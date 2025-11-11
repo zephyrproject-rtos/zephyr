@@ -1,5 +1,6 @@
 board:
   name: ubx_bmd330eval
+  full_name: "EVK-BMD-330: BMD-330-EVAL"
   vendor: u-blox
   socs:
   - name: nrf52810

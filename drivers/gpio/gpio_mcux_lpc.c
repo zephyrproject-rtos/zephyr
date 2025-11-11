@@ -17,6 +17,8 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
@@ -51,6 +53,7 @@ struct gpio_mcux_lpc_config {
 	MCI_IO_MUX_Type * pinmux_base;
 #endif
 	uint32_t port_no;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct gpio_mcux_lpc_data {
@@ -260,7 +263,10 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 	const struct gpio_mcux_lpc_config *config = dev->config;
 	enum nxp_pint_trigger interrupt_mode = NXP_PINT_NONE;
 	uint32_t port = config->port_no;
+	bool wake = ((trig & GPIO_INT_WAKEUP) == GPIO_INT_WAKEUP);
 	int ret;
+
+	trig &= ~GPIO_INT_WAKEUP;
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -289,7 +295,7 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 	}
 
 	/* PINT treats GPIO pins as continuous. Each port has 32 pins */
-	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, (trig & GPIO_INT_WAKEUP));
+	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, wake);
 	if (ret < 0) {
 		return ret;
 	}
@@ -398,6 +404,13 @@ static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
 #endif
 }
 
+void gpio_mcux_lpc_trigger_cb(const struct device *dev, uint32_t pins)
+{
+	struct gpio_mcux_lpc_data *data = dev->data;
+
+	gpio_fire_callbacks(&data->callbacks, dev, pins);
+}
+
 static int gpio_mcux_lpc_manage_cb(const struct device *port,
 				   struct gpio_callback *callback, bool set)
 {
@@ -406,15 +419,40 @@ static int gpio_mcux_lpc_manage_cb(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_mcux_lpc_init(const struct device *dev)
+static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct gpio_mcux_lpc_config *config = dev->config;
-	GPIO_PortInit(config->gpio_base, config->port_no);
+	int error;
 
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		GPIO_PortInit(config->gpio_base, config->port_no);
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (error) {
+			return error;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
+static int gpio_mcux_lpc_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, gpio_mcux_lpc_pm_action);
+}
+
+static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 	.pin_configure = gpio_mcux_lpc_configure,
 	.port_get_raw = gpio_mcux_lpc_port_get_raw,
 	.port_set_masked_raw = gpio_mcux_lpc_port_set_masked_raw,
@@ -451,6 +489,7 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 
 
 #define GPIO_MCUX_LPC(n)								\
+	PINCTRL_DT_INST_DEFINE(n);							\
 	static int lpc_gpio_init_##n(const struct device *dev);				\
 											\
 	static const struct gpio_mcux_lpc_config gpio_mcux_lpc_config_##n = {		\
@@ -460,12 +499,16 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 		.gpio_base = (GPIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
 		.pinmux_base = PINMUX_BASE,						\
 		.int_source = DT_INST_ENUM_IDX(n, int_source),				\
-		.port_no = DT_INST_REG_ADDR(n)						\
+		.port_no = DT_INST_REG_ADDR(n),						\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)				\
 	};										\
 											\
 	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;			\
 											\
-	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_mcux_lpc_pm_action);				\
+											\
+	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n,					\
+		    PM_DEVICE_DT_INST_GET(n),						\
 		    &gpio_mcux_lpc_data_##n,						\
 		    &gpio_mcux_lpc_config_##n, PRE_KERNEL_1,				\
 		    CONFIG_GPIO_INIT_PRIORITY,						\

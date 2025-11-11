@@ -236,18 +236,18 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		LOG_ERR("DCS Read not yet implemented or used");
 		return -ENOTSUP;
 	case MIPI_DSI_DCS_SHORT_WRITE:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrNoParam;
 		break;
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrOneParam;
 		break;
 	case MIPI_DSI_DCS_LONG_WRITE:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
 		/*
@@ -300,7 +300,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 }
 
-static struct mipi_dsi_driver_api dsi_mcux_api = {
+static DEVICE_API(mipi_dsi, dsi_mcux_api) = {
 	.attach = dsi_mcux_attach,
 	.transfer = dsi_mcux_transfer,
 };

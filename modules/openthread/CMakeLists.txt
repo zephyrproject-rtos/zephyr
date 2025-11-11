@@ -11,6 +11,10 @@ macro(kconfig_to_ot_option kconfig_option ot_config description)
     endif()
 endmacro()
 
+macro(kconfig_to_ot_option_value kconfig_option ot_config description)
+      set(${ot_config} ${${kconfig_option}} CACHE STRING "${description}" FORCE)
+endmacro()
+
 # OpenThread options
 set(OT_BUILD_EXECUTABLES OFF CACHE BOOL "Disable OpenThread samples")
 set(OT_BUILTIN_MBEDTLS_MANAGEMENT OFF CACHE BOOL "Use Zephyr's mbedTLS heap")
@@ -45,13 +49,17 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_BACKBONE_ROUTER_MULTICAST_ROUTING OT_BACK
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BLE_TCAT OT_BLE_TCAT "Enable BLE TCAT support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT OT_BORDER_AGENT "Enable Border Agent")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE OT_BORDER_AGENT_EPSKC "Border agent ephemeral PSKc")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_ID OT_BORDER_AGENT_ID "Create and save border agent ID")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_MESHCOP_SERVICE OT_BORDER_AGENT_MESHCOP_SERVICE "Border agent meshcop service")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTER OT_BORDER_ROUTER "Enable Border Router")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING OT_BORDER_ROUTING "Enable Border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_COUNTERS OT_BORDER_ROUTING_COUNTERS "Enable Border routing counters")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD OT_BORDER_ROUTING_DHCP6_PD "DHCPv6-PD support in border routing")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT OT_BORDER_ROUTING_DHCP6_PD_CLIENT "DHCPv6-PD client support in border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER OT_CHANNEL_MANAGER "Enable channel manager support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER_CSL OT_CHANNEL_MANAGER_CSL "Channel manager for CSL channel")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MONITOR OT_CHANNEL_MONITOR "Enable channel monitor support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MONITOR_AUTO_START OT_CHANNEL_MONITOR_AUTO_START "Start channel monitor with interface")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP OT_COAP "Enable CoAP API")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP_BLOCK OT_COAP_BLOCK "Enable CoAP Block-wise option support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP_OBSERVE OT_COAP_OBSERVE "Enable CoAP Observe option support")
@@ -70,8 +78,10 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT OT_DNS_CLIENT "Enable DNS clie
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT_OVER_TCP OT_DNS_CLIENT_OVER_TCP "Enable dns query over tcp")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_DSO OT_DNS_DSO "Enable DNS Stateful Operations (DSO) support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY OT_DNS_UPSTREAM_QUERY "Enable forwarding DNS queries to upstream")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_DNSSD_DISCOVERY_PROXY OT_DNSSD_DISCOVERY_PROXY "Enable DNS-SD discovery proxy support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNSSD_SERVER OT_DNSSD_SERVER "Enable DNS-SD server support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DUA OT_DUA "Enable Domain Unicast Address feature for Thread 1.2")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_DYNAMIC_STORE_FRAME_AHEAD_COUNTER OT_DYNAMIC_STORE_FRAME_AHEAD_COUNTER "Enable dynamic store frame ahead counter")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_ECDSA OT_ECDSA "Enable ECDSA support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_ENABLE_SERVICE OT_SERVICE "Enable Service entries in Thread Network Data")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_EXTERNAL_HEAP OT_EXTERNAL_HEAP "Enable external heap support")
@@ -99,6 +109,7 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING OT_NAT64_BORDER_ROUT
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NAT64_TRANSLATOR OT_NAT64_TRANSLATOR "Enable NAT64 translator")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT OT_NEIGHBOR_DISCOVERY_AGENT "Enable neighbor discovery agent support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDIAG_CLIENT OT_NETDIAG_CLIENT "Enable TMF network diagnostics on clients")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDIAG_VENDOR_INFO OT_NETDIAG_VENDOR_INFO "Allow setting vendor info at runtime")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDATA_PUBLISHER OT_NETDATA_PUBLISHER "Enable Thread Network Data publisher")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OPERATIONAL_DATASET_AUTO_INIT OT_OPERATIONAL_DATASET_AUTO_INIT "Enable operational dataset auto init")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OTNS OT_OTNS "Enable OTNS support")
@@ -116,14 +127,22 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_SNTP_CLIENT OT_SNTP_CLIENT "Enable SNTP C
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_ADV_PROXY OT_SRP_ADV_PROXY "Enable SRP Server Advertising Proxy support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_CLIENT OT_SRP_CLIENT "Enable SRP Client support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_SERVER OT_SRP_SERVER "Enable SRP Server support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_SERVER_FAST_START OT_SRP_SERVER_FAST_START_MODE "Enable SRP server fast start")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TCP_ENABLE OT_TCP "Enable TCP support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TIME_SYNC OT_TIME_SYNC "Enable the time synchronization service feature")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TREL OT_TREL "Enable TREL radio link for Thread over Infrastructure feature")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_TREL_MANAGE_DNSSD OT_TREL_MANAGE_DNSSD "Enable TREL to manage DNSSD and peer discovery")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_BEACON_PAYLOAD OT_TX_BEACON_PAYLOAD "Enable tx beacon payload support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_QUEUE_STATISTICS OT_TX_QUEUE_STATS "Enable tx queue statistics")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_UDP_FORWARD OT_UDP_FORWARD "Enable UDP forward feature")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_UPTIME OT_UPTIME "Enable support for tracking OpenThread instance's uptime")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_VERHOEFF_CHECKSUM OT_VERHOEFF_CHECKSUM "Verhoeff checksum")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_COORDINATOR OT_WAKEUP_COORDINATOR "Enable Wake-up Coordinator role")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE OT_WAKEUP_END_DEVICE "Enable Wake-up End Device role")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_RCP_RESTORATION_MAX_COUNT OT_RCP_RESTORATION_MAX_COUNT "Set the maximum number of RCP restoration attempts")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_NAME OT_VENDOR_NAME "Set vendor name for network diagnostics")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_MODEL OT_VENDOR_MODEL "Set vendor model for network diagnostics")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_SW_VERSION OT_VENDOR_SW_VERSION "Set software version for network diagnostics")
 
 if(CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE)
   set(OT_NCP_VENDOR_HOOK_SOURCE ${CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE} CACHE STRING "NCP vendor hook source file name" FORCE)
@@ -131,6 +150,10 @@ endif()
 
 if(CONFIG_OPENTHREAD_POWER_SUPPLY)
   set(OT_POWER_SUPPLY ${CONFIG_OPENTHREAD_POWER_SUPPLY} CACHE STRING "Power supply configuration" FORCE)
+endif()
+
+if(CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION)
+  set(OT_CLI_VENDOR_EXTENSION ${CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION} CACHE STRING "Path to CMake file to define and link Openthread CLI vendor extension" FORCE)
 endif()
 
 set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORCE)
@@ -163,6 +186,11 @@ endforeach()
 string(REPLACE " " ";" OT_PARAM_LIST " ${CONFIG_OPENTHREAD_CUSTOM_PARAMETERS}")
 target_compile_definitions(ot-config INTERFACE ${OT_PARAM_LIST})
 
+# Since Mbed TLS 3.1.0 MBEDTLS_SSL_EXPORT_KEYS was removed as build symbol and
+# it's always assumed to be enabled. Corresponding kconfig was removed from
+# Zephyr as well, but OpenThread code still uses it, so we add it here.
+target_compile_definitions(ot-config INTERFACE -DMBEDTLS_SSL_EXPORT_KEYS)
+
 # Zephyr compiler options
 target_include_directories(ot-config INTERFACE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
@@ -186,6 +214,13 @@ target_compile_options(ot-config INTERFACE
     $<TARGET_PROPERTY:compiler,no_builtin>
     -imacros ${AUTOCONF_H}
 )
+
+# FIXME Temporary suppress -Wundef option to avoid warning about
+# MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT undefined option. To be removed
+# when the issue is resolved in mbed TLS (the faulty option is already removed
+# on the development branch or there is a pending bugfix for the 3.6 branch
+# https://github.com/Mbed-TLS/mbedtls/pull/10112).
+target_compile_options(ot-config INTERFACE -Wno-undef)
 
 # Openthread depends on errno.h, which includes errno_private.h in minimal libc.
 # errno_private.h is generated as part of ${SYSCALL_LIST_H_TARGET} target.
@@ -234,6 +269,17 @@ list(APPEND ot_libs openthread-mtd)
 endif()
 endif()
 
+if(CONFIG_HDLC_RCP_IF)
+list(APPEND ot_libs
+  ot-config
+  openthread-platform
+  openthread-radio-spinel
+  openthread-spinel-ncp
+  openthread-url
+  openthread-hdlc
+)
+endif()
+
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
@@ -246,6 +292,15 @@ endif()
 zephyr_link_libraries(${ot_libs})
 
 endif()
+
+# Create a library for the OpenThread Zephyr utils
+zephyr_library_named(openthread_utils)
+zephyr_library_sources(
+  openthread.c
+  openthread_utils.c
+)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
+zephyr_include_directories(include)
 
 add_subdirectory(platform)
 

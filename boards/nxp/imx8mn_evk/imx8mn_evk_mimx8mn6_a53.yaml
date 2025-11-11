@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,8 +12,12 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 1024
+supported:
+  - uart
+  - net
+  - gpio
+  - i2c
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: nxp

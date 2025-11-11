@@ -595,8 +595,9 @@ const struct pfc_drive_reg *pfc_rcar_get_drive_regs(void)
 
 int pfc_rcar_get_reg_index(uint8_t pin, uint8_t *reg_index)
 {
-	if (RCAR_IS_GP_PIN(pin) == false)
+	if (RCAR_IS_GP_PIN(pin) == false) {
 		return -EINVAL;
+	}
 
 	*reg_index = pin / 32;
 

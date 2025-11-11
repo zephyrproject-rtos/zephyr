@@ -1,0 +1,13 @@
+# ST MEMS sensor configuration options
+
+# Copyright (c) 2025 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config STMEMSC_I3C_I2C_WRITE_BUFFER_SIZE
+	int "ST memsc I2C write buffer size"
+	default 16
+	depends on I2C || I3C
+	depends on HAS_STMEMSC
+	help
+	  The size of the buffer pushed on the stack used to copy
+	  the data to be written along with the register address.

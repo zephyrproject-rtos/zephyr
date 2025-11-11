@@ -19,7 +19,7 @@ ZTEST_F(eventfd, test_write_then_read)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 5, "val == %d", val);
+	zassert_true(val == 5, "val == %lld", val);
 
 	/* Test EFD_SEMAPHORE */
 	reopen(&fixture->fd, 0, EFD_SEMAPHORE);
@@ -32,7 +32,7 @@ ZTEST_F(eventfd, test_write_then_read)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 1, "val == %d", val);
+	zassert_true(val == 1, "val == %lld", val);
 }
 
 ZTEST_F(eventfd, test_zero_shall_not_unblock)

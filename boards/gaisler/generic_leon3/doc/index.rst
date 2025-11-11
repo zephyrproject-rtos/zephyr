@@ -1,7 +1,4 @@
-.. _generic_leon3:
-
-Generic LEON3
-#############
+.. zephyr:board:: generic_leon3
 
 Overview
 ********
@@ -19,6 +16,8 @@ M2GL-EVAL-KIT.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

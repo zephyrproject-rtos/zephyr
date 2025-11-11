@@ -20,7 +20,7 @@ west flash
 
 Building for boards without UART interrupt support:
 ```bash
-west build -b native_sim -- -DOVERLAY_CONFIG=prj_poll.conf  samples/subsys/shell/devmem_load
+west build -b native_sim -- -DCONF_FILE=prj_poll.conf  samples/subsys/shell/devmem_load
 ```
 ## Running
 After connecting to the UART console you should see the following output:

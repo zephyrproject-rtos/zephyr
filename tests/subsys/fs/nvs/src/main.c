@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This test is designed to be run using flash-simulator which provide
- * functionality for flash property customization and emulating errors in
- * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86, mps2_an385 or native_sim target.
- */
-
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX) &&                              \
-	!defined(CONFIG_BOARD_MPS2_AN385)
-#error "Run only on qemu_x86, mps2_an385, or a posix architecture based target (for ex. native_sim)"
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/ztest.h>
@@ -39,8 +27,10 @@ static const struct device *const flash_dev = TEST_NVS_FLASH_AREA_DEV;
 
 struct nvs_fixture {
 	struct nvs_fs fs;
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	struct stats_hdr *sim_stats;
 	struct stats_hdr *sim_thresholds;
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 };
 
 static void *setup(void)
@@ -69,22 +59,26 @@ static void *setup(void)
 
 static void before(void *data)
 {
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	struct nvs_fixture *fixture = (struct nvs_fixture *)data;
 
 	fixture->sim_stats = stats_group_find("flash_sim_stats");
 	fixture->sim_thresholds = stats_group_find("flash_sim_thresholds");
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 }
 
 static void after(void *data)
 {
 	struct nvs_fixture *fixture = (struct nvs_fixture *)data;
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 	if (fixture->sim_stats) {
 		stats_reset(fixture->sim_stats);
 	}
 	if (fixture->sim_thresholds) {
 		stats_reset(fixture->sim_thresholds);
 	}
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 	/* Clear NVS */
 	if (fixture->fs.ready) {
@@ -102,7 +96,14 @@ ZTEST_SUITE(nvs, NULL, setup, before, after, NULL);
 ZTEST_F(nvs, test_nvs_mount)
 {
 	int err;
+	size_t orig_sector_size = fixture->fs.sector_size;
 
+	fixture->fs.sector_size = KB(128);
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == -EINVAL,
+		     "nvs_mount did not return expected err for invalid sector_size");
+
+	fixture->fs.sector_size = orig_sector_size;
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
@@ -142,6 +143,7 @@ ZTEST_F(nvs, test_nvs_write)
 	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
 }
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
 				      const char *name, uint16_t off)
 {
@@ -312,7 +314,7 @@ static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 
 	for (uint16_t i = begin; i < end; i++) {
 		uint8_t id = (i % max_id);
-		uint8_t id_data = id + max_id * (i / max_id);
+		uint8_t id_data = id + max_id * ((i % 256) / max_id);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -351,13 +353,25 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 
 	const uint16_t max_id = 10;
 	/* 50th write will trigger 1st GC. */
-	const uint16_t max_writes = 51;
+	uint16_t max_writes = 51;
 	/* 75th write will trigger 2st GC. */
-	const uint16_t max_writes_2 = 51 + 25;
+	uint16_t max_writes_2 = 51 + 25;
 	/* 100th write will trigger 3st GC. */
-	const uint16_t max_writes_3 = 51 + 25 + 25;
+	uint16_t max_writes_3 = 51 + 25 + 25;
 	/* 125th write will trigger 4st GC. */
-	const uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+	uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+
+	if (fixture->fs.sector_size == KB(64)) {
+		/* write 1637 will trigger 1st GC. */
+		/* write 3274 will trigger 2nd GC. */
+		max_writes = 3275;
+		/* write 4911 will trigger 3rd GC. */
+		max_writes_2 = 3275 + 1637;
+		/* write 6548 will trigger 4th GC. */
+		max_writes_3 = 3275 + 1637 + 1637;
+		/* write 8185 will trigger 5th GC. */
+		max_writes_4 = 3275 + 1637 + 1637 + 1637;
+	}
 
 	fixture->fs.sector_count = 3;
 
@@ -366,7 +380,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 
-	/* Trigger 1st GC */
+	/* Trigger 1st and 2nd GC */
 	write_content(max_id, 0, max_writes, &fixture->fs);
 
 	/* sector sequence: empty,closed, write */
@@ -381,7 +395,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 2nd GC */
+	/* Trigger 3rd GC */
 	write_content(max_id, max_writes, max_writes_2, &fixture->fs);
 
 	/* sector sequence: write, empty, closed */
@@ -396,7 +410,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 3rd GC */
+	/* Trigger 4th GC */
 	write_content(max_id, max_writes_2, max_writes_3, &fixture->fs);
 
 	/* sector sequence: closed, write, empty */
@@ -411,7 +425,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 4th GC */
+	/* Trigger 5th GC */
 	write_content(max_id, max_writes_3, max_writes_4, &fixture->fs);
 
 	/* sector sequence: empty,closed, write */
@@ -525,6 +539,7 @@ ZTEST_F(nvs, test_nvs_corrupted_sector_close_operation)
 	/* Ensure that the NVS is able to store new content. */
 	execute_long_pattern_write(max_id, &fixture->fs);
 }
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 /**
  * @brief Test case when storage become full, so only deletion is possible.
@@ -563,7 +578,7 @@ ZTEST_F(nvs, test_nvs_full_sector)
 	len = nvs_write(&fixture->fs, filling_id, &filling_id, sizeof(filling_id));
 	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
 
-	/* sanitycheck on NVS content */
+	/* coherence check on NVS content */
 	for (i = 0; i <= filling_id; i++) {
 		len = nvs_read(&fixture->fs, i, &data_read, sizeof(data_read));
 		if (i == 1) {
@@ -639,6 +654,7 @@ ZTEST_F(nvs, test_delete)
 		     " any footprint in the storage");
 }
 
+#ifdef CONFIG_TEST_NVS_SIMULATOR
 /*
  * Test that garbage-collection can recover all ate's even when the last ate,
  * ie close_ate, is corrupt. In this test the close_ate is set to point to the
@@ -659,6 +675,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct nvs_ate) * 5;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	ate.id = 0x1;
@@ -667,6 +684,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 #ifdef CONFIG_NVS_DATA_CRC
 	ate.len += sizeof(data_crc);
 #endif
+	ate.part = 0xff;
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
@@ -722,12 +740,14 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
+	close_ate.part = 0xff;
 	close_ate.crc8 = crc8_ccitt(0xff, &close_ate,
 				    offsetof(struct nvs_ate, crc8));
 
 	corrupt_ate.id = 0xdead;
 	corrupt_ate.offset = 0;
 	corrupt_ate.len = 20;
+	corrupt_ate.part = 0xff;
 	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	/* Mark sector 0 as closed */
@@ -754,6 +774,7 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
+#endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 static size_t num_matching_cache_entries(uint32_t addr, bool compare_sector_only, struct nvs_fs *fs)
@@ -959,3 +980,42 @@ ZTEST_F(nvs, test_nvs_cache_hash_quality)
 
 #endif
 }
+
+#ifdef CONFIG_TEST_NVS_SIMULATOR
+/*
+ * Test NVS bad region initialization recovery.
+ */
+ZTEST_F(nvs, test_nvs_init_bad_memory_region)
+{
+	int err;
+	uint32_t data;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Write bad ATE to each sector */
+	for (uint16_t i = 0; i < TEST_SECTOR_COUNT; i++) {
+		data = 0xdeadbeef;
+		err = flash_write(fixture->fs.flash_device,
+				  fixture->fs.offset + (fixture->fs.sector_size * (i + 1)) -
+					  sizeof(struct nvs_ate),
+				  &data, sizeof(data));
+		zassert_true(err == 0, "flash_write failed: %d", err);
+	}
+
+	/* Reinitialize the NVS. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+
+#ifdef CONFIG_NVS_INIT_BAD_MEMORY_REGION
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Ensure that the NVS is able to store new content. */
+	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
+#else
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == -EDEADLK, "nvs_mount call ok, expect fail: %d", err);
+#endif
+}
+#endif /* CONFIG_TEST_NVS_SIMULATOR */

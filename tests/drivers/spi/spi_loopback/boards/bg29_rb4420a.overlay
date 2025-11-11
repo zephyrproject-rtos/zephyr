@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
+
+/*
+ * Connect EXP4 (PC0) and EXP6 (PC1) of the Expansion Pin header
+ */
+
+&eusart1 {
+	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART1RXFL>;
+	dma-names = "tx", "rx";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};

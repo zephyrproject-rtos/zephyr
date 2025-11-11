@@ -48,8 +48,6 @@ if(HostTools_FOUND)
   return()
 endif()
 
-find_package(Deprecated COMPONENTS CROSS_COMPILE)
-
 find_package(Zephyr-sdk 0.16)
 
 # gperf is an optional dependency
@@ -61,9 +59,16 @@ find_program(OPENOCD openocd)
 # bossac is an optional dependency
 find_program(BOSSAC bossac)
 
-# imgtool is an optional dependency (the build may also fall back to scripts/imgtool.py
-# in the mcuboot repository if that's present in some cases)
-find_program(IMGTOOL imgtool)
+# imgtool is an optional dependency (prefer the version that is in the mcuboot repository, if
+# present and a user has not specified a different version)
+zephyr_get(IMGTOOL SYSBUILD LOCAL)
+find_program(IMGTOOL imgtool.py HINTS ${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/ NAMES imgtool NAMES_PER_DIR)
+
+# winpty is an optional dependency
+find_program(PTY_INTERFACE winpty)
+if("${PTY_INTERFACE}" STREQUAL "PTY_INTERFACE-NOTFOUND")
+  set(PTY_INTERFACE "")
+endif()
 
 # Default to the host system's toolchain if we are targeting a host based target
 if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
@@ -114,3 +119,6 @@ set_ifndef(TOOLCHAIN_KCONFIG_DIR ${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOL
 
 set(HostTools_FOUND TRUE)
 set(HOSTTOOLS_FOUND TRUE)
+build_info(toolchain name VALUE ${ZEPHYR_TOOLCHAIN_VARIANT})
+string(TOUPPER ${ZEPHYR_TOOLCHAIN_VARIANT} zephyr_toolchain_variant_upper)
+build_info(toolchain path PATH "${${zephyr_toolchain_variant_upper}_TOOLCHAIN_PATH}")

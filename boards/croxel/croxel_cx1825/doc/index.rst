@@ -1,7 +1,4 @@
-.. _croxel_cx1825_nrf52840:
-
-CX1825 nRF52840
-###############
+.. zephyr:board:: croxel_cx1825
 
 Overview
 ********
@@ -23,12 +20,6 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/cx1825_nrf52840.jpg
-     :align: center
-     :alt: CX1825
-
-     Croxel's CX1825 Bluetooth Prototyping board (Credit: Croxel)
 
 Hardware
 ********
@@ -55,12 +46,7 @@ Hardware
 Supported Features
 ==================
 
-- Discrete LEDs (red and green)
-- Buttons (User and Reset)
-- Sensors (Accelerometer, Light, Temperature and Humidity, Pressure and Hall-Effect sensors)
-- Beeper
-- Radio (Bluetooth, IEEE 802.15.4)
-- SOC peripherals (ADC, Clock, Flash, GPIO, I2C, MPU, NVIC, PWM, Radio, RTC, SPI, USB, WDT)
+.. zephyr:board-supported-hw::
 
 Future Feature Support
 ======================
@@ -89,6 +75,8 @@ Digital Inputs
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``croxel_cx1825/nrf52840`` board configuration
 can be built and flashed in the usual way (see :ref:`build_an_application`

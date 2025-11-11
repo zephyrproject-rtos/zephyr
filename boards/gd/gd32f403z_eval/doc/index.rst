@@ -1,8 +1,4 @@
-.. _gd32f403z_eval:
-
-GigaDevice GD32F403Z-EVAL
-#########################
-
+.. zephyr:board:: gd32f403z_eval
 
 Overview
 ********
@@ -13,11 +9,6 @@ of the GigaDevice F403 Cortex-M4F High Performance MCU.
 The GD32F403ZE features a single-core ARM Cortex-M4F MCU which can run up
 to 168-MHz with flash accesses zero wait states, 512kiB of Flash, 96kiB of
 SRAM and 112 GPIOs.
-
-.. image:: img/gd32f403z_eval.jpg
-     :align: center
-     :alt: gd32f403z_eval
-
 
 Hardware
 ********
@@ -52,27 +43,7 @@ For more information about the GD32F403 SoC and GD32F403Z-Eval board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| EXTI      | on-chip    | EXTI interrupt        |
-|           |            | controller            |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | PWM                   |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling   |
-+-----------+------------+-----------------------+
-| ADC       | on-chip    | ADC                   |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -82,6 +53,8 @@ is UART0 at PIN-9 and PIN-10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before program your board make sure to configure boot setting and serial port.
 The default serial port is USART0.  This port uses header JP-5/6 to route
@@ -114,7 +87,7 @@ The GD32F403Z-EVAL includes an onboard programmer/debugger (GD-Link) which
 allow flash programming and debug over USB. There are also program and debug
 headers J1 and J100 that can be used with any ARM compatible tools.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -163,7 +136,7 @@ The GD32F403 MCU have a ROM bootloader which allow flash programming.  User
 should install `GD32 ISP Console`_ software at some Linux path.  The recommended
 is :code:`$HOME/.local/bin`.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

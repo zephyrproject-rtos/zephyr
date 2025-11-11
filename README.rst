@@ -10,12 +10,9 @@
      </p>
    </a>
 
-   <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
-   src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
-   <a
-   href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain">
-   <img
-   src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push"></a>
+   <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
+   <a href="https://scorecard.dev/viewer/?uri=github.com/zephyrproject-rtos/zephyr"><img src="https://api.securityscorecards.dev/projects/github.com/zephyrproject-rtos/zephyr/badge"></a>
+   <a href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain"><img src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push"></a>
 
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
@@ -27,7 +24,7 @@ resource-constrained systems: from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
 The Zephyr kernel supports multiple architectures, including ARM (Cortex-A,
-Cortex-R, Cortex-M), Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V,
+Cortex-R, Cortex-M), Intel x86, ARC, Tensilica Xtensa, and RISC-V,
 SPARC, MIPS, and a large number of `supported boards`_.
 
 .. below included in doc/introduction/introduction.rst

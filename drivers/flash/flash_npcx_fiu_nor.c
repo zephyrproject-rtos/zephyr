@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
 #define BLOCK_64K_SIZE KB(64)
 #define BLOCK_4K_SIZE  KB(4)
 
+#define POLLING_BUSY_SLEEP_TIME_US 100
+
 /* Device config */
 struct flash_npcx_nor_config {
 	/* QSPI bus device for mutex control and bus configuration */
@@ -75,15 +77,12 @@ static int flash_npcx_uma_transceive(const struct device *dev, struct npcx_uma_c
 	struct flash_npcx_nor_data *data = dev->data;
 	int ret;
 
-	/* Lock SPI bus and configure it if needed */
-	qspi_npcx_fiu_mutex_lock_configure(config->qspi_bus, &config->qspi_cfg,
-					   data->operation);
+	/* Configure SPI bus */
+	qspi_npcx_fiu_apply_cfg(config->qspi_bus, &config->qspi_cfg,
+				data->operation);
 
 	/* Execute UMA transaction */
 	ret = qspi_npcx_fiu_uma_transceive(config->qspi_bus, cfg, flags);
-
-	/* Unlock SPI bus */
-	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
 
 	return ret;
 }
@@ -94,6 +93,20 @@ static int flash_npcx_uma_cmd_only(const struct device *dev, uint8_t opcode)
 	struct npcx_uma_cfg cfg = { .opcode = opcode};
 
 	return flash_npcx_uma_transceive(dev, &cfg, 0); /* opcode only */
+}
+
+static int flash_npcx_uma_cmd_only_locked(const struct device *dev, uint8_t opcode)
+{
+	int ret;
+	const struct flash_npcx_nor_config *config = dev->config;
+
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+
+	ret = flash_npcx_uma_cmd_only(dev, opcode);
+
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 
 static int flash_npcx_uma_cmd_by_addr(const struct device *dev, uint8_t opcode,
@@ -153,6 +166,7 @@ static int flash_npcx_nor_wait_until_ready(const struct device *dev)
 			return 0;
 		}
 
+		k_usleep(POLLING_BUSY_SLEEP_TIME_US);
 	} while ((k_uptime_get() - st) < config->max_timeout);
 
 	return -EBUSY;
@@ -160,45 +174,92 @@ static int flash_npcx_nor_wait_until_ready(const struct device *dev)
 
 static int flash_npcx_nor_read_status_regs(const struct device *dev, uint8_t *sts_reg)
 {
-	int ret = flash_npcx_uma_read(dev, SPI_NOR_CMD_RDSR, sts_reg, 1);
+	int ret;
+	const struct flash_npcx_nor_config *config = dev->config;
 
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
 	if (ret != 0) {
-		return ret;
+		goto unlock_rd_sts_regs;
 	}
-	return flash_npcx_uma_read(dev, SPI_NOR_CMD_RDSR2, sts_reg + 1, 1);
+
+	ret = flash_npcx_uma_read(dev, SPI_NOR_CMD_RDSR, sts_reg, 1);
+	if (ret != 0) {
+		goto out_rd_sts_regs;
+	}
+
+	ret = flash_npcx_uma_read(dev, SPI_NOR_CMD_RDSR2, sts_reg + 1, 1);
+
+out_rd_sts_regs:
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_rd_sts_regs:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 
 static int flash_npcx_nor_write_status_regs(const struct device *dev, uint8_t *sts_reg)
 {
 	int ret;
+	const struct flash_npcx_nor_config *config = dev->config;
+
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		goto unlock_wr_sts_regs;
+	}
 
 	ret = flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 	if (ret != 0) {
-		return ret;
+		goto out_wr_sts_regs;
 	}
 
 	ret = flash_npcx_uma_write(dev, SPI_NOR_CMD_WRSR, sts_reg, 2);
 	if (ret != 0) {
-		return ret;
+		goto out_wr_sts_regs;
 	}
 
-	return flash_npcx_nor_wait_until_ready(dev);
+	ret = flash_npcx_nor_wait_until_ready(dev);
+
+out_wr_sts_regs:
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_wr_sts_regs:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 
 /* Flash API functions */
 #if defined(CONFIG_FLASH_JESD216_API)
 static int flash_npcx_nor_read_jedec_id(const struct device *dev, uint8_t *id)
 {
+	int ret;
+	const struct flash_npcx_nor_config *config = dev->config;
+
 	if (id == NULL) {
 		return -EINVAL;
 	}
 
-	return flash_npcx_uma_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		goto unlock_rd_jedec_id;
+	}
+
+	ret = flash_npcx_uma_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
+
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_rd_jedec_id:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 
 static int flash_npcx_nor_read_sfdp(const struct device *dev, off_t addr,
 				    void *data, size_t size)
 {
+	int ret;
+	const struct flash_npcx_nor_config *config = dev->config;
 	uint8_t sfdp_addr[4];
 	struct npcx_uma_cfg cfg = { .opcode = JESD216_CMD_READ_SFDP,
 					.tx_buf = sfdp_addr,
@@ -214,8 +275,21 @@ static int flash_npcx_nor_read_sfdp(const struct device *dev, off_t addr,
 	sfdp_addr[0] = (addr >> 16) & 0xff;
 	sfdp_addr[1] = (addr >> 8) & 0xff;
 	sfdp_addr[2] = addr & 0xff;
-	return flash_npcx_uma_transceive(dev, &cfg, NPCX_UMA_ACCESS_WRITE |
-					 NPCX_UMA_ACCESS_READ);
+
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		goto unlock_read_sfdp;
+	}
+
+	ret = flash_npcx_uma_transceive(dev, &cfg, NPCX_UMA_ACCESS_WRITE |
+					NPCX_UMA_ACCESS_READ);
+
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_read_sfdp:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
@@ -236,6 +310,7 @@ static int flash_npcx_nor_read(const struct device *dev, off_t addr,
 {
 	const struct flash_npcx_nor_config *config = dev->config;
 	struct flash_npcx_nor_data *dev_data = dev->data;
+	int ret = 0;
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -246,18 +321,23 @@ static int flash_npcx_nor_read(const struct device *dev, off_t addr,
 	qspi_npcx_fiu_mutex_lock_configure(config->qspi_bus, &config->qspi_cfg,
 					   dev_data->operation);
 
-	/* Trigger Direct Read Access (DRA) via reading memory mapped-address */
+	/* Read Data by Direct Read Access (DRA) or GDMA */
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+	ret = qspi_npcx_fiu_dma_transceive(config->qspi_bus, (void *)(config->mapped_addr + addr),
+					   data, size);
+#else
 	memcpy(data, (void *)(config->mapped_addr + addr), size);
+#endif
 
 	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
 
-	return 0;
+	return ret;
 }
 
 static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
-	int ret = 0;
+	int ret;
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -277,12 +357,20 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 		return -EINVAL;
 	}
 
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		LOG_ERR("QSPI UMA block failed");
+		goto unlock_nor_erase;
+	}
+
 	/* Select erase opcode by size */
 	if (size == config->flash_size) {
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 		/* Send chip erase command */
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_CE);
-		return flash_npcx_nor_wait_until_ready(dev);
+		ret = flash_npcx_nor_wait_until_ready(dev);
+		goto out_nor_erase;
 	}
 
 	while (size > 0) {
@@ -303,6 +391,11 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 		}
 	}
 
+out_nor_erase:
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_nor_erase:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
 	return ret;
 }
 
@@ -311,7 +404,7 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 {
 	const struct flash_npcx_nor_config *config = dev->config;
 	uint8_t *tx_buf = (uint8_t *)data;
-	int ret = 0;
+	int ret;
 	size_t sz_write;
 
 	/* Out of the region of nor flash device? */
@@ -332,6 +425,12 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 	 */
 	if (((addr + sz_write - 1U) / SPI_NOR_PAGE_SIZE) != (addr / SPI_NOR_PAGE_SIZE)) {
 		sz_write -= (addr + sz_write) & (SPI_NOR_PAGE_SIZE - 1);
+	}
+
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		goto unlock_nor_write;
 	}
 
 	while (size > 0) {
@@ -360,6 +459,10 @@ static int flash_npcx_nor_write(const struct device *dev, off_t addr,
 		}
 	}
 
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_nor_write:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
 	return ret;
 }
 
@@ -376,8 +479,10 @@ static int flash_npcx_nor_ex_exec_uma(const struct device *dev,
 				      const struct npcx_ex_ops_uma_in *op_in,
 				      const struct npcx_ex_ops_uma_out *op_out)
 {
+	const struct flash_npcx_nor_config *config = dev->config;
 	int flag = 0;
 	struct npcx_uma_cfg cfg;
+	int ret;
 
 	if (op_in == NULL) {
 		return -EINVAL;
@@ -402,7 +507,19 @@ static int flash_npcx_nor_ex_exec_uma(const struct device *dev,
 		flag |= NPCX_UMA_ACCESS_READ;
 	}
 
-	return flash_npcx_uma_transceive(dev, &cfg, flag);
+	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
+	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
+	if (ret != 0) {
+		goto unlock_nor_ex_exec_uma;
+	}
+
+	ret = flash_npcx_uma_transceive(dev, &cfg, flag);
+
+	qspi_npcx_fiu_uma_block(config->qspi_bus, false);
+unlock_nor_ex_exec_uma:
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
 }
 
 static int flash_npcx_nor_ex_set_spi_spec(const struct device *dev,
@@ -432,8 +549,37 @@ static int flash_npcx_nor_ex_get_spi_spec(const struct device *dev,
 	struct flash_npcx_nor_data *data = dev->data;
 
 	op_out->oper = data->operation;
+
 	return 0;
 }
+
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+static int flash_npcx_nor_ex_exec_gdma(const struct device *dev,
+				       const struct npcx_ex_ops_gdma_in *op_in)
+{
+	const struct flash_npcx_nor_config *config = dev->config;
+	struct flash_npcx_nor_data *dev_data = dev->data;
+	int ret;
+
+	/* Out of the region of flash device? */
+	if (!is_within_region(op_in->src, op_in->length, 0, config->flash_size)) {
+		return -EINVAL;
+	}
+
+	/* Lock SPI bus and configure it if needed */
+	qspi_npcx_fiu_mutex_lock_configure(config->qspi_bus, &config->qspi_cfg,
+					   dev_data->operation);
+
+	ret = qspi_npcx_fiu_dma_transceive(config->qspi_bus,
+					   (uint8_t *)(config->mapped_addr + op_in->src),
+					   (uint8_t *)op_in->dst, op_in->length);
+
+	/* Unlock SPI bus */
+	qspi_npcx_fiu_mutex_unlock(config->qspi_bus);
+
+	return ret;
+}
+#endif
 
 static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 				const uintptr_t in, void *out)
@@ -460,6 +606,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 #endif
 
 		ret = flash_npcx_nor_ex_exec_uma(dev, op_in, op_out);
+
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
 			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
@@ -500,6 +647,24 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 #endif
 		break;
 	}
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+	case FLASH_NPCX_EX_OP_EXEC_GDMA:
+	{
+		struct npcx_ex_ops_gdma_in *op_in = (struct npcx_ex_ops_gdma_in *)in;
+
+#ifdef CONFIG_USERSPACE
+		struct npcx_ex_ops_gdma_in op_in_copy;
+
+		if (syscall_trap) {
+			K_OOPS(k_usermode_from_copy(&op_in_copy, op_in, sizeof(op_in_copy)));
+			op_in = &op_in_copy;
+		}
+#endif
+		ret = flash_npcx_nor_ex_exec_gdma(dev, op_in);
+
+		break;
+	}
+#endif /* CONFIG_FLASH_NPCX_FIU_USE_DMA */
 	default:
 		ret = -ENOTSUP;
 		break;
@@ -509,7 +674,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 }
 #endif
 
-static const struct flash_driver_api flash_npcx_nor_driver_api = {
+static DEVICE_API(flash, flash_npcx_nor_driver_api) = {
 	.read = flash_npcx_nor_read,
 	.write = flash_npcx_nor_write,
 	.erase = flash_npcx_nor_erase,
@@ -574,21 +739,35 @@ static int flash_npcx_nor_init(const struct device *dev)
 		bool wr_en = (config->qspi_cfg.enter_4ba & 0x02) != 0;
 
 		if (wr_en) {
-			ret = flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
+			ret = flash_npcx_uma_cmd_only_locked(dev, SPI_NOR_CMD_WREN);
 			if (ret != 0) {
 				LOG_ERR("Enable 4byte addr: WREN failed %d!", ret);
 				return ret;
 			}
 		}
-		ret = flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_4BA);
+		ret = flash_npcx_uma_cmd_only_locked(dev, SPI_NOR_CMD_4BA);
 		if (ret != 0) {
 			LOG_ERR("Enable 4byte addr: 4BA failed %d!", ret);
 			return ret;
 		}
 	}
 
+	if (config->qspi_cfg.is_logical_low_dev && IS_ENABLED(CONFIG_FLASH_NPCX_FIU_DRA_V2)) {
+		qspi_npcx_fiu_set_spi_size(config->qspi_bus, &config->qspi_cfg);
+	}
+
 	return 0;
 }
+
+#define NPCX_FLASH_IS_LOGICAL_LOW_DEV(n)					\
+	(DT_PROP(DT_PARENT(DT_DRV_INST(n)), en_direct_access_2dev) &&		\
+	 (DT_PROP(DT_PARENT(DT_DRV_INST(n)), flash_dev_inv) ==			\
+	  ((DT_INST_PROP(n, qspi_flags) & NPCX_QSPI_SEC_FLASH_SL) ==		\
+	   NPCX_QSPI_SEC_FLASH_SL)))
+
+#define NPCX_FLASH_SPI_ALLOCATE_SIZE(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, spi_dev_size),			\
+		    (DT_INST_STRING_TOKEN(n, spi_dev_size)), (0xFF))
 
 #define NPCX_FLASH_NOR_INIT(n)							\
 BUILD_ASSERT(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE ||		\
@@ -606,6 +785,8 @@ static const struct flash_npcx_nor_config flash_npcx_nor_config_##n = {		\
 		.enter_4ba = DT_INST_PROP_OR(n, enter_4byte_addr, 0),		\
 		.qer_type = DT_INST_QUAD_EN_PROP_OR(n),				\
 		.rd_mode = DT_INST_STRING_TOKEN(n, rd_mode),			\
+		.is_logical_low_dev = NPCX_FLASH_IS_LOGICAL_LOW_DEV(n),		\
+		.spi_dev_sz = NPCX_FLASH_SPI_ALLOCATE_SIZE(n),			\
 	},									\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (					\
 		.layout = {							\

@@ -16,3 +16,4 @@ Build and Configuration Systems
    sysbuild/index.rst
    version/index.rst
    flashing/index.rst
+   signing/index.rst

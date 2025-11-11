@@ -1,7 +1,4 @@
-.. _b_u585i_iot02a_board:
-
-ST B_U585I_IOT02A Discovery kit
-###############################
+.. zephyr:board:: b_u585i_iot02a
 
 Overview
 ********
@@ -15,7 +12,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM
 - USB FS, Sink and Source power, 2.5 W power capability
 - 802.11 b/g/n compliant Wi-Fi® module from MXCHIP
-- Bluetooth Low Energy from STMicroelectronics
+- Bluetooth |reg| Low Energy from STMicroelectronics
 - MEMS sensors from STMicroelectronics
 
   - 2 digital microphones
@@ -35,17 +32,13 @@ some highlights of the B_U585I_IOT02A Discovery kit:
     - External sources
 
 
-.. image:: img/b-u585i-iot02a.jpg
-     :align: center
-     :alt: B_U585I_IOT02A Discovery kit
-
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.
 
 Hardware
 ********
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm|reg| Cortex|reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 300 nA Standby mode and 19.5 uA/MHz run mode)
@@ -160,48 +153,7 @@ More information about STM32U585AI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_u585i_iot02a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb_device                          |
-+-----------+------------+-------------------------------------+
-| BKP SRAM  | on-chip    | Backup SRAM                         |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| RADIO     | STM32WB5MMG| Bluetooth Low Energy (BLE)          |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/b_u585i_iot02a/b_u585i_iot02a_defconfig`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================
@@ -220,7 +172,7 @@ The BOARD options are summarized below:
 +-------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
-using `tfm_ipc_` sample:
+using :zephyr:code-sample:`tfm_ipc` sample:
 
    .. code-block:: bash
 
@@ -236,7 +188,7 @@ option bit TZEN will be set).
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
+run ``./build/tfm/api_ns/regression.sh`` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -290,6 +242,8 @@ do it by removing ``SB6`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 B_U585I_IOT02A Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 
@@ -297,12 +251,16 @@ This probe allows to flash the board using various tools.
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd (provided in Zephyr SDK), JLink and pyocd can also be
-used to flash and debug the board if west is told to use it as runner,
-using ``-r openocd``.
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Connect the B_U585I_IOT02A Discovery kit to your host computer using the USB
 port, then run a serial host program to connect with your Discovery
@@ -313,7 +271,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -329,7 +287,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
+Default flasher for this board is OpenOCD. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -348,7 +306,7 @@ To disable TrustZone, it's necessary to change AT THE SAME TIME the ``TZEN``
 and ``RDP`` bits. ``TZEN`` needs to get set from 1 to 0 and ``RDP``,
 needs to be set from ``DC`` to ``AA`` (step 3 below).
 
-This is docummented in the `AN5347, in section 9`_, "TrustZone deactivation".
+This is documented in the `AN5347, in section 9`_, "TrustZone deactivation".
 
 However, it's possible that the ``RDP`` bit is not yet set to ``DC``, so you
 first need to set it to ``DC`` (step 2).

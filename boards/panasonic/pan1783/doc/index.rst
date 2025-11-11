@@ -1,7 +1,4 @@
-.. _pan1783_evb:
-
-PAN1783, PAN1783A and PAN1783A-PA Evaluation Boards
-###################################################
+.. zephyr:board:: pan1783_evb
 
 Overview
 ********
@@ -17,11 +14,7 @@ Evaluation Boards can be found on the `product website`_.
 PAN1783 EVB
 ***********
 
-.. figure:: img/pan1783_evb.webp
-     :align: center
-     :alt: PAN1783 EVB
-
-     PAN1783 EVB (Credit: Panasonic)
+This variant of the board is depicted in the "Board Overview" sidebar.
 
 PAN1783A EVB
 ************
@@ -56,6 +49,8 @@ of the `Panasonic Wireless Connectivity Development Hub`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Please use the ``pan1783_evb_cpuapp``, ``pan1783a_evb_cpuapp`` or
 ``pan1783a_pa_evb_cpuapp`` for application core and ``pan1783_evb_cpunet``,

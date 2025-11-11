@@ -51,16 +51,46 @@ ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 
 	res = zsock_inet_pton(AF_INET6, "a:b:c:d:0:1:2:3z", buf);
 	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "192.0.2.400", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.1", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "1", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "256", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "00.0.0.0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0.0.0", buf);
+	zassert_equal(res, 1, "");
+
+	res = zsock_inet_pton(AF_INET, "0.0..0", buf);
+	zassert_equal(res, 0, "");
+
+	res = zsock_inet_pton(AF_INET, "1.2.3.0.", buf);
+	zassert_equal(res, 0, "");
 }
 
-#define TEST_MY_IPV4_ADDR "192.0.2.1"
+#define TEST_MY_IPV4_ADDR "192.0.1.1"
 #define TEST_PEER_IPV4_ADDR "192.0.2.2"
 #define TEST_MY_IPV6_ADDR "2001:db8::1"
 #define TEST_PEER_IPV6_ADDR "2001:db8::2"
 
 static struct in6_addr my_ipv6_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+static struct in_addr my_ipv4_addr1 = { { { 192, 0, 1, 1 } } };
 
 static struct in6_addr my_ipv6_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x2 } } };
@@ -166,9 +196,9 @@ NET_DEVICE_INIT(dummy_2, DEV2_NAME, NULL, NULL, &dummy_data2, NULL,
 #define DST_PORT 4242
 #define BIND_PORT 4240
 
-void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
-			  socklen_t peer_addrlen, struct sockaddr *bind_addr,
-			  socklen_t bind_addrlen)
+void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr_1,
+			  struct sockaddr *peer_addr_2, socklen_t peer_addrlen,
+			  struct sockaddr *bind_addr, socklen_t bind_addrlen)
 {
 	int ret;
 	struct ifreq ifreq = { 0 };
@@ -203,7 +233,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
 	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-			   peer_addr, peer_addrlen);
+			   peer_addr_1, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -228,7 +258,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
 	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-			   peer_addr, peer_addrlen);
+			   peer_addr_2, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -266,7 +296,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
 	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-			   peer_addr, peer_addrlen);
+			   peer_addr_1, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -295,10 +325,18 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 void test_ipv4_so_bindtodevice(void)
 {
-	int ret;
 	int sock_c;
 	int sock_s;
-	struct sockaddr_in peer_addr;
+	struct sockaddr_in peer_addr_1 = {
+		.sin_family = AF_INET,
+		.sin_port = htons(DST_PORT),
+		.sin_addr = { { { 192, 0, 1, 1 } } },
+	};
+	struct sockaddr_in peer_addr_2 = {
+		.sin_family = AF_INET,
+		.sin_port = htons(DST_PORT),
+		.sin_addr = { { { 192, 0, 2, 2 } } },
+	};
 	struct sockaddr_in bind_addr = {
 		.sin_family = AF_INET,
 		.sin_port = htons(DST_PORT),
@@ -310,23 +348,27 @@ void test_ipv4_so_bindtodevice(void)
 	sock_s = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
-	peer_addr.sin_family = AF_INET;
-	peer_addr.sin_port = htons(DST_PORT);
-	ret = zsock_inet_pton(AF_INET, TEST_PEER_IPV4_ADDR,
-			      &peer_addr.sin_addr);
-	zassert_equal(ret, 1, "inet_pton failed");
-
-	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr,
-			     sizeof(peer_addr), (struct sockaddr *)&bind_addr,
-			     sizeof(bind_addr));
+	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr_1,
+			     (struct sockaddr *)&peer_addr_2, sizeof(peer_addr_1),
+			     (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 }
 
 void test_ipv6_so_bindtodevice(void)
 {
-	int ret;
 	int sock_c;
 	int sock_s;
-	struct sockaddr_in6 peer_addr;
+	struct sockaddr_in6 peer_addr_1 = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(DST_PORT),
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } },
+	};
+	struct sockaddr_in6 peer_addr_2 = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(DST_PORT),
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } },
+	};
 	struct sockaddr_in6 bind_addr = {
 		.sin6_family = AF_INET6,
 		.sin6_port = htons(DST_PORT),
@@ -338,15 +380,9 @@ void test_ipv6_so_bindtodevice(void)
 	sock_s = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
-	peer_addr.sin6_family = AF_INET6;
-	peer_addr.sin6_port = htons(DST_PORT);
-	ret = zsock_inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
-			      &peer_addr.sin6_addr);
-	zassert_equal(ret, 1, "inet_pton failed");
-
-	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr,
-			     sizeof(peer_addr), (struct sockaddr *)&bind_addr,
-			     sizeof(bind_addr));
+	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr_1,
+			     (struct sockaddr *)&peer_addr_2, sizeof(peer_addr_1),
+			     (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 }
 
 #define ADDR_SIZE(family) ((family == AF_INET) ? \
@@ -723,7 +759,7 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	 */
 	srv_addr.sa_family = AF_INET;
 	net_sin(&srv_addr)->sin_port = htons(MAPPING_PORT);
-	ret = zsock_inet_pton(AF_INET, "192.0.2.1",
+	ret = zsock_inet_pton(AF_INET, "192.0.1.1",
 			      &net_sin(&srv_addr)->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 

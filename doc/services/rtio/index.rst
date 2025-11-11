@@ -1,4 +1,4 @@
-.. _rtio_api:
+.. _rtio:
 
 Real Time I/O (RTIO)
 ####################
@@ -211,6 +211,20 @@ descriptors entirely. Meaning the hardware can potentially do more than ever.
 There is a small cost to each RTIO context and iodev. This cost could be weighed
 against using a thread for each concurrent I/O operation or custom queues and
 threads per peripheral. RTIO is much lower cost than that.
+
+Supported Buses
+***************
+
+To check if your bus supports RTIO natively, you can check the driver API implementation, if the
+driver implements the ``iodev_submit`` function of the bus API, then RTIO is supported. If the
+driver doesn't support the RTIO APIs, it will set the submit function to
+``i2c_iodev_submit_fallback``.
+
+I2C buses have a default implementation which allows apps to leverage the RTIO work queue while
+vendors implement the submit function. With this queue, any I2C bus driver that does not implement
+the ``iodev_submit`` function will defer to a work item which will perform a blocking I2C
+transaction. To change the pool size, set a different value to
+:kconfig:option:`CONFIG_RTIO_WORKQ_POOL_ITEMS`.
 
 API Reference
 *************

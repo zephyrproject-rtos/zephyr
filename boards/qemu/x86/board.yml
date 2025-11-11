@@ -1,6 +1,8 @@
 boards:
 
   - name: qemu_x86
+    full_name: QEMU Emulation for X86
+    vendor: intel
     socs:
       - name: atom
         variants:
@@ -11,15 +13,21 @@ boards:
           - name: 'xip'
 
   - name: qemu_x86_lakemont
+    full_name: QEMU Emulation for X86 / Lakemont CPU
+    vendor: intel
     socs:
       - name: lakemont
 
   - name: qemu_x86_64
+    full_name: QEMU Emulation for X86 64bit
+    vendor: intel
     socs:
       - name: atom
         variants:
           - name: 'nokpti'
 
   - name: qemu_x86_tiny
+    full_name: QEMU Emulation for X86 Minimal Configuration
+    vendor: intel
     socs:
       - name: atom

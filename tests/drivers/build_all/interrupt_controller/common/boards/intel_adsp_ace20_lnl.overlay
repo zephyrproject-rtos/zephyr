@@ -6,9 +6,9 @@
 
 /* Made-up devicetree to build intc_dw.c */
 
- /{
+/ {
 	soc {
-		dw_intc: dw_intc@7a000  {
+		dw_intc: dw_intc@7a000 {
 			compatible = "snps,designware-intc";
 			reg = <0x7a000 0xc00>;
 			interrupt-controller;

@@ -6,17 +6,17 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/mm/system_mm.h>
 
-ZTEST(sys_mm_drv_api, test_query_memory_region_sanity)
+ZTEST(sys_mm_drv_api, test_query_memory_region_coherence)
 {
 	const struct sys_mm_drv_region *regions, *region;
 
 	regions = sys_mm_drv_query_memory_regions();
-	zassert_not_null(regions, NULL);
+	zassert_not_null(regions);
 
 	SYS_MM_DRV_MEMORY_REGION_FOREACH(regions, region)
 		; /* just iterate, do nothing */
 
-	zassert_equal(region->size, 0, NULL);
+	zassert_equal(region->size, 0);
 
 	sys_mm_drv_query_memory_regions_free(regions);
 }

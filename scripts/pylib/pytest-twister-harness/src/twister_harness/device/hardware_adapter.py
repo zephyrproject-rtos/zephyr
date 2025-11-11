@@ -30,7 +30,7 @@ class HardwareAdapter(DeviceAdapter):
 
     def __init__(self, device_config: DeviceConfig) -> None:
         super().__init__(device_config)
-        self._flashing_timeout: float = self.base_timeout
+        self._flashing_timeout: float = device_config.flash_timeout
         self._serial_connection: serial.Serial | None = None
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
@@ -38,8 +38,23 @@ class HardwareAdapter(DeviceAdapter):
         self.device_log_path: Path = device_config.build_dir / 'device.log'
         self._log_files.append(self.device_log_path)
 
+    def _generate_flash_command(self) -> None:
+        command = [self.device_config.flash_command[0]]
+        command.extend(['--build-dir', str(self.device_config.build_dir)])
+
+        if self.device_config.id:
+            command.extend(['--board-id', self.device_config.id])
+
+        command.extend(self.device_config.flash_command[1:])
+
+        self.command = command
+
     def generate_command(self) -> None:
         """Return command to flash."""
+        if self.device_config.flash_command:
+            self._generate_flash_command()
+            return
+
         command = [
             self.west,
             'flash',
@@ -73,7 +88,10 @@ class HardwareAdapter(DeviceAdapter):
             if runner == 'pyocd':
                 extra_args.append('--board-id')
                 extra_args.append(board_id)
-            elif runner in ('nrfjprog', 'nrfutil'):
+            elif runner == "esp32":
+                extra_args.append("--esp-device")
+                extra_args.append(board_id)
+            elif runner in ('nrfjprog', 'nrfutil', 'nrfutil_next'):
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
             elif runner == 'openocd' and self.device_config.product in ['STM32 STLink', 'STLINK-V3']:
@@ -86,8 +104,9 @@ class HardwareAdapter(DeviceAdapter):
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
             elif runner == 'jlink':
-                base_args.append(f'--tool-opt=-SelectEmuBySN {board_id}')
-            elif runner == 'stm32cubeprogrammer':
+                base_args.append('--dev-id')
+                base_args.append(board_id)
+            elif runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL":
                 base_args.append(f'--tool-opt=sn={board_id}')
             elif runner == 'linkserver':
                 base_args.append(f'--probe={board_id}')

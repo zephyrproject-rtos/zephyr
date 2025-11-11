@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, Teslabs Engineering S.L.
  * Copyright (c) 2022, Basalte bv
+ * Copyright (c) 2025, ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +11,11 @@
 #include <zephyr/ztest.h>
 
 /** Buffer size. */
-#define BUF_SIZE 64U
-#define BUF_DEF(label) static uint32_t buf_##label[BUF_SIZE]			\
+#define BUF_SIZE_PSRAM	524288U
+#define BUF_SIZE_SDRAM	64U
+#define BUF_SIZE_SRAM	64U
+
+#define BUF_DEF(label, size) static uint32_t buf_##label[size]		\
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(label)))
 
 /**
@@ -28,27 +32,27 @@ static void test_ram_rw(uint32_t *mem, size_t size)
 
 	/* check that memory contains written range */
 	for (size_t i = 0U; i < size / sizeof(uint32_t); i++) {
-		zassert_equal(mem[i], i, "Unexpected content on byte %ld", i);
+		zassert_equal(mem[i], i, "Unexpected content on byte %zd", i);
 	}
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
-BUF_DEF(sdram1);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram1))
+BUF_DEF(sdram1, BUF_SIZE_SDRAM);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
-BUF_DEF(sdram2);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram2))
+BUF_DEF(sdram2, BUF_SIZE_SDRAM);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
-BUF_DEF(sram1);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+BUF_DEF(sram1, BUF_SIZE_SRAM);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
-BUF_DEF(sram2);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
+BUF_DEF(sram2, BUF_SIZE_SRAM);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
-BUF_DEF(psram);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
+BUF_DEF(psram, BUF_SIZE_PSRAM);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ram0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
 #define RAM_SIZE DT_REG_SIZE(DT_NODELABEL(ram0))
 static uint32_t *buf_ram0 = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(ram0));
 #endif
@@ -57,8 +61,8 @@ ZTEST_SUITE(test_ram, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(test_ram, test_sdram1)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
-	test_ram_rw(buf_sdram1, BUF_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram1))
+	test_ram_rw(buf_sdram1, BUF_SIZE_SDRAM);
 #else
 	ztest_test_skip();
 #endif
@@ -66,8 +70,8 @@ ZTEST(test_ram, test_sdram1)
 
 ZTEST(test_ram, test_ram0)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ram0), okay)
-	test_ram_rw(buf_ram0, RAM_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
+	test_ram_rw(buf_ram0, RAM_SIZE_SRAM);
 #else
 	ztest_test_skip();
 #endif
@@ -75,8 +79,8 @@ ZTEST(test_ram, test_ram0)
 
 ZTEST(test_ram, test_sdram2)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
-	test_ram_rw(buf_sdram2, BUF_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram2))
+	test_ram_rw(buf_sdram2, BUF_SIZE_SDRAM);
 #else
 	ztest_test_skip();
 #endif
@@ -84,8 +88,8 @@ ZTEST(test_ram, test_sdram2)
 
 ZTEST(test_ram, test_sram1)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
-	test_ram_rw(buf_sram1, BUF_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+	test_ram_rw(buf_sram1, BUF_SIZE_SRAM);
 #else
 	ztest_test_skip();
 #endif
@@ -93,8 +97,8 @@ ZTEST(test_ram, test_sram1)
 
 ZTEST(test_ram, test_sram2)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
-	test_ram_rw(buf_sram2, BUF_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
+	test_ram_rw(buf_sram2, BUF_SIZE_SRAM);
 #else
 	ztest_test_skip();
 #endif
@@ -102,8 +106,8 @@ ZTEST(test_ram, test_sram2)
 
 ZTEST(test_ram, test_psram)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
-	test_ram_rw(buf_psram, BUF_SIZE);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
+	test_ram_rw(buf_psram, BUF_SIZE_PSRAM);
 #else
 	ztest_test_skip();
 #endif

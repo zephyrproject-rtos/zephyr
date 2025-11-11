@@ -1,0 +1,20 @@
+identifier: stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+name: ST STM32H7S78 Discovery Kit with App in Ext Flash
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 456
+flash: 61439  # size in kB of 1 app slot minus MCUboot header size (1KB)
+sysbuild: true
+supported:
+  - arduino_gpio
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+  - adc
+  - octospi
+  - usbd
+  - memc
+vendor: st

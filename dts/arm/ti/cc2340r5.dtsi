@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/cc23x0.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(36)>;
+	};
+};
+
+/* Main flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_K(512)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	slot0_partition: partition@0 {
+		label = "image-0";
+		reg = <0x0 DT_SIZE_K(512)>;
+	};
+};
+
+/* CCFG */
+&flash1 {
+	reg = <0x4e020000 DT_SIZE_K(2)>;
+	ti,bldr-vtor-flash = <0>;
+	ti,serial-io-cfg-index = <0>;
+	ti,debug-port;
+	ti,energy-trace;
+	ti,flash-verify;
+	ti,flash-program;
+	ti,chip-erase;
+	ti,ret-to-factory;
+	ti,wr-er-prot-sect0-31 = <0xffffffff>;
+	ti,wr-er-prot-sect32-255 = <0xffffffff>;
+	ti,wr-er-prot-ccfg-sect = <0>;
+	ti,wr-er-prot-fcfg-sect = <0>;
+	ti,wr-er-prot-engr-sect = <0>;
+	ti,chip-er-retain-sect0-31 = <0>;
+	ti,chip-er-retain-sect32-255 = <0>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ti_ccfg_partition: partition@4e020000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x4e020000 0x800>;
+			zephyr,memory-region = "FLASH_CCFG";
+		};
+	};
+};

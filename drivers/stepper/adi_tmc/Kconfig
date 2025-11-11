@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+comment "ADI Trinamic Stepper Drivers"
+
+rsource "bus/Kconfig"
+
+rsource "Kconfig.tmc22xx"
+rsource "Kconfig.tmc50xx"
+rsource "tmc51xx/Kconfig.tmc51xx"

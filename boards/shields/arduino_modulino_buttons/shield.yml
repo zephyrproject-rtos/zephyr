@@ -1,0 +1,7 @@
+shield:
+  name: arduino_modulino_buttons
+  full_name: Arduino Modulino Buttons
+  vendor: arduino
+  supported_features:
+    - input
+    - led

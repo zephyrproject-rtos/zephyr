@@ -29,26 +29,15 @@ struct syscon_generic_data {
 
 static int syscon_generic_get_base(const struct device *dev, uintptr_t *addr)
 {
-	if (!dev) {
-		return -ENODEV;
-	}
-
 	*addr = DEVICE_MMIO_GET(dev);
 	return 0;
 }
 
 static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
-	const struct syscon_generic_config *config;
-	struct syscon_generic_data *data;
+	const struct syscon_generic_config *config = dev->config;
+	struct syscon_generic_data *data = dev->data;
 	uintptr_t base_address;
-
-	if (!dev) {
-		return -ENODEV;
-	}
-
-	data = dev->data;
-	config = dev->config;
 
 	if (!val) {
 		return -EINVAL;
@@ -79,16 +68,9 @@ static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint3
 
 static int syscon_generic_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
-	const struct syscon_generic_config *config;
-	struct syscon_generic_data *data;
+	const struct syscon_generic_config *config = dev->config;
+	struct syscon_generic_data *data = dev->data;
 	uintptr_t base_address;
-
-	if (!dev) {
-		return -ENODEV;
-	}
-
-	data = dev->data;
-	config = dev->config;
 
 	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
 		return -EINVAL;
@@ -121,7 +103,7 @@ static int syscon_generic_get_size(const struct device *dev, size_t *size)
 	return 0;
 }
 
-static const struct syscon_driver_api syscon_generic_driver_api = {
+static DEVICE_API(syscon, syscon_generic_driver_api) = {
 	.read = syscon_generic_read_reg,
 	.write = syscon_generic_write_reg,
 	.get_base = syscon_generic_get_base,

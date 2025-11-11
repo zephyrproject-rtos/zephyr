@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,7 +168,8 @@ struct pm_state_info {
 };
 
 /**
- * Power state information needed to lock a power state.
+ * Information needed to be able to reference a power state as a constraint
+ * on some device or system functions.
  */
 struct pm_state_constraint {
 	 /**
@@ -184,6 +186,16 @@ struct pm_state_constraint {
 	uint8_t substate_id;
 };
 
+/**
+ * Collection of multiple power state constraints.
+ */
+struct pm_state_constraints {
+	/** Array of power state constraints */
+	struct pm_state_constraint *list;
+	/** Number of constraints in the list */
+	size_t count;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -194,7 +206,7 @@ struct pm_state_constraint {
  * @param idx Index within the array.
  */
 #define Z_DT_PHANDLE_01(node_id, prop, idx) \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, prop, idx), okay), \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
 		    (1), (0))
 
 /**
@@ -207,7 +219,7 @@ struct pm_state_constraint {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id)                                                   \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i), okay),    \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),     \
 		    (PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
 /**
@@ -220,7 +232,7 @@ struct pm_state_constraint {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_FROM_DT_CPU(i, node_id)                                                        \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i), okay),    \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),     \
 		    (PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
 /** @endcond */
@@ -358,6 +370,54 @@ struct pm_state_constraint {
 			Z_PM_STATE_FROM_DT_CPU, (), node_id)		       \
 	}
 
+/**
+ * @brief initialize a device pm constraint with information from devicetree.
+ *
+ * @param node_id Node identifier.
+ */
+#define PM_STATE_CONSTRAINT_INIT(node_id)                                     \
+	{                                                                     \
+		.state = PM_STATE_DT_INIT(node_id),                           \
+		.substate_id = DT_PROP_OR(node_id, substate_id, 0),           \
+	}
+
+#define Z_PM_STATE_CONSTRAINT_REF(node_id, phandle, idx)                        \
+	PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id, phandle, idx))
+
+#define Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles)                   \
+	_CONCAT_4(node_id, _, phandles, _constraints)
+
+/**
+ * @brief Define a list of power state constraints from devicetree.
+ *
+ * This macro creates an array of pm_state_constraint structures initialized
+ * with power state information from the specified devicetree property.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop Property name containing the list of power state phandles.
+ */
+#define PM_STATE_CONSTRAINTS_LIST_DEFINE(node_id, prop)                                    \
+	struct pm_state_constraint Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, prop)[] =     \
+	{                                                                                  \
+		DT_FOREACH_PROP_ELEM_SEP(node_id, prop, Z_PM_STATE_CONSTRAINT_REF, (,))    \
+	}
+
+/**
+ * @brief Get power state constraints structure from devicetree.
+ *
+ * This macro creates a structure containing a pointer to the constraints list
+ * and the count of constraints, suitable for initializing a pm_state_constraints
+ * structure. Must be used after the PM_STATE_CONSTRAINTS_LIST_DEFINE call for the same
+ * @param prop to refer to the array of constraints.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop Property name containing the list of power state phandles.
+ */
+#define PM_STATE_CONSTRAINTS_GET(node_id, prop)                                            \
+	{                                                                                  \
+		.list = Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, prop),                   \
+		.count = DT_PROP_LEN(node_id, prop),                                       \
+	}
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
@@ -369,6 +429,50 @@ struct pm_state_constraint {
  * @return Number of supported states.
  */
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
+
+/**
+ * Get power state structure.
+ *
+ * Function searches in all states assigned to the CPU and in disabled states.
+ *
+ * @param cpu CPU index.
+ * @param state Power state.
+ * @param substate_id Substate.
+ *
+ * @return Pointer to the power state structure or NULL if state is not found.
+ */
+const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id);
+
+/**
+ * @brief Convert a pm_state enum value to its string representation.
+ *
+ * @param state Power state.
+ *
+ * @return A constant string representing the state.
+ */
+const char *pm_state_to_str(enum pm_state state);
+
+
+/**
+ * @brief Parse a string and convert it to a pm_state enum value.
+ *
+ * @param name Input string (e.g., "suspend-to-ram").
+ * @param out Pointer to store the parsed pm_state value.
+ *
+ * @return 0 on success, -EINVAL if the string is invalid or NULL.
+ */
+int pm_state_from_str(const char *name, enum pm_state *out);
+
+/**
+ * @brief Check if a power management constraint matches any in a set of constraints.
+ *
+ * @param constraints Pointer to the power state constraints structure.
+ * @param match The constraint to match against.
+ *
+ * @return true if the constraint matches, false otherwise.
+ */
+bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+			     const struct pm_state_constraint match);
 
 /**
  * @}
@@ -384,6 +488,25 @@ static inline uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_in
 	return 0;
 }
 
+static inline const struct pm_state_info *pm_state_get(uint8_t cpu,
+						       enum pm_state state,
+						       uint8_t substate_id)
+{
+	ARG_UNUSED(cpu);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return NULL;
+}
+
+static inline bool pm_state_in_constraints(struct pm_state_constraints *constraints,
+					   struct pm_state_constraint match)
+{
+	ARG_UNUSED(constraints);
+	ARG_UNUSED(match);
+
+	return false;
+}
 #endif /* CONFIG_PM */
 
 #ifdef __cplusplus

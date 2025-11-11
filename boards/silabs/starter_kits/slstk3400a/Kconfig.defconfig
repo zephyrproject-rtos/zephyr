@@ -1,5 +1,3 @@
-# EFM32HG SLSTK3400A board
-
 # Copyright (c) 2018, Marcio Montenegro
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,5 +8,16 @@ config CMU_HFXO_FREQ
 
 config CMU_LFXO_FREQ
 	default 32768
+
+# Kernel Options due to Low Memory (8k)
+
+configdefault MAIN_STACK_SIZE
+	default 640
+
+configdefault IDLE_STACK_SIZE
+	default 200
+
+configdefault ISR_STACK_SIZE
+	default 512
 
 endif # BOARD_SLSTK3400A

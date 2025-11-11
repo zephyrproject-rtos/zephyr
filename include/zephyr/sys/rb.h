@@ -66,8 +66,8 @@ struct rbnode {
  * packed binary tree, plus root...  Works out to 59 entries for 32
  * bit pointers and 121 at 64 bits.
  */
-#define Z_TBITS(t) ((sizeof(t)) < 8 ? 2 : 3)
-#define Z_PBITS(t) (8 * sizeof(t))
+#define Z_TBITS(t)         ((sizeof(t)) < sizeof(uint64_t) ? 2 : 3)
+#define Z_PBITS(t)         (BITS_PER_BYTE * sizeof(t))
 #define Z_MAX_RBTREE_DEPTH (2 * (Z_PBITS(int *) - Z_TBITS(int *) - 1) + 1)
 
 /**

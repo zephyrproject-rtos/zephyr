@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/l1/stm32l151.dtsi>
 
 / {
@@ -18,7 +17,8 @@
 				reg = <0x08000000 DT_SIZE_K(64)>;
 			};
 		};
-		eeprom: eeprom@8080000{
+
+		eeprom: eeprom@8080000 {
 			reg = <0x08080000 DT_SIZE_K(4)>;
 		};
 	};

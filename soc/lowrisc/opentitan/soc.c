@@ -26,7 +26,7 @@
 #define RV_TIMER_LOWER0_OFFSET          0x110
 #define RV_TIMER_COMPARE_LOWER0_OFFSET  0x118
 
-static int soc_opentitan_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable the watchdog reset (bit 1). */
 	sys_write32(2u, PWRMGR_BASE + PWRMGR_RESET_EN_REG_OFFSET);
@@ -40,6 +40,4 @@ static int soc_opentitan_init(void)
 	sys_write32(1u, RV_TIMER_BASE + RV_TIMER_CTRL_REG_OFFSET);
 	/* Enable timer interrupts. */
 	sys_write32(1u, RV_TIMER_BASE + RV_TIMER_INTR_ENABLE_REG_OFFSET);
-	return 0;
 }
-SYS_INIT(soc_opentitan_init, PRE_KERNEL_1, 0);

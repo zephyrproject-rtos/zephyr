@@ -387,7 +387,7 @@ static void adc_it8xxx2_isr(const struct device *dev)
 	k_sem_give(&data->sem);
 }
 
-static const struct adc_driver_api api_it8xxx2_driver_api = {
+static DEVICE_API(adc, api_it8xxx2_driver_api) = {
 	.channel_setup = adc_it8xxx2_channel_setup,
 	.read = adc_it8xxx2_read,
 #ifdef CONFIG_ADC_ASYNC

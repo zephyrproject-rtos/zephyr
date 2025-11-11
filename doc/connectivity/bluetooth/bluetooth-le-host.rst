@@ -21,7 +21,7 @@ host, and vice-versa.
 
 Perhaps the most important block above the HCI handling is the Generic
 Access Profile (GAP). GAP simplifies Bluetooth LE access by defining
-four distinct roles of BLE usage:
+four distinct roles of Bluetooth usage:
 
 * Connection-oriented roles
 
@@ -31,9 +31,9 @@ four distinct roles of BLE usage:
 
 * Connection-less roles
 
-  * Broadcaster (sending out BLE advertisements, e.g. a smart beacon)
+  * Broadcaster (sending out Bluetooth LE advertisements, e.g. a smart beacon)
 
-  * Observer (scanning for BLE advertisements)
+  * Observer (scanning for Bluetooth LE advertisements)
 
 Each role comes with its own build-time configuration option:
 :kconfig:option:`CONFIG_BT_PERIPHERAL`, :kconfig:option:`CONFIG_BT_CENTRAL`,
@@ -49,7 +49,7 @@ section.
 Peripheral role
 ===============
 
-Most Zephyr-based BLE devices will most likely be peripheral-role
+Most Zephyr-based Bluetooth LE devices will most likely be peripheral-role
 devices. This means that they perform connectable advertising and expose
 one or more GATT services. After registering services using the
 :c:func:`bt_gatt_service_register` API the application will typically
@@ -73,9 +73,7 @@ To initially discover a device to connect to the application will likely
 use the :c:func:`bt_le_scan_start` API, wait for an appropriate device
 to be found (using the scan callback), stop scanning using
 :c:func:`bt_le_scan_stop` and then connect to the device using
-:c:func:`bt_conn_le_create`. If the central wants to keep
-automatically reconnecting to the peripheral it should use the
-:c:func:`bt_le_set_auto_conn` API.
+:c:func:`bt_conn_le_create`.
 
 There are some sample applications for the central role available in the
 tree, such as :zephyr_file:`samples/bluetooth/central_hr`.
@@ -107,7 +105,7 @@ Security
 To achieve a secure relationship between two Bluetooth devices a process
 called pairing is used. This process can either be triggered implicitly
 through the security properties of GATT services, or explicitly using
-the :c:func:`bt_conn_security` API on a connection object.
+the :c:func:`bt_conn_set_security` API on a connection object.
 
 To achieve a higher security level, and protect against
 Man-In-The-Middle (MITM) attacks, it is recommended to use some
@@ -273,6 +271,19 @@ The Generic Attribute Profile is the most common means of communication
 over LE connections. A more detailed description of this layer and the
 API reference can be found in the
 :ref:`GATT API reference section <bt_gatt>`.
+
+ATT timeout
+-----------
+
+If the peer device does not respond to an ATT request (such as read or write)
+within the ATT timeout, the host will automatically initiate a disconnect. This
+simplifies error handling by reducing rare failure conditions to a common
+disconnection, allowing developers to manage unexpected disconnects without
+special cases for ATT timeouts.
+
+.. image:: img/att_timeout.svg
+  :align: center
+  :alt: ATT timeout
 
 Mesh
 ====

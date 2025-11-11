@@ -1,7 +1,4 @@
-.. _rpi_5:
-
-Raspberry Pi 5 (Cortex-A76)
-###########################
+.. zephyr:board:: rpi_5
 
 Overview
 ********
@@ -32,31 +29,14 @@ Hardware
 Supported Features
 ==================
 
-The Raspberry Pi 5 board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GIC-400
-     - N/A
-     - :dtcompatible:`arm,gic-v2`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`brcm,brcmstb-gpio`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`arm,pl011`
-
-Not all hardware features are supported yet. See `Raspberry Pi hardware`_ for the complete list of hardware features.
-
-The default configuration can be found in
-:zephyr_file:`boards/raspberrypi/rpi_5/rpi_5_defconfig`.
+See `Raspberry Pi hardware`_ for the complete list of hardware features.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Blinky
 ======
@@ -69,7 +49,7 @@ In brief,
         * `bcm2712-rpi-5.dtb`_
     3. Insert the Micro SD card and power on the Raspberry Pi 5.
 
-then, You will see the Raspberry Pi 5 running the `zephyr.bin`.
+then, You will see the Raspberry Pi 5 running the :file:`zephyr.bin`.
 
 config.txt
 ----------
@@ -83,14 +63,15 @@ config.txt
 zephyr.bin
 ----------
 
-Build an app `samples/basic/blinky`
+Build an app, for example :zephyr:code-sample:`blinky`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: rpi_5
    :goals: build
 
-Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Micro SD card.
+Copy :file:`zephyr.bin` from :file:`build/zephyr` directory to the root directory of the Micro SD
+card.
 
 Insert the Micro SD card and power on the Raspberry Pi 5. And then, the STAT LED will start to blink.
 
@@ -125,14 +106,14 @@ config.txt
 zephyr.bin
 ----------
 
-Build an app `samples/hello_world`
+Build an app, for example :zephyr:code-sample:`hello_world`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rpi_5
    :goals: build
 
-Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Micro SD card.
+Copy :file:`zephyr.bin` from :file:`build/zephyr` directory to the root directory of the Micro SD card.
 
 Insert the Micro SD card into your Raspberry Pi 5.
 

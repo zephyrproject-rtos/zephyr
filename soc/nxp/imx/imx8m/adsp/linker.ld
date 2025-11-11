@@ -408,6 +408,7 @@ SECTIONS
     _trace_ctx_end = ABSOLUTE(.);
     . = ALIGN(4);
     *(.gna_model)
+    *(NonCacheable)
     __data_end = ABSOLUTE(.);
     . = ALIGN(4096);
   } >sdram0 :sdram0_phdr
@@ -483,6 +484,14 @@ SECTIONS
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
   .debug_ranges  0 :  { *(.debug_ranges) }
+  .debug_addr  0 :  { *(.debug_addr) }
+  .debug_line_str  0 :  { *(.debug_line_str) }
+  .debug_loclists  0 :  { *(.debug_loclists) }
+  .debug_macro  0 :  { *(.debug_macro) }
+  .debug_names  0 :  { *(.debug_names) }
+  .debug_rnglists  0 :  { *(.debug_rnglists) }
+  .debug_str_offsets  0 :  { *(.debug_str_offsets) }
+  .debug_sup  0 :  { *(.debug_sup) }
   .xtensa.info  0 :  { *(.xtensa.info) }
   .xt.insn 0 :
   {

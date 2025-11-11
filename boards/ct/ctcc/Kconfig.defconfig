@@ -5,54 +5,27 @@
 
 if BOARD_CTCC_NRF52840
 
-if BOARD_SERIAL_BACKEND_CDC_ACM
-
-config USB_DEVICE_STACK
-	default y
-
-config USB_CDC_ACM
-	default SERIAL
-
-config CONSOLE
-	default y
-
-config UART_CONSOLE
-	default CONSOLE
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y if !MCUBOOT && CONSOLE
-
-config USB_DEVICE_REMOTE_WAKEUP
-	default n
-
-if LOG
-
-# Turn off logging for USB CDC ACM
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
-endchoice
-
-# Turn off logging for USB Device
-choice USB_DEVICE_LOG_LEVEL_CHOICE
-	default USB_DEVICE_LOG_LEVEL_OFF
-endchoice
-
-# Wait 5s at startup for logging
-config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
-	default 5000
-
-endif # LOG
-
-if USB_DEVICE_STACK
-
-config SERIAL
-	default y
-
-endif # USB_DEVICE_STACK
-
-endif # BOARD_SERIAL_BACKEND_CDC_ACM
-
-config BT_CTLR
-	default BT
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_CTCC_NRF52840
+
+if BOARD_CTCC_NRF9161 || BOARD_CTCC_NRF9161_NS
+
+# Workaround for not being able to have commas in macro arguments.
+# For explanation please see: boards/nordic/nrf9161dk/Kconfig.defconfig
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	depends on BOARD_CTCC_NRF9161 && TRUSTED_EXECUTION_SECURE
+
+if BOARD_CTCC_NRF9161_NS
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+endif # BOARD_CTCC_NRF9161_NS
+endif # BOARD_CTCC_NRF9161 || BOARD_CTCC_NRF9161_NS

@@ -63,7 +63,7 @@ static int tcn75a_channel_get(const struct device *dev, enum sensor_channel chan
 	return 0;
 }
 
-static const struct sensor_driver_api tcn75a_api = {
+static DEVICE_API(sensor, tcn75a_api) = {
 	.sample_fetch = &tcn75a_sample_fetch,
 	.channel_get = &tcn75a_channel_get,
 #ifdef CONFIG_TCN75A_TRIGGER

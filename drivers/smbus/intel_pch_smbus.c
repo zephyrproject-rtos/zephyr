@@ -886,7 +886,7 @@ unlock:
 	return ret;
 }
 
-static const struct smbus_driver_api funcs = {
+static DEVICE_API(smbus, funcs) = {
 	.configure = pch_configure,
 	.get_config = pch_get_config,
 	.smbus_quick = pch_smbus_quick,

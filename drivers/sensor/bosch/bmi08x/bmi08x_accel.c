@@ -6,16 +6,21 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #define DT_DRV_COMPAT bosch_bmi08x_accel
 #include "bmi08x.h"
 #include "bmi08x_config_file.h"
+#include "bmi08x_accel_async.h"
+#include "bmi08x_accel_stream.h"
+#include "bmi08x_accel_decoder.h"
 
 LOG_MODULE_REGISTER(BMI08X_ACCEL, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -320,6 +325,7 @@ static int bmi08x_acc_range_set(const struct device *dev, int32_t range)
 	}
 
 	data->scale = BMI08X_ACC_SCALE(range);
+	data->range = reg_val;
 
 	return ret;
 }
@@ -341,15 +347,6 @@ static int bmi08x_acc_config(const struct device *dev, enum sensor_channel chan,
 static int bmi08x_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
@@ -372,15 +369,6 @@ static int bmi08x_sample_fetch(const struct device *dev, enum sensor_channel cha
 		LOG_DBG("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
 
 	pm_device_busy_set(dev);
 
@@ -454,16 +442,41 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 {
 	uint16_t temp_raw = 0U;
 	int32_t temp_micro = 0;
+	int16_t temp_int11 = 0;
 	int ret;
 
 	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_MSB, &temp_raw);
-	if (ret < 0) {
+	if (!ret) {
+		temp_int11 = (temp_raw & 0xFF) << 3;
+	} else {
+		LOG_ERR("Error reading BMI08X_REG_TEMP_MSB. (err %d)", ret);
 		return ret;
 	}
 
-	/* the scale is 1/2^5/LSB = 31250 micro degrees */
-	temp_micro = BMI08X_TEMP_OFFSET * 1000000ULL + temp_raw * 31250ULL;
+	if (temp_raw == 0x80) {
+		/* temperature invalid */
+		LOG_ERR("BMI08X returned invalid temperature.");
+		return -ENODATA;
+	}
 
+	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_LSB, &temp_raw);
+	if (!ret) {
+		temp_int11 |= (temp_raw & 0xE0) >> 5;
+	} else {
+		LOG_ERR("Error reading BMI08X_REG_TEMP_LSB. (err %d)", ret);
+		return ret;
+	}
+	/*
+	 * int11 type ranges in [-1024, 1023]
+	 * the 11st bit declares +/-
+	 * if larger than 1023, it is negative.
+	 */
+	if (temp_int11 > 1023) {
+		temp_int11 -= 2048;
+	}
+	/* the value ranges in [-504, 496] */
+	/* the scale is 0.125°C/LSB = 125 micro degrees */
+	temp_micro = temp_int11 * 125 + 23 * 1000000;
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;
 
@@ -473,15 +486,6 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 static int bmi08x_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
@@ -536,10 +540,14 @@ static int bmi08x_accel_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api bmi08x_api = {
+static DEVICE_API(sensor, bmi08x_api) = {
 	.attr_set = bmi08x_attr_set,
 #ifdef CONFIG_BMI08X_ACCEL_TRIGGER
 	.trigger_set = bmi08x_trigger_set_acc,
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bmi08x_accel_async_submit,
+	.get_decoder = bmi08x_accel_decoder_get,
 #endif
 	.sample_fetch = bmi08x_sample_fetch,
 	.channel_get = bmi08x_channel_get,
@@ -721,12 +729,20 @@ int bmi08x_accel_init(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_BMI08X_ACCEL_STREAM)
+	ret = bmi08x_accel_stream_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to init stream: %d", ret);
+		return ret;
+	}
+#endif
+
 	return ret;
 }
 
 #define BMI08X_CONFIG_SPI(inst)                                                                    \
 	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
-		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 2),
+		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
@@ -746,7 +762,7 @@ int bmi08x_accel_init(const struct device *dev)
  */
 #define BMI08X_GYRO_ODR(inst)  DT_ENUM_IDX(DT_INST_PHANDLE(inst, data_sync), gyro_hz)
 #define BMI08X_ACCEL_ODR(inst) DT_INST_ENUM_IDX(inst, accel_hz)
-/* As the dts uses strings to define the definition, ints must be used for comparision */
+/* As the dts uses strings to define the definition, ints must be used for comparison */
 #define BMI08X_VERIFY_DATA_SYNC_ODR(inst)                                                          \
 	BUILD_ASSERT((BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5) ||                \
 			     (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ||        \
@@ -786,22 +802,44 @@ int bmi08x_accel_init(const struct device *dev)
 
 #define BMI08X_CREATE_INST(inst)                                                                   \
                                                                                                    \
+	RTIO_DEFINE(bmi08x_accel_rtio_ctx_##inst, 16, 16);					   \
+                                                                                                   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
+		    (I2C_DT_IODEV_DEFINE(bmi08x_accel_rtio_bus_##inst,				   \
+					 DT_DRV_INST(inst))),					   \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
+		    (SPI_DT_IODEV_DEFINE(bmi08x_accel_rtio_bus_##inst,				   \
+					 DT_DRV_INST(inst),					   \
+					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)),\
+		    ())));									   \
+                                                                                                   \
 	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))              \
 	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC_ODR(inst);))          \
 	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst);))      \
                                                                                                    \
-	static struct bmi08x_accel_data bmi08x_drv_##inst;                                         \
+	static struct bmi08x_accel_data bmi08x_drv_##inst = {					   \
+		IF_ENABLED(CONFIG_BMI08X_ACCEL_STREAM,						   \
+			   (.stream.fifo_wm = DT_INST_PROP_OR(inst, fifo_watermark, 0),))	   \
+	};											   \
+												   \
                                                                                                    \
 	static const struct bmi08x_accel_config bmi08x_config_##inst = {                           \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
 			    (BMI08X_CONFIG_I2C(inst)))                                             \
 			.api = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
 					   (&bmi08x_i2c_api)),                                     \
-		IF_ENABLED(CONFIG_BMI08X_ACCEL_TRIGGER,                                            \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
+			.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),		   \
 			BMI08X_ACCEL_TRIGGER_PINS(inst)                                            \
 				.accel_hz = DT_INST_ENUM_IDX(inst, accel_hz) + 5,                  \
-		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)};             \
+		.rtio_bus = {									   \
+			.ctx = &bmi08x_accel_rtio_ctx_##inst,					   \
+			.iodev = &bmi08x_accel_rtio_bus_##inst,					   \
+			.type = COND_CODE_1(DT_INST_ON_BUS(inst, i2c),				   \
+					    (BMI08X_RTIO_BUS_TYPE_I2C),				   \
+					    (BMI08X_RTIO_BUS_TYPE_SPI)),			   \
+		},										   \
+		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)		   \
+	};											   \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),         \

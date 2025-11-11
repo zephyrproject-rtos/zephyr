@@ -204,7 +204,7 @@ static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
 	return ret;
 }
 
-static const struct i2c_driver_api api_funcs = {
+static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_virtual_runtime_configure,
 	.transfer = i2c_virtual_transfer,
 	.target_register = i2c_virtual_target_register,

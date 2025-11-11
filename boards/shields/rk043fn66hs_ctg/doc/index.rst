@@ -1,7 +1,7 @@
 .. _rk043fn66hs_ctg:
 
-RK043FN66HS-CTG Parallel Display
-################################
+NXP RK043FN66HS-CTG Parallel Display
+####################################
 
 Overview
 ********
@@ -95,6 +95,9 @@ example:
    :board: mimxrt1060_evk
    :shield: rk043fn66hs_ctg
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

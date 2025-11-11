@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include "fs_priv.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -18,15 +23,6 @@
 int zvfs_fstat(int fd, struct stat *buf);
 
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
-
-struct posix_fs_desc {
-	union {
-		struct fs_file_t file;
-		struct fs_dir_t dir;
-	};
-	bool is_dir;
-	bool used;
-};
 
 static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
 
@@ -64,6 +60,7 @@ static int posix_mode_to_zephyr(int mf)
 	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
 
 	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
 
 	switch (mf & O_ACCMODE) {
 	case O_RDONLY:
@@ -82,7 +79,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-int zvfs_open(const char *name, int flags)
+int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
@@ -99,24 +96,44 @@ int zvfs_open(const char *name, int flags)
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		zvfs_free_fd(fd);
-		errno = EMFILE;
-		return -1;
+		rc = -EMFILE;
+		goto out_err;
 	}
 
 	fs_file_t_init(&ptr->file);
 
-	rc = fs_open(&ptr->file, name, zmode);
+	if (flags & O_CREAT) {
+		flags &= ~O_CREAT;
 
+		rc = fs_open(&ptr->file, name, FS_O_CREATE | (mode & O_ACCMODE));
+		if (rc < 0) {
+			goto out_err;
+		}
+		rc = fs_close(&ptr->file);
+		if (rc < 0) {
+			goto out_err;
+		}
+	}
+
+	rc = fs_open(&ptr->file, name, zmode);
 	if (rc < 0) {
-		posix_fs_free_obj(ptr);
-		zvfs_free_fd(fd);
-		errno = -rc;
-		return -1;
+		goto out_err;
 	}
 
 	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		posix_fs_free_obj(ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
 	return fd;
 }
 
@@ -137,6 +154,35 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
+	case ZFD_IOCTL_STAT: {
+		struct stat *buf = va_arg(args, struct stat *);
+		long offset = fs_tell(&ptr->file);
+		long current;
+
+		if (offset < 0) {
+			return offset;
+		}
+
+		memset(buf, 0, sizeof(struct stat));
+
+		rc = fs_seek(&ptr->file, 0, FS_SEEK_END);
+		if (rc < 0) {
+			return rc;
+		}
+
+		current = fs_tell(&ptr->file);
+		if (current >= 0) {
+			buf->st_size = current;
+			buf->st_mode = ptr->is_dir ? S_IFDIR : S_IFREG;
+		}
+
+		rc = fs_seek(&ptr->file, offset, FS_SEEK_SET);
+
+		if (current < 0) {
+			rc = current;
+		}
+		break;
+	}
 	case ZFD_IOCTL_FSYNC: {
 		rc = fs_sync(&ptr->file);
 		break;
@@ -428,3 +474,13 @@ int fstat(int fildes, struct stat *buf)
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);
 #endif
+
+/**
+ * @brief Remove a directory.
+ *
+ * See IEEE 1003.1
+ */
+int rmdir(const char *path)
+{
+	return unlink(path);
+}

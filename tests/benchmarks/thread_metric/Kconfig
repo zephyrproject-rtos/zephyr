@@ -1,0 +1,83 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Eclipse ThreadX Thread-Metric RTOS Test Suite"
+
+choice TM_TEST
+	prompt "Select a Thread-Metric test to execute"
+	default TM_PREEMPTIVE
+	help
+	  The Thread-Metric benchmark suite consists of eight RTOS tests.
+	  These tests measure the total number of RTOS events that can be
+	  processed during a 30 second time interval.
+
+config TM_BASIC
+	bool "Baseline basic benchmark"
+	help
+	  The baseline basic benchmark consists of a single thread that counts
+	  the number of times it performs a set of calculations. This number
+	  is reported every 30 seconds.
+
+config TM_COOPERATIVE
+	bool "Cooperative context switching"
+	help
+	  The cooperative context switching benchmark spawns five (5) threads
+	  of equal priority that yield to each other and increment counters
+	  on each context switch. The sum total of the counters is reported
+	  every 30 seconds.
+
+config TM_INTERRUPT
+	bool "Interrupt processing"
+	select TEST
+	select IRQ_OFFLOAD
+	select IRQ_OFFLOAD_NESTED
+	help
+	  The interrupt processing benchmark has a single thread that causes
+	  an interrupt which results in its ISR incrementing a counter and then
+	  posting a semaphore. The thread then increments its own counter and
+	  takes that semaphore. The sum total of the counters is reported
+	  every 30 seconds.
+
+config TM_INTERRUPT_PREEMPTION
+	bool "Interrupt processing preemption"
+	select TEST
+	select IRQ_OFFLOAD
+	select IRQ_OFFLOAD_NESTED
+	help
+	  The interrupt preemption benchmark counts the number of times that
+	  an ISR from a software generated interrupt results in the preemption
+	  of a thread. The total number of context switches is reported every
+	  30 seconds.
+
+config TM_MEMORY_ALLOCATION
+	bool "Memory allocation"
+	help
+	  The memory allocation benchmark counts the number of times a thread
+	  is able to allocate and then release a 128-byte block. This number
+	  is reported every 30 seconds.
+
+config TM_MESSAGE
+	bool "Message processing"
+	help
+	  The message processing benchmark counts the number of times that a
+	  thread can send and receive a 16-byte message from a message queue.
+	  This number is reported every 30 seconds.
+
+config TM_PREEMPTIVE
+	bool "Preemptive context switching"
+	help
+	  The preemptive context switching benchmark creates five (5) threads
+	  of different priorities that suspend and resume each other in a
+	  cyclical pattern. The total number of context switches is reported
+	  every 30 seconds.
+
+config TM_SYNCHRONIZATION
+	bool "Synchronization"
+	help
+	  The synchronization benchmark counts the number of times that a
+	  thread can give and take a semaphore without blocking. This number
+	  is reported every 30 seconds.
+
+endchoice
+
+source "Kconfig.zephyr"

@@ -341,7 +341,7 @@ static int mtls_session_setup(const struct device *dev,
 #endif
 	    mode != CRYPTO_CIPHER_MODE_ECB) {
 		LOG_ERR("Unsupported mode");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != 16U) {
@@ -541,7 +541,7 @@ static int mtls_hash_session_setup(const struct device *dev,
 
 	if (ctx->flags & ~(MTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if ((algo != CRYPTO_HASH_ALGO_SHA224) &&
@@ -549,7 +549,7 @@ static int mtls_hash_session_setup(const struct device *dev,
 	    (algo != CRYPTO_HASH_ALGO_SHA384) &&
 	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
 		LOG_ERR("Unsupported algo: %d", algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ctx_idx = mtls_get_unused_session_index();
@@ -599,7 +599,7 @@ static int mtls_query_caps(const struct device *dev)
 	return MTLS_SUPPORT;
 }
 
-static struct crypto_driver_api mtls_crypto_funcs = {
+static DEVICE_API(crypto, mtls_crypto_funcs) = {
 	.cipher_begin_session = mtls_session_setup,
 	.cipher_free_session = mtls_session_free,
 	.cipher_async_callback_set = NULL,

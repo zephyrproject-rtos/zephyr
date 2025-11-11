@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_$(module)_GENERATE_ISR_SAFE_EVENTS
+	bool "$(module-str) guarantee non ISR callbacks upon stepper events"
+	help
+	  Enable the dispatch of stepper generated events via
+	  a message queue to guarantee that the event handler
+	  code is not run inside of an ISR. Can be disabled, but
+	  then registered stepper event callback must be ISR safe.
+
+config STEPPER_$(module)_EVENT_QUEUE_LEN
+	int "$(module-str) maximum number of pending stepper events"
+	default 4
+	depends on STEPPER_$(module)_GENERATE_ISR_SAFE_EVENTS
+	help
+	  The maximum number of stepper events that can be pending before new events
+	  are dropped.

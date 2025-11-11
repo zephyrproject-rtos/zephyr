@@ -19,6 +19,7 @@ family:
     socs:
     - name: lpc55s06
     - name: lpc55s16
+    - name: lpc55s26
     - name: lpc55s28
     - name: lpc55s36
     - name: lpc55s69

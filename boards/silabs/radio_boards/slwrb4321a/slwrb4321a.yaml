@@ -1,5 +1,5 @@
 identifier: slwrb4321a
-name: WGM160P Wi-Fi Module Radio Board (SLWRB4321A)
+name: WGM160P Wi-Fi Module Radio Board (SLWRB4321A, BRD4321A)
 type: mcu
 arch: arm
 ram: 512
@@ -7,7 +7,6 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - i2c

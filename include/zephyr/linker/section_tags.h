@@ -13,6 +13,8 @@
 
 #if !defined(_ASMLANGUAGE)
 
+#include <zephyr/linker/sections.h>
+
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
 #define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
@@ -42,16 +44,17 @@
 #define __imx_boot_data_section Z_GENERIC_SECTION(_IMX_BOOT_DATA_SECTION_NAME)
 #define __imx_boot_ivt_section Z_GENERIC_SECTION(_IMX_BOOT_IVT_SECTION_NAME)
 #define __imx_boot_dcd_section Z_GENERIC_SECTION(_IMX_BOOT_DCD_SECTION_NAME)
-#define __stm32_sdram1_section Z_GENERIC_SECTION(_STM32_SDRAM1_SECTION_NAME)
-#define __stm32_sdram2_section Z_GENERIC_SECTION(_STM32_SDRAM2_SECTION_NAME)
+#define __imx_boot_container_section Z_GENERIC_SECTION(_IMX_BOOT_CONTAINER_SECTION_NAME)
 #define __stm32_backup_sram_section Z_GENERIC_SECTION(_STM32_BACKUP_SRAM_SECTION_NAME)
 #endif /* CONFIG_ARM */
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_load __in_section_unique(_NOCACHE_LOAD_SECTION_NAME)
 #define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_load
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
@@ -96,6 +99,14 @@
 #define __pinned_bss
 #define __pinned_noinit	__noinit
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+
+#if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
+#define __ondemand_func	Z_GENERIC_DOT_SECTION(ONDEMAND_TEXT_SECTION_NAME)
+#define __ondemand_rodata	Z_GENERIC_DOT_SECTION(ONDEMAND_RODATA_SECTION_NAME)
+#else
+#define __ondemand_func
+#define __ondemand_rodata
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define __isr		__pinned_func

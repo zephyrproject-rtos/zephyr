@@ -1,7 +1,4 @@
-.. _dragino_nbsn95_board:
-
-Dragino NBSN95 NB-IoT Sensor Node
-#################################
+.. zephyr:board:: dragino_nbsn95
 
 Overview
 ********
@@ -21,10 +18,6 @@ This kit provides:
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
-
-.. image:: img/dragino_nbsn95.jpg
-     :align: center
-     :alt: Dragino NBSN95
 
 More information about the board can be found at the `Dragino NBSN95 website`_.
 
@@ -84,24 +77,7 @@ More information about STM32L072CZ can be found here:
 Supported Features
 ==================
 
-The Zephyr Dragino NBSN95 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/dragino/nbsn95/dragino_nbsn95_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -136,6 +112,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``dragino_nbsn95`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -148,7 +126,7 @@ Dragino NBSN95  board requires an external debugger.
 Flashing an application to Dragino NBSN95
 -----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the Dragino NBSN95 to a STLinkV2 to your host computer using the USB port, then
 run a serial host program to connect with your board. For example:
@@ -174,7 +152,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

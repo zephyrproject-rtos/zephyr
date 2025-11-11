@@ -1,7 +1,4 @@
-.. _adafruit_grand_central_m4_express:
-
-Adafruit Grand Central M4 Express
-#################################
+.. zephyr:board:: adafruit_grand_central_m4_express
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The Adafruit Grand Central M4 Express is an ARM development board with the
 form factor of an Arduino Mega.
 It features 70 GPIO pins, a microSDHC slot and 8MiB of QSPI Flash.
-
-.. figure:: img/adafruit_grand_central_m4_express.webp
-   :width: 800px
-   :align: center
-   :alt: Adafruit Grand Central M4 Express
-
-   Adafruit Grand Central M4 Express (Credit: Kattni Rembor / Adafruit)
 
 Hardware
 ********
@@ -31,37 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_grand_central_m4_express board configuration supports the following
-hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | Nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | SysTick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports, User LED                      |
-+-----------+------------+------------------------------------------+
-| UART      | on-chip    | Serial ports, Console                    |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | SPI ports, microSDHC slot                |
-+-----------+------------+------------------------------------------+
-| TRNG      | on-chip    | True Random Number Generator             |
-+-----------+------------+------------------------------------------+
-| RTC       | on-chip    | Real-Time Counter                        |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog Timer                           |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/grand_central_m4_express/adafruit_grand_central_m4_express_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -98,12 +58,14 @@ USB Device Port
 ===============
 
 The SAMD51 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Grand Central ships with a BOSSA compatible UF2 bootloader.
 The bootloader can be entered by quickly tapping the reset button twice.
@@ -111,7 +73,7 @@ The bootloader can be entered by quickly tapping the reset button twice.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

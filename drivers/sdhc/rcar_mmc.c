@@ -1877,7 +1877,7 @@ static int rcar_mmc_get_host_props(const struct device *dev, struct sdhc_host_pr
 	return 0;
 }
 
-static const struct sdhc_driver_api rcar_sdhc_api = {
+static DEVICE_API(sdhc, rcar_sdhc_api) = {
 	.card_busy = rcar_mmc_card_busy,
 #ifdef CONFIG_RCAR_MMC_SCC_SUPPORT
 	.execute_tuning = rcar_mmc_execute_tuning,

@@ -96,7 +96,7 @@ static int ps2_npcx_channel_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
+static DEVICE_API(ps2, ps2_channel_npcx_driver_api) = {
 	.config = ps2_npcx_ch_configure,
 	.read = NULL,
 	.write = ps2_npcx_ch_write,

@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief DHCPv4
  * @defgroup dhcpv4 DHCPv4
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -35,6 +37,7 @@ extern "C" {
 enum net_dhcpv4_state {
 	NET_DHCPV4_DISABLED,
 	NET_DHCPV4_INIT,
+	NET_DHCPV4_INIT_REBOOT,
 	NET_DHCPV4_SELECTING,
 	NET_DHCPV4_REQUESTING,
 	NET_DHCPV4_RENEWING,

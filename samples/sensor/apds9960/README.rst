@@ -1,7 +1,8 @@
-.. _apds9960:
+.. zephyr:code-sample:: apds9960
+   :name: APDS9960 RGB, ambient light, and gesture sensor
+   :relevant-api: sensor_interface
 
-APDS9960 RGB, Ambient Light, Gesture Sensor
-###########################################
+   Get ambient light, RGB, and proximity/gesture data from an APDS9960 sensor.
 
 Overview
 ********

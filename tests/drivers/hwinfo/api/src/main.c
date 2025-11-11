@@ -40,7 +40,7 @@ ZTEST(hwinfo_device_id_api, test_device_id_get)
 	}
 
 	zassert_false((length_read_1 < 0),
-		      "Unexpected negative return value: %d", length_read_1);
+		      "Unexpected negative return value: %zd", length_read_1);
 	zassert_not_equal(length_read_1, 0, "Zero bytes read");
 	zassert_equal(length_read_1, 1, "Length not adhered");
 
@@ -98,7 +98,7 @@ ZTEST(hwinfo_device_id_api, test_get_reset_cause)
 	}
 
 	zassert_false((ret < 0),
-		      "Unexpected negative return value: %d", ret);
+		      "Unexpected negative return value: %zd", ret);
 
 	/* Verify that `cause` has been changed. */
 	zassert_not_equal(cause, 0xDEADBEEF, "Reset cause not written.");
@@ -133,7 +133,7 @@ ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 	}
 
 	zassert_false((ret < 0),
-		      "Unexpected negative return value: %d", ret);
+		      "Unexpected negative return value: %zd", ret);
 
 	ret = hwinfo_clear_reset_cause();
 	if (ret == -ENOSYS) {
@@ -142,7 +142,7 @@ ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 	}
 
 	zassert_false((ret < 0),
-		      "Unexpected negative return value: %d", ret);
+		      "Unexpected negative return value: %zd", ret);
 
 	ret = hwinfo_get_reset_cause(&cause_2);
 	if (ret == -ENOSYS) {
@@ -151,7 +151,7 @@ ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 	}
 
 	zassert_false((ret < 0),
-		      "Unexpected negative return value: %d", ret);
+		      "Unexpected negative return value: %zd", ret);
 
 	/* Verify that `cause` has been changed. */
 	zassert_not_equal(cause_1, cause_2,
@@ -187,7 +187,7 @@ ZTEST(hwinfo_device_id_api, test_get_supported_reset_cause)
 	}
 
 	zassert_false((ret < 0),
-		      "Unexpected negative return value: %d", ret);
+		      "Unexpected negative return value: %zd", ret);
 
 	/* Verify that `supported` has been changed. */
 	zassert_not_equal(supported, 0xDEADBEEF,

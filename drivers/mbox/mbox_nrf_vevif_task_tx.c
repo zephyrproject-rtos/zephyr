@@ -5,16 +5,14 @@
 
 #define DT_DRV_COMPAT nordic_nrf_vevif_task_tx
 
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/mbox.h>
 
 #include <haly/nrfy_vpr.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUAPP)
-#define TASKS_IDX_MAX 17U
-#else
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
-#endif
+#define VEVIF_RETRIGGER_DELAY_USEC 12
 
 struct mbox_vevif_task_tx_conf {
 	NRF_VPR_Type *vpr;
@@ -38,10 +36,16 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 	}
 
 	if (msg != NULL) {
-		return -ENOTSUP;
+		return -EMSGSIZE;
 	}
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
+
+#ifdef CONFIG_SOC_NRF54H20
+	k_busy_wait(VEVIF_RETRIGGER_DELAY_USEC);
+
+	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
+#endif /* CONFIG_SOC_NRF54H20 */
 
 	return 0;
 }
@@ -60,7 +64,7 @@ static uint32_t vevif_task_tx_max_channels_get(const struct device *dev)
 	return config->tasks;
 }
 
-static const struct mbox_driver_api vevif_task_tx_driver_api = {
+static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 	.send = vevif_task_tx_send,
 	.mtu_get = vevif_task_tx_mtu_get,
 	.max_channels_get = vevif_task_tx_max_channels_get,

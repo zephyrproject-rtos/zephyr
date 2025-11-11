@@ -12,9 +12,9 @@ This section is a quick hands-on reference to start debugging your
 application with QEMU. Most content in this section is already covered in
 `QEMU`_ and `GNU_Debugger`_ reference manuals.
 
-.. _QEMU: http://wiki.qemu.org/Main_Page
+.. _QEMU: https://wiki.qemu.org/Main_Page
 
-.. _GNU_Debugger: http://www.gnu.org/software/gdb
+.. _GNU_Debugger: https://www.gnu.org/software/gdb
 
 In this quick reference, you'll find shortcuts, specific environmental
 variables, and parameters that can help you to quickly set up your debugging
@@ -225,7 +225,7 @@ Generate and Import an Eclipse Project
 
    .. zephyr-app-commands::
       :tool: all
-      :app: %ZEPHYR_BASE%\samples\synchronization
+      :zephyr-app: samples/synchronization
       :host-os: win
       :board: frdm_k64f
       :gen-args: -G"Eclipse CDT4 - Ninja"
@@ -291,7 +291,7 @@ Debugging I2C communication
 
 There is a possibility to log all or some of the I2C transactions done by the application.
 This feature is enabled by the Kconfig option :kconfig:option:`CONFIG_I2C_DUMP_MESSAGES`, but it
-uses the ``LOG_DBG`` function to print the contents so the
+uses the :c:macro:`LOG_DBG` function to print the contents so the
 :kconfig:option:`CONFIG_I2C_LOG_LEVEL_DBG` option must also be enabled.
 
 The sample output of the dump looks like this::
@@ -363,4 +363,4 @@ in the log.
 
 .. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
-.. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
+.. _pyOCD v0.11.0: https://github.com/pyocd/pyOCD/releases/tag/v0.11.0

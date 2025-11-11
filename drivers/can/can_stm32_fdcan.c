@@ -13,7 +13,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <stm32_ll_rcc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
@@ -403,13 +402,30 @@ static int can_stm32fd_clear_mram(const struct device *dev, uint16_t offset, siz
 
 static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	const uint32_t rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
+	uint32_t rate_tmp;
+	const struct can_mcan_config *mcan_cfg = dev->config;
+	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	ARG_UNUSED(dev);
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
 
-	if (rate_tmp == LL_RCC_PERIPH_FREQUENCY_NO) {
-		LOG_ERR("Can't read core clock");
-		return -EIO;
+	if (IS_ENABLED(STM32_CANFD_DOMAIN_CLOCK_SUPPORT) && (stm32fd_cfg->pclk_len > 1)) {
+		if (clock_control_get_rate(clk,
+			 (clock_control_subsys_t) &stm32fd_cfg->pclken[1],
+			  &rate_tmp) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(clk,
+			 (clock_control_subsys_t) &stm32fd_cfg->pclken[0],
+			  &rate_tmp) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+			return -EIO;
+		}
 	}
 
 	if (FDCAN_CONFIG->CKDIV == 0) {
@@ -507,7 +523,7 @@ static int can_stm32fd_init(const struct device *dev)
 	return ret;
 }
 
-static const struct can_driver_api can_stm32fd_driver_api = {
+static DEVICE_API(can, can_stm32fd_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

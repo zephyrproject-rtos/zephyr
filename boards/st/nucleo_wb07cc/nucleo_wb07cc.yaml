@@ -1,0 +1,23 @@
+identifier: nucleo_wb07cc
+name: ST Nucleo WB07CC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - watchdog
+  - bluetooth
+vendor: st

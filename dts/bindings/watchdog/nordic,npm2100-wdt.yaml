@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: nPM2100 Watchdog
+
+compatible: "nordic,npm2100-wdt"
+
+include: base.yaml

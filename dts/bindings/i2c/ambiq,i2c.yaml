@@ -5,14 +5,17 @@ description: Ambiq I2C
 
 compatible: "ambiq,i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  reg:
-    required: true
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery
+      support.
 
-  interrupts:
-    required: true
-
-  ambiq,pwrcfg:
-    required: true
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
+      support.

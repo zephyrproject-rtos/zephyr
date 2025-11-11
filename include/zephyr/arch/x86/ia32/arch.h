@@ -7,8 +7,9 @@
 /**
  * @file
  * @brief IA-32 specific kernel interface header
- * This header contains the IA-32 specific kernel interface.  It is included
- * by the generic kernel interface header (include/arch/cpu.h)
+ *
+ * This header contains the IA-32 portion of the X86 specific kernel
+ * interface (see include/zephyr/arch/x86/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
@@ -19,7 +20,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/arch/x86/ia32/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/x86/ia32/gdbstub.h>
 #include <zephyr/arch/x86/ia32/thread.h>
 #include <zephyr/arch/x86/ia32/syscall.h>
@@ -58,7 +59,7 @@
  */
 #define MK_ISR_NAME(x) __isr__##x
 
-#define Z_DYN_STUB_SIZE			4
+#define Z_DYN_STUB_SIZE			8
 #define Z_DYN_STUB_OFFSET		0
 #define Z_DYN_STUB_LONG_JMP_EXTRA_SIZE	3
 #define Z_DYN_STUB_PER_BLOCK		32
@@ -209,6 +210,7 @@ typedef struct s_isrList {
 		".pushsection " IRQSTUBS_TEXT_SECTION "\n\t" \
 		".global %c[isr]_irq%c[irq]_stub\n\t" \
 		"%c[isr]_irq%c[irq]_stub:\n\t" \
+		"endbr32\n\t" \
 		"pushl %[isr_param]\n\t" \
 		"pushl %[isr]\n\t" \
 		"jmp _interrupt_enter\n\t" \
@@ -361,7 +363,8 @@ extern struct task_state_segment _main_tss;
 		"int %[vector]\n\t" \
 		: \
 		: [vector] "i" (Z_X86_OOPS_VECTOR), \
-		  [reason] "i" (reason_p)); \
+		  [reason] "i" (reason_p) \
+		: "memory"); \
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 

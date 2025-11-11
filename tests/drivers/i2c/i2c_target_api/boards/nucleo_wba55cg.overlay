@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed on the ST morpho header.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB1   CN6:9      PB2   CN6:10
+ *  i2c3    PA7   CN7:1      PA6   CN7:2
+ *
+ * Short Pin PB1 to PA7, and PB2 to PA6, for the test to pass.
+ */
+
+&i2c1 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa6 &i2c3_sda_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

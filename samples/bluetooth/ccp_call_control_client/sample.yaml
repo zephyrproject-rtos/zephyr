@@ -1,0 +1,30 @@
+sample:
+  description: Bluetooth Low Energy Call Control Profile Server sample
+  name: Bluetooth Low Energy Call Control Profile Server sample
+tests:
+  sample.bluetooth.ccp_call_control_client:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+    integration_platforms:
+      - qemu_x86
+      - nrf5340dk/nrf5340/cpuapp
+    tags: bluetooth
+    sysbuild: true
+  sample.bluetooth.ccp_call_control_client.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52840
+      - nrf52840dongle/nrf52840
+    integration_platforms:
+      - nrf52_bsim
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52840
+      - nrf52840dongle/nrf52840
+    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

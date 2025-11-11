@@ -2,12 +2,11 @@
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
-
 &pinctrl {
 	uart135_default_alt: uart135_default_alt {
 		group1 {
 			psels = <NRF_PSEL(UART_RX, 0, 9)>;
-				bias-pull-up;
+			bias-pull-up;
 		};
 		group2 {
 			psels = <NRF_PSEL(UART_TX, 0, 6)>;
@@ -30,6 +29,7 @@ dut: &uart135 {
 	pinctrl-1 = <&uart135_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	zephyr,pm-device-runtime-auto;
 };
 
 &pinctrl {
@@ -59,4 +59,5 @@ dut_aux: &uart137 {
 	pinctrl-1 = <&uart137_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	zephyr,pm-device-runtime-auto;
 };

@@ -236,7 +236,7 @@ static void cmux_dte_init(void)
 	dlci2_pipe = modem_cmux_dlci_init(&cmux_dte, &dlci2, &dlci2_config);
 	/* Init Backend DTE */
 	bus_mock_pipe = modem_backend_mock_init(&bus_mock_dte, &bus_mock_config);
-	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)) == 0);
 	__ASSERT_NO_MSG(modem_cmux_attach(&cmux_dte, bus_mock_pipe) == 0);
 	modem_pipe_attach(dlci1_pipe, test_dlci1_pipe_cb, NULL);
 	modem_pipe_attach(dlci2_pipe, test_dlci2_pipe_cb, NULL);
@@ -278,7 +278,7 @@ static void cmux_dce_init(void)
 	dlci2_pipe_dce = modem_cmux_dlci_init(&cmux_dce, &dlci2_dce, &dlci2_config);
 	/* Init Backend DCE */
 	bus_mock_pipe_dce = modem_backend_mock_init(&bus_mock_dce, &bus_mock_config);
-	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe_dce) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe_dce, K_SECONDS(10)) == 0);
 	__ASSERT_NO_MSG(modem_cmux_attach(&cmux_dce, bus_mock_pipe_dce) == 0);
 	modem_pipe_attach(dlci1_pipe_dce, test_dlci1_pipe_cb_dce, NULL);
 	modem_pipe_attach(dlci2_pipe_dce, test_dlci2_pipe_cb_dce, NULL);
@@ -507,9 +507,10 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect)
 	modem_backend_mock_reset(&bus_mock_dte);
 	zassert_true(modem_cmux_disconnect_async(&cmux_dte) == 0, "Failed to disconnect CMUX");
 
-	k_msleep(100);
+	events = k_event_wait_all(&cmux_event_dte, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
+	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 
-	events = k_event_wait_all(&cmux_event_dte, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(100));
+	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
 	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 
 	/* Reconnect CMUX */
@@ -543,8 +544,8 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect_sync)
 {
 	uint32_t events;
 
-	zassert_true(modem_pipe_close(dlci1_pipe) == 0, "Failed to close DLCI1");
-	zassert_true(modem_pipe_close(dlci2_pipe) == 0, "Failed to close DLCI2");
+	zassert_true(modem_pipe_close(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI1");
+	zassert_true(modem_pipe_close(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI2");
 	events = k_event_wait_all(&cmux_event_dce,
 				  (EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED), false,
 				  K_MSEC(100));
@@ -554,6 +555,9 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect_sync)
 	zassert_true(modem_cmux_disconnect(&cmux_dte) == 0, "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux_dte) == -EALREADY,
 		     "Should already be disconnected");
+
+	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
+	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux_dce) == -EALREADY,
 		     "Should already be disconnected");
 
@@ -563,8 +567,8 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect_sync)
 	zassert_true(modem_cmux_connect(&cmux_dte) == -EALREADY, "Should already be connected");
 	zassert_true(modem_cmux_connect(&cmux_dce) == -EALREADY, "Should already be connected");
 
-	zassert_true(modem_pipe_open(dlci1_pipe) == 0, "Failed to open DLCI1 pipe");
-	zassert_true(modem_pipe_open(dlci2_pipe) == 0, "Failed to open DLCI2 pipe");
+	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to open DLCI1 pipe");
+	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to open DLCI2 pipe");
 	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DLCI1_OPEN | EVENT_CMUX_DLCI2_OPEN),
 				  false, K_MSEC(100));
 	zassert_true((events & EVENT_CMUX_DLCI1_OPEN), "DCE DLCI1 not open as expected");
@@ -575,8 +579,8 @@ ZTEST(modem_cmux_pair, test_modem_cmux_dlci_close_open_sync)
 {
 	uint32_t events;
 
-	zassert_true(modem_pipe_close(dlci1_pipe) == 0, "Failed to close DLCI1");
-	zassert_true(modem_pipe_close(dlci2_pipe) == 0, "Failed to close DLCI2");
+	zassert_true(modem_pipe_close(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI1");
+	zassert_true(modem_pipe_close(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI2");
 
 	events = k_event_wait_all(&cmux_event_dce,
 				  (EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED), false,
@@ -584,8 +588,8 @@ ZTEST(modem_cmux_pair, test_modem_cmux_dlci_close_open_sync)
 	zassert_true((events & EVENT_CMUX_DLCI1_CLOSED), "DCE DLCI1 not closed as expected");
 	zassert_true((events & EVENT_CMUX_DLCI2_CLOSED), "DCE DLCI2 not closed as expected");
 
-	zassert_true(modem_pipe_open(dlci1_pipe) == 0, "Failed to open DLCI1 pipe");
-	zassert_true(modem_pipe_open(dlci2_pipe) == 0, "Failed to open DLCI2 pipe");
+	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to open DLCI1 pipe");
+	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to open DLCI2 pipe");
 	/* Verify DCE side channels are open also */
 	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DLCI1_OPEN | EVENT_CMUX_DLCI2_OPEN),
 				  false, K_MSEC(100));

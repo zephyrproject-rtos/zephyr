@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: can-babbling
    :name: Controller Area Network (CAN) babbling node
-   :relevant-api: can_interface
+   :relevant-api: can_controller
 
    Simulate a babbling CAN node.
 
@@ -34,7 +34,7 @@ configured using the ``sw0`` :ref:`devicetree <dt-guide>` alias, usually in the 
 Building and Running
 ********************
 
-Example building for :ref:`twr_ke18f`:
+Example building for :zephyr:board:`twr_ke18f`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/babbling

@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+title: Omron D6F-P0010 1 L/min flow rate sensor.
+
+compatible: "omron,d6f-p0010"
+
+include: omron,d6f-analog.yaml

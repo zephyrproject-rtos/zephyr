@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from subprocess import run, PIPE
+from subprocess import run
 
 from west import log
+
 
 # Given a path to the applicable C compiler, a C source file, and the
 # corresponding TargetCompileGroup, determine which include files would
@@ -29,13 +30,14 @@ def getCIncludes(compilerPath, srcFile, tcg):
     # prepare command invocation
     cmd = [compilerPath, "-E", "-H"] + fragments + includes + defines + [srcFile]
 
-    cp = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    cp = run(cmd, capture_output=True, text=True)
     if cp.returncode != 0:
         log.dbg(f"    - calling {compilerPath} failed with error code {cp.returncode}")
         return []
     else:
         # response will be in cp.stderr, not cp.stdout
         return extractIncludes(cp.stderr)
+
 
 # Parse the response from the CC -E -H call, to extract the include file paths
 def extractIncludes(resp):

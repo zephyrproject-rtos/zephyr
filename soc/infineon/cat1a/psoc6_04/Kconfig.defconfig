@@ -2,7 +2,7 @@
 # an affiliate of Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon PSoC6_04 based MCU default configuration
+# Infineon PSOC 6_04 based MCU default configuration
 
 if SOC_DIE_PSOC6_04
 
@@ -12,6 +12,12 @@ config NUM_IRQS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024 if PM
 
 # add additional die specific params
 

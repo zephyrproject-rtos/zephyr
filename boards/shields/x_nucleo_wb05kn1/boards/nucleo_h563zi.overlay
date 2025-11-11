@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1_sck_pa5 {
+	/delete-property/ bias-pull-down;
+	bias-pull-up;
+};
+
+&spi1_miso_pg9 {
+	slew-rate = "high-speed";
+};
+
+&spi1_mosi_pb5 {
+	slew-rate = "high-speed";
+};
+
+/ {
+	chosen {
+		zephyr,bt-c2h-uart = &usart3;
+	};
+};

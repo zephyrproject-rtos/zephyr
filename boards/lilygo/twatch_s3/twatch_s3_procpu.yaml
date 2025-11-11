@@ -1,0 +1,19 @@
+identifier: twatch_s3/esp32s3/procpu
+name: T-Watch S3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - video
+  - rtc
+vendor: lilygo

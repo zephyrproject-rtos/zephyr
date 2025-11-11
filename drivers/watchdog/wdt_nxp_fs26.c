@@ -804,7 +804,7 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_nxp_fs26_api = {
+static DEVICE_API(wdt, wdt_nxp_fs26_api) = {
 	.setup = wdt_nxp_fs26_setup,
 	.disable = wdt_nxp_fs26_disable,
 	.install_timeout = wdt_nxp_fs26_install_timeout,
@@ -825,7 +825,7 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 											\
 	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {		\
 		.spi = SPI_DT_SPEC_INST_GET(n,						\
-			SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),	\
+			SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32)),		\
 		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
 		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),			\
 	};										\

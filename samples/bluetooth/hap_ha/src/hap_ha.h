@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
 
 /**
  * @brief Initialize the BAP Unicast Server role

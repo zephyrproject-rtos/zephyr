@@ -114,27 +114,19 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
-/* MWDT toolchain misses ssize_t definition which is used by Zephyr */
-#ifndef _SSIZE_T_DEFINED
-#define _SSIZE_T_DEFINED
-#ifdef CONFIG_64BIT
-	typedef long ssize_t;
-#else
-	typedef int ssize_t;
-#endif
-#endif /* _SSIZE_T_DEFINED */
-
 #ifdef CONFIG_NEWLIB_LIBC
   #error "ARC MWDT doesn't support building with CONFIG_NEWLIB_LIBC as it doesn't have newlib"
 #endif /* CONFIG_NEWLIB_LIBC */
 
-#ifdef CONFIG_NATIVE_APPLICATION
+#ifdef CONFIG_NATIVE_BUILD
   #error "ARC MWDT doesn't support building Zephyr as an native application"
-#endif /* CONFIG_NATIVE_APPLICATION */
+#endif /* CONFIG_NATIVE_BUILD */
 
 
 #define __no_optimization __attribute__((optnone))
+#ifndef __fallthrough
 #define __fallthrough     __attribute__((fallthrough))
+#endif
 
 #define TOOLCHAIN_HAS_C_GENERIC                 1
 #define TOOLCHAIN_HAS_C_AUTO_TYPE               1

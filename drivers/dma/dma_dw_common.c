@@ -565,8 +565,9 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	 * needed
 	 */
 	ret = pm_device_state_get(dev, &pm_state);
-	if (!ret && pm_state != PM_DEVICE_STATE_ACTIVE)
+	if (!ret && pm_state != PM_DEVICE_STATE_ACTIVE) {
 		goto out;
+	}
 
 	if (!dw_dma_is_enabled(dev, channel) && chan_data->state != DW_DMA_SUSPENDED) {
 		ret = 0;
@@ -825,8 +826,15 @@ int dw_dma_get_status(const struct device *dev, uint32_t channel,
 	struct dw_dma_dev_data *const dev_data = dev->data;
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_chan_data *chan_data;
+	enum pm_device_state pm_state;
+	int ret;
 
 	if (channel >= DW_CHAN_COUNT) {
+		return -EINVAL;
+	}
+
+	ret = pm_device_state_get(dev, &pm_state);
+	if (!ret && pm_state != PM_DEVICE_STATE_ACTIVE) {
 		return -EINVAL;
 	}
 

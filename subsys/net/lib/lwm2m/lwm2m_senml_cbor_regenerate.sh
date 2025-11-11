@@ -4,7 +4,7 @@
 
 zcbor code --default-max-qty 99 -c lwm2m_senml_cbor.cddl -e -d -t lwm2m_senml \
 	--oc lwm2m_senml_cbor.c --oh lwm2m_senml_cbor.h --file-header "
-Copyright (c) 2023 Nordic Semiconductor ASA
+Copyright (c) 2024 Nordic Semiconductor ASA
 
 SPDX-License-Identifier: Apache-2.0
 "

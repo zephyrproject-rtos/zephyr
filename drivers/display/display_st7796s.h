@@ -16,6 +16,7 @@
 #define ST7796S_CMD_RAMWR	0x2C /* Memory write */
 #define ST7796S_CMD_DISPOFF	0x28 /* Display off */
 #define ST7796S_CMD_DISPON	0x29 /* Display on */
+#define ST7796S_CMD_TEON	0x35 /* Tearing effect on */
 #define ST7796S_CMD_MADCTL	0x36 /* Memory data access control */
 #define ST7796S_CMD_COLMOD	0x3A /* Interface pixel format */
 #define ST7796S_CMD_FRMCTR1	0xB1 /* Frame rate control 1 (normal mode) */

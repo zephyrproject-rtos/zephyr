@@ -9,6 +9,10 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -16,7 +20,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <hci_core.h>
 
-#include "bap_endpoint.h"
+#include "ascs_internal.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #define LOG_MODULE_NAME bttester_bap_unicast
@@ -25,13 +29,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 
-static struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
+static struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
 
 static struct btp_bap_unicast_connection connections[CONFIG_BT_MAX_CONN];
 static struct btp_bap_unicast_group cigs[CONFIG_BT_ISO_MAX_CIG];
 
-static inline struct btp_bap_unicast_stream *stream_bap_to_unicast(struct bt_bap_stream *stream)
+static struct btp_bap_unicast_stream *stream_bap_to_unicast(const struct bt_bap_stream *stream)
 {
 	return CONTAINER_OF(CONTAINER_OF(CONTAINER_OF(stream, struct bt_cap_stream, bap_stream),
 		struct btp_bap_audio_stream, cap_stream),
@@ -152,13 +156,14 @@ struct bt_bap_ep *btp_bap_unicast_end_point_find(struct btp_bap_unicast_connecti
 	return NULL;
 }
 
-static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id, uint8_t state)
+static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id,
+					       enum bt_bap_ep_state state)
 {
 	struct btp_ascs_ase_state_changed_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.ase_id = ase_id;
-	ev.state = state;
+	ev.state = (uint8_t)state;
 
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_ASE_STATE_CHANGED, &ev, sizeof(ev));
 }
@@ -257,7 +262,7 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	struct bt_bap_ep_info info;
-	struct btp_ascs_ase_found_ev ev;
+	struct btp_bap_ase_found_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
@@ -268,7 +273,7 @@ static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_ASE_FOUND, &ev, sizeof(ev));
 }
 
-static inline void print_qos(const struct bt_audio_codec_qos *qos)
+static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u latency %u pd %u",
 		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
@@ -323,7 +328,7 @@ static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
-		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -338,9 +343,6 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_REJECTED,
 				       BT_BAP_ASCS_REASON_CODEC_DATA);
 
-		btp_send_ascs_operation_completed_ev(conn, info.id, BT_ASCS_CONFIG_OP,
-						     BTP_ASCS_STATUS_FAILED);
-
 		return -ENOTSUP;
 	}
 
@@ -349,9 +351,6 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	if (u_stream == NULL) {
 		LOG_DBG("No free stream available");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
-
-		btp_send_ascs_operation_completed_ev(conn, info.id, BT_ASCS_CONFIG_OP,
-						     BTP_ASCS_STATUS_FAILED);
 
 		return -ENOMEM;
 	}
@@ -372,7 +371,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
-			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
@@ -381,7 +380,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
@@ -427,19 +426,9 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp)
 {
-	int err;
-	struct bt_bap_ep_info info;
-
 	LOG_DBG("Metadata: stream %p meta_len %zu", stream, meta_len);
 
-	err = bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
-	if (err != 0) {
-		(void)bt_bap_ep_get_info(stream->ep, &info);
-		btp_send_ascs_operation_completed_ev(stream->conn, info.id,
-						     BT_ASCS_ENABLE_OP, BTP_ASCS_STATUS_FAILED);
-	}
-
-	return err;
+	return bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
 }
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -452,19 +441,9 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 			struct bt_bap_ascs_rsp *rsp)
 {
-	int err;
-	struct bt_bap_ep_info info;
-
 	LOG_DBG("Metadata: stream %p meta_count %zu", stream, meta_len);
 
-	err = bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
-	if (err != 0) {
-		(void)bt_bap_ep_get_info(stream->ep, &info);
-		btp_send_ascs_operation_completed_ev(stream->conn, info.id,
-						     BT_ASCS_METADATA_OP, BTP_ASCS_STATUS_FAILED);
-	}
-
-	return err;
+	return bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -500,8 +479,28 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static void stream_configured(struct bt_bap_stream *stream,
-			      const struct bt_audio_codec_qos_pref *pref)
+static void stream_state_changed(struct bt_bap_stream *stream)
+{
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+	struct bt_bap_ep_info info;
+	int err;
+
+	if (stream->ep == NULL) {
+		info.state = BT_BAP_EP_STATE_IDLE;
+	} else {
+		err = bt_bap_ep_get_info(stream->ep, &info);
+		if (err != 0) {
+			LOG_ERR("Failed to get info: %d", err);
+
+			return;
+		}
+	}
+
+	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+}
+
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -514,22 +513,18 @@ static void stream_configured(struct bt_bap_stream *stream,
 	u_conn = &connections[u_stream->conn_id];
 	u_stream->ase_id = info.id;
 
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_CONFIG_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_qos_set(struct bt_bap_stream *stream)
+static void stream_qos_set_cb(struct bt_bap_stream *stream)
 {
-	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
-
 	LOG_DBG("QoS set stream %p", stream);
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_QOS_OP, BTP_ASCS_STATUS_SUCCESS);
+
+	stream_state_changed(stream);
 }
 
-static void stream_enabled(struct bt_bap_stream *stream)
+static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 	struct bt_bap_ep_info info;
 	struct bt_conn_info conn_info;
 	int err;
@@ -540,57 +535,45 @@ static void stream_enabled(struct bt_bap_stream *stream)
 	(void)bt_conn_get_info(stream->conn, &conn_info);
 	if (conn_info.role == BT_HCI_ROLE_PERIPHERAL && info.dir == BT_AUDIO_DIR_SINK) {
 		/* Automatically do the receiver start ready operation */
+		/* TODO: This should ideally be done by the upper tester */
 		err = bt_bap_stream_start(stream);
 		if (err != 0) {
 			LOG_DBG("Failed to start stream %p", stream);
-			btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-							     BT_ASCS_ENABLE_OP,
-							     BTP_ASCS_STATUS_FAILED);
 
 			return;
 		}
 	}
 
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_ENABLE_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_metadata_updated(struct bt_bap_stream *stream)
+static void stream_metadata_updated_cb(struct bt_bap_stream *stream)
 {
-	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
-
 	LOG_DBG("Metadata updated stream %p", stream);
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_METADATA_OP, BTP_ASCS_STATUS_SUCCESS);
+
+	stream_state_changed(stream);
 }
 
-static void stream_disabled(struct bt_bap_stream *stream)
+static void stream_disabled_cb(struct bt_bap_stream *stream)
 {
-	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
-
 	LOG_DBG("Disabled stream %p", stream);
 
-	/* Stop send timer */
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
-
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_DISABLE_OP, BTP_ASCS_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
-static void stream_released(struct bt_bap_stream *stream)
+static void stream_released_cb(struct bt_bap_stream *stream)
 {
 	uint8_t cig_id;
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+	struct bt_conn *conn;
 
 	LOG_DBG("Released stream %p", stream);
 
 	u_conn = &connections[u_stream->conn_id];
 
-	/* Stop send timer */
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
-
+	/* TODO: Fix this as stream->ep is always NULL in the released callback */
 	if (stream->ep != NULL) {
 		(void)bt_bap_ep_get_info(stream->ep, &info);
 		if (info.dir == BT_AUDIO_DIR_SINK) {
@@ -599,6 +582,15 @@ static void stream_released(struct bt_bap_stream *stream)
 			u_conn->configured_source_stream_count--;
 		}
 	}
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &u_conn->address);
+	if (conn == NULL) {
+		LOG_ERR("Unknown connection");
+		return;
+	}
+
+	btp_send_ascs_ase_state_changed_ev(conn, u_stream->ase_id, BT_BAP_EP_STATE_IDLE);
+	bt_conn_unref(conn);
 
 	cig_id = u_stream->cig_id;
 	btp_bap_unicast_stream_free(u_stream);
@@ -623,67 +615,101 @@ static void stream_released(struct bt_bap_stream *stream)
 	}
 }
 
-static void stream_started(struct bt_bap_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
-	struct bt_bap_ep_info info;
 
 	/* Callback called on transition to Streaming state */
 
 	LOG_DBG("Started stream %p", stream);
 
-	btp_bap_audio_stream_started(&u_stream->audio_stream);
+	/* Start TX */
+	if (btp_bap_audio_stream_can_send(&u_stream->audio_stream)) {
+		int err;
 
-	(void)bt_bap_ep_get_info(stream->ep, &info);
-	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+		err = btp_bap_audio_stream_tx_register(&u_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to register stream: %d", err);
+		}
+	}
+
+	stream_state_changed(stream);
 }
 
-static void stream_connected(struct bt_bap_stream *stream)
+static void stream_connected_cb(struct bt_bap_stream *stream)
 {
 	struct bt_conn_info conn_info;
-	struct bt_bap_ep_info ep_info;
-	int err;
 
 	LOG_DBG("Connected stream %p", stream);
 
-	(void)bt_bap_ep_get_info(stream->ep, &ep_info);
 	(void)bt_conn_get_info(stream->conn, &conn_info);
-	if (conn_info.role == BT_HCI_ROLE_CENTRAL && ep_info.dir == BT_AUDIO_DIR_SOURCE) {
-		/* Automatically do the receiver start ready operation for source ASEs as the client
-		 */
-		err = bt_bap_stream_start(stream);
+	if (conn_info.role == BT_HCI_ROLE_CENTRAL) {
+		struct bt_bap_ep_info ep_info;
+		int err;
+
+		err = bt_bap_ep_get_info(stream->ep, &ep_info);
 		if (err != 0) {
-			LOG_ERR("Failed to start stream %p", stream);
+			LOG_ERR("Failed to get info: %d", err);
+
+			return;
+		}
+
+		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
+			/* Automatically do the receiver start ready operation for source ASEs as
+			 * the client
+			 */
+			err = bt_bap_stream_start(stream);
+			if (err != 0) {
+				LOG_ERR("Failed to start stream %p", stream);
+			}
+		} else {
+			struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
+			btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
+							     BT_ASCS_START_OP,
+							     BTP_ASCS_STATUS_SUCCESS);
 		}
 	}
 }
 
-static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
+	if (btp_bap_audio_stream_can_send(&u_stream->audio_stream)) {
+		int err;
+
+		err = btp_bap_audio_stream_tx_unregister(&u_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister stream: %d", err);
+		}
+	}
 
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_STOP_OP, BTP_STATUS_SUCCESS);
+	stream_state_changed(stream);
 }
 
 static void send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *ep,
 				    uint8_t data_len, uint8_t *data)
 {
 	struct btp_bap_stream_received_ev *ev;
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(ep, &ep_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	tester_rsp_buffer_lock();
 	tester_rsp_buffer_allocate(sizeof(*ev) + data_len, (uint8_t **)&ev);
 
-	LOG_DBG("Stream received, ep %d, dir %d, len %d", ep->status.id, ep->dir,
-		data_len);
+	LOG_DBG("Stream received, ep %d, dir %d, len %d", ep_info.id, ep_info.dir, data_len);
 
 	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
-	ev->ase_id = ep->status.id;
+	ev->ase_id = ep_info.id;
 	ev->data_len = data_len;
 	memcpy(ev->data, data, data_len);
 
@@ -693,9 +719,8 @@ static void send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *ep,
 	tester_rsp_buffer_unlock();
 }
 
-static void stream_recv(struct bt_bap_stream *stream,
-			const struct bt_iso_recv_info *info,
-			struct net_buf *buf)
+static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
@@ -703,29 +728,28 @@ static void stream_recv(struct bt_bap_stream *stream,
 		/* For now, send just a first packet, to limit the number
 		 * of logs and not unnecessarily spam through btp.
 		 */
-		LOG_DBG("Incoming audio on stream %p len %u", stream, buf->len);
-		u_stream->already_sent = true;
-		send_stream_received_ev(stream->conn, stream->ep, buf->len, buf->data);
+		LOG_DBG("Incoming audio on stream %p len %u flags 0x%02X seq_num %u and ts %u",
+			stream, buf->len, info->flags, info->seq_num, info->ts);
+
+		if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+			u_stream->already_sent = true;
+			send_stream_received_ev(stream->conn, stream->ep, buf->len, buf->data);
+		}
 	}
 }
 
-static void stream_sent(struct bt_bap_stream *stream)
-{
-	LOG_DBG("Stream %p sent", stream);
-}
-
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured,
-	.qos_set = stream_qos_set,
-	.enabled = stream_enabled,
-	.metadata_updated = stream_metadata_updated,
-	.disabled = stream_disabled,
-	.released = stream_released,
-	.started = stream_started,
-	.stopped = stream_stopped,
-	.recv = stream_recv,
-	.sent = stream_sent,
-	.connected = stream_connected,
+	.configured = stream_configured_cb,
+	.qos_set = stream_qos_set_cb,
+	.enabled = stream_enabled_cb,
+	.metadata_updated = stream_metadata_updated_cb,
+	.disabled = stream_disabled_cb,
+	.released = stream_released_cb,
+	.started = stream_started_cb,
+	.stopped = stream_stopped_cb,
+	.recv = stream_recv_cb,
+	.sent = btp_bap_audio_stream_sent_cb,
+	.connected = stream_connected_cb,
 };
 
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
@@ -752,71 +776,137 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
-static void available_contexts_cb(struct bt_conn *conn,
-				  enum bt_audio_context snk_ctx,
-				  enum bt_audio_context src_ctx)
+static void unicast_client_available_contexts_cb(struct bt_conn *conn,
+						 enum bt_audio_context snk_ctx,
+						 enum bt_audio_context src_ctx)
 {
 	LOG_DBG("snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
-static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		      enum bt_bap_ascs_reason reason)
-{
-	LOG_DBG("stream %p config operation rsp_code %u reason %u", stream, rsp_code, reason);
-}
-
-static void qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		   enum bt_bap_ascs_reason reason)
-{
-	LOG_DBG("stream %p qos operation rsp_code %u reason %u", stream, rsp_code, reason);
-}
-
-static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		      enum bt_bap_ascs_reason reason)
-{
-	LOG_DBG("stream %p enable operation rsp_code %u reason %u", stream, rsp_code, reason);
-}
-
-static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		     enum bt_bap_ascs_reason reason)
+static void unicast_client_config_cb(struct bt_bap_stream *stream,
+				     enum bt_bap_ascs_rsp_code rsp_code,
+				     enum bt_bap_ascs_reason reason)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
+	LOG_DBG("stream %p config operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_CONFIG_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
+}
+
+static void unicast_client_qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+				  enum bt_bap_ascs_reason reason)
+{
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
+	LOG_DBG("stream %p qos operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_QOS_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
+}
+
+static void unicast_client_enable_cb(struct bt_bap_stream *stream,
+				     enum bt_bap_ascs_rsp_code rsp_code,
+				     enum bt_bap_ascs_reason reason)
+{
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
+	LOG_DBG("stream %p enable operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_ENABLE_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
+}
+
+static void unicast_client_start_cb(struct bt_bap_stream *stream,
+				    enum bt_bap_ascs_rsp_code rsp_code,
+				    enum bt_bap_ascs_reason reason)
+{
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+	struct bt_bap_ep_info ep_info;
+	int err;
 
 	/* Callback called on Receiver Start Ready notification from ASE Control Point */
 
 	LOG_DBG("stream %p start operation rsp_code %u reason %u", stream, rsp_code, reason);
 	u_stream->already_sent = false;
 
-	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
-					     BT_ASCS_START_OP, BTP_STATUS_SUCCESS);
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get ep info: %d", err);
+
+		return;
+	}
+
+	if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
+		btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
+						     BT_ASCS_START_OP, BTP_ASCS_STATUS_SUCCESS);
+	}
 }
 
-static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		    enum bt_bap_ascs_reason reason)
+static void unicast_client_stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+				   enum bt_bap_ascs_reason reason)
 {
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
 	LOG_DBG("stream %p stop operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_STOP_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
 }
 
-static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		       enum bt_bap_ascs_reason reason)
+static void unicast_client_disable_cb(struct bt_bap_stream *stream,
+				      enum bt_bap_ascs_rsp_code rsp_code,
+				      enum bt_bap_ascs_reason reason)
 {
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
 	LOG_DBG("stream %p disable operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_DISABLE_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
 }
 
-static void metadata_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-			enum bt_bap_ascs_reason reason)
+static void unicast_client_metadata_cb(struct bt_bap_stream *stream,
+				       enum bt_bap_ascs_rsp_code rsp_code,
+				       enum bt_bap_ascs_reason reason)
 {
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
 	LOG_DBG("stream %p metadata operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_METADATA_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
 }
 
-static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
-		       enum bt_bap_ascs_reason reason)
+static void unicast_client_release_cb(struct bt_bap_stream *stream,
+				      enum bt_bap_ascs_rsp_code rsp_code,
+				      enum bt_bap_ascs_reason reason)
 {
+	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
 	LOG_DBG("stream %p release operation rsp_code %u reason %u", stream, rsp_code, reason);
+
+	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id, BT_ASCS_RELEASE_OP,
+					     rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS
+						     ? BTP_ASCS_STATUS_SUCCESS
+						     : BTP_ASCS_STATUS_FAILED);
 }
 
-static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
-			  const struct bt_audio_codec_cap *codec_cap)
+static void unicast_client_pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+					 const struct bt_audio_codec_cap *codec_cap)
 {
 	LOG_DBG("");
 
@@ -837,14 +927,21 @@ static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_DISCOVERY_COMPLETED, &ev, sizeof(ev));
 }
 
-static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+static void unicast_client_endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+				       struct bt_bap_ep *ep)
 {
 	struct btp_bap_unicast_connection *u_conn;
 
 	LOG_DBG("");
 
 	if (ep != NULL) {
-		LOG_DBG("Discovered ASE %p, id %u, dir 0x%02x", ep, ep->status.id, ep->dir);
+		struct bt_bap_ep_info ep_info;
+		int err;
+
+		err = bt_bap_ep_get_info(ep, &ep_info);
+		__ASSERT_NO_MSG(err == 0);
+
+		LOG_DBG("Discovered ASE %p, id %u, dir 0x%02x", ep, ep_info.id, ep_info.dir);
 
 		u_conn = &connections[bt_conn_index(conn)];
 
@@ -865,7 +962,7 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 	}
 }
 
-static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
+static void unicast_client_discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
 	LOG_DBG("");
 
@@ -897,20 +994,25 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 	btp_send_discovery_completed_ev(conn, BTP_BAP_DISCOVERY_STATUS_SUCCESS);
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
-	.available_contexts = available_contexts_cb,
-	.config = config_cb,
-	.qos = qos_cb,
-	.enable = enable_cb,
-	.start = start_cb,
-	.stop = stop_cb,
-	.disable = disable_cb,
-	.metadata = metadata_cb,
-	.release = release_cb,
-	.pac_record = pac_record_cb,
-	.endpoint = endpoint_cb,
-	.discover = discover_cb,
+	.available_contexts = unicast_client_available_contexts_cb,
+	.config = unicast_client_config_cb,
+	.qos = unicast_client_qos_cb,
+	.enable = unicast_client_enable_cb,
+	.start = unicast_client_start_cb,
+	.stop = unicast_client_stop_cb,
+	.disable = unicast_client_disable_cb,
+	.metadata = unicast_client_metadata_cb,
+	.release = unicast_client_release_cb,
+	.pac_record = unicast_client_pac_record_cb,
+	.endpoint = unicast_client_endpoint_cb,
+	.discover = unicast_client_discover_cb,
 };
 
 uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
@@ -952,7 +1054,7 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 
 static int server_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream,
 				struct bt_audio_codec_cfg *codec_cfg,
-				struct bt_audio_codec_qos_pref *qos)
+				struct bt_bap_qos_cfg_pref *qos)
 {
 	int err;
 	struct bt_bap_ep_info info;
@@ -1126,6 +1228,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	cigs[cig_id].in_use = true;
+	cigs[cig_id].cig_id = cig_id;
 	*out_unicast_group = &cigs[cig_id];
 
 	return 0;
@@ -1216,6 +1319,11 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 		err = bt_bap_stream_reconfig(stream_unicast_to_bap(stream), &stream->codec_cfg);
 	}
 
+	if (err == 0) {
+		btp_send_ascs_operation_completed_ev(conn, stream->ase_id, BT_ASCS_CONFIG_OP,
+						     BT_BAP_ASCS_RSP_CODE_SUCCESS);
+	}
+
 	return err;
 }
 
@@ -1242,6 +1350,8 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 
+	codec_cfg.target_latency = BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED;
+	codec_cfg.target_phy = BT_AUDIO_CODEC_CFG_TARGET_PHY_2M;
 	codec_cfg.id = cp->coding_format;
 	codec_cfg.vid = cp->vid;
 	codec_cfg.cid = cp->cid;
@@ -1271,14 +1381,14 @@ uint8_t btp_ascs_preconfigure_qos(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_ascs_preconfigure_qos_cmd *cp = cmd;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 
 	LOG_DBG("");
 
 	qos = &cigs[cp->cig_id].qos[cp->cis_id];
 	memset(qos, 0, sizeof(*qos));
 
-	qos->phy = BT_AUDIO_CODEC_QOS_2M;
+	qos->phy = BT_BAP_QOS_CFG_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = sys_le16_to_cpu(cp->max_sdu);
@@ -1402,6 +1512,23 @@ uint8_t btp_ascs_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 		return BTP_STATUS_FAILED;
 	}
 
+	if (err == 0) {
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_ERR("Failed to get conn info: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+
+		if (conn_info.role == BT_HCI_ROLE_PERIPHERAL) {
+			/* The server the operation completes immediately */
+			btp_send_ascs_operation_completed_ev(conn, stream->ase_id,
+							     BT_ASCS_DISABLE_OP,
+							     BT_BAP_ASCS_RSP_CODE_SUCCESS);
+		}
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
 
@@ -1413,6 +1540,7 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *stream;
 	struct bt_bap_stream *bap_stream;
+	struct bt_conn_info conn_info;
 	struct bt_bap_ep_info info;
 	struct bt_conn *conn;
 
@@ -1421,6 +1549,18 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (conn_info.role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Cannot connect the CIS as the peripheral */
+		LOG_DBG("Cannot connect the CIS as the peripheral");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1441,6 +1581,10 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("Starting stream %p, ep %u, dir %u", bap_stream, cp->ase_id, info.dir);
 
+	/* TODO: This function should not do the BAP stream connect, and should instead just the
+	 * operation that function is named after. Connecting the BAP stream should be its own BTP
+	 * command
+	 */
 	while (true) {
 		err = bt_bap_stream_connect(bap_stream);
 		if (err == -EBUSY) {
@@ -1493,6 +1637,22 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	if (err == 0) {
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_ERR("Failed to get conn info: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+
+		if (conn_info.role == BT_HCI_ROLE_PERIPHERAL) {
+			/* The server the operation completes immediately */
+			btp_send_ascs_operation_completed_ev(conn, stream->ase_id, BT_ASCS_STOP_OP,
+							     BT_BAP_ASCS_RSP_CODE_SUCCESS);
+		}
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
 
@@ -1525,6 +1685,23 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	if (err != 0) {
 		LOG_DBG("Unable to release stream, err %d", err);
 		return BTP_STATUS_FAILED;
+	}
+
+	if (err == 0) {
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_ERR("Failed to get conn info: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+
+		if (conn_info.role == BT_HCI_ROLE_PERIPHERAL) {
+			/* The server the operation completes immediately */
+			btp_send_ascs_operation_completed_ev(conn, stream->ase_id,
+							     BT_ASCS_RELEASE_OP,
+							     BT_BAP_ASCS_RSP_CODE_SUCCESS);
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -1564,6 +1741,23 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 	if (err != 0) {
 		LOG_DBG("Failed to update stream metadata, err %d", err);
 		return BTP_STATUS_FAILED;
+	}
+
+	if (err == 0) {
+		struct bt_conn_info conn_info;
+
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_ERR("Failed to get conn info: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+
+		if (conn_info.role == BT_HCI_ROLE_PERIPHERAL) {
+			/* The server the operation completes immediately */
+			btp_send_ascs_operation_completed_ev(conn, stream->ase_id,
+							     BT_ASCS_METADATA_OP,
+							     BT_BAP_ASCS_RSP_CODE_SUCCESS);
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -1651,6 +1845,13 @@ int btp_bap_unicast_init(void)
 	}
 
 	(void)memset(connections, 0, sizeof(connections));
+
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		LOG_DBG("Failed to register unicast server (err %d)\n", err);
+
+		return err;
+	}
 
 	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
 	if (err != 0) {

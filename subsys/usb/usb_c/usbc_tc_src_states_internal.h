@@ -11,27 +11,27 @@
  * @brief Unattached.SRC
  */
 void tc_unattached_src_entry(void *obj);
-void tc_unattached_src_run(void *obj);
+enum smf_state_result tc_unattached_src_run(void *obj);
 
 /**
  * @brief UnattachedWait.SRC
  */
 void tc_unattached_wait_src_entry(void *obj);
-void tc_unattached_wait_src_run(void *obj);
+enum smf_state_result tc_unattached_wait_src_run(void *obj);
 void tc_unattached_wait_src_exit(void *obj);
 
 /**
  * @brief AttachWait.SRC
  */
 void tc_attach_wait_src_entry(void *obj);
-void tc_attach_wait_src_run(void *obj);
+enum smf_state_result tc_attach_wait_src_run(void *obj);
 void tc_attach_wait_src_exit(void *obj);
 
 /**
  * @brief Attached.SRC
  */
 void tc_attached_src_entry(void *obj);
-void tc_attached_src_run(void *obj);
+enum smf_state_result tc_attached_src_run(void *obj);
 void tc_attached_src_exit(void *obj);
 
 /**

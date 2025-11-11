@@ -1,7 +1,4 @@
-.. _verdin_imx8mp:
-
-Toradex Verdin iMX8M Plus SoM
-#############################
+.. zephyr:board:: verdin_imx8mp
 
 Overview
 ********
@@ -31,14 +28,8 @@ Quoting NXP:
    industrial automation with high reliability. It is built to meet the needs of Smart Home,
    Building, City and Industry 4.0 applications.
 
-The Verdin iMX8M Plus integrates a total of 4 Arm Cortex™-A53 CPUs, operating at 1.6 GHz, alongside
-a single Arm Cortex™-M7F microcontroller operating at 800 MHz.
-
-.. figure:: verdin_imx8mp_front.jpg
-   :align: center
-   :alt: Toradex Verdin iMX8M Plus
-
-   Toradex Verdin iMX8M Plus (Credit: Toradex)
+The Verdin iMX8M Plus integrates a total of 4 Arm Cortex |reg|-A53 CPUs, operating at 1.6 GHz, alongside
+a single Arm Cortex |reg|-M7F microcontroller operating at 800 MHz.
 
 Regarding the Cortex-A53 cluster, it employs the ARMv8-A architecture as a mid-range and
 energy-efficient processor. With four cores in this cluster, each core is equipped with its own L1
@@ -62,8 +53,8 @@ Hardware
 ********
 
 - SoC name: NXP® i.MX 8M Plus
-- CPU Type:	4x Arm Cortex™-A53 (1.6 GHz)
-- Microcontroller:	1x Arm Cortex™-M7F (800 MHz)
+- CPU Type:	4x Arm Cortex |reg|-A53 (1.6 GHz)
+- Microcontroller:	1x Arm Cortex |reg|-M7F (800 MHz)
 
 - Memory:
 
@@ -181,6 +172,8 @@ used/tested.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Verdin iMX8M Plus board doesn't have QSPI flash for the M7, and it needs to be started by the
 A53 core. The A53 core is responsible to load the M7 binary application into the RAM, put the M7 in
 reset, set the M7 Program Counter and Stack Pointer, and get the M7 out of reset. The A53 can
@@ -251,7 +244,7 @@ Toradex Verdin iMX8M Plus SoM can be debugged by connecting an external JLink JT
 X56 debug connector and to the PC, or simply connecting a USB-C to X66 on the Verdin Development
 Board. Then, the application can be debugged using the usual way.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

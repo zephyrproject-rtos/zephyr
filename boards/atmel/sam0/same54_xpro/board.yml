@@ -1,5 +1,6 @@
 board:
   name: same54_xpro
+  full_name: SAM E54 Xplained Pro Evaluation Kit
   vendor: atmel
   socs:
     - name: same54p20a

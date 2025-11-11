@@ -1,0 +1,23 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ISSI IS25(W/L)X0(32/64) on MSPI bus
+
+compatible: "mspi-is25xX0xx"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET line. If specified, the flash chip will be reset at initialization.
+
+  t-reset-pulse:
+    type: int
+    description: |
+      Minimum duration, in nanoseconds, of an active pulse on the RESET line.
+  t-reset-recovery:
+    type: int
+    description: |
+      Minimum time, in nanoseconds, the flash chip needs to recover after reset.

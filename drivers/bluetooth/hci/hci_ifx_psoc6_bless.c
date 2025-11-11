@@ -6,7 +6,7 @@
  */
 
 /**
- * @brief PSoC 6 BLE (BLESS) driver.
+ * @brief PSOC 6 BLE (BLESS) driver.
  */
 
 #include <errno.h>
@@ -126,10 +126,8 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
 			return;
 		}
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 
 		break;
-
 	default:
 		LOG_WRN("Unsupported HCI Packet Received");
 		return;
@@ -168,24 +166,12 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 
 	memset(&hci_tx_pkt, 0, sizeof(cy_stc_ble_hci_tx_packet_info_t));
 
+	hci_tx_pkt.packetType = net_buf_pull_u8(buf);
 	hci_tx_pkt.dataLength = buf->len;
 	hci_tx_pkt.data = buf->data;
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		hci_tx_pkt.packetType = BT_HCI_H4_ACL;
-		break;
-	case BT_BUF_CMD:
-		hci_tx_pkt.packetType = BT_HCI_H4_CMD;
-		break;
-	default:
-		net_buf_unref(buf);
-		return -ENOTSUP;
-	}
-
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
 		LOG_ERR("Failed to acquire BLE DRV Semaphore");
-		net_buf_unref(buf);
 		return -EIO;
 	}
 
@@ -216,7 +202,7 @@ static int psoc6_bless_setup(const struct device *dev, const struct bt_hci_setup
 		addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], BT_ADDR_LE_PUBLIC,
 	};
 
-	buf = bt_hci_cmd_create(PSOC6_BLESS_OP_SET_PUBLIC_ADDR, sizeof(hci_data));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Unable to allocate command buffer");
 		return -ENOMEM;
@@ -245,7 +231,7 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	/* Registers the generic callback functions.  */
 	Cy_BLE_RegisterEventCallback(psoc6_bless_events_handler);
 
-	/* Initializes the PSoC 6 BLESS Controller. */
+	/* Initializes the PSOC 6 BLESS Controller. */
 	result = Cy_BLE_InitController(&psoc6_bless_config);
 	if (result != CY_BLE_SUCCESS) {
 		LOG_ERR("Failed to init the BLE Controller");
@@ -265,7 +251,7 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = psoc6_bless_open,
 	.send = psoc6_bless_send,
 	.setup = psoc6_bless_setup,

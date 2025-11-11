@@ -99,7 +99,7 @@ static int npcx_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 		break;
 	default:
 		LOG_ERR("Unexpected algo: %d", npcx_session->algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (!ctx->started) {
@@ -140,13 +140,13 @@ static int npcx_hash_session_setup(const struct device *dev, struct hash_ctx *ct
 
 	if (ctx->flags & ~(NPCX_HASH_CAPS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if ((algo != CRYPTO_HASH_ALGO_SHA256) && (algo != CRYPTO_HASH_ALGO_SHA384) &&
 	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
 		LOG_ERR("Unsupported algo: %d", algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ctx_idx = npcx_get_unused_session_index();
@@ -202,7 +202,7 @@ static int npcx_hash_init(const struct device *dev)
 	return 0;
 }
 
-static const struct crypto_driver_api npcx_crypto_api = {
+static DEVICE_API(crypto, npcx_crypto_api) = {
 	.hash_begin_session = npcx_hash_session_setup,
 	.hash_free_session = npcx_hash_session_free,
 	.query_hw_caps = npcx_query_caps,

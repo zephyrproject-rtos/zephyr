@@ -114,11 +114,12 @@ static int create_free_list(struct k_mem_slab *slab)
 	slab->free_list = NULL;
 	p = slab->buffer + slab->info.block_size * (slab->info.num_blocks - 1);
 
-	while (p >= slab->buffer) {
+	for (int i = slab->info.num_blocks - 1; i >= 0; i--) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
 		p -= slab->info.block_size;
 	}
+
 	return 0;
 }
 
@@ -204,9 +205,12 @@ out:
 	return rc;
 }
 
-#if __ASSERT_ON
 static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 {
+	if (!IS_ENABLED(CONFIG_MEM_SLAB_POINTER_VALIDATE)) {
+		return true;
+	}
+
 	const char *p = ptr;
 	ptrdiff_t offset = p - slab->buffer;
 
@@ -214,7 +218,6 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
 	       ((offset % slab->info.block_size) == 0);
 }
-#endif
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
@@ -234,7 +237,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 			 "slab corruption detected");
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-		slab->info.max_used = MAX(slab->info.num_used,
+		slab->info.max_used = max(slab->info.num_used,
 					  slab->info.max_used);
 #endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 
@@ -267,15 +270,19 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 
 void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
+	if (!slab_ptr_is_good(slab, mem)) {
+		__ASSERT(false, "Invalid memory pointer provided");
+		k_panic();
+		return;
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	__ASSERT(slab_ptr_is_good(slab, mem), "Invalid memory pointer provided");
-
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
-	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if (unlikely(slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
-		if (pending_thread != NULL) {
+		if (unlikely(pending_thread != NULL)) {
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
 
 			z_thread_return_value_set_with_data(pending_thread, 0, mem);

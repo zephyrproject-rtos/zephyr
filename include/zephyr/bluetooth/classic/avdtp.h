@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#define AVDTP_VERSION_1_3 0x0103 /**< AVDTP version 1.3 value */
+
+#define AVDTP_VERSION AVDTP_VERSION_1_3 /**< AVDTP version used by Zephyr */
+
 /**
  * @brief AVDTP error code
  */
@@ -87,11 +91,11 @@ enum bt_avdtp_media_type {
  */
 struct bt_avdtp_sep_info {
 	/** End Point usage status */
-	uint8_t inuse:1;
+	uint8_t inuse: 1;
 	/** Stream End Point ID that is the identifier of the stream endpoint */
-	uint8_t id:6;
+	uint8_t id: 6;
 	/** Reserved */
-	uint8_t reserved:1;
+	uint8_t reserved: 1;
 	/** Stream End-point Type that indicates if the stream end-point is SNK or SRC */
 	enum bt_avdtp_sep_type tsep;
 	/** Media-type of the End Point
@@ -120,6 +124,14 @@ enum bt_avdtp_service_category {
 	BT_AVDTP_SERVICE_DELAY_REPORTING = 0x08,
 };
 
+/** @brief service category Recovery Capabilities type*/
+enum bt_avdtp_recovery_type {
+	/** Forbidden */
+	BT_AVDTP_RECOVERY_TYPE_FORBIDDEN = 0x00,
+	/** RFC2733 */
+	BT_ADVTP_RECOVERY_TYPE_RFC2733 = 0x01,
+};
+
 /** @brief AVDTP Stream End Point */
 struct bt_avdtp_sep {
 	/** Stream End Point information */
@@ -127,10 +139,17 @@ struct bt_avdtp_sep {
 	/** Media Transport Channel*/
 	struct bt_l2cap_br_chan chan;
 	/** the endpoint media data */
-	void (*media_data_cb)(struct bt_avdtp_sep *sep,
-				struct net_buf *buf);
+	void (*media_data_cb)(struct bt_avdtp_sep *sep, struct net_buf *buf);
+	/* semaphore for lock/unlock */
+	struct k_sem sem_lock;
 	/** avdtp session */
 	struct bt_avdtp *session;
+	/** endpoint becomes idle */
+	int (*endpoint_released)(struct bt_avdtp_sep *sep);
+	/** delay worker for disconnecting l2cap media channel */
+	struct k_work_delayable _delay_work;
+	/** delay_work_state */
+	uint8_t _delay_work_state;
 	/** SEP state */
 	uint8_t state;
 	/* Internally used list node */

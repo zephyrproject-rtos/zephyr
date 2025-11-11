@@ -74,9 +74,8 @@ const size_t _kernel_thread_info_offsets[] = {
 #elif defined(CONFIG_MIPS)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
-#elif defined(CONFIG_NIOS2)
-	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
-						callee_saved.sp),
+#elif defined(CONFIG_RX)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
 #elif defined(CONFIG_RISCV)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
@@ -92,6 +91,9 @@ const size_t _kernel_thread_info_offsets[] = {
 	 * no fixed location for this to work. So mark this as
 	 * unimplemented to avoid the #warning below.
 	 */
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
+#elif defined(CONFIG_RX)
+	/* RX doesn't store *anything* inside thread objects yet */
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
 #else
 	/* Use a special value so that OpenOCD knows that obtaining the stack

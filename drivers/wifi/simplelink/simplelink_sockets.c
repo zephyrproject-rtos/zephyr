@@ -674,7 +674,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 			case TLS_CREDENTIAL_CA_CERTIFICATE:
 				opt = SL_SO_SECURE_FILES_CA_FILE_NAME;
 				break;
-			case TLS_CREDENTIAL_SERVER_CERTIFICATE:
+			case TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
 				opt = SL_SO_SECURE_FILES_CERTIFICATE_FILE_NAME;
 				break;
 			case TLS_CREDENTIAL_PRIVATE_KEY:

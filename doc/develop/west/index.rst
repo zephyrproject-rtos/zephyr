@@ -37,12 +37,12 @@ each command.
    workspaces.rst
    manifest.rst
    config.rst
+   alias.rst
    extensions.rst
    build-flash-debug.rst
    sign.rst
    zephyr-cmds.rst
    why.rst
-   moving-to-west.rst
    without-west.rst
 
 For details on west's Python APIs, see :ref:`west-apis`.

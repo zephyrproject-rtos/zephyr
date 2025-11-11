@@ -1,0 +1,9 @@
+tests:
+  boards.renesas.elc:
+    depends_on: renesas_elc
+    tags:
+      - drivers
+      - misc
+      - renesas_elc
+    filter: dt_node_enabled("renesas,ra-elc")
+    harness: ztest

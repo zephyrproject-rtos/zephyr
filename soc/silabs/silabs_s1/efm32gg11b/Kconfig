@@ -1,4 +1,3 @@
-# EFM32GG11B (Giant Gecko) MCU line
 # Copyright (c) 2019 Interay Solutions B.V.
 # Copyright (c) 2019 Oane Kingma
 # SPDX-License-Identifier: Apache-2.0
@@ -16,6 +15,3 @@ config SOC_SERIES_EFM32GG11B
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_TRNG
-
-config SOC_GECKO_SDID
-	default 100 if SOC_SERIES_EFM32GG11B

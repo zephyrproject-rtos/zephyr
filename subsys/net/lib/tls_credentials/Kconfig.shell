@@ -32,4 +32,14 @@ config TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE
 
 	   Also used to print error messages if digest generation fails.
 
+if TLS_CREDENTIALS_BACKEND_VOLATILE
+
+config HEAP_MEM_POOL_ADD_SIZE_TLS_CRED_SHELL
+	int "TLS credentials shell memory pool size"
+	# default 4 certs and each assume 1500 bytes
+	default 6000
+	help
+	  The size of the memory pool used by the TLS credentials shell.
+endif # TLS_CREDENTIALS_BACKEND_VOLATILE
+
 endif # TLS_CREDENTIALS_SHELL

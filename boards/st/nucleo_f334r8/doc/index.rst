@@ -1,7 +1,4 @@
-.. _nucleo_f334r8_board:
-
-ST Nucleo F334R8
-################
+.. zephyr:board:: nucleo_f334r8
 
 Overview
 ********
@@ -21,10 +18,6 @@ debugger and programmer.
 The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
 
-.. image:: img/nucleo_f334r8.jpg
-   :align: center
-   :alt: Nucleo F334R8
-
 More information about the board can be found at the `Nucleo F334R8 website`_.
 
 Hardware
@@ -37,7 +30,6 @@ Nucleo F334R8 provides the following hardware components:
   - Arduino* Uno V3 connectivity
   - ST morpho extension pin headers for full access to all STM32 I/Os
 
-- ARM* mbed*
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector:
 
   - Selection-mode switch to use the kit as a standalone ST-LINK/V2-1
@@ -58,11 +50,6 @@ Nucleo F334R8 provides the following hardware components:
   - Mass storage
   - Debug port
 
-- Support of wide choice of Integrated Development Environments (IDEs) including:
-
-  - IAR
-  - ARM Keil
-  - GCC-based IDEs
 
 More information about STM32F334R8 can be found in the
 `STM32F334 reference manual`_
@@ -71,31 +58,7 @@ More information about STM32F334R8 can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_f334r8 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f334r8/nucleo_f334r8_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -128,6 +91,10 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo F334R8 board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_f334r8`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -135,8 +102,17 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo F334R8 board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 Flashing an application to Nucleo F334R8
 ----------------------------------------
@@ -177,3 +153,6 @@ References
 
 .. _STM32 Nucleo-64 board User Manual:
    https://www.st.com/resource/en/user_manual/dm00105823.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

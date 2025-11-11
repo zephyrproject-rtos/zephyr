@@ -405,7 +405,7 @@ static inline int wait_read_transfer_done(Hsmci *hsmci)
 	int sr;
 
 	do {
-		sr = HSMCI->HSMCI_SR;
+		sr = hsmci->HSMCI_SR;
 		if (sr & (HSMCI_SR_UNRE | HSMCI_SR_OVRE | HSMCI_SR_DTOE | HSMCI_SR_DCRCE)) {
 			return -EIO;
 		}
@@ -660,7 +660,7 @@ static int sam_hsmci_request(const struct device *dev, struct sdhc_command *cmd,
 	return ret;
 }
 
-static const struct sdhc_driver_api hsmci_api = {
+static DEVICE_API(sdhc, hsmci_api) = {
 	.reset = sam_hsmci_reset,
 	.get_host_props = sam_hsmci_get_host_props,
 	.set_io = sam_hsmci_set_io,

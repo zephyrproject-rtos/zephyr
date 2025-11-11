@@ -1,20 +1,17 @@
-# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Ambiq MSPI controller
 
 compatible: "ambiq,mspi-controller"
 
-include: [mspi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [mspi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
     required: true
 
   interrupts:
-    required: true
-
-  ambiq,pwrcfg:
     required: true
 
   ce-gpios:
@@ -29,3 +26,28 @@ properties:
     type: int
     description: |
       Define the DMA command queue buffer size in (4-byte) words
+
+  ambiq,rbx:
+    type: boolean
+    description: |
+      Define the Ambiq MSPI controller read boundary crossing feature enable.
+
+  ambiq,wbx:
+    type: boolean
+    description: |
+      Define the Ambiq MSPI controller write boundary crossing feature enable.
+
+  ambiq,apmemory:
+    type: boolean
+    description: |
+      Define the Ambiq MSPI controller APMemory specific support enable.
+
+  ambiq,hyperbus:
+    type: boolean
+    description: |
+        Define the Ambiq MSPI controller HyperBus specific support enable.
+
+  ambiq,clkond4:
+    type: boolean
+    description: |
+        Define the Ambiq MSPI controller clock on D4 feature enable.

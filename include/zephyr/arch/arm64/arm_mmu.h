@@ -45,6 +45,7 @@
  * attrs[7] : Mirror RO/RW permissions to EL0
  * attrs[8] : Overwrite existing mapping if any
  * attrs[9] : non-Global mapping (nG)
+ * attrs[10]: Paged-out mapping
  *
  */
 #define MT_PERM_SHIFT		3U
@@ -54,6 +55,7 @@
 #define MT_RW_AP_SHIFT		7U
 #define MT_NO_OVERWRITE_SHIFT	8U
 #define MT_NON_GLOBAL_SHIFT	9U
+#define MT_PAGED_OUT_SHIFT	10U
 
 #define MT_RO			(0U << MT_PERM_SHIFT)
 #define MT_RW			(1U << MT_PERM_SHIFT)
@@ -75,6 +77,8 @@
 #define MT_G			(0U << MT_NON_GLOBAL_SHIFT)
 #define MT_NG			(1U << MT_NON_GLOBAL_SHIFT)
 
+#define MT_PAGED_OUT		(1U << MT_PAGED_OUT_SHIFT)
+
 #define MT_P_RW_U_RW		(MT_RW | MT_RW_AP_ELx | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
 #define MT_P_RW_U_NA		(MT_RW | MT_RW_AP_EL_HIGHER  | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
 #define MT_P_RO_U_RO		(MT_RO | MT_RW_AP_ELx | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
@@ -88,6 +92,19 @@
 #else
 #define MT_DEFAULT_SECURE_STATE	MT_SECURE
 #endif
+
+/* Definitions used by arch_page_info_get() */
+#define ARCH_DATA_PAGE_LOADED		BIT(0)
+#define ARCH_DATA_PAGE_ACCESSED		BIT(1)
+#define ARCH_DATA_PAGE_DIRTY		BIT(2)
+#define ARCH_DATA_PAGE_NOT_MAPPED	BIT(3)
+
+/*
+ * Special unpaged "location" tags (highest possible descriptor physical
+ * address values unlikely to conflict with backing store locations)
+ */
+#define ARCH_UNPAGED_ANON_ZERO		0x0000fffffffff000
+#define ARCH_UNPAGED_ANON_UNINIT	0x0000ffffffffe000
 
 #ifndef _ASMLANGUAGE
 

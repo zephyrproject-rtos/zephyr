@@ -5,31 +5,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
 #include <errno.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
-
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
-
-#include "psa/crypto.h"
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <psa/crypto.h>
+#include <psa/crypto_struct.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
 
 #include "common/bt_str.h"
-
 #include "hci_core.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_host_crypto);
 
-int prng_init(void)
+int bt_crypto_init(void)
 {
-	if (psa_crypto_init() != PSA_SUCCESS) {
+	psa_status_t status = psa_crypto_init();
+
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_crypto_init() failed %d", status);
 		return -EIO;
 	}
 	return 0;
@@ -38,10 +43,13 @@ int prng_init(void)
 #if defined(CONFIG_BT_HOST_CRYPTO_PRNG)
 int bt_rand(void *buf, size_t len)
 {
-	if (psa_generate_random(buf, len) == PSA_SUCCESS) {
+	psa_status_t status = psa_generate_random(buf, len);
+
+	if (status == PSA_SUCCESS) {
 		return 0;
 	}
 
+	LOG_ERR("psa_generate_random() failed %d", status);
 	return -EIO;
 }
 #else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
@@ -77,8 +85,9 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 	psa_set_key_bits(&attr, 128);
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT);
 	psa_set_key_algorithm(&attr, PSA_ALG_ECB_NO_PADDING);
-	if (psa_import_key(&attr, tmp, 16, &key_id) != PSA_SUCCESS) {
-		LOG_ERR("Failed to import AES key");
+	status = psa_import_key(&attr, tmp, 16, &key_id);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Failed to import AES key %d", status);
 		return -EINVAL;
 	}
 
@@ -87,12 +96,12 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 	status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, tmp, 16,
 					enc_data, 16, &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("AES encryption failed");
+		LOG_ERR("AES encryption failed %d", status);
 	}
 
 	destroy_status = psa_destroy_key(key_id);
 	if (destroy_status != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy AES key");
+		LOG_ERR("Failed to destroy AES key %d", destroy_status);
 	}
 
 	if ((status != PSA_SUCCESS) || (destroy_status != PSA_SUCCESS)) {
@@ -125,20 +134,21 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 	psa_set_key_bits(&attr, 128);
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT);
 	psa_set_key_algorithm(&attr, PSA_ALG_ECB_NO_PADDING);
-	if (psa_import_key(&attr, key, 16, &key_id) != PSA_SUCCESS) {
-		LOG_ERR("Failed to import AES key");
+	status = psa_import_key(&attr, key, 16, &key_id);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Failed to import AES key %d", status);
 		return -EINVAL;
 	}
 
 	status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING,
 				plaintext, 16, enc_data, 16, &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("AES encryption failed");
+		LOG_ERR("AES encryption failed %d", status);
 	}
 
 	destroy_status = psa_destroy_key(key_id);
 	if (destroy_status != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy AES key");
+		LOG_ERR("Failed to destroy AES key %d", destroy_status);
 	}
 
 	if ((status != PSA_SUCCESS) || (destroy_status != PSA_SUCCESS)) {

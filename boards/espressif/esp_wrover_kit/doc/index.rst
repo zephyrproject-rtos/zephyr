@@ -1,12 +1,7 @@
-.. _esp_wrover_kit:
-
-ESP-WROVER-KIT
-##############
+.. zephyr:board:: esp_wrover_kit
 
 Overview
 ********
-
-ESP-WROVER-KIT is an ESP32-based development board produced by `Espressif <https://www.espressif.com/>`_.
 
 ESP-WROVER-KIT features the following integrated components:
 
@@ -26,8 +21,21 @@ Most of the ESP32 I/O pins are broken out to the board's pin headers for easy ac
    ESP32's GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two
    GPIOs are not broken out to the board's pin headers in order to ensure reliable performance.
 
+For more information, check `ESP32-WROVER-E Datasheet`_ and `ESP32 Datasheet`_.
+
+Hardware
+********
+
+.. include:: ../../../espressif/common/soc-esp32-features.rst
+   :start-after: espressif-soc-esp32-features
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Functionality Overview
-**********************
+======================
 
 The block diagram below shows the main components of ESP-WROVER-KIT and their interconnections.
 
@@ -36,7 +44,7 @@ The block diagram below shows the main components of ESP-WROVER-KIT and their in
      :alt: ESP-WROVER-KIT
 
 Functional Description
-**********************
+======================
 
 The following two figures and the table below describe the key components, interfaces, and controls
 of the ESP-WROVER-KIT board.
@@ -56,7 +64,7 @@ of the ESP-WROVER-KIT board.
      ESP-WROVER-KIT board layout - back
 
 The table below provides description in the following manner:
-- Starting from the first picture’s top right corner and going clockwise
+- Starting from the first picture's top right corner and going clockwise
 - Then moving on to the second picture
 
 +------------------+-------------------------------------------------------------------------+
@@ -155,7 +163,7 @@ The table below provides description in the following manner:
 .. _setup options:
 
 Setup Options
-*************
+=============
 
 There are three jumper blocks available to set up the board functionality. The most frequently
 required options are listed in the table below.
@@ -185,7 +193,7 @@ required options are listed in the table below.
 +--------+----------------+-------------------------------------------------------+
 
 Allocation of ESP32 Pins
-************************
+========================
 
 Some pins / terminals of ESP32 are allocated for use with the onboard or external hardware. If
 that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these
@@ -206,7 +214,7 @@ For more details on which pins are shared among which peripherals, please refer 
 the next section.
 
 Main I/O Connector / JP1
-************************
+========================
 
 The JP1 connector consists of 14x2 male pins whose functions are shown in the middle two “I/O”
 columns of the table below. The two “Shared With” columns on both sides describe where else on
@@ -253,10 +261,10 @@ Legend:
   - LED - RGB LED
   - MicroSD - MicroSD Card / J4
   - LCD - LCD / U5
-  - PSRAM - ESP32-WROVER-E’s PSRAM
+  - PSRAM - ESP32-WROVER-E's PSRAM
 
 32.768 kHz Oscillator
-*********************
+=====================
 
 +---+-----------+
 | . | ESP32 Pin |
@@ -270,11 +278,11 @@ Legend:
 
    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to
    the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the
-   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-
-   soldering them to positions R12 / R24.
+   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering
+   them to positions R12 / R24.
 
 SPI Flash / JP2
-***************
+===============
 
 +---+--------------+
 | . | ESP32 Pin    |
@@ -293,13 +301,13 @@ SPI Flash / JP2
 +---+--------------+
 
 .. important::
-   The module’s flash bus is connected to the jumper block JP2 through zero-ohm resistors R140 ~
+   The module's flash bus is connected to the jumper block JP2 through zero-ohm resistors R140 ~
    R145. If the flash memory needs to operate at the frequency of 80 MHz, for reasons such as
    improving the integrity of bus signals, you can desolder these resistors to disconnect the
-   module’s flash bus from the pin header JP2.
+   module's flash bus from the pin header JP2.
 
 JTAG / JP2
-**********
+==========
 
 +---+---------------+-------------+
 | . | ESP32 Pin     | JTAG Signal |
@@ -316,7 +324,7 @@ JTAG / JP2
 +---+---------------+-------------+
 
 Camera / JP4
-************
+============
 
 +----+-----------+-----------------------------+
 | .  | ESP32 Pin | Camera Signal               |
@@ -361,7 +369,7 @@ Camera / JP4
 - Signals D0 .. D7 denote camera data bus
 
 RGB LED
-*******
+=======
 
 +----+-----------+---------+
 | .  | ESP32 Pin | RGB LED |
@@ -374,7 +382,7 @@ RGB LED
 +----+-----------+---------+
 
 MicroSD Card
-************
+============
 
 +---+---------------+----------------+
 | . | ESP32 Pin     | MicroSD Signal |
@@ -395,7 +403,7 @@ MicroSD Card
 +---+---------------+----------------+
 
 LCD / U5
-********
+========
 
 +---+-----------+------------+
 | . | ESP32 Pin | LCD Signal |
@@ -415,14 +423,8 @@ LCD / U5
 | 7 | GPIO5     | Backlight  |
 +---+-----------+------------+
 
-Start Application Development
-*****************************
-
-Before powering up your ESP-WROVER-KIT, please make sure that the board is in good
-condition with no obvious signs of damage.
-
 Initial Setup
-*************
+=============
 
 Please set only the following jumpers shown in the pictures below:
 
@@ -439,190 +441,28 @@ Do not install any other jumpers.
 
 Turn the Power Switch to ON, the 5V Power On LED should light up.
 
-Supported Features
-==================
-
-Current Zephyr's ESP32-Wrover-Kit board supports the following features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| USB-JTAG   | on-chip    | hardware interface                  |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| Timers     | on-chip    | counter                             |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| MCPWM      | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| PCNT       | on-chip    | qdec                                |
-+------------+------------+-------------------------------------+
-| SPI DMA    | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| TWAI       | on-chip    | can                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | adc                                 |
-+------------+------------+-------------------------------------+
-| DAC        | on-chip    | dac                                 |
-+------------+------------+-------------------------------------+
-| Wi-Fi      | on-chip    |                                     |
-+------------+------------+-------------------------------------+
-| Bluetooth  | on-chip    |                                     |
-+------------+------------+-------------------------------------+
-
-System requirements
-===================
-
-Prerequisites
--------------
-
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
-
-Building & Flashing
+System Requirements
 *******************
 
-Simple boot
-===========
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
-The board could be loaded using the single binary image, without 2nd stage bootloader.
-It is the default option when building the application without additional configuration.
+Programming and Debugging
+*************************
 
-.. note::
+.. zephyr:board-supported-runners::
 
-   Simple boot does not provide any security features nor OTA updates.
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-MCUboot bootloader
-==================
-
-User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
-
-There are two options to be used when building an application:
-
-1. Sysbuild
-2. Manual build
-
-.. note::
-
-   User can select the MCUboot bootloader by adding the following line
-   to the board default configuration file.
-
-   .. code:: cfg
-
-      CONFIG_BOOTLOADER_MCUBOOT=y
-
-Sysbuild
-========
-
-The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the ESP32 SoC.
-
-To build the sample application using sysbuild use the command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :app: samples/hello_world
-   :board: esp_wrover_kit
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
-
-By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
-images. But it can be configured to create other kind of images.
-
-Build directory structure created by sysbuild is different from traditional
-Zephyr build. Output is structured by the domain subdirectories:
-
-.. code-block::
-
-  build/
-  ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  ├── mcuboot
-  │    └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  └── domains.yaml
-
-.. note::
-
-   With ``--sysbuild`` option the bootloader will be re-build and re-flash
-   every time the pristine build is used.
-
-For more information about the system build please read the :ref:`sysbuild` documentation.
-
-Manual build
-============
-
-During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
-
-The instructions following are relevant for both manual build and sysbuild.
-The only difference is the structure of the build directory.
-
-.. note::
-
-   Remember that bootloader (MCUboot) needs to be flash at least once.
-
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: build
-
-The usual ``flash`` target will work with the ``esp_wrover_kit`` board
-configuration. Here is an example for the :ref:`hello_world`
-application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: flash
-
-Open the serial monitor using the following command:
-
-.. code-block:: shell
-
-   west espressif monitor
-
-After the board has automatically reset and booted, you should see the following
-message in the monitor:
-
-.. code-block:: console
-
-   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp_wrover_kit
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
-ESP32 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
 a USB serial port on the same device as the console.  These boards
@@ -633,29 +473,10 @@ headers are on the right side of the board as viewed from the power
 switch, next to similar headers for SPI and UART.  See
 `ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
-Here is an example for building the :ref:`hello_world` application.
+References
+**********
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+.. target-notes::
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: debug
-
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
+.. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
 .. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
-
-Related Documents
-*****************
-
-.. _ESP-WROVER-KIT V4.1 schematics: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf (PDF)
-.. _ESP-WROVER-KIT V4.1 layout: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf (DXF)
-.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
-.. _ESP32-WROVER-E Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
-.. _ESP32 Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html

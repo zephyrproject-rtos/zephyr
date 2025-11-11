@@ -4,9 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for GPIO utility functions
+ * @ingroup gpio_interface
+ */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_
+
+/**
+ * @addtogroup gpio_interface
+ * @{
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,7 +26,18 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracing.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Makes a bitmask of allowed GPIOs from a number of GPIOs.
+ *
+ * @param ngpios number of GPIOs
+ * @return the bitmask of allowed gpios
+ */
 #define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
 	((gpio_port_pins_t)(((uint64_t)1 << (ngpios)) - 1U))
 
@@ -88,12 +109,24 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 {
 	struct gpio_callback *cb, *tmp;
 
+	sys_port_trace_gpio_fire_callbacks_enter(list, port, pins);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
 		if (cb->pin_mask & pins) {
 			__ASSERT(cb->handler, "No callback handler!");
+
 			cb->handler(port, cb, cb->pin_mask & pins);
+			sys_port_trace_gpio_fire_callback(port, cb);
 		}
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_ */

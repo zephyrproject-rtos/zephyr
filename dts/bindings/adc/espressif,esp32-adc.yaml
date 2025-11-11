@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Espressif ESP32 ADC
+  ESP32 ADC.
+
   Possible available resolutions depends on the used chip.
     - ESP32     < 9,10,11,12 >
     - ESP32-S2  < 12 >

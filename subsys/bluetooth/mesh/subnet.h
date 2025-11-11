@@ -9,7 +9,9 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include <zephyr/net/buf.h>
+
+#include <zephyr/bluetooth/mesh/keys.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -72,7 +74,7 @@ struct bt_mesh_subnet {
 		struct bt_mesh_key net;         /* NetKey */
 		struct bt_mesh_net_cred msg;
 		uint8_t net_id[8];              /* Network ID */
-	#if defined(CONFIG_BT_MESH_GATT_PROXY)
+	#if defined(CONFIG_BT_MESH_GATT)
 		struct bt_mesh_key identity;    /* IdentityKey */
 	#endif
 		struct bt_mesh_key beacon;      /* BeaconKey */

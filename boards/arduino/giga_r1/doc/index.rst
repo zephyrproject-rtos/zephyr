@@ -1,7 +1,4 @@
-.. _arduino_giga_r1_board:
-
-Arduino GIGA R1 WiFi
-####################
+.. zephyr:board:: arduino_giga_r1
 
 Overview
 ********
@@ -22,10 +19,6 @@ The board features:
 - Audio jack
 - ATECC608A secure element
 
-.. image:: img/arduino_giga_r1.jpg
-     :align: center
-     :alt: Arduino GIGA R1 WiFi
-
 More information about the board, including the datasheet, pinout and
 schematics, can be found at the `Arduino GIGA website`_.
 
@@ -38,39 +31,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr ``arduino_giga_r1_m7`` board configuration supports the
-following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| QSPI      | on-chip    | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr port.
+.. zephyr:board-supported-hw::
 
 Fetch Binary Blobs
 ******************
@@ -102,6 +63,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``arduino_giga_r1`` board should be built per core target,
 using either ``arduino_giga_r1/stm32h747xx/m7`` or ``arduino_giga_r1/stm32h747xx/m4`` as the target.
 
@@ -130,7 +93,7 @@ First, connect the Arduino GIGA R1 board to your host computer using the USB
 port to prepare it for flashing. Double click the ``RST`` button to put the
 board into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

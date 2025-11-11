@@ -43,5 +43,23 @@
 				write-block-size = <8>;
 			};
 		};
+
+		uart0: uart@4006d000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006d000 0x1000>;
+			interrupts = <21 0>;
+			interrupt-names = "status";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
+
+		uart1: uart@4006e000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006e000 0x1000>;
+			interrupts = <30 0>;
+			interrupt-names = "status";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
 	};
 };

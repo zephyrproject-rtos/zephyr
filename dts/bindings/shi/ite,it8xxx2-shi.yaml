@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: ITE, IT8XXX2 Serial Host Interface (SHI) node
+description: ITE IT8XXX2 Serial Host Interface (SHI)
 
 compatible: "ite,it8xxx2-shi"
 

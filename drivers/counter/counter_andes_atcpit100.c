@@ -462,7 +462,7 @@ static int atcpit100_set_guard_period(const struct device *dev,
 	return 0;
 }
 
-static const struct counter_driver_api atcpit100_driver_api = {
+static DEVICE_API(counter, atcpit100_driver_api) = {
 	.start = atcpit100_start,
 	.stop = atcpit100_stop,
 	.get_value = atcpit100_get_value,

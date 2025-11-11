@@ -4,12 +4,12 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# Test Private Node ID advertisment
+# Test Private Node ID advertisement
 #
 # Test procedure:
 # 0. TX device disables GATT proxy and enables the Private Node
 #    Identity state for the network. Then it waits for the
-#    advertisment to complete.
+#    advertisement to complete.
 # 1. RX device enables scanner and scans for Private Node ID advertisements.
 # 2. RX device scans for a single Private Node ID advertisement and stores
 #    the random field of that message. Then it waits for the
@@ -24,11 +24,6 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    are NOT equal.
 
 overlay=overlay_gatt_conf
-RunTest mesh_priv_proxy_node_id \
-	beacon_tx_priv_node_id \
-	beacon_rx_priv_node_id
-
-overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest mesh_priv_proxy_node_id \
 	beacon_tx_priv_node_id \
 	beacon_rx_priv_node_id

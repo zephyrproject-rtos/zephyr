@@ -9,7 +9,6 @@ tests:
       - native_sim
     platform_allow:
       - native_sim
-      - qemu_cortex_m3
       - qemu_x86
     tags:
       - testing

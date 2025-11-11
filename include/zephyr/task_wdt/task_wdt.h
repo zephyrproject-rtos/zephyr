@@ -14,8 +14,8 @@
  * threads. It can be used together with a hardware watchdog as a fallback.
  */
 
-#ifndef TASK_WDT_H_
-#define TASK_WDT_H_
+#ifndef ZEPHYR_INCLUDE_TASK_WDT_H_
+#define ZEPHYR_INCLUDE_TASK_WDT_H_
 
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -102,6 +102,28 @@ int task_wdt_delete(int channel_id);
  */
 int task_wdt_feed(int channel_id);
 
+/**
+ * @brief Pause all channels before changing system power mode.
+ *
+ * Stop the internal timer and feed the hardware watchdog a last time
+ * (if enabled). It is expected that the system enters a low-power
+ * mode quite fast after this call.
+ *
+ * @note To pause the hardware watchdog (if this is supported),
+ * enable @kconfig{CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP} in your
+ * configuration.
+ */
+void task_wdt_suspend(void);
+
+/**
+ * @brief Resume all channels execution.
+ *
+ * Resume the internal timer and feed all channels. Also feed the hardware
+ * watchdog (if enabled) to let enough time to the application to resume
+ * feeding the channels by itself.
+ */
+void task_wdt_resume(void);
+
 #ifdef __cplusplus
 }
 #endif
@@ -110,4 +132,4 @@ int task_wdt_feed(int channel_id);
  * @}
  */
 
-#endif /* TASK_WDT_H_ */
+#endif /* ZEPHYR_INCLUDE_TASK_WDT_H_ */

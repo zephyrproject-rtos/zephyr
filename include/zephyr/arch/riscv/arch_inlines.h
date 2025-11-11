@@ -26,6 +26,15 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 #endif
 }
 
+#ifdef CONFIG_RISCV_CURRENT_VIA_GP
+
+register struct k_thread *__arch_current_thread __asm__("gp");
+
+#define arch_current_thread() __arch_current_thread
+#define arch_current_thread_set(thread) ({ __arch_current_thread = (thread); })
+
+#endif /* CONFIG_RISCV_CURRENT_VIA_GP */
+
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)
 {
 	return CONFIG_MP_MAX_NUM_CPUS;

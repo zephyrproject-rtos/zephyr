@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup mbox_interface
+ * @brief Main header file for MBOX (Mailbox) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MBOX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MBOX_H_
 
@@ -18,10 +24,10 @@ extern "C" {
 #endif
 
 /**
- * @brief MBOX Interface
- * @defgroup mbox_interface MBOX Interface
+ * @brief Interfaces for mailbox (MBOX) devices.
+ * @defgroup mbox_interface MBOX
  * @since 1.0
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  *
@@ -201,7 +207,7 @@ typedef int (*mbox_register_callback_t)(const struct device *dev,
  *
  * @param dev MBOX device instance
  * @param channel_id Channel ID
- * @param enables Set to 0 to disable and to nonzero to enable.
+ * @param enabled Set to 0 to disable and to nonzero to enable.
  *
  * @return See return values for mbox_set_enabled()
  * @see mbox_set_enabled()

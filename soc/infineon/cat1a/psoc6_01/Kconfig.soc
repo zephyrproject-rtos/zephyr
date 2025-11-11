@@ -31,7 +31,7 @@ config SOC_PACKAGE_PSOC6_01_104_M_CSP_BLE_USB
 config SOC_PACKAGE_PSOC6_01_68_QFN_BLE
 	bool
 
-# Infineon PSoC6_01 series MCUs
+# Infineon PSOC 6_01 series MCUs
 config SOC_CY8C6036BZI_F04
 	bool
 	select SOC_DIE_PSOC6_01

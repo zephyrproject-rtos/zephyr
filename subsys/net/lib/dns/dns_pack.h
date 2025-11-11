@@ -8,7 +8,7 @@
 #define _DNS_PACK_H_
 
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -93,12 +93,16 @@ enum dns_rr_type {
 	DNS_RR_TYPE_TXT = 16,		/* TXT   */
 	DNS_RR_TYPE_AAAA = 28,		/* IPv6  */
 	DNS_RR_TYPE_SRV = 33,		/* SRV   */
+	DNS_RR_TYPE_HTTPS = 65,		/* HTTPS */
 	DNS_RR_TYPE_ANY = 0xff,		/* ANY (all records)   */
 };
 
 enum dns_response_type {
 	DNS_RESPONSE_INVALID = -EINVAL,
-	DNS_RESPONSE_IP,
+	DNS_RESPONSE_IP = 1,
+	DNS_RESPONSE_DATA,
+	DNS_RESPONSE_TXT,
+	DNS_RESPONSE_SRV,
 	DNS_RESPONSE_CNAME_WITH_IP,
 	DNS_RESPONSE_CNAME_NO_IP
 };
@@ -320,6 +324,21 @@ static inline int dns_answer_rdlength(uint16_t dname_size,
 	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
 
+static inline int dns_unpack_srv_priority(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 0)));
+}
+
+static inline int dns_unpack_srv_weight(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 2)));
+}
+
+static inline int dns_unpack_srv_port(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 4)));
+}
+
 /**
  * @brief Packs a QNAME
  *
@@ -471,5 +490,8 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
  * @return Printable query type name.
  */
 const char *dns_qtype_to_str(enum dns_rr_type qtype);
+
+int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
+		    struct net_buf *buf, const uint8_t **eol);
 
 #endif

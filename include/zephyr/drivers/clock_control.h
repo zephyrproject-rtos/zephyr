@@ -8,15 +8,16 @@
 
 /**
  * @file
- * @brief Public Clock Control APIs
+ * @ingroup clock_control_interface
+ * @brief Main header file for clock control driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
 
 /**
- * @brief Clock Control Interface
- * @defgroup clock_control_interface Clock Control Interface
+ * @brief Interfaces for clock controllers.
+ * @defgroup clock_control_interface Clock Control
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -128,6 +129,10 @@ static inline int clock_control_on(const struct device *dev,
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
+	if (api->on == NULL) {
+		return -ENOSYS;
+	}
+
 	return api->on(dev, sys);
 }
 
@@ -146,6 +151,10 @@ static inline int clock_control_off(const struct device *dev,
 {
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->off == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->off(dev, sys);
 }

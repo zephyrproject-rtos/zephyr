@@ -35,7 +35,6 @@ static void nmi_test_isr(void)
  * @{
  */
 
-
 /**
  * @brief test the behavior of CONFIG_RUNTIME_NMI at run time
  *

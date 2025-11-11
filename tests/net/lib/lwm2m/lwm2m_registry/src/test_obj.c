@@ -106,4 +106,4 @@ static int obj_init(void)
 	return lwm2m_create_obj_inst(TEST_OBJ_ID, 0, &obj_inst);
 }
 
-SYS_INIT(obj_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(obj_init);

@@ -32,16 +32,22 @@
 /* Disable binary info */
 #define PICO_NO_BINARY_INFO 1
 
+#ifdef CONFIG_DT_HAS_RASPBERRYPI_PICO_XOSC_ENABLED
+#include <zephyr/devicetree.h>
+#define PICO_XOSC_STARTUP_DELAY_MULTIPLIER DT_PROP(DT_NODELABEL(xosc), startup_delay_multiplier)
+#endif
+
 /* Zephyr compatible way of forcing inline */
 #ifndef __always_inline
 #define __always_inline ALWAYS_INLINE
 #endif /* __always_inline */
 
-/* Two definitions required for the flash driver */
+/* Definition required for the flash driver */
 #define __STRING(x) #x
 
-#ifndef __noinline
-#define __noinline __attribute__((noinline))
+/* Enable the HAL to work with minimal modification when using a minimal libc. */
+#ifndef __CONCAT
+#define __CONCAT CONCAT
 #endif
 
 #endif

@@ -16,10 +16,8 @@
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
 
-
-#define LOG_LEVEL CONFIG_FS_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(fs);
+LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);
 
 /* list of mounted file systems */
 static sys_dlist_t fs_mnt_list = SYS_DLIST_STATIC_INIT(&fs_mnt_list);
@@ -663,6 +661,26 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	return rc;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GC)
+
+int fs_gc(struct fs_mount_t *mp)
+{
+	int rc;
+
+	CHECKIF(mp->fs->gc == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->gc(mp);
+	if (rc < 0) {
+		LOG_ERR("failed to run garbage collection (%d)", rc);
+	}
+
+	return rc;
+}
+
+#endif /* CONFIG_FILE_SYSTEM_GC */
+
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;
@@ -686,7 +704,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	len = strlen(mp->mnt_point);
 
-	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
+	if ((len == 0) || (mp->mnt_point[0] != '/')) {
 		LOG_ERR("invalid mount point!!");
 		return -EINVAL;
 	}
@@ -814,9 +832,6 @@ int fs_unmount(struct fs_mount_t *mp)
 		LOG_ERR("fs unmount error (%d)", rc);
 		goto unmount_err;
 	}
-
-	/* clear file system interface */
-	mp->fs = NULL;
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);

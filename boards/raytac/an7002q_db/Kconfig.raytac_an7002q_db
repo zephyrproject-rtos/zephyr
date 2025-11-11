@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# Copyright (c) 2025 Raytac Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAYTAC_AN7002Q_DB
+	select SOC_NRF5340_CPUNET_QKAA if BOARD_RAYTAC_AN7002Q_DB_NRF5340_CPUNET
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_RAYTAC_AN7002Q_DB_NRF5340_CPUAPP

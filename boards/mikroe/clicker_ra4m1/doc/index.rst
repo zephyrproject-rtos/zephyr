@@ -1,7 +1,4 @@
-.. _mikroe_clicker_ra4m1:
-
-Mikroe Clicker RA4M1
-####################
+.. zephyr:board:: mikroe_clicker_ra4m1
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The Mikroe Clicker RA4M1 development board contains a Renesas Cortex-M4 based
 R7FA4M1AB3CFM Microcontroller operating at up to 48 MHz with 256 KB of Flash
 memory and 32 KB of SRAM.
-
-.. figure:: img/mikroe_clicker_ra4m1.jpg
-   :align: center
-   :alt: Clicker RA4M1
-
-   Clicker RA4M1 (Credit: MikroElektronika d.o.o.)
 
 Hardware
 ********
@@ -27,29 +18,12 @@ development board see the `Clicker RA4M1 website`_.
 Supported Features
 ==================
 
-The Zephyr Mikroe Clicker RA4M1 configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/mikroe/clicker_ra4m1/mikroe_clicker_ra4m1_defconfig`.
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building & Flashing
 ===================

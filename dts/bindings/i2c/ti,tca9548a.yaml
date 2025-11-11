@@ -1,6 +1,6 @@
 # Binding for TI TCA9548A, compatible with NXP PCA9548A
 
-description: Texas Instruments TCA9548A binding
+description: Texas Instruments TCA9548A
 
 compatible: "ti,tca9548a"
 

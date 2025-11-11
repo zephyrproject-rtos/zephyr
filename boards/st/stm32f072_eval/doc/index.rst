@@ -1,7 +1,4 @@
-.. _stm32f072_eval_board:
-
-ST STM32F072 Evaluation
-#######################
+.. zephyr:board:: stm32f072_eval
 
 Overview
 ********
@@ -34,11 +31,6 @@ Here are some highlights of the STM32F072-EVAL board:
 - Two HDMI connectors with DDC and CEC
 - Smart Card slot
 - Motor control connector
-
-
-.. image:: img/stm32f072_eval.jpg
-     :align: center
-     :alt: STM32F072-EVAL
 
 Hardware
 ********
@@ -76,32 +68,7 @@ More information about STM32F072VB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f072_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f072_eval/stm32f072_eval_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -142,6 +109,10 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+STM32F072-EVAL Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32f072_eval`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -149,8 +120,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32F072-EVAL Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32F072-EVAL
 -------------------------------------------
@@ -182,3 +161,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F072 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00031936.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

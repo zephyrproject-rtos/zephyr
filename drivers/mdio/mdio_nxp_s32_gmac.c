@@ -141,7 +141,7 @@ static int mdio_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_nxp_s32_driver_api = {
+static DEVICE_API(mdio, mdio_nxp_s32_driver_api) = {
 	.read = mdio_nxp_s32_read_c22,
 	.write = mdio_nxp_s32_write_c22,
 	.read_c45 = mdio_nxp_s32_read_c45,

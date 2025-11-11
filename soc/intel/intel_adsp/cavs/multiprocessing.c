@@ -82,10 +82,11 @@ void soc_start_core(int cpu_num)
 	 * initialization, the next pm state is set to ACTIVE. This way we can determine
 	 * whether the core is being turned on again or for the first time.
 	 */
-	if (pm_state_next_get(cpu_num)->state == PM_STATE_ACTIVE)
+	if (pm_state_next_get(cpu_num)->state == PM_STATE_ACTIVE) {
 		lpsram[1] = z_soc_mp_asm_entry;
-	else
+	} else {
 		lpsram[1] = dsp_restore_vector;
+	}
 #else
 	lpsram[1] = z_soc_mp_asm_entry;
 #endif
@@ -199,6 +200,7 @@ __imr void soc_mp_init(void)
 
 int soc_adsp_halt_cpu(int id)
 {
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	unsigned int irq_mask;
 
 	if (id == 0 || id == arch_curr_cpu()->id) {
@@ -235,4 +237,7 @@ int soc_adsp_halt_cpu(int id)
 	while ((CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
 	return 0;
+#else
+	return -EINVAL;
+#endif
 }

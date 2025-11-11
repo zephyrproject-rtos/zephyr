@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <mem.h>
+#include <freq.h>
 #include "armv6-m.dtsi"
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -31,7 +32,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -48,7 +49,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(128)>;
-				erase-block-size = <1024>;
+				erase-block-size = <DT_SIZE_K(1)>;
 				write-block-size = <4>;
 			};
 		};
@@ -110,7 +111,7 @@
 			status = "disabled";
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <15 0>;
@@ -119,31 +120,31 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
 		portd: pinmux@4004c000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
 		porte: pinmux@4004d000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
 		};

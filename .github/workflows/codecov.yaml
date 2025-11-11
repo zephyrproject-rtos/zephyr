@@ -1,8 +1,14 @@
 name: Code Coverage with codecov
 
 on:
-  schedule:
-    - cron: '25 06,18 * * *'
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -14,7 +20,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.6.20251003
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -34,7 +40,7 @@ jobs:
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
       CCACHE_REMOTE_ONLY: "true"
       # `--specs` is ignored because ccache is unable to resovle the toolchain specs file path.
-      CCACHE_IGNOREOPTIONS: '--specs=*'
+      CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -61,9 +67,20 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: west setup
         run: |
@@ -85,29 +102,36 @@ jobs:
           ccache -p
           ccache -z -s -vv
 
-      - name: Update BabbleSim to manifest revision
-        run: |
-          export BSIM_VERSION=$( west list bsim -f {revision} )
-          echo "Manifest points to bsim sha $BSIM_VERSION"
-          cd /opt/bsim_west/bsim
-          git fetch -n origin ${BSIM_VERSION}
-          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
-          west update
-          make everything -s -j 8
-
       - name: Run Tests with Twister (Push)
         continue-on-error: true
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          pip3 install gcovr==6.0
-          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ./scripts/twister --save-tests ${{matrix.normalized}}-testplan.json
           ls -la
           ./scripts/twister \
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
             -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano \
             --timeout-multiplier 2
+
+      - name: Build Doxygen Coverage
+        if: matrix.platform == 'unit_testing'
+        run: |
+          pip install -r doc/requirements.txt --require-hashes
+          sudo apt-get update
+          sudo apt-get install -y graphviz # dot is needed but currently missing from the Docker image
+          cmake -B doc/_build -S doc
+          cmake --build doc/_build --target doxygen-coverage
+
+      - name: Upload Doxygen Coverage Results
+        if: matrix.platform == 'unit_testing'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: doxygen-coverage-results
+          path: |
+            doc/_build/new.info
+            doc/_build/coverage-report
 
       - name: Print ccache stats
         if: always()
@@ -121,7 +145,7 @@ jobs:
 
       - name: Upload Coverage Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Coverage Data (Subset ${{ matrix.normalized }})
           path: |
@@ -131,18 +155,29 @@ jobs:
   codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # the codecov job might be skipped, we don't need to run this job then
     if: success() || failure()
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           path: coverage/reports
 
@@ -182,7 +217,6 @@ jobs:
       - name: Merge coverage files
         run: |
           pushd ./coverage/reports
-          pip3 install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
           popd
@@ -198,7 +232,6 @@ jobs:
       - name: Generate Coverage Report
         if: always()
         run: |
-          pip install xlsxwriter ijson
           python3 ./scripts/ci/coverage/coverage_analysis.py \
             -t native_sim-testplan.json \
             -m MAINTAINERS.yml \
@@ -209,7 +242,7 @@ jobs:
 
       - name: Upload Merged Coverage Results and Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Coverage Data and report
           path: |
@@ -218,12 +251,25 @@ jobs:
             coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.json
             coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.xlsx
 
-      - name: Upload coverage to Codecov
+      - name: Upload test coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false
           verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/reports/merged.xml
+          flags: unittests-coverage
+
+      - name: Upload Doxygen coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        with:
+          env_vars: OS,PYTHON
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/reports/doxygen-coverage-results/new.info
+          disable_search: true
+          flags: doxygen-coverage

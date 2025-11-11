@@ -5,7 +5,7 @@ Releases
 
 Zephyr project is provided as source code and build scripts for different target
 architectures and configurations, and not as a binary image. Updated versions of
-the Zephyr project are released approximately every four months.
+the Zephyr project are released approximately every six months.
 
 All Zephyr project source code is maintained in a `GitHub repository`_. In order
 to use a released version of the Zephyr project, it is recommended that you use
@@ -20,24 +20,70 @@ of interest).
 Release Life Cycle and Maintenance
 **********************************
 
-Periodic Releases
-=================
+Major and Maintenance Release Cadence
+=====================================
 
-The Zephyr project provides periodic releases every 4 months leading to the
-long term support releases approximately every 2 years. Periodic and non-LTS
-releases are maintained with updates, bug fixes and security related updates
-for at least two cycles, meaning that the project supports the most recent two
-releases in addition to the most recent LTS.
+The Zephyr Project delivers major releases using a six month cadence roughly timed
+each April and October of the year.
+
+This timescale facilitates regular releases that have strong QA cycles while
+not overwhelming users with too many new releases.
+
+The cadence is predictable and avoids many major holidays in various geographies.
+
+The Zephyr project delivers maintenance releases on an unscheduled basis and
+are usually driven by the accumulation of enough significant fixes or enhancements
+to the associated major release.
+
+The point release indicates a point in the major release branch where a full QA
+cycle and release process validates the content of the new branch.
 
 Long Term Support and Maintenance
 =================================
 
-A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
-published every 2 years and is branched and maintained independently from the
-main tree for at least 2.5 years after it was released.
+While stable releases are supported for the duration of 2 release cycles (roughly 1 year),
+some specific ones will be supported for a longer period by the Zephyr Project,
+and are called Long Term Support (LTS) releases.
 
-Support and maintenance for an LTS release stops at least half a year
-after the following LTS release is published.
+A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
+published every 2.5 to 3 years and is branched and maintained independently from the
+main tree for approximately 5 years after it was released.
+
+This offers more stability to project users and leaves more time to
+upgrade to the following LTS release.
+
+
+Transitioning to the new Release Cadence
+========================================
+
+The transition to the new release cadence will begin in 2026. Zephyr 4.4 is scheduled
+for release in April 2026, and subsequent releases will occur every six months.
+
+The projected timeline for upcoming releases is as follows:
+
++---------+-------------------+---------------------+
+| Release | Planned Date      | Notes               |
++=========+===================+=====================+
+| 4.4     | April 2026        |                     |
++---------+-------------------+---------------------+
+| 4.5     | October 2026      |                     |
++---------+-------------------+---------------------+
+| 4.6     | April 2027        | LTS4                |
++---------+-------------------+---------------------+
+| 5.0     | October 2027      | Start of 5.x cycle  |
++---------+-------------------+---------------------+
+| 5.1     | April 2028        |                     |
++---------+-------------------+---------------------+
+| 5.2     | October 2028      |                     |
++---------+-------------------+---------------------+
+| 5.3     | April 2029        |                     |
++---------+-------------------+---------------------+
+| 5.4     | October 2029      | LTS5                |
++---------+-------------------+---------------------+
+
+Starting with the 5.x release cycle, all releases will follow the new six-month
+cadence from the beginning.
+
 
 Security Fixes
 ==============
@@ -51,21 +97,31 @@ following releases:
 
 For more information, see  :ref:`Security Vulnerability Reporting <reporting>`.
 
+.. _supported_releases:
 
 Supported Releases
 ******************
 
-+-----------------+----------------+---------------+
-| Release         | Release date   | EOL           |
-+=================+================+===============+
-| `Zephyr 2.7.6`_ | 2024-03-01     | 2025-01-26    |
-+-----------------+----------------+---------------+
-| `Zephyr 3.6.0`_ | 2024-02-23     | 2024-11-29    |
-+-----------------+----------------+---------------+
-| `Zephyr 3.5.0`_ | 2023-10-20     | 2024-07-26    |
-+-----------------+----------------+---------------+
++------------------------+----------------+---------------+
+| Release                | Release date   | EOL           |
++========================+================+===============+
+| `Zephyr 4.2.0`_        | 2025-07-18     | 2026-03-20    |
++------------------------+----------------+---------------+
+| `Zephyr 4.1.0`_        | 2025-03-07     | 2025-11-14    |
++------------------------+----------------+---------------+
+| `Zephyr 3.7.0 (LTS3)`_ | 2024-07-26     | 2029-07-27    |
++------------------------+----------------+---------------+
 
-As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EOL).
+Previous LTS
+************
+
++-------------------------+---------------+
+| Release                 | EOL           |
++=========================+===============+
+| `Zephyr 2.7.6 (LTS2)`_  | 2025-01-26    |
++-------------------------+---------------+
+| `Zephyr 1.14.1 (LTS1)`_ | 2022-01-01    |
++-------------------------+---------------+
 
 Release Notes
 *************
@@ -73,17 +129,21 @@ Release Notes
 Release notes contain a list of changes that have been made to the different
 areas of the project during the development cycle of the release.
 Changes that require the user to modify their own application to support the new
-release may be mentioned in the release notes, but the details regarding `what`
+release may be mentioned in the release notes, but the details regarding *what*
 needs to be changed are to be detailed in the release's migration guide.
+
+Updates to the release notes post release cycle is permitted but limited to
+style, typographical fixes and to upmerge the notes from maintenance release
+branches with the sole purpose of keeping the latest documentation consistent
+with the changes in the project.
 
 .. toctree::
    :maxdepth: 1
    :glob:
    :reversed:
 
-   eol_releases
-   release-notes-2.7
-   release-notes-3.[5-7]
+   release-notes-3.7
+   release-notes-4.[1-3]
 
 Migration Guides
 ****************
@@ -114,10 +174,25 @@ to be able to understand the context of the change.
    :glob:
    :reversed:
 
-   migration-guide-*
+   migration-guide-3.7
+   migration-guide-4.[1-3]
+
+End-of-life Releases
+********************
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   eol_releases
+
+Release notes and migration guides for end-of-life releases of Zephyr RTOS can be accessed
+:ref:`here <eol_releases>`.
 
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
-.. _`Zephyr 2.7.6`: https://docs.zephyrproject.org/2.7.6/
-.. _`Zephyr 3.5.0`: https://docs.zephyrproject.org/3.5.0/
-.. _`Zephyr 3.6.0`: https://docs.zephyrproject.org/3.6.0/
+.. _`Zephyr 1.14.1 (LTS1)`: https://docs.zephyrproject.org/1.14.1/
+.. _`Zephyr 2.7.6 (LTS2)`: https://docs.zephyrproject.org/2.7.6/
+.. _`Zephyr 3.7.0 (LTS3)`: https://docs.zephyrproject.org/3.7.0/
+.. _`Zephyr 4.1.0`: https://docs.zephyrproject.org/4.1.0/
+.. _`Zephyr 4.2.0`: https://docs.zephyrproject.org/4.2.0/

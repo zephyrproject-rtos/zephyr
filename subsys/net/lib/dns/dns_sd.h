@@ -18,11 +18,11 @@
 #include "dns_pack.h"
 
 /* TODO: Move these into Kconfig */
-#define DNS_SD_PTR_TTL 4500
-#define DNS_SD_TXT_TTL 4500
-#define DNS_SD_SRV_TTL 120
-#define DNS_SD_A_TTL 120
-#define DNS_SD_AAAA_TTL 120
+#define DNS_SD_PTR_TTL 4500u
+#define DNS_SD_TXT_TTL 4500u
+#define DNS_SD_SRV_TTL 120u
+#define DNS_SD_A_TTL 120u
+#define DNS_SD_AAAA_TTL 120u
 
 #define DNS_SD_PTR_MASK (NS_CMPRSFLGS << 8)
 
@@ -157,6 +157,13 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
 int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
 	const struct in_addr *addr4, const struct in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
+
+/**
+ * @brief Check if DNS-SD record is a valid one.
+ *
+ * @param rec the record to check
+ */
+bool dns_sd_rec_is_valid(const struct dns_sd_rec *rec);
 
 #ifdef __cplusplus
 };

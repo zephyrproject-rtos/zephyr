@@ -935,7 +935,7 @@ static int uart_intel_lw_drv_cmd(const struct device *dev, uint32_t cmd,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_intel_lw_driver_api = {
+static DEVICE_API(uart, uart_intel_lw_driver_api) = {
 	.poll_in = uart_intel_lw_poll_in,
 	.poll_out = uart_intel_lw_poll_out,
 	.err_check = uart_intel_lw_err_check,
@@ -994,12 +994,9 @@ static struct uart_intel_lw_device_data uart_intel_lw_dev_data_##n = {      \
 	.uart_cfg =                                                         \
 	{                                                                   \
 			.baudrate = DT_INST_PROP(n, current_speed),         \
-			.parity = DT_INST_ENUM_IDX_OR(n, parity,            \
-						 UART_CFG_PARITY_NONE),     \
-			.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits,      \
-						 UART_CFG_STOP_BITS_1),     \
-			.data_bits = DT_INST_ENUM_IDX_OR(n, data_bits,      \
-						 UART_CFG_DATA_BITS_8),     \
+			.parity = DT_INST_ENUM_IDX(n, parity),              \
+			.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),        \
+			.data_bits = DT_INST_ENUM_IDX(n, data_bits),        \
 			.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?     \
 				UART_CFG_FLOW_CTRL_RTS_CTS :                \
 				UART_CFG_FLOW_CTRL_NONE,                    \

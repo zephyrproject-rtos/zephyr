@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <fsl_ecspi.h>
 
 #include "spi_context.h"
@@ -92,7 +93,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.txData = NULL;
 	}
 
-	transfer.dataSize = data->dfs;
+	/* Burst length is set in the configure step */
+	transfer.dataSize = 1;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
@@ -162,7 +164,7 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave > kECSPI_Channel3) {
+	if (!spi_cs_is_gpio(spi_cfg) && spi_cfg->slave > kECSPI_Channel3) {
 		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, kECSPI_Channel3);
 		return -EINVAL;
 	}
@@ -180,7 +182,8 @@ static int spi_mcux_configure(const struct device *dev,
 
 	ECSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.channel = (ecspi_channel_source_t)spi_cfg->slave;
+	master_config.channel =
+		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0 : (ecspi_channel_source_t)spi_cfg->slave;
 	master_config.channelConfig.polarity =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_PolarityActiveLow
@@ -301,10 +304,13 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_mcux_driver_api = {
+static DEVICE_API(spi, spi_mcux_driver_api) = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_mcux_release,
 };
@@ -327,7 +333,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)				\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,						\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,					\
 			      &spi_mcux_data_##n, &spi_mcux_config_##n,				\
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
 			      &spi_mcux_driver_api);						\

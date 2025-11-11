@@ -10,7 +10,12 @@
 
 / {
 	model = "Mercury XU";
-	compatible = "xlnx,zynqmp";
+	compatible = "enclustra,mercury_xu";
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0 DT_SIZE_M(64)>;
+	};
 
 	chosen {
 		zephyr,console = &uart0;

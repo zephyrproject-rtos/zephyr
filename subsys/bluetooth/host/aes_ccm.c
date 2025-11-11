@@ -5,16 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdint.h>
 #include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "common/bt_str.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_aes_ccm);
 
 static inline void xor16(uint8_t *dst, const uint8_t *a, const uint8_t *b)

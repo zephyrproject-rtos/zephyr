@@ -27,6 +27,8 @@ extern "C" {
 /**
  * @brief Network Packet Filter API
  * @defgroup net_pkt_filter Network Packet Filter API
+ * @since 3.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -37,19 +39,57 @@ struct npf_test;
 
 typedef bool (npf_test_fn_t)(struct npf_test *test, struct net_pkt *pkt);
 
+enum npf_test_type {
+	NPF_TEST_TYPE_UNKNOWN = 0,
+	NPF_TEST_TYPE_IFACE_MATCH,
+	NPF_TEST_TYPE_IFACE_UNMATCH,
+	NPF_TEST_TYPE_ORIG_IFACE_MATCH,
+	NPF_TEST_TYPE_ORIG_IFACE_UNMATCH,
+	NPF_TEST_TYPE_SIZE_MIN,
+	NPF_TEST_TYPE_SIZE_MAX,
+	NPF_TEST_TYPE_SIZE_BOUNDS,
+	NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,
+	NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,
+	NPF_TEST_TYPE_ETH_SRC_ADDR_MATCH,
+	NPF_TEST_TYPE_ETH_SRC_ADDR_UNMATCH,
+	NPF_TEST_TYPE_ETH_DST_ADDR_MATCH,
+	NPF_TEST_TYPE_ETH_DST_ADDR_UNMATCH,
+	NPF_TEST_TYPE_ETH_SRC_ADDR_MASK_MATCH,
+	NPF_TEST_TYPE_ETH_DST_ADDR_MASK_MATCH,
+	NPF_TEST_TYPE_ETH_TYPE_MATCH,
+	NPF_TEST_TYPE_ETH_TYPE_UNMATCH,
+	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
+	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
+};
+
+#if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
+	defined(CONFIG_NET_SHELL_PKT_FILTER_SUPPORTED)
+#define NPF_TEST_ENABLE_NAME 1
+#elif defined(NPF_TEST_ENABLE_NAME)
+#undef NPF_TEST_ENABLE_NAME
+#endif
+
 /** @endcond */
 
 /** @brief common filter test structure to be embedded into larger structures */
 struct npf_test {
 	npf_test_fn_t *fn;	/**< packet condition test function */
+
+/** @cond INTERNAL_HIDDEN */
+	IF_ENABLED(NPF_TEST_ENABLE_NAME,
+		   (const char *name;))        /**< Name of the test */
+	IF_ENABLED(NPF_TEST_ENABLE_NAME,
+		   (enum npf_test_type type;)) /**< Type of the test */
+/** @endcond */
 };
 
 /** @brief filter rule structure */
 struct npf_rule {
-	sys_snode_t node;               /**< Slist rule list node */
-	enum net_verdict result;	/**< result if all tests pass */
-	uint32_t nb_tests;		/**< number of tests for this rule */
-	struct npf_test *tests[];	/**< pointers to @ref npf_test instances */
+	sys_snode_t node;           /**< Slist rule list node */
+	enum net_verdict result;    /**< result if all tests pass */
+	enum net_priority priority; /**< priority in case of NET_CONTINUE */
+	uint32_t nb_tests;          /**< number of tests for this rule */
+	struct npf_test *tests[];   /**< pointers to @ref npf_test instances */
 };
 
 /** @brief Default rule list termination for accepting a packet */
@@ -203,12 +243,22 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
 	}
 
+#define NPF_PRIORITY(_name, _priority, ...)                                                        \
+	struct npf_rule _name = {                                                                  \
+		.result = NET_CONTINUE,                                                            \
+		.priority = (_priority),                                                           \
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,                                   \
+		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},                            \
+	}
+
 #define Z_NPF_TEST_ADDR(arg) &arg.test
 
 /** @} */
 
 /**
  * @defgroup npf_basic_cond Basic Filter Conditions
+ * @since 3.0
+ * @version 0.8.0
  * @ingroup net_pkt_filter
  * @{
  */
@@ -233,10 +283,13 @@ extern npf_test_fn_t npf_orig_iface_unmatch;
  * @param _name Name of the condition
  * @param _iface Interface to match
  */
-#define NPF_IFACE_MATCH(_name, _iface) \
-	struct npf_test_iface _name = { \
-		.iface = (_iface), \
-		.test.fn = npf_iface_match, \
+#define NPF_IFACE_MATCH(_name, _iface)					\
+	struct npf_test_iface _name = {					\
+		.iface = (_iface),					\
+		.test.fn = npf_iface_match,				\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "iface",			\
+			    .test.type = NPF_TEST_TYPE_IFACE_MATCH,))	\
 	}
 
 /**
@@ -245,10 +298,13 @@ extern npf_test_fn_t npf_orig_iface_unmatch;
  * @param _name Name of the condition
  * @param _iface Interface to exclude
  */
-#define NPF_IFACE_UNMATCH(_name, _iface) \
-	struct npf_test_iface _name = { \
-		.iface = (_iface), \
-		.test.fn = npf_iface_unmatch, \
+#define NPF_IFACE_UNMATCH(_name, _iface)				\
+	struct npf_test_iface _name = {					\
+		.iface = (_iface),					\
+		.test.fn = npf_iface_unmatch,				\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!iface",			\
+			    .test.type = NPF_TEST_TYPE_IFACE_UNMATCH,))	\
 	}
 
 /**
@@ -257,10 +313,13 @@ extern npf_test_fn_t npf_orig_iface_unmatch;
  * @param _name Name of the condition
  * @param _iface Interface to match
  */
-#define NPF_ORIG_IFACE_MATCH(_name, _iface) \
-	struct npf_test_iface _name = { \
-		.iface = (_iface), \
-		.test.fn = npf_orig_iface_match, \
+#define NPF_ORIG_IFACE_MATCH(_name, _iface)				\
+	struct npf_test_iface _name = {					\
+		.iface = (_iface),					\
+		.test.fn = npf_orig_iface_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "orig iface",			\
+			    .test.type = NPF_TEST_TYPE_ORIG_IFACE_MATCH,)) \
 	}
 
 /**
@@ -269,10 +328,13 @@ extern npf_test_fn_t npf_orig_iface_unmatch;
  * @param _name Name of the condition
  * @param _iface Interface to exclude
  */
-#define NPF_ORIG_IFACE_UNMATCH(_name, _iface) \
-	struct npf_test_iface _name = { \
-		.iface = (_iface), \
-		.test.fn = npf_orig_iface_unmatch, \
+#define NPF_ORIG_IFACE_UNMATCH(_name, _iface)				\
+	struct npf_test_iface _name = {					\
+		.iface = (_iface),					\
+		.test.fn = npf_orig_iface_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!orig iface",			\
+			    .test.type = NPF_TEST_TYPE_ORIG_IFACE_UNMATCH,)) \
 	}
 
 /** @cond INTERNAL_HIDDEN */
@@ -293,11 +355,14 @@ extern npf_test_fn_t npf_size_inbounds;
  * @param _name Name of the condition
  * @param _size Lower bound of the packet's data size
  */
-#define NPF_SIZE_MIN(_name, _size) \
-	struct npf_test_size_bounds _name = { \
-		.min = (_size), \
-		.max = SIZE_MAX, \
-		.test.fn = npf_size_inbounds, \
+#define NPF_SIZE_MIN(_name, _size)				   \
+	struct npf_test_size_bounds _name = {			   \
+		.min = (_size),					   \
+		.max = SIZE_MAX,				   \
+		.test.fn = npf_size_inbounds,			   \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,		   \
+			   (.test.name = "size min",		   \
+			    .test.type = NPF_TEST_TYPE_SIZE_MIN,)) \
 	}
 
 /**
@@ -306,11 +371,14 @@ extern npf_test_fn_t npf_size_inbounds;
  * @param _name Name of the condition
  * @param _size Higher bound of the packet's data size
  */
-#define NPF_SIZE_MAX(_name, _size) \
-	struct npf_test_size_bounds _name = { \
-		.min = 0, \
-		.max = (_size), \
-		.test.fn = npf_size_inbounds, \
+#define NPF_SIZE_MAX(_name, _size)				   \
+	struct npf_test_size_bounds _name = {			   \
+		.min = 0,					   \
+		.max = (_size),					   \
+		.test.fn = npf_size_inbounds,			   \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,		   \
+			   (.test.name = "size max",		   \
+			    .test.type = NPF_TEST_TYPE_SIZE_MAX,)) \
 	}
 
 /**
@@ -320,11 +388,14 @@ extern npf_test_fn_t npf_size_inbounds;
  * @param _min_size Lower bound of the packet's data size
  * @param _max_size Higher bound of the packet's data size
  */
-#define NPF_SIZE_BOUNDS(_name, _min_size, _max_size) \
-	struct npf_test_size_bounds _name = { \
-		.min = (_min_size), \
-		.max = (_max_size), \
-		.test.fn = npf_size_inbounds, \
+#define NPF_SIZE_BOUNDS(_name, _min_size, _max_size)		      \
+	struct npf_test_size_bounds _name = {			      \
+		.min = (_min_size),				      \
+		.max = (_max_size),				      \
+		.test.fn = npf_size_inbounds,			      \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,		      \
+			   (.test.name = "size bounds",		      \
+			    .test.type = NPF_TEST_TYPE_SIZE_BOUNDS,)) \
 	}
 
 /** @cond INTERNAL_HIDDEN */
@@ -354,11 +425,14 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * @param _af Addresses family type (AF_INET / AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = { \
-		.addr_family = _af, \
-		.ipaddr = (_ip_addr_array), \
-		.ipaddr_num = _ip_addr_num, \
-		.test.fn = npf_ip_src_addr_match, \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "ip src allow",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,)) \
 	}
 
 /**
@@ -374,11 +448,14 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * @param _af Addresses family type (AF_INET / AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = { \
-		.addr_family = _af, \
-		.ipaddr = (_ip_addr_array), \
-		.ipaddr_num = _ip_addr_num, \
-		.test.fn = npf_ip_src_addr_unmatch, \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "ip src block",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,)) \
 	}
 
 /** @} */
@@ -386,6 +463,8 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
 /**
  * @defgroup npf_eth_cond Ethernet Filter Conditions
  * @ingroup net_pkt_filter
+ * @since 3.0
+ * @version 0.8.0
  * @{
  */
 
@@ -414,12 +493,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _name Name of the condition
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  */
-#define NPF_ETH_SRC_ADDR_MATCH(_name, _addr_array) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.test.fn = npf_eth_src_addr_match, \
-		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, \
+#define NPF_ETH_SRC_ADDR_MATCH(_name, _addr_array)			\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.test.fn = npf_eth_src_addr_match,			\
+		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },	\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth src",			\
+			    .test.type = NPF_TEST_TYPE_ETH_SRC_ADDR_MATCH,)) \
 	}
 
 /**
@@ -431,12 +513,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _name Name of the condition
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  */
-#define NPF_ETH_SRC_ADDR_UNMATCH(_name, _addr_array) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.test.fn = npf_eth_src_addr_unmatch, \
-		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, \
+#define NPF_ETH_SRC_ADDR_UNMATCH(_name, _addr_array)			\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.test.fn = npf_eth_src_addr_unmatch,			\
+		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },	\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!eth src",			\
+			    .test.type = NPF_TEST_TYPE_ETH_SRC_ADDR_UNMATCH,)) \
 	}
 
 /**
@@ -448,12 +533,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _name Name of the condition
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  */
-#define NPF_ETH_DST_ADDR_MATCH(_name, _addr_array) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.test.fn = npf_eth_dst_addr_match, \
-		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, \
+#define NPF_ETH_DST_ADDR_MATCH(_name, _addr_array)			\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.test.fn = npf_eth_dst_addr_match,			\
+		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },	\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth dst",			\
+			    .test.type = NPF_TEST_TYPE_ETH_DST_ADDR_MATCH,)) \
 	}
 
 /**
@@ -465,12 +553,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _name Name of the condition
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  */
-#define NPF_ETH_DST_ADDR_UNMATCH(_name, _addr_array) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.test.fn = npf_eth_dst_addr_unmatch, \
-		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, \
+#define NPF_ETH_DST_ADDR_UNMATCH(_name, _addr_array)			\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.test.fn = npf_eth_dst_addr_unmatch,			\
+		.mask.addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },	\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!eth dst",			\
+			    .test.type = NPF_TEST_TYPE_ETH_DST_ADDR_UNMATCH,)) \
 	}
 
 /**
@@ -483,12 +574,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  * @param ... up to 6 mask bytes
  */
-#define NPF_ETH_SRC_ADDR_MASK_MATCH(_name, _addr_array, ...) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.mask.addr = { __VA_ARGS__ }, \
-		.test.fn = npf_eth_src_addr_match, \
+#define NPF_ETH_SRC_ADDR_MASK_MATCH(_name, _addr_array, ...)		\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.mask.addr = { __VA_ARGS__ },				\
+		.test.fn = npf_eth_src_addr_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth src mask",		\
+			    .test.type = NPF_TEST_TYPE_ETH_SRC_ADDR_MASK_MATCH,)) \
 	}
 
 /**
@@ -501,12 +595,15 @@ extern npf_test_fn_t npf_eth_dst_addr_unmatch;
  * @param _addr_array Array of <tt>struct net_eth_addr</tt> items to test against
  * @param ... up to 6 mask bytes
  */
-#define NPF_ETH_DST_ADDR_MASK_MATCH(_name, _addr_array, ...) \
-	struct npf_test_eth_addr _name = { \
-		.addresses = (_addr_array), \
-		.nb_addresses = ARRAY_SIZE(_addr_array), \
-		.mask.addr = { __VA_ARGS__ }, \
-		.test.fn = npf_eth_dst_addr_match, \
+#define NPF_ETH_DST_ADDR_MASK_MATCH(_name, _addr_array, ...)		\
+	struct npf_test_eth_addr _name = {				\
+		.addresses = (_addr_array),				\
+		.nb_addresses = ARRAY_SIZE(_addr_array),		\
+		.mask.addr = { __VA_ARGS__ },				\
+		.test.fn = npf_eth_dst_addr_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth dst mask",		\
+			    .test.type = NPF_TEST_TYPE_ETH_DST_ADDR_MASK_MATCH,)) \
 	}
 
 /** @cond INTERNAL_HIDDEN */
@@ -518,6 +615,8 @@ struct npf_test_eth_type {
 
 extern npf_test_fn_t npf_eth_type_match;
 extern npf_test_fn_t npf_eth_type_unmatch;
+extern npf_test_fn_t npf_eth_vlan_type_match;
+extern npf_test_fn_t npf_eth_vlan_type_unmatch;
 
 /** @endcond */
 
@@ -527,10 +626,13 @@ extern npf_test_fn_t npf_eth_type_unmatch;
  * @param _name Name of the condition
  * @param _type Ethernet type to match
  */
-#define NPF_ETH_TYPE_MATCH(_name, _type) \
-	struct npf_test_eth_type _name = { \
-		.type = htons(_type), \
-		.test.fn = npf_eth_type_match, \
+#define NPF_ETH_TYPE_MATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_type_match,				\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth type",			\
+			    .test.type = NPF_TEST_TYPE_ETH_TYPE_MATCH,)) \
 	}
 
 /**
@@ -539,11 +641,82 @@ extern npf_test_fn_t npf_eth_type_unmatch;
  * @param _name Name of the condition
  * @param _type Ethernet type to exclude
  */
-#define NPF_ETH_TYPE_UNMATCH(_name, _type) \
-	struct npf_test_eth_type _name = { \
-		.type = htons(_type), \
-		.test.fn = npf_eth_type_unmatch, \
+#define NPF_ETH_TYPE_UNMATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_type_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!eth type",			\
+			    .test.type = NPF_TEST_TYPE_ETH_TYPE_UNMATCH,)) \
 	}
+
+/**
+ * @brief Statically define an "Ethernet VLAN header type match" packet
+ *        filter condition.
+ *
+ * @param _name Name of the condition
+ * @param _type Ethernet VLAN header type to match
+ */
+#define NPF_ETH_VLAN_TYPE_MATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_vlan_type_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "eth vlan type",		\
+			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,)) \
+	}
+
+/**
+ * @brief Statically define an "Ethernet VLAN header type unmatch" packet
+ *        filter condition.
+ *
+ * @param _name Name of the condition
+ * @param _type Ethernet VLAN header type to exclude
+ */
+#define NPF_ETH_VLAN_TYPE_UNMATCH(_name, _type)				\
+	struct npf_test_eth_type _name = {				\
+		.type = htons(_type),					\
+		.test.fn = npf_eth_vlan_type_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "!eth vlan type",		\
+			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
+	}
+
+/** Type of the packet filter rule. */
+enum npf_rule_type {
+	NPF_RULE_TYPE_UNKNOWN = 0,   /**< Unknown rule type */
+	NPF_RULE_TYPE_SEND,          /**< Rule for outgoing packets */
+	NPF_RULE_TYPE_RECV,          /**< Rule for incoming packets */
+	NPF_RULE_TYPE_LOCAL_IN_RECV, /**< Rule for local incoming packets */
+	NPF_RULE_TYPE_IPV4_RECV,     /**< Rule for IPv4 incoming packets */
+	NPF_RULE_TYPE_IPV6_RECV,     /**< Rule for IPv6 incoming packets */
+};
+
+/**
+ * @typedef npf_rule_cb_t
+ * @brief Callback used while iterating over network packet filter rules.
+ *
+ * @param rule Pointer to current network packet filter rule
+ * @param type Type of the rule (rx, tx, local_in, IPv4 or IPv6)
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*npf_rule_cb_t)(struct npf_rule *rule,
+			      enum npf_rule_type type,
+			      void *user_data);
+
+/**
+ * @brief Go through all the network packet filter rules and call callback
+ * for each of them.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+const char *npf_test_get_str(struct npf_test *test, char *buf,
+			     size_t len);
+/** @endcond */
 
 /** @} */
 

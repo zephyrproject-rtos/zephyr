@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+&st7735r_160x80 {
+	madctl = <184>; /* Rotate the image 180 degrees. */
+};

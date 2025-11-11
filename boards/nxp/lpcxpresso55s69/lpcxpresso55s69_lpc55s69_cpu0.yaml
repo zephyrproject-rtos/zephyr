@@ -1,5 +1,5 @@
 #
-# Copyright 2019, 2024 NXP
+# Copyright 2019, 2024, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,13 +13,14 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
+  - arduino_gpio
   - arduino_i2c
   - arduino_serial
   - arduino_spi
   - counter
+  - flash
   - gpio
   - i2c
   - i2s
@@ -27,4 +28,5 @@ supported:
   - sdhc
   - usb_device
   - watchdog
+  - rtc
 vendor: nxp

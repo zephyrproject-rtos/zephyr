@@ -29,12 +29,16 @@
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
-#ifdef CONFIG_POLL
-static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
+static inline bool handle_poll_events(struct k_msgq *msgq)
 {
-	z_handle_obj_poll_events(&msgq->poll_events, state);
-}
+#ifdef CONFIG_POLL
+	return z_handle_obj_poll_events(&msgq->poll_events,
+					K_POLL_STATE_MSGQ_DATA_AVAILABLE);
+#else
+	ARG_UNUSED(msgq);
+	return false;
 #endif /* CONFIG_POLL */
+}
 
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
@@ -85,7 +89,6 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, alloc_init, msgq, ret);
-
 	return ret;
 }
 
@@ -102,12 +105,12 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 int k_msgq_cleanup(struct k_msgq *msgq)
 {
+	int ret = 0;
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
 	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, -EBUSY);
-
-		return -EBUSY;
+		ret = -EBUSY;
+		goto exit;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
@@ -115,72 +118,118 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, 0);
-
-	return 0;
+exit:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
+	return ret;
 }
 
-
-int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
+			k_timeout_t timeout, bool put_at_back)
 {
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
 	int result;
+	bool resched = false;
 
 	key = k_spin_lock(&msgq->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	if (put_at_back) {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put_front, msgq, timeout);
+	}
 
 	if (msgq->used_msgs < msgq->max_msgs) {
 		/* message queue isn't full */
 		pending_thread = z_unpend_first_thread(&msgq->wait_q);
-		if (pending_thread != NULL) {
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, 0);
+		if (unlikely(pending_thread != NULL)) {
+			resched = true;
 
 			/* give message to waiting thread */
-			(void)memcpy(pending_thread->base.swap_data, data,
-			       msgq->msg_size);
+			(void)memcpy(pending_thread->base.swap_data, data, msgq->msg_size);
 			/* wake up waiting thread */
 			arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
-			z_reschedule(&msgq->lock, key);
-			return 0;
 		} else {
-			/* put message in queue */
 			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
 					msgq->write_ptr < msgq->buffer_end);
-			(void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
-			msgq->write_ptr += msgq->msg_size;
-			if (msgq->write_ptr == msgq->buffer_end) {
-				msgq->write_ptr = msgq->buffer_start;
+			if (put_at_back) {
+				/*
+				 * to write a message to the back of the queue,
+				 * copy the message and increment write_ptr
+				 */
+				(void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
+				msgq->write_ptr += msgq->msg_size;
+				if (msgq->write_ptr == msgq->buffer_end) {
+					msgq->write_ptr = msgq->buffer_start;
+				}
+			} else {
+				/*
+				 * to write a message to the head of the queue,
+				 * first decrement the read pointer (to open
+				 * space at the front of the queue) then copy
+				 * the message to the newly created space.
+				 */
+				if (msgq->read_ptr == msgq->buffer_start) {
+					msgq->read_ptr = msgq->buffer_end;
+				}
+				msgq->read_ptr -= msgq->msg_size;
+				(void)memcpy(msgq->read_ptr, (char *)data, msgq->msg_size);
 			}
 			msgq->used_msgs++;
-#ifdef CONFIG_POLL
-			handle_poll_events(msgq, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
-#endif /* CONFIG_POLL */
+			resched = handle_poll_events(msgq);
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for message space to become available */
 		result = -ENOMSG;
 	} else {
-		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		if (put_at_back) {
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		} else {
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put_front, msgq, timeout);
+		}
 
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = (void *) data;
 
 		result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+
+		if (put_at_back) {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+		} else {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+		}
+
 		return result;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	if (put_at_back) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+	}
 
-	k_spin_unlock(&msgq->lock, key);
+	if (resched) {
+		z_reschedule(&msgq->lock, key);
+	} else {
+		k_spin_unlock(&msgq->lock, key);
+	}
 
 	return result;
+}
+
+
+int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+{
+	return put_msg_in_queue(msgq, data, timeout, true);
+}
+
+int z_impl_k_msgq_put_front(struct k_msgq *msgq, const void *data)
+{
+	return put_msg_in_queue(msgq, data, K_NO_WAIT, false);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -193,6 +242,15 @@ static inline int z_vrfy_k_msgq_put(struct k_msgq *msgq, const void *data,
 	return z_impl_k_msgq_put(msgq, data, timeout);
 }
 #include <zephyr/syscalls/k_msgq_put_mrsh.c>
+
+static inline int z_vrfy_k_msgq_put_front(struct k_msgq *msgq, const void *data)
+{
+	K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	K_OOPS(K_SYSCALL_MEMORY_READ(data, msgq->msg_size));
+
+	return z_impl_k_msgq_put_front(msgq, data);
+}
+#include <zephyr/syscalls/k_msgq_put_front_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
@@ -220,6 +278,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;
 	int result;
+	bool resched = false;
 
 	key = k_spin_lock(&msgq->lock);
 
@@ -236,7 +295,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 		/* handle first thread waiting to write (if any) */
 		pending_thread = z_unpend_first_thread(&msgq->wait_q);
-		if (pending_thread != NULL) {
+		if (unlikely(pending_thread != NULL)) {
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, get, msgq, timeout);
 
 			/* add thread's message to queue */
@@ -253,11 +312,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 			/* wake up waiting thread */
 			arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
-			z_reschedule(&msgq->lock, key);
-
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, get, msgq, timeout, 0);
-
-			return 0;
+			resched = true;
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -276,7 +331,11 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, get, msgq, timeout, result);
 
-	k_spin_unlock(&msgq->lock, key);
+	if (resched) {
+		z_reschedule(&msgq->lock, key);
+	} else {
+		k_spin_unlock(&msgq->lock, key);
+	}
 
 	return result;
 }
@@ -377,22 +436,29 @@ void z_impl_k_msgq_purge(struct k_msgq *msgq)
 {
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;
+	bool resched = false;
 
 	key = k_spin_lock(&msgq->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_msgq, purge, msgq);
 
 	/* wake up any threads that are waiting to write */
-	for (pending_thread = z_unpend_first_thread(&msgq->wait_q); pending_thread != NULL;
-		 pending_thread = z_unpend_first_thread(&msgq->wait_q)) {
+	for (pending_thread = z_unpend_first_thread(&msgq->wait_q);
+	     pending_thread != NULL;
+	     pending_thread = z_unpend_first_thread(&msgq->wait_q)) {
 		arch_thread_return_value_set(pending_thread, -ENOMSG);
 		z_ready_thread(pending_thread);
+		resched = true;
 	}
 
 	msgq->used_msgs = 0;
 	msgq->read_ptr = msgq->write_ptr;
 
-	z_reschedule(&msgq->lock, key);
+	if (resched) {
+		z_reschedule(&msgq->lock, key);
+	} else {
+		k_spin_unlock(&msgq->lock, key);
+	}
 }
 
 #ifdef CONFIG_USERSPACE

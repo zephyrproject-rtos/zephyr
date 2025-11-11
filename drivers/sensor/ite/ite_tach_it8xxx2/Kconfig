@@ -8,6 +8,7 @@ config TACH_IT8XXX2
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_TACH_ENABLED
 	depends on SOC_IT8XXX2
+	select PINCTRL
 	help
 	  Enable the ITE it8xxx2 tachometer sensor,
 	  it8xxx2 supports two 16-bit tachometer sensor, each sensor has two

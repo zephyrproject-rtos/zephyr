@@ -1,7 +1,4 @@
-.. _nsim_arc_v:
-
-DesignWare RISC-V nSIM and HAPS FPGA boards
-###########################################
+.. zephyr:board:: nsim_arc_v
 
 Overview
 ********
@@ -16,11 +13,12 @@ platform includes the following features:
 Supported board targets for that platform are listed below:
 
 * ``nsim_arc_v/rmx100`` - Synopsys RISC-V RMX100 core
+* ``nsim_arc_v/rhx100`` - Synopsys RISC-V RHX100 core
 
 .. _board_nsim_arc_v_prop_files:
 
 It is recommended to look at precise description of a particular board target in ``.props``
-files in :zephyr_file:`boards/snps/nsim_arc_v/support/` directory to understand
+files in :zephyr_file:`boards/snps/nsim/arc_v/support/` directory to understand
 which options are configured and so will be used on invocation of the simulator.
 
 .. warning::
@@ -29,6 +27,8 @@ which options are configured and so will be used on invocation of the simulator.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Required Hardware and Software
 ==============================
@@ -43,7 +43,8 @@ Most board targets support building with both GNU and ARC MWDT toolchains, howev
 there might be exceptions from that, especially for newly added targets. You can check supported
 toolchains for the board targets in the corresponding ``.yaml`` file.
 
-I.e. for the ``nsim_arc_v/rmx100`` board we can check :zephyr_file:`boards/snps/nsim_arc_v/nsim_arc_v_rmx100.yaml`
+I.e. for the ``nsim_arc_v/rmx100`` board we can check :zephyr_file:`boards/snps/nsim/arc_v/nsim_arc_v_rmx100.yaml`
+and for the ``nsim_arc_v/rhx100`` board we can check :zephyr_file:`boards/snps/nsim/arc_v/nsim_arc_v_rhx100.yaml`
 
 The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, where we can find:
 
@@ -192,6 +193,8 @@ on SoC level.
 
 References
 **********
+
+.. target-notes::
 
 .. _Designware ARC nSIM: https://www.synopsys.com/dw/ipdir.php?ds=sim_nsim
 .. _DesignWare ARC Free nSIM: https://www.synopsys.com/cgi-bin/dwarcnsim/req1.cgi

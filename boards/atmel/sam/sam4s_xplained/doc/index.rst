@@ -1,17 +1,10 @@
-.. _sam4s_xplained:
-
-SAM4S Xplained
-##############
+.. zephyr:board:: sam4s_xplained
 
 Overview
 ********
 
 The SAM4S Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM4S series microcontrollers.
-
-.. image:: img/sam4s_xplained.jpg
-     :align: center
-     :alt: SAM4S Xplained
 
 Hardware
 ********
@@ -30,43 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4s_xplained board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| SMC       | on-chip    | memc (PSRAM)                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4s_xplained/sam4s_xplained_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -91,6 +48,8 @@ The section flashing uses the UART from the Segger USB debug connection.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM4S Xplained board comes with Segger
 `J-Link OB <https://www.segger.com/jlink-ob.html>`_. This provides a debug
 interface to the SAM4S16C chip. You can use Ozone or JLink to communicate with
@@ -111,7 +70,7 @@ Using JLink
    accessible from your path.
 
 #. Connect the SAM4S Xplained board to your host computer using the USB debug
-   port. Then build and flash the :ref:`hello_world` application.
+   port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -128,7 +87,7 @@ Using SAM-BA bootloader
 #. Open the ``J25`` jumper.
 
 #. Connect the SAM4S Xplained board to your host computer using the SoC USB
-   port. Then build and flash the :ref:`hello_world` application.
+   port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -167,7 +126,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

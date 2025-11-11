@@ -7,15 +7,16 @@
 
 /**
  * @file
- * @brief Public API for counter and timer drivers
+ * @ingroup counter_interface
+ * @brief Main header file for counter driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_
 
 /**
- * @brief Counter Interface
- * @defgroup counter_interface Counter Interface
+ * @brief Interfaces for counters.
+ * @defgroup counter_interface Counter
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces
@@ -215,6 +216,7 @@ typedef int (*counter_api_get_value)(const struct device *dev,
 				     uint32_t *ticks);
 typedef int (*counter_api_get_value_64)(const struct device *dev,
 			uint64_t *ticks);
+typedef int (*counter_api_reset)(const struct device *dev);
 typedef int (*counter_api_set_alarm)(const struct device *dev,
 				     uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg);
@@ -236,6 +238,7 @@ __subsystem struct counter_driver_api {
 	counter_api_stop stop;
 	counter_api_get_value get_value;
 	counter_api_get_value_64 get_value_64;
+	counter_api_reset reset;
 	counter_api_set_alarm set_alarm;
 	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
@@ -336,6 +339,22 @@ static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
 }
 
 /**
+ * @brief Function to convert ticks to nanoseconds.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ * @param[in]  ticks  Ticks.
+ *
+ * @return Converted nanoseconds.
+ */
+__syscall uint64_t counter_ticks_to_ns(const struct device *dev, uint32_t ticks);
+
+static inline uint64_t z_impl_counter_ticks_to_ns(const struct device *dev,
+					       uint32_t ticks)
+{
+	return ((uint64_t)ticks * NSEC_PER_SEC) / z_impl_counter_get_frequency(dev);
+}
+
+/**
  * @brief Function to retrieve maximum top value that can be set.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
@@ -425,10 +444,31 @@ static inline int z_impl_counter_get_value_64(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	if (!api->get_value_64) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->get_value_64(dev, ticks);
+}
+
+/**
+ * @brief Reset the counter to the initial value.
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 If successful.
+ * @retval -errno Negative error code on failure resetting the counter value.
+ */
+__syscall int counter_reset(const struct device *dev);
+
+static inline int z_impl_counter_reset(const struct device *dev)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->reset) {
+		return -ENOSYS;
+	}
+
+	return api->reset(dev);
 }
 
 /**
@@ -627,7 +667,7 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
  * @retval 0 if successful.
- * @retval -ENOTSUP if function or flags are not supported.
+ * @retval -ENOSYS if function or flags are not supported.
  * @retval -EINVAL if ticks value is invalid.
  */
 __syscall int counter_set_guard_period(const struct device *dev,
@@ -641,7 +681,7 @@ static inline int z_impl_counter_set_guard_period(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	if (!api->set_guard_period) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->set_guard_period(dev, ticks, flags);

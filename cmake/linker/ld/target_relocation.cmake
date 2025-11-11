@@ -16,7 +16,7 @@ macro(toolchain_ld_relocation)
   OUTPUT
     ${DICT_FILE}
   CONTENT
-    $<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>
+    $<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>
   )
 
   add_custom_command(

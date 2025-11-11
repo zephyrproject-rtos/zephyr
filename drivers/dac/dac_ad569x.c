@@ -77,6 +77,11 @@ static int ad569x_channel_setup(const struct device *dev, const struct dac_chann
 		return -EINVAL;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 
@@ -155,7 +160,7 @@ static int ad569x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api ad569x_driver_api = {
+static DEVICE_API(dac, ad569x_driver_api) = {
 	.channel_setup = ad569x_channel_setup,
 	.write_value = ad569x_write_value,
 };

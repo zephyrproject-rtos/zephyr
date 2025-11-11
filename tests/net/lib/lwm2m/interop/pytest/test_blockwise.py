@@ -9,17 +9,16 @@ SPDX-License-Identifier: Apache-2.0
 
 """
 
-import time
-import logging
-import zlib
-import re
-import random
-import string
 import binascii
-from leshan import Leshan
+import logging
+import random
+import re
+import string
+import time
+import zlib
 
-from twister_harness import Shell
-from twister_harness import DeviceAdapter
+from leshan import Leshan
+from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +78,8 @@ def test_blockwise_3(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint:
     """Blockwise test 3: Block-Wise Get using TLV and SenML-CBOR content formats"""
 
     shell.exec_command('lwm2m create /19/0')
+    # Wait for update to finish so server is aware of the /19/0 object
+    dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
 
     # Generate 4 kB of binary app-data
     # and write it into BinaryAppData object
@@ -109,6 +110,9 @@ def test_blockwise_4(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint:
     """Blockwise test 4: Block-Wise SEND using SenML-CBOR content format"""
 
     shell.exec_command('lwm2m create /19/0')
+    # Wait for update to finish so server is aware of the /19/0 object
+    dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
+
     # Generate 4 kB of binary app-data
     data = ''.join(random.choice(string.ascii_letters) for i in range(4096)).encode()
     fmt = leshan.format

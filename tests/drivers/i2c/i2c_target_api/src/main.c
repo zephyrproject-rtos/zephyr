@@ -16,15 +16,18 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/target/eeprom.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/ztest.h>
 
 #define NODE_EP0 DT_NODELABEL(eeprom0)
 #define NODE_EP1 DT_NODELABEL(eeprom1)
 
-#define TEST_DATA_SIZE	20
-static const uint8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
-static const uint8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
+#define TEST_DATA_SIZE	MIN(CONFIG_I2C_TEST_DATA_MAX_SIZE, \
+			    MIN(DT_PROP(NODE_EP0, size), DT_PROP(NODE_EP1, size)))
+
+static uint8_t eeprom_0_data[TEST_DATA_SIZE];
+static uint8_t eeprom_1_data[TEST_DATA_SIZE];
 static uint8_t i2c_buffer[TEST_DATA_SIZE];
 
 /*
@@ -33,6 +36,23 @@ static uint8_t i2c_buffer[TEST_DATA_SIZE];
  */
 uint8_t buffer_print_eeprom[TEST_DATA_SIZE * 5 + 1];
 uint8_t buffer_print_i2c[TEST_DATA_SIZE * 5 + 1];
+
+static void init_eeprom_test_data(void)
+{
+	size_t n;
+
+	/*
+	 * Initialize EEPROM data with printable ASCII value (range [32 126]).
+	 * Make sure content differs between eeprom_0_data[] and eeprom_1_data[].
+	 */
+	for (n = 0; n < sizeof(eeprom_0_data); n++) {
+		eeprom_0_data[n] = 32 + (n % (126 - 32));
+	}
+
+	for (n = 0; n < sizeof(eeprom_1_data); n++) {
+		eeprom_1_data[n] = 32 + (((n + 10) * 3) % (126 - 32));
+	}
+}
 
 static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
@@ -122,7 +142,7 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 		i2c->name, addr, offset);
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
-		i2c_buffer[i] = i;
+		i2c_buffer[i] = i & 0xFF;
 	}
 
 	switch (addr_width) {
@@ -154,16 +174,72 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
-		if (i2c_buffer[i] != i) {
+		if (i2c_buffer[i] != (i & 0xFF)) {
 			to_display_format(i2c_buffer, TEST_DATA_SIZE-offset,
 					  buffer_print_i2c);
-			TC_PRINT("Error: Unexpected buffer content: %s\n",
-				 buffer_print_i2c);
+			TC_PRINT("Error: Unexpected %u (%02x) buffer content: %s\n",
+				 i, i2c_buffer[i], buffer_print_i2c);
 			return -EIO;
 		}
 	}
 
 	return 0;
+}
+
+ZTEST(i2c_eeprom_target, test_deinit)
+{
+	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
+	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
+	const struct gpio_dt_spec sda_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sda0_gpios, {});
+	const struct gpio_dt_spec scl_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), scl0_gpios, {});
+	const struct gpio_dt_spec sda_pin_1 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sda1_gpios, {});
+	const struct gpio_dt_spec scl_pin_1 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), scl1_gpios, {});
+	int ret;
+
+	if (i2c_0 == i2c_1) {
+		TC_PRINT("  gpio loopback required for test\n");
+		ztest_test_skip();
+	}
+
+	if (scl_pin_0.port == NULL || sda_pin_0.port == NULL ||
+	    scl_pin_1.port == NULL || sda_pin_1.port == NULL) {
+		TC_PRINT("  bus gpios not specified in zephyr,path\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(i2c_0);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+
+	ret = device_deinit(i2c_1);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		zassert_ok(device_init(i2c_0));
+		ztest_test_skip();
+	}
+
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_0, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_1, GPIO_OUTPUT_INACTIVE));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_0, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_1, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&sda_pin_0), 0);
+	zassert_equal(gpio_pin_get_dt(&scl_pin_0), 0);
+	zassert_ok(gpio_pin_set_dt(&sda_pin_1, 1));
+	zassert_ok(gpio_pin_set_dt(&scl_pin_1, 1));
+	zassert_equal(gpio_pin_get_dt(&sda_pin_0), 1);
+	zassert_equal(gpio_pin_get_dt(&scl_pin_0), 1);
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_1, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_1, GPIO_INPUT));
+	zassert_ok(device_init(i2c_0));
+	zassert_ok(device_init(i2c_1));
 }
 
 ZTEST(i2c_eeprom_target, test_eeprom_target)
@@ -177,6 +253,8 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	int addr_1 = DT_REG_ADDR(NODE_EP1);
 	uint8_t addr_1_width = DT_PROP_OR(NODE_EP1, address_width, 8);
 	int ret, offset;
+
+	init_eeprom_test_data();
 
 	zassert_not_null(i2c_0, "EEPROM 0 - I2C bus not found");
 	zassert_not_null(eeprom_0, "EEPROM 0 device not found");

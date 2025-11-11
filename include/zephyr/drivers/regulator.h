@@ -7,12 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_interface
+ * @brief Main header file for regulator driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_REGULATOR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_REGULATOR_H_
 
 /**
- * @brief Regulator Interface
- * @defgroup regulator_interface Regulator Interface
+ * @brief Interfaces for regulators.
+ * @defgroup regulator_interface Regulator
  * @since 2.4
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -179,7 +185,7 @@ struct regulator_common_config {
 	uint8_t allowed_modes_cnt;
 	/** Regulator initial mode */
 	regulator_mode_t initial_mode;
-	/** Flags (@reg REGULATOR_FLAGS). */
+	/** Flags (@ref REGULATOR_FLAGS). */
 	uint8_t flags;
 };
 
@@ -310,6 +316,28 @@ static inline int regulator_common_get_min_voltage(const struct device *dev, int
 	}
 
 	*min_uv = config->min_uv;
+	return 0;
+}
+
+/**
+ * @brief Get maximum supported voltage.
+ *
+ * @param dev Regulator device instance.
+ * @param max_uv Where maximum voltage will be stored, in microvolts.
+ *
+ * @retval 0 If successful
+ * @retval -ENOENT If maximum voltage is not specified.
+ */
+static inline int regulator_common_get_max_voltage(const struct device *dev, int32_t *max_uv)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	if (config->max_uv == INT32_MAX) {
+		return -ENOENT;
+	}
+
+	*max_uv = config->max_uv;
 	return 0;
 }
 

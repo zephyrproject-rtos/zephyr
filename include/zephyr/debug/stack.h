@@ -21,9 +21,9 @@ static inline void log_stack_usage(const struct k_thread *thread)
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 	size_t unused, size = thread->stack_info.size;
 
-	TOOLCHAIN_IGNORE_WSHADOW_BEGIN;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW);
 	LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-	TOOLCHAIN_IGNORE_WSHADOW_END;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW);
 
 	if (k_thread_stack_space_get(thread, &unused) == 0) {
 		unsigned int pcnt = ((size - unused) * 100U) / size;

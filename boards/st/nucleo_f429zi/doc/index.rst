@@ -1,7 +1,4 @@
-.. _nucleo_f429zi_board:
-
-ST Nucleo F429ZI
-################
+.. zephyr:board:: nucleo_f429zi
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the Nucleo F429ZI board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f429zi.jpg
-   :align: center
-   :alt: Nucleo F429ZI
 
 More information about the board can be found at the `Nucleo F429ZI website`_.
 
@@ -77,48 +70,7 @@ More information about STM32F429ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f429zi board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | Ethernet                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f429zi/nucleo_f429zi_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -180,8 +132,23 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nucleo F429ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flash partitions for MCUBoot bootloader
 ***************************************
@@ -217,3 +184,6 @@ A specific application can adjust each partition size based on its needs.
 
 .. _MCUBoot:
    https://github.com/JuulLabs-OSS/mcuboot/blob/master/README.md
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

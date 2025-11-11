@@ -3,7 +3,7 @@
 # Copyright (c) 2021 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig LM77
+config LM77
 	bool "LM77 Temperature Sensor"
 	default y
 	depends on DT_HAS_LM77_ENABLED
@@ -13,9 +13,12 @@ menuconfig LM77
 	  Enable driver for the LM77 digital temperature sensor with 2-wire
 	  interface.
 
+if LM77
+
 config LM77_TRIGGER
 	bool "Trigger support"
-	depends on LM77
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LM77),int-gpios)
 	default y
 	help
 	  Enable trigger support for the LM77 digital temperature sensor.
@@ -39,3 +42,4 @@ config LM77_TRIGGER_THREAD_PRIO
 	  Priority level for the internal trigger workqueue thread.
 
 endif # LM77_TRIGGER
+endif # LM77

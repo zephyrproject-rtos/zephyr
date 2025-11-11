@@ -21,6 +21,72 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) || defined(__DOXYGEN__)
+
+typedef union _z_irq {
+	/* Zephyr multilevel-encoded IRQ */
+	uint32_t irq;
+
+	/* Interrupt bits */
+	struct {
+		/* First level interrupt bits */
+		uint32_t l1: CONFIG_1ST_LEVEL_INTERRUPT_BITS;
+		/* Second level interrupt bits */
+		uint32_t l2: CONFIG_2ND_LEVEL_INTERRUPT_BITS;
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS) || defined(__DOXYGEN__)
+		/* Third level interrupt bits */
+		uint32_t l3: CONFIG_3RD_LEVEL_INTERRUPT_BITS;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+	} bits;
+
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS) || defined(__DOXYGEN__)
+	/* Third level IRQ's interrupt controller */
+	struct {
+		/* IRQ of the third level interrupt aggregator */
+		uint32_t irq: CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS;
+	} l3_intc;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+
+	/* Second level IRQ's interrupt controller */
+	struct {
+		/* IRQ of the second level interrupt aggregator */
+		uint32_t irq: CONFIG_1ST_LEVEL_INTERRUPT_BITS;
+	} l2_intc;
+} _z_irq_t;
+
+BUILD_ASSERT(sizeof(_z_irq_t) == sizeof(uint32_t), "Size of `_z_irq_t` must equal to `uint32_t`");
+
+static inline uint32_t _z_l1_irq(_z_irq_t irq)
+{
+	return irq.bits.l1;
+}
+
+static inline uint32_t _z_l2_irq(_z_irq_t irq)
+{
+	return irq.bits.l2 - 1;
+}
+
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+static inline uint32_t _z_l3_irq(_z_irq_t irq)
+{
+	return irq.bits.l3 - 1;
+}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+
+static inline unsigned int _z_irq_get_level(_z_irq_t z_irq)
+{
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	if (z_irq.bits.l3 != 0) {
+		return 3;
+	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+
+	if (z_irq.bits.l2 != 0) {
+		return 2;
+	}
+
+	return 1;
+}
+
 /**
  * @brief Return IRQ level
  * This routine returns the interrupt level number of the provided interrupt.
@@ -31,20 +97,11 @@ extern "C" {
  */
 static inline unsigned int irq_get_level(unsigned int irq)
 {
-	const uint32_t mask2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) <<
-		CONFIG_1ST_LEVEL_INTERRUPT_BITS;
-	const uint32_t mask3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) <<
-		(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
 
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq & mask3) != 0) {
-		return 3;
-	}
-
-	if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq & mask2) != 0) {
-		return 2;
-	}
-
-	return 1;
+	return _z_irq_get_level(z_irq);
 }
 
 /**
@@ -59,12 +116,11 @@ static inline unsigned int irq_get_level(unsigned int irq)
  */
 static inline unsigned int irq_from_level_2(unsigned int irq)
 {
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
-		return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-			BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
-	} else {
-		return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
-	}
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	return _z_l2_irq(z_irq);
 }
 
 /**
@@ -90,7 +146,17 @@ static inline unsigned int irq_from_level_2(unsigned int irq)
  */
 static inline unsigned int irq_to_level_2(unsigned int irq)
 {
-	return IRQ_TO_L2(irq);
+	_z_irq_t z_irq = {
+		.bits = {
+			.l1 = 0,
+			.l2 = irq + 1,
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+			.l3 = 0,
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+		},
+	};
+
+	return z_irq.irq;
 }
 
 /**
@@ -105,9 +171,14 @@ static inline unsigned int irq_to_level_2(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_2(unsigned int irq)
 {
-	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	return _z_l1_irq(z_irq);
 }
 
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS) || defined(__DOXYGEN__)
 /**
  * @brief Return the 3rd level interrupt number
  *
@@ -121,7 +192,11 @@ static inline unsigned int irq_parent_level_2(unsigned int irq)
  */
 static inline unsigned int irq_from_level_3(unsigned int irq)
 {
-	return (irq >> (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	return _z_l3_irq(z_irq);
 }
 
 /**
@@ -148,7 +223,15 @@ static inline unsigned int irq_from_level_3(unsigned int irq)
  */
 static inline unsigned int irq_to_level_3(unsigned int irq)
 {
-	return IRQ_TO_L3(irq);
+	_z_irq_t z_irq = {
+		.bits = {
+			.l1 = 0,
+			.l2 = 0,
+			.l3 = irq + 1,
+		},
+	};
+
+	return z_irq.irq;
 }
 
 /**
@@ -163,9 +246,13 @@ static inline unsigned int irq_to_level_3(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_3(unsigned int irq)
 {
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	return _z_l2_irq(z_irq);
 }
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 /**
  * @brief Return the interrupt number for a given level
@@ -181,11 +268,14 @@ static inline unsigned int irq_from_level(unsigned int irq, unsigned int level)
 		return irq;
 	} else if (level == 2) {
 		return irq_from_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_from_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -204,11 +294,14 @@ static inline unsigned int irq_to_level(unsigned int irq, unsigned int level)
 		return irq;
 	} else if (level == 2) {
 		return irq_to_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_to_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -228,11 +321,14 @@ static inline unsigned int irq_parent_level(unsigned int irq, unsigned int level
 		return irq;
 	} else if (level == 2) {
 		return irq_parent_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_parent_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -247,11 +343,53 @@ static inline unsigned int irq_parent_level(unsigned int irq, unsigned int level
 static inline unsigned int irq_get_intc_irq(unsigned int irq)
 {
 	const unsigned int level = irq_get_level(irq);
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
 
-	__ASSERT_NO_MSG(level > 1 && level <= 3);
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	__ASSERT_NO_MSG(level <= 3);
+	if (level == 3) {
+		return z_irq.l3_intc.irq;
+	}
+#else
+	__ASSERT_NO_MSG(level <= 2);
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS +
-			      (level == 3 ? CONFIG_2ND_LEVEL_INTERRUPT_BITS : 0));
+	if (level == 2) {
+		return z_irq.l2_intc.irq;
+	}
+
+	return irq;
+}
+
+/**
+ * @brief Increments the multilevel-encoded @a irq by @a val
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param val Amount to increment
+ *
+ * @return @a irq incremented by @a val
+ */
+static inline unsigned int irq_increment(unsigned int irq, unsigned int val)
+{
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	if (false) {
+		/* so that it evaluates the next condition */
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	} else if (z_irq.bits.l3 != 0) {
+		z_irq.bits.l3 += val;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+	} else if (z_irq.bits.l2 != 0) {
+		z_irq.bits.l2 += val;
+	} else {
+		z_irq.bits.l1 += val;
+	}
+
+	return z_irq.irq;
 }
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */

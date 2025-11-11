@@ -175,7 +175,7 @@ static int ens160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static const struct sensor_driver_api ens160_driver_api = {
+static DEVICE_API(sensor, ens160_driver_api) = {
 	.sample_fetch = ens160_sample_fetch,
 	.channel_get = ens160_channel_get,
 	.attr_set = ens160_attr_set,
@@ -306,7 +306,7 @@ static int ens160_pm_action(const struct device *dev, enum pm_device_action acti
 
 #define ENS160_CONFIG_SPI(inst)                                                                    \
 	.bus_init = &ens160_spi_init,                                                              \
-	.spi = SPI_DT_SPEC_INST_GET(inst, ENS160_SPI_OPERATION, 0),
+	.spi = SPI_DT_SPEC_INST_GET(inst, ENS160_SPI_OPERATION),
 
 #define ENS160_CONFIG_I2C(inst)                                                                    \
 	.bus_init = &ens160_i2c_init,                                                              \

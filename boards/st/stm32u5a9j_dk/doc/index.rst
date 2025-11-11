@@ -1,7 +1,4 @@
-.. _stm32u5a9j_dk_board:
-
-ST STM32U5A9J Discovery Kit
-###########################
+.. zephyr:board:: stm32u5a9j_dk
 
 Overview
 ********
@@ -50,48 +47,7 @@ More information about STM32U5A9NJH6Q can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32u5a9j_dk board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| LPUART    | on-chip    | low power uart                      |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration per core can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32u5a9j_dk/stm32u5a9j_dk_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -136,14 +92,26 @@ ST-LINK/V3.0. Virtual COM port interface. Default communication settings are
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32U5A9J Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
 
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.,
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Flashing an application to STM32U5A9J_DK
+----------------------------------------
 
 Connect the STM32U5A9J Discovery board to your host computer using the USB
 port, then run a serial host program to connect with your Discovery
@@ -154,7 +122,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0 -b 115200
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -366,8 +366,8 @@ int slip_init(const struct device *dev)
 
 static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 {
-	slip->ll_addr.addr = slip->mac_addr;
-	slip->ll_addr.len = sizeof(slip->mac_addr);
+	(void)net_linkaddr_set(&slip->ll_addr, slip->mac_addr,
+			       sizeof(slip->mac_addr));
 
 	return &slip->ll_addr;
 }
@@ -376,6 +376,7 @@ void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
+	int err;
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 	ethernet_init(iface);
@@ -388,8 +389,6 @@ void slip_iface_init(struct net_if *iface)
 	if (slip->init_done) {
 		return;
 	}
-
-	ll_addr = slip_get_mac(slip);
 
 	slip->init_done = true;
 	slip->iface = iface;
@@ -409,8 +408,14 @@ use_random_mac:
 		slip->mac_addr[4] = 0x53;
 		slip->mac_addr[5] = sys_rand8_get();
 	}
+	ll_addr = slip_get_mac(slip);
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
+
+	err = net_if_set_name(iface, CONFIG_SLIP_DRV_NAME);
+	if (err < 0) {
+		LOG_ERR("Could not set the interface name: %d", err);
+	}
 }
 
 

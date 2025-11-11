@@ -1,7 +1,4 @@
-.. _adafruit_feather_m0_lora:
-
-Adafruit Feather M0 LoRa
-########################
+.. zephyr:board:: adafruit_feather_m0_lora
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Adafruit Feather M0 Lora is a thin, light ARM development
 boards with an onboard battery connector and charger for 3.7 V lithium
 polymer batteries, charging status indicator and user LEDs, native USB
 connector, 20 I/O pins, and a LoRa radio module from Semtech.
-
-.. image:: img/adafruit_feather_m0_lora.jpg
-     :align: center
-     :alt: Adafruit Feather M0 LoRa
 
 Hardware
 ********
@@ -31,37 +24,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_feather_m0_lora board configuration supports the
-following hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | Nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | Systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial port                              |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface port         |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| RADIO     | SPI        | LoRa radio                               |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/feather_m0_lora/adafruit_feather_m0_lora_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -99,7 +62,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -112,6 +75,8 @@ version, 433MHz or 900MHz is supported.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Adafruit Feather M0 with LoRa ships with a BOSSA compatible
 SAM-BA bootloader.  The bootloader can be entered by quickly tapping
 the reset button twice.
@@ -119,7 +84,7 @@ the reset button twice.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

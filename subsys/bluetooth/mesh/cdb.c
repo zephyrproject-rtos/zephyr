@@ -55,7 +55,7 @@ struct node_val {
 
 /* NetKey storage information */
 struct net_key_val {
-	uint8_t kr_flag:1,
+	uint8_t unused:1,
 		kr_phase:7;
 	struct bt_mesh_key val[2];
 } __packed;
@@ -180,6 +180,10 @@ static int cdb_net_set(const char *name, size_t len_rd,
 	struct net_val net;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 		return 0;
@@ -218,6 +222,10 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp;
 	uint16_t addr;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -280,6 +288,10 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t net_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -346,6 +358,10 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t app_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -491,7 +507,7 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	memcpy(&key.val[0], &sub->keys[0].net_key, sizeof(struct bt_mesh_key));
 	memcpy(&key.val[1], &sub->keys[1].net_key, sizeof(struct bt_mesh_key));
-	key.kr_flag = 0U; /* Deprecated */
+	key.unused = 0U;
 	key.kr_phase = sub->kr_phase;
 
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Subnet/%x", sub->net_idx);

@@ -111,6 +111,12 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_POLTE_LOCATE_STATUS,
 	HL7800_EVENT_POLTE,
 	HL7800_EVENT_SITE_SURVEY,
+	HL7800_EVENT_STATE,
+};
+
+enum mdm_hl7800_state {
+	HL7800_STATE_NOT_READY = 0,
+	HL7800_STATE_INITIALIZED,
 };
 
 enum mdm_hl7800_startup_state {
@@ -227,25 +233,26 @@ struct mdm_hl7800_polte_location_data {
 
 /**
  * event - The type of event
- * event_data - Pointer to event specific data structure
- * HL7800_EVENT_NETWORK_STATE_CHANGE - compound event
+ * event_data - Pointer to event specific data structure:
+ * HL7800_EVENT_NETWORK_STATE_CHANGE - mdm_hl7800_compound_event
  * HL7800_EVENT_APN_UPDATE - struct mdm_hl7800_apn
  * HL7800_EVENT_RSSI - int
  * HL7800_EVENT_SINR - int
- * HL7800_EVENT_STARTUP_STATE_CHANGE - compound event
- * HL7800_EVENT_SLEEP_STATE_CHANGE - compound event
+ * HL7800_EVENT_STARTUP_STATE_CHANGE - mdm_hl7800_compound_event
+ * HL7800_EVENT_SLEEP_STATE_CHANGE - mdm_hl7800_compound_event
  * HL7800_EVENT_RAT - int
  * HL7800_EVENT_BANDS - string
  * HL7800_EVENT_ACTIVE_BANDS - string
- * HL7800_EVENT_FOTA_STATE - compound event
+ * HL7800_EVENT_FOTA_STATE - mdm_hl7800_compound_event
  * HL7800_EVENT_FOTA_COUNT - uint32_t
  * HL7800_EVENT_REVISION - string
- * HL7800_EVENT_GPS - compound event
+ * HL7800_EVENT_GPS - mdm_hl7800_compound_event
  * HL7800_EVENT_GPS_POSITION_STATUS int
  * HL7800_EVENT_POLTE_REGISTRATION mdm_hl7800_polte_registration_event_data
  * HL7800_EVENT_POLTE mdm_hl7800_polte_location_data
  * HL7800_EVENT_POLTE_LOCATE_STATUS int
  * HL7800_EVENT_SITE_SURVEY mdm_hl7800_site_survey
+ * HL7800_EVENT_STATE mdm_hl7800_compound_event
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
@@ -265,7 +272,7 @@ int32_t mdm_hl7800_power_off(void);
 /**
  * @brief Reset the HL7800 (and allow it to reconfigure).
  *
- * @return int32_t 0 for success
+ * @return int32_t >= 0 for success, < 0 for failure
  */
 int32_t mdm_hl7800_reset(void);
 
@@ -279,12 +286,18 @@ void mdm_hl7800_wakeup(bool awake);
 
 /**
  * @brief Send an AT command to the HL7800.
- * @note this API should only be used for debug purposes.
+ * @note This API should only be used for debug purposes.
+ *   It is possible to break the driver using this API.
  *
  * @param data AT command string
+ * @param resp_timeout Timeout in seconds to wait for the response
+ * @param resp Pointer to the response buffer. This can be NULL to ignore the response.
+ * @param resp_len Input: length of the response buffer, Output: length of the response.
+ *   This can be NULL.
  * @return int32_t 0 for success
  */
-int32_t mdm_hl7800_send_at_cmd(const uint8_t *data);
+int32_t mdm_hl7800_send_at_cmd(const uint8_t *data, uint8_t resp_timeout, char *resp,
+			       uint16_t *resp_len);
 
 /**
  * @brief Get the signal quality of the HL7800.

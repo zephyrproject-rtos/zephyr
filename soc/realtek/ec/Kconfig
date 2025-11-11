@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_FAMILY_REALTEK_EC
+
+menuconfig REALTEK_RTS5912_BOOTROM_HEADER
+	bool "Create BOOTROM header for RTS5912"
+	help
+	  The RTS5912 BOOTROM needs the information about boot up progress.
+	  Invoke the 'rts5912_imgtool' to generates the RTS5912 bootrom header.
+
+if REALTEK_RTS5912_BOOTROM_HEADER
+
+config REALTEK_HEADER_CHIP
+	string
+	default "RTS5912" if SOC_RTS5912
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config REALTEK_RTS5912_BOOTROM_HEADER_LOAD_ADDRESS
+	string "Set the address for BOOTROM"
+	default "$(FLASH_BASE) - 0x20"
+	help
+	  This address will be used by the RTS5912 BOOTROM to decide where firmware image start.
+
+endif # REALTEK_RTS5912_BOOTROM_HEADER
+
+# Select SoC Part No. and configuration options
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_REALTEK_EC

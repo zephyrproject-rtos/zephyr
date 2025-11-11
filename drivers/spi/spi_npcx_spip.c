@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nuvoton_npcx_spip
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
@@ -401,11 +402,14 @@ static int spi_npcx_spip_init(const struct device *dev)
 	return 0;
 }
 
-static struct spi_driver_api spi_npcx_spip_api = {
+static DEVICE_API(spi, spi_npcx_spip_api) = {
 	.transceive = spi_npcx_spip_transceive,
 	.release = spi_npcx_spip_release,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_npcx_spip_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 };
 
@@ -439,7 +443,7 @@ static struct spi_driver_api spi_npcx_spip_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		NPCX_SPIP_IRQ_HANDLER_FUNC(n)};                                                    \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,                \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,            \
 			      &spi_npcx_spip_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
 			      &spi_npcx_spip_api);
 

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio {
+	status = "okay";
+};
+
+&gpio0 {
+	irqs = <0 1>;
+	status = "okay";
+};

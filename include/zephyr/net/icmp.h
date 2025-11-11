@@ -4,11 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @file icmp.h
+/**
+ * @file icmp.h
+ * @brief Header file for ICMP protocol support.
+ * @ingroup icmp
  *
- * @brief ICMP sending and receiving.
- *
- * @defgroup icmp Send and receive IPv4 or IPv6 ICMP Echo Request messages.
+ * @defgroup icmp ICMP
+ * @brief Send and receive IPv4 or IPv6 ICMP (Internet Control Message Protocol)
+ *        Echo Request messages.
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -91,6 +96,9 @@ struct net_icmp_ctx {
 	/** Opaque user supplied data */
 	void *user_data;
 
+	/** Address family the handler is registered for */
+	uint8_t family;
+
 	/** ICMP type of the response we are waiting */
 	uint8_t type;
 
@@ -155,12 +163,13 @@ struct net_icmp_ping_params {
  *        system.
  *
  * @param ctx ICMP context used in this request.
+ * @param family Address family the context is using.
  * @param type Type of ICMP message we are handling.
  * @param code Code of ICMP message we are handling.
  * @param handler Callback function that is called when a response is received.
  */
-int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
-		      net_icmp_handler_t handler);
+int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t family, uint8_t type,
+		      uint8_t code, net_icmp_handler_t handler);
 
 /**
  * @brief Cleanup the ICMP context structure. This will unregister the ICMP handler
@@ -188,6 +197,30 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
+
+/**
+ * @brief Send ICMP echo request message without waiting during send.
+ *
+ * @details This function can be used to send ICMP Echo-Request from a system
+ *          workqueue handler which should not have any sleeps or waits.
+ *          This variant will do the net_buf allocations with K_NO_WAIT.
+ *          This will avoid a warning message in the log about the timeout.
+ *
+ * @param ctx ICMP context used in this request.
+ * @param iface Network interface, can be set to NULL in which case the
+ *        interface is selected according to destination address.
+ * @param dst IP address of the target host.
+ * @param params Echo-Request specific parameters. May be NULL in which case
+ *        suitable default parameters are used.
+ * @param user_data User supplied opaque data passed to the handler. May be NULL.
+ *
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
+				       struct net_if *iface,
+				       struct sockaddr *dst,
+				       struct net_icmp_ping_params *params,
+				       void *user_data);
 
 /**
  * @brief ICMP offload context structure.

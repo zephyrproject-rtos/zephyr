@@ -18,8 +18,8 @@ Major enhancements with this release include:
 * Userspace support extended to Xtensa architecture.
 * Build system now supports Link Time Optimization (LTO), reducing the size of the final image.
 * Bluetooth Mesh protocol 1.1 now supported by default.
-* Major updates to the documentation of the :ref:`native simulator <native_sim>`, clarifying
-  supported peripherals and how to use them.
+* Major updates to the documentation of the :zephyr:board:`native simulator <native_sim>`,
+  clarifying supported peripherals and how to use them.
 * Over 30 new supported boards, spanning all Zephyr-supported architectures.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
@@ -1007,7 +1007,7 @@ Libraries / Subsystems
     MCUboot or currently running application slot.
 
   * Fixed an issue whereby messages that were too large to be sent over the UDP transport would
-    wrongly return :c:enum:`MGMT_ERR_EINVAL` instead of :c:enum:`MGMT_ERR_EMSGSIZE`.
+    wrongly return :c:enumerator:`MGMT_ERR_EINVAL` instead of :c:enumerator:`MGMT_ERR_EMSGSIZE`.
 
   * Fixed an issue where confirming an image in Direct XIP mode would always confirm the image in
     the primary slot even when executing from the secondary slot. Now the currently active image is
@@ -1301,9 +1301,9 @@ Additionally, the following changes in Zephyr were done:
 Tests and Samples
 *****************
 
-* :ref:`native_sim<native_sim>` has replaced :ref:`native_posix<native_posix>` as the default
+* :zephyr:board:`native_sim<native_sim>` has replaced ``native_posix`` as the default
   test platform.
-  :ref:`native_posix<native_posix>` remains supported and used in testing but will be deprecated
+  ``native_posix`` remains supported and used in testing but will be deprecated
   in a future release.
 
 * Bluetooth split stacks tests, where the BT host and controller are run in separate MCUs, are

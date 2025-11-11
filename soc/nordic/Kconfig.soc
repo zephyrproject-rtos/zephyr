@@ -14,6 +14,7 @@ config SOC_SERIES
 	default "nrf54h" if SOC_SERIES_NRF54HX
 	default "nrf54l" if SOC_SERIES_NRF54LX
 	default "nrf91" if SOC_SERIES_NRF91X
+	default "nrf92" if SOC_SERIES_NRF92X
 
 config SOC_FAMILY_NORDIC_NRF
 	bool
@@ -55,5 +56,11 @@ config SOC_SERIES_NRF91X
 	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF91 MCU series
+
+config SOC_SERIES_NRF92X
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF92 MCU series
 
 rsource "*/Kconfig.soc"

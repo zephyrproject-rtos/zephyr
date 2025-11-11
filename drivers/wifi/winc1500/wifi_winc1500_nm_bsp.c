@@ -14,7 +14,7 @@
 #include "wifi_winc1500_config.h"
 
 const struct winc1500_cfg winc1500_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
 	.chip_en_gpio = GPIO_DT_SPEC_INST_GET(0, enable_gpios),
 	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
@@ -52,13 +52,13 @@ int8_t nm_bsp_deinit(void)
 void nm_bsp_reset(void)
 {
 	gpio_pin_set_dt(&winc1500_config.chip_en_gpio, 0);
-	gpio_pin_set_dt(&winc1500_config.reset_gpio, 0);
+	gpio_pin_set_dt(&winc1500_config.reset_gpio, 1);
 	nm_bsp_sleep(100);
 
 	gpio_pin_set_dt(&winc1500_config.chip_en_gpio, 1);
 	nm_bsp_sleep(10);
 
-	gpio_pin_set_dt(&winc1500_config.reset_gpio, 1);
+	gpio_pin_set_dt(&winc1500_config.reset_gpio, 0);
 	nm_bsp_sleep(10);
 }
 
@@ -75,7 +75,7 @@ void nm_bsp_register_isr(void (*isr_fun)(void))
 			   chip_isr,
 			   BIT(winc1500_config.irq_gpio.pin));
 
-	gpio_add_callback(winc1500_config.irq_gpio.port, &winc1500.gpio_cb);
+	(void)gpio_add_callback(winc1500_config.irq_gpio.port, &winc1500.gpio_cb);
 }
 
 void nm_bsp_interrupt_ctrl(uint8_t enable)

@@ -114,7 +114,7 @@ static int a01nyub_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api a01nyub_api_funcs = {
+static DEVICE_API(sensor, a01nyub_api_funcs) = {
 	.sample_fetch = a01nyub_sample_fetch,
 	.channel_get = a01nyub_channel_get,
 };
@@ -142,7 +142,7 @@ static void a01nyub_uart_isr(const struct device *uart_dev, void *user_data)
 		 * If we do not read A01NYUB_HEADER on what we think is the
 		 * first byte, then reset the number of bytes read until we do
 		 */
-		if ((data->rd_data[0] != A01NYUB_HEADER) & (data->xfer_bytes == 1)) {
+		if ((data->rd_data[0] != A01NYUB_HEADER) && (data->xfer_bytes == 1)) {
 			LOG_DBG("First byte not header! Resetting # of bytes read.");
 			data->xfer_bytes = 0;
 		}

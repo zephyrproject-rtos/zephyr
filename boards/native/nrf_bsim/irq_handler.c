@@ -278,6 +278,11 @@ void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
  */
 void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
+	if (irq >= NHW_INTCTRL_MAX_INTLINES) {
+		bs_trace_error_time_line("Attempted to configure not existent interrupt %u\n",
+					 irq);
+		return;
+	}
 	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_MCU_N, irq, prio);
 }
 

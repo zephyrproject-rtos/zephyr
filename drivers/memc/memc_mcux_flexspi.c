@@ -53,6 +53,7 @@ struct memc_flexspi_data {
 	bool ahb_cacheable;
 	bool ahb_prefetch;
 	bool ahb_read_addr_opt;
+	uint8_t ahb_boundary;
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
@@ -89,9 +90,26 @@ int memc_flexspi_update_clock(const struct device *dev,
 		flexspi_port_t port, uint32_t freq_hz)
 {
 	struct memc_flexspi_data *data = dev->data;
-	uint32_t rate;
 	uint32_t key;
-	int ret;
+	uint32_t divider, actual_freq, flexspiRootClk_copy, ccm_clock;
+
+	int ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &ccm_clock);
+
+	if (ret < 0) {
+		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		return ret;
+	}
+
+	/* Freq required shall not exceed the max freq flash can support. */
+	freq_hz = MIN(freq_hz, device_config->flexspiRootClk);
+
+	/* Get the real freq on going. */
+	divider = (data->base->MCR0 & FLEXSPI_MCR0_SERCLKDIV_MASK) >> FLEXSPI_MCR0_SERCLKDIV_SHIFT;
+	actual_freq = ccm_clock / (divider + 1);
+	if (freq_hz ==  actual_freq) {
+		return 0;
+	}
+
 
 	/* To reclock the FlexSPI, we should:
 	 * - disable the module
@@ -102,39 +120,34 @@ int memc_flexspi_update_clock(const struct device *dev,
 	 */
 	key = irq_lock();
 	memc_flexspi_wait_bus_idle(dev);
+	FLEXSPI_Enable(data->base, false);
 
-	ret = clock_control_set_rate(data->clock_dev, data->clock_subsys,
-				(clock_control_subsys_rate_t)freq_hz);
-	if (ret < 0) {
-		irq_unlock(key);
-		return ret;
-	}
+	 /* Select a divider based on root frequency.
+	  * if we can't get an exact divider, round down
+	  */
+	divider = ((ccm_clock + (freq_hz - 1)) / freq_hz) - 1;
+	/* Cap divider to max value */
+	divider = MIN(divider, FLEXSPI_MCR0_SERCLKDIV_MASK >> FLEXSPI_MCR0_SERCLKDIV_SHIFT);
+	/* Update the internal divider*/
+	data->base->MCR0 &= ~FLEXSPI_MCR0_SERCLKDIV_MASK;
+	data->base->MCR0 |= FLEXSPI_MCR0_SERCLKDIV(divider);
 
 	/*
-	 * We need to update the DLL value before we call clock_control_get_rate,
-	 * because this will cause XIP (flash reads) to occur. Although the
-	 * true flash clock is not known, assume the set_rate function programmed
-	 * a value close to what we requested.
+	 * We don't want to modify the root clock variable, but we have to use this
+	 * parameter for DLL updating purpose(FLEXSPI_CalculateDll use flexspiRootClk as
+	 * the real frequency of FlexSPI serial clock). Back up it and restore it after DLL
+	 * Updating.
 	 */
-	device_config->flexspiRootClk = freq_hz;
+	flexspiRootClk_copy = device_config->flexspiRootClk;
+	device_config->flexspiRootClk = ccm_clock/(divider + 1);
 	FLEXSPI_UpdateDllValue(data->base, device_config, port);
-	memc_flexspi_reset(dev);
+	/* Restore root clock */
+	device_config->flexspiRootClk = flexspiRootClk_copy;
 
-	memc_flexspi_wait_bus_idle(dev);
-	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &rate);
-	if (ret < 0) {
-		irq_unlock(key);
-		return ret;
-	}
-
-
-	device_config->flexspiRootClk = rate;
-	FLEXSPI_UpdateDllValue(data->base, device_config, port);
-
+	FLEXSPI_Enable(data->base, true);
 	memc_flexspi_reset(dev);
 
 	irq_unlock(key);
-
 	return 0;
 }
 
@@ -150,6 +163,8 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	const uint32_t *lut_ptr = lut_array;
 	uint8_t lut_used = 0U;
 	unsigned int key = 0;
+	int ret;
+	uint32_t divider;
 
 	if (port >= kFLEXSPI_PortCount) {
 		LOG_ERR("Invalid port number");
@@ -195,10 +210,35 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 
+	/* Set FlexSPI clock to the max frequency flash can support.
+	 * FLEXSPI_SetFlashConfig only update DLL but not the freq divider.
+	 */
+	ret = memc_flexspi_update_clock(dev, &tmp_config,
+					port, device_config->flexspiRootClk);
+	if (ret < 0) {
+		LOG_ERR("memc flexspi update clock error: %d", ret);
+		return ret;
+	}
+
+	/* Get the real clock for DLL updating. */
+	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys,
+				&tmp_config.flexspiRootClk);
+	if (ret < 0) {
+		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		return ret;
+	}
+	divider = (data->base->MCR0 & FLEXSPI_MCR0_SERCLKDIV_MASK) >> FLEXSPI_MCR0_SERCLKDIV_SHIFT;
+	tmp_config.flexspiRootClk /= (divider + 1);
+
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
 	key = irq_lock();
-
 	FLEXSPI_SetFlashConfig(data->base, &tmp_config, port);
+
+#if (CONFIG_FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL == 1)
+	data->base->DLLCR[port >> 1U] = FLEXSPI_DLLCR_OVRDEN(1) |
+					FLEXSPI_DLLCR_OVRDVAL(CONFIG_FLASH_MCUX_FLEXSPI_OVRDVAL);
+#endif
+
 	FLEXSPI_UpdateLUT(data->base, data->port_luts[port].lut_offset,
 			  lut_ptr, lut_count);
 	irq_unlock(key);
@@ -264,14 +304,6 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	for (i = 0; i < port; i++) {
 		offset += data->size[i];
 	}
-
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
-	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
-	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
-		/* Address shift is set, add 0x1000_0000 to AHB address */
-		offset += 0x10000000;
-	}
-#endif
 
 	return data->ahb_base + offset;
 }
@@ -350,6 +382,12 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 
 	FLEXSPI_Init(data->base, &flexspi_config);
 
+#if defined(FLEXSPI_AHBCR_ALIGNMENT_MASK)
+	/* Configure AHB alignment boundary */
+	data->base->AHBCR = (data->base->AHBCR & ~FLEXSPI_AHBCR_ALIGNMENT_MASK) |
+		FLEXSPI_AHBCR_ALIGNMENT(data->ahb_boundary);
+#endif
+
 	if (memc_flexspi_is_running_xip(dev)) {
 		/* Restore flash sizes */
 		for (i = 0; i < kFLEXSPI_PortCount; i++) {
@@ -422,6 +460,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),	\
 		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),		\
 		.ahb_read_addr_opt = DT_INST_PROP(n, ahb_read_addr_opt),\
+		.ahb_boundary = DT_INST_ENUM_IDX(n, ahb_boundary),	\
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\

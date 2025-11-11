@@ -1,7 +1,7 @@
-.. _tfm_psa_crypto:
+.. zephyr:code-sample:: tfm_psa_crypto
+   :name: TF-M PSA crypto
 
-TF-M PSA crypto
-################
+   Use the PSA Crypto API for cryptography and device certificate signing requests.
 
 Overview
 ********

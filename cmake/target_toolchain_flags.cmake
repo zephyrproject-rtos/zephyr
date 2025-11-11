@@ -35,8 +35,15 @@ include(${CMAKE_CURRENT_LIST_DIR}/compiler/compiler_features.cmake)
 # a new toolchain.
 include(${CMAKE_CURRENT_LIST_DIR}/compiler/compiler_flags_template.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/linker/linker_flags_template.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/linker/linker_libraries_template.cmake)
 
 # Configure the toolchain flags based on what toolchain technology is used
 # (gcc, host-gcc etc.)
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/compiler_flags.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/linker_flags.cmake OPTIONAL)
+
+if(CONFIG_NATIVE_LIBRARY)
+  include(${TOOLCHAIN_ROOT}/cmake/linker/linker_libraries_native.cmake)
+else()
+  include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/linker_libraries.cmake OPTIONAL)
+endif()

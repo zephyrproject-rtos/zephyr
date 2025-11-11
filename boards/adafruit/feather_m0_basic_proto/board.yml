@@ -1,5 +1,6 @@
 board:
   name: adafruit_feather_m0_basic_proto
+  full_name: Feather M0 Basic Proto
   vendor: adafruit
   socs:
     - name: samd21g18a

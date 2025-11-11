@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,11 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 		(uint32_t)data->active_fb);
 	LCDIF_SetFrameBufferConfig(config->base, 0, &data->fb_config);
 
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	LCDIF_Start(config->base);
+	LCDIF_SetUpdateReady(config->base);
+#endif
+
 #if CONFIG_MCUX_DCNANO_LCDIF_FB_NUM != 0
 	/* Update index of active framebuffer */
 	data->next_idx = (data->next_idx + 1) % CONFIG_MCUX_DCNANO_LCDIF_FB_NUM;
@@ -128,18 +133,17 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
-	capabilities->supported_pixel_formats =
-		(PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888);
+	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888);
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	switch (data->fb_config.format) {
 	case kLCDIF_PixelFormatRGB565:
-		/* Zephyr stores RGB565 as big endian, and LCDIF
-		 * expects little endian. Use BGR565 format to resolve
-		 * this.
-		 */
-		capabilities->current_pixel_format = PIXEL_FORMAT_BGR_565;
+		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	case kLCDIF_PixelFormatARGB8888:
+#else
 	case kLCDIF_PixelFormatXRGB8888:
+#endif
 		capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		break;
 	default:
@@ -176,16 +180,16 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 
 	switch (pixel_format) {
-	case PIXEL_FORMAT_BGR_565:
-		/* Zephyr stores RGB565 as big endian, and LCDIF
-		 * expects little endian. Use BGR565 format to resolve
-		 * this.
-		 */
+	case PIXEL_FORMAT_RGB_565:
 		data->fb_config.format = kLCDIF_PixelFormatRGB565;
 		data->pixel_bytes = 2;
 		break;
 	case PIXEL_FORMAT_ARGB_8888:
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+#else
 		data->fb_config.format = kLCDIF_PixelFormatXRGB8888;
+#endif
 		data->pixel_bytes = 4;
 		break;
 	default:
@@ -228,6 +232,13 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 
 	LCDIF_DpiModeSetConfig(config->base, 0, &config->dpi_config);
 
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	lcdif_panel_config_t panel_config;
+
+	LCDIF_PanelGetDefaultConfig(&panel_config);
+	LCDIF_SetPanelConfig(config->base, 0, &panel_config);
+#endif
+
 	LCDIF_EnableInterrupts(config->base, kLCDIF_Display0FrameDoneInterrupt);
 	config->irq_config_func(dev);
 
@@ -247,7 +258,7 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api mcux_dcnano_lcdif_api = {
+static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	.blanking_on = mcux_dcnano_lcdif_display_blanking_on,
 	.blanking_off = mcux_dcnano_lcdif_display_blanking_off,
 	.set_pixel_format = mcux_dcnano_lcdif_set_pixel_format,
@@ -257,7 +268,7 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 };
 
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
-	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / 8)
+	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / BITS_PER_BYTE)
 #define MCUX_DCNANO_LCDIF_FB_SIZE(n) DT_INST_PROP(n, width) *			\
 	DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
 
@@ -278,6 +289,29 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
 #endif
 
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#define MCUX_DCNANO_LCDIF_FB_CONFIG(n)						\
+		.fb_config = {							\
+			.enable = true,						\
+			.inOrder = kLCDIF_PixelInputOrderARGB,			\
+			.rotateFlipMode = kLCDIF_Rotate0,			\
+			.alpha.enable = false,					\
+			.colorkey.enable = false,				\
+			.topLeftX = 0U,						\
+			.topLeftY = 0U,						\
+			.width = DT_INST_PROP(n, width),			\
+			.height = DT_INST_PROP(n, height),			\
+			.format = DT_INST_PROP(n, pixel_format),		\
+		},
+#else
+#define MCUX_DCNANO_LCDIF_FB_CONFIG(n)						\
+		.fb_config = {							\
+			.enable = true,						\
+			.enableGamma = false,					\
+			.format = DT_INST_PROP(n, pixel_format),		\
+		},
+#endif
+
 #define MCUX_DCNANO_LCDIF_DEVICE_INIT(n)					\
 	static void mcux_dcnano_lcdif_config_func_##n(const struct device *dev)	\
 	{									\
@@ -290,11 +324,7 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 	}									\
 	MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n);					\
 	struct mcux_dcnano_lcdif_data mcux_dcnano_lcdif_data_##n = {		\
-		.fb_config = {							\
-			.enable = true,						\
-			.enableGamma = false,					\
-			.format = DT_INST_PROP(n, pixel_format),		\
-		},								\
+		MCUX_DCNANO_LCDIF_FB_CONFIG(n)					\
 		.next_idx = 0,							\
 		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),		\
 	};									\

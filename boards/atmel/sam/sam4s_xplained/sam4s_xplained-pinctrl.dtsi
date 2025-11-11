@@ -29,18 +29,21 @@
 				 <PA10A_UART0_TXD>;
 		};
 	};
+
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <PB2A_UART1_RXD>,
 				 <PB3A_UART1_TXD>;
 		};
 	};
+
 	usart1_default: usart1_default {
 		group1 {
 			pinmux = <PA21A_USART1_RXD>,
 				 <PA22A_USART1_TXD>;
 		};
 	};
+
 	pwm0_default: pwm0_default {
 		group1 {
 			pinmux = <PA12B_PWM_PWMH1>,
@@ -48,12 +51,21 @@
 				 <PA14B_PWM_PWMH3>;
 		};
 	};
+
 	adc0_default: adc0_default {
 		group1 {
 			pinmux = <PB0X_ADC_AD4>,
 				 <PB1X_ADC_AD5>;
 		};
 	};
+
+	dacc_default: dacc_default {
+		group1 {
+			pinmux = <PB13D_DACC_DAC0>,
+				 <PB14D_DACC_DAC1>;
+		};
+	};
+
 	smc_default: smc_default {
 		group1 {
 			pinmux = <PC18A_EBI_A0>,

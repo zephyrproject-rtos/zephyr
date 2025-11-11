@@ -64,6 +64,7 @@ enum coap_option_num {
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
 	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
+	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
 	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
 };
 
@@ -202,6 +203,7 @@ enum coap_response_code {
 #define COAP_CODE_EMPTY (0)
 
 #define COAP_TOKEN_MAX_LEN 8UL
+#define COAP_FIXED_HEADER_SIZE 4UL
 
 /** @endcond */
 
@@ -220,6 +222,22 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,   /**< application/json-patch+json */
 	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,  /**< application/merge-patch+json */
 	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
+};
+
+/**
+ * @brief Set of No-Response option values for CoAP.
+ *
+ * To be used when encoding or decoding a No-Response option defined
+ * in RFC 7967.
+ */
+enum coap_no_response {
+	COAP_NO_RESPONSE_SUPPRESS_2_XX = 0x02,
+	COAP_NO_RESPONSE_SUPPRESS_4_XX = 0x08,
+	COAP_NO_RESPONSE_SUPPRESS_5_XX = 0x10,
+
+	COAP_NO_RESPONSE_SUPPRESS_ALL = COAP_NO_RESPONSE_SUPPRESS_2_XX |
+					COAP_NO_RESPONSE_SUPPRESS_4_XX |
+					COAP_NO_RESPONSE_SUPPRESS_5_XX,
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -299,10 +317,10 @@ struct coap_packet {
 	uint8_t hdr_len;  /**< CoAP header length */
 	uint16_t opt_len; /**< Total options length (delta + len + value) */
 	uint16_t delta;   /**< Used for delta calculation in CoAP packet */
-#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXYGEN)
+#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(__DOXYGEN__)
 	/**
 	 * Application specific user data.
-	 * Only available when @kconfig{CONFIG_COAP_KEEP_USER_DATA} is enabled.
+	 * @kconfig_dep{CONFIG_COAP_KEEP_USER_DATA}
 	 */
 	void *user_data;
 #endif
@@ -338,8 +356,15 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  * @brief CoAP transmission parameters.
  */
 struct coap_transmission_parameters {
-	/**  Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
+	/** Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
 	uint32_t ack_timeout;
+#if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) || defined(__DOXYGEN__)
+	/**
+	 * Set CoAP ack random factor. A value of 150 means a factor of 1.5. A value of 0 defaults
+	 * to @kconfig{CONFIG_COAP_ACK_RANDOM_PERCENT}. The value must be >= 100.
+	 */
+	uint16_t ack_random_percent;
+#endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 	/** Set CoAP retry backoff factor. A value of 200 means a factor of 2.0. */
 	uint16_t coap_backoff_percent;
 	/** Maximum number of retransmissions. */
@@ -528,6 +553,21 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 		  uint8_t *data, uint16_t max_len, uint8_t code);
 
+/**
+ * @brief Create a new CoAP Reset message for given request.
+ *
+ * This function works like @ref coap_packet_init, filling CoAP header type,
+ * and CoAP header message id fields.
+ *
+ * @param cpkt New packet to be initialized using the storage from @a data.
+ * @param req CoAP request packet that is being acknowledged
+ * @param data Data that will contain a CoAP packet information
+ * @param max_len Maximum allowable length of data
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len);
 /**
  * @brief Returns a randomly generated array of 8 bytes, that can be
  * used as a message's token.
@@ -887,21 +927,22 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number);
 
 /**
  * @brief Get values from CoAP block2 option.
  *
- * Decode block number and block size from option. Ignore the has_more flag
- * as it should always be zero on queries.
+ * Decode block number, more flag and block size from option.
  *
  * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
  * @param block_number Is set to the number of the block
  *
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number);
+int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			   uint32_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates

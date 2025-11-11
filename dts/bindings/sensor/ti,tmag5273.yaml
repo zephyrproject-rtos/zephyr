@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Texas Instruments TMAG5273 Low-Power Linear 3D Hall-Effect Sensor with an I2C interface.
+  Texas Instruments Low-Power Linear 3D Hall-Effect Sensor with an I2C interface.
 
   See the specification for the default I2C address.
 

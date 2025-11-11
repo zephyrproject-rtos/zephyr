@@ -14,13 +14,14 @@
 #define TICKER_USER_ID_ULL_LOW  MAYFLY_CALL_ID_2
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
-#define EVENT_PIPELINE_MAX 7
+#define ADV_INT_UNIT_US          625U
+#define SCAN_INT_UNIT_US         625U
+#define CONN_INT_UNIT_US         1250U
+#define ISO_INT_UNIT_US          CONN_INT_UNIT_US
+#define PERIODIC_INT_UNIT_US     CONN_INT_UNIT_US
+#define CONN_LOW_LAT_INT_UNIT_US 500U
 
-#define ADV_INT_UNIT_US      625U
-#define SCAN_INT_UNIT_US     625U
-#define CONN_INT_UNIT_US     1250U
-#define ISO_INT_UNIT_US      CONN_INT_UNIT_US
-#define PERIODIC_INT_UNIT_US 1250U
+#define ISO_INTERVAL_TO_US(interval) ((interval) * ISO_INT_UNIT_US)
 
 /* Timeout for Host to accept/reject cis create request */
 /* See BTCore5.3, 4.E.6.7 - Default value 0x1f40 * 625us */
@@ -28,10 +29,6 @@
 
 /* Intervals after which connection or sync establishment is considered lost */
 #define CONN_ESTAB_COUNTDOWN 6U
-
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-#define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 #if defined(CONFIG_BT_BROADCASTER)
 #if defined(CONFIG_BT_CTLR_ADV_SET)
@@ -90,9 +87,13 @@ enum {
 	TICKER_ID_SCAN_BASE,
 	TICKER_ID_SCAN_LAST = ((TICKER_ID_SCAN_BASE) + (BT_CTLR_SCAN_SET) - 1),
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	TICKER_ID_SCAN_AUX,
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	TICKER_ID_SCAN_AUX_BASE,
 	TICKER_ID_SCAN_AUX_LAST = ((TICKER_ID_SCAN_AUX_BASE) +
 				   (CONFIG_BT_CTLR_SCAN_AUX_SET) - 1),
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	TICKER_ID_SCAN_SYNC_BASE,
 	TICKER_ID_SCAN_SYNC_LAST = ((TICKER_ID_SCAN_SYNC_BASE) +
@@ -101,6 +102,9 @@ enum {
 	TICKER_ID_SCAN_SYNC_ISO_BASE,
 	TICKER_ID_SCAN_SYNC_ISO_LAST = ((TICKER_ID_SCAN_SYNC_ISO_BASE) +
 					(CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) - 1),
+	TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE,
+	TICKER_ID_SCAN_SYNC_ISO_RESUME_LAST = ((TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE) +
+					       (CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) - 1),
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -188,6 +192,19 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
+/* Number of (connection interval) events that can occur per (connection) event length.
+ * These number of event's prepare will be deferred if overlapping a single Tx-Rx chain.
+ */
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+/* Connection events per 251 byte PDU Coded PHY S8 event length */
+#define EVENT_DEFER_MAX 4U
+#elif defined(CONFIG_BT_CTLR_PHY_2M)
+/* Low latency connection interval events per 27 byte PDU 2M PHY event length */
+#define EVENT_DEFER_MAX 1U
+#else /* !CONFIG_BT_CTLR_PHY_CODED && !CONFIG_BT_CTLR_PHY_2M */
+#define EVENT_DEFER_MAX 0U
+#endif /* !CONFIG_BT_CTLR_PHY_CODED && !CONFIG_BT_CTLR_PHY_2M */
+
 enum done_result {
 	DONE_COMPLETED,
 	DONE_ABORTED,
@@ -203,19 +220,7 @@ struct ull_hdr {
 				*/
 
 	/* Event parameters */
-	/* TODO: The intention is to use the greater of the
-	 *       ticks_prepare_to_start or ticks_active_to_start as the prepare
-	 *       offset. At the prepare tick generate a software interrupt
-	 *       serviceable by application as the per role configurable advance
-	 *       radio event notification, usable for data acquisitions.
-	 *       ticks_preempt_to_start is the per role dynamic preempt offset,
-	 *       which shall be based on role's preparation CPU usage
-	 *       requirements.
-	 */
 	struct {
-		uint32_t ticks_active_to_start;
-		uint32_t ticks_prepare_to_start;
-		uint32_t ticks_preempt_to_start;
 		uint32_t ticks_slot;
 	};
 
@@ -242,7 +247,8 @@ struct lll_prepare_param {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-	uint8_t force;
+	uint8_t force:1;
+	uint8_t defer:1;
 	void *param;
 };
 
@@ -314,6 +320,8 @@ enum node_rx_type {
 	NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_ULL_RELEASE,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE,
+	NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED,
+	NODE_RX_TYPE_PATH_LOSS,
 	/* Signals retention (ie non-release) of rx node */
 	NODE_RX_TYPE_RETAIN,
 
@@ -340,8 +348,18 @@ struct node_rx_ftr {
 				* chaining, to reserve node_rx for CSA#2 event
 				* generation etc.
 				*/
-		void *aux_ptr;
-		uint8_t aux_phy;
+		void *lll_aux; /* LLL scheduled auxiliary context associated to
+				* the scan context when enqueuing the node rx.
+				* This does not overlap the below aux_ptr or
+				* aux_phy which are used before enqueue when
+				* setting up LLL scheduling.
+				*/
+		void *aux_ptr; /* aux pointer stored when LLL scheduling the
+				* auxiliary PDU reception by scan context.
+				*/
+		uint8_t aux_phy; /* aux phy stored when LLL scheduling the
+				  * auxiliary PDU reception by scan context.
+				  */
 		struct cte_conn_iq_report *iq_report;
 	};
 	uint32_t ticks_anchor;
@@ -391,6 +409,7 @@ struct node_rx_iso_meta {
 	uint64_t payload_number:39; /* cisPayloadNumber */
 	uint64_t status:8;          /* Status of reception (OK/not OK) */
 	uint32_t timestamp;         /* Time of reception */
+	void     *next;             /* Pointer to next pre-transmission rx_node (BIS) */
 };
 
 /* Define invalid/unassigned Controller state/role instance handle */
@@ -503,6 +522,7 @@ struct event_done_extra {
 				struct {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
+					uint8_t  is_aborted:1;
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 					uint8_t  estab_failed:1;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
@@ -517,6 +537,10 @@ struct event_done_extra {
 	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
 	*/
 				};
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+				void *lll;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 			};
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)

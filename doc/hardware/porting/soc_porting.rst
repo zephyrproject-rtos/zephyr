@@ -18,7 +18,7 @@ For SoC porting, the most important terms are:
 - SoC: the exact system on a chip the board's CPU is part of.
 - SoC series: a group of tightly related SoCs.
 - SoC family: a wider group of SoCs with similar characteristics.
-- CPU Cluster: a cluster of one or more CPU cores.
+- CPU cluster: a cluster of one or more CPU cores.
 - CPU core: a particular CPU instance of a given architecture.
 - Architecture: an instruction set architecture.
 
@@ -75,6 +75,7 @@ The mandatory files are:
 
 #. :file:`soc.yml`: a YAML file describing the high-level meta data of the
    SoC such as:
+
    - SoC name: the name of the SoC
    - CPU clusters: CPU clusters if the SoC contains one or more clusters
    - SoC series: the SoC series to which the SoC belong
@@ -116,7 +117,7 @@ The skeleton of a simple SoC YAML file containing just one SoC is:
 .. code-block:: yaml
 
    socs:
-   - name: <soc1>
+     - name: <soc1>
 
 It is possible to have multiple SoC located in the SoC folder.
 For example if they belong to a common family or series it is recommended to
@@ -127,18 +128,18 @@ Multiple SoCs and SoC series in a common folder can be described in the
 .. code-block:: yaml
 
    family:
-     name: <family-name>
-     series:
-       - name: <series-1-name>
-         socs:
-           - name: <soc1>
-             cpucluster:
-               - name: <coreA>
-               - name: <coreB>
-                 ...
-           - name: <soc2>
-       - name: <series-2-name>
-         ...
+     - name: <family-name>
+       series:
+         - name: <series-1-name>
+           socs:
+             - name: <soc1>
+               cpuclusters:
+                 - name: <coreA>
+                 - name: <coreB>
+                   ...
+             - name: <soc2>
+         - name: <series-2-name>
+           ...
 
 
 Write your SoC devicetree
@@ -230,22 +231,40 @@ files for a SoC:
 
   .. code-block:: kconfig
 
-     config SOC_<series name>
+     config SOC_FAMILY_<SOC_FAMILY_NAME>
              bool
+
+     config SOC_SERIES_<SOC_SERIES_NAME>
+             bool
+             select SOC_FAMILY_<SOC_FAMILY_NAME>
 
      config SOC_<SOC_NAME>
              bool
-             select SOC_SERIES_<series name>
+             select SOC_SERIES_<SOC_SERIES_NAME>
+
+     config SOC_FAMILY
+             default "<soc_family_name>" if SOC_FAMILY_<SOC_FAMILY_NAME>
+
+     config SOC_SERIES
+             default "<soc_series_name>" if SOC_SERIES_<SOC_SERIES_NAME>
 
      config SOC
-             default "SoC name" if SOC_<SOC_NAME>
+             default "<soc_name>" if SOC_<SOC_NAME>
 
-  Notice that ``SOC_NAME`` is a pure upper case version of the SoC name.
+  Notice that ``SOC_NAME`` is a pure uppercase version of the SoC name, ``SOC_SERIES_NAME`` is
+  a pure uppercase version of SoC series name and ``SOC_FAMILY_NAME`` is a pure uppercase version
+  of the SoC family name. If these fields do not appear in the :file:`soc.yml` file then they
+  should not be present in the :file:`Kconfig.soc` file.
 
-  The Kconfig ``SOC`` setting is globally defined as a string and therefore the
-  :file:`Kconfig.soc` file shall only define the default string value and not
-  the type. Notice that the string value must match the SoC name used in the
+  The Kconfigs ``SOC``, ``SOC_SERIES`` and ``SOC_FAMILY`` settings are globally defined as
+  strings and therefore the :file:`Kconfig.soc` file shall only define the default string values
+  and not the types. Notice that the string values must match the values used in the
   :file:`soc.yml` file.
+
+.. note::
+  The build system supports any variation of case for ``soc_name``, ``soc_series_name`` and
+  ``soc_family_mame``, but when submitting boards for inclusion in Zephyr itself, these must be
+  purely lowercase versions of the Kconfig names
 
 :file:`Kconfig`
   Included by :zephyr_file:`soc/Kconfig`.

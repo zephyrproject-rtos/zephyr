@@ -1,6 +1,0 @@
-family:
-  - name: mtk_adsp
-    series:
-      - name: mtk_adsp
-        socs:
-          - name: mt8195_adsp

@@ -63,13 +63,25 @@ level to the Zephyr GitHub repository.
 
 You may nominate yourself, or another GitHub user, for promotion to the Triage
 permission level by creating a GitHub issue, using the :github:`nomination
-template <new?assignees=&labels=Role+Nomination&template=006_nomination.md&title=>`.
+template <new?assignees=&labels=Role+Nomination&template=006_nomination.yml>`.
 
 Contributors granted the Triage permission level are permitted to add reviewers
 to a pull request and can be added as a reviewer by other GitHub users.
 Contributor change requests or approval on pull requests are not counted with
 respect to accepting and merging a pull request. However, Contributors comments
 and requested changes should still be considered by the pull request author.
+
+Zephyr Contributor Badge
+++++++++++++++++++++++++
+
+When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
+Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
+profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
+its awareness.
+
+You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
+
+.. _collaborator:
 
 Collaborator
 ++++++++++++
@@ -104,6 +116,9 @@ assignee to advance the review process and resolve any disagreements.
 Collaborator approval of pull requests are counted toward the minimum required
 approvals needed to merge a PR. Other criteria for merging may apply.
 
+
+.. _maintainer:
+
 Maintainer
 ++++++++++
 
@@ -122,13 +137,17 @@ in addition to those listed for Contributors and Collaborators:
   the TSC
 * Responsibility to ensure all contributions of the project have been reviewed
   within reasonable time.
-* Responsibility to enforce the code of conduct.
+* Responsibility to enforce the Code of Conduct. As leaders in the community,
+  maintainers are expected to be role models in upholding the project's code
+  of conduct and creating a welcoming and inclusive environment for everyone.
 * Responsibility to triage static analysis issues in their code area.
   See :ref:`static_analysis`.
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
-:ref:`maintainers_file` in the Zephyr repository.
+:ref:`maintainers_file` in the Zephyr repository. Candidates who are neither
+Contributors nor Collaborators must be approved by the TSC before they can
+assume the role of Maintainer.
 
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
@@ -273,7 +292,7 @@ Roles / Permissions
     Supportive Roles QA/Validation                                      x                        x
         ..           DevOps                   **x**
         ..           System Admin             **x**                                      x
-        ..           Release Engineering      **x**      **x**          x
+        ..           Release Engineering                 **x**          x
 
     ================ =================== =========== ================ =========== =========== ============
 
@@ -285,9 +304,6 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The :zephyr_file:`MAINTAINERS.yml` file shall replace the
-  :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
-  reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
@@ -333,70 +349,4 @@ Generic guidelines for deciding and filling in the Maintainers' list
     implementation
 
 
-Release Activity
-################
-
-    .. figure:: img/img_release_activity.png
-         :width: 663px
-         :align: center
-         :alt: Release Activity
-
-.. _merge_criteria:
-
-Merge Criteria
-++++++++++++++
-
-* Minimal of 2 approvals, including an approval by the designated assignee.
-* Pull requests should be reviewed by at least a maintainer or collaborator of
-  each affected area; Unless the changes to a given area are considered trivial
-  enough, in which case approvals by other affected subsystems
-  maintainers/collaborators would suffice.
-* Four eye principle on the organisation level. We already require at least 2
-  approvals (basic four eye principle), however, such reviews and approvals
-  might be unintentionally biased in the case where the submitter is from the
-  same organisation as the approvers. To allow for project wide review and
-  approvals, the merge criteria is extended with the guidelines below:
-
-  * Changes or additions to common and shared code shall have approvals from
-    different organisations (at least one approval from an
-    organisation different than the submitters').
-    Common and shared code is defined as anything that does not fall under
-    :file:`soc`, :file:`boards` and :file:`drivers/*/*`.
-  * Changes or additions to hardware support (driver, SoC, boards) shall at
-    least have the merger be from a different organisation. This applies only
-    to implementation of an API supporting vendor specific hardware and not the
-    APIs.
-  * Release engineers may make exceptions for areas with contributions primarily
-    coming from one organisation and where reviews from other organisations are
-    not possible, however, merges shall be completed by a person from a different
-    organisation. In such cases, the minimum review period of at least 2 days
-    shall be strictly followed to allow for additional reviews.
-  * Release engineers shall not merge code changes originating and reviewed
-    only by their own organisation. To be able to merge such changes, at least
-    one review shall be from a different organisation.
-
-* A minimum review period of 2 business days, 4 hours for trivial changes (see
-  :ref:`review_time`).
-* Hotfixes can be merged at any time after CI has passed and are excluded from
-  most of the conditions listed above.
-* All required checks are passing:
-
-  * Codeowners
-  * Device Tree
-  * Documentation
-  * Gitlint
-  * Identity/Emails
-  * Kconfig
-  * License checks
-  * Checkpatch (Coding Style)
-  * Pylint
-  * Integration Tests (Via twister) on emulation/simulation platforms
-  * Simulated Bluetooth Tests
-
-* Planned
-
-  * Footprint
-  * Code coverage
-  * Coding Guidelines
-  * Static Analysis (Coverity)
-  * Documentation coverage (APIs)
+.. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8

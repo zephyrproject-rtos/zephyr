@@ -1,7 +1,4 @@
-.. _stm32373c_eval_board:
-
-ST STM32373C Evaluation
-#######################
+.. zephyr:board:: stm32373c_eval
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32373C-EVAL evaluation board is designed as a complete demonstration and 
 The full range of hardware features on the board can help the user evaluate all peripherals (USB FS, USART, audio DAC, microphone ADC, dot-matrix LCD, IrDA, LDR, MicroSD card, HDMI CEC, ECG, pressure sensor, CAN, IR transmitter and receiver, EEPROM, touch slider, temperature sensor, etc.) and develop their own applications.
 
 Extension headers make it possible to easily connect a daughter board or wrapping board for a specific application.
-
-.. image:: img/stm32373c_eval.jpg
-     :align: center
-     :alt: STM32373C-EVAL
 
 More information about the board can be found at the `STM32373C-EVAL website`_.
 
@@ -61,31 +54,7 @@ More information about STM32F373VCT6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32373c_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32373c_eval/stm32373c_eval_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -110,6 +79,8 @@ Default Zephyr Peripheral Mapping:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``stm32373c_eval`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

@@ -28,23 +28,13 @@
 #error Only one LPTIM instance should be enabled
 #endif
 
+#if DT_INST_NUM_CLOCKS(0) <= 1
+#error "LPTIM source clock must be provided in Device Tree"
+#endif
+
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
-#if DT_INST_NUM_CLOCKS(0) == 1
-#warning Kconfig for LPTIM source clock (LSI/LSE) is deprecated, use device tree.
-static const struct stm32_pclken lptim_clk[] = {
-	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields */
-	/* Fortunately, values are consistent across enabled series */
-#ifdef CONFIG_STM32_LPTIM_CLOCK_LSI
-	{.bus = STM32_SRC_LSI, .enr = LPTIM1_SEL(1)}
-#else
-	{.bus = STM32_SRC_LSE, .enr = LPTIM1_SEL(3)}
-#endif
-};
-#else
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
-#endif
 
 static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -108,6 +98,123 @@ static const struct device *stdby_timer = DEVICE_DT_GET(DT_CHOSEN(st_lptim_stdby
 
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
+/**
+ * @brief Enable autonomous clock for the LPTIM instance in use
+ *
+ * Enables autonomous mode (if supported) for whichever LPTIM instance
+ * is configured as the system timer. This allows the LPTIM to continue
+ * running in low power modes.
+ */
+static void lptim_enable_autonomous_mode(void)
+{
+	const uint32_t lptim_base = (uint32_t)LPTIM;
+
+	switch (lptim_base) {
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim1)) && defined(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN)
+	case DT_REG_ADDR(DT_NODELABEL(lptim1)):
+		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim3)) && defined(LL_SRDAMR_GRP1_PERIPH_LPTIM3AMEN)
+	case DT_REG_ADDR(DT_NODELABEL(lptim3)):
+		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM3AMEN);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim4)) && defined(LL_SRDAMR_GRP1_PERIPH_LPTIM4AMEN)
+	case DT_REG_ADDR(DT_NODELABEL(lptim4)):
+		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM4AMEN);
+		break;
+#endif
+	default:
+		/* Note: LPTIM2, LPTIM5, LPTIM6 do not support autonomous mode */
+		break;
+	}
+}
+
+/**
+ * @brief Freeze LPTIM during debug for the instance in use
+ *
+ * Configures the debug subsystem to freeze the LPTIM counter when the CPU
+ * is halted in a debugger. Handles all LPTIM instances across different buses.
+ */
+static void lptim_freeze_during_debug(void)
+{
+#ifdef CONFIG_DEBUG
+	const uint32_t lptim_base = (uint32_t)LPTIM;
+
+	switch (lptim_base) {
+		/* LPTIM1 - can be on APB1_GRP1, APB3_GRP1, or APB7_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim1))
+	case DT_REG_ADDR(DT_NODELABEL(lptim1)):
+#if defined(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP);
+#elif defined(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP);
+#elif defined(LL_DBGMCU_APB7_GRP1_LPTIM1_STOP)
+		LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_LPTIM1_STOP);
+#endif
+		break;
+#endif
+		/* LPTIM2 - can be on APB1_GRP1, APB1_GRP2, APB3_GRP1, or APB4_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim2))
+	case DT_REG_ADDR(DT_NODELABEL(lptim2)):
+#if defined(LL_DBGMCU_APB1_GRP1_LPTIM2_STOP)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_LPTIM2_STOP);
+#elif defined(LL_DBGMCU_APB1_GRP2_LPTIM2_STOP)
+		LL_DBGMCU_APB1_GRP2_FreezePeriph(LL_DBGMCU_APB1_GRP2_LPTIM2_STOP);
+#elif defined(LL_DBGMCU_APB3_GRP1_LPTIM2_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM2_STOP);
+#elif defined(LL_DBGMCU_APB4_GRP1_LPTIM2_STOP)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_LPTIM2_STOP);
+#endif
+		break;
+#endif
+		/* LPTIM3 - can be on APB1_GRP2, APB3_GRP1, or APB4_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim3))
+	case DT_REG_ADDR(DT_NODELABEL(lptim3)):
+#if defined(LL_DBGMCU_APB1_GRP2_LPTIM3_STOP)
+		LL_DBGMCU_APB1_GRP2_FreezePeriph(LL_DBGMCU_APB1_GRP2_LPTIM3_STOP);
+#elif defined(LL_DBGMCU_APB3_GRP1_LPTIM3_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM3_STOP);
+#elif defined(LL_DBGMCU_APB4_GRP1_LPTIM3_STOP)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_LPTIM3_STOP);
+#endif
+		break;
+#endif
+		/* LPTIM4 - can be on APB3_GRP1 or APB4_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim4))
+	case DT_REG_ADDR(DT_NODELABEL(lptim4)):
+#if defined(LL_DBGMCU_APB3_GRP1_LPTIM4_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM4_STOP);
+#elif defined(LL_DBGMCU_APB4_GRP1_LPTIM4_STOP)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_LPTIM4_STOP);
+#endif
+		break;
+#endif
+		/* LPTIM5 - can be on APB3_GRP1 or APB4_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim5))
+	case DT_REG_ADDR(DT_NODELABEL(lptim5)): {
+#if defined(LL_DBGMCU_APB3_GRP1_LPTIM5_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM5_STOP);
+#elif defined(LL_DBGMCU_APB4_GRP1_LPTIM5_STOP)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_LPTIM5_STOP);
+#endif
+	}
+#endif
+	/* LPTIM6 - on APB3_GRP1 */
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim6))
+	case DT_REG_ADDR(DT_NODELABEL(lptim6)):
+#if defined(LL_DBGMCU_APB3_GRP1_LPTIM6_STOP)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM6_STOP);
+#endif
+		break;
+#endif
+	default:
+		break;
+	}
+#endif /* CONFIG_DEBUG */
+}
+
 static inline bool arrm_state_get(void)
 {
 	return (LL_LPTIM_IsActiveFlag_ARRM(LPTIM) && LL_LPTIM_IsEnabledIT_ARRM(LPTIM));
@@ -162,8 +269,9 @@ static void lptim_set_autoreload(uint32_t arr)
 	/* Update autoreload register */
 	autoreload_next = arr;
 
-	if (!autoreload_ready)
+	if (!autoreload_ready) {
 		return;
+	}
 
 	/* The ARR register ready, we could set it directly */
 	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM))) {
@@ -243,6 +351,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
 
+		LL_LPTIM_DisableIT_ARROK(LPTIM);
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		/* Stop clocks for LPTIM, since RTC is used instead */
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
@@ -417,9 +528,8 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
-#if defined(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN)
-	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
-#endif
+	/* Enable autonomous mode for the LPTIM instance in use */
+	lptim_enable_autonomous_mode();
 
 	/* Enable LPTIM clock source */
 	err = clock_control_configure(clk_ctrl,
@@ -449,6 +559,22 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
+#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
+
+	if (timeout > (lptim_clock_presc * 0xFFFF) / lptim_clock_freq) {
+		__ASSERT(0,
+			"st,timeout can't be higher than range defined by LPTIM presc and freq");
+		return -EIO;
+	}
+
+
+	/*
+	 * Define the lptim_time_base that should be set to expire at "timeout" seconds
+	 * running counter at (lptim_clock_freq divided by lptim_clock_presc) Hz
+	 */
+	lptim_time_base = (lptim_clock_freq * timeout) / lptim_clock_presc;
+#else
 	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {
 		lptim_time_base = 0xF9FF;
@@ -457,6 +583,8 @@ static int sys_clock_driver_init(void)
 	} else {
 		return -EIO;
 	}
+
+#endif /* st_timeout */
 
 #if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
 	/*
@@ -493,11 +621,9 @@ static int sys_clock_driver_init(void)
 	/* the LPTIM clock freq is affected by the prescaler */
 	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
-				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
+	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #else
 	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #endif
@@ -507,9 +633,8 @@ static int sys_clock_driver_init(void)
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM);
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
 
@@ -529,6 +654,7 @@ static int sys_clock_driver_init(void)
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
 
 	/* ARROK bit validates the write operation to ARR register */
+	autoreload_ready = true;
 	LL_LPTIM_EnableIT_ARROK(LPTIM);
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
@@ -554,15 +680,9 @@ static int sys_clock_driver_init(void)
 	/* Start the LPTIM counter in continuous mode */
 	LL_LPTIM_StartCounter(LPTIM, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
-#ifdef CONFIG_DEBUG
-	/* stop LPTIM during DEBUG */
-#if defined(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP)
-	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP);
-#elif defined(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP)
-	LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP);
-#endif
+	/* Freeze LPTIM during debug */
+	lptim_freeze_during_debug();
 
-#endif
 	return 0;
 }
 
@@ -604,7 +724,7 @@ void sys_clock_idle_exit(void)
 		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
 
 		/* Convert standby time in LPTIM cnt */
-		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
+		missed_lptim_cnt = (CONFIG_STM32_LPTIM_CLOCK * stdby_timer_us) /
 				   USEC_PER_SEC;
 		/* Add the LPTIM cnt pre standby */
 		missed_lptim_cnt += lptim_cnt_pre_stdby;

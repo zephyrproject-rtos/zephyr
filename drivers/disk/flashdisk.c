@@ -424,7 +424,7 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 end:
 	k_mutex_unlock(&ctx->lock);
 
-	return 0;
+	return rc;
 }
 
 static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
@@ -531,4 +531,4 @@ static int disk_flash_init(void)
 	return err;
 }
 
-SYS_INIT(disk_flash_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(disk_flash_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

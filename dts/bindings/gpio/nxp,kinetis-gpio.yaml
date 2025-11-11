@@ -1,4 +1,4 @@
-description: Kinetis GPIO node
+description: Kinetis GPIO
 
 compatible: "nxp,kinetis-gpio"
 

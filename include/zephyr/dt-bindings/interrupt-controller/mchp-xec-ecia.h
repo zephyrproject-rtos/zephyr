@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DT_BINDING_MCHP_XEC_ECIA_H
-#define __DT_BINDING_MCHP_XEC_ECIA_H
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 
 /*
  * Encode peripheral interrupt information into a 32-bit unsigned.
@@ -26,4 +26,4 @@
 #define MCHP_XEC_ECIA_NVIC_AGGR(e)	(((e) >> 16) & 0xff)
 #define MCHP_XEC_ECIA_NVIC_DIRECT(e)	(((e) >> 24) & 0xff)
 
-#endif /* __DT_BINDING_MCHP_XEC_ECIA_H */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_ */

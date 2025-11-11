@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,8 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_sam0_tc32, CONFIG_COUNTER_LOG_LEVEL);
+
+/* clang-format off */
 
 struct counter_sam0_tc32_ch_data {
 	counter_alarm_callback_t callback;
@@ -31,16 +34,11 @@ struct counter_sam0_tc32_config {
 	struct counter_config_info info;
 	TcCount32 *regs;
 	const struct pinctrl_dev_config *pcfg;
-#ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
+	uint32_t gclk_gen;
 	uint16_t gclk_id;
-#else
-	uint32_t pm_apbcmask;
-	uint16_t gclk_clkctrl_id;
-#endif
 	uint16_t prescaler;
-
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -336,20 +334,15 @@ static int counter_sam0_tc32_initialize(const struct device *dev)
 	TcCount32 *tc = cfg->regs;
 	int retval;
 
-#ifdef MCLK
-	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					  GCLK_PCHCTRL_CHEN;
-
-	/* Enable TC clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
-#else
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
 
-	/* Enable clock in PM */
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#else
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
 
 	/*
@@ -391,7 +384,7 @@ static int counter_sam0_tc32_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_sam0_tc32_driver_api = {
+static DEVICE_API(counter, counter_sam0_tc32_driver_api) = {
 	.start = counter_sam0_tc32_start,
 	.stop = counter_sam0_tc32_stop,
 	.get_value = counter_sam0_tc32_get_value,
@@ -403,60 +396,57 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 };
 
 
-#ifdef MCLK
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)				\
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
-	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),
-#else
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)				\
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),
-#endif
+#define ASSIGNED_CLOCKS_CELL_BY_NAME						\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
-#define SAM0_TC32_PRESCALER(n)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prescaler),		\
+#define SAM0_TC32_PRESCALER(n)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prescaler),			\
 		    (DT_INST_PROP(n, prescaler)), (1))
 
-#define COUNTER_SAM0_TC32_DEVICE(n)					\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static void counter_sam0_tc32_config_##n(const struct device *dev); \
-	static const struct counter_sam0_tc32_config			\
-									\
-	counter_sam0_tc32_dev_config_##n = {				\
-		.info = {						\
-			.max_top_value = UINT32_MAX,			\
-			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /		\
-				SAM0_TC32_PRESCALER(n),			\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-			.channels = 1					\
-		},							\
-		.regs = (TcCount32 *)DT_INST_REG_ADDR(n),		\
-		COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			\
-		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,		\
-				      SAM0_TC32_PRESCALER(n)),		\
-		.irq_config_func = &counter_sam0_tc32_config_##n,	\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	};								\
-									\
-	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &counter_sam0_tc32_initialize,		\
-			    NULL,					\
-			    &counter_sam0_tc32_dev_data_##n,		\
-			    &counter_sam0_tc32_dev_config_##n,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
-			    &counter_sam0_tc32_driver_api);		\
-									\
-	static void counter_sam0_tc32_config_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    counter_sam0_tc32_isr,			\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define COUNTER_SAM0_TC32_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
+	static void counter_sam0_tc32_config_##n(const struct device *dev);	\
+	static const struct counter_sam0_tc32_config				\
+										\
+	counter_sam0_tc32_dev_config_##n = {					\
+		.info = {							\
+			.max_top_value = UINT32_MAX,				\
+			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /			\
+				SAM0_TC32_PRESCALER(n),				\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
+			.channels = 1						\
+		},								\
+		.regs = (TcCount32 *)DT_INST_REG_ADDR(n),			\
+		.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+		.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+		.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
+		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,			\
+				      SAM0_TC32_PRESCALER(n)),			\
+		.irq_config_func = &counter_sam0_tc32_config_##n,		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+	};									\
+										\
+	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;	\
+										\
+	DEVICE_DT_INST_DEFINE(n,						\
+			    &counter_sam0_tc32_initialize,			\
+			    NULL,						\
+			    &counter_sam0_tc32_dev_data_##n,			\
+			    &counter_sam0_tc32_dev_config_##n,			\
+			    PRE_KERNEL_1,					\
+			    CONFIG_COUNTER_INIT_PRIORITY,			\
+			    &counter_sam0_tc32_driver_api);			\
+										\
+	static void counter_sam0_tc32_config_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    counter_sam0_tc32_isr,				\
+			    DEVICE_DT_INST_GET(n), 0);				\
+		irq_enable(DT_INST_IRQN(n));					\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_TC32_DEVICE)
+
+/* clang-format on */

@@ -15,6 +15,20 @@ module = USBH
 module-str = usbh
 source "subsys/logging/Kconfig.template.log_config"
 
+config USBH_USB_DEVICE_MAX
+	int "Maximum number of USB devices supported."
+	default 4
+	range 2 127
+	help
+	  Maximum number of USB devices supported for all controllers.
+
+config USBH_USB_DEVICE_HEAP
+	int "Memory used to cache device descriptors"
+	default 1024
+	range 256 16384
+	help
+	  Memory used to cache device descriptors.
+
 config USBH_SHELL
 	bool "USB host shell"
 	depends on SHELL
@@ -38,5 +52,7 @@ config USBH_MAX_UHC_MSG
 	default 10
 	help
 	  Maximum number of USB host controller events that can be queued.
+
+rsource "Kconfig.usbip"
 
 endif # USB_HOST_STACK

@@ -234,7 +234,7 @@ static int nxp_pit_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api nxp_pit_driver_api = {
+static DEVICE_API(counter, nxp_pit_driver_api) = {
 	.start = nxp_pit_start,
 	.stop = nxp_pit_stop,
 	.get_value = nxp_pit_get_value,

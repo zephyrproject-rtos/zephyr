@@ -297,7 +297,7 @@ uint32_t counter_dw_timer_get_freq(const struct device *timer_dev)
 #endif
 }
 
-static const struct counter_driver_api dw_timer_driver_api = {
+static DEVICE_API(counter, dw_timer_driver_api) = {
 	.start = counter_dw_timer_start,
 	.stop = counter_dw_timer_disable,
 	.get_value = counter_dw_timer_get_value,

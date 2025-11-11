@@ -49,7 +49,7 @@ static int fixed_rate_clk_get_rate(const struct device *dev,
 	return 0;
 }
 
-static const struct clock_control_driver_api fixed_rate_clk_api = {
+static DEVICE_API(clock_control, fixed_rate_clk_api) = {
 	.on = fixed_rate_clk_on,
 	.off = fixed_rate_clk_off,
 	.get_status = fixed_rate_clk_get_status,

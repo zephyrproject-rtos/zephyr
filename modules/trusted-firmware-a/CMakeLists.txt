@@ -1,12 +1,15 @@
 # Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_BUILD_WITH_TFA)
+if(CONFIG_BUILD_WITH_TFA)
   set(TFA_BINARY_DIR ${CMAKE_BINARY_DIR}/tfa)
 
   file(MAKE_DIRECTORY ${TFA_BINARY_DIR})
 
   include(ExternalProject)
+
+  set(tfa_image_info MAP "name: tfa, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}")
+  build_info(images VALUE ${tfa_image_info})
 
   ExternalProject_Add(
     tfa
@@ -19,7 +22,7 @@ if (CONFIG_BUILD_WITH_TFA)
     USES_TERMINAL_BUILD True
   )
 
-  if (CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
+  if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(TFA_BUILD_DEBUG "1")
   else()
     set(TFA_BUILD_DEBUG "0")

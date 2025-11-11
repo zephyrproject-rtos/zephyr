@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_NBU
+	bool
+	default y if BT || IEEE802154
+	depends on DT_HAS_NXP_NBU_ENABLED
+	help
+	  NXP Narrow Band Unit interrupt initialization.

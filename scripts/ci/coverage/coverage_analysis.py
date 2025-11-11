@@ -52,8 +52,8 @@ class Json_report:
             for element in parser:
                 for testsuite in element:
                     for testcase in testsuite['testcases']:
-                        if testcase['status'] is None:
-                            testcase_name = testcase['identifier']
+                        if testcase['status'] == 'None':
+                            testcase_name = testsuite['name']
                             component_name = testcase_name[:testcase_name.find('.')]
                             component = {
                                 "name": component_name,
@@ -334,7 +334,7 @@ class Json_report:
             {
                 "bold": True,
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
         cell_format = workbook.add_format(
@@ -404,7 +404,7 @@ class Json_report:
             {
                 "bold": True,
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
 
@@ -415,7 +415,7 @@ class Json_report:
                 "align": "center",
                 "valign": "vcenter",
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
         cell_format = self.report_book.add_format(

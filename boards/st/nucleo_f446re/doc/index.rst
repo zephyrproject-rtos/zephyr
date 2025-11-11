@@ -1,7 +1,4 @@
-.. _nucleo_f446re_board:
-
-ST Nucleo F446RE
-################
+.. zephyr:board:: nucleo_f446re
 
 Overview
 ********
@@ -24,10 +21,6 @@ some highlights of the Nucleo F446RE board:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f446re.jpg
-   :align: center
-   :alt: Nucleo F446RE
 
 More information about the board can be found at the `Nucleo F446RE website`_.
 
@@ -69,33 +62,7 @@ More information about STM32F446RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f446re board configuration supports the following hardware features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| CAN 1/2     | on-chip    | Controller Area Network             |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f446re/nucleo_f446re_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -164,6 +131,10 @@ used with `RS485 CAN Shield`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo F446RE board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_f446re`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -171,13 +142,21 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo F446RE board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Nucleo F446RE
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board.
 
@@ -202,7 +181,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -224,3 +203,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _RS485 CAN Shield:
    https://www.waveshare.com/wiki/RS485_CAN_Shield
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

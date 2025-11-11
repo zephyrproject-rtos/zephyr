@@ -38,19 +38,25 @@ extern "C" {
  */
 #define SYS_FOREVER_US (-1)
 
+/** @brief System-wide macro to initialize #k_timeout_t with a number of ticks
+ * converted from milliseconds.
+ */
+#define SYS_TIMEOUT_MS_INIT(ms) \
+	Z_TIMEOUT_TICKS_INIT((ms) == SYS_FOREVER_MS ? \
+	K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
+
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
-#define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
-					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
+#define SYS_TIMEOUT_MS(ms) ((k_timeout_t) SYS_TIMEOUT_MS_INIT(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-__syscall int sys_clock_hw_cycles_per_sec_runtime_get(void);
+__syscall unsigned int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
-static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
+static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
-	extern int z_clock_hw_cycles_per_sec;
+	extern unsigned int z_clock_hw_cycles_per_sec;
 
 	return z_clock_hw_cycles_per_sec;
 }
@@ -73,7 +79,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 #define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
 #else
-#define sys_clock_hw_cycles_per_sec() CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define sys_clock_hw_cycles_per_sec() (uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #endif
 
 /** @internal
@@ -169,10 +175,10 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
 	((uint64_t) (__t) <= 0xffffffffU -				\
 	 z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?	\
-	 ((uint32_t)((__t) +						\
+	 ((uint32_t)(((__t) +						\
 		     z_tmcvt_off_div(__from_hz, __to_hz,		\
 				     __round_up, __round_off)) /	\
-	  z_tmcvt_divisor(__from_hz, __to_hz))				\
+	  z_tmcvt_divisor(__from_hz, __to_hz)))				\
 	 :								\
 	 (uint32_t) (((uint64_t) (__t) +				\
 		      z_tmcvt_off_div(__from_hz, __to_hz,		\
@@ -182,7 +188,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Integer multiplication 32-bit conversion */
 #define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)	\
-	(uint32_t) (__t)*((__to_hz) / (__from_hz))
+	((uint32_t) ((__t)*((__to_hz) / (__from_hz))))
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
@@ -206,9 +212,9 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) / (__from_hz))*(__to_hz) +			\
-	 (((uint64_t) (__t) % (__from_hz))*(__to_hz) +		\
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+	((((uint64_t) (__t) / (__from_hz))*(__to_hz)) +			\
+	 (((((uint64_t) (__t) % (__from_hz))*(__to_hz)) +		\
+	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
 
 /* General 64-bit conversion. Uses one of the two above macros */
 #define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \

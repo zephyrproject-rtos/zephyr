@@ -46,7 +46,6 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void prepare(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
@@ -100,44 +99,26 @@ void lll_sync_create_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
+	/* Request to start HF Clock */
+	err = lll_hfclock_on();
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 void lll_sync_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
+	/* Request to start HF Clock */
+	err = lll_hfclock_on();
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-static void prepare(void *param)
-{
-	struct lll_prepare_param *p;
-	struct lll_sync *lll;
-	int err;
-
-	/* Request to start HF Clock */
-	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
-
-	p = param;
-
-	lll = p->param;
-
-	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (p->lazy + 1U);
-	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
-		lll->window_widening_prepare_us = lll->window_widening_max_us;
-	}
+	LL_ASSERT_ERR(err == 0 || err == -EINPROGRESS);
 }
 
 void lll_sync_aux_prepare_cb(struct lll_sync *lll,
@@ -156,7 +137,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -272,7 +253,8 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->lazy_prepare = p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -360,7 +342,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->lazy_prepare = p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -440,6 +423,13 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	lll = p->param;
 
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (lll->lazy_prepare + 1U);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
+
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
 	lll->window_widening_prepare_us = 0;
@@ -466,7 +456,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	lll_chan_set(chan_idx);
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -520,7 +510,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -562,6 +552,13 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll_sync_next = ull_sync_lll_is_valid_get(next);
 		if (!lll_sync_next) {
+			lll_sync_curr = curr;
+
+			/* Do not abort if near supervision timeout */
+			if (lll_sync_curr->forced) {
+				return 0;
+			}
+
 			/* Abort current event as next event is not a
 			 * scan and not a scan aux event.
 			 */
@@ -620,15 +617,25 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
+
+	/* Get reference to LLL connection context */
+	lll = prepare_param->param;
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
-	lll = prepare_param->param;
-	lll->skip_prepare += (prepare_param->lazy + 1U);
+	lll->lazy_prepare = prepare_param->lazy;
+	lll->skip_prepare += (lll->lazy_prepare + 1U);
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (prepare_param->lazy + 1);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = 0U;
@@ -738,6 +745,7 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
+	LL_ASSERT_ERR(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
@@ -747,7 +755,7 @@ static void isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
 	 * channel chaining, create connection or to create periodic sync.
@@ -819,6 +827,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 
 			ftr = &(node_rx->rx_ftr);
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			ftr->aux_failed = 0U;
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
@@ -942,7 +951,7 @@ static void isr_rx_adv_sync_estab(void *param)
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-		LL_ASSERT(!lll->node_cte_incomplete);
+		LL_ASSERT_DBG(!lll->node_cte_incomplete);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 		goto isr_rx_done;
@@ -1128,11 +1137,12 @@ isr_rx_aux_chain_done:
 		 * generated thereafter by HCI as incomplete.
 		 */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -1169,9 +1179,16 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 {
 	struct event_done_extra *e;
 
+	/* Reset Sync context association with any Aux context as the chain reception is done.
+	 * By code inspection there should not be a race that ULL execution context assigns lll_aux
+	 * that would be reset here, because either we are here not receiving a chain PDU or the
+	 * lll_aux has been set in the node rx type NODE_RX_TYPE_EXT_AUX_RELEASE before we are here.
+	 */
+	lll->lll_aux = NULL;
+
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = trx_cnt;
@@ -1223,11 +1240,12 @@ static void isr_done(void *param)
 		 * generated thereafter by HCI as incomplete.
 		 */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
@@ -1307,7 +1325,7 @@ static int iq_report_create_put(struct lll_sync *lll, uint8_t rssi_ready, uint8_
 		if (!lll->is_cte_incomplete &&
 		    is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 			iq_report = ull_df_iq_report_alloc();
-			LL_ASSERT(iq_report);
+			LL_ASSERT_ERR(iq_report);
 
 			iq_report_create(lll, rssi_ready, packet_status,
 					 cfg->slot_durations, iq_report);

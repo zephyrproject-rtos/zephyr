@@ -8,37 +8,48 @@
 #include <zephyr/init.h>
 
 #include "app_conf.h"
+#if defined(CONFIG_BT_STM32WBA)
 #include "blestack.h"
 #include "bpka.h"
+#endif /* CONFIG_BT_STM32WBA */
 #include "ll_intf.h"
 
-K_MUTEX_DEFINE(ble_ctlr_stack_mutex);
-struct k_work_q ble_ctlr_work_q, ll_work_q;
-struct k_work ble_ctlr_stack_work, bpka_work;
-
+K_MUTEX_DEFINE(ble_ctrl_stack_mutex);
+#if defined(CONFIG_BT_STM32WBA)
+struct k_work_q ble_ctrl_work_q;
+struct k_work ble_ctrl_stack_work, bpka_work;
+#endif /* CONFIG_BT_STM32WBA */
+struct k_work_q ll_work_q;
 uint8_t ll_state_busy;
 
-#define BLE_CTLR_TASK_STACK_SIZE (256 * 7)
-#define LL_TASK_STACK_SIZE (256 * 7)
-#define BLE_CTLR_TASK_PRIO	 (14)
-#define LL_TASK_PRIO (14)
+/* TODO: More tests to be done to optimize thread stacks' sizes */
+#if defined(CONFIG_BT_STM32WBA)
+#define BLE_CTRL_THREAD_STACK_SIZE (256 * 7)
+#define BLE_CTRL_THREAD_PRIO (14)
+#endif /* CONFIG_BT_STM32WBA */
+#define LL_THREAD_STACK_SIZE (256 * 7)
 
-K_THREAD_STACK_DEFINE(ble_ctlr_work_area, BLE_CTLR_TASK_STACK_SIZE);
-K_THREAD_STACK_DEFINE(ll_work_area, LL_TASK_STACK_SIZE);
+/* The LL thread has higher priority than the BLE CTRL thread and the Zephyr BLE stack threads */
+#define LL_THREAD_PRIO (4)
 
-void HostStack_Process(void)
+#if defined(CONFIG_BT_STM32WBA)
+K_THREAD_STACK_DEFINE(ble_ctrl_work_area, BLE_CTRL_THREAD_STACK_SIZE);
+#endif /* CONFIG_BT_STM32WBA */
+K_THREAD_STACK_DEFINE(ll_work_area, LL_THREAD_STACK_SIZE);
+
+#if defined(CONFIG_BT_STM32WBA)
+void HostStack_Process(void);
+#endif /* CONFIG_BT_STM32WBA */
+
+#if defined(CONFIG_BT_STM32WBA)
+static void ble_ctrl_stack_handler(struct k_work *work)
 {
-	k_work_submit_to_queue(&ble_ctlr_work_q, &ble_ctlr_stack_work);
-}
-
-static void ble_ctlr_stack_handler(struct k_work *work)
-{
-	uint8_t running = 0x0;
+	uint8_t running = 0x00;
 	change_state_options_t options;
 
-	k_mutex_lock(&ble_ctlr_stack_mutex, K_FOREVER);
+	k_mutex_lock(&ble_ctrl_stack_mutex, K_FOREVER);
 	running = BleStack_Process();
-	k_mutex_unlock(&ble_ctlr_stack_mutex);
+	k_mutex_unlock(&ble_ctrl_stack_mutex);
 
 	if (ll_state_busy == 1) {
 		options.combined_value = 0x0F;
@@ -51,32 +62,46 @@ static void ble_ctlr_stack_handler(struct k_work *work)
 	}
 }
 
-void BPKACB_Process(void)
-{
-	k_work_submit_to_queue(&ble_ctlr_work_q, &bpka_work);
-}
-
 static void bpka_work_handler(struct k_work *work)
 {
 	BPKA_BG_Process();
 }
+#endif /* CONFIG_BT_STM32WBA */
 
-static int stm32wba_ble_ctlr_init(void)
+static int stm32wba_ctrl_init(void)
 {
-	k_work_queue_init(&ble_ctlr_work_q);
-	k_work_queue_start(&ble_ctlr_work_q, ble_ctlr_work_area,
-				K_THREAD_STACK_SIZEOF(ble_ctlr_work_area),
-				BLE_CTLR_TASK_PRIO, NULL);
+	struct k_work_queue_config ll_cfg = {.name = "LL thread"};
+
+#if defined(CONFIG_BT_STM32WBA)
+	struct k_work_queue_config ble_ctrl_cfg = {.name = "ble ctrl thread"};
+
+	k_work_queue_init(&ble_ctrl_work_q);
+	k_work_queue_start(&ble_ctrl_work_q, ble_ctrl_work_area,
+			   K_THREAD_STACK_SIZEOF(ble_ctrl_work_area),
+			   BLE_CTRL_THREAD_PRIO, &ble_ctrl_cfg);
+
+	k_work_init(&ble_ctrl_stack_work, &ble_ctrl_stack_handler);
+	k_work_init(&bpka_work, &bpka_work_handler);
+#endif /* CONFIG_BT_STM32WBA */
 
 	k_work_queue_init(&ll_work_q);
 	k_work_queue_start(&ll_work_q, ll_work_area,
-				K_THREAD_STACK_SIZEOF(ll_work_area),
-				LL_TASK_PRIO, NULL);
-
-	k_work_init(&ble_ctlr_stack_work, &ble_ctlr_stack_handler);
-	k_work_init(&bpka_work, &bpka_work_handler);
+			   K_THREAD_STACK_SIZEOF(ll_work_area),
+			   LL_THREAD_PRIO, &ll_cfg);
 
 	return 0;
 }
 
-SYS_INIT(stm32wba_ble_ctlr_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#if defined(CONFIG_BT_STM32WBA)
+void HostStack_Process(void)
+{
+	k_work_submit_to_queue(&ble_ctrl_work_q, &ble_ctrl_stack_work);
+}
+
+void BPKACB_Process(void)
+{
+	k_work_submit_to_queue(&ble_ctrl_work_q, &bpka_work);
+}
+#endif /* CONFIG_BT_STM32WBA */
+
+SYS_INIT(stm32wba_ctrl_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

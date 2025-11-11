@@ -9,6 +9,7 @@ config UART_NUMAKER
 	select SERIAL_HAS_DRIVER
 	select HAS_NUMAKER_UART
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_UART_ENABLED
 	help
 	  This option enables the UART driver for Nuvoton Numaker family of

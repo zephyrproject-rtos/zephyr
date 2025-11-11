@@ -82,22 +82,19 @@ def main():
     #enable device tracing
     write_endpoint.write('enable')
 
-    #try to read to avoid garbage mixed to useful stream data
-    buff = usb.util.create_buffer(8192)
-    read_endpoint.read(buff, 10000)
-
-    with open(output_file, "wb") as file_desc:
-        while True:
-            buff = usb.util.create_buffer(8192)
-            length = read_endpoint.read(buff, 100000)
-            for index in range(length):
-                file_desc.write(chr(buff[index]).encode('latin1'))
-
-    usb.util.release_interface(usb_device, interface)
+    try:
+        with open(output_file, "wb") as file_desc:
+            while True:
+                buff = usb.util.create_buffer(8192)
+                length = read_endpoint.read(buff, 100000)
+                for index in range(length):
+                    file_desc.write(chr(buff[index]).encode('latin1'))
+    except KeyboardInterrupt:
+        pass
+    finally:
+        write_endpoint.write('disable')
+        print('Data capture interrupted, data saved into {}'.format(args.output))
+        usb.util.release_interface(usb_device, interface)
 
 if __name__=="__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('Data capture interrupted, data saved into {}'.format(args.output))
-        sys.exit(0)
+    main()

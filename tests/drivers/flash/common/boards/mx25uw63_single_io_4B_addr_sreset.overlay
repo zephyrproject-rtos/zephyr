@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+
+	/delete-node/ exmif_default;
+	/delete-node/ exmif_sleep;
+
+	exmif_default: exmif_default {
+		group1 {
+			psels = <NRF_PSEL(EXMIF_CK, 6, 0)>,
+				<NRF_PSEL(EXMIF_RWDS, 6, 2)>,
+				<NRF_PSEL(EXMIF_DQ0, 6, 7)>,
+				<NRF_PSEL(EXMIF_DQ1, 6, 5)>,
+				<NRF_PSEL(EXMIF_DQ2, 6, 10)>,
+				<NRF_PSEL(EXMIF_DQ3, 6, 9)>,
+				<NRF_PSEL(EXMIF_DQ4, 6, 11)>,
+				<NRF_PSEL(EXMIF_DQ5, 6, 8)>,
+				<NRF_PSEL(EXMIF_DQ6, 6, 6)>,
+				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
+
+	exmif_sleep: exmif_sleep {
+		group1 {
+			low-power-enable;
+			psels = <NRF_PSEL(EXMIF_CK, 6, 0)>,
+				<NRF_PSEL(EXMIF_RWDS, 6, 2)>,
+				<NRF_PSEL(EXMIF_DQ0, 6, 7)>,
+				<NRF_PSEL(EXMIF_DQ1, 6, 5)>,
+				<NRF_PSEL(EXMIF_DQ2, 6, 10)>,
+				<NRF_PSEL(EXMIF_DQ3, 6, 9)>,
+				<NRF_PSEL(EXMIF_DQ4, 6, 11)>,
+				<NRF_PSEL(EXMIF_DQ5, 6, 8)>,
+				<NRF_PSEL(EXMIF_DQ6, 6, 6)>,
+				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
+		};
+	};
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	status = "okay";
+	pinctrl-0 = <&exmif_default>;
+	pinctrl-1 = <&exmif_sleep>;
+	pinctrl-names = "default", "sleep";
+	ce-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
+};
+
+&mx25uw63 {
+	status = "okay";
+	mspi-max-frequency = <DT_FREQ_M(50)>;
+	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+	use-4byte-addressing;
+	initial-soft-reset;
+	transfer-timeout = <500>;
+};

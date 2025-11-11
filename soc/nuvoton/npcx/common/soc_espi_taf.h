@@ -55,13 +55,15 @@ extern "C" {
 /* Unsuccessful Only Completion Without Data */
 #define CYC_UNSCS_CMP_WITHOUT_DATA_ONLY            0x0E
 
-/* Timeout for checking transmit buffer available and no completion was sent */
-#define NPCX_FLASH_CHK_TIMEOUT                     10000
+/* ESPI TAF RPMC OP1 instruction */
+#define ESPI_TAF_RPMC_OP1_CMD                      0x9B
+/* ESPI TAF RPMC OP2 instruction */
+#define ESPI_TAF_RPMC_OP2_CMD                      0x96
 
 /* Clear RSTBUFHEADS, FLASH_ACC_TX_AVAIL, and FLASH_ACC_NP_FREE */
 #define NPCX_FLASHCTL_ACCESS_MASK     (~(BIT(NPCX_FLASHCTL_RSTBUFHEADS) |   \
 					 BIT(NPCX_FLASHCTL_FLASH_NP_FREE) | \
-					 BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL)))
+					 BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)))
 
 /* Flash Sharing Capability Support */
 #define NPCX_FLASH_SHARING_CAP_SUPP_CAF            0
@@ -145,6 +147,8 @@ struct npcx_taf_head {
 };
 
 int npcx_init_taf(const struct device *dev, sys_slist_t *callbacks);
+
+int espi_taf_npcx_block(const struct device *dev, bool en_block);
 
 #ifdef __cplusplus
 }

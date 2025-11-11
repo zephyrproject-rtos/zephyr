@@ -13,8 +13,11 @@ config NUM_IRQS
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y
 
+# The flash option register (FOPT) boot options
+# 0011 1001 - Boot from Internal Flash.
+#             Set NMI pin/interrupts to disabled.
 config KINETIS_FLASH_CONFIG_FOPT
-	default 0x3f
+	default 0x3B
 	depends on KINETIS_FLASH_CONFIG
 
 config GPIO

@@ -1,7 +1,4 @@
-.. _sam_v71_xplained_ultra:
-
-SAM V71(B) Xplained Ultra
-#########################
+.. zephyr:board:: sam_v71_xult
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The SAM V71 Xplained Ultra evaluation kit is a development platform to
 evaluate the Atmel SAM V71 series microcontrollers. The current version
 allows to use both IC variations ATSAMV71Q21A(B).
-
-.. image:: img/sam_v71_xult.jpg
-     :align: center
-     :alt: SAM V71 Xplained Ultra
 
 Hardware
 ********
@@ -40,53 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The sam_v71_xplained_ultra board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| AFEC      | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CAN FD    | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| XDMAC     | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam_v71_xult/sam_v71_xult_samv71q21_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -108,6 +55,8 @@ for the console and is available as a Virtual COM Port via EDBG USB chip.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing the Zephyr project onto SAM V71 MCU requires the `OpenOCD tool`_.
 By default a factory new SAM V71 chip will boot the `SAM-BA`_ boot loader
@@ -144,7 +93,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM V71 Xplained Ultra board to your host computer using the
-   USB debug port. Then build and flash the :ref:`hello_world`
+   USB debug port. Then build and flash the :zephyr:code-sample:`hello_world`
    application.
 
    .. zephyr-app-commands::
@@ -174,7 +123,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -9,6 +9,7 @@ supported:
   - acpi
   - smp
 testing:
+  timeout_multiplier: 2
   ignore_tags:
     - net
     - bluetooth

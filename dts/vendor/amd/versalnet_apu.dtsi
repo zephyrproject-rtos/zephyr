@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc: soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		/*
+		 * OCM (On-Chip Memory) is used by TF-A (Trusted Firmware-A) by default.
+		 * Enable this node only if TF-A is not using this memory region or if
+		 * explicit coordination is established between TF-A and Zephyr.
+		 */
+		ocm: memory@bbf00000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0xbbf00000 0x0 DT_SIZE_M(1)>;
+			status = "disabled";
+			zephyr,memory-region = "OCM";
+		};
+
+		uart0: uart@f1920000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xf1920000 0x0 0x4c>;
+			status = "disabled";
+			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		uart1: uart@f1930000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xf1930000 0x0 0x1000>;
+			status = "disabled";
+			interrupt-names = "irq_1";
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+	};
+};

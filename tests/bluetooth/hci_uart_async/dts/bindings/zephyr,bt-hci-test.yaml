@@ -8,4 +8,4 @@ properties:
   bt-hci-name:
     default: "Mock Controller"
   bt-hci-bus:
-    default: "BT_HCI_BUS_VIRTUAL"
+    default: "virtual"

@@ -67,21 +67,24 @@ static int dht_sample_fetch(const struct device *dev,
 	uint8_t buf[5];
 	unsigned int i, j;
 
-#if defined(CONFIG_DHT_LOCK_IRQS)
-	int lock;
-#endif
-
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+#if defined(CONFIG_DHT_LOCK_IRQS)
+	/* Get the lock before any pin interaction since irq_lock has a */
+	/* potential of causing delays itself.                          */
+	int lock = irq_lock();
+#endif
 
 	/* assert to send start signal */
 	gpio_pin_set_dt(&cfg->dio_gpio, true);
 
-#if defined(CONFIG_DHT_LOCK_IRQS)
-	lock = irq_lock();
-#endif
-
 	k_busy_wait(DHT_START_SIGNAL_DURATION);
 
+	/* set the state back to logic LOW (voltage HIGH) so that the   */
+	/* subsequent call to dht_measure_signal duration waits for the */
+	/* DHT sensor to set it back to HIGH (voltage LOW).             */
+	/* Failure to do this would cause that subsequent call to       */
+	/* return immediately.                                          */
 	gpio_pin_set_dt(&cfg->dio_gpio, false);
 
 	/* switch to DIR_IN to read sensor signals */
@@ -179,12 +182,13 @@ static int dht_channel_get(const struct device *dev,
 			   struct sensor_value *val)
 {
 	struct dht_data *drv_data = dev->data;
+	const struct dht_config *cfg = dev->config;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP
 			|| chan == SENSOR_CHAN_HUMIDITY);
 
 	/* see data calculation example from datasheet */
-	if (IS_ENABLED(DT_INST_PROP(0, dht22))) {
+	if (cfg->is_dht22) {
 		/*
 		 * use both integral and decimal data bytes; resulted
 		 * 16bit data has a resolution of 0.1 units
@@ -230,7 +234,7 @@ static int dht_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api dht_api = {
+static DEVICE_API(sensor, dht_api) = {
 	.sample_fetch = &dht_sample_fetch,
 	.channel_get = &dht_channel_get,
 };
@@ -255,6 +259,7 @@ static int dht_init(const struct device *dev)
 											\
 	static const struct dht_config dht_config_##inst = {				\
 		.dio_gpio = GPIO_DT_SPEC_INST_GET(inst, dio_gpios),			\
+		.is_dht22 = DT_INST_PROP(inst, dht22),					\
 	};										\
 											\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &dht_init, NULL,				\

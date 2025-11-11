@@ -1,7 +1,4 @@
-.. _slwrb4250b:
-
-EFR32FG1 2400/868 MHz 13 dBm Dual Band (SLWRB4250B)
-###################################################
+.. zephyr:board:: slwrb4250b
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32FG1 Flex Gecko 2.4 GHz and 868 MHz Radio Board is delivered as part of
 `SLWSTK6061B Proprietary Wireless Starter Kit`_. It contains a EFR32FG1 Wireless
 SoC built on an ARM Cortex®-M4F processor with excellent low power capabilities.
-
-.. figure:: efr32fg1-slwrb4250b.jpg
-   :align: center
-   :alt: SLWRB4250B Flex Gecko 2.4 GHz and 868 MHz Radio Board
-
-   SLWRB4250B (image courtesy of Silicon Labs)
 
 The BRD4250B a.k.a. SLWRB4250B radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -45,33 +36,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/radio_boards/slwrb4250b/slwrb4250b_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -120,13 +85,15 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
 Connect the BRD4001A board with a mounted BRD4250B radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

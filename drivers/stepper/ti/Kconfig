@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+comment "TI Stepper Drivers"
+
+rsource "Kconfig.drv84xx"

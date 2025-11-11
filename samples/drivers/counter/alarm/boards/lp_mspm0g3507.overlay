@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Linumiz GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		counter = &counterg0;
+	};
+};
+
+&timg0 {
+	status = "okay";
+	counterg0: counterg0 {
+		status = "okay";
+	};
+};

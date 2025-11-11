@@ -8,7 +8,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
+#include <sample_usbd.h>
+#include <zephyr/tracing/tracing.h>
 
 /*
  * The hello world demo has two threads that utilize semaphores and sleeping
@@ -27,6 +28,7 @@
 /* delay between greetings (in ms) */
 #define SLEEPTIME 500
 
+static uint32_t counter;
 
 /*
  * @param my_name      thread identification string
@@ -41,6 +43,10 @@ void helloLoop(const char *my_name,
 	while (1) {
 		/* take my semaphore */
 		k_sem_take(my_sem, K_FOREVER);
+
+		/* Provide a named trace, with the counter value */
+		sys_trace_named_event("counter_value", counter, 0);
+		counter++;
 
 		/* say "hello" */
 		tname = k_thread_name_get(k_current_get());
@@ -87,15 +93,19 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-	int ret;
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd = sample_usbd_init_device(NULL);
 
-	ret = usb_enable(NULL);
-	if (ret) {
+	if (sample_usbd == NULL) {
+		printk("Failed to initialize USB device");
+		return;
+	}
+
+	if (usbd_enable(sample_usbd)) {
 		printk("usb backend enable failed");
 		return;
 	}
-#endif /* CONFIG_USB_DEVICE_STACK */
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
 
 	/* spawn threadB */
 	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,

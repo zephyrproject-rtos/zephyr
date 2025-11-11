@@ -1,5 +1,6 @@
 board:
   name: stm32f030_demo
+  full_name: STM32F030 DEMO BOARD
   vendor: others
   socs:
     - name: stm32f030x6

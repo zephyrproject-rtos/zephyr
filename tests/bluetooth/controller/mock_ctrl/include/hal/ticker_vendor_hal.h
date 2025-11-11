@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define HAL_TICKER_CNTR_CLK_FREQ_HZ   32768U
 #define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
 #define HAL_TICKER_FSEC_PER_USEC      1000000000UL
 #define HAL_TICKER_PSEC_PER_USEC      1000000UL
@@ -69,3 +68,30 @@
 /* Macro defining the margin for positioning re-scheduled nodes */
 #define HAL_TICKER_RESCHEDULE_MARGIN \
 	HAL_TICKER_US_TO_TICKS(150)
+
+/* Remove ticks and return positive remainder value in microseconds */
+static inline void hal_ticker_remove_jitter(uint32_t *ticks,
+					    uint32_t *remainder)
+{
+	/* Is remainder less than 1 us */
+	if ((*remainder & BIT(31)) || !(*remainder / HAL_TICKER_PSEC_PER_USEC)) {
+		*ticks -= 1U;
+		*remainder += HAL_TICKER_CNTR_CLK_UNIT_FSEC / HAL_TICKER_FSEC_PER_PSEC;
+	}
+
+	/* pico seconds to micro seconds unit */
+	*remainder /= HAL_TICKER_PSEC_PER_USEC;
+}
+
+/* Add ticks and return positive remainder value in microseconds */
+static inline void hal_ticker_add_jitter(uint32_t *ticks, uint32_t *remainder)
+{
+	/* Is remainder less than 1 us */
+	if ((*remainder & BIT(31)) || !(*remainder / HAL_TICKER_PSEC_PER_USEC)) {
+		*ticks += 1U;
+		*remainder += HAL_TICKER_CNTR_CLK_UNIT_FSEC / HAL_TICKER_FSEC_PER_PSEC;
+	}
+
+	/* pico seconds to micro seconds unit */
+	*remainder /= HAL_TICKER_PSEC_PER_USEC;
+}

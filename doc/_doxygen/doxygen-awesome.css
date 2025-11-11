@@ -160,6 +160,9 @@ html {
     --toc-background: var(--side-nav-background);
     --toc-foreground: var(--side-nav-foreground);
 
+    /* page navigation colors */
+    --page-outline-vis: #f0f2f4;
+
     /* height of an item in any tree / collapsible table */
     --tree-item-height: 30px;
 
@@ -202,6 +205,7 @@ html {
         --page-secondary-foreground-color: #859399;
         --separator-color: #38393b;
         --side-nav-background: #252628;
+        --page-outline-vis: #323539;
 
         --code-background: #2a2c2f;
 
@@ -263,6 +267,7 @@ html.dark-mode {
     --page-secondary-foreground-color: #859399;
     --separator-color: #38393b;
     --side-nav-background: #252628;
+    --page-outline-vis: #323539;
 
     --code-background: #2a2c2f;
 
@@ -313,7 +318,7 @@ body {
 body, table, div, p, dl, #nav-tree .label, .title,
 .sm-dox a, .sm-dox a:hover, .sm-dox a:focus, #projectname,
 .SelectItem, #MSearchField, .navpath li.navelem a,
-.navpath li.navelem a:hover, p.reference, p.definition {
+.navpath li.navelem a:hover, p.reference, p.definition, div.toc li, div.toc h3 {
     font-family: var(--font-family);
 }
 
@@ -334,6 +339,7 @@ p.reference, p.definition {
 a:link, a:visited, a:hover, a:focus, a:active {
     color: var(--primary-color) !important;
     font-weight: 500;
+    background: none;
 }
 
 a.anchor {
@@ -362,6 +368,7 @@ a.anchor {
 #main-nav {
     flex-grow: 5;
     padding: var(--spacing-small) var(--spacing-medium);
+    border-bottom: none;
 }
 
 #titlearea {
@@ -775,7 +782,7 @@ html.dark-mode iframe#MSearchResults {
  Tree view
  */
 
-#side-nav {
+#side-nav, #page-nav {
     padding: 0 !important;
     background: var(--side-nav-background);
     min-width: 8px;
@@ -792,9 +799,14 @@ html.dark-mode iframe#MSearchResults {
     }
 }
 
+ul.page-outline li.vis {
+    background-color: var(--page-outline-vis);
+}
+
 #nav-tree {
     background: transparent;
     margin-right: 1px;
+    border-right: none;
 }
 
 #nav-tree .label {
@@ -804,6 +816,12 @@ html.dark-mode iframe#MSearchResults {
 #nav-tree .item {
     height: var(--tree-item-height);
     line-height: var(--tree-item-height);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#nav-tree .item > a:focus {
+    outline: none;
 }
 
 #nav-sync {
@@ -818,6 +836,8 @@ html.dark-mode iframe#MSearchResults {
     background-image: none;
     background-color: transparent;
     position: relative;
+    color: var(--primary-color) !important;
+    font-weight: 500;
 }
 
 #nav-tree .selected::after {
@@ -832,7 +852,7 @@ html.dark-mode iframe#MSearchResults {
 }
 
 
-#nav-tree a {
+#nav-tree a, #page-nav-tree a {
     color: var(--side-nav-foreground) !important;
     font-weight: normal;
 }
@@ -843,6 +863,7 @@ html.dark-mode iframe#MSearchResults {
 
 #nav-tree .arrow {
     opacity: var(--side-nav-arrow-opacity);
+    background: none;
 }
 
 .arrow {
@@ -850,7 +871,8 @@ html.dark-mode iframe#MSearchResults {
     cursor: pointer;
     font-size: 45%;
     vertical-align: middle;
-    margin-right: 2px;
+    padding-bottom: 4px;
+    padding-right: 4px;
     font-family: serif;
     height: auto;
     text-align: right;
@@ -979,7 +1001,7 @@ html.dark-mode div.contents .dotgraph iframe
     filter: brightness(89%) hue-rotate(180deg) invert();
 }
 
-h2.groupheader {
+td h2.groupheader, h2.groupheader {
     border-bottom: 0px;
     color: var(--page-foreground-color);
     box-shadow:
@@ -1040,7 +1062,7 @@ blockquote::after {
 blockquote p {
     margin: var(--spacing-small) 0 var(--spacing-medium) 0;
 }
-.paramname {
+.paramname, .paramname em {
     font-weight: 600;
     color: var(--primary-dark-color);
 }
@@ -1090,7 +1112,7 @@ div.contents .toc {
     border: 0;
     border-left: 1px solid var(--separator-color);
     border-radius: 0;
-    background-color: transparent;
+    background-color: var(--page-background-color);
     box-shadow: none;
     position: sticky;
     top: var(--toc-sticky-top);
@@ -1743,7 +1765,7 @@ table.fieldtable th {
     color: var(--tablehead-foreground);
 }
 
-table.fieldtable td.fieldtype, .fieldtable td.fieldname, .fieldtable td.fielddoc, .fieldtable th {
+table.fieldtable td.fieldtype, .fieldtable td.fieldname, .fieldtable td.fieldinit, .fieldtable td.fielddoc, .fieldtable th {
     border-bottom: 1px solid var(--separator-color);
     border-right: 1px solid var(--separator-color);
 }
@@ -1789,6 +1811,7 @@ table.memberdecls .memTemplParams {
     border-top: 1px solid var(--separator-color);
     border-bottom: 1px solid var(--separator-color);
     background-color: var(--fragment-background);
+    border-top-color: var(--separator-color) !important;
 }
 
 table.memberdecls .memTemplItemLeft,
@@ -1833,6 +1856,9 @@ table.memberdecls .memItemRight  {
 }
 
 table.memberdecls .mdescLeft, table.memberdecls .mdescRight {
+    border-bottom-color: var(--separator-color);
+    border-left: none;
+    border-right: none;
     background: none;
     color: var(--page-foreground-color);
     padding: var(--spacing-small) 0;
@@ -1982,14 +2008,16 @@ hr {
 }
 
 .contents hr {
-    box-shadow: 100px 0 0 var(--separator-color),
-                -100px 0 0 var(--separator-color),
-                500px 0 0 var(--separator-color),
-                -500px 0 0 var(--separator-color),
-                1500px 0 0 var(--separator-color),
-                -1500px 0 0 var(--separator-color),
-                2000px 0 0 var(--separator-color),
-                -2000px 0 0 var(--separator-color);
+    box-shadow: 100px 0 var(--separator-color),
+                -100px 0 var(--separator-color),
+                500px 0 var(--separator-color),
+                -500px 0 var(--separator-color),
+                900px 0 var(--separator-color),
+                -900px 0 var(--separator-color),
+                1400px 0 var(--separator-color),
+                -1400px 0 var(--separator-color),
+                1900px 0 var(--separator-color),
+                -1900px 0 var(--separator-color);
 }
 
 .contents img, .contents .center, .contents center, .contents div.image object {
@@ -2460,17 +2488,17 @@ h2:hover a.anchorlink, h1:hover a.anchorlink, h3:hover a.anchorlink, h4:hover a.
  Optional tab feature
 */
 
-.tabbed ul {
+.tabbed > ul {
     padding-inline-start: 0px;
     margin: 0;
     padding: var(--spacing-small) 0;
 }
 
-.tabbed li {
+.tabbed > ul > li {
     display: none;
 }
 
-.tabbed li.selected {
+.tabbed > ul > li.selected {
     display: block;
 }
 

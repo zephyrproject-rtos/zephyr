@@ -16,12 +16,10 @@ properties:
 
   clk-divider:
     type: int
-    required: true
     description: clock divider for the converter
 
   clk-source:
     type: int
-    required: true
     description: source to attach the ADC clock to
 
   voltage-ref:
@@ -49,9 +47,13 @@ properties:
       - 64
       - 128
 
+  no-power-level:
+    type: boolean
+    description: |
+      There is no power level selection function.
+
   power-level:
     type: int
-    required: true
     description: |
       Power level selection. Corresponds to the value of
       register field CFG[PWRSEL] (see chip specific manual).
@@ -74,6 +76,18 @@ properties:
   nxp,references:
     type: phandle-array
     description: References to required regulators which must be enabled for LPADC to function
+
+  nxp,opamps:
+    type: phandle-array
+    description: |
+      When the opamp output is used as the ADC input, the opamp output can be adjusted by
+      adjusting the opamp gain.
+
+  ideal-sample-range:
+    type: array
+    description: |
+      Ideal ADC sample range for the application. This is used to calculate the opamp gain
+      when the opamp output is used as the ADC input.
 
   "#io-channel-cells":
     const: 1

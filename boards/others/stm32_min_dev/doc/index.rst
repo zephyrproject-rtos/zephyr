@@ -1,7 +1,4 @@
-.. _stm32_min_dev:
-
-STM32 Minimum Development Board
-###############################
+.. zephyr:board:: stm32_min_dev
 
 Overview
 ********
@@ -15,12 +12,6 @@ are two variants of the board:
 
 Zephyr applications can use the stm32_min_dev@blue or stm32_min_dev@black board
 configuration to use these boards.
-
-.. figure:: img/stm32_min_dev.jpg
-     :align: center
-     :alt: STM32 Minimum Development Board
-
-     STM32 Minimum Development Board
 
 As the name suggests, these boards have the bare minimum components required to
 power on the CPU. For practical use, you'll need to add additional components
@@ -90,32 +81,7 @@ respectively.
 Supported Features
 ==================
 
-The stm32_min_dev board configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| USB       | on-chip    | USB device           |
-+-----------+------------+----------------------+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -154,6 +120,8 @@ variants respectively.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``stm32_min_dev@(blue|black)`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -172,7 +140,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

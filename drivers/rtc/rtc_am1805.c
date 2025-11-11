@@ -569,7 +569,7 @@ static int am1805_init(const struct device *dev)
 	return 0;
 }
 
-static const struct rtc_driver_api am1805_driver_api = {
+static DEVICE_API(rtc, am1805_driver_api) = {
 	.set_time = am1805_set_time,
 	.get_time = am1805_get_time,
 #ifdef CONFIG_RTC_ALARM

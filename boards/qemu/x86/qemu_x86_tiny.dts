@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRAM_BASE            0x100000
+/* Note: this is the unit-address (in hex) of the node */
+#define DT_DRAM_BASE            100000
 #define DT_DRAM_SIZE            DT_SIZE_K(256)
 #include "qemu_x86.dts"

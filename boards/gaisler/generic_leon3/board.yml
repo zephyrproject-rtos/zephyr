@@ -1,5 +1,6 @@
 board:
   name: generic_leon3
+  full_name: Generic LEON3
   vendor: gaisler
   socs:
   - name: leon3

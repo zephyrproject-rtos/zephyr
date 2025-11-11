@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -17,7 +18,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
@@ -32,7 +33,6 @@ static bool expect_lockable = true;
 
 extern enum bst_result_t bst_result;
 static volatile bool discovered;
-static volatile bool members_discovered;
 static volatile bool discover_timed_out;
 static volatile bool set_locked;
 static volatile bool set_unlocked;
@@ -40,6 +40,7 @@ static volatile bool ordered_access_locked;
 static volatile bool ordered_access_unlocked;
 static const struct bt_csip_set_coordinator_csis_inst *primary_inst;
 CREATE_FLAG(flag_sirk_changed);
+CREATE_FLAG(flag_size_changed);
 
 static uint8_t connected_member_count;
 static uint8_t members_found;
@@ -139,6 +140,14 @@ static void csip_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
 	SET_FLAG(flag_sirk_changed);
 }
 
+static void csip_size_changed_cb(struct bt_conn *conn,
+				 const struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	printk("Inst %p size changed: %u\n", inst, inst->info.set_size);
+
+	SET_FLAG(flag_size_changed);
+}
+
 static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked,  struct bt_csip_set_coordinator_set_member *member)
@@ -160,6 +169,7 @@ static struct bt_csip_set_coordinator_cb cbs = {
 	.discover = csip_discover_cb,
 	.lock_changed = csip_lock_changed_cb,
 	.sirk_changed = csip_sirk_changed_cb,
+	.size_changed = csip_size_changed_cb,
 	.ordered_access = csip_set_coordinator_ordered_access_cb,
 };
 
@@ -186,7 +196,8 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
+	if (primary_inst == NULL ||
+	    bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -201,7 +212,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		if (primary_inst->info.set_size == 0) {
+		if (primary_inst == NULL || primary_inst->info.set_size == 0) {
 			printk("Found member %u\n", members_found);
 		} else {
 			printk("Found member (%u / %u)\n", members_found,
@@ -219,16 +230,9 @@ static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *in
 					   struct net_buf_simple *ad)
 {
 	/* We're only interested in connectable events */
-	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
-		if (primary_inst == NULL) {
-			/* Scanning for the first device */
-			if (members_found == 0) {
-				bt_addr_le_copy(&addr_found[members_found++],
-						info->addr);
-			}
-		} else { /* Scanning for set members */
-			bt_data_parse(ad, csip_found, (void *)info->addr);
-		}
+	if ((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0U &&
+	    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U) {
+		bt_data_parse(ad, csip_found, (void *)info->addr);
 	}
 }
 
@@ -335,8 +339,8 @@ static void connect_set(void)
 	}
 
 	bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
-	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &conns[0]);
+	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
+				&conns[0]);
 	if (err != 0) {
 		FAIL("Failed to connect to %s: %d\n", err);
 
@@ -520,6 +524,24 @@ static void test_new_sirk(void)
 	PASS("All members disconnected\n");
 }
 
+static void test_new_size_and_rank(void)
+{
+	init();
+	connect_set();
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	/* We won't get a new rank in a notification. For this test we only verify that we get a new
+	 * size
+	 */
+	WAIT_FOR_FLAG(flag_size_changed);
+
+	disconnect_set();
+
+	PASS("All members disconnected\n");
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (int argn = 0; argn < argc; argn++) {
@@ -550,6 +572,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_coordinator_new_size_and_rank",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_size_and_rank,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,

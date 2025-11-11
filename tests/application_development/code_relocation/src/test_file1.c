@@ -23,12 +23,15 @@ __in_section(rodata, sram2, var) const uint32_t var_sram2_rodata = 100U;
 __in_section(custom_section, static, var) uint32_t var_custom_data = 1U;
 
 extern void function_in_sram(int32_t value);
+extern void function_not_relocated(int32_t value);
 void function_in_custom_section(void);
 
 #define HAS_SRAM2_DATA_SECTION (CONFIG_ARM)
 
 ZTEST(code_relocation, test_function_in_sram2)
 {
+	extern uintptr_t __ram_text_reloc_start;
+	extern uintptr_t __ram_text_reloc_end;
 	extern uintptr_t __sram2_text_reloc_start;
 	extern uintptr_t __sram2_text_reloc_end;
 	extern uintptr_t __sram2_data_reloc_start;
@@ -64,7 +67,20 @@ ZTEST(code_relocation, test_function_in_sram2)
 		"var_sram2_bss not in sram2_bss region");
 
 	/* Print values from sram */
+	printk("Address of function_in_sram %p\n", &function_in_sram);
+	zassert_between_inclusive((uintptr_t)&function_in_sram,
+		(uintptr_t)&__ram_text_reloc_start,
+		(uintptr_t)&__ram_text_reloc_end,
+		"function_in_sram is not in ram region");
 	function_in_sram(var_sram2_data);
+
+	/* Print values from non-relocated function */
+	printk("Address of function_not_relocated %p\n", &function_not_relocated);
+	zassert_between_inclusive((uintptr_t)&function_not_relocated,
+		(uintptr_t)&__text_region_start,
+		(uintptr_t)&__text_region_end,
+		"function_not_relocated is not in flash region");
+	function_not_relocated(var_sram2_data);
 	/* Call library function */
 	relocated_library();
 

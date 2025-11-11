@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT x_powers_axp192
-
 #include <errno.h>
 #include <stdbool.h>
 
@@ -14,6 +12,13 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
+
+struct mfd_axp192_config {
+	struct i2c_dt_spec i2c;
+	bool vbusen_disable;
+	uint8_t vbus_config_reg;
+	uint8_t val_vbusen_disable;
+};
 
 /* Chip ID value */
 #define AXP192_CHIP_ID 0x03U
@@ -95,12 +100,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 
 #define AXP192_GPIO5_OUTPUT_MASK  0x04U
 #define AXP192_GPIO5_OUTPUT_VAL   0x04U
-#define AXP192_GPIO5_OUTPUT_SHIFT 3U
-
-struct mfd_axp192_config {
-	struct i2c_dt_spec i2c;
-	bool vbusen_disable;
-};
+#define AXP192_GPIO5_OUTPUT_SHIFT 2U
 
 struct mfd_axp192_data {
 	const struct device *gpio_mask_used[AXP192_GPIO_MAX_NUM];
@@ -144,7 +144,6 @@ static int mfd_axp192_init(const struct device *dev)
 {
 	const struct mfd_axp192_config *config = dev->config;
 	uint8_t chip_id;
-	uint8_t vbus_val;
 	int ret;
 
 	LOG_DBG("Initializing instance");
@@ -154,7 +153,7 @@ static int mfd_axp192_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Check if axp192 chip is available */
+	/* Check if AXP192 chip is available */
 	ret = i2c_reg_read_byte_dt(&config->i2c, AXP192_REG_CHIP_ID, &chip_id);
 	if (ret < 0) {
 		return ret;
@@ -165,12 +164,9 @@ static int mfd_axp192_init(const struct device *dev)
 	}
 
 	/* Disable N_VBUSEN */
-	vbus_val = 0;
-	if (config->vbusen_disable) {
-		vbus_val = AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE;
-	}
-	ret = i2c_reg_update_byte_dt(&config->i2c, AXP192_VBUS_CFG_REG,
-				     AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE, vbus_val);
+	ret = i2c_reg_update_byte_dt(
+		&config->i2c, config->vbus_config_reg, config->val_vbusen_disable,
+		config->vbusen_disable ? config->val_vbusen_disable : 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -606,15 +602,17 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
 	return 0;
 }
 
-#define MFD_AXP192_DEFINE(inst)                                                                    \
-	static const struct mfd_axp192_config config##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.vbusen_disable = DT_INST_PROP_OR(inst, vbusen_disable, false),                    \
+#define MFD_AXP192_DEFINE(node)                                                                    \
+	static const struct mfd_axp192_config config##node = {                                     \
+		.i2c = I2C_DT_SPEC_GET(node),                                                      \
+		.vbusen_disable = DT_PROP_OR(node, vbusen_disable, false),                         \
+		.vbus_config_reg = AXP192_VBUS_CFG_REG,                                            \
+		.val_vbusen_disable = AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE,                          \
 	};                                                                                         \
                                                                                                    \
-	static struct mfd_axp192_data data##inst;                                                  \
+	static struct mfd_axp192_data data##node;                                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_axp192_init, NULL, &data##inst, &config##inst,             \
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+	DEVICE_DT_DEFINE(node, mfd_axp192_init, NULL, &data##node,                                 \
+			 &config##node, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(MFD_AXP192_DEFINE);
+DT_FOREACH_STATUS_OKAY(x_powers_axp192, MFD_AXP192_DEFINE);

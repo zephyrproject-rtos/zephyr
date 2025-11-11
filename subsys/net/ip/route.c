@@ -328,7 +328,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				      uint32_t lifetime,
 				      uint8_t preference)
 {
-	struct net_linkaddr_storage *nexthop_lladdr;
+	struct net_linkaddr *nexthop_lladdr;
 	struct net_nbr *nbr, *nbr_nexthop, *tmp;
 	struct net_route_nexthop *nexthop_route;
 	struct net_route_entry *route = NULL;
@@ -403,7 +403,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 		if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *in6_addr_tmp;
-			struct net_linkaddr_storage *llstorage;
+			struct net_linkaddr *llstorage;
 
 			in6_addr_tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, in6_addr_tmp);
@@ -957,6 +957,30 @@ net_route_mcast_lookup(struct in6_addr *group)
 
 	return NULL;
 }
+
+struct net_route_entry_mcast *
+net_route_mcast_lookup_by_iface(struct in6_addr *group, struct net_if *iface)
+{
+	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
+		if (!route->is_used) {
+			continue;
+		}
+
+		ARRAY_FOR_EACH(route->ifaces, i) {
+			if (route->ifaces[i] == NULL || route->ifaces[i] != iface) {
+				continue;
+			}
+
+			if (net_ipv6_is_prefix(group->s6_addr,
+						route->group.s6_addr,
+						route->prefix_len)) {
+				return route;
+			}
+		}
+	}
+
+	return NULL;
+}
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
 bool net_route_get_info(struct net_if *iface,
@@ -1008,9 +1032,30 @@ exit:
 	return ret;
 }
 
+static bool is_ll_addr_supported(struct net_if *iface)
+{
+#if defined(CONFIG_NET_L2_DUMMY)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+		return false;
+	}
+#endif
+#if defined(CONFIG_NET_L2_PPP)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(PPP)) {
+		return false;
+	}
+#endif
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 {
-	struct net_linkaddr_storage *lladdr;
+	struct net_linkaddr *lladdr = NULL;
 	struct net_nbr *nbr;
 	int err;
 
@@ -1024,64 +1069,52 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		goto error;
 	}
 
-	lladdr = net_nbr_get_lladdr(nbr->idx);
-	if (!lladdr) {
-		NET_DBG("Cannot find %s neighbor link layer address.",
-			net_sprint_ipv6_addr(nexthop));
-		err = -ESRCH;
-		goto error;
-	}
-
-#if defined(CONFIG_NET_L2_DUMMY)
-	/* No need to do this check for dummy L2 as it does not have any
-	 * link layer. This is done at runtime because we can have multiple
-	 * network technologies enabled.
-	 */
-	if (net_if_l2(net_pkt_iface(pkt)) != &NET_L2_GET_NAME(DUMMY)) {
-#endif
-#if defined(CONFIG_NET_L2_PPP)
-		/* PPP does not populate the lladdr fields */
-		if (net_if_l2(net_pkt_iface(pkt)) != &NET_L2_GET_NAME(PPP)) {
-#endif
-			if (!net_pkt_lladdr_src(pkt)->addr) {
-				NET_DBG("Link layer source address not set");
-				err = -EINVAL;
-				goto error;
-			}
-
-			/* Sanitycheck: If src and dst ll addresses are going
-			 * to be same, then something went wrong in route
-			 * lookup.
-			 */
-			if (!memcmp(net_pkt_lladdr_src(pkt)->addr, lladdr->addr,
-				    lladdr->len)) {
-				NET_ERR("Src ll and Dst ll are same");
-				err = -EINVAL;
-				goto error;
-			}
-#if defined(CONFIG_NET_L2_PPP)
+	if (is_ll_addr_supported(nbr->iface) && is_ll_addr_supported(net_pkt_iface(pkt)) &&
+	    is_ll_addr_supported(net_pkt_orig_iface(pkt))) {
+		lladdr = net_nbr_get_lladdr(nbr->idx);
+		if (!lladdr) {
+			NET_DBG("Cannot find %s neighbor link layer address.",
+				net_sprint_ipv6_addr(nexthop));
+			err = -ESRCH;
+			goto error;
 		}
-#endif
-#if defined(CONFIG_NET_L2_DUMMY)
+
+		if (net_pkt_lladdr_src(pkt)->len == 0) {
+			NET_DBG("Link layer source address not set");
+			err = -EINVAL;
+			goto error;
+		}
+
+		/* Sanitycheck: If src and dst ll addresses are going
+		 * to be same, then something went wrong in route
+		 * lookup.
+		 */
+		if (!memcmp(net_pkt_lladdr_src(pkt)->addr, lladdr->addr,
+				lladdr->len)) {
+			NET_ERR("Src ll and Dst ll are same");
+			err = -EINVAL;
+			goto error;
+		}
 	}
-#endif
 
 	net_pkt_set_forwarding(pkt, true);
 
-	/* Set the destination and source ll address in the packet.
-	 * We set the destination address to be the nexthop recipient.
+	/* Set the source ll address of the iface (if relevant) and the
+	 * destination address to be the nexthop recipient.
 	 */
-	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
-	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
-	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+	if (is_ll_addr_supported(net_pkt_iface(pkt))) {
+		(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+					net_pkt_lladdr_if(pkt));
+	}
 
-	net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
-	net_pkt_lladdr_dst(pkt)->type = lladdr->type;
-	net_pkt_lladdr_dst(pkt)->len = lladdr->len;
+	if (lladdr) {
+		(void)net_linkaddr_copy(net_pkt_lladdr_dst(pkt), lladdr);
+	}
 
 	net_pkt_set_iface(pkt, nbr->iface);
 
 	net_ipv6_nbr_unlock();
+
 	return net_send_data(pkt);
 
 error:
@@ -1094,15 +1127,19 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 	/* The destination is reachable via iface. But since no valid nexthop
 	 * is known, net_pkt_lladdr_dst(pkt) cannot be set here.
 	 */
-
 	net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 	net_pkt_set_iface(pkt, iface);
 
 	net_pkt_set_forwarding(pkt, true);
 
-	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
-	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
-	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+	/* Set source LL address if only if relevant */
+	if (is_ll_addr_supported(iface)) {
+		memcpy(net_pkt_lladdr_src(pkt)->addr,
+		       net_pkt_lladdr_if(pkt)->addr,
+		       net_pkt_lladdr_if(pkt)->len);
+		net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
+		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+	}
 
 	return net_send_data(pkt);
 }

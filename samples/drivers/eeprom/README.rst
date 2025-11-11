@@ -15,7 +15,7 @@ Building and Running
 
 In case the target board has defined an EEPROM with alias ``eeprom-0`` the
 sample can be built without further ado. This applies for example to the
-:ref:`native_sim` board:
+:zephyr:board:`native_sim` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
@@ -35,7 +35,7 @@ as follows:
    :shield: x_nucleo_eeprma2
    :compact:
 
-For :ref:`gd32f450i_eval` board. First bridge the JP5 to USART with the jumper cap,
+For :zephyr:board:`gd32f450i_eval` board. First bridge the JP5 to USART with the jumper cap,
 Then the sample can be built and executed for the  as follows:
 
 .. zephyr-app-commands::

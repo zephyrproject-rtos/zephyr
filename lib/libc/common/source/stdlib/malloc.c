@@ -101,8 +101,8 @@ static POOL_SECTION unsigned char __aligned(HEAP_ALIGN) malloc_arena[HEAP_SIZE];
 
 #   define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, HEAP_ALIGN)
 
-#   if defined(CONFIG_XTENSA) && (defined(CONFIG_SOC_FAMILY_INTEL_ADSP) \
-	|| defined(CONFIG_HAS_ESPRESSIF_HAL))
+#   if (defined(CONFIG_XTENSA) && defined(CONFIG_SOC_FAMILY_INTEL_ADSP)) \
+	|| defined(CONFIG_HAS_ESPRESSIF_HAL)
 extern char _heap_sentry[];
 #    define HEAP_SIZE  ROUND_DOWN((POINTER_TO_UINT(_heap_sentry) - HEAP_BASE), HEAP_ALIGN)
 #   else
@@ -210,14 +210,16 @@ static int malloc_prepare(void)
 
 	/* Align size to power of two */
 	heap_size = 1;
-	while (heap_size * 2 <= HEAP_SIZE)
+	while (heap_size * 2 <= HEAP_SIZE) {
 		heap_size *= 2;
+	}
 
 	/* Search for an aligned heap that fits within the available space */
 	while (heap_size >= HEAP_ALIGN) {
 		heap_base = UINT_TO_POINTER(ROUND_UP(HEAP_BASE, heap_size));
-		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE)
+		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE) {
 			break;
+		}
 		heap_size >>= 1;
 	}
 #else

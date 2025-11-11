@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
@@ -91,6 +92,7 @@ static int configure(const struct device *dev,
 	struct spi_context *ctx = &dev_data->ctx;
 	nrfx_spi_config_t config;
 	nrfx_err_t result;
+	uint32_t sck_pin;
 
 	if (dev_data->initialized && spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
@@ -134,8 +136,11 @@ static int configure(const struct device *dev,
 	config.mode      = get_nrf_spi_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spi_bit_order(spi_cfg->operation);
 
-	nrf_gpio_pin_write(nrf_spi_sck_pin_get(dev_config->spi.p_reg),
-			   spi_cfg->operation & SPI_MODE_CPOL ? 1 : 0);
+	sck_pin = nrf_spi_sck_pin_get(dev_config->spi.p_reg);
+
+	if (sck_pin != NRF_SPI_PIN_NOT_CONNECTED) {
+		nrf_gpio_pin_write(sck_pin, spi_cfg->operation & SPI_MODE_CPOL ? 1 : 0);
+	}
 
 	if (dev_data->initialized) {
 		nrfx_spi_uninit(&dev_config->spi);
@@ -273,7 +278,11 @@ static int transceive(const struct device *dev,
 			finish_transaction(dev, -ETIMEDOUT);
 
 			/* Clean up the driver state. */
+#ifdef CONFIG_MULTITHREADING
 			k_sem_reset(&dev_data->ctx.sync);
+#else
+			dev_data->ctx.ready = 0;
+#endif /* CONFIG_MULTITHREADING */
 		}
 
 		spi_context_cs_control(&dev_data->ctx, false);
@@ -322,10 +331,13 @@ static int spi_nrfx_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_nrfx_driver_api = {
+static DEVICE_API(spi, spi_nrfx_driver_api) = {
 	.transceive = spi_nrfx_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nrfx_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_nrfx_release,
 };
@@ -424,8 +436,10 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI(idx), ctx)		       \
 		.dev  = DEVICE_DT_GET(SPI(idx)),			       \
 		.busy = false,						       \
@@ -452,7 +466,7 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPI(idx), wake_gpios) & GPIO_ACTIVE_LOW), \
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
-	DEVICE_DT_DEFINE(SPI(idx),					       \
+	SPI_DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_nrfx_init,					       \
 		      PM_DEVICE_DT_GET(SPI(idx)),			       \
 		      &spi_##idx##_data,				       \

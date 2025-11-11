@@ -33,6 +33,16 @@ config DEVICE_DT_METADATA
 	  each device. This allows you to use device_get_by_dt_nodelabel(),
 	  device_get_dt_metadata(), etc.
 
+config DEVICE_DEINIT_SUPPORT
+	bool "Support device de-initialization"
+	default y
+	help
+	  In very specific case, it might be necessary to de-initialize
+	  a device at runtime. This is possible by providing a function
+	  to do so. Note, that this will grow every struct device by a
+	  function pointer. All device drivers that use the relevant
+	  macros and provide such function should select this option.
+
 endmenu
 
 menu "Initialization Priorities"

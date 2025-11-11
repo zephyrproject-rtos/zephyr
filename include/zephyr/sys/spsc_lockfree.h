@@ -99,7 +99,7 @@ struct spsc {
  * @param type Type stored in the spsc
  */
 #define SPSC_DECLARE(name, type)                                                                   \
-	static struct spsc_##name {                                                                \
+	struct spsc_##name {                                                                       \
 		struct spsc _spsc;                                                                 \
 		type * const buffer;                                                               \
 	}

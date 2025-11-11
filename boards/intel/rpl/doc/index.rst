@@ -12,7 +12,10 @@ architecture, utilizing P-cores for performance and E-Cores for efficiency.
 Raptor Lake S and Raptor Lake P processor lines are supported.
 
 The S-Processor line is a 2-Chip Platform that includes the Processor Die and
-Platform Controller Hub (PCH-S) Die in the Package.
+Platform Controller Hub (PCH-S) Die in the Package. There are 2 PCH-s versions
+supported for S-Processor line 600 series (ADL) and 700 series (RPL). Default
+600 series revision is selected, to select 700 series revision the board name
+during build should be ``intel_rpl_s_crb@700``.
 
 The P-Processor line is a 2-Die Multi Chip Package (MCP) that includes the
 Processor Die and Platform Controller Hub (PCH-P) Die on the same package as
@@ -23,7 +26,7 @@ please refer to `RPL`_.
 
 Raptor Lake Customer Reference Board (RPL CRB) is an example implementation of a
 compact single board computer with high performance for IoT edge devices. The
-supported boards are `intel_rpl_s_crb` and `intel_rpl_p_crb`.
+supported boards are ``intel_rpl_s_crb`` and ``intel_rpl_p_crb``.
 
 These board configurations enable kernel support for the supported Raptor Lake
 boards.

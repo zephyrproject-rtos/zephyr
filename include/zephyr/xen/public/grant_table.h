@@ -126,7 +126,7 @@ typedef uint32_t grant_ref_t;
  * Version 1 of the grant table entry structure is maintained purely
  * for backwards compatibility.  New guests should use version 2.
  */
-#if __XEN_INTERFACE_VERSION__ < 0x0003020a
+#if CONFIG_XEN_INTERFACE_VERSION < 0x0003020a
 #define grant_entry_v1 grant_entry
 #define grant_entry_v1_t grant_entry_t
 #endif
@@ -232,13 +232,13 @@ typedef struct grant_entry_v1 grant_entry_v1_t;
 #define GNTTABOP_copy				5
 #define GNTTABOP_query_size			6
 #define GNTTABOP_unmap_and_replace		7
-#if __XEN_INTERFACE_VERSION__ >= 0x0003020a
+#if CONFIG_XEN_INTERFACE_VERSION >= 0x0003020a
 #define GNTTABOP_set_version			8
 #define GNTTABOP_get_status_frames		9
 #define GNTTABOP_get_version			10
 #define GNTTABOP_swap_grant_ref			11
 #define GNTTABOP_cache_flush			12
-#endif /* __XEN_INTERFACE_VERSION__ */
+#endif /* CONFIG_XEN_INTERFACE_VERSION */
 /* ` } */
 
 /*
@@ -315,7 +315,7 @@ struct gnttab_setup_table {
 
 	/* OUT parameters. */
 	int16_t status; /* => enum grant_status */
-#if __XEN_INTERFACE_VERSION__ < 0x00040300
+#if CONFIG_XEN_INTERFACE_VERSION < 0x00040300
 	XEN_GUEST_HANDLE(ulong) frame_list;
 #else
 	XEN_GUEST_HANDLE(xen_pfn_t) frame_list;
@@ -324,7 +324,23 @@ struct gnttab_setup_table {
 typedef struct gnttab_setup_table gnttab_setup_table_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_setup_table_t);
 
-
+/*
+ * GNTTABOP_query_size: Query the current and maximum sizes of the shared
+ * grant table.
+ * NOTES:
+ *  1. <dom> may be specified as DOMID_SELF.
+ *  2. Only a sufficiently-privileged domain may specify <dom> != DOMID_SELF.
+ */
+struct gnttab_query_size {
+	/* IN parameters. */
+	domid_t  dom;
+	/* OUT parameters. */
+	uint32_t nr_frames;
+	uint32_t max_nr_frames;
+	int16_t  status;	/* => enum grant_status */
+};
+typedef struct gnttab_query_size gnttab_query_size_t;
+DEFINE_XEN_GUEST_HANDLE(gnttab_query_size_t);
 
 /*
  * Bitfield values for gnttab_map_grant_ref.flags.

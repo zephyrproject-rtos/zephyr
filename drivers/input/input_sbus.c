@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT futaba_sbus
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/input/input.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -124,7 +123,7 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 
 	uint8_t i, channel;
 	uint8_t *sbus_channel_data = &data->sbus_frame[1]; /* Omit header */
-	uint16_t value;
+	uint32_t value;
 	int bits_read;
 	unsigned int key;
 	int ret;
@@ -248,7 +247,7 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		return;
 	}
 
-	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes <= SBUS_FRAME_LEN) {
+	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < SBUS_FRAME_LEN) {
 		if (data->in_sync) {
 			if (data->xfer_bytes == 0) {
 				data->last_rx_time = k_uptime_get_32();
@@ -325,9 +324,9 @@ static int input_sbus_init(const struct device *dev)
 		return ret;
 	}
 
-	uart_irq_rx_enable(config->uart_dev);
-
 	k_sem_init(&data->report_lock, 0, 1);
+
+	uart_irq_rx_enable(config->uart_dev);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			K_KERNEL_STACK_SIZEOF(data->thread_stack),
@@ -356,7 +355,7 @@ static int input_sbus_init(const struct device *dev)
 
 #define INPUT_SBUS_INIT(n)                                                                         \
                                                                                                    \
-	static const struct sbus_input_channel input_##id[] = {                                    \
+	static const struct sbus_input_channel input_##n[] = {                                     \
 		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)                           \
 	};                                                                                         \
 	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                              \
@@ -364,9 +363,9 @@ static int input_sbus_init(const struct device *dev)
 	static struct input_sbus_data sbus_data_##n;                                               \
                                                                                                    \
 	static const struct input_sbus_config sbus_cfg_##n = {                                     \
-		.channel_info = input_##id,                                                        \
+		.channel_info = input_##n,                                                         \
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.num_channels = ARRAY_SIZE(input_##id),                                            \
+		.num_channels = ARRAY_SIZE(input_##n),                                             \
 		.cb = sbus_uart_isr,                                                               \
 	};                                                                                         \
                                                                                                    \

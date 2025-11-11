@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
@@ -29,19 +30,19 @@ ZTEST(stm32_syclck_config, test_sysclk_src)
 #if STM32_SYSCLK_SRC_PLL
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src,
 			"Expected sysclk src: PLL (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSE
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
 			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
 			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif STM32_SYSCLK_SRC_CSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_CSI, sys_clk_src,
 			"Expected sysclk src: CSI (0x%x). Actual: 0x%x",
-			RCC_SYSCLKSOURCE_STATUS_CSI, sys_clk_src);
+			(uint32_t)RCC_SYSCLKSOURCE_STATUS_CSI, sys_clk_src);
 #else
 	/* Case not expected */
 	zassert_true((STM32_SYSCLK_SRC_PLL ||
@@ -82,9 +83,11 @@ ZTEST(stm32_syclck_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the register */
 #if STM32_HSE_CSS
-	zassert_true(READ_BIT(RCC->CR, RCC_CR_CSSHSEON), "HSE CSS is not enabled");
+	zassert_true(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSHSEON) == RCC_CR_CSSHSEON,
+		     "HSE CSS is not enabled");
 #else
-	zassert_false(READ_BIT(RCC->CR, RCC_CR_CSSHSEON), "HSE CSS unexpectedly enabled");
+	zassert_false(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSHSEON) == RCC_CR_CSSHSEON,
+		      "HSE CSS unexpectedly enabled");
 #endif /* STM32_HSE_CSS */
 
 }

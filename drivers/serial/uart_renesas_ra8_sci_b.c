@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <soc.h>
 #include "r_sci_b_uart.h"
 #include "r_dtc.h"
@@ -46,7 +49,7 @@ struct uart_ra_sci_b_data {
 	/* RX */
 	struct st_transfer_instance rx_transfer;
 	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info;
+	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
 	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 	struct k_work_delayable rx_timeout_work;
@@ -61,7 +64,7 @@ struct uart_ra_sci_b_data {
 	/* TX */
 	struct st_transfer_instance tx_transfer;
 	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info;
+	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
 	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
 	struct k_work_delayable tx_timeout_work;
@@ -73,7 +76,77 @@ struct uart_ra_sci_b_data {
 	uart_callback_t async_user_cb;
 	void *async_user_cb_data;
 #endif
+#ifdef CONFIG_PM
+	bool rx_ongoing;
+	bool tx_ongoing;
+#endif
 };
+
+#if CONFIG_PM
+static inline void uart_ra_sci_b_rx_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (!data->rx_ongoing) {
+		data->rx_ongoing = true;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		pm_device_busy_set(dev);
+#else
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_rx_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_ongoing) {
+		data->rx_ongoing = false;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		if (!data->tx_ongoing) {
+			pm_device_busy_clear(dev);
+		}
+#else
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_tx_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (!data->tx_ongoing) {
+		data->tx_ongoing = true;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		pm_device_busy_set(dev);
+#else
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_tx_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->tx_ongoing) {
+		data->tx_ongoing = false;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		if (!data->rx_ongoing) {
+			pm_device_busy_clear(dev);
+		}
+#else
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+#endif
 
 static int uart_ra_sci_b_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -100,10 +173,21 @@ static void uart_ra_sci_b_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_ra_sci_b_config *cfg = dev->config;
 
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
+
 	while (cfg->regs->CSR_b.TEND == 0U) {
 	}
 
 	cfg->regs->TDR_BY = c;
+
+	while (cfg->regs->CSR_b.TEND == 0U) {
+	}
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
 }
 
 static int uart_ra_sci_b_err_check(const struct device *dev)
@@ -256,7 +340,7 @@ static int uart_ra_sci_b_fifo_fill(const struct device *dev, const uint8_t *tx_d
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	const struct uart_ra_sci_b_config *cfg = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
 		while ((size - num_tx > 0) && cfg->regs->FTSR != 0x10U) {
@@ -281,7 +365,7 @@ static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, c
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	const struct uart_ra_sci_b_config *cfg = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
 		while ((size - num_rx > 0) && cfg->regs->FRSR_b.R > 0U) {
@@ -302,7 +386,7 @@ static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, c
 	}
 
 	/* Clear overrun error flag */
-	cfg->regs->CFCLR_b.ORERC = 0U;
+	cfg->regs->CFCLR_b.ORERC = 1U;
 
 	return num_rx;
 }
@@ -310,6 +394,10 @@ static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, c
 static void uart_ra_sci_b_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
 
 	cfg->regs->CCR0 |= (BIT(R_SCI_B0_CCR0_TIE_Pos) | BIT(R_SCI_B0_CCR0_TEIE_Pos));
 }
@@ -319,6 +407,10 @@ static void uart_ra_sci_b_irq_tx_disable(const struct device *dev)
 	const struct uart_ra_sci_b_config *cfg = dev->config;
 
 	cfg->regs->CCR0 &= ~(BIT(R_SCI_B0_CCR0_TIE_Pos) | BIT(R_SCI_B0_CCR0_TEIE_Pos));
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
 }
 
 static int uart_ra_sci_b_irq_tx_ready(const struct device *dev)
@@ -342,6 +434,10 @@ static void uart_ra_sci_b_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_ra_sci_b_config *cfg = dev->config;
 
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_get(dev);
+#endif
+
 	cfg->regs->CCR0_b.RIE = 1U;
 }
 
@@ -350,6 +446,10 @@ static void uart_ra_sci_b_irq_rx_disable(const struct device *dev)
 	const struct uart_ra_sci_b_config *cfg = dev->config;
 
 	cfg->regs->CCR0_b.RIE = 0U;
+
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_put(dev);
+#endif
 }
 
 static int uart_ra_sci_b_irq_rx_ready(const struct device *dev)
@@ -458,7 +558,7 @@ static inline void async_rx_disabled(const struct device *dev)
 	struct uart_event event = {
 		.type = UART_RX_DISABLED,
 	};
-	return async_user_callback(dev, &event);
+	async_user_callback(dev, &event);
 }
 
 static inline void async_request_rx_buffer(const struct device *dev)
@@ -466,7 +566,7 @@ static inline void async_request_rx_buffer(const struct device *dev)
 	struct uart_event event = {
 		.type = UART_RX_BUF_REQUEST,
 	};
-	return async_user_callback(dev, &event);
+	async_user_callback(dev, &event);
 }
 
 static inline void async_rx_ready(const struct device *dev)
@@ -637,6 +737,10 @@ static int uart_ra_sci_b_async_tx(const struct device *dev, const uint8_t *buf, 
 	data->tx_buffer = (uint8_t *)buf;
 	data->tx_buffer_cap = len;
 
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
+
 	uart_ra_sci_b_async_timer_start(&data->tx_timeout_work, timeout);
 
 unlock:
@@ -687,6 +791,10 @@ static int uart_ra_sci_b_async_tx_abort(const struct device *dev)
 
 	async_tx_abort(dev);
 
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
+
 	return 0;
 }
 
@@ -719,6 +827,10 @@ static int uart_ra_sci_b_async_rx_enable(const struct device *dev, uint8_t *buf,
 	if (err != 0) {
 		goto unlock;
 	}
+
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_get(dev);
+#endif
 
 	data->rx_timeout = timeout;
 	data->rx_buffer = buf;
@@ -772,6 +884,10 @@ static int uart_ra_sci_b_async_rx_disable(const struct device *dev)
 	cfg->regs->CFCLR_b.RDRFC = 1U;
 
 unlock:
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_put(dev);
+#endif
+
 	irq_unlock(key);
 	return err;
 }
@@ -803,7 +919,7 @@ static void uart_ra_sci_b_callback_adapter(struct st_uart_callback_arg *fsp_args
 	case UART_EVENT_TX_COMPLETE: {
 		data->tx_buffer_len = data->tx_buffer_cap;
 		async_update_tx_buffer(dev);
-		return;
+		break;
 	}
 	case UART_EVENT_RX_COMPLETE: {
 		data->rx_buffer_len =
@@ -811,16 +927,20 @@ static void uart_ra_sci_b_callback_adapter(struct st_uart_callback_arg *fsp_args
 		async_rx_ready(dev);
 		async_release_rx_buffer(dev);
 		async_replace_rx_buffer(dev);
-		return;
+		break;
 	}
 	case UART_EVENT_ERR_PARITY:
-		return async_rx_error(dev, UART_ERROR_PARITY);
+		async_rx_error(dev, UART_ERROR_PARITY);
+		break;
 	case UART_EVENT_ERR_FRAMING:
-		return async_rx_error(dev, UART_ERROR_FRAMING);
+		async_rx_error(dev, UART_ERROR_FRAMING);
+		break;
 	case UART_EVENT_ERR_OVERFLOW:
-		return async_rx_error(dev, UART_ERROR_OVERRUN);
+		async_rx_error(dev, UART_ERROR_OVERRUN);
+		break;
 	case UART_EVENT_BREAK_DETECT:
-		return async_rx_error(dev, UART_BREAK);
+		async_rx_error(dev, UART_BREAK);
+		break;
 	case UART_EVENT_TX_DATA_EMPTY:
 	case UART_EVENT_RX_CHAR:
 		break;
@@ -829,7 +949,41 @@ static void uart_ra_sci_b_callback_adapter(struct st_uart_callback_arg *fsp_args
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_ra_sci_b_driver_api = {
+#ifdef CONFIG_PM_DEVICE
+static int uart_ra_sci_b_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	fsp_err_t fsp_err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Deinitialize the device */
+		fsp_err = R_SCI_B_UART_Close(&data->sci);
+		__ASSERT(fsp_err == 0, "sci_uart: initialization: close failed");
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		/* Reinitialize the device */
+		int ret = uart_ra_sci_b_apply_config(&data->uart_config, &data->fsp_config,
+						     &data->fsp_config_extend,
+						     &data->fsp_baud_setting);
+		if (ret < 0) {
+			return ret;
+		}
+
+		fsp_err = R_SCI_B_UART_Open(&data->sci, &data->fsp_config);
+		__ASSERT(fsp_err == 0, "sci_uart: initialization: open failed");
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static DEVICE_API(uart, uart_ra_sci_b_driver_api) = {
 	.poll_in = uart_ra_sci_b_poll_in,
 	.poll_out = uart_ra_sci_b_poll_out,
 	.err_check = uart_ra_sci_b_err_check,
@@ -888,7 +1042,7 @@ static int uart_ra_sci_b_init(const struct device *dev)
 
 #if defined(CONFIG_UART_ASYNC_API)
 	data->fsp_config.p_callback = uart_ra_sci_b_callback_adapter;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 
 	k_work_init_delayable(&data->tx_timeout_work, uart_ra_sci_b_async_tx_timeout);
 	k_work_init_delayable(&data->rx_timeout_work, uart_ra_sci_b_async_rx_timeout);
@@ -967,6 +1121,9 @@ static void uart_ra_sci_b_tei_isr(const struct device *dev)
 #if defined(CONFIG_UART_ASYNC_API)
 	k_work_cancel_delayable(&data->tx_timeout_work);
 	sci_b_uart_tei_isr();
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
 #else
 	R_ICU->IELSR_b[data->fsp_config.tei_irq].IR = 0U;
 #endif
@@ -991,28 +1148,28 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 
 #endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
 
-#define _ELC_EVENT_SCI_RXI(channel) ELC_EVENT_SCI##channel##_RXI
-#define _ELC_EVENT_SCI_TXI(channel) ELC_EVENT_SCI##channel##_TXI
-#define _ELC_EVENT_SCI_TEI(channel) ELC_EVENT_SCI##channel##_TEI
-#define _ELC_EVENT_SCI_ERI(channel) ELC_EVENT_SCI##channel##_ERI
-
-#define ELC_EVENT_SCI_RXI(channel) _ELC_EVENT_SCI_RXI(channel)
-#define ELC_EVENT_SCI_TXI(channel) _ELC_EVENT_SCI_TXI(channel)
-#define ELC_EVENT_SCI_TEI(channel) _ELC_EVENT_SCI_TEI(channel)
-#define ELC_EVENT_SCI_ERI(channel) _ELC_EVENT_SCI_ERI(channel)
-
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
+#define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
+#define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
+#define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
+#define EVENT_SCI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _ERI))
 
 #define UART_RA_SCI_B_IRQ_CONFIG_INIT(index)                                                       \
 	do {                                                                                       \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                    \
-			ELC_EVENT_SCI_RXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_RXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			ELC_EVENT_SCI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
-			ELC_EVENT_SCI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
-			ELC_EVENT_SCI_ERI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_ERI(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_ERI(DT_INST_PROP(index, channel)));     \
                                                                                                    \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \
@@ -1038,14 +1195,10 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 
 #define UART_RA_SCI_B_DTC_INIT(index)                                                              \
 	do {                                                                                       \
-		if (DT_INST_PROP_OR(index, rx_dtc, false)) {                                       \
-			uart_ra_sci_b_data_##index.fsp_config.p_transfer_rx =                      \
-				&uart_ra_sci_b_data_##index.rx_transfer;                           \
-		}                                                                                  \
-		if (DT_INST_PROP_OR(index, tx_dtc, false)) {                                       \
-			uart_ra_sci_b_data_##index.fsp_config.p_transfer_tx =                      \
-				&uart_ra_sci_b_data_##index.tx_transfer;                           \
-		}                                                                                  \
+		uart_ra_sci_b_data_##index.fsp_config.p_transfer_rx =                              \
+			&uart_ra_sci_b_data_##index.rx_transfer;                                   \
+		uart_ra_sci_b_data_##index.fsp_config.p_transfer_tx =                              \
+			&uart_ra_sci_b_data_##index.tx_transfer;                                   \
 	} while (0)
 
 #define UART_RA_SCI_B_ASYNC_INIT(index)                                                            \
@@ -1108,6 +1261,10 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 #define UART_RA_SCI_B_DTC_INIT(index)
 #endif
 
+#define FLOW_CTRL_PARAMETER(index)                                                                 \
+	COND_CODE_1(DT_INST_PROP(index, hw_flow_control),                                          \
+	(UART_CFG_FLOW_CTRL_RTS_CTS), (UART_CFG_FLOW_CTRL_NONE))
+
 #define UART_RA_SCI_B_INIT(index)                                                                  \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
                                                                                                    \
@@ -1123,9 +1280,7 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
-							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
-							 (UART_CFG_FLOW_CTRL_NONE)),               \
+				.flow_ctrl = FLOW_CTRL_PARAMETER(index),                           \
 			},                                                                         \
 		.fsp_config =                                                                      \
 			{                                                                          \
@@ -1155,7 +1310,8 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_init_##index, NULL,                             \
+	PM_DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_pm_action);                                  \
+	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_init_##index, PM_DEVICE_DT_INST_GET(index),     \
 			      &uart_ra_sci_b_data_##index, &uart_ra_sci_b_config_##index,          \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                           \
 			      &uart_ra_sci_b_driver_api);

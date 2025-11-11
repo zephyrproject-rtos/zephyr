@@ -1,5 +1,6 @@
 board:
   name: 96b_nitrogen
+  full_name: Nitrogen
   vendor: 96boards
   socs:
   - name: nrf52832

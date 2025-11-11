@@ -129,7 +129,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  *        location, which must be updated.
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
-#else
+#endif /* CONFIG_USE_SWITCH */
+
+#if !defined(CONFIG_USE_SWITCH) || defined(__DOXYGEN__)
+#if defined(__DOXYGEN__)
 /**
  * Cooperatively context switch
  *
@@ -143,6 +146,7 @@ static inline void arch_switch(void *switch_to, void **switched_from);
  *         blocking operation.
  */
 int arch_swap(unsigned int key);
+#endif /* __DOXYGEN__ */
 
 /**
  * Set the return value for the specified thread.
@@ -154,7 +158,7 @@ int arch_swap(unsigned int key);
  */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH */
+#endif /* !CONFIG_USE_SWITCH || __DOXYGEN__ */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**
@@ -170,6 +174,15 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
 void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
+
+/**
+ * @brief Save coprocessor states on an IPI
+ *
+ * The function, invoked by the IPI handler, is used by cross-CPU lazy context
+ * switches. It saves the relevant coprocessor context(s) before signalling the
+ * waiting CPU that it has finished.
+ */
+void arch_ipi_lazy_coprocessors_save(void);
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 /**
@@ -207,6 +220,42 @@ int arch_float_disable(struct k_thread *thread);
  */
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+/**
+ * @brief Disable coprocessor context preservation
+ *
+ * This function serves as a catchall for disabling the preservation of
+ * coprocessor context information when aborting a thread.
+ */
+int arch_coprocessors_disable(struct k_thread *thread);
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
+/**
+ * @brief Obtain privileged stack usage information for the specified thread
+ *
+ * Must be called under supervisor mode.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * error will be generated.
+ *
+ * @param[in]  thread     Thread to inspect stack information
+ * @param[out] stack_size Filled in with the size of the stack space of
+ *                        the target thread in bytes.
+ * @param[out] unused_ptr Filled in with the unused stack space of
+ *                        the target thread in bytes.
+ *
+ * @return 0 on success
+ * @return -EBADF Bad thread object
+ * @return -EPERM No permissions on thread object
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited or not a user thread
+ * @return -EFAULT Bad memory address for unused_ptr
+ */
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr);
+#endif /* CONFIG_USERSPACE && CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET */
 
 /** @} */
 
@@ -557,6 +606,22 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  */
 int arch_printk_char_out(int c);
 
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+/**
+ * Set thread name hook
+ *
+ * If implemented, any invocation of a function setting a thread name
+ * will invoke this function.
+ *
+ * @param thread    Pointer to thread object
+ * @param str       The thread name
+ *
+ * @retval 0        On success.
+ * @retval -EAGAIN  If the operation could not be performed.
+ */
+int arch_thread_name_set(struct k_thread *thread, const char *str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+
 /**
  * Architecture-specific kernel initialization hook
  *
@@ -589,6 +654,24 @@ void arch_coredump_info_dump(const struct arch_esf *esf);
  * @brief Get the target code specified by the architecture.
  */
 uint16_t arch_coredump_tgt_code_get(void);
+
+/**
+ * @brief Get the stack pointer of the thread.
+ */
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread);
+
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
+
+/**
+ * @brief Architecture-specific handling of dumping privileged stack
+ *
+ * This dumps the architecture-specific privileged stack during coredump.
+ *
+ * @param thread Pointer to thread object
+ */
+void arch_coredump_priv_stack_dump(struct k_thread *thread);
+
+#endif /* CONFIG_USERSPACE || __DOXYGEN__ */
 
 /** @} */
 

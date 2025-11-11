@@ -176,7 +176,7 @@ ZTEST(mem_protect_domain, test_mem_domain_invalid_access)
 /**
  * @brief Show that a read-only partition can't be written to
  *
- * @ingroup kernel_memgroup_tests
+ * @ingroup kernel_memprotect_tests
  */
 ZTEST(mem_protect_domain, test_mem_domain_no_writes_to_ro)
 {

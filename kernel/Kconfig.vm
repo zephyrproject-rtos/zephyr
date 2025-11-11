@@ -98,8 +98,10 @@ config KERNEL_DIRECT_MAP
 
 endif # KERNEL_VM_SUPPORT
 
-menuconfig MMU
-	bool "MMU features"
+menu "MMU Features"
+
+config MMU
+	bool
 	depends on CPU_HAS_MMU
 	select KERNEL_VM_SUPPORT
 	help
@@ -123,6 +125,15 @@ menuconfig DEMAND_PAGING
 	  backing store for evicted pages.
 
 if DEMAND_PAGING
+config DEMAND_MAPPING
+	bool "Allow on-demand memory mappings"
+	depends on ARCH_HAS_DEMAND_MAPPING
+	default y
+	help
+	  When this is enabled, RAM-based memory mappings don't actually
+	  allocate memory at mem_map time. They are made to be populated
+	  at access time using the demand paging mechanism instead.
+
 config DEMAND_PAGING_ALLOW_IRQ
 	bool "Allow interrupts during page-ins/outs"
 	help
@@ -197,6 +208,7 @@ config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
 
 endif # DEMAND_PAGING
 endif # MMU
+endmenu
 
 config KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
 	bool

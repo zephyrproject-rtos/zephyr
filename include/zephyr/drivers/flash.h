@@ -7,16 +7,17 @@
 
 /**
  * @file
- * @brief Public API for FLASH drivers
+ * @ingroup flash_interface
+ * @brief Main header file for Flash driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH internal Interface
- * @defgroup flash_internal_interface FLASH internal Interface
- * @ingroup io_interfaces
+ * @brief Internal interfaces for flash memory controllers.
+ * @defgroup flash_internal_interface Flash Internal
+ * @ingroup flash_interface
  * @{
  */
 
@@ -43,12 +44,18 @@ struct flash_pages_layout {
  */
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief Interfaces for flash memory controllers.
+ * @defgroup flash_interface Flash
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
+ *
  * @{
+ *
+ * @defgroup flash_ex_op Extended Operations
+ * @brief Vendor-specific extended operations for flash drivers.
+ * @{
+ * @}
  */
 
 /**
@@ -88,8 +95,8 @@ struct flash_parameters {
 #define FLASH_ERASE_C_VAL_BIT		0x04
 #define FLASH_ERASE_UNIFORM_PAGE	0x08
 
-
-/* @brief Parser for flash_parameters for retrieving erase capabilities
+/**
+ * @brief Parser for flash_parameters for retrieving erase capabilities
  *
  * The functions parses flash_parameters type object and returns combination
  * of erase capabilities of 0 if device does not have any.
@@ -125,6 +132,18 @@ int flash_params_get_erase_cap(const struct flash_parameters *p)
  * @{
  */
 
+/**
+ * @brief Flash read implementation handler type
+ *
+ * @return 0 on success or len is zero, -EINVAL if page offset doesn't exist or data
+ *         destination is NULL
+ *
+ * @note Any necessary read protection management must be performed by
+ * the driver.
+ *
+ * For consistency across implementations, value check len parameter equal zero and
+ * return result 0 before validating the data destination parameter.
+ */
 typedef int (*flash_api_read)(const struct device *dev, off_t offset,
 			      void *data,
 			      size_t len);
@@ -154,6 +173,18 @@ typedef int (*flash_api_write)(const struct device *dev, off_t offset,
  */
 typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 			       size_t size);
+
+/**
+ * @brief Get device size in bytes.
+ *
+ * Returns total logical device size in bytes.
+ *
+ * @param[in] dev	flash device.
+ * @param[out] size	device size in bytes.
+ *
+ * @return 0 on success, negative errno code on error.
+ */
+typedef int (*flash_api_get_size)(const struct device *dev, uint64_t *size);
 
 typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device *dev);
 
@@ -195,6 +226,7 @@ __subsystem struct flash_driver_api {
 	flash_api_write write;
 	flash_api_erase erase;
 	flash_api_get_parameters get_parameters;
+	flash_api_get_size get_size;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -316,6 +348,33 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 
 	if (api->erase != NULL) {
 		rc = api->erase(dev, offset, size);
+	}
+
+	return rc;
+}
+
+/**
+ * @brief Get device size in bytes.
+ *
+ * Returns total logical device size in bytes. Not all devices may support
+ * returning size, specifically those with non uniform page layouts or banked,
+ * in which case the function will return -ENOTSUP, and user has to rely
+ * on Flash page layout functions enabled by CONFIG_FLASH_PAGE_LAYOUT.
+ *
+ * @param[in] dev	flash device.
+ * @param[out] size	device size in bytes.
+ *
+ * @return 0 on success, negative errno code on error.
+ */
+__syscall int flash_get_size(const struct device *dev, uint64_t *size);
+
+static inline int z_impl_flash_get_size(const struct device *dev, uint64_t *size)
+{
+	int rc = -ENOSYS;
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
+
+	if (api->get_size != NULL) {
+		rc = api->get_size(dev, size);
 	}
 
 	return rc;
@@ -583,6 +642,37 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
 __syscall int flash_ex_op(const struct device *dev, uint16_t code,
 			  const uintptr_t in, void *out);
 
+/**
+ * @brief Copy flash memory from one device to another.
+ *
+ * Copy a region of flash memory from one place to another. The source and
+ * destination flash devices may be the same or different devices. However,
+ * this function will fail if the source and destination devices are the same
+ * if memory regions overlap and are not identical.
+ *
+ * The caller must supply a buffer of suitable size and ensure that the
+ * destination is erased beforehand, if necessary.
+ *
+ * @note If the source and destination devices are the same, and the source
+ * and destination offsets are also the same, this function succeeds without
+ * performing any copy operation.
+ *
+ * @param src_dev Source flash device.
+ * @param dst_dev Destination flash device.
+ * @param src_offset Offset within the source flash device.
+ * @param dst_offset Offset within the destination flash device.
+ * @param size Size of the region to copy, in bytes.
+ * @param[out] buf Pointer to a buffer of size @a buf_size.
+ * @param buf_size Size of the buffer pointed to by @a buf.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an argument is invalid.
+ * @retval -EIO if an I/O error occurs.
+ * @retval -ENODEV if either @a src_dev or @a dst_dev are not ready.
+ */
+__syscall int flash_copy(const struct device *src_dev, off_t src_offset,
+			 const struct device *dst_dev, off_t dst_offset, off_t size, uint8_t *buf,
+			 size_t buf_size);
 /*
  *  Extended operation interface provides flexible way for supporting flash
  *  controller features. Code space is divided equally into Zephyr codes

@@ -67,7 +67,7 @@ static void test_config_psk(int s_sock, int c_sock)
 
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK,
 					 psk, sizeof(psk)),
-		      0, "Failed to register PSK %d");
+		      0, "Failed to register PSK");
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK_ID,
 					 psk_id, strlen(psk_id)),
 		      0, "Failed to register PSK ID");
@@ -916,7 +916,7 @@ ZTEST(net_socket_tls, test_connect_closed_port)
 	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
-	zassert_equal(errno, ETIMEDOUT,
+	zassert_equal(errno, ECONNREFUSED,
 		      "connect should fail, got %d", errno);
 
 	test_sockets_close();
@@ -1812,6 +1812,88 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+}
+
+#define BAD_CA_CERT_TAG 11
+#define BAD_OWN_CERT_TAG 12
+#define BAD_PRIV_KEY_TAG 13
+#define BAD_PSK_TAG 14
+#define BAD_NO_CRED_TAG 15
+
+static void remove_bad_cred(void)
+{
+	(void)tls_credential_delete(BAD_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE);
+	(void)tls_credential_delete(BAD_OWN_CERT_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
+	(void)tls_credential_delete(BAD_PRIV_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY);
+	(void)tls_credential_delete(BAD_PSK_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(BAD_PSK_TAG, TLS_CREDENTIAL_PSK_ID);
+}
+
+static void test_bad_cred_common(bool test_dtls)
+{
+	static uint8_t bad_ca_cert[] = "bad ca cert";
+	static uint8_t bad_own_cert[] = "bad own cert";
+	static uint8_t bad_priv_key[] = "bad priv key";
+	static uint8_t bad_psk[] = "bad psk"; /* PSK is not bad per se, but will
+					       * try to use it without matching PSK ID.
+					       */
+	sec_tag_t bad_tags[] = {
+		BAD_CA_CERT_TAG,
+		BAD_OWN_CERT_TAG,
+		BAD_PRIV_KEY_TAG,
+		BAD_PSK_TAG,
+		BAD_NO_CRED_TAG,
+	};
+
+	/* Preconfigure "bad" credentials */
+	remove_bad_cred();
+
+	zassert_ok(tls_credential_add(BAD_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+				      bad_ca_cert, sizeof(bad_ca_cert)),
+				      "Failed to add ca cert");
+	zassert_ok(tls_credential_add(BAD_OWN_CERT_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+				      bad_own_cert, sizeof(bad_own_cert)),
+				      "Failed to add own cert");
+	zassert_ok(tls_credential_add(BAD_PRIV_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
+				      bad_priv_key, sizeof(bad_priv_key)),
+				      "Failed to add priv key");
+	zassert_ok(tls_credential_add(BAD_PSK_TAG, TLS_CREDENTIAL_PSK, bad_psk,
+				      sizeof(bad_psk)), "Failed to add psk");
+
+	if (test_dtls) {
+		s_sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_DTLS_1_2);
+	} else {
+		s_sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+	}
+
+	zassert_true(s_sock >= 0, "socket open failed");
+
+	for (int i = 0; i < ARRAY_SIZE(bad_tags); i++) {
+		sec_tag_t test_tag = bad_tags[i];
+		int ret;
+
+		ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+				       &test_tag, sizeof(test_tag));
+		zassert_equal(ret, -1, "zsock_setsockopt should've failed with invalid credential");
+		if (test_tag == BAD_NO_CRED_TAG) {
+			zassert_equal(errno, ENOENT, "Unfound credential should fail with ENOENT");
+		} else {
+			zassert_equal(errno, EINVAL, "Bad credential should fail with EINVAL");
+		}
+	}
+
+	test_sockets_close();
+	remove_bad_cred();
+}
+
+ZTEST(net_socket_tls, test_tls_bad_cred)
+{
+	test_bad_cred_common(false);
+}
+
+ZTEST(net_socket_tls, test_dtls_bad_cred)
+{
+	test_bad_cred_common(true);
 }
 
 static void *tls_tests_setup(void)

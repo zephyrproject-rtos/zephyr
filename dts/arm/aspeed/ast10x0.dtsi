@@ -28,6 +28,7 @@
 		syscon: syscon@7e6e2000 {
 			compatible = "syscon";
 			reg = <0x7e6e2000 0x1000>;
+
 			sysclk: sysclk {
 				compatible = "aspeed,ast10x0-clock";
 				#clock-cells = <1>;

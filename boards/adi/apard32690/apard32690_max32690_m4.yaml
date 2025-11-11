@@ -6,12 +6,20 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
+  - arduino_gpio
   - arduino_serial
   - arduino_spi
+  - arduino_i2c
+  - pmod_spi
+  - pmod_gpio
   - gpio
   - serial
   - spi
-ram: 1024
+  - trng
+  - usbd
+  - counter
+  - w1
+  - memc
+ram: 128
 flash: 3072

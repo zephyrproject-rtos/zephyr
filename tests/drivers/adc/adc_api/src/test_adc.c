@@ -12,6 +12,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+#if CONFIG_ADC_32_BITS_DATA
+typedef int32_t adc_data_size_t;
+#define INVALID_ADC_VALUE INT_MIN
+#else
+typedef int16_t adc_data_size_t;
+#endif
+
 /* Invalid value that is not supposed to be written by the driver. It is used
  * to mark the sample buffer entries as empty. If needed, it can be overridden
  * for a particular board by providing a specific definition above.
@@ -28,9 +35,9 @@
 
 #define BUFFER_SIZE  6
 #ifdef CONFIG_TEST_USERSPACE
-static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM adc_data_size_t m_sample_buffer[BUFFER_SIZE];
 #else
-static __aligned(32) int16_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
+static __aligned(32) adc_data_size_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
 #endif
 
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
@@ -55,7 +62,7 @@ const struct device *get_adc_device(void)
 	return adc_channels[0].dev;
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 static void init_counter(void)
 {
@@ -90,7 +97,7 @@ static void init_adc(void)
 		m_sample_buffer[i] = INVALID_ADC_VALUE;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 	init_counter();
 #endif
@@ -102,9 +109,13 @@ static void check_samples(int expected_count)
 
 	TC_PRINT("Samples read: ");
 	for (i = 0; i < BUFFER_SIZE; i++) {
-		int16_t sample_value = m_sample_buffer[i];
+		adc_data_size_t sample_value = m_sample_buffer[i];
 
+#if CONFIG_ADC_32_BITS_DATA
+		TC_PRINT("0x%08x ", sample_value);
+#else
 		TC_PRINT("0x%04hx ", sample_value);
+#endif
 		if (i < expected_count) {
 			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
 				"[%u] should be filled", i);

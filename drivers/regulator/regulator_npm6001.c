@@ -569,7 +569,7 @@ static int regulator_npm6001_init(const struct device *dev)
 	return regulator_common_init(dev, is_enabled);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_npm6001_enable,
 	.disable = regulator_npm6001_disable,
 	.count_voltages = regulator_npm6001_count_voltages,

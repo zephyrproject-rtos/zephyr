@@ -1,0 +1,381 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_rt7xx_common.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu1: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/*
+	 * Note that the offsets here are relative to the base address.
+	 * The base addresses differ between non-secure (0x40000000)
+	 * and secure modes (0x50000000).
+	 */
+
+	rstctl1: reset-controller@40000 {
+		compatible = "nxp,rstctl";
+		reg = <0x40000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rtc1: rtc@69000 {
+		compatible = "nxp,irtc";
+		reg = <0x69000 0x1000>;
+		interrupts = <23 0>, <24 0>;
+		clock-frequency = <32768>;
+		prescaler = <1>;
+		alarms-count = <1>;
+		share-counter;
+		status = "disabled";
+	};
+
+	clkctl1: clock-controller@41000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x41000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	ctimer5: timer@48000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x48000 0x1000>;
+		interrupts = <7 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER5_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer6: timer@49000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x49000 0x1000>;
+		interrupts = <8 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER6_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer7: timer@4a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x4a000 0x1000>;
+		interrupts = <9 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER7_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	syscon1: syscon@42000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x42000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	i3c2: i3c@56000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x56000 0x1000>;
+		interrupts = <33 0>;
+		clocks = <&clkctl1 MCUX_I3C_CLK>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c3: i3c@57000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x57000 0x1000>;
+		interrupts = <40 0>;
+		clocks = <&clkctl1 MCUX_I3C_CLK>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	gpio8: gpio@320000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x320000 0x1000>, <0x64000 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <61 0>, <62 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio8>;
+	};
+
+	gpio9: gpio@322000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x322000 0x1000>, <0x64080 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <63 0>, <64 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio9>;
+	};
+
+	gpio10: gpio@324000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x324000 0x1000>, <0x64100 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <65 0>, <66 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio10>;
+	};
+
+	flexcomm17: flexcomm@326000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x326000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm17_lpuart17: serial@326000 {
+			compatible = "nxp,lpuart";
+			reg = <0x326000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			status = "disabled";
+		};
+
+		flexcomm17_lpspi17: spi@326000 {
+			compatible = "nxp,lpspi";
+			reg = <0x326000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		flexcomm17_lpi2c17: i2c@326800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x326800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm18: flexcomm@327000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x327000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm18_lpuart18: serial@327000 {
+			compatible = "nxp,lpuart";
+			reg = <0x327000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			status = "disabled";
+		};
+
+		flexcomm18_lpspi18: spi@327000 {
+			compatible = "nxp,lpspi";
+			reg = <0x327000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		flexcomm18_lpi2c18: i2c@327800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x327800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm19: flexcomm@328000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x328000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm19_lpuart19: serial@328000 {
+			compatible = "nxp,lpuart";
+			reg = <0x328000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			status = "disabled";
+		};
+
+		flexcomm19_lpspi19: spi@328000 {
+			compatible = "nxp,lpspi";
+			reg = <0x328000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		flexcomm19_lpi2c19: i2c@328800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x328800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm20: flexcomm@329000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x329000 0x1000>;
+		interrupts = <14 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm20_lpuart20: serial@329000 {
+			compatible = "nxp,lpuart";
+			reg = <0x329000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			status = "disabled";
+		};
+
+		flexcomm20_lpspi20: spi@329000 {
+			compatible = "nxp,lpspi";
+			reg = <0x329000 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		flexcomm20_lpi2c20: i2c@329800 {
+			compatible = "nxp,lpi2c";
+			reg = <0x329800 0x1000>;
+			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	/* MU1: MUB, CPU1 to CPU0 */
+	mbox1_b: mbox@203000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x203000 0x1000>;
+		interrupts = <26 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU2: MUB, CPU1 to HiFi4 */
+	mbox2_b: mbox@205000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x205000 0x1000>;
+		interrupts = <27 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU3: MUA, CPU1 to HiFi1 */
+	mbox3_a: mbox@319000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x319000 0x1000>;
+		interrupts = <28 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* LPFlexcomm15 only support LPI2C function. */
+	lpi2c15: i2c@213000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x213000 0x1000>;
+		interrupts = <14 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		status = "disabled";
+	};
+
+	os_timer_cpu1: timer@209000 {
+		compatible = "nxp,os-timer";
+		reg = <0x209000 0x1000>;
+		interrupts = <30 0>;
+		status = "disabled";
+	};
+
+	acmp: comparator@20b000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x20b000 0x1000>;
+		interrupts = <18 0>;
+		status = "disabled";
+	};
+};
+
+&xspi2 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <74 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+};

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/ztest.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ethernet.h>
@@ -171,7 +171,7 @@ static void timestamp_callback(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	/* The pkt was ref'ed in send_some_data()() */
@@ -201,7 +201,7 @@ void test_timestamp_setup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 static void timestamp_callback_2(struct net_pkt *pkt)
@@ -214,7 +214,7 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	zassert_equal(eth_interfaces[1], net_pkt_iface(pkt),
@@ -247,7 +247,7 @@ void test_timestamp_setup_2nd_iface(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 void test_timestamp_setup_all(void)
@@ -272,7 +272,7 @@ void test_timestamp_setup_all(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
@@ -296,7 +296,7 @@ void test_timestamp_cleanup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_false(timestamp_cb_called, "Timestamp callback called\n");
-	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
+	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n", pkt);
 
 	net_pkt_unref(pkt);
 }
@@ -399,19 +399,17 @@ void test_address_setup(void)
 
 static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 {
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	nbr = net_ipv6_nbr_add(iface, addr, &lladdr, false,

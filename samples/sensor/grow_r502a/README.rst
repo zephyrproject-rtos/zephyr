@@ -1,7 +1,8 @@
-.. _grow_r502a:
+.. zephyr:code-sample:: grow_r502a
+   :name: GROW R502-A Fingerprint Sensor
+   :relevant-api: sensor_interface
 
-GROW_R502A Fingerprint Sensor
-#############################
+   Store and match fingerprints using the GROW R502-A fingerprint sensor.
 
 Overview
 ********
@@ -39,7 +40,7 @@ build this sample app using:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/grow_r502a
-   :board: esp32_devkitc_wroom/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
 
 Sample Output

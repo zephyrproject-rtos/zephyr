@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <soc_common.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -46,9 +47,6 @@ BUILD_ASSERT((ILM_BLOCK_SIZE & (ILM_BLOCK_SIZE - 1)) == 0, "ILM_BLOCK_SIZE must 
 
 #define ILM_NODE DT_NODELABEL(ilm)
 
-#define SCARH_ENABLE	 BIT(3)
-#define SCARH_ADDR_BIT19 BIT(7)
-
 /*
  * SCAR registers contain 20-bit addresses in three registers, with one set
  * of SCAR registers for each ILM block that may be configured.
@@ -82,8 +80,13 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 	if ((uintptr_t)ram_addr < RAM_BASE) {
 		return -EFAULT; /* Not in RAM */
 	}
-	const int dirmap_index = ((uintptr_t)ram_addr - RAM_BASE) / ILM_BLOCK_SIZE;
 
+#ifdef CONFIG_SOC_IT51XXX
+	/* Since IT51XXX only supports one 4KB ILM block (SCAR0), set dirmap_index to 0 directly. */
+	const int dirmap_index = 0;
+#else
+	const int dirmap_index = ((uintptr_t)ram_addr - RAM_BASE) / ILM_BLOCK_SIZE;
+#endif
 	if (dirmap_index >= ARRAY_SIZE(config->scar_regs)) {
 		return -EFAULT; /* Past the end of RAM */
 	}
@@ -103,8 +106,10 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 
 	int irq_key = irq_lock();
 
+#if !defined(CONFIG_SOC_IT51XXX)
 	/* Ensure scratch RAM for block data access is enabled */
 	scar->h = SCARH_ENABLE;
+#endif
 	/* Copy block contents from flash into RAM */
 	memcpy(ram_addr, flash_addr, copy_sz);
 	/* Program SCAR */
@@ -118,6 +123,11 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 	}
 	scar->h = scarh_value;
 
+#ifdef CONFIG_SOC_IT51XXX
+	struct gctrl_it51xxx_regs *const gctrl_regs = GCTRL_IT51XXX_REGS_BASE;
+	/* Scratch ROM0 is 4kb size */
+	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
+#endif
 	irq_unlock(irq_key);
 	return 0;
 }
@@ -158,51 +168,41 @@ static int it8xxx2_ilm_init(const struct device *dev)
 #define SCAR_REG(n) (volatile struct scar_reg *)DT_REG_ADDR_BY_IDX(ILM_NODE, n)
 
 static const struct ilm_config ilm_config = {
-	.scar_regs = {
-		/* SCAR0 SRAM 4KB */
-		SCAR_REG(0),
-		SCAR_REG(1),
-		SCAR_REG(2),
-		SCAR_REG(3),
-		SCAR_REG(4),
-		SCAR_REG(5),
-		SCAR_REG(6),
-		SCAR_REG(7),
-		SCAR_REG(8),
-		SCAR_REG(9),
-		SCAR_REG(10),
-		SCAR_REG(11),
-		SCAR_REG(12),
-		SCAR_REG(13),
-		SCAR_REG(14),
-		/*
-		 * Except for CONFIG_SOC_IT81202CX and CONFIG_SOC_IT81302CX
-		 * maximum ILM size are 60KB, the ILM size of other varients
-		 * are equal to the SRAM size.
-		 */
+	.scar_regs = {/* SCAR0 SRAM 4KB */
+		      SCAR_REG(0),
+#if (CONFIG_ILM_MAX_SIZE > 4)
+		      SCAR_REG(1), SCAR_REG(2), SCAR_REG(3), SCAR_REG(4), SCAR_REG(5), SCAR_REG(6),
+		      SCAR_REG(7), SCAR_REG(8), SCAR_REG(9), SCAR_REG(10), SCAR_REG(11),
+		      SCAR_REG(12), SCAR_REG(13), SCAR_REG(14),
+#endif
+/*
+ * Except for CONFIG_SOC_IT81202CX and CONFIG_SOC_IT81302CX
+ * maximum ILM size are 60KB, the ILM size of other variants
+ * are equal to the SRAM size.
+ */
 #if (CONFIG_ILM_MAX_SIZE == 256)
-		/* SCAR15 SRAM 4KB */
-		SCAR_REG(15),
-		/* SCAR16 SRAM 16KB */
-		SCAR_REG(16), SCAR_REG(16), SCAR_REG(16), SCAR_REG(16),
-		/* SCAR17 SRAM 16KB */
-		SCAR_REG(17), SCAR_REG(17), SCAR_REG(17), SCAR_REG(17),
-		/* SCAR18 SRAM 16KB */
-		SCAR_REG(18), SCAR_REG(18), SCAR_REG(18), SCAR_REG(18),
-		/* SCAR19 SRAM 16KB */
-		SCAR_REG(19), SCAR_REG(19), SCAR_REG(19), SCAR_REG(19),
-		/* SCAR20 SRAM 32KB */
-		SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
-		SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
-		/* SCAR21 SRAM 32KB */
-		SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
-		SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
-		/* SCAR22 SRAM 32KB */
-		SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
-		SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
-		/* SCAR23 SRAM 32KB */
-		SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23),
-		SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23)
+		      /* SCAR15 SRAM 4KB */
+		      SCAR_REG(15),
+		      /* SCAR16 SRAM 16KB */
+		      SCAR_REG(16), SCAR_REG(16), SCAR_REG(16), SCAR_REG(16),
+		      /* SCAR17 SRAM 16KB */
+		      SCAR_REG(17), SCAR_REG(17), SCAR_REG(17), SCAR_REG(17),
+		      /* SCAR18 SRAM 16KB */
+		      SCAR_REG(18), SCAR_REG(18), SCAR_REG(18), SCAR_REG(18),
+		      /* SCAR19 SRAM 16KB */
+		      SCAR_REG(19), SCAR_REG(19), SCAR_REG(19), SCAR_REG(19),
+		      /* SCAR20 SRAM 32KB */
+		      SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
+		      SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
+		      /* SCAR21 SRAM 32KB */
+		      SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
+		      SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
+		      /* SCAR22 SRAM 32KB */
+		      SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
+		      SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
+		      /* SCAR23 SRAM 32KB */
+		      SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23),
+		      SCAR_REG(23), SCAR_REG(23), SCAR_REG(23)
 #endif
 	}};
 BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(CONFIG_ILM_MAX_SIZE),

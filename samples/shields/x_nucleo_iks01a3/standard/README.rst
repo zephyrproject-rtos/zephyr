@@ -26,7 +26,7 @@ Requirements
 This sample communicates over I2C with the X-NUCLEO-IKS01A3 shield
 stacked on a board with an Arduino connector. The board's I2C must be
 configured for the I2C Arduino connector (both for pin muxing
-and devicetree). See for example the :ref:`nucleo_f401re_board` board
+and devicetree). See for example the :zephyr:board:`nucleo_f401re` board
 source code:
 
 - :file:`$ZEPHYR_BASE/boards/arm/nucleo_f401re/nucleo_f401re.dts`
@@ -56,7 +56,7 @@ Building and Running
 ********************
 
 This sample runs with X-NUCLEO-IKS01A3 stacked on any board with a matching
-Arduino connector. For this example, we use a :ref:`nucleo_f401re_board` board.
+Arduino connector. For this example, we use a :zephyr:board:`nucleo_f401re` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks01a3/standard/

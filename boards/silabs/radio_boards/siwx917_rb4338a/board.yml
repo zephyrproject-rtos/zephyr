@@ -1,0 +1,6 @@
+board:
+  name: siwx917_rb4338a
+  full_name: SiWx917 Wi-Fi 6 and Bluetooth LE SoC 8 MB Flash Radio Board (SLWRB4338A)
+  vendor: silabs
+  socs:
+    - name: siwg917m111mgtba

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: QEMU RISC-V virt machine CPU node
+description: QEMU RISC-V virt machine CPU
 
 compatible: "qemu,riscv-virt"
 

@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	lc709203f: lc709203f@0b {
+		compatible = "onnn,lc709203f";
+		status = "okay";
+		reg = <0x0b>;
+		apa = "500mAh";
+		battery-profile = <0x01>;
+		thermistor;
+	};
+};

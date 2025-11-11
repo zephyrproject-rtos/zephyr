@@ -159,7 +159,7 @@ static void rm68200_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static const struct display_driver_api rm68200_api = {
+static DEVICE_API(display, rm68200_api) = {
 	.blanking_on = rm68200_blanking_on,
 	.blanking_off = rm68200_blanking_off,
 	.write = rm68200_write,

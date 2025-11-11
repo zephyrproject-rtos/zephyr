@@ -15,14 +15,7 @@
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-static int arc_iot_init(void)
+void soc_early_init_hook(void)
 {
-
-	if (arc_iot_pll_fout_config(CPU_FREQ / 1000000) < 0) {
-		return -1;
-	}
-
-	return 0;
+	arc_iot_pll_fout_config(CPU_FREQ / 1000000);
 }
-
-SYS_INIT(arc_iot_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

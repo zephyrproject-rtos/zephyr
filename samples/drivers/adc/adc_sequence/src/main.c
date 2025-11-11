@@ -10,12 +10,18 @@
 /* ADC node from the devicetree. */
 #define ADC_NODE DT_ALIAS(adc0)
 
+/* Auxiliary macro to obtain channel vref, if available. */
+#define CHANNEL_VREF(node_id) DT_PROP_OR(node_id, zephyr_vref_mv, 0)
+
 /* Data of ADC device specified in devicetree. */
 static const struct device *adc = DEVICE_DT_GET(ADC_NODE);
 
 /* Data array of ADC channels for the specified ADC. */
 static const struct adc_channel_cfg channel_cfgs[] = {
 	DT_FOREACH_CHILD_SEP(ADC_NODE, ADC_CHANNEL_CFG_DT, (,))};
+
+/* Data array of ADC channel voltage references. */
+static uint32_t vrefs_mv[] = {DT_FOREACH_CHILD_SEP(ADC_NODE, CHANNEL_VREF, (,))};
 
 /* Get the number of channels defined on the DTS. */
 #define CHANNEL_COUNT ARRAY_SIZE(channel_cfgs)
@@ -24,7 +30,11 @@ int main(void)
 {
 	int err;
 	uint32_t count = 0;
+#ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
+	uint32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][CHANNEL_COUNT];
+#else
 	uint16_t channel_reading[CONFIG_SEQUENCE_SAMPLES][CHANNEL_COUNT];
+#endif
 
 	/* Options for the sequence sampling. */
 	const struct adc_sequence_options options = {
@@ -38,6 +48,7 @@ int main(void)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(channel_reading),
 		.resolution = CONFIG_SEQUENCE_RESOLUTION,
+		.oversampling = CONFIG_SEQUENCE_OVERSAMPLING,
 		.options = &options,
 	};
 
@@ -53,6 +64,9 @@ int main(void)
 		if (err < 0) {
 			printf("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
+		}
+		if ((vrefs_mv[i] == 0) && (channel_cfgs[i].reference == ADC_REF_INTERNAL)) {
+			vrefs_mv[i] = adc_ref_internal(adc);
 		}
 	}
 
@@ -78,16 +92,33 @@ int main(void)
 			       CONFIG_SEQUENCE_SAMPLES);
 			for (size_t sample_index = 0U; sample_index < CONFIG_SEQUENCE_SAMPLES;
 			     sample_index++) {
+				uint8_t res = CONFIG_SEQUENCE_RESOLUTION;
 
-				val_mv = channel_reading[sample_index][channel_index];
-
+				/*
+				 * If using differential mode, the 16/32 bit value
+				 * in the ADC sample buffer should be a signed 2's
+				 * complement value.
+				 * Also reduce the resolution by 1 for the conversion
+				 */
+				if (channel_cfgs[channel_index].differential) {
+#ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
+					val_mv = (int32_t)
+						channel_reading[sample_index][channel_index];
+#else
+					val_mv = (int32_t)((int16_t)channel_reading[sample_index]
+										   [channel_index]);
+#endif
+					res -= 1;
+				} else {
+					val_mv = channel_reading[sample_index][channel_index];
+				}
 				printf("- - %" PRId32, val_mv);
-				err = adc_raw_to_millivolts(channel_cfgs[channel_index].reference,
+				err = adc_raw_to_millivolts(vrefs_mv[channel_index],
 							    channel_cfgs[channel_index].gain,
-							    CONFIG_SEQUENCE_RESOLUTION, &val_mv);
+							    res, &val_mv);
 
 				/* conversion to mV may not be supported, skip if not */
-				if ((err < 0) || channel_cfgs[channel_index].reference == 0) {
+				if ((err < 0) || vrefs_mv[channel_index] == 0) {
 					printf(" (value in mV not available)\n");
 				} else {
 					printf(" = %" PRId32 "mV\n", val_mv);

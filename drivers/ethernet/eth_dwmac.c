@@ -102,11 +102,11 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev)
 	enum ethernet_hw_caps caps = 0;
 
 	if (p->feature0 & MAC_HW_FEATURE0_GMIISEL) {
-		caps |= ETHERNET_LINK_1000BASE_T;
+		caps |= ETHERNET_LINK_1000BASE;
 	}
 
 	if (p->feature0 & MAC_HW_FEATURE0_MIISEL) {
-		caps |= ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+		caps |= ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 	}
 
 	caps |= ETHERNET_PROMISC_MODE;

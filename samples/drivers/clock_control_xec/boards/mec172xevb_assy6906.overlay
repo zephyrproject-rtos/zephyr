@@ -6,8 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 
-/ {
-};
+/ {};
 &pcr {
 	status = "okay";
 	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
@@ -23,8 +22,8 @@
 
 	/* 32KHZ_IN is a clock source with debug */
 	/* pinctrl-0 = <&clk_32khz_in_gpio165
-			&tst_clk_out_gpio060
-			&clk_32khz_out_gpio221>;
-	*/
+	 * &tst_clk_out_gpio060
+	 * &clk_32khz_out_gpio221>;
+	 */
 	pinctrl-names = "default";
 };

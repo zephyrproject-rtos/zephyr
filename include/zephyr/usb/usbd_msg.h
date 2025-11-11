@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @defgroup usbd_msg_api USB device core API
  * @ingroup usb
+ * @since 3.7
+ * @version 0.2.0
  * @{
  */
 
@@ -40,6 +42,8 @@ enum usbd_msg_type {
 	USBD_MSG_SUSPEND,
 	/** Bus reset detected */
 	USBD_MSG_RESET,
+	/** Device changed configuration */
+	USBD_MSG_CONFIGURATION,
 	/** Non-correctable UDC error message  */
 	USBD_MSG_UDC_ERROR,
 	/** Unrecoverable device stack error message  */
@@ -48,6 +52,10 @@ enum usbd_msg_type {
 	USBD_MSG_CDC_ACM_LINE_CODING,
 	/** CDC ACM Line State update */
 	USBD_MSG_CDC_ACM_CONTROL_LINE_STATE,
+	/** USB DFU class detach request */
+	USBD_MSG_DFU_APP_DETACH,
+	/** USB DFU class download completed */
+	USBD_MSG_DFU_DOWNLOAD_COMPLETED,
 	/** Maximum number of message types */
 	USBD_MSG_MAX_NUMBER,
 };
@@ -61,10 +69,13 @@ static const char *const usbd_msg_type_list[] = {
 	"Device resumed",
 	"Device suspended",
 	"Bus reset",
+	"New device configuration",
 	"Controller error",
 	"Stack error",
 	"CDC ACM line coding",
 	"CDC ACM control line state",
+	"DFU detach request",
+	"DFU download completed",
 };
 
 BUILD_ASSERT(ARRAY_SIZE(usbd_msg_type_list) == USBD_MSG_MAX_NUMBER,

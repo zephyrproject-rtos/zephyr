@@ -87,7 +87,7 @@ static int ltc2451_init(const struct device *dev)
 	return ltc2451_set_conversion_speed(dev, config->conversion_speed);
 }
 
-static const struct adc_driver_api ltc2451_api = {
+static DEVICE_API(adc, ltc2451_api) = {
 	.channel_setup = ltc2451_channel_setup,
 	.read = ltc2451_read_latest_conversion,
 };
@@ -98,7 +98,7 @@ static const struct adc_driver_api ltc2451_api = {
 		.conversion_speed = DT_INST_PROP(index, conversion_speed), \
 	}; \
  \
-	DEVICE_DT_INST_DEFINE(index, &ltc2451_init, NULL, NULL, \
+	DEVICE_DT_INST_DEFINE(index, ltc2451_init, NULL, NULL, \
 			      &ltc2451_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &ltc2451_api);
 

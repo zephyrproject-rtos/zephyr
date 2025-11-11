@@ -29,7 +29,7 @@ properties:
     description: |
       Number of words used as write watermark level in FIFO queue for USDHC
 
-  max_current_330:
+  max-current-330:
     type: int
     default: 0
     description: |
@@ -42,6 +42,14 @@ properties:
     type: phandle-array
     description: |
       Power pin
+      This pin defaults to active high when consumed by the SD card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
+  sd-gpios:
+    type: phandle-array
+    description: |
+      SDIO Reset pin
       This pin defaults to active high when consumed by the SD card. The
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
@@ -66,3 +74,10 @@ properties:
       Enable the host to detect an SD card via the DAT3 line of the SD card
       connection. Requires the board to define a function to pull DAT3 low or
       high using pullup/pulldown resistors.
+
+  detect-cd:
+    type: boolean
+    description: |
+      Use the host's internal card detect signal (USDHC_CD) to detect the SD
+      card. This signal is available as an alternative to card detect via GPIO,
+      and should be connected to the SD slot's detect pin if used.

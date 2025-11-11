@@ -60,3 +60,8 @@ properties:
       Time it takes for the device from power up to become responsive and
       accepting commands. Defaults to 10ms (found by trial and error) if not
       provided.
+
+  use-internal-iref:
+    type: boolean
+    description: |
+      Use internal Iref, not common but sometime used to save component cost.

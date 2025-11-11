@@ -19,11 +19,13 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			reg = <0>;
 			clock-frequency = <24000000>;
-			compatible ="telink,b91", "riscv";
+			compatible = "telink,b91", "andestech,andescore-v5", "riscv";
 			riscv,isa = "rv32imac_zicsr_zifencei";
+
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -48,10 +50,10 @@
 		};
 
 		mtimer: timer@e6000000 {
-			compatible = "telink,machine-timer";
-			reg = <0xe6000000 0x10000>;
-			interrupts = <7 0>;
-			interrupt-parent = <&plic0>;
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8 0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&plic0 7 0>;
 		};
 
 		flash_mspi: flash-controller@80140100 {
@@ -218,11 +220,11 @@
 		pinctrl: pinctrl@80140330 {
 			compatible = "telink,b91-pinctrl";
 			reg = <0x80140330 0x28
-				   0x80140306 0x28
-				   0x0000000e 0x0C>;
+			       0x80140306 0x28
+			       0x0000000e 0x0C>;
 			reg-names = "pin_mux",
-						"gpio_en",
-						"pull_up_en";
+				    "gpio_en",
+				    "pull_up_en";
 			status = "okay";
 		};
 	};

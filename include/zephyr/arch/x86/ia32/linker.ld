@@ -341,6 +341,8 @@ SECTIONS
 	*(.fini)
 	*(.eini)
 
+#include <snippets-text-sections.ld>
+
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-text.ld>
 #endif
@@ -470,6 +472,32 @@ SECTIONS
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
+#ifdef CONFIG_HW_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_start = .;
+
+	*(.x86shadowstack)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+	MMU_PAGE_ALIGN
+
+	*(.x86shadowstack.arr*)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 /* Must be last in RAM */
 #include <zephyr/linker/kobject-data.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
@@ -557,12 +585,6 @@ SECTIONS
 #include <zephyr/linker/debug-sections.ld>
 
 	/DISCARD/ : { *(.note.GNU-stack) }
-/*
- * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
- */
-#if !defined(CONFIG_CPP_EXCEPTIONS)
-	/DISCARD/ : { *(.eh_frame) }
-#endif
 
 /*
  * The sections below are still treated as warnings
@@ -573,7 +595,10 @@ SECTIONS
 	.strtab 0 : { *(.strtab) }
 	.shstrtab 0 : { *(.shstrtab) }
 #endif
-	}
+
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
+}
 
 #ifdef CONFIG_XIP
 /*

@@ -90,7 +90,7 @@ static int pwm_kb1200_get_cycles_per_sec(const struct device *dev, uint32_t chan
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_kb1200_driver_api = {
+static DEVICE_API(pwm, pwm_kb1200_driver_api) = {
 	.set_cycles = pwm_kb1200_set_cycles,
 	.get_cycles_per_sec = pwm_kb1200_get_cycles_per_sec,
 };

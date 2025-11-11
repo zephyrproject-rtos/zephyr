@@ -1,0 +1,52 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/mgm260pd32vna.dtsi>
+#include "xg26_explorer_kit.dtsi"
+
+/ {
+	model = "Silicon Labs xGM260P Explorer Kit";
+	compatible = "silabs,mgm260p_ek2713a", "silabs,mgm26";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+	};
+};
+
+&button0 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&button1 {
+	gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&itm {
+	swo-ref-frequency = <DT_FREQ_M(80)>;
+};
+
+&led0 {
+	gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+};
+
+&timer0_default {
+	group0 {
+		pins = <TIMER0_CC0_PA9>, <TIMER0_CC1_PC9>;
+	};
+};

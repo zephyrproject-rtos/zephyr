@@ -47,6 +47,14 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
 	  avoid duplicating buffers. If multiple backends are used, the size has to be
 	  set by user to the largest one.
 
+config EC_HOST_CMD_HANDLER_BUFFER_ALIGN
+	int "Memory alignment for the tx/rx buffers"
+	default DCACHE_LINE_SIZE if (DCACHE_LINE_SIZE > 0) && EC_HOST_CMD_BACKEND_USB
+	default 4
+	help
+	  Some interfaces need a special memory alignment to work properly. Use that config
+	  to specify the alignment.
+
 config EC_HOST_CMD_HANDLER_PRIO
 	int "Priority of host command task"
 	default 13
@@ -75,6 +83,15 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
 	default y if EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE > 0
 	help
 	  The handler defines common rx buffer
+
+config EC_HOST_CMD_NOCACHE_BUFFERS
+	bool "Place RX and TX buffers in __nocache section"
+	default y if DCACHE && DMA
+	depends on EC_HOST_CMD_HANDLER_TX_BUFFER_DEF || EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
+	help
+	  DMA is often use for communication, however it usually requires
+	  uncached memory. Add possibility to place the RX and TX buffers in the
+	  __nocache section.
 
 config EC_HOST_CMD_INITIALIZE_AT_BOOT
 	bool "Initialize the host command subsystem automacitlly"

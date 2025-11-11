@@ -1,5 +1,6 @@
 board:
   name: nrf5340_audio_dk
+  full_name: nRF5340 Audio DK
   vendor: nordic
   socs:
   - name: 'nrf5340'

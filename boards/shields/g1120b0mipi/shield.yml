@@ -1,0 +1,6 @@
+shield:
+  name: g1120b0mipi
+  full_name: G1120B0 MIPI Display Shield
+  vendor: boe
+  supported_features:
+    - display

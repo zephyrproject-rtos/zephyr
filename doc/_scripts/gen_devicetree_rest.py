@@ -7,20 +7,19 @@ devicetree bindings.
 """
 
 import argparse
-from collections import defaultdict
 import glob
 import io
 import logging
 import os
-from pathlib import Path
 import pprint
 import re
 import sys
 import textwrap
-
-from devicetree import edtlib
+from collections import defaultdict
+from pathlib import Path
 
 import gen_helpers
+from devicetree import edtlib
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 
@@ -30,7 +29,7 @@ UNKNOWN_VENDOR = 'Unknown vendor'
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 # Base properties that have documentation in 'dt-important-props'.
-DETAILS_IN_IMPORTANT_PROPS = set('compatible label reg status interrupts'.split())
+DETAILS_IN_IMPORTANT_PROPS = {'compatible', 'label', 'reg', 'status', 'interrupts'}
 
 logger = logging.getLogger('gen_devicetree_rest')
 
@@ -163,10 +162,11 @@ class VndLookup:
 def main():
     args = parse_args()
     setup_logging(args.verbose)
-    bindings = load_bindings(args.dts_roots, args.dts_folders)
+    bindings = load_bindings(args.dts_roots, args.dts_folders, args.dts_files)
     base_binding = load_base_binding()
+    driver_sources = load_driver_sources()
     vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
-    dump_content(bindings, base_binding, vnd_lookup, args.out_dir,
+    dump_content(bindings, base_binding, vnd_lookup, driver_sources, args.out_dir,
                  args.turbo_mode)
 
 def parse_args():
@@ -182,6 +182,8 @@ def parse_args():
                         be set in DTS_ROOTS''')
     parser.add_argument('--dts-folder', dest='dts_folders', action='append', default=[],
                         help='additional DTS folders containing binding files')
+    parser.add_argument('--dts-file', dest='dts_files', action='append', default=[],
+                        help='additional individual DTS binding files')
     parser.add_argument('--turbo-mode', action='store_true',
                         help='Enable turbo mode (dummy references)')
     parser.add_argument('out_dir', help='output files are generated here')
@@ -198,7 +200,7 @@ def setup_logging(verbose):
     logging.basicConfig(format='%(filename)s:%(levelname)s: %(message)s',
                         level=log_level)
 
-def load_bindings(dts_roots, dts_folders):
+def load_bindings(dts_roots, dts_folders, dts_files):
     # Get a list of edtlib.Binding objects from searching 'dts_roots'.
 
     if not dts_roots:
@@ -213,6 +215,7 @@ def load_bindings(dts_roots, dts_folders):
     for folders in dts_folders:
         binding_files.extend(glob.glob(f'{folders}/*.yml', recursive=False))
         binding_files.extend(glob.glob(f'{folders}/*.yaml', recursive=False))
+    binding_files.extend(dts_files)
 
     bindings = edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
@@ -243,7 +246,60 @@ def load_base_binding():
     return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
 
-def dump_content(bindings, base_binding, vnd_lookup, out_dir, turbo_mode):
+def load_driver_sources():
+    driver_sources = {}
+    dt_drv_compat_occurrences = defaultdict(list)
+
+    dt_drv_compat_pattern = re.compile(r"#define DT_DRV_COMPAT\s+(.*)")
+    device_dt_inst_define_pattern = re.compile(r"DEVICE_DT_INST_DEFINE")
+
+    folders_to_scan = ["boards", "drivers", "modules", "soc", "subsys"]
+
+    # When looking at folders_to_scan, a file is considered as a likely driver source if:
+    # - There is only one and only one file with a "#define DT_DRV_COMPAT <compatible>" for a given
+    #   compatible.
+    # - or, a file contains both a "#define DT_DRV_COMPAT <compatible>" and a
+    #   DEVICE_DT_INST_DEFINE(...) call.
+
+    for folder in folders_to_scan:
+        for dirpath, _, filenames in os.walk(ZEPHYR_BASE / folder):
+            for filename in filenames:
+                if not filename.endswith(('.c', '.h')):
+                    continue
+                filepath = Path(dirpath) / filename
+                with open(filepath, encoding="utf-8") as f:
+                    content = f.read()
+
+                relative_path = filepath.relative_to(ZEPHYR_BASE)
+
+                # Find all DT_DRV_COMPAT occurrences in the file
+                dt_drv_compat_matches = dt_drv_compat_pattern.findall(content)
+                for compatible in dt_drv_compat_matches:
+                    dt_drv_compat_occurrences[compatible].append(relative_path)
+
+                if dt_drv_compat_matches and device_dt_inst_define_pattern.search(content):
+                    for compatible in dt_drv_compat_matches:
+                        if compatible in driver_sources:
+                            # Mark as ambiguous if multiple files define the same compatible
+                            driver_sources[compatible] = None
+                        else:
+                            driver_sources[compatible] = relative_path
+
+    # Remove ambiguous driver sources
+    driver_sources = {k: v for k, v in driver_sources.items() if v is not None}
+
+    # Consider DT_DRV_COMPATs with only one occurrence as driver sources
+    for compatible, occurrences in dt_drv_compat_occurrences.items():
+        if compatible not in driver_sources and len(occurrences) == 1:
+            path = occurrences[0]
+            # Assume the driver is defined in the enclosing folder if it's a header file
+            if path.suffix == ".h":
+                path = path.parent
+            driver_sources[compatible] = path
+
+    return driver_sources
+
+def dump_content(bindings, base_binding, vnd_lookup, driver_sources, out_dir, turbo_mode):
     # Dump the generated .rst files for a vnd2bindings dict.
     # Files are only written if they are changed. Existing .rst
     # files which would not be written by the 'vnd2bindings'
@@ -256,7 +312,7 @@ def dump_content(bindings, base_binding, vnd_lookup, out_dir, turbo_mode):
         write_dummy_index(bindings, out_dir)
     else:
         write_bindings_rst(vnd_lookup, out_dir)
-        write_orphans(bindings, base_binding, vnd_lookup, out_dir)
+        write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir)
 
 def setup_bindings_dir(bindings, out_dir):
     # Make a set of all the Path objects we will be creating for
@@ -295,9 +351,9 @@ def write_dummy_index(bindings, out_dir):
 
     # build compatibles set and dump it
     compatibles = {binding.compatible for binding in bindings}
-    content += '\n'.join((
+    content += '\n'.join(
         f'.. dtcompatible:: {compatible}' for compatible in compatibles
-    ))
+    )
 
     write_if_updated(out_dir / 'bindings.rst', content)
 
@@ -382,7 +438,7 @@ def write_bindings_rst(vnd_lookup, out_dir):
 
     write_if_updated(out_dir / 'bindings.rst', string_io.getvalue())
 
-def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
+def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
     # Write out_dir / bindings / foo / binding_page.rst for each binding
     # in 'bindings', along with any "disambiguation" pages needed when a
     # single compatible string can be handled by multiple bindings.
@@ -415,7 +471,7 @@ def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
         string_io = io.StringIO()
 
         print_binding_page(binding, base_names, vnd_lookup,
-                           dup_compat2bindings, string_io)
+                           driver_sources, dup_compat2bindings, string_io)
 
         written = write_if_updated(out_dir / 'bindings' /
                                    binding_filename(binding),
@@ -443,7 +499,20 @@ def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
 
-def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
+def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
+    lines = [
+        ".. sidebar:: Overview",
+        "",
+        f"   :Name: ``{compatible}``",
+        f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
+        f"   :Used in: :zephyr:board-catalog:`List of boards <#compatibles={compatible}>` using",
+        "               this compatible",
+    ]
+    if driver_path:
+        lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")
+    return "\n".join(lines) + "\n"
+
+def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compats,
                        string_io):
     # Print the rst content for 'binding' to 'string_io'. The
     # 'dup_compats' argument should support membership testing for
@@ -494,11 +563,18 @@ def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
     {underline}
     ''', string_io)
 
-    # Vendor: <link-to-vendor-section>
     vnd = compatible_vnd(compatible)
-    print('Vendor: '
-          f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
-          file=string_io)
+    vendor_name = vnd_lookup.vendor(vnd)
+    vendor_target = vnd_lookup.target(vnd)
+    driver_path = driver_sources.get(re.sub("[-,.@/+]", "_", compatible.lower()))
+
+    sidebar_content = make_sidebar(
+        compatible=compatible,
+        vendor_name=vendor_name,
+        vendor_ref_target=vendor_target,
+        driver_path=driver_path,
+    )
+    print_block(sidebar_content, string_io)
 
     # Binding description.
     if binding.bus:
@@ -511,7 +587,14 @@ def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
 
     {bus_help}
     ''', string_io)
-    print(to_code_block(binding.description.strip()), file=string_io)
+
+    if binding.title:
+        description = ("\n\n"
+                       .join([binding.title, binding.description])
+                       .strip())
+    else:
+        description = binding.description.strip()
+    print(to_code_block(description), file=string_io)
 
     # Properties.
     print_block('''\

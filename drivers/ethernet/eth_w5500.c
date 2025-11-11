@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 	((W5500_SPI_BLOCK_SELECT(addr) << 3) | BIT(2))
 
 static int w5500_spi_read(const struct device *dev, uint32_t addr,
-			  uint8_t *data, uint32_t len)
+			  uint8_t *data, size_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
@@ -75,7 +75,7 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 }
 
 static int w5500_spi_write(const struct device *dev, uint32_t addr,
-			   uint8_t *data, uint32_t len)
+			   uint8_t *data, size_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
@@ -105,13 +105,13 @@ static int w5500_spi_write(const struct device *dev, uint32_t addr,
 }
 
 static int w5500_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf,
-			 int len)
+			 size_t len)
 {
 	uint32_t addr;
-	int remain = 0;
+	size_t remain = 0;
 	int ret;
 	const uint32_t mem_start = W5500_Sn_RX_MEM_START;
-	const uint16_t mem_size = W5500_RX_MEM_SIZE;
+	const uint32_t mem_size = W5500_RX_MEM_SIZE;
 
 	offset %= mem_size;
 	addr = mem_start + offset;
@@ -130,11 +130,11 @@ static int w5500_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf
 }
 
 static int w5500_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf,
-			  int len)
+			  size_t len)
 {
 	uint32_t addr;
-	int ret = 0;
-	int remain = 0;
+	size_t remain = 0;
+	int ret;
 	const uint32_t mem_start = W5500_Sn_TX_MEM_START;
 	const uint32_t mem_size = W5500_TX_MEM_SIZE;
 
@@ -160,7 +160,7 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
-	while (1) {
+	while (true) {
 		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
 		if (!reg) {
 			break;
@@ -176,7 +176,7 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct w5500_runtime *ctx = dev->data;
-	uint16_t len = net_pkt_get_len(pkt);
+	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
 	uint16_t offset;
 	uint8_t off[2];
 	int ret;
@@ -260,9 +260,9 @@ static void w5500_rx(const struct device *dev)
 
 		w5500_readbuf(dev, reader, data_ptr, frame_len);
 		net_buf_add(pkt_buf, frame_len);
-		reader += frame_len;
+		reader += (uint16_t)frame_len;
 
-		read_len -= frame_len;
+		read_len -= (uint16_t)frame_len;
 		pkt_buf = pkt_buf->frags;
 	} while (read_len > 0);
 
@@ -311,7 +311,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_W5500_MONITOR_PERIOD));
 
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */
@@ -370,7 +370,7 @@ static enum ethernet_hw_caps w5500_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
@@ -459,7 +459,7 @@ static int w5500_hw_stop(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api w5500_api_funcs = {
+static const struct ethernet_api w5500_api_funcs = {
 	.iface_api.init = w5500_iface_init,
 	.get_capabilities = w5500_get_capabilities,
 	.set_config = w5500_set_config,
@@ -611,7 +611,7 @@ static struct w5500_runtime w5500_0_runtime = {
 };
 
 static const struct w5500_config w5500_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,

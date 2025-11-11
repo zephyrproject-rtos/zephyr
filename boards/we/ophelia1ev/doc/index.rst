@@ -1,7 +1,4 @@
-.. _we_ophelia1ev_nrf52805:
-
-Ophelia-I EV NRF52805
-#####################
+.. zephyr:board:: we_ophelia1ev
 
 Overview
 ********
@@ -22,12 +19,6 @@ the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/we_ophelia1ev_nrf52805.jpg
-     :align: center
-     :alt: Ophelia-I EV
-
-     Ophelia-I EV (Credit: Würth Elektronik)
-
 Hardware
 ********
 
@@ -39,39 +30,12 @@ antenna that can be connected to the available SMA connector.
 Supported Features
 ==================
 
-The we_ophelia1ev_nrf52805 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -82,7 +46,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

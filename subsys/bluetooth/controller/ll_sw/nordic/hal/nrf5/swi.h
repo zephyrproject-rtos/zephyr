@@ -45,7 +45,14 @@
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 
 #define HAL_SWI_RADIO_IRQ  SWI02_IRQn
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#define HAL_SWI_WORKER_IRQ GRTC_1_IRQn
+#define HAL_RTC_IRQn       GRTC_1_IRQn
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #define HAL_SWI_WORKER_IRQ RTC10_IRQn
+#define HAL_RTC_IRQn       RTC10_IRQn
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
@@ -53,8 +60,6 @@
 #else
 #define HAL_SWI_JOB_IRQ    SWI03_IRQn
 #endif
-
-#define HAL_RTC_IRQn       RTC10_IRQn
 
 #endif
 

@@ -5,6 +5,3 @@
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest blob_broadcast_unicast blob_cli_broadcast_unicast
-
-overlay=overlay_psa_conf
-RunTest blob_broadcast_unicast_psa blob_cli_broadcast_unicast

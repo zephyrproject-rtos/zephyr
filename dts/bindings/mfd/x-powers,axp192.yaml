@@ -7,6 +7,8 @@ compatible: "x-powers,axp192"
 
 include: i2c-device.yaml
 
+bus: axp192
+
 properties:
   reg:
     required: true

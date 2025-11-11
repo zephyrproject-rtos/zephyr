@@ -201,7 +201,7 @@ static int gpio_xmc4xxx_toggle_bits(const struct device *dev, gpio_port_pins_t p
 
 static int gpio_xmc4xxx_init(const struct device *dev) { return 0; }
 
-static const struct gpio_driver_api gpio_xmc4xxx_driver_api = {
+static DEVICE_API(gpio, gpio_xmc4xxx_driver_api) = {
 	.pin_configure = gpio_xmc4xxx_pin_configure,
 	.port_get_raw = gpio_xmc4xxx_get_raw,
 	.port_set_masked_raw = gpio_xmc4xxx_set_masked_raw,

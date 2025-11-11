@@ -5,12 +5,15 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/has.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-
-#include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/sys/util_macro.h>
 
 #define PRESET_INDEX_UNIVERSAL  1
 #define PRESET_INDEX_OUTDOOR    5

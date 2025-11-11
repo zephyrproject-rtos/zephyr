@@ -3,6 +3,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2018 Prevas A/S
  * Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,7 +85,7 @@ static const sim_clock_config_t simConfig = {
  * clock.
  *
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
@@ -102,7 +103,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS || CONFIG_UHC_NXP_KHCI
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 #endif
@@ -118,24 +119,20 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int fsl_frdm_k22f_init(void)
+void soc_early_init_hook(void)
 {
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clock_init();
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(fsl_frdm_k22f_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

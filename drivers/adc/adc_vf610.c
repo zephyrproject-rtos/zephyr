@@ -233,7 +233,7 @@ static int vf610_adc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api vf610_adc_driver_api = {
+static DEVICE_API(adc, vf610_adc_driver_api) = {
 	.channel_setup = vf610_adc_channel_setup,
 	.read = vf610_adc_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -257,7 +257,7 @@ static const struct adc_driver_api vf610_adc_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(vf610_adc_data_##n, ctx),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &vf610_adc_init,			\
+	DEVICE_DT_INST_DEFINE(n, vf610_adc_init,			\
 			      NULL, &vf610_adc_data_##n,		\
 			      &vf610_adc_config_##n, POST_KERNEL,	\
 			      CONFIG_ADC_INIT_PRIORITY,			\

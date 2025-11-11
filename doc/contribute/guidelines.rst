@@ -12,6 +12,34 @@ This document explains how to participate in project conversations, log bugs
 and enhancement requests, and submit patches to the project so your patch will
 be accepted quickly in the codebase.
 
+
+Prerequisites
+*************
+
+.. _Zephyr Project website: https://zephyrproject.org
+
+As a contributor, you'll want to be familiar with the Zephyr project, how to
+configure, install, and use it as explained in the `Zephyr Project website`_
+and how to set up your development environment as introduced in the Zephyr
+:ref:`getting_started`.
+
+You should be familiar with common developer tools such as Git and CMake, and
+platforms such as GitHub.
+
+If you haven't already done so, you'll need to create a (free) GitHub account
+on https://github.com and have Git tools available on your development system.
+
+.. note::
+   The Zephyr development workflow supports all 3 major operating systems
+   (Linux, macOS, and Windows) but some of the tools used in the sections below
+   are only available on Linux and macOS. On Windows, instead of running these
+   tools yourself, you will need to rely on the Continuous Integration (CI)
+   service using Github Actions, which runs automatically on GitHub when you submit
+   your Pull Request (PR).  You can see any failure results in the workflow
+   details link near the end of the PR conversation list. See
+   `Continuous Integration`_ for more information
+
+
 .. _licensing_requirements:
 
 Licensing
@@ -73,15 +101,37 @@ this contributing and review process for imported components.
 
 .. _copyrights:
 
-Copyrights Notices
-*******************
+Copyright and License Notices
+=============================
 
-Please follow this `Community Best Practice`_ for Copyright Notices from the
-Linux Foundation.
+Zephyr follows SPDX/REUSE-style file headers. Add a machine-readable copyright notice and a license
+identifier at the top of each file so tooling can detect them (for example
+:ref:`west spdx <west-spdx>`, which uses the `REUSE tool`_).
 
+The Zephyr Project follows the `Community Best Practice`_ for copyright notices from the Linux
+Foundation, therefore we recommend using the following copyright notice:
+
+.. code-block:: none
+
+   SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+Include the license identifier alongside it:
+
+.. code-block:: none
+
+   SPDX-License-Identifier: Apache-2.0
+
+Practical guidance:
+
+- Place both lines at the very top of the file using the file's native comment syntax.
+- If you authored substantial, original content, you *may* add an additional line for yourself or
+  your organization.
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+
+.. _REUSE tool:
+   https://github.com/fsfe/reuse-tool
 
 .. _DCO:
 
@@ -99,7 +149,7 @@ statement and thereby agrees to the DCO.
 
 When a developer submits a patch, it is a commitment that the contributor has
 the right to submit the patch per the license.  The DCO agreement is shown
-below and at http://developercertificate.org/.
+below and at https://developercertificate.org/.
 
 .. code-block:: none
 
@@ -143,8 +193,11 @@ For your commits, replace:
 - ``Your Name`` with your legal name (pseudonyms, hacker handles, and the
   names of groups are not allowed)
 
-- ``your.email@example.com`` with the same email address you are using to
-  author the commit (CI will fail if there is no match)
+- ``your.email@example.com`` with the real email address you are using to
+  author the commit. Pseudo or anonymized emails such as
+  ``you-id+your-username@users.noreply.github.com`` are not allowed. The
+  email must match the one you use to author the commit (CI will fail if
+  there is no match).
 
 You can automatically add the Signed-off-by: line to your commit body using
 ``git commit -s``. Use other commits in the zephyr git history as examples.
@@ -155,54 +208,6 @@ Additional requirements:
 
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
-
-- If you forget to add the Signed-off-by: line, you can add it to your previous
-  commit by running ``git commit --amend -s``.
-
-- If you've pushed your changes to GitHub already you'll need to force push
-  your branch after this with ``git push -f``.
-
-Notes
-=====
-
-Any contributions made as part of submitted pull requests are considered free
-for the Project to use. Developers are permitted to cherry-pick patches that
-are included in pull requests submitted by other contributors. It is expected
-that
-
-* the content of the patches will not be substantially modified,
-* the cherry-picked commits or portions of a commit shall preserve the original
-  sign-off messages and the author identity.
-
-:ref:`modifying_contributions` describes additional recommended policies
-around working with contributions submitted by other developers.
-
-
-Prerequisites
-*************
-
-.. _Zephyr Project website: https://zephyrproject.org
-
-As a contributor, you'll want to be familiar with the Zephyr project, how to
-configure, install, and use it as explained in the `Zephyr Project website`_
-and how to set up your development environment as introduced in the Zephyr
-:ref:`getting_started`.
-
-You should be familiar with common developer tools such as Git and CMake, and
-platforms such as GitHub.
-
-If you haven't already done so, you'll need to create a (free) GitHub account
-on https://github.com and have Git tools available on your development system.
-
-.. note::
-   The Zephyr development workflow supports all 3 major operating systems
-   (Linux, macOS, and Windows) but some of the tools used in the sections below
-   are only available on Linux and macOS. On Windows, instead of running these
-   tools yourself, you will need to rely on the Continuous Integration (CI)
-   service using Github Actions, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the workflow
-   details link near the end of the PR conversation list. See
-   `Continuous Integration`_ for more information
 
 .. _source_tree_v2:
 
@@ -351,15 +356,37 @@ address is ``z.developer@example.com``:
    git config --global user.name "Zephyr Developer"
    git config --global user.email "z.developer@example.com"
 
+.. note::
+   ``user.name`` must be your full name (first and last at minimum), not a
+   pseudonym or hacker handle. The email address that you use in your Git configuration must match the email
+   address you use to sign your commits. If they don't match, the CI system will
+   fail your pull request.
+
+   If you intend to edit commits using the Github.com UI, ensure that your github profile
+   ``email address`` and profile ``name`` also match those used in your git configuration
+   (``user.name`` & ``user.email``).
 
 Pull Request Guidelines
 ***********************
 When opening a new Pull Request, adhere to the following guidelines to ensure
 compliance with Zephyr standards and facilitate the review process.
 
-If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
+
+.. note::
+   GitHub's default code UI uses 4-character tabs. However, Zephyr follows the
+   `Linux kernel coding style`_, which uses 8-character tabs.
+
+   To ensure your view of the code is consistent with other developers, please
+   go to your `user preferences on GitHub`_ and change the tab width to 8 spaces.
+
+.. _Linux kernel coding style:
+   https://kernel.org/doc/html/latest/process/coding-style.html#indentation
+
+.. _user preferences on GitHub:
+   https://github.com/settings/appearance
 
 .. _commit-guidelines:
 
@@ -380,11 +407,6 @@ this:
 
 You need to change text in square brackets (``[like this]``) above to
 fit your commit.
-
-Examples and more details follow.
-
-Example
--------
 
 Here is an example of a good commit message.
 
@@ -492,128 +514,45 @@ in the Git commit's ``Author:`` field.
 See the :ref:`contributor-expectations` for a more complete discussion of
 contributor and reviewer expectations.
 
-Adding links
+Adding Links
 ------------
 
 .. _GitHub references:
    https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls
 
-Do not include `GitHub references`_ in the commit message directly, as it can
-lose meaning in case the repository is forked, for example. Instead, if the
-change addresses a specific GitHub issue, include in the Pull Request message a
-line of the form:
+If your change addresses a specific GitHub issue, include a reference in the
+pull request description using the following format:
+
+.. code-block:: none
+
+   Fixes zephyrproject-rtos/zephyr#[issue number]
+
+For pull requests to the Zephyr project only, the short form can also be used,
+for example:
 
 .. code-block:: none
 
    Fixes #[issue number]
 
-Where ``[issue number]`` is the relevant GitHub issue's number. For
-example:
+Replace [issue number] with the relevant GitHub issue number. For example:
 
 .. code-block:: none
 
-   Fixes: #1234
+   Fixes zephyrproject-rtos/zephyr#1234
 
-You can point to other relevant information that can be found on the web using
-:code:`Link:` tags. This includes, for example: GitHub issues, datasheets,
-reference manuals, etc.
+This syntax ensures that the issue is automatically closed when the pull
+request is merged. Always specify the full repository path
+(zephyrproject-rtos/zephyr) to avoid ambiguity, especially when working across
+multiple repositories.
+
+The same format can also be used in commit messages.
+
+For linking to additional external resources—such as related issues,
+datasheets, or technical reference manuals—use the ``Link:`` tag:
 
 .. code-block:: none
 
    Link: https://github.com/zephyrproject-rtos/zephyr/issues/<issue number>
-
-.. _coding_style:
-
-Coding Style
-============
-
-.. _Linux kernel coding style:
-   https://kernel.org/doc/html/latest/process/coding-style.html
-
-In general, follow the `Linux kernel coding style`_, with the following
-exceptions:
-
-* The line length is 100 columns or fewer. In the documentation, longer lines
-  for URL references are an allowed exception.
-* Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
-  ``switch`` body, even for single-line code blocks. Use the ``--ignore BRACES``
-  flag to make *checkpatch* stop complaining.
-* Use spaces instead of tabs to align comments after declarations, as needed.
-* Use C89-style single line comments, ``/*  */``. The C99-style single line
-  comment, ``//``, is not allowed.
-* Use ``/**  */`` for doxygen comments that need to appear in the documentation.
-* Avoid using binary literals (constants starting with ``0b``).
-* Avoid using non-ASCII symbols in code, unless it significantly improves
-  clarity, avoid emojis in any case.
-
-Use these coding guidelines to ensure that your development complies with the
-project's style and naming conventions.
-
-The Linux kernel GPL-licensed tool ``checkpatch`` is used to check
-coding style conformity.
-
-.. note::
-   checkpatch does not currently run on Windows.
-
-Checkpatch is available in the scripts directory. To invoke it when committing
-code, make the file *$ZEPHYR_BASE/.git/hooks/pre-commit* executable and edit
-it to contain:
-
-.. code-block:: bash
-
-    #!/bin/sh
-    set -e exec
-    exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl -
-
-Instead of running checkpatch at each commit, you may prefer to run it only
-before pushing on zephyr repo. To do this, make the file
-*$ZEPHYR_BASE/.git/hooks/pre-push* executable and edit it to contain:
-
-.. code-block:: bash
-
-    #!/bin/sh
-    remote="$1"
-    url="$2"
-
-    z40=0000000000000000000000000000000000000000
-
-    echo "Run push hook"
-
-    while read local_ref local_sha remote_ref remote_sha
-    do
-        args="$remote $url $local_ref $local_sha $remote_ref $remote_sha"
-        exec ${ZEPHYR_BASE}/scripts/series-push-hook.sh $args
-    done
-
-    exit 0
-
-If you want to override checkpatch verdict and push you branch despite reported
-issues, you can add option --no-verify to the git push command.
-
-A more complete alternative to this is using :ref:`check_compliance_py` script.
-
-clang-format
-------------
-
-The `clang-format tool <https://clang.llvm.org/docs/ClangFormat.html>`_ can
-be helpful to quickly reformat large amounts of new source code to our
-`Coding Style`_ standards together with the ``.clang-format`` configuration file
-provided in the repository. ``clang-format`` is well integrated into most
-editors, but you can also run it manually like this:
-
-.. code-block:: bash
-
-   clang-format -i my_source_file.c
-
-``clang-format`` is part of LLVM, which can be downloaded from the project
-`releases page <https://github.com/llvm/llvm-project/releases>`_. Note that if
-you are a Linux user, ``clang-format`` will likely be available as a package in
-your distribution repositories.
-
-When there are differences between the `Coding Style`_ guidelines and the
-formatting generated by code formatting tools, the `Coding Style`_ guidelines
-take precedence. If there is ambiguity between formatting tools and the
-guidelines, maintainers may decide which style should be adopted.
 
 .. _Continuous Integration:
 
@@ -668,14 +607,21 @@ before opening a new Pull Request:
 
 .. code-block:: bash
 
-   ./scripts/ci/check_compliance.py -c upstream/main..
+   ./scripts/ci/check_compliance.py -c <commit range>
+
+.. note::
+   On Windows if the .pl extension has not yet been associated with an
+   application, then the first time a .pl file is run without specifying an
+   interpreter, Windows will ask what application will open Perl files.
+   Set the default app to Strawberry Perl. By default the executable is
+   installed at ``C:\Strawberry\perl\bin\perl.exe``.
 
 twister
 -------
 
 .. note::
    twister is only fully supported on Linux; on Windows and MacOS the execution
-   of tests is not supported, only building.
+   of tests is not supported on all target devices.
 
 If you think your change may break some test, you can submit your PR as a draft
 and let the project CI automatically run the :ref:`twister_script` for you.
@@ -685,7 +631,7 @@ for example:
 
 .. code-block:: bash
 
-   west twister -p native_sim -s tests/drivers/build_all/sensor/sensors.generic_test
+   west twister -p native_sim -s tests/drivers/build_all/sensor/drivers.sensor.generic_test
 
 .. _static_analysis:
 
@@ -846,13 +792,6 @@ workflow here:
    review.  Email will be sent as review comments are made, or you can check
    on your pull request at https://github.com/zephyrproject-rtos/zephyr/pulls.
 
-   .. note:: As more commits are merged upstream, the GitHub PR page will show
-      a ``This branch is out-of-date with the base branch`` message and a
-      ``Update branch`` button on the PR page. That message should be ignored,
-      as the commits will be rebased as part of merging anyway, and triggering
-      a branch update from the GitHub UI will cause the PR approvals to be
-      dropped.
-
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
    new branch off of ``main`` and not the previous branch.)::
@@ -945,30 +884,6 @@ attention needed and it will be ready for merge sooner than later:
    sure you click the "Re-request review" button on the GitHub UI to notify
    those who asked for the changes
 
-
-Submitting Proposals
-====================
-
-You can request a new feature or submit a proposal by submitting an issue to
-our GitHub Repository.
-If you would like to implement a new feature, please submit an issue with a
-proposal (RFC) for your work first, to be sure that we can use it. Please
-consider what kind of change it is:
-
-* For a Major Feature, first open an issue and outline your proposal so that it
-  can be discussed. This will also allow us to better coordinate our efforts,
-  prevent duplication of work, and help you to craft the change so that it is
-  successfully accepted into the project. Providing the following information
-  will increase the chances of your issue being dealt with quickly:
-
-  * Overview of the Proposal
-  * Motivation for or Use Case
-  * Design Details
-  * Alternatives
-  * Test Strategy
-
-* Small Features can be crafted and directly submitted as a Pull Request.
-
 Identifying Contribution Origin
 ===============================
 
@@ -989,7 +904,7 @@ For example, a copy of a locally maintained import::
 
       Origin: Contiki OS
       License: BSD 3-Clause
-      URL: http://www.contiki-os.org/
+      URL: https://www.contiki-os.org/
       commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
       Purpose: Introduction of networking stack.
 
@@ -1042,7 +957,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.yml>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 

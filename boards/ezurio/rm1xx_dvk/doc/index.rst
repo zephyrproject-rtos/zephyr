@@ -1,7 +1,4 @@
-.. _rm1xx_dvk:
-
-Ezurio RM1xx DVK
-################
+.. zephyr:board:: rm1xx_dvk
 
 Overview
 ********
@@ -28,12 +25,6 @@ This development kit has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/RM186-DVK.jpg
-     :align: center
-     :alt: RM1xx development kit (DVK)
-
-     RM1xx development kit (DVK) (Credit: Ezurio)
-
 .. figure:: img/RM186-SM.jpg
      :align: center
      :alt: RM1xx module
@@ -57,40 +48,8 @@ is 16MHz.
 Supported Features
 ==================
 
-The rm1xx_dvk board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_
 for a complete list of hardware features.
 
@@ -134,6 +93,8 @@ Refer to the `Semtech SX1272 datasheet`_ for further details.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -143,7 +104,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

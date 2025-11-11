@@ -273,7 +273,7 @@ and install a more recent version of pyOCD.
 Flashing an Application to 96Boards Nitrogen
 ============================================
 
-Here is an example for the :ref:`hello_world` application. This
+Here is an example for the :zephyr:code-sample:`hello_world` application. This
 requires installing the :ref:`pyocd-debug-host-tools`.
 
 .. zephyr-app-commands::
@@ -302,7 +302,7 @@ Debugging with GDB
 ==================
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application. This also requires pyOCD.
+:zephyr:code-sample:`hello_world` application. This also requires pyOCD.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -311,7 +311,7 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _pyOCD:
-    https://github.com/mbedmicro/pyOCD
+    https://github.com/pyocd/pyOCD
 
 .. _CMSIS DAP:
     https://developer.mbed.org/handbook/CMSIS-DAP
@@ -323,7 +323,7 @@ You can debug an application in the usual way.  Here is an example for the
     http://wiki.seeed.cc/BLE_Nitrogen/
 
 .. _pyOCD issue 259:
-    https://github.com/mbedmicro/pyOCD/issues/259
+    https://github.com/pyocd/pyOCD/issues/259
 
 .. _96Boards IE Specification:
     https://linaro.co/ie-specification

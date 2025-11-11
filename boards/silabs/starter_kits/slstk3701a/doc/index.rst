@@ -1,7 +1,4 @@
-.. _efm32gg_stk3701a:
-
-EFM32 Giant Gecko 11 (SLSTK3701A)
-#################################
+.. zephyr:board:: slstk3701a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32 Giant Gecko Starter Kit SLSTK3701A contains an MCU from the
 EFM32GG Series 1 family built on an ARM® Cortex®-M4F processor with excellent
 low power capabilities.
-
-.. figure:: slstk3701a.jpg
-   :align: center
-   :alt: EFM32GG11 SLSTK3701A
-
-   EFM32GG11 SLSTK3701A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -43,36 +34,7 @@ For more information about the EFM32GG11 SoC and SLSTK3701A board:
 Supported Features
 ==================
 
-The slstk3701a board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3701a/slstk3701a_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -130,9 +92,11 @@ USART4 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -148,7 +112,7 @@ board. The adaptor provides:
 Flashing an application to SLSTK3701A
 -------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -195,6 +159,3 @@ terminal session:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

@@ -1,7 +1,4 @@
-.. _qemu_riscv32_xip:
-
-RISCV32 XIP Emulation (QEMU)
-############################
+.. zephyr:board:: qemu_riscv32_xip
 
 Overview
 ********
@@ -10,6 +7,8 @@ The RISCV32 XIP QEMU board configuration is used to emulate the RISCV32 architec
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``qemu_riscv32_xip`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and

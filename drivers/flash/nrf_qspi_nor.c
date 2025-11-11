@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Nordic Semiconductor ASA
+ * Copyright (c) 2019-2024, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
@@ -27,22 +28,23 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include <hal/nrf_gpio.h>
 
 struct qspi_nor_data {
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
-	/* A semaphore to control QSPI deactivation. */
-	struct k_sem count;
-#endif
 #ifdef CONFIG_MULTITHREADING
 	/* The semaphore to control exclusive access to the device. */
 	struct k_sem sem;
 	/* The semaphore to indicate that transfer has completed. */
 	struct k_sem sync;
+	/* A counter to control QSPI deactivation. */
+	atomic_t usage_count;
 #else /* CONFIG_MULTITHREADING */
 	/* A flag that signals completed transfer when threads are
 	 * not enabled.
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
-	bool xip_enabled;
+	uint32_t xip_users;
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	nrf_clock_hfclk_div_t prev_hclk_div;
+#endif
 };
 
 struct qspi_nor_config {
@@ -56,6 +58,12 @@ struct qspi_nor_config {
 
 	const struct pinctrl_dev_config *pcfg;
 };
+
+#ifdef CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#define ACTIVE_DWELL_MS CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#else
+#define ACTIVE_DWELL_MS 0
+#endif
 
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
@@ -274,9 +282,18 @@ static inline void qspi_unlock(const struct device *dev)
 #endif
 }
 
-static inline void qspi_clock_div_change(void)
+static inline void qspi_clock_div_change(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Save current hfclk configuration */
+		dev_data->prev_hclk_div = nrf_clock_hfclk_div_get(NRF_CLOCK);
+		nrf_clock_hfclk_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_2);
+	}
+#endif
 	/* Make sure the base clock divider is changed accordingly
 	 * before a QSPI transfer is performed.
 	 */
@@ -285,38 +302,45 @@ static inline void qspi_clock_div_change(void)
 #endif
 }
 
-static inline void qspi_clock_div_restore(void)
+static inline void qspi_clock_div_restore(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
 	/* Restore the default base clock divider to reduce power
 	 * consumption when the QSPI peripheral is idle.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Restore previous hfclk configuration */
+		nrf_clock_hfclk_div_set(NRF_CLOCK, dev_data->prev_hclk_div);
+	}
+#endif
 #endif
 }
 
 static void qspi_acquire(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
+	int rc;
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_get(dev);
-
+	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_get failed: %d", rc);
 	}
-#elif defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_MULTITHREADING)
 	/* In multithreading, the driver can call qspi_acquire more than once
 	 * before calling qspi_release. Keeping count, so QSPI is deactivated
-	 * only at the last call (count == 0).
+	 * only at the last call (usage_count == 0).
 	 */
-	k_sem_give(&dev_data->count);
+	atomic_inc(&dev_data->usage_count);
 #endif
 
 	qspi_lock(dev);
 
-	if (!dev_data->xip_enabled) {
-		qspi_clock_div_change();
+	if (dev_data->xip_users == 0) {
+		qspi_clock_div_change(dev);
 
 		pm_device_busy_set(dev);
 	}
@@ -326,17 +350,17 @@ static void qspi_release(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 	bool deactivate = true;
+	int rc;
 
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_MULTITHREADING)
 	/* The last thread to finish using the driver deactivates the QSPI */
-	(void) k_sem_take(&dev_data->count, K_NO_WAIT);
-	deactivate = (k_sem_count_get(&dev_data->count) == 0);
+	deactivate = atomic_dec(&dev_data->usage_count) == 1;
 #endif
 
-	if (!dev_data->xip_enabled) {
-		qspi_clock_div_restore();
+	if (dev_data->xip_users == 0) {
+		qspi_clock_div_restore(dev);
 
-		if (deactivate && !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (deactivate) {
 			(void) nrfx_qspi_deactivate();
 		}
 
@@ -345,13 +369,10 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
-	int rc = pm_device_runtime_put(dev);
-
+	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}
-#endif
 }
 
 static inline void qspi_wait_for_completion(const struct device *dev,
@@ -487,11 +508,16 @@ static int qspi_rdsr(const struct device *dev, uint8_t sr_num)
 }
 
 /* Wait until RDSR confirms write is not in progress. */
-static int qspi_wait_while_writing(const struct device *dev)
+static int qspi_wait_while_writing(const struct device *dev, k_timeout_t poll_period)
 {
 	int rc;
 
 	do {
+#ifdef CONFIG_MULTITHREADING
+		if (!K_TIMEOUT_EQ(poll_period, K_NO_WAIT)) {
+			k_sleep(poll_period);
+		}
+#endif
 		rc = qspi_rdsr(dev, 1);
 	} while ((rc >= 0)
 		 && ((rc & SPI_NOR_WIP_BIT) != 0U));
@@ -562,7 +588,7 @@ static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 	 * corrupted.  Wait.
 	 */
 	if (rc == 0) {
-		rc = qspi_wait_while_writing(dev);
+		rc = qspi_wait_while_writing(dev, K_NO_WAIT);
 	}
 
 	return rc;
@@ -607,6 +633,16 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 		if (res == NRFX_SUCCESS) {
 			addr += adj;
 			size -= adj;
+
+			/* Erasing flash pages takes a significant period of time and the
+			 * flash memory is unavailable to perform additional operations
+			 * until done.
+			 */
+			rc = qspi_wait_while_writing(dev, K_MSEC(10));
+			if (rc < 0) {
+				LOG_ERR("wait error at 0x%lx size %zu", (long)addr, size);
+				break;
+			}
 		} else {
 			LOG_ERR("erase error at 0x%lx size %zu", (long)addr, size);
 			rc = qspi_get_zephyr_ret_code(res);
@@ -1105,25 +1141,15 @@ static int qspi_nor_init(const struct device *dev)
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	rc = qspi_init(dev);
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 
 	if (!IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_XIP) && nrfx_qspi_init_check()) {
 		(void)nrfx_qspi_deactivate();
 	}
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	int rc2 = pm_device_runtime_enable(dev);
-
-	if (rc2 < 0) {
-		LOG_ERR("Failed to enable runtime power management: %d", rc2);
-	} else {
-		LOG_DBG("Runtime power management enabled");
-	}
-#endif
 
 #ifdef CONFIG_NORDIC_QSPI_NOR_XIP
 	if (rc == 0) {
@@ -1176,11 +1202,21 @@ qspi_flash_get_parameters(const struct device *dev)
 	return &qspi_flash_parameters;
 }
 
-static const struct flash_driver_api qspi_nor_api = {
+int qspi_nor_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)(INST_0_BYTES);
+
+	return 0;
+}
+
+static DEVICE_API(flash, qspi_nor_api) = {
 	.read = qspi_nor_read,
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,
 	.get_parameters = qspi_flash_get_parameters,
+	.get_size = qspi_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
@@ -1312,7 +1348,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 	}
 
 	qspi_lock(dev);
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -1327,30 +1363,61 @@ static int qspi_nor_pm_action(const struct device *dev,
 		rc = -ENOTSUP;
 	}
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 	qspi_unlock(dev);
 
 	return rc;
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void on_xip_enable(const struct device *dev)
+{
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, true);
+#endif
+	(void)nrfx_qspi_activate(false);
+}
+
+static void on_xip_disable(const struct device *dev)
+{
+	/* It turns out that when the QSPI peripheral is deactivated
+	 * after a XIP transaction, it cannot be later successfully
+	 * reactivated and an attempt to perform another XIP transaction
+	 * results in the CPU being hung; even a debug session cannot be
+	 * started then and the SoC has to be recovered.
+	 * As a workaround, at least until the cause of such behavior
+	 * is fully clarified, perform a simple non-XIP transaction
+	 * (a read of the status register) before deactivating the QSPI.
+	 * This prevents the issue from occurring.
+	 */
+	(void)qspi_rdsr(dev, 1);
+
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, false);
+#endif
+}
+
 void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 
-	if (dev_data->xip_enabled == enable) {
-		return;
-	}
-
 	qspi_acquire(dev);
 
-#if NRF_QSPI_HAS_XIPEN
-	nrf_qspi_xip_set(NRF_QSPI, enable);
-#endif
 	if (enable) {
-		(void)nrfx_qspi_activate(false);
+		if (dev_data->xip_users == 0) {
+			on_xip_enable(dev);
+		}
+
+		++dev_data->xip_users;
+	} else if (dev_data->xip_users == 0) {
+		LOG_ERR("Unbalanced XIP disabling");
+	} else {
+		--dev_data->xip_users;
+
+		if (dev_data->xip_users == 0) {
+			on_xip_disable(dev);
+		}
 	}
-	dev_data->xip_enabled = enable;
 
 	qspi_release(dev);
 }
@@ -1370,9 +1437,6 @@ void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 #endif /* CONFIG_USERSPACE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {
-#if !defined(CONFIG_PM_DEVICE_RUNTIME) && defined(CONFIG_MULTITHREADING)
-	.count = Z_SEM_INITIALIZER(qspi_nor_dev_data.count, 0, K_SEM_MAX_LIMIT),
-#endif
 #ifdef CONFIG_MULTITHREADING
 	.sem = Z_SEM_INITIALIZER(qspi_nor_dev_data.sem, 1, 1),
 	.sync = Z_SEM_INITIALIZER(qspi_nor_dev_data.sync, 0, 1),

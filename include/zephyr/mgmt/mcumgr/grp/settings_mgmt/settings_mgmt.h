@@ -7,17 +7,26 @@
 #ifndef H_SETTINGS_MGMT_
 #define H_SETTINGS_MGMT_
 
+/**
+ * @brief MCUmgr Settings Management API
+ * @defgroup mcumgr_settings_mgmt Settings Management
+ * @ingroup mcumgr_mgmt_api
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Command IDs for settings management group.
+ * @name Command IDs for Settings Management group.
+ * @{
  */
-#define SETTINGS_MGMT_ID_READ_WRITE		0
-#define SETTINGS_MGMT_ID_DELETE			1
-#define SETTINGS_MGMT_ID_COMMIT			2
-#define SETTINGS_MGMT_ID_LOAD_SAVE		3
+#define SETTINGS_MGMT_ID_READ_WRITE 0 /**< Read/write setting */
+#define SETTINGS_MGMT_ID_DELETE     1 /**< Delete setting */
+#define SETTINGS_MGMT_ID_COMMIT     2 /**< Commit settings */
+#define SETTINGS_MGMT_ID_LOAD_SAVE  3 /**< Load/save settings */
+/** @} */
 
 /**
  * Command result codes for settings management group.
@@ -46,10 +55,17 @@ enum settings_mgmt_ret_code_t {
 
 	/** The provided key name does not support being deleted. */
 	SETTINGS_MGMT_ERR_DELETE_NOT_SUPPORTED,
+
+	/** The provided key name does not support being saved. */
+	SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED,
 };
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif

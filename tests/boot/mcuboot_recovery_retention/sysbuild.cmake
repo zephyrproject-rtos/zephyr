@@ -1,9 +1,9 @@
 set(mcuboot_EXTRA_ZEPHYR_MODULES "${CMAKE_CURRENT_LIST_DIR}/test_module" CACHE INTERNAL "test_module directory")
 
-if(DEFINED mcuboot_TARGET_OVERLAY_CONFIG)
-  list(APPEND mcuboot_OVERLAY_CONFIG "${CMAKE_CURRENT_LIST_DIR}/sysbuild/mcuboot/${mcuboot_TARGET_OVERLAY_CONFIG}")
-  list(REMOVE_DUPLICATES mcuboot_OVERLAY_CONFIG)
-  set(mcuboot_OVERLAY_CONFIG "${mcuboot_OVERLAY_CONFIG}" CACHE INTERNAL "")
+if(DEFINED mcuboot_TARGET_EXTRA_CONF_FILE)
+  list(APPEND mcuboot_EXTRA_CONF_FILE "${CMAKE_CURRENT_LIST_DIR}/sysbuild/mcuboot/${mcuboot_TARGET_EXTRA_CONF_FILE}")
+  list(REMOVE_DUPLICATES mcuboot_EXTRA_CONF_FILE)
+  set(mcuboot_EXTRA_CONF_FILE "${mcuboot_EXTRA_CONF_FILE}" CACHE INTERNAL "")
 endif()
 
 if(DEFINED mcuboot_TARGET_DTC_OVERLAY_FILE)

@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <time.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -60,6 +61,13 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_mutexattr_gettype(&mut_attr, &actual_type),
 		   "reading mutex type is failed");
+	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, &protocol));
+	zassert_not_ok(pthread_mutexattr_getprotocol(&mut_attr, NULL));
+	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, NULL));
+
+	zassert_not_ok(pthread_mutexattr_setprotocol(&mut_attr, PTHREAD_PRIO_INHERIT));
+	zassert_not_ok(pthread_mutexattr_setprotocol(&mut_attr, PTHREAD_PRIO_PROTECT));
+	zassert_ok(pthread_mutexattr_setprotocol(&mut_attr, PTHREAD_PRIO_NONE));
 	zassert_ok(pthread_mutexattr_getprotocol(&mut_attr, &protocol),
 		   "reading mutex protocol is failed");
 	zassert_ok(pthread_mutexattr_destroy(&mut_attr));
@@ -76,6 +84,18 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_join(th, NULL));
 	zassert_ok(pthread_mutex_destroy(&mutex), "Destroying mutex is failed");
+}
+
+ZTEST(mutex, test_mutex_prioceiling_stubs)
+{
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutex_setprioceiling(NULL, 0, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_getprioceiling(NULL, NULL), ENOSYS);
+	zassert_equal(pthread_mutexattr_setprioceiling(NULL, 0), ENOSYS);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
 }
 
 /**
@@ -163,7 +183,7 @@ static void *test_mutex_timedlock_fn(void *arg)
 	struct timespec time_point;
 	pthread_mutex_t *mtx = (pthread_mutex_t *)arg;
 
-	zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
+	zassume_ok(clock_gettime(CLOCK_REALTIME, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
 	return INT_TO_POINTER(pthread_mutex_timedlock(mtx, &time_point));

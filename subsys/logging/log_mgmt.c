@@ -243,6 +243,9 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 const char *log_source_name_get(uint32_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
+		if (IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP)) {
+			return "unknown";
+		}
 		if (source_id < log_src_cnt_get(domain_id)) {
 			return TYPE_SECTION_START(log_const)[source_id].name;
 		} else {
@@ -362,6 +365,10 @@ void z_log_runtime_filters_init(void)
 
 int log_source_id_get(const char *name)
 {
+	if (IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP)) {
+		return -1;
+	}
+
 	for (int i = 0; i < log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID); i++) {
 		const char *sname = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i);
 
@@ -553,12 +560,6 @@ void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			uint32_t level)
 {
-	/* As first slot in filtering mask is reserved, backend ID has offset.*/
-	uint32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
-
-	id += backend - log_backend_get(0);
-
-	log_backend_id_set(backend, id);
 	backend->cb->level = level;
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);

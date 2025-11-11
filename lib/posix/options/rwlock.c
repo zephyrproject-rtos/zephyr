@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
 #include "posix_internal.h"
 
 #include <zephyr/init.h>
@@ -11,13 +12,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/sem.h>
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_POSIX_THREAD_THREADS_MAX + 1)
 
 struct posix_rwlock {
-	struct k_sem rd_sem;
-	struct k_sem wr_sem;
-	struct k_sem reader_active; /* blocks WR till reader has acquired lock */
+	struct sys_sem rd_sem;
+	struct sys_sem wr_sem;
+	struct sys_sem reader_active; /* blocks WR till reader has acquired lock */
 	k_tid_t wr_owner;
 };
 
@@ -26,13 +28,12 @@ struct posix_rwlockattr {
 	bool pshared: 1;
 };
 
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
-static uint32_t read_lock_acquire(struct posix_rwlock *rwl, int32_t timeout);
-static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout);
+static uint32_t read_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout);
+static uint32_t write_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout);
 
 LOG_MODULE_REGISTER(pthread_rwlock, CONFIG_PTHREAD_RWLOCK_LOG_LEVEL);
 
-static struct k_spinlock posix_rwlock_spinlock;
+static SYS_SEM_DEFINE(posix_rwlock_lock, 1, 1);
 
 static struct posix_rwlock posix_rwlock_pool[CONFIG_MAX_PTHREAD_RWLOCK_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_rwlock_bitarray, CONFIG_MAX_PTHREAD_RWLOCK_COUNT);
@@ -123,9 +124,9 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 		return ENOMEM;
 	}
 
-	k_sem_init(&rwl->rd_sem, CONCURRENT_READER_LIMIT, CONCURRENT_READER_LIMIT);
-	k_sem_init(&rwl->wr_sem, 1, 1);
-	k_sem_init(&rwl->reader_active, 1, 1);
+	sys_sem_init(&rwl->rd_sem, CONCURRENT_READER_LIMIT, CONCURRENT_READER_LIMIT);
+	sys_sem_init(&rwl->wr_sem, 1, 1);
+	sys_sem_init(&rwl->reader_active, 1, 1);
 	rwl->wr_owner = NULL;
 
 	LOG_DBG("Initialized rwlock %p", rwl);
@@ -140,22 +141,24 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
  */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 {
-	int ret = 0;
 	int err;
 	size_t bit;
+	int ret = EINVAL;
 	struct posix_rwlock *rwl;
 
-	rwl = get_posix_rwlock(*rwlock);
-	if (rwl == NULL) {
-		return EINVAL;
-	}
-
-	K_SPINLOCK(&posix_rwlock_spinlock) {
-		if (rwl->wr_owner != NULL) {
-			ret = EBUSY;
-			K_SPINLOCK_BREAK;
+	SYS_SEM_LOCK(&posix_rwlock_lock) {
+		rwl = get_posix_rwlock(*rwlock);
+		if (rwl == NULL) {
+			ret = EINVAL;
+			SYS_SEM_LOCK_BREAK;
 		}
 
+		if (rwl->wr_owner != NULL) {
+			ret = EBUSY;
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		ret = 0;
 		bit = posix_rwlock_to_offset(rwl);
 		err = sys_bitarray_free(&posix_rwlock_bitarray, 1, bit);
 		__ASSERT_NO_MSG(err == 0);
@@ -195,22 +198,20 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	int32_t timeout;
 	uint32_t ret = 0U;
 	struct posix_rwlock *rwl;
 
-	if (abstime->tv_nsec < 0 || abstime->tv_nsec > NSEC_PER_SEC) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
-
-	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	rwl = get_posix_rwlock(*rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
 
-	if (read_lock_acquire(rwl, timeout) != 0U) {
+	if (read_lock_acquire(rwl, timespec_to_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
 		ret = ETIMEDOUT;
 	}
 
@@ -268,22 +269,20 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	int32_t timeout;
 	uint32_t ret = 0U;
 	struct posix_rwlock *rwl;
 
-	if (abstime->tv_nsec < 0 || abstime->tv_nsec > NSEC_PER_SEC) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
-
-	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	rwl = get_posix_rwlock(*rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
 
-	if (write_lock_acquire(rwl, timeout) != 0U) {
+	if (write_lock_acquire(rwl, timespec_to_timeoutms(CLOCK_REALTIME, abstime)) != 0U) {
 		ret = ETIMEDOUT;
 	}
 
@@ -328,28 +327,28 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 	if (k_current_get() == rwl->wr_owner) {
 		/* Write unlock */
 		rwl->wr_owner = NULL;
-		k_sem_give(&rwl->reader_active);
-		k_sem_give(&rwl->wr_sem);
+		(void)sys_sem_give(&rwl->reader_active);
+		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		/* Read unlock */
-		k_sem_give(&rwl->rd_sem);
+		(void)sys_sem_give(&rwl->rd_sem);
 
-		if (k_sem_count_get(&rwl->rd_sem) == CONCURRENT_READER_LIMIT) {
+		if (sys_sem_count_get(&rwl->rd_sem) == CONCURRENT_READER_LIMIT) {
 			/* Last read lock, unlock writer */
-			k_sem_give(&rwl->reader_active);
+			(void)sys_sem_give(&rwl->reader_active);
 		}
 	}
 	return 0;
 }
 
-static uint32_t read_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
+static uint32_t read_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout)
 {
 	uint32_t ret = 0U;
 
-	if (k_sem_take(&rwl->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
-		k_sem_take(&rwl->reader_active, K_NO_WAIT);
-		k_sem_take(&rwl->rd_sem, K_NO_WAIT);
-		k_sem_give(&rwl->wr_sem);
+	if (sys_sem_take(&rwl->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
+		(void)sys_sem_take(&rwl->reader_active, K_NO_WAIT);
+		(void)sys_sem_take(&rwl->rd_sem, K_NO_WAIT);
+		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		ret = EBUSY;
 	}
@@ -357,7 +356,7 @@ static uint32_t read_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 	return ret;
 }
 
-static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
+static uint32_t write_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout)
 {
 	uint32_t ret = 0U;
 	int64_t elapsed_time, st_time = k_uptime_get();
@@ -366,7 +365,7 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 	k_timeout = SYS_TIMEOUT_MS(timeout);
 
 	/* waiting for release of write lock */
-	if (k_sem_take(&rwl->wr_sem, k_timeout) == 0) {
+	if (sys_sem_take(&rwl->wr_sem, k_timeout) == 0) {
 		/* update remaining timeout time for 2nd sem */
 		if (timeout != SYS_FOREVER_MS) {
 			elapsed_time = k_uptime_get() - st_time;
@@ -377,10 +376,10 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 		k_timeout = SYS_TIMEOUT_MS(timeout);
 
 		/* waiting for reader to complete operation */
-		if (k_sem_take(&rwl->reader_active, k_timeout) == 0) {
+		if (sys_sem_take(&rwl->reader_active, k_timeout) == 0) {
 			rwl->wr_owner = k_current_get();
 		} else {
-			k_sem_give(&rwl->wr_sem);
+			(void)sys_sem_give(&rwl->wr_sem);
 			ret = EBUSY;
 		}
 

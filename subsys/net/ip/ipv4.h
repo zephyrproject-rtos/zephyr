@@ -25,6 +25,26 @@
 #define NET_IPV4_DSCP_OFFSET 2
 #define NET_IPV4_ECN_MASK 0x03
 
+/* IPv4 DiffServ code points (DSCP) for Assured Forwarding (AF) group.
+ * See https://tools.ietf.org/html/rfc2597
+ *     https://en.wikipedia.org/wiki/Differentiated_services
+ */
+/* Drop probability low */
+#define NET_IPV4_DSCP_AF11 10 /* 001010 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF21 18 /* 010010 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF31 26 /* 011010 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF41 34 /* 100010 */ /* Class 4 */
+/* Drop probability medium */
+#define NET_IPV4_DSCP_AF12 12 /* 001100 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF22 20 /* 010100 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF32 28 /* 011100 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF42 36 /* 100100 */ /* Class 4 */
+/* Drop probability high */
+#define NET_IPV4_DSCP_AF13 14 /* 001110 */ /* Class 1 */
+#define NET_IPV4_DSCP_AF23 22 /* 010110 */ /* Class 2 */
+#define NET_IPV4_DSCP_AF33 30 /* 011110 */ /* Class 3 */
+#define NET_IPV4_DSCP_AF43 38 /* 100110 */ /* Class 4 */
+
 /* IPv4 Options */
 #define NET_IPV4_OPTS_EO   0   /* End of Options */
 #define NET_IPV4_OPTS_NOP  1   /* No operation */
@@ -357,6 +377,17 @@ typedef void (*net_ipv4_frag_cb_t)(struct net_ipv4_reassembly *reass, void *user
  */
 void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data);
 
+/**
+ * @brief Prepare packet for sending, this will split up a packet that is too large to send into
+ * multiple fragments so that it can be sent. It will also update PMTU destination cache if it
+ * is enabled.
+ *
+ * @param pkt Network packet
+ *
+ * @return Return verdict about the packet.
+ */
+enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
+
 #if defined(CONFIG_NET_NATIVE_IPV4)
 /**
  * @brief Initialises IPv4
@@ -384,22 +415,9 @@ static inline enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV4_FRAGMENT */
 
-/**
- * @brief Prepare packet for sending, this will split up a packet that is too large to send into
- * multiple fragments so that it can be sent.
- *
- * @param pkt Network packet
- *
- * @return Return verdict about the packet.
- */
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
-enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
-#else
-static inline enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
-{
-	return NET_OK;
-}
-#endif /* CONFIG_NET_IPV4_FRAGMENT */
+enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt);
+#endif
 
 /**
  * @brief Sets up fragment buffers for usage, should only be called by the SYS_INIT() handler in

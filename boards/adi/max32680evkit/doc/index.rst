@@ -1,7 +1,4 @@
-.. _max32680_evkit:
-
-MAX32680EVKIT
-#############
+.. zephyr:board:: max32680evkit
 
 Overview
 ********
@@ -16,11 +13,6 @@ the latest generation Bluetooth® 5.2 Low Energy
 (LE) radio.
 
 The Zephyr port is running on the MAX32680 MCU.
-
-.. image:: img/max32680evkit_img1.jpg
-   :align: center
-   :alt: MAX32680 EVKIT
-
 
 Hardware
 ********
@@ -95,21 +87,7 @@ Hardware
 Supported Features
 ==================
 
-Below interfaces are supported by Zephyr on MAX32680EVKIT.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -126,9 +104,9 @@ Connections and IOs
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
 | JP2       | REF0P         | +-----------+ |  +-------------------------------------------------------------------------------+               |
-|           |               | | 2-1       | |  | Connects the external high-precision voltage refernce to REF0P.               |               |
+|           |               | | 2-1       | |  | Connects the external high-precision voltage reference to REF0P.              |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
-|           |               | | 2-3       | |  | Connects the internal voltage refernce to REF0P.                              |               |
+|           |               | | 2-3       | |  | Connects the internal voltage reference to REF0P.                             |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
@@ -154,9 +132,9 @@ Connections and IOs
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
 | JP6       | REF1P         | +-----------+ |  +-------------------------------------------------------------------------------+               |
-|           |               | | 2-1       | |  | Connects the external high-precision voltage refernce to REF1P.               |               |
+|           |               | | 2-1       | |  | Connects the external high-precision voltage reference to REF1P.              |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
-|           |               | | 2-3       | |  | Connects the internal voltage refernce to REF1P.                              |               |
+|           |               | | 2-3       | |  | Connects the internal voltage reference to REF1P.                             |               |
 |           |               | +-----------+ |  +-------------------------------------------------------------------------------+               |
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
@@ -309,6 +287,8 @@ Connections and IOs
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -317,7 +297,8 @@ SWD port. SWD debug can be accessed through the Cortex 10-pin connector, JH10.
 Logic levels are set to 1.8V (VDDIO_AUX).
 
 Once the debug probe is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 Debugging
 =========

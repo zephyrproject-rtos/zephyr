@@ -148,7 +148,7 @@ static int pin_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = pin_config,
 	.port_get_raw = port_get,
 	.port_set_masked_raw = port_set_masked,

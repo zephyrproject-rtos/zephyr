@@ -1,9 +1,0 @@
-# Copyright 2023 The ChromiumOS Authors
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_MT8195_ADSP
-
-config BOARD
-	default "mt8195_adsp"
-
-endif # BOARD_MT8195_ADSP

@@ -34,7 +34,12 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/base64.h>
+
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+#include <psa/crypto.h>
+#else
 #include <mbedtls/sha1.h>
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 #include "net_private.h"
 #include "sockets_internal.h"
@@ -99,8 +104,6 @@ static int websocket_context_unref(struct websocket_context *ctx)
 
 static inline bool websocket_context_is_used(struct websocket_context *ctx)
 {
-	NET_ASSERT(ctx);
-
 	return !!atomic_get(&ctx->refcount);
 }
 
@@ -151,9 +154,9 @@ static struct websocket_context *websocket_find(int real_sock)
 	return ctx;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	struct websocket_context *ctx = user_data;
 
@@ -166,6 +169,8 @@ static void response_cb(struct http_response *rsp,
 			rsp->data_len);
 		ctx->all_received = true;
 	}
+
+	return 0;
 }
 
 static int on_header_field(struct http_parser *parser, const char *at,
@@ -253,6 +258,10 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		"Sec-WebSocket-Version: 13\r\n",
 		NULL
 	};
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status_t psa_status;
+	size_t hash_length;
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	fd = -1;
 
@@ -278,9 +287,25 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->recv_buf.size = wreq->tmp_buf_len;
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
+	ctx->is_client = 1;
 
-	mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value),
-			 sec_accept_key);
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)&rnd_value, sizeof(rnd_value),
+				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, psa_status);
+		ret = -EPROTO;
+		goto out;
+	}
+#else
+	ret = mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value), sec_accept_key);
+	if (ret != 0) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
+		ret = -EPROTO;
+		goto out;
+	}
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
+
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
 			    sizeof(sec_ws_key) -
@@ -343,7 +368,22 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-	mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)key_accept, olen + key_len,
+				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, psa_status);
+		ret = -EPROTO;
+		goto out;
+	}
+#else
+	ret = mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
+	if (ret != 0) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
+		ret = -EPROTO;
+		goto out;
+	}
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {
@@ -385,10 +425,11 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 
 	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
 
-	/* We will re-use the temp buffer in receive function if needed but
-	 * in order that to work the amount of data in buffer must be set to 0
+	/* We will re-use the temp buffer in receive function. If there were
+	 * any leftover data from HTTP headers processing, we need to reflect
+	 * this in the count variable.
 	 */
-	ctx->recv_buf.count = 0;
+	ctx->recv_buf.count = req.data_len;
 
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
@@ -411,7 +452,7 @@ int websocket_disconnect(int ws_sock)
 	return zsock_close(ws_sock);
 }
 
-static int websocket_interal_disconnect(struct websocket_context *ctx)
+static int websocket_internal_disconnect(struct websocket_context *ctx)
 {
 	int ret;
 
@@ -422,7 +463,7 @@ static int websocket_interal_disconnect(struct websocket_context *ctx)
 	NET_DBG("[%p] Disconnecting", ctx);
 
 	ret = websocket_send_msg(ctx->sock, NULL, 0, WEBSOCKET_OPCODE_CLOSE,
-				 true, true, SYS_FOREVER_MS);
+				 ctx->is_client, true, SYS_FOREVER_MS);
 	if (ret < 0) {
 		NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
 	}
@@ -439,7 +480,7 @@ static int websocket_close_vmeth(void *obj)
 	struct websocket_context *ctx = obj;
 	int ret;
 
-	ret = websocket_interal_disconnect(ctx);
+	ret = websocket_internal_disconnect(ctx);
 	if (ret < 0) {
 		/* Ignore error if we are not connected */
 		if (ret != -ENOTCONN) {
@@ -458,7 +499,7 @@ static int websocket_close_vmeth(void *obj)
 static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 					 int timeout)
 {
-	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	int fd_backup[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
 	void *ctx;
 	int ret = 0;
@@ -645,7 +686,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
 
 	return sendmsg_all(ctx->real_sock, &msg,
-			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0, req_end_timepoint);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? ZSOCK_MSG_DONTWAIT : 0,
+			   req_end_timepoint);
 #endif /* CONFIG_NET_TEST */
 }
 
@@ -839,7 +881,8 @@ static int websocket_parse(struct websocket_context *ctx, struct websocket_buffe
 				break;
 			case WEBSOCKET_PARSER_STATE_MASK:
 				ctx->parser_remaining--;
-				ctx->masking_value |= (data << (ctx->parser_remaining * 8));
+				ctx->masking_value |=
+					(uint32_t)((uint64_t)data << (ctx->parser_remaining * 8));
 				if (ctx->parser_remaining == 0) {
 					if (ctx->message_len == 0) {
 						ctx->parser_remaining = 0;
@@ -995,7 +1038,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 			ret = wait_rx(ctx->real_sock, timeout_to_ms(&tout));
 			if (ret == 0) {
 				ret = zsock_recv(ctx->real_sock, ctx->recv_buf.buf,
-						 ctx->recv_buf.size, MSG_DONTWAIT);
+						 ctx->recv_buf.size, ZSOCK_MSG_DONTWAIT);
 				if (ret < 0) {
 					ret = -errno;
 				}
@@ -1061,6 +1104,10 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		}
 	}
 
+	if (ctx->message_type == WEBSOCKET_FLAG_CLOSE) {
+		return websocket_internal_disconnect(ctx);
+	}
+
 	return payload.count;
 }
 
@@ -1071,9 +1118,8 @@ static int websocket_send(struct websocket_context *ctx, const uint8_t *buf,
 
 	NET_DBG("[%p] Sending %zd bytes", ctx, buf_len);
 
-	ret = websocket_send_msg(ctx->sock, buf, buf_len,
-				 WEBSOCKET_OPCODE_DATA_TEXT,
-				 true, true, timeout);
+	ret = websocket_send_msg(ctx->sock, buf, buf_len, WEBSOCKET_OPCODE_DATA_TEXT,
+				 ctx->is_client, true, timeout);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -1185,6 +1231,7 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	ctx->real_sock = sock;
 	ctx->recv_buf.buf = recv_buf;
 	ctx->recv_buf.size = recv_buf_len;
+	ctx->is_client = 0;
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {

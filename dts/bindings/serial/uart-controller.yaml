@@ -18,11 +18,15 @@ properties:
     type: string
     description: |
       Configures the parity of the adapter. Enumeration id 0 for none, 1 for odd
-      and 2 for even parity. Default to none if not specified.
+      and 2 for even parity, 3 for mark parity and 4 for space parity.
+      Default to none if not specified.
     enum:
       - "none"
       - "odd"
       - "even"
+      - "mark"
+      - "space"
+    default: "none"
   stop-bits:
     type: string
     description: |

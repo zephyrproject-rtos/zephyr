@@ -281,7 +281,7 @@ static int temp_nrfs_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api temp_nrfs_drv_api = {
+static DEVICE_API(sensor, temp_nrfs_drv_api) = {
 #ifdef CONFIG_TEMP_NRFS_TRIGGER
 	.attr_set = api_sensor_attr_set,
 	.trigger_set = api_sensor_trigger_set,

@@ -150,8 +150,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	int current_channel = u32_count_trailing_zeros(data->channel_read_mask);
 
 	/* Wait until the SDADC LDO stabilizes */
-	while (!(SDADC->SDADC_CTRL_REG & SDADC_SDADC_CTRL_REG_SDADC_LDO_OK_Msk))
+	while (!(SDADC->SDADC_CTRL_REG & SDADC_SDADC_CTRL_REG_SDADC_LDO_OK_Msk)) {
 		__NOP();
+	}
 
 	if (ctx->sequence.calibrate) {
 		/* TODO: Add calibration code */
@@ -392,7 +393,7 @@ static int sdadc_smartbond_init(const struct device *dev)
 	return ret;
 }
 
-static const struct adc_driver_api sdadc_smartbond_driver_api = {
+static DEVICE_API(adc, sdadc_smartbond_driver_api) = {
 	.channel_setup = sdadc_smartbond_channel_setup,
 	.read          = sdadc_smartbond_read,
 #ifdef CONFIG_ADC_ASYNC

@@ -1,5 +1,3 @@
-# EFM32HG series configuration options
-
 # Copyright (c) 2018 Christian Taedcke
 # Copyright (c) 2018 Marcio Montenegro
 # SPDX-License-Identifier: Apache-2.0
@@ -10,4 +8,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 20
 
-endif # SOC_SERIES_EFM32HG
+endif

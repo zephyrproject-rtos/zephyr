@@ -28,7 +28,8 @@ contain the following:
   have an MPU region configuring it. It is strongly recommended to use this
   to maximize the number of available MPU regions for the end user. On
   ARMv7-M/ARMv8-M this is called the System Address Map, other CPUs may
-  have similar capabilities.
+  have similar capabilities. See :ref:`mem_mgmt_api` for information on
+  how to annotate the system map in the device tree.
 
 - A read-only, executable region or regions for program text and ro-data, that
   is accessible to user mode. This could be further sub-divided into a
@@ -111,12 +112,6 @@ noted for users who do not want heap allocations within their application:
    user. An alternative is to declare k_stacks that are automatically
    initialized at boot with :c:macro:`K_STACK_DEFINE()`, or to initialize the
    k_stack in supervisor mode with :c:func:`k_stack_init`.
-
- - :c:func:`k_pipe_alloc_init` sets up a k_pipe object with its
-   storage buffer allocated out of a resource pool instead of a buffer provided
-   by the user. An alternative is to declare k_pipes that are automatically
-   initialized at boot with :c:macro:`K_PIPE_DEFINE()`, or to initialize the
-   k_pipe in supervisor mode with :c:func:`k_pipe_init`.
 
  - :c:func:`k_msgq_alloc_init` sets up a k_msgq object with its
    storage buffer allocated out of a resource pool instead of a buffer provided

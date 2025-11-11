@@ -1,10 +1,31 @@
 # Copyright (c) 2022 Meta
 # SPDX-License-Identifier: Apache-2.0
 
-config ICE40_FPGA
-	bool "Lattice iCE40 fpga driver [EXPERIMENTAL]"
-	select EXPERIMENTAL
+menuconfig ICE40_FPGA
+	bool "Lattice iCE40 fpga driver"
+	default y
+	depends on (DT_HAS_LATTICE_ICE40_FPGA_ENABLED || \
+		   DT_HAS_LATTICE_ICE40_FPGA_BITBANG_ENABLED)
 	imply CRC
 	depends on SPI
 	help
 	  Enable support for the Lattice iCE40 fpga driver.
+
+if ICE40_FPGA
+
+config ICE40_FPGA_SPI
+	bool "Lattice iCE40 fpga SPI driver"
+	default y
+	depends on DT_HAS_LATTICE_ICE40_FPGA_ENABLED
+	help
+	  Enable support for the Lattice iCE40 fpga SPI driver.
+
+config ICE40_FPGA_BITBANG
+	bool "Lattice iCE40 fpga driver GPIO bitbang"
+	default y
+	select EXPERIMENTAL
+	depends on DT_HAS_LATTICE_ICE40_FPGA_BITBANG_ENABLED
+	help
+	  Enable support for the Lattice iCE40 fpga GPIO bitbang driver.
+
+endif # ICE40_FPGA

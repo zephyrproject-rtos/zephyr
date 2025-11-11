@@ -546,7 +546,7 @@ the :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK` is enabled and an
 application registers a callback, the callback will be called when this command
 is issued and can be used to perform any necessary tidy operations prior to the
 module rebooting, or to reject the reset request outright altogether with an
-error response. For details on this functionality, see `ref:`mcumgr_callbacks`.
+error response. For details on this functionality, see :ref:`mcumgr_callbacks`.
 
 System reset request
 ====================
@@ -570,6 +570,7 @@ following map may be sent to force a reset:
 
     {
         (opt)"force"       : (int)
+        (opt)"boot_mode"   : (uint)
     }
 
 where:
@@ -577,9 +578,13 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "force"               | Force reset if value > 0, optional if 0.          |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+-----------------------------------------------------------------+
+    | "force"               | Force reset if value > 0, optional if 0.                        |
+    +-----------------------+-----------------------------------------------------------------+
+    | "boot_mode"           | Specifies boot mode for image or application mode/selection,    |
+    |                       | requires :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE` |
+    |                       | to be enabled.                                                  |
+    +-----------------------+-----------------------------------------------------------------+
 
 
 System reset response

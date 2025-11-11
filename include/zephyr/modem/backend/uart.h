@@ -30,16 +30,41 @@ struct modem_backend_uart_isr {
 	uint32_t transmit_buf_put_limit;
 };
 
-struct modem_backend_uart_async {
-	uint8_t *receive_bufs[2];
-	uint32_t receive_buf_size;
-	struct ring_buf receive_rb;
-	struct k_spinlock receive_rb_lock;
+struct modem_backend_uart_async_common {
 	uint8_t *transmit_buf;
 	uint32_t transmit_buf_size;
 	struct k_work rx_disabled_work;
 	atomic_t state;
 };
+
+#ifdef CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC
+
+struct rx_queue_event {
+	uint8_t *buf;
+	size_t len;
+};
+
+struct modem_backend_uart_async {
+	struct modem_backend_uart_async_common common;
+	struct k_mem_slab rx_slab;
+	struct k_msgq rx_queue;
+	struct rx_queue_event rx_event;
+	struct rx_queue_event rx_queue_buf[CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT];
+	uint32_t rx_buf_size;
+	uint8_t rx_buf_count;
+};
+
+#else
+
+struct modem_backend_uart_async {
+	struct modem_backend_uart_async_common common;
+	uint8_t *receive_bufs[2];
+	uint32_t receive_buf_size;
+	struct ring_buf receive_rb;
+	struct k_spinlock receive_rb_lock;
+};
+
+#endif /* CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC */
 
 struct modem_backend_uart {
 	const struct device *uart;
@@ -60,6 +85,7 @@ struct modem_backend_uart {
 
 struct modem_backend_uart_config {
 	const struct device *uart;
+	/* Address must be word-aligned when CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC is enabled. */
 	uint8_t *receive_buf;
 	uint32_t receive_buf_size;
 	uint8_t *transmit_buf;

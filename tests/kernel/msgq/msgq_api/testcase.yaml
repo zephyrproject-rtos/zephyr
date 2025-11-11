@@ -1,5 +1,9 @@
+common:
+  tags:
+    - kernel
+    - userspace
 tests:
-  kernel.message_queue:
-    tags:
-      - kernel
-      - userspace
+  kernel.message_queue: {}
+  kernel.message_queue.put_front:
+    extra_configs:
+      - CONFIG_TEST_MSGQ_PUT_FRONT=y

@@ -6,17 +6,6 @@
 config COUNTER_MCUX_LPTMR
 	bool "MCUX LPTMR driver"
 	default y
-	depends on DT_HAS_NXP_LPTMR_ENABLED || \
-		   COUNTER_MCUX_KINETIS_LPTMR
+	depends on DT_HAS_NXP_LPTMR_ENABLED
 	help
 	  Enable support for the MCUX Low Power Timer (LPTMR).
-
-config COUNTER_MCUX_KINETIS_LPTMR
-	bool
-	default y
-	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED
-	select DEPRECATED
-	help
-	  The compatible string "nxp,kinetis-lptmr" should
-	  be swiched to "nxp,lptmr" in DT. The former will
-	  be removed eventually.

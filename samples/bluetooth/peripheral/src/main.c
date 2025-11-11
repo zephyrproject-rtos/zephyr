@@ -22,10 +22,9 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/bluetooth/services/cts.h>
 #include <zephyr/bluetooth/services/hrs.h>
 #include <zephyr/bluetooth/services/ias.h>
-
-#include "cts.h"
 
 /* Custom Service Variables */
 #define BT_UUID_CUSTOM_SERVICE_VAL \
@@ -41,6 +40,8 @@ static const struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef2));
 
 #define VND_MAX_LEN 20
+#define BT_HR_HEARTRATE_DEFAULT_MIN 90U
+#define BT_HR_HEARTRATE_DEFAULT_MAX 160U
 
 static uint8_t vnd_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
 static uint8_t vnd_auth_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
@@ -242,7 +243,7 @@ static struct bt_gatt_cb gatt_callbacks = {
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		printk("Connection failed (err 0x%02x)\n", err);
+		printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
 	} else {
 		printk("Connected\n");
 	}
@@ -250,7 +251,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02x)\n", reason);
+	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 }
 
 static void alert_stop(void)
@@ -285,13 +286,11 @@ static void bt_ready(void)
 
 	printk("Bluetooth initialized\n");
 
-	cts_init();
-
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -337,18 +336,82 @@ static void bas_notify(void)
 	bt_bas_set_battery_level(battery_level);
 }
 
+static uint8_t bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
+
 static void hrs_notify(void)
 {
-	static uint8_t heartrate = 90U;
-
 	/* Heartrate measurements simulation */
-	heartrate++;
-	if (heartrate == 160U) {
-		heartrate = 90U;
+	bt_heartrate++;
+	if (bt_heartrate == BT_HR_HEARTRATE_DEFAULT_MAX) {
+		bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
 	}
 
-	bt_hrs_notify(heartrate);
+	bt_hrs_notify(bt_heartrate);
 }
+
+/**
+ * variable to hold reference milliseconds to epoch when device booted
+ * this is only for demo purpose, for more precise synchronization please
+ * review clock_settime API implementation.
+ */
+static int64_t unix_ms_ref;
+static bool cts_notification_enabled;
+
+void bt_cts_notification_changed(bool enabled)
+{
+	cts_notification_enabled = enabled;
+}
+
+int bt_cts_cts_time_write(struct bt_cts_time_format *cts_time)
+{
+	int err;
+	int64_t unix_ms;
+
+	if (IS_ENABLED(CONFIG_BT_CTS_HELPER_API)) {
+		err = bt_cts_time_to_unix_ms(cts_time, &unix_ms);
+		if (err) {
+			return err;
+		}
+	} else {
+		return -ENOTSUP;
+	}
+
+	/* recalculate reference value */
+	unix_ms_ref = unix_ms - k_uptime_get();
+	return 0;
+}
+
+int bt_cts_fill_current_cts_time(struct bt_cts_time_format *cts_time)
+{
+	int64_t unix_ms = unix_ms_ref + k_uptime_get();
+
+	if (IS_ENABLED(CONFIG_BT_CTS_HELPER_API)) {
+		return bt_cts_time_from_unix_ms(cts_time, unix_ms);
+	} else {
+		return -ENOTSUP;
+	}
+}
+
+const struct bt_cts_cb cts_cb = {
+	.notification_changed = bt_cts_notification_changed,
+	.cts_time_write = bt_cts_cts_time_write,
+	.fill_current_cts_time = bt_cts_fill_current_cts_time,
+};
+
+static int bt_hrs_ctrl_point_write(uint8_t request)
+{
+	printk("HRS Control point request: %d\n", request);
+	if (request != BT_HRS_CONTROL_POINT_RESET_ENERGY_EXPANDED_REQ) {
+		return -ENOTSUP;
+	}
+
+	bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
+	return 0;
+}
+
+static struct bt_hrs_cb hrs_cb = {
+	.ctrl_point_write = bt_hrs_ctrl_point_write,
+};
 
 int main(void)
 {
@@ -363,6 +426,8 @@ int main(void)
 	}
 
 	bt_ready();
+	bt_cts_init(&cts_cb);
+	bt_hrs_cb_register(&hrs_cb);
 
 	bt_gatt_cb_register(&gatt_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
@@ -378,9 +443,13 @@ int main(void)
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
-		/* Current Time Service updates only when time is changed */
-		cts_notify();
-
+		/* Current time update notification example
+		 * For testing purposes, we send a manual update notification every second.
+		 * In production `bt_cts_send_notification` should only be used when time is changed
+		 */
+		if (cts_notification_enabled) {
+			bt_cts_send_notification(BT_CTS_UPDATE_REASON_MANUAL);
+		}
 		/* Heartrate measurements simulation */
 		hrs_notify();
 

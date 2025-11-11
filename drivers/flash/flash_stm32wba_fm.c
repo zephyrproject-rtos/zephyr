@@ -18,13 +18,15 @@ LOG_MODULE_REGISTER(flash_stm32wba, CONFIG_FLASH_LOG_LEVEL);
 #include "flash_manager.h"
 #include "flash_driver.h"
 
+#include <stm32_ll_utils.h>
+
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
 #define STM32_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-extern struct k_work_q ble_ctlr_work_q;
+extern struct k_work_q ble_ctrl_work_q;
 struct k_work fm_work;
 
 static const struct flash_parameters flash_stm32_parameters = {
@@ -47,7 +49,7 @@ struct FM_CallbackNode cb_ptr = {
 
 void FM_ProcessRequest(void)
 {
-	k_work_submit_to_queue(&ble_ctlr_work_q, &fm_work);
+	k_work_submit_to_queue(&ble_ctrl_work_q, &fm_work);
 }
 
 void FM_BackgroundProcess_Entry(struct k_work *work)
@@ -64,17 +66,6 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		return false;
 	}
 	return flash_stm32_range_exists(dev, offset, len);
-}
-
-
-static inline void flash_stm32_sem_take(const struct device *dev)
-{
-	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
-}
-
-static inline void flash_stm32_sem_give(const struct device *dev)
-{
-	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
 }
 
 static int flash_stm32_read(const struct device *dev, off_t offset,
@@ -104,7 +95,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 			     size_t len)
 {
 	int rc;
-	int sect_num = (len / FLASH_PAGE_SIZE) + 1;
+	int sect_num;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
 		LOG_ERR("Erase range invalid. Offset: %p, len: %zu",
@@ -115,6 +106,9 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	if (!len) {
 		return 0;
 	}
+
+	/* len is a multiple of FLASH_PAGE_SIZE */
+	sect_num = len / FLASH_PAGE_SIZE;
 
 	flash_stm32_sem_take(dev);
 
@@ -174,6 +168,16 @@ static const struct flash_parameters *
 	return &flash_stm32_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32wba_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+	return 0;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 };
@@ -198,11 +202,12 @@ void flash_stm32wba_page_layout(const struct device *dev,
 	*layout_size = 1;
 }
 
-static const struct flash_driver_api flash_stm32_api = {
+static DEVICE_API(flash, flash_stm32_api) = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_size = flash_stm32wba_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32wba_page_layout,
 #endif

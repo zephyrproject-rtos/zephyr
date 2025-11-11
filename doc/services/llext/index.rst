@@ -16,9 +16,10 @@ and introspected to some degree, as well as unloaded when no longer needed.
    config
    build
    load
+   debug
    api
 
 .. note::
 
    The LLEXT subsystem requires architecture-specific support. It is currently
-   available only on ARM and Xtensa cores.
+   available only on RISC-V, ARM, ARM64, ARC, x86, and Xtensa cores.

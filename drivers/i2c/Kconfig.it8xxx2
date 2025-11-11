@@ -5,6 +5,8 @@ config I2C_ITE_IT8XXX2
 	bool "ITE IT8XXX2 I2C driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_I2C_ENABLED
+	select PINCTRL
+	select I2C_BITBANG
 	help
 	  Enable I2C support on it8xxx2_evb.
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
@@ -30,6 +32,8 @@ config I2C_ITE_ENHANCE
 	bool "ITE IT8XXX2 I2C enhance driver"
 	default y
 	depends on DT_HAS_ITE_ENHANCE_I2C_ENABLED
+	select PINCTRL
+	select I2C_BITBANG
 	help
 	  This option can enable the enhance I2C
 	  of IT8XXX2 and support three channels.
@@ -66,5 +70,15 @@ config I2C_TARGET_IT8XXX2_MAX_BUF_SIZE
 
 config I2C_TARGET_BUFFER_MODE
 	default y
+
+config I2C_TARGET_ALLOW_POWER_SAVING
+	bool "Allow I2C target to enter power-saving modes [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !SOC_IT8XXX2_REG_SET_V1
+	help
+	  When enabled, the I2C target device can enter Doze/Deep doze states
+	  while the bus is idle. Ongoing transfers will block low-power entry
+	  until they are completed, ensuring correct communication while still
+	  reducing overall power consumption.
 
 endif # I2C_TARGET

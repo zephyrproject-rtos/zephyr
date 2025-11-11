@@ -1,0 +1,15 @@
+board:
+  name: mps4
+  full_name: MPS4
+  vendor: arm
+  socs:
+  - name: 'corstone315'
+    variants:
+    - name: 'fvp'
+      variants:
+      - name: 'ns'
+  - name: 'corstone320'
+    variants:
+    - name: 'fvp'
+      variants:
+      - name: 'ns'

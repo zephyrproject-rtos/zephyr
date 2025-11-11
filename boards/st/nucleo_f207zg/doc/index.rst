@@ -1,7 +1,4 @@
-.. _nucleo_f207zg_board:
-
-ST Nucleo F207ZG
-################
+.. zephyr:board:: nucleo_f207zg
 
 Overview
 ********
@@ -29,10 +26,6 @@ some highlights of the Nucleo F207ZG board:
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f207zg.jpg
-   :align: center
-   :alt: Nucleo F207ZG
-
 More information about the board can be found at the `Nucleo F207ZG website`_.
 
 Hardware
@@ -56,6 +49,7 @@ Nucleo F207ZG provides the following hardware components:
 - I2C (3)
 - SPI (3)
 - SDIO
+- CAN (2)
 - USB 2.0 OTG FS
 - DMA Controller
 - 10/100 Ethernet MAC with dedicated DMA
@@ -70,52 +64,7 @@ More information about STM32F207ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_207zg board configuration supports the following hardware features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port-polling;                |
-|             |            | serial port-interrupt               |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | Ethernet                            |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| USB         | on-chip    | USB device                          |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| WATCHDOG    | on-chip    | independent watchdog                |
-+-------------+------------+-------------------------------------+
-| ADC         | on-chip    | ADC Controller                      |
-+-------------+------------+-------------------------------------+
-| DAC         | on-chip    | DAC Controller                      |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | PWM                                 |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | Random Number Generator             |
-+-------------+------------+-------------------------------------+
-| DMA         | on-chip    | Direct Memory Access                |
-+-------------+------------+-------------------------------------+
-| die-temp    | on-chip    | die temperature sensor              |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | rtc                                 |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_f207zg/nucleo_f207zg_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -148,6 +97,8 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PA7 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- CAN1 TX/RX : PD1/PD0
+- CAN2 TX/RX : PB6/PB5
 - USB_DM : PA11
 - USB_DP : PA12
 - USER_PB : PC13
@@ -191,8 +142,23 @@ do it by removing ``SB156`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F207ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 
 .. _Nucleo F207ZG website:
@@ -206,3 +172,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F207 reference manual:
    https://www.st.com/resource/en/reference_manual/cd00225773.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

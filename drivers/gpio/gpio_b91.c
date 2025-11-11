@@ -467,7 +467,7 @@ static int gpio_b91_manage_callback(const struct device *dev,
 }
 
 /* GPIO driver APIs structure */
-static const struct gpio_driver_api gpio_b91_driver_api = {
+static DEVICE_API(gpio, gpio_b91_driver_api) = {
 	.pin_configure = gpio_b91_pin_configure,
 	.port_get_raw = gpio_b91_port_get_raw,
 	.port_set_masked_raw = gpio_b91_port_set_masked_raw,

@@ -63,7 +63,7 @@ _ASM_FILE_PROLOGUE
 	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
-	/* The expection from el1 does not need to save x16, x17, x18 and lr */
+	/* The exception from el1 does not need to save x16, x17, x18 and lr */
 	.if	\el == el0
 #endif
 	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]

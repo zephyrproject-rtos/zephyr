@@ -9,6 +9,7 @@ config UART_XEC
 	depends on DT_HAS_MICROCHIP_XEC_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the UARTx driver for Microchip XEC MCUs.
 

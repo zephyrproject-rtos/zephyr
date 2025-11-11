@@ -61,7 +61,7 @@ static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
 	struct updatehub_storage_context storage_ctx;
-	updatehub_crypto_context_t crypto_ctx;
+	psa_hash_operation_t crypto_ctx;
 	enum updatehub_response code_status;
 	uint8_t hash[SHA256_BIN_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
@@ -113,7 +113,7 @@ static void prepare_fds(void)
 
 static int metadata_hash_get(char *metadata)
 {
-	updatehub_crypto_context_t local_crypto_ctx;
+	psa_hash_operation_t local_crypto_ctx;
 
 	if (updatehub_integrity_init(&local_crypto_ctx)) {
 		return -1;
@@ -1001,7 +1001,7 @@ static void autohandler(struct k_work *work)
 	case UPDATEHUB_UNCONFIRMED_IMAGE:
 		LOG_ERR("Image is unconfirmed. Rebooting to revert back to previous"
 			"confirmed image.");
-
+		updatehub_report_error();
 		LOG_PANIC();
 		updatehub_reboot();
 		break;
@@ -1043,4 +1043,14 @@ void z_impl_updatehub_autohandler(void)
 
 	k_work_init_delayable(&updatehub_work_handle, autohandler);
 	k_work_reschedule(&updatehub_work_handle, K_NO_WAIT);
+}
+
+int z_impl_updatehub_report_error(void)
+{
+	int ret = report(UPDATEHUB_STATE_ERROR);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to report rollback error to server");
+	}
+	return ret;
 }

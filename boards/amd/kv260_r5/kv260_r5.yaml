@@ -5,6 +5,10 @@ toolchain:
   - zephyr
 ram: 65536
 flash: 32768
+supported:
+  - i2c
+  - eeprom
+  - gpio
 testing:
   ignore_tags:
     - net

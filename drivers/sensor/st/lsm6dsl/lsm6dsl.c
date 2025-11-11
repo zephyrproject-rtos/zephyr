@@ -699,7 +699,7 @@ static int lsm6dsl_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dsl_driver_api = {
+static DEVICE_API(sensor, lsm6dsl_driver_api) = {
 	.attr_set = lsm6dsl_attr_set,
 #if CONFIG_LSM6DSL_TRIGGER
 	.trigger_set = lsm6dsl_trigger_set,
@@ -918,7 +918,7 @@ static int lsm6dsl_pm_action(const struct device *dev,
 		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
 				      SPI_OP_MODE_MASTER |			\
 				      SPI_MODE_CPOL |				\
-				      SPI_MODE_CPHA, 0),			\
+				      SPI_MODE_CPHA),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSL_CFG_IRQ(inst)), ())					\
 	}

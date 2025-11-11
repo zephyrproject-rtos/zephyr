@@ -9,14 +9,53 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 
-#include "common.h"
 #include "bap_common.h"
+
+#define VS_CODEC_CID 0x05F1 /* Linux foundation*/
+#define VS_CODEC_VID 0x1234 /* any value*/
+
+/* Vendor specific codec configuration with some random values */
+struct bt_audio_codec_cfg vs_codec_cfg = {
+	.path_id = BT_ISO_DATA_PATH_HCI,
+	.ctlr_transcode = false,
+	.id = BT_HCI_CODING_FORMAT_VS,
+	.cid = VS_CODEC_CID,
+	.vid = VS_CODEC_VID,
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	.data_len = 5,
+	.data = {1, 2, 3, 4, 5}, /* any value */
+#endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
+	.meta_len = 5,
+	.meta = {10, 20, 30, 40, 50}, /* any value */
+#endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
+};
+
+/* Vendor specific codec configuration with some random values */
+struct bt_audio_codec_cap vs_codec_cap = {
+	.path_id = BT_ISO_DATA_PATH_HCI,
+	.ctlr_transcode = false,
+	.id = BT_HCI_CODING_FORMAT_VS,
+	.cid = VS_CODEC_CID,
+	.vid = VS_CODEC_VID,
+#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
+	.data_len = 5,
+	.data = {1, 2, 3, 4, 5}, /* any value */
+#endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
+	.meta_len = 5,
+	.meta = {10, 20, 30, 40, 50}, /* any value */
+#endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
+};
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -86,7 +125,7 @@ void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	print_ltv_array("meta", codec_cfg->meta, codec_cfg->meta_len);
 }
 
-void print_qos(const struct bt_audio_codec_qos *qos)
+void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",

@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Intel Corporation
-# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2022, 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_TENSORFLOW_LITE_MICRO)
@@ -24,7 +24,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     zephyr_library_compile_definitions(CMSIS_NN)
   endif()
 
-  if (CONFIG_ARM_ETHOS_U)
+  if(CONFIG_ETHOS_U)
     set(ETHOSU_CO_PROCESSOR ethos_u)
   endif()
 
@@ -41,9 +41,12 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/signal/src/kiss_fft_wrappers/kiss_fft_float.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/signal/src/kiss_fft_wrappers/kiss_fft_int16.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/signal/src/kiss_fft_wrappers/kiss_fft_int32.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/compiler/mlir/lite/core/api/error_reporter.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/compiler/mlir/lite/schema/schema_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/array.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/c/common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/debug_log.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/hexdump.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/fake_micro_context.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_helpers.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_allocation_info.cc
@@ -81,9 +84,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/portable_tensor_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/kernel_util.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/flatbuffer_conversions.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/error_reporter.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/tensor_utils.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/schema/schema_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/add.cc
@@ -91,6 +92,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/add_n.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/arg_min_max.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/assign_variable.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/batch_matmul.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/batch_to_space_nd.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/broadcast_args.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/broadcast_to.cc
@@ -104,6 +106,8 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/conv.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/conv_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/cumsum.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/decompress.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/decompress_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/depth_to_space.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/depthwise_conv.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/depthwise_conv_common.cc
@@ -141,7 +145,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/lstm_eval.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/lstm_eval_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/log_softmax.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/maximum_minimum.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/maximum_minimum.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/micro_tensor_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/mirror_pad.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/mul.cc
@@ -175,6 +179,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/squared_difference.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/squeeze.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/strided_slice.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/strided_slice_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/sub.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/sub_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/svdf.cc

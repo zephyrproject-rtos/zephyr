@@ -12,8 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/method.h>
 #include <zephyr/net/http/parser.h>
-
-#define IS_BIT_SET(val, bit) (((val >> bit) & (0x1)) != 0)
+#include <zephyr/sys/util.h>
 
 static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -40,6 +39,9 @@ static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 			switch (detail->type) {
 			case HTTP_RESOURCE_TYPE_STATIC:
 				detail_type = "static";
+				break;
+			case HTTP_RESOURCE_TYPE_STATIC_FS:
+				detail_type = "static_fs";
 				break;
 			case HTTP_RESOURCE_TYPE_DYNAMIC:
 				detail_type = "dynamic";

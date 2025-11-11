@@ -25,3 +25,11 @@ config XEN_DOM0LESS
 	help
 	  Configures Zephyr as DomU, that can be started on Dom0less
 	  setup.
+
+config XEN_INTERFACE_VERSION
+	hex "Xen interface version"
+	default 0x00040e00
+	depends on XEN
+	help
+	  Xen interface version to use. This is the version of the
+	  interface that Zephyr will use to communicate with the hypervisor.

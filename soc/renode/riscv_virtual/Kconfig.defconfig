@@ -9,9 +9,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_GP
-	default y
-
 config 1ST_LEVEL_INTERRUPT_BITS
 	default 4
 

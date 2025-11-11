@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 /* MICS commands */
 #define BTP_MICS_READ_SUPPORTED_COMMANDS	0x01
 struct btp_mics_read_supported_commands_rp {

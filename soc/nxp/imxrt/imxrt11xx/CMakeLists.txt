@@ -16,4 +16,10 @@ if(CONFIG_MEMC_MCUX_FLEXSPI)
   endif()
 endif()
 
+if(CONFIG_SECOND_CORE_MCUX_REMOTE_DIR)
+  # Add remote directory to include within the build
+  zephyr_include_directories(${CONFIG_SECOND_CORE_MCUX_REMOTE_DIR})
+endif()
+
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

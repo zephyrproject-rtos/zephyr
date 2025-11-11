@@ -1,7 +1,4 @@
-.. _efm32wg_stk3800:
-
-EFM32 Wonder Gecko (EFM32WG-STK3800)
-####################################
+.. zephyr:board:: efm32wg_stk3800
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The EFM32 Wonder Gecko Starter Kit EFM32WG-STK3800 contains a MCU from the
 EFM32WG family built on ARM® Cortex®-M4F processor with excellent low
 power capabilities.
-
-.. figure:: efm32wg_stk3800.jpg
-   :align: center
-   :alt: EFM32WG-STK3800
-
-   EFM32WG-STK3800 (image courtesy of Silicon Labs)
-
 
 Hardware
 ********
@@ -40,29 +30,7 @@ For more information about the EFM32WG SoC and EFM32WG-STK3800 board:
 Supported Features
 ==================
 
-The efm32wg_stk3800 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kit/efm32wg_stk3800/efm32wg_stk3800_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -107,9 +75,11 @@ UART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -125,7 +95,7 @@ board. The adaptor provides:
 Flashing an application to EFM32-STK3800
 ----------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -172,6 +142,3 @@ the following message:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

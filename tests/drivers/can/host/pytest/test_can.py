@@ -7,9 +7,9 @@ Test suites for testing Zephyr CAN <=> host CAN.
 """
 
 import logging
-import pytest
 
 import can
+import pytest
 from can import BusABC, CanProtocol
 
 # RX/TX timeout in seconds
@@ -17,40 +17,45 @@ TIMEOUT = 1.0
 
 logger = logging.getLogger(__name__)
 
-@pytest.mark.parametrize('msg', [
-    pytest.param(
-        can.Message(arbitration_id=0x10,
-                    is_extended_id=False),
-        id='std_id_dlc_0'
-    ),
-    pytest.param(
-        can.Message(arbitration_id=0x20,
-                    data=[0xaa, 0xbb, 0xcc, 0xdd],
-                    is_extended_id=False),
-        id='std_id_dlc_4'
-    ),
-    pytest.param(
-        can.Message(arbitration_id=0x30,
-                    data=[0xee, 0xff, 0xee, 0xff, 0xee, 0xff, 0xee, 0xff],
-                    is_extended_id=True),
-        id='ext_id_dlc_8'
-    ),
-    pytest.param(
-        can.Message(arbitration_id=0x40,
-                    data=[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-                          0x10, 0x11],
-                    is_fd=True, is_extended_id=False),
-        id='std_id_fdf_dlc_9'
-    ),
-    pytest.param(
-        can.Message(arbitration_id=0x50,
-                    data=[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-                          0x10, 0x11],
-                    is_fd=True, bitrate_switch=True, is_extended_id=False),
-        id='std_id_fdf_brs_dlc_9'
-    ),
-])
-class TestCanRxTx():
+
+@pytest.mark.parametrize(
+    'msg',
+    [
+        pytest.param(can.Message(arbitration_id=0x10, is_extended_id=False), id='std_id_dlc_0'),
+        pytest.param(
+            can.Message(arbitration_id=0x20, data=[0xAA, 0xBB, 0xCC, 0xDD], is_extended_id=False),
+            id='std_id_dlc_4',
+        ),
+        pytest.param(
+            can.Message(
+                arbitration_id=0x30,
+                data=[0xEE, 0xFF, 0xEE, 0xFF, 0xEE, 0xFF, 0xEE, 0xFF],
+                is_extended_id=True,
+            ),
+            id='ext_id_dlc_8',
+        ),
+        pytest.param(
+            can.Message(
+                arbitration_id=0x40,
+                data=[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11],
+                is_fd=True,
+                is_extended_id=False,
+            ),
+            id='std_id_fdf_dlc_9',
+        ),
+        pytest.param(
+            can.Message(
+                arbitration_id=0x50,
+                data=[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11],
+                is_fd=True,
+                bitrate_switch=True,
+                is_extended_id=False,
+            ),
+            id='std_id_fdf_brs_dlc_9',
+        ),
+    ],
+)
+class TestCanRxTx:
     """
     Class for testing CAN RX/TX between Zephyr DUT and host.
     """
@@ -64,8 +69,7 @@ class TestCanRxTx():
         if rx is None:
             pytest.fail('no message received')
 
-        if not tx.equals(rx, timestamp_delta=None, check_channel=False,
-                         check_direction=False):
+        if not tx.equals(rx, timestamp_delta=None, check_channel=False, check_direction=False):
             pytest.fail(f'rx message "{rx}" not equal to tx message "{tx}"')
 
     @staticmethod

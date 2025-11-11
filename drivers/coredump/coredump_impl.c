@@ -126,7 +126,7 @@ static int coredump_init(const struct device *dev)
 	return 0;
 }
 
-static const struct coredump_driver_api coredump_api = {
+static DEVICE_API(coredump, coredump_api) = {
 	.dump = coredump_impl_dump,
 	.register_memory = coredump_impl_register_memory,
 	.unregister_memory = coredump_impl_unregister_memory,

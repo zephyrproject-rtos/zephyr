@@ -20,6 +20,8 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/sensor/bmp581_user.h>
 
+#include "bmp581_bus.h"
+
 #define DT_DRV_COMPAT bosch_bmp581
 
 /* UTILITY MACROS */
@@ -27,10 +29,10 @@
 #define BMP5_SET_HIGH_BYTE 0xFF00u
 
 /* BIT SLICE GET AND SET FUNCTIONS */
-#define BMP5_GET_BITSLICE(regvar, bitname) ((regvar & bitname##_MSK) >> bitname##_POS)
+#define BMP5_GET_BITSLICE(regvar, bitname) (((regvar) & (bitname##_MSK)) >> (bitname##_POS))
 
 #define BMP5_SET_BITSLICE(regvar, bitname, val)                                                    \
-	((regvar & ~bitname##_MSK) | ((val << bitname##_POS) & bitname##_MSK))
+	(((regvar) & ~(bitname##_MSK)) | (((val) << (bitname##_POS)) & (bitname##_MSK)))
 
 #define BMP5_GET_LSB(var) (uint8_t)(var & BMP5_SET_LOW_BYTE)
 #define BMP5_GET_MSB(var) (uint8_t)((var & BMP5_SET_HIGH_BYTE) >> 8)
@@ -118,6 +120,11 @@
 #define BMP5_FIFO_MAX_THRESHOLD_P_T_MODE 0x0F
 #define BMP5_FIFO_MAX_THRESHOLD_P_MODE   0x1F
 
+#define BMP5_FIFO_FRAME_SEL_OFF 0
+#define BMP5_FIFO_FRAME_SEL_TEMP 1
+#define BMP5_FIFO_FRAME_SEL_PRESS 2
+#define BMP5_FIFO_FRAME_SEL_ALL 3
+
 /* Macro is used to bypass both iir_t and iir_p together */
 #define BMP5_IIR_BYPASS 0xC0
 
@@ -149,6 +156,7 @@
 
 /* Interrupt configurations */
 #define BMP5_INT_MODE_MSK 0x01
+#define BMP5_INT_MODE_POS 0
 
 #define BMP5_INT_POL_MSK 0x02
 #define BMP5_INT_POL_POS 1
@@ -160,6 +168,7 @@
 #define BMP5_INT_EN_POS 3
 
 #define BMP5_INT_DRDY_EN_MSK 0x01
+#define BMP5_INT_DRDY_EN_POS 0
 
 #define BMP5_INT_FIFO_FULL_EN_MSK 0x02
 #define BMP5_INT_FIFO_FULL_EN_POS 1
@@ -175,10 +184,11 @@
 #define BMP5_ODR_POS 2
 
 /* OSR configurations */
-#define BMP5_TEMP_OS_MSK 0x07
+#define BMP5_TEMP_OSR_MSK 0x07
+#define BMP5_TEMP_OSR_POS 0
 
-#define BMP5_PRESS_OS_MSK 0x38
-#define BMP5_PRESS_OS_POS 3
+#define BMP5_PRESS_OSR_MSK 0x38
+#define BMP5_PRESS_OSR_POS 3
 
 /* Pressure enable */
 #define BMP5_PRESS_EN_MSK 0x40
@@ -186,6 +196,7 @@
 
 /* IIR configurations */
 #define BMP5_SET_IIR_TEMP_MSK 0x07
+#define BMP5_SET_IIR_TEMP_POS 0
 
 #define BMP5_SET_IIR_PRESS_MSK 0x38
 #define BMP5_SET_IIR_PRESS_POS 3
@@ -219,6 +230,7 @@
 
 /* Powermode */
 #define BMP5_POWERMODE_MSK 0x03
+#define BMP5_POWERMODE_POS 0
 
 #define BMP5_DEEP_DISABLE_MSK 0x80
 #define BMP5_DEEP_DISABLE_POS 7
@@ -232,9 +244,12 @@
 #define BMP5_FIFO_DEC_SEL_MSK 0x1C
 #define BMP5_FIFO_DEC_SEL_POS 2
 
-#define BMP5_FIFO_COUNT_MSK 0x3F
+/* This driver only supports both Pressure and Temperature FIFO mode. */
+#define BMP5_FIFO_COUNT_MSK BMP5_FIFO_MAX_THRESHOLD_P_T_MODE
+#define BMP5_FIFO_COUNT_POS 0
 
 #define BMP5_FIFO_FRAME_SEL_MSK 0x03
+#define BMP5_FIFO_FRAME_SEL_POS 0
 
 /* Out-of-range configuration */
 #define BMP5_OOR_THR_P_LSB_MSK 0x0000FF
@@ -266,27 +281,27 @@
 struct bmp581_osr_odr_press_config {
 	/*! Temperature oversampling
 	 * Assignable macros :
-	 * - BMP5_OVERSAMPLING_1X
-	 * - BMP5_OVERSAMPLING_2X
-	 * - BMP5_OVERSAMPLING_4X
-	 * - BMP5_OVERSAMPLING_8X
-	 * - BMP5_OVERSAMPLING_16X
-	 * - BMP5_OVERSAMPLING_32X
-	 * - BMP5_OVERSAMPLING_64X
-	 * - BMP5_OVERSAMPLING_128X
+	 * - BMP581_DT_OVERSAMPLING_1X
+	 * - BMP581_DT_OVERSAMPLING_2X
+	 * - BMP581_DT_OVERSAMPLING_4X
+	 * - BMP581_DT_OVERSAMPLING_8X
+	 * - BMP581_DT_OVERSAMPLING_16X
+	 * - BMP581_DT_OVERSAMPLING_32X
+	 * - BMP581_DT_OVERSAMPLING_64X
+	 * - BMP581_DT_OVERSAMPLING_128X
 	 */
 	uint8_t osr_t;
 
 	/*! Pressure oversampling
 	 * Assignable macros :
-	 * - BMP5_OVERSAMPLING_1X
-	 * - BMP5_OVERSAMPLING_2X
-	 * - BMP5_OVERSAMPLING_4X
-	 * - BMP5_OVERSAMPLING_8X
-	 * - BMP5_OVERSAMPLING_16X
-	 * - BMP5_OVERSAMPLING_32X
-	 * - BMP5_OVERSAMPLING_64X
-	 * - BMP5_OVERSAMPLING_128X
+	 * - BMP581_DT_OVERSAMPLING_1X
+	 * - BMP581_DT_OVERSAMPLING_2X
+	 * - BMP581_DT_OVERSAMPLING_4X
+	 * - BMP581_DT_OVERSAMPLING_8X
+	 * - BMP581_DT_OVERSAMPLING_16X
+	 * - BMP581_DT_OVERSAMPLING_32X
+	 * - BMP581_DT_OVERSAMPLING_64X
+	 * - BMP581_DT_OVERSAMPLING_128X
 	 */
 	uint8_t osr_p;
 
@@ -298,6 +313,10 @@ struct bmp581_osr_odr_press_config {
 
 	/*! Output Data Rate */
 	uint8_t odr;
+
+	uint8_t iir_t;
+	uint8_t iir_p;
+	uint8_t power_mode;
 };
 
 struct bmp581_sample {
@@ -305,14 +324,31 @@ struct bmp581_sample {
 	struct sensor_value temperature;
 };
 
+/** Aligned with register bitmask to easily match on data-readout */
+enum bmp581_event {
+	BMP581_EVENT_DRDY = BIT(0),
+	BMP581_EVENT_FIFO_WM = BIT(2),
+};
+
+struct bmp581_stream {
+	const struct device *dev;
+	struct gpio_callback cb;
+	struct rtio_iodev_sqe *iodev_sqe;
+	enum bmp581_event enabled_mask;
+	uint8_t fifo_thres;
+	atomic_t state;
+};
+
 struct bmp581_data {
 	uint8_t chip_id;
 	struct bmp581_sample last_sample;
 	struct bmp581_osr_odr_press_config osr_odr_press_config;
+	struct bmp581_stream stream;
 };
 
 struct bmp581_config {
-	struct i2c_dt_spec i2c;
+	struct bmp581_bus bus;
+	struct gpio_dt_spec int_gpio;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */

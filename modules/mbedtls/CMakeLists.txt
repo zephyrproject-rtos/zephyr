@@ -7,8 +7,23 @@ if(CONFIG_MBEDTLS)
 zephyr_interface_library_named(mbedTLS)
 
   if(CONFIG_MBEDTLS_BUILTIN)
-    if(CONFIG_MBEDTLS_ZEPHYR_ENTROPY AND NOT CONFIG_ENTROPY_HAS_DRIVER)
+    if(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR AND NOT CONFIG_ENTROPY_HAS_DRIVER)
       message(WARNING "No entropy device on the system, using fake entropy source!")
+    endif()
+
+    if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+      if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG OR
+         CONFIG_TEST_CSPRNG_GENERATOR)
+        message(WARNING "
+          Non cryptographycally secure sources are enabled for psa_generate_random().
+          This is meant to be used only for tests, not in production!")
+      else()
+        if(NOT CONFIG_CSPRNG_ENABLED)
+          message(FATAL_ERROR "
+            MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is set but there is
+            no CSPRNG enabled.")
+        endif()
+      endif()
     endif()
 
     # Add the config-file entry point
@@ -16,7 +31,7 @@ zephyr_interface_library_named(mbedTLS)
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
-    if (CONFIG_BUILD_WITH_TFM)
+    if(CONFIG_BUILD_WITH_TFM)
       target_include_directories(mbedTLS INTERFACE
         $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
       )
@@ -29,7 +44,7 @@ zephyr_interface_library_named(mbedTLS)
         include
     )
 
-    if (CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
       target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m
       )
@@ -101,6 +116,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
       zephyr_init.c
+      zephyr_entropy.c
     )
 
     zephyr_library_sources(${mbedtls_base_src})
@@ -109,19 +125,19 @@ zephyr_interface_library_named(mbedTLS)
     zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
     zephyr_library_app_memory(k_mbedtls_partition)
-    if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
+    if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT AND NOT CONFIG_NO_OPTIMIZATIONS)
       # i386 assembly code used in MBEDTLS does not compile with size optimization
       # if address sanitizer is enabled, as such switch default optimization level
       # to speed
-      set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
-          "${OPTIMIZE_FOR_SPEED_FLAG}")
-    endif ()
+      set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c APPEND PROPERTY COMPILE_OPTIONS
+          "${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}")
+    endif()
 
     zephyr_library_link_libraries(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C AND NOT CONFIG_BUILD_WITH_TFM)
+    if(CONFIG_MBEDTLS_PSA_CRYPTO_C)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
@@ -130,6 +146,7 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ffdh.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_hash.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_mac.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_pake.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_rsa.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_se.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_storage.c
@@ -161,6 +178,9 @@ zephyr_interface_library_named(mbedTLS)
 
     zephyr_library_sources(${crypto_source})
 
+    # Custom macro to tell that an mbedTLSCrypto source file is being compiled.
+    zephyr_library_compile_definitions(BUILDING_MBEDTLS_CRYPTO)
+
     zephyr_library_link_libraries(mbedTLS)
 
     zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)
@@ -175,6 +195,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509_csr.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write_crt.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write_csr.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/x509write.c
     )
 
     zephyr_library_sources(${x509_source})
@@ -210,7 +231,7 @@ zephyr_interface_library_named(mbedTLS)
       mbedTLS
     )
 
-elseif (CONFIG_MBEDTLS_LIBRARY)
+elseif(CONFIG_MBEDTLS_LIBRARY)
 
   # NB: CONFIG_MBEDTLS_LIBRARY is not regression tested and is
   # therefore susceptible to bit rot
@@ -230,6 +251,17 @@ else()
   # are defined the users need add a custom Kconfig choice to the
   # MBEDTLS_IMPLEMENTATION and manually add the mbedtls library and
   # included the required directories for mbedtls in their projects.
+endif()
+
+if(CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)
+  if(NOT CONFIG_MBEDTLS_HAVE_TIME_DATE)
+    message(WARNING "
+    The option CONFIG_MBEDTLS_HAVE_TIME_DATE is required for proper
+    certificate validation. If it is not enabled, certificates will
+    not be checked for expiration or validity dates, which may lead
+    to security vulnerabilities.
+    ")
+  endif()
 endif()
 
 endif()

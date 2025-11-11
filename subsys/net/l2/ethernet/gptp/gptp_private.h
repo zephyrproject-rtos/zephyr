@@ -31,6 +31,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief gPTP clock data.
+ */
+struct gptp_clock_data {
+	/** gptp_domain pointer */
+	struct gptp_domain *domain;
+	/** pi control drift value */
+	double pi_drift;
+};
+
+extern struct gptp_clock_data gptp_clock;
+
+/**
  * @brief Is a slave acting as a slave.
  *
  * Utility to check if a port is configured as a slave.
@@ -116,6 +128,15 @@ static inline uint64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 
 	return (ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
+
+/**
+ * @brief gPTP PI servo.
+ *
+ * @param nanosecond_diff nanosecond offset.
+ *
+ * @return ppb value to adjust.
+ */
+double gptp_servo_pi(int64_t nanosecond_diff);
 
 /**
  * @brief Change the port state

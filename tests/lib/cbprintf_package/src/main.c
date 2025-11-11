@@ -893,6 +893,60 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert)
 
 }
 
+/* Test uses package convert with initial size calculation. Array provided to hold
+ * argument string lengths is shorter than number of string arguments.
+ */
+ZTEST(cbprintf_package, test_cbprintf_package_convert_strl)
+{
+	int slen, clen;
+	char test_str[] = "test %s %d %s %s";
+	char test_str1[] = "test str1";
+	char test_str2[] = "test str 2";
+	char test_str3[] = "test str  3";
+	/* Store indexes of rw strings. */
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RW_STR_POS;
+	struct test_cbprintf_covert_ctx ctx;
+	uint16_t strl[2];
+
+#define TEST_FMT test_str, test_str1, 100, test_str2, test_str3
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	slen = cbprintf_package(NULL, 0, flags, TEST_FMT);
+	zassert_true(slen > 0);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	memset(&ctx, 0, sizeof(ctx));
+	memset(spackage, 0, slen);
+
+	slen = cbprintf_package(spackage, slen, flags, TEST_FMT);
+	zassert_true(slen > 0);
+
+	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
+			      CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR;
+
+	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags,
+					strl, ARRAY_SIZE(strl));
+	zassert_true(clen > 0);
+	/* Two locations were provided to store string lengths. 3rd string length
+	 * will need to be calculated in both conversions.
+	 */
+	zassert_equal(strl[0], strlen(test_str1) + 1);
+	zassert_equal(strl[1], strlen(test_str2) + 1);
+
+	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags,
+					strl, ARRAY_SIZE(strl));
+	zassert_true(clen > 0);
+	zassert_true(ctx.null);
+	zassert_equal((int)ctx.offset, clen);
+
+	check_package(ctx.buf, ctx.offset, exp_str);
+#undef TEST_FMT
+
+}
+
 ZTEST(cbprintf_package, test_cbprintf_package_convert_static)
 {
 	int slen, clen, olen;
@@ -923,7 +977,8 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert_static)
 	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR;
 
 	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
-	zassert_true(clen == slen + sizeof(test_str1) + 1/*null*/ - 2 /* arg+ro idx gone*/);
+	zassert_true(clen >= 0);
+	zassert_true((size_t)clen == slen + sizeof(test_str1) + 1/*null*/ - 2 /* arg+ro idx gone*/);
 
 	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
 	zassert_true(clen > 0);

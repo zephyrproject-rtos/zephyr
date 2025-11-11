@@ -17,8 +17,6 @@
 #include <da1469x_pdc.h>
 #include <da1469x_pd.h>
 
-#define GPIO_MODE_RESET		0x200
-
 #define GPIO_PUPD_INPUT		0
 #define GPIO_PUPD_INPUT_PU	1
 #define GPIO_PUPD_INPUT_PD	2
@@ -79,10 +77,11 @@ struct gpio_smartbond_config {
 	volatile uint32_t *mode_regs;
 	volatile struct gpio_smartbond_latch_regs *latch_regs;
 	volatile struct gpio_smartbond_wkup_regs *wkup_regs;
-	/* Value of TRIG_SELECT for PDC_CTRLx_REG entry */
-	uint8_t wkup_trig_select;
 #if CONFIG_PM_DEVICE
 	uint8_t ngpios;
+#endif
+#if CONFIG_PM
+	uint8_t port;
 #endif
 };
 
@@ -117,8 +116,8 @@ static int gpio_smartbond_pin_configure(const struct device *dev,
 	const struct gpio_smartbond_config *config = dev->config;
 
 	if (flags == GPIO_DISCONNECTED) {
-		/* Reset to default value */
-		config->mode_regs[pin] = GPIO_MODE_RESET;
+		/* Set pin as input with no resistors selected */
+		config->mode_regs[pin] = GPIO_PUPD_INPUT << GPIO_P0_00_MODE_REG_PUPD_Pos;
 		return 0;
 	}
 
@@ -166,7 +165,8 @@ static int gpio_smartbond_port_set_masked_raw(const struct device *dev,
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
-	config->data_regs->data = value & mask;
+	config->data_regs->set = value & mask;
+	config->data_regs->reset = ~value & mask;
 
 	return 0;
 }
@@ -227,7 +227,7 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 	struct gpio_smartbond_data *data = dev->data;
 	uint32_t pin_mask = BIT(pin);
 #if CONFIG_PM
-	int trig_select_id = (config->wkup_trig_select << 5) | pin;
+	int trig_select_id = (config->port << 5) | pin;
 	int pdc_ix;
 #endif
 
@@ -244,7 +244,9 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 		config->wkup_regs->clear = pin_mask;
 		data->both_edges_pins &= ~pin_mask;
 #if CONFIG_PM
-		da1469x_pdc_del(pdc_ix);
+		if (pdc_ix >= 0) {
+			da1469x_pdc_del(pdc_ix);
+		}
 #endif
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {
@@ -378,7 +380,7 @@ static int gpio_smartbond_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 /* GPIO driver registration */
-static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 	.pin_configure = gpio_smartbond_pin_configure,
 	.port_get_raw = gpio_smartbond_port_get_raw,
 	.port_set_masked_raw = gpio_smartbond_port_set_masked_raw,
@@ -409,7 +411,7 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 						DT_INST_REG_ADDR_BY_NAME(id, latch),	\
 		.wkup_regs = (volatile struct gpio_smartbond_wkup_regs *)		\
 						DT_INST_REG_ADDR_BY_NAME(id, wkup),	\
-		.wkup_trig_select = id,							\
+		IF_ENABLED(CONFIG_PM, (.port = DT_INST_PROP(id, port),))		\
 		GPIO_PM_DEVICE_CFG(.ngpios, DT_INST_PROP(id, ngpios))			\
 	};										\
 											\
@@ -429,9 +431,9 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 		return 0;								\
 	}										\
 											\
-	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);					\
+	PM_DEVICE_DT_INST_DEFINE(id, gpio_smartbond_pm_action);				\
 	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id,				\
-			      PM_DEVICE_GET(id),					\
+			      PM_DEVICE_DT_INST_GET(id),				\
 			      &gpio_smartbond_data_##id,				\
 			      &gpio_smartbond_config_##id,				\
 			      PRE_KERNEL_1,						\

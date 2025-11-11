@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,26 @@
 LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVEL);
 
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
+
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param)
+{
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	return bt_ascs_register(param->snk_cnt, param->src_cnt);
+}
+
+int bt_bap_unicast_server_unregister(void)
+{
+	if (unicast_server_cb != NULL) {
+		LOG_DBG("Callbacks are still registered");
+		return -EAGAIN;
+	}
+
+	return bt_ascs_unregister();
+}
 
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
@@ -54,7 +75,12 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 
 int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (unicast_server_cb == NULL) {
+		LOG_DBG("no callback is registered");
+		return -EALREADY;
+	}
+
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
@@ -80,6 +106,11 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 
 	ep = stream->ep;
 
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	if (unicast_server_cb != NULL &&
 		unicast_server_cb->reconfig != NULL) {
 		err = unicast_server_cb->reconfig(stream, ep->dir, codec_cfg, &ep->qos_pref, &rsp);
@@ -99,6 +130,11 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
+
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
 
 	if (ep->dir != BT_AUDIO_DIR_SINK) {
 		LOG_DBG("Invalid operation for stream %p with dir %u",
@@ -127,6 +163,12 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
+	ep = stream->ep;
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	if (meta_len > sizeof(ep->codec_cfg.meta)) {
 		return -ENOMEM;
 	}
@@ -143,26 +185,35 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 		return err;
 	}
 
-	ep = stream->ep;
 	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
 
 	/* Set the state to the same state to trigger the notifications */
-	return ascs_ep_set_state(ep, ep->status.state);
+	return ascs_ep_set_state(ep, ep->state);
 }
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
+	if (!bt_ascs_has_ep(stream->ep)) {
+		LOG_DBG("ep %p not in ASCS", stream->ep);
+		return -EINVAL;
+	}
+
 	return bt_ascs_disable_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
+	if (!bt_ascs_has_ep(stream->ep)) {
+		LOG_DBG("ep %p not in ASCS", stream->ep);
+		return -EINVAL;
+	}
+
 	return bt_ascs_release_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 				     struct bt_audio_codec_cfg *codec_cfg,
-				     const struct bt_audio_codec_qos_pref *qos_pref)
+				     const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	return bt_ascs_config_ase(conn, stream, codec_cfg, qos_pref);
 }
@@ -170,4 +221,9 @@ int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream 
 void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
 	bt_ascs_foreach_ep(conn, func, user_data);
+}
+
+bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep)
+{
+	return bt_ascs_has_ep(ep);
 }

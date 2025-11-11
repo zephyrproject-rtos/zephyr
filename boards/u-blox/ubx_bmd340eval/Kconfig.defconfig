@@ -5,7 +5,4 @@
 
 if BOARD_UBX_BMD340EVAL
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_UBX_BMD340EVAL

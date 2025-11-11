@@ -14,7 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -970,6 +970,10 @@ static int net_key_set(const char *name, size_t len_rd,
 	struct bt_mesh_key val[2];
 	int err;
 	uint16_t net_idx;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");

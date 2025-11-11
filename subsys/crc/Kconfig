@@ -1,0 +1,163 @@
+# Copyright (c) 2016,2023 Intel Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_CRC := zephyr,crc
+
+menuconfig CRC
+	bool "Cyclic redundancy check (CRC) Support"
+	help
+	  Enable use of CRC.
+
+if CRC
+
+module = CRC
+module-str = CRC
+source "subsys/logging/Kconfig.template.log_config"
+
+config CRC_HW_HANDLER
+	bool "CRC Hardware Accelerator"
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	select CRC_DRIVER
+	help
+	  Enable use of CRC hardware
+
+config CRC4
+	bool "CRC-4 (Generic)"
+	depends on CRC_DRIVER_HAS_CRC4
+	default y
+	help
+	  Implements a generic CRC-4 algorithm. This is suitable for platforms
+	  without hardware CRC support. Offers flexibility but has lower performance
+	  compared to hardware-based implementations.
+
+config CRC4_TI
+	bool "CRC-4 (TI Polynomial)"
+	depends on CRC_DRIVER_HAS_CRC4_TI
+	default y
+	help
+	  Implements the TI-specific CRC-4 algorithm. Commonly used in low-level
+	  embedded communication where minimal CRC overhead is needed.
+
+config CRC7_BE
+	bool "CRC-7 (Big Endian)"
+	depends on CRC_DRIVER_HAS_CRC7_BE
+	default y
+	help
+	  Implements a CRC-7 algorithm with Big Endian bit order. Often used
+	  in SD card protocols and other serial communication standards.
+
+config CRC8
+	bool "CRC-8 (Generic)"
+	depends on CRC_DRIVER_HAS_CRC8
+	default y
+	help
+	  Implements a generic CRC-8 algorithm. Useful for small data integrity
+	  checks such as checksums and simple communication protocols.
+
+config CRC8_ROHC
+	bool "CRC-8 (ROHC)"
+	depends on CRC_DRIVER_HAS_CRC8_ROHC
+	default y
+	help
+	  Implements the CRC-8 ROHC (Robust Header Compression) algorithm,
+	  typically used in compressed IP header protocols and networking.
+
+config CRC8_CCITT
+	bool "CRC-8 (CCITT)"
+	depends on CRC_DRIVER_HAS_CRC8_CCITT
+	default y
+	help
+	  Implements the CRC-8 CCITT polynomial. Commonly used in
+	  telecommunications and low-power sensor protocols.
+
+config CRC16
+	bool "CRC-16 (Generic)"
+	depends on CRC_DRIVER_HAS_CRC16
+	default y
+	help
+	  Implements the generic CRC-16 algorithm. Frequently used in
+	  storage, file transmission, and basic serial communication protocols.
+
+config CRC16_ANSI
+	bool "CRC-16 (ANSI)"
+	depends on CRC_DRIVER_HAS_CRC16_ANSI
+	default y
+	help
+	  Implements the ANSI variant of CRC-16, also known as CRC-16-IBM.
+	  Commonly applied in legacy serial and file systems.
+
+config CRC16_CCITT
+	bool "CRC-16 (CCITT)"
+	depends on CRC_DRIVER_HAS_CRC16_CCITT
+	default y
+	help
+	  Implements the CCITT variant of CRC-16, widely used in
+	  telecommunication systems such as XMODEM and HDLC protocols.
+
+config CRC16_ITU_T
+	bool "CRC-16 (ITU-T)"
+	depends on CRC_DRIVER_HAS_CRC16_ITU_T
+	default y
+	help
+	  Implements the ITU-T (formerly CCITT) CRC-16 variant.
+	  Popular in modem protocols and wireless communication standards.
+
+config CRC16_REFLECT
+	bool "CRC-16 (Reflected)"
+	depends on CRC_DRIVER_HAS_CRC16_REFLECT
+	default y
+	help
+	  Implements the reflected (bit-reversed) variant of CRC-16-CCITT.
+	  Useful in systems that process data in LSB-first order.
+
+config CRC24_PGP
+	bool "CRC-24 (PGP)"
+	depends on CRC_DRIVER_HAS_CRC24_PGP
+	default y
+	help
+	  Implements a CRC24 algorithm, used in applications like Bluetooth
+	  and certain cryptographic protocols.
+
+config CRC32_C
+	bool "CRC-32C"
+	depends on CRC_DRIVER_HAS_CRC32_C
+	default y
+	help
+	  Implements the CRC32-C (Castagnoli) algorithm, optimized for
+	  high-performance applications such as storage, networking,
+	  and error detection in modern processors.
+
+config CRC32_IEEE
+	bool "CRC-32 (IEEE)"
+	depends on CRC_DRIVER_HAS_CRC32_IEEE
+	default y
+	help
+	  Implements the CRC32-IEEE (CRC-32) algorithm, commonly used
+	  in Ethernet, ZIP file integrity checks, and other standard
+	  networking and storage applications.
+
+
+config CRC32_K_4_2
+	bool "CRC-32K/4.2"
+	depends on CRC_DRIVER_HAS_CRC32_K_4_2
+	default y
+	help
+	  Implement the CRC-32K/4.2 algorithm, a variant of the standard
+	  CRC32-IEEE used in Ethernet, ZIP files, and other data integrity
+	  applications.
+
+config CRC32_K_4_2_TABLE_256
+	bool "CRC-32K/4.2 Table 256"
+	help
+	  Enables the software implementation of the CRC-32K/4.2 algorithm
+	  using a 256-entry lookup table for faster computation.
+
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select POSIX_C_LIB_EXT
+	help
+	  Enable CRC checking for memory regions from the shell.
+
+endif # CRC

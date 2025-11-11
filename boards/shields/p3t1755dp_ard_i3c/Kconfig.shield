@@ -1,0 +1,8 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SHIELD_P3T1755DP_ARD_I3C
+	def_bool $(shields_list_contains,p3t1755dp_ard_i3c)

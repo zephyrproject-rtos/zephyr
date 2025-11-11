@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 description: |
   Nordic Local DPPIC
@@ -11,3 +11,9 @@ description: |
 compatible: "nordic,nrf-dppic-local"
 
 include: ["nordic,nrf-dppic.yaml", "nordic,nrf-dppic-links.yaml"]
+
+properties:
+  channels:
+    type: int
+    required: true
+    description: Number of channels implemented by the DPPIC instance.

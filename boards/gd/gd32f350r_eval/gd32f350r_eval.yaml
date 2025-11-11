@@ -10,8 +10,8 @@ flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - watchdog
   - dma
+  - adc
 vendor: gd

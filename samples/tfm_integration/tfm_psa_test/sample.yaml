@@ -10,7 +10,6 @@ common:
     - v2m_musca_s1/musca_s1/ns
   modules:
     - psa-arch-tests
-    - tf-m-tests
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console

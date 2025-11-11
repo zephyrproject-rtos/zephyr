@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l10_cpuapp.dtsi>
+#include "nrf54l_05_10_15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54l15dk_nrf54l10-cpuapp";
+	model = "Nordic nRF54L15 DK nRF54L10 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* FLPR not supported yet, give all SRAM and RRAM to the APP core */
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(192)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(192)>;
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l10_partition.dtsi>

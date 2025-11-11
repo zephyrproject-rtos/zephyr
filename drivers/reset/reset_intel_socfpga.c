@@ -89,7 +89,7 @@ static int32_t reset_intel_soc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct reset_driver_api reset_intel_soc_driver_api = {
+static DEVICE_API(reset, reset_intel_soc_driver_api) = {
 	.status = reset_intel_soc_status,
 	.line_assert = reset_intel_soc_line_assert,
 	.line_deassert = reset_intel_soc_line_deassert,

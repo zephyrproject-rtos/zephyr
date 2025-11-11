@@ -3,6 +3,7 @@
 
 description: |
   STM32WB Reset and Clock controller node.
+
   For more description confere st,stm32-rcc.yaml
 
 compatible: "st,stm32wb-rcc"

@@ -1,0 +1,45 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXN947VDF-pinctrl.h>
+#include "mcx_nx4x_evk-pinctrl.dtsi"
+
+&pinctrl {
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A0_PIO2_6>,
+				 <PWM1_B0_PIO2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
+		group0 {
+			pinmux = <PWM1_A1_PIO2_4>,
+				 <PWM1_B1_PIO2_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
+		group0 {
+			pinmux = <PWM1_A2_PIO2_2>,
+				 <PWM1_B2_PIO2_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpcmp2: pinmux_lpcmp2 {
+		group0 {
+			pinmux = <CMP2_IN0_PIO1_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
+};

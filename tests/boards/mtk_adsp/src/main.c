@@ -35,6 +35,7 @@ static uint32_t cpu_hz(void)
 
 ZTEST(mtk_adsp, cpu_freq)
 {
+#ifdef CONFIG_SOC_SERIES_MT8195
 	int freqs[] = { 26, 370, 540, 720 };
 
 	for (int i = 0; i < ARRAY_SIZE(freqs); i++) {
@@ -49,6 +50,9 @@ ZTEST(mtk_adsp, cpu_freq)
 
 		zassert_true(err > 200);
 	}
+#else
+	(void)cpu_hz();
+#endif
 }
 
 #define MBOX0 DEVICE_DT_GET(DT_INST(0, mediatek_mbox))
@@ -59,32 +63,25 @@ static bool mbox1_fired;
 
 static void mbox_fn(const struct device *mbox, void *arg)
 {
-	zassert_equal(mbox, MBOX1);
 	zassert_equal(arg, NULL);
 	mbox1_fired = true;
 	k_sem_give(&mbox_sem);
 }
 
-
 /* Test in/out interrupts from the host.  This relies on a SOF driver
  * on the host, which has the behavior of "replying" with an interrupt
  * on mbox1 after receiving a "command" on mbox0 (you can also see it
- * whine about the invalid IPC message in the kernel logs).  SOF
- * ignores the message bytes (it uses a DRAM area instead), so we just
- * write them blindly.  It's only a partial test of the hardware, but
- * easy to run and exercises the core functionality.
+ * whine about the invalid IPC message in the kernel logs).
  *
- * Note that there's a catch: SOF's "reply" comes after a timeout
- * (it's an invalid command, afterall) which is 165 seconds!  But the
- * test does pass.
+ * Note that there's a catch: on older kernels, SOF's "reply" comes
+ * after a timeout (it's an invalid command, afterall) which is 165
+ * seconds!  But the test does pass.
  */
 ZTEST(mtk_adsp, mbox)
 {
+	/* Different SOCs transmit the replies on different devices!  Just listen to both */
+	mtk_adsp_mbox_set_handler(MBOX0, 1, mbox_fn, NULL);
 	mtk_adsp_mbox_set_handler(MBOX1, 1, mbox_fn, NULL);
-
-	for (int i = 0; i < MTK_ADSP_MBOX_MSG_WORDS; i++) {
-		mtk_adsp_mbox_set_msg(MBOX0, i, 0x01010100 | i);
-	}
 
 	/* First signal the host with a reply on the second channel,
 	 * that effects a reply to anything it thinks it might have

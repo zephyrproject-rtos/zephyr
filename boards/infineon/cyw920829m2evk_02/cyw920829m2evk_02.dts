@@ -19,7 +19,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &app_region;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bluetooth;
@@ -38,6 +39,16 @@ uart2: &scb2 {
 
 	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
 	pinctrl-names = "default";
+
+	dmas = <&dma0 8>, <&dma0 9>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,cat1-dma";
+	status = "okay";
 };
 
 &fll0 {
@@ -81,39 +92,55 @@ uart2: &scb2 {
 	status = "okay";
 };
 
+&mcwdt0 {
+	status = "okay";
+};
+
 &bluetooth {
 	status = "okay";
 };
 
-/ {
-	flash0: flash@60000000 {
+&qspi_flash {
+	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";
-		reg = <0x60000000 DT_SIZE_K(512)>;
-		write-block-size = <16>;
-		erase-block-size = <256>;
+		reg = <0x08000000 DT_SIZE_M(1)>;
+		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Keep bootstrap_region node to know size, finally it will
+		 * locate on beginning of code-partition. The BootROM copies
+		 * bootstrap application in RAM and launches it.
+		 */
+		bootstrap_region: bootstrap_region@0 {
+			reg = <0 BOOTSTRAP_SIZE>;
+		};
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			toc2_region: flash@60000000 {
-				compatible = "zephyr,memory-region", "soc-nv-flash";
-				zephyr,memory-region = "APP_HEADER_FLASH";
-				reg = <0x60000000 0x50>;
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x0 0x20000>;
+				read-only;
 			};
-			bootstrap_region: flash@60000050 {
-				compatible = "zephyr,memory-region", "soc-nv-flash";
-				zephyr,memory-region = "BOOTSTRAP_FLASH";
-				reg = <0x60000050 DT_SIZE_K(12)>;
+
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x20000 0x60000>;
 			};
-			app_region: flash@60003050 {
+
+			slot1_partition: partition@80000 {
+				label = "image-1";
+				reg = <0x80000 0x60000>;
+			};
+
+			storage_partition: storage_partition@E0000 {
 				compatible = "soc-nv-flash";
-				reg = <0x60003050 0x6CFB0>; /* 435kb */
-			};
-			storage_partition: flash@60070000 {
-				compatible = "soc-nv-flash";
-				reg = <0x60070000 DT_SIZE_K(64)>;
+				reg = <0xE0000 DT_SIZE_K(64)>;
 			};
 		};
 	};

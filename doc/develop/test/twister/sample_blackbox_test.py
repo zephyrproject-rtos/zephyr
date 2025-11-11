@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import importlib
-import mock
-import os
-import pytest
-import sys
 import json
+import os
+import sys
+from unittest import mock
 
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+import pytest
+from conftest import TEST_DATA, ZEPHYR_BASE, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -34,7 +34,7 @@ class TestDummy:
     @pytest.mark.parametrize(
         "level, expected_tests", TESTDATA_X, ids=["smoke", "acceptance"]
     )
-    @mock.patch.object(TestPlan, "TESTSUITE_FILENAME", testsuite_filename_mock)
+    @mock.patch.object(TestPlan, "TESTSUITE_FILENAME", suite_filename_mock)
     def test_level(self, capfd, out_path, level, expected_tests):
         # Select platforms used for the tests
         test_platforms = ["qemu_x86", "frdm_k64f"]
@@ -57,7 +57,7 @@ class TestDummy:
             # Flags related to platform selection
             + [
                 val
-                for pair in zip(["-p"] * len(test_platforms), test_platforms)
+                for pair in zip(["-p"] * len(test_platforms), test_platforms, strict=False)
                 for val in pair
             ]
         )

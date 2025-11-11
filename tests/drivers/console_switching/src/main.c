@@ -13,9 +13,8 @@
 #define BUF_SIZE 32
 
 /* array of const struct device* */
-#define PHANDLE_TO_DEVICE(node_id, prop, idx) DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
 static const struct device *devs[] = {
-	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(devmux0), devices, PHANDLE_TO_DEVICE, (,))};
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(devmux0), devices, DEVICE_DT_GET_BY_IDX, (,))};
 
 /* array of names, e.g. "euart0" */
 #define PHANDLE_TO_NAME(node_id, prop, idx) DT_NODE_FULL_NAME(DT_PHANDLE_BY_IDX(node_id, prop, idx))
@@ -55,7 +54,7 @@ ZTEST(console_switching, test_write)
 		/* verify that text[j] was written to dev[j] */
 		TC_PRINT("wrote '%s' to %s\n", buf, name[j]);
 
-		zassert_equal(ret[1], strlen(text[j]), "Only wrote %zu/%zu bytes of '%s'",
+		zassert_equal(ret[1], strlen(text[j]), "Only wrote %d/%zu bytes of '%s'",
 			      ret[1], strlen(text[j]), text[j]);
 		zassert_equal(0, strcmp(text[j], buf), "Strings '%s' and '%s' do not match",
 			      text[j], buf);
@@ -91,7 +90,7 @@ ZTEST(console_switching, test_read)
 		/* verify that text[j] was written to dev[j] */
 		TC_PRINT("read '%s' from %s\n", buf, name[j]);
 
-		zassert_equal(ret[1], strlen(text[j]), "Only put %zu/%zu bytes of '%s'",
+		zassert_equal(ret[1], strlen(text[j]), "Only put %d/%zu bytes of '%s'",
 			      ret[1], strlen(text[j]), text[j]);
 		zassert_equal(0, strcmp(text[j], buf), "Strings '%s' and '%s' do not match",
 			      text[j], buf);

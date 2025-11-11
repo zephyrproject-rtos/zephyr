@@ -1,7 +1,4 @@
-.. _ip_k66f:
-
-SEGGER IP Switch Board
-######################
+.. zephyr:board:: ip_k66f
 
 Overview
 ********
@@ -12,10 +9,6 @@ Ethernet switch with Gigabit RGMII/MII/RMII interface.
 
 - KSZ8794CNX enables evaluation for switch functions
 - On-board debug probe J-Link-OB for programming
-
-.. image:: ip_k66f.jpg
-   :align: center
-   :alt: IP-K66F
 
 Hardware
 ********
@@ -39,28 +32,7 @@ For more information about the K66F SoC and IP-K66F board:
 Supported Features
 ==================
 
-The ip_k66f board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/segger/ip_k66f/ip_k66f_defconfig`
+.. zephyr:board-supported-hw::
 
 Micrel/Microchip KSZ8794CNX Ethernet Switch is supported
 (see :zephyr:code-sample:`dsa` sample).
@@ -91,6 +63,8 @@ The K66F SoC has six UARTs. None of them are used.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

@@ -217,6 +217,8 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @{
  */
 
+#if defined(CONFIG_EVICTION_TRACKING) || defined(__DOXYGEN__)
+
 /**
  * Submit a page frame for eviction candidate tracking
  *
@@ -260,6 +262,25 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
  * @param [in] phys The physical address being accessed
  */
 void k_mem_paging_eviction_accessed(uintptr_t phys);
+
+#else /* CONFIG_EVICTION_TRACKING || __DOXYGEN__ */
+
+static inline void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline void k_mem_paging_eviction_accessed(uintptr_t phys)
+{
+	ARG_UNUSED(phys);
+}
+
+#endif /* CONFIG_EVICTION_TRACKING || __DOXYGEN__ */
 
 /**
  * Select a page frame for eviction
@@ -348,6 +369,22 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
  * @param location Location token to free
  */
 void k_mem_paging_backing_store_location_free(uintptr_t location);
+
+/**
+ * Obtain persistent location token for on-demand content
+ *
+ * Unlike k_mem_paging_backing_store_location_get() this does not allocate
+ * any backing store space. Instead, it returns a location token corresponding
+ * to some fixed storage content to be paged in on demand. This is expected
+ * to be used in conjonction with CONFIG_LINKER_USE_ONDEMAND_SECTION and the
+ * K_MEM_MAP_UNPAGED flag to create demand mappings at boot time. This may
+ * also be used e.g. to implement file-based mmap().
+ *
+ * @param addr Virtual address to obtain a location token for
+ * @param [out] location storage location token
+ * @return 0 for success or negative error code
+ */
+int k_mem_paging_backing_store_location_query(void *addr, uintptr_t *location);
 
 /**
  * Copy a data page from K_MEM_SCRATCH_PAGE to the specified location

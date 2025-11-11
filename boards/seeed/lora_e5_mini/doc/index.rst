@@ -1,7 +1,4 @@
-.. _lora_e5_mini:
-
-Seeed Studio LoRa-E5 mini
-#########################
+.. zephyr:board:: lora_e5_mini
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 LoRa-E5 mini is a compacted-sized development board suitable for the rapid
 testing and building of small-sized LoRa device, exposing all capabilities of
 Seeed Studio LoRa-E5 STM32WLE5JC module.
-
-.. image:: img/lora_e5_mini.jpg
-   :align: center
-   :alt: LoRa-E5 mini
 
 Hardware
 ********
@@ -63,48 +56,7 @@ More information about LoRa-E5 STM32WLE5JC Module can be found here:
 Supported Features
 ==================
 
-The Zephyr LoRa-E5 mini configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| MPU       | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | LoRa                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in:
-
-- :zephyr_file:`boards/seeed/lora_e5_mini/lora_e5_mini_defconfig`
-- :zephyr_file:`boards/seeed/lora_e5_mini/lora_e5_mini.dts`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -138,6 +90,8 @@ main PLL clock. By default System clock is driven by the MSI clock at 48MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``lora_e5_mini`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
@@ -178,7 +132,7 @@ Flashing an application to LoRa-E5 mini
 
 Connect the LoRa-E5 to your host computer using the external debug probe.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector

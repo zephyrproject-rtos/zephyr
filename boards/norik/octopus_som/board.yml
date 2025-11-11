@@ -1,0 +1,8 @@
+board:
+  name: octopus_som
+  full_name: Octopus SoM
+  vendor: norik
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'

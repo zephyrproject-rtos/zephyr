@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/pm/device.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -38,7 +39,8 @@ static int spi_sedi_configure(const struct device *dev,
 {
 	struct spi_sedi_data *data = dev->data;
 	const struct spi_sedi_config *info = dev->config;
-	uint32_t word_size, cpol, cpha, loopback;
+	uint32_t word_size, loopback;
+	bool cpol_mode, cpha_mode;
 
 	if (spi_context_configured(&data->ctx, config) == true) {
 		return 0;
@@ -49,23 +51,23 @@ static int spi_sedi_configure(const struct device *dev,
 			 word_size);
 
 	/* CPOL and CPHA */
-	cpol = SPI_MODE_GET(config->operation) & SPI_MODE_CPOL;
-	cpha = SPI_MODE_GET(config->operation) & SPI_MODE_CPHA;
 
-	if ((cpol == 0) && (cpha == 0)) {
+	cpol_mode = ((SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) != 0);
+	cpha_mode = ((SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) != 0);
+
+	if (!cpol_mode && !cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA0,
 				 0);
-	} else if ((cpol == 0) && (cpha == 1U)) {
+	} else if (!cpol_mode && cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA1,
 				 0);
-	} else if ((cpol == 1) && (cpha == 0U)) {
+	} else if (cpol_mode && !cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA0,
 				 0);
 	} else {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA1,
 				 0);
 	}
-
 	/* MSB and LSB */
 	if (config->operation & SPI_TRANSFER_LSB) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_LSB, 0);
@@ -296,11 +298,14 @@ void spi_sedi_callback(uint32_t event, void *param)
 	}
 }
 
-static const struct spi_driver_api sedi_spi_api = {
+static DEVICE_API(spi, sedi_spi_api) = {
 	.transceive = spi_sedi_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_sedi_transceive_async,
 #endif  /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_sedi_release,
 };
 
@@ -398,14 +403,14 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),	               \
 		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),	               \
 	};								       \
-	const static struct spi_sedi_config spi_##num##_config = {	               \
+	const static struct spi_sedi_config spi_##num##_config = {	       \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                        \
 		.spi_device = num, .irq_config = spi_##num##_irq_init,         \
 	};								       \
-	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);		       \
-	DEVICE_DT_INST_DEFINE(num,					       \
-			      &spi_sedi_init,				       \
-			      PM_DEVICE_GET(spi_##num),		               \
+	PM_DEVICE_DT_INST_DEFINE(spi_##num, spi_sedi_device_ctrl);	       \
+	SPI_DEVICE_DT_INST_DEFINE(num,					       \
+			      spi_sedi_init,				       \
+			      PM_DEVICE_DT_INST_GET(spi_##num),	               \
 			      &spi_##num##_data,			       \
 			      &spi_##num##_config,			       \
 			      POST_KERNEL,				       \

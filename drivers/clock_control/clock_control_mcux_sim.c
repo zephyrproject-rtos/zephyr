@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017,2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,17 @@ static int mcux_sim_on(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	if ((uint32_t)sub_system == KINETIS_SIM_ENET_CLK) {
 		clock_ip_name = kCLOCK_Enet0;
+	}
+#endif
+#ifdef CONFIG_COMPARATOR_NXP_CMP
+	if ((uint32_t)sub_system == KINETIS_SIM_CMP_CLK) {
+		clock_ip_name = kCLOCK_Cmp0;
+	}
+#endif
+
+#ifdef CONFIG_REGULATOR_NXP_VREFV1
+	if ((uint32_t)sub_system == KINETIS_SIM_VREF_CLK) {
+		clock_ip_name = kCLOCK_Vref0;
 	}
 #endif
 
@@ -67,7 +78,7 @@ static int mcux_sim_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ke1xf_sim), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ke1xf_sim))
 #define NXP_KINETIS_SIM_NODE DT_INST(0, nxp_kinetis_ke1xf_sim)
 #if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_source)
 	#define NXP_KINETIS_SIM_CLKOUT_SOURCE \
@@ -103,7 +114,7 @@ static int mcux_sim_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api mcux_sim_driver_api = {
+static DEVICE_API(clock_control, mcux_sim_driver_api) = {
 	.on = mcux_sim_on,
 	.off = mcux_sim_off,
 	.get_rate = mcux_sim_get_subsys_rate,

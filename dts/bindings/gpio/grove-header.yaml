@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    GPIO pins exposing on Grove 4 pins headers.
+    GPIO pins exposed on Grove 4 pins headers.
 
     This binding provides a nexus mapping for 2 pins as depicted below.
 

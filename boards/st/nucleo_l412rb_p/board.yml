@@ -1,5 +1,6 @@
 board:
   name: nucleo_l412rb_p
+  full_name: Nucleo L412RB-P
   vendor: st
   socs:
     - name: stm32l412xx

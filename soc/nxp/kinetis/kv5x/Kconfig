@@ -14,11 +14,9 @@ config SOC_SERIES_KINETIS_KV5X
 	select CPU_HAS_DCACHE
 	select CLOCK_CONTROL
 	select HAS_MCUX
-	select HAS_MCUX_ADC16
-	select HAS_MCUX_FTFX
-	select HAS_MCUX_FTM
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK

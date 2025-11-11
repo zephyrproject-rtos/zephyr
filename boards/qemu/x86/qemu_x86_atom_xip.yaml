@@ -2,12 +2,14 @@ identifier: qemu_x86/atom/xip
 name: QEMU Emulation for X86 (XIP enabled)
 type: qemu
 arch: x86
-simulation: qemu
+simulation:
+  - name: qemu
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:
     - xip
+    - llext
+ram: 3000
 vendor: qemu

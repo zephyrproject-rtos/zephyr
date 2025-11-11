@@ -1,7 +1,4 @@
-.. _colibri_imx7d:
-
-NXP i.MX 7 Computer on Module - Colibri iMX7
-############################################
+.. zephyr:board:: colibri_imx7d
 
 Overview
 ********
@@ -10,11 +7,6 @@ The i.MX7 SoC is a Hybrid multi-core processor composed by Single/Dual Cortex A7
 core and Single Cortex M4 core.
 Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
-
-
-.. image:: colibri_imx7d.jpg
-   :align: center
-   :alt: Colibri-iMX7
 
 Hardware
 ********
@@ -69,31 +61,7 @@ and Colibri Evaluation Board, see these references:
 Supported Features
 ==================
 
-The Colibri iMX7D Computer on Module with Colibri Evaluation Board configuration
-supports the following hardware features on the Cortex M4 Core:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/toradex/colibri_imx7d/colibri_imx7d_mcimx7d_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -132,6 +100,8 @@ the remaining are not used/tested.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Colibri iMX7D doesn't have QSPI flash for the M4 and it needs to be started by
 the A7 core. The A7 core is responsible to load the M4 binary application into the
@@ -310,7 +280,7 @@ from its currently loaded dtb file.
    };
 
    #Add these definitions under / { } just before the __symbols__
-   #Disgard the comments with #-->
+   #Discard the comments with #-->
    reserved-memory {
       #address-cells = <0x01>;
       #size-cells = <0x01>;

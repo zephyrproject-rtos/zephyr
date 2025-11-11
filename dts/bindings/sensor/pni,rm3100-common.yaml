@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Croxel, Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: PNI RM3100 3-axis Magnetometer.
+
+compatible: "pni,rm3100"
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  odr:
+    type: int
+    default: 0x96
+    description: |
+      The output data rate (ODR) of the sensor in Hz.
+      Default is power-on setting.
+    enum:
+      - 0x92 # RM3100_DT_ODR_600
+      - 0x93 # RM3100_DT_ODR_300
+      - 0x94 # RM3100_DT_ODR_150
+      - 0x95 # RM3100_DT_ODR_75
+      - 0x96 # RM3100_DT_ODR_37_5
+      - 0x97 # RM3100_DT_ODR_18
+      - 0x98 # RM3100_DT_ODR_9
+      - 0x99 # RM3100_DT_ODR_4_5
+      - 0x9A # RM3100_DT_ODR_2_3
+      - 0x9B # RM3100_DT_ODR_1_2
+      - 0x9C # RM3100_DT_ODR_0_6
+      - 0x9D # RM3100_DT_ODR_0_3
+      - 0x9E # RM3100_DT_ODR_0_015
+      - 0x9F # RM3100_DT_ODR_0_0075

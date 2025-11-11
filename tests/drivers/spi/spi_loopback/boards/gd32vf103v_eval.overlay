@@ -26,7 +26,7 @@
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 
-	dmas =  <&dma0 1 0>, <&dma0 2 0>;
+	dmas = <&dma0 1 0>, <&dma0 2 0>;
 	dma-names = "rx", "tx";
 
 	slow@0 {

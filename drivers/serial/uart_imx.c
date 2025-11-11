@@ -267,7 +267,7 @@ void uart_imx_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_imx_driver_api = {
+static DEVICE_API(uart, uart_imx_driver_api) = {
 	.poll_in  = uart_imx_poll_in,
 	.poll_out = uart_imx_poll_out,
 
@@ -326,7 +326,7 @@ static const struct uart_driver_api uart_imx_driver_api = {
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
-	DEVICE_DT_INST_DEFINE(n, &uart_imx_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, uart_imx_init, NULL,			\
 			&imx_uart_##n##_data, &imx_uart_##n##_config,	\
 			PRE_KERNEL_1,					\
 			CONFIG_SERIAL_INIT_PRIORITY,			\

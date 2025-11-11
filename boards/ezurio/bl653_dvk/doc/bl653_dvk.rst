@@ -1,7 +1,4 @@
-.. _bl653_dvk:
-
-Ezurio BL653 DVK
-################
+.. zephyr:board:: bl653_dvk
 
 Overview
 ********
@@ -27,12 +24,6 @@ This development kit has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl653_dvk.jpg
-     :align: center
-     :alt: BL653 Development Kit
-
-     BL653 Development Kit Board
-
 More information about the board can be found at the
 `BL653 website`_.
 
@@ -42,45 +33,8 @@ Hardware
 Supported Features
 ==================
 
-The BL653 DVK board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `BL653 website`_
 for a complete list of BL653 Development Kit board hardware features.
 
@@ -107,6 +61,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bl653_dvk`` board configuration can be built, flashed,
 and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
@@ -120,7 +76,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -151,9 +107,9 @@ Testing Bluetooth on the BL653 DVK
 Many of the Bluetooth examples will work on the BL653 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LEDs and buttons on the BL653 DVK

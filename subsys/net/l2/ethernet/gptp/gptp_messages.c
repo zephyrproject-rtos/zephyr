@@ -23,6 +23,7 @@ static bool ts_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 
 static const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
+static uint8_t ieee8021_oui[3] = { OUI_IEEE_802_1_COMMITTEE };
 
 #define NET_GPTP_INFO(msg, pkt)						\
 	if (CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
@@ -170,12 +171,14 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 
 	net_buf_add(pkt->buffer, sizeof(struct gptp_hdr) + extra_header);
 	net_pkt_set_ptp(pkt, true);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_PTP);
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = net_if_get_link_addr(iface)->len;
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+				net_if_get_link_addr(iface));
 
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&gptp_multicast_eth_addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)&gptp_multicast_eth_addr,
+			       sizeof(struct net_eth_addr));
 
 	return pkt;
 }
@@ -786,6 +789,14 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt)
 
 	/* If time-synchronization not enabled, drop packet. */
 	if (!port_ds->ptt_port_enabled) {
+		return;
+	}
+
+	/* Check if this is interval request. */
+	if (ntohs(sig->tlv.type) != GPTP_TLV_ORGANIZATION_EXT ||
+	    memcmp(sig->tlv.org_id, ieee8021_oui, sizeof(ieee8021_oui)) != 0 ||
+	    sig->tlv.org_sub_type[0] != 0 || sig->tlv.org_sub_type[1] != 0 ||
+	    sig->tlv.org_sub_type[2] != 2) {
 		return;
 	}
 

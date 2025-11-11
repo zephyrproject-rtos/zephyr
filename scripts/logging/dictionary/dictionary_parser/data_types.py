@@ -11,7 +11,8 @@ dictionary logging.
 
 import struct
 
-class DataTypes():
+
+class DataTypes:
     """Class regarding data types, their alignments and sizes"""
     INT = 0
     UINT = 1
@@ -30,14 +31,19 @@ class DataTypes():
 
         if database.is_tgt_64bit():
             self.add_data_type(self.LONG, "q")
+            self.add_data_type(self.ULONG, "Q")
             self.add_data_type(self.LONG_LONG, "q")
+            self.add_data_type(self.ULONG_LONG, "Q")
             self.add_data_type(self.PTR, "Q")
         else:
             self.add_data_type(self.LONG, "i")
+            self.add_data_type(self.ULONG, "I")
             self.add_data_type(self.LONG_LONG, "q")
+            self.add_data_type(self.ULONG_LONG, "Q")
             self.add_data_type(self.PTR, "I")
 
         self.add_data_type(self.INT, "i")
+        self.add_data_type(self.UINT, "I")
         self.add_data_type(self.DOUBLE, "d")
         self.add_data_type(self.LONG_DOUBLE, "d")
 
@@ -89,10 +95,6 @@ class DataTypes():
                 stack_min_align = 8
             else:
                 stack_min_align = 1
-
-        elif arch == "nios2":
-            need_further_align = False
-            stack_min_align = 1
 
         else:
             need_further_align = True

@@ -216,7 +216,7 @@ static int uart_rzt2m_irq_update(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api rzt2m_uart_api = {
+static DEVICE_API(uart, rzt2m_uart_api) = {
 	.poll_in = rzt2m_poll_in,
 	.poll_out = rzt2m_poll_out,
 	.err_check = rzt2m_err_check,
@@ -427,11 +427,9 @@ static void uart_rzt2m_isr(const struct device *dev)
 		.uart_cfg =                                                                        \
 			{                                                                          \
 				.baudrate = DT_INST_ENUM_IDX(n, current_speed),                    \
-				.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),    \
-				.stop_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),   \
-				.data_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8),   \
+				.parity = DT_INST_ENUM_IDX(n, parity),                             \
+				.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                       \
+				.data_bits = DT_INST_ENUM_IDX(n, data_bits),                       \
 			},                                                                         \
 	};                                                                                         \
 	UART_RZT2M_CONFIG_FUNC(n);                                                                 \
@@ -439,7 +437,7 @@ static void uart_rzt2m_isr(const struct device *dev)
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config_func = uart##n##_rzt2m_irq_config,                                     \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                  \
-	DEVICE_DT_INST_DEFINE(n, &rzt2m_uart_init, NULL, &rzt2m_uart_##n##data,                    \
+	DEVICE_DT_INST_DEFINE(n, rzt2m_uart_init, NULL, &rzt2m_uart_##n##data,                     \
 			      &rzt2m_uart_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &rzt2m_uart_api);
 

@@ -2,10 +2,9 @@ sample:
   description: posix env sample
   name: posix env
 common:
-  tags: posix env
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
+  tags:
+    - posix
+    - env
   integration_platforms:
     - native_sim
   harness: console

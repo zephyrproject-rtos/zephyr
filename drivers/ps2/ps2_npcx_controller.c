@@ -227,10 +227,12 @@ static int ps2_npcx_ctrl_is_rx_error(const struct device *dev)
 
 	status = inst->PSTAT & (BIT(NPCX_PSTAT_PERR) | BIT(NPCX_PSTAT_RFERR));
 	if (status) {
-		if (status & BIT(NPCX_PSTAT_PERR))
+		if (status & BIT(NPCX_PSTAT_PERR)) {
 			LOG_ERR("RX parity error");
-		if (status & BIT(NPCX_PSTAT_RFERR))
+		}
+		if (status & BIT(NPCX_PSTAT_RFERR)) {
 			LOG_ERR("RX Frame error");
+		}
 		return -EIO;
 	}
 
@@ -250,7 +252,11 @@ static void ps2_npcx_ctrl_isr(const struct device *dev)
 	 * ACH = 5 : Channel 3
 	 */
 	active_ch = GET_FIELD(inst->PSTAT, NPCX_PSTAT_ACH);
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+	active_ch = active_ch > 2 ? (active_ch - 1) : active_ch;
+#else
 	active_ch = active_ch > 2 ? (active_ch - 2) : (active_ch - 1);
+#endif
 	LOG_DBG("ACH: %d\n", active_ch);
 
 	/*
@@ -359,8 +365,9 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	 */
 	inst->PSIEN = BIT(NPCX_PSIEN_SOTIE) | BIT(NPCX_PSIEN_EOTIE) |
 		      BIT(NPCX_PSIEN_PS2_WUE);
-	if (config->clk_cfg.bus == NPCX_CLOCK_BUS_FREERUN)
+	if (config->clk_cfg.bus == NPCX_CLOCK_BUS_FREERUN) {
 		inst->PSIEN |= BIT(NPCX_PSIEN_PS2_CLK_SEL);
+	}
 	/* Enable weak internal pull-up */
 	inst->PSCON |= BIT(NPCX_PSCON_WPUED);
 	/* Enable shift mechanism */

@@ -180,9 +180,14 @@ static int bmi160_emul_io_spi(const struct emul *target, const struct spi_config
 		LOG_DBG("Unknown tx_bufs->count %d", count);
 		return -EIO;
 	}
-	tx = tx_bufs->buffers;
-	txd = &tx_bufs->buffers[1];
+	tx = tx_bufs ? tx_bufs->buffers : NULL;
+	txd = tx_bufs ? &tx_bufs->buffers[1] : NULL;
 	rxd = rx_bufs ? &rx_bufs->buffers[1] : NULL;
+
+	if (tx == NULL) {
+		LOG_DBG("tx cannot be NULL");
+		return -EIO;
+	}
 
 	if (tx->len != 1) {
 		LOG_DBG("Unknown tx->len %d", tx->len);

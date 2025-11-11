@@ -38,7 +38,7 @@ Building and Running for ST Nucleo L073RZ
 =========================================
 
 The sample can be built and executed for the
-:ref:`nucleo_l073rz_board` as follows:
+:zephyr:board:`nucleo_l073rz` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/adc/adc_dt

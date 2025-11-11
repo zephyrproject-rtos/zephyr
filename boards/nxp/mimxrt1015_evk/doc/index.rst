@@ -1,7 +1,4 @@
-.. _mimxrt1015_evk:
-
-NXP MIMXRT1015-EVK
-##################
+.. zephyr:board:: mimxrt1015_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1015 expands the i.MX RT crossover processor families by providing
 high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1015 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
-
-.. image:: mimxrt1015_evk.jpg
-   :align: center
-   :alt: MIMXRT1015-EVK
 
 Hardware
 ********
@@ -59,7 +52,7 @@ This platform has the following external memories:
 +--------------------+------------+-------------------------------------+
 | Device             | Controller | Status                              |
 +====================+============+=====================================+
-| AT25SF128A         | FLEXSPI    | Enabled via flash configurationn    |
+| AT25SF128A         | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -67,42 +60,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1015_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1015_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1015_evk/mimxrt1015_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1015_evk board.
 
 Connections and I/Os
 ====================
@@ -161,6 +127,8 @@ and the remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
@@ -179,8 +147,7 @@ Configuring a Debug Probe
 For the RT1015, J47/J48 are the SWD isolation jumpers, J42 is the DFU
 mode jumper, and J34 is the 10 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -203,7 +170,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
     :zephyr-app: samples/hello_world
@@ -218,6 +185,7 @@ see the following message in the terminal:
     ***** Booting Zephyr OS v1.14.0-rc1-1297-g312d75f2459e *****
     Hello World! mimxrt1015_evk
 
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1015-EVK Website:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/i.mx-rt1015-evaluation-kit:MIMXRT1015-EVK

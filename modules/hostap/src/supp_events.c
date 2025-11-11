@@ -42,6 +42,7 @@ static const struct wpa_supp_event_info {
 	{ "CTRL-EVENT-NETWORK-ADDED", SUPPLICANT_EVENT_NETWORK_ADDED },
 	{ "CTRL-EVENT-NETWORK-REMOVED", SUPPLICANT_EVENT_NETWORK_REMOVED },
 	{ "CTRL-EVENT-DSCP-POLICY", SUPPLICANT_EVENT_DSCP_POLICY },
+	{ "CTRL-EVENT-REGDOM-CHANGE", SUPPLICANT_EVENT_REGDOM_CHANGE },
 };
 
 static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
@@ -71,6 +72,8 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 {
 	switch (status) {
+	case WIFI_REASON_DISCONN_SUCCESS:
+		return WIFI_REASON_DISCONN_SUCCESS;
 	case WLAN_REASON_DEAUTH_LEAVING:
 		return WIFI_REASON_DISCONN_AP_LEAVING;
 	case WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY:
@@ -221,20 +224,24 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 	enum net_event_wifi_cmd event;
+	int status;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
 		return -EINVAL;
 	}
 
 	if (wpa_s->wpa_state >= WPA_COMPLETED) {
+		/* Disconnect event code & status */
+		status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT;
 		} else {
 			event = NET_EVENT_WIFI_CMD_DISCONNECT_RESULT;
 		}
 	} else {
+		/* Connect event code & status */
+		status = WIFI_STATUS_CONN_FAIL;
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 		} else {
@@ -270,7 +277,11 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 
 static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	return hostapd_get_he_twt_responder(wpa_s->ap_iface->bss[0], IEEE80211_MODE_AP);
+#else
+	return false;
+#endif
 }
 
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
@@ -278,9 +289,10 @@ int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum wifi_ap_status ap_status)
 {
 	struct wpa_supplicant *wpa_s = ctx;
+	char *ifname = wpa_s->ifname;
 	int status = ap_status;
 
-	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+	return supplicant_send_wifi_mgmt_event(ifname,
 					       event,
 					       (void *)&status,
 					       sizeof(int));
@@ -291,21 +303,24 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 					   void *data)
 {
 	struct sta_info *sta = data;
-	struct wpa_supplicant *wpa_s = ctx;
+	struct wpa_supplicant *ap_ctx = ctx;
+	char *ifname;
 	struct wifi_ap_sta_info sta_info = { 0 };
 
-	if (!wpa_s || !sta) {
+	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
+
+	ifname = ap_ctx->ifname;
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 
 	if (event == NET_EVENT_WIFI_CMD_AP_STA_CONNECTED) {
-		sta_info.link_mode = get_sta_link_mode(wpa_s, sta);
-		sta_info.twt_capable = is_twt_capable(wpa_s, sta);
+		sta_info.link_mode = get_sta_link_mode(ap_ctx, sta);
+		sta_info.twt_capable = is_twt_capable(ap_ctx, sta);
 	}
 
-	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+	return supplicant_send_wifi_mgmt_event(ifname,
 					       event,
 					       (void *)&sta_info,
 					       sizeof(sta_info));
@@ -335,6 +350,21 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 			iface,
 			*(int *)supplicant_status);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	case NET_EVENT_WIFI_CMD_SIGNAL_CHANGE:
+		net_mgmt_event_notify_with_info(NET_EVENT_WIFI_SIGNAL_CHANGE,
+						iface, NULL, 0);
+		break;
+	case NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED:
+		wifi_mgmt_raise_neighbor_rep_recv_event(
+			iface,
+			(char *)supplicant_status, len);
+		break;
+	case NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE:
+		net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NEIGHBOR_REP_COMP,
+						iface, NULL, 0);
+		break;
+#endif
 #ifdef CONFIG_AP
 	case NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT:
 		wifi_mgmt_raise_ap_enable_result_event(iface,
@@ -353,7 +383,7 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 				(struct wifi_ap_sta_info *)supplicant_status);
 		break;
 #endif /* CONFIG_AP */
-	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
+	case NET_EVENT_WIFI_CMD_SUPPLICANT:
 		event_data.data = &data;
 		if (supplicant_process_status(&event_data, (char *)supplicant_status) > 0) {
 			net_mgmt_event_notify_with_info(NET_EVENT_SUPPLICANT_INT_EVENT,

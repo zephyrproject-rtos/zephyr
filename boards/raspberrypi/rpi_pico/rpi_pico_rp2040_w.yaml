@@ -1,5 +1,5 @@
 identifier: rpi_pico/rp2040/w
-name: RaspberryPi-Pico-w
+name: Raspberry Pi Pico W
 type: mcu
 arch: arm
 flash: 2048
@@ -7,7 +7,6 @@ ram: 264
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - uart
   - gpio

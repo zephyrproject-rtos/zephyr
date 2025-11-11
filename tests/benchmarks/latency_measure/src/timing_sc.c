@@ -19,6 +19,8 @@ BENCH_BMEM uint64_t timestamp_overhead;
 BENCH_BMEM uint64_t user_timestamp_overhead;
 #endif
 
+#define OVERHEAD_CALC_ITER 10
+
 timing_t z_impl_timing_timestamp_get(void)
 {
 	return timing_counter_get();
@@ -37,17 +39,23 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 	uint32_t  num_iterations = (uint32_t)(uintptr_t)p1;
 	timing_t  start;
 	timing_t  finish;
+	uint64_t min_cycles = UINT64_MAX;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	start = timing_timestamp_get();
-	for (uint32_t i = 0; i < num_iterations; i++) {
-		timing_timestamp_get();
-	}
-	finish = timing_timestamp_get();
+	/* Repeat the overhead measurements for a few times to obtain the minimum overhead */
+	for (int n = 0; n < OVERHEAD_CALC_ITER; n++) {
+		start = timing_timestamp_get();
+		for (uint32_t i = 0; i < num_iterations; i++) {
+			timing_timestamp_get();
+		}
+		finish = timing_timestamp_get();
 
-	timestamp.cycles = timing_cycles_get(&start, &finish);
+		min_cycles = MIN(min_cycles, timing_cycles_get(&start, &finish));
+	}
+
+	timestamp.cycles = min_cycles;
 }
 
 void timestamp_overhead_init(uint32_t num_iterations)

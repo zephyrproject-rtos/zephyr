@@ -1,4 +1,5 @@
 # Copyright (c) 2018 omSquare s.r.o.
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM0 RTC
@@ -6,14 +7,124 @@ description: Atmel SAM0 RTC
 compatible: "atmel,sam0-rtc"
 
 include:
-  - name: rtc.yaml
+  - name: rtc-device.yaml
   - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
 
 properties:
   reg:
     required: true
 
-  clock-generator:
-    type: int
-    description: clock generator index
+  clocks:
     required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  systimer:
+    type: boolean
+    description: |
+      Selects RTC peripheral to be used as a system timer and replace
+      the ARM systick. When this option is selected the normal RTC
+      functionality is in exclusive mode and the normal RTC functions
+      will not be available.
+
+      The systimer exclusive functionality can be enabled using the
+      following devicetree entry:
+
+        &rtc {
+          status = "okay";
+          systimer;
+        };
+
+  cal-constant:
+    type: int
+    required: true
+    description: |
+      Define the constant used to calculate the calibration. More
+      information can be found in the datasheet of each SoC series
+      at RTC Frequency Correction topic.
+
+      Example:
+        Correction in ppm = (FREQCORR.VALUE * 1e6 ppm) / (8192 * 128)
+
+        &rtc {
+          cal-constant = <8192 * 128>;
+        };
+
+  counter-mode:
+    type: string
+    enum:
+      - "count-32"
+      - "count-16"
+      - "clock"
+    description: |
+      Configure the RTC counter operating mode. In mode 0, the counter
+      register is configured as a 32-bit counter. In mode 1, simmilar
+      to mode 0, the counter register is only 16-bit counter. In mode
+      2 the counter register is configured as a clock/calendar.
+
+        &rtc {
+          status = "okay";
+          counter-mode = "clock";
+          prescaler = <1024>;
+        };
+
+  prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+    description: |
+      Enable CLKOUT at given frequency. When disabled, CLKOUT pin is LOW.
+      The default is 0 and corresponds to the disable the CLKOUT signal.
+
+        &rtc {
+          status = "okay";
+          counter-mode = "clock";
+          prescaler = <1024>;
+        };
+
+  event-control-msk:
+    type: int
+    default: 0
+    description: |
+      Enable peripheral event sources by bitmask. By default all the channels
+      are always disabled.
+
+      Event Table:
+
+        bit   Event Source
+         0    Periodic Interval 0 Event Output
+         1    Periodic Interval 1 Event Output
+         2    Periodic Interval 2 Event Output
+         3    Periodic Interval 3 Event Output
+         4    Periodic Interval 4 Event Output
+         5    Periodic Interval 5 Event Output
+         6    Periodic Interval 6 Event Output
+         7    Periodic Interval 7 Event Output
+         8    Compare/Alarm 0 Event Output
+         9    Compare/Alarm 1 Event Output
+        14    Tamper Event Output
+        15    Overflow Event Output
+        16    Tamper Event Input
+
+      Example how to enable Compare/Alarm 0 Event Output:
+        &rtc {
+          event-control-msk = <100>;
+        };

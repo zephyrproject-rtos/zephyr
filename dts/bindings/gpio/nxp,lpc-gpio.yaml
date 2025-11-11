@@ -6,7 +6,7 @@
 # base address. It is the ports that are
 # functionally gpio devices.
 
-description: LPC GPIO node
+description: LPC GPIO
 
 compatible: "nxp,lpc-gpio"
 

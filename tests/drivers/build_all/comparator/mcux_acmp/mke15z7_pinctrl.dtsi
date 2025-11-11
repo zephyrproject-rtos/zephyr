@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/kinetis/MKE17Z256VLL7-pinctrl.h>
+
+&pinctrl {
+	cmp0_default: cmp0_default {
+		group0 {
+			pinmux = <ACMP0_IN0_PTA0>,
+				 <ACMP0_IN1_PTA1>,
+				 <ACMP0_OUT_PTA4>,
+				 <ACMP0_IN5_PTC2>;
+
+			drive-strength = "high";
+		};
+	};
+};

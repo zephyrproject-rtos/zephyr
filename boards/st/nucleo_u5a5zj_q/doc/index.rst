@@ -1,7 +1,4 @@
-.. _nucleo_u5a5zj_q_board:
-
-ST Nucleo U5A5ZJ Q
-##################
+.. zephyr:board:: nucleo_u5a5zj_q
 
 Overview
 ********
@@ -175,45 +172,7 @@ More information about STM32U5A5ZJ can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| BKP SRAM  | on-chip    | Backup SRAM                         |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_u5a5zj_q/nucleo_u5a5zj_q_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -239,7 +198,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PG2
 - LPUART_1_TX : PG7
 - LPUART_1_RX : PG8
-- SPI_1_NSS : PA4
+- SPI_1 nCS (GPIO) : PD14
 - SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
@@ -248,13 +207,15 @@ Default Zephyr Peripheral Mapping:
 - UART_2_TX : PD5
 - UART_2_RX : PD6
 - USER_PB : PC13
+- USB_DM : PA11
+- USB_DP : PA12
 
 System Clock
 ------------
 
 Nucleo U5A5ZJ Q System Clock could be driven by internal or external oscillator,
 as well as main PLL clock. By default System clock is driven by PLL clock at
-160MHz, driven by 4MHz medium speed internal oscillator.
+160MHz, driven by the 16MHz high speed oscillator.
 
 Serial Port
 -----------
@@ -262,16 +223,23 @@ Serial Port
 Nucleo U5A5ZJ Q board has 6 U(S)ARTs. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
 
-
 Backup SRAM
 -----------
 
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB50`` jumper on the back side of the board.
 
+Using USB
+---------
+
+USB 2.0 high speed (HS) operation requires the HSE clock source to be populated
+and enabled.  The Nucleo U5A5ZJ-Q includes the 16MHz oscillator and required
+jumper settings.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo U5A5ZJ-Q board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
@@ -279,14 +247,19 @@ This probe allows to flash the board using various tools.
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd (provided in Zephyr SDK), JLink and pyocd can also be
-used to flash and debug the board if west is told to use it as runner,
-which can be done by passing either ``-r openocd``, ``-r jlink`` or ``-r pyocd``.
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
-For pyocd additional target information needs to be installed.
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
+
+For pyOCD, additional target information needs to be installed.
 This can be done by executing the following commands.
 
 .. code-block:: console
@@ -300,7 +273,7 @@ Flashing an application to Nucleo U5A5ZJ Q
 
 Connect the Nucleo U5A5ZJ Q to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

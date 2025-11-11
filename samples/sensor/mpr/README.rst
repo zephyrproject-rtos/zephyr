@@ -1,7 +1,8 @@
-.. _mpr-sample:
+.. zephyr:code-sample:: mpr
+   :name: MPR Pressure Sensor
+   :relevant-api: sensor_interface
 
-MPR Pressure Sensor
-###################
+   Get atmospheric pressure data from an MPR pressure sensor.
 
 Overview
 ********
@@ -26,7 +27,7 @@ Building and Running
 This project outputs sensor data to the console. It requires a sensor from the
 MPR series.
 It does not work on QEMU.
-In the sample below the :ref:`arduino_due` board is used.
+In the sample below the :zephyr:board:`arduino_due` board is used.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mpr

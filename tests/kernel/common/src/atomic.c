@@ -28,7 +28,12 @@ static struct k_thread thread[THREADS_NUM];
 atomic_t total_atomic;
 
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_atomic_ops_tests Atomic Operations
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_atomic_ops_tests
  * @{
  */
 
@@ -92,7 +97,6 @@ atomic_t total_atomic;
  * atomic_test_and_set_bit(), atomic_clear_bit(), atomic_set_bit(),
  * ATOMIC_DEFINE
  *
- * @ingroup kernel_common_tests
  */
 ZTEST_USER(atomic, test_atomic)
 {
@@ -312,7 +316,6 @@ void atomic_handler(void *p1, void *p2, void *p3)
  * In this time, the two sub threads will be scheduled separately
  * according to the time slice.
  *
- * @ingroup kernel_common_tests
  */
 ZTEST(atomic, test_threads_access_atomic)
 {
@@ -349,7 +352,6 @@ ZTEST(atomic, test_threads_access_atomic)
  *	in a non-atomic manner (as long as it is logically safe)
  *	and expect its value to match the result of the similar atomic increment.
  *
- * @ingroup kernel_common_tests
  */
 ZTEST(atomic, test_atomic_overflow)
 {
@@ -383,8 +385,8 @@ ZTEST(atomic, test_atomic_overflow)
 		atomic_value);
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(atomic, NULL, common_setup, NULL, NULL, NULL);
 /**
  * @}
  */
+extern void *common_setup(void);
+ZTEST_SUITE(atomic, NULL, common_setup, NULL, NULL, NULL);

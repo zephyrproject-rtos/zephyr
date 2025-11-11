@@ -19,7 +19,8 @@
  * - no statistics collection
  */
 
-#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
+#include <zephyr/devicetree.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_gmac)
 #define DT_DRV_COMPAT atmel_sam_gmac
 #else
 #define DT_DRV_COMPAT atmel_sam0_gmac
@@ -31,6 +32,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
@@ -59,12 +61,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/irq.h>
 
-#ifdef __DCACHE_PRESENT
+#if defined(__DCACHE_PRESENT) || defined(CONFIG_DCACHE)
 static bool dcache_enabled;
 
 static inline void dcache_is_enabled(void)
 {
+#ifdef __DCACHE_PRESENT
 	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
+#else
+	dcache_enabled = true;
+#endif
 }
 static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 {
@@ -76,7 +82,7 @@ static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_invd_range((uint32_t *)start_addr, size_full);
 }
 
 static inline void dcache_clean(uint32_t addr, uint32_t size)
@@ -89,7 +95,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_flush_range((uint32_t *)start_addr, size_full);
 }
 #else
 #define dcache_is_enabled()
@@ -101,6 +107,8 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
+#elif defined(CONFIG_SOC_SAMA7G54)
+#define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
 #endif
@@ -133,7 +141,17 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
-BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
+/* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
+ * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
+ */
+#ifndef GMAC_UR_MIM_RGMII
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
+#else
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 2
+#endif
+
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= SAM_GMAC_PHY_CONNECTION_TYPE_MAX,
+	     "Invalid PHY connection");
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
@@ -403,7 +421,7 @@ static inline void eth_sam_gmac_init_qav(Gmac *gmac)
 /*
  * Reset ring buffer
  */
-static void ring_buf_reset(struct ring_buf *rb)
+static void ring_buffer_reset(struct ring_buffer *rb)
 {
 	rb->head = 0U;
 	rb->tail = 0U;
@@ -412,7 +430,7 @@ static void ring_buf_reset(struct ring_buf *rb)
 /*
  * Get one 32 bit item from the ring buffer
  */
-static uint32_t ring_buf_get(struct ring_buf *rb)
+static uint32_t ring_buffer_get(struct ring_buffer *rb)
 {
 	uint32_t val;
 
@@ -428,7 +446,7 @@ static uint32_t ring_buf_get(struct ring_buf *rb)
 /*
  * Put one 32 bit item into the ring buffer
  */
-static void ring_buf_put(struct ring_buf *rb, uint32_t val)
+static void ring_buffer_put(struct ring_buffer *rb, uint32_t val)
 {
 	rb->buf[rb->head] = val;
 	MODULO_INC(rb->head, rb->len);
@@ -528,9 +546,9 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	/* Reset TX frame list */
-	ring_buf_reset(&queue->tx_frag_list);
+	ring_buffer_reset(&queue->tx_frag_list);
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	ring_buf_reset(&queue->tx_frames);
+	ring_buffer_reset(&queue->tx_frames);
 #endif
 #endif
 }
@@ -721,14 +739,14 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 		k_sem_give(&queue->tx_desc_sem);
 
 		/* Release net buffer to the buffer pool */
-		frag = UINT_TO_POINTER(ring_buf_get(&queue->tx_frag_list));
+		frag = UINT_TO_POINTER(ring_buffer_get(&queue->tx_frag_list));
 		net_pkt_frag_unref(frag);
 		LOG_DBG("Dropping frag %p", frag);
 
 		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			/* Release net packet to the packet pool */
-			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
+			pkt = UINT_TO_POINTER(ring_buffer_get(&queue->tx_frames));
 
 #if defined(CONFIG_NET_GPTP)
 			hdr = check_gptp_msg(get_iface(dev_data),
@@ -756,10 +774,10 @@ static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	struct net_buf *frag;
-	struct ring_buf *tx_frag_list = &queue->tx_frag_list;
+	struct ring_buffer *tx_frag_list = &queue->tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct net_pkt *pkt;
-	struct ring_buf *tx_frames = &queue->tx_frames;
+	struct ring_buffer *tx_frames = &queue->tx_frames;
 #endif
 #endif
 
@@ -1083,12 +1101,22 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	case 1: /* rmii */
 		gmac->GMAC_UR = 0x0;
 		break;
+#ifdef GMAC_UR_MIM_RGMII
+	case 2: /* rgmii */
+		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
+		break;
+#endif
 	default:
 		/* Build assert at top of file should catch this case */
 		LOG_ERR("The phy connection type is invalid");
 
 		return -EINVAL;
 	}
+#ifdef GMAC_UR_REFCLK_Msk
+	if (DT_INST_ENUM_IDX(0, ref_clk_source)) {
+		gmac->GMAC_UR |= GMAC_UR_REFCLK_Msk;
+	}
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
@@ -1495,7 +1523,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			 "tx_desc_list overflow");
 
 		/* Account for a sent frag */
-		ring_buf_put(&queue->tx_frag_list, POINTER_TO_UINT(frag));
+		ring_buffer_put(&queue->tx_frag_list, POINTER_TO_UINT(frag));
 
 		/* frag is internally queued, so it requires to hold a reference */
 		net_pkt_frag_ref(frag);
@@ -1533,7 +1561,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Account for a sent frame */
-	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
+	ring_buffer_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
 
 	/* pkt is internally queued, so it requires to hold a reference */
 	net_pkt_ref(pkt);
@@ -1718,6 +1746,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
+#elif defined(CONFIG_SOC_SAMA7G54)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1792,6 +1821,13 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
+static const struct device *eth_sam_gmac_get_phy(const struct device *dev)
+{
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 static void eth0_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1821,6 +1857,9 @@ static void eth0_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
+#ifdef CONFIG_SOC_SAMA7G54
+		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
+#endif
 		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
 		| GMAC_MAX_FRAME_SIZE;
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
@@ -1894,16 +1933,13 @@ static void eth0_iface_init(struct net_if *iface)
 #endif
 #endif
 	if (device_is_ready(cfg->phy_dev)) {
+		net_if_carrier_off(iface);
+
 		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed,
 				      (void *)dev);
 
 	} else {
 		LOG_ERR("PHY device not ready");
-	}
-
-	/* Do not start the interface until PHY link is up */
-	if (!(dev_data->link_up)) {
-		net_if_carrier_off(iface);
 	}
 
 	init_done = true;
@@ -1913,7 +1949,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -1924,7 +1960,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
@@ -2097,6 +2133,7 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_sam_gmac_get_capabilities,
 	.set_config = eth_sam_gmac_set_config,
 	.get_config = eth_sam_gmac_get_config,
+	.get_phy = eth_sam_gmac_get_phy,
 	.send = eth_tx,
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
@@ -2150,10 +2187,10 @@ static void eth0_irq_config(void)
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_sam_dev_cfg eth0_config = {
-	.regs = (Gmac *)DT_INST_REG_ADDR(0),
+	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
-	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
+	.clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(0)),
 #endif
 	.config_func = eth0_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))
@@ -2390,7 +2427,7 @@ static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ptp_clock_driver_api ptp_api = {
+static DEVICE_API(ptp_clock, ptp_api) = {
 	.set = ptp_clock_sam_gmac_set,
 	.get = ptp_clock_sam_gmac_get,
 	.adjust = ptp_clock_sam_gmac_adjust,

@@ -7,8 +7,9 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
+  - flash
   - usb_device
+  - usbd
   - watchdog
 vendor: nxp

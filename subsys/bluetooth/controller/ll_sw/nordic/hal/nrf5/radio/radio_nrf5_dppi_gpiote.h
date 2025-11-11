@@ -66,10 +66,6 @@ static inline void hal_fem_ppi_setup(void)
 	hal_gpiote_tasks_setup(gpiote_pdn.p_reg, gpiote_ch_pdn,
 			       IS_ENABLED(HAL_RADIO_GPIO_NRF21540_PDN_POL_INV),
 			       HAL_ENABLE_FEM_PPI, HAL_DISABLE_FEM_PPI);
-
-	hal_gpiote_tasks_setup(gpiote_csn.p_reg, gpiote_ch_csn,
-			       IS_ENABLED(HAL_RADIO_GPIO_NRF21540_CSN_POL_INV),
-			       HAL_ENABLE_FEM_PPI, HAL_DISABLE_FEM_PPI);
 }
 
 #endif /* HAL_RADIO_FEM_IS_NRF21540 */

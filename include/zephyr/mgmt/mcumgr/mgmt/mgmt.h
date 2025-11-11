@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr mgmt API
- * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
+ * @brief MCUmgr Management API
+ * @defgroup mcumgr_mgmt_api Management
  * @since 1.11
  * @version 1.0.0
  * @ingroup mcumgr
@@ -72,7 +72,9 @@ typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
  * Set use_custom_payload to true when using a user defined payload type
  */
 struct mgmt_handler {
+	/** Read handler */
 	mgmt_handler_fn mh_read;
+	/** Write handler */
 	mgmt_handler_fn mh_write;
 #if defined(CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA)
 	void *user_data;
@@ -104,6 +106,11 @@ struct mgmt_group {
 	/** Should be true when using user defined payload */
 	bool custom_payload;
 #endif
+
+#if IS_ENABLED(CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME)
+	/** NULL-terminated name of group */
+	const char *mg_group_name;
+#endif
 };
 
 /**
@@ -119,6 +126,24 @@ void mgmt_register_group(struct mgmt_group *group);
  * @param group	The group to register.
  */
 void mgmt_unregister_group(struct mgmt_group *group);
+
+/**
+ * @brief Group iteration callback
+ *
+ * @param group Group
+ * @param user_data User-supplied data
+ *
+ * @return true to continue with the foreach callback, false to abort
+ */
+typedef bool (*mgmt_groups_cb_t)(const struct mgmt_group *group, void *user_data);
+
+/**
+ * @brief Iterate over groups
+ *
+ * @param user_cb User callback
+ * @param user_data User-supplied data
+ */
+void mgmt_groups_foreach(mgmt_groups_cb_t user_cb, void *user_data);
 
 /**
  * @brief Finds a registered command handler.

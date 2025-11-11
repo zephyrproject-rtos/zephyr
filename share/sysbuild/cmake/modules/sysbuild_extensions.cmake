@@ -216,7 +216,7 @@ endfunction()
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
-  set(app_types MAIN BOOTLOADER)
+  set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
@@ -261,7 +261,7 @@ function(ExternalZephyrProject_Add)
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
   set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
   # User defined `-D<image>_CONF_FILE=<file.conf>` takes precedence over anything else.
-  if (NOT ${ZBUILD_APPLICATION}_CONF_FILE)
+  if(NOT ${ZBUILD_APPLICATION}_CONF_FILE)
     if(EXISTS ${sysbuild_image_name_conf_dir})
       set(${ZBUILD_APPLICATION}_APPLICATION_CONFIG_DIR ${sysbuild_image_name_conf_dir}
           CACHE INTERNAL "Application configuration dir controlled by sysbuild"
@@ -275,7 +275,7 @@ function(ExternalZephyrProject_Add)
                 NAMES ${ZBUILD_APPLICATION}.conf SUFFIX ${FILE_SUFFIX}
     )
 
-    if (NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
+    if(NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
         AND EXISTS ${sysbuild_image_conf_fragment}
     )
       set(${ZBUILD_APPLICATION}_EXTRA_CONF_FILE ${sysbuild_image_conf_fragment}
@@ -283,12 +283,23 @@ function(ExternalZephyrProject_Add)
       )
     endif()
 
-    # Check for overlay named <ZBUILD_APPLICATION>.overlay.
-    set(sysbuild_image_dts_overlay ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
-    if (NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE AND EXISTS ${sysbuild_image_dts_overlay})
-      set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${sysbuild_image_dts_overlay}
-          CACHE INTERNAL "devicetree overlay file defined by main application"
-      )
+    if(NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE)
+      # Check for overlay named <ZBUILD_APPLICATION>.overlay.
+      set(sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
+
+      # Check for overlay named <ZBUILD_APPLICATION>_<FILE_SUFFIX>.overlay.
+      if(FILE_SUFFIX)
+        list(PREPEND sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${FILE_SUFFIX}.overlay)
+      endif()
+
+      foreach(overlay_file ${sysbuild_image_dts_overlay_files})
+        if(EXISTS ${overlay_file})
+          set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${overlay_file}
+            CACHE INTERNAL "devicetree overlay file defined by main application"
+          )
+          break()
+        endif()
+      endforeach()
     endif()
   endif()
 
@@ -332,7 +343,7 @@ function(ExternalZephyrProject_Add)
       menuconfig
       hardenconfig
       guiconfig
-      ${EXTRA_KCONFIG_TARGETS}
+      $CACHE{EXTRA_KCONFIG_TARGETS}
       )
 
     if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
@@ -345,6 +356,16 @@ function(ExternalZephyrProject_Add)
       USES_TERMINAL
       )
   endforeach()
+
+  set(list_separator ",")
+  set(image_extra_kconfig_targets "-DEXTRA_KCONFIG_TARGETS=$CACHE{EXTRA_KCONFIG_TARGETS}")
+  string(REPLACE ";" "${list_separator}" image_extra_kconfig_targets "${image_extra_kconfig_targets}")
+  foreach(target $CACHE{EXTRA_KCONFIG_TARGETS})
+    list(APPEND image_extra_kconfig_targets
+         -DEXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}=$CACHE{EXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}}
+    )
+  endforeach()
+
   include(ExternalProject)
   set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
@@ -352,9 +373,11 @@ function(ExternalZephyrProject_Add)
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
     BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
+    LIST_SEPARATOR "${list_separator}"
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
                ${shared_cmake_vars_argument}
+               ${image_extra_kconfig_targets}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""
     BUILD_ALWAYS True
@@ -376,6 +399,17 @@ function(ExternalZephyrProject_Add)
 
   if(DEFINED ZBUILD_APP_TYPE)
     list(APPEND image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
+    set(image_default_dtc_overlay "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.overlay")
+
+    if(EXISTS ${image_default_dtc_overlay})
+      if(NOT ${image_default_dtc_overlay} IN_LIST ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE)
+        list(APPEND ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE ${image_default_dtc_overlay})
+        set(${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE
+            ${${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE}
+            CACHE INTERNAL "Application extra DTC overlay file" FORCE
+        )
+      endif()
+    endif()
   endif()
 
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT "${image_default}")
@@ -385,8 +419,17 @@ function(ExternalZephyrProject_Add)
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
     if(DEFINED ZBUILD_BOARD_REVISION)
-      # Use provided board revision
-      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION})
+      # Use provided board revision, HWMv2 requires adding version to the board, split elements
+      # up, attach version, then reassemble into a complete string
+      string(REPLACE "/" ";" split_board_qualifiers "${ZBUILD_BOARD}")
+      list(GET split_board_qualifiers 0 target_board)
+      set(target_board ${target_board}@${ZBUILD_BOARD_REVISION})
+      list(REMOVE_AT split_board_qualifiers 0)
+      list(PREPEND split_board_qualifiers ${target_board})
+      string(REPLACE ";" "/" board_qualifiers "${split_board_qualifiers}")
+      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${board_qualifiers})
+      set(split_board_qualifiers)
+      set(board_qualifiers)
     else()
       set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD})
     endif()
@@ -453,7 +496,7 @@ function(ExternalZephyrProject_Cmake)
                  "   ${image_banner_header}\n"
   )
 
-  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS)
+  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS LIST_SEPARATOR)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
 
   get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
@@ -471,6 +514,7 @@ function(ExternalZephyrProject_Cmake)
   string(CONFIGURE "${config_content}" config_content)
   file(WRITE ${dotconfigsysbuild} ${config_content})
 
+  string(REPLACE "${LIST_SEPARATOR}" "\\;" CMAKE_ARGS "${CMAKE_ARGS}")
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
@@ -490,6 +534,7 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+  zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
 
   # This custom target informs CMake how the BYPRODUCTS are generated if a target
   # depends directly on the BYPRODUCT instead of depending on the image target.
@@ -631,6 +676,10 @@ endfunction()
 
 function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
+endfunction()
+
+function(set_config_int image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=${value}\n")
 endfunction()
 
 # Usage:

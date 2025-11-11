@@ -5,8 +5,7 @@ tests:
     build_only: true
     tags: zbus
     platform_allow:
-      - native_posix
       - native_sim
-      - hifive1@B
+      - hifive1_revb
     integration_platforms:
       - native_sim

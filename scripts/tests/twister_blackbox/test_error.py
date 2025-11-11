@@ -7,13 +7,14 @@ Blackbox tests for twister's command line functions - simple does-error-out or n
 """
 
 import importlib
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
 import re
 
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+# pylint: disable=no-name-in-module
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.error import TwisterRuntimeError
 
@@ -45,7 +46,7 @@ class TestError:
         ),
         (
             '--overflow-as-errors',
-            r'always_overflow.dummy  ERROR Build failure \(build\)'
+            r'always_overflow.dummy ERROR Build failure \(build <zephyr>\)'
         )
     ]
 
@@ -65,13 +66,13 @@ class TestError:
         TESTDATA_1,
         ids=['valid', 'invalid', 'valid']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_test(self, out_path, testroot, test, expected_exception):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         args = []
         if testroot:
             args = ['-T', testroot]
-        args += ['-i', '--outdir', out_path, '--test', test, '-y'] + \
+        args += ['--detailed-test-id', '-i', '--outdir', out_path, '--test', test, '-y'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -93,11 +94,11 @@ class TestError:
         ],
     )
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_overflow_as_errors(self, capfd, out_path, switch, expected):
         path = os.path.join(TEST_DATA, 'tests', 'qemu_overflow')
         test_platforms = ['qemu_x86']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        args = ['--detailed-test-id', '--outdir', out_path, '-T', path, '-vv'] + \
                ['--build-only'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms

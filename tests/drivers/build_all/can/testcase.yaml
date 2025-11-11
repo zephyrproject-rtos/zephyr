@@ -21,7 +21,5 @@ tests:
     platform_allow: lpcxpresso55s28
   drivers.can.build_all.native_linux:
     platform_allow:
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64

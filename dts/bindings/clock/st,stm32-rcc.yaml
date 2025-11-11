@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 Reset and Clock controller node.
+  STM32 RCC (Reset and Clock controller).
+
   This node is in charge of system clock ('SYSCLK') source selection and controlling
   clocks for AHB (Advanced High Performance) and APB (Advanced Peripheral) bus domains.
 
@@ -20,25 +21,36 @@ description: |
            clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
            ahb-prescaler = <2>;
            clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
-           apb1-presacler = <1>;
-           apb2-presacler = <1>;
+           apb1-prescaler = <1>;
+           apb2-prescaler = <1>;
   }
 
   Specifying a gated clock:
 
-  To specify a gated clock, a peripheral should define a "clocks" property encoded
-  in the following way:
+  To specify a gated clock, a peripheral should define a "clocks" property such as:
   ... {
            ...
-           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+           clocks = <&rcc STM32_CLOCK(APB2, 5)>;
            ...
   }
-  After the phandle referring to rcc node, the first index specifies the registers of
-  the bus controlling the peripheral and the second index specifies the bit used to
-  control the peripheral clock in that bus register.
+
+  After the phandle referring to rcc node, use the STM32_CLOCK() macro which accepts
+  two parameters: the first specifies the bus on which the peripheral is attached, and
+  the second indicates the bit number controlling the peripheral clock gate in that
+  bus's control register in RCC. As an example, the snippet above indicates that the
+  peripheral gate is controlled by bit 5 in RCC_APB2ENR (USART6EN on STM32F401).
   The gated clock is required when accessing to the peripheral controller is needed
   (generally for configuring the device). If dual clock domain is not used, it is
   also used for peripheral operation.
+
+  Note: in situations where more than one bit is required, use the explicit form:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 ((1 << 14) | (1 << 7))>;
+           ...
+  }
+  where 14 and 7 are the bits that control the peripheral clock gate.
+  (You can have more than two bits, and they do not have to be contiguous).
 
   Specifying a domain clock source:
 
@@ -46,7 +58,7 @@ description: |
   clock property:
   ... {
            ...
-           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>,
+           clocks = <&rcc STM32_CLOCK(APB2, 5)>,
                         <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
            ...
   }
@@ -66,6 +78,17 @@ description: |
   Note 2: Default peripheral clock configuration (ie the one provided in *.dsti files)
           should be the one matching SoC reset state. Confere reference manual to check
           what is the reset value of the clock source for each peripheral.
+
+  Specifying a divided domain clock source:
+
+  Some peripherals are sourced through fixed clock dividers. For such cases there is
+  STM32_CLOCK_DIV() macro, which allows to specify such divider value. Selecting HSE/2 (HSE
+  frequency divided by 2) is done with following clock property:
+  ... {
+           ...
+           clocks = <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) ...>;
+           ...
+  }
 
 compatible: "st,stm32-rcc"
 

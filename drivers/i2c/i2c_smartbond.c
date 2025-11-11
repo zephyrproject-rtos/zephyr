@@ -247,8 +247,6 @@ static inline int i2c_smartbond_set_msg_flags(struct i2c_msg *msgs, uint8_t num_
 			if (current->flags & I2C_MSG_STOP) {
 				return -EINVAL;
 			}
-		} else {
-			current->flags |= I2C_MSG_STOP;
 		}
 		current++;
 	}
@@ -550,12 +548,15 @@ static void i2c_smartbond_isr(const struct device *dev)
 #define I2C_SMARTBOND_CONFIGURE(id)
 #endif
 
-static const struct i2c_driver_api i2c_smartbond_driver_api = {
+static DEVICE_API(i2c, i2c_smartbond_driver_api) = {
 	.configure = i2c_smartbond_configure,
 	.get_config = i2c_smartbond_get_config,
 	.transfer = i2c_smartbond_transfer,
 #ifdef CONFIG_I2C_CALLBACK
 	.transfer_cb = i2c_smartbond_transfer_cb,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 

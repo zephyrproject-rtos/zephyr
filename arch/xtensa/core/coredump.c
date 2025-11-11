@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/debug/coredump.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/offsets.h>
@@ -91,6 +92,10 @@ struct xtensa_arch_block {
  */
 static struct xtensa_arch_block arch_blk;
 
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+static uint32_t xtensa_coredump_fault_sp;
+#endif
+
 void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
@@ -126,8 +131,9 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 
 	/* Set in top-level CMakeLists.txt for use with Xtensa coredump */
 	arch_blk.toolchain = XTENSA_TOOLCHAIN_VARIANT;
-
-	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+	xtensa_coredump_fault_sp = (uint32_t)esf;
+#endif
 
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)esf;
 	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
@@ -142,7 +148,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	regs_blk_remaining = (int)num_high_regs / 4;
 
 	arch_blk.r.pc = bsa->pc;
-	__asm__ volatile("rsr.excvaddr %0" : "=r"(arch_blk.r.excvaddr));
+	arch_blk.r.excvaddr = bsa->excvaddr;
 	arch_blk.r.ps = bsa->ps;
 #if XCHAL_HAVE_S32C1I
 	arch_blk.r.scompare1 = bsa->scompare1;
@@ -152,6 +158,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.a1 = (uint32_t)((char *)bsa) + sizeof(*bsa);
 	arch_blk.r.a2 = bsa->a2;
 	arch_blk.r.a3 = bsa->a3;
+	arch_blk.r.exccause = bsa->exccause;
 	if (regs_blk_remaining > 0) {
 		regs_blk_remaining--;
 
@@ -189,3 +196,25 @@ uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_XTENSA;
 }
+
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+void arch_coredump_priv_stack_dump(struct k_thread *thread)
+{
+	struct xtensa_thread_stack_header *hdr_stack_obj;
+	uintptr_t start_addr, end_addr;
+
+	hdr_stack_obj = (struct xtensa_thread_stack_header *)thread->stack_obj;
+
+	start_addr = (uintptr_t)&hdr_stack_obj->privilege_stack[0];
+	end_addr = start_addr + sizeof(hdr_stack_obj->privilege_stack);
+
+	coredump_memory_dump(start_addr, end_addr);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
+
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
+{
+	return (thread == _current) ? xtensa_coredump_fault_sp : (uintptr_t)thread->switch_handle;
+}
+#endif /* CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP */

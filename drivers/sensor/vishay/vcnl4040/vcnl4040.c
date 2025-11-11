@@ -136,21 +136,21 @@ static int vcnl4040_reg_setup(const struct device *dev)
 
 	/*
 	 * scale the lux depending on the value of the integration time
-	 * see page 8 of the VCNL4040 application note:
-	 * https://www.vishay.com/docs/84307/designingvcnl4040.pdf
+	 * see page 12 of the VCNL4040 application note:
+	 * https://www.vishay.com/docs/84274/vcnl4040.pdf
 	 */
 	switch (config->als_it) {
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_80MS:
-		data->sensitivity = 0.12;
+		data->sensitivity = 0.1;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_160MS:
-		data->sensitivity = 0.06;
+		data->sensitivity = 0.05;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_320MS:
-		data->sensitivity = 0.03;
+		data->sensitivity = 0.025;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_640MS:
-		data->sensitivity = 0.015;
+		data->sensitivity = 0.0125;
 		break;
 	default:
 		data->sensitivity = 1.0;
@@ -189,14 +189,16 @@ static int vcnl4040_pm_action(const struct device *dev,
 	uint16_t ps_conf;
 
 	ret = vcnl4040_read(dev, VCNL4040_REG_PS_CONF, &ps_conf);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 	uint16_t als_conf;
 
 	ret = vcnl4040_read(dev, VCNL4040_REG_ALS_CONF, &als_conf);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 #endif
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -205,16 +207,18 @@ static int vcnl4040_pm_action(const struct device *dev,
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
 					ps_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 		/* Clear als shutdown */
 		als_conf &= ~VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
 					als_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -223,16 +227,18 @@ static int vcnl4040_pm_action(const struct device *dev,
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
 					ps_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 		/* Clear als shutdown bit 0 */
 		als_conf |= VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
 					als_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #endif
 		break;
 	default:
@@ -285,7 +291,7 @@ static int vcnl4040_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api vcnl4040_driver_api = {
+static DEVICE_API(sensor, vcnl4040_driver_api) = {
 	.sample_fetch = vcnl4040_sample_fetch,
 	.channel_get = vcnl4040_channel_get,
 #ifdef CONFIG_VCNL4040_TRIGGER

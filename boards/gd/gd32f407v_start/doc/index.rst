@@ -1,7 +1,4 @@
-.. _gd32f407v_start:
-
-GigaDevice GD32F407V-START
-##########################
+.. zephyr:board:: gd32f407v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32F407VE Cortex-M4 High Performance MCU.
 The GD32F407VE features a single-core ARM Cortex-M4 MCU which can run up
 to 168 MHz with flash accesses zero wait states, 3072kiB of Flash, 192kiB of
 SRAM and 82 GPIOs.
-
-.. image:: img/gd32f407v_start.webp
-     :align: center
-     :alt: gd32f407v_start
 
 Hardware
 ********
@@ -37,34 +30,7 @@ For more information about the GD32F407 SoC and GD32F407V-START board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-
-Other peripherals may be used if shields are connected to the board.
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -74,6 +40,8 @@ is USART0 with TX connected at PB6 and RX at PB7.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot jumpers as
 follows:
@@ -96,7 +64,7 @@ if not installed yet.
 Also, J-Link can be used to program the board via the SWD interface
 (PA13/SWDIO and PA14/SWCLK in the JP6 header).
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

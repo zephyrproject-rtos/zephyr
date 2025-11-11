@@ -6,8 +6,8 @@ common:
 tests:
   drivers.ieee802154.build.external:
     platform_allow:
-      - native_posix
       - native_sim
+      - native_sim/native/64
   drivers.ieee802154.build.cc13xx_cc26xx:
     platform_allow: cc1352r_sensortag
   drivers.ieee802154.build.kw41z:

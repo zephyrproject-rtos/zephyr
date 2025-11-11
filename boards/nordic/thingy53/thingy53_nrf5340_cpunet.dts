@@ -29,11 +29,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
@@ -43,14 +45,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpio1 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB red LED";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpio1 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB green LED";
 		};
+
 		blue_led: led_3 {
 			gpios = <&gpio1 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB blue LED";
@@ -60,9 +65,10 @@
 	nrf_radio_fem: fem {
 		compatible = "nordic,nrf21540-fem";
 		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		mode-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		pdn-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		spi-if = <&nrf_radio_fem_spi>;
 		supply-voltage-mv = <3000>;
 	};
 
@@ -71,7 +77,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
+		gpio-map = <5 0 &gpio1 1 0>,    /* P5, P1.01/GRANT */
+			   <6 0 &gpio1 0 0>,    /* P6, P1.00/REQ */
+			   <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
 			   <9 0 &gpio0 4 0>,	/* P9, P0.04/AIN0 */
 			   <15 0 &gpio0 8 0>,	/* P15, P0.08/TRACEDATA3 */
 			   <16 0 &gpio0 9 0>,	/* P16, P0.09/TRACEDATA2 */
@@ -111,8 +119,28 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&flash1 {
+/* Disabled by default as shares same GPIO lines as SPI peripherals on application core */
+fem_spi: &spi0 {
+	status = "disabled";
+	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 
+	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&radio {
+	/* Uncomment to enable SPI interface for FEM */
+	/* fem = <&nrf_radio_fem>; */
+};
+
+&flash1 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -122,18 +150,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x12000>;
+			reg = <0x0000C000 0x17000>;
 		};
-		slot1_partition: partition@1e000 {
+
+		slot1_partition: partition@23000 {
 			label = "image-1";
-			reg = <0x0001E000 0x12000>;
+			reg = <0x00023000 0x17000>;
 		};
-		scratch_partition: partition@30000 {
-			label = "image-scratch";
-			reg = <0x00030000 0xa000>;
-		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;
@@ -145,5 +172,5 @@
 	status = "okay";
 };
 
-/* Include shared RAM configuration file */
-#include "thingy53_nrf5340_shared_sram_planning_conf.dtsi"
+/* Include default shared RAM configuration file */
+#include <nordic/nrf5340_shared_sram_partition.dtsi>

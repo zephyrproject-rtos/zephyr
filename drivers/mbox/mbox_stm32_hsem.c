@@ -115,8 +115,9 @@ static void mbox_dispatcher(const struct device *dev)
 	struct mbox_stm32_hsem_data *data = dev->data;
 
 	/* Check semaphore rx_semid interrupt status */
-	if (!stm32_hsem_is_rx_interrupt_active())
+	if (!stm32_hsem_is_rx_interrupt_active()) {
 		return;
+	}
 
 	if (data->cb != NULL) {
 		data->cb(dev, MBOX_RX_HSEM_ID, data->user_data, NULL);
@@ -206,7 +207,7 @@ static int mbox_stm32_clock_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_WRN("Failed to enable clock.");
 		return -EIO;
 	}
@@ -240,7 +241,7 @@ static int mbox_stm32_hsem_init(const struct device *dev)
 	return ret;
 }
 
-static const struct mbox_driver_api mbox_stm32_hsem_driver_api = {
+static DEVICE_API(mbox, mbox_stm32_hsem_driver_api) = {
 	.send = mbox_stm32_hsem_send,
 	.register_callback = mbox_stm32_hsem_register_callback,
 	.mtu_get = mbox_stm32_hsem_mtu_get,

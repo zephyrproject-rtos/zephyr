@@ -39,8 +39,8 @@ work flow is illustrated in the diagram below.
        }
        domain [label="gpio_domain"]
 
-      action -> devA [label="pm_device_get()"]
-      devA:se -> domain:n [label="pm_device_get()"]
+      action -> devA [label="pm_device_runtime_get()"]
+      devA:se -> domain:n [label="pm_device_runtime_get()"]
 
       domain -> devB [label="action_cb(PM_DEVICE_ACTION_TURN_ON)"]
       domain:sw -> devA:sw [label="action_cb(PM_DEVICE_ACTION_TURN_ON)"]
@@ -131,13 +131,13 @@ Devices belonging to this device can be declared referring it in the
         &gpio0 {
                 compatible = "zephyr,gpio-emul";
                 gpio-controller;
-                power-domain = <&gpio_domain>;
+                power-domains = <&gpio_domain>;
         };
 
         &gpio1 {
                 compatible = "zephyr,gpio-emul";
                 gpio-controller;
-                power-domain = <&gpio_domain>;
+                power-domains = <&gpio_domain>;
         };
 
 All devices under a domain will be notified when the domain changes

@@ -6,15 +6,12 @@
 Tests for quarantine.py classes' methods
 """
 
-import mock
 import os
-import pytest
 import textwrap
+from unittest import mock
 
-from twisterlib.quarantine import QuarantineException, \
-                                  QuarantineElement, \
-                                  QuarantineData
-
+import pytest
+from twisterlib.quarantine import QuarantineData, QuarantineElement, QuarantineException
 
 TESTDATA_1 = [
     (
@@ -263,12 +260,12 @@ def test_quarantinedata_get_matched_quarantine(
             scenario=scenario,
             platform=platform,
             architecture=architecture,
-            simulation=simulation
+            simulator_name=simulation
         ) is None
     else:
         assert quarantine_data.get_matched_quarantine(
             scenario=scenario,
             platform=platform,
             architecture=architecture,
-            simulation=simulation
+            simulator_name=simulation
         ) == qlist[expected_idx]

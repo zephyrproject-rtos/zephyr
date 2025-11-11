@@ -1,18 +1,13 @@
-/* Copyright 2024 Cypress Semiconductor Corporation (an Infineon company) or
+/* Copyright 2025 Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-SECTIONS
-{
-    .app_header :
-    {
-	    KEEP(*(.app_header))
-    } > APP_HEADER_FLASH
-
-   /* Cortex-M33 bootstrap code area */
-    .bootstrapText :
+    /* Cortex-M33 bootstrap code area */
+    bootstrap.text_lma = BS_CODE_LMA_CBUS;
+    bootstrap.text_vma = BS_CODE_VMA_CBUS;
+    .bootstrapText (bootstrap.text_vma) : AT (bootstrap.text_lma)
     {
         . = ALIGN(4);
         __bootstrapText_begin = .;
@@ -49,9 +44,11 @@ SECTIONS
 
         . = ALIGN(4);
         __bootstrapText_end = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    }
 
-    .bootstrapzero.table :
+    bootstrap.zerotable.vma = (__bootstrapText_end);
+    bootstrap.zerotable.lma = (bootstrap.text_lma + (__bootstrapText_end - __bootstrapText_begin));
+    .bootstrapzero.table (bootstrap.zerotable.vma): AT (bootstrap.zerotable.lma)
     {
         . = ALIGN(4);
         __bootstrapzero_table_start__ = .;
@@ -59,9 +56,11 @@ SECTIONS
         LONG ((__bootstrap_bss_end__ - __bootstrap_bss_start__)/4)
         . = ALIGN(4);
         __bootstrapzero_table_end__ = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    }
 
-    .bootstrapData :
+    bootstrap.data.vma = ((__bootstrapzero_table_end__ - RAM_START_ADDR_CBUS) + RAM_START_ADDR_SAHB); /* CBUS -> SAHB */
+    bootstrap.data.lma = (bootstrap.zerotable.lma + (__bootstrapzero_table_end__ - __bootstrapzero_table_start__));
+    .bootstrapData (bootstrap.data.vma): AT (bootstrap.data.lma)
     {
         __bootstrapData_start__ = .;
         . = ALIGN(4);
@@ -85,9 +84,9 @@ SECTIONS
 
         . = ALIGN(4);
         __bootstrapData_end__ = .;
-    } > BOOTSTRAP_RAM AT>BOOTSTRAP_FLASH
+    } > BOOTSTRAP_RAM
 
-    .bootstrapBss (NOLOAD):
+    .bootstrapBss (__bootstrapData_end__) (NOLOAD):
     {
         . = ALIGN(4);
         __bootstrap_bss_start__ = .;
@@ -111,4 +110,3 @@ SECTIONS
         . = ALIGN(4);
         __bootstrap_bss_end__ = .;
     } > BOOTSTRAP_RAM
-}

@@ -1,0 +1,48 @@
+board:
+  name: bl54l15u_dvk
+  full_name: BL54L15u DVK
+  vendor: ezurio
+  socs:
+    - name: nrf54l15
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - bl54l15u_dvk/nrf54l15/cpuapp
+              - bl54l15u_dvk/nrf54l15/cpuapp/ns
+              - bl54l15u_dvk/nrf54l15/cpuflpr
+              - bl54l15u_dvk/nrf54l15/cpuflpr/xip
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - bl54l15u_dvk/nrf54l15/cpuapp
+              - bl54l15u_dvk/nrf54l15/cpuapp/ns
+              - bl54l15u_dvk/nrf54l15/cpuflpr
+              - bl54l15u_dvk/nrf54l15/cpuflpr/xip
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - bl54l15u_dvk/nrf54l15/cpuapp
+              - bl54l15u_dvk/nrf54l15/cpuapp/ns
+              - bl54l15u_dvk/nrf54l15/cpuflpr
+              - bl54l15u_dvk/nrf54l15/cpuflpr/xip

@@ -1,7 +1,7 @@
 .. _rk043fn02h_ct:
 
-RK043FN02H-CT Parallel Display
-##############################
+NXP RK043FN02H-CT Parallel Display
+##################################
 
 Overview
 ********
@@ -95,6 +95,9 @@ example:
    :board: mimxrt1060_evk
    :shield: rk043fn02h_ct
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

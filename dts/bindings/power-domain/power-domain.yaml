@@ -6,3 +6,7 @@ description: Properties for power domains
 compatible: "power-domain"
 
 include: base.yaml
+
+properties:
+  "#power-domain-cells":
+    const: 0

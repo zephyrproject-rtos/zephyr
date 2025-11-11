@@ -16,12 +16,8 @@
 #define ATMEL_OUI_B1 0x04
 #define ATMEL_OUI_B2 0x25
 
-/* This option enables support to push multiple packets to the DMA engine.
- * This currently doesn't work given the current version of net_pkt or
- * net_buf does not allowed access from multiple threads. This option is
- * therefore currently disabled.
- */
-#define GMAC_MULTIPLE_TX_PACKETS 0
+/* This option enables support to push multiple packets to the DMA engine. */
+#define GMAC_MULTIPLE_TX_PACKETS 1
 
 #define GMAC_MTU NET_ETH_MTU
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)
@@ -34,8 +30,12 @@
 #define GMAC_QUEUE_NUM                  DT_INST_PROP(0, num_queues)
 #define GMAC_PRIORITY_QUEUE_NUM         (GMAC_QUEUE_NUM - 1)
 #if (GMAC_PRIORITY_QUEUE_NUM >= 1)
+#ifdef CONFIG_SOC_SAMA7G54
+/* Do not check the queue numbers due to they are different for GMAC0 (6) and GMAC1 (2) */
+#else
 BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 	     "GMAC_QUEUE_NUM doesn't match soc header");
+#endif
 #endif
 /** Number of priority queues used */
 #define GMAC_ACTIVE_QUEUE_NUM           (CONFIG_ETH_SAM_GMAC_QUEUES)
@@ -164,8 +164,12 @@ BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 		(GMAC_IER_RCOMP | GMAC_INT_RX_ERR_BITS | \
 		 GMAC_IER_TCOMP | GMAC_INT_TX_ERR_BITS | GMAC_IER_HRESP)
 
+#ifdef GMAC_IERPQ_ROVR
 #define GMAC_INTPQ_RX_ERR_BITS \
 		(GMAC_IERPQ_RXUBR | GMAC_IERPQ_ROVR)
+#else
+#define GMAC_INTPQ_RX_ERR_BITS GMAC_IERPQ_RXUBR
+#endif
 #define GMAC_INTPQ_TX_ERR_BITS \
 		(GMAC_IERPQ_RLEX | GMAC_IERPQ_TFC)
 #define GMAC_INTPQ_EN_FLAGS \
@@ -208,7 +212,7 @@ enum queue_idx {
 #endif
 
 /** Minimal ring buffer implementation */
-struct ring_buf {
+struct ring_buffer {
 	uint32_t *buf;
 	uint16_t len;
 	uint16_t head;
@@ -242,9 +246,9 @@ struct gmac_queue {
 	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-	struct ring_buf tx_frag_list;
+	struct ring_buffer tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct ring_buf tx_frames;
+	struct ring_buffer tx_frames;
 #endif
 #endif
 

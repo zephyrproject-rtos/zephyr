@@ -8,7 +8,7 @@ tests:
       - bcm958402m2/bcm58402/m7
       - bcm958401m2
     integration_platforms:
-      - qemu_xtensa
+      - qemu_xtensa/dc233c
       - qemu_cortex_a53
       - nsim/nsim_em
       - qemu_x86
@@ -23,7 +23,7 @@ tests:
       - bcm958402m2/bcm58402/m7
       - bcm958401m2
     integration_platforms:
-      - qemu_xtensa
+      - qemu_xtensa/dc233c
       - qemu_cortex_a53
       - nsim/nsim_em
       - qemu_x86

@@ -1,0 +1,224 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/mimx9131cvvxj-pinctrl.dtsi>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
+				 <&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <&iomuxc1_uart2_rxd_lpuart_rx_lpuart2_rx>,
+				 <&iomuxc1_uart2_txd_lpuart_tx_lpuart2_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	pinmux_usdhc1: pinmux_usdhc1 {
+		group0 {
+			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
+				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+			drive-strength = "x1";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
+				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+			drive-strength = "x1";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc1_100mhz: pinmux_usdhc1_100mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
+				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+			drive-strength = "x3";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
+				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+			drive-strength = "x3";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc1_200mhz: pinmux_usdhc1_200mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
+				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+			drive-strength = "x6";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
+				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+			drive-strength = "x6";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc2: pinmux_usdhc2 {
+		group0 {
+			pinmux = <&iomuxc1_sd2_clk_usdhc_clk_usdhc2_clk>;
+			drive-strength = "x1";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
+				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+			drive-strength = "x1";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <&iomuxc1_sd2_vselect_usdhc_vselect_usdhc2_vselect>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+		};
+
+		group3 {
+			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
+				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+			bias-pull-up;
+		};
+	};
+
+	pinmux_usdhc2_100mhz: pinmux_usdhc2_100mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd2_clk_usdhc_clk_usdhc2_clk>;
+			drive-strength = "x3";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
+				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+			drive-strength = "x3";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <&iomuxc1_sd2_vselect_usdhc_vselect_usdhc2_vselect>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+		};
+
+		group3 {
+			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
+				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+			bias-pull-up;
+		};
+	};
+
+	pinmux_usdhc2_200mhz: pinmux_usdhc2_200mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd2_clk_usdhc_clk_usdhc2_clk>;
+			drive-strength = "x6";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
+				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+			drive-strength = "x6";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <&iomuxc1_sd2_vselect_usdhc_vselect_usdhc2_vselect>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+		};
+
+		group3 {
+			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
+				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+			drive-strength = "x4";
+			slew-rate = "slightly_fast";
+			bias-pull-up;
+		};
+	};
+};

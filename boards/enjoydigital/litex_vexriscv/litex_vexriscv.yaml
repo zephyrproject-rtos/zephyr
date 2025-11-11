@@ -12,8 +12,12 @@ toolchain:
   - zephyr
 ram: 262144
 supported:
+  - gpio
+  - uart
   - spi
   - i2s
+  - i2c
+  - watchdog
 testing:
   ignore_tags:
     - bluetooth

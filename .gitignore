@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
 *.o
 *.a
 *.d
@@ -55,12 +58,25 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+.envrc
 .DS_Store
 .clangd
 new.info
 
+# Cargo drops lock files in projects to capture resolved dependencies.
+# We don't want to record these.
+Cargo.lock
+
+# Cargo encourages a .cargo/config.toml file to symlink to a generated file.  Don't save these.
+.cargo/
+
+# Normal west builds will place the Rust target directory under the build directory.  However,
+# sometimes IDEs and such will litter these target directories as well.
+target/
+
 # CI output
 compliance.xml
+dts_linter.patch
 _error.types
 
 # Tag files
@@ -73,10 +89,13 @@ tags
 .idea
 
 # from check_compliance.py
+# zephyr-keep-sorted-start
 BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
+ClangFormat.txt
 DevicetreeBindings.txt
+DevicetreeLinting.txt
 GitDiffCheck.txt
 Gitlint.txt
 Identity.txt
@@ -86,8 +105,21 @@ KconfigBasic.txt
 KconfigBasicNoModules.txt
 KconfigHWMv2.txt
 KeepSorted.txt
+LicenseAndCopyrightCheck.txt
 MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
+PythonCompat.txt
+Ruff.txt
+SphinxLint.txt
+SysbuildKconfig.txt
+SysbuildKconfigBasic.txt
+SysbuildKconfigBasicNoModules.txt
+TextEncoding.txt
 YAMLLint.txt
+ZephyrModuleFile.txt
+# zephyr-keep-sorted-stop
+
+# Node dependecies
+node_modules

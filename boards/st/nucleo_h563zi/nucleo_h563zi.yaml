@@ -4,13 +4,14 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-ram: 640
+ram: 256
 flash: 2048
 supported:
   - arduino_gpio
   - gpio
   - arduino_serial
   - arduino_spi
+  - backup_sram
   - can
   - gpio
   - uart
@@ -22,7 +23,7 @@ supported:
   - counter
   - spi
   - usb_device
-  - usb
   - rtc
   - i2c
+  - i3c
 vendor: st

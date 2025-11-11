@@ -1,7 +1,7 @@
 .. _nrf54l15bsim:
 
-NRF54L15 simulated boards (BabbleSim)
-#####################################
+NRF54L15 simulated board (BabbleSim)
+####################################
 
 .. contents::
    :depth: 1
@@ -12,7 +12,7 @@ NRF54L15 simulated boards (BabbleSim)
 Overview
 ********
 
-To allow simulating nRF54L15 SOCs a Zephyr target boards is provided: the
+To allow simulating nRF54L15 SOCs, a Zephyr target board is provided: the
 ``nrf54l15bsim/nrf54l15/cpuapp``.
 
 This uses `BabbleSim`_ to simulate the radio activity, and the
@@ -21,41 +21,43 @@ run applications natively on the development system. This has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
-Just like for the nrf54l15pdk target,
+Just like for the nrf54l15dk target,
 the nrf54l15bsim/nrf54l15/cpuapp build target provides support for the application core,
 on the simulated nRF54L15 SOC.
 
 .. note::
 
+   Unlike real nRF54L15 devices, the nrf54l15bsim target has unlimited RAM, and code does not
+   occupy its RRAM. Therefore, as the nRF54L15, nRF54L10 and nRF54L05 SOCs only differ in the amount
+   of available RAM and RRAM either can be simulated using the nrf54l15bsim.
+
+.. note::
+
    This simulated target does **not** yet support targeting the cpuflpr core.
 
-.. warning::
+This board includes models of some of the nRF54L15 SOC peripherals:
 
-   This target is experimental, and even though it includes models of the RADIO, it does not yet
-   include models of the AAR, CCM or ECB peripherals, so the BLE and 802.15.4 stacks can only be
-   run without encryption or privacy features so far.
-
-This boards include models of some of the nRF54L15 SOC peripherals:
-
+* AAR (Accelerated Address Resolver)
+* CCM (AES CCM mode encryption)
 * CLOCK (Clock control)
+* CRACEN (Crypto Accelerator Engine)
 * DPPI (Distributed Programmable Peripheral Interconnect)
+* ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* GPIO & GPIOTE
 * GRTC (Global Real-time Counter)
 * PPIB (PPI Bridge)
 * RADIO
 * RRAMC (Resistive RAM Controller)
-* RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * TIMER
+* UARTE (UART with Easy DMA)
 * UICR (User Information Configuration Registers)
 
-and will use the same drivers as the nrf54l15pdk targets for these.
+and will use the same drivers as the nrf54l15dk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
-
-Note that unlike a real nrf54l15 device, the nrf54l15bsim boards have unlimited RAM, and code does
-not occupy their RRAM.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
@@ -74,6 +76,8 @@ You can follow the instructions from the :ref:`nrf52_bsim board <nrf52bsim_build
 Simply change the board/target appropriately when building.
 
 
+.. _nrf54l15bsim_tz:
+
 TrustZone, TF-M and other security considerations
 *************************************************
 
@@ -88,5 +92,4 @@ ARM's TrustZone is not modeled in this board. This means that:
   can be labeled as restricted for secure or non secure access.
 * TF-M cannot be used.
 
-Note that the CRACEN peripheral is not modeled. The mbedTLS library can still be used
-but with a SW crypto backend.
+As crypto library, Mbed TLS can be used with its SW crypto backend.

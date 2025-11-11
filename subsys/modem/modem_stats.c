@@ -32,7 +32,7 @@ static void stats_buffer_list_append(struct modem_stats_buffer *buffer)
 
 static struct modem_stats_buffer *stats_buffer_list_first(void)
 {
-	struct modem_stats_buffer *first;
+	struct modem_stats_buffer *first = NULL;
 
 	K_SPINLOCK(&stats_buffer_lock) {
 		first = stats_buffer_from_node(sys_slist_peek_head(&stats_buffer_list));
@@ -43,7 +43,7 @@ static struct modem_stats_buffer *stats_buffer_list_first(void)
 
 static struct modem_stats_buffer *stats_buffer_list_next(struct modem_stats_buffer *buffer)
 {
-	struct modem_stats_buffer *next;
+	struct modem_stats_buffer *next = NULL;
 
 	K_SPINLOCK(&stats_buffer_lock) {
 		next = stats_buffer_from_node(sys_slist_peek_next(&buffer->node));

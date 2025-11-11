@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/conn_mgr_monitor.h>
@@ -31,10 +30,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
 #define CLIENT_HW_VER		"1.0.1"
-#define TEMP_SENSOR_UNITS	"Celcius"
+#define TEMP_SENSOR_UNITS       "Celsius"
 
 /* Macros used to subscribe to specific Zephyr NET management events. */
+#if defined(CONFIG_NET_SAMPLE_LWM2M_WAIT_DNS)
+#define L4_EVENT_MASK (NET_EVENT_DNS_SERVER_ADD | NET_EVENT_L4_DISCONNECTED)
+#else
 #define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
+#endif
 #define CONN_LAYER_EVENT_MASK (NET_EVENT_CONN_IF_FATAL_ERROR)
 
 static uint8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
@@ -53,7 +56,7 @@ static double max_range = 100;
 static struct lwm2m_ctx client_ctx;
 
 static const char *endpoint =
-	(sizeof(CONFIG_LWM2M_APP_ID) > 1 ? CONFIG_LWM2M_APP_ID : CONFIG_BOARD);
+	(sizeof(CONFIG_NET_SAMPLE_LWM2M_ID) > 1 ? CONFIG_NET_SAMPLE_LWM2M_ID : CONFIG_BOARD);
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 BUILD_ASSERT(sizeof(endpoint) <= CONFIG_LWM2M_SECURITY_KEY_SIZE,
@@ -106,17 +109,17 @@ static int lwm2m_setup(void)
 	/* setup SECURITY object */
 
 	/* Server URL */
-	lwm2m_set_string(&LWM2M_OBJ(0, 0, 0), CONFIG_LWM2M_APP_SERVER);
+	lwm2m_set_string(&LWM2M_OBJ(0, 0, 0), CONFIG_NET_SAMPLE_LWM2M_SERVER);
 
 	/* Security Mode */
 	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 2), IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	lwm2m_set_string(&LWM2M_OBJ(0, 0, 3), endpoint);
-	if (sizeof(CONFIG_LWM2M_APP_PSK) > 1) {
-		char psk[1 + sizeof(CONFIG_LWM2M_APP_PSK) / 2];
+	if (sizeof(CONFIG_NET_SAMPLE_LWM2M_PSK) > 1) {
+		char psk[1 + sizeof(CONFIG_NET_SAMPLE_LWM2M_PSK) / 2];
 		/* Need to skip the nul terminator from string */
-		size_t len = hex2bin(CONFIG_LWM2M_APP_PSK, sizeof(CONFIG_LWM2M_APP_PSK) - 1, psk,
-				     sizeof(psk));
+		size_t len = hex2bin(CONFIG_NET_SAMPLE_LWM2M_PSK,
+				     sizeof(CONFIG_NET_SAMPLE_LWM2M_PSK) - 1, psk, sizeof(psk));
 		if (len <= 0) {
 			return -EINVAL;
 		}
@@ -127,9 +130,6 @@ static int lwm2m_setup(void)
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	/* Mark 1st instance of security object as a bootstrap server */
 	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 1), 1);
-
-	/* Create 2nd instance of security object needed for bootstrap */
-	lwm2m_create_object_inst(&LWM2M_OBJ(0, 1));
 #else
 	/* Match Security object instance with a Server object instance with
 	 * Short Server ID.
@@ -334,11 +334,15 @@ static void on_net_event_l4_connected(void)
 }
 
 static void l4_event_handler(struct net_mgmt_event_callback *cb,
-			     uint32_t event,
+			     uint64_t event,
 			     struct net_if *iface)
 {
 	switch (event) {
+#if defined(CONFIG_NET_SAMPLE_LWM2M_WAIT_DNS)
+	case NET_EVENT_DNS_SERVER_ADD:
+#else
 	case NET_EVENT_L4_CONNECTED:
+#endif
 		LOG_INF("IP Up");
 		on_net_event_l4_connected();
 		break;
@@ -352,7 +356,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void connectivity_event_handler(struct net_mgmt_event_callback *cb,
-				       uint32_t event,
+				       uint64_t event,
 				       struct net_if *iface)
 {
 	if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
@@ -372,6 +376,13 @@ int main(void)
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
+		struct net_if *iface = net_if_get_default();
+
+		if (!iface) {
+			LOG_ERR("No network interface found!");
+			return -ENODEV;
+		}
+
 		/* Setup handler for Zephyr NET Connection Manager events. */
 		net_mgmt_init_event_callback(&l4_cb, l4_event_handler, L4_EVENT_MASK);
 		net_mgmt_add_event_callback(&l4_cb);
@@ -381,19 +392,17 @@ int main(void)
 					     CONN_LAYER_EVENT_MASK);
 		net_mgmt_add_event_callback(&conn_cb);
 
-		ret = net_if_up(net_if_get_default());
+		ret = net_if_up(iface);
 
 		if (ret < 0 && ret != -EALREADY) {
 			LOG_ERR("net_if_up, error: %d", ret);
 			return ret;
 		}
 
-		ret = conn_mgr_if_connect(net_if_get_default());
-		/* Ignore errors from interfaces not requiring connectivity */
-		if (ret == 0) {
-			LOG_INF("Connecting to network");
-			k_sem_take(&network_connected_sem, K_FOREVER);
-		}
+		(void)conn_mgr_if_connect(iface);
+
+		LOG_INF("Waiting for network connection...");
+		k_sem_take(&network_connected_sem, K_FOREVER);
 	}
 
 	ret = lwm2m_setup();
@@ -404,7 +413,7 @@ int main(void)
 
 	(void)memset(&client_ctx, 0x0, sizeof(client_ctx));
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	client_ctx.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
+	client_ctx.tls_tag = CONFIG_NET_SAMPLE_LWM2M_TLS_TAG;
 #endif
 	client_ctx.set_socket_state = socket_state;
 

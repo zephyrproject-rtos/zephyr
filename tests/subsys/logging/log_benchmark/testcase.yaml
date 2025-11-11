@@ -17,7 +17,6 @@ tests:
       - qemu_x86
     platform_allow:
       - qemu_x86
-      - native_posix
       - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y

@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2024 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define LOG_MODULE_NAME net_openthread_alarm
-#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
+#define LOG_LEVEL CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -49,7 +50,7 @@ K_TIMER_DEFINE(ot_us_timer, ot_timer_us_fired, NULL);
 
 void platformAlarmInit(void)
 {
-#if defined(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 	time_offset_us =
 		(int32_t)((int64_t)otPlatAlarmMicroGetNow() - (uint32_t)otPlatRadioGetNow(NULL));
 	time_offset_ms = time_offset_us / 1000;
@@ -131,3 +132,10 @@ uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 	return otPlatRadioGetCslAccuracy(NULL);
 }
+
+#ifdef CONFIG_HDLC_RCP_IF
+uint64_t otPlatTimeGet(void)
+{
+	return k_ticks_to_us_floor64(k_uptime_ticks());
+}
+#endif

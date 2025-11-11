@@ -1,7 +1,4 @@
-.. _stm32h745i_disco_board:
-
-ST STM32H745I Discovery
-#######################
+.. zephyr:board:: stm32h745i_disco
 
 Overview
 ********
@@ -53,10 +50,6 @@ Key Features
  - USB charger
  - USB power
 
-.. image:: img/stm32h745i-disco.jpg
-   :align: center
-   :alt: STM32H745I-DISCO
-
 More information about the board can be found at the `STM32H745I-DISCO website`_.
 More information about STM32H747XIH6 can be found here:
 
@@ -67,43 +60,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h745i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FDCAN     | on-chip    | fdcan                               |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m7_defconfig` and
-:zephyr_file:`boards/st/stm32h745i_disco/stm32h745i_disco_stm32h745xx_m4_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32H745-Disco UM`_.
 
@@ -150,6 +107,10 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``stm32h745i_disco`` board should be built per core target,
 using either ``stm32h745i_disco/stm32h745xx/m7`` or ``stm32h745i_disco/stm32h745xx/m4`` as the target
 (see :ref:`build_an_application` and :ref:`application_run` for more details).
@@ -161,10 +122,22 @@ using either ``stm32h745i_disco/stm32h745xx/m7`` or ``stm32h745i_disco/stm32h745
 Flashing
 ========
 
-STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+The target core is detected automatically.
 
-Flashing operation will depend on the target and the SoC
-option bytes configuration.
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+Flashing an application to STM32H745I-DISCO
+-------------------------------------------
+
+Flashing operation will depend on the target and the SoC option bytes configuration.
 
 By default:
 
@@ -176,19 +149,12 @@ board is powered (Option bytes BCM7 and BCM4 are checked).
 In that configuration, Kconfig boot option ``STM32H7_BOOT_CM4_CM7`` should be selected.
 Zephyr flash configuration has been set to meet these default settings.
 
-Alternatively, west `STM32CubeProgrammer`_ runner can be used, after installing
-it, to flash applications for both cores. The target core is detected automatically.
-
-.. code-block:: console
-
-   $ west flash --runner stm32cubeprogrammer
-
 Flashing an application to STM32H745XI M7 Core
 ----------------------------------------------
 First, connect the STM32H745I-DISCO to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your STM32H745I-DISCO board.
 
@@ -238,7 +204,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

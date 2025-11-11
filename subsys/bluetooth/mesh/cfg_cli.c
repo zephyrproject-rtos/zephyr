@@ -1187,6 +1187,7 @@ int bt_mesh_cfg_cli_krp_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	struct krp_param param = {
 		.status = status,
 		.phase = phase,
+		.net_idx = key_net_idx,
 	};
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
@@ -1209,6 +1210,7 @@ int bt_mesh_cfg_cli_krp_set(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	struct krp_param param = {
 		.status = status,
 		.phase = phase,
+		.net_idx = key_net_idx,
 	};
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
@@ -2275,6 +2277,7 @@ struct bt_mesh_comp_p0_elem *bt_mesh_comp_p0_elem_pull(const struct bt_mesh_comp
 	size_t modlist_size;
 
 	if (page->_buf->len < 4) {
+		LOG_DBG("Buffer is too short");
 		return NULL;
 	}
 
@@ -2285,6 +2288,7 @@ struct bt_mesh_comp_p0_elem *bt_mesh_comp_p0_elem_pull(const struct bt_mesh_comp
 	modlist_size = elem->nsig * 2 + elem->nvnd * 4;
 
 	if (page->_buf->len < modlist_size) {
+		LOG_DBG("Buffer is shorter than number of claimed models");
 		return NULL;
 	}
 
@@ -2321,7 +2325,7 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 						       struct bt_mesh_comp_p1_elem *elem)
 {
 	if (buf->len < 4) {
-		LOG_DBG("No more elements to pull or missing data");
+		LOG_DBG("Buffer is too short");
 		return NULL;
 	}
 	size_t elem_size = 0;
@@ -2332,6 +2336,11 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 	elem->nsig = net_buf_simple_pull_u8(buf);
 	elem->nvnd = net_buf_simple_pull_u8(buf);
 	for (i = 0; i < elem->nsig + elem->nvnd; i++) {
+		if (buf->len < elem_size + 1) {
+			LOG_DBG("Buffer is shorter than number of claimed models");
+			return NULL;
+		}
+
 		header = buf->data[elem_size];
 		cor_present = COR_PRESENT(header);
 		fmt = FMT(header);
@@ -2344,6 +2353,11 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 		 * (each 1 or 2 octet long, depending on format)
 		 */
 		elem_size += (1 + cor_present) + (fmt + 1) * ext_item_cnt;
+	}
+
+	if (buf->len < elem_size) {
+		LOG_DBG("No more elements to pull or missing data");
+		return NULL;
 	}
 
 	net_buf_simple_init_with_data(elem->_buf,
@@ -2372,7 +2386,17 @@ struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
 	item->ext_item_cnt = EXT_ITEM_CNT(header);
 	item_size = item->ext_item_cnt * (item->format + 1);
 	if (item->cor_present) {
+		if (elem->_buf->len < 1) {
+			LOG_DBG("Coresponding_Present field is claimed but not present");
+			return NULL;
+		}
+
 		item->cor_id = net_buf_simple_pull_u8(elem->_buf);
+	}
+
+	if (elem->_buf->len < item_size) {
+		LOG_DBG("No more elements to pull or missing data");
+		return NULL;
 	}
 
 	net_buf_simple_init_with_data(item->_buf,

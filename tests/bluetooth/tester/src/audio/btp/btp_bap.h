@@ -6,12 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util.h>
 
 /* BAP commands */
 #define BTP_BAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_bap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_BAP_DISCOVER			0x02
@@ -27,7 +32,7 @@ struct btp_bap_send_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t data_len;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 struct btp_bap_send_rp {
@@ -144,7 +149,7 @@ struct btp_bap_add_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_REMOVE_BROADCAST_SRC		0x15
@@ -160,20 +165,41 @@ struct btp_bap_modify_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_SET_BROADCAST_CODE		0x17
 struct btp_bap_set_broadcast_code_cmd {
 	bt_addr_le_t address;
 	uint8_t src_id;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
 #define BTP_BAP_SEND_PAST			0x18
 struct btp_bap_send_past_cmd {
 	bt_addr_le_t address;
 	uint8_t src_id;
+} __packed;
+
+#define BTP_BAP_BROADCAST_SOURCE_SETUP_V2	0x19
+struct btp_bap_broadcast_source_setup_v2_cmd {
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
+	uint8_t streams_per_subgroup;
+	uint8_t subgroups;
+	uint8_t sdu_interval[3];
+	uint8_t framing;
+	uint16_t max_sdu;
+	uint8_t retransmission_num;
+	uint16_t max_transport_latency;
+	uint8_t presentation_delay[3];
+	uint8_t coding_format;
+	uint16_t vid;
+	uint16_t cid;
+	uint8_t cc_ltvs_len;
+	uint8_t cc_ltvs[];
+} __packed;
+struct btp_bap_broadcast_source_setup_v2_rp {
+	uint32_t gap_settings;
 } __packed;
 
 /* BAP events */
@@ -195,7 +221,7 @@ struct btp_bap_codec_cap_found_ev {
 } __packed;
 
 #define BTP_BAP_EV_ASE_FOUND			0x82
-struct btp_ascs_ase_found_ev {
+struct btp_bap_ase_found_ev {
 	bt_addr_le_t address;
 	uint8_t dir;
 	uint8_t ase_id;
@@ -232,7 +258,7 @@ struct btp_bap_bis_found_ev {
 } __packed;
 
 #define BTP_BAP_EV_BIS_SYNCED			0x86
-struct btp_bap_bis_syned_ev {
+struct btp_bap_bis_synced_ev {
 	bt_addr_le_t address;
 	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
 	uint8_t bis_id;
@@ -262,7 +288,7 @@ struct btp_bap_broadcast_receive_state_ev {
 	uint8_t pa_sync_state;
 	uint8_t big_encryption;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_EV_PA_SYNC_REQ			0x8a

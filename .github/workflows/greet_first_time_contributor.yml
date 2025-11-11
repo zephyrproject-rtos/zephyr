@@ -6,14 +6,20 @@ on:
   pull_request_target:
     types: [opened, closed]
 
+permissions:
+  contents: read
+
 jobs:
   check_for_first_interaction:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      pull-requests: write # to comment on pull requests
+      issues: write        # to comment on issues
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: zephyrproject-rtos/action-first-interaction@58853996b1ac504b8e0f6964301f369d2bb22e5c # v1.1.1+zephyr.6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,7 +45,7 @@ jobs:
             and update (by amending and force-pushing the commits) your pull request if necessary.
 
             If you are stuck or need help please join us on [Discord](https://chat.zephyrproject.org/)
-            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-review-escalation)
+            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-technical-escalation)
             when applicable. 😊
 
           pr-merged-message: >

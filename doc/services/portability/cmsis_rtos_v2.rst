@@ -8,7 +8,7 @@ hardware abstraction layer for the ARM Cortex-M processor series and defines
 generic tool interfaces. Though it was originally defined for ARM Cortex-M
 microcontrollers alone, it could be easily extended to other microcontrollers
 making it generic. For more information on CMSIS RTOS v2, please refer to the
-`CMSIS-RTOS2 Documentation <http://www.keil.com/pack/doc/CMSIS/RTOS2/html/index.html>`_.
+`CMSIS-RTOS2 Documentation <https://arm-software.github.io/CMSIS_6/latest/RTOS2/index.html>`_.
 
 Features not supported in Zephyr implementation
 ***********************************************

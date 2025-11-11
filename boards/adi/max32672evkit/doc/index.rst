@@ -1,7 +1,4 @@
-.. _max32672_evkit:
-
-MAX32672EVKIT
-#############
+.. zephyr:board:: max32672evkit
 
 Overview
 ********
@@ -12,10 +9,6 @@ for motion/motor control, industrial sensors, and battery-powered medical device
 designs an easy, cost-optimal upgrade path from 8-bit or 16-bit microcontrollers.
 
 The Zephyr port is running on the MAX32672 MCU.
-
-.. image:: img/max32672evkit.webp
-   :align: center
-   :alt: MAX32672EVKIT
 
 Hardware
 ********
@@ -84,22 +77,7 @@ Hardware
 Supported Features
 ==================
 
-Below interfaces are supported by Zephyr on MAX32672EVKIT.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -301,11 +279,9 @@ The I2C ports can independently pulled up to V_AUX (3.3V default) through JP4 (I
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The IC can be reset by pushbutton SW1.
-
-
-Programming and Debugging
-*************************
 
 Flashing
 ========
@@ -316,7 +292,8 @@ is supplied externally. Be sure to remove jumper JP15 (LDO_DUT_EN) to disconnect
 LDO if supplying VDD and VDDA externally.
 
 Once the debug probe is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 .. note::
 

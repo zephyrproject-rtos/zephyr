@@ -1,7 +1,4 @@
-.. _ebyte_e73_tbb_nrf52832:
-
-EBYTE E73-TBB
-#############
+.. zephyr:board:: ebyte_e73_tbb
 
 Overview
 ********
@@ -25,12 +22,6 @@ the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/ebyte_e73_tbb_nrf52832.jpg
-     :align: center
-     :alt: EBYTE E73-TBB
-
-     EBYTE E73-TBB (Credit: EBYTE)
-
 More information about the board can be found at the
 `E73-TBB website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
@@ -48,42 +39,8 @@ and solder NFC antenna using NFC_ANT connector.
 Supported Features
 ==================
 
-The ebyte_e73_tbb/nrf52832 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features are not supported by the Zephyr kernel.
 See `E73-TBB website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52832 hardware features.
 
@@ -177,6 +134,8 @@ NFC_ANT
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

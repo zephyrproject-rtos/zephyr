@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Vitrolife A/S
+# Copyright (c) 2025 Prevas A/S
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -17,6 +17,8 @@ description: |
 
 compatible: "ist,tsic-xx6"
 
+include: sensor-device.yaml
+
 properties:
   pwms:
     required: true
@@ -26,12 +28,12 @@ properties:
   lower-temperature-limit:
     required: true
     type: int
-    description: Lowest temperature supported by the device in celcius degrees.
+    description: Lowest temperature supported by the device in celsius degrees.
 
   higher-temperature-limit:
     required: true
     type: int
-    description: Highest temperature supported by the device in celcius degrees.
+    description: Highest temperature supported by the device in celsius degrees.
 
   data-bits:
     required: true

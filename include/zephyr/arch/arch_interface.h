@@ -47,8 +47,6 @@ typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
-__deprecated typedef struct arch_esf z_arch_esf_t;
-
 /**
  * @defgroup arch-timing Architecture timing APIs
  * @ingroup arch-interface
@@ -455,6 +453,13 @@ bool arch_irq_is_used(unsigned int irq);
  * @param parameter Value to pass to the function when invoked
  */
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
+
+
+/**
+ * Initialize the architecture-specific portion of the irq_offload subsystem
+ */
+void arch_irq_offload_init(void);
+
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
@@ -1064,6 +1069,15 @@ int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
 
+/**
+ * @brief Post processing after memory write.
+ *
+ * @param[in] addr  Starting address of the memory region
+ * @param[in] len   Size of the memory region
+ * @param[in] align Write alignment of memory region
+ */
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align);
+
 #endif
 /** @} */
 
@@ -1252,6 +1266,18 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 void arch_spin_relax(void);
 
 /**
+ * @defgroup arch-stackwalk Architecture-specific Stack Walk APIs
+ * @ingroup arch-interface
+ * @brief Architecture-specific Stack Walk APIs
+ *
+ * To add API support to an architecture, `arch_stack_walk()` should be implemented and a non-user
+ * configurable Kconfig `ARCH_HAS_STACKWALK` that is default to `y` should be created in the
+ * architecture's top level Kconfig, with all the relevant dependencies.
+ *
+ * @{
+ */
+
+/**
  * stack_trace_callback_fn - Callback for @ref arch_stack_walk
  * @param cookie Caller supplied pointer handed back by @ref arch_stack_walk
  * @param addr The stack entry address to consume
@@ -1277,6 +1303,11 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
  */
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf);
+
+/**
+ * arch-stackwalk
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -20,12 +20,15 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_0: led0 {
 			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
 		};
+
 		green_led_1: led1 {
 			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 		};
+
 		blue_led_2: led2 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
 		};
@@ -65,14 +68,14 @@
 	csa_vbus: vbusc {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc1 17>;
-		sense-resistor-micro-ohms = <3000>;
+		sense-resistor-milli-ohms = <3>;
 		sense-gain-mult = <100>;
 	};
 
 	csa_cc2: vconc {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc1 18>;
-		sense-resistor-micro-ohms = <10000>;
+		sense-resistor-milli-ohms = <10>;
 		sense-gain-mult = <25>;
 	};
 
@@ -80,7 +83,6 @@
 		led0 = &red_led_0;
 		led1 = &green_led_1;
 		led2 = &blue_led_2;
-		bootloader-led0 = &blue_led_2;
 		vcc1 = &cc1_buf;
 		vcc2 = &cc2_buf;
 		vbus = &vbus_read_buf;
@@ -88,7 +90,6 @@
 		ccon = &csa_cc2;
 	};
 };
-
 
 &adc1 {
 	#address-cells = <1>;
@@ -98,10 +99,9 @@
 		     &adc1_in3_pa3	/* CC2_BUF	 */
 		     &adc1_in15_pb11	/* VBUS_READ_BUF */
 		     &adc1_in17_pc4	/* CSA_VBUS	 */
-		     &adc1_in18_pc5	/* CSA_CC2	 */
-		    >;
+		     &adc1_in18_pc5	/* CSA_CC2	 */ >;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 
@@ -123,7 +123,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@15 {
+	channel@f {
 		reg = <15>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -132,7 +132,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@17 {
+	channel@11 {
 		reg = <17>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -141,7 +141,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@18 {
+	channel@12 {
 		reg = <18>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";

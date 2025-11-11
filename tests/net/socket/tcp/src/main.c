@@ -357,8 +357,8 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 void test_send_recv_large_common(int tcp_nodelay, int family)
 {
 	int rv;
-	int c_sock;
-	int s_sock;
+	int c_sock = 0;
+	int s_sock = 0;
 	struct sockaddr *c_saddr = NULL;
 	struct sockaddr *s_saddr = NULL;
 	size_t addrlen = 0;
@@ -756,10 +756,12 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	msg.msg_name = &addr;
 	msg.msg_namelen = addrlen;
 
-	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, strlen(TEST_STR_SMALL),
-		     __LINE__);
-	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
-			  "wrong data (%s)", buf);
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 1, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_mem_equal(buf, TEST_STR_SMALL, len, "wrong data (%s)", buf);
 
 	/* Then in two chunks */
 	io_vector[0].iov_base = buf2;
@@ -773,12 +775,18 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	msg.msg_name = &addr;
 	msg.msg_namelen = addrlen;
 
-	test_recvmsg(new_sock, &msg, 0, strlen(TEST_STR_SMALL), __LINE__);
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, 0, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 2, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[1].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_SMALL, msg.msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
+	len -= msg.msg_iov[0].iov_len;
 	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_SMALL[msg.msg_iov[0].iov_len],
-			  msg.msg_iov[1].iov_len,
-			  "wrong data in %s", "iov[1]");
+			  len, "wrong data in %s", "iov[1]");
 
 	/* Send larger test buffer */
 	test_sendto(c_sock, TEST_STR_LONG, strlen(TEST_STR_LONG), 0,
@@ -803,6 +811,13 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	}
 
 	test_recvmsg(new_sock, &msg, 0, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 3, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[1].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[2].iov_len, sizeof(buf3),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_LONG, msg.msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
 	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_LONG[msg.msg_iov[0].iov_len],
@@ -2334,7 +2349,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
-ZTEST(net_socket_tcp, test_so_keepalive)
+ZTEST(net_socket_tcp, test_so_keepalive_opt)
 {
 	struct sockaddr_in bind_addr4;
 	int sock, ret;
@@ -2415,55 +2430,92 @@ ZTEST(net_socket_tcp, test_so_keepalive)
 	test_context_cleanup();
 }
 
-ZTEST(net_socket_tcp, test_keepalive_timeout)
+static void test_prepare_keepalive_socks(int *c_sock, int *s_sock, int *new_sock)
 {
 	struct sockaddr_in c_saddr, s_saddr;
-	int c_sock, s_sock, new_sock;
-	uint8_t rx_buf;
 	int optval;
 	int ret;
 
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, s_sock, &s_saddr);
 
 	/* Enable keep-alive on both ends and set timeouts/retries to minimum */
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_KEEPALIVE,
+	ret = zsock_setsockopt(*c_sock, SOL_SOCKET, SO_KEEPALIVE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, SOL_SOCKET, SO_KEEPALIVE,
-			       &optval, sizeof(optval));
-	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-
-	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPIDLE,
-			       &optval, sizeof(optval));
-	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPIDLE,
+	ret = zsock_setsockopt(*s_sock, SOL_SOCKET, SO_KEEPALIVE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPIDLE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPIDLE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPCNT,
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPINTVL,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPCNT,
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			       &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 1;
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPCNT,
+			       &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPCNT,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	/* Establish connection */
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_listen(s_sock);
-	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_accept(s_sock, &new_sock, NULL, NULL);
+	test_bind(*s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(*s_sock);
+	test_connect(*c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(*s_sock, new_sock, NULL, NULL);
+}
+
+ZTEST(net_socket_tcp, test_keepalive)
+{
+	int c_sock, s_sock, new_sock;
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_keepalive_socks(&c_sock, &s_sock, &new_sock);
+
+	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			       sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* recv() should fail, but due to receive timeout (no data), not
+	 * connection timeout (keepalive).
+	 */
+	ret = zsock_recv(c_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "recv() should've failed");
+	zassert_equal(errno, EAGAIN, "wrong errno value, %d", errno);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_keepalive_timeout)
+{
+	int c_sock, s_sock, new_sock;
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_keepalive_socks(&c_sock, &s_sock, &new_sock);
 
 	/* Kill communication - expect that connection will be closed after
 	 * a timeout period.
@@ -2487,11 +2539,133 @@ ZTEST(net_socket_tcp, test_keepalive_timeout)
 	test_context_cleanup();
 }
 
+#define TEST_BACKLOG_MAX 3
+
+static void test_prepare_backlog_server_sock(int family, int *s_sock,
+					     struct sockaddr *s_addr,
+					     socklen_t *addrlen)
+{
+	if (family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, s_sock,
+				    (struct sockaddr_in *)s_addr);
+		*addrlen = sizeof(struct sockaddr_in);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, s_sock,
+				    (struct sockaddr_in6 *)s_addr);
+		*addrlen = sizeof(struct sockaddr_in6);
+	}
+
+	test_bind(*s_sock, s_addr, *addrlen);
+}
+
+static void test_backlog_connect_ok(int *c_sock, struct sockaddr *s_addr,
+				    socklen_t addrlen)
+{
+	struct sockaddr c_addr;
+	int sock;
+	int ret;
+
+	if (s_addr->sa_family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in *)&c_addr);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in6 *)&c_addr);
+	}
+
+	ret = zsock_connect(sock, s_addr, addrlen);
+	zassert_ok(ret, "connect failed with error %d", errno);
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the connection proceed */
+		k_msleep(THREAD_SLEEP);
+	}
+
+	*c_sock = sock;
+}
+
+static void test_backlog_connect_fail(struct sockaddr *s_addr, socklen_t addrlen)
+{
+	struct sockaddr c_addr;
+	int sock;
+	int ret;
+
+	if (s_addr->sa_family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in *)&c_addr);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in6 *)&c_addr);
+	}
+
+	ret = zsock_connect(sock, s_addr, addrlen);
+	zassert_equal(ret, -1, "connect should have failed");
+	zassert_equal(errno, ETIMEDOUT, "wrong errno, %d", errno);
+
+	test_close(sock);
+}
+
+static void test_common_listen_backlog(int family, int backlog)
+{
+	const int expect_conns = backlog <= 0 ? 1 : backlog;
+	int client_socks[TEST_BACKLOG_MAX];
+	struct sockaddr s_addr;
+	socklen_t addrlen;
+	int s_sock, c_sock, accept_sock;
+	int ret;
+
+	test_prepare_backlog_server_sock(family, &s_sock, &s_addr, &addrlen);
+
+	ret = zsock_listen(s_sock, backlog);
+	zassert_ok(ret, "listen failed with error %d", errno);
+
+	/* Fill up the server backlog. */
+	for (int i = 0; i < expect_conns; i++) {
+		test_backlog_connect_ok(&client_socks[i], &s_addr, addrlen);
+	}
+
+	/* Backlog full, consecutive attempt should fail. */
+	test_backlog_connect_fail(&s_addr, addrlen);
+
+	/* Accept one connection. */
+	accept_sock = zsock_accept(s_sock, NULL, NULL);
+	zassert_true(accept_sock >= 0, "accept failed");
+
+	/* Server should now allow one more connection. */
+	test_backlog_connect_ok(&c_sock, &s_addr, addrlen);
+	test_backlog_connect_fail(&s_addr, addrlen);
+
+	/* Cleanup */
+	test_close(accept_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	for (int i = 0; i < expect_conns; i++) {
+		test_close(client_socks[i]);
+	}
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_v4_listen_backlog)
+{
+	test_common_listen_backlog(AF_INET, 0);
+	test_common_listen_backlog(AF_INET, 1);
+	test_common_listen_backlog(AF_INET, TEST_BACKLOG_MAX);
+}
+
+ZTEST(net_socket_tcp, test_v6_listen_backlog)
+{
+	test_common_listen_backlog(AF_INET6, 0);
+	test_common_listen_backlog(AF_INET6, 1);
+	test_common_listen_backlog(AF_INET6, TEST_BACKLOG_MAX);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (int i = 0; i < CONFIG_ZVFS_OPEN_MAX; ++i) {
+	for (int i = 0; i < ZVFS_OPEN_SIZE; ++i) {
 		(void)zsock_close(i);
 	}
 }

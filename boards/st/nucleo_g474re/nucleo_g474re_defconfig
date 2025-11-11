@@ -6,9 +6,6 @@ CONFIG_SERIAL=y
 # enable GPIO
 CONFIG_GPIO=y
 
-# Enable Clocks
-CONFIG_CLOCK_CONTROL=y
-
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
@@ -18,6 +15,3 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

@@ -14,11 +14,19 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 
+#ifdef CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+#include "i2c_bitbang.h"
+#include <zephyr/drivers/gpio.h>
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
+
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"
+
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
 	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
@@ -34,6 +42,10 @@ struct mcux_flexcomm_config {
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pincfg;
 	const struct reset_dt_spec reset;
+#ifdef CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+	struct gpio_dt_spec scl;
+	struct gpio_dt_spec sda;
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 };
 
 #ifdef CONFIG_I2C_TARGET
@@ -145,6 +157,8 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+	pm_policy_device_power_lock_get(dev);
+
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs->flags) {
@@ -199,10 +213,95 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		msgs++;
 	}
 
+	pm_policy_device_power_lock_put(dev);
+
 	k_sem_give(&data->lock);
 
 	return ret;
 }
+
+#if CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+static void mcux_flexcomm_bitbang_set_scl(void *io_context, int state)
+{
+	const struct mcux_flexcomm_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void mcux_flexcomm_bitbang_set_sda(void *io_context, int state)
+{
+	const struct mcux_flexcomm_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int mcux_flexcomm_bitbang_get_sda(void *io_context)
+{
+	const struct mcux_flexcomm_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+static int mcux_flexcomm_recover_bus(const struct device *dev)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = mcux_flexcomm_bitbang_set_scl,
+		.set_sda = mcux_flexcomm_bitbang_set_sda,
+		.get_sda = mcux_flexcomm_bitbang_get_sda,
+	};
+	uint32_t bitrate_cfg;
+	int error = 0;
+
+	if (!gpio_is_ready_dt(&config->scl)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
+	}
+
+	if (!gpio_is_ready_dt(&config->sda)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		goto restore;
+	}
+
+	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (error != 0) {
+		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		goto restore;
+	}
+
+	error = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (error != 0) {
+		LOG_ERR("failed to recover bus (err %d)", error);
+		goto restore;
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+
+	k_sem_give(&data->lock);
+
+	return error;
+}
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 
 #if defined(CONFIG_I2C_TARGET)
 
@@ -463,7 +562,7 @@ static void mcux_flexcomm_isr(const struct device *dev)
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static int mcux_flexcomm_init(const struct device *dev)
+static int mcux_flexcomm_init_common(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -486,9 +585,6 @@ static int mcux_flexcomm_init(const struct device *dev)
 	if (error) {
 		return error;
 	}
-
-	k_sem_init(&data->lock, 1, 1);
-	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -519,14 +615,59 @@ static int mcux_flexcomm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api mcux_flexcomm_driver_api = {
+static int i2c_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	case PM_DEVICE_ACTION_TURN_ON:
+		mcux_flexcomm_init_common(dev);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int mcux_flexcomm_init(const struct device *dev)
+{
+	struct mcux_flexcomm_data *data = dev->data;
+
+	k_sem_init(&data->lock, 1, 1);
+	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, i2c_mcux_flexcomm_pm_action);
+}
+
+static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 	.configure = mcux_flexcomm_configure,
 	.transfer = mcux_flexcomm_transfer,
+#if CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+	.recover_bus = mcux_flexcomm_recover_bus,
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = mcux_flexcomm_target_register,
 	.target_unregister = mcux_flexcomm_target_unregister,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
+
+#if CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+#define I2C_MCUX_FLEXCOMM_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
+#define I2C_MCUX_FLEXCOMM_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#else
+#define I2C_MCUX_FLEXCOMM_SCL_INIT(n)
+#define I2C_MCUX_FLEXCOMM_SDA_INIT(n)
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
@@ -539,12 +680,15 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
+		I2C_MCUX_FLEXCOMM_SCL_INIT(id)				\
+		I2C_MCUX_FLEXCOMM_SDA_INIT(id)				\
 		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_mcux_flexcomm_pm_action);	\
 	I2C_DEVICE_DT_INST_DEFINE(id,					\
 			    mcux_flexcomm_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(id),			\
 			    &mcux_flexcomm_data_##id,			\
 			    &mcux_flexcomm_config_##id,			\
 			    POST_KERNEL,				\

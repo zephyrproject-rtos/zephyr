@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * Based on NXP k6x soc.c, which is:
@@ -81,7 +81,7 @@ static const scg_firc_config_t scg_firc_config = {
 	.trimConfig = NULL
 };
 
-static ALWAYS_INLINE void clk_init(void)
+__weak void clk_init(void)
 {
 	const scg_sys_clk_config_t scg_sys_clk_config_safe = {
 		.divSlow = kSCG_SysClkDivBy4,
@@ -106,45 +106,64 @@ static ALWAYS_INLINE void clk_init(void)
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart2,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart2), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1))
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
+	CLOCK_SetIpSrc(kCLOCK_Flexio0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(flexio), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	CLOCK_SetIpSrc(kCLOCK_Lpspi0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi0), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
+	CLOCK_SetIpSrc(kCLOCK_Lpspi1,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi1), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
+	CLOCK_SetIpSrc(kCLOCK_Adc0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_EnableClock(kCLOCK_Ewm0);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
+	CLOCK_SetIpSrc(kCLOCK_Lpit0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
+#endif
 }
 
-static int ke1xz_init(void)
+void soc_early_init_hook(void)
 
 {
 	/* Initialize system clocks and PLL */
 	clk_init();
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* SystemInit is provided by the NXP SDK */
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(ke1xz_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

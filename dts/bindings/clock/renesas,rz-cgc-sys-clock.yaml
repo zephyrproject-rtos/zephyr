@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Clock Control System Clock
+
+compatible: "renesas,rz-cgc-sys-clock"
+
+include: [base.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    default: 200000000
+    enum:
+    - 200000000
+    - 150000000
+    description: Select frequency of iclk.
+
+  div:
+    type: int
+    default: 4
+    enum:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    description: |
+      Prescale divider to calculate the subclock frequency from the
+      system clock frequency.
+
+  mul:
+    type: int
+    default: 1
+    description: |
+      Multiplier to calculate the subclock frequency from the
+      system clock frequency.

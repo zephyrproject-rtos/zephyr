@@ -1,19 +1,9 @@
-.. _qomu:
-
-Qomu
-####
+.. zephyr:board:: qomu
 
 Overview
 ********
 
 The Qomu board is a platform with an on-board QuickLogic EOS S3 Sensor Processing Platform.
-
-
-.. figure:: img/qomu-board.png
-   :align: center
-   :alt: Qomu
-
-   Qomu (Credit: QuickLogic)
 
 Hardware
 ********
@@ -41,7 +31,7 @@ Below are steps to run Qomu sample application:
 #. Build the sample in an usual way:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/boards/qomu
+      :zephyr-app: samples/boards/quicklogic/qomu
       :board: qomu
       :goals: build
 

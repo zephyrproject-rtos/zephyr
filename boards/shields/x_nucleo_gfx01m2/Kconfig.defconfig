@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Christian Rask
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_GFX01M2
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config SPI_STM32_DMA
+	default y
+	depends on SPI
+
+endif # SHIELD_X_NUCLEO_GFX01M2

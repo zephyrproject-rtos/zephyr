@@ -6,10 +6,11 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
-#define MAX_BLOCKS      10
-#define TIMEOUT_TICKS   10
+#define MAX_BLOCKS    10
+#define TIMEOUT_TICKS 10
 
 struct mem_block {
 	int member1;
@@ -26,8 +27,7 @@ static const osMemoryPoolAttr_t mp_attrs = {
 	.mp_size = sizeof(struct mem_block) * MAX_BLOCKS,
 };
 
-static void mempool_common_tests(osMemoryPoolId_t mp_id,
-				 const char *expected_name)
+static void mempool_common_tests(osMemoryPoolId_t mp_id, const char *expected_name)
 {
 	int i;
 	osMemoryPoolId_t dummy_id = NULL;
@@ -50,8 +50,7 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
 	zassert_equal(osMemoryPoolGetBlockSize(dummy_id), 0,
 		      "Something's wrong with osMemoryPoolGetBlockSize!");
 
-	zassert_equal(osMemoryPoolGetBlockSize(mp_id),
-		      sizeof(struct mem_block),
+	zassert_equal(osMemoryPoolGetBlockSize(mp_id), sizeof(struct mem_block),
 		      "Something's wrong with osMemoryPoolGetBlockSize!");
 
 	/* The memory pool should be completely available at this point */
@@ -61,8 +60,7 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
 		      "Something's wrong with osMemoryPoolGetSpace!");
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
-		addr_list[i] = (struct mem_block *)osMemoryPoolAlloc(mp_id,
-								     osWaitForever);
+		addr_list[i] = (struct mem_block *)osMemoryPoolAlloc(mp_id, osWaitForever);
 		zassert_true(addr_list[i] != NULL, "mempool allocation failed");
 	}
 
@@ -75,13 +73,12 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
 	/* All blocks in mempool are allocated, any more allocation
 	 * without free should fail
 	 */
-	addr_list[i] = (struct mem_block *)osMemoryPoolAlloc(mp_id,
-							     TIMEOUT_TICKS);
+	addr_list[i] = (struct mem_block *)osMemoryPoolAlloc(mp_id, TIMEOUT_TICKS);
 	zassert_true(addr_list[i] == NULL, "allocation happened."
-		     " Something's wrong!");
+					   " Something's wrong!");
 
-	zassert_equal(osMemoryPoolFree(dummy_id, addr_list[0]),
-		      osErrorParameter, "mempool free worked unexpectedly!");
+	zassert_equal(osMemoryPoolFree(dummy_id, addr_list[0]), osErrorParameter,
+		      "mempool free worked unexpectedly!");
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
 		status = osMemoryPoolFree(mp_id, addr_list[i]);
@@ -104,8 +101,7 @@ ZTEST(cmsis_mempool, test_mempool_dynamic)
 {
 	osMemoryPoolId_t mp_id;
 
-	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block),
-				NULL);
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block), NULL);
 	zassert_true(mp_id != NULL, "mempool creation failed");
 
 	mempool_common_tests(mp_id, "ZephyrMemPool");
@@ -121,14 +117,36 @@ ZTEST(cmsis_mempool, test_mempool)
 	osMemoryPoolId_t mp_id;
 
 	/* Create memory pool with invalid block size */
-	mp_id = osMemoryPoolNew(MAX_BLOCKS + 1, sizeof(struct mem_block),
-				&mp_attrs);
+	mp_id = osMemoryPoolNew(MAX_BLOCKS + 1, sizeof(struct mem_block), &mp_attrs);
 	zassert_true(mp_id == NULL, "osMemoryPoolNew worked unexpectedly!");
 
-	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block),
-				&mp_attrs);
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block), &mp_attrs);
 	zassert_true(mp_id != NULL, "mempool creation failed");
 
 	mempool_common_tests(mp_id, mp_attrs.name);
+}
+
+static struct cmsis_rtos_mempool_cb mempool_cb2;
+static const osMemoryPoolAttr_t mp_attrs2 = {
+	.name = "TestMempool2",
+	.attr_bits = 0,
+	.cb_mem = &mempool_cb2,
+	.cb_size = sizeof(mempool_cb2),
+	.mp_mem = sample_mem,
+	.mp_size = sizeof(struct mem_block) * MAX_BLOCKS,
+};
+/**
+ * @brief Test memory pool allocation and free
+ *
+ * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
+ */
+ZTEST(cmsis_mempool, test_mempool_static_allocation)
+{
+	osMemoryPoolId_t mp_id;
+
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block), &mp_attrs2);
+	zassert_true(mp_id != NULL, "mempool creation failed");
+
+	mempool_common_tests(mp_id, mp_attrs2.name);
 }
 ZTEST_SUITE(cmsis_mempool, NULL, NULL, NULL, NULL, NULL);

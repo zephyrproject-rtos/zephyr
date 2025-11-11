@@ -14,6 +14,7 @@
 			pinmux = <UART0_TX_GPIO21>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO20>;
 			bias-pull-up;
@@ -22,20 +23,21 @@
 
 	spim2_default: spim2_default {
 		group1 {
-			pinmux = <SPIM2_MISO_GPIO2>,
-				<SPIM2_SCLK_GPIO6>,
-				<SPIM2_CSEL_GPIO10>;
+			pinmux = <SPIM2_MISO_GPIO10>,
+				 <SPIM2_SCLK_GPIO2>,
+				 <SPIM2_CSEL_GPIO7>;
 		};
+
 		group2 {
-			pinmux = <SPIM2_MOSI_GPIO7>;
+			pinmux = <SPIM2_MOSI_GPIO3>;
 			output-low;
 		};
 	};
 
 	i2c0_default: i2c0_default {
 		group1 {
-			pinmux = <I2C0_SDA_GPIO1>,
-				  <I2C0_SCL_GPIO3>;
+			pinmux = <I2C0_SDA_GPIO4>,
+				 <I2C0_SCL_GPIO5>;
 			bias-pull-up;
 			drive-open-drain;
 			output-high;
@@ -44,8 +46,8 @@
 
 	twai_default: twai_default {
 		group1 {
-			pinmux = <TWAI_TX_GPIO4>,
-				<TWAI_RX_GPIO5>;
+			pinmux = <TWAI_TX_GPIO12>,
+				 <TWAI_RX_GPIO13>;
 		};
 	};
 };

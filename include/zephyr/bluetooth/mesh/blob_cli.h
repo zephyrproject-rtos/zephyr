@@ -282,6 +282,10 @@ struct blob_cli_broadcast_ctx {
 	 *  and broadcast_complete calls.
 	 */
 	bool is_inited;
+	/* Defines a time in ms by which the broadcast API postpones sending the message to a next
+	 * target or completing the broadcast.
+	 */
+	uint32_t post_send_delay_ms;
 };
 /** INTERNAL_HIDDEN @endcond */
 
@@ -299,7 +303,7 @@ struct bt_mesh_blob_cli {
 		struct k_work_delayable retry;
 		/* Represents Client Timeout timer in a timestamp. Used in Pull mode only. */
 		int64_t cli_timestamp;
-		struct k_work complete;
+		struct k_work_delayable complete;
 		uint16_t pending;
 		uint8_t retries;
 		uint8_t sending : 1,
@@ -309,6 +313,7 @@ struct bt_mesh_blob_cli {
 	const struct bt_mesh_blob_io *io;
 	const struct bt_mesh_blob_cli_inputs *inputs;
 	const struct bt_mesh_blob_xfer *xfer;
+	uint32_t chunk_interval_ms;
 	uint16_t block_count;
 	uint16_t chunk_idx;
 	uint16_t mtu_size;
@@ -418,6 +423,22 @@ uint8_t bt_mesh_blob_cli_xfer_progress_active_get(struct bt_mesh_blob_cli *cli);
  *          retrieving the capabilities and false otherwise.
  */
 bool bt_mesh_blob_cli_is_busy(struct bt_mesh_blob_cli *cli);
+
+/** @brief Set chunk sending interval in ms
+ *
+ *  This function is optional, and can be used to define how fast chunks are sent in the BLOB Client
+ *  Model.
+ *  Without an added delay, for example a Bluetooth Mesh DFU can cause network blockage by
+ *  constantly sending the next chunks, especially if the chunks are sent to group addresses or
+ *  multiple unicast addresses.
+ *
+ *  @note: Big intervals may cause timeouts. Increasing the @c timeout_base accordingly can
+ *  circumvent this.
+ *
+ *  @param cli BLOB Transfer Client instance.
+ *  @param interval_ms the delay before each chunk is sent out in ms.
+ */
+void bt_mesh_blob_cli_set_chunk_interval_ms(struct bt_mesh_blob_cli *cli, uint32_t interval_ms);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op _bt_mesh_blob_cli_op[];

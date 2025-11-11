@@ -49,12 +49,14 @@
 			test_i2c_ads1014: ads1014@1 {
 				compatible = "ti,ads1014";
 				reg = <0x1>;
+				alert-rdy-gpios = <&test_gpio 0 0>;
 				#io-channel-cells = <1>;
 			};
 
 			test_i2c_ads1015: ads1015@2 {
 				compatible = "ti,ads1015";
 				reg = <0x2>;
+				alert-rdy-gpios = <&test_gpio 0 0>;
 				#io-channel-cells = <1>;
 			};
 
@@ -67,12 +69,14 @@
 			test_i2c_ads1114: ads1114@4 {
 				compatible = "ti,ads1114";
 				reg = <0x4>;
+				alert-rdy-gpios = <&test_gpio 0 0>;
 				#io-channel-cells = <1>;
 			};
 
 			test_i2c_ads1115: ads1115@5 {
 				compatible = "ti,ads1115";
 				reg = <0x5>;
+				alert-rdy-gpios = <&test_gpio 0 0>;
 				#io-channel-cells = <1>;
 			};
 
@@ -88,7 +92,7 @@
 				#io-channel-cells = <1>;
 			};
 
-			test_i2c_ltc2451: ltc2451@8{
+			test_i2c_ltc2451: ltc2451@8 {
 				compatible = "lltc,ltc2451";
 				reg = <0x8>;
 				conversion-speed = <60>;
@@ -107,6 +111,24 @@
 					#io-channel-cells = <1>;
 				};
 			};
+
+			test_i2c_tla2021: tla2021@a {
+				compatible = "ti,tla2021";
+				reg = <0xa>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_tla2022: tla2022@b {
+				compatible = "ti,tla2022";
+				reg = <0xb>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_tla2024: tla2024@c {
+				compatible = "ti,tla2024";
+				reg = <0xc>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -119,6 +141,13 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
@@ -250,7 +279,6 @@
 				#io-channel-cells = <1>;
 			};
 
-
 			test_spi_ads114s08: ads114s08@c {
 				compatible = "ti,ads114s08";
 				reg = <0xc>;
@@ -339,6 +367,62 @@
 					compatible = "adi,ad559x-adc";
 					#io-channel-cells = <1>;
 				};
+			};
+
+			test_spi_ads131m02: ads131m02@17 {
+				compatible = "ti,ads131m02";
+				reg = <0x17>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				drdy-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad7124: ad7124@18 {
+				compatible = "adi,ad7124-adc";
+				reg = <0x18>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				active-device = <1>;
+			};
+
+			test_spi_ad4130: ad41304@19 {
+				compatible = "adi,ad4130-adc";
+				reg = <0x19>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_mcp356xr: mcp356xr@18 {
+				compatible = "microchip,mcp356xr";
+				reg = <0x1a>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+
+				address = <1>;
+				analog-clock-prescaler = <0>;
+				boost-current-bias = <0>;
+				irq-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad4170: ad4170@21 {
+				compatible = "adi,ad4170-adc";
+				reg = <0x21>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4190: ad4190@22 {
+				compatible = "adi,ad4190-adc";
+				reg = <0x22>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4195: ad4195@23 {
+				compatible = "adi,ad4195-adc";
+				reg = <0x23>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 		};
 	};

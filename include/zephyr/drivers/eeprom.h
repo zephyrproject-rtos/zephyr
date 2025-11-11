@@ -10,15 +10,16 @@
 
 /**
  * @file
- * @brief Public API for EEPROM drivers
+ * @ingroup eeprom_interface
+ * @brief Main header file for EEPROM driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EEPROM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EEPROM_H_
 
 /**
- * @brief EEPROM Interface
- * @defgroup eeprom_interface EEPROM Interface
+ * @brief Interfaces for Electrically Erasable Programmable Read-Only Memory (EEPROM).
+ * @defgroup eeprom_interface EEPROM
  * @since 2.1
  * @version 1.0.0
  * @ingroup io_interfaces

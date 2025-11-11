@@ -1,0 +1,36 @@
+family:
+- name: ti_mspm0
+  series:
+  - name: mspm0g
+    socs:
+    - name: mspm0g1105
+    - name: mspm0g1106
+    - name: mspm0g1107
+    - name: mspm0g1505
+    - name: mspm0g1506
+    - name: mspm0g1507
+    - name: mspm0g1519
+    - name: mspm0g3105
+    - name: mspm0g3106
+    - name: mspm0g3107
+    - name: mspm0g3505
+    - name: mspm0g3506
+    - name: mspm0g3507
+    - name: mspm0g3519
+  - name: mspm0l
+    socs:
+    - name: mspm0l1105
+    - name: mspm0l1106
+    - name: mspm0l1117
+    - name: mspm0l1227
+    - name: mspm0l1228
+    - name: mspm0l1303
+    - name: mspm0l1304
+    - name: mspm0l1305
+    - name: mspm0l1306
+    - name: mspm0l1343
+    - name: mspm0l1344
+    - name: mspm0l1345
+    - name: mspm0l1346
+    - name: mspm0l2227
+    - name: mspm0l2228

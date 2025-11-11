@@ -4,6 +4,15 @@
 
 type: map
 mapping:
+  "options":
+    type: map
+    required: false
+    mapping:
+      "integration_mode":
+        type: seq
+        required: false
+        sequence:
+          - type: str
   "platforms":
     type: map
     required: false

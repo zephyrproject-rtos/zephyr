@@ -7,9 +7,7 @@
 /dts-v1/;
 
 #include <nordic/nrf54h20_cpuapp.dtsi>
-#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
-#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
-#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+#include "nrf54h20dk_nrf54h20-common.dtsi"
 
 /delete-node/ &cpurad_cpusys_ipc;
 /delete-node/ &cpusec_cpurad_ipc;
@@ -24,6 +22,7 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
+		zephyr,uart-mcumgr = &uart136;
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
@@ -43,6 +42,8 @@
 		sw3 = &button3;
 		ipc-to-cpusys = &cpuapp_cpusys_ipc;
 		watchdog0 = &wdt010;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 
 	buttons {
@@ -99,6 +100,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		/*
 		 * LEDs are connected to GPIO Port 9 - pins 0-3. There is no valid hardware
 		 * configuration to pass PWM signal on pis 0 and 1. First valid config is P9.2.
@@ -110,28 +112,18 @@
 	};
 };
 
-&cpuapp_ram0x_region {
-	status = "okay";
-};
-
-&cpuapp_cpurad_ram0x_region {
-	status = "okay";
-};
-
-&shared_ram3x_region {
-	status = "okay";
-};
-
-&ram21_region {
-	status = "okay";
-};
-
 &cpuapp_bellboard {
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
-	nordic,interrupt-mapping = <0x00042041 0>;
+	/* irq0:
+	 *  - 0:  cpuapp-cpusec
+	 *  - 6:  cpuapp-cpusys
+	 *  - 13: cpuapp-cpuppr
+	 *  - 14: cpuapp-cpuflpr
+	 *  - 18: cpuapp-cpurad
+	 */
+	nordic,interrupt-mapping = <0x00046041 0>;
 };
 
 &cpurad_bellboard {
@@ -143,9 +135,12 @@
 };
 
 &cpusec_cpuapp_ipc {
+	status = "okay";
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpuapp_ipc_shm>;
+};
+
+&cpusec_bellboard {
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -175,25 +170,53 @@ ipc0: &cpuapp_cpurad_ipc {
 	rx-region = <&cpuppr_cpuapp_ipc_shm>;
 };
 
+&cpuapp_cpuflpr_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
+	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
+};
+
 &cpuapp_dma_region {
 	status = "okay";
 };
 
-&dma_fast_region {
-	status = "okay";
+ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
+
+boot_partition: &cpuapp_boot_partition {
+	label = "mcuboot";
 };
 
-&cpuapp_rx_partitions {
-	status = "okay";
+slot0_partition: &cpuapp_slot0_partition {
+	label = "image-0";
 };
 
-&cpuapp_rw_partitions {
-	status = "okay";
+secondary_app_partition: &cpuapp_slot1_partition {};
+
+slot1_partition: &cpuapp_slot1_partition {
+	label = "image-1";
+};
+
+slot2_partition: &cpurad_slot0_partition {
+	label = "image-2";
+};
+
+slot3_partition: &cpurad_slot1_partition {
+	label = "image-3";
 };
 
 &cpuppr_vpr {
 	execution-memory = <&cpuppr_code_data>;
 	source-memory = <&cpuppr_code_partition>;
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_code_data>;
+	source-memory = <&cpuflpr_code_partition>;
+};
+
+&nfct {
+	status = "okay";
+	memory-regions = <&cpuapp_dma_region>;
 };
 
 &gpiote130 {
@@ -216,6 +239,13 @@ ipc0: &cpuapp_cpurad_ipc {
 	owned-channels = <4 5 6>;
 };
 
+&uart120 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart120_default>;
+	pinctrl-1 = <&uart120_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &uart135 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
@@ -230,35 +260,46 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &gpio6 {
-	status = "okay";
+	status = "disabled";
 };
 
 &exmif {
-	cs-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&exmif_default>;
-	pinctrl-names = "default";
-	status = "okay";
+	pinctrl-1 = <&exmif_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "disabled";
+
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "jedec,spi-nor";
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(48)>;
 		jedec-id = [c2 84 37];
-		sfdp-bfp = [
-			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
-			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
-			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
-			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
-		];
+		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 10 d8
+			    00 ff 00 ff 87 79 01 00 84 12 00 c4 cc 04 67 46
+			    30 b0 30 b0 f4 bd d5 5c 00 00 00 ff 10 10 00 20
+			    00 00 00 00 00 00 7c 23 48 00 00 00 00 00 88 88];
+		sfdp-ff05 = [00 ee c0 69 72 72 71 71 00 d8 f7 f6 00 0a 00 00
+			     14 45 98 80];
+		sfdp-ff84 = [43 06 0f 00 21 dc ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <30000>;
+		reset-gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+		t-reset-pulse = <10000>;
+		t-reset-recovery = <35000>;
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <1>;
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
 	};
 };
 
@@ -291,4 +332,28 @@ zephyr_udc0: &usbhs {
 &adc {
 	memory-regions = <&cpuapp_dma_region>;
 	status = "okay";
+};
+
+/* Trim this RAM block for power management related features. */
+&cpuapp_ram0 {
+	reg = <0x22000000 (DT_SIZE_K(32) - 256)>;
+	ranges = <0x0 0x22000000 (0x8000 - 0x100)>;
+};
+
+/ {
+	soc {
+		/* cache control functions - must be executed from local SRAM */
+		pm_ramfunc: cpuapp_s2ram@22007f00 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007f00 192>;
+			zephyr,memory-region = "PMLocalRamfunc";
+		};
+
+		/* run-time common S2RAM cpu context RAM */
+		pm_s2ram: cpuapp_s2ram@22007fe0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007fe0 32>;
+			zephyr,memory-region = "pm_s2ram_context";
+		};
+	};
 };

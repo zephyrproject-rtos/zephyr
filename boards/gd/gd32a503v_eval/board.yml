@@ -1,5 +1,6 @@
 board:
   name: gd32a503v_eval
+  full_name: GD32A503V-EVAL
   vendor: gd
   socs:
     - name: gd32a503

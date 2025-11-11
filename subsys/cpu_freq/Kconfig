@@ -1,0 +1,87 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_CPU_FREQ
+	bool
+	help
+	  Enabled by the SoC if it has a DTS property indicating support for
+	  CPU frequency scaling.
+
+menuconfig CPU_FREQ
+	bool "CPU Frequency Scaling Subsystem"
+	select EXPERIMENTAL
+	help
+	  CPU Frequency scaling subsystem
+
+if CPU_FREQ
+
+module = CPU_FREQ
+module-str = CPU Frequency Scaling
+source "subsys/logging/Kconfig.template.log_config"
+
+config CPU_FREQ_INTERVAL_MS
+	int "CPU Freq evaluation interval"
+	default 1000
+	help
+	  Controls the interval (in milliseconds) at which the CPU Frequency
+	  subsystem runs and evaluates the current policy.
+
+config CPU_FREQ_PER_CPU_SCALING
+	bool "Per-CPU frequency scaling"
+	default n
+	depends on SMP
+	help
+	  Enable per-CPU frequency scaling support. If disabled, setting the
+	  P-state will apply to the whole system instead of just the current CPU.
+	  This should be done at the SoC level.
+
+choice CPU_FREQ_POLICY
+	prompt "CPU Frequency Scaling Policy"
+	default CPU_FREQ_POLICY_NONE
+	help
+	  The policy algorithm to use when using the CPU freq subsystem.
+
+config CPU_FREQ_POLICY_NONE
+	bool "No selected policy"
+	help
+	  Kconfig placeholder if no policy is chosen. This Kconfig will produce a build error
+
+config CPU_FREQ_POLICY_ON_DEMAND
+	bool "On-demand Policy"
+	select CPU_LOAD_METRIC
+
+endchoice # CPU_FREQ_POLICY
+
+choice CPU_FREQ_PSTATE_SET
+	prompt "Select method of setting CPU P-state"
+	default CPU_FREQ_PSTATE_SET_SOC if HAS_CPU_FREQ
+	default CPU_FREQ_PSTATE_SET_STUB
+	help
+	  The implementation used to set the CPU P-state.
+
+config CPU_FREQ_PSTATE_SET_STUB
+	bool "Stub P-state setter"
+	help
+	  A stub implementation that does nothing. This is useful for
+	  exercising the CPU frequency subsystem without actually
+	  changing the CPU frequency.
+
+config CPU_FREQ_PSTATE_SET_SOC
+	bool "SoC-specific P-state setter"
+	depends on HAS_CPU_FREQ
+	help
+	  A SoC-specific implementation that sets the CPU P-state using
+	  SoC-specific mechanisms. This requires the SoC to provide
+	  the necessary implementation of cpu_freq_pstate_set().
+
+config CPU_FREQ_PSTATE_SET_CUSTOM
+	bool "Custom P-state setter defined by the project"
+	help
+	  A custom implementation that sets the CPU P-state using
+	  project-specific mechanisms. This requires the project to provide
+	  the necessary implementation of cpu_freq_pstate_set().
+
+endchoice # CPU_FREQ_PSTATE_SET
+
+endif # CPU_FREQ

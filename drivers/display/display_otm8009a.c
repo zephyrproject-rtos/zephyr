@@ -605,7 +605,7 @@ static void otm8009a_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
-static const struct display_driver_api otm8009a_api = {
+static DEVICE_API(display, otm8009a_api) = {
 	.blanking_on = otm8009a_blanking_on,
 	.blanking_off = otm8009a_blanking_off,
 	.write = otm8009a_write,

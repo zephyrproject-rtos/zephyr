@@ -16,7 +16,7 @@
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/sys/util.h>
 
 #include <esp_private/system_internal.h>
@@ -33,7 +33,12 @@
 #include <esp_app_format.h>
 #include <esp_clk_internal.h>
 
-extern void z_cstart(void);
+#define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+
+void __appcpu_start(void);
+static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+
+extern FUNC_NORETURN void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -44,17 +49,15 @@ static void core_intr_matrix_clear(void)
 	}
 }
 
-void IRAM_ATTR __app_cpu_start(void)
+void IRAM_ATTR __appcpu_start(void)
 {
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 
@@ -69,10 +72,8 @@ void IRAM_ATTR __app_cpu_start(void)
 
 	core_intr_matrix_clear();
 
-	esp_intr_initialize();
-
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }
@@ -86,5 +87,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

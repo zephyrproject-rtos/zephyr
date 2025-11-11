@@ -16,8 +16,9 @@
  */
 int adsp_comm_widget_pmc_send_ipc(uint16_t banks)
 {
-	if (!cw_upstream_ready())
+	if (!cw_upstream_ready()) {
 		return -EBUSY;
+	}
 
 	uint32_t iface = FIELD_PREP(CW_PMC_IPC_OP_CODE, CW_PMC_OPC_SRAM_CONFIG) |
 			 FIELD_PREP(CW_PMC_IPC_SRAM_USED_BANKS, banks) |

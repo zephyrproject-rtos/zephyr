@@ -257,7 +257,7 @@ static void data64_mts_cb(uint64_t data, uint64_t ts)
 	cfg.cb(STP_DATA64, d, &ts, true);
 }
 
-static void master_cb(uint64_t id, uint64_t ts)
+static void major_cb(uint64_t id, uint64_t ts)
 {
 	ARG_UNUSED(ts);
 	uint16_t m_id = (uint16_t)id;
@@ -265,7 +265,7 @@ static void master_cb(uint64_t id, uint64_t ts)
 
 	curr_ch = 0;
 
-	cfg.cb(STP_DECODER_MASTER, data, NULL, false);
+	cfg.cb(STP_DECODER_MAJOR, data, NULL, false);
 }
 
 static void channel16_cb(uint64_t id, uint64_t ts)
@@ -383,7 +383,7 @@ static void async_cb(uint64_t data, uint64_t ts)
 
 static const struct stp_item items[] = {
 	STP_ITEM(STP_NULL, (0x0), 1, 0, false, null_cb),
-	STP_ITEM(STP_M8, (0x1), 1, 2, false, master_cb),
+	STP_ITEM(STP_M8, (0x1), 1, 2, false, major_cb),
 	STP_ITEM(STP_MERR, (0x2), 1, 2, false, merror_cb),
 	STP_ITEM(STP_C8, (0x3), 1, 2, false, channel_cb),
 	STP_ITEM(STP_D8, (0x4), 1, 2, false, data8_cb),
@@ -412,7 +412,7 @@ static const struct stp_item items[] = {
 	STP_ITEM(STP_FREQ_40, (0xf0, 0xf0), 4, 10, false, freq_cb),
 	STP_ITEM(STP_FREQ_40_TS, (0xf0, 0xf1), 4, 0, true, notsup_cb),
 	STP_ITEM(STP_DIP, (0xf0, 0xf2), 4, 0, false, notsup_cb),
-	STP_ITEM(STP_M16, (0xf1), 2, 4, false, master_cb),
+	STP_ITEM(STP_M16, (0xf1), 2, 4, false, major_cb),
 	STP_ITEM(STP_GERR, (0xf2), 2, 2, false, gerror_cb),
 	STP_ITEM(STP_C16, (0xf3), 2, 4, false, channel16_cb),
 	STP_ITEM(STP_D8TS, (0xf4), 2, 2, true, data8_ts_cb),
@@ -461,36 +461,41 @@ static inline void get_nibbles64(const uint8_t *src, size_t src_noff, uint8_t *d
 {
 	bool src_ba = (src_noff & 0x1UL) == 0;
 	bool dst_ba = (dst_noff & 0x1UL) == 0;
-	uint64_t *src64 = (uint64_t *)&src[src_noff / 2];
-	uint64_t *dst64 = (uint64_t *)&dst[dst_noff / 2];
+	uint32_t *src32 = (uint32_t *)&src[src_noff / 2];
+	uint32_t *dst32 = (uint32_t *)&dst[dst_noff / 2];
 
 	if (nlen == 16) {
 		/* dst must be aligned. */
 		if (src_ba) {
-			uint32_t *s32 = (uint32_t *)src64;
-			uint32_t *d32 = (uint32_t *)dst64;
-
-			d32[0] = s32[0];
-			d32[1] = s32[1];
+			dst32[0] = src32[0];
+			dst32[1] = src32[1];
 		} else {
-			uint64_t part_a = src64[0] >> 4;
-			uint64_t part_b = src64[1] << 60;
+			uint64_t src0 = src32[0] | ((uint64_t)src32[1] << 32);
+			uint64_t src1 = src32[2] | ((uint64_t)src32[3] << 32);
+			uint64_t part_a = src0 >> 4;
+			uint64_t part_b = src1 << 60;
+			uint64_t out = part_a | part_b;
 
-			dst64[0] = part_a | part_b;
+			dst32[0] = (uint32_t)out;
+			dst32[1] = (uint32_t)(out >> 32);
 		}
 		return;
 	}
 
+	uint64_t src0 = src32[0] | ((uint64_t)src32[1] << 32);
 	uint64_t mask = BIT64_MASK(nlen * 4) << (src_ba ? 0 : 4);
-	uint64_t src_d = src64[0] & mask;
+	uint64_t src_d = src0 & mask;
 
 	if (((src_noff ^ dst_noff) & 0x1UL) == 0) {
-		dst64[0] |= src_d;
+		/* nothing */
 	} else if (dst_ba) {
-		dst64[0] |= (src_d >> 4);
+		src_d >>= 4;
 	} else {
-		dst64[0] |= (src_d << 4);
+		src_d <<= 4;
 	}
+
+	dst32[0] |= (uint32_t)src_d;
+	dst32[1] |= (uint32_t)(src_d >> 32);
 }
 
 /* Function performs getting nibbles in less efficient way but does not use unaligned

@@ -5,4 +5,4 @@ description: ADXL345 3-axis accelerometer with SPI connection
 
 compatible: "adi,adxl345"
 
-include: [sensor-device.yaml, spi-device.yaml]
+include: ["spi-device.yaml", "adi,adxl345-common.yaml"]

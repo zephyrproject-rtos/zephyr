@@ -1,7 +1,4 @@
-.. _bl654_sensor_board:
-
-Ezurio BL654 Sensor Board
-#########################
+.. zephyr:board:: bl654_sensor_board
 
 Overview
 ********
@@ -27,12 +24,6 @@ This sensor board has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl654_sensor_board.jpg
-     :align: center
-     :alt: BL654 Sensor Board front and back
-
-     BL654 Sensor Board front and back
-
 .. figure:: img/bl654_sensor_board_usb_swd_programmer.jpg
      :align: center
      :alt: BL654 Sensor Board connected to USB-SWD Programmer (UART and SWD access)
@@ -49,43 +40,7 @@ Hardware
 Supported Features
 ==================
 
-The BL654 Sensor Board configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
-See the `BL654 website`_ for a complete list of BL654 module hardware features.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -128,6 +83,8 @@ be blobbed.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``bl654_sensor_board`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running. An external
@@ -145,7 +102,7 @@ as usual (see :ref:`build_an_application` and :ref:`application_run` for more
 details). If using a Ezurio USB-SWD Programmer Board, see the
 `pyOCD website`_ to find details about the software and how to install it.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output - note that an
 external UART is required to be connected to the BL654 sensor board's UART, if
@@ -222,9 +179,9 @@ Testing Bluetooth on the BL654 Sensor Board
 Many of the Bluetooth examples will work on the BL654 Sensor Board.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LED and button on the BL654 Sensor Board

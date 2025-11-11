@@ -608,16 +608,6 @@ static int fdc2x1x_get_cap_data(const struct device *dev)
 static int fdc2x1x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		LOG_ERR("Sample fetch failed, device is not in active mode");
-		return -ENXIO;
-	}
-#endif
-
 	return fdc2x1x_get_cap_data(dev);
 }
 
@@ -718,7 +708,7 @@ static int fdc2x1x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api fdc2x1x_api_funcs = {
+static DEVICE_API(sensor, fdc2x1x_api_funcs) = {
 	.attr_set = fdc2x1x_attr_set,
 	.sample_fetch = fdc2x1x_sample_fetch,
 	.channel_get = fdc2x1x_channel_get,

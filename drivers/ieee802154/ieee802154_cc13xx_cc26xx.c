@@ -31,6 +31,10 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 
 #include "ieee802154_cc13xx_cc26xx.h"
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <zephyr/net/openthread.h>
+#endif
+
 /* Overrides from SmartRF Studio 7 2.13.0 */
 static uint32_t overrides[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x3 (DITHER_EN=0 and IPEAK=3). */
@@ -124,7 +128,7 @@ ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
-	       IEEE802154_HW_RETRANSMISSION;
+	       IEEE802154_HW_RETRANSMISSION | IEEE802154_HW_ENERGY_SCAN;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
@@ -409,10 +413,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			corr = drv_data->rx_data[i][len--] & 0x3F;
 			rssi = drv_data->rx_data[i][len--];
 
-			/* remove fcs as it is not expected by L2
-			 * But keep it for RAW mode
-			 */
-			if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+			if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 				len -= 2;
 			}
 
@@ -521,6 +522,64 @@ static int ieee802154_cc13xx_cc26xx_attr_get(const struct device *dev, enum ieee
 		&drv_attr.phy_supported_channels, value);
 }
 
+static void cmd_ieee_ed_scan_callback(RF_Handle aRfHandle,
+				      RF_CmdHandle aRfCmdHandle,
+				      RF_EventMask aRfEventMask)
+{
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+	int maxRssi = IEEE802154_MAC_RSSI_DBM_UNDEFINED;
+
+	if (drv_data->cmd_ieee_ed_scan.status != IEEE_DONE_OK) {
+		LOG_DBG("ED Scan failed (%x)", drv_data->cmd_ieee_ed_scan.status);
+	} else {
+		maxRssi = drv_data->cmd_ieee_ed_scan.maxRssi;
+	}
+
+	drv_data->ed_scan_done_cb(dev, maxRssi);
+}
+
+int ieee802154_cc13xx_cc26xx_ed_scan(const struct device *dev,
+				     uint16_t duration,
+				     energy_scan_done_cb_t done_cb)
+{
+	int ret = 0;
+	int channel;
+	RF_EventMask reason;
+	RF_ScheduleCmdParams sched_params = {
+		.allowDelay = true,
+	};
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+
+	channel = drv_data->cmd_ieee_rx.channel;
+
+	drv_data->cmd_ieee_ed_scan.status = IDLE;
+	drv_data->cmd_ieee_ed_scan.channel = channel;
+	drv_data->cmd_ieee_ed_scan.endTime =
+		duration * (CC13XX_CC26XX_RAT_CYCLES_PER_SECOND / 1000);
+	drv_data->ed_scan_done_cb = done_cb;
+
+	/* Abort FG and BG processes */
+	if (ieee802154_cc13xx_cc26xx_stop(dev) < 0) {
+		return -EIO;
+	}
+
+	/* Block TX while starting the ED scan */
+	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
+
+	reason = RF_runScheduleCmd(drv_data->rf_handle,
+		(RF_Op *)&drv_data->cmd_ieee_ed_scan, &sched_params,
+		cmd_ieee_ed_scan_callback, RF_EventLastCmdDone);
+	if ((reason & RF_EventLastCmdDone) == 0) {
+		LOG_DBG("Failed to run command (0x%" PRIx64 ")",
+			reason);
+		ret = -EIO;
+	}
+
+	k_mutex_unlock(&drv_data->tx_mutex);
+	return ret;
+}
+
 static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
@@ -583,6 +642,7 @@ static const struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.stop = ieee802154_cc13xx_cc26xx_stop_if,
 	.configure = ieee802154_cc13xx_cc26xx_configure,
 	.attr_get = ieee802154_cc13xx_cc26xx_attr_get,
+	.ed_scan = ieee802154_cc13xx_cc26xx_ed_scan,
 };
 
 /** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
@@ -678,7 +738,11 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.bStrictLenFilter = 1
 		},
 		.frameTypes = {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+			.bAcceptFt0Beacon = 1,
+#else
 			.bAcceptFt0Beacon = 0,
+#endif
 			.bAcceptFt1Data = 1,
 			.bAcceptFt2Ack = 0,
 			.bAcceptFt3MacCmd = 1,
@@ -777,7 +841,13 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 	},
 
 	.cmd_radio_setup = {
+#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || \
+	defined(CONFIG_SOC_CC1352R7) || defined(CONFIG_SOC_CC2652R7)
 		.commandNo = CMD_RADIO_SETUP,
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) || \
+	defined(CONFIG_SOC_CC1352P7) || defined(CONFIG_SOC_CC2652P7)
+		.commandNo = CMD_RADIO_SETUP_PA,
+#endif /* CONFIG_SOC_CCxx52x */
 		.status = IDLE,
 		.pNextOp = NULL,
 		.startTrigger.triggerType = TRIG_NOW,
@@ -793,14 +863,55 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.txPower = 0x2853, /* 0 dBm */
 		.pRegOverride = overrides
 	},
+
+	.cmd_ieee_ed_scan = {
+		.commandNo = CMD_IEEE_ED_SCAN,
+		.status = IDLE,
+		.pNextOp = NULL,
+		.startTrigger.triggerType = TRIG_NOW,
+		.condition.rule = COND_NEVER,
+		.endTrigger = {
+			.triggerType = TRIG_REL_START,
+			.pastTrig = 1,
+		},
+		.ccaRssiThr = CC13XX_CC26XX_RECEIVER_SENSITIVITY + 10,
+		.ccaOpt = {
+#if IEEE802154_PHY_CCA_MODE == 1
+			.ccaEnEnergy = 1,
+			.ccaEnCorr = 0,
+#elif IEEE802154_PHY_CCA_MODE == 2
+			.ccaEnEnergy = 0,
+			.ccaEnCorr = 1,
+#elif IEEE802154_PHY_CCA_MODE == 3
+			.ccaEnEnergy = 1,
+			.ccaEnCorr = 1,
+#else
+#error "Invalid CCA mode"
+#endif
+			.ccaEnSync = 1,
+			.ccaSyncOp = 0,
+			.ccaCorrOp = 1,
+			.ccaCorrThr = 3,
+		},
+	},
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
+#define L2 IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU IEEE802154_MTU
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+#define L2 OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU 1280
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
 			  &ieee802154_cc13xx_cc26xx_data, NULL,
 			  CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
-			  &ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
-			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+			  &ieee802154_cc13xx_cc26xx_radio_api, L2,
+			  L2_CTX_TYPE, MTU);
 #else
 DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
 		      &ieee802154_cc13xx_cc26xx_data, NULL, POST_KERNEL,

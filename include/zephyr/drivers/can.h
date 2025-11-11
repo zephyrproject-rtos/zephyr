@@ -8,7 +8,8 @@
 
 /**
  * @file
- * @brief Controller Area Network (CAN) driver API.
+ * @brief Header file for Controller Area Network (CAN) controller driver API.
+ * @ingroup can_controller
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_H_
@@ -28,11 +29,16 @@ extern "C" {
 #endif
 
 /**
- * @brief CAN Interface
- * @defgroup can_interface CAN Interface
+ * @brief Interfaces for Controller Area Network (CAN) controllers and transceivers
+ * @defgroup can_interface CAN
+ * @ingroup io_interfaces
+ *
+ * @defgroup can_controller CAN Controller
+ * @brief Interfaces for CAN controllers
+ * @ingroup can_interface
  * @since 1.12
  * @version 1.1.0
- * @ingroup io_interfaces
+ *
  * @{
  */
 
@@ -45,26 +51,17 @@ extern "C" {
  * @brief Bit mask for a standard (11-bit) CAN identifier.
  */
 #define CAN_STD_ID_MASK 0x7FFU
-/**
- * @brief Maximum value for a standard (11-bit) CAN identifier.
- *
- * @deprecated Use ``CAN_STD_ID_MASK`` instead.
- */
-#define CAN_MAX_STD_ID  CAN_STD_ID_MASK __DEPRECATED_MACRO
+
 /**
  * @brief Bit mask for an extended (29-bit) CAN identifier.
  */
 #define CAN_EXT_ID_MASK 0x1FFFFFFFU
-/**
- * @brief Maximum value for an extended (29-bit) CAN identifier.
- *
- * @deprecated Use ``CAN_EXT_ID_MASK`` instead.
- */
-#define CAN_MAX_EXT_ID  CAN_EXT_ID_MASK __DEPRECATED_MACRO
+
 /**
  * @brief Maximum data length code for CAN 2.0A/2.0B.
  */
 #define CAN_MAX_DLC     8U
+
 /**
  * @brief Maximum data length code for CAN FD.
  */
@@ -770,7 +767,8 @@ struct can_device_state {
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm, data, config, level, prio, api,		\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm, data,	\
+			config,	level, prio, api,			\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
@@ -835,8 +833,16 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  *
  * Get the minimum supported bitrate for the CAN controller/transceiver combination.
  *
+ * @note The minimum bitrate represents limitations of the CAN controller/transceiver
+ * combination. Whether the CAN controller can achieve this bitrate depends on the CAN core clock
+ * rate and the minimum CAN timing limits.
+ *
+ * @see can_get_core_clock()
+ * @see can_get_timing_min()
+ * @see can_get_timing_data_min()
+ *
  * @param dev Pointer to the device structure for the driver instance.
- * @return Minimum supported bitrate in bits/s
+ * @return Minimum supported bitrate in bits/s. A value of 0 means the lower limit is unspecified.
  */
 __syscall uint32_t can_get_bitrate_min(const struct device *dev);
 
@@ -848,29 +854,17 @@ static inline uint32_t z_impl_can_get_bitrate_min(const struct device *dev)
 }
 
 /**
- * @brief Get minimum supported bitrate
- *
- * Get the minimum supported bitrate for the CAN controller/transceiver combination.
- *
- * @deprecated Use @a can_get_bitrate_min() instead.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param[out] min_bitrate Minimum supported bitrate in bits/s
- *
- * @retval -EIO General input/output error.
- * @retval -ENOSYS If this function is not implemented by the driver.
- */
-__deprecated static inline int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
-{
-	*min_bitrate = can_get_bitrate_min(dev);
-
-	return 0;
-}
-
-/**
  * @brief Get maximum supported bitrate
  *
  * Get the maximum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @note The maximum bitrate represents limitations of the CAN controller/transceiver
+ * combination. Whether the CAN controller can achieve this bitrate depends on the CAN core clock
+ * rate and the maximum CAN timing limits.
+ *
+ * @see can_get_core_clock()
+ * @see can_get_timing_max()
+ * @see can_get_timing_data_max()
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @return Maximum supported bitrate in bits/s
@@ -882,27 +876,6 @@ static inline uint32_t z_impl_can_get_bitrate_max(const struct device *dev)
 	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
 
 	return common->max_bitrate;
-}
-
-/**
- * @brief Get maximum supported bitrate
- *
- * Get the maximum supported bitrate for the CAN controller/transceiver combination.
- *
- * @deprecated Use @a can_get_bitrate_max() instead.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param[out] max_bitrate Maximum supported bitrate in bits/s
- *
- * @retval 0 If successful.
- * @retval -EIO General input/output error.
- * @retval -ENOSYS If this function is not implemented by the driver.
- */
-__deprecated static inline int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	*max_bitrate = can_get_bitrate_max(dev);
-
-	return 0;
 }
 
 /**
@@ -1086,29 +1059,6 @@ __syscall int can_set_timing_data(const struct device *dev,
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
-
-/**
- * @brief Fill in the prescaler value for a given bitrate and timing
- *
- * Fill the prescaler value in the timing struct. The sjw, prop_seg, phase_seg1
- * and phase_seg2 must be given.
- *
- * The returned bitrate error is remainder of the division of the clock rate by
- * the bitrate times the timing segments.
- *
- * @deprecated This function allows for bitrate errors, but bitrate errors between nodes on the same
- *             network leads to them drifting apart after the start-of-frame (SOF) synchronization
- *             has taken place.
- *
- * @param dev     Pointer to the device structure for the driver instance.
- * @param timing  Result is written into the can_timing struct provided.
- * @param bitrate Target bitrate.
- *
- * @retval 0 or positive bitrate error.
- * @retval Negative error code on error.
- */
-__deprecated int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
-				    uint32_t bitrate);
 
 /**
  * @brief Configure the bus timing of a CAN controller.
@@ -1425,7 +1375,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->remove_rx_filter(dev, filter_id);
+	api->remove_rx_filter(dev, filter_id);
 }
 
 /**

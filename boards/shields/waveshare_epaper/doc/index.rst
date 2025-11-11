@@ -1,4 +1,4 @@
-.. _waveshare_e_paper_raw_panel_shield:
+.. _waveshare_epaper:
 
 WAVESHARE e-Paper Raw Panel Shield
 ##################################

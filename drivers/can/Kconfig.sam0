@@ -7,3 +7,4 @@ config CAN_SAM0
 	default y
 	depends on DT_HAS_ATMEL_SAM0_CAN_ENABLED
 	select CAN_MCAN
+	select PINCTRL

@@ -66,6 +66,9 @@ int lll_clock_deinit(void)
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 
+	/* Cancel any ongoing request */
+	(void)onoff_cancel(mgr, &lf_cli);
+
 	return onoff_release(mgr);
 }
 
@@ -124,7 +127,7 @@ int lll_hfclock_on_wait(void)
 
 int lll_hfclock_off(void)
 {
-	if (hf_refcnt < 1) {
+	if (atomic_get(&hf_refcnt) < 1) {
 		return -EALREADY;
 	}
 

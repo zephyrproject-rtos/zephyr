@@ -1,0 +1,21 @@
+family:
+  - name: mt8xxx
+    series:
+      - name: mt8195
+        socs:
+          - name: mt8195
+            cpuclusters:
+              - name: adsp
+      - name: mt818x
+        socs:
+          - name: mt8186
+            cpuclusters:
+              - name: adsp
+          - name: mt8188
+            cpuclusters:
+              - name: adsp
+      - name: mt8196
+        socs:
+          - name: mt8196
+            cpuclusters:
+              - name: adsp

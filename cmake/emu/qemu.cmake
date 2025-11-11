@@ -67,13 +67,20 @@ elseif(QEMU_PIPE)
   foreach(target ${qemu_targets})
     list(APPEND PRE_QEMU_COMMANDS_FOR_${target} COMMAND ${CMAKE_COMMAND} -E touch ${QEMU_PIPE})
   endforeach()
+elseif(QEMU_SOCKET)
+  # Serve serial console on a TCP/IP port.
+  list(APPEND QEMU_FLAGS -chardev socket,id=con,mux=on,server=on,host=127.0.0.1,port=4321)
 else()
   # Redirect console to stdio, used for manual debugging.
   list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
 endif()
 
 # Connect main serial port to the console chardev.
-list(APPEND QEMU_FLAGS -serial chardev:con)
+if(CONFIG_DT_HAS_VIRTIO_CONSOLE_ENABLED)
+  list(APPEND QEMU_FLAGS -serial none -device virtio-serial -device virtconsole,chardev=con)
+else()
+  list(APPEND QEMU_FLAGS -serial chardev:con)
+endif()
 
 # Connect semihosting console to the console chardev if configured.
 if(CONFIG_SEMIHOST)
@@ -83,7 +90,11 @@ if(CONFIG_SEMIHOST)
 endif()
 
 # Connect monitor to the console chardev.
-list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
+if(CONFIG_DT_HAS_VIRTIO_CONSOLE_ENABLED)
+  list(APPEND QEMU_FLAGS -monitor none)
+else()
+  list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
+endif()
 
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)
@@ -254,26 +265,35 @@ elseif(QEMU_NET_STACK)
     # NET_TOOLS has been set to the net-tools repo path
     # net-tools/monitor_15_4 has been built beforehand
 
-    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
+    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../tools/net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
-      COMMAND
+      #Disable Ctrl-C to ensure that users won't accidentally exit
+      #w/o killing the monitor.
+      COMMAND stty intr ^d
+
       #This command is run in the background using '&'. This prevents
       #chaining other commands with '&&'. The command is enclosed in '{}'
       #to fix this.
-      {
-      ${NET_TOOLS}/monitor_15_4
-      ${PCAP}
-      /tmp/ip-stack-server
-      /tmp/ip-stack-client
-      > /dev/null &
+      COMMAND {
+        ${NET_TOOLS}/monitor_15_4
+        ${PCAP}
+        /tmp/ip-stack-server
+        /tmp/ip-stack-client
+        > /dev/null &
       }
-      # TODO: Support cleanup of the monitor_15_4 process
+      )
+    set(POST_QEMU_COMMANDS_FOR_server
+      # Re-enable Ctrl-C.
+      COMMAND stty intr ^c
+
+      # Kill the monitor_15_4 sub-process
+      COMMAND pkill -P $$$$
       )
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_CAN AND NOT (CONFIG_NIOS2 OR CONFIG_SOC_LEON3))
+if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
   # Add CAN bus 0
   list(APPEND QEMU_FLAGS -object can-bus,id=canbus0)
 
@@ -440,6 +460,7 @@ foreach(target ${qemu_targets})
     ${MORE_FLAGS_FOR_${target}}
     ${QEMU_SMP_FLAGS}
     ${QEMU_KERNEL_OPTION}
+    ${POST_QEMU_COMMANDS_FOR_${target}}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"

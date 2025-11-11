@@ -1,0 +1,22 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp1>;
+	};
+};
+
+&opamp0 {
+	functional-mode = "follower";
+	is-reference-source;
+	compensation-capcitor = <0>;
+};
+
+&opamp1 {
+	functional-mode = "inverting";
+	compensation-capcitor = <2>;
+};

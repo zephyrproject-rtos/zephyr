@@ -1,7 +1,8 @@
-.. _ipc_multi_endpoint_sample:
+.. zephyr:code-sample:: ipc_multi_endpoint
+   :name: IPC service: Multi-endpoint
+   :relevant-api: ipc
 
-IPC Service - Multi-endpoint Sample Application
-###############################################
+   Use the IPC Service with multiple endpoints.
 
 This application demonstrates how to use IPC Service with multiple endpoints.
 By default, it uses the ``icmsg_me`` backend.

@@ -100,6 +100,7 @@ extern uint8_t ull_filter_lll_fal_match(struct lll_filter const *const filter,
 					uint8_t *devmatch_id);
 extern bool ull_filter_lll_lrpa_used(uint8_t rl_idx);
 extern bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx);
+extern bt_addr_t *ull_filter_lll_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type);
 extern uint8_t *ull_filter_lll_irks_get(uint8_t *count);
 extern uint8_t ull_filter_lll_rl_idx(bool fal, uint8_t devmatch_id);
 extern uint8_t ull_filter_lll_rl_irk_idx(uint8_t irkmatch_id);

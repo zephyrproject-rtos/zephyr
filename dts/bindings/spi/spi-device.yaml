@@ -50,6 +50,9 @@ properties:
     description: |
       SPI clock phase that indicates on which edge data is sampled.
       If it is used, data is sampled on the second edge; otherwise, on the first edge.
+  spi-lsb-first:
+    type: boolean
+    description: The device requires least significant bit first data mode.
   spi-hold-cs:
     type: boolean
     description: |
@@ -58,3 +61,22 @@ properties:
       without releasing it. A typical use case is variable length SPI packets
       where the first spi transaction reads the length and the second spi transaction
       reads length bytes.
+  spi-cs-high:
+    type: boolean
+    description: The device requires the chip select to be active high.
+  spi-interframe-delay-ns:
+    type: int
+    default: 0
+    description: |
+      Delay in nanoseconds between SPI words.
+      Default of 0 is special value which will assume to mean half of the SCK period.
+  spi-cs-setup-delay-ns:
+    type: int
+    description: |
+      Delay in nanoseconds to be introduced by the controller after CS is asserted.
+      Also known as enable lead time.
+  spi-cs-hold-delay-ns:
+    type: int
+    description: |
+     Delay in nanoseconds to be introduced by the controller before the CS is de-asserted.
+      Also known as enable lag time.

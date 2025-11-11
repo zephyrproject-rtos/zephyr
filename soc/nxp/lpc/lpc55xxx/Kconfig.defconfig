@@ -19,7 +19,6 @@ config SECOND_CORE_MCUX
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
 
-
 # Move the LMA for the second core image to be in the flash region of primary
 # core, so that JLink flash will load it correctly.
 config BUILD_OUTPUT_ADJUST_LMA
@@ -52,46 +51,21 @@ config CAN_MCUX_MCAN
 	default y
 	depends on CAN
 
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_LPCIP3511
-endchoice
-
 endif # SOC_LPC55S16
 
-if SOC_LPC55S28
-
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_LPCIP3511
-endchoice
-
-endif # SOC_LPC55S28
-
-if SOC_LPC55S36
-
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_LPCIP3511
-endchoice
-
-endif # SOC_LPC55S36
-
-if SOC_LPC55S69
+if SOC_LPC55S69_CPU0
 
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 	depends on !TRUSTED_EXECUTION_NONSECURE
 
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_LPCIP3511
-endchoice
-
 config I2S_MCUX_FLEXCOMM
 	select INIT_PLL0
 
-endif # SOC_LPC55S69
+endif # SOC_LPC55S69_CPU0
 
 if SOC_LPC55S69_CPU1
-
 
 config GPIO
 	default y

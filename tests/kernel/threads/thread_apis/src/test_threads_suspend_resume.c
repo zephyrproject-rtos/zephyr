@@ -86,7 +86,7 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
 /**
  * @ingroup kernel_thread_tests
  *
- * @brief Check that k_thread_suspend() is a schedule point when
+ * @brief Check that suspending a thread is a schedule point when
  * called on the current thread.
  */
 ZTEST(threads_lifecycle, test_threads_suspend)
@@ -121,7 +121,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Check that k_thread_suspend() cancels a preexisting thread timeout
+ * @brief Check that suspending a thread cancels a preexisting thread timeout
  *
  * @details Suspended threads should not wake up unexpectedly if they
  * happened to have been sleeping when suspended.
@@ -149,7 +149,7 @@ ZTEST(threads_lifecycle, test_threads_suspend_timeout)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Check resume an unsuspend thread
+ * @brief Check resuming a thread that is not suspended
  *
  * @details Use k_thread_state_str() to get thread state.
  * Resume an unsuspend thread will not change the thread state.

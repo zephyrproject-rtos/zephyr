@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
- /* This partition table should be used along with TFM configuration:
-  * - TEST_S=OFF (NO REGRESSION)
-  *
-  * In this configuration, TFM binary does not include tests.
-  * The partition sizes are compatible with TF-M platform flash_layout.h.
-  */
+/* This partition table should be used along with TFM configuration:
+ * - TEST_S=OFF (NO REGRESSION)
+ *
+ * In this configuration, TFM binary does not include tests.
+ * The partition sizes are compatible with TF-M platform flash_layout.h.
+ */
 
 / {
 	chosen {

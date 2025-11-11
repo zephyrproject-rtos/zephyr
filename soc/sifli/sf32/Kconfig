@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SF32
+	select HAS_SIFLI_HAL
+
+if SOC_FAMILY_SF32
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_SF32

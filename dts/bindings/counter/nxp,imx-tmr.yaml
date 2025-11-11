@@ -33,7 +33,7 @@ properties:
       - "kQTMR_SecSrcTrigPriCnt"
       - "kQTMR_CascadeCount"
 
-  primary_source:
+  primary-source:
     type: string
     required: true
     description: Primary source of the timer, see qtmr_primary_count_source_t enumerator type
@@ -56,7 +56,7 @@ properties:
       - "kQTMR_ClockDivide_64"
       - "kQTMR_ClockDivide_128"
 
-  secondary_source:
+  secondary-source:
     type: string
     description: Secondary source of the timer, see qtmr_input_source_t enumerator type
       of the MCUXpresso SDK
@@ -66,11 +66,11 @@ properties:
       - "kQTMR_Counter2InputPin"
       - "kQTMR_Counter3InputPin"
 
-  filter_count:
+  filter-count:
     type: int
     description: Fault filter count (0-255).
 
-  filter_period:
+  filter-period:
     type: int
     description: Fault filter period (0-255).
 

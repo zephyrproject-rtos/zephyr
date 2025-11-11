@@ -21,6 +21,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_1: led_1 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -90,7 +91,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

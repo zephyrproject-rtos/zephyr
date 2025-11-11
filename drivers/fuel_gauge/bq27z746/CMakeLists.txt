@@ -1,5 +1,3 @@
-zephyr_library()
-
 zephyr_library_sources(bq27z746.c)
 
 zephyr_include_directories_ifdef(CONFIG_EMUL_BQ27Z746 .)

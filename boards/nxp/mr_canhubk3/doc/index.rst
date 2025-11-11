@@ -1,7 +1,4 @@
-.. _mr_canhubk3:
-
-NXP MR-CANHUBK3
-###############
+.. zephyr:board:: mr_canhubk3
 
 Overview
 ********
@@ -10,10 +7,6 @@ Overview
 as autonomous mobile robots (AMR) and automated guided vehicles (AGV). It
 features an `NXP S32K344`_ general-purpose automotive microcontroller based on
 an Arm Cortex-M7 core (Lock-Step).
-
-.. image:: img/mr_canhubk3_top.jpg
-     :align: center
-     :alt: NXP MR-CANHUBK3 (TOP)
 
 Hardware
 ********
@@ -40,31 +33,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``mr_canhubk3`` board configuration supports the following hardware features:
-
-============  ==========  ================================
-Interface     Controller  Driver/Component
-============  ==========  ================================
-SIUL2         on-chip     | pinctrl
-                          | gpio
-                          | external interrupt controller
-WKPU          on-chip     interrupt controller
-LPUART        on-chip     serial
-QSPI          on-chip     flash
-FLEXCAN       on-chip     can
-LPI2C         on-chip     i2c
-ADC SAR       on-chip     adc
-LPSPI         on-chip     spi
-WDT           FS26 SBC    watchdog
-EMAC          on-chip     ethernet
-                          mdio
-eMIOS         on-chip     pwm
-EDMA          on-chip     dma
-FLEXIO PWM    on-chip     pwm
-============  ==========  ================================
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/mr_canhubk3/mr_canhubk3_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -76,8 +45,8 @@ bank), and ``PTA20`` is the pin 4 of ``gpioa_h`` (high bank).
 The GPIO controller provides the option to route external input pad interrupts
 to either the SIUL2 EIRQ or WKPU interrupt controllers, as supported by the SoC.
 By default, GPIO interrupts are routed to SIUL2 EIRQ interrupt controller,
-unless they are explicity configured to be directed to the WKPU interrupt
-controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,s32-gpio.yaml`.
+unless they are explicitly configured to be directed to the WKPU interrupt
+controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,siul2-gpio.yaml`.
 
 To find information about which GPIOs are compatible with each interrupt
 controller, refer to the device reference manual.
@@ -270,7 +239,7 @@ Ethernet
 
 This board has a single instance of Ethernet Media Access Controller (EMAC)
 interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. Currently, there is
-limited driver for this PHY that allows for overiding the default pin strapping configuration for
+limited driver for this PHY that allows for overriding the default pin strapping configuration for
 the PHY (RMII, master, autonomous mode enabled, polarity correction enabled)
 to slave mode.
 
@@ -280,15 +249,18 @@ The 100Base-T1 signals are available in connector ``P9`` and can be converted to
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``mr_canhubk3`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
 This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_ and `pyOCD`_
-West runners for flashing and debugging applications. Follow the steps described
-in :ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
-:ref:`pyocd-debug-host-tools`,
-to setup the flash and debug host tools for these runners, respectively. The
-default runner is J-Link.
+West runners for flashing and debugging. Follow the steps described in
+:ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
+:ref:`pyocd-debug-host-tools`, to set up the required host tools.
+The default runner is J-Link.
+
+If using TRACE32, ensure you have version >= 2024.09 installed.
 
 Flashing
 ========
@@ -330,6 +302,8 @@ Debugging
 Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
 Alternatively, run ``west debug -r trace32`` or ``west debug -r pyocd``
 to launch the Lauterbach TRACE32 or pyOCD software debugging interface respectively.
+
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********

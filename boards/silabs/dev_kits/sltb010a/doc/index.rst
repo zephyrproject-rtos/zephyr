@@ -1,21 +1,14 @@
-.. _sltb010a:
-
-EFR32BG22 Thunderboard (SLTB010A)
-#################################
+.. zephyr:board:: sltb010a
 
 SLTB010A is a development kit based on the EFR32BG22 SoC. Early revisions of
 the kit (A00 and A01) use a slightly different PCB (BRD4184A) from later
 revisions (BRD4184B).
 
-.. image:: ./sltb010a.jpg
-   :align: center
-   :alt: SLTB010A board
-
 Hardware
 ********
 
 - EFR32BG22 Blue Gecko Wireless SoC with upto 76.8 MHz operating frequency
-- ARM® Cortex® M33 core with 32 kB RAM and 512 kB Flash
+- ARM® Cortex®-M33 core with 32 kB RAM and 512 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor
@@ -49,38 +42,7 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 Supported Features
 ==================
 
-The sltb010a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| SPI(M/S)  | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | true random number generator        |
-+-----------+------------+-------------------------------------+
-| I2C(M/S)  | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/dev_kits/sltb010a/sltb010a_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -127,11 +89,13 @@ board.
 Programming and Debugging
 =========================
 
+.. zephyr:board-supported-runners::
+
 Flashing an application
 -----------------------
 
 Connect your device to your host computer using the USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 BRD4184A:
@@ -149,7 +113,7 @@ BRD4184B:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ to be installed on you host
+   ``west flash`` requires `SEGGER J-Link software`_ to be installed on you host
    computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -177,7 +141,7 @@ blobs from the SiLabs HAL repository.
    west blobs fetch hal_silabs
 
 Then build the Zephyr kernel and a Bluetooth sample with the following
-command. The :ref:`bluetooth-observer-sample` sample application is used in
+command. The :zephyr:code-sample:`bluetooth_observer` sample application is used in
 this example.
 
 BRD4184A:

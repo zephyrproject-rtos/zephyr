@@ -16,11 +16,11 @@
  * The driver supports both standard speed and overdrive speed modes.
  *
  * This driver is heavily based on the w1_zephyr_serial.c driver and the
- * technical documentation from Maxim Integrated.
+ * technical article from Analog Devices.
  *
  * - w1_zephyr_serial.c: drivers/w1/w1_zephyr_serial.c
- * - Maxim Integrated 1-Wire Communication Through Software:
- * https://www.analog.com/en/technical-articles/1wire-communication-through-software.html
+ * - Analog Devices 1-Wire Communication Through Software:
+ * https://www.analog.com/en/resources/technical-articles/1wire-communication-through-software.html
  */
 
 #include <zephyr/drivers/gpio.h>
@@ -307,7 +307,7 @@ static int w1_gpio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct w1_driver_api w1_gpio_driver_api = {
+static DEVICE_API(w1, w1_gpio_driver_api) = {
 	.reset_bus = w1_gpio_reset_bus,
 	.read_bit = w1_gpio_read_bit,
 	.write_bit = w1_gpio_write_bit,

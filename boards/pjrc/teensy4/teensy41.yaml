@@ -11,7 +11,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 768
 flash: 8192
 supported:
@@ -19,8 +18,8 @@ supported:
   - gpio
   - sdhc
   - usb_device
+  - netif:eth
 testing:
   ignore_tags:
     - net
     - posix
-vendor: nxp

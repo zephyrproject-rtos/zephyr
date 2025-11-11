@@ -151,14 +151,14 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
 			zassert_equal(listener_heap_id[i],
 				      HEAP_ID_FROM_POINTER(mem_block),
-				      "Heap ID mismatched: 0x%lx != %p",
-				      listener_heap_id[i], mem_block);
+				      "Heap ID mismatched: %p != %p",
+				      (void *)listener_heap_id[i], mem_block);
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
 			zassert_equal(listener_size[i],
 				      BIT(mem_block->info.blk_sz_shift),
-				      "Heap allocated sized: %u != %u",
+				      "Heap allocated sized: %zu != %lu",
 				      listener_size[i],
 				      BIT(mem_block->info.blk_sz_shift));
 #endif
@@ -188,14 +188,14 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
 			zassert_equal(listener_heap_id[i],
 				      HEAP_ID_FROM_POINTER(mem_block),
-				      "Heap ID mismatched: 0x%lx != %p",
-				      listener_heap_id[i], mem_block);
+				      "Heap ID mismatched: 0x%p != %p",
+				      (void *)listener_heap_id[i], mem_block);
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
 			zassert_equal(listener_size[i],
 				      BIT(mem_block->info.blk_sz_shift),
-				      "Heap allocated sized: %u != %u",
+				      "Heap allocated sized: %zu != %lu",
 				      listener_size[i],
 				      BIT(mem_block->info.blk_sz_shift));
 #endif
@@ -387,28 +387,28 @@ ZTEST(lib_mem_block, test_mem_block_get)
 			"sys_mem_blocks_get bitmap failed, %p != %p",
 			listener_mem[0], mem_block_01.buffer);
 	zassert_equal(listener_size[0], BLK_SZ*2,
-			"sys_mem_blocks_get bitmap failed, %u != %u",
+			"sys_mem_blocks_get bitmap failed, %zu != %u",
 			listener_size[0], BLK_SZ*2);
 
 	zassert_equal(listener_mem[1], mem_block_01.buffer + BLK_SZ*3,
 			"sys_mem_blocks_get bitmap failed, %p != %p",
 			listener_mem[1], mem_block_01.buffer + BLK_SZ*2);
 	zassert_equal(listener_size[1], BLK_SZ,
-			"sys_mem_blocks_get bitmap failed, %u != %u",
+			"sys_mem_blocks_get bitmap failed, %zu != %u",
 			listener_size[1], BLK_SZ);
 
 	zassert_equal(listener_mem[2], mem_block_01.buffer + BLK_SZ*2,
 			"sys_mem_blocks_get bitmap failed, %p != %p",
 			listener_mem[2], mem_block_01.buffer + BLK_SZ);
 	zassert_equal(listener_size[2], BLK_SZ,
-			"sys_mem_blocks_get bitmap failed, %u != %u",
+			"sys_mem_blocks_get bitmap failed, %zu != %u",
 			listener_size[2], BLK_SZ);
 
 	zassert_equal(listener_mem[3], mem_block_01.buffer,
 			"sys_mem_blocks_get bitmap failed, %p != %p",
 			listener_mem[3], mem_block_01.buffer);
 	zassert_equal(listener_size[3], BLK_SZ*4,
-			"sys_mem_blocks_get bitmap failed, %u != %u",
+			"sys_mem_blocks_get bitmap failed, %zu != %u",
 			listener_size[3], BLK_SZ*4);
 
 #endif
@@ -553,42 +553,42 @@ ZTEST(lib_mem_block, test_mem_block_alloc_free_contiguous)
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[0], mem_block_01.buffer);
 	zassert_equal(listener_size[0], BLK_SZ*NUM_BLOCKS,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[0], BLK_SZ*NUM_BLOCKS);
 
 	zassert_equal(listener_mem[1], mem_block_01.buffer,
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[1], mem_block_01.buffer);
 	zassert_equal(listener_size[1], BLK_SZ*3,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[1], BLK_SZ*3);
 
 	zassert_equal(listener_mem[2], mem_block_01.buffer+BLK_SZ*4,
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[2], mem_block_01.buffer+BLK_SZ*4);
 	zassert_equal(listener_size[2], BLK_SZ*4,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[2], BLK_SZ*4);
 
 	zassert_equal(listener_mem[3], mem_block_01.buffer,
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[3], mem_block_01.buffer);
 	zassert_equal(listener_size[3], BLK_SZ*3,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[3], BLK_SZ*3);
 
 	zassert_equal(listener_mem[4], mem_block_01.buffer+BLK_SZ*4,
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[4], mem_block_01.buffer+BLK_SZ*4);
 	zassert_equal(listener_size[4], BLK_SZ*4,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[4], BLK_SZ*4);
 
 	zassert_equal(listener_mem[5], mem_block_01.buffer,
 			"sys_mem_blocks_alloc_contiguous failed, %p != %p",
 			listener_mem[5], mem_block_01.buffer);
 	zassert_equal(listener_size[5], BLK_SZ*NUM_BLOCKS,
-			"sys_mem_blocks_alloc_contiguous failed, %u != %u",
+			"sys_mem_blocks_alloc_contiguous failed, %zu != %u",
 			listener_size[5], BLK_SZ*NUM_BLOCKS);
 #endif
 }

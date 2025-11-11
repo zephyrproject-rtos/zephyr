@@ -1,13 +1,55 @@
 /*
  * Copyright (c) 2023 PSICONTROL nv
+ * Copyright (c) 2025 Harris Tomy
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <st/u5/stm32u595.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 
 / {
 	soc {
 		compatible = "st,stm32u599", "st,stm32u5", "simple-bus";
+
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x400>;
+			interrupts = <135 0>, <136 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
+			resets = <&rctl STM32_RESET(APB2, 26)>;
+			status = "disabled";
+		};
+
+		mipi_dsi: dsihost@40016c00 {
+			compatible = "st,stm32u5-mipi-dsi", "st,stm32-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40016C00 0x1000>;
+			clock-names = "dsiclk", "dsisrc", "refclk", "pixelclk";
+			clocks = <&rcc STM32_CLOCK(APB2, 27U)>,
+					<&rcc STM32_SRC_DSIPHY DSI_SEL(1)>,
+					<&rcc STM32_SRC_HSE NO_SEL>,
+					<&rcc STM32_SRC_PLL3_R NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 27U)>;
+			status = "disabled";
+		};
+
+		xspi1: spi@420d3400 {
+			compatible = "st,stm32-xspi";
+			reg = <0x420d3400 0x400>,
+			      <0xa0000000 DT_SIZE_M(256)>;
+			interrupts = <131 0>;
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 12)>,
+				 <&rcc STM32_SRC_SYSCLK HSPI_SEL(0)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };

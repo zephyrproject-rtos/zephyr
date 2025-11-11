@@ -25,10 +25,6 @@ extern "C" {
 
 /** @cond ignore */
 
-#ifndef NET_PKT_HAS_CONTROL_BLOCK
-#define NET_PKT_HAS_CONTROL_BLOCK
-#endif
-
 /* See section 6.16.2.8 - Received Signal Strength Indicator (RSSI) */
 #define IEEE802154_MAC_RSSI_MIN       0U   /* corresponds to -174 dBm */
 #define IEEE802154_MAC_RSSI_MAX       254U /* corresponds to 80 dBm */
@@ -58,6 +54,16 @@ struct net_pkt_cb_ieee802154 {
 			 * value is not available for this packet.
 			 */
 			uint8_t rssi;
+		};
+		struct {
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+			/* The channel used for timed transmissions.
+			 *
+			 * Please refer to `ieee802154_radio_api::tx` documentation for
+			 * details.
+			 */
+			uint8_t txchannel;
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 		};
 	};
 
@@ -178,6 +184,18 @@ static inline void net_pkt_set_ieee802154_rssi_dbm(struct net_pkt *pkt, int16_t 
 
 	CODE_UNREACHABLE;
 }
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+static inline uint8_t net_pkt_ieee802154_txchannel(struct net_pkt *pkt)
+{
+	return net_pkt_cb_ieee802154(pkt)->txchannel;
+}
+
+static inline void net_pkt_set_ieee802154_txchannel(struct net_pkt *pkt, uint8_t channel)
+{
+	net_pkt_cb_ieee802154(pkt)->txchannel = channel;
+}
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 
 static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
 {

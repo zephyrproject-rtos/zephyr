@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&sdmmc1 {
-	sdmmc {
-		compatible = "zephyr,sdmmc-disk";
-	};
-};
-
 /delete-node/ &storage_partition;
 
 &flash0 {

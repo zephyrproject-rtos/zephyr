@@ -1,0 +1,6 @@
+board:
+  name: xg29_rb4412a
+  full_name: EFR32xG29 2.4 GHz 8 dBm Buck (xG29-RB4412A)
+  vendor: silabs
+  socs:
+    - name: efr32mg29b140f1024im40

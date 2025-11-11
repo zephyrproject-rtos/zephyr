@@ -834,9 +834,10 @@ static void usbd_dmareq_process(void)
 {
 	if ((m_ep_dma_waiting & m_ep_ready) &&
 	    (k_sem_take(&dma_available, K_NO_WAIT) == 0)) {
+		const bool low_power = nrf_usbd_common_suspend_check();
 		uint32_t req;
 
-		while (0 != (req = m_ep_dma_waiting & m_ep_ready)) {
+		while (!low_power && 0 != (req = m_ep_dma_waiting & m_ep_ready)) {
 			uint8_t pos;
 
 			if (NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST &&
@@ -1029,6 +1030,16 @@ void nrf_usbd_common_irq_handler(void)
 	volatile uint32_t *dma_endevent;
 	uint32_t epdatastatus = 0;
 
+	/* Always check and clear SOF but call handler only if SOF interrupt
+	 * is actually enabled.
+	 */
+	if (NRF_USBD->EVENTS_SOF) {
+		NRF_USBD->EVENTS_SOF = 0;
+		if (NRF_USBD->INTENSET & USBD_INTEN_SOF_Msk) {
+			ev_sof_handler();
+		}
+	}
+
 	/* Clear EPDATA event and only then get and clear EPDATASTATUS to make
 	 * sure we don't miss any event.
 	 */
@@ -1064,16 +1075,6 @@ void nrf_usbd_common_irq_handler(void)
 	if (NRF_USBD->EVENTS_USBRESET) {
 		NRF_USBD->EVENTS_USBRESET = 0;
 		ev_usbreset_handler();
-	}
-
-	/* Always check and clear SOF but call handler only if SOF interrupt
-	 * is actually enabled.
-	 */
-	if (NRF_USBD->EVENTS_SOF) {
-		NRF_USBD->EVENTS_SOF = 0;
-		if (NRF_USBD->INTENSET & USBD_INTEN_SOF_Msk) {
-			ev_sof_handler();
-		}
 	}
 
 	if (NRF_USBD->EVENTS_USBEVENT) {
@@ -1310,7 +1311,11 @@ bool nrf_usbd_common_is_started(void)
 bool nrf_usbd_common_suspend(void)
 {
 	bool suspended = false;
-	unsigned int irq_lock_key = irq_lock();
+	unsigned int irq_lock_key;
+
+	/* DMA doesn't work in Low Power mode, ensure there is no active DMA */
+	k_sem_take(&dma_available, K_FOREVER);
+	irq_lock_key = irq_lock();
 
 	if (m_bus_suspend) {
 		if (!(NRF_USBD->EVENTCAUSE & USBD_EVENTCAUSE_RESUME_Msk)) {
@@ -1327,6 +1332,7 @@ bool nrf_usbd_common_suspend(void)
 	}
 
 	irq_unlock(irq_lock_key);
+	k_sem_give(&dma_available);
 
 	return suspended;
 }

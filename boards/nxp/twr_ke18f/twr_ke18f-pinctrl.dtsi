@@ -6,15 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MKE18F512VLL16-pinctrl.h>
 
 &pinctrl {
 	adc0_default: adc0_default {
 		group0 {
 			pinmux = <ADC0_SE0_PTA0>,
-				<ADC0_SE1_PTA1>,
-				<ADC0_SE12_PTC14>;
+				 <ADC0_SE1_PTA1>,
+				 <ADC0_SE12_PTC14>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -31,7 +30,7 @@
 	flexcan0_default: flexcan0_default {
 		group0 {
 			pinmux = <CAN0_RX_PTE4>,
-				<CAN0_TX_PTE5>;
+				 <CAN0_TX_PTE5>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -49,8 +48,8 @@
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH0_PTD15>,
-				<FTM0_CH1_PTD16>,
-				<FTM0_CH5_PTB5>;
+				 <FTM0_CH1_PTD16>,
+				 <FTM0_CH5_PTB5>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -59,9 +58,9 @@
 	ftm3_default: ftm3_default {
 		group0 {
 			pinmux = <FTM3_CH4_PTC10>,
-				<FTM3_CH5_PTC11>,
-				<FTM3_CH6_PTC12>,
-				<FTM3_CH7_PTC13>;
+				 <FTM3_CH5_PTC11>,
+				 <FTM3_CH6_PTC12>,
+				 <FTM3_CH7_PTC13>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -70,7 +69,7 @@
 	lpi2c0_default: lpi2c0_default {
 		group0 {
 			pinmux = <LPI2C0_SCL_PTA3>,
-				<LPI2C0_SDA_PTA2>;
+				 <LPI2C0_SDA_PTA2>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -79,7 +78,7 @@
 	lpi2c1_default: lpi2c1_default {
 		group0 {
 			pinmux = <LPI2C1_SCL_PTD9>,
-				<LPI2C1_SDA_PTD8>;
+				 <LPI2C1_SDA_PTD8>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -88,8 +87,8 @@
 	lpspi0_default: lpspi0_default {
 		group0 {
 			pinmux = <LPSPI0_SCK_PTE0>,
-				<LPSPI0_SIN_PTE1>,
-				<LPSPI0_SOUT_PTE2>;
+				 <LPSPI0_SIN_PTE1>,
+				 <LPSPI0_SOUT_PTE2>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -99,9 +98,9 @@
 	lpspi0_pcs2: lpspi0_pcs2 {
 		group0 {
 			pinmux = <LPSPI0_SCK_PTE0>,
-				<LPSPI0_SIN_PTE1>,
-				<LPSPI0_SOUT_PTE2>,
-				<LPSPI0_PCS2_PTE6>;
+				 <LPSPI0_SIN_PTE1>,
+				 <LPSPI0_SOUT_PTE2>,
+				 <LPSPI0_PCS2_PTE6>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -110,8 +109,8 @@
 	lpspi1_default: lpspi1_default {
 		group0 {
 			pinmux = <LPSPI1_SCK_PTD0>,
-				<LPSPI1_SIN_PTD1>,
-				<LPSPI1_SOUT_PTD2>;
+				 <LPSPI1_SIN_PTD1>,
+				 <LPSPI1_SOUT_PTD2>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -121,9 +120,9 @@
 	lpspi1_pcs0: lpspi1_pcs0 {
 		group0 {
 			pinmux = <LPSPI1_SCK_PTD0>,
-				<LPSPI1_SIN_PTD1>,
-				<LPSPI1_SOUT_PTD2>,
-				<LPSPI1_PCS0_PTD3>;
+				 <LPSPI1_SIN_PTD1>,
+				 <LPSPI1_SOUT_PTD2>,
+				 <LPSPI1_PCS0_PTD3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -133,10 +132,10 @@
 	lpspi1_pcs0_pcs2: lpspi1_pcs0_pcs2 {
 		group0 {
 			pinmux = <LPSPI1_SCK_PTD0>,
-				<LPSPI1_SIN_PTD1>,
-				<LPSPI1_SOUT_PTD2>,
-				<LPSPI1_PCS2_PTA16>,
-				<LPSPI1_PCS0_PTD3>;
+				 <LPSPI1_SIN_PTD1>,
+				 <LPSPI1_SOUT_PTD2>,
+				 <LPSPI1_PCS2_PTA16>,
+				 <LPSPI1_PCS0_PTD3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -146,9 +145,9 @@
 	lpspi1_pcs2: lpspi1_pcs2 {
 		group0 {
 			pinmux = <LPSPI1_SCK_PTD0>,
-				<LPSPI1_SIN_PTD1>,
-				<LPSPI1_SOUT_PTD2>,
-				<LPSPI1_PCS2_PTA16>;
+				 <LPSPI1_SIN_PTD1>,
+				 <LPSPI1_SOUT_PTD2>,
+				 <LPSPI1_PCS2_PTA16>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -157,10 +156,9 @@
 	lpuart0_default: lpuart0_default {
 		group0 {
 			pinmux = <LPUART0_RX_PTB0>,
-				<LPUART0_TX_PTB1>;
+				 <LPUART0_TX_PTB1>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
-
 };

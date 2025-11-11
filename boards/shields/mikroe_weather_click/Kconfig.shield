@@ -1,5 +1,8 @@
 # Copyright (c) 2024 Common Ground Electronics
 # SPDX-License-Identifier: Apache-2.0
 
-config SHIELD_MIKROE_WEATHER_CLICK
-	def_bool $(shields_list_contains,mikroe_weather_click)
+config SHIELD_MIKROE_WEATHER_CLICK_I2C
+	def_bool $(shields_list_contains,mikroe_weather_click_i2c)
+
+config SHIELD_MIKROE_WEATHER_CLICK_SPI
+	def_bool $(shields_list_contains,mikroe_weather_click_spi)

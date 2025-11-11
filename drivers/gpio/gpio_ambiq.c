@@ -13,8 +13,9 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/gpio/gpio_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 typedef void (*ambiq_gpio_cfg_func_t)(void);
 
@@ -36,6 +37,7 @@ struct ambiq_gpio_data {
 static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	int ret = 0;
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	pin += dev_cfg->offset;
@@ -54,6 +56,11 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				pincfg.eGPOutcfg = AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN;
+				if (flags & GPIO_PULL_UP) {
+					pincfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+				} else if (flags & GPIO_PULL_DOWN) {
+					pincfg.ePullup = AM_HAL_GPIO_PIN_PULLDOWN;
+				}
 			}
 		} else {
 			pincfg.eGPOutcfg = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -88,6 +95,11 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				pincfg.GP.cfg_b.eGPOutCfg = AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN;
+				if (flags & GPIO_PULL_UP) {
+					pincfg.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_50K;
+				} else if (flags & GPIO_PULL_DOWN) {
+					pincfg.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLDOWN_50K;
+				}
 			}
 		} else {
 			pincfg.GP.cfg_b.eGPOutCfg = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -106,9 +118,12 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		am_hal_gpio_state_write(pin, AM_HAL_GPIO_OUTPUT_CLEAR);
 	}
 #endif
-	am_hal_gpio_pinconfig(pin, pincfg);
 
-	return 0;
+	if (am_hal_gpio_pinconfig(pin, pincfg) != AM_HAL_STATUS_SUCCESS) {
+		ret = -ENOTSUP;
+	}
+
+	return ret;
 }
 
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -256,12 +271,15 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 static int ambiq_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	uint32_t pin_offset;
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
-	*value = (*AM_HAL_GPIO_RDn(dev_cfg->offset));
+	pin_offset = dev_cfg->offset;
 #else
-	*value = (*AM_HAL_GPIO_RDn(dev_cfg->offset >> 2));
+	pin_offset = dev_cfg->offset >> 2;
 #endif
+	*value = (*AM_HAL_GPIO_RDn(pin_offset)) | (*AM_HAL_GPIO_WTn(pin_offset));
+
 	return 0;
 }
 
@@ -388,7 +406,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 	struct ambiq_gpio_data *const data = dev->data;
 
-	int ret;
+	int ret = 0;
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	am_hal_gpio_pincfg_t pincfg = g_AM_HAL_GPIO_DEFAULT;
 	int gpio_pin = pin + dev_cfg->offset;
@@ -471,7 +489,12 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 			 * GPIO_INT_TRIG_BOTH is not supported on Ambiq Apollo4 Plus Platform
 			 * ERR008: GPIO: Dual-edge interrupts are not vectoring
 			 */
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 			return -ENOTSUP;
+#elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+			pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_BOTH;
+			break;
+#endif
 		default:
 			return -EINVAL;
 		}
@@ -533,7 +556,7 @@ static int ambiq_gpio_init(const struct device *port)
 	return 0;
 }
 
-static const struct gpio_driver_api ambiq_gpio_drv_api = {
+static DEVICE_API(gpio, ambiq_gpio_drv_api) = {
 	.pin_configure = ambiq_gpio_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = ambiq_gpio_get_config,
@@ -549,6 +572,18 @@ static const struct gpio_driver_api ambiq_gpio_drv_api = {
 	.port_get_direction = ambiq_gpio_port_get_direction,
 #endif
 };
+
+gpio_pin_t ambiq_gpio_get_pinnum(const struct device *dev, gpio_pin_t pin)
+{
+	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	pin += dev_cfg->offset;
+#else
+	pin += (dev_cfg->offset >> 2);
+#endif
+	return pin;
+}
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 /* Apollo3 GPIO banks share the same irq number, connect irq here will cause build error, so we

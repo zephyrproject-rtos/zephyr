@@ -1,0 +1,23 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwmleds {
+		status = "okay";
+	};
+};
+
+&tpm1 {
+	clocks = <&sim KINETIS_SIM_OSCERCLK 0x103C 25>;
+};
+
+&tpm2 {
+	clocks = <&sim KINETIS_SIM_OSCERCLK 0x103C 26>;
+};

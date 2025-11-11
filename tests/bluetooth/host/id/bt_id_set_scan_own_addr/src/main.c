@@ -7,9 +7,12 @@
 #include "mocks/crypto.h"
 #include "mocks/hci_core.h"
 #include "mocks/rpa.h"
+#include "mocks/adv.h"
+#include "mocks/adv_expects.h"
 #include "testing_common_defs.h"
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 
@@ -70,18 +73,93 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy)
 	err = bt_id_set_scan_own_addr(false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
+		     "Address type reference was incorrectly set");
+}
+
+/*
+ *  Test setting scan own address while 'CONFIG_BT_PRIVACY' isn't enabled.
+ *  Advertising is ongoing and uses a random device address.
+ *
+ *  Constraints:
+ *   - bt_id_set_private_addr() succeeds and returns 0
+ *   - 'CONFIG_BT_SCAN_WITH_IDENTITY' isn't enabled
+ *   - 'CONFIG_BT_PRIVACY' isn't enabled
+ *
+ *  Expected behaviour:
+ *   - bt_id_set_scan_own_addr() returns 0
+ *   - Address type reference is updated
+ */
+ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing_random_identity)
+{
+	int err;
+	struct bt_le_ext_adv *adv = &bt_dev.adv;
+	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_BROADCASTER);
+
+	bt_rand_fake.custom_fake = bt_rand_custom_fake;
+	bt_le_adv_lookup_legacy_fake.return_val = adv;
+
+	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
+
+	atomic_set_bit(adv->flags, BT_ADV_ENABLED);
+
+	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+
+	zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
+		     "Address type reference was incorrectly set");
+}
+
+/*
+ *  Test setting scan own address while 'CONFIG_BT_PRIVACY' isn't enabled.
+ *  Advertising is ongoing and uses a public device address.
+ *
+ *  Constraints:
+ *   - bt_id_set_private_addr() succeeds and returns 0
+ *   - 'CONFIG_BT_SCAN_WITH_IDENTITY' isn't enabled
+ *   - 'CONFIG_BT_PRIVACY' isn't enabled
+ *
+ *  Expected behaviour:
+ *   - bt_id_set_scan_own_addr() returns 0
+ *   - Address type reference is updated
+ */
+ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing_public_identity)
+{
+	int err;
+	struct bt_le_ext_adv *adv = &bt_dev.adv;
+	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_BROADCASTER);
+
+	bt_rand_fake.custom_fake = bt_rand_custom_fake;
+	bt_le_adv_lookup_legacy_fake.return_val = adv;
+
+	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
+
+	atomic_set_bit(adv->flags, BT_ADV_ENABLED);
+	atomic_set_bit(adv->flags, BT_ADV_USE_IDENTITY);
+
+	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+
+	zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,
 		     "Address type reference was incorrectly set");
 }
 
 /*
  *  Test setting scan own address while 'CONFIG_BT_PRIVACY' isn't enabled.
  *  If 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled and the default identity has an RPA address of type
- * 'BT_ADDR_LE_RANDOM', set_random_address() is called and address type reference is updated upon
- *  success.
+ * 'BT_HCI_OWN_ADDR_RANDOM', set_random_address() is called and address type reference is updated
+ * upon success.
  *
  *  Constraints:
- *   - Default identity has an address with the type 'BT_ADDR_LE_RANDOM'
+ *   - Default identity has an address with the type 'BT_HCI_OWN_ADDR_RANDOM'
  *   - 'CONFIG_BT_PRIVACY' isn't enabled
  *   - 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled
  *   - set_random_address() succeeds and returns 0
@@ -106,7 +184,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
 	err = bt_id_set_scan_own_addr(false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 }
 
@@ -123,7 +201,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
  *
  *  Expected behaviour:
  *   - bt_id_set_scan_own_addr() returns 0
- *   - Address type reference is updated with the value 'BT_ADDR_LE_RANDOM'
+ *   - Address type reference is updated with the value 'BT_HCI_OWN_ADDR_RANDOM'
  */
 ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_enabled)
 {
@@ -138,7 +216,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_enabled)
 	err = bt_id_set_scan_own_addr(true, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 }
 

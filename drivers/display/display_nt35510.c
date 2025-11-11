@@ -410,7 +410,7 @@ static int nt35510_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api nt35510_api = {
+static DEVICE_API(display, nt35510_api) = {
 	.blanking_on = nt35510_blanking_on,
 	.blanking_off = nt35510_blanking_off,
 	.set_brightness = nt35510_set_brightness,

@@ -1,7 +1,7 @@
 .. _g1120b0mipi:
 
-G1120B0MIPI MIPI Display
-##########################
+NXP G1120B0MIPI MIPI Display
+############################
 
 Overview
 ********
@@ -58,6 +58,9 @@ example:
    :board: mimxrt595_evk/mimxrt595s/cm33
    :shield: g1120b0mipi
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

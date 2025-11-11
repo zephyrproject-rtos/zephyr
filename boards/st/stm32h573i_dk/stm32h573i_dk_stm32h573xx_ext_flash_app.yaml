@@ -1,0 +1,31 @@
+identifier: stm32h573i_dk/stm32h573xx/ext_flash_app
+name: ST STM32H573I Discovery Kit with App in Ext Flash
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 256
+flash: 32767 # size in kB of 1 app slot minus MCUboot header size (1KB)
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+  - dma
+  - adc
+  - dac
+  - netif:eth
+  - pwm
+  - counter
+  - spi
+  - octospi
+  - can
+  - i2c
+  - rtc
+  - usbd
+vendor: st

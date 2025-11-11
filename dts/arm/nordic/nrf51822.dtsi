@@ -2,6 +2,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
 
 / {
 	chosen {
@@ -21,6 +22,15 @@
 		};
 	};
 
+	clocks {
+		hfxo: hfxo {
+			compatible = "nordic,nrf51-hfxo";
+			clock-frequency = <16000000>;
+			startup-time-us = <1400>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
@@ -37,6 +47,8 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		power: power@40000000 {
@@ -104,7 +116,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <8>;
 			status = "disabled";
@@ -132,7 +143,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <8>;
 			status = "disabled";
@@ -302,7 +312,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";

@@ -17,6 +17,9 @@ uint16_t ull_conn_default_tx_octets_get(void);
 uint16_t ull_conn_default_tx_time_get(void);
 uint8_t ull_conn_default_phy_tx_get(void);
 uint8_t ull_conn_default_phy_rx_get(void);
+void ull_conn_default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
+				     uint8_t cte_type);
+struct past_params ull_conn_default_past_param_get(void);
 bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 			     uint8_t const *const own_id_addr,
 			     uint8_t const peer_id_addr_type,
@@ -77,6 +80,11 @@ static inline void cpr_active_reset(void)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+void ull_conn_past_sender_offset_request(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn);
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
@@ -130,4 +138,14 @@ void ull_conn_resume_rx_data(struct ll_conn *conn);
 /**
  * @brief Check if the lower link layer transmit queue is empty
  */
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn);
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn);
+
+/**
+ * @brief Set path loss parameters
+ */
+void ull_path_loss_set_parameters(void);
+
+/**
+ * @brief Enable path loss reporting
+ */
+void ull_enable_path_loss_reporting(void);

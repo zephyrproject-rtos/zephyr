@@ -1,0 +1,6 @@
+board:
+  name: google_icetower
+  full_name: Icetower Development Board
+  vendor: google
+  socs:
+    - name: stm32h743xx

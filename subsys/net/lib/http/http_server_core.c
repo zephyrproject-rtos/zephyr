@@ -12,6 +12,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
@@ -20,6 +22,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -41,7 +44,6 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + HTTP_SERVER_MAX_CLIENTS)
 
 struct http_server_ctx {
-	int num_clients;
 	int listen_fds; /* max value of 1 + MAX_SERVICES */
 
 	/* First pollfd is eventfd that can be used to stop the server,
@@ -56,7 +58,18 @@ static struct http_server_ctx server_ctx;
 static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+static const char *const alpn_list[] = {"h2", "http/1.1"};
+#endif
+
 static void close_client_connection(struct http_client_ctx *client);
+
+HTTP_SERVER_CONTENT_TYPE(html, "text/html")
+HTTP_SERVER_CONTENT_TYPE(css, "text/css")
+HTTP_SERVER_CONTENT_TYPE(js, "text/javascript")
+HTTP_SERVER_CONTENT_TYPE(jpg, "image/jpeg")
+HTTP_SERVER_CONTENT_TYPE(png, "image/png")
+HTTP_SERVER_CONTENT_TYPE(svg, "image/svg+xml")
 
 int http_server_init(struct http_server_ctx *ctx)
 {
@@ -101,14 +114,14 @@ int http_server_init(struct http_server_ctx *ctx)
 		memset(&addr_storage, 0, sizeof(struct sockaddr_storage));
 
 		/* Set up the server address struct according to address family */
-		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6) && svc->host != NULL &&
 		    zsock_inet_pton(AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
 			af = AF_INET6;
 			len = sizeof(*addr.addr6);
 
 			addr.addr6->sin6_family = AF_INET6;
 			addr.addr6->sin6_port = htons(*svc->port);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && svc->host != NULL &&
 			   zsock_inet_pton(AF_INET, svc->host, &addr.addr4->sin_addr) == 1) {
 			af = AF_INET;
 			len = sizeof(*addr.addr4);
@@ -143,11 +156,25 @@ int http_server_init(struct http_server_ctx *ctx)
 			proto = IPPROTO_TCP;
 		}
 
-		fd = zsock_socket(af, SOCK_STREAM, proto);
+		if (svc->config != NULL && svc->config->socket_create != NULL) {
+			fd = svc->config->socket_create(svc, af, proto);
+		} else {
+			fd = zsock_socket(af, SOCK_STREAM, proto);
+		}
 		if (fd < 0) {
 			LOG_ERR("socket: %d", errno);
 			failed++;
 			continue;
+		}
+
+		/* If IPv4-to-IPv6 mapping is enabled, then turn off V6ONLY option
+		 * so that IPv6 socket can serve IPv4 connections.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+			int optval = 0;
+
+			(void)zsock_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &optval,
+					       sizeof(optval));
 		}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -166,8 +193,17 @@ int http_server_init(struct http_server_ctx *ctx)
 				zsock_close(fd);
 				continue;
 			}
+
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+			if (zsock_setsockopt(fd, SOL_TLS, TLS_ALPN_LIST, alpn_list,
+					     sizeof(alpn_list)) < 0) {
+				LOG_ERR("setsockopt: %d", errno);
+				zsock_close(fd);
+				continue;
+			}
+#endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 		}
-#endif
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 		if (zsock_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1},
 				     sizeof(int)) < 0) {
@@ -195,15 +231,18 @@ int http_server_init(struct http_server_ctx *ctx)
 			*svc->port = ntohs(addr.addr4->sin_port);
 		}
 
-		if (zsock_listen(fd, HTTP_SERVER_MAX_CLIENTS) < 0) {
+		svc->data->num_clients = 0;
+		if (zsock_listen(fd, svc->backlog) < 0) {
 			LOG_ERR("listen: %d", errno);
 			failed++;
 			zsock_close(fd);
 			continue;
 		}
 
-		LOG_DBG("Initialized HTTP Service %s:%u", svc->host, *svc->port);
+		LOG_DBG("Initialized HTTP Service %s:%u",
+			svc->host ? svc->host : "<any>", *svc->port);
 
+		*svc->fd = fd;
 		ctx->fds[count].fd = fd;
 		ctx->fds[count].events = ZSOCK_POLLIN;
 		count++;
@@ -217,7 +256,6 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	ctx->listen_fds = count;
-	ctx->num_clients = 0;
 
 	return 0;
 }
@@ -238,8 +276,9 @@ static int accept_new_client(int server_fd)
 		return new_socket;
 	}
 
-	LOG_DBG("New client from %s:%d",
-		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr),
+	const char * const addrstr =
+		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr);
+	LOG_DBG("New client from %s:%d", addrstr != NULL ? addrstr : "<unknown>",
 		ntohs(net_sin((struct sockaddr *)&sa)->sin_port));
 
 	return new_socket;
@@ -266,12 +305,18 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 
 		ctx->fds[i].fd = -1;
 	}
+
+	HTTP_SERVICE_FOREACH(svc) {
+		*svc->fd = -1;
+	}
 }
 
 static void client_release_resources(struct http_client_ctx *client)
 {
 	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http_request_ctx request_ctx;
+	struct http_response_ctx response_ctx;
 
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
@@ -297,8 +342,10 @@ static void client_release_resources(struct http_client_ctx *client)
 				continue;
 			}
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED,
-					   NULL, 0, dynamic_detail->user_data);
+			populate_request_ctx(&request_ctx, NULL, 0, NULL);
+
+			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, &request_ctx,
+					   &response_ctx, dynamic_detail->user_data);
 		}
 	}
 }
@@ -313,8 +360,14 @@ void http_server_release_client(struct http_client_ctx *client)
 	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
 	client_release_resources(client);
 
-	server_ctx.num_clients--;
+	client->service->data->num_clients--;
 
+	for (i = 0; i < server_ctx.listen_fds; i++) {
+		if (server_ctx.fds[i].fd == *client->service->fd) {
+			server_ctx.fds[i].events = ZSOCK_POLLIN;
+			break;
+		}
+	}
 	for (i = server_ctx.listen_fds; i < ARRAY_SIZE(server_ctx.fds); i++) {
 		if (server_ctx.fds[i].fd == client->fd) {
 			server_ctx.fds[i].fd = INVALID_SOCK;
@@ -330,9 +383,11 @@ static void close_client_connection(struct http_client_ctx *client)
 {
 	int fd = client->fd;
 
-	http_server_release_client(client);
+	if (fd >= 0) {
+		http_server_release_client(client);
 
-	(void)zsock_close(fd);
+		(void)zsock_close(fd);
+	}
 }
 
 static void client_timeout(struct k_work *work)
@@ -356,9 +411,22 @@ void http_client_timer_restart(struct http_client_ctx *client)
 	k_work_reschedule(&client->inactivity_timer, INACTIVITY_TIMEOUT);
 }
 
-static void init_client_ctx(struct http_client_ctx *client, int new_socket)
+static const struct http_service_desc *lookup_service(int server_fd)
+{
+	HTTP_SERVICE_FOREACH(svc) {
+		if (*svc->fd == server_fd) {
+			return svc;
+		}
+	}
+
+	return NULL;
+}
+
+static void init_client_ctx(struct http_client_ctx *client, const struct http_service_desc *svc,
+			    int new_socket)
 {
 	client->fd = new_socket;
+	client->service = svc;
 	client->data_len = 0;
 	client->server_state = HTTP_SERVER_PREFACE_STATE;
 	client->has_upgrade_header = false;
@@ -385,6 +453,12 @@ static int handle_http_preface(struct http_client_ctx *client)
 	if (client->data_len < sizeof(HTTP2_PREFACE) - 1) {
 		/* We don't have full preface yet, get more data. */
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		client->header_capture_ctx.count = 0;
+		client->header_capture_ctx.cursor = 0;
+		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
 	}
 
 	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
@@ -480,6 +554,7 @@ static int handle_http_request(struct http_client_ctx *client)
 static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
+	const struct http_service_desc *service;
 	eventfd_t value;
 	bool found_slot;
 	int new_socket;
@@ -550,6 +625,14 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 			/* First check if we have something to accept */
 			if (i < ctx->listen_fds) {
+				service = lookup_service(ctx->fds[i].fd);
+				__ASSERT(NULL != service, "fd not associated with a service");
+
+				if (service->data->num_clients >= service->concurrent) {
+					ctx->fds[i].events = 0;
+					continue;
+				}
+
 				new_socket = accept_new_client(ctx->fds[i].fd);
 				if (new_socket < 0) {
 					ret = -errno;
@@ -568,11 +651,11 @@ static int http_server_run(struct http_server_ctx *ctx)
 					ctx->fds[j].events = ZSOCK_POLLIN;
 					ctx->fds[j].revents = 0;
 
-					ctx->num_clients++;
+					service->data->num_clients++;
 
 					LOG_DBG("Init client #%d", j - ctx->listen_fds);
 
-					init_client_ctx(&ctx->clients[j - ctx->listen_fds],
+					init_client_ctx(&ctx->clients[j - ctx->listen_fds], service,
 							new_socket);
 					found_slot = true;
 					break;
@@ -635,20 +718,34 @@ closing:
 	return ret;
 }
 
-/* Compare two strings where the terminator is either "\0" or "?" */
-static int compare_strings(const char *s1, const char *s2)
+/* Compare a path and a resource string. The path string comes from the HTTP request and may be
+ * terminated by either '?' or '\0'. The resource string is registered along with the resource and
+ * may only be terminated by `\0`.
+ */
+static int compare_strings(const char *path, const char *resource)
 {
-	while ((*s1 && *s2) && (*s1 == *s2) && (*s1 != '?')) {
-		s1++;
-		s2++;
+	while ((*path && *resource) && (*path == *resource) && (*path != '?')) {
+		path++;
+		resource++;
 	}
 
-	/* Check if both strings have reached their terminators or '?' */
-	if ((*s1 == '\0' || *s1 == '?') && (*s2 == '\0' || *s2 == '?')) {
+	/* Check if both strings have reached their terminators */
+	if ((*path == '\0' || *path == '?') && (*resource == '\0')) {
 		return 0; /* Strings are equal */
 	}
 
 	return 1; /* Strings are not equal */
+}
+
+static int path_len_without_query(const char *path)
+{
+	int len = 0;
+
+	while ((path[len] != '\0') && (path[len] != '?')) {
+		len++;
+	}
+
+	return len;
 }
 
 static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
@@ -670,38 +767,123 @@ static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 	return false;
 }
 
-struct http_resource_detail *get_resource_detail(const char *path,
-						 int *path_len,
-						 bool is_websocket)
+struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+						 const char *path, int *path_len, bool is_websocket)
 {
-	HTTP_SERVICE_FOREACH(service) {
-		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-			if (skip_this(resource, is_websocket)) {
-				continue;
-			}
+	HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+		if (skip_this(resource, is_websocket)) {
+			continue;
+		}
 
-			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
-				int ret;
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+			int ret;
 
-				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
-				if (ret == 0) {
-					*path_len = strlen(resource->resource);
-					return resource->detail;
-				}
-			}
-
-			if (compare_strings(path, resource->resource) == 0) {
-				NET_DBG("Got match for %s", resource->resource);
-
-				*path_len = strlen(resource->resource);
+			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
+			if (ret == 0) {
+				*path_len = path_len_without_query(path);
 				return resource->detail;
 			}
 		}
+
+		if (compare_strings(path, resource->resource) == 0) {
+			NET_DBG("Got match for %s", resource->resource);
+
+			*path_len = strlen(resource->resource);
+			return resource->detail;
+		}
+	}
+
+	if (service->res_fallback != NULL) {
+		*path_len = path_len_without_query(path);
+		return service->res_fallback;
 	}
 
 	NET_DBG("No match for %s", path);
 
 	return NULL;
+}
+
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
+			  uint8_t supported_compression, enum http_compression *chosen_compression)
+{
+	struct fs_dirent dirent;
+	int ret;
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		const size_t len = strlen(fname);
+		*chosen_compression = HTTP_NONE;
+		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
+			snprintk(fname + len, fname_size - len, ".br");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_BR;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
+			snprintk(fname + len, fname_size - len, ".gz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_GZIP;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
+			snprintk(fname + len, fname_size - len, ".zst");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_ZSTD;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
+			snprintk(fname + len, fname_size - len, ".lzw");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_COMPRESS;
+				goto return_filename;
+			}
+		}
+		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
+			snprintk(fname + len, fname_size - len, ".zz");
+			ret = fs_stat(fname, &dirent);
+			if (ret == 0) {
+				*chosen_compression = HTTP_DEFLATE;
+				goto return_filename;
+			}
+		}
+		/* No compressed file found, try the original filename */
+		fname[len] = '\0';
+	}
+	ret = fs_stat(fname, &dirent);
+	if (ret != 0) {
+		return -ENOENT;
+	}
+
+return_filename:
+	*file_size = dirent.size;
+	return ret;
+}
+
+void http_server_get_content_type_from_extension(char *url, char *content_type,
+						 size_t content_type_size)
+{
+	size_t url_len = strlen(url);
+
+	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
+		char *ext;
+
+		if (url_len <= ct->extension_len) {
+			continue;
+		}
+
+		ext = &url[url_len - ct->extension_len];
+
+		if (strncmp(ext, ct->extension, ct->extension_len) == 0) {
+			strncpy(content_type, ct->content_type, content_type_size);
+			return;
+		}
+	}
 }
 
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len)
@@ -720,6 +902,46 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	}
 
 	return 0;
+}
+
+bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status)
+{
+	if (status != HTTP_SERVER_DATA_FINAL) {
+		return false;
+	}
+
+	if (rsp->final_chunk ||
+	    (rsp->status == 0 && rsp->header_count == 0 && rsp->body_len == 0)) {
+		return true;
+	}
+
+	return false;
+}
+
+bool http_response_is_provided(struct http_response_ctx *rsp)
+{
+	if (rsp->status != 0 || rsp->header_count > 0 || rsp->body_len > 0) {
+		return true;
+	}
+
+	return false;
+}
+
+void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
+			  struct http_header_capture_ctx *header_ctx)
+{
+	req_ctx->data = data;
+	req_ctx->data_len = len;
+
+	if (NULL == header_ctx || header_ctx->status == HTTP_HEADER_STATUS_NONE) {
+		req_ctx->headers = NULL;
+		req_ctx->header_count = 0;
+		req_ctx->headers_status = HTTP_HEADER_STATUS_NONE;
+	} else {
+		req_ctx->headers = header_ctx->headers;
+		req_ctx->header_count = header_ctx->count;
+		req_ctx->headers_status = header_ctx->status;
+	}
 }
 
 int http_server_start(void)

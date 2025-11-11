@@ -6,15 +6,23 @@
 / {
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&cpuppr_vevif 15>, <&cpuapp_bellboard 18>;
-		mbox-names = "tx", "rx";
+		mboxes = <&cpuapp_bellboard 18>, <&cpurad_bellboard 12>;
+		mbox-names = "rx", "tx";
 	};
 };
 
 &cpuapp_bellboard {
 	status = "okay";
+	/* When other cpurad_bellboard channel is selected for RX,
+	 * make sure it's enabled in the interrupt mask.
+	 * See `nordic,interrupt-mapping` property.
+	 */
 };
 
-&cpuppr_vevif {
+&cpurad_bellboard {
 	status = "okay";
+};
+
+&uart136 {
+	/delete-property/ hw-flow-control;
 };

@@ -27,7 +27,7 @@ static int vnd_i2c_transfer(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct i2c_driver_api vnd_i2c_api = {
+static DEVICE_API(i2c, vnd_i2c_api) = {
 	.configure = vnd_i2c_configure,
 	.transfer  = vnd_i2c_transfer,
 };

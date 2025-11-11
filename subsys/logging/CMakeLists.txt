@@ -25,7 +25,7 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   # - C++ (auto)
   # - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
   # - Clang 3.8
-  if (NOT CONFIG_LOG_ALWAYS_RUNTIME)
+  if(NOT CONFIG_LOG_ALWAYS_RUNTIME)
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
       if(CMAKE_C_COMPILER_VERSION VERSION_LESS "3.8.0")
         message(WARNING "Compiler version requires CONFIG_LOG_ALWAYS_RUNTIME to be set")
@@ -44,16 +44,12 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_FRONTEND_DICT_UART
-    log_frontend_dict_uart.c
-  )
-
-  zephyr_sources_ifdef(
     CONFIG_LOG_DICTIONARY_SUPPORT
     log_output_dict.c
   )
 
   add_subdirectory(backends)
+  add_subdirectory(frontends)
 
   # For some reason, running sys-t with catalog message on
   # Cortex-M0 would result in hard fault in mipi_catalog_formatter()

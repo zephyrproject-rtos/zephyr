@@ -1,5 +1,6 @@
 board:
   name: nucleo_f413zh
+  full_name: Nucleo F413ZH
   vendor: st
   socs:
     - name: stm32f413xx

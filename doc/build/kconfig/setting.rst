@@ -91,8 +91,8 @@ this:
 
       # CONFIG_SOME_OTHER_BOOL is not set
 
-   This is the format you will see in the merged configuration in
-   :file:`zephyr/.config`.
+   This is the format you will see in the merged configuration
+   saved to :file:`zephyr/.config` in the build directory.
 
    This style is accepted for historical reasons: Kconfig configuration files
    can be parsed as makefiles (though Zephyr doesn't use this). Having
@@ -149,13 +149,6 @@ used.
 
    3. From the CMake variable cache
 
-   Furthermore if ``CONF_FILE`` is set as single configuration file of the
-   form :file:`prj_<build>.conf` and if file
-   :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
-   :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
-   :file:`boards/<BOARD>_<build>.conf` is used - note that this feature is
-   deprecated, :ref:`application-file-suffixes` should be used instead.
-
 #. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` is
    used.
@@ -168,10 +161,10 @@ used.
 #. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
 
-Furthermore, applications can have SoC overlay configuration that is applied to
-it, the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
-after the main project configuration has been applied and before any board overlay
-configuration files have been applied.
+Furthermore, applications can have SoC Kconfig fragments added to the configuration,
+the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
+after the main project configuration has been applied and before any board Kconfig
+fragments files have been applied.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the

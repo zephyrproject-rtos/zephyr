@@ -4,11 +4,14 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 ram: 192
 flash: 192
 supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - i2c
   - pwm
   - watchdog
@@ -18,3 +21,4 @@ supported:
   - gpio
   - spi
 vendor: nordic
+sysbuild: true

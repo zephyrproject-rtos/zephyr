@@ -151,8 +151,8 @@ static int max7219_write(const struct device *dev, const uint16_t x, const uint1
 	/*
 	 * MAX7219 only supports PIXEL_FORMAT_MONO01. 1 bit stands for 1 pixel.
 	 */
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer to small");
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(desc->pitch <= max_width, "Pitch in descriptor is larger than screen size");
 	__ASSERT(desc->height <= max_height, "Height in descriptor is larger than screen size");
 	__ASSERT(x + desc->pitch <= max_width,
@@ -254,7 +254,7 @@ static void max7219_get_capabilities(const struct device *dev, struct display_ca
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static const struct display_driver_api max7219_api = {
+static DEVICE_API(display, max7219_api) = {
 	.write = max7219_write,
 	.set_brightness = max7219_set_brightness,
 	.get_capabilities = max7219_get_capabilities,
@@ -332,7 +332,7 @@ static int max7219_init(const struct device *dev)
 	};                                                                     \
 	static const struct max7219_config max7219_config_##n = {              \
 		.spi = SPI_DT_SPEC_INST_GET(                                   \
-			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
+			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),             \
 		.num_cascading = DT_INST_PROP(n, num_cascading),               \
 		.intensity = DT_INST_PROP(n, intensity),                       \
 		.scan_limit = DT_INST_PROP(n, scan_limit),                     \

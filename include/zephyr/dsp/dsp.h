@@ -8,8 +8,8 @@
  * @brief Public APIs for Digital Signal Processing (DSP) math.
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_DSP_H_
-#define INCLUDE_ZEPHYR_DSP_DSP_H_
+#ifndef ZEPHYR_INCLUDE_DSP_DSP_H_
+#define ZEPHYR_INCLUDE_DSP_DSP_H_
 
 #ifdef CONFIG_DSP_BACKEND_HAS_STATIC
 #define DSP_FUNC_SCOPE static
@@ -30,8 +30,9 @@
 #endif
 
 /**
- * @brief DSP Interface
- * @defgroup math_dsp DSP Interface
+ * @brief Digital Signal Processing (DSP) math functions and utilities.
+ * @defgroup math_dsp DSP (Digital Signal Processing)
+ * @ingroup utilities
  * @since 3.3
  * @version 0.1.0
  */
@@ -44,4 +45,4 @@
 
 #include "zdsp_backend.h"
 
-#endif /* INCLUDE_ZEPHYR_DSP_DSP_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_DSP_H_ */

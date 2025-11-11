@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_XIAO_ESP32C3
-	select SOC_ESP32C3_FX4
+	select SOC_ESP32C3_FN4

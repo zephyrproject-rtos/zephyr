@@ -1,5 +1,6 @@
 board:
   name: imx8mq_evk
+  full_name: MIMX8MQ EVK
   vendor: nxp
   socs:
   - name: mimx8mq6

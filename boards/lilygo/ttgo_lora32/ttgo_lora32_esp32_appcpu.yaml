@@ -24,4 +24,5 @@ testing:
     - cmsis_rtos
     - jwt
     - zdsp
+    - sdhc
 vendor: lilygo

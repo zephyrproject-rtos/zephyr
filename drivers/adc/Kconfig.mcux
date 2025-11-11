@@ -6,7 +6,7 @@
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_ADC12_ENABLED
+	depends on DT_HAS_NXP_ADC12_ENABLED
 	select PINCTRL
 	help
 	  Enable the MCUX ADC12 driver.
@@ -22,6 +22,7 @@ config ADC_MCUX_ADC16
 config ADC_MCUX_12B1MSPS_SAR
 	bool "MCUX 12B1MSPS SAR ADC driver"
 	default y
+	select PINCTRL
 	depends on DT_HAS_NXP_MCUX_12B1MSPS_SAR_ENABLED
 	help
 	  Enable the MCUX 12B1MSPS SAR ADC driver.
@@ -31,15 +32,18 @@ config ADC_MCUX_LPADC
 	default y
 	select ADC_CONFIGURABLE_INPUTS
 	select REGULATOR
+	select PINCTRL
 	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
 	help
 	  Enable the MCUX LPADC driver.
 
-config ADC_MCUX_ETC
-	bool "MCUX ADC ETC driver"
-	depends on HAS_MCUX_ADC_ETC
+config ADC_MCUX_SAR_ADC
+	bool "MCUX SAR ADC driver"
+	default y
+	select ADC_CONFIGURABLE_INPUTS
+	depends on DT_HAS_NXP_SAR_ADC_ENABLED
 	help
-	  Enable the MCUX ADC ETC driver.
+	  Enable the MCUX SAR ADC driver.
 
 config ADC_MCUX_GAU
 	bool "MCUX GAU ADC driver"
@@ -83,7 +87,7 @@ endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
 	bool "EDMA for adc driver"
-	depends on HAS_MCUX_ADC16 && HAS_MCUX_EDMA
+	depends on DMA_MCUX_EDMA
 	help
 	  Enable the MCUX ADC16 driver.
 
@@ -119,3 +123,16 @@ config LPADC_CHANNEL_COUNT
 
 
 endif # ADC_MCUX_LPADC
+
+if ADC_MCUX_SAR_ADC
+
+config SAR_ADC_CHANNEL_COUNT
+	int "SAR_ADC channel count"
+	default 8
+	range 1 8
+	help
+	  Amount of hardware channels to use, reduce to save RAM.
+	  The user can reduce this value if their application uses fewer than
+	  8 ADC channels.
+
+endif # ADC_MCUX_SAR_ADC

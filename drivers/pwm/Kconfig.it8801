@@ -1,0 +1,12 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_ITE_IT8801
+	bool "ITE IT8801 PWM device driver"
+	default y
+	depends on DT_HAS_ITE_IT8801_PWM_ENABLED
+	select I2C
+	select MFD
+	help
+	   Enable driver for ITE IT8801 I2C-based PWM.
+	   Supports 7 open-drain/push-pull outputs.

@@ -1,7 +1,4 @@
-.. _efm32gg_sltb009a:
-
-EFM32GG12 Thunderboard (SLTB009A)
-#################################
+.. zephyr:board:: sltb009a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32GG12 Thunderboard Kit (SLTB009A) is an evaluation platform for the
 EFM32GG12 Giant Gecko Microcontroller, featuring an ARM Cortex-M4 with FPU,
 1024kB flash, and 192kB RAM.
-
-.. figure:: sltb009a.jpg
-   :align: center
-   :alt: SLTB009A
-
-   SLTB009A (Credit: Silicon Labs)
 
 Hardware
 ********
@@ -35,30 +26,7 @@ For more information about the WGM160P and SLTB009A board:
 Supported Features
 ==================
 
-The efm32gg_sltb009a board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/dev_kits/sltb009a/sltb009a_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -108,9 +76,11 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -126,7 +96,7 @@ Flashing an application to SLTB009A
 
 Connect the SLTB009A to your host computer using the USB port.
 
-Here is an example to build and flash the :ref:`hello_world` application.
+Here is an example to build and flash the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -161,6 +131,3 @@ terminal session:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

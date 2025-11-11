@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&backup_sram {
+	status = "okay";
+
+	retainedmem0: retainedmem {
+		compatible = "zephyr,retained-ram";
+		status = "okay";
+	};
+};

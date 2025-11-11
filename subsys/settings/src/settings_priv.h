@@ -111,6 +111,12 @@ extern sys_slist_t settings_load_srcs;
 extern sys_slist_t settings_handlers;
 extern struct settings_store *settings_save_dst;
 
+/** Takes the settings mutex lock (if multithreading is enabled) */
+void settings_lock_take(void);
+
+/** Releases the settings mutex lock (if multithreading is enabled) */
+void settings_lock_release(void);
+
 #ifdef __cplusplus
 }
 #endif

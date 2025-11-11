@@ -1,5 +1,7 @@
 #
 # Copyright (c) 2022 Badgerd Technologies B.V and its affiliates
+# Copyright (c) 2025 Croxel, Inc.
+# Copyright (c) 2025 CogniPilot Foundation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,4 +10,12 @@ config BMP581
 	bool "BMP581 barometric pressure sensor"
 	depends on DT_HAS_BOSCH_BMP581_ENABLED
 	select I2C
+	select I2C_RTIO
 	default y
+
+config BMP581_STREAM
+	bool "Streaming mode"
+	default y
+	depends on SENSOR_ASYNC_API
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMP581),int-gpios)

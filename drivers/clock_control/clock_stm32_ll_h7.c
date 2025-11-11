@@ -16,9 +16,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "clock_stm32_ll_mco.h"
-#include "stm32_hsem.h"
-
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -54,15 +53,29 @@
 /* This check should only be performed for the M7 core code */
 #ifdef CONFIG_CPU_CORTEX_M7
 
-/* Choose PLL SRC */
-#if defined(STM32_PLL_SRC_HSI)
+/* Choose PLL SRC : same source for all the PLL */
+#if defined(STM32_PLL_SRC_HSI) || defined(STM32_PLL2_SRC_HSI) || defined(STM32_PLL3_SRC_HSI)
 #define PLLSRC_FREQ  ((STM32_HSI_FREQ)/(STM32_HSI_DIVISOR))
-#elif defined(STM32_PLL_SRC_CSI)
+#endif
+
+#if defined(STM32_PLL_SRC_CSI) || defined(STM32_PLL2_SRC_CSI) || defined(STM32_PLL3_SRC_CSI)
+#if !defined(PLLSRC_FREQ)
 #define PLLSRC_FREQ  STM32_CSI_FREQ
-#elif defined(STM32_PLL_SRC_HSE)
+#else
+#error "All PLLs must have the same clock source"
+#endif
+#endif
+
+#if defined(STM32_PLL_SRC_HSE) || defined(STM32_PLL2_SRC_HSE) || defined(STM32_PLL3_SRC_HSE)
+#if !defined(PLLSRC_FREQ)
 #define PLLSRC_FREQ  STM32_HSE_FREQ
 #else
-#define PLLSRC_FREQ 0
+#error "All PLLs must have the same clock source"
+#endif
+#endif
+
+#if !defined(PLLSRC_FREQ)
+#define PLLSRC_FREQ  0
 #endif
 
 /* Given source clock and dividers, computed the output frequency of PLLP */
@@ -105,11 +118,13 @@
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 /* Datasheet maximum frequency definitions */
-#if defined(CONFIG_SOC_STM32H743XX) ||\
+#if defined(CONFIG_SOC_STM32H742XX) || defined(CONFIG_SOC_STM32H743XX) ||\
 	defined(CONFIG_SOC_STM32H745XX_M7) || defined(CONFIG_SOC_STM32H745XX_M4) ||\
 	defined(CONFIG_SOC_STM32H747XX_M7) || defined(CONFIG_SOC_STM32H747XX_M4) ||\
 	defined(CONFIG_SOC_STM32H750XX) ||\
-	defined(CONFIG_SOC_STM32H753XX)
+	defined(CONFIG_SOC_STM32H753XX) ||\
+	defined(CONFIG_SOC_STM32H755XX_M7) || defined(CONFIG_SOC_STM32H755XX_M4) ||\
+	defined(CONFIG_SOC_STM32H757XX_M7) || defined(CONFIG_SOC_STM32H757XX_M4)
 /* All h7 SoC with maximum 480MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		480000000UL
 #define AHB_FREQ_MAX		240000000UL
@@ -129,10 +144,10 @@
 #define AHB_FREQ_MAX		280000000UL
 #define APBx_FREQ_MAX		140000000UL
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-/* All h7RS SoC with maximum 500MHz SYSCLK (refer to Datasheet DS14359 rev 1) */
-#define SYSCLK_FREQ_MAX		500000000UL
-#define AHB_FREQ_MAX		250000000UL
-#define APBx_FREQ_MAX		125000000UL
+/* All h7RS SoC with maximum 600MHz SYSCLK (refer to Datasheet DS14359 rev 4) */
+#define SYSCLK_FREQ_MAX		600000000UL
+#define AHB_FREQ_MAX		300000000UL
+#define APBx_FREQ_MAX		150000000UL
 #else
 /* Default: All h7 SoC with maximum 280MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		280000000UL
@@ -157,10 +172,6 @@
 #endif
 #if APB4_FREQ > APBx_FREQ_MAX
 #error "APB4 frequency is too high!"
-#endif
-
-#if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
 /* end of clock feasibility check */
@@ -206,17 +217,12 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 __unused
 static uint32_t get_pllsrc_frequency(void)
 {
-	switch (LL_RCC_PLL_GetSource()) {
-	case LL_RCC_PLLSOURCE_HSI:
-		return STM32_HSI_FREQ;
-	case LL_RCC_PLLSOURCE_CSI:
-		return STM32_CSI_FREQ;
-	case LL_RCC_PLLSOURCE_HSE:
-		return STM32_HSE_FREQ;
-	case LL_RCC_PLLSOURCE_NONE:
-	default:
-		return 0;
-	}
+/* M4 is not expected to call this function */
+#ifdef CONFIG_CPU_CORTEX_M7
+	return PLLSRC_FREQ;
+#else
+	return 0;
+#endif
 }
 
 __unused
@@ -252,27 +258,6 @@ static uint32_t get_hclk_frequency(void)
 
 static int32_t prepare_regulator_voltage_scale(void)
 {
-	/* Apply system power supply configuration */
-#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
-	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
-#else
-	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
-#endif
-
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
 	/* Highest voltage is SCALE0 */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
@@ -282,6 +267,7 @@ static int32_t prepare_regulator_voltage_scale(void)
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 #endif
 	}
+
 	return 0;
 }
 
@@ -295,25 +281,6 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	/* LL_PWR_REGULATOR_SCALE3 is lowest power consumption */
 	/* Must be done in accordance to the Maximum allowed frequency vs VOS*/
 	/* See RM0433 page 352 for more details */
-#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
-#elif defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
-	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
-#else
-	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
-#endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
@@ -321,6 +288,7 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 #endif
 	};
+
 	return 0;
 }
 
@@ -359,7 +327,7 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
 /** @brief Verifies clock is part of active clock configuration */
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 
 	if ((src_clk == STM32_SRC_SYSCLK) ||
@@ -378,6 +346,18 @@ static int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK2) ||
+	    (src_clk == STM32_SRC_HCLK3) ||
+	    (src_clk == STM32_SRC_HCLK4) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
+	    ((src_clk == STM32_SRC_PLL2_S) && IS_ENABLED(STM32_PLL2_S_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL2_T) && IS_ENABLED(STM32_PLL2_T_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL3_S) && IS_ENABLED(STM32_PLL3_S_ENABLED)) ||
+#endif
 	    ((src_clk == STM32_SRC_PLL3_R) && IS_ENABLED(STM32_PLL3_R_ENABLED))) {
 		return 0;
 	}
@@ -385,15 +365,14 @@ static int enabled_clock(uint32_t src_clk)
 	return -ENOTSUP;
 }
 
-static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	volatile int temp;
 
 	ARG_UNUSED(dev);
 
-	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
 		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
@@ -412,14 +391,13 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
 	ARG_UNUSED(dev);
 
-	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
 		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
@@ -433,9 +411,9 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	int err;
@@ -449,12 +427,19 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
-		       STM32_CLOCK_MASK_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
-		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
@@ -496,6 +481,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	case STM32_CLOCK_BUS_AHB2:
 	case STM32_CLOCK_BUS_AHB3:
 	case STM32_CLOCK_BUS_AHB4:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* HCLKn is a possible source clock for some peripherals */
+	case STM32_SRC_HCLK1:
+	case STM32_SRC_HCLK2:
+	case STM32_SRC_HCLK3:
+	case STM32_SRC_HCLK4:
+	case STM32_SRC_HCLK5:
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
@@ -544,6 +537,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI_ENABLED)
+	case STM32_SRC_HSI_KER:
+		*rate = STM32_HSI_FREQ/STM32_HSI_DIVISOR;
+	break;
+#endif /* STM32_HSI_ENABLED */
 #if defined(STM32_HSI48_ENABLED)
 	case STM32_SRC_HSI48:
 		*rate = STM32_HSI48_FREQ;
@@ -575,7 +573,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_N_MULTIPLIER,
 					      STM32_PLL_S_DIVISOR);
 		break;
-	/* PLL 1  has no T-divider */
+	/* PLL 1 has no T-divider */
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 #endif /* STM32_PLL_ENABLED */
 #if defined(STM32_PLL2_ENABLED)
@@ -641,14 +639,48 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	/* PLL 3  has no T-divider */
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
+	case STM32_SRC_TIMPCLK2:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE2 <= 4 ? ahb_clock : apb2_clock * 4;
+		} else {
+			*rate = STM32_PPRE2 <= 2 ? ahb_clock : apb2_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE2 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE2 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
 	default:
 		return -ENOTSUP;
+	}
+
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
 	}
 
 	return 0;
 }
 
-static const struct clock_control_driver_api stm32_clock_control_api = {
+static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
@@ -678,9 +710,18 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
-		/* Enable HSI oscillator */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
+		if (IS_ENABLED(STM32_PLL_SRC_HSI) || IS_ENABLED(STM32_PLL2_SRC_HSI) ||
+		    IS_ENABLED(STM32_PLL3_SRC_HSI)) {
+			/* HSI calibration */
+			LL_RCC_HSI_SetCalibTrimming(RCC_HSICALIBRATION_DEFAULT);
+		}
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI oscillator */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			}
 		}
 		/* HSI divider configuration */
 		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
@@ -701,8 +742,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		/* Enable backup domain */
-		LL_PWR_EnableBkUpAccess();
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -716,6 +756,8 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
@@ -766,18 +808,53 @@ static int set_up_plls(void)
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
+
+#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
+	/*
+	 * Don't disable PLL during application initialization
+	 * that runs in memmap mode when (Q/O)SPI uses PLL
+	 * as its clock source.
+	 */
+#if defined(OCTOSPI1) || defined(OCTOSPI2)
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#elif defined(QUADSPI)
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#else
 	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+#else
+	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+	LL_RCC_PLL3_Disable();
 
 	/* Configure PLL source */
 
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
-	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+	if (IS_ENABLED(STM32_PLL_SRC_HSE) ||
+		IS_ENABLED(STM32_PLL2_SRC_HSE) ||
+		IS_ENABLED(STM32_PLL3_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
-	} else if (IS_ENABLED(STM32_PLL_SRC_CSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_CSI) ||
+		IS_ENABLED(STM32_PLL2_SRC_CSI) ||
+		IS_ENABLED(STM32_PLL3_SRC_CSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
-	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI) ||
+		IS_ENABLED(STM32_PLL2_SRC_HSI) ||
+		IS_ENABLED(STM32_PLL3_SRC_HSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
 	} else {
@@ -799,8 +876,11 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
 
-	/* FRACN disable DIVP,DIVQ,DIVR enable*/
 	LL_RCC_PLL1FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+		LL_RCC_PLL1_SetFRACN(STM32_PLL_FRACN_VALUE);
+		LL_RCC_PLL1FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL_P_ENABLED)) {
 		LL_RCC_PLL1_SetP(STM32_PLL_P_DIVISOR);
@@ -845,6 +925,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
 
 	LL_RCC_PLL2FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
+		LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
+		LL_RCC_PLL2FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
@@ -895,6 +979,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
 
 	LL_RCC_PLL3FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL3_FRACN_ENABLED)) {
+		LL_RCC_PLL3_SetFRACN(STM32_PLL3_FRACN_VALUE);
+		LL_RCC_PLL3FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
@@ -933,91 +1021,6 @@ static int set_up_plls(void)
 	return 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-/*  adapted from the stm32cube SystemCoreClockUpdate*/
-void stm32_system_clock_update(void)
-{
-	uint32_t sysclk, hsivalue, pllsource, pllm, pllp, core_presc;
-	float_t pllfracn, pllvco;
-
-	/* Get SYSCLK source */
-	switch (RCC->CFGR & RCC_CFGR_SWS) {
-	case 0x00: /* HSI used as system clock source (default after reset) */
-		sysclk = (HSI_VALUE >> ((RCC->CR & RCC_CR_HSIDIV)
-			>> RCC_CR_HSIDIV_Pos));
-		break;
-
-	case 0x08: /* CSI used as system clock source */
-		sysclk = CSI_VALUE;
-		break;
-
-	case 0x10: /* HSE used as system clock source */
-		sysclk = HSE_VALUE;
-		break;
-
-	case 0x18:  /* PLL1 used as system clock  source */
-		/*
-		 * PLL1_VCO = (HSE_VALUE or HSI_VALUE or CSI_VALUE/ PLLM) * PLLN
-		 * SYSCLK = PLL1_VCO / PLL1R
-		 */
-		pllsource = (RCC->PLLCKSELR & RCC_PLLCKSELR_PLLSRC);
-		pllm = ((RCC->PLLCKSELR & RCC_PLLCKSELR_DIVM1) >> RCC_PLLCKSELR_DIVM1_Pos);
-
-		if ((RCC->PLLCFGR & RCC_PLLCFGR_PLL1FRACEN) != 0U) {
-			pllfracn = (float_t)(uint32_t)(((RCC->PLL1FRACR & RCC_PLL1FRACR_FRACN)
-			>> RCC_PLL1FRACR_FRACN_Pos));
-		} else {
-			pllfracn = (float_t)0U;
-		}
-
-		if (pllm != 0U) {
-			switch (pllsource) {
-			case 0x02: /* HSE used as PLL1 clock source */
-				pllvco = ((float_t)HSE_VALUE / (float_t)pllm) *
-					((float_t)(uint32_t)(RCC->PLL1DIVR1 & RCC_PLL1DIVR1_DIVN) +
-					(pllfracn/(float_t)0x2000) + (float_t)1);
-				break;
-
-			case 0x01: /* CSI used as PLL1 clock source */
-				pllvco = ((float_t)CSI_VALUE / (float_t)pllm) *
-				((float_t)(uint32_t)(RCC->PLL1DIVR1 & RCC_PLL1DIVR1_DIVN) +
-				(pllfracn/(float_t)0x2000) + (float_t)1);
-				break;
-
-			case 0x00: /* HSI used as PLL1 clock source */
-			default:
-				hsivalue = (HSI_VALUE >> ((RCC->CR & RCC_CR_HSIDIV) >>
-					RCC_CR_HSIDIV_Pos));
-				pllvco = ((float_t)hsivalue / (float_t)pllm) *
-					((float_t)(uint32_t)(RCC->PLL1DIVR1 & RCC_PLL1DIVR1_DIVN) +
-					(pllfracn/(float_t)0x2000) + (float_t)1);
-				break;
-			}
-
-			pllp = (((RCC->PLL1DIVR1 & RCC_PLL1DIVR1_DIVP) >>
-				RCC_PLL1DIVR1_DIVP_Pos) + 1U);
-			sysclk =  (uint32_t)(float_t)(pllvco/(float_t)pllp);
-		} else {
-			sysclk = 0U;
-		}
-		break;
-
-	default: /* Unexpected, default to HSI used as system clk source (default after reset) */
-		sysclk = (HSI_VALUE >> ((RCC->CR & RCC_CR_HSIDIV) >> RCC_CR_HSIDIV_Pos));
-		break;
-	}
-
-	/* system clock frequency : CM7 CPU frequency  */
-	core_presc = (RCC->CDCFGR & RCC_CDCFGR_CPRE);
-
-	if (core_presc >= 8U) {
-		SystemCoreClock = (sysclk >> (core_presc - RCC_CDCFGR_CPRE_3 + 1U));
-	} else {
-		SystemCoreClock = sysclk;
-	}
-}
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-
 int stm32_clock_control_init(const struct device *dev)
 {
 	int r = 0;
@@ -1037,20 +1040,25 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	/* Configure MCO1/MCO2 based on Kconfig */
-	stm32_clock_control_mco_init();
-
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM1);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM2);
+#endif
+#endif
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
+
+	/* Configure Voltage scale to comply with the desired system frequency */
+	prepare_regulator_voltage_scale();
 
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
 		return r;
 	}
-
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
 
 	/* Current hclk value */
 	old_hclk_freq = get_hclk_frequency();
@@ -1127,6 +1135,12 @@ int stm32_clock_control_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
+
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
 
 	ARG_UNUSED(dev);
 

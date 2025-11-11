@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
@@ -25,6 +26,7 @@
 #include "bap_iso.h"
 #include "audio_internal.h"
 #include "bap_endpoint.h"
+#include "bap_internal.h"
 
 LOG_MODULE_REGISTER(bt_bap_iso, CONFIG_BT_BAP_ISO_LOG_LEVEL);
 
@@ -170,50 +172,76 @@ static struct bt_bap_iso_dir *bap_iso_get_iso_dir(bool unicast_client, struct bt
 	}
 }
 
-void bt_bap_iso_configure_data_path(struct bt_bap_ep *ep, struct bt_audio_codec_cfg *codec_cfg)
+void bt_bap_setup_iso_data_path(struct bt_bap_stream *stream)
 {
+	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	struct bt_bap_ep *ep = stream->ep;
 	struct bt_bap_iso *bap_iso = ep->iso;
-	struct bt_iso_chan_qos *qos = bap_iso->chan.qos;
 	const bool is_unicast_client =
-		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
 	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
-	struct bt_iso_chan_path *path = &iso_dir->path;
+	struct bt_iso_chan_path path = {0};
+	uint8_t dir;
+	int err;
 
-	/* Setup the data path objects */
 	if (iso_dir == &bap_iso->rx) {
-		qos->rx->path = path;
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 	} else {
-		qos->tx->path = path;
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 	}
+
+	path.pid = codec_cfg->path_id;
 
 	/* Configure the data path to either use the controller for transcoding, or set the path to
 	 * be transparent to indicate that the transcoding happens somewhere else
 	 */
-	path->pid = codec_cfg->path_id;
-
 	if (codec_cfg->ctlr_transcode) {
-		path->format = codec_cfg->id;
-		path->cid = codec_cfg->cid;
-		path->vid = codec_cfg->vid;
-		path->delay = 0;
-		path->cc_len = codec_cfg->data_len;
-		path->cc = codec_cfg->data;
+		path.format = codec_cfg->id;
+		path.cid = codec_cfg->cid;
+		path.vid = codec_cfg->vid;
+		path.cc_len = codec_cfg->data_len;
+		path.cc = codec_cfg->data;
 	} else {
-		path->format = BT_HCI_CODING_FORMAT_TRANSPARENT;
-		path->cid = 0;
-		path->vid = 0;
-		path->delay = 0;
-		path->cc_len = 0;
-		path->cc = NULL;
+		path.format = BT_HCI_CODING_FORMAT_TRANSPARENT;
+	}
+
+	err = bt_iso_setup_data_path(&bap_iso->chan, dir, &path);
+	if (err != 0) {
+		LOG_ERR("Failed to set ISO data path for ep %p and codec_cfg %p: %d", ep, codec_cfg,
+			err);
 	}
 }
+
+void bt_bap_remove_iso_data_path(struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep *ep = stream->ep;
+	struct bt_bap_iso *bap_iso = ep->iso;
+	const bool is_unicast_client =
+		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
+	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
+	uint8_t dir;
+	int err;
+
+	if (iso_dir == &bap_iso->rx) {
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+	} else {
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+	}
+
+	err = bt_iso_remove_data_path(&bap_iso->chan, dir);
+	if (err != 0) {
+		LOG_ERR("Failed to remove ISO data path for ep %p: %d", ep, err);
+	}
+}
+
 static bool is_unicast_client_ep(struct bt_bap_ep *ep)
 {
-	return IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+	return IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
 }
 
 void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 {
+	const struct bt_bap_ep *paired_ep;
 	struct bt_bap_iso_dir *iso_dir;
 
 	__ASSERT_NO_MSG(ep != NULL);
@@ -229,6 +257,15 @@ void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 	iso_dir->ep = ep;
 
 	ep->iso = bt_bap_iso_ref(iso);
+
+	paired_ep = bt_bap_iso_get_paired_ep(ep);
+	if (paired_ep != NULL && paired_ep->stream != NULL && paired_ep->stream->conn != NULL &&
+	    ep->stream != NULL && ep->stream->conn != NULL) {
+		__ASSERT(paired_ep->stream->conn == ep->stream->conn,
+			 "Cannot bind ep %p with conn %p to iso %p with paired_ep %p with "
+			 "different conn %p",
+			 ep, ep->stream->conn, iso, paired_ep, paired_ep->stream->conn);
+	}
 }
 
 void bt_bap_iso_unbind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
@@ -284,8 +321,8 @@ void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *st
 
 	__ASSERT_NO_MSG(stream != NULL);
 	__ASSERT_NO_MSG(bap_iso != NULL);
-	__ASSERT(stream->bap_iso == NULL, "stream %p bound with bap_iso %p already", stream,
-		 stream->bap_iso);
+	__ASSERT(stream->iso == NULL, "stream %p bound with bap_iso %p already", stream,
+		 CONTAINER_OF(stream->iso, struct bt_bap_iso, chan));
 
 	LOG_DBG("bap_iso %p stream %p dir %s", bap_iso, stream, bt_audio_dir_str(dir));
 
@@ -300,17 +337,18 @@ void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *st
 		 bap_iso_ep->stream);
 	bap_iso_ep->stream = stream;
 
-	stream->bap_iso = bt_bap_iso_ref(bap_iso);
+	stream->iso = &bt_bap_iso_ref(bap_iso)->chan;
 }
 
-void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream,
-			      enum bt_audio_dir dir)
+void bt_bap_iso_unbind_stream(struct bt_bap_stream *stream, enum bt_audio_dir dir)
 {
 	struct bt_bap_iso_dir *bap_iso_ep;
+	struct bt_bap_iso *bap_iso;
 
 	__ASSERT_NO_MSG(stream != NULL);
-	__ASSERT_NO_MSG(bap_iso != NULL);
-	__ASSERT(stream->bap_iso != NULL, "stream %p not bound with an bap_iso", stream);
+	__ASSERT(stream->iso != NULL, "stream %p not bound with an bap_iso", stream);
+
+	bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
 
 	LOG_DBG("bap_iso %p stream %p dir %s", bap_iso, stream, bt_audio_dir_str(dir));
 
@@ -322,11 +360,12 @@ void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *
 	}
 
 	__ASSERT(bap_iso_ep->stream == stream, "bap_iso %p (%p) not bound with stream %p (%p)",
-		 bap_iso, bap_iso_ep->stream, stream, stream->bap_iso);
+		 bap_iso, bap_iso_ep->stream, stream,
+		 CONTAINER_OF(stream->iso, struct bt_bap_iso, chan));
 	bap_iso_ep->stream = NULL;
 
 	bt_bap_iso_unref(bap_iso);
-	stream->bap_iso = NULL;
+	stream->iso = NULL;
 }
 
 struct bt_bap_stream *bt_bap_iso_get_stream(struct bt_bap_iso *iso, enum bt_audio_dir dir)

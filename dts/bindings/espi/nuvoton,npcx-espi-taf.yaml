@@ -58,3 +58,15 @@ properties:
       - "NPCX_ESPI_TAF_MAX_READ_REQ_1024B"
       - "NPCX_ESPI_TAF_MAX_READ_REQ_2048B"
       - "NPCX_ESPI_TAF_MAX_READ_REQ_4096B"
+
+  rpmc-cntr:
+    type: int
+    description: |
+      RPMC counter on RPMC flash devices.
+    default: 0
+
+  rpmc-op1-code:
+    type: int
+    description: |
+      RPMC OP1 opcode on RPMC flash devices.
+    default: 0

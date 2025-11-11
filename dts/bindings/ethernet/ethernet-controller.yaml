@@ -37,3 +37,9 @@ properties:
       - "rmii"
       - "gmii"
       - "rgmii"
+      - "internal"
+
+  ptp-clock:
+    type: phandle
+    description: |
+      Corresponding ptp clock device.

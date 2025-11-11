@@ -32,16 +32,34 @@ extern "C" {
 extern volatile irq_offload_routine_t offload_routine;
 #endif
 
-/* Check the CPSR mode bits to see if we are in IRQ or FIQ mode */
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return (arch_curr_cpu()->nested != 0U);
+	uint32_t nested;
+#ifdef CONFIG_SMP
+	unsigned int key;
+
+	key = arch_irq_lock();
+#endif
+	nested = arch_curr_cpu()->nested;
+#ifdef CONFIG_SMP
+	arch_irq_unlock(key);
+#endif
+	return nested != 0U;
 }
 
 static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf)
 {
-	return (arch_curr_cpu()->arch.exc_depth > 1U) ? (true) : (false);
+	return (_current_cpu->arch.exc_depth > 1U) ? (true) : (false);
 }
+
+/**
+ * @brief No current implementation where core dump is not supported
+ *
+ * @param esf exception frame
+ * @param exc_return EXC_RETURN value present in LR after exception entry.
+ */
+static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
+{}
 
 #if defined(CONFIG_USERSPACE)
 /*

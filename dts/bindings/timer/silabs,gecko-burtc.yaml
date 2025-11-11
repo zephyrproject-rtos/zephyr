@@ -1,7 +1,10 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: SiLabs Gecko BURTC timer
+title: Silicon Labs Series 2 BURTC (Backup Real Time Counter)
+
+description: |
+  Backup RTC timer for Silicon Labs Series 2 SoCs.
 
 compatible: "silabs,gecko-burtc"
 

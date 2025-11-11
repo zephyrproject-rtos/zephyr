@@ -28,7 +28,7 @@ static int assign_ep_addr(const struct device *dev,
 	int ret = -ENODEV;
 
 	for (unsigned int idx = 1; idx < 16U; idx++) {
-		uint16_t mps = ed->wMaxPacketSize;
+		uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 		uint8_t ep;
 
 		if (USB_EP_DIR_IS_IN(ed->bEndpointAddress)) {
@@ -50,7 +50,7 @@ static int assign_ep_addr(const struct device *dev,
 		if (ret == 0) {
 			LOG_DBG("ep 0x%02x -> 0x%02x", ed->bEndpointAddress, ep);
 			ed->bEndpointAddress = ep;
-			ed->wMaxPacketSize = mps;
+			ed->wMaxPacketSize = sys_cpu_to_le16(mps);
 			usbd_ep_bm_set(class_ep_bm, ed->bEndpointAddress);
 			usbd_ep_bm_set(config_ep_bm, ed->bEndpointAddress);
 
@@ -115,6 +115,7 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				   uint8_t *const nif)
 {
 	struct usb_desc_header **dhp;
+	struct usb_association_descriptor *iad = NULL;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
 	uint32_t class_ep_bm = 0;
@@ -132,6 +133,14 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 	c_nd->ep_active = 0U;
 
 	while (*dhp != NULL && (*dhp)->bLength != 0) {
+		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
+			iad = (struct usb_association_descriptor *)(*dhp);
+
+			/* IAD must be before interfaces it associates, so the
+			 * first interface will be the next interface assigned.
+			 */
+			iad->bFirstInterface = tmp_nif;
+		}
 
 		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
 			ifd = (struct usb_if_descriptor *)(*dhp);
@@ -166,8 +175,10 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				return ret;
 			}
 
-			LOG_INF("\tep 0x%02x mps %u interface ep-bm 0x%08x",
-				ed->bEndpointAddress, ed->wMaxPacketSize, class_ep_bm);
+			LOG_INF("\tep 0x%02x mps 0x%04x interface ep-bm 0x%08x",
+				ed->bEndpointAddress,
+				sys_le16_to_cpu(ed->wMaxPacketSize),
+				class_ep_bm);
 		}
 
 		dhp++;
@@ -270,18 +281,20 @@ int usbd_init_configurations(struct usbd_context *const uds_ctx)
 
 	usbd_init_update_fs_mps0(uds_ctx);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
-		int ret;
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
+			int ret;
 
-		ret = init_configuration(uds_ctx, USBD_SPEED_HS, cfg_nd);
-		if (ret) {
-			LOG_ERR("Failed to init HS configuration %u",
-				usbd_config_get_value(cfg_nd));
-			return ret;
+			ret = init_configuration(uds_ctx, USBD_SPEED_HS, cfg_nd);
+			if (ret) {
+				LOG_ERR("Failed to init HS configuration %u",
+					usbd_config_get_value(cfg_nd));
+				return ret;
+			}
+
+			LOG_INF("HS bNumConfigurations %u",
+				usbd_get_num_configs(uds_ctx, USBD_SPEED_HS));
 		}
-
-		LOG_INF("HS bNumConfigurations %u",
-			usbd_get_num_configs(uds_ctx, USBD_SPEED_HS));
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->fs_configs, cfg_nd, node) {

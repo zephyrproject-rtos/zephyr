@@ -25,11 +25,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h7rs_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
@@ -39,16 +36,6 @@ static int stm32h7rs_init(void)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#if !defined(SMPS) && \
-		(defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT))
-#error Unsupported configuration: Selected SoC do not support SMPS
-#endif
 #if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
 #elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
@@ -72,7 +59,13 @@ static int stm32h7rs_init(void)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
 
-	return 0;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
+	LL_PWR_EnableXSPIM1(); /* Required for powering GPIO O and P */
+#endif /* gpioo || gpio p */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay)
+	LL_PWR_EnableXSPIM2(); /* Required for powering GPIO N */
+#endif /* gpio n */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay)
+	LL_PWR_EnableUSBVoltageDetector(); /* Required for powering GPIO M */
+#endif /* gpiom */
 }
-
-SYS_INIT(stm32h7rs_init, PRE_KERNEL_1, 0);

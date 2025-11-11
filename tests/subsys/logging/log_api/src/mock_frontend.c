@@ -115,9 +115,7 @@ void log_frontend_msg(const void *source,
 	if (desc.level == LOG_LEVEL_NONE) {
 		source_id = (uintptr_t)source;
 	} else {
-		source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-			log_dynamic_source_id((struct log_source_dynamic_data *)source) :
-			log_const_source_id((const struct log_source_const_data *)source);
+		source_id = log_source_id(source);
 	}
 
 	zassert_equal(source_id, exp_msg->source_id, "got: %d, exp: %d",

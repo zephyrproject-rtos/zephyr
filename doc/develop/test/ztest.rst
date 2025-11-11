@@ -46,10 +46,13 @@ Below is an example of a test suite using a predicate:
 Adding tests to a suite
 ***********************
 
-There are 4 macros used to add a test to a suite, they are:
+There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
+  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
+  the body of the test using the ``data`` pointer.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
@@ -260,7 +263,7 @@ prj.conf
    :language: text
    :linenos:
 
-src/main.c (see :ref:`best practices <main_c_bp>`)
+src/main.c
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c
@@ -357,7 +360,16 @@ efforts into the specific module in question. This will speed up testing since
 only the module will have to be compiled in, and the tested functions will be
 called directly.
 
-Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+To setup unit tests you have to add a CMakeLists.txt, a testcases.yml and a
+prj.conf to the directory containing the unit test source files. The resulting
+binary from this directory is build with the -DBOARD=unit_testing. When twister
+is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
+filters out all testcases.yml in which type: unit is not set. Only unit tests
+are executed with a firmware build with BOARD=unit_testing.
+
+CMakeLists.txt
+==============
+
 In order to declare the unit tests present in a source folder, you need to add
 the relevant source files to the ``testbinary`` target from the CMake
 :zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
@@ -379,6 +391,41 @@ In a unit test, mock objects can simulate the behavior of complex real objects
 and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
+
+testcases.yaml
+==============
+
+You have to set the value for the key "type" to "unit" in the testcase.yaml
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+
+prj.conf
+========
+
+For unit tests this contains usually only
+
+.. code-block:: kconfig
+
+   CONFIG_ZTEST=y
+
+If your unit tests require additional libraries (e.g. math-lib) you will have to
+add them either via the CMakeLists.txt or in the testcase.yaml:
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+         extra_args:
+            - EXTRA_LDFLAGS="-lm"
+
+Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
 
 Best practices for declaring the test suite
 *******************************************
@@ -597,13 +644,17 @@ By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
 tests.  For native simulator builds you can provide the seed as an argument to
-twister with `--seed`
+twister with ``--seed``.
 
-Static configuration of ZTEST_SHUFFLE contains:
 
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
-
+Repeating Tests
+***********************
+By default the tests are executed once. The test cases and test suites
+may be executed multiple times. Enable :kconfig:option:`CONFIG_ZTEST_REPEAT` to
+execute the tests multiple times. By default the multiplication factors are 3, which
+means every test suite is executed 3 times and every test case is executed 3 times. This can
+be changed by the :kconfig:option:`CONFIG_ZTEST_SUITE_REPEAT_COUNT` and
+:kconfig:option:`CONFIG_ZTEST_TEST_REPEAT_COUNT` Kconfig options.
 
 Test Selection
 **************

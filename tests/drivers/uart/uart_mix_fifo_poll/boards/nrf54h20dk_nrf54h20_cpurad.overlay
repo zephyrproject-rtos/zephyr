@@ -2,13 +2,16 @@
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
-&cpurad_dma_region {
-	/* Default space is not enough. */
-	reg = <0x1e80 0x100>;
-};
-
 &dut {
 	memory-regions = <&cpurad_dma_region>;
+};
+
+&dma_fast_region {
+	status = "okay";
+};
+
+&dut2 {
+	memory-regions = <&dma_fast_region>;
 };
 
 &grtc {

@@ -1,0 +1,57 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ITE IT8801 ioexpander multi-function device drivers.
+  This ioexpander provides a GPIO/PWM/Keyboard function via I2C bus.
+
+  An example configuration using the it8801-common-cfg.dtsi template:
+
+  &i2c4 {
+      it8801_mfd: it8801@38 {
+          compatible = "ite,it8801-mfd";
+          /*
+           * SMBus address (7-bit without R/W)
+           * SMB_ADDR pin is 0, SMBus address is 0x38
+           * SMB_ADDR pin is 1, SMBus address is 0x39
+           */
+          reg = <0x38>;
+          irq-gpios = <&gpioa 1 0>; /* SMB_INT# */
+      }
+
+      #include <ite/it8801-common-cfg.dtsi>
+
+      /* sub-devices available at nodelabels:
+       * - ioex_it8801_port0
+       * - ioex_it8801_port1
+       * - ioex_it8801_port2
+       * - ioex_it8801_kbd
+       * - ioex_it8801_pwm
+       */
+
+      &ioex_it8801_kbd {
+          kso-mapping = <0 1 20 3 4 5 6 17 18 16 15 11 12>;
+          mfdctrl = <&kso18_gp01_default &kso20_gp23_default>;
+          row-size = <8>;
+          col-size = <13>;
+      };
+
+      &ioex_it8801_pwm {
+          status = "okay";
+      };
+  };
+
+compatible: "ite,it8801-mfd"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      An interrupt can be asserted on SMB_INT# pin to notify
+      the host-side since an effective interrupt occurs.

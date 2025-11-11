@@ -5,18 +5,15 @@
  */
 
 /dts-v1/;
- #include <st/u5/stm32u585Xi.dtsi>
- #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
- #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <st/u5/stm32u585Xi.dtsi>
+#include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STEVAL-STWINBX1 Development kit";
 	compatible = "st,steval_stwinbx1";
 
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -26,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
 			label = "LED_1";
 		};
+
 		orange_led: led_2 {
 			gpios = <&gpioh 10 GPIO_ACTIVE_HIGH>;
 			label = "LED_2";
@@ -47,6 +46,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
@@ -137,8 +137,8 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
-		<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -149,11 +149,46 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pd3 &spi2_mosi_pi3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioh 6 GPIO_ACTIVE_LOW>,
+		   <&gpioh 15 GPIO_ACTIVE_LOW>,
+		   <&gpioi 7 GPIO_ACTIVE_LOW>;
+
+	iis2dlpc: iis2dlpc@0 {
+		compatible = "st,iis2dlpc";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <0>;
+		drdy-gpios = <&gpiof 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		drdy-int = <1>;
+	};
+
+	ism330dhcx: ism330dhcx@1 {
+		compatible = "st,ism330dhcx";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <1>;
+		drdy-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		int-pin = <1>;
+	};
+
+	iis2iclx: iis2iclx@2 {
+		compatible = "st,iis2iclx";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <2>;
+		drdy-gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		int-pin = <2>;
+	};
+};
+
 &spi3 {
 	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+
 	hci_spi: bluenrg-2@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
@@ -178,6 +213,19 @@ stm32_lp_tick_source: &lptim1 {
 		int-gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
+
+	iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	ilps22qs@5c {
+		compatible = "st,ilps22qs";
+		reg = <0x5c>;
+		status = "okay";
+	};
 };
 
 &timers5 {
@@ -191,7 +239,6 @@ stm32_lp_tick_source: &lptim1 {
 	};
 };
 
-
 &aes {
 	status = "okay";
 };
@@ -204,16 +251,14 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	vref-mv = <2750>;
 	status = "okay";
@@ -222,7 +267,7 @@ zephyr_udc0: &usbotg_fs {
 &adc4 {
 	pinctrl-0 = <&adc4_in3_pc2>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	vref-mv = <2750>;
 	status = "okay";
@@ -247,12 +292,13 @@ zephyr_udc0: &usbotg_fs {
 &sdmmc1 {
 	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
 	bus-width = <4>;
 	clk-div = <4>;
+	disk-name = "SD";
 };
 
 &flash0 {
@@ -270,23 +316,26 @@ zephyr_udc0: &usbotg_fs {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
 		};
+
 		slot1_partition: partition@78000 {
 			label = "image-1";
 			reg = <0x00078000 DT_SIZE_K(416)>;
 		};
+
 		scratch_partition: partition@e0000 {
 			label = "image-scratch";
 			reg = <0x000e0000 DT_SIZE_K(64)>;
 		};
+
 		storage_partition: partition@f0000 {
 			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};
-
 	};
 };
 

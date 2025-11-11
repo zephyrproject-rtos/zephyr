@@ -1,7 +1,8 @@
-.. _soc_voltage:
+.. zephyr:code-sample:: soc_voltage
+   :name: SoC Voltage Sensor
+   :relevant-api: sensor_interface
 
-SoC voltage sensor measurement
-##############################
+   Get voltage data from an SoC's voltage sensor(s).
 
 Overview
 ********

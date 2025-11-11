@@ -286,7 +286,7 @@ static int gpio_rv32m1_init(const struct device *dev)
 	return config->irq_config_func(dev);
 }
 
-static const struct gpio_driver_api gpio_rv32m1_driver_api = {
+static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
 	.pin_configure = gpio_rv32m1_configure,
 	.port_get_raw = gpio_rv32m1_port_get_raw,
 	.port_set_masked_raw = gpio_rv32m1_port_set_masked_raw,

@@ -197,7 +197,7 @@ static const struct bt_mesh_comp_p1_model_item test_p1_mod2 = {
 	.cor_present = 1,
 	.format = 0,
 	.ext_item_cnt = 1,
-	.cor_id = 0,
+	.cor_id = 1,
 };
 
 static const struct bt_mesh_comp_p1_model_item test_p1_mod3 = {
@@ -211,7 +211,7 @@ static const struct bt_mesh_comp_p1_model_item test_p1_mod4 = {
 	.cor_present = 1,
 	.format = 0,
 	.ext_item_cnt = 0,
-	.cor_id = 0,
+	.cor_id = 1,
 };
 
 static const struct bt_mesh_comp_p1_model_item test_p1_mod5 = {

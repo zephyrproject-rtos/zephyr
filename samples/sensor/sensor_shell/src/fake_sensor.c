@@ -81,7 +81,7 @@ static int trigger_set(const struct device *dev, const struct sensor_trigger *tr
 	return 0;
 }
 
-static const struct sensor_driver_api api = {
+static DEVICE_API(sensor, api) = {
 	.attr_get = attr_get,
 	.attr_set = attr_set,
 	.sample_fetch = sample_fetch,

@@ -1,0 +1,32 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mcx_n9xx_evk/mcxn947/cpu0/qspi
+name: NXP MCX-N9XX-EVK QSPI (CPU0)
+type: mcu
+arch: arm
+ram: 320
+flash: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - counter
+  - dac
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - i3c
+  - pwm
+  - regulator
+  - sdhc
+  - spi
+  - usb_device
+  - watchdog
+vendor: nxp

@@ -6,7 +6,7 @@ common:
 tests:
   sd.mmc:
     harness: ztest
-    filter: dt_compat_enabled("zephyr,mmc-disk")
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("zephyr,mmc-disk")
     tags: sdhc
     min_ram: 32
     integration_platforms:

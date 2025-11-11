@@ -5,7 +5,7 @@ description: STMPE811 I2C touchscreen controller
 
 compatible: "st,stmpe811"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, touchscreen-common.yaml]
 
 properties:
   int-gpios:
@@ -13,20 +13,6 @@ properties:
     description: |
       Interrupt GPIO. Used by the controller to signal touch data is
       available. Active low.
-
-  screen-width:
-    type: int
-    default: 0
-    description: |
-      Screen width for scaling the reported coordinates.
-      Default: raw touchscreen resolution.
-
-  screen-height:
-    type: int
-    default: 0
-    description: |
-      Screen height for scaling the reported coordinates.
-      Default: raw touchscreen resolution.
 
   raw-x-min:
     type: int

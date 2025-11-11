@@ -1,7 +1,4 @@
-.. mini_stm32h743:
-
-WeAct Studio MiniSTM32H743 Core Board
-#####################################
+.. zephyr:board:: mini_stm32h743
 
 Overview
 ********
@@ -26,12 +23,6 @@ Key Features
    - USB Type-C Connector
    - SWD header for external debugger
    - 2x 40-pin GPIO connector
-
-.. figure:: img/stm32h7xx.webp
-      :align: center
-      :alt: MiniSTM32H743 Core Board
-
-      MiniSTM32H743 Core Board (Credit: WeAct Studio)
 
 More information about the board can be found on the `Mini_STM32H743 website`_.
 
@@ -80,34 +71,7 @@ More information about STM32H743 can be found here:
 Supported Features
 ==================
 
-The mini_stm32h743 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration per core can be found in the defconfig file:
-``boards/weact/mini_stm32h743/mini_stm32h743_defconfig``
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -146,6 +110,8 @@ Virtual COM port interface. Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The MiniSTM32H743 Core board facilitates firmware flashing via the USB DFU
 bootloader. This method simplifies the process of updating images, although
 it doesn't provide debugging capabilities. However, the board provides header
@@ -168,7 +134,7 @@ the device using the west tool or the STM32CubeProgrammer.
 Flashing an application to MiniSTM32H743
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, put the board in bootloader mode as described above. Then build and flash
 the application in the usual way. Just add ``CONFIG_BOOT_DELAY=5000`` to the

@@ -34,7 +34,8 @@ static inline int soc_secure_mem_read(void *dst, void *src, size_t len)
 /* Include these soc_secure_* functions only when the FICR is mapped as secure only */
 #if defined(NRF_FICR_S)
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
+#if defined(CONFIG_SOC_HFXO_CAP_INTERNAL) || \
+	DT_ENUM_HAS_VALUE(DT_NODELABEL(hfxo), load_capacitors, internal)
 static inline uint32_t soc_secure_read_xosc32mtrim(void)
 {
 	uint32_t xosc32mtrim;
@@ -60,7 +61,8 @@ static inline void soc_secure_read_deviceid(uint32_t deviceid[2])
 }
 
 #else /* defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
-#if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
+#if defined(CONFIG_SOC_HFXO_CAP_INTERNAL) || \
+	DT_ENUM_HAS_VALUE(DT_NODELABEL(hfxo), load_capacitors, internal)
 static inline uint32_t soc_secure_read_xosc32mtrim(void)
 {
 	return NRF_FICR_S->XOSC32MTRIM;

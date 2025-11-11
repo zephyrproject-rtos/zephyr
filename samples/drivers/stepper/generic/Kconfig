@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Stepper generic sample application"
+
+config STEPS_PER_REV
+	int "Steps per revolution"
+	default 200
+
+config STEP_INTERVAL_NS
+	int "Step interval (ns)"
+	default 1000000
+
+config PING_PONG_N_REV
+	int "Change direction every N revolutions"
+	default 1
+
+config MONITOR_THREAD_TIMEOUT_MS
+	int "Monitor thread timeout (ms)"
+	default 1000
+
+config MONITOR_THREAD_STACK_SIZE
+	int "Monitor thread stack size"
+	default 1024
+
+source "Kconfig.zephyr"

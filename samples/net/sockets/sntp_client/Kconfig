@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Embeint Inc
+
+config NET_SAMPLE_SNTP_SERVER_ADDRESS
+	string "SNTP server address"
+	default "pool.ntp.org"
+
+config NET_SAMPLE_SNTP_SERVER_PORT
+	int "SNTP server port"
+	default 123
+
+config NET_SAMPLE_SNTP_SERVER_TIMEOUT_MS
+	int "Duration to wait for response"
+	default 2000
+
+source "Kconfig.zephyr"

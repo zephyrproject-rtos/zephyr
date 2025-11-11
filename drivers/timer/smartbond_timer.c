@@ -103,7 +103,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * as soon as system is awaken. Following code makes sure that
 	 * system never goes to sleep for longer time that watchdog reload value.
 	 */
-	if (!IS_ENABLED(CONFIG_WDT_SMARTBOND) && IS_ENABLED(CONFIG_PM)) {
+	if (IS_ENABLED(CONFIG_PM)) {
 		uint32_t watchdog_expire_ticks;
 
 		if (CRG_TOP->CLK_RCX_REG & CRG_TOP_CLK_RCX_REG_RCX_ENABLE_Msk) {
@@ -120,7 +120,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			 * RC32K maximum frequency.
 			 */
 			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG *
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC / (get_rc32k_max_frequency() / 320);
+				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+				(get_rc32k_max_frequency() / 320);
 		}
 		if (watchdog_expire_ticks - 2 < ticks) {
 			ticks = watchdog_expire_ticks - 2;
@@ -199,7 +200,7 @@ static int sys_clock_driver_init(void)
 	uint8_t pdc_idx;
 	uint8_t en_xtal;
 
-	en_xtal = DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay) ? MCU_PDC_EN_XTAL : 0;
+	en_xtal = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? MCU_PDC_EN_XTAL : 0;
 
 	/* Enable wakeup by TIMER2 */
 	pdc_idx = da1469x_pdc_add(MCU_PDC_TRIGGER_TIMER2, MCU_PDC_MASTER_M33, en_xtal);

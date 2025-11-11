@@ -48,7 +48,7 @@ struct nvs_fs {
 	/** Data write address */
 	uint32_t data_wra;
 	/** File system is split into sectors, each sector must be multiple of erase-block-size */
-	uint16_t sector_size;
+	uint32_t sector_size;
 	/** Number of sectors in the file system */
 	uint16_t sector_count;
 	/** Flag indicating if the file system is initialized */
@@ -163,6 +163,30 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, ui
  * especially on spi flash. On error, returns negative value of errno.h defined error codes.
  */
 ssize_t nvs_calc_free_space(struct nvs_fs *fs);
+
+/**
+ * @brief Tell how many contiguous free space remains in the currently active NVS sector.
+ *
+ * @param fs Pointer to the file system.
+ *
+ * @return Number of free bytes.
+ */
+size_t nvs_sector_max_data_size(struct nvs_fs *fs);
+
+/**
+ * @brief Close the currently active sector and switch to the next one.
+ *
+ * @note The garbage collector is called on the new sector.
+ *
+ * @warning This routine is made available for specific use cases.
+ * It breaks the aim of the NVS to avoid any unnecessary flash erases.
+ * Using this routine extensively can result in premature failure of the flash device.
+ *
+ * @param fs Pointer to the file system.
+ *
+ * @return 0 on success. On error, returns negative value of errno.h defined error codes.
+ */
+int nvs_sector_use_next(struct nvs_fs *fs);
 
 /**
  * @}

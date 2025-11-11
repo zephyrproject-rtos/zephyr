@@ -148,7 +148,7 @@ static int pwm_xmc4xxx_ccu8_get_cycles_per_sec(const struct device *dev, uint32_
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_xmc4xxx_ccu8_driver_api = {
+static DEVICE_API(pwm, pwm_xmc4xxx_ccu8_driver_api) = {
 	.set_cycles = pwm_xmc4xxx_ccu8_set_cycles,
 	.get_cycles_per_sec = pwm_xmc4xxx_ccu8_get_cycles_per_sec,
 };

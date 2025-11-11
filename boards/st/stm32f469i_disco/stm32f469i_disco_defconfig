@@ -15,8 +15,8 @@ CONFIG_UART_CONSOLE=y
 # enable GPIO
 CONFIG_GPIO=y
 
-# Enable Clocks
-CONFIG_CLOCK_CONTROL=y
+# Enable External Memory
+CONFIG_MEMC=y
 
-# enable pin controller
-CONFIG_PINCTRL=y
+# Configure Display
+CONFIG_STM32_LTDC_ARGB8888=y

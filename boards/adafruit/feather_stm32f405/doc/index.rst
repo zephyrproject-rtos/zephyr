@@ -1,7 +1,4 @@
-.. _adafruit_feather_stm32f405:
-
-Adafruit Feather STM32F405 Express
-##################################
+.. zephyr:board:: adafruit_feather_stm32f405
 
 Overview
 ********
@@ -11,10 +8,6 @@ Feather standard layout, sharing peripheral placement with other
 devices labeled as Feathers or FeatherWings. The board is equipped
 with a lithium ion battery charger, native USB C connector, 2MB of
 external flash memory, and SD card socket.
-
-.. image:: img/adafruit_feather_stm32f405.jpg
-     :align: center
-     :alt: Adafruit Feather STM32F405 Express
 
 Hardware
 ********
@@ -33,29 +26,7 @@ Hardware
 Supported Features
 ==================
 
-The Adafruit Feather STM32F405 board configuration supports the
-following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| USB       | on-chip    | USB device           |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -92,6 +63,8 @@ dedicated to the 2 MB SPI Flash chip.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 DFU-Util programming is supported through Zephyr by default. Set up
 of the built in DFU-Util bootloader is possible by following the

@@ -8,8 +8,7 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
-ram: 320
+ram: 256
 flash: 64
 supported:
   - arduino_i2c

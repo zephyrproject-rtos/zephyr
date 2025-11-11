@@ -99,6 +99,14 @@ config WIFI_ESP_AT_RX_NET_PKT_ALLOC_TIMEOUT
 	help
 	  Network interface RX net_pkt allocation timeout in milliseconds.
 
+config WIFI_ESP_AT_TCP_SEND_TIMEOUT
+	int "TCP socket send timeout"
+	default 30000
+	help
+	  For TCP socket, how long to wait in milliseconds for device
+	  to reply SEND OK/SEND FAIL after AT+CIPSEND has been sent.
+	  This can vary with network traffic condition.
+
 choice
 	prompt "ESP IP Address configuration"
 	default WIFI_ESP_AT_IP_DHCP
@@ -163,8 +171,9 @@ config WIFI_ESP_AT_DNS_USE
 
 config WIFI_ESP_AT_CIPDINFO_USE
 	bool "Use CIPDINFO to get peer ip and port"
+	default y if DNS_RESOLVER
 	help
-	  Enable AT+CIPDINFO got get peer ip-address and port.
+	  Enable AT+CIPDINFO to get peer ip-address and port.
 
 config WIFI_ESP_AT_FETCH_VERSION
 	bool "Fetch and log ESP-AT firmware version"

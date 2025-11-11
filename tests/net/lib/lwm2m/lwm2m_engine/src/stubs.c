@@ -44,6 +44,8 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
 DEFINE_FAKE_VOID_FUNC(engine_update_tx_time);
 DEFINE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
+DEFINE_FAKE_VOID_FUNC(lwm2m_rd_client_hint_socket_state, struct lwm2m_ctx *,
+		      enum lwm2m_socket_states);
 
 static sys_slist_t obs_obj_path_list = SYS_SLIST_STATIC_INIT(&obs_obj_path_list);
 sys_slist_t *lwm2m_obs_obj_path_list(void)
@@ -54,7 +56,7 @@ sys_slist_t *lwm2m_obs_obj_path_list(void)
 static sys_slist_t engine_obj_inst_list = SYS_SLIST_STATIC_INIT(&engine_obj_inst_list);
 sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
-struct zsock_pollfd {
+struct zvfs_pollfd {
 	int fd;
 	short events;
 	short revents;
@@ -123,7 +125,7 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 	return -1;
 }
 
-int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
 {
 	k_sleep(K_MSEC(1));
 	fds->revents = my_events;

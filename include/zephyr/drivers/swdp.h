@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Serial Wire Debug Port interface driver API
+ * @ingroup swdp_interface
+ * @brief Main header file for SWDP (Serial Wire Debug Port) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_SWDP_H_
@@ -18,28 +19,77 @@
 extern "C" {
 #endif
 
-/* SWDP packet request bits */
+/**
+ * @brief Interfaces for Serial Wire Debug Port (SWDP).
+ * @defgroup swdp_interface SWDP
+ * @since 3.7
+ * @version 0.1.0
+ * @ingroup io_interfaces
+ * @{
+ */
+
+/**
+ * @name SWD Packet Request Bits
+ *
+ * Bit definitions for SWD packet request fields.
+ * These bits are used to construct the 8-bit request packet header sent during an SWD transaction.
+ *
+ * @{
+ */
+
+/** Access Port (AP) or Debug Port (DP). 1 = AP, 0 = DP */
 #define SWDP_REQUEST_APnDP			BIT(0)
+/** Read (1) or Write (0) operation */
 #define SWDP_REQUEST_RnW			BIT(1)
+/** Address bit 2 for register selection */
 #define SWDP_REQUEST_A2				BIT(2)
+/** Address bit 3 for register selection */
 #define SWDP_REQUEST_A3				BIT(3)
 
-/* SWDP acknowledge response bits */
+/** @} */
+
+/**
+ * @name SWD Acknowledge (ACK) Response Bits
+ *
+ * Bit definitions for SWD acknowledge response fields.
+ * These bits are used to indicate the result of an SWD transaction.
+ *
+ * @{
+ */
+
+/** Transaction completed successfully */
 #define SWDP_ACK_OK				BIT(0)
+/** Target requests to retry the transaction later */
 #define SWDP_ACK_WAIT				BIT(1)
+/** Target detected a fault condition */
 #define SWDP_ACK_FAULT				BIT(2)
 
-/* SWDP transfer or parity error */
+/** @} */
+
+/** Transfer or parity error detected during transaction */
 #define SWDP_TRANSFER_ERROR			BIT(3)
 
-/* SWDP Interface pins */
+/**
+ * @name SWDP Interface Pin Definitions
+ *
+ * Pin identifiers for SWDP interface control.
+ * These constants define bit positions for controlling individual pins in the SWDP interface.
+ *
+ * @{
+ */
+
+/** Serial Wire Clock (SWCLK) pin identifier */
 #define SWDP_SWCLK_PIN			0U
+/** Serial Wire Data Input/Output (SWDIO) pin identifier */
 #define SWDP_SWDIO_PIN			1U
+/** Active-low reset (nRESET) pin identifier */
 #define SWDP_nRESET_PIN			7U
 
-/*
- * Serial Wire Interface (SWDP) driver API.
- * This is the mandatory API any Serial Wire driver needs to expose.
+/** @} */
+
+/**
+ * Serial Wire Debug Port (SWDP) driver API.
+ * This is the mandatory API any Serial Wire Debug Port driver needs to expose.
  */
 struct swdp_api {
 	/**
@@ -147,5 +197,7 @@ struct swdp_api {
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_SWDP_H_ */

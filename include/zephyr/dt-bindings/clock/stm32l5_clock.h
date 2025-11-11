@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L5_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L5_CLOCK_H_
+
+#include "stm32_common_clocks.h"
+
+/** Bus clocks */
+#define STM32_CLOCK_BUS_AHB1    0x048
+#define STM32_CLOCK_BUS_AHB2    0x04c
+#define STM32_CLOCK_BUS_AHB3    0x050
+#define STM32_CLOCK_BUS_APB1    0x058
+#define STM32_CLOCK_BUS_APB1_2  0x05c
+#define STM32_CLOCK_BUS_APB2    0x060
+
+#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
+
+/** Domain clocks */
+/* RM0438, § Clock configuration register (RCC_CCIPRx) */
+
+/** System clock */
+/* defined in stm32_common_clocks.h */
+/** Fixed clocks  */
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSI48		(STM32_SRC_HSI + 1)
+#define STM32_SRC_MSI		(STM32_SRC_HSI48 + 1)
+/** Bus clock */
+#define STM32_SRC_PCLK		(STM32_SRC_MSI + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
+/** PLL clock outputs */
+#define STM32_SRC_PLL_P		(STM32_SRC_TIMPCLK2 + 1)
+#define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
+#define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
+/* PLLSAI1 clocks */
+#define STM32_SRC_PLLSAI1_P	(STM32_SRC_PLL_R + 1)
+#define STM32_SRC_PLLSAI1_Q	(STM32_SRC_PLLSAI1_P + 1)
+#define STM32_SRC_PLLSAI1_R	(STM32_SRC_PLLSAI1_Q + 1)
+/* PLLSAI2 clocks */
+#define STM32_SRC_PLLSAI2_P	(STM32_SRC_PLLSAI1_R + 1)
+#define STM32_SRC_PLLSAI2_Q	(STM32_SRC_PLLSAI2_P + 1)
+#define STM32_SRC_PLLSAI2_R	(STM32_SRC_PLLSAI2_Q + 1)
+#define STM32_SRC_PLLSAI2_DIVR	(STM32_SRC_PLLSAI2_R + 1)
+
+/** @brief RCC_CCIPR register offset */
+#define CCIPR_REG		0x88
+#define CCIPR2_REG		0x9C
+
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x90
+
+/** @brief RCC_CFGRx register offset */
+#define CFGR_REG                0x08
+
+/** @brief Device domain clocks selection helpers */
+/** CCIPR devices */
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR_REG)
+#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 2, CCIPR_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR_REG)
+#define UART4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 6, CCIPR_REG)
+#define UART5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, CCIPR_REG)
+#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 11, 10, CCIPR_REG)
+#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 13, 12, CCIPR_REG)
+#define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 15, 14, CCIPR_REG)
+#define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CCIPR_REG)
+#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CCIPR_REG)
+#define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR_REG)
+#define LPTIM3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 23, 22, CCIPR_REG)
+#define FDCAN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 25, 24, CCIPR_REG)
+#define CLK48_SEL(val)		STM32_DT_CLOCK_SELECT((val), 27, 26, CCIPR_REG)
+#define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 29, 28, CCIPR_REG)
+/** CCIPR2 devices */
+#define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR2_REG)
+#define DFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 2, CCIPR2_REG)
+#define ADFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 4, 3, CCIPR2_REG)
+#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 5, CCIPR2_REG)
+#define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, CCIPR2_REG)
+#define SDMMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 14, CCIPR2_REG)
+#define OSPI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR2_REG)
+
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
+/** CFGR devices */
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR_REG)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L5_CLOCK_H_ */

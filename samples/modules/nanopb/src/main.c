@@ -30,7 +30,7 @@ bool encode_message(uint8_t *buffer, size_t buffer_size, size_t *message_length)
 
 	/* Fill in the lucky number */
 	message.lucky_number = 13;
-	for (int i = 0; i < 8; ++i) {
+	for (int i = 0; i < CONFIG_SAMPLE_BUFFER_SIZE; ++i) {
 		message.buffer[i] = (uint8_t)(i * 2);
 	}
 #ifdef CONFIG_SAMPLE_UNLUCKY_NUMBER
@@ -66,13 +66,14 @@ bool decode_message(uint8_t *buffer, size_t message_length)
 		/* Print the data contained in the message. */
 		printk("Your lucky number was %d!\n", (int)message.lucky_number);
 		printk("Buffer contains: ");
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < CONFIG_SAMPLE_BUFFER_SIZE; ++i) {
 			printk("%s%d", ((i == 0) ? "" : ", "), (int) message.buffer[i]);
 		}
 		printk("\n");
 #ifdef CONFIG_SAMPLE_UNLUCKY_NUMBER
 		printk("Your unlucky number was %d!\n", (int)message.unlucky_number);
 #endif
+		pb_release(SimpleMessage_fields, &message);
 	} else {
 		printk("Decoding failed: %s\n", PB_GET_ERROR(&stream));
 	}

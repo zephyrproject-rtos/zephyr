@@ -10,6 +10,10 @@ include: [adc-controller.yaml, spi-device.yaml]
 on-bus: spi
 
 properties:
+  spi-cs-setup-delay-ns:
+    default: 1000
+  spi-cs-hold-delay-ns:
+    default: 1000
   "#io-channel-cells":
     const: 1
 

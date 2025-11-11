@@ -333,7 +333,7 @@ static int gpio_gd32_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static const struct gpio_driver_api gpio_gd32_api = {
+static DEVICE_API(gpio, gpio_gd32_api) = {
 	.pin_configure = gpio_gd32_configure,
 	.port_get_raw = gpio_gd32_port_get_raw,
 	.port_set_masked_raw = gpio_gd32_port_set_masked_raw,
@@ -365,7 +365,7 @@ static int gpio_gd32_init(const struct device *port)
 		},							       \
 		.reg = DT_INST_REG_ADDR(n),				       \
 		.clkid = DT_INST_CLOCKS_CELL(n, id),			       \
-		COND_CODE_1(DT_NODE_HAS_STATUS(SYSCFG_NODE, okay),	       \
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SYSCFG_NODE),	       \
 			    (.clkid_exti = DT_CLOCKS_CELL(SYSCFG_NODE, id),),  \
 			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),))    \
 		.reset = RESET_DT_SPEC_INST_GET(n),			       \

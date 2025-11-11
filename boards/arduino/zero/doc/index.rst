@@ -1,7 +1,4 @@
-.. _arduino_zero:
-
-Arduino/Genuino Zero
-####################
+.. zephyr:board:: arduino_zero
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Arduino Zero is a maker-friendly development board with
 Atmel’s Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
-
-.. image:: img/arduino_zero.jpg
-     :align: center
-     :alt: Arduino Zero
 
 Hardware
 ********
@@ -28,37 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_zero board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation                   |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| DAC       | on-chip    | Digital to analogue converter            |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/zero/arduino_zero_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -98,7 +61,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -111,6 +74,8 @@ Arduino Zero, the DAC is available on pin A0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Arduino Zero comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMD21 chip and is supported by
 OpenOCD.
@@ -118,7 +83,7 @@ OpenOCD.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

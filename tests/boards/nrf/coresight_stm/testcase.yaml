@@ -1,0 +1,85 @@
+sample:
+  name: Logging using Coresight STM on nrf54h20
+
+common:
+  tags: coresight_stm
+  sysbuild: true
+  platform_allow:
+    - nrf54h20dk/nrf54h20/cpuapp
+  integration_platforms:
+    - nrf54h20dk/nrf54h20/cpuapp
+
+tests:
+  boards.nrf.coresight_stm.dict:
+    filter: not CONFIG_COVERAGE
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_root:
+        - "$ZEPHYR_BASE/samples/boards/nordic/coresight_stm/pytest/test_stm.py::test_STM_dictionary_mode"
+    required_snippets:
+      - nordic-log-stm-dict
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
+
+  boards.nrf.coresight_stm:
+    filter: not CONFIG_COVERAGE
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_root:
+        - "$ZEPHYR_BASE/samples/boards/nordic/coresight_stm/pytest/test_stm.py::test_STM_decoded"
+    required_snippets:
+      - nordic-log-stm
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
+
+  boards.nrf.coresight_stm.dict.coverage:
+    filter: CONFIG_COVERAGE
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "GCOV_COVERAGE_DUMP_END"
+    required_snippets:
+      - nordic-log-stm-dict
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=n
+      - coresight_stm_CONFIG_LOG_PRINTK=n
+
+  boards.nrf.coresight_stm.coverage:
+    filter: CONFIG_COVERAGE
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Timing for log message with 0 arguments:"
+        - "Timing for log message with 1 argument:"
+        - "Timing for log message with 2 arguments:"
+        - "Timing for log message with 3 arguments:"
+        - "Timing for log_message with string:"
+    required_snippets:
+      - nordic-log-stm
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=n
+      - coresight_stm_CONFIG_LOG_PRINTK=n
+
+  boards.nrf.coresight_stm.local_uart.coverge:
+    filter: CONFIG_COVERAGE
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Timing for log message with 0 arguments:"
+        - "Timing for log message with 1 argument:"
+        - "Timing for log message with 2 arguments:"
+        - "Timing for log message with 3 arguments:"
+        - "Timing for log_message with string:"
+    extra_args:
+      - CONFIG_LOG_MODE_IMMEDIATE=y

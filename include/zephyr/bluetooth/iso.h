@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,10 +23,19 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdint.h>
+#include <stddef.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,20 +56,40 @@ extern "C" {
  */
 #define BT_ISO_SDU_BUF_SIZE(mtu) BT_BUF_ISO_SIZE(mtu)
 
+/**
+ * Convert BIS index to bit
+ *
+ * The BIS indexes start from 0x01, so the lowest allowed bit is
+ * BIT(0) that represents index 0x01. To synchronize to e.g. BIS
+ * indexes 0x01 and 0x02, the bitfield value should be BIT(0) | BIT(1).
+ * As a general notation, to sync to BIS index N use BIT(N - 1).
+ */
+#define BT_ISO_BIS_INDEX_BIT(x) (BIT((x) - 1))
+
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
 
-/** Minimum interval value in microseconds */
+/** Unknown SDU interval */
+#define BT_ISO_SDU_INTERVAL_UNKNOWN 0x000000U
+/** The minimum value for vendor specific data path ID */
+#define BT_ISO_DATA_PATH_VS_ID_MIN  0x01
+/** The maximum value for vendor specific data path ID */
+#define BT_ISO_DATA_PATH_VS_ID_MAX  0xFE
+/** Minimum controller delay in microseconds (0 us) */
+#define BT_ISO_CONTROLLER_DELAY_MIN 0x000000
+/** Maximum controller delay in microseconds (4,000,000 us) */
+#define BT_ISO_CONTROLLER_DELAY_MAX 0x3D0900
+/** Minimum interval value in microseconds (255 us) */
 #define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
-/** Maximum interval value in microseconds */
+/** Maximum interval value in microseconds (1,048,575 us) */
 #define BT_ISO_SDU_INTERVAL_MAX     0x0FFFFFU
-/** Minimum ISO interval (N * 1.25 ms) */
+/** Minimum ISO interval in units of 1.25 ms (5 ms) */
 #define BT_ISO_ISO_INTERVAL_MIN     0x0004U
-/** Maximum ISO interval (N * 1.25 ms) */
+/** Maximum ISO interval in units of 1.25 ms (4,000 ms) */
 #define BT_ISO_ISO_INTERVAL_MAX     0x0C80U
-/** Minimum latency value in milliseconds */
+/** Minimum latency value in milliseconds (5 ms) */
 #define BT_ISO_LATENCY_MIN          0x0005
-/** Maximum latency value in milliseconds */
+/** Maximum latency value in milliseconds (4,000 ms)*/
 #define BT_ISO_LATENCY_MAX          0x0FA0
 /** Packets will be sent sequentially between the channels in the group */
 #define BT_ISO_PACKING_SEQUENTIAL   0x00
@@ -70,58 +99,81 @@ extern "C" {
 #define BT_ISO_FRAMING_UNFRAMED     0x00
 /** Packets are always framed */
 #define BT_ISO_FRAMING_FRAMED       0x01
-/** Maximum number of isochronous channels in a single group */
+/** Maximum number of isochronous channels in a single group (31) */
 #define BT_ISO_MAX_GROUP_ISO_COUNT  0x1F
-/** Minimum SDU size */
+/** Minimum SDU size (1 octet) */
 #define BT_ISO_MIN_SDU              0x0001
-/** Maximum SDU size */
+/** Maximum SDU size (4095 octets) */
 #define BT_ISO_MAX_SDU              0x0FFF
-/** Minimum PDU size */
+/** Minimum PDU size (0 octet) */
 #define BT_ISO_CONNECTED_PDU_MIN    0x0000U
-/** Minimum PDU size */
+/** Minimum PDU size (1 octet) */
 #define BT_ISO_BROADCAST_PDU_MIN    0x0001U
-/** Maximum PDU size */
+/** Maximum PDU size (251 octets) */
 #define BT_ISO_PDU_MAX              0x00FBU
-/** Minimum burst number */
+/** Minimum burst number (1) */
 #define BT_ISO_BN_MIN               0x01U
-/** Maximum burst number */
+/** Maximum burst number (15) */
 #define BT_ISO_BN_MAX               0x0FU
-/** Minimum flush timeout */
+/** Minimum flush timeout in multiples of ISO interval (1) */
 #define BT_ISO_FT_MIN               0x01U
-/** Maximum flush timeout */
+/** Maximum flush timeout in multiples of ISO interval (255) */
 #define BT_ISO_FT_MAX               0xFFU
-/** Minimum number of subevents */
+/** Minimum number of subevents (1) */
 #define BT_ISO_NSE_MIN              0x01U
-/** Maximum number of subevents */
+/** Maximum number of subevents (31) */
 #define BT_ISO_NSE_MAX              0x1FU
-/** Minimum BIG sync timeout value (N * 10 ms) */
+/** Minimum BIG sync timeout value in units of 10 ms (100 ms) */
 #define BT_ISO_SYNC_TIMEOUT_MIN     0x000A
-/** Maximum BIG sync timeout value (N * 10 ms) */
+/** Maximum BIG sync timeout value in units of 10 ms (163,840 ms) */
 #define BT_ISO_SYNC_TIMEOUT_MAX     0x4000
 /** Controller controlled maximum subevent count value */
 #define BT_ISO_SYNC_MSE_ANY         0x00
-/** Minimum BIG sync maximum subevent count value */
+/** Minimum BIG sync maximum subevent count value (1) */
 #define BT_ISO_SYNC_MSE_MIN         0x01
-/** Maximum BIG sync maximum subevent count value */
+/** Maximum BIG sync maximum subevent count value (31) */
 #define BT_ISO_SYNC_MSE_MAX         0x1F
-/** Maximum connected ISO retransmission value */
+/** Minimum connected ISO retransmission value (0) */
+#define BT_ISO_CONNECTED_RTN_MIN    0x00
+/** Maximum connected ISO retransmission value (255) */
 #define BT_ISO_CONNECTED_RTN_MAX    0xFF
-/** Maximum broadcast ISO retransmission value */
+/** Minimum broadcast ISO retransmission value (0) */
+#define BT_ISO_BROADCAST_RTN_MIN    0x00
+/** Maximum broadcast ISO retransmission value (30) */
 #define BT_ISO_BROADCAST_RTN_MAX    0x1E
-/** Broadcast code size */
-#define BT_ISO_BROADCAST_CODE_SIZE  16
-/** Lowest BIS index */
+/** Broadcast code size (16 octets) */
+#define BT_ISO_BROADCAST_CODE_SIZE  0x10
+/** Lowest BIS index (1) */
 #define BT_ISO_BIS_INDEX_MIN        0x01
-/** Highest BIS index */
+/** Highest BIS index (31) */
 #define BT_ISO_BIS_INDEX_MAX        0x1F
-/** Minimum Immediate Repetition Count */
+/** Minimum Immediate Repetition Count (1) */
 #define BT_ISO_IRC_MIN              0x01U
-/** Maximum Immediate Repetition Count */
+/** Maximum Immediate Repetition Count (15) */
 #define BT_ISO_IRC_MAX              0x0FU
-/** Minimum pre-transmission offset */
+/** Minimum pre-transmission offset (0) */
 #define BT_ISO_PTO_MIN              0x00U
-/** Maximum pre-transmission offset */
+/** Maximum pre-transmission offset (15) */
 #define BT_ISO_PTO_MAX              0x0FU
+/** No subinterval */
+#define BT_ISO_SUBINTERVAL_NONE     0x00000000U
+/** Unknown subinterval */
+#define BT_ISO_SUBINTERVAL_UNKNOWN  0xFFFFFFFFU
+/** Minimum subinterval in microseconds (400 us) */
+#define BT_ISO_SUBINTERVAL_MIN      0x00000190U
+/** @brief Maximum subinterval in microseconds (3,999,999 us)
+ *
+ * This maximum depends on the ISO interval, as the subinterval shall be less than the ISO interval
+ */
+#define BT_ISO_SUBINTERVAL_MAX      0x00009C3FU
+
+/**
+ * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
+ *
+ * @param _bis_bitfield BIS index bitfield (uint32)
+ */
+#define BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield)                                                   \
+	((_bis_bitfield) != 0U && (_bis_bitfield) <= BIT_MASK(BT_ISO_BIS_INDEX_MAX))
 
 /**
  * @brief Life-span states of ISO channel. Used only by internal APIs dealing with setting channel
@@ -146,7 +198,8 @@ enum bt_iso_state {
  */
 enum bt_iso_chan_type {
 	BT_ISO_CHAN_TYPE_NONE,		/**< No channel type */
-	BT_ISO_CHAN_TYPE_CONNECTED,	/**< Connected */
+	BT_ISO_CHAN_TYPE_CENTRAL,       /**< Connected as central */
+	BT_ISO_CHAN_TYPE_PERIPHERAL,    /**< Connected as peripheral */
 	BT_ISO_CHAN_TYPE_BROADCASTER,	/**< Isochronous broadcaster */
 	BT_ISO_CHAN_TYPE_SYNC_RECEIVER	/**< Synchronized receiver */
 };
@@ -187,7 +240,7 @@ struct bt_iso_chan_io_qos {
 	 */
 	uint16_t			sdu;
 	/**
-	 * @brief Channel PHY - See the BT_GAP_LE_PHY_* values.
+	 * @brief Channel PHY - See the @ref bt_gap_le_phy values.
 	 *
 	 * Setting @ref BT_GAP_LE_PHY_NONE is invalid.
 	 */
@@ -198,13 +251,6 @@ struct bt_iso_chan_io_qos {
 	 * This value is ignored if any advanced ISO parameters are set.
 	 */
 	uint8_t				rtn;
-	/**
-	 * @brief Channel data path reference
-	 *
-	 * Setting to NULL default to HCI data path (same as setting path.pid
-	 * to @ref BT_ISO_DATA_PATH_HCI).
-	 */
-	struct bt_iso_chan_path		*path;
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
@@ -261,20 +307,37 @@ struct bt_iso_chan_qos {
 
 /** @brief ISO Channel Data Path structure. */
 struct bt_iso_chan_path {
-	/** Default path ID */
-	uint8_t				pid;
-	/** Coding Format */
-	uint8_t				format;
+	/**
+	 * @brief Default path ID
+	 *
+	 * @ref BT_ISO_DATA_PATH_HCI to use ISO over  HCI or between @ref BT_ISO_DATA_PATH_VS_ID_MIN
+	 * and @ref BT_ISO_DATA_PATH_VS_ID_MAX for vendor specific data paths.
+	 */
+	uint8_t pid;
+	/**
+	 * @brief Coding Format
+	 *
+	 * See the BT_HCI_CODING_FORMAT_* values for valid values.
+	 */
+	uint8_t format;
 	/** Company ID */
-	uint16_t			cid;
+	uint16_t cid;
 	/** Vendor-defined Codec ID */
-	uint16_t			vid;
-	/** Controller Delay */
-	uint32_t			delay;
-	/** Codec Configuration length*/
-	uint8_t				cc_len;
-	/** Pointer to an array containing the Codec Configuration */
-	uint8_t				*cc;
+	uint16_t vid;
+	/**
+	 * @brief Controller Delay in microseconds
+	 *
+	 * Value range from @ref BT_ISO_CONTROLLER_DELAY_MIN to @ref BT_ISO_CONTROLLER_DELAY_MAX.
+	 */
+	uint32_t delay;
+	/** Codec Configuration length */
+	uint8_t cc_len;
+	/**
+	 * @brief Pointer to an array containing the Codec Configuration
+	 *
+	 * Shall not be NULL if bt_iso_chan_path.cc_len is non-zero.
+	 */
+	uint8_t *cc;
 };
 
 /** ISO packet status flag bits */
@@ -381,7 +444,7 @@ struct bt_iso_cig_param {
 	 * @brief Channel peripherals sleep clock accuracy Only for CIS
 	 *
 	 * Shall be worst case sleep clock accuracy of all the peripherals.
-	 * For possible values see the BT_GAP_SCA_* values.
+	 * For possible values, see @ref bt_gap_sca.
 	 * If unknown for the peripherals, this should be set to @ref BT_GAP_SCA_UNKNOWN.
 	 */
 	uint8_t sca;
@@ -548,9 +611,10 @@ struct bt_iso_big_sync_param {
 	/**
 	 * @brief Bitfield of the BISes to sync to
 	 *
-	 * The BIS indexes start from 0x01, so the lowest allowed bit is
-	 * BIT(1) that represents index 0x01. To synchronize to e.g. BIS
-	 * indexes 0x01 and 0x02, the bitfield value should be BIT(1) | BIT(2).
+	 * Use @ref BT_ISO_BIS_INDEX_BIT to convert BIS indexes to a bitfield.
+	 *
+	 * To synchronize to e.g. BIS indexes 0x01 and 0x02, this can be set to
+	 * BT_ISO_BIS_INDEX_BIT(0x01) | BT_ISO_BIS_INDEX_BIT(0x02).
 	 */
 	uint32_t bis_bitfield;
 
@@ -657,6 +721,14 @@ struct bt_iso_chan_ops {
 	 * If this callback is provided it will be called whenever the
 	 * channel is disconnected, including when a connection gets
 	 * rejected or when setting security fails.
+	 *
+	 * If the channel was established (i.e. @ref bt_iso_chan_ops.connected has been called
+	 * for this channel), then the channel object is still valid and the memory of the channel
+	 * shall not be memset to 0 or otherwise free'd.
+	 * To avoid any issues it is recommended to use a @ref k_work_submit or similar to not
+	 * overwrite any data while in the callback.
+	 *
+	 * For the above reason it is still possible to use bt_iso_chan_get_info() on the @p chan.
 	 *
 	 * @param chan   The channel that has been Disconnected
 	 * @param reason BT_HCI_ERR_* reason for the disconnection.
@@ -924,6 +996,70 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
 
+/**
+ * @brief Sets up the ISO data path for a ISO channel
+ *
+ * The channel must be associated with a BIS or CIS handle first which it is when the
+ * bt_iso_chan_ops.connected() callback is called.
+ *
+ * @param chan The channel to setup the ISO data path for
+ * @param dir The direction to setup, either @ref BT_HCI_DATAPATH_DIR_CTLR_TO_HOST or
+ *            @ref BT_HCI_DATAPATH_DIR_HOST_TO_CTLR. For ISO broadcast channels this can only be
+ *            @ref BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, and for ISO sync receiver channels this can
+ *            only be @ref BT_HCI_DATAPATH_DIR_CTLR_TO_HOST.
+ * @param path The data path
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Invalid parameters
+ * @retval -ENOBUFS No HCI command buffer could be allocated
+ * @retval -EIO The controller rejected the request or response contains invalid data
+ * @retval -ENODEV @p chan is not associated with a CIS or BIS handle
+ * @retval -EACCES The controller rejected the request as disallowed
+ * @retval -ENOEXEC Unexpected error occurred
+ */
+int bt_iso_setup_data_path(const struct bt_iso_chan *chan, uint8_t dir,
+			   const struct bt_iso_chan_path *path);
+
+/**
+ * @brief Removes the ISO data path for a ISO channel
+ *
+ * Removes the ISO data path configured by bt_iso_setup_data_path() for the provided @p dir.
+ *
+ * The data paths of CIS for Peripherals are deleted by the controller,
+ * and thus it is not necessary (or possible) to remove
+ * data paths of CIS after they have disconnected for a Peripheral,
+ * as per Bluetooth Core specification 6.0, Vol 4, Part E, Section 7.7.5.
+ * The data paths for CIS for a Central remain valid, even after a disconnection, and thus a Central
+ * device should call bt_iso_remove_data_path() on disconnect if it no longer wants to use that CIS.
+ * All data paths created by a Central are removed when the CIG is removed with
+ * bt_iso_cig_terminate().
+ *
+ * Any data paths associated with an ISO Sync Receiver BIG are removed by the controller
+ * when the BIG sync is lost or terminated, and thus it is not necessary (or possible) to remove
+ * data paths of ISO channels associated with a BIG for a Sync Receiver,
+ * as per Bluetooth Core specification 6.0, Vol 4, Part E, Section 7.7.65.30
+ *
+ * All data paths associated with an ISO Broadcaster BIG are removed when the BIG is terminated by
+ * bt_iso_big_terminate(), and thus it is not necessary (or possible) to remove data paths of ISO
+ * channels associated with a BIG for a Broadcaster,
+ * as per Bluetooth Core specification 6.0, Vol 4, Part E, Section 7.8.105
+ *
+ * @param chan The channel to setup the ISO data path for
+ * @param dir The direction to setup, either @ref BT_HCI_DATAPATH_DIR_CTLR_TO_HOST or
+ *            @ref BT_HCI_DATAPATH_DIR_HOST_TO_CTLR. For ISO broadcast channels this can only be
+ *            @ref BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, and for ISO sync receiver channels this can
+ *            only be @ref BT_HCI_DATAPATH_DIR_CTLR_TO_HOST.
+
+ * @retval 0 Success
+ * @retval -EINVAL Invalid parameters
+ * @retval -ENOBUFS No HCI command buffer could be allocated
+ * @retval -EIO The controller rejected the request or response contains invalid data
+ * @retval -ENODEV @p chan is not associated with a CIS or BIS handle
+ * @retval -EACCES The controller rejected the request as disallowed
+ * @retval -ENOEXEC Unexpected error occurred
+ */
+int bt_iso_remove_data_path(const struct bt_iso_chan *chan, uint8_t dir);
+
 /** @brief ISO Unicast TX Info Structure */
 struct bt_iso_unicast_tx_info {
 	/** The transport latency in us */
@@ -940,15 +1076,41 @@ struct bt_iso_unicast_tx_info {
 
 	/** The burst number */
 	uint8_t  bn;
+
+	/** The maximum SDU size in octets
+	 *
+	 * May be set to @ref bt_iso_unicast_tx_info.max_pdu for peripherals if unknown
+	 */
+	uint16_t max_sdu;
+
+	/** The SDU interval in microseconds
+	 *
+	 * May be set to  @ref BT_ISO_SDU_INTERVAL_UNKNOWN for if unknown.
+	 */
+	uint32_t sdu_interval;
 };
 
 /** @brief ISO Unicast Info Structure */
 struct bt_iso_unicast_info {
+	/** Connected Isochronous Group ID */
+	uint8_t cig_id;
+
+	/** Connected Isochronous Stream ID */
+	uint8_t cis_id;
+
 	/** The maximum time in us for all PDUs of all CIS in a CIG event */
 	uint32_t cig_sync_delay;
 
 	/** The maximum time in us for all PDUs of this CIS in a CIG event */
 	uint32_t cis_sync_delay;
+
+	/**
+	 * @brief The subinterval in microseconds
+	 *
+	 * Will be @ref BT_ISO_SUBINTERVAL_NONE if there is no subinterval (NSE = 1).
+	 * Will be @ref BT_ISO_SUBINTERVAL_UNKNOWN if unknown.
+	 */
+	uint32_t subinterval;
 
 	/** @brief TX information for the central to peripheral data path */
 	struct bt_iso_unicast_tx_info central;
@@ -959,6 +1121,12 @@ struct bt_iso_unicast_info {
 
 /** @brief ISO Broadcaster Info Structure */
 struct bt_iso_broadcaster_info {
+	/** Broadcast Isochronous Group Handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The maximum time in us for all PDUs of all BIS in a BIG event */
 	uint32_t sync_delay;
 
@@ -983,6 +1151,12 @@ struct bt_iso_broadcaster_info {
 
 /** @brief ISO Synchronized Receiver Info Structure */
 struct bt_iso_sync_receiver_info {
+	/** Broadcast Isochronous Group handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The transport latency in us */
 	uint32_t latency;
 
@@ -1029,20 +1203,30 @@ struct bt_iso_info {
 	/** Connection Type specific Info.*/
 	union {
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(__DOXYGEN__)
-		/** Unicast specific Info.
+		/**
+		 * @brief Unicast specific Info.
+		 *
 		 * Only available when @kconfig{CONFIG_BT_ISO_UNICAST} is enabled.
+		 * Use this when the @ref bt_iso_info.type is @ref BT_ISO_CHAN_TYPE_CENTRAL or
+		 * @ref BT_ISO_CHAN_TYPE_PERIPHERAL.
 		 */
 		struct bt_iso_unicast_info unicast;
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCASTER) || defined(__DOXYGEN__)
-		/** Broadcaster specific Info.
+		/**
+		 * @brief Broadcaster specific Info.
+		 *
 		 * Only available when @kconfig{CONFIG_BT_ISO_BROADCASTER} is enabled.
+		 * Use this when the @ref bt_iso_info.type is @ref BT_ISO_CHAN_TYPE_BROADCASTER.
 		 */
 		struct bt_iso_broadcaster_info broadcaster;
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(__DOXYGEN__)
-		/** Sync receiver specific Info.
+		/**
+		 * @brief Sync receiver specific Info.
+		 *
 		 * Only available when @kconfig{CONFIG_BT_ISO_SYNC_RECEIVER} is enabled.
+		 * Use this when the @ref bt_iso_info.type is @ref BT_ISO_CHAN_TYPE_SYNC_RECEIVER.
 		 */
 		struct bt_iso_sync_receiver_info sync_receiver;
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
@@ -1077,6 +1261,42 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan, struct bt_iso_info *inf
 int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info);
 
 /**
+ * @brief Struct to hold the Broadcast Isochronous Group callbacks
+ *
+ * These can be registered for usage with bt_iso_big_register_cb().
+ */
+struct bt_iso_big_cb {
+	/**
+	 * @brief The BIG has started and all of the streams are ready for data
+	 *
+	 * @param big The started BIG
+	 */
+	void (*started)(struct bt_iso_big *big);
+
+	/**
+	 * @brief The BIG has stopped and none of the streams are ready for data
+	 *
+	 * @param big The stopped BIG
+	 * @param reason The reason why the BIG stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_iso_big *big, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/**
+ * @brief Registers callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_iso_big_register_cb(struct bt_iso_big_cb *cb);
+
+/**
  * @brief Creates a BIG as a broadcaster
  *
  * @param[in] padv      Pointer to the periodic advertising object the BIGInfo shall be sent on.
@@ -1092,6 +1312,9 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 
 /**
  * @brief Terminates a BIG as a broadcaster or receiver
+ *
+ * This function cannot be called while in @ref bt_iso_big_cb.started, @ref bt_iso_big_cb.stopped,
+ * @ref bt_iso_chan_ops.connected or @ref bt_iso_chan_ops.disconnected callbacks.
  *
  * @param big    Pointer to the BIG structure.
  *

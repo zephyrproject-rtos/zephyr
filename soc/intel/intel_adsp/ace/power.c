@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
@@ -43,7 +44,7 @@ __imr void power_init(void)
 #if CONFIG_SOC_INTEL_ACE15_MTPM
 	*((__sparse_force uint32_t *)sys_cache_cached_ptr_get(&adsp_pending_buffer)) =
 		INTEL_ADSP_ACE15_MAGIC_KEY;
-	cache_data_flush_range((__sparse_force void *)
+	sys_cache_data_flush_range((__sparse_force void *)
 			sys_cache_cached_ptr_get(&adsp_pending_buffer),
 			sizeof(adsp_pending_buffer));
 #endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
@@ -68,12 +69,10 @@ __imr void power_init(void)
  * NOTE: there's no return from this function.
  *
  * @param disable_lpsram        flag if LPSRAM is to be disabled (whole)
- * @param hpsram_pg_mask pointer to memory segments power gating mask
- * (each bit corresponds to one ebb)
+ * @param disable_hpsram        flag if HPSRAM is to be disabled (whole)
  * @param response_to_ipc       flag if ipc response should be send during power down
  */
-extern void power_down(bool disable_lpsram, uint32_t __sparse_cache * hpsram_pg_mask,
-		       bool response_to_ipc);
+void power_down(bool disable_lpsram, bool disable_hpsram, bool response_to_ipc);
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 /**
@@ -83,17 +82,17 @@ extern void power_down(bool disable_lpsram, uint32_t __sparse_cache * hpsram_pg_
  */
 extern void platform_context_restore(void);
 
-/*
+/**
  * @brief pointer to a persistent storage space, to be set by platform code
  */
 uint8_t *global_imr_ram_storage;
 
-/*8
- * @biref a d3 restore boot entry point
+/**
+ * @brief a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
 
-/*
+/**
  * @brief re-enables IDC interrupt for all cores after exiting D3 state
  *
  * Called once from core 0
@@ -102,8 +101,8 @@ extern void soc_mp_on_d3_exit(void);
 
 #else
 
-/*
- * @biref FW entry point called by ROM during normal boot flow
+/**
+ * @brief FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
 
@@ -294,6 +293,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		if (cpu == 0) {
 			soc_cpus_active[cpu] = false;
+			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
+			__ASSERT_NO_MSG(ret == 0);
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
 			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
@@ -339,19 +340,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 					(void *)rom_entry;
 			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-			/* This assumes a single HPSRAM segment */
-			static uint32_t hpsram_mask;
-#ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
-			/* turn off all HPSRAM banks - get a full bitmap */
-			uint32_t ebb_banks = ace_hpsram_get_bank_count();
-			hpsram_mask = (1 << ebb_banks) - 1;
-#endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
 			/* do power down - this function won't return */
-			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
-			__ASSERT_NO_MSG(ret == 0);
-			power_down(true, sys_cache_cached_ptr_get(&hpsram_mask),
-				   true);
+			power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
 		} else {
+			/* When all secondary cores are turned off, power gating for the primary
+			 * core will be re-enabled.
+			 */
+			pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 			power_gate_entry(cpu);
 		}
 		break;
@@ -441,7 +436,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 #endif /* CONFIG_PM */
 
-#ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 
 __no_optimization
 void arch_cpu_idle(void)
@@ -461,4 +456,4 @@ void arch_cpu_idle(void)
 	__asm__ volatile ("waiti 0");
 }
 
-#endif /* CONFIG_ARCH_CPU_IDLE_CUSTOM */
+#endif /* CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE */

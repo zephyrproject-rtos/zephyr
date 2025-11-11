@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32F7 Main PLL node binding:
+  STM32F7 Main PLL.
 
   Takes one of clk_hse or clk_hsi as input clock.
 

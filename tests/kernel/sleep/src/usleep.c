@@ -36,6 +36,17 @@
 #elif defined(CONFIG_CC13XX_CC26XX_RTC_TIMER) && \
 	(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
 #define MAXIMUM_SHORTEST_TICKS 3
+#elif defined(CONFIG_SILABS_SLEEPTIMER_TIMER) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+/* Similar situation for Silabs devices using sleeptimer due to the
+ * limitation that a value too close to the current time cannot be
+ * loaded to its comparator.
+ */
+#define MAXIMUM_SHORTEST_TICKS 2
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+/* Similar for nRF54H20 cpuppr (RISC-V core), it has a slow CPU clock
+ * compared to other cores, causing the increased overhead.
+ */
+#define MAXIMUM_SHORTEST_TICKS 4
 #else
 #define MAXIMUM_SHORTEST_TICKS 1
 #endif

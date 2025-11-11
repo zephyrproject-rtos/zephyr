@@ -5,8 +5,9 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 8
+flash: 64
 supported:
   - watchdog
+  - adc
 vendor: st

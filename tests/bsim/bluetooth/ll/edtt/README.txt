@@ -1,14 +1,14 @@
 Intro
 #####
 
-This is the embedded side of the BLE conformance tests which are part of the
+This is the embedded side of the Bluetooth conformance tests which are part of the
 EDTT (Embedded Device Test Tool).
 
 Much more info about the tool can be found in https://github.com/EDTTool/EDTT
 and in its `doc/` folder.
 
 In very short, there is 2 applications in this folder:
-1.) A controller only build of the BLE stack, where the HCI, and a few extra
+1.) A controller only build of the Bluetooth LE stack, where the HCI, and a few extra
     interfaces are exposed to the EDTT.
 2.) An application which implements the test GATT services specified by BT SIG
     in GATT_Test_Databases.xlsm, with an EDTT interface which allows the EDTT

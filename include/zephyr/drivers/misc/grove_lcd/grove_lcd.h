@@ -16,8 +16,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Grove display APIs
- * @defgroup grove_display Grove display APIs
+ * @brief Interfaces for Grove LCD RGB display.
+ * @defgroup grove_display Grove display
  * @ingroup third_party
  * @{
  */

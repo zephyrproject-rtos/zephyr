@@ -4,6 +4,7 @@
  */
 
 #include "rv32m1_vega_openisa_rv32m1-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -28,18 +29,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_0 {
 			gpios = <&gpioa 22 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioa 23 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led: led_2 {
 			gpios = <&gpioa 24 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		sts_led: led_3 {
 			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -48,14 +53,17 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		blue_pwm_led: pwm_led_0 {
 			pwms = <&tpm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD1";
 		};
+
 		green_pwm_led: pwm_led_1 {
 			pwms = <&tpm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD2";
 		};
+
 		red_pwm_led: pwm_led_2 {
 			pwms = <&tpm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD3";
@@ -64,21 +72,25 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_4: button_2 {
 			label = "User SW4";
 			gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		user_button_5: button_3 {
 			label = "User SW5";
 			gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
@@ -91,28 +103,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioc 11 0>,	/* A0 */
-			   <1 0 &gpioc 12 0>,	/* A1 */
-			   <2 0 &gpiob 9 0>,	/* A2 */
-			   <3 0 &gpioe 4 0>,	/* A3 */
-			   <4 0 &gpioe 10 0>,	/* A4 */
-			   <5 0 &gpioe 11 0>,	/* A5 */
-			   <6 0 &gpioa 25 0>,	/* D0 */
-			   <7 0 &gpioa 26 0>,	/* D1 */
-			   <8 0 &gpioa 27 0>,	/* D2 */
-			   <9 0 &gpiob 13 0>,	/* D3 */
-			   <10 0 &gpiob 14 0>,	/* D4 */
-			   <11 0 &gpioa 30 0>,	/* D5 */
-			   <12 0 &gpioa 31 0>,	/* D6 */
-			   <13 0 &gpiob 1 0>,	/* D7 */
-			   <14 0 &gpiob 2 0>,	/* D8 */
-			   <15 0 &gpiob 3 0>,	/* D9 */
-			   <16 0 &gpiob 6 0>,	/* D10 */
-			   <17 0 &gpiob 5 0>,	/* D11 */
-			   <18 0 &gpiob 7 0>,	/* D12 */
-			   <19 0 &gpiob 4 0>,	/* D13 */
-			   <20 0 &gpioc 9 0>,	/* D14 */
-			   <21 0 &gpioc 10 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioc 11 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpioc 12 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiob 9 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioe 4 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioe 10 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioe 11 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioa 25 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioa 26 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpioa 27 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpiob 13 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpiob 14 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioa 30 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa 31 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpiob 1 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpiob 2 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpiob 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpiob 5 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpiob 7 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpioc 9 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpioc 10 0>;
 	};
 };
 

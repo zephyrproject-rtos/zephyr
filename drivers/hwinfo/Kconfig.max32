@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MAX32
+	bool "MAX32 hwinfo"
+	default y
+	depends on SOC_FAMILY_MAX32
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable MAX32 hwinfo driver.

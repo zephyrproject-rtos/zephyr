@@ -18,11 +18,6 @@
 
 #include <stm32_ll_usart.h>
 
-#define STM32_UART_DEFAULT_BAUDRATE	115200
-#define STM32_UART_DEFAULT_PARITY	UART_CFG_PARITY_NONE
-#define STM32_UART_DEFAULT_STOP_BITS	UART_CFG_STOP_BITS_1
-#define STM32_UART_DEFAULT_DATA_BITS	UART_CFG_DATA_BITS_8
-
 /* device config */
 struct uart_stm32_config {
 	/* USART instance */
@@ -108,6 +103,7 @@ struct uart_stm32_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 	bool pm_policy_state_on;
+	bool rx_woken;
 #endif
 };
 

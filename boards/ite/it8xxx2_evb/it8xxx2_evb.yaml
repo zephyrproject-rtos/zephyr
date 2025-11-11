@@ -13,7 +13,6 @@ supported:
   - gpio
   - adc
   - i2c
-  - kscan
   - pwm
   - watchdog
 vendor: ite

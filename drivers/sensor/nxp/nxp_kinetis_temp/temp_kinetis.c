@@ -131,7 +131,7 @@ static int temp_kinetis_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api temp_kinetis_driver_api = {
+static DEVICE_API(sensor, temp_kinetis_driver_api) = {
 	.sample_fetch = temp_kinetis_sample_fetch,
 	.channel_get = temp_kinetis_channel_get,
 };

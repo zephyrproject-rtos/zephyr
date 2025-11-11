@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_context.h>
@@ -157,7 +157,7 @@ static uint8_t *net_route_mcast_get_mac(const struct device *dev)
 		cfg->mac_addr[5] = sys_rand8_get();
 	}
 
-	cfg->ll_addr.addr = cfg->mac_addr;
+	memcpy(cfg->ll_addr.addr, cfg->mac_addr, 6);
 	cfg->ll_addr.len = 6U;
 
 	return cfg->mac_addr;
@@ -417,6 +417,23 @@ static void test_route_mcast_lookup(void)
 	zassert_equal_ptr(test_mcast_routes[3], route,
 						  "mcast lookup failed");
 }
+
+static void test_route_mcast_lookup_by_iface(void)
+{
+	struct net_route_entry_mcast *route =
+			net_route_mcast_lookup_by_iface(&mcast_prefix_admin, iface_1);
+
+	zassert_not_null(route, "mcast lookup by iface failed");
+
+	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_2);
+
+	zassert_not_null(route, "mcast lookup by iface failed");
+
+	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_1);
+
+	zassert_is_null(route, "mcast lookup by iface should not find a route on this interface");
+}
+
 static void test_route_mcast_route_del(void)
 {
 	struct net_route_entry_mcast *route;
@@ -752,6 +769,7 @@ ZTEST(route_mcast_test_suite, test_route_mcast)
 	test_route_mcast_scenario3();
 	test_route_mcast_multiple_route_ifaces();
 	test_route_mcast_lookup();
+	test_route_mcast_lookup_by_iface();
 	test_route_mcast_route_del();
 }
 ZTEST_SUITE(route_mcast_test_suite, NULL, NULL, NULL, NULL, NULL);

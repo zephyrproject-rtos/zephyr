@@ -33,7 +33,7 @@ RAM as non-init for this purpose. The retention system is then initialised as a
 child node of this device 1 or more times - note that the memory region will
 need to be decremented to account for this reserved portion of RAM. See the
 following example (examples in this guide are based on the
-:ref:`nrf52840dk_nrf52840` board and memory layout):
+:zephyr:board:`nrf52840dk` board and memory layout):
 
 .. code-block:: devicetree
 
@@ -114,8 +114,8 @@ using:
 	#include <zephyr/device.h>
 	#include <zephyr/retention/retention.h>
 
+	const struct device *retention0 = DEVICE_DT_GET(DT_NODELABEL(retention0));
 	const struct device *retention1 = DEVICE_DT_GET(DT_NODELABEL(retention1));
-	const struct device *retention2 = DEVICE_DT_GET(DT_NODELABEL(retention2));
 
 When the write function is called, the magic header and checksum (if enabled)
 will be set on the area, and it will be marked as valid from that point

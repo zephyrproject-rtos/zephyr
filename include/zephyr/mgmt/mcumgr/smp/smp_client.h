@@ -8,14 +8,14 @@
 #define H_SMP_CLIENT_
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <mgmt/mcumgr/transport/smp_internal.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 
 /**
  * @brief MCUmgr SMP client API
- * @defgroup mcumgr_smp_client SMP client API
+ * @defgroup mcumgr_smp_client SMP client
  * @ingroup mcumgr
  * @{
  */

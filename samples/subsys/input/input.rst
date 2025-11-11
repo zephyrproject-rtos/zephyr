@@ -1,10 +1,5 @@
-.. _input-samples:
+.. zephyr:code-sample-category:: input
+   :name: Input
+   :show-listing:
 
-Input Samples
-#############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the :ref:`input` subsystem.

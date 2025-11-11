@@ -7,7 +7,6 @@ tests:
       - uart
     harness: ztest
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim

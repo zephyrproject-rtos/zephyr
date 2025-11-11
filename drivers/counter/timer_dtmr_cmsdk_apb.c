@@ -19,6 +19,20 @@
 
 #include "dualtimer_cmsdk_apb.h"
 
+#define DTIMER_NODE(inst) DT_INST(inst, arm_cmsdk_dtimer)
+#define CLOCK_NODE(inst) DT_PHANDLE(DTIMER_NODE(inst), clocks)
+
+#define HAS_DTIMER_CLOCK(inst) DT_NODE_HAS_PROP(DTIMER_NODE(inst), clocks)
+#define HAS_CLOCK_FREQUENCY(inst) DT_NODE_HAS_PROP(CLOCK_NODE(inst), clock_frequency)
+
+#if HAS_DTIMER_CLOCK(inst) && HAS_CLOCK_FREQUENCY(inst)
+#define DTIMER_CMSDK_FREQ(inst) \
+	DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)
+#else
+#define DTIMER_CMSDK_FREQ(inst) \
+	24000000U  /* fallback default */
+#endif /* HAS_DTIMER_CLOCK(inst) && HAS_CLOCK_FREQUENCY(inst) */
+
 typedef void (*dtimer_config_func_t)(const struct device *dev);
 
 struct dtmr_cmsdk_apb_cfg {
@@ -122,7 +136,7 @@ static uint32_t dtmr_cmsdk_apb_get_pending_int(const struct device *dev)
 	return cfg->dtimer->timer1ris;
 }
 
-static const struct counter_driver_api dtmr_cmsdk_apb_api = {
+static DEVICE_API(counter, dtmr_cmsdk_apb_api) = {
 	.start = dtmr_cmsdk_apb_start,
 	.stop = dtmr_cmsdk_apb_stop,
 	.get_value = dtmr_cmsdk_apb_get_value,
@@ -176,8 +190,8 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 	dtmr_cmsdk_apb_cfg_##inst = {					\
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 24000000U,				\
-			.flags = 0,					\
+			.freq = DTIMER_CMSDK_FREQ(inst),				\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 0U,					\
 		},							\
 		.dtimer = DTIMER_CMSDK_REG(inst),			\

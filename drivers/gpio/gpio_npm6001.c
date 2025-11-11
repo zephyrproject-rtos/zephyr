@@ -192,7 +192,7 @@ static int gpio_npm6001_port_toggle_bits(const struct device *dev,
 						~val & NPM6001_PIN_MSK);
 }
 
-static const struct gpio_driver_api gpio_npm6001_api = {
+static DEVICE_API(gpio, gpio_npm6001_api) = {
 	.pin_configure = gpio_npm6001_configure,
 	.port_get_raw = gpio_npm6001_port_get_raw,
 	.port_set_masked_raw = gpio_npm6001_port_set_masked_raw,

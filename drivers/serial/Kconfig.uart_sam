@@ -8,6 +8,7 @@ config UART_SAM
 	bool "Atmel SAM MCU family UART driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_UART_ENABLED
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

@@ -11,9 +11,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <errno.h>
 #include <reg/adc.h>
+#include <zephyr/logging/log.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
+
+LOG_MODULE_REGISTER(adc_ene_kb1200, CONFIG_ADC_LOG_LEVEL);
 
 struct adc_kb1200_config {
 	/* ADC Register base address */
@@ -70,17 +73,17 @@ static int adc_kb1200_start_read(const struct device *dev, const struct adc_sequ
 	int error = 0;
 
 	if (!sequence->channels || (sequence->channels & ~BIT_MASK(ADC_MAX_CHAN))) {
-		printk("Invalid ADC channels.\n");
+		LOG_ERR("Invalid ADC channels.");
 		return -EINVAL;
 	}
 	/* Fixed 10 bit resolution of ene ADC */
 	if (sequence->resolution != ADC_RESOLUTION) {
-		printk("Unfixed 10 bit ADC resolution.\n");
+		LOG_ERR("Unfixed 10 bit ADC resolution.");
 		return -ENOTSUP;
 	}
 	/* Check sequence->buffer_size is enough */
 	if (!adc_kb1200_validate_buffer_size(sequence)) {
-		printk("ADC buffer size too small.\n");
+		LOG_ERR("ADC buffer size too small.");
 		return -ENOMEM;
 	}
 
@@ -107,7 +110,7 @@ static int adc_kb1200_start_read(const struct device *dev, const struct adc_sequ
 			k_busy_wait(ADC_WAIT_TIME);
 			count++;
 			if (count >= ADC_WAIT_CNT) {
-				printk("ADC busy timeout...\n");
+				LOG_ERR("ADC busy timeout...");
 				error = -EBUSY;
 				break;
 			}
@@ -136,30 +139,30 @@ static int adc_kb1200_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id >= ADC_MAX_CHAN) {
-		printk("Invalid channel %d.\n", channel_cfg->channel_id);
+		LOG_ERR("Invalid channel %d.", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		printk("Unsupported channel acquisition time.\n");
+		LOG_ERR("Unsupported channel acquisition time.");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		printk("Differential channels are not supported.\n");
+		LOG_ERR("Differential channels are not supported.");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		printk("Unsupported channel gain %d.\n", channel_cfg->gain);
+		LOG_ERR("Unsupported channel gain %d.", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		printk("Unsupported channel reference.\n");
+		LOG_ERR("Unsupported channel reference.");
 		return -ENOTSUP;
 	}
-	printk("ADC channel %d configured.\n", channel_cfg->channel_id);
+	LOG_DBG("ADC channel %d configured.", channel_cfg->channel_id);
 	return 0;
 }
 
@@ -199,7 +202,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	data->repeat_buffer = data->buffer;
 	config->adc->ADCCFG = (config->adc->ADCCFG & ~ADC_CHANNEL_BIT_MASK) |
-		      (ctx->sequence.channels << ADC_CHANNEL_BIT_POS);
+			      (ctx->sequence.channels << ADC_CHANNEL_BIT_POS);
 	config->adc->ADCCFG |= ADC_FUNCTION_ENABLE;
 }
 
@@ -212,7 +215,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-struct adc_driver_api adc_kb1200_api = {
+static DEVICE_API(adc, adc_kb1200_api) = {
 	.channel_setup = adc_kb1200_channel_setup,
 	.read = adc_kb1200_read,
 	.ref_internal = ADC_VREF_ANALOG,
@@ -231,7 +234,7 @@ static int adc_kb1200_init(const struct device *dev)
 	/* Configure pin-mux for ADC device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		printk("ADC pinctrl setup failed (%d).\n", ret);
+		LOG_ERR("ADC pinctrl setup failed (%d).", ret);
 		return ret;
 	}
 
@@ -249,7 +252,7 @@ static int adc_kb1200_init(const struct device *dev)
 		.adc = (struct adc_regs *)DT_INST_REG_ADDR(inst),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &adc_kb1200_init, NULL, &adc_kb1200_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, adc_kb1200_init, NULL, &adc_kb1200_data_##inst,                \
 			      &adc_kb1200_config_##inst, PRE_KERNEL_1,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_kb1200_api);
 

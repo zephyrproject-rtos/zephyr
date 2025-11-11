@@ -1,7 +1,4 @@
-.. _sltb004a:
-
-EFR32MG12 Thunderboard (SLTB004A)
-#################################
+.. zephyr:board:: sltb004a
 
 Overview
 ********
@@ -10,15 +7,11 @@ The EFR32MG12 Thunderboard (a.k.a Thunderboard Sense 2) contains an MCU
 from the EFR32MG12 family built on ARM® Cortex®-M4F processor with low
 power capabilities.
 
-.. image:: sltb004a.jpg
-   :align: center
-   :alt: EFR32MG12 SLTB004A
-
 Hardware
 ********
 
 - EFR32MG12 Mighty Gecko Wireless SoC with 38.4 MHz operating frequency
-- ARM® Cortex® M4 core with 256 kB RAM and 1024 kB Flash
+- ARM® Cortex®-M4 core with 256 kB RAM and 1024 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor
@@ -50,39 +43,7 @@ For more information about the EFR32MG12 SoC and Thunderboard Sense 2 board:
 Supported Features
 ==================
 
-The sltb004a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | true random number generator        |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/dev_kits/sltb004a/sltb004a_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -147,9 +108,11 @@ purpose application serial data transfer with this interface.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -165,7 +128,7 @@ board. The adaptor provides:
 Flashing an application to SLTB004A
 -----------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -206,6 +169,3 @@ the following message:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

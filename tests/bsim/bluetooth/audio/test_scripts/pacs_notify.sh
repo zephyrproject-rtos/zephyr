@@ -15,10 +15,12 @@ cd ${BSIM_OUT_PATH}/bin
 printf "\n\n======== Running PACS Notify test =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=pacs_notify_server -rs=24 -D=2
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=pacs_notify_server \
+  -RealEncryption=1 -rs=24 -D=2
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=pacs_notify_client -rs=46 -D=2
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=pacs_notify_client \
+  -RealEncryption=1 -rs=46 -D=2
 
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=2 -sim_length=60e6 $@

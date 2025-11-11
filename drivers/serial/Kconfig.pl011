@@ -7,9 +7,7 @@ menuconfig UART_PL011
 	depends on DT_HAS_ARM_PL011_ENABLED || DT_HAS_ARM_SBSA_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select PINCTRL if SOC_EOS_S3
-	select PINCTRL if DT_HAS_AMBIQ_UART_ENABLED
-	select PINCTRL if DT_HAS_RASPBERRYPI_PICO_UART_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_ARM_PL011),pinctrl-0)
 	help
 	  This option enables the UART driver for the PL011
 

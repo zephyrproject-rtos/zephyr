@@ -7,7 +7,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - ble
   - gpio
@@ -17,7 +16,6 @@ supported:
   - pwm
   - adc
   - usb_device
-  - usb_cdc
   - watchdog
   - micromod_gpio
   - micromod_uart

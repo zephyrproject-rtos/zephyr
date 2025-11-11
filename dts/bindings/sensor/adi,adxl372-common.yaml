@@ -3,6 +3,20 @@
 
 include: sensor-device.yaml
 
+description: |
+  ADXL372 3-axis SPI accelerometer
+  When setting the accelerometer DTS properties and want to use
+  streaming functionality, make sure to include adxl372.h and
+  use the macros defined there for fifo-mode properties.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/adxl372.h>
+
+  adxl372: adxl372@0 {
+    ...
+    fifo-mode = <ADXL372_FIFO_MODE_STREAMED>;
+  };
+
 properties:
   odr:
     type: int
@@ -63,3 +77,23 @@ properties:
       The INT1 signal defaults to active high as produced by the
       sensor.  The property value should ensure the flags properly
       describe the signal that is presented to the driver.
+
+  fifo-mode:
+    type: int
+    description: |
+          Accelerometer FIFO Mode.
+          0 # ADXL372_FIFO_MODE_BYPASSED
+          1 # ADXL372_FIFO_MODE_STREAMED
+          2 # ADXL372_FIFO_MODE_TRIGGERED
+          3 # ADXL372_FIFO_MODE_OLD_SAVED
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Valid range: 0 - 512

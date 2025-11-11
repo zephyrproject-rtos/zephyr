@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc 0>, <&adc 1>;
+	};
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&ain0_p2_0 &ain1_p2_1>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};

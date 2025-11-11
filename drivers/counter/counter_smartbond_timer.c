@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(counter_timer, CONFIG_COUNTER_LOG_LEVEL);
 
 #define COUNTER_DT_DEVICE(_idx) DEVICE_DT_GET_OR_NULL(DT_NODELABEL(timer##_idx))
 
-#define PDC_XTAL_EN (DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay) ? \
+#define PDC_XTAL_EN (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? \
 					MCU_PDC_EN_XTAL : MCU_PDC_EN_NONE)
 
 struct counter_smartbond_data {
@@ -68,7 +68,9 @@ static void counter_smartbond_pm_policy_state_lock_get(const struct device *dev)
 static void counter_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
 	pm_device_runtime_put(dev);
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	if (pm_policy_state_lock_is_active(PM_STATE_STANDBY, PM_ALL_SUBSTATES)) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
 }
 
 /*
@@ -451,7 +453,7 @@ static int counter_smartbond_pm_action(const struct device *dev, enum pm_device_
 }
 #endif
 
-static const struct counter_driver_api counter_smartbond_driver_api = {
+static DEVICE_API(counter, counter_smartbond_driver_api) = {
 	.start = counter_smartbond_start,
 	.stop = counter_smartbond_stop,
 	.get_value = counter_smartbond_get_value,

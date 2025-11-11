@@ -1,0 +1,119 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA ACMPHS (High-Speed Analog COMParator) Controller
+
+  The following example displays the minimum node layout:
+
+    acmphs_global: acmphs_global@deadbeef {
+            ...
+
+            acmphs0: acmphs0 {
+                    compatible = "renesas,ra-acmphs";
+                    channel = <0>;
+                    status = "disabled";
+            };
+    };
+
+  Enabling the comparator controller node requires setting the minimum
+  default configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+  Note: A set of pinctrl for the default comparator controller node is
+  already defined on each board that supported comparator. Please check
+  the board’s pinctrl before defining it.
+
+  &pinctrl {
+          acmphs_ivref0: acmphs_ivref0 {
+                  group1 {
+                          /* IVREF0 */
+                          psels = <RA_PSEL(RA_PSEL_ACMPHS, ..., ...)>;
+                          renesas,analog-enable;
+                  };
+          };
+
+          acmphs0_ivcmp0: acmphs0_ivcmp0 {
+                  group1 {
+                          /* CH0 IVCMP0 */
+                          psels = <RA_PSEL(RA_PSEL_ACMPHS, ..., ...)>;
+                          renesas,analog-enable;
+                  };
+          };
+  };
+
+  &acmphs_global {
+          status = "okay";
+
+          acmphs0 {
+                  pinctrl-0 = <&acmphs_ivref0 &acmphs0_ivcmp0>;
+                  pinctrl-names = "default";
+                  interrupts = <90 12>;
+                  interrupt-names = "hs";
+                  reference-input-source = "ivref0";
+                  compare-input-source = "ivcmp0";
+                  status = "okay";
+          };
+  };
+
+compatible: "renesas,ra-acmphs"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    description: |
+      IRQ number and priority to use for interrupt Comparator:
+      - "hs": generated on valid edge detection from comparison result
+      Note: when this interrupts property is not defined, none of the trigger APIs
+            can be used (set_trigger, set_trigger_callback, trigger_is_pending).
+
+  reference-input-source:
+    type: string
+    required: true
+    enum:
+      - "ivref0"
+      - "ivref1"
+      - "ivref2"
+      - "ivref3"
+    description: |
+      Select the Analog reference voltage source.
+      Note: ivref2 is connected to Vref
+            ivref3 is connected to DA0 (DAC)
+            If either of these is selected, there is no need to configure pinsel for pinctrl.
+
+  compare-input-source:
+    type: string
+    required: true
+    enum:
+      - "ivcmp0"
+      - "ivcmp1"
+      - "ivcmp2"
+      - "ivcmp3"
+    description: |
+      Select the Analog compare voltage source.
+      Note: ivcmp1 is connected to DA0 (DAC)
+            If ivcmp1 is selected, there is no need to configure pinsel for pinctrl.
+
+  noise-filter:
+    type: int
+    enum: [1, 8, 16, 32]
+    default: 32
+    description: |
+      Select the PCLK divisor for the hardware digital debounce filter.
+      Larger divisors provide a longer debounce and take longer for the output to update.
+
+  output-invert-polarity:
+    type: boolean
+    description: |
+      When enabled comparator output is inverted.
+
+  pin-output-enable:
+    type: boolean
+    description: |
+      Turn this on to enable the CMPOUTn signal for this channel.
+      The CMPOUTn signal for each channel is OR'd together and the result is output to VCOUT.

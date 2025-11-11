@@ -351,7 +351,7 @@ static int mcux_gau_adc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_gau_adc_driver_api = {
+static DEVICE_API(adc, mcux_gau_adc_driver_api) = {
 	.channel_setup = mcux_gau_adc_channel_setup,
 	.read = mcux_gau_adc_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -377,7 +377,7 @@ static const struct adc_driver_api mcux_gau_adc_driver_api = {
 										\
 	static struct mcux_gau_adc_data mcux_gau_adc_data_##n = {0};		\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, mcux_gau_adc_init, NULL,			\
 			      &mcux_gau_adc_data_##n, &mcux_gau_adc_config_##n,	\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 			      &mcux_gau_adc_driver_api);			\

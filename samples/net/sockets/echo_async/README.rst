@@ -49,6 +49,12 @@ another terminal window and run the same telnet command as above.
 The sample supports up to three connected clients, but this can be adjusted
 by changing ``NUM_FDS`` defined in the source code.
 
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
+
 Running application on POSIX Host
 =================================
 

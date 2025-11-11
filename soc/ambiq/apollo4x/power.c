@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ambiq LLC
+ * Copyright (c) 2024 Ambiq Micro Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,9 +11,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/init.h>
-
-/* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -65,7 +62,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	irq_unlock(0);
 }
 
-static int ambiq_power_init(void)
+void ambiq_power_init(void)
 {
 	am_hal_pwrctrl_mcu_memory_config_t sMcuMemCfg = {
 		.eCacheCfg    = AM_HAL_PWRCTRL_CACHE_NONE,
@@ -98,8 +95,4 @@ static int ambiq_power_init(void)
 	am_hal_pwrctrl_dsp_memory_config(AM_HAL_DSP0, &sDSPMemCfg);
 
 	am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_CRYPTO);
-
-	return 0;
 }
-
-SYS_INIT(ambiq_power_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

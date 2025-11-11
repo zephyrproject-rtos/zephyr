@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Main PLL node binding for STM32F100 devices
+  STM32F100 Main PLL.
 
   Takes one of clk_hse or clk_hsi as input clock.
   When clk_hsi is used a fixed prescaler is applied. When input clock is hse or

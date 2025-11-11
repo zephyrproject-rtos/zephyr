@@ -5,8 +5,12 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <SEGGER_SYSVIEW.h>
-#include <ksched.h>
+#ifdef CONFIG_SYMTAB
+#include <zephyr/debug/symtab.h>
+#include <zephyr/sw_isr_table.h>
+#endif
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -51,8 +55,29 @@ static void cbSendSystemDesc(void)
 {
 	SEGGER_SYSVIEW_SendSysDesc("N=" CONFIG_SEGGER_SYSVIEW_APP_NAME);
 	SEGGER_SYSVIEW_SendSysDesc("D=" CONFIG_BOARD " "
-				   CONFIG_SOC_SERIES " " CONFIG_ARCH);
+				   CONFIG_SOC_FAMILY " " CONFIG_ARCH);
 	SEGGER_SYSVIEW_SendSysDesc("O=Zephyr");
+
+#ifdef CONFIG_BOARD_QUALIFIERS
+	SEGGER_SYSVIEW_SendSysDesc("C=" CONFIG_BOARD_QUALIFIERS);
+#endif
+
+#ifdef CONFIG_SYMTAB
+	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
+
+	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
+		const struct _isr_table_entry *entry = &_sw_isr_table[idx];
+
+		if ((entry->isr == z_irq_spurious) || (entry->isr == NULL)) {
+			continue;
+		}
+		const char *name = symtab_find_symbol_name((uintptr_t)entry->isr, NULL);
+
+		snprintf(isr_desc, SEGGER_SYSVIEW_MAX_STRING_LEN, "I#%d=%s", idx + 16, name);
+
+		SEGGER_SYSVIEW_SendSysDesc(isr_desc);
+	}
+#endif
 }
 
 static void send_task_list_cb(void)
@@ -97,7 +122,7 @@ void SEGGER_SYSVIEW_Conf(void)
 	SEGGER_SYSVIEW_Init(sys_clock_hw_cycles_per_sec(),
 			    sys_clock_hw_cycles_per_sec(),
 			    &SYSVIEW_X_OS_TraceAPI, cbSendSystemDesc);
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_sram), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_sram))
 	SEGGER_SYSVIEW_SetRAMBase(DT_REG_ADDR(DT_CHOSEN(zephyr_sram)));
 #else
 	/* Setting RAMBase is just an optimization: this value is subtracted

@@ -126,7 +126,7 @@ out_fp_inactive:
      * TPIDRURW is used as a base pointer to all
      * thread variables with offsets added by toolchain.
      */
-    mcr 15, 0, r0, c13, c0, 2
+    mcr p15, 0, r0, c13, c0, 2
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
@@ -336,12 +336,14 @@ _context_switch:
 
 _oops:
     /*
-     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
-     * exception reason.
+     * Pass the exception frame to z_do_kernel_oops.
      */
     cps #MODE_SYS
     mov r0, sp
     cps #MODE_SVC
+    /* Zero callee_regs and exc_return (only used on Cortex-M) */
+    mov r1, #0
+    mov r2, #0
     bl z_do_kernel_oops
     b z_arm_int_exit
 
@@ -421,5 +423,9 @@ valid_syscall_id:
 
 GTEXT(z_arm_cortex_r_svc)
 SECTION_FUNC(TEXT, z_arm_cortex_r_svc)
+    .cfi_sections .debug_frame
+    .cfi_startproc simple
+    .cfi_def_cfa 13, 0x0
     svc #_SVC_CALL_CONTEXT_SWITCH
     bx lr
+    .cfi_endproc

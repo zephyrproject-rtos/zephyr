@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 #include <DA1469xAB.h>
 #include <da1469x_clock.h>
@@ -36,25 +37,39 @@ static uint32_t z_renesas_cache_configured;
 
 void sys_arch_reboot(int type)
 {
-	ARG_UNUSED(type);
+	if (type == SYS_REBOOT_WARM) {
+		NVIC_SystemReset();
+	} else if (type == SYS_REBOOT_COLD) {
+		if ((SYS_WDOG->WATCHDOG_REG & SYS_WDOG_WATCHDOG_REG_WDOG_VAL_NEG_Msk) == 0) {
+			/* Cannot write WATCHDOG_REG while WRITE_BUSY */
+			while ((SYS_WDOG->WATCHDOG_REG &
+				SYS_WDOG_WATCHDOG_CTRL_REG_WRITE_BUSY_Msk) != 0) {
+			}
+			/* Write WATCHDOG_REG */
+			SYS_WDOG->WATCHDOG_REG = BIT(SYS_WDOG_WATCHDOG_REG_WDOG_VAL_Pos);
 
-	NVIC_SystemReset();
+			GPREG->RESET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
+			SYS_WDOG->WATCHDOG_CTRL_REG &=
+				~SYS_WDOG_WATCHDOG_CTRL_REG_WDOG_FREEZE_EN_Msk;
+		}
+		/* Wait */
+		for (;;) {
+			__NOP();
+		}
+	}
 }
 
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
 static void z_renesas_configure_cache(void)
 {
-	uint32_t cache_start;
-	uint32_t region_size;
+	/* Cache region should reflect both MCU boot and slots partition areas */
+	uint32_t region_size = (uint32_t)&__text_region_end - CONFIG_FLASH_BASE_ADDRESS;
 	uint32_t reg_region_size;
 	uint32_t reg_cache_len;
 
 	if (z_renesas_cache_configured == MAGIC) {
 		return;
 	}
-
-	cache_start = (uint32_t)&_vector_start;
-	region_size = (uint32_t)&__rom_region_end - cache_start;
 
 	/* Disable cache before configuring it */
 	CACHE->CACHE_CTRL2_REG = 0;
@@ -82,10 +97,11 @@ static void z_renesas_configure_cache(void)
 	} else {
 		reg_region_size = FLASH_REGION_SIZE_025M;
 	}
+
+	/* Flash base and offset fields should have already been configured by ROM booter. */
 	CACHE->CACHE_FLASH_REG =
-		(cache_start >> 16) << CACHE_CACHE_FLASH_REG_FLASH_REGION_BASE_Pos |
-		((cache_start & 0xffff) >> 2) << CACHE_CACHE_FLASH_REG_FLASH_REGION_OFFSET_Pos |
-		reg_region_size << CACHE_CACHE_FLASH_REG_FLASH_REGION_SIZE_Pos;
+		(CACHE->CACHE_FLASH_REG & ~CACHE_CACHE_FLASH_REG_FLASH_REGION_SIZE_Msk) |
+		reg_region_size;
 
 	reg_cache_len = CLAMP(reg_region_size / KB(64), 0, 0x1ff);
 	CACHE->CACHE_CTRL2_REG = (CACHE->CACHE_FLASH_REG & ~CACHE_CACHE_CTRL2_REG_CACHE_LEN_Msk) |
@@ -109,7 +125,7 @@ static void z_renesas_configure_cache(void)
 }
 #endif /* CONFIG_HAS_FLASH_LOAD_OFFSET */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #if defined(CONFIG_PM)
 	uint32_t *ivt;
@@ -131,7 +147,10 @@ void z_arm_platform_init(void)
 #endif
 }
 
-static int renesas_da1469x_init(void)
+/* defined in power.c */
+extern int renesas_da1469x_pm_init(void);
+
+void soc_early_init_hook(void)
 {
 	/* Freeze watchdog until configured */
 	GPREG->SET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
@@ -176,8 +195,7 @@ static int renesas_da1469x_init(void)
 	da1469x_pd_acquire(MCU_PD_DOMAIN_TIM);
 
 	da1469x_pdc_reset();
-
-	return 0;
+#if CONFIG_PM
+	renesas_da1469x_pm_init();
+#endif
 }
-
-SYS_INIT(renesas_da1469x_init, PRE_KERNEL_1, 0);

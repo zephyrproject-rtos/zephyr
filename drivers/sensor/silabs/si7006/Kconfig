@@ -6,6 +6,7 @@ config SI7006
 	default y
 	depends on DT_HAS_SILABS_SI7006_ENABLED || DT_HAS_SENSIRION_SHT21_ENABLED
 	select I2C
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_SI7006),vin-supply)
 	help
 	  Enable I2C-based driver for several humidity and temperature sensors
 	  compatible with the Sensirion SHT21, such as the Silicon Labs

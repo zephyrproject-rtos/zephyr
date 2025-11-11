@@ -247,7 +247,7 @@ static int mhz19b_sample_fetch(const struct device *dev, enum sensor_channel cha
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api mhz19b_api_funcs = {
+static DEVICE_API(sensor, mhz19b_api_funcs) = {
 	.attr_set = mhz19b_attr_set,
 	.attr_get = mhz19b_attr_get,
 	.sample_fetch = mhz19b_sample_fetch,

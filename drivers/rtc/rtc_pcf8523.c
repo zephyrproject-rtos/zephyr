@@ -927,7 +927,7 @@ static int pcf8523_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct rtc_driver_api pcf8523_driver_api = {
+static DEVICE_API(rtc, pcf8523_driver_api) = {
 	.set_time = pcf8523_set_time,
 	.get_time = pcf8523_get_time,
 #ifdef CONFIG_RTC_ALARM

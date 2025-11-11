@@ -1,7 +1,4 @@
-.. _adi_eval_adin1110ebz:
-
-ADI EVAL-ADIN1110EVB Evaluation board
-#####################################
+.. zephyr:board:: adi_eval_adin1110ebz
 
 Overview
 ********
@@ -23,12 +20,6 @@ The SPI interface provides configuration and data access to the ADIN1110.
 A small prototyping area and test points are provided for experimentation with alternative cable
 connection topologies including isolation transformers and/or power coupling inductors.
 
-.. figure:: img/adi_eval_adin1110ebz.webp
-   :align: center
-   :alt: ADI EVAL-ADIN1110EBZ
-
-   ADI EVAL-ADIN1110EBZ (Credit: Analog Devices, Inc.)
-
 .. important::
 
    S201 DIP switches are shipped in Open Alliance SPI mode. The current Zephyr
@@ -47,43 +38,7 @@ https://wiki.analog.com/resources/eval/user-guides/eval-adin1110ebz-user-guide
 Supported Features
 ==================
 
-The ADI adi_eval_adin1110ebz board configuration supports the
-following hardware features:
-
-+--------------+------------+-------------------------------------+
-| Interface    | Controller | Driver/Component                    |
-+==============+============+=====================================+
-| NVIC         | on-chip    | nested vector interrupt controller  |
-+--------------+------------+-------------------------------------+
-| UART         | on-chip    | serial port-polling;                |
-|              |            | serial port-interrupt               |
-+--------------+------------+-------------------------------------+
-| PINMUX       | on-chip    | pinmux                              |
-+--------------+------------+-------------------------------------+
-| GPIO         | on-chip    | gpio                                |
-+--------------+------------+-------------------------------------+
-| I2C          | on-chip    | i2c                                 |
-+--------------+------------+-------------------------------------+
-| SPI          | on-chip    | spi                                 |
-+--------------+------------+-------------------------------------+
-| PWM          | on-chip    | pwm                                 |
-+--------------+------------+-------------------------------------+
-| WATCHDOG     | on-chip    | independent watchdog                |
-+--------------+------------+-------------------------------------+
-| ADIN1110     | spi        | adin1110 10BASE-T1L mac/phy         |
-+--------------+------------+-------------------------------------+
-| FT232        | uart       | usb-uart                            |
-+--------------+------------+-------------------------------------+
-| ADT7422      | i2c        | temperature sensor                  |
-+--------------+------------+-------------------------------------+
-| ISS66WVE4M16 | fmc        | 8MB PSRAM                           |
-+--------------+------------+-------------------------------------+
-
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/adi/eval_adin1110ebz/adi_eval_adin1110ebz_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -128,6 +83,8 @@ to a FT232, so available through Micro USB connector. Default settings are 11520
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -145,7 +102,7 @@ program to connect with your ADI board. For example:
    $ minicom -D /dev/serial/by-id/usb-ADI_EVAL-ADIN1110EBZ_AVAS_XXXXXX-if00-port0
 
 where XXXXXX is the serial number of the connected device.
-Then, build and flash in the usual way. Here is an example for the :ref:`hello_world` application.
+Then, build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -161,7 +118,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the :ref:`hello_world`
+You can debug an application in the usual way.  Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

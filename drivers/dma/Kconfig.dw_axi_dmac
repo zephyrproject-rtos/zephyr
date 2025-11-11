@@ -1,0 +1,53 @@
+# DesignWare DMA configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_DW_AXI
+	bool "DesignWare AXI DMA driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_DMA_AXI_ENABLED
+	imply DMA_64BIT
+	help
+	  DesignWare AXI DMA driver.
+
+if DMA_DW_AXI
+
+config DMA_DW_AXI_MAX_DESC
+	int "allocate number of lli descriptor"
+	default 10
+	help
+	  creates number of descriptor per channel in a statically allocated pool.
+	  Each channel has its own dedicated pool.
+
+config DMA_DW_AXI_LLI_SUPPORT
+	bool "hardware supports linked list multi block transfer"
+	default y
+	help
+	  This flag can be enabled if hardware support Linked List multi-block transfer
+
+config DMA_CHANNEL_STATUS_TIMEOUT
+	int "Channel status timeout"
+	default 1000
+	help
+	  Max timeout to abort or disable the channel
+
+config DMA_DW_AXI_MAX_BURST_TXN_LEN
+	int "max burst transaction length"
+	default 8
+	help
+	  set max number of source and destination data units supported
+
+config DMA_DW_AXI_DATA_WIDTH
+	int "data bus width"
+	default 64
+	help
+	  update this flag to change the axi master interface data width
+
+config DMA_DW_AXI_MAX_BLOCK_TS
+	int "max block size"
+	default 32767
+	help
+	  update this config to set maximum value of block size
+
+endif # DMA_DW_AXI

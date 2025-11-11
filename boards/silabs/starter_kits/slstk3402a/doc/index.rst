@@ -1,7 +1,4 @@
-.. _slstk3402a:
-
-EFM32 Pearl Gecko 12 (SLSTK3402A)
-#################################
+.. zephyr:board:: slstk3402a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32 Pearl Gecko 12 Starter Kit SLSTK3402A contains an MCU from the
 EFM32PG family built on an ARM® Cortex®-M4F processor with excellent low
 power capabilities.
-
-.. figure:: slstk3402a.jpg
-   :align: center
-   :alt: SLSTK3402A
-
-   EFM32PG12 SLSTK3402A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -38,41 +29,7 @@ For more information about the EFM32PG SoC and SLSTK3402A board:
 Supported Features
 ==================
 
-The slstk3402a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | true random number generator        |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3402a/slstk3402a_efm32pg12b500f1024gl125_defconfig`
-
-The default configuration when building using this board to develop for the
-EFM32JG12 SoC can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3402a/slstk3402a_efm32jg12b500f1024gl125_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 EFM32 Jade Gecko SoC
 --------------------
@@ -141,9 +98,11 @@ The EFM32PG12 SoC has four USARTs and one Low Energy UART (LEUART).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -159,7 +118,7 @@ board. The adaptor provides:
 Flashing an application to SLSTK3402A
 -------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -209,6 +168,3 @@ terminal session:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

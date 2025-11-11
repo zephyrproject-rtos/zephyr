@@ -31,6 +31,10 @@ properties:
   self-calibration:
     type: boolean
     description: start self calibration during channel setup
+  spi-cs-setup-delay-ns:
+    default: 1000
+  spi-cs-hold-delay-ns:
+    default: 1000
 
 io-channel-cells:
   - input

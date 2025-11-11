@@ -16,6 +16,20 @@
 
 #include "timer_cmsdk_apb.h"
 
+#define TIMER_NODE DT_INST(0, arm_cmsdk_timer)
+#define CLOCK_NODE DT_PHANDLE(TIMER_NODE, clocks)
+
+#define HAS_TIMER_CLOCK DT_NODE_HAS_PROP(TIMER_NODE, clocks)
+#define HAS_CLOCK_FREQUENCY DT_NODE_HAS_PROP(CLOCK_NODE, clock_frequency)
+
+#if HAS_TIMER_CLOCK && HAS_CLOCK_FREQUENCY
+#define TIMER_CMSDK_FREQ(inst) \
+	DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)
+#else
+#define TIMER_CMSDK_FREQ(inst) \
+	24000000U  /* fallback default */
+#endif /* HAS_TIMER_CLOCK && HAS_CLOCK_FREQUENCY */
+
 typedef void (*timer_config_func_t)(const struct device *dev);
 
 struct tmr_cmsdk_apb_cfg {
@@ -119,7 +133,7 @@ static uint32_t tmr_cmsdk_apb_get_pending_int(const struct device *dev)
 	return cfg->timer->intstatus;
 }
 
-static const struct counter_driver_api tmr_cmsdk_apb_api = {
+static DEVICE_API(counter, tmr_cmsdk_apb_api) = {
 	.start = tmr_cmsdk_apb_start,
 	.stop = tmr_cmsdk_apb_stop,
 	.get_value = tmr_cmsdk_apb_get_value,
@@ -172,8 +186,8 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 	static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_##inst = { \
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 24000000U,				\
-			.flags = 0,					\
+			.freq = TIMER_CMSDK_FREQ(inst),			\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 0U,					\
 		},							\
 		.timer = ((volatile struct timer_cmsdk_apb *)DT_INST_REG_ADDR(inst)), \

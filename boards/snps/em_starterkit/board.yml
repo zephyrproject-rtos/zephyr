@@ -1,5 +1,6 @@
 board:
   name: em_starterkit
+  full_name: ARC EM Starter Kit
   vendor: snps
   socs:
   - name: emsk_em7d
@@ -7,7 +8,7 @@ board:
   - name: emsk_em11d
   revision:
     format: major.minor.patch
-    default: "2.3"
+    default: "2.3.0"
     revisions:
-    - name: "2.2"
-    - name: "2.3"
+    - name: "2.2.0"
+    - name: "2.3.0"

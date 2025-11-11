@@ -19,6 +19,70 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 static struct session sessions[SESSION_PROTO_END][SESSION_MAX];
 
+struct session *get_free_session(const struct sockaddr *addr,
+				 enum session_proto proto)
+{
+	struct session *ptr;
+	uint64_t oldest = 0ULL;
+	int oldest_completed_index = -1, oldest_free_index = -1;
+	int i = 0;
+
+	const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
+	const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
+
+	/* Check whether we already have an active session */
+	while (i < SESSION_MAX) {
+		ptr = &sessions[proto][i];
+
+		if (ptr->state == STATE_NULL ||
+		    ptr->state == STATE_COMPLETED) {
+
+			if (oldest == 0ULL || ptr->last_time < oldest) {
+				oldest = ptr->last_time;
+
+				if (ptr->state == STATE_COMPLETED) {
+					if (oldest_completed_index < 0) {
+						oldest_completed_index = i;
+					}
+				} else {
+					/* Free session */
+					if (oldest_free_index < 0) {
+						oldest_free_index = i;
+					}
+				}
+			}
+		}
+
+		i++;
+	}
+
+	ptr = NULL;
+
+	if (oldest_free_index >= 0) {
+		ptr = &sessions[proto][oldest_free_index];
+	} else if (oldest_completed_index >= 0) {
+		ptr = &sessions[proto][oldest_completed_index];
+	}
+
+	if (ptr != NULL) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    addr->sa_family == AF_INET) {
+			ptr->port = addr4->sin_port;
+			ptr->ip.family = AF_INET;
+			net_ipaddr_copy(&ptr->ip.in_addr, &addr4->sin_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			   addr->sa_family == AF_INET6) {
+			ptr->port = addr6->sin6_port;
+			ptr->ip.family = AF_INET6;
+			net_ipaddr_copy(&ptr->ip.in6_addr, &addr6->sin6_addr);
+		}
+
+		ptr->state = STATE_STARTING;
+	}
+
+	return ptr;
+}
+
 /* Get session from a given packet */
 struct session *get_session(const struct sockaddr *addr,
 			    enum session_proto proto)
@@ -102,6 +166,14 @@ void zperf_reset_session_stats(struct session *session)
 	session->last_transit_time = 0;
 }
 
+void zperf_session_foreach(enum session_proto proto, session_cb_t cb,
+			   void *user_data)
+{
+	ARRAY_FOR_EACH(sessions[proto], i) {
+		cb(&sessions[proto][i], proto, user_data);
+	}
+}
+
 void zperf_session_reset(enum session_proto proto)
 {
 	int i, j;
@@ -114,6 +186,7 @@ void zperf_session_reset(enum session_proto proto)
 
 	for (j = 0; j < SESSION_MAX; j++) {
 		sessions[i][j].state = STATE_NULL;
+		sessions[i][j].id = j;
 		zperf_reset_session_stats(&(sessions[i][j]));
 	}
 }

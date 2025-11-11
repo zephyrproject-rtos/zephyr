@@ -1,7 +1,4 @@
-.. _gd32f450i_eval:
-
-GigaDevice GD32F450I-EVAL
-#########################
+.. zephyr:board:: gd32f450i_eval
 
 Overview
 ********
@@ -12,11 +9,6 @@ on GD32F450IK Cortex-M4F Stretch Performance MCU.
 The GD32F450IK features a single-core ARM Cortex-M4F MCU which can run up
 to 200 MHz with flash accesses zero wait states, 3072kiB of Flash, 256kiB of
 SRAM and 140 GPIOs.
-
-.. image:: img/gd32f450i_eval.webp
-     :align: center
-     :alt: gd32f450i_eval
-
 
 Hardware
 ********
@@ -51,44 +43,7 @@ For more information about the GD32F450 SoC and GD32F450I-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC`
-     - :dtcompatible:`gd,gd32-dac`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`gd,gd32-i2c`
-   * - EEPROM
-     - :kconfig:option:`CONFIG_EEPROM`
-     - :dtcompatible:`atmel,at24`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -98,6 +53,8 @@ is USART0 with TX connected at PA9 and RX at PA10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot and serial jumpers
 as follows:
@@ -112,7 +69,7 @@ The GD32F450I-EVAL includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a JTAG header
 (J1) which can be used with tools like Segger J-Link.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

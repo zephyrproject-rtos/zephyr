@@ -440,6 +440,7 @@ const struct bt_mesh_model_op _bt_mesh_dfu_srv_op[] = {
 
 static int dfu_srv_init(const struct bt_mesh_model *mod)
 {
+	int err;
 	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
@@ -451,8 +452,18 @@ static int dfu_srv_init(const struct bt_mesh_model *mod)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
-		bt_mesh_model_extend(mod, srv->blob.mod);
+	const struct bt_mesh_model *blob_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_SRV);
+
+	if (blob_srv == NULL) {
+		LOG_ERR("Missing BLOB Srv.");
+		return -EINVAL;
+	}
+
+	err = bt_mesh_model_extend(mod, srv->blob.mod);
+
+	if (err) {
+		return err;
 	}
 
 	return 0;
@@ -550,7 +561,7 @@ const struct bt_mesh_blob_srv_cb _bt_mesh_dfu_srv_blob_cb = {
 void bt_mesh_dfu_srv_verified(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -563,7 +574,7 @@ void bt_mesh_dfu_srv_verified(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_rejected(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -576,7 +587,7 @@ void bt_mesh_dfu_srv_rejected(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase == BT_MESH_DFU_PHASE_IDLE) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -586,7 +597,7 @@ void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 

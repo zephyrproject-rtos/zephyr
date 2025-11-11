@@ -19,6 +19,16 @@ like this:
 
 .. code-block:: yaml
 
+   # When the description text is too long, this field can
+   # be used to improve readability, e.g.:
+   #
+   # title: Binding the device's hardware model.
+   #
+   # description |
+   #   A piece of content with 20 lines.
+   #   ...
+   title: Concise title for the long description [optional]
+
    # A high level description of the device the binding applies to:
    description: |
       This is the Vendomatic company's foo-device.
@@ -58,6 +68,24 @@ like this:
 
 These keys are explained in the following sections.
 
+.. _dt-bindings-title:
+
+Title
+*****
+
+Short description of the bound device, typically the hardware model. It should
+typically be on the format "Vendor Family Model". If acronyms are used, they
+should be spelled out in parentheses. The naming should stay as close to the
+vendor datasheet as possible.
+
+Titles should not exceed 100 characters. The description field should be used
+for longer descriptions. The words "binding", "schema" or "driver" should not
+be used in the title, everything is a binding.
+
+.. code-block:: YAML
+
+   title: Acme Foo UART (Universal Asynchronous Receiver/Transmitter)
+
 .. _dt-bindings-description:
 
 Description
@@ -96,11 +124,49 @@ match this node:
         compatible = "manufacturer,device-v2", "manufacturer,device";
     };
 
-Each node's ``compatible`` property is tried in order. The first matching
-binding is used. The :ref:`on-bus: <dt-bindings-on-bus>` key can be used to
-refine the search.
+Each node's ``compatible`` property is tried in order. The
+:ref:`bindings <dt-binding-compat>` are uniquely identified by a pair of
+(:ref:`compatible <dt-bindings-compatible>`,
+:ref:`on-bus <dt-bindings-on-bus>`), where the
+:ref:`on-bus <dt-bindings-on-bus>` may be unspecified. A specified
+:ref:`on-bus <dt-bindings-on-bus>` takes precedence over unspecified. The
+first matching binding is used.
 
-If more than one binding for a compatible is found, an error is raised.
+For the following device:
+
+.. code-block:: devicetree
+
+   spi-bus {
+           device-3 {
+                   compatible = "manufacturer,device";
+           };
+   };
+
+The following two bindings can coexist and would match in the following order:
+
+``manufacturer,device-spi.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+   on-bus: spi
+
+``manufacturer,device.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+
+The following binding can coexist but would not match.
+
+``manufacturer,device-i2c.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+   on-bus: i2c
+
+If more than one matching binding for a compatible is found, an error is raised.
 
 The ``manufacturer`` prefix identifies the device vendor. See
 :zephyr_file:`dts/bindings/vendor-prefixes.txt` for a list of accepted vendor
@@ -135,8 +201,8 @@ this:
        required: true
 
 In this example, a node with compatible ``"manufacturer,serial"`` must contain
-a node named ``current-speed``. The property's value must be a single integer.
-Similarly, the node must contain a ``reg`` property.
+a property named ``current-speed``. The property's value must be a single
+integer. Similarly, the node must contain a ``reg`` property.
 
 The build system uses bindings to generate C macros for devicetree properties
 that appear in DTS files. You can read more about how to get property values in

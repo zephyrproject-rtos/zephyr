@@ -1,5 +1,6 @@
 board:
   name: v2m_musca_b1
+  full_name: V2M Musca B1
   vendor: arm
   socs:
   - name: musca_b1

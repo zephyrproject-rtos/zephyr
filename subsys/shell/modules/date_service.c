@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/init.h>
 #include <string.h>
 
 #include <zephyr/sys/timeutil.h>
-
-#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
-#include <time.h>
-#else
-#include <zephyr/posix/time.h>
-#endif
 
 #define HELP_NONE      "[none]"
 #define HELP_DATE_SET  "[Y-m-d] <H:M:S>"
@@ -40,7 +36,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 	int day;
 	char *endptr;
 
-	endptr = NULL;
 	year = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '-')) {
 		return -EINVAL;
@@ -48,7 +43,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 
 	date_str = endptr + 1;
 
-	endptr = NULL;
 	month = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '-')) {
 		return -EINVAL;
@@ -61,7 +55,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 
 	date_str = endptr + 1;
 
-	endptr = NULL;
 	day = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '\0')) {
 		return -EINVAL;
@@ -92,7 +85,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 	if (*time_str == ':') {
 		time_str++;
 	} else {
-		endptr = NULL;
 		t->tm_hour = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
@@ -111,7 +103,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 	if (*time_str == ':') {
 		time_str++;
 	} else {
-		endptr = NULL;
 		t->tm_min = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
@@ -127,7 +118,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 		}
 	}
 
-	endptr = NULL;
 	t->tm_sec = strtol(time_str, &endptr, 10);
 	if ((endptr == time_str) || (*endptr != '\0')) {
 		return -EINVAL;
@@ -148,7 +138,7 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 	struct tm tm;
 	int ret;
 
-	clock_gettime(CLOCK_REALTIME, &tp);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &tp);
 
 	gmtime_r(&tp.tv_sec, &tm);
 
@@ -181,7 +171,7 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 	}
 	tp.tv_nsec = 0;
 
-	ret = clock_settime(CLOCK_REALTIME, &tp);
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tp);
 	if (ret != 0) {
 		shell_error(sh, "Could not set date %d", ret);
 		return -EINVAL;
@@ -197,7 +187,7 @@ static int cmd_date_get(const struct shell *sh, size_t argc, char **argv)
 	struct timespec tp;
 	struct tm tm;
 
-	clock_gettime(CLOCK_REALTIME, &tp);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &tp);
 
 	gmtime_r(&tp.tv_sec, &tm);
 

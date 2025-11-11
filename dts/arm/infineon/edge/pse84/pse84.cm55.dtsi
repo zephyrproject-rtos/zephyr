@@ -1,0 +1,358 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8.1-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <1>;
+			clock-frequency = <400000000>;
+		};
+	};
+};
+
+&gpio_prt0 {
+	interrupts = <0 4>;
+};
+
+&gpio_prt1 {
+	interrupts = <39 4>;
+};
+
+&gpio_prt2 {
+	interrupts = <1 4>;
+};
+
+&gpio_prt3 {
+	interrupts = <2 4>;
+};
+
+&gpio_prt4 {
+	interrupts = <40 4>;
+};
+
+&gpio_prt5 {
+	interrupts = <3 4>;
+};
+
+&gpio_prt6 {
+	interrupts = <4 4>;
+};
+
+&gpio_prt7 {
+	interrupts = <5 4>;
+};
+
+&gpio_prt8 {
+	interrupts = <6 4>;
+};
+
+&gpio_prt9 {
+	interrupts = <7 4>;
+};
+
+&gpio_prt10 {
+	interrupts = <8 4>;
+};
+
+&gpio_prt11 {
+	interrupts = <9 4>;
+};
+
+&gpio_prt12 {
+	interrupts = <10 4>;
+};
+
+&gpio_prt13 {
+	interrupts = <11 4>;
+};
+
+&gpio_prt14 {
+	interrupts = <12 4>;
+};
+
+&gpio_prt15 {
+	interrupts = <13 4>;
+};
+
+&gpio_prt16 {
+	interrupts = <14 4>;
+};
+
+&gpio_prt17 {
+	interrupts = <15 4>;
+};
+
+&gpio_prt18 {
+	interrupts = <16 4>;
+};
+
+&gpio_prt19 {
+	interrupts = <17 4>;
+};
+
+&gpio_prt20 {
+	interrupts = <18 4>;
+};
+
+&gpio_prt21 {
+	interrupts = <19 4>;
+};
+
+&autanalog {
+	interrupts = <36 4>;
+};
+
+&scb0 {
+	interrupts = <22 4>;
+};
+
+&scb2 {
+	interrupts = <121 4>;
+};
+
+&scb3 {
+	interrupts = <122 4>;
+};
+
+&scb4 {
+	interrupts = <123 4>;
+};
+
+&scb5 {
+	interrupts = <124 4>;
+};
+
+&scb6 {
+	interrupts = <125 4>;
+};
+
+&scb7 {
+	interrupts = <126 4>;
+};
+
+&scb8 {
+	interrupts = <127 4>;
+};
+
+&scb9 {
+	interrupts = <128 4>;
+};
+
+&scb10 {
+	interrupts = <129 4>;
+};
+
+&scb11 {
+	interrupts = <130 4>;
+};
+
+&scb1 {
+	interrupts = <120 4>;
+};
+
+&i3c0 {
+	interrupts = <153 4>;
+};
+
+&watchdog0 {
+	interrupts = <33 4>;
+};
+
+&mcwdt0 {
+	interrupts = <0 4>;
+};
+
+&mcwdt1 {
+	interrupts = <34 4>;
+};
+
+&tcpwm0_0 {
+	interrupts = <88 4>;
+};
+
+&tcpwm0_1 {
+	interrupts = <89 4>;
+};
+
+&tcpwm0_2 {
+	interrupts = <90 4>;
+};
+
+&tcpwm0_3 {
+	interrupts = <91 4>;
+};
+
+&tcpwm0_4 {
+	interrupts = <92 4>;
+};
+
+&tcpwm0_5 {
+	interrupts = <93 4>;
+};
+
+&tcpwm0_6 {
+	interrupts = <94 4>;
+};
+
+&tcpwm0_7 {
+	interrupts = <95 4>;
+};
+
+&tcpwm1_0 {
+	interrupts = <96 4>;
+};
+
+&tcpwm1_1 {
+	interrupts = <97 4>;
+};
+
+&tcpwm1_2 {
+	interrupts = <98 4>;
+};
+
+&tcpwm1_3 {
+	interrupts = <99 4>;
+};
+
+&tcpwm1_4 {
+	interrupts = <100 4>;
+};
+
+&tcpwm1_5 {
+	interrupts = <101 4>;
+};
+
+&tcpwm1_6 {
+	interrupts = <102 4>;
+};
+
+&tcpwm1_7 {
+	interrupts = <103 4>;
+};
+
+&tcpwm1_8 {
+	interrupts = <104 4>;
+};
+
+&tcpwm1_9 {
+	interrupts = <105 4>;
+};
+
+&tcpwm1_10 {
+	interrupts = <106 4>;
+};
+
+&tcpwm1_11 {
+	interrupts = <107 4>;
+};
+
+&tcpwm1_12 {
+	interrupts = <108 4>;
+};
+
+&tcpwm1_13 {
+	interrupts = <109 4>;
+};
+
+&tcpwm1_14 {
+	interrupts = <110 4>;
+};
+
+&tcpwm1_15 {
+	interrupts = <111 4>;
+};
+
+&tcpwm1_16 {
+	interrupts = <112 4>;
+};
+
+&tcpwm1_17 {
+	interrupts = <113 4>;
+};
+
+&tcpwm1_18 {
+	interrupts = <114 4>;
+};
+
+&tcpwm1_19 {
+	interrupts = <115 4>;
+};
+
+&tcpwm1_20 {
+	interrupts = <116 4>;
+};
+
+&tcpwm1_21 {
+	interrupts = <117 4>;
+};
+
+&tcpwm1_22 {
+	interrupts = <118 4>;
+};
+
+&tcpwm1_23 {
+	interrupts = <119 4>;
+};
+
+&dma0 {
+	interrupts = <60 4>, /* CH0 */
+		     <61 4>, /* CH1 */
+		     <62 4>, /* CH2 */
+		     <63 4>, /* CH3 */
+		     <64 4>, /* CH4 */
+		     <65 4>, /* CH5 */
+		     <66 4>, /* CH6 */
+		     <67 4>, /* CH7 */
+		     <68 4>, /* CH8 */
+		     <69 4>, /* CH9 */
+		     <70 4>, /* CH10 */
+		     <71 4>, /* CH11 */
+		     <72 4>, /* CH12 */
+		     <73 4>, /* CH13 */
+		     <74 4>, /* CH14 */
+		     <75 4>; /* CH15 */
+};
+
+&dma1 {
+	interrupts = <158 4>, /* CH0 */
+		     <159 4>, /* CH1 */
+		     <160 4>, /* CH2 */
+		     <161 4>, /* CH3 */
+		     <162 4>, /* CH4 */
+		     <163 4>, /* CH5 */
+		     <164 4>, /* CH6 */
+		     <165 4>, /* CH7 */
+		     <166 4>, /* CH8 */
+		     <167 4>, /* CH9 */
+		     <168 4>, /* CH10 */
+		     <169 4>, /* CH11 */
+		     <170 4>, /* CH12 */
+		     <171 4>, /* CH13 */
+		     <172 4>, /* CH14 */
+		     <173 4>; /* CH15 */
+};
+
+&sdhc0 {
+	interrupts = <132 4>, /* SDIO wakeup interrupt for mxsdhc */
+		     <131 6>; /* Consolidated interrupt for mxsdhc */
+};
+
+&sdhc1 {
+	interrupts = <134 4>, /* SDIO wakeup interrupt for mxsdhc */
+		     <133 6>; /* Consolidated interrupt for mxsdhc */
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

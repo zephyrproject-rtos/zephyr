@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024 NXP
+ * Copyright 2021,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,11 +23,17 @@
 /* LPUART */
 #define IMX_CCM_LPUART_CLK             0x300UL
 #define IMX_CCM_LPUART1_CLK            0x300UL
+#define IMX_CCM_LPUART0102_CLK         0x300UL
 #define IMX_CCM_LPUART2_CLK            0x301UL
+#define IMX_CCM_LPUART0304_CLK         0x301UL
 #define IMX_CCM_LPUART3_CLK            0x302UL
+#define IMX_CCM_LPUART0506_CLK         0x302UL
 #define IMX_CCM_LPUART4_CLK            0x303UL
+#define IMX_CCM_LPUART0708_CLK         0x303UL
 #define IMX_CCM_LPUART5_CLK            0x304UL
+#define IMX_CCM_LPUART0910_CLK         0x304UL
 #define IMX_CCM_LPUART6_CLK            0x305UL
+#define IMX_CCM_LPUART1112_CLK         0x305UL
 #define IMX_CCM_LPUART7_CLK            0x306UL
 #define IMX_CCM_LPUART8_CLK            0x307UL
 #define IMX_CCM_LPUART9_CLK            0x308UL
@@ -37,21 +43,28 @@
 
 /* LPI2C */
 #define IMX_CCM_LPI2C_CLK              0x400UL
+#define IMX_CCM_LPI2C0102_CLK          0x400UL
 #define IMX_CCM_LPI2C1_CLK             0x400UL
 #define IMX_CCM_LPI2C2_CLK             0x401UL
+#define IMX_CCM_LPI2C0304_CLK          0x401UL
 #define IMX_CCM_LPI2C3_CLK             0x402UL
 #define IMX_CCM_LPI2C4_CLK             0x403UL
+#define IMX_CCM_LPI2C0506_CLK          0x402UL
 #define IMX_CCM_LPI2C5_CLK             0x404UL
 #define IMX_CCM_LPI2C6_CLK             0x405UL
+#define IMX_CCM_LPI2C0708_CLK          0x403UL
 #define IMX_CCM_LPI2C7_CLK             0x406UL
 #define IMX_CCM_LPI2C8_CLK             0x407UL
 
 /* LPSPI */
 #define IMX_CCM_LPSPI_CLK              0x500UL
+#define IMX_CCM_LPSPI0102_CLK          0x500UL
 #define IMX_CCM_LPSPI1_CLK             0x500UL
 #define IMX_CCM_LPSPI2_CLK             0x501UL
+#define IMX_CCM_LPSPI0304_CLK          0x501UL
 #define IMX_CCM_LPSPI3_CLK             0x502UL
 #define IMX_CCM_LPSPI4_CLK             0x503UL
+#define IMX_CCM_LPSPI0506_CLK          0x502UL
 #define IMX_CCM_LPSPI5_CLK             0x504UL
 #define IMX_CCM_LPSPI6_CLK             0x505UL
 #define IMX_CCM_LPSPI7_CLK             0x506UL
@@ -64,6 +77,8 @@
 /* DMA  */
 #define IMX_CCM_EDMA_CLK               0x700UL
 #define IMX_CCM_EDMA_LPSR_CLK          0x701UL
+#define IMX_CCM_EDMA3_CLK              0x700UL
+#define IMX_CCM_EDMA4_CLK              0x701UL
 
 /* PWM */
 #define IMX_CCM_PWM_CLK                0x800UL
@@ -106,6 +121,7 @@
 /* ADC */
 #define IMX_CCM_LPADC1_CLK             0x1500UL
 #define IMX_CCM_LPADC2_CLK             0x1501UL
+#define IMX_CCM_SAR_ADC1_CLK           0x1500UL
 
 /* TPM */
 #define IMX_CCM_TPM_CLK                0x1600UL
@@ -116,11 +132,46 @@
 #define IMX_CCM_TPM5_CLK               0x1604UL
 #define IMX_CCM_TPM6_CLK               0x1605UL
 
+/* FLEXIO */
+#define IMX_CCM_FLEXIO_CLK             0x1700UL
+#define IMX_CCM_FLEXIO1_CLK            0x1700UL
+#define IMX_CCM_FLEXIO2_CLK            0x1701UL
+
+/* NETC */
+#define IMX_CCM_NETC_CLK 0x1800UL
+
+/* MIPI CSI2RX */
+#define IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0x1900UL
+#define IMX_CCM_MIPI_CSI2RX_UI_CLK   0x2000UL
+#define IMX_CCM_MIPI_CSI2RX_ESC_CLK  0x2100UL
+
+/* I3C */
+#define IMX_CCM_I3C_CLK                0x2200UL
+#define IMX_CCM_I3C1_CLK               0x2200UL
+#define IMX_CCM_I3C2_CLK               0x2201UL
+
+/* LPIT */
+#define IMX_CCM_LPIT_CLK  0x2300UL
+#define IMX_CCM_LPIT1_CLK 0x2300UL
+#define IMX_CCM_LPIT2_CLK 0x2301UL
+#define IMX_CCM_LPIT3_CLK 0x2302UL
+
+/* KPP */
+#define IMX_CCM_KPP_CLK                0x2400UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
 #define IMX_CCM_QTMR2_CLK              0x6001UL
 #define IMX_CCM_QTMR3_CLK              0x6002UL
 #define IMX_CCM_QTMR4_CLK              0x6003UL
+
+/* MEDIA */
+#define IMX_CCM_MEDIA_AXI_CLK      0x3000UL
+#define IMX_CCM_MEDIA_APB_CLK      0x3100UL
+#define IMX_CCM_MEDIA_DISP_PIX_CLK 0x3200UL
+#define IMX_CCM_MEDIA_LDB_CLK      0x3300UL
+#define IMX_CCM_MIPI_PHY_CFG_CLK   0x3400UL
+#define IMX_CCM_CAM_PIX_CLK        0x3500UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */

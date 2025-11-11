@@ -1,7 +1,4 @@
-.. _holyiot_yj16019:
-
-Holyiot YJ-16019
-################
+.. zephyr:board:: holyiot_yj16019
 
 Overview
 ********
@@ -20,12 +17,6 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
 * Segger RTT (RTT Console)
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/holyiot_yj16019_front.jpg
-     :align: center
-     :alt: Holyiot YJ-16019
-
-     Holyiot YJ-16019 (Credit: Holyiot)
-
 The board is equipped with one LED, one push button, and is powered by
 a CR2032 coin cell. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
@@ -39,34 +30,7 @@ The nRF52832 of the Holyiot YJ-16019 is clocked by an external crystal with a fr
 Supported Features
 ==================
 
-The holyiot_yj16019 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -79,6 +43,8 @@ LED and push button
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``holyiot_yj16019`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`

@@ -34,7 +34,7 @@ Requirements
 Building and Running
 ********************
 
-This application can be built and executed on :ref:`native_sim <native_sim>` as follows:
+This application can be built and executed on :zephyr:board:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/native_tty

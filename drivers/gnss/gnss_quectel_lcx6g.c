@@ -22,7 +22,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(quectel_lcx6g, CONFIG_GNSS_LOG_LEVEL);
 
-#define QUECTEL_LCX6G_PM_TIMEOUT_MS    500U
+#define QUECTEL_LCX6G_PM_TIMEOUT       K_MSEC(500U)
 #define QUECTEL_LCX6G_SCRIPT_TIMEOUT_S 10U
 
 #define QUECTEL_LCX6G_PAIR_NAV_MODE_STATIONARY 4
@@ -74,7 +74,7 @@ struct quectel_lcx6g_data {
 	};
 
 	struct k_sem lock;
-	k_timeout_t pm_timeout;
+	k_timepoint_t pm_deadline;
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -182,10 +182,8 @@ static void quectel_lcx6g_unlock(const struct device *dev)
 static void quectel_lcx6g_pm_changed(const struct device *dev)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	uint32_t pm_ready_at_ms;
 
-	pm_ready_at_ms = k_uptime_get() + QUECTEL_LCX6G_PM_TIMEOUT_MS;
-	data->pm_timeout = K_TIMEOUT_ABS_MS(pm_ready_at_ms);
+	data->pm_deadline = sys_timepoint_calc(QUECTEL_LCX6G_PM_TIMEOUT);
 }
 
 static void quectel_lcx6g_await_pm_ready(const struct device *dev)
@@ -193,7 +191,7 @@ static void quectel_lcx6g_await_pm_ready(const struct device *dev)
 	struct quectel_lcx6g_data *data = dev->data;
 
 	LOG_INF("Waiting until PM ready");
-	k_sleep(data->pm_timeout);
+	k_sleep(sys_timepoint_timeout(data->pm_deadline));
 }
 
 static int quectel_lcx6g_resume(const struct device *dev)
@@ -205,7 +203,7 @@ static int quectel_lcx6g_resume(const struct device *dev)
 
 	quectel_lcx6g_await_pm_ready(dev);
 
-	ret = modem_pipe_open(data->uart_pipe);
+	ret = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (ret < 0) {
 		LOG_ERR("Failed to open pipe");
 		return ret;
@@ -214,21 +212,21 @@ static int quectel_lcx6g_resume(const struct device *dev)
 	ret = modem_chat_attach(&data->chat, data->uart_pipe);
 	if (ret < 0) {
 		LOG_ERR("Failed to attach chat");
-		modem_pipe_close(data->uart_pipe);
+		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
 	ret = modem_chat_run_script(&data->chat, &resume_script);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize GNSS");
-		modem_pipe_close(data->uart_pipe);
+		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
 	ret = quectel_lcx6g_configure_pps(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure PPS");
-		modem_pipe_close(data->uart_pipe);
+		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
@@ -253,7 +251,7 @@ static int quectel_lcx6g_suspend(const struct device *dev)
 		LOG_INF("Suspended");
 	}
 
-	modem_pipe_close(data->uart_pipe);
+	modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 	return ret;
 }
 
@@ -268,7 +266,7 @@ static int quectel_lcx6g_turn_off(const struct device *dev)
 
 	LOG_INF("Powered off");
 
-	return modem_pipe_close(data->uart_pipe);
+	return modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 }
 
 static int quectel_lcx6g_pm_action(const struct device *dev, enum pm_device_action action)
@@ -401,7 +399,7 @@ static int quectel_lcx6g_get_fix_rate(const struct device *dev, uint32_t *fix_in
 
 unlock_return:
 	quectel_lcx6g_unlock(dev);
-	return 0;
+	return ret;
 }
 
 static int quectel_lcx6g_set_navigation_mode(const struct device *dev,
@@ -717,7 +715,7 @@ static int quectel_lcx6g_get_supported_systems(const struct device *dev, gnss_sy
 	return 0;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 	.set_fix_rate = quectel_lcx6g_set_fix_rate,
 	.get_fix_rate = quectel_lcx6g_get_fix_rate,
 	.set_navigation_mode = quectel_lcx6g_set_navigation_mode,

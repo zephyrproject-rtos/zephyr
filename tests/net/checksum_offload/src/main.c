@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/udp.h>
@@ -74,9 +74,9 @@ static struct in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
 
 /* Keep track of all ethernet interfaces. For native_sim board, we need
  * to increase the count as it has one extra network interface defined in
- * eth_native_posix driver.
+ * eth_native_tap driver.
  */
-static struct net_if *eth_interfaces[2 + IS_ENABLED(CONFIG_ETH_NATIVE_POSIX)];
+static struct net_if *eth_interfaces[2 + IS_ENABLED(CONFIG_ETH_NATIVE_TAP)];
 
 static bool test_failed;
 static bool test_started;
@@ -333,7 +333,7 @@ static int eth_tx_offloading_disabled(const struct device *dev,
 
 	zassert_equal_ptr(&eth_context_offloading_disabled, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context_offloading_disabled, context);
+			  &eth_context_offloading_disabled, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -377,7 +377,7 @@ static int eth_tx_offloading_enabled(const struct device *dev,
 
 	zassert_equal_ptr(&eth_context_offloading_enabled, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context_offloading_enabled, context);
+			  &eth_context_offloading_enabled, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -608,19 +608,17 @@ static void test_address_setup(void)
 
 static void add_neighbor(struct net_if *iface, struct in6_addr *addr)
 {
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	nbr = net_ipv6_nbr_add(iface, addr, &lladdr, false,
@@ -876,7 +874,7 @@ static void test_tx_chksum_icmp_frag(sa_family_t family, bool offloaded)
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx, 0, 0, dummy_icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, family, 0, 0, dummy_icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	test_started = true;
@@ -1212,7 +1210,7 @@ static void test_rx_chksum_icmp_frag(sa_family_t family, bool offloaded)
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx,
+	ret = net_icmp_init_ctx(&ctx, family,
 				family == AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
 						     NET_ICMPV4_ECHO_REPLY,
 				0, icmp_handler);
@@ -1269,7 +1267,7 @@ static void test_rx_chksum_icmp_frag_bad(sa_family_t family, bool offloaded)
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx,
+	ret = net_icmp_init_ctx(&ctx, family,
 				family == AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
 						     NET_ICMPV4_ECHO_REPLY,
 				0, icmp_handler);

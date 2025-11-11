@@ -58,7 +58,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_null_address_type_reference)
  *  Constraints:
  *   - Directed advertising flag is set
  *   - 'BT_LE_FEAT_BIT_PRIVACY' bit isn't set
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit is set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit is set
  *   - Options 'BT_LE_ADV_OPT_DIR_ADDR_RPA' bit is set
  *
  *  Expected behaviour:
@@ -71,7 +71,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_dir_adv_with_rpa_no_privacy)
 	struct bt_le_ext_adv adv = {0};
 	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
 
-	options |= BT_LE_ADV_OPT_CONNECTABLE;
+	options |= BT_LE_ADV_OPT_CONN;
 	options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 
 	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] &= ~BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
@@ -87,7 +87,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_dir_adv_with_rpa_no_privacy)
  *  Operation fails if bt_id_set_adv_private_addr() failed and a negative error code is returned.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit is set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit is set
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit isn't set
  *   - 'CONFIG_BT_PRIVACY' is enabled
  *   - bt_id_set_adv_private_addr() fails and returns a negative error code (failure)
@@ -104,7 +104,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_private_addr_fai
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
-	options |= BT_LE_ADV_OPT_CONNECTABLE;
+	options |= BT_LE_ADV_OPT_CONN;
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 
@@ -119,7 +119,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_private_addr_fai
  *  Operation fails if bt_id_set_adv_random_addr() failed and a negative error code is returned.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit is set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit is set
  *   - 'CONFIG_BT_PRIVACY' isn't enabled
  *   - bt_id_set_adv_random_addr() fails and returns a negative error code (failure)
  *
@@ -137,7 +137,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
 	/* If 'CONFIG_BT_EXT_ADV' is defined, it changes bt_id_set_adv_random_addr() behaviour */
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	options |= BT_LE_ADV_OPT_CONNECTABLE;
+	options |= BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
@@ -152,14 +152,14 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
 /*
  *  Test setting the advertising private address with a static random address through
  *  bt_id_set_adv_random_addr() when device isn't advertising as a connectable device (i.e.
- *  BT_LE_ADV_OPT_CONNECTABLE bit in options isn't set) and the advertisement is using the device
+ *  BT_LE_ADV_OPT_CONN bit in options isn't set) and the advertisement is using the device
  *  identity (i.e. BT_LE_ADV_OPT_USE_IDENTITY bit is set in options).
  *
  *  Operation fails if bt_id_set_adv_random_addr() failed and a negative error code is returned.
  *
  *  Constraints:
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit is set
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit isn't set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
  *   - bt_id_set_adv_random_addr() fails and returns a negative error code (failure)
  *
  *  Expected behaviour:
@@ -176,7 +176,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
 	options |= BT_LE_ADV_OPT_USE_IDENTITY;
-	options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	options &= ~BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
@@ -192,7 +192,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
  *  Operation fails if bt_id_set_adv_private_addr() failed and a negative error code is returned.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit isn't set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit isn't set
  *   - bt_id_set_adv_private_addr() fails and returns a negative error code (failure)
  *
@@ -206,7 +206,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_private_addr_fai
 	struct bt_le_ext_adv adv = {0};
 	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
 
-	options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	options &= ~BT_LE_ADV_OPT_CONN;
 	options &= ~BT_LE_ADV_OPT_USE_IDENTITY;
 
 	/* This will cause bt_id_set_adv_private_addr() to return a negative error code */

@@ -81,8 +81,12 @@ enum it82xx2_transaction_types {
 #define DC_CONNECT_TO_HOST		BIT(6) /* internal pull-up */
 
 /* ENDPOINT[3..0]_CONTROL_REG */
-#define ENDPOINT_EN			BIT(0)
-#define EP_SEND_STALL			BIT(3)
+#define ENDPOINT_ENABLE_BIT      BIT(0)
+#define ENDPOINT_READY_BIT       BIT(1)
+#define ENDPOINT_OUTDATA_SEQ_BIT BIT(2)
+#define ENDPOINT_SEND_STALL_BIT  BIT(3)
+#define ENDPOINT_ISO_ENABLE_BIT  BIT(4)
+#define ENDPOINT_DIRECTION_BIT   BIT(5)
 
 enum it82xx2_ep_status {
 	EP_INIT = 0,
@@ -201,6 +205,18 @@ static void it82xx2_enable_sof_int(bool enable)
 		usb_regs->dc_interrupt_mask |= DC_SOF_RECEIVED;
 	} else {
 		usb_regs->dc_interrupt_mask &= ~DC_SOF_RECEIVED;
+	}
+}
+
+static void it82xx2_enable_resume_int(bool enable)
+{
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
+
+	usb_regs->dc_interrupt_status = DC_RESUME_INT;
+	if (enable) {
+		usb_regs->dc_interrupt_mask |= DC_RESUME_INT;
+	} else {
+		usb_regs->dc_interrupt_mask &= ~DC_RESUME_INT;
 	}
 }
 
@@ -417,14 +433,11 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, boo
 		}
 		break;
 	case EP_READY_ENABLE:
-		unsigned int key;
 		int idx = ((ep_idx - 4) % 3) + 1;
 
-		key = irq_lock();
 		(enable) ? (ext_ctrl[idx].epn_ext_ctrl2 |= BIT((ep_idx - 4) / 3))
 			 : (ext_ctrl[idx].epn_ext_ctrl2 &= ~BIT((ep_idx - 4) / 3));
 		ep_regs[ep_fifo].ep_ctrl.fields.ready_bit = enable;
-		irq_unlock(key);
 		break;
 	default:
 		LOG_ERR("Unknown control type 0x%x", ctrl);
@@ -438,51 +451,72 @@ static int it82xx2_usb_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool enabl
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
+	uint8_t ep_ctrl_value;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 		return -EINVAL;
 	}
 
+	ep_ctrl_value = ep_regs[ep_idx].ep_ctrl.value & ~ENDPOINT_READY_BIT;
+
 	switch (ctrl) {
 	case EP_IN_DIRECTION_SET:
-		ep_regs[ep_idx].ep_ctrl.fields.direction_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_DIRECTION_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_DIRECTION_BIT;
+		}
 		break;
 	case EP_STALL_SEND:
-		ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_SEND_STALL_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_SEND_STALL_BIT;
+		}
 		break;
 	case EP_STALL_CHECK:
 		return ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit;
 	case EP_IOS_ENABLE:
-		ep_regs[ep_idx].ep_ctrl.fields.iso_enable_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_ISO_ENABLE_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_ISO_ENABLE_BIT;
+		}
 		break;
 	case EP_ENABLE:
-		ep_regs[ep_idx].ep_ctrl.fields.enable_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_ENABLE_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_ENABLE_BIT;
+		}
 		break;
 	case EP_READY_ENABLE:
-		unsigned int key;
-
-		key = irq_lock();
-		ep_regs[ep_idx].ep_ctrl.fields.ready_bit = enable;
-		irq_unlock(key);
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_READY_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_READY_BIT;
+		}
 		break;
 	case EP_DATA_SEQ_1:
-		ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_OUTDATA_SEQ_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_OUTDATA_SEQ_BIT;
+		}
 		break;
 	case EP_DATA_SEQ_TOGGLE:
 		if (!enable) {
 			break;
 		}
-		if (ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit) {
-			ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = 0;
-		} else {
-			ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = 1;
-		}
+		ep_ctrl_value ^= ENDPOINT_OUTDATA_SEQ_BIT;
 		break;
 	default:
 		LOG_ERR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
+
+	ep_regs[ep_idx].ep_ctrl.value = ep_ctrl_value;
 	return 0;
 }
 
@@ -490,12 +524,15 @@ static int it82xx2_usb_set_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool e
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	int ret = 0;
+	unsigned int key;
 
+	key = irq_lock();
 	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 		ret = it82xx2_usb_extend_ep_ctrl(ep, ctrl, enable);
 	} else {
 		ret = it82xx2_usb_ep_ctrl(ep, ctrl, enable);
 	}
+	irq_unlock(key);
 	return ret;
 }
 
@@ -512,11 +549,11 @@ static int it82xx2_usb_dc_ip_init(void)
 	usb_regs->host_device_control = 0;
 
 	usb_regs->dc_interrupt_status =
-		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_INT;
 
 	usb_regs->dc_interrupt_mask = 0x00;
 	usb_regs->dc_interrupt_mask =
-		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_INT;
 
 	usb_regs->dc_address = DC_ADDR_NULL;
 
@@ -548,7 +585,7 @@ static bool it82xx2_check_setup_following_out(void)
 		ff_regs[EP0].ep_rx_fifo_dcnt_lsb == SETUP_DATA_CNT));
 }
 
-static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
+static inline void it82xx2_handler_setup(uint8_t fifo_idx)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
@@ -556,8 +593,8 @@ static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
 	uint8_t ep_idx = fifo_idx;
 
 	/* wrong trans */
-	if (ep_ctrl & EP_SEND_STALL) {
-		ep_regs[fifo_idx].ep_ctrl.fields.send_stall_bit = 0;
+	if (ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit) {
+		it82xx2_usb_set_ep_ctrl(fifo_idx, EP_STALL_SEND, false);
 		udata0.st_state = STALL_SEND;
 		ff_regs[fifo_idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 		LOG_DBG("Clear Stall Bit & RX FIFO");
@@ -596,14 +633,14 @@ static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
 	}
 }
 
-static inline void it82xx2_handler_in(const uint8_t ep_idx, const uint8_t ep_ctrl)
+static inline void it82xx2_handler_in(const uint8_t ep_idx)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 
 	if (ep_idx == 0) {
-		if (ep_ctrl & EP_SEND_STALL) {
-			ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit = 0;
+		if (ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit) {
+			it82xx2_usb_set_ep_ctrl(ep_idx, EP_STALL_SEND, false);
 			udata0.st_state = STALL_SEND;
 			LOG_DBG("Clear Stall Bit");
 			return;
@@ -657,9 +694,6 @@ static inline void it82xx2_handler_in(const uint8_t ep_idx, const uint8_t ep_ctr
 
 static inline void it82xx2_handler_out(const uint8_t ep_idx)
 {
-	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
-	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-
 	if (ep_idx == 0) {
 		/* ep0 wrong enter check */
 		if (udata0.st_state >= STATUS_ST) {
@@ -688,7 +722,7 @@ static inline void it82xx2_handler_out(const uint8_t ep_idx)
 			udata0.last_token = udata0.now_token;
 			udata0.now_token = SETUP_TOKEN;
 			udata0.st_state = SETUP_ST;
-			ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = 1;
+			it82xx2_usb_set_ep_ctrl(ep_idx, EP_DATA_SEQ_1, true);
 			udata0.ep_data[ep_idx].cb_out(ep_idx | USB_EP_DIR_OUT, USB_DC_EP_SETUP);
 
 			if (udata0.no_data_ctrl) {
@@ -799,12 +833,10 @@ static bool it82xx2_usb_fake_token(const uint8_t ep_idx, uint8_t *token_type)
 static void it82xx2_usb_dc_trans_done(void)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
-	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct epn_ext_ctrl_regs *epn_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 
 	for (uint8_t fifo_idx = 0; fifo_idx < 4; fifo_idx++) {
-		uint8_t ep_ctrl = ep_regs[fifo_idx].ep_ctrl.value;
 		uint8_t ep_idx, token_type;
 
 		if (fifo_idx == 0) {
@@ -819,10 +851,10 @@ static void it82xx2_usb_dc_trans_done(void)
 		if (!it82xx2_usb_fake_token(ep_idx, &token_type)) {
 			switch (token_type) {
 			case DC_SETUP_TRANS:
-				it82xx2_handler_setup(fifo_idx, ep_ctrl);
+				it82xx2_handler_setup(fifo_idx);
 				break;
 			case DC_IN_TRANS:
-				it82xx2_handler_in(ep_idx, ep_ctrl);
+				it82xx2_handler_in(ep_idx);
 				break;
 			case DC_OUTDATA_TRANS:
 				it82xx2_handler_out(ep_idx);
@@ -830,6 +862,17 @@ static void it82xx2_usb_dc_trans_done(void)
 			default:
 				break;
 			}
+		}
+	}
+}
+
+static inline void emit_resume_event(void)
+{
+	if (udata0.suspended) {
+		udata0.suspended = false;
+		k_sem_give(&udata0.suspended_sem);
+		if (udata0.usb_status_cb) {
+			(*(udata0.usb_status_cb))(USB_DC_RESUME, NULL);
 		}
 	}
 }
@@ -855,7 +898,14 @@ static void it82xx2_usb_dc_isr(void)
 	/* sof received */
 	if (status & DC_SOF_RECEIVED) {
 		it82xx2_enable_sof_int(false);
+		it82xx2_enable_resume_int(false);
+		emit_resume_event();
 		k_work_reschedule(&udata0.check_suspended_work, K_MSEC(5));
+	}
+	/* resume received */
+	if (status & DC_RESUME_INT) {
+		it82xx2_enable_resume_int(false);
+		emit_resume_event();
 	}
 	/* transaction done */
 	if (status & DC_TRANS_DONE) {
@@ -874,22 +924,15 @@ static void suspended_check_handler(struct k_work *item)
 		CONTAINER_OF(dwork, struct usb_it82xx2_data, check_suspended_work);
 
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
+	unsigned int key;
 
 	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
 		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
-		if (udata->suspended) {
-			if (udata->usb_status_cb) {
-				(*(udata->usb_status_cb))(USB_DC_RESUME, NULL);
-			}
-			udata->suspended = false;
-			k_sem_give(&udata->suspended_sem);
-		}
 		k_work_reschedule(&udata->check_suspended_work, K_MSEC(5));
 		return;
 	}
 
-	it82xx2_enable_sof_int(true);
-
+	key = irq_lock();
 	if (!udata->suspended) {
 		if (udata->usb_status_cb) {
 			(*(udata->usb_status_cb))(USB_DC_SUSPEND, NULL);
@@ -900,6 +943,11 @@ static void suspended_check_handler(struct k_work *item)
 
 		k_sem_reset(&udata->suspended_sem);
 	}
+
+	it82xx2_enable_resume_int(true);
+	it82xx2_enable_sof_int(true);
+
+	irq_unlock(key);
 }
 
 /*
@@ -991,7 +1039,7 @@ int usb_dc_reset(void)
 		}
 	}
 
-	ep_regs[0].ep_ctrl.value = ENDPOINT_EN;
+	ep_regs[0].ep_ctrl.value = ENDPOINT_ENABLE_BIT;
 	usb_regs->dc_address = DC_ADDR_NULL;
 	udata0.addr = DC_ADDR_NULL;
 	usb_regs->dc_interrupt_status = DC_NAK_SENT_INT | DC_SOF_RECEIVED;
@@ -1083,9 +1131,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	it82xx2_usb_set_ep_ctrl(ep_idx, EP_IN_DIRECTION_SET, in);
 
 	if (in) {
-		if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-			it82xx2_usb_extend_ep_ctrl(ep_idx, EP_DATA_SEQ_1, false);
-		}
+		it82xx2_usb_set_ep_ctrl(ep_idx, EP_DATA_SEQ_1, false);
 		udata0.ep_data[ep_idx].ep_status = EP_CONFIG_IN;
 	} else {
 		udata0.ep_data[ep_idx].ep_status = EP_CONFIG_OUT;
@@ -1205,7 +1251,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 		}
 
 		if (idx < 198) {
-			ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit = 0;
+			it82xx2_usb_set_ep_ctrl(ep_idx, EP_STALL_SEND, false);
 		}
 
 		udata0.no_data_ctrl = false;
@@ -1276,7 +1322,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
-	unsigned int key;
+	unsigned int key = 0;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 
@@ -1323,7 +1369,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 	}
 
 	it82xx2_usb_set_ep_ctrl(ep_idx, EP_READY_ENABLE, true);
-	if (ep_idx != 0) {
+	if (ep_idx != EP0) {
 		irq_unlock(key);
 	}
 
@@ -1422,7 +1468,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 				ff_regs[0].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
 				if (buf[6] != 0 || buf[7] != 0) {
 					/* set status IN after data OUT */
-					ep_regs[0].ep_ctrl.fields.outdata_sequence_bit = 1;
+					it82xx2_usb_set_ep_ctrl(ep_idx, EP_DATA_SEQ_1, true);
 					it82xx2_usb_set_ep_ctrl(ep_idx, EP_READY_ENABLE, true);
 				} else {
 					/* no_data_ctrl status */

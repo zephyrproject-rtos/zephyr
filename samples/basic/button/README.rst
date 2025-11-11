@@ -10,6 +10,10 @@ Overview
 A simple button demo showcasing the use of GPIO input with interrupts.
 The sample prints a message to the console each time a button is pressed.
 
+.. NOTE:: If you are looking into an implementation of button events with
+   debouncing, check out :ref:`input` and :zephyr:code-sample:`input-dump`
+   instead.
+
 Requirements
 ************
 

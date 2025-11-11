@@ -14,7 +14,8 @@ list(APPEND CXX_EXCLUDED_OPTIONS
 set_compiler_property(PROPERTY no_optimization -O0)
 set_compiler_property(PROPERTY optimization_debug -O0)
 set_compiler_property(PROPERTY optimization_speed -O2)
-set_compiler_property(PROPERTY optimization_size  -Os)
+set_compiler_property(PROPERTY optimization_size -Os)
+set_compiler_property(PROPERTY optimization_fast -O3)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -115,7 +116,7 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_ARCMWDT_LIBC)
+if(NOT CONFIG_ARCMWDT_LIBC)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
@@ -126,10 +127,11 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17")
 
-#no support of C++2a, C++20, C++2b
+# no support of C++2a, C++20, C++2b, C++23
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -165,9 +167,14 @@ set_compiler_property(PROPERTY coverage "")
 # mwdt compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 
+# assembler compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros -imacros)
+
 # Security canaries.
 #no support of -mstack-protector-guard=global"
-set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
+set_compiler_property(PROPERTY security_canaries -fstack-protector)
+set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
+set_compiler_property(PROPERTY security_canaries_all -fstack-protector-all)
 
 #no support of _FORTIFY_SOURCE"
 set_compiler_property(PROPERTY security_fortify_compile_time)
@@ -203,8 +210,15 @@ if(CONFIG_ARCMWDT_LIBC)
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
 
-# Remove after testing that -Wshadow works
+# Update after testing that -Wshadow and -Wno-array-bounds works
 set_compiler_property(PROPERTY warning_shadow_variables)
+set_compiler_property(PROPERTY warning_no_array_bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
+
+# Compiler flag for not placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for not placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")

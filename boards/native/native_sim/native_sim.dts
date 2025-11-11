@@ -25,6 +25,7 @@
 		zephyr,canbus = &can_loopback0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_userchan;
+		zephyr,touch = &input_sdl_touch;
 	};
 
 	aliases {
@@ -37,6 +38,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -53,7 +55,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "zephyr,native-posix-cpu";
+			compatible = "zephyr,native-sim-cpu";
 			reg = <0>;
 		};
 	};
@@ -82,18 +84,22 @@
 					label = "mcuboot";
 					reg = <0x00000000 0x0000C000>;
 				};
+
 				slot0_partition: partition@c000 {
 					label = "image-0";
 					reg = <0x0000C000 0x00069000>;
 				};
+
 				slot1_partition: partition@75000 {
 					label = "image-1";
 					reg = <0x00075000 0x00069000>;
 				};
+
 				scratch_partition: partition@de000 {
 					label = "image-scratch";
 					reg = <0x000de000 0x0001e000>;
 				};
+
 				storage_partition: partition@fc000 {
 					label = "storage";
 					reg = <0x000fc000 0x00004000>;
@@ -114,6 +120,7 @@
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		#forward-cells = <1>;
 		reg = <0x100 4>;
 	};
 
@@ -145,7 +152,7 @@
 
 	uart0: uart {
 		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -153,8 +160,8 @@
 	};
 
 	uart1: uart_1 {
-		status = "okay";
-		compatible = "zephyr,native-posix-uart";
+		status = "disabled";
+		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -163,12 +170,12 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "zephyr,native-sim-rng";
 	};
 
 	counter0: counter {
 		status = "okay";
-		compatible = "zephyr,native-posix-counter";
+		compatible = "zephyr,native-sim-counter";
 	};
 
 	gpio0: gpio_emul {
@@ -194,6 +201,7 @@
 
 	input_sdl_touch: input-sdl-touch {
 		compatible = "zephyr,input-sdl-touch";
+		display = <&sdl_dc>;
 	};
 
 	can_loopback0: can_loopback0 {
@@ -232,5 +240,25 @@
 	bt_hci_userchan: bt_hci_userchan {
 		compatible = "zephyr,bt-hci-userchan";
 		status = "okay";
+	};
+
+	performance-states {
+		pstate_0: pstate_0 {
+			compatible = "zephyr,native-sim-pstate";
+			load-threshold = <50>;
+			pstate-id = <0>;
+		};
+
+		pstate_1: pstate_1 {
+			compatible = "zephyr,native-sim-pstate";
+			load-threshold = <20>;
+			pstate-id = <1>;
+		};
+
+		pstate_2: pstate_2 {
+			compatible = "zephyr,native-sim-pstate";
+			load-threshold = <0>;
+			pstate-id = <2>;
+		};
 	};
 };

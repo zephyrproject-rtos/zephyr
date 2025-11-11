@@ -1,0 +1,71 @@
+# Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Input driver for STM32 Tocuh Sensing Controller (TSC).
+
+  This node is a st,stm32-tsc grandchild node and applies filters and
+  calculations to detect an input event on a group which is the child of
+  st,stm32-tsc. For more information see drivers/misc/st,stm32-tsc.yaml
+
+  Example:
+
+  #include <dt-bindings/input/input-event-codes.h>
+
+  &tsc {
+    compatible = "st,stm32-tsc";
+
+    tsc_group6: g6 {
+      ...
+      ts1 {
+        compatible = "tsc-keys";
+        sampling-interval-ms = <10>;
+        oversampling = <10>;
+        noise-threshold = <50>;
+        zephyr,code = <INPUT_KEY_0>;
+      };
+    };
+  };
+
+compatible: "tsc-keys"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - compatible
+      - zephyr,deferred-init
+      - label
+      - status
+
+properties:
+  sampling-interval-ms:
+    type: int
+    required: true
+    description: |
+      Sampling interval in milliseconds.
+  oversampling:
+    type: int
+    required: true
+    description: |
+      Over sampling factor. The driver will take the average of the samples
+      taken in the sampling interval and compare it with the previous sample.
+      Larger values will reduce the noise but will increase the latency. The
+      default value is 10 so the slope will be calculated every
+      10 * sampling-interval-ms milliseconds.
+  noise-threshold:
+    type: int
+    required: true
+    description: |
+      This value will be used to reject the noise for both
+      directions of the slope.
+  sticky-key-timeout-ms:
+    type: int
+    required: true
+    description: |
+      Time in milliseconds to wait before releasing a key. By default a release
+      event will be generated after 10 seconds of the last press event if
+      the key is still pressed.
+  zephyr,code:
+    type: int
+    required: true
+    description: Key code to emit.

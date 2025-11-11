@@ -1,0 +1,14 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - power_domain
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  drivers.power_domain.build: {}
+  drivers.power_domain.build.pm:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y

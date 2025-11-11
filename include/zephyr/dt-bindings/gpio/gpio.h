@@ -8,14 +8,12 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 
 /**
- * @brief GPIO Driver APIs
- * @defgroup gpio_interface GPIO Driver APIs
- * @ingroup io_interfaces
+ * @addtogroup gpio_interface
  * @{
  */
 
 /** Mask for DT GPIO flags. */
-#define GPIO_DT_FLAGS_MASK 0x3F
+#define GPIO_DT_FLAGS_MASK 0x7F
 
 /**
  * @name GPIO pin active level flags

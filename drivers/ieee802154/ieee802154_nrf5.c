@@ -72,7 +72,7 @@ static const struct device *nrf5_dev;
 #define NSEC_PER_TEN_SYMBOLS (10 * IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS)
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_SERIES_NRF54LX)
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #error "NRF_UICR->OTP is not supported to read from non-secure"
 #else
@@ -80,7 +80,7 @@ static const struct device *nrf5_dev;
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_UICR->CUSTOMER)
-#endif /* CONFIG_SOC_NRF5340_CPUAPP */
+#endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_SERIES_NRF54LX*/
 #endif /* CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE */
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
@@ -172,14 +172,19 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
-		if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len = rx_frame->psdu[0];
 		} else {
 			pkt_len = rx_frame->psdu[0] -  IEEE802154_FCS_LENGTH;
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
+			LOG_ERR("Received a frame exceeding the buffer size (%u): %u",
+				CONFIG_NET_BUF_DATA_SIZE, pkt_len);
+			LOG_HEXDUMP_ERR(rx_frame->psdu, rx_frame->psdu[0] + 1, "Received PSDU");
+			goto drop;
+		}
 #endif
 
 		LOG_DBG("Frame received");
@@ -232,7 +237,9 @@ drop:
 		rx_frame->psdu = NULL;
 		nrf_802154_buffer_free_raw(psdu);
 
-		net_pkt_unref(pkt);
+		if (pkt) {
+			net_pkt_unref(pkt);
+		}
 	}
 }
 
@@ -255,6 +262,12 @@ static void nrf5_get_capabilities_at_boot(void)
 		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL)
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
 		| IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA
+#endif
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		| IEEE802154_HW_SELECTIVE_TXCHANNEL
+#endif
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+		| IEEE802154_OPENTHREAD_HW_CST
 #endif
 		;
 }
@@ -413,7 +426,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 #endif
 
-	if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
+	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		ack_len = nrf5_radio->ack_frame.psdu[0];
 	} else {
 		ack_len = nrf5_radio->ack_frame.psdu[0] - IEEE802154_FCS_LENGTH;
@@ -486,7 +499,9 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 
-	return nrf_802154_transmit_raw(payload, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 
 #if NRF_802154_CSMA_CA_ENABLED
@@ -503,7 +518,9 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 		},
 	};
 
-	return nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 #endif
 
@@ -540,7 +557,11 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		.channel = net_pkt_ieee802154_txchannel(pkt),
+#else
 		.channel = nrf_802154_channel_get(),
+#endif
 		.tx_power = {
 			.use_metadata_value = true,
 			.power = nrf5_data.txpwr,
@@ -556,7 +577,9 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
 		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
 
-	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
@@ -575,7 +598,7 @@ static int nrf5_tx(const struct device *dev,
 		return -EMSGSIZE;
 	}
 
-	LOG_DBG("%p (%u)", payload, payload_len);
+	LOG_DBG("%p (%u)", (void *)payload, payload_len);
 
 	nrf5_radio->tx_psdu[0] = payload_len + IEEE802154_FCS_LENGTH;
 	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);
@@ -720,7 +743,7 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 static int nrf5_continuous_carrier(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -733,6 +756,23 @@ static int nrf5_continuous_carrier(const struct device *dev)
 	}
 
 	LOG_DBG("Continuous carrier wave transmission started (channel: %d)",
+		nrf_802154_channel_get());
+
+	return 0;
+}
+
+static int nrf_modulated_carrier(const struct device *dev, const uint8_t *data)
+{
+	ARG_UNUSED(dev);
+
+	nrf_802154_tx_power_set(nrf5_data.txpwr);
+
+	if (!nrf_802154_modulated_carrier(data)) {
+		LOG_ERR("Failed to enter modulated carrier state");
+		return -EIO;
+	}
+
+	LOG_DBG("Modulated carrier wave transmission started (channel: %d)",
 		nrf_802154_channel_get());
 
 	return 0;
@@ -927,7 +967,10 @@ static int nrf5_configure(const struct device *dev,
 		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
 
 		if (config->ack_ie.header_ie == NULL || config->ack_ie.header_ie->length == 0) {
-			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
+			if (config->ack_ie.short_addr != IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+				nrf_802154_ack_data_clear(short_addr_le, false,
+					NRF_802154_ACK_DATA_IE);
+			}
 			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
 		} else {
 			element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
@@ -948,10 +991,13 @@ static int nrf5_configure(const struct device *dev,
 				return -ENOTSUP;
 			}
 
-			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.header_ie,
-						config->ack_ie.header_ie->length +
-							IEEE802154_HEADER_IE_HEADER_LENGTH,
-						NRF_802154_ACK_DATA_IE);
+			if (config->ack_ie.short_addr != IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+				nrf_802154_ack_data_set(
+					short_addr_le, false, config->ack_ie.header_ie,
+					config->ack_ie.header_ie->length +
+						IEEE802154_HEADER_IE_HEADER_LENGTH,
+					NRF_802154_ACK_DATA_IE);
+			}
 			nrf_802154_ack_data_set(ext_addr_le, true, config->ack_ie.header_ie,
 						config->ack_ie.header_ie->length +
 							IEEE802154_HEADER_IE_HEADER_LENGTH,
@@ -1015,6 +1061,17 @@ static int nrf5_configure(const struct device *dev,
 		}
 		break;
 
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+	case IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD:
+		nrf_802154_cst_writer_period_set(config->cst_period);
+		break;
+
+	case IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME:
+		nrf_802154_cst_writer_anchor_time_set(nrf_802154_timestamp_phr_to_mhr_convert(
+			config->expected_tx_time / NSEC_PER_USEC));
+		break;
+#endif /* CONFIG_IEEE802154_NRF5_CST_ENDPOINT */
+
 	default:
 		return -EINVAL;
 	}
@@ -1070,8 +1127,12 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].lqi = lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.rx_frames[i].time =
-			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		if (time != NRF_802154_NO_TIMESTAMP) {
+			nrf5_data.rx_frames[i].time =
+				nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		} else {
+			nrf5_data.rx_frames[i].time = 0;
+		}
 #endif
 
 		nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;
@@ -1244,15 +1305,16 @@ static const struct ieee802154_radio_api nrf5_radio_api = {
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 	.continuous_carrier = nrf5_continuous_carrier,
+	.modulated_carrier = nrf_modulated_carrier,
 #endif
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,
 	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
-	.attr_get = nrf5_attr_get
+	.attr_get = nrf5_attr_get,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)

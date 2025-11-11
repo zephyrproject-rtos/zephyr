@@ -7,6 +7,19 @@ if SOC_SERIES_STM32H5X
 
 rsource "Kconfig.defconfig.stm32h5*"
 
+config ICACHE
+	default y
+
+config DCACHE
+	default y if !SOC_STM32H503XX
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 

@@ -8,8 +8,7 @@
 import subprocess
 import sys
 
-from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, \
-                               NrfBinaryRunner
+from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, NrfBinaryRunner
 
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
@@ -18,21 +17,46 @@ VerifyError = 55
 class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
+    def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
+                 erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
+                 force=False, recover=False, qspi_ini=None):
+
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
+                         erase_mode, ext_erase_mode, reset, tool_opt, force,
+                         recover)
+
+        self.qspi_ini = qspi_ini
+
     @classmethod
     def name(cls):
         return 'nrfjprog'
 
     @classmethod
+    def capabilities(cls):
+        return NrfBinaryRunner._capabilities()
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return NrfBinaryRunner._dev_id_help()
+
+    @classmethod
     def tool_opt_help(cls) -> str:
-        return 'Additional options for nrfjprog, e.g. "--recover"'
+        return 'Additional options for nrfjprog, e.g. "--clockspeed"'
 
     @classmethod
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                    args.dev_id, erase=args.erase,
-                                    reset=args.reset,
-                                    tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover)
+                                    args.pinreset, args.dev_id, erase=args.erase,
+                                    erase_mode=args.erase_mode,
+                                    ext_erase_mode=args.ext_erase_mode,
+                                    reset=args.reset, tool_opt=args.tool_opt,
+                                    force=args.force, recover=args.recover,
+                                    qspi_ini=args.qspi_ini)
+    @classmethod
+    def do_add_parser(cls, parser):
+        super().do_add_parser(parser)
+        parser.add_argument('--qspiini', required=False, dest='qspi_ini',
+                            help='path to an .ini file with qspi configuration')
 
     def do_get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -45,11 +69,11 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         self.logger.debug(f'Executing op: {op}')
         # Translate the op
 
-        families = {'NRF51_FAMILY': 'NRF51', 'NRF52_FAMILY': 'NRF52',
-                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L',
-                    'NRF91_FAMILY': 'NRF91'}
-        cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
-                 'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
+        families = {'nrf51': 'NRF51', 'nrf52': 'NRF52',
+                    'nrf53': 'NRF53', 'nrf54l': 'NRF54L',
+                    'nrf91': 'NRF91'}
+        cores = {'Application': 'CP_APPLICATION',
+                 'Network': 'CP_NETWORK'}
 
         core_opt = ['--coprocessor', cores[op['core']]] \
                    if op.get('core') else []
@@ -63,34 +87,41 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         elif op_type == 'program':
             cmd.append('--program')
             cmd.append(_op['firmware']['file'])
-            erase = _op['chip_erase_mode']
+            opts = _op['options']
+            erase = opts['chip_erase_mode']
             if erase == 'ERASE_ALL':
                 cmd.append('--chiperase')
-            elif erase == 'ERASE_PAGES':
-                cmd.append('--sectorerase')
-            elif erase == 'ERASE_PAGES_INCLUDING_UICR':
-                cmd.append('--sectoranduicrerase')
-            elif erase == 'NO_ERASE':
+            elif erase == 'ERASE_RANGES_TOUCHED_BY_FIRMWARE':
+                if self.family == 'nrf52':
+                    cmd.append('--sectoranduicrerase')
+                else:
+                    cmd.append('--sectorerase')
+            elif erase == 'ERASE_NONE':
                 pass
             else:
                 raise RuntimeError(f'Invalid erase mode: {erase}')
 
-            if _op.get('qspi_erase_mode'):
-                # In the future there might be multiple QSPI erase modes
-                cmd.append('--qspisectorerase')
-            if _op.get('verify'):
+            if opts.get('ext_mem_erase_mode'):
+                if opts['ext_mem_erase_mode'] == 'ERASE_RANGES_TOUCHED_BY_FIRMWARE':
+                    cmd.append('--qspisectorerase')
+                elif opts['ext_mem_erase_mode'] == 'ERASE_ALL':
+                    cmd.append('--qspichiperase')
+
+            if opts.get('verify'):
                 # In the future there might be multiple verify modes
                 cmd.append('--verify')
+            if self.qspi_ini:
+                cmd.append('--qspiini')
+                cmd.append(self.qspi_ini)
         elif op_type == 'recover':
             cmd.append('--recover')
         elif op_type == 'reset':
-            if _op['option'] == 'RESET_SYSTEM':
+            if _op['kind'] == 'RESET_SYSTEM':
                 cmd.append('--reset')
-            if _op['option'] == 'RESET_PIN':
+            if _op['kind'] == 'RESET_PIN':
                 cmd.append('--pinreset')
-        elif op_type == 'erasepage':
-            cmd.append('--erasepage')
-            cmd.append(f"0x{_op['page']:08x}")
+        elif op_type == 'erase':
+            cmd.append(f'--erase{_op["kind"]}')
         else:
             raise RuntimeError(f'Invalid operation: {op_type}')
 

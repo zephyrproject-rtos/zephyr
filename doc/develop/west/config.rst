@@ -130,6 +130,9 @@ commands are documented in the pages for those commands.
 
    * - Option
      - Description
+   * - :samp:`alias.{ALIAS}`
+     - String. If non-empty the ``<ALIAS>`` can be used as a west command.
+       See :ref:`west-aliases`.
    * - ``color.ui``
      - Boolean. If ``true`` (the default), then west output is colorized when
        stdout is a terminal.
@@ -224,6 +227,9 @@ commands are documented in the pages for those commands.
            +foo,,-bar
            +foo,-bar
 
+   * - ``update.auto-cache``
+     - String. If non-empty, ``west update`` will use its value as the
+       ``--auto-cache`` option's value if not given on the command line.
    * - ``update.fetch``
      - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
        ``"always"`` (the previous behavior). If set to ``"smart"``, the

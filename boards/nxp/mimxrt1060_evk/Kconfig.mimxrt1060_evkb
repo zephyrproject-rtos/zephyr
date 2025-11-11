@@ -1,5 +1,0 @@
-# Copyright 2024 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MIMXRT1060_EVKB
-	select SOC_PART_NUMBER_MIMXRT1062DVL6A

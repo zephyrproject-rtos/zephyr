@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
@@ -51,7 +52,7 @@ struct bt_bap_bass_cp_scan_start {
 struct bt_bap_bass_cp_subgroup {
 	uint32_t bis_sync;
 	uint8_t metadata_len;
-	uint8_t metadata[0];
+	uint8_t metadata[];
 } __packed;
 
 struct bt_bap_bass_cp_add_src {
@@ -62,7 +63,7 @@ struct bt_bap_bass_cp_add_src {
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
-	struct bt_bap_bass_cp_subgroup subgroups[0];
+	struct bt_bap_bass_cp_subgroup subgroups[];
 } __packed;
 
 struct bt_bap_bass_cp_mod_src {
@@ -71,13 +72,13 @@ struct bt_bap_bass_cp_mod_src {
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
-	struct bt_bap_bass_cp_subgroup subgroups[0];
+	struct bt_bap_bass_cp_subgroup subgroups[];
 } __packed;
 
 struct bt_bap_bass_cp_broadcase_code {
 	uint8_t opcode;
 	uint8_t src_id;
-	uint8_t broadcast_code[16];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
 struct bt_bap_bass_cp_rem_src {
@@ -135,9 +136,14 @@ static inline bool valid_bis_syncs(uint32_t bis_sync)
 		return true;
 	}
 
-	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
+	if (bis_sync > BIT_MASK(BT_ISO_MAX_GROUP_ISO_COUNT)) {
 		return false;
 	}
 
 	return true;
 }
+
+bool bt_bap_broadcast_sink_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_broadcast_source_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep);

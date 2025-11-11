@@ -53,6 +53,7 @@ struct ptp_clock {
 		uint64_t	    t3;
 		uint64_t	    t4;
 	} timestamp;			/* latest timestamps in nanoseconds */
+	double pi_drift;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -262,7 +263,7 @@ const struct ptp_clock *ptp_clock_init(void)
 	dds->n_ports = 0;
 	dds->time_receiver_only = IS_ENABLED(CONFIG_PTP_TIME_RECEIVER_ONLY) ? true : false;
 
-	dds->clk_quality.class = dds->time_receiver_only ? 255 : 248;
+	dds->clk_quality.cls = dds->time_receiver_only ? 255 : 248;
 	dds->clk_quality.accuracy = CONFIG_PTP_CLOCK_ACCURACY;
 	/* 0xFFFF means that value has not been computed - IEEE 1588-2019 7.6.3.3 */
 	dds->clk_quality.offset_scaled_log_variance = 0xFFFF;
@@ -506,10 +507,23 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 	return state_decision_required;
 }
 
+static double ptp_servo_pi(int64_t nanosecond_diff)
+{
+	double kp = 0.7;
+	double ki = 0.3;
+	double ppb;
+
+	ptp_clk.pi_drift += ki * nanosecond_diff;
+	ppb = kp * nanosecond_diff + ptp_clk.pi_drift;
+
+	return ppb;
+}
+
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 {
+	double ppb;
 	int64_t offset;
-	uint64_t delay = ptp_clk.current_ds.mean_delay >> 16;
+	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
 
 	ptp_clk.timestamp.t1 = egress;
 	ptp_clk.timestamp.t2 = ingress;
@@ -518,38 +532,56 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		return;
 	}
 
-	offset = ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1 - delay;
+	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
 	/* If diff is too big, ptp_clk needs to be set first. */
 	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
 		struct net_ptp_time current;
+		int32_t dest_nsec;
 
 		LOG_WRN("Clock offset exceeds 1 second.");
 
 		ptp_clock_get(ptp_clk.phc, &current);
 
-		current.second -= (uint64_t)(offset / NSEC_PER_SEC);
-		current.nanosecond -= (uint32_t)(offset % NSEC_PER_SEC);
+		current.second = (uint64_t)(current.second - (offset / NSEC_PER_SEC));
+		dest_nsec = (int32_t)(current.nanosecond - (offset % NSEC_PER_SEC));
+
+		if (dest_nsec < 0) {
+			current.second--;
+			dest_nsec += NSEC_PER_SEC;
+		} else if (dest_nsec >= NSEC_PER_SEC) {
+			current.second++;
+			dest_nsec -= NSEC_PER_SEC;
+		}
+
+		current.nanosecond = (uint32_t)dest_nsec;
 
 		ptp_clock_set(ptp_clk.phc, &current);
+		LOG_WRN("Set clock time: %"PRIu64".%09u", current.second, current.nanosecond);
 		return;
 	}
 
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	ptp_clock_adjust(ptp_clk.phc, offset);
+	ppb = ptp_servo_pi(-offset);
+	ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 {
 	int64_t delay;
 
+	if (ptp_clk.timestamp.t1 == 0 || ptp_clk.timestamp.t2 == 0) {
+		return;
+	}
+
 	ptp_clk.timestamp.t3 = egress;
 	ptp_clk.timestamp.t4 = ingress;
 
-	delay = ((ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
-		 (ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) / 2;
+	delay = ((int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t3) +
+		 (int64_t)(ptp_clk.timestamp.t4 - ptp_clk.timestamp.t1)) /
+		2LL;
 
 	LOG_DBG("Delay %lldns", delay);
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);

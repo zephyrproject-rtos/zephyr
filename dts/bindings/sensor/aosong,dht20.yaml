@@ -6,7 +6,7 @@
 description: |
     Aosong DHT20 (Digital-output Humidity and Temperature Sensor)
 
-    The Asosong DHT20 sensor provides temperature and humidity
+    The Aosong DHT20 sensor provides temperature and humidity
     measurements through an I2C bus.
 
 compatible: "aosong,dht20"

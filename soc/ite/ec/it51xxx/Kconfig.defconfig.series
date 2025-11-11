@@ -1,0 +1,40 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IT51XXX
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096
+
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
+config FLASH_INIT_PRIORITY
+	default 0
+
+config NUM_IRQS
+	default 225
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_START_VECTOR
+	default 0
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+endif # SOC_SERIES_IT51XXX

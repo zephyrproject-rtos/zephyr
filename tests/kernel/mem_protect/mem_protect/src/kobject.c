@@ -1183,7 +1183,7 @@ ZTEST(mem_protect_kobj, test_kobj_create_out_of_memory)
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 
-#define MAX_THREAD_BITS         (CONFIG_MAX_THREAD_BYTES * 8)
+#define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
 #endif
 
 /* @brief Test alloc thread object until out of idex

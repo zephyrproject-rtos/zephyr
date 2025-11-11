@@ -29,7 +29,7 @@ ZTEST(posix_headers, test_sys_time_h)
 	/* zassert_not_equal(-1, ITIMER_VIRTUAL); */ /* not implemented */
 	/* zassert_not_equal(-1, ITIMER_PROF); */ /* not implemented */
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_XSI_SINGLE_PROCESS)) {
 		/* zassert_not_null(getitimer); */ /* not implemented */
 		zassert_not_null(gettimeofday);
 		/* zassert_not_null(setitimer); */ /* not implemented */

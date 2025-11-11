@@ -42,3 +42,17 @@ const struct sof_man_module_manifest main_manifest = {
 		     .affinity_mask = 3,
 	}
 };
+
+__attribute__((section(".module.cold")))
+const struct sof_man_module_manifest cold_manifest = {
+	.module = {
+		     .name = "COLD",
+		     /* d406d134-c3c1-402c-8aec-6821c0c2b0e6 */
+		     .uuid = {0x34, 0xd1, 0x06, 0xd4, 0xc1, 0xc3, 0x2c, 0x40,
+			      0x8a, 0xec, 0x68, 0x21, 0xc0, 0xc2, 0xb0, 0xe6},
+		     .entry_point = 0,
+		     .type = { .load_type = SOF_MAN_MOD_TYPE_MODULE,
+			       .domain_ll = 1 },
+		     .affinity_mask = 3,
+	}
+};

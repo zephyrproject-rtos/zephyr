@@ -9,13 +9,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_msc.h>
 #include <zephyr/fs/fs.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #if CONFIG_DISK_DRIVER_FLASH
 #include <zephyr/storage/flash_map.h>
@@ -30,47 +29,30 @@ LOG_MODULE_REGISTER(main);
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 #endif
 
+#if !defined(CONFIG_DISK_DRIVER_FLASH) && \
+	!defined(CONFIG_DISK_DRIVER_RAM) && \
+	!defined(CONFIG_DISK_DRIVER_SDMMC)
+#error No supported disk driver enabled
+#endif
+
 #define STORAGE_PARTITION		storage_partition
 #define STORAGE_PARTITION_ID		FIXED_PARTITION_ID(STORAGE_PARTITION)
 
 static struct fs_mount_t fs_mnt;
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 static struct usbd_context *sample_usbd;
 
 #if CONFIG_DISK_DRIVER_RAM
-USBD_DEFINE_MSC_LUN(RAM, "Zephyr", "RAMDisk", "0.00");
+USBD_DEFINE_MSC_LUN(ram, "RAM", "Zephyr", "RAMDisk", "0.00");
 #endif
 
 #if CONFIG_DISK_DRIVER_FLASH
-USBD_DEFINE_MSC_LUN(NAND, "Zephyr", "FlashDisk", "0.00");
+USBD_DEFINE_MSC_LUN(nand, "NAND", "Zephyr", "FlashDisk", "0.00");
 #endif
 
 #if CONFIG_DISK_DRIVER_SDMMC
-USBD_DEFINE_MSC_LUN(SD, "Zephyr", "SD", "0.00");
+USBD_DEFINE_MSC_LUN(sd, "SD", "Zephyr", "SD", "0.00");
 #endif
-
-static int enable_usb_device_next(void)
-{
-	int err;
-
-	sample_usbd = sample_usbd_init_device(NULL);
-	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
-		return -ENODEV;
-	}
-
-	err = usbd_enable(sample_usbd);
-	if (err) {
-		LOG_ERR("Failed to enable device support");
-		return err;
-	}
-
-	LOG_DBG("USB device support enabled");
-
-	return 0;
-}
-#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static int setup_flash(struct fs_mount_t *mnt)
 {
@@ -209,16 +191,24 @@ int main(void)
 
 	setup_disk();
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-	ret = enable_usb_device_next();
-#else
-	ret = usb_enable(NULL);
-#endif
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		LOG_ERR("Failed to initialize USB device");
+		return -ENODEV;
+	}
+
+	ret = usbd_enable(sample_usbd);
+	if (ret) {
+		LOG_ERR("Failed to enable device support");
+		return ret;
+	}
+
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return 0;
 	}
 
-	LOG_INF("The device is put in USB mass storage mode.\n");
+	LOG_INF("The device is put in USB mass storage mode");
+
 	return 0;
 }

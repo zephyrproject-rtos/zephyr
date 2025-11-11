@@ -366,7 +366,7 @@ static int gpio_xlnx_axi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
+static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
 	.pin_configure = gpio_xlnx_axi_pin_configure,
 	.port_get_raw = gpio_xlnx_axi_port_get_raw,
 	.port_set_masked_raw = gpio_xlnx_axi_port_set_masked_raw,
@@ -382,7 +382,7 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 
 #define GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n)                                              \
 	UTIL_AND(DT_NODE_HAS_COMPAT(DT_INST_CHILD(n, gpio2), xlnx_xps_gpio_1_00_a_gpio2),          \
-		 DT_NODE_HAS_STATUS(DT_INST_CHILD(n, gpio2), okay))
+		 DT_NODE_HAS_STATUS_OKAY(DT_INST_CHILD(n, gpio2)))
 
 #define GPIO_XLNX_AXI_GPIO2_COND_INIT(n)                                                           \
 	IF_ENABLED(UTIL_AND(DT_INST_PROP_OR(n, xlnx_is_dual, 1),                                   \

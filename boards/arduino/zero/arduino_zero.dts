@@ -30,14 +30,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&porta 17 0>;
 			label = "LED";
 		};
+
 		led1: led_1 {
 			gpios = <&porta 27 0>;
 			label = "TX";
 		};
+
 		led2: led_2 {
 			gpios = <&portb 3 0>;
 			label = "RX";
@@ -99,6 +102,13 @@
 	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+
+	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 };
 

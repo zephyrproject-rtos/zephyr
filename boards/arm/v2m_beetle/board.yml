@@ -1,5 +1,6 @@
 board:
   name: v2m_beetle
+  full_name: V2M Beetle
   vendor: arm
   socs:
   - name: beetle_r0

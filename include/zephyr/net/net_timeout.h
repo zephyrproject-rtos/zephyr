@@ -17,6 +17,8 @@
 /**
  * @brief Network long timeout primitives and helpers
  * @defgroup net_timeout Network long timeout primitives and helpers
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

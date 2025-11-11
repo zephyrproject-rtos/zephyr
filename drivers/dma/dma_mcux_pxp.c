@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -57,6 +57,7 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 	pxp_output_buffer_config_t output_buffer_cfg;
 	uint8_t bytes_per_pixel;
 	pxp_rotate_degree_t rotate;
+	pxp_flip_mode_t flip;
 
 	ARG_UNUSED(channel);
 	if (config->channel_direction != MEMORY_TO_MEMORY) {
@@ -107,6 +108,25 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 	default:
 		return -ENOTSUP;
 	}
+	/*
+	 * Use the DMA linked_channel value to get the flip settings.
+	 */
+	switch ((config->linked_channel & DMA_MCUX_PXP_FLIP_MASK) >> DMA_MCUX_PXP_FLIP_SHIFT) {
+	case DMA_MCUX_PXP_FLIP_DISABLE:
+		flip = kPXP_FlipDisable;
+		break;
+	case DMA_MCUX_PXP_FLIP_HORIZONTAL:
+		flip = kPXP_FlipHorizontal;
+		break;
+	case DMA_MCUX_PXP_FLIP_VERTICAL:
+		flip = kPXP_FlipVertical;
+		break;
+	case DMA_MCUX_PXP_FLIP_BOTH:
+		flip = kPXP_FlipBoth;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 	DCACHE_CleanByRange((uint32_t)config->head_block->source_address,
 			    config->head_block->block_size);
 
@@ -139,7 +159,7 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 	PXP_SetProcessSurfacePosition(dev_config->base, 0U, 0U, output_buffer_cfg.width,
 				      output_buffer_cfg.height);
 	/* Setup rotation */
-	PXP_SetRotateConfig(dev_config->base, kPXP_RotateProcessSurface, rotate, kPXP_FlipDisable);
+	PXP_SetRotateConfig(dev_config->base, kPXP_RotateProcessSurface, rotate, flip);
 
 	dev_data->ps_buf_addr = config->head_block->source_address;
 	dev_data->ps_buf_size = config->head_block->block_size;
@@ -163,7 +183,7 @@ static int dma_mcux_pxp_start(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_mcux_pxp_api = {
+static DEVICE_API(dma, dma_mcux_pxp_api) = {
 	.config = dma_mcux_pxp_configure,
 	.start = dma_mcux_pxp_start,
 };
@@ -198,7 +218,7 @@ static int dma_mcux_pxp_init(const struct device *dev)
                                                                                                    \
 	static struct dma_mcux_pxp_data dma_data_##n;                                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,         \
+	DEVICE_DT_INST_DEFINE(n, dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,          \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_pxp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

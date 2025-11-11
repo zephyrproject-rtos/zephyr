@@ -4,21 +4,23 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1170_evk/mimxrt1176/cm7
+identifier: mimxrt1170_evk@A/mimxrt1176/cm7
 name: NXP MIMXRT1170-EVK CM7
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 16384
 supported:
   - adc
-  - counter
   - can
+  - counter
+  - dac
+  - display
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c
@@ -27,7 +29,7 @@ supported:
   - pwm
   - spi
   - usb_device
-  - watchdog
-  - video
   - usbd
+  - video
+  - watchdog
 vendor: nxp

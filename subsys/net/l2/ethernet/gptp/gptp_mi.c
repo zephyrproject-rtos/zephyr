@@ -786,14 +786,12 @@ static void gptp_update_local_port_clock(void)
 		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
 	}
 
-	ptp_clock_rate_adjust(clk, port_ds->neighbor_rate_ratio);
-
 	/* If time difference is too high, set the clock value.
 	 * Otherwise, adjust it.
 	 */
 	if (second_diff || (second_diff == 0 &&
-			    (nanosecond_diff < -5000 ||
-			     nanosecond_diff > 5000))) {
+			    (nanosecond_diff < -50000000 ||
+			     nanosecond_diff > 50000000))) {
 		bool underflow = false;
 
 		key = irq_lock();
@@ -822,28 +820,22 @@ static void gptp_update_local_port_clock(void)
 			tm.second++;
 			tm.nanosecond -= NSEC_PER_SEC;
 		}
-
-		/* This prints too much data normally but can be enabled to see
-		 * what time we are setting to the local clock.
-		 */
-		if (0) {
-			NET_INFO("Set local clock %lu.%lu",
-				 (unsigned long int)tm.second,
-				 (unsigned long int)tm.nanosecond);
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("Set local clock %"PRIu64".%09u", tm.second, tm.nanosecond);
 		}
-
 		ptp_clock_set(clk, &tm);
 
 	skip_clock_set:
 		irq_unlock(key);
 	} else {
-		if (nanosecond_diff < -200) {
-			nanosecond_diff = -200;
-		} else if (nanosecond_diff > 200) {
-			nanosecond_diff = 200;
-		}
+		double ppb = gptp_servo_pi(nanosecond_diff);
 
-		ptp_clock_adjust(clk, nanosecond_diff);
+		ptp_clock_rate_adjust(clk, 1.0 + (ppb / 1000000000.0));
+
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("sync offset %9"PRId64" ns, freq offset %f ppb",
+				 nanosecond_diff, ppb);
+		}
 	}
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */
@@ -1419,6 +1411,7 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	memcpy(&vector->src_port_id, &hdr->port_id,
 	       sizeof(struct gptp_port_identity));
 
+	vector->steps_removed = announce->steps_removed;
 	vector->port_number = htons(port);
 }
 
@@ -1669,8 +1662,8 @@ static int compute_best_vector(void)
 				continue;
 			}
 
-			tmp = (int)challenger->steps_removed -
-				((int)ntohs(best_vector->steps_removed) + 1);
+			tmp = (int)(challenger->steps_removed + 1) -
+				(int)ntohs(best_vector->steps_removed);
 			if (tmp < 0) {
 				best_vector = challenger;
 				best_port = port;
@@ -1755,6 +1748,7 @@ static void update_bmca(int port,
 		bmca_data->master_priority.port_number = htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
 			htons(port);
+		bmca_data->master_priority.steps_removed = gm_prio->steps_removed;
 	}
 
 	switch (bmca_data->info_is) {

@@ -520,7 +520,7 @@ static int ivshmem_api_enable_interrupts(const struct device *dev,
 
 #endif /* CONFIG_IVSHMEM_V2 */
 
-static const struct ivshmem_driver_api ivshmem_api = {
+static DEVICE_API(ivshmem, ivshmem_api) = {
 	.get_mem = ivshmem_api_get_mem,
 	.get_id = ivshmem_api_get_id,
 	.get_vectors = ivshmem_api_get_vectors,

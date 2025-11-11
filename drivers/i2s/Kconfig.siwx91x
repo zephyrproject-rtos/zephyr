@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_SILABS_SIWX91X
+	bool "Silabs Siwx91x MCU I2S controller driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_I2S_ENABLED
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	select DMA
+	select PINCTRL
+	select GPIO
+	help
+	  Enable I2S support on the Siwx91x family.
+
+if I2S_SILABS_SIWX91X
+
+config I2S_SILABS_SIWX91X_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_SILABS_SIWX91X_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+config I2S_SILABS_SIWX91X_DMA_MAX_BLOCKS
+	int "Maximum DMA transfer block per channel for a transaction."
+	default 16
+	help
+	  One block is needed for every 1024 bytes
+
+endif # I2S_SILABS_SIWX91X

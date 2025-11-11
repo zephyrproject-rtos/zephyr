@@ -41,12 +41,12 @@ struct usb_setup_packet {
 	union {
 		uint8_t bmRequestType;
 		struct usb_req_type_field RequestType;
-	};
+	} __packed;
 	uint8_t bRequest;
 	uint16_t wValue;
 	uint16_t wIndex;
 	uint16_t wLength;
-};
+} __packed;
 
 /** USB Setup packet RequestType Direction values (from Table 9-2) */
 #define USB_REQTYPE_DIR_TO_DEVICE	0
@@ -135,6 +135,13 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 #define USB_SFS_ENDPOINT_HALT		0x00
 #define USB_SFS_REMOTE_WAKEUP		0x01
 #define USB_SFS_TEST_MODE		0x02
+
+/** USB Test Mode Selectors defined in spec. Table 9-7 */
+#define USB_SFS_TEST_MODE_J		0x01
+#define USB_SFS_TEST_MODE_K		0x02
+#define USB_SFS_TEST_MODE_SE0_NAK	0x03
+#define USB_SFS_TEST_MODE_PACKET	0x04
+#define USB_SFS_TEST_MODE_FORCE_ENABLE	0x05
 
 /** Bits used for GetStatus response defined in spec. Figure 9-4 */
 #define USB_GET_STATUS_SELF_POWERED	BIT(0)
@@ -260,6 +267,7 @@ struct usb_association_descriptor {
 #define USB_BCC_MASS_STORAGE		0x08
 #define USB_BCC_CDC_DATA		0x0A
 #define USB_BCC_VIDEO			0x0E
+#define USB_BCC_MCTP			0x14
 #define USB_BCC_WIRELESS_CONTROLLER	0xE0
 #define USB_BCC_MISCELLANEOUS		0xEF
 #define USB_BCC_APPLICATION		0xFE
@@ -283,7 +291,12 @@ struct usb_association_descriptor {
 /** Macro to obtain descriptor index from USB_SREQ_GET_DESCRIPTOR request */
 #define USB_GET_DESCRIPTOR_INDEX(wValue)	((uint8_t)(wValue))
 
-/** USB Control Endpoints maximum packet size (MPS) */
+/**
+ * USB Control Endpoints maximum packet size (MPS)
+ *
+ * This value may not be correct for devices operating at speeds other than
+ * high speed.
+ */
 #define USB_CONTROL_EP_MPS		64U
 
 /** USB endpoint direction mask */
@@ -342,11 +355,40 @@ struct usb_association_descriptor {
 /** Calculate high speed interrupt endpoint bInterval from a value in microseconds */
 #define USB_HS_INT_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
-/** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
-#define USB_FS_ISO_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 16U)
+/** Calculate full speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_FS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 1000U) + 1U), 1U, 16U)
 
 /** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
 #define USB_HS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+
+/** Get endpoint size field from Max Packet Size value */
+#define USB_MPS_EP_SIZE(mps)		((mps) & BIT_MASK(11))
+
+/** Get number of additional transactions per microframe from Max Packet Size value */
+#define USB_MPS_ADDITIONAL_TRANSACTIONS(mps) (((mps) & 0x1800) >> 11)
+
+/** Calculate total payload length from Max Packet Size value */
+#define USB_MPS_TO_TPL(mps)	\
+	((1 + USB_MPS_ADDITIONAL_TRANSACTIONS(mps)) * USB_MPS_EP_SIZE(mps))
+
+/** Calculate Max Packet Size value from total payload length */
+#define USB_TPL_TO_MPS(tpl)				\
+	(((tpl) > 2048) ? ((2 << 11) | ((tpl) / 3)) :	\
+	 ((tpl) > 1024) ? ((1 << 11) | ((tpl) / 2)) :	\
+	 (tpl))
+
+/** Round up total payload length to next valid value */
+#define USB_TPL_ROUND_UP(tpl)				\
+	(((tpl) > 2048) ? ROUND_UP(tpl, 3) :		\
+	 ((tpl) > 1024) ? ROUND_UP(tpl, 2) :		\
+	 (tpl))
+
+/** Determine whether total payload length value is valid according to USB 2.0 */
+#define USB_TPL_IS_VALID(tpl)				\
+	(((tpl) > 3072) ? false :			\
+	 ((tpl) > 2048) ? ((tpl) % 3 == 0) :		\
+	 ((tpl) > 1024) ? ((tpl) % 2 == 0) :		\
+	 ((tpl) >= 0))
 
 #ifdef __cplusplus
 }

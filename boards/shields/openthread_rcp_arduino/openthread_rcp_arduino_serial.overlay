@@ -1,0 +1,25 @@
+/*
+ * Copyright 2025 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Overlay to enable support for OpenThread's RCP over UART communication
+ */
+
+/ {
+	chosen {
+		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
+		zephyr,ot-uart = &arduino_serial;
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		compatible = "uart,hdlc-rcp-if";
+	};
+};
+
+&arduino_serial {
+	status = "okay";
+	current-speed = <115200>;
+};

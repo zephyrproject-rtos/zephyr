@@ -5,9 +5,6 @@
 
 if BOARD_BT610
 
-config BT_CTLR
-	default BT
-
 config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
 

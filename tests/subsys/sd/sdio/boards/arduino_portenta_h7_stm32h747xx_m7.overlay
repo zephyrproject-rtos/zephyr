@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&boot_partition {
+	reg = <0x00000000 0x00020000>;
+};
+&scratch_partition {
+	reg = <0x00020000 0x00020000>;
+};
+&slot0_partition {
+	reg = <0x00040000 0x001C0000>;
+};
+&slot1_partition {
+	reg = <0x00200000 0x001C0000>;
+};
+
+&wifi {
+	status = "disabled";
+};

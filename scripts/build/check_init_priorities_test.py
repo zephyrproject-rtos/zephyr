@@ -6,7 +6,7 @@
 Tests for check_init_priorities
 """
 
-import mock
+from unittest import mock
 import pathlib
 import unittest
 
@@ -82,7 +82,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         sts.iter_symbols.return_value = [s0, s1, s2]
 
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
         obj._load_objects()
 
@@ -126,7 +126,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         sts.iter_symbols.return_value = [s0, s1, s2, s3, s4, s5, s6]
 
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
         obj._load_level_addr()
 
@@ -142,7 +142,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_device_ord_from_name(self, mock_zilinit):
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
 
         self.assertEqual(obj._device_ord_from_name(None), None)
         self.assertEqual(obj._device_ord_from_name("hey, hi!"), None)
@@ -150,7 +150,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_object_name(self, mock_zilinit):
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._objects = {0x123: ("name", 4)}
 
         self.assertEqual(obj._object_name(0), "NULL")
@@ -159,7 +159,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_initlevel_pointer_32(self, mock_zilinit):
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 32
         mock_section = mock.Mock()
@@ -176,7 +176,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_initlevel_pointer_64(self, mock_zilinit):
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 64
         mock_section = mock.Mock()
@@ -195,7 +195,7 @@ class testZephyrInitLevels(unittest.TestCase):
     @mock.patch("check_init_priorities.ZephyrInitLevels._initlevel_pointer")
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels(self, mock_zilinit, mock_ip, mock_on):
-        obj = check_init_priorities.ZephyrInitLevels("")
+        obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._init_level_addr = {
             "EARLY": 0x00,
             "PRE_KERNEL_1": 0x00,
@@ -210,15 +210,19 @@ class testZephyrInitLevels(unittest.TestCase):
                 0x04: ("b", 4, 0),
                 0x08: ("c", 4, 0),
                 }
+        obj._object_addr = {
+                "__device_dts_ord_11": 0x00,
+                "__device_dts_ord_22": 0x04,
+                }
 
         mock_ip.side_effect = lambda *args: args
 
         def mock_obj_name(*args):
-            if args[0] == (0, 0, 0):
+            if args[0] == (0, 5, 0):
                 return "i0"
             elif args[0] == (0, 1, 0):
                 return "__device_dts_ord_11"
-            elif args[0] == (4, 0, 0):
+            elif args[0] == (4, 5, 0):
                 return "i1"
             elif args[0] == (4, 1, 0):
                 return "__device_dts_ord_22"
@@ -253,15 +257,15 @@ class testValidator(unittest.TestCase):
         mock_zil.return_value = mock_obj
 
         with mock.patch("builtins.open", mock.mock_open()) as mock_open:
-            validator = check_init_priorities.Validator("path", "pickle", mock_log)
+            validator = check_init_priorities.Validator("path", "pickle", mock_log, None)
 
         self.assertEqual(validator._obj, mock_obj)
-        mock_zil.assert_called_once_with("path")
+        mock_zil.assert_called_once_with("path", None)
         mock_open.assert_called_once_with(pathlib.Path("pickle"), "rb")
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_check_dep_same_node(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator.log = mock.Mock()
 
         validator._check_dep(123, 123)
@@ -272,7 +276,7 @@ class testValidator(unittest.TestCase):
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_check_dep_no_prio(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator.log = mock.Mock()
         validator._obj = mock.Mock()
 
@@ -292,7 +296,7 @@ class testValidator(unittest.TestCase):
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_check(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator.log = mock.Mock()
         validator._obj = mock.Mock()
         validator.errors = 0
@@ -316,7 +320,7 @@ class testValidator(unittest.TestCase):
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_check_same_prio_assert(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator.log = mock.Mock()
         validator._obj = mock.Mock()
         validator.errors = 0
@@ -333,37 +337,8 @@ class testValidator(unittest.TestCase):
             validator._check_dep(1, 2)
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
-    def test_check_swapped(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
-        validator.log = mock.Mock()
-        validator._obj = mock.Mock()
-        validator.errors = 0
-
-        save_inverted_priorities = check_init_priorities._INVERTED_PRIORITY_COMPATIBLES
-
-        check_init_priorities._INVERTED_PRIORITY_COMPATIBLES = set([("compat-3", "compat-1")])
-
-        validator._ord2node = {1: mock.Mock(), 3: mock.Mock()}
-        validator._ord2node[1]._binding.compatible = "compat-1"
-        validator._ord2node[1].path = "/1"
-        validator._ord2node[3]._binding.compatible = "compat-3"
-        validator._ord2node[3].path = "/3"
-
-        validator._obj.devices = {1: (20, "i1"), 3: (10, "i3")}
-
-        validator._check_dep(3, 1)
-
-        self.assertListEqual(validator.log.info.call_args_list, [
-            mock.call("Swapped priority: compat-3, compat-1"),
-            mock.call("/3 <i1> 20 > /1 <i3> 10"),
-        ])
-        self.assertEqual(validator.errors, 0)
-
-        check_init_priorities._INVERTED_PRIORITY_COMPATIBLES = save_inverted_priorities
-
-    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_check_ignored(self, mock_vinit):
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator.log = mock.Mock()
         validator._obj = mock.Mock()
         validator.errors = 0
@@ -406,7 +381,7 @@ class testValidator(unittest.TestCase):
         dev2 = mock.Mock()
         dev2.depends_on = [d2]
 
-        validator = check_init_priorities.Validator("", "", None)
+        validator = check_init_priorities.Validator("", "", None, None)
         validator._ord2node = {1: dev0, 2: dev1, 3: dev2}
         validator._obj = mock.Mock()
         validator._obj.devices = {1: 10, 2: 10, 3: 20}

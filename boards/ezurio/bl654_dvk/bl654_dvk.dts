@@ -8,6 +8,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <nordic/nrf52840_partition.dtsi>
 #include "bl654_dvk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -21,26 +22,27 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 4";
@@ -49,21 +51,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1 (SW1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 12 GPIO_PULL_UP>;
 			label = "Push button switch 2 (SW2)";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Push button switch 3 (SW9)";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button4: button_4 {
 			gpios = <&gpio0 25 GPIO_PULL_UP>;
 			label = "Push button switch 4 (SW10)";
@@ -86,6 +92,10 @@
 		watchdog0 = &wdt0;
 		bbram0 = &extrtc0;
 	};
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &adc {
@@ -124,6 +134,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	dac0: mcp4725@60 {
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
@@ -163,6 +174,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -176,46 +188,6 @@
 
 &ieee802154 {
 	status = "okay";
-};
-
-&flash0 {
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x0000C000>;
-		};
-		slot0_partition: partition@c000 {
-			label = "image-0";
-			reg = <0x0000C000 0x00067000>;
-		};
-		slot1_partition: partition@73000 {
-			label = "image-1";
-			reg = <0x00073000 0x00067000>;
-		};
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
-		};
-
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
-
-		/*
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@f8000 {
-			label = "storage";
-			reg = <0x000f8000 0x00008000>;
-		};
-	};
 };
 
 zephyr_udc0: &usbd {

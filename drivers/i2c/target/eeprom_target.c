@@ -179,9 +179,19 @@ static void eeprom_target_buf_write_received(struct i2c_target_config *config,
 	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_target_data,
 						config);
-	/* The first byte is offset */
-	data->buffer_idx = *ptr;
-	memcpy(&data->buffer[data->buffer_idx], ptr + 1, len - 1);
+	/* The first byte(s) is offset */
+	uint32_t idx_write_cnt = 0;
+
+	data->buffer_idx = 0;
+	while (idx_write_cnt < (data->address_width >> 3)) {
+		data->buffer_idx = (data->buffer_idx << 8) | *ptr++;
+		len--;
+		idx_write_cnt++;
+	}
+
+	if (len > 0) {
+		memcpy(&data->buffer[data->buffer_idx], ptr, len);
+	}
 }
 
 static int eeprom_target_buf_read_requested(struct i2c_target_config *config,

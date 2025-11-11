@@ -2,21 +2,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdint.h>
+#include <testlib/conn.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 
-#include <testlib/conn.h>
-
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_testlib_conn_wait, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(conn_wait_mutex);

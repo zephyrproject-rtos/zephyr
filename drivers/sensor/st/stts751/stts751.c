@@ -35,7 +35,7 @@ static int stts751_sample_fetch(const struct device *dev,
 	struct stts751_data *data = dev->data;
 	int16_t raw_temp;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL);
 
 	if (stts751_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
@@ -131,7 +131,7 @@ static int stts751_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api stts751_api_funcs = {
+static DEVICE_API(sensor, stts751_api_funcs) = {
 	.attr_set = stts751_attr_set,
 	.sample_fetch = stts751_sample_fetch,
 	.channel_get = stts751_channel_get,

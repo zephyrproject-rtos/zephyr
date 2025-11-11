@@ -644,7 +644,7 @@ static bool dma_xec_chan_filter(const struct device *dev, int ch, void *filter_p
 }
 
 /* API - HW does not stupport suspend/resume */
-static const struct dma_driver_api dma_xec_api = {
+static DEVICE_API(dma, dma_xec_api) = {
 	.config = dma_xec_configure,
 	.reload = dma_xec_reload,
 	.start = dma_xec_start,
@@ -833,7 +833,7 @@ static int dma_xec_init(const struct device *dev)
 		.irq_connect = dma_xec_irq_connect##i,					\
 	};										\
 	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);					\
-	DEVICE_DT_INST_DEFINE(i, &dma_xec_init,						\
+	DEVICE_DT_INST_DEFINE(i, dma_xec_init,						\
 		PM_DEVICE_DT_GET(i),							\
 		&dma_xec_data##i, &dma_xec_cfg##i,					\
 		PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,					\

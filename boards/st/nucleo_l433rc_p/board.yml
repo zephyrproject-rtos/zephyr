@@ -1,5 +1,6 @@
 board:
   name: nucleo_l433rc_p
+  full_name: Nucleo L433RC
   vendor: st
   socs:
     - name: stm32l433xx

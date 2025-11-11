@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon XMC4xxx family RTC device
+
+compatible: "infineon,xmc4xxx-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup subsys_tracing_object_tracking
+ * @brief Header file for object tracking API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACKING_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACKING_H_
 
@@ -12,37 +19,51 @@
 #if defined(CONFIG_TRACING_OBJECT_TRACKING) || defined(__DOXYGEN__)
 
 /**
- * @brief Object tracking
+ * @brief Helpers for accessing object tracking lists.
  *
  * Object tracking provides lists to kernel objects, so their
  * existence and current status can be tracked.
  *
  * The following global variables are the heads of available lists:
- * - _track_list_k_timer
- * - _track_list_k_mem_slab
- * - _track_list_k_sem
- * - _track_list_k_mutex
- * - _track_list_k_stack
- * - _track_list_k_msgq
- * - _track_list_k_mbox
- * - _track_list_k_pipe
- * - _track_list_k_queue
- * - _track_list_k_event
+ * - @ref _track_list_k_timer
+ * - @ref _track_list_k_mem_slab
+ * - @ref _track_list_k_sem
+ * - @ref _track_list_k_mutex
+ * - @ref _track_list_k_stack
+ * - @ref _track_list_k_msgq
+ * - @ref _track_list_k_mbox
+ * - @ref _track_list_k_pipe
+ * - @ref _track_list_k_queue
+ * - @ref _track_list_k_event
+ *
+ * @note To enable object tracking, enable @kconfig{CONFIG_TRACING_OBJECT_TRACKING}.
+ *       When disabled, all macros compile to no-ops, preserving call sites with zero runtime
+ *       cost.
  *
  * @defgroup subsys_tracing_object_tracking Object tracking
  * @ingroup subsys_tracing
  * @{
  */
 
+/** @brief Head of the tracking list for k_timer objects. */
 extern struct k_timer *_track_list_k_timer;
+/** @brief Head of the tracking list for k_mem_slab objects. */
 extern struct k_mem_slab *_track_list_k_mem_slab;
+/** @brief Head of the tracking list for k_sem objects. */
 extern struct k_sem *_track_list_k_sem;
+/** @brief Head of the tracking list for k_mutex objects. */
 extern struct k_mutex *_track_list_k_mutex;
+/** @brief Head of the tracking list for k_stack objects. */
 extern struct k_stack *_track_list_k_stack;
+/** @brief Head of the tracking list for k_msgq objects. */
 extern struct k_msgq *_track_list_k_msgq;
+/** @brief Head of the tracking list for k_mbox objects. */
 extern struct k_mbox *_track_list_k_mbox;
+/** @brief Head of the tracking list for k_pipe objects. */
 extern struct k_pipe *_track_list_k_pipe;
+/** @brief Head of the tracking list for k_queue objects. */
 extern struct k_queue *_track_list_k_queue;
+/** @brief Head of the tracking list for k_event objects. */
 extern struct k_event *_track_list_k_event;
 
 /**
@@ -73,8 +94,8 @@ extern struct k_event *_track_list_k_event;
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue) \
 	sys_track_k_queue_init(queue)
-#define sys_port_track_k_pipe_init(pipe) \
-	sys_track_k_pipe_init(pipe)
+#define sys_port_track_k_pipe_init(pipe, buffer, buffer_size) \
+	sys_track_k_pipe_init(pipe, buffer, buffer_size)
 #define sys_port_track_k_condvar_init(condvar, ret)
 #define sys_port_track_k_stack_init(stack) \
 	sys_track_k_stack_init(stack)
@@ -105,7 +126,7 @@ void sys_track_k_mutex_init(struct k_mutex *mutex);
 void sys_track_k_stack_init(struct k_stack *stack);
 void sys_track_k_msgq_init(struct k_msgq *msgq);
 void sys_track_k_mbox_init(struct k_mbox *mbox);
-void sys_track_k_pipe_init(struct k_pipe *pipe);
+void sys_track_k_pipe_init(struct k_pipe *pipe, void *buffer, size_t size);
 void sys_track_k_queue_init(struct k_queue *queue);
 void sys_track_k_event_init(struct k_event *event);
 void sys_track_socket_init(int sock, int family, int type, int proto);
@@ -132,7 +153,7 @@ void sys_track_socket_init(int sock, int family, int type, int proto);
 #define sys_port_track_k_queue_peek_head(queue, ret)
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue)
-#define sys_port_track_k_pipe_init(pipe)
+#define sys_port_track_k_pipe_init(pipe, buffer, buffer_size)
 #define sys_port_track_k_condvar_init(condvar, ret)
 #define sys_port_track_k_stack_init(stack)
 #define sys_port_track_k_thread_name_set(thread, ret)

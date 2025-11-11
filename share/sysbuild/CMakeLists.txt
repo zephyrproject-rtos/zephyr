@@ -4,6 +4,11 @@
 
 cmake_minimum_required(VERSION 3.20)
 
+
+if(NOT DEFINED APP_DIR AND DEFINED ENV{APP_DIR})
+  set(APP_DIR $ENV{APP_DIR})
+endif()
+
 if(NOT DEFINED APP_DIR)
   message(FATAL_ERROR "No main application specified")
 endif()
@@ -24,4 +29,11 @@ if(EXISTS ${APP_DIR}/sysbuild/CMakeLists.txt)
   add_subdirectory(${APP_DIR}/sysbuild _sysbuild)
 else()
   add_subdirectory(template _sysbuild)
+endif()
+
+build_info(sysbuild VALUE true)
+build_info(application source-dir VALUE ${CMAKE_CURRENT_SOURCE_DIR})
+yaml_context(EXISTS NAME build_info result)
+if(result)
+  yaml_save(NAME build_info)
 endif()

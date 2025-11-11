@@ -5,8 +5,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util.h>
 
 static struct bt_vocs {
 	bool active;
@@ -51,9 +57,14 @@ struct bt_vocs *bt_vocs_client_free_instance_get(void)
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		     const struct bt_vocs_discover_param *param)
 {
+
+	if (vocs == NULL) {
+		return -EINVAL;
+	}
+
 	vocs->conn = conn;
 
-	if (vocs != NULL && vocs->cb != NULL && vocs->cb->discover != NULL) {
+	if (vocs->cb != NULL && vocs->cb->discover != NULL) {
 		vocs->cb->discover(vocs, 0);
 	}
 

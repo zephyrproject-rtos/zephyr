@@ -18,7 +18,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NXP
+ * Copyright 2020, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
+#include <soc_common.h>
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
@@ -80,13 +82,19 @@
 #define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
 #endif
 
+/* Handle variation to implement Wakeup Interrupt */
+#undef NXP_ENABLE_WAKEUP_SIGNAL
+#undef NXP_DISABLE_WAKEUP_SIGNAL
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if CONFIG_IMX_USDHC &&					\
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) ||	\
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) ||	\
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)))
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc,
 	bool init, uint32_t speed, uint32_t strength);

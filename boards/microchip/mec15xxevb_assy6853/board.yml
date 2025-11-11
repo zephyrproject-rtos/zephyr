@@ -1,5 +1,6 @@
 board:
   name: mec15xxevb_assy6853
+  full_name: MEC15xxEVB ASSY6853
   vendor: microchip
   socs:
     - name: mec1501_hsz

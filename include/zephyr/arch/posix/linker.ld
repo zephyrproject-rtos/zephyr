@@ -86,10 +86,7 @@ SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME,,)
 
 } INSERT AFTER .data;
 
-SECTIONS
-{
 #include <zephyr/arch/posix/native_sim_interface.ld>
-} INSERT AFTER .text;
 
 /*
  * Note that the INSERT command actually changes the meaning of the -T command

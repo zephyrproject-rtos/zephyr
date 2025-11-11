@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&pwm_led1 {
+&pwmleds {
 	status = "okay";
 };
 

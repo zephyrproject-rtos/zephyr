@@ -1,5 +1,6 @@
 board:
   name: heltec_wireless_stick_lite_v3
+  full_name: Wireless Stick Lite (V3)
   vendor: heltec
   socs:
   - name: esp32s3

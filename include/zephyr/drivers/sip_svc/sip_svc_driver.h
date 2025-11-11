@@ -224,7 +224,7 @@ static inline void z_impl_sip_svc_plat_update_trans_id(const struct device *dev,
 		 "sip_svc_plat_update_trans_id func shouldn't be NULL");
 	__ASSERT(request, "request shouldn't be NULL");
 
-	return api->sip_svc_plat_update_trans_id(dev, request, trans_id);
+	api->sip_svc_plat_update_trans_id(dev, request, trans_id);
 }
 
 /**

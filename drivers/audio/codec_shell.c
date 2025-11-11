@@ -9,20 +9,20 @@
 #include <zephyr/audio/codec.h>
 
 #define CODEC_START_HELP                                                                           \
-	"Start output audio playback. Syntax:\n"                                                   \
-	"<device>"
+	SHELL_HELP("Start output audio playback",                                                  \
+		   "<device>")
 
 #define CODEC_STOP_HELP                                                                            \
-	"Stop output audio playback. Syntax:\n"                                                    \
-	"<device>"
+	SHELL_HELP("Stop output audio playback",                                                   \
+		   "<device>")
 
 #define CODEC_SET_PROP_HELP                                                                        \
-	"Set a codec property. Syntax:\n"                                                          \
-	"<device> <property> <channel> <value>"
+	SHELL_HELP("Set a codec property",                                                         \
+		   "<device> <property> <channel> <value>")
 
 #define CODEC_APPLY_PROP_HELP                                                                      \
-	"Apply any cached properties. Syntax:\n"                                                   \
-	"<device>"
+	SHELL_HELP("Apply any cached properties",                                                  \
+		   "<device>")
 
 static const char *const codec_property_name[] = {
 	[AUDIO_PROPERTY_OUTPUT_VOLUME] = "volume",
@@ -39,6 +39,8 @@ static const char *const codec_channel_name[] = {
 	[AUDIO_CHANNEL_REAR_CENTER] = "rear_center",
 	[AUDIO_CHANNEL_SIDE_LEFT] = "side_left",
 	[AUDIO_CHANNEL_SIDE_RIGHT] = "side_right",
+	[AUDIO_CHANNEL_HEADPHONE_LEFT] = "headphone_left",
+	[AUDIO_CHANNEL_HEADPHONE_RIGHT] = "headphone_right",
 	[AUDIO_CHANNEL_ALL] = "all",
 };
 
@@ -81,7 +83,7 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -95,7 +97,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -114,7 +116,7 @@ static int cmd_set_prop(const struct shell *sh, size_t argc, char *argv[])
 	char *endptr;
 	audio_property_value_t property_value;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -159,7 +161,7 @@ static int cmd_apply_prop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;

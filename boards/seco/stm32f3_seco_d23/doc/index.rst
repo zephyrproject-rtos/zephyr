@@ -1,7 +1,4 @@
-.. _stm32f3_seco_d23_board:
-
-SECO SBC-3.5-PX30 (JUNO - D23) (STM32F302)
-##########################################
+.. zephyr:board:: stm32f3_seco_d23
 
 Overview
 ********
@@ -20,13 +17,6 @@ capabilities can be extended by WiFi+BT M.2 module and external modem module.
 The audio functionalities are managed by the AudioCodec embedded in the RK-809
 PMIC. SBC-3.5-PX30 board is completed by a series of connectors with various
 interfaces (UART, SPI, I2C) managed by the microcontroller STM32F302VCT6.
-
-.. image:: img/stm32f3_seco_d23.jpg
-     :align: center
-     :alt: SECO SBC-3.5-PX30
-
-More information about the board can be found at the
-`SECO SBC-3.5-PX30 website`_.
 
 Hardware
 ********
@@ -60,35 +50,7 @@ More information about STM32F302VC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f3_seco_d23 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | Independent WatchDoG                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -182,6 +144,8 @@ main processor (Rockchip PX30) and SPI2 is connected to CN39.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -208,7 +172,7 @@ The pinout is (1-8):
 
 Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

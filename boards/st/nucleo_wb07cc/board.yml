@@ -1,0 +1,6 @@
+board:
+  name: nucleo_wb07cc
+  full_name: Nucleo WB07CC
+  vendor: st
+  socs:
+    - name: stm32wb07

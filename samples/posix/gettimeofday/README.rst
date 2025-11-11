@@ -1,7 +1,7 @@
-.. _posix-gettimeofday-sample:
+.. zephyr:code-sample:: posix-gettimeofday
+   :name: gettimeofday() with clock initialization
 
-POSIX gettimeofday() with clock initialization over SNTP
-########################################################
+   Use ``gettimeofday()`` with clock initialization over SNTP.
 
 Overview
 ********

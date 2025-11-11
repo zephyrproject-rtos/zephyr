@@ -68,7 +68,6 @@ struct xtensa_thread_stack_header {
 	ROUND_UP((size), XTENSA_STACK_SIZE_ALIGN)
 
 /* kernel stack */
-#define ARCH_KERNEL_STACK_RESERVED		0
 #define ARCH_KERNEL_STACK_OBJ_ALIGN		ARCH_STACK_PTR_ALIGN
 
 #endif /* _ASMLANGUAGE */

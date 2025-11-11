@@ -7,10 +7,12 @@
 
 import logging
 import shutil
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
+
+logging.getLogger("twister").setLevel("DEBUG")  # requires for testing twister
 
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
 TEST_DATA = os.path.join(ZEPHYR_BASE, 'scripts', 'tests',
@@ -22,7 +24,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 
 
 sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
-testsuite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
+suite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
 sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
 
 def pytest_configure(config):
@@ -84,4 +86,10 @@ def provide_out(tmp_path, request):
     # After
     # We're operating in temp, so it is not strictly necessary
     # but the files can get large quickly as we do not need them after the test.
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logg in loggers:
+        handls = logg.handlers[:]
+        for handl in handls:
+            logg.removeHandler(handl)
+            handl.close()
     shutil.rmtree(out_container_path)

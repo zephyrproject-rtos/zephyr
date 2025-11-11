@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TIMER_MAX32
+	bool "MAX32xxx counter driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_COUNTER_ENABLED
+	help
+	  Enable the counter driver for MAX32 MCUs.

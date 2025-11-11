@@ -25,9 +25,9 @@
 #define ESPI_XEC_VWIRE_ACK_DELAY	10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
- * 10 ms expressed in multiples of 100us
+ * 1 ms expressed in multiples of 1us
  */
-#define ESPI_XEC_VWIRE_SEND_TIMEOUT	100ul
+#define ESPI_XEC_VWIRE_SEND_TIMEOUT	1000ul
 
 #define VW_MAX_GIRQS			2ul
 
@@ -325,10 +325,15 @@ static int espi_xec_send_vwire(const struct device *dev,
 		/* Ensure eSPI virtual wire packet is transmitted
 		 * There is no interrupt, so need to poll register
 		 */
-		uint8_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
+		uint16_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
 
 		while (sys_read8(regaddr + SMVW_BI_SRC_CHG) && rd_cnt--) {
-			k_busy_wait(100);
+			k_busy_wait(1);
+		}
+
+		if (rd_cnt == 0) {
+			LOG_ERR("VW %d send timeout", signal);
+			return -ETIMEDOUT;
 		}
 	}
 
@@ -1250,7 +1255,7 @@ const struct espi_vw_isr m2s_vwires_isr[] = {
 
 static int espi_xec_init(const struct device *dev);
 
-static const struct espi_driver_api espi_xec_driver_api = {
+static DEVICE_API(espi, espi_xec_driver_api) = {
 	.config = espi_xec_configure,
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,

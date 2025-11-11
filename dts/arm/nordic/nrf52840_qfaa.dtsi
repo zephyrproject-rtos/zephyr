@@ -13,14 +13,13 @@
 
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(256)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(256)>;
 };
 
 / {
 	soc {
-		compatible = "nordic,nrf52840-qfaa", "nordic,nrf52840",
-			     "nordic,nrf52", "simple-bus";
+		compatible = "simple-bus";
 	};
-
 };
 
 /delete-node/ &usbd;

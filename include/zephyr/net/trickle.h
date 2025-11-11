@@ -26,6 +26,8 @@ extern "C" {
 /**
  * @brief Trickle algorithm library
  * @defgroup trickle Trickle Algorithm Library
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -134,7 +136,9 @@ void net_trickle_inconsistency(struct net_trickle *trickle);
  */
 static inline bool net_trickle_is_running(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return false;
+	}
 
 	return trickle->I != 0U;
 }

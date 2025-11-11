@@ -72,15 +72,17 @@ static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t c
 		channel, cap, ctl, ipptr, llpc, llpl, llpu);
 
 	/* Channel Register Dump */
-	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8)
+	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8) {
 		LOG_INF(" channel register offset: %#x value: %#x\n", chan_reg_offs[i],
 			dw_read(dw_cfg->base, DW_CHAN_OFFSET(channel) + chan_reg_offs[i]));
+	}
 
 	/* IP Register Dump */
 	for (i = DW_DMA_CHANNEL_REGISTER_OFFSET_START; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END;
-	     i += 0x8)
+	     i += 0x8) {
 		LOG_INF(" ip register offset: %#x value: %#x\n", ip_reg_offs[i],
 			dw_read(dw_cfg->base, ip_reg_offs[i]));
+	}
 }
 #endif
 
@@ -129,9 +131,15 @@ static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t tmp;
 
-	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	tmp = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
 	*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	if (tmp > *llp_l) {
+		/* re-read the LLPU value, as LLPL just wrapped */
+		*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	}
 #endif
 }
 
@@ -432,38 +440,15 @@ static inline void ace_gpdma_intc_unmask(void)
 static inline void ace_gpdma_intc_unmask(void) {}
 #endif
 
-
-int intel_adsp_gpdma_init(const struct device *dev)
-{
-	struct dw_dma_dev_data *const dev_data = dev->data;
-
-	/* Setup context and atomics for channels */
-	dev_data->dma_ctx.magic = DMA_MAGIC;
-	dev_data->dma_ctx.dma_channels = DW_MAX_CHAN;
-	dev_data->dma_ctx.atomic = dev_data->channels_atomic;
-
-	ace_gpdma_intc_unmask();
-
-#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-	if (pm_device_on_power_domain(dev)) {
-		pm_device_init_off(dev);
-	} else {
-		pm_device_init_suspended(dev);
-	}
-
-	return 0;
-#else
-	return intel_adsp_gpdma_power_on(dev);
-#endif
-}
-#ifdef CONFIG_PM_DEVICE
 static int gpdma_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		return intel_adsp_gpdma_power_on(dev);
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE
 		return intel_adsp_gpdma_power_off(dev);
+#endif
 	/* ON and OFF actions are used only by the power domain to change internal power status of
 	 * the device. OFF state mean that device and its power domain are disabled, SUSPEND mean
 	 * that device is power off but domain is already power on.
@@ -477,9 +462,21 @@ static int gpdma_pm_action(const struct device *dev, enum pm_device_action actio
 
 	return 0;
 }
-#endif
 
-static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
+int intel_adsp_gpdma_init(const struct device *dev)
+{
+	struct dw_dma_dev_data *const dev_data = dev->data;
+
+	/* Setup context and atomics for channels */
+	dev_data->dma_ctx.magic = DMA_MAGIC;
+	dev_data->dma_ctx.dma_channels = DW_MAX_CHAN;
+	dev_data->dma_ctx.atomic = dev_data->channels_atomic;
+
+	ace_gpdma_intc_unmask();
+	return pm_device_driver_init(dev, gpdma_pm_action);
+}
+
+static DEVICE_API(dma, intel_adsp_gpdma_driver_api) = {
 	.config = intel_adsp_gpdma_config,
 	.reload = intel_adsp_gpdma_copy,
 	.start = intel_adsp_gpdma_start,
@@ -547,7 +544,7 @@ static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_pm_action);		\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			      &intel_adsp_gpdma_init,			\
+			      intel_adsp_gpdma_init,			\
 			      PM_DEVICE_DT_INST_GET(inst),		\
 			      &intel_adsp_gpdma##inst##_data,		\
 			      &intel_adsp_gpdma##inst##_config, POST_KERNEL,\

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/mem_stats.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,13 +73,11 @@ struct z_heap_stress_result {
  * @{
  */
 
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-
 /**
  * @brief Get the runtime statistics of a sys_heap
  *
  * @param heap Pointer to specified sys_heap
- * @param stats_t Pointer to struct to copy statistics into
+ * @param stats Pointer to struct to copy statistics into
  * @return -EINVAL if null pointers, otherwise 0
  */
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
@@ -94,8 +93,6 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
  * @return -EINVAL if null pointer was passed, otherwise 0
  */
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
-
-#endif
 
 /** @brief Initialize sys_heap
  *
@@ -141,6 +138,18 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes);
  */
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes);
 
+/** @brief Allocate memory from a sys_heap
+ *
+ * This is a wrapper for sys_heap_alloc() whose purpose is to provide the same
+ * function signature as sys_heap_aligned_alloc().
+ *
+ * @param heap Heap from which to allocate
+ * @param align Ignored placeholder
+ * @param bytes Number of bytes requested
+ * @return Pointer to memory the caller can now use
+ */
+void *sys_heap_noalign_alloc(struct sys_heap *heap, size_t align, size_t bytes);
+
 /** @brief Free memory into a sys_heap
  *
  * De-allocates a pointer to memory previously returned from
@@ -170,15 +179,28 @@ void sys_heap_free(struct sys_heap *heap, void *mem);
  *
  * @param heap Heap from which to allocate
  * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Number of bytes requested for the new block
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes);
+
+/** @brief Expand the size of an existing allocation
+ *
+ * Behaves in all ways like sys_heap_realloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes. In-place expansion will be attempted only if the provided memory
+ * pointer conforms to the specified alignment value otherwise the data will be
+ * moved to a new memory block.
+ *
+ * @param heap Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested for the new block
  * @return Pointer to memory the caller can now use, or NULL
  */
 void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 			       size_t align, size_t bytes);
-
-#define sys_heap_realloc(heap, ptr, bytes) \
-	sys_heap_aligned_realloc(heap, ptr, 0, bytes)
 
 /** @brief Return allocated memory size
  *
@@ -209,7 +231,15 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem);
  * @param heap Heap to validate
  * @return true, if the heap is valid, otherwise false
  */
+#ifdef CONFIG_SYS_HEAP_VALIDATE
 bool sys_heap_validate(struct sys_heap *heap);
+#else
+static inline bool sys_heap_validate(struct sys_heap *heap)
+{
+	ARG_UNUSED(heap);
+	return true;
+}
+#endif
 
 /** @brief sys_heap stress test rig
  *
@@ -257,6 +287,24 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  * @param dump_chunks True to print the entire heap chunk list
  */
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
+
+/** @brief Save the heap pointer
+ *
+ * The heap pointer is saved into an internal array, if there is space.
+ *
+ * @param heap Heap to save
+ * @return -EINVAL if null pointer or array is full, otherwise 0
+ */
+int sys_heap_array_save(struct sys_heap *heap);
+
+/** @brief Get the array of saved heap pointers
+ *
+ * Returns the pointer to the array of heap pointers.
+ *
+ * @param heap Heap array
+ * @return -EINVAL if null pointer, otherwise number of saved pointers
+ */
+int sys_heap_array_get(struct sys_heap ***heap);
 
 /**
  * @}

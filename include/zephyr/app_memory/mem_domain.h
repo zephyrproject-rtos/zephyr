@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_APP_MEMORY_MEM_DOMAIN_H
-#define INCLUDE_APP_MEMORY_MEM_DOMAIN_H
+#ifndef ZEPHYR_INCLUDE_APP_MEMORY_MEM_DOMAIN_H_
+#define ZEPHYR_INCLUDE_APP_MEMORY_MEM_DOMAIN_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -83,11 +83,18 @@ struct k_mem_domain {
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-	/** Doubly linked list of member threads */
-	sys_dlist_t mem_domain_q;
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
+	/** Doubly linked list of member threads,
+	 * pointer to the thread_mem_domain_node inside
+	 * each thread's memory domain info struct.
+	 */
+	sys_dlist_t thread_mem_domain_list;
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
 };
+
+typedef struct k_mem_domain k_mem_domain_t;
 
 /**
  * Default memory domain
@@ -193,4 +200,4 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain,
 #endif
 
 /** @} */
-#endif /* INCLUDE_APP_MEMORY_MEM_DOMAIN_H */
+#endif /* ZEPHYR_INCLUDE_APP_MEMORY_MEM_DOMAIN_H_ */

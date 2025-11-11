@@ -6,6 +6,7 @@
 config MIPI_DBI_SMARTBOND
 	bool "Smartbond MIPI DBI host controller driver"
 	depends on DT_HAS_RENESAS_SMARTBOND_MIPI_DBI_ENABLED
+	select PINCTRL
 	default y
 	help
 	  Enable Smartbond MIPI DBI host controller.

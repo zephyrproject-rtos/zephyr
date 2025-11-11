@@ -4,9 +4,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 include(ExternalProject)
 
-# Add the sources and set up the build for either unit testing or native_sim
-list(APPEND SOURCES src/main.cpp)
-if(BOARD STREQUAL unit_testing)
+if(BOARD STREQUAL "unit_testing" OR BOARD STREQUAL "unit_testing/unit_testing")
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
   set(target testbinary)
   # Set the target binary for the 'core' external project. The path to this must match the one set
@@ -22,7 +20,7 @@ endif()
 
 # Create the project and set the sources for the target
 project(fail)
-target_sources(${target} PRIVATE ${SOURCES})
+target_sources(${target} PRIVATE src/main.cpp)
 
 # Find which CONFIG_ZTEST_FAIL_TEST_* choice was set so we can pass it to the external project
 # Once we find the config, we'll need to prepend a '-D' and append '=y' so we can pass it to the
@@ -32,13 +30,15 @@ string(REGEX MATCHALL "(^|;)CONFIG_ZTEST_FAIL_TEST_[A-Za-z0-9_]+" fail_test_conf
 list(FILTER fail_test_config EXCLUDE REGEX "^$")
 list(TRANSFORM fail_test_config PREPEND "-D")
 list(TRANSFORM fail_test_config APPEND "=y")
-string(REPLACE ";" " " fail_test_config "${fail_test_config}")
+if(CONFIG_ZTEST_FAIL_ON_ASSUME)
+  list(APPEND fail_test_config "-DCONFIG_ZTEST_FAIL_ON_ASSUME=y")
+endif()
 
 # Add the 'core' external project which will mirror the configs of this project.
 ExternalProject_Add(core
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/core
     CMAKE_ARGS
-      -DBOARD:STRING=${BOARD}
+      -DBOARD:STRING=${BOARD}${BOARD_QUALIFIERS}
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/core
       ${fail_test_config}
 )

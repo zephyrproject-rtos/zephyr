@@ -5,29 +5,6 @@
 
 if BOARD_DEGU_EVK
 
-if USB_DEVICE_STACK
-
-config USB_DEVICE_PRODUCT
-	default "Degu Evaluation Kit"
-
-config UART_INTERRUPT_DRIVEN
-	default y
-
-config UART_LINE_CTRL
-	default y
-
-endif # USB_DEVICE_STACK
-
-if LOG
-
-# Logger cannot use itself to log
-config USB_CDC_ACM_LOG_LEVEL
-	default 0
-
-# Set USB log level to error only
-config USB_DEVICE_LOG_LEVEL
-	default 1
-
-endif # LOG
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_DEGU_EVK

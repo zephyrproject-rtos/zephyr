@@ -1,0 +1,113 @@
+# Copyright 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Axis alignment specification for sensors
+    that require orientation. This can be used for
+    sensors that have more than one axis. It is used by
+    assigning the hardware's internal axes to an external
+    reference frame axes of choice (IE, orientation of sensor
+    on a board or overall system mounting).
+
+    Consider a sensor (sensor-top-90) that follows right hand rule,
+    and when mounted to the board was rotated clockwise around it's Z axis
+    90 degrees from another identical directional sensor (sensor-bottom)
+    that was mounted on the bottom side of the board.
+
+    To have the sensors all in the same board reference frame a simple
+    axis change can be performed by changing the axis output of
+    sensor-top-90 as follows:
+    x -> +y
+    y -> -x
+    z -> +z
+
+    To align the sensor that is on the bottom side of the board an
+    axis output change for sensor-bottom would be as followed:
+    x -> +x
+    y -> -y
+    z -> -z
+
+    Example of how to encode that into DTS:
+    #include <zephyr/dt-bindings/sensor/sensor_axis_align.h>
+
+    sensor-top-90: sensor-top-90@0 {
+      ...
+      axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>
+      axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>
+      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
+    };
+
+    sensor-bottom: sensor-bottom@1 {
+      ...
+      axis-align-x = <SENSOR_AXIS_ALIGN_DT_X>
+      axis-align-y = <SENSOR_AXIS_ALIGN_DT_Y>
+      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
+      axis-align-z-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+    };
+
+include: base.yaml
+properties:
+  axis-align-x:
+    type: int
+    default: 0
+    description: |
+      Align sensor chanel x output with hardware orientation axis.
+      Defaults to x.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-x-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel x output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS
+
+  axis-align-y:
+    type: int
+    default: 1
+    description: |
+      Align sensor chanel y output with hardware orientation axis.
+      Defaults to y.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-y-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel y output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS
+
+  axis-align-z:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel z output with hardware orientation axis.
+      Defaults to z.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-z-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel z output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS

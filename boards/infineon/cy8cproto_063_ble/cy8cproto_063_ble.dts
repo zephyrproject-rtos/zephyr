@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit";
-	compatible = "cypress,cy8cproto_063_ble", "cypress,PSoC6";
+	model = "CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit";
+	compatible = "cypress,cy8cproto_063_ble", "cypress,PSOC6";
 
 	aliases {
 		uart-5 = &uart5;
@@ -34,6 +34,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led_0 {
 			label = "LED_0";
 			gpios = <&gpio_prt6 3 GPIO_ACTIVE_LOW>;

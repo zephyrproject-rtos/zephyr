@@ -72,9 +72,6 @@ config BT_HCI_VS
 # https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
 if DISPLAY
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 if LVGL
 
 config LV_Z_VDB_SIZE
@@ -87,7 +84,7 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 endchoice
 
-config LV_COLOR_16_SWAP
+configdefault LV_COLOR_16_SWAP
 	default y
 
 config INPUT
@@ -99,18 +96,7 @@ endif # DISPLAY
 
 endif # BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
-config IPM_NRFX
-	default IPM
-
-config MBOX_NRFX_IPC
-	default MBOX
-
 if BOARD_BL5340_DVK_NRF5340_CPUNET
-
-# BT_CTLR depends on BT. When BT is enabled we should default to also
-# enabling the controller.
-config BT_CTLR
-	default y if BT
 
 config BT_ECC
 	default y if BT

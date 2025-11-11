@@ -87,17 +87,34 @@ static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 	return idx;
 }
 
+static bool wdt_gecko_is_enabled(WDOG_TypeDef *wdog)
+{
+#if defined(CONFIG_SOC_FAMILY_SILABS_S2)
+	return FIELD_GET(WDOG_EN_EN, wdog->EN);
+#else
+	return FIELD_GET(WDOG_CTRL_EN, wdog->CTRL);
+#endif
+}
+
 static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_gecko_cfg *config = dev->config;
 	struct wdt_gecko_data *data = dev->data;
 	WDOG_TypeDef *wdog = config->base;
 
+	if (wdt_gecko_is_enabled(wdog)) {
+		return -EBUSY;
+	}
+
 	if (!data->timeout_installed) {
 		LOG_ERR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
+#if defined(_WDOG_CFG_EM1RUN_MASK)
+	data->wdog_config.em1Run =
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+#endif
 	data->wdog_config.em2Run =
 		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 	data->wdog_config.em3Run =
@@ -130,8 +147,14 @@ static int wdt_gecko_disable(const struct device *dev)
 	struct wdt_gecko_data *data = dev->data;
 	WDOG_TypeDef *wdog = config->base;
 
-	WDOGn_Enable(wdog, false);
+	/* Always uninstall timeouts, independent of watchdog enable state */
 	data->timeout_installed = false;
+
+	if (!wdt_gecko_is_enabled(wdog)) {
+		return -EFAULT;
+	}
+
+	WDOGn_Enable(wdog, false);
 	LOG_DBG("Disabled the watchdog");
 
 	return 0;
@@ -140,9 +163,15 @@ static int wdt_gecko_disable(const struct device *dev)
 static int wdt_gecko_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
+	const struct wdt_gecko_cfg *config = dev->config;
 	struct wdt_gecko_data *data = dev->data;
-	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
 	uint32_t installed_timeout;
+
+	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
+
+	if (wdt_gecko_is_enabled(config->base)) {
+		return -EBUSY;
+	}
 
 	if (data->timeout_installed) {
 		LOG_ERR("No more timeouts can be installed");
@@ -185,13 +214,12 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	/* Set mode of watchdog and callback */
 	switch (cfg->flags) {
 	case WDT_FLAG_RESET_SOC:
-	case WDT_FLAG_RESET_CPU_CORE:
 		if (cfg->callback != NULL) {
 			LOG_ERR("Reset mode with callback not supported\n");
 			return -ENOTSUP;
 		}
 		data->wdog_config.resetDisable = false;
-		LOG_DBG("Configuring reset CPU/SoC mode\n");
+		LOG_DBG("Configuring reset SoC mode\n");
 		break;
 
 	case WDT_FLAG_RESET_NONE:
@@ -199,6 +227,10 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 		data->callback = cfg->callback;
 		LOG_DBG("Configuring non-reset mode\n");
 		break;
+
+	case WDT_FLAG_RESET_CPU_CORE:
+		LOG_ERR("CPU core only reset not supported");
+		return -ENOTSUP;
 
 	default:
 		LOG_ERR("Unsupported watchdog config flag");
@@ -217,6 +249,10 @@ static int wdt_gecko_feed(const struct device *dev, int channel_id)
 
 	if (channel_id != 0) {
 		LOG_ERR("Invalid channel id");
+		return -EINVAL;
+	}
+
+	if (!wdt_gecko_is_enabled(wdog)) {
 		return -EINVAL;
 	}
 
@@ -271,7 +307,7 @@ static int wdt_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_gecko_driver_api = {
+static DEVICE_API(wdt, wdt_gecko_driver_api) = {
 	.setup = wdt_gecko_setup,
 	.disable = wdt_gecko_disable,
 	.install_timeout = wdt_gecko_install_timeout,

@@ -294,6 +294,14 @@ You can individually set them for each iface.
    It is left to connectivity implementations to successfully and accurately implement these two features as described below.
    See :ref:`conn_mgr_impl_timeout_persistence` for more details from the connectivity implementation perspective.
 
+The Connection Manager also implements the following optional feature:
+
+* :ref:`Interface idle timeouts <conn_mgr_control_idle_timeout>`
+
+.. note::
+   The only requirement on the connectivity implementation to implement idle timeouts is to call :c:func:`conn_mgr_if_used` each
+   time the interface is used.
+
 .. _conn_mgr_control_timeouts:
 
 Connection Timeouts
@@ -306,12 +314,22 @@ The connection attempt continues indefinitely until it succeeds, unless a timeou
 In that case, the connection attempt will be abandoned if the timeout elapses before it succeeds.
 If this happens, the :ref:`timeout event<conn_mgr_control_events_timeout>` is raised.
 
+.. _conn_mgr_control_idle_timeout:
+
+Interface Idle Timeout
+----------------------
+
+The connection manager enables users to apply an inactivity timeout on an interface (:c:func:`conn_mgr_if_set_idle_timeout`).
+Once connected, if the interface goes for the configured number of seconds without any activity, the interface is automatically disconnected.
+If this happens, the :ref:`idle timeout event<conn_mgr_control_events_idle_timeout>` is raised.
+An idle timeout is considered an unintentional connection loss for the purposes of :ref:`Connection persistence <conn_mgr_control_persistence>`.
+
 .. _conn_mgr_control_persistence:
 
 Connection Persistence
 ----------------------
 
-Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
+Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
 
 This setting specifies how the iface should handle unintentional connection loss.
 
@@ -354,6 +372,15 @@ Timeout
 -------
 
 The :c:macro:`NET_EVENT_CONN_IF_TIMEOUT` event is raised when an :ref:`iface association <conn_mgr_control_operation_connecting>` attempt :ref:`times out <conn_mgr_control_timeouts>`.
+
+Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
+
+.. _conn_mgr_control_events_idle_timeout:
+
+Idle Timeout
+------------
+
+The :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT` event is raised when an interface is considered :ref:`inactive <conn_mgr_control_idle_timeout>`.
 
 Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
 
@@ -416,7 +443,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    In Zephyr, ifaces are automatically taken admin-up (see :ref:`net_if_interface_state_management` for details on iface states) during initialization.
 
-   Applications can disable this behavior by setting the :c:enumerator:`~net_if_flag.NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
+   Applications can disable this behavior by setting the :c:enumerator:`NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
 
 .. _conn_mgr_control_automations_auto_connect:
 
@@ -424,7 +451,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically connect any :ref:`bound <conn_mgr_impl_binding>` iface that becomes admin-up.
 
-   Applications can disable this by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_automations_auto_down:
 
@@ -432,7 +459,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
 
-   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_api:
 

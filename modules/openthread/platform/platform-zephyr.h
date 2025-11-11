@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,17 +71,36 @@ void platformUartPanic(void);
  */
 uint16_t platformRadioChannelGet(otInstance *aInstance);
 
+#if defined(CONFIG_OPENTHREAD_DIAG)
+/**
+ * Set channel on radio driver.
+ *
+ * @param[in]  aChannel  The channel that the radio driver should use for operation.
+ *
+ */
+void platformRadioChannelSet(uint8_t aChannel);
+#endif /* CONFIG_OPENTHREAD_DIAG */
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 /**
  * Start/stop continuous carrier wave transmission.
  */
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable);
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
+/**
+ * Start/stop modulated carrier wave transmission.
+ */
+otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnable,
+					      const uint8_t *aData);
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 /**
  * This function initializes the random number service used by OpenThread.
  *
  */
 void platformRandomInit(void);
-
 
 /**
  *  Initialize platform Shell driver.
@@ -98,4 +118,19 @@ int notify_new_rx_frame(struct net_pkt *pkt);
  */
 int notify_new_tx_frame(struct net_pkt *pkt);
 
-#endif  /* PLATFORM_POSIX_H_ */
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+otError infra_if_init(otInstance *instance, struct net_if *ail_iface);
+otError infra_if_start_icmp6_listener(void);
+void infra_if_stop_icmp6_listener(void);
+otError udp_plat_init(otInstance *ot_instance, struct net_if *ail_iface, struct net_if *ot_iface);
+void udp_plat_deinit(void);
+otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx);
+void mdns_plat_monitor_interface(struct net_if *ail_iface);
+otError border_agent_init(otInstance *instance);
+void border_agent_deinit(void);
+otError trel_plat_init(otInstance *instance, struct net_if *ail_iface_ptr);
+otError dhcpv6_pd_client_init(otInstance *ot_instance, uint32_t ail_iface_index);
+otError dns_upstream_resolver_init(otInstance *ot_instance);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
+#endif /* PLATFORM_ZEPHYR_H_ */

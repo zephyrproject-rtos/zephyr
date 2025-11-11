@@ -233,7 +233,7 @@ static void tref_from_local(const char *tag,
 	zassert_equal(rv, 0,
 		      "%s: unexpected init: %d", tag, rv);
 	zassert_equal(ss.skew, 1.0,
-		      "%s: unexpected skew");
+		      "%s: unexpected skew", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, NULL);
 	zassert_equal(rv, -EINVAL,
@@ -241,19 +241,19 @@ static void tref_from_local(const char *tag,
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected fail", tag, rv);
+		      "%s: unexpected fail %d", tag, rv);
 	zassert_equal(ref, ss.base.ref,
 		      "%s: unexpected base convert", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, 0, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected local=0 fail", tag, rv);
+		      "%s: unexpected local=0 fail %d", tag, rv);
 	zassert_equal(ref, scale_ref(5, cfg),
 		      "%s: unexpected local=0 ref", tag);
 
 	rv = timeutil_sync_ref_from_local(&ss, ss.base.local, &ref);
 	zassert_equal(rv, 0,
-		      "%s: unexpected local=base fail", tag, rv);
+		      "%s: unexpected local=base fail, %d", tag, rv);
 	zassert_equal(ref, ss.base.ref,
 		      "%s: unexpected local=base ref", tag);
 
@@ -314,11 +314,11 @@ static void tlocal_from_ref(const char *tag,
 
 	rv = timeutil_sync_local_from_ref(&ss, ss.base.ref, NULL);
 	zassert_equal(rv, -EINVAL,
-		      "%s: unexpected missing dest", tag, rv);
+		      "%s: unexpected missing dest %d", tag, rv);
 
 	rv = timeutil_sync_local_from_ref(&ss, ss.base.ref, &local);
 	zassert_equal(rv, 0,
-		      "%s: unexpected fail", tag, rv);
+		      "%s: unexpected fail %d", tag, rv);
 	zassert_equal(local, ss.base.local,
 		      "%s: unexpected base convert", tag);
 

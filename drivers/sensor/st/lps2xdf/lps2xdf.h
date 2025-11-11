@@ -4,10 +4,6 @@
  * Copyright (c) 2023 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- * Datasheets:
- * https://www.st.com/resource/en/datasheet/lps22df.pdf
- * https://www.st.com/resource/en/datasheet/lps28dfw.pdf
  */
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_LPS2XDF_LPS2XDF_H_
@@ -15,6 +11,10 @@
 
 #include <stdint.h>
 #include <stmemsc.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_ilps22qs)
+#include "ilps22qs_reg.h"
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps28dfw)
 #include "lps28dfw_reg.h"
@@ -32,6 +32,7 @@
 #define LPS2XDF_SWRESET_WAIT_TIME_US 50
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	#define ON_I3C_BUS(cfg) (cfg->i3c.bus != NULL)
 #else
@@ -40,8 +41,9 @@
 
 typedef int32_t (*api_lps2xdf_mode_set_odr_raw)(const struct device *dev, uint8_t odr);
 typedef int32_t (*api_lps2xdf_sample_fetch)(const struct device *dev, enum sensor_channel chan);
-typedef void (*api_lps2xdf_handle_interrupt)(const struct device *dev);
 #ifdef CONFIG_LPS2XDF_TRIGGER
+typedef int (*api_lps2xdf_config_interrupt)(const struct device *dev);
+typedef void (*api_lps2xdf_handle_interrupt)(const struct device *dev);
 typedef int (*api_lps2xdf_trigger_set)(const struct device *dev,
 				       const struct sensor_trigger *trig,
 				       sensor_trigger_handler_t handler);
@@ -50,8 +52,9 @@ typedef int (*api_lps2xdf_trigger_set)(const struct device *dev,
 struct lps2xdf_chip_api {
 	api_lps2xdf_mode_set_odr_raw mode_set_odr_raw;
 	api_lps2xdf_sample_fetch sample_fetch;
-	api_lps2xdf_handle_interrupt handle_interrupt;
 #ifdef CONFIG_LPS2XDF_TRIGGER
+	api_lps2xdf_config_interrupt config_interrupt;
+	api_lps2xdf_handle_interrupt handle_interrupt;
 	api_lps2xdf_trigger_set trigger_set;
 #endif
 };
@@ -60,6 +63,7 @@ struct lps2xdf_chip_api {
 enum sensor_variant {
 	DEVICE_VARIANT_LPS22DF = 0,
 	DEVICE_VARIANT_LPS28DFW = 1,
+	DEVICE_VARIANT_ILPS22QS = 2,
 };
 
 
@@ -67,13 +71,16 @@ struct lps2xdf_config {
 	stmdev_ctx_t ctx;
 	union {
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i2c))
 		const struct i2c_dt_spec i2c;
 #endif
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, spi)
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, spi) ||\
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, spi))
 		const struct spi_dt_spec spi;
 #endif
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 		struct i3c_device_desc **i3c;
 #endif
@@ -89,6 +96,7 @@ struct lps2xdf_config {
 #endif
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	struct {
 		const struct device *bus;
@@ -120,12 +128,15 @@ struct lps2xdf_data {
 #endif /* CONFIG_LPS2XDF_TRIGGER */
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	struct i3c_device_desc *i3c_dev;
 #endif
 };
 
 #ifdef CONFIG_LPS2XDF_TRIGGER
+int lps2xdf_config_int(const struct device *dev);
+
 int lps2xdf_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);

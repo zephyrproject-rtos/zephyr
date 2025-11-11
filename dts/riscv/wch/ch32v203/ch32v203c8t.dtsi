@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v203/ch32v203.dtsi>
+
+&gpioc {
+	gpio-reserved-ranges = <0 13>;
+};
+
+&gpiod {
+	gpio-reserved-ranges = <2 16>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(20)>;
+};
+
+/ {
+	soc {
+		usart3: uart@40004800 {
+			compatible = "wch,usart";
+			reg = <0x40004800 0x20>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_USART3>;
+			interrupt-parent = <&pfic>;
+			interrupts = <55>;
+			status = "disabled";
+		};
+
+		usart4: uart@40004c00 {
+			compatible = "wch,usart";
+			reg = <0x40004C00 0x20>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_USART4>;
+			interrupt-parent = <&pfic>;
+			interrupts = <68>;
+			status = "disabled";
+		};
+	};
+};

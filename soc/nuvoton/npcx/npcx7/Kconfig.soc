@@ -5,7 +5,7 @@
 
 config SOC_SERIES_NPCX7
 	bool
-	select SOC_FAMILY_NPCX
+	select NPCX_SOC_VARIANT_NPCXN
 	help
 	  Enable support for Nuvoton NPCX7 series
 

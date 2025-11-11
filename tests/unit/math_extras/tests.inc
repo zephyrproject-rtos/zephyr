@@ -174,8 +174,6 @@ static void VNAME(u64_ctz)(void)
 	zassert_equal(u64_count_trailing_zeros(0x00f00f00), 8);
 	zassert_equal(u64_count_trailing_zeros(0xf00ffc00), 10);
 	zassert_equal(u64_count_trailing_zeros(0xffffffffffffffffull), 0);
-	zassert_equal(u64_count_trailing_zeros(0x8000000080000000ull), 31,
-		      NULL);
-	zassert_equal(u64_count_trailing_zeros(0xc000000000000000ull), 62,
-		      NULL);
+	zassert_equal(u64_count_trailing_zeros(0x8000000080000000ull), 31);
+	zassert_equal(u64_count_trailing_zeros(0xc000000000000000ull), 62);
 }

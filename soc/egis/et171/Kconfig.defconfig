@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EGIS_ET171
+
+rsource "Kconfig.defconfig.et171"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_mtimer,clock-frequency)
+
+config KERNEL_ENTRY
+	default "entry"
+
+config RISCV_GENERIC_TOOLCHAIN
+	default n if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr"
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config PMP_NO_NA4
+	default y
+
+config PMP_GRANULARITY
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 3
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 52
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 2
+
+config NUM_IRQS
+	default 116
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # SOC_EGIS_ET171

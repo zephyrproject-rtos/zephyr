@@ -231,11 +231,8 @@ cy_rslt_t cy_rtos_get_thread_state(cy_thread_t *thread, cy_thread_state_t *state
 				*state = CY_THREAD_STATE_UNKNOWN;
 				break;
 
-			case _THREAD_PRESTART:
-				*state = CY_THREAD_STATE_INACTIVE;
-				break;
-
 			case _THREAD_SUSPENDED:
+			case _THREAD_SLEEPING:
 			case _THREAD_PENDING:
 				*state = CY_THREAD_STATE_BLOCKED;
 				break;
@@ -311,10 +308,8 @@ cy_rslt_t cy_rtos_wait_thread_notification(cy_time_t timeout_ms)
 	return status;
 }
 
-cy_rslt_t cy_rtos_thread_set_notification(cy_thread_t *thread, bool in_isr)
+cy_rslt_t cy_rtos_thread_set_notification(cy_thread_t *thread)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rslt_t status = CY_RSLT_SUCCESS;
 
 	if (thread == NULL) {
@@ -429,8 +424,6 @@ cy_rslt_t cy_rtos_init_semaphore(cy_semaphore_t *semaphore, uint32_t maxcount, u
 
 cy_rslt_t cy_rtos_get_semaphore(cy_semaphore_t *semaphore, cy_time_t timeout_ms, bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rtos_error_t status_internal;
 	cy_rslt_t status;
 
@@ -465,8 +458,6 @@ cy_rslt_t cy_rtos_get_semaphore(cy_semaphore_t *semaphore, cy_time_t timeout_ms,
 
 cy_rslt_t cy_rtos_set_semaphore(cy_semaphore_t *semaphore, bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rslt_t status = CY_RSLT_SUCCESS;
 
 	if (semaphore == NULL) {
@@ -526,8 +517,6 @@ cy_rslt_t cy_rtos_init_event(cy_event_t *event)
 
 cy_rslt_t cy_rtos_setbits_event(cy_event_t *event, uint32_t bits, bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rslt_t status = CY_RSLT_SUCCESS;
 
 	if (event == NULL) {
@@ -542,8 +531,6 @@ cy_rslt_t cy_rtos_setbits_event(cy_event_t *event, uint32_t bits, bool in_isr)
 
 cy_rslt_t cy_rtos_clearbits_event(cy_event_t *event, uint32_t bits, bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rslt_t status = CY_RSLT_SUCCESS;
 
 	if (event == NULL) {
@@ -648,8 +635,6 @@ cy_rslt_t cy_rtos_init_queue(cy_queue_t *queue, size_t length, size_t itemsize)
 cy_rslt_t cy_rtos_put_queue(cy_queue_t *queue, const void *item_ptr, cy_time_t timeout_ms,
 			    bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rtos_error_t status_internal;
 	cy_rslt_t status;
 
@@ -677,8 +662,6 @@ cy_rslt_t cy_rtos_put_queue(cy_queue_t *queue, const void *item_ptr, cy_time_t t
 
 cy_rslt_t cy_rtos_get_queue(cy_queue_t *queue, void *item_ptr, cy_time_t timeout_ms, bool in_isr)
 {
-	CY_UNUSED_PARAMETER(in_isr);
-
 	cy_rtos_error_t status_internal;
 	cy_rslt_t status;
 

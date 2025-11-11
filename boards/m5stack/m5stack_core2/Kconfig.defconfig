@@ -5,13 +5,6 @@
 
 if BOARD_M5STACK_CORE2_ESP32_PROCPU
 
-config HEAP_MEM_POOL_ADD_SIZE_BOARD
-	int
-	default 65535 if WIFI && BT
-	default 51200 if WIFI
-	default 65536 if BT
-	default 4096
-
 config KERNEL_MEM_POOL
 	default y
 
@@ -21,7 +14,7 @@ config GPIO_HOGS_INIT_PRIORITY
 config MFD_INIT_PRIORITY
 	default 70
 
-config REGULATOR_AXP192_INIT_PRIORITY
+config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
 	default 71
 
 config GPIO_AXP192_INIT_PRIORITY
@@ -30,13 +23,10 @@ config GPIO_AXP192_INIT_PRIORITY
 config REGULATOR_FIXED_INIT_PRIORITY
 	default 75
 
-config INPUT_FT5336_INTERRUPT
-	default y if INPUT
-
 config INPUT
 	default y
 
-config LV_COLOR_16_SWAP
+configdefault LV_COLOR_16_SWAP
 	default y if LVGL
 
 # Increase initialization priority of MIPI DBI device, so that it initializes
@@ -49,10 +39,3 @@ config MIPI_DBI_INIT_PRIORITY
 endif # MIPI_DBI
 
 endif # BOARD_M5STACK_CORE2_ESP32_PROCPU
-
-if BOARD_M5STACK_CORE2_ESP32_APPCPU
-
-config HEAP_MEM_POOL_ADD_SIZE_BOARD
-	default 256
-
-endif # BOARD_M5STACK_CORE2_ESP32_APPCPU

@@ -101,10 +101,10 @@ struct ptp_parent_ds {
 	uint8_t		       gm_priority1;
 	/** Value of Grandmaster's priority2 attribute. */
 	uint8_t		       gm_priority2;
-	/** Address of the PTP Port issuing sync messages used to synchronize this PTP Instance. */
-	struct ptp_port_addr   protocol_addr;
 	/** Flag inticating use of sync_uncertain flag in Announce message. */
 	bool		       sync_uncertain;
+	/** Address of the PTP Port issuing sync messages used to synchronize this PTP Instance. */
+	struct ptp_port_addr   protocol_addr;
 };
 
 /**

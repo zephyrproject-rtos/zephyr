@@ -57,7 +57,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		k_timeout_t next = timer->period;
 
 		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = MAX(next.ticks - 1, 0);
+		next.ticks = max(next.ticks - 1, 0);
 
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
@@ -166,8 +166,13 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * argument the same way k_sleep() does), but historical.  The
 	 * timer_api test relies on this behavior.
 	 */
-	if (Z_TICK_ABS(duration.ticks) < 0) {
-		duration.ticks = MAX(duration.ticks - 1, 0);
+	if (Z_IS_TIMEOUT_RELATIVE(duration)) {
+		/* For the duration == K_NO_WAIT case, ensure that behaviour
+		 * is consistent for both 32-bit k_ticks_t which are unsigned
+		 * and 64-bit k_ticks_t which are signed.
+		 */
+		duration.ticks = max(1, duration.ticks);
+		duration.ticks = duration.ticks - 1;
 	}
 
 	(void)z_abort_timeout(&timer->timeout);

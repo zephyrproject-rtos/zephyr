@@ -1,0 +1,7 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MCX_NXXX_EVK
+	bool
+	default y if BOARD_MCX_N9XX_EVK || BOARD_MCX_N5XX_EVK
+	select BOARD_EARLY_INIT_HOOK

@@ -6,7 +6,6 @@
 #include <dt-bindings/pinctrl/samc21n-pinctrl.h>
 
 &pinctrl {
-
 	pwm_default: pwm_default {
 		group1 {
 			pinmux = <PC5F_TCC2_WO1>;
@@ -74,5 +73,4 @@
 				 <PB1D_SERCOM5_PAD3>;
 		};
 	};
-
 };

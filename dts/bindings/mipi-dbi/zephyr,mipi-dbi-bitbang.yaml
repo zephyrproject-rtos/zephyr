@@ -1,0 +1,56 @@
+# Copyright 2024 Stefan Gloor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MIPI-DBI Mode A and B bit banging controller. This driver emulates MIPI DBI mode A and B (6800
+  and 8080 parallel interfaces) using GPIO pins.
+
+compatible: "zephyr,mipi-dbi-bitbang"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/command GPIO pin. Set to low when sending a command, or high when sending data.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Reset GPIO pin. Set high to reset the display.
+
+  rd-gpios:
+    type: phandle-array
+    description: |
+      Read GPIO pin. Set high when reading from the display. Required for type B (Intel 8080) mode,
+      unused for type A (Motorola 6800).
+
+  wr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Write GPIO pin for type B (Intel 8080) mode, Read/!Write pin for type A (Motorola 6800) mode.
+
+  e-gpios:
+    type: phandle-array
+    description: |
+      Clocked enable/strobe pin for type A (Motorola 6800) mode, unused for type B (Intel 8080).
+      Fixed E mode is not supported.
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Chip-select GPIO pin.
+
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pins used for the parallel data bus. This must have as many entries as the bus is wide
+      of the selected mipi-mode.

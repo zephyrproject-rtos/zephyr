@@ -488,7 +488,7 @@ static void gpio_gpio_xec_port_isr(const struct device *dev)
 }
 
 /* GPIO driver official API table */
-static const struct gpio_driver_api gpio_xec_driver_api = {
+static DEVICE_API(gpio, gpio_xec_driver_api) = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
 	.port_set_masked_raw = gpio_xec_port_set_masked_raw,

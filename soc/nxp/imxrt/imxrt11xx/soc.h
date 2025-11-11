@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,15 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
+#include <fsl_gpc.h>
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(GPC_CPU_MODE_CTRL, irqn, true)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(GPC_CPU_MODE_CTRL, irqn, false)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) GPC_CM_GetIrqWakeupStatus(GPC_CPU_MODE_CTRL, irqn)
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +36,10 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 void imxrt_pre_init_display_interface(void);
 
 void imxrt_post_init_display_interface(void);
+#endif
+
+#if CONFIG_VIDEO_MCUX_MIPI_CSI2RX
+int mipi_csi2rx_clock_set_freq(clock_root_t clock_root, uint32_t rate);
 #endif
 
 void flexspi_clock_set_div(uint32_t value);

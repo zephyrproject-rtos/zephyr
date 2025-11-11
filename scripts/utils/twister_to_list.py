@@ -16,7 +16,6 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-
 FIELDS = (
     "arch_exclude",
     "arch_allow",

@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NXP_SPSDK_IMAGE
+	bool "Generate bootable firmware image with SPSDK"
+	help
+	  Generate bootable firmware image with NXP Secure
+	  Provisioning SDK (SPSDK).

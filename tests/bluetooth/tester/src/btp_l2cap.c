@@ -5,27 +5,39 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/bluetooth/bluetooth.h>
-
 #include <errno.h>
-#include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/att.h>
-#include <zephyr/sys/byteorder.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_l2cap
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <sys/types.h>
 
 #include "btp/btp.h"
 
-#define DATA_MTU_INITIAL 128
-#define DATA_MTU 256
-#define DATA_BUF_SIZE BT_L2CAP_SDU_BUF_SIZE(DATA_MTU)
+#define LOG_MODULE_NAME bttester_l2cap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+#define L2CAP_MPS        96
+#define DATA_MTU         (3 * L2CAP_MPS)
+#define DATA_MTU_INITIAL (2 * L2CAP_MPS)
+
+/* CHANNELS cannot be greater than 0x7f. */
 #define CHANNELS 2
 #define SERVERS 1
 
-NET_BUF_POOL_FIXED_DEFINE(data_pool, CHANNELS, DATA_BUF_SIZE, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, CHANNELS, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static bool authorize_flag;
 static uint8_t req_keysize;
@@ -35,18 +47,59 @@ static struct channel {
 	struct bt_l2cap_le_chan le;
 	bool in_use;
 	bool hold_credit;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	unsigned int pending_credits;
+	uint8_t recv_cb_buf[DATA_MTU + sizeof(struct btp_l2cap_data_received_ev)];
+#else
 	struct net_buf *pending_credit;
+#endif
 } channels[CHANNELS];
+
+#if defined(CONFIG_BT_CLASSIC)
+static struct br_channel {
+	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
+	struct bt_l2cap_br_chan br;
+	bool in_use;
+} br_channels[CHANNELS];
+#endif /* CONFIG_BT_CLASSIC */
 
 /* TODO Extend to support multiple servers */
 static struct bt_l2cap_server servers[SERVERS];
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+static void seg_recv_cb(struct bt_l2cap_chan *l2cap_chan, size_t sdu_len, off_t seg_offset,
+			struct net_buf_simple *seg)
+{
+	struct btp_l2cap_data_received_ev *ev;
+	struct bt_l2cap_le_chan *l2cap_le_chan =
+		CONTAINER_OF(l2cap_chan, struct bt_l2cap_le_chan, chan);
+	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
+
+	ev = (void *)chan->recv_cb_buf;
+	memcpy(&ev->data[seg_offset], seg->data, seg->len);
+
+	/* complete SDU received */
+	if (seg_offset + seg->len == sdu_len) {
+		ev->chan_id = chan->chan_id;
+		ev->data_length = sys_cpu_to_le16(sdu_len);
+
+		tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DATA_RECEIVED, chan->recv_cb_buf,
+			     sizeof(*ev) + sdu_len);
+	}
+
+	if (chan->hold_credit) {
+		chan->pending_credits++;
+	} else {
+		bt_l2cap_chan_give_credits(l2cap_chan, 1);
+	}
+}
+#else
 static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 {
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
-static uint8_t recv_cb_buf[DATA_BUF_SIZE + sizeof(struct btp_l2cap_data_received_ev)];
+static uint8_t recv_cb_buf[DATA_MTU + sizeof(struct btp_l2cap_data_received_ev)];
 
 static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
@@ -72,6 +125,7 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	return 0;
 }
+#endif
 
 static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
@@ -110,11 +164,13 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
 	struct bt_conn_info info;
 
+#if !defined(CONFIG_BT_L2CAP_SEG_RECV)
 	/* release netbuf on premature disconnection */
 	if (chan->pending_credit) {
 		net_buf_unref(chan->pending_credit);
 		chan->pending_credit = NULL;
 	}
+#endif
 
 	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
 
@@ -159,12 +215,16 @@ static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 #endif
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
-	.alloc_buf	= alloc_buf_cb,
-	.recv		= recv_cb,
-	.connected	= connected_cb,
-	.disconnected	= disconnected_cb,
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	.seg_recv = seg_recv_cb,
+#else
+	.alloc_buf = alloc_buf_cb,
+	.recv = recv_cb,
+#endif
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
 #if defined(CONFIG_BT_L2CAP_ECRED)
-	.reconfigured	= reconfigured_cb,
+	.reconfigured = reconfigured_cb,
 #endif
 };
 
@@ -191,6 +251,146 @@ static struct channel *get_free_channel()
 	return NULL;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static void br_connected_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_connected_ev ev;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+	struct bt_conn_info info;
+
+	ev.chan_id = chan->chan_id;
+
+	/* TODO: ev.psm */
+	if (bt_conn_get_info(l2cap_chan->conn, &info) != 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_BR:
+		ev.mtu_remote = sys_cpu_to_le16(chan->br.tx.mtu);
+		ev.mps_remote = sys_cpu_to_le16(chan->br.tx.mtu);
+		ev.mtu_local = sys_cpu_to_le16(chan->br.rx.mtu);
+		ev.mps_local = sys_cpu_to_le16(chan->br.rx.mtu);
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, info.br.dst);
+		break;
+	default:
+		/* Unsupported transport */
+		return;
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_CONNECTED, &ev, sizeof(ev));
+}
+
+static void br_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct btp_l2cap_disconnected_ev ev;
+	struct bt_l2cap_br_chan *l2cap_br_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_br_chan, chan);
+	struct br_channel *chan = CONTAINER_OF(l2cap_br_chan, struct br_channel, br);
+	struct bt_conn_info info;
+
+	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
+
+	/* TODO: ev.result */
+	ev.chan_id = chan->chan_id;
+
+	chan->in_use = false;
+
+	/* TODO: ev.psm */
+	if (bt_conn_get_info(l2cap_chan->conn, &info) != 0) {
+		return;
+	}
+
+	switch (info.type) {
+	case BT_CONN_TYPE_BR:
+		ev.address.type = BTP_BR_ADDRESS_TYPE;
+		bt_addr_copy(&ev.address.a, info.br.dst);
+		break;
+	default:
+		/* Unsupported transport */
+		return;
+	}
+
+	tester_event(BTP_SERVICE_ID_L2CAP, BTP_L2CAP_EV_DISCONNECTED, &ev, sizeof(ev));
+}
+
+static const struct bt_l2cap_chan_ops br_l2cap_ops = {
+	.connected = br_connected_cb,
+	.disconnected = br_disconnected_cb,
+};
+
+static struct br_channel *get_free_br_channel(void)
+{
+	uint8_t i;
+	struct br_channel *chan;
+
+	for (i = 0U; i < CHANNELS; i++) {
+		if (br_channels[i].in_use) {
+			continue;
+		}
+
+		chan = &br_channels[i];
+
+		(void)memset(chan, 0, sizeof(*chan));
+		chan->chan_id = i + ARRAY_SIZE(channels);
+
+		br_channels[i].in_use = true;
+
+		return chan;
+	}
+
+	return NULL;
+}
+
+static uint8_t br_connect(const struct btp_l2cap_connect_cmd *cp, struct btp_l2cap_connect_rp *rp,
+			  uint16_t *rsp_len)
+{
+	struct bt_conn *conn;
+	struct br_channel *br_chan = NULL;
+	int err;
+
+	conn = bt_conn_lookup_addr_br(&cp->address.a);
+	if (conn == NULL) {
+		return BTP_STATUS_FAILED;
+	}
+
+	br_chan = get_free_br_channel();
+	if (br_chan == NULL) {
+		goto fail;
+	}
+	br_chan->br.chan.ops = &br_l2cap_ops;
+	br_chan->br.rx.mtu = sys_le16_to_cpu(cp->mtu);
+	rp->chan_id[0] = br_chan->chan_id;
+
+	err = bt_l2cap_chan_connect(conn, &br_chan->br.chan, sys_le16_to_cpu(cp->psm));
+	if (err < 0) {
+		goto fail;
+	}
+
+	rp->num = 1;
+	*rsp_len = sizeof(*rp) + (rp->num * sizeof(rp->chan_id[0]));
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+
+fail:
+	if (br_chan != NULL) {
+		br_chan->in_use = false;
+	}
+	bt_conn_unref(conn);
+	return BTP_STATUS_FAILED;
+}
+#else
+static uint8_t br_connect(const struct btp_l2cap_connect_cmd *cp, struct btp_l2cap_connect_rp *rp,
+			  uint16_t *rsp_len)
+{
+	return BTP_STATUS_FAILED;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
@@ -209,6 +409,10 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
+		return br_connect(cp, rp, rsp_len);
+	}
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		return BTP_STATUS_FAILED;
@@ -221,10 +425,15 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		}
 		chan->le.chan.ops = &l2cap_ops;
 		chan->le.rx.mtu = mtu;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+		chan->le.rx.mps = L2CAP_MPS;
+#endif
 		rp->chan_id[i] = chan->chan_id;
 		allocated_channels[i] = &chan->le.chan;
 
 		chan->hold_credit = cp->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
+
+		bt_l2cap_chan_give_credits(&chan->le.chan, 1);
 	}
 
 	if (cp->num == 1 && !ecfc) {
@@ -261,12 +470,48 @@ fail:
 	return BTP_STATUS_FAILED;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t br_disconnect(uint8_t chan_id)
+{
+	struct br_channel *br_chan;
+	int err;
+
+	if (chan_id >= CHANNELS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	br_chan = &br_channels[chan_id];
+
+	err = bt_l2cap_chan_disconnect(&br_chan->br.chan);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#else
+static uint8_t br_disconnect(uint8_t chan_id)
+{
+	return BTP_STATUS_FAILED;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_l2cap_disconnect_cmd *cp = cmd;
 	struct channel *chan;
 	int err;
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		uint8_t chan_id;
+
+		chan_id = cp->chan_id;
+		if (chan_id >= ARRAY_SIZE(channels)) {
+			chan_id = chan_id - ARRAY_SIZE(channels);
+			return br_disconnect(chan_id);
+		}
+	}
 
 	if (cp->chan_id >= CHANNELS) {
 		return BTP_STATUS_FAILED;
@@ -288,6 +533,7 @@ static uint8_t reconfigure(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_l2cap_reconfigure_cmd *cp = cmd;
 	uint16_t mtu;
+	uint16_t mps;
 	struct bt_conn *conn;
 	int err;
 	struct bt_l2cap_chan *reconf_channels[CHANNELS + 1] = {};
@@ -320,7 +566,8 @@ static uint8_t reconfigure(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_l2cap_ecred_chan_reconfigure(reconf_channels, mtu);
+	mps = MIN(L2CAP_MPS, BT_L2CAP_RX_MTU);
+	err = bt_l2cap_ecred_chan_reconfigure_explicit(reconf_channels, cp->num, mtu, mps);
 	if (err) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
@@ -453,11 +700,50 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 	chan->le.chan.ops = &l2cap_ops;
 	chan->le.rx.mtu = DATA_MTU_INITIAL;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	chan->le.rx.mps = L2CAP_MPS;
+#endif
 
 	*l2cap_chan = &chan->le.chan;
 
+	bt_l2cap_chan_give_credits(&chan->le.chan, 1);
+
 	return 0;
 }
+
+#if defined(CONFIG_BT_CLASSIC)
+static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		     struct bt_l2cap_chan **l2cap_chan)
+{
+	struct br_channel *chan;
+
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
+	chan = get_free_br_channel();
+	if (chan == NULL) {
+		return -ENOMEM;
+	}
+
+	chan->br.chan.ops = &br_l2cap_ops;
+	chan->br.rx.mtu = DATA_MTU_INITIAL;
+
+	*l2cap_chan = &chan->br.chan;
+
+	return 0;
+}
+#else
+static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		     struct bt_l2cap_chan **l2cap_chan)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_CLASSIC */
 
 static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
@@ -465,8 +751,6 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	const struct btp_l2cap_listen_cmd *cp = cmd;
 	struct bt_l2cap_server *server;
 	uint16_t psm = sys_le16_to_cpu(cp->psm);
-
-	/* TODO: Handle cmd->transport flag */
 
 	if (psm == 0 || !is_free_psm(psm)) {
 		return BTP_STATUS_FAILED;
@@ -477,7 +761,6 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	server->accept = accept;
 	server->psm = psm;
 
 	switch (cp->response) {
@@ -496,12 +779,26 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION:
 		server->sec_level = BT_SECURITY_L2;
 		break;
+	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_SEC_AUTHEN:
+		server->sec_level = BT_SECURITY_L4;
+		break;
 	default:
 		return BTP_STATUS_FAILED;
 	}
 
-	if (bt_l2cap_server_register(server) < 0) {
-		server->psm = 0U;
+	if (cp->transport == BTP_L2CAP_TRANSPORT_LE) {
+		server->accept = accept;
+		if (bt_l2cap_server_register(server) < 0) {
+			server->psm = 0U;
+			return BTP_STATUS_FAILED;
+		}
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && (cp->transport == BTP_L2CAP_TRANSPORT_BREDR)) {
+		server->accept = br_accept;
+		if (bt_l2cap_br_server_register(server) < 0) {
+			server->psm = 0U;
+			return BTP_STATUS_FAILED;
+		}
+	} else {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -523,7 +820,15 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 	if (!chan->in_use) {
 		return BTP_STATUS_FAILED;
 	}
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	if (chan->pending_credits) {
+		if (bt_l2cap_chan_give_credits(&chan->le.chan, chan->pending_credits) < 0) {
+			return BTP_STATUS_FAILED;
+		}
 
+		chan->pending_credits = 0;
+	}
+#else
 	if (chan->pending_credit) {
 		if (bt_l2cap_chan_recv_complete(&chan->le.chan,
 						chan->pending_credit) < 0) {
@@ -532,6 +837,7 @@ static uint8_t credits(const void *cmd, uint16_t cmd_len,
 
 		chan->pending_credit = NULL;
 	}
+#endif
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -541,22 +847,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_l2cap_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_L2CAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_L2CAP_CONNECT);
-	tester_set_bit(rp->data, BTP_L2CAP_DISCONNECT);
-	tester_set_bit(rp->data, BTP_L2CAP_SEND_DATA);
-	tester_set_bit(rp->data, BTP_L2CAP_LISTEN);
-#if defined(CONFIG_BT_L2CAP_ECRED)
-	tester_set_bit(rp->data, BTP_L2CAP_RECONFIGURE);
-#endif
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_L2CAP_CREDITS);
-#if defined(CONFIG_BT_EATT)
-	tester_set_bit(rp->data, BTP_L2CAP_DISCONNECT_EATT_CHANS);
-#endif
-
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_L2CAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -598,11 +890,13 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_l2cap_credits_cmd),
 		.func = credits,
 	},
+#if defined(CONFIG_BT_EATT)
 	{
 		.opcode = BTP_L2CAP_DISCONNECT_EATT_CHANS,
 		.expect_len = sizeof(struct btp_l2cap_disconnect_eatt_chans_cmd),
 		.func = disconnect_eatt_chans,
 	},
+#endif
 };
 
 uint8_t tester_init_l2cap(void)

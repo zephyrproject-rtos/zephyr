@@ -15,11 +15,18 @@ LOG_MODULE_REGISTER(ptp_transport, CONFIG_PTP_LOG_LEVEL);
 
 #define INTERFACE_NAME_LEN (32)
 
+union mcast_addr {
+	struct in_addr ipv4;
+#if defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+	struct in6_addr ipv6;
+#endif
+};
+
 #if CONFIG_PTP_UDP_IPv4_PROTOCOL
-static struct in_addr mcast_addr = {{{224, 0, 1, 129}}};
+static union mcast_addr mcast_addr = {.ipv4 = {{{224, 0, 1, 129}}}};
 #elif CONFIG_PTP_UDP_IPv6_PROTOCOL
-static struct in6_addr mcast_addr = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-				       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}};
+static union mcast_addr mcast_addr = {.ipv6 = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+						 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}}};
 #else
 #error "Chosen PTP transport protocol not implemented"
 #endif
@@ -198,7 +205,7 @@ static int transport_send(int socket, int port, void *buf, int length, struct so
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 			m_addr.sa_family = AF_INET;
 			net_sin(&m_addr)->sin_port = htons(port);
-			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.s_addr;
+			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.ipv4.s_addr;
 
 		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 			m_addr.sa_family = AF_INET6;
@@ -266,7 +273,7 @@ int ptp_transport_close(struct ptp_port *port)
 
 int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -276,7 +283,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 
 int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -286,7 +293,7 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 
 int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	int cnt = 0;
 	uint8_t ctrl[CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
@@ -325,13 +332,17 @@ int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 		struct in_addr *ip = net_if_ipv4_get_global_addr(port->iface, NET_ADDR_PREFERRED);
 
-		length = NET_IPV4_ADDR_SIZE;
-		*addr = ip->s_addr;
+		if (ip) {
+			length = NET_IPV4_ADDR_SIZE;
+			*addr = ip->s_addr;
+		}
 	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 		struct in6_addr *ip = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &port->iface);
 
-		length = NET_IPV6_ADDR_SIZE;
-		memcpy(addr, ip, length);
+		if (ip) {
+			length = NET_IPV6_ADDR_SIZE;
+			memcpy(addr, ip, length);
+		}
 	}
 
 	return length;

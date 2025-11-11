@@ -1,0 +1,69 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+		};
+
+		test_flexcomm7_lpi2c7: lpi2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "nxp,lpi2c";
+			reg = <0x11112222 0x1000>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			test_ov7670: ov7670@1 {
+				compatible = "ovti,ov7670";
+				reset-gpios = <&test_gpio 19 GPIO_ACTIVE_HIGH>;
+				pwdn-gpios = <&test_gpio 18 GPIO_ACTIVE_HIGH>;
+				reg = <0x1>;
+
+				port {
+					test_ov7670_ep_out: endpoint {
+						remote-endpoint-label = "test_sdma_ep_in";
+					};
+				};
+			};
+		};
+
+		test_smartdma: smartdma@22223333 {
+			compatible = "nxp,smartdma";
+			reg = <0x22223333 0x1000>;
+			interrupt-parent = <&nvic>;
+			interrupts = <0 0>;
+			program-mem = <0x4000000>;
+			#dma-cells = <0>;
+			test_video_sdma: video-sdma {
+				compatible = "nxp,video-smartdma";
+				pinctrl-0 = <&pinmux_smartdma_camera>;
+				pinctrl-names = "default";
+				vsync-pin = <4>;
+				hsync-pin = <11>;
+				pclk-pin = <5>;
+
+				port {
+					test_sdma_ep_in: endpoint {
+						remote-endpoint-label = "test_ov7670_ep_out";
+					};
+				};
+			};
+		};
+	};
+};

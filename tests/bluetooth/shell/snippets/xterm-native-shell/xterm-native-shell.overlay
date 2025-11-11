@@ -6,11 +6,12 @@
 };
 
 /* Use the PTY driver instead of the UART peripheral emulation that is now the
- * default on nrf52_bsim. */
+ * default on nrf52_bsim.
+ */
 
 &uart1 {
 	status = "okay";
-	compatible = "zephyr,native-posix-uart";
+	compatible = "zephyr,native-pty-uart";
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;
@@ -23,7 +24,7 @@
 
 &uart0 {
 	status = "okay";
-	compatible = "zephyr,native-posix-uart";
+	compatible = "zephyr,native-pty-uart";
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;

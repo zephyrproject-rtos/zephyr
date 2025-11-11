@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "sparkfun_pro_micro_rp2040-pinctrl.dtsi"
 #include "sparkfun_pro_micro_connector.dtsi"
 #include <freq.h>
@@ -45,7 +45,6 @@
 			read-only;
 		};
 
-
 		/*
 		 * Usable flash. Starts at 0x100, after the bootloader. The partition
 		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
@@ -58,16 +57,18 @@
 	};
 };
 
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
-};
-
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+};
+
+zephyr_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c1 {

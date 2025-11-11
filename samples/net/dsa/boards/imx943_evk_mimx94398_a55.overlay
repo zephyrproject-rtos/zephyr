@@ -1,0 +1,39 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&emdio {
+	status = "okay";
+
+	phy0: phy@2 {
+		status = "okay";
+	};
+
+	phy1: phy@3 {
+		status = "okay";
+	};
+};
+
+/* Internal port */
+&enetc_psi3 {
+	status = "okay";
+};
+
+&netc_switch {
+	status = "okay";
+
+	switch_port0: switch_port@0 {
+		status = "okay";
+	};
+
+	switch_port1: switch_port@1 {
+		status = "okay";
+	};
+
+	/* Internal port */
+	switch_port3: switch_port@3 {
+		status = "okay";
+	};
+};

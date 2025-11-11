@@ -1,4 +1,4 @@
-.. _sensing_api:
+.. _sensing:
 
 Sensing Subsystem
 ########################
@@ -25,7 +25,7 @@ The sensing subsystem relies on Zephyr sensor device APIs (existing version or u
 to leverage Zephyr's large library of sensor device drivers (100+).
 
 Use of the sensing subsystem is optional. Applications that only need to access simple sensors
-devices can use the Zephyr :ref:`sensor_api` API directly.
+devices can use the Zephyr :ref:`sensor` API directly.
 
 Since the sensing subsystem is separated from device driver layer or
 kernel space and could support various customizations and sensor
@@ -246,7 +246,4 @@ See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_sim.ov
 API Reference
 *************
 
-.. doxygengroup:: sensing_sensor_types
-.. doxygengroup:: sensing_datatypes
 .. doxygengroup:: sensing_api
-.. doxygengroup:: sensing_sensor

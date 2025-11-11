@@ -118,6 +118,7 @@ static int mcux_sdif_get_host_props(const struct device *dev,
 	props->host_caps.high_spd_support = true;
 	props->host_caps.suspend_res_support = true;
 	props->host_caps.vol_330_support = true;
+	props->host_caps.bus_4_bit_support = true;
 	props->host_caps.bus_8_bit_support = true;
 	props->max_current_330 = 1024;
 	return 0;
@@ -401,7 +402,7 @@ static int mcux_sdif_request(const struct device *dev,
 	return ret;
 }
 
-static const struct sdhc_driver_api sdif_api = {
+static DEVICE_API(sdhc, sdif_api) = {
 	.reset = mcux_sdif_reset,
 	.get_host_props = mcux_sdif_get_host_props,
 	.set_io = mcux_sdif_set_io,

@@ -5,7 +5,8 @@
 '''Runner stub for renode-test.'''
 
 import subprocess
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class RenodeRobotRunner(ZephyrBinaryRunner):
@@ -59,5 +60,6 @@ class RenodeRobotRunner(ZephyrBinaryRunner):
                 for suite in self.testsuite:
                     cmd.append(suite)
             else:
-                self.logger.error("No Robot testsuite passed to renode-test! Use the `--testsuite` argument to provide one.")
+                self.logger.error("No Robot testsuite passed to renode-test! "
+                                  "Use the `--testsuite` argument to provide one.")
         subprocess.run(cmd, check=True)

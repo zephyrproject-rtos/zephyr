@@ -1,5 +1,6 @@
 board:
   name: dragino_lsn50
+  full_name: LSN50 LoRA Sensor Node
   vendor: dragino
   socs:
     - name: stm32l072xx

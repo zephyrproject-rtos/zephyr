@@ -3,7 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <soc.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/devicetree.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/atomic.h>
 
@@ -70,7 +72,12 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#if NRF_TIMER_HAS_SHUTDOWN
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+#else
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+#endif
 
 	return 0;
 }
@@ -89,6 +96,7 @@ static uint32_t read(const struct device *dev)
 
 	nrf_timer_task_trigger(timer,
 			       nrf_timer_capture_task_get(COUNTER_READ_CC));
+	nrf_barrier_w();
 
 	return nrf_timer_cc_get(timer, COUNTER_READ_CC);
 }
@@ -96,6 +104,14 @@ static uint32_t read(const struct device *dev)
 static int get_value(const struct device *dev, uint32_t *ticks)
 {
 	*ticks = read(dev);
+	return 0;
+}
+
+static int reset(const struct device *dev)
+{
+	const struct counter_nrfx_config *config = dev->config;
+
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
 	return 0;
 }
 
@@ -160,6 +176,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val,
 	 */
 	now = read(dev);
 	prev_val = nrf_timer_cc_get(reg, chan);
+	nrf_barrier_r();
 	nrf_timer_cc_set(reg, chan, now);
 	nrf_timer_event_clear(reg, evt);
 
@@ -388,10 +405,11 @@ static void irq_handler(const void *arg)
 	}
 }
 
-static const struct counter_driver_api counter_nrfx_driver_api = {
+static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,
+	.reset = reset,
 	.set_alarm = set_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,
@@ -416,14 +434,6 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		(IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),	\
 			    irq_handler, DEVICE_DT_INST_GET(idx), 0))		\
 	)
-
-#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-#define CHECK_MAX_FREQ(idx)									\
-		BUILD_ASSERT(DT_INST_PROP(idx, max_frequency) ==				\
-			NRF_TIMER_BASE_FREQUENCY_GET((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)))
-#else
-#define CHECK_MAX_FREQ(idx)
-#endif
 
 #define COUNTER_NRFX_TIMER_DEVICE(idx)								\
 	BUILD_ASSERT(DT_INST_PROP(idx, prescaler) <=						\
@@ -454,7 +464,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
-			.freq = DT_INST_PROP(idx, max_frequency) /				\
+			.freq = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)) /			\
 				BIT(DT_INST_PROP(idx, prescaler)),				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
@@ -463,7 +473,6 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
-	CHECK_MAX_FREQ(idx);									\
 	DEVICE_DT_INST_DEFINE(idx,								\
 			    counter_##idx##_init,						\
 			    NULL,								\

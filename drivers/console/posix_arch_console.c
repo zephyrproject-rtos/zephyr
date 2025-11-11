@@ -7,11 +7,14 @@
 
 #include <zephyr/init.h>
 #include <zephyr/arch/posix/posix_trace.h>
+#include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 
+#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 static int print_char(int c)
 {
 	int printnow = 0;
@@ -34,6 +37,7 @@ static int print_char(int c)
 	}
 	return c;
 }
+#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 /**
  * Ensure that whatever was written thru printk is displayed now
@@ -51,11 +55,9 @@ void posix_flush_stdout(void)
 static int posix_arch_console_init(void)
 {
 #ifdef CONFIG_PRINTK
-	extern void __printk_hook_install(int (*fn)(int));
 	__printk_hook_install(print_char);
 #endif
 #ifdef CONFIG_STDOUT_CONSOLE
-	extern void __stdout_hook_install(int (*fn)(int));
 	__stdout_hook_install(print_char);
 #endif
 	return 0;

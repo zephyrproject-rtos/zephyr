@@ -1,11 +1,10 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config CMU_HFXO_FREQ
-	default 38400000
+if BOARD_XG27_DK2602A
 
-config CMU_LFXO_FREQ
-	default 32768
+configdefault LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
 
 if SOC_GECKO_USE_RAIL
 
@@ -19,9 +18,6 @@ if BT
 config FPU
 	default y
 
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 8192
-
 config MAIN_STACK_SIZE
 	default 3072 if PM
 	default 2304
@@ -30,3 +26,5 @@ endif # BT
 
 config REGULATOR
 	default y if SI7210
+
+endif

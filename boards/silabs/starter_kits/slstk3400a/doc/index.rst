@@ -1,7 +1,4 @@
-.. _slstk3400a:
-
-EFM32 Happy Gecko (SLSTK3400A)
-##############################
+.. zephyr:board:: slstk3400a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32 Happy Gecko Starter Kit SLSTK3400A contains a MCU from the
 EFM32HG family built on ARM® Cortex®-M0+ processor with excellent low
 power capabilities.
-
-.. figure:: slstk3400a.jpg
-   :align: center
-   :alt: SLSTK3400A
-
-   SLSTK3400A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -42,27 +33,7 @@ See these documents for more information
 Supported Features
 ==================
 
-The efm32hg_slstk3400 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kit/slstk3400a/slstk3400a_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -107,9 +78,11 @@ USART1 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -125,7 +98,7 @@ board. The adaptor provides:
 Flashing an application to EFM32-SLSTK3400A
 -------------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -171,6 +144,3 @@ Reset the board and you will see this message written to the serial port:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

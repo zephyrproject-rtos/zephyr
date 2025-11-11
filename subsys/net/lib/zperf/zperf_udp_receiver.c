@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/zperf.h>
@@ -45,9 +46,9 @@ static struct sockaddr udp_server_addr;
 
 struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 
-static void udp_svc_handler(struct k_work *work);
+static void udp_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_udp, NULL, udp_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_udp, udp_svc_handler,
 				      SOCK_ID_MAX);
 static char udp_server_iface_name[IFNAMSIZ];
 
@@ -236,8 +237,9 @@ static void zperf_udp_join_mcast_ipv4(char *if_name, struct in_addr *addr)
 
 	if (if_name[0]) {
 		iface = net_if_get_by_index(net_if_get_by_name(if_name));
-		if (iface == NULL)
+		if (iface == NULL) {
 			iface = net_if_get_default();
+		}
 	} else {
 		iface = net_if_get_default();
 	}
@@ -253,8 +255,9 @@ static void zperf_udp_join_mcast_ipv6(char *if_name, struct in6_addr *addr)
 
 	if (if_name[0]) {
 		iface = net_if_get_by_index(net_if_get_by_name(if_name));
-		if (iface == NULL)
+		if (iface == NULL) {
 			iface = net_if_get_default();
+		}
 	} else {
 		iface = net_if_get_default();
 	}
@@ -275,15 +278,17 @@ static void zperf_udp_leave_mcast(int sock)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
 
-		if (net_ipv4_is_addr_mcast(&addr4->sin_addr))
+		if (net_ipv4_is_addr_mcast(&addr4->sin_addr)) {
 			net_ipv4_igmp_leave(iface, &addr4->sin_addr);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
 
-		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr))
+		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
 			net_ipv6_mld_leave(iface, &addr6->sin6_addr);
+		}
 	}
 }
 
@@ -310,7 +315,7 @@ static void udp_receiver_cleanup(void)
 static int udp_recv_data(struct net_socket_service_event *pev)
 {
 	static uint8_t buf[UDP_RECEIVER_BUF_SIZE];
-	int ret = 0;
+	int ret = 1;
 	int family, sock_error;
 	struct sockaddr addr;
 	socklen_t optlen = sizeof(int);
@@ -336,19 +341,25 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 		return 0;
 	}
 
-	ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), 0,
-			     &addr, &addrlen);
-	if (ret < 0) {
-		ret = -errno;
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_DOMAIN, &family, &optlen);
-		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
-		goto error;
+	while (ret > 0) {
+		ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT,
+				     &addr, &addrlen);
+		if ((ret < 0) && (errno == EAGAIN)) {
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			ret = -errno;
+			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
+					       SO_DOMAIN, &family, &optlen);
+			NET_ERR("recv failed on IPv%d socket (%d)",
+				family == AF_INET ? 4 : 6, -ret);
+			goto error;
+		}
+
+		udp_received(pev->event.fd, &addr, buf, ret);
 	}
-
-	udp_received(pev->event.fd, &addr, buf, ret);
-
 	return ret;
 
 error:
@@ -359,10 +370,8 @@ error:
 	return ret;
 }
 
-static void udp_svc_handler(struct k_work *work)
+static void udp_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = udp_recv_data(pev);

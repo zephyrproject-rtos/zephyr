@@ -635,7 +635,7 @@ static int gpio_sx1509b_manage_callback(const struct device *dev,
 }
 #endif
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = sx1509b_config,
 	.port_get_raw = port_get,
 	.port_set_masked_raw = port_set_masked,

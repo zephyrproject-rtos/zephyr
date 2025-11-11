@@ -1,5 +1,6 @@
 boards:
   - name: xg27_dk2602a
+    full_name: EFR32xG27 Dev Kit (xG27-DK2602A)
     vendor: silabs
     socs:
       - name: efr32bg27c140f768im40

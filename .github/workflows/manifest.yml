@@ -2,16 +2,20 @@ name: Manifest
 on:
   pull_request_target:
 
+permissions:
+  contents: read
+
 jobs:
   contribs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write # to create/update pull request comments
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           path: zephyrproject/zephyr
-          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -20,19 +24,22 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip3 install west
+          pip install -r scripts/requirements-west.txt --require-hashes
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@v1.2.2
+        uses: zephyrproject-rtos/action-manifest@09983f53d3d878791aa37a7755ae44d695f4c1e5 # v2.0.0
         with:
-          github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           manifest-path: 'west.yml'
           checkout-path: 'zephyrproject/zephyr'
           use-tree-checkout: 'true'
+          check-impostor-commits: 'true'
           label-prefix: 'manifest-'
           verbosity-level: '1'
           labels: 'manifest'
-          dnm-labels: 'DNM'
+          dnm-labels: 'DNM (manifest)'
+          blobs-added-labels: 'Binary Blobs Added'
+          blobs-modified-labels: 'Binary Blobs Modified'

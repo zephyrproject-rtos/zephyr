@@ -1,0 +1,9 @@
+# Copyright (c) 2023 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SysTick of ARM Cortex-M chips
+include: base.yaml
+
+properties:
+  reg:
+    required: true

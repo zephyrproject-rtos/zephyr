@@ -11,15 +11,17 @@
 #include <zephyr/logging/log.h>
 
 #include "../common_defs.h"
-#include "../test_utils.h"
 
 #include <testlib/conn.h>
 #include "testlib/scan.h"
 #include "testlib/security.h"
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);
 
-DEFINE_FLAG(flag_attr_read_success);
+DEFINE_FLAG_STATIC(flag_attr_read_success);
 
 static uint8_t gatt_attr_read_cb(struct bt_conn *conn, uint8_t att_err,
 				 struct bt_gatt_read_params *params, const void *data, uint16_t len)
@@ -96,7 +98,7 @@ static void test_client(void)
 	bt_conn_unref(conn);
 	conn = NULL;
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 DEFINE_FLAG(flag_pairing_in_progress);
@@ -158,20 +160,16 @@ static void test_client_security_request(void)
 	bt_conn_unref(conn);
 	conn = NULL;
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 static const struct bst_test_instance client_tests[] = {
 	{
 		.test_id = "test_client",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_client,
 	},
 	{
 		.test_id = "test_client_security_request",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_client_security_request,
 	},
 	BSTEST_END_MARKER,

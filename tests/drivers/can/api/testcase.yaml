@@ -14,14 +14,10 @@ tests:
       - CONFIG_CAN_ACCEPT_RTR=y
   drivers.can.api.twai:
     extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
-    filter: dt_compat_enabled("espressif,esp32-twai")
     platform_allow:
-      - esp32_devkitc_wroom/esp32/procpu
-      - esp32_devkitc_wrover/esp32/procpu
-      - esp32c3_devkitm
-      - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - xiao_esp32s3/esp32s3/procpu
+      - esp32h2_devkitm
   drivers.can.api.nxp_s32_canxl.non_rx_fifo:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n

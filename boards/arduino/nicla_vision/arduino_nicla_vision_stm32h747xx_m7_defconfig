@@ -1,0 +1,19 @@
+# Copyright 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+# Disable the internal SMPS regulator
+CONFIG_POWER_SUPPLY_DIRECT_SMPS=n
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# On M7, USB CDC ACM is used as the UART console backend by default
+
+# Use zephyr,code-partition as flash offset
+CONFIG_USE_DT_CODE_PARTITION=y

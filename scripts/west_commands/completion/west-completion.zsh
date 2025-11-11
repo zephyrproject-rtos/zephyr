@@ -16,24 +16,33 @@ _west_cmds() {
   'manifest[manage the west manifest]'
   'diff["git diff" for one or more projects]'
   'status["git status" for one or more projects]'
+  'grep["run grep or a grep-like tool in one or more local projects]'
   'forall[run a command in one or more local projects]'
+  'help[get help for west or a command]'
   'config[get or set config file values]'
   'topdir[print the top level directory of the workspace]'
-  'help[get help for west or a command]'
   )
 
   local -a zephyr_ext_cmds=(
   'completion[display shell completion scripts]'
   'boards[display information about supported boards]'
+  'shields[display information about supported shields]'
   'build[compile a Zephyr application]'
   'sign[sign a Zephyr binary for bootloader chain-loading]'
   'flash[flash and run a binary on a board]'
   'debug[flash and interactively debug a Zephyr application]'
   'debugserver[connect to board and launch a debug server]'
   'attach[interactively debug a board]'
+  'rtt[open an rtt shell]'
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
+  'bindesc[work with Binary Descriptors]'
+  'robot[run RobotFramework test suites]'
+  'sdk[manage SDKs]'
+  'packages[manage packages for Zephyr]'
+  'patch[manage patches for Zephyr modules]'
+  'gtags[create a GNU global tags file for the current workspace]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})
@@ -111,6 +120,18 @@ _get_west_boards() {
   _west_boards=(${(@s/ /)_west_boards})
 
   _describe 'boards' _west_boards
+}
+
+_get_west_shields() {
+  _west_shields=( $(__west_x shields --format='{name}') )
+  for i in {1..${#_west_shields[@]}}; do
+    local name="${_west_shields[$i]%%|*}"
+    local transformed_shield="${_west_shields[$i]//|//}"
+    _west_shields[$i]="${transformed_shield//,/ ${name}/}"
+  done
+  _west_shields=(${(@s/ /)_west_shields})
+
+  _describe 'shields' _west_shields
 }
 
 _west_init() {
@@ -227,6 +248,16 @@ _west_boards() {
   _arguments -S $opts
 }
 
+_west_shields() {
+  local -a opts=(
+  {-f,--format}'[format string]:format string:'
+  {-n,--name}'[name regex]:regex:'
+  '*--board-root[Add a board root]:board root:_directories'
+  )
+
+  _arguments -S $opts
+}
+
 _west_build() {
   local -a opts=(
   '(-b --board)'{-b,--board}'[board to build for]:board:_get_west_boards'
@@ -242,6 +273,7 @@ _west_build() {
   {-o,--build-opt}'[options to pass to build tool (make or ninja)]:tool opt:'
   '(-n --just-print --dry-run --recon)'{-n,--just-print,--dry-run,--recon}"[just print build commands, don't run them]"
   '(-p --pristine)'{-p,--pristine}'[pristine build setting]:pristine:(auto always never)'
+  '--shield[shield to build for]:shield:_get_west_shields'
   )
   _arguments -S $opts \
       "1:source_dir:_directories"

@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
-static void dl_callback(uint8_t port, bool data_pending,
-			int16_t rssi, int8_t snr,
-			uint8_t len, const uint8_t *hex_data)
+static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+			const uint8_t *hex_data)
 {
-	LOG_INF("Port %d, Pending %d, RSSI %ddB, SNR %ddBm", port, data_pending, rssi, snr);
+	LOG_INF("Port %d, Pending %d, RSSI %ddB, SNR %ddBm, Time %d", port,
+		flags & LORAWAN_DATA_PENDING, rssi, snr, !!(flags & LORAWAN_TIME_UPDATED));
 	if (hex_data) {
 		LOG_HEXDUMP_INF(hex_data, len, "Payload: ");
 	}

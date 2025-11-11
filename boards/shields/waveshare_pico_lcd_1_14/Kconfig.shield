@@ -1,0 +1,11 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_WAVESHARE_PICO_LCD_1_14
+	def_bool $(shields_list_contains,waveshare_pico_lcd_1_14)
+
+config SHIELD_WAVESHARE_PICO_LCD_1_14_DISPLAY
+	def_bool $(shields_list_contains,waveshare_pico_lcd_1_14_display)
+
+config SHIELD_WAVESHARE_PICO_LCD_1_14_BUTTONS
+	def_bool $(shields_list_contains,waveshare_pico_lcd_1_14_buttons)

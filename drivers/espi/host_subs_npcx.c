@@ -127,7 +127,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-LOG_MODULE_REGISTER(host_sub_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(host_sub_npcx, CONFIG_ESPI_LOG_LEVEL);
 
 struct host_sub_npcx_config {
 	/* host module instances */
@@ -199,12 +199,12 @@ struct host_sub_npcx_data host_sub_data;
 #define EC_CFG_LDN_HCMD  0x12 /* PM Channel 2 */
 
 /* Index of EC (4E/4F) Configuration Register */
-#define EC_CFG_IDX_LDN             0x07
-#define EC_CFG_IDX_CTRL            0x30
-#define EC_CFG_IDX_CMD_IO_ADDR_H   0x60
-#define EC_CFG_IDX_CMD_IO_ADDR_L   0x61
-#define EC_CFG_IDX_DATA_IO_ADDR_H  0x62
-#define EC_CFG_IDX_DATA_IO_ADDR_L  0x63
+#define EC_CFG_IDX_LDN            0x07
+#define EC_CFG_IDX_CTRL           0x30
+#define EC_CFG_IDX_DATA_IO_ADDR_H 0x60
+#define EC_CFG_IDX_DATA_IO_ADDR_L 0x61
+#define EC_CFG_IDX_CMD_IO_ADDR_H  0x62
+#define EC_CFG_IDX_CMD_IO_ADDR_L  0x63
 
 /* LDN Activation Enable */
 #define EC_CFG_IDX_CTRL_LDN_ENABLE 0x01
@@ -897,9 +897,9 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			return -ENOTSUP;
 		}
 		if (data) {
-			LOG_INF("%s: op 0x%x data %x", __func__, op, *data);
+			LOG_DBG("op 0x%x data %x", op, *data);
 		} else {
-			LOG_INF("%s: op 0x%x only", __func__, op);
+			LOG_DBG("op 0x%x only", op);
 		}
 
 		switch (op) {
@@ -1029,15 +1029,15 @@ void npcx_host_init_subs_host_domain(void)
 		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM)
 		/* Configure IO address of CMD portt (default: 0x200) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H,
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H,
 		 (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff);
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L,
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L,
 		 CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM & 0xff);
 		/* Configure IO address of Data portt (default: 0x204) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H,
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H,
 		 ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) >> 8)
 		 & 0xff);
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L,
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L,
 		 (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) & 0xff);
 #endif
 		/* Enable 'Host Command' io port (PM Channel 2) */

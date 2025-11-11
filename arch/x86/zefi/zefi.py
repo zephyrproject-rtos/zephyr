@@ -8,6 +8,9 @@ import elftools.elf.elffile
 import argparse
 
 ENTRY_SYM = "__start64"
+BOOTARGS_SYM = "efi_bootargs"
+
+args = None
 
 def verbose(msg):
     if args.verbose:
@@ -93,6 +96,9 @@ def build_elf(elf_file, include_dirs):
 
     cf.write("static uintptr_t zefi_entry = 0x%xUL;\n" % (entry_addr))
 
+    if symtab.get_symbol_by_name(BOOTARGS_SYM):
+        cf.write("static uintptr_t zefi_bootargs = 0x%xUL;\n" % (symtab.get_symbol_by_name(BOOTARGS_SYM)[0].entry.st_value))
+
     cf.close()
 
     verbose("Metadata header generated.")
@@ -111,7 +117,7 @@ def build_elf(elf_file, include_dirs):
         includes.extend(["-I", include_dir])
     cmd = ([args.compiler, "-shared", "-Wall", "-Werror", "-I."] + includes +
            ["-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
-            "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile])
+            "-Wl,-nostdlib", "-nostartfiles", "-T", ldscript, "-o", "zefi.elf", cfile])
     verbose(" ".join(cmd))
     subprocess.run(cmd, check = True)
 

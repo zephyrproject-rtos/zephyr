@@ -168,6 +168,32 @@ const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_
  */
 void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block);
 
+/** @brief Expand the size of an existing allocation on the multi heap
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size.  If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copies to a new block and the old one
+ * will be freed as per sys_heap_free().  If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap.  If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified. If a new allocation is needed, the choice
+ * for the heap used will be bases on the cfg parameter (same as in sys_multi_heap_aligned_alloc).
+ *
+ * @param mheap Multi heap pointer
+ * @param cfg Opaque configuration parameter, as for sys_multi_heap_fn_t
+ * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Number of bytes requested for the new block
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *sys_multi_heap_aligned_realloc(struct sys_multi_heap *mheap, void *cfg,
+				     void *ptr, size_t align, size_t bytes);
+
+#define sys_multi_heap_realloc(mheap, cfg, ptr, bytes) \
+	sys_multi_heap_aligned_realloc(mheap, cfg, ptr, 0, bytes)
+
 /**
  * @}
  */

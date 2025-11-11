@@ -7,5 +7,5 @@ tests:
       - drivers
       - rtc
       - shell
-    filter: dt_alias_exists("rtc")
+    filter: dt_alias_exists("rtc") and not dt_compat_enabled("zephyr,rtc-counter")
     depends_on: rtc

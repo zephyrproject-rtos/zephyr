@@ -143,6 +143,11 @@ static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action act
 	struct kscan_regs *regs = cfg->regs;
 	int ret;
 
+	ret = input_kbd_matrix_pm_action(dev, action);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (cfg->wakeup_source) {
 		return 0;
 	}

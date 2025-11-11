@@ -1,0 +1,139 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC series
+config SOC_SERIES_XMC7200
+	bool
+
+config SOC_SERIES
+	default "xmc7200" if SOC_SERIES_XMC7200
+# SOC die
+config SOC_DIE_XMC7200
+	bool
+	select SOC_FAMILY_INFINEON_CAT1C
+
+# SOC packages
+config SOC_PACKAGE_XMC7200_176_TEQFP
+	bool
+
+config SOC_PACKAGE_XMC7200_272_BGA
+	bool
+
+config SOC_PACKAGE_XMC7200_320_BGA
+	bool
+
+# Infineon XMC7200 series MCUs
+config SOC_XMC7200_F176K8384
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+	select SOC_SERIES_XMC7200
+
+config SOC_XMC7200D_F176K8384
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+	select SOC_SERIES_XMC7200
+
+config SOC_XMC7200_E272K8384
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+	select SOC_SERIES_XMC7200
+
+config SOC_XMC7200D_E272K8384_M0PLUS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+	select SOC_SERIES_XMC7200
+
+config SOC_XMC7200D_E272K8384_M7_0
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+	select SOC_SERIES_XMC7200
+
+config SOC_XMC7200D_E272K8384_M7_1
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+	select SOC_SERIES_XMC7200
+
+config SOC_CYT4BF8CES
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+config SOC_CYT4BF8CEE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+config SOC_CYT4BF8CDS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+config SOC_CYT4BF8CDE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+config SOC_CYT4BFBCJS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+
+config SOC_CYT4BFBCJE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+
+config SOC_CYT4BFBCHS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+
+config SOC_CYT4BFBCHE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_272_BGA
+
+config SOC_CYT4BFCCJS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_320_BGA
+
+config SOC_CYT4BFCCJE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_320_BGA
+
+config SOC_CYT4BFCCHS
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_320_BGA
+
+config SOC_CYT4BFCCHE
+	bool
+	select SOC_DIE_XMC7200
+	select SOC_PACKAGE_XMC7200_320_BGA
+
+config SOC
+	default "xmc7200_f176k8384" if SOC_XMC7200_F176K8384
+	default "xmc7200d_f176k8384" if SOC_XMC7200D_F176K8384
+	default "xmc7200_e272k8384" if SOC_XMC7200_E272K8384
+	default "xmc7200d_e272k8384" if SOC_XMC7200D_E272K8384_M0PLUS || SOC_XMC7200D_E272K8384_M7_0 || SOC_XMC7200D_E272K8384_M7_1
+	default "cyt4bf8ces" if SOC_CYT4BF8CES
+	default "cyt4bf8cee" if SOC_CYT4BF8CEE
+	default "cyt4bf8cds" if SOC_CYT4BF8CDS
+	default "cyt4bf8cde" if SOC_CYT4BF8CDE
+	default "cyt4bfbcjs" if SOC_CYT4BFBCJS
+	default "cyt4bfbcje" if SOC_CYT4BFBCJE
+	default "cyt4bfbchs" if SOC_CYT4BFBCHS
+	default "cyt4bfbche" if SOC_CYT4BFBCHE
+	default "cyt4bfccjs" if SOC_CYT4BFCCJS
+	default "cyt4bfccje" if SOC_CYT4BFCCJE
+	default "cyt4bfcchs" if SOC_CYT4BFCCHS
+	default "cyt4bfcche" if SOC_CYT4BFCCHE

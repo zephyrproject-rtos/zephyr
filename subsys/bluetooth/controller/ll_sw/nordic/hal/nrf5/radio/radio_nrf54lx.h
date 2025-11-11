@@ -5,17 +5,25 @@
  */
 
 /* Use the NRF_RTC instance for coarse radio event scheduling */
+#if !defined(CONFIG_BT_CTLR_NRF_GRTC)
 #define NRF_RTC NRF_RTC10
-
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#error "Single Timer feature not supported yet"
-#endif
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #undef EVENT_TIMER_ID
 #define EVENT_TIMER_ID 10
 
 #undef EVENT_TIMER
 #define EVENT_TIMER _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#undef SW_SWITCH_TIMER
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#define SW_SWITCH_TIMER EVENT_TIMER
+#else  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+/* TODO: Using NRF_TIMER from another domain needs DPPIC and PPIB setup */
+#error "SW tIFS switching using dedicated second timer not supported yet."
+#endif  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 /* HAL abstraction of event timer prescaler value */
 #define HAL_EVENT_TIMER_PRESCALER_VALUE 5U
@@ -353,9 +361,16 @@
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
 /* HAL abstraction of Radio bitfields */
-#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET00_DISABLED_Msk
-#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_PHYEND_DISABLE_Msk
-#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
+#define HAL_RADIO_EVENTS_END                      EVENTS_END
+#define HAL_RADIO_PUBLISH_END                     PUBLISH_END
+#define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
+#define HAL_RADIO_PUBLISH_PHYEND                  PUBLISH_PHYEND
+#define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET00_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear (1UL)
 
 /* HAL abstraction of Radio IRQ number */
 #define HAL_RADIO_IRQn                          RADIO_0_IRQn
@@ -368,6 +383,23 @@
  */
 #define HAL_RADIO_RESET_VALUE_DFEMODE       0x00000000UL
 #define HAL_RADIO_RESET_VALUE_CTEINLINECONF 0x00002800UL
+#define HAL_RADIO_RESET_VALUE_DATAWHITE     0x00890040UL
+
+/* HAL abstraction of CCM h/w */
+#define NRF_CCM                               NRF_CCM00
+#define NRF_CCM_TASK_CRYPT                    NRF_CCM_TASK_START
+#define EVENTS_ENDCRYPT                       EVENTS_END
+#define INPTR                                 IN.PTR
+#define OUTPTR                                OUT.PTR
+#define MICSTATUS                             MACSTATUS
+#define CCM_INTENSET_ENDCRYPT_Msk             CCM_INTENSET_END_Msk
+#define CCM_INTENCLR_ENDCRYPT_Msk             CCM_INTENCLR_END_Msk
+#define CCM_MODE_DATARATE_125Kbps             CCM_MODE_DATARATE_125Kbit
+#define CCM_MODE_DATARATE_500Kbps             CCM_MODE_DATARATE_500Kbit
+#define CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbit
+
+/* HAL abstraction of AAR h/w */
+#define NRF_AAR NRF_AAR00
 
 static inline void hal_radio_reset(void)
 {
@@ -623,9 +655,17 @@ static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 
+#if defined(RADIO_TXPOWER_TXPOWER_Neg26dBm)
 	if (tx_power_lvl >= -26) {
 		return RADIO_TXPOWER_TXPOWER_Neg26dBm;
 	}
+#endif
+
+#if defined(RADIO_TXPOWER_TXPOWER_Neg28dBm)
+	if (tx_power_lvl >= -28) {
+		return RADIO_TXPOWER_TXPOWER_Neg28dBm;
+	}
+#endif
 
 	if (tx_power_lvl >= -40) {
 		return RADIO_TXPOWER_TXPOWER_Neg40dBm;

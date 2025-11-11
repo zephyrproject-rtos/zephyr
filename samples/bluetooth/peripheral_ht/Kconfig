@@ -3,10 +3,10 @@
 
 mainmenu "Bluetooth: Peripheral HT"
 
-if HAS_HW_NRF_TEMP
-
 config SENSOR
-	default y
+	default y if HAS_HW_NRF_TEMP || $(dt_alias_enabled,dht0)
+
+if HAS_HW_NRF_TEMP
 
 config TEMP_NRF5
 	default y

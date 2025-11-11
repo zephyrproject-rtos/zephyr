@@ -8,7 +8,7 @@
 /** SMP - Simple Management Protocol. */
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
@@ -310,9 +310,15 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 	}
 #endif
 
-	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
-			 zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
-	nbw->nb->len = zsp->payload_mut - nbw->nb->data;
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+	if (!mgmt_find_group(req_hdr->nh_group)->custom_payload) {
+#endif
+		nbw->nb->len = zsp->payload_mut - nbw->nb->data;
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+	}
+#endif
+
+	smp_make_rsp_hdr(req_hdr, &rsp_hdr, (nbw->nb->len - MGMT_HDR_SIZE));
 	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;

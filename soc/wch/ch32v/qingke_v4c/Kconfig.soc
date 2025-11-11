@@ -1,0 +1,11 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V4C
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v4c" if SOC_SERIES_QINGKE_V4C
+
+rsource "Kconfig.soc.*"

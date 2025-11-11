@@ -7,10 +7,10 @@
 from pathlib import Path
 from shutil import copy
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
-    import psutil  # pylint: disable=unused-import
+    import psutil
     MISSING_PSUTIL = False
 except ImportError:
     # This can happen when building the documentation for the

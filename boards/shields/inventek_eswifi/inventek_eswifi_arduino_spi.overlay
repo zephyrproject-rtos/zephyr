@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
 
-	/* D10 */
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	wifi0_inventek_eswifi_arduino_spi: iwin@0 {
 		status = "okay";
@@ -16,13 +17,9 @@
 		spi-max-frequency = <2000000>;
 		reg = <0>;
 
-		/* D9 */
-		data-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;
-		/* D7 */
-		wakeup-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
-		/* D6 */
-		resetn-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
-		/* D5 */
-		boot0-gpios = <&arduino_header 11 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+		resetn-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		boot0-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 	};
 };

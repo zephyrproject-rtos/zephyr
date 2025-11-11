@@ -6,4 +6,5 @@ config ADC_RPI_PICO
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_ADC_ENABLED
 	select PICOSDK_USE_ADC
+	select PINCTRL
 	depends on RESET

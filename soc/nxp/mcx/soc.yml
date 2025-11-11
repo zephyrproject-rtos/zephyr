@@ -1,9 +1,54 @@
 family:
-- name: nxp_mcx
+- name: mcxn
+  socs:
+  - name: mcxn947
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn547
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn236
+- name: mcxc
+  socs:
+  - name: mcxc141
+  - name: mcxc142
+  - name: mcxc242
+  - name: mcxc444
+- name: mcxe
   series:
-  - name: mcxnx4x
+  - name: mcxe24x
     socs:
-    - name: mcxn947
+    - name: mcxe245
+    - name: mcxe246
+    - name: mcxe247
+- name: mcxe
+  series:
+  - name: mcxe31x
+    socs:
+    - name: mcxe315
+    - name: mcxe316
+    - name: mcxe317
+    - name: mcxe31b
+- name: mcxa
+  socs:
+  - name: mcxa153
+  - name: mcxa156
+  - name: mcxa346
+  - name: mcxa266
+  - name: mcxa366
+  - name: mcxa344
+- name: mcxw
+  series:
+  - name: mcxw2xx
+    socs:
+    - name: mcxw236
+    - name: mcxw235
+  - name: mcxw7xx
+    socs:
+    - name: mcxw716c
+    - name: mcxw727c
       cpuclusters:
       - name: cpu0
       - name: cpu1
@@ -17,6 +62,32 @@ runners:
       - qualifiers:
         - mcxn947/cpu0
         - mcxn947/cpu1
+      - qualifiers:
+        - mcxn236
+      - qualifiers:
+        - mcxc141
+      - qualifiers:
+        - mcxc142
+      - qualifiers:
+        - mcxc242
+      - qualifiers:
+        - mcxc444
+      - qualifiers:
+        - mcxa153
+      - qualifiers:
+        - mcxa156
+      - qualifiers:
+        - mcxa346
+      - qualifiers:
+        - mcxa266
+      - qualifiers:
+        - mcxa366
+      - qualifiers:
+        - mcxw716c
+      - qualifiers:
+        - mcxw236
+      - qualifiers:
+        - mcxa344
     '--reset':
     - run: last
       runners:
@@ -25,3 +96,29 @@ runners:
       - qualifiers:
         - mcxn947/cpu0
         - mcxn947/cpu1
+      - qualifiers:
+        - mcxn236
+      - qualifiers:
+        - mcxc141
+      - qualifiers:
+        - mcxc142
+      - qualifiers:
+        - mcxc242
+      - qualifiers:
+        - mcxc444
+      - qualifiers:
+        - mcxa153
+      - qualifiers:
+        - mcxa156
+      - qualifiers:
+        - mcxa346
+      - qualifiers:
+        - mcxa266
+      - qualifiers:
+        - mcxa366
+      - qualifiers:
+        - mcxw716c
+      - qualifiers:
+        - mcxw236
+      - qualifiers:
+        - mcxa344

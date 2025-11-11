@@ -6,6 +6,7 @@ menuconfig SPI_XMC4XXX
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_SPI_ENABLED
 	select GPIO
+	select PINCTRL
 	help
 	  Enable XMC4XXX SPI driver.
 

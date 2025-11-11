@@ -15,7 +15,11 @@ Buffer Credential (``buf``)
 
 Buffer data incrementally into the credential buffer so that it can be added using the :ref:`tls_credentials_shell_add_cred` command.
 
-Alternatively, clear the credential buffer.
+Alternatively:
+
+   - Clear the credential buffer.
+
+   - Load credential directly to the credential buffer, ending with ``Ctrl + c``.
 
 Usage
 -----
@@ -27,6 +31,14 @@ To append ``<DATA>`` to the credential buffer, use:
    cred buf <DATA>
 
 Use this as many times as needed to load the full credential into the credential buffer, then use the :ref:`tls_credentials_shell_add_cred` command to store it.
+
+To load ``<DATA>`` directly to the credential buffer, use:
+
+.. code-block:: shell
+
+   cred buf load
+   <DATA>
+   Ctrl + c
 
 To clear the credential buffer, use:
 
@@ -206,7 +218,7 @@ After the list is printed, a final summary of the found credentials will be prin
 
    <N> credentials found.
 
-Where `<N>` is the number of credentials found, and is zero if none are found.
+Where ``<N>`` is the number of credentials found, and is zero if none are found.
 
 .. _tls_credentials_shell_cred_types:
 

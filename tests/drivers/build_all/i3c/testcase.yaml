@@ -4,8 +4,18 @@ common:
     - drivers
     - i3c
 tests:
-  drivers.i3c.build:
+  drivers.i3c.build.dual_role:
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
-    tags: i3c_cdns
-    extra_args: "CONFIG_I3C=y"
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_DUAL_ROLE=y CONFIG_I3C_RTIO=y"
+  drivers.i3c.build.controller_role_only:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_CONTROLLER_ROLE_ONLY=y CONFIG_I3C_RTIO=y"
+  drivers.i3c.build.target_role_only:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_TARGET_ROLE_ONLY=y"

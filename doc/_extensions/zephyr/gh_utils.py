@@ -33,27 +33,25 @@ Configuration options
   for, e.g., auto-generated pages not in Git.
 """
 
-from functools import partial
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime
+from functools import partial
 from pathlib import Path
-from textwrap import dedent
-from typing import Final, Optional, Tuple
-from urllib.parse import quote
+from typing import Final
+from urllib.parse import urlencode
 
 from sphinx.application import Sphinx
 from sphinx.util.i18n import format_date
 
-ZEPHYR_BASE : Final[str] = Path(__file__).parents[3]
-SCRIPTS : Final[str] = ZEPHYR_BASE / "scripts"
-sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(Path(__file__).parents[3] / "scripts"))
 
 from get_maintainer import Maintainers
 
-MAINTAINERS : Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
+ZEPHYR_BASE: Final[str] = Path(__file__).parents[3]
+MAINTAINERS: Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
 
 
 __version__ = "0.1.0"
@@ -90,7 +88,7 @@ def get_page_prefix(app: Sphinx, pagename: str) -> str:
     return found_prefix
 
 
-def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[str]:
+def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> str | None:
     """Obtain GitHub URL for the given page.
 
     Args:
@@ -112,18 +110,18 @@ def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[
             mode,
             app.config.gh_link_version,
             page_prefix,
-            app.env.doc2path(pagename, False),
+            str(app.env.doc2path(pagename, False)),
         ]
     )
 
 
-def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optional[str]:
-    """Link to open a new Github issue regarding "pagename" with title, body, and
-    labels already pre-filled with useful information.
+def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> str | None:
+    """Link to open a new Github issue regarding "pagename" using the bug report template.
 
     Args:
         app: Sphinx instance.
         pagename: Page name (path).
+        sha1: SHA1 of the last commit to the page.
 
     Returns:
         URL to open a new issue if applicable, None otherwise.
@@ -139,32 +137,28 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optiona
         app.env.doc2path(pagename, False),
     )
 
-    title = quote(f"doc: Documentation issue in '{pagename}'")
-    labels = quote("area: Documentation")
+    form_data = {
+        "template": "001_bug_report.yml",
+        "title": f"doc: Documentation issue in '{pagename}'",
+        "labels": ["bug", "area: Documentation"],
+        "env": (f"- Page: {pagename}\n- Version: {app.config.gh_link_version}\n- SHA-1: {sha1}"),
+        "context": (
+            "This issue was reported from the online documentation page using the "
+            "'Report an issue' button."
+        ),
+    }
+
     areas = MAINTAINERS.path2areas(rel_path)
     if areas:
-        labels += "," + ",".join([label for area in areas for label in area.labels])
-    body = quote(
-        dedent(
-            f"""\
-    **Describe the bug**
+        for area in areas:
+            form_data["labels"].extend(area.labels)
+    form_data["labels"] = ",".join(form_data.get("labels", []))
 
-    << Please describe the issue here >>
-    << You may also want to update the automatically generated issue title above. >>
-
-    **Environment**
-
-    * Page: `{pagename}`
-    * Version: {app.config.gh_link_version}
-    * SHA-1: {sha1}
-    """
-        )
-    )
-
-    return f"{app.config.gh_link_base_url}/issues/new?title={title}&labels={labels}&body={body}"
+    base_url = f"{app.config.gh_link_base_url}/issues/new"
+    return f"{base_url}?{urlencode(form_data)}"
 
 
-def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
+def git_info_filter(app: Sphinx, pagename) -> tuple[str, str] | None:
     """Return a tuple with the date and SHA1 of the last commit made to a page.
 
     Arguments:
@@ -212,6 +206,8 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
             .decode("utf-8")
             .strip()
         )
+        if not date_and_sha1:  # added but not committed
+            return None
         date, sha1 = date_and_sha1.split(" ", 1)
         date_object = datetime.fromtimestamp(int(date))
         last_update_fmt = app.config.html_last_updated_fmt
@@ -221,6 +217,7 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
         return (date, sha1)
     except subprocess.CalledProcessError:
         return None
+
 
 def add_jinja_filter(app: Sphinx):
     if app.builder.format != "html":

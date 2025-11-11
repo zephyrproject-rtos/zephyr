@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <stdbool.h>
+
 /** Virtual address entry. */
 struct bt_mesh_va {
 	uint16_t ref:15,

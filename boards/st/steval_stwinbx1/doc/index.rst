@@ -1,21 +1,14 @@
-.. _steval_stwinbx1_board:
-
-STEVAL STWINBX1 Development kit
-###############################
+.. zephyr:board:: steval_stwinbx1
 
 Overview
 ********
 
-The STWIN.box (STEVAL-STWINBX1) is a development kit that features an Arm|reg| Cortex|reg|-M33 based STM32U585AI MCU
+The STWIN.box (STEVAL-STWINBX1) is a development kit that features an Arm |reg| Cortex |reg|-M33 based STM32U585AI MCU
 and is a reference design that simplifies prototyping and testing of advanced industrial sensing applications in
 IoT contexts such as condition monitoring and predictive maintenance.
 
 The STEVAL-STWINBX1 kit consists of an STWIN.box core system, a 480mAh LiPo battery, an adapter for the ST-LINK debugger,
 a plastic case, an adapter board for DIL 24 sensors and a flexible cable.
-
-.. image:: img/steval_stwinbx1.jpg
-     :align: center
-     :alt: STEVAL-STWINBX1 Development kit
 
 More information about the board can be found at the `STEVAL-STWINBX1 Development kit website`_.
 
@@ -38,11 +31,13 @@ NFC or USB protocols to a host application running on a smartphone/PC to impleme
 (see `Sensing`_ section for the complete lists of available
 sensors on board)
 
+.. zephyr:board-supported-hw::
+
 Hardware
 ********
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm|reg| Cortex|reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 300 nA Standby mode and 19.5 uA/MHz run mode)
@@ -155,12 +150,12 @@ More information about STM32U585AI can be found here:
 Connectivity
 ************
 
-   - **BlueNRG-M2SA** Bluetooth|reg| low energy v5.2 wireless technology module
+   - **BlueNRG-M2SA** Bluetooth |reg| low energy v5.2 wireless technology module
      (`BlueNRG-M2 datasheet`_)
    - **MXCHIP EMW3080** (802.11 b/g/n compliant Wi-Fi module)
    - **ST25DV64K** dynamic NFC/RFID tag IC with 64-Kbit EEPROM
      (`st25dv64k datasheet`_)
-   - USB Type-C|trade| connector (power supply and data)
+   - USB Type-C |reg| connector (power supply and data)
    - STDC14 programming connector for **STLINK-V3MINI**
      (`stlink-v3mini`_)
    - microSD card socket
@@ -237,23 +232,7 @@ Console
 There are two possible options for Zephyr console output:
 
 
-- through USB as USB CDC/ACM class. This is the default case present in the board dts file
-  and is enabled by :kconfig:option:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM`.
-
-.. code-block:: dts
-   :caption: boards/st/steval_stwinbx1/steval_stwinbx1.dts
-
-   / {
-       chosen {
-          zephyr,console = &cdc_acm_uart0;
-        };
-     };
-
-     &zephyr_udc0 {
-        cdc_acm_uart0: cdc_acm_uart0 {
-                compatible = "zephyr,cdc-acm-uart";
-        };
-     };
+- through common CDC ACM UART backend configuration for all boards
 
 - through USART2 which is available on SWD connector (CN4). In this case a JTAG adapter
   can be used to connect STEVAL-STWINBX1 and have both SWD and console lines available.
@@ -277,7 +256,9 @@ There are two possible options for Zephyr console output:
 Console default settings are 115200 8N1.
 
 Programming and Debugging
--------------------------
+*************************
+
+.. zephyr:board-supported-runners::
 
 There are two alternative methods of flashing ST Sensortile.box Pro board:
 
@@ -318,7 +299,7 @@ It is recommended to use the latest version of `STM32CubeProgrammer`_
 
 
 Flash an Application to STEVAL-STWINBX1
-------------------------------------------
+---------------------------------------
 
 There are two ways to enter DFU mode:
 
@@ -361,10 +342,9 @@ You should see the following confirmation on your Linux host:
    usb 3-1: Manufacturer: STMicroelectronics
    usb 3-1: SerialNumber: 207136863530
 
-.. You can build and flash the provided sample application
-.. (:ref:`sensortile_box_pro_sample_sensors`) that reads sensors data and outputs
-.. values on the console.
-
+You can build and flash the provided sample application
+(:zephyr:code-sample:`stwinbx1_sensors`) that reads sensors data and outputs
+values on the console.
 
 .. _STEVAL-STWINBX1 Development kit website:
    https://www.st.com/en/evaluation-tools/steval-stwinbx1.html

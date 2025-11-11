@@ -1,7 +1,4 @@
-.. _mimxrt1010_evk:
-
-NXP MIMXRT1010-EVK
-##################
+.. zephyr:board:: mimxrt1010_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1010 offer a new entry-point into the i.MX RT crossover processor
 series by providing the lowest-cost LQFP package option, combined with the
 high performance and ease-of-use known throughout the entire i.MX RT series.
 This device is fully supported by NXP’s MCUXpresso Software and Tools.
-
-.. image:: mimxrt1010_evk.jpg
-   :align: center
-   :alt: MIMXRT1010-EVK
 
 Hardware
 ********
@@ -59,7 +52,7 @@ This platform has the following external memories:
 +--------------------+------------+-------------------------------------+
 | Device             | Controller | Status                              |
 +====================+============+=====================================+
-| AT25SF128A         | FLEXSPI    | Enabled via flash configurationn    |
+| AT25SF128A         | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -67,44 +60,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1010_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1010_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1010_evk/mimxrt1010_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk`, which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1010_evk board:
 
 Connections and I/Os
 ====================
@@ -159,6 +123,8 @@ and the remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
@@ -175,10 +141,9 @@ Configuring a Debug Probe
 =========================
 
 For the RT1010, J61/J62 are the SWD isolation jumpers, J22 is the DFU
-mode jumper, and J16 is the 10 pin JTAG/SWD header.
+mode jumper, and J55 is the 10 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -201,7 +166,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
     :zephyr-app: samples/hello_world
@@ -215,6 +180,7 @@ see the following message in the terminal:
 
     Hello World! mimxrt1010_evk
 
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1010-EVK Website:
    https://www.nxp.com/MIMXRT1010-EVK

@@ -437,7 +437,7 @@ static int tca6424a_manage_callback(const struct device *dev, struct gpio_callba
 	return gpio_manage_callback(&drv_data->callbacks, callback, set);
 }
 
-static const struct gpio_driver_api tca6424a_drv_api = {
+static DEVICE_API(gpio, tca6424a_drv_api) = {
 	.pin_configure = tca6424a_pin_config,
 	.port_get_raw = tca6424a_port_get_raw,
 	.port_set_masked_raw = tca6424a_port_set_masked_raw,

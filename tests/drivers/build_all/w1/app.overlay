@@ -27,5 +27,54 @@
 			compatible = "zephyr,w1-gpio";
 			gpios = <&test_gpio 0 0>;
 		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			test_uart_w1_serial: w1_serial {
+				compatible = "zephyr,w1-serial";
+			};
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_ds2482_800: ds2482-800@0 {
+				compatible = "maxim,ds2482-800";
+				reg = <0x0>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				w1_0: ch@0 {
+					compatible = "maxim,ds2482-800-channel";
+					reg = <0>;
+				};
+			};
+
+			test_i2c_ds2484: ds2484@1 {
+				compatible = "maxim,ds2484";
+				reg = <0x1>;
+			};
+
+			test_i2c_ds2485: ds2485@2 {
+				compatible = "maxim,ds2485";
+				reg = <0x2>;
+
+				switching-threshold = "low";
+				active-pull-threshold = "low";
+				weak-pullup = "1000";
+			};
+		};
 	};
 };

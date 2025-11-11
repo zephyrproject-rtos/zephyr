@@ -1,5 +1,3 @@
-# EFR32 radio board
-
 # Copyright (c) 2020 Piotr Mienkowski
 # Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
@@ -11,10 +9,6 @@ config CMU_HFXO_FREQ
 
 config CMU_LFXO_FREQ
 	default 32768
-
-config FLASH_BASE_ADDRESS
-	hex
-	default 0x0
 
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
@@ -31,9 +25,6 @@ if BT
 
 config FPU
 	default y
-
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 8192
 
 config MAIN_STACK_SIZE
 	default 3072 if PM

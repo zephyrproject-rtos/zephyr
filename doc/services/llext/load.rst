@@ -11,9 +11,17 @@ Loading an extension
 An extension may be loaded using any implementation of a :c:struct:`llext_loader`
 which has a set of function pointers that provide the necessary functionality
 to read the ELF data. A loader also provides some minimal context (memory)
-needed by the :c:func:`llext_load` function. An implementation over a buffer
-containing an ELF in addressable memory in memory is available as
-:c:struct:`llext_buf_loader`.
+needed by the :c:func:`llext_load` function. Several loaders are already provided:
+
+ * An implementation over a buffer containing an ELF in addressable memory in
+   memory is available as :c:struct:`llext_buf_loader`. To use this kind of
+   loader, it is helpful to use one of the :c:macro:`LLEXT_TEMPORARY_BUF_LOADER`,
+   :c:macro:`LLEXT_PERSISTENT_BUF_LOADER`, or :c:macro:`LLEXT_WRITABLE_BUF_LOADER`
+   macros to tell LLEXT the appropriate type of memory buffer.
+
+ * An implementation that reads data from a file in the filesystem is available
+   as the :c:struct:`llext_fs_loader`. The path to the file must be provided
+   when creating the loader with the :c:macro:`LLEXT_FS_LOADER` macro.
 
 The extensions are loaded with a call to the :c:func:`llext_load` function,
 passing in the extension name and the configured loader. Once that completes
@@ -24,6 +32,32 @@ successfully, the extension is loaded into memory and is ready to be used.
    included in any user memory domain. To allow access from user mode, the
    :c:func:`llext_add_domain` function must be called.
 
+Initializing and cleaning up the extension
+==========================================
+
+The extension may define a number of initialization functions that must be
+called after loading but before any function in it can be used; this is typical
+in languages such as C++ that provide the concept of object constructors. The
+same is true for cleanup functions that must be called before unloading the
+extension.
+
+LLEXT supports calling the functions listed in the ``.preinit_array`` and
+``.init_array`` sections of the ELF file with the :c:func:`llext_bringup`
+function, and the functions listed in the ``.fini_array`` section with the
+:c:func:`llext_teardown` function. These APIs are compatible with
+:ref:`User Mode <usermode_api>`, and thus can be called from either kernel or
+user context.
+
+.. important::
+   The code run by these functions is fully determined by the contents of the
+   ELF file. This may have security implications if its origin is untrusted.
+
+If the extension requires a dedicated thread, the :c:func:`llext_bootstrap`
+function can be used to minimize boilerplate code. This function has a
+signature that is compatible with the :c:func:`k_thread_create` API, and will
+call :c:func:`llext_bringup`, then a user-specified function in the same
+context, and finally :c:func:`llext_teardown` before returning.
+
 Accessing code and data
 =======================
 
@@ -33,6 +67,10 @@ The returned ``void *`` can then be cast to the appropriate type and used.
 
 A wrapper for calling a function with no arguments is provided in
 :c:func:`llext_call_fn`.
+
+Advanced users that need direct access to areas of the newly loaded extension
+may want to refer to :c:func:`llext_get_section_info` and other LLEXT
+inspection APIs.
 
 Cleaning up after use
 =====================
@@ -68,13 +106,7 @@ If any of this happens, the following tips may help understand the issue:
   the issue.
 
 * Use a debugger to inspect the memory and registers to try to understand what
-  is happening.
-
-  .. note::
-     When using GDB, the ``add_symbol_file`` command may be used to load the
-     debugging information and symbols from the ELF file. Make sure to specify
-     the proper offset (usually the start of the ``.text`` section, reported
-     as ``region 0`` in the debug logs.)
+  is happening. See :ref:`Debugging extensions <llext_debug>` for more details.
 
 If the issue persists, please open an issue in the GitHub repository, including
 all the above information.

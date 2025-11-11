@@ -124,6 +124,7 @@ static int flash_mspi_atxp032_command_write(const struct device *flash, uint8_t 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_PIO;
 	data->trans.tx_dummy          = tx_dummy;
+	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = addr_len;
 	data->trans.hold_ce           = false;
@@ -155,6 +156,7 @@ static int flash_mspi_atxp032_command_read(const struct device *flash, uint8_t c
 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_PIO;
+	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.rx_dummy          = rx_dummy;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = addr_len;
@@ -180,13 +182,14 @@ static void acquire(const struct device *flash)
 
 	if (cfg->sw_multi_periph) {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg))
+				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
 			;
+		}
 	} else {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL))
+				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
-
+		}
 	}
 }
 
@@ -195,8 +198,9 @@ static void release(const struct device *flash)
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
 	struct flash_mspi_atxp032_data *data = flash->data;
 
-	while (mspi_get_channel_status(cfg->bus, cfg->port))
+	while (mspi_get_channel_status(cfg->bus, cfg->port)) {
 		;
+	}
 
 	k_sem_give(&data->lock);
 }
@@ -259,7 +263,7 @@ static int flash_mspi_atxp032_get_vendor_id(const struct device *flash, uint8_t 
 	ret = flash_mspi_atxp032_command_read(flash, SPI_NOR_CMD_RDID, 0, 0, 0, buffer, 11);
 	*vendor_id = buffer[7];
 
-	data->jedec_id = (buffer[7] << 16) | (buffer[8] << 8) | buffer[9];
+	memcpy(&data->jedec_id, buffer + 7, 3);
 
 	return ret;
 }
@@ -324,10 +328,11 @@ static int flash_mspi_atxp032_page_program(const struct device *flash, off_t off
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_DMA;
 	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
+	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
 	data->trans.addr_length       = data->dev_cfg.addr_length;
 	data->trans.hold_ce           = false;
-	data->trans.priority          = 1;
+	data->trans.priority          = MSPI_XFER_PRIORITY_MEDIUM;
 	data->trans.packets           = &data->packet;
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
@@ -373,6 +378,7 @@ static int flash_mspi_atxp032_busy_wait(const struct device *flash)
 			return ret;
 		}
 		LOG_DBG("status: 0x%x", status);
+		k_sleep(K_MSEC(1));
 	} while (status & SPI_NOR_WIP_BIT);
 
 	if (data->dev_cfg.io_mode != MSPI_IO_MODE_SINGLE) {
@@ -405,11 +411,12 @@ static int flash_mspi_atxp032_read(const struct device *flash, off_t offset, voi
 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_DMA;
+	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
 	data->trans.addr_length       = data->dev_cfg.addr_length;
 	data->trans.hold_ce           = false;
-	data->trans.priority          = 1;
+	data->trans.priority          = MSPI_XFER_PRIORITY_MEDIUM;
 	data->trans.packets           = &data->packet;
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
@@ -679,6 +686,7 @@ static int flash_mspi_atxp032_init(const struct device *flash)
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
 
+#if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
 			LOG_ERR("Failed to enable XIP/%u", __LINE__);
@@ -686,7 +694,9 @@ static int flash_mspi_atxp032_init(const struct device *flash)
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
 	}
+#endif /* CONFIG_MSPI_XIP */
 
+#if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(cfg->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
 			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
@@ -694,6 +704,7 @@ static int flash_mspi_atxp032_init(const struct device *flash)
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;
 	}
+#endif /* MSPI_SCRAMBLE */
 
 	release(flash);
 
@@ -718,11 +729,12 @@ static int flash_mspi_atxp032_read_sfdp(const struct device *flash, off_t addr, 
 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_DMA;
+	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.rx_dummy          = 8;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = 3;
 	data->trans.hold_ce           = false;
-	data->trans.priority          = 1;
+	data->trans.priority          = MSPI_XFER_PRIORITY_MEDIUM;
 	data->trans.packets           = &data->packet;
 	data->trans.num_packet        = 1;
 	data->trans.timeout           = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
@@ -743,7 +755,7 @@ static int flash_mspi_atxp032_read_jedec_id(const struct device *flash, uint8_t 
 {
 	struct flash_mspi_atxp032_data *data = flash->data;
 
-	id = &data->jedec_id;
+	memcpy(id, &data->jedec_id, 3);
 	return 0;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
@@ -772,7 +784,7 @@ static int flash_mspi_atxp032_pm_action(const struct device *flash, enum pm_devi
 }
 #endif /** IS_ENABLED(CONFIG_PM_DEVICE) */
 
-static const struct flash_driver_api flash_mspi_atxp032_api = {
+static DEVICE_API(flash, flash_mspi_atxp032_api) = {
 	.erase = flash_mspi_atxp032_erase,
 	.write = flash_mspi_atxp032_write,
 	.read = flash_mspi_atxp032_read,
@@ -806,29 +818,22 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 		.time_to_break      = 0,                                                          \
 	}
 
-#if CONFIG_SOC_FAMILY_AMBIQ
 #define MSPI_TIMING_CONFIG(n)                                                                     \
-	{                                                                                         \
-		.ui8WriteLatency    = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),             \
-		.ui8TurnAround      = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),             \
-		.bTxNeg             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),             \
-		.bRxNeg             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),             \
-		.bRxCap             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),             \
-		.ui32TxDQSDelay     = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),             \
-		.ui32RxDQSDelay     = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),             \
-		.ui32RXDQSDelayEXT  = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7),             \
-	}
-#define MSPI_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
-#else
-#define MSPI_TIMING_CONFIG(n)
-#define MSPI_TIMING_CONFIG_MASK(n)
-#endif
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_TIMING_CONFIG(n)), ({}))                                              \
+
+#define MSPI_TIMING_CONFIG_MASK(n)                                                                \
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_TIMING_CONFIG_MASK(n)), (MSPI_TIMING_PARAM_DUMMY))                    \
+
+#define MSPI_PORT(n)                                                                              \
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_PORT(n)), (0))                                                        \
 
 #define FLASH_MSPI_ATXP032(n)                                                                     \
 	static const struct flash_mspi_atxp032_config flash_mspi_atxp032_config_##n = {           \
-		.port = (DT_REG_ADDR(DT_INST_BUS(n)) - REG_MSPI_BASEADDR) /                       \
-			(DT_REG_SIZE(DT_INST_BUS(n)) * 4),                                        \
 		.mem_size = DT_INST_PROP(n, size) / 8,                                            \
+		.port        = MSPI_PORT(n),                                                      \
 		.flash_param =                                                                    \
 			{                                                                         \
 				.write_block_size = NOR_WRITE_SIZE,                               \

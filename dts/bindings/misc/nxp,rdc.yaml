@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP i.MX Resource Domain Controller (RDC) node.
+  NXP i.MX Resource Domain Controller (RDC).
   The RDC provides robust support for the isolation of destination
   memory mapped locations such as peripherals and memory to a single
   core, a bus master, or set of cores and bus masters.

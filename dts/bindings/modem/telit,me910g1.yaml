@@ -1,11 +1,11 @@
-# Copyright(c) 2023 Jeff Welder (Ellenby Technologies, Inc.)
+# Copyright (c) 2023 Jeff Welder (Ellenby Technologies, Inc.)
 # SPDX-License-Identifier: Apache-2.0
 
 description: Telit ME910G1 Modem
 
 compatible: "telit,me910g1"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:

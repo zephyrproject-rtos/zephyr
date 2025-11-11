@@ -95,7 +95,7 @@ struct bt_spi_data {
 };
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON, 0);
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON);
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -335,7 +335,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	hdr.param_len = data_len;
 	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
 #else
-	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, data_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 #endif /* CONFIG_BT_HCI_RAW */
 
 	if (!buf) {
@@ -350,7 +350,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 #if defined(CONFIG_BT_HCI_RAW)
 	return bt_send(buf);
 #else
-	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
+	return bt_hci_cmd_send_sync(BLUENRG_ACI_WRITE_CONFIG_DATA, buf, NULL);
 #endif /* CONFIG_BT_HCI_RAW */
 }
 
@@ -515,7 +515,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 
 		/* Wait for interrupt pin to be active */
-		k_sem_take(&sem_request, K_FOREVER);
+		ret = k_sem_take(&sem_request, K_FOREVER);
+		if (ret) {
+			LOG_DBG("Failed to take the semaphore. The RX thread exits.");
+			break;
+		}
 
 		LOG_DBG("");
 
@@ -569,23 +573,6 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-#if defined(CONFIG_BT_ISO)
-	case BT_BUF_ISO_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ISO);
-		break;
-#endif /* CONFIG_BT_ISO */
-	default:
-		LOG_ERR("Unsupported type");
-		return -EINVAL;
-	}
-
 	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
 	data_ptr = buf->data;
@@ -631,12 +618,19 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {
-		k_sem_take(&sem_initialised, K_FOREVER);
+		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+			ret = -EIO;
+		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
@@ -682,7 +676,9 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 			0, K_NO_WAIT);
 
 	/* Device will let us know when it's ready */
-	k_sem_take(&sem_initialised, K_FOREVER);
+	if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+		return -EIO;
+	}
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BLUENRG_ACI)
 	/* force BlueNRG to be on controller mode */
@@ -693,12 +689,39 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static int bt_spi_close(const struct device *dev)
+{
+	struct bt_spi_data *hci = dev->data;
+	int ret;
+
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+
+	/* To exit the thread safely */
+	k_sem_reset(&sem_request);
+	ret = k_thread_join(&spi_rx_thread_data, K_MSEC(100));
+	if (ret) {
+		LOG_DBG("bt_spi_rx_thread is unable to exit");
+		return ret;
+	}
+
+	/* Reset the BLE controller */
+	gpio_pin_set_dt(&rst_gpio, 1);
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+	gpio_pin_set_dt(&rst_gpio, 0);
+
+	hci->recv = NULL;
+	LOG_DBG("Bluetooth disabled");
+
+	return 0;
+}
+
+static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
+	.close		= bt_spi_close,
 };
 
 static int bt_spi_init(const struct device *dev)

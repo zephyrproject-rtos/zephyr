@@ -1,7 +1,4 @@
-.. _kv260_r5:
-
-Xilinx KV260 Development Board RPU Cortex-R5
-############################################
+.. zephyr:board:: kv260_r5
 
 Overview
 ********
@@ -17,29 +14,12 @@ This processing unit is based on an ARM Cortex-R5 CPU, it also enables the follo
 * Xilinx Zynq TTC (Cadence TTC)
 * Xilinx Zynq UART
 
-.. figure:: kv260-starter-kit.jpg
-   :align: center
-   :alt: Xilinx KV260 Starter Kit
-
 Hardware
 ********
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| GIC          | on-chip    | generic interrupt    |
-|              |            | controller           |
-+--------------+------------+----------------------+
-| TTC          | on-chip    | system timer         |
-+--------------+------------+----------------------+
-| UART         | on-chip    | serial port          |
-+--------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
@@ -75,6 +55,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Currently the best way to run this sample is by loading it through remoteproc
 from the APU, running Linux, to the RPU, assuming the target board has a compatible
 Linux kernel.
@@ -84,7 +66,7 @@ remoteproc support, it is based around 5.15 Xilinx maintained kernel, as describ
 https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#PetaLinux
 
 The other option is to use the reference image from the openAMP project, the link
-below points, betweem the options, to the kv260 target:
+below points, between the options, to the kv260 target:
 
 https://github.com/OpenAMP/openamp-ci-builds/releases/tag/v2022.12
 

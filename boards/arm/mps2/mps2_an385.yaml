@@ -2,11 +2,13 @@ identifier: mps2/an385
 name: ARM V2M MPS2
 type: mcu
 arch: arm
-simulation: qemu
+simulation:
+  - name: qemu
+  - name: armfvp
+    exec: FVP_MPS2_Cortex-M3
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - netif:serial-net
@@ -15,3 +17,5 @@ supported:
 testing:
   default: true
 vendor: arm
+ram: 4096
+flash: 4096

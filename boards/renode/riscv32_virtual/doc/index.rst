@@ -1,7 +1,4 @@
-.. _riscv32-virtual:
-
-RISCV32 Virtual
-###############
+.. zephyr:board:: riscv32_virtual
 
 Overview
 ********
@@ -13,6 +10,8 @@ configurations that only exist in proprietary boards/SoCs to be tested in upstre
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

@@ -88,7 +88,7 @@ static int eth_ivshmem_stop(const struct device *dev)
 static enum ethernet_hw_caps eth_ivshmem_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
 static int eth_ivshmem_send(const struct device *dev, struct net_pkt *pkt)

@@ -41,7 +41,7 @@ Building and Running
 The demo can be built as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/cmsis-dsp/moving_average
+   :zephyr-app: samples/modules/cmsis_dsp/moving_average
    :host-os: unix
    :board: qemu_cortex_m0
    :goals: run

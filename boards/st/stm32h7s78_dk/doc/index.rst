@@ -1,19 +1,15 @@
-.. _stm32h7s78_dk_board:
-
-ST STM32H7S78-DK Discovery
-##########################
+.. zephyr:board:: stm32h7s78_dk
 
 Overview
 ********
 
 The STM32H7S78-DK Discovery kit is designed as a complete demonstration and
 development platform for STMicroelectronics Arm |reg| Cortex |reg|-M7 core-based
-STM32H7S7L8H6H microcontroller with TrustZone |reg|. Here are some highlights of
-the STM32H7S78-DK Discovery board:
+STM32H7S7L8H6H microcontroller. Here are some highlights of the STM32H7S78-DK Discovery board:
 
 
 - STM32H7S7L8H6H microcontroller featuring 64Kbytes of Flash memory and 620 Kbytes of SRAM in 225-pin TFBGA package
-- USB Type-C |trade| Host and device with USB power-delivery controller
+- USB Type-C |reg| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX66UW1G45GXD100 from MACRONIX)
@@ -41,10 +37,6 @@ the STM32H7S78-DK Discovery board:
 - 4 user LEDs
 - User and reset push-buttons
 
-.. image:: img/stm32h7s78_dk.jpg
-   :align: center
-   :alt: STM32H7S78-DK Discovery
-
 More information about the board can be found at the `STM32H7S78-DK Discovery website`_.
 
 Hardware
@@ -54,16 +46,13 @@ The STM32H7S7xx devices are a high-performance microcontrollers family (STM32H7
 Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
 They operate at a frequency of up to 500 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with TrustZone |reg| and FPU.
+- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU.
 - Performance benchmark:
 
   - 1284 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with ARMv8-M mainline security extension
-  - Up to 8 configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
   - Flexible lifecycle scheme with secure debug authentication
   - Preconfigured immutable root of trust (ST-iROT)
   - SFI (secure firmware installation)
@@ -73,7 +62,6 @@ They operate at a frequency of up to 500 MHz.
   - Public key accelerator, DPA resistant
   - On-the-fly decryption of Octo-SPI external memories
   - HASH hardware accelerator
-  - True random number generator, NIST SP800-90B compliant
   - 96-bit unique ID
   - Active tampers
   - True Random Number Generator (RNG) NIST SP800-90B compliant
@@ -154,40 +142,7 @@ More information about STM32H7S7 can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32H7S78_DK board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi bus                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk.dts`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================
@@ -222,6 +177,9 @@ Default Zephyr Peripheral Mapping:
 - LD3 (red) : PM2
 - LD4 (blue) : PM3
 - ADC1 channel 6 input : PF12
+- USB OTG FS DM/DP : PM12/PM11
+- XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
+- I2C1 SCL/SDA: PB6/PB9
 
 System Clock
 ------------
@@ -236,30 +194,29 @@ Serial Port
 STM32H7S78-DK Discovery board has 2 U(S)ARTs. The Zephyr console output is
 assigned to USART4. Default settings are 115200 8N1.
 
+USB
+---
+
+STM32H7S78-DK Discovery board has 2 USB Type-C connectors. Currently, only
+USB port2 (FS) is supported.
 
 Programming and Debugging
 *************************
 
-Applications for the ``stm32h7s78_dk`` board configuration can be built and
-flashed in the usual way (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+.. zephyr:board-supported-runners::
 
-Flashing
-========
+STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
-STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. Support is available on STM32CubeProgrammer V2.13.0.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, this interface will be supported by a next openocd version.
+Application in SoC Flash
+========================
 
-Flashing an application to STM32H7S78-DK Discovery
---------------------------------------------------
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-Connect the STM32H7S78-DK Discovery to your host computer using the USB port.
-Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
-
-Run a serial host program to connect with your Nucleo board:
+Connect the STM32H7S78-DK Discovery to your host computer using the USB port,
+then run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
@@ -278,17 +235,103 @@ You should see the following message on the console:
 
    Hello World! stm32h7s78_dk
 
+If the application size is too big to fit in SoC Flash,
+Zephyr :ref:`Code and Data Relocation <code_data_relocation>` can be used to relocate
+the non-critical and big parts of the application to external Flash.
+
 Debugging
-=========
+---------
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: stm32h7s78_dk
    :maybe-skip-config:
    :goals: debug
+
+Application in External Flash
+=============================
+
+Because of the limited amount of SoC Flash (64KB), you may want to store the application
+in external QSPI Flash instead, and run it from there. In that case, the MCUboot bootloader
+is needed to chainload the application. A dedicated board variant, ``ext_flash_app``, was created
+for this usecase.
+
+:ref:`sysbuild` makes it possible to build and flash all necessary images needed to run a user application
+from external Flash.
+
+The following example shows how to build :zephyr:code-sample:`hello_world` with Sysbuild enabled:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+   :goals: build
+   :west-args: --sysbuild
+
+By default, Sysbuild creates MCUboot and user application images.
+
+For more information, refer to the :ref:`sysbuild` documentation.
+
+Flashing
+--------
+
+Both MCUboot and user application images can be flashed by running:
+
+.. code-block:: console
+
+   west flash
+
+You should see the following message in the serial host program:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-192-g96576b341ee1 ***
+   *** Using Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   I: Starting bootloader
+   I: Bootloader chainload address offset: 0x0
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   Hello World! stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   west flash --domain hello_world
+
+With the default configuration, the board uses MCUboot's Swap-using-offset mode.
+To get more information about the different MCUboot operating modes and how to
+perform application upgrade, refer to `MCUboot design`_.
+To learn more about how to secure the application images stored in external Flash,
+refer to `MCUboot Encryption`_.
+
+Debugging
+---------
+
+You can debug the application in external flash using ``west`` and ``GDB``.
+
+After flashing MCUboot and the app, execute the following command:
+
+.. code-block:: console
+
+   west debugserver
+
+Then, open another terminal (don't forget to activate Zephyr's environment) and execute:
+
+.. code-block:: console
+
+   west attach
+
+By default, user application symbols are loaded. To debug MCUboot application,
+launch:
+
+.. code-block:: console
+
+   west attach --domain mcuboot
 
 .. _STM32H7S78-DK Discovery website:
    https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
@@ -304,3 +347,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCUboot design:
+   https://docs.mcuboot.com/design.html
+
+.. _MCUboot Encryption:
+   https://docs.mcuboot.com/encrypted_images.html

@@ -41,7 +41,7 @@ static int entropy_psa_crypto_rng_get_entropy(const struct device *dev,
 }
 
 /* Entropy driver APIs structure */
-static const struct entropy_driver_api entropy_psa_crypto_rng_api = {
+static DEVICE_API(entropy, entropy_psa_crypto_rng_api) = {
 	.get_entropy = entropy_psa_crypto_rng_get_entropy,
 };
 

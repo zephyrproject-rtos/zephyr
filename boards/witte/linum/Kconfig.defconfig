@@ -1,0 +1,15 @@
+# STM32H753ZI Linum board configuration
+
+# Copyright (c) 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LINUM
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_LINUM

@@ -2,4 +2,4 @@ description: Raspberry Pi Pico I2C
 
 compatible: "raspberrypi,pico-i2c"
 
-include: ["snps,designware-i2c.yaml", "reset-device.yaml"]
+include: "snps,designware-i2c.yaml"

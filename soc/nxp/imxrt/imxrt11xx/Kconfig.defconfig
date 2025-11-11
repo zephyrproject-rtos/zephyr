@@ -33,4 +33,5 @@ config NXP_IMXRT_BOOT_HEADER
 	depends on !(CPU_CORTEX_M4 || BOOTLOADER_MCUBOOT)
 
 endif
+
 endif

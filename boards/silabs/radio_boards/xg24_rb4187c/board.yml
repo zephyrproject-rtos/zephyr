@@ -1,4 +1,0 @@
-boards:
-  - name: xg24_rb4187c
-    socs:
-      - name: efr32mg24b220f1536im48

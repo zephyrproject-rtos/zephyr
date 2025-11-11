@@ -361,22 +361,19 @@ static int bt_ipm_send(const struct device *dev, struct net_buf *buf)
 
 	k_sem_take(&ipm_busy, K_FOREVER);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	switch (buf->data[0]) {
+	case BT_HCI_H4_ACL:
+		LOG_DBG("ACL: buf %p type %u len %u", buf, buf->data[0], buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		memcpy((void *)
-		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
+		memcpy((void *)&((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
 		       buf->data, buf->len);
 		TL_BLE_SendAclData(NULL, 0);
 		break;
-	case BT_BUF_CMD:
-		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		ble_cmd_buff->cmdserial.type = BT_HCI_H4_CMD;
+	case BT_HCI_H4_CMD:
+		LOG_DBG("CMD: buf %p type %u len %u", buf, buf->data[0], buf->len);
+		ble_cmd_buff->cmdserial.type = net_buf_pull_u8(buf);
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
-		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
-		       buf->len);
+		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data, buf->len);
 		TL_BLE_SendCmd(NULL, 0);
 		break;
 	default:
@@ -436,8 +433,7 @@ static int bt_ipm_set_addr(void)
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
-
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -471,7 +467,7 @@ static int bt_ipm_ble_init(void)
 		LOG_ERR("Can't set BLE UID addr");
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
-	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -565,6 +561,19 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
+	hci->recv = recv;
+
+	LOG_DBG("IPM Channel Open Completed");
+
+	return 0;
+}
+
+static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(params);
+	ARG_UNUSED(dev);
+	int err;
+
 #ifdef CONFIG_BT_HCI_HOST
 	err = bt_ipm_ble_init();
 	if (err) {
@@ -572,9 +581,7 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 #endif /* CONFIG_BT_HCI_HOST */
 
-	hci->recv = recv;
-
-	LOG_DBG("IPM Channel Open Completed");
+	LOG_DBG("IPM Channel Setup Completed");
 
 	return 0;
 }
@@ -607,12 +614,13 @@ static int bt_ipm_close(const struct device *dev)
 }
 #endif /* CONFIG_BT_HCI_HOST */
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_ipm_open,
 #ifdef CONFIG_BT_HCI_HOST
 	.close          = bt_ipm_close,
 #endif
 	.send           = bt_ipm_send,
+	.setup          = bt_ipm_setup,
 };
 
 static int _bt_ipm_init(const struct device *dev)

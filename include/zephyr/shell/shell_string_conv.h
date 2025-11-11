@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_STRING_CONV_H__
-#define SHELL_STRING_CONV_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_STRING_CONV_H_
+#define ZEPHYR_INCLUDE_SHELL_STRING_CONV_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -86,4 +86,4 @@ bool shell_strtobool(const char *str, int base, int *err);
 }
 #endif
 
-#endif /* SHELL_STRING_CONV_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_STRING_CONV_H_ */

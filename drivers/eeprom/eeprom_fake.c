@@ -49,7 +49,7 @@ static void fake_eeprom_reset_rule_before(const struct ztest_unit_test *test, vo
 ZTEST_RULE(fake_eeprom_reset_rule, fake_eeprom_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
 
-static const struct eeprom_driver_api fake_eeprom_driver_api = {
+static DEVICE_API(eeprom, fake_eeprom_driver_api) = {
 	.read = fake_eeprom_read,
 	.write = fake_eeprom_write,
 	.size = fake_eeprom_size,

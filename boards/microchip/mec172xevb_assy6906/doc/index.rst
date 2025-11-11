@@ -1,7 +1,4 @@
-.. _mec172xevb_assy6906:
-
-Microchip MEC172xEVB ASSY6906
-#############################
+.. zephyr:board:: mec172xevb_assy6906
 
 Overview
 ********
@@ -10,10 +7,6 @@ The MEC172xEVB_ASSY6906 kit is a future development platform to evaluate the
 Microchip MEC172X series microcontrollers. This board needs to be mated with
 part number MEC172x 144WFBGA SOLDER DC ASSY 6914 (cpu board) in order to operate.
 MEC172x and MEC152x SPI image formats are not compatible with each other.
-
-.. image:: mec172xevb_assy6906.jpg
-     :align: center
-     :alt: MEC172X EVB ASSY 6906
 
 Hardware
 ********
@@ -43,37 +36,7 @@ For more information about the SOC's please see `MEC172x Reference Manual`_
 Supported Features
 ==================
 
-The mec172xevb_assy6906 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PS/2      | on-chip    | ps2                                 |
-+-----------+------------+-------------------------------------+
-| KSCAN     | on-chip    | kscan                               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer                          |
-+-----------+------------+-------------------------------------+
-| RPMFAN    | on-chip    | Fan speed controller                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec172xevb_assy6906/mec172xevb_assy6906_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -267,6 +230,8 @@ NOTE: ``JP121 3-4`` on base board also needs to be loaded.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Setup
 =====
 
@@ -360,7 +325,7 @@ Wiring
 Building
 ========
 
-#. Build :ref:`hello_world` application as you would normally do.
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do.
 
 #. The file :file:`spi_image.bin` will be created if the build system
    can find the image generation tool. This binary image can be used

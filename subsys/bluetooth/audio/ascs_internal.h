@@ -3,12 +3,16 @@
 
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef BT_ASCS_INTERNAL_H
 #define BT_ASCS_INTERNAL_H
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -33,13 +37,13 @@
 struct bt_ascs_ase_status {
 	uint8_t  id;
 	uint8_t  state;
-	uint8_t  params[0];
+	uint8_t  params[];
 } __packed;
 
 struct bt_ascs_codec_config {
 	uint8_t len;
 	uint8_t type;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 struct bt_ascs_codec {
@@ -63,7 +67,7 @@ struct bt_ascs_ase_status_config {
 	struct bt_ascs_codec codec;
 	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
-	struct bt_ascs_codec_config cc[0];
+	struct bt_ascs_codec_config cc[];
 } __packed;
 
 /* ASE_State = 0x02 (QoS Configured), defined in Table 4.4. */
@@ -85,7 +89,7 @@ struct bt_ascs_ase_status_enable {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	uint8_t  metadata[];
 } __packed;
 
 /* ASE_Status =  0x04 (Streaming) defined in Table 4.5.
@@ -94,7 +98,7 @@ struct bt_ascs_ase_status_stream {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	uint8_t  metadata[];
 } __packed;
 
 /* ASE_Status = 0x05 (Disabling) as defined in Table 4.5.
@@ -103,14 +107,14 @@ struct bt_ascs_ase_status_disable {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	uint8_t  metadata[];
 } __packed;
 
 /* ASE Control Point Protocol */
 struct bt_ascs_ase_cp {
 	/* Request/Notification opcode */
 	uint8_t  op;
-	uint8_t  pdu[0];
+	uint8_t  pdu[];
 } __packed;
 
 /* Opcodes */
@@ -136,14 +140,14 @@ struct bt_ascs_config {
 	/* Codec Specific Config Length */
 	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
-	struct bt_ascs_codec_config cc[0];
+	struct bt_ascs_codec_config cc[];
 } __packed;
 
 struct bt_ascs_config_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Config Parameters */
-	struct bt_ascs_config cfg[0];
+	struct bt_ascs_config cfg[];
 } __packed;
 
 #define BT_ASCS_QOS_OP                   0x02
@@ -174,7 +178,7 @@ struct bt_ascs_qos_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* QoS Parameters */
-	struct bt_ascs_qos qos[0];
+	struct bt_ascs_qos qos[];
 } __packed;
 
 #define BT_ASCS_ENABLE_OP                0x03
@@ -184,14 +188,14 @@ struct bt_ascs_metadata {
 	/* Metadata length */
 	uint8_t  len;
 	/* LTV-formatted Metadata */
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 struct bt_ascs_enable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Metadata */
-	struct bt_ascs_metadata metadata[0];
+	struct bt_ascs_metadata metadata[];
 } __packed;
 
 #define BT_ASCS_START_OP                 0x04
@@ -199,7 +203,7 @@ struct bt_ascs_start_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	uint8_t  ase[];
 } __packed;
 
 #define BT_ASCS_DISABLE_OP               0x05
@@ -207,7 +211,7 @@ struct bt_ascs_disable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	uint8_t  ase[];
 } __packed;
 
 #define BT_ASCS_STOP_OP                  0x06
@@ -215,7 +219,7 @@ struct bt_ascs_stop_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	uint8_t  ase[];
 } __packed;
 
 #define BT_ASCS_METADATA_OP              0x07
@@ -223,7 +227,7 @@ struct bt_ascs_metadata_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Metadata */
-	struct bt_ascs_metadata metadata[0];
+	struct bt_ascs_metadata metadata[];
 } __packed;
 
 #define BT_ASCS_RELEASE_OP              0x08
@@ -231,7 +235,7 @@ struct bt_ascs_release_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Ase IDs */
-	uint8_t  ase[0];
+	uint8_t  ase[];
 } __packed;
 
 struct bt_ascs_cp_ase_rsp {
@@ -249,7 +253,7 @@ struct bt_ascs_cp_rsp {
 	/* Number of ASEs */
 	uint8_t  num_ase;
 	/* ASE response */
-	struct bt_ascs_cp_ase_rsp ase_rsp[0];
+	struct bt_ascs_cp_ase_rsp ase_rsp[];
 } __packed;
 
 static inline const char *bt_ascs_op_str(uint8_t op)
@@ -271,9 +275,9 @@ static inline const char *bt_ascs_op_str(uint8_t op)
 		return "Update Metadata";
 	case BT_ASCS_RELEASE_OP:
 		return "Release";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 static inline const char *bt_ascs_rsp_str(uint8_t code)
@@ -309,9 +313,9 @@ static inline const char *bt_ascs_rsp_str(uint8_t code)
 		return "Insufficient Resources";
 	case BT_BAP_ASCS_RSP_CODE_UNSPECIFIED:
 		return "Unspecified Error";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 static inline const char *bt_ascs_reason_str(uint8_t reason)
@@ -339,22 +343,26 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 		return "Presentation Delay";
 	case BT_BAP_ASCS_REASON_CIS:
 		return "Invalid ASE CIS Mapping";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
 void bt_ascs_cleanup(void);
 
-int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
+int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state);
+bool bt_ascs_has_ep(const struct bt_bap_ep *ep);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
-		       const struct bt_audio_codec_qos_pref *qos_pref);
+		       const struct bt_bap_qos_cfg_pref *qos_pref);
 int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+
+int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt);
+int bt_ascs_unregister(void);
 
 #endif /* BT_ASCS_INTERNAL_H */

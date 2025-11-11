@@ -18,6 +18,7 @@ struct args_index {
 	uint8_t channel;
 	uint8_t value;
 	uint8_t resolution;
+	uint8_t options;
 };
 
 static const struct args_index args_indx = {
@@ -25,15 +26,17 @@ static const struct args_index args_indx = {
 	.channel = 2,
 	.value = 3,
 	.resolution = 3,
+	.options = 4,
 };
 
 static int cmd_setup(const struct shell *sh, size_t argc, char **argv)
 {
-	struct dac_channel_cfg cfg;
+	struct dac_channel_cfg cfg = {0};
 	const struct device *dac;
+	int argidx;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;
@@ -41,6 +44,21 @@ static int cmd_setup(const struct shell *sh, size_t argc, char **argv)
 
 	cfg.channel_id = strtoul(argv[args_indx.channel], NULL, 0);
 	cfg.resolution = strtoul(argv[args_indx.resolution], NULL, 0);
+
+	argidx = args_indx.options;
+	while (argidx < argc && strncmp(argv[argidx], "-", 1) == 0) {
+		if (strcmp(argv[argidx], "-b") == 0) {
+			cfg.buffered = true;
+			argidx++;
+		} else if (strcmp(argv[argidx], "-i") == 0) {
+			cfg.internal = true;
+			argidx++;
+		} else {
+			shell_error(sh, "unsupported option %s", argv[argidx]);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
 
 	err = dac_channel_setup(dac, &cfg);
 	if (err) {
@@ -58,7 +76,7 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	uint32_t value;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;
@@ -76,11 +94,32 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static bool device_is_dac(const struct device *dev)
+{
+	return DEVICE_API_IS(dac, dev);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_dac);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
-	SHELL_CMD_ARG(setup, NULL, "<device> <channel> <resolution>",
-		      cmd_setup, 4, 0),
-	SHELL_CMD_ARG(write_value, NULL, "<device> <channel> <value>",
-		      cmd_write_value, 4, 0),
+	SHELL_CMD_ARG(setup, &dsub_device_name,
+		      SHELL_HELP("Setup DAC channel", "<device> <channel> <resolution> [-b] [-i]\n"
+						      "-b Enable output buffer\n"
+						      "-i Connect internally"),
+		      cmd_setup, 4, 2),
+	SHELL_CMD_ARG(write_value, &dsub_device_name,
+		      SHELL_HELP("Write DAC value", "<device> <channel> <value>"), cmd_write_value,
+		      4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

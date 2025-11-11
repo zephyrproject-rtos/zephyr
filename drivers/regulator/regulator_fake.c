@@ -32,6 +32,9 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_voltage, const struct device *,
 		       int32_t, int32_t);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_voltage, const struct device *,
 		       int32_t *);
+DEFINE_FAKE_VALUE_FUNC(unsigned int, regulator_fake_count_current_limits, const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_list_current_limit, const struct device *, unsigned int,
+		       int32_t *);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_current_limit,
 		       const struct device *, int32_t, int32_t);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_current_limit,
@@ -47,13 +50,15 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct de
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
-static struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_fake_enable,
 	.disable = regulator_fake_disable,
 	.count_voltages = regulator_fake_count_voltages,
 	.list_voltage = regulator_fake_list_voltage,
 	.set_voltage = regulator_fake_set_voltage,
 	.get_voltage = regulator_fake_get_voltage,
+	.count_current_limits = regulator_fake_count_current_limits,
+	.list_current_limit = regulator_fake_list_current_limit,
 	.set_current_limit = regulator_fake_set_current_limit,
 	.get_current_limit = regulator_fake_get_current_limit,
 	.set_mode = regulator_fake_set_mode,
@@ -80,7 +85,7 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
 DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
 		       const struct device *);
 
-static struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
 	.ship_mode = regulator_parent_fake_ship_mode,
 };

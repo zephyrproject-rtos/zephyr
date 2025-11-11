@@ -1,0 +1,63 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video capture sample application"
+
+menu "Video capture configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+	help
+	   Left value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+	help
+	   Top value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	   Width value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	   Height value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config VIDEO_CTRL_HFLIP
+	bool "Mirror the video frame horizontally"
+	help
+	  If set, mirror the video frame horizontally
+
+config VIDEO_CTRL_VFLIP
+	bool "Mirror the video frame vertically"
+	help
+	  If set, mirror the video frame vertically
+
+endmenu
+
+source "Kconfig.zephyr"

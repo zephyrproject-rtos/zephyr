@@ -1,7 +1,4 @@
-.. _nrf52840_mdk:
-
-nRF52840-mdk
-#################
+.. zephyr:board:: nrf52840_mdk
 
 Overview
 ********

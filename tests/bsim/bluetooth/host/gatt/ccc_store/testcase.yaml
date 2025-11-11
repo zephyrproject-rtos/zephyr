@@ -1,0 +1,22 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.ccc_store:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_prj_conf
+  bluetooth.host.gatt.ccc_store_no_store_on_write:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_overlay-no_store_on_write_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-no_store_on_write.conf
+  bluetooth.host.gatt.ccc_store_no_long_wq:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_overlay-no_long_wq_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-no_long_wq.conf

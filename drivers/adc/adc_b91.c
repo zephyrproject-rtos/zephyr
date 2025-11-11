@@ -452,7 +452,7 @@ static const struct b91_adc_cfg cfg_0 = {
 	.vref_internal_mv = DT_INST_PROP(0, vref_internal_mv),
 };
 
-static const struct adc_driver_api adc_b91_driver_api = {
+static DEVICE_API(adc, adc_b91_driver_api) = {
 	.channel_setup = adc_b91_channel_setup,
 	.read = adc_b91_read,
 #ifdef CONFIG_ADC_ASYNC

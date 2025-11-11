@@ -1,0 +1,7 @@
+shield:
+  name: olimex_shield_midi
+  full_name: Olimex SHIELD-MIDI
+  vendor: olimex
+  supported_features:
+    - led
+    - uart

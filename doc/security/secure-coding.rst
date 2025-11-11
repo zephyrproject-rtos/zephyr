@@ -176,10 +176,10 @@ including the 8 principles from [SALT75]_:
 - limited attack surface (the set of the
   different points where an attacker can try to enter or extract data)
 
-- input validation with whitelists (inputs should typically be checked
+- input validation with allowlists (inputs should typically be checked
   to determine if they are valid before they are accepted; this
-  validation should use whitelists (which only accept known-good
-  values), not blacklists (which attempt to list known-bad values)).
+  validation should use allowlists (which only accept known-good
+  values), not blocklists (which attempt to list known-bad values)).
 
 Vulnerability Knowledge
 =======================
@@ -216,7 +216,7 @@ and information disclosure vulnerabilities.
 .. Turn this into something specific. Can we find examples of
    mistakes.  Perhaps an example of things static analysis tool has sent us.
 
-.. _CWE/SANS top 25: http://cwe.mitre.org/top25/
+.. _CWE/SANS top 25: https://cwe.mitre.org/top25/
 
 .. _OWASP Top 10: https://owasp.org/www-project-top-ten/
 
@@ -285,4 +285,4 @@ and approved by consensus.
 .. [#attackf]  An attack_ resulted in a significant portion of DNS
    infrastructure being taken down.
 
-.. _attack: http://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained
+.. _attack: https://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained

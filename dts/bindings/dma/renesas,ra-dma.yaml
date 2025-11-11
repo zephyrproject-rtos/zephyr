@@ -1,0 +1,74 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA DMA Controller
+
+  The following example displays the minimum DMA node layout:
+
+    dma0: dma@4000a000 {
+        compatible = "renesas,ra-dma";
+        reg = <0x4000a000 0x200>, <0x4000a800 0xa0>;
+        reg-names = "channel", "common";
+        clocks = <&iclk MSTPA 22>;
+        dma-channels = <8>;
+        #dma-cells = <2>;
+        status = "disabled";
+    };
+
+  By default, the DMA controller node appears with `status = "disabled"`.
+  To enable and use the DMA controller, add an overlay that sets `status = "okay"`
+  and provides the required `interrupts` and `interrupt-names` properties.
+
+  Example overlay to enable the DMA controller for specific channels:
+
+    &dma0 {
+        status = "okay";
+        interrupts = <95 1>, <94 1>;
+        interrupt-names = "ch0", "ch1";
+    };
+
+  Note:
+  - The `interrupts` property specifies only the channels intended for use.
+    It is not necessary to declare interrupts for all available DMA channels;
+    just include entries for the channels intended for use.
+  - The `interrupt-names` property provides human-readable names corresponding
+    to each interrupt, typically matching the channel number.
+
+compatible: "renesas,ra-dma"
+
+include: [dma-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      The `interrupt-names` property is required and must be specified as an array,
+      with one entry for each DMA channel in use.
+      Each entry must strictly follow the format "chX", where X is the DMA channel number.
+      The order of entries must correspond to the channels defined in the `interrupts` property.
+
+      Example:
+        interrupt-names = "ch0", "ch1";
+
+      In this example, "ch0" and "ch1" are the interrupt names assigned to DMA Channel 0 and
+      DMA Channel 1, each corresponding to its respective entry in the `interrupts` property.
+
+  clocks:
+    required: true
+
+  dma-channels:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - config

@@ -297,7 +297,7 @@ static int mcp320x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcp320x_adc_api = {
+static DEVICE_API(adc, mcp320x_adc_api) = {
 	.channel_setup = mcp320x_channel_setup,
 	.read = mcp320x_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -316,11 +316,11 @@ static const struct adc_driver_api mcp320x_adc_api = {
 	static const struct mcp320x_config mcp##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_MCP320X(n, t), \
 					 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-					 SPI_WORD_SET(8), 0), \
+					 SPI_WORD_SET(8)), \
 		.channels = ch, \
 	}; \
 	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), \
-			 &mcp320x_init, NULL, \
+			 mcp320x_init, NULL, \
 			 &mcp##t##_data_##n, \
 			 &mcp##t##_config_##n, POST_KERNEL, \
 			 CONFIG_ADC_INIT_PRIORITY, \

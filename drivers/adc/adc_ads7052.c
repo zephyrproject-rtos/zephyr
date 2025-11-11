@@ -284,7 +284,7 @@ static int adc_ads7052_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api ads7052_api = {
+static DEVICE_API(adc, ads7052_api) = {
 	.channel_setup = adc_ads7052_channel_setup,
 	.read = adc_ads7052_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -298,7 +298,7 @@ static const struct adc_driver_api ads7052_api = {
 #define ADC_ADS7052_INIT(n)                                                                        \
                                                                                                    \
 	static const struct ads7052_config ads7052_cfg_##n = {                                     \
-		.bus = SPI_DT_SPEC_INST_GET(n, ADC_ADS7052_SPI_CFG, 1U),                           \
+		.bus = SPI_DT_SPEC_INST_GET(n, ADC_ADS7052_SPI_CFG),                               \
 		.channels = 1,                                                                     \
 	};                                                                                         \
                                                                                                    \

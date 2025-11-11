@@ -171,7 +171,7 @@ Actual key mask configuration
 *****************************
 
 If the key matrix is not complete, a map of the keys that are actually
-populated can be specified using the `actual-key-mask` property. This allows
+populated can be specified using the ``actual-key-mask`` property. This allows
 the matrix state to be filtered to remove keys that are not present before
 ghosting detection, potentially allowing key combinations that would otherwise
 be blocked by it.
@@ -230,6 +230,8 @@ output:
           col-size = <3>;
       };
   };
+
+.. doxygengroup:: input_keymap
 
 Keyboard matrix shell commands
 ******************************

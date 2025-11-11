@@ -15,14 +15,14 @@ Devicetree setup
 To use the bootloader information subsystem, a retention area needs to be
 created which has a retained data section as its parent, generally non-init RAM
 is used for this purpose. See the following example (examples in this guide are
-based on the :ref:`nrf52840dk_nrf52840` board and memory layout):
+based on the :zephyr:board:`nrf52840dk` board and memory layout):
 
 .. code-block:: devicetree
 
 	/ {
-		sram@2003F000 {
+		sram@2003FC00 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x2003F000 DT_SIZE_K(1)>;
+			reg = <0x2003FC00 DT_SIZE_K(1)>;
 			zephyr,memory-region = "RetainedMem";
 			status = "okay";
 

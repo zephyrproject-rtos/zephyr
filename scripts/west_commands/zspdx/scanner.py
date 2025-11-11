@@ -5,36 +5,38 @@
 import hashlib
 import os
 import re
+from dataclasses import dataclass
 
+from reuse.project import Project
 from west import log
 
 from zspdx.licenses import LICENSES
 from zspdx.util import getHashes
 
+
 # ScannerConfig contains settings used to configure how the SPDX
 # Document scanning should occur.
+@dataclass(eq=True)
 class ScannerConfig:
-    def __init__(self):
-        super(ScannerConfig, self).__init__()
+    # when assembling a Package's data, should we auto-conclude the
+    # Package's license, based on the licenses of its Files?
+    shouldConcludePackageLicense: bool = True
 
-        # when assembling a Package's data, should we auto-conclude the
-        # Package's license, based on the licenses of its Files?
-        self.shouldConcludePackageLicense = True
+    # when assembling a Package's Files' data, should we auto-conclude
+    # each File's license, based on its detected license(s)?
+    shouldConcludeFileLicenses: bool = True
 
-        # when assembling a Package's Files' data, should we auto-conclude
-        # each File's license, based on its detected license(s)?
-        self.shouldConcludeFileLicenses = True
+    # number of lines to scan for SPDX-License-Identifier (0 = all)
+    # defaults to 20
+    numLinesScanned: int = 20
 
-        # number of lines to scan for SPDX-License-Identifier (0 = all)
-        # defaults to 20
-        self.numLinesScanned = 20
+    # should we calculate SHA256 hashes for each Package's Files?
+    # note that SHA1 hashes are mandatory, per SPDX 2.3
+    doSHA256: bool = True
 
-        # should we calculate SHA256 hashes for each Package's Files?
-        # note that SHA1 hashes are mandatory, per SPDX 2.3
-        self.doSHA256 = True
+    # should we calculate MD5 hashes for each Package's Files?
+    doMD5: bool = False
 
-        # should we calculate MD5 hashes for each Package's Files?
-        self.doMD5 = False
 
 def parseLineForExpression(line):
     """Return parsed SPDX expression if tag found in line, or None otherwise."""
@@ -46,6 +48,7 @@ def parseLineForExpression(line):
     expression = expression.rstrip("/*")
     expression = expression.strip()
     return expression
+
 
 def getExpressionData(filePath, numLines):
     """
@@ -60,11 +63,9 @@ def getExpressionData(filePath, numLines):
     """
     log.dbg(f"  - getting licenses for {filePath}")
 
-    with open(filePath, "r") as f:
+    with open(filePath) as f:
         try:
-            lineno = 0
-            for line in f:
-                lineno += 1
+            for lineno, line in enumerate(f, start=1):
                 if lineno > numLines > 0:
                     break
                 expression = parseLineForExpression(line)
@@ -76,6 +77,7 @@ def getExpressionData(filePath, numLines):
 
     # if we get here, we didn't find an expression
     return None
+
 
 def splitExpression(expression):
     """
@@ -96,6 +98,7 @@ def splitExpression(expression):
 
     return sorted(e4)
 
+
 def calculateVerificationCode(pkg):
     """
     Calculate the SPDX Package Verification Code for all files in the package.
@@ -110,9 +113,10 @@ def calculateVerificationCode(pkg):
     hashes.sort()
     filelist = "".join(hashes)
 
-    hSHA1 = hashlib.sha1()
+    hSHA1 = hashlib.sha1(usedforsecurity=False)
     hSHA1.update(filelist.encode('utf-8'))
     return hSHA1.hexdigest()
+
 
 def checkLicenseValid(lic, doc):
     """
@@ -125,6 +129,7 @@ def checkLicenseValid(lic, doc):
     """
     if lic not in LICENSES:
         doc.customLicenseIDs.add(lic)
+
 
 def getPackageLicenses(pkg):
     """
@@ -142,6 +147,7 @@ def getPackageLicenses(pkg):
         for licInfo in f.licenseInfoInFile:
             licsFromFiles.add(licInfo)
     return sorted(list(licsConcluded)), sorted(list(licsFromFiles))
+
 
 def normalizeExpression(licsConcluded):
     """
@@ -169,6 +175,33 @@ def normalizeExpression(licsConcluded):
         else:
             revised.append(lic)
     return " AND ".join(revised)
+
+
+def getCopyrightInfo(filePath):
+    """
+    Scans the specified file for copyright information using REUSE tools.
+
+    Arguments:
+        - filePath: path to file to scan
+
+    Returns: list of copyright statements if found; empty list if not found
+    """
+    log.dbg(f"  - getting copyright info for {filePath}")
+
+    try:
+        project = Project(os.path.dirname(filePath))
+        infos = project.reuse_info_of(filePath)
+        copyrights = []
+
+        for info in infos:
+            if info.copyright_lines:
+                copyrights.extend(info.copyright_lines)
+
+        return copyrights
+    except Exception as e:
+        log.wrn(f"Error getting copyright info for {filePath}: {e}")
+        return []
+
 
 def scanDocument(cfg, doc):
     """
@@ -205,6 +238,9 @@ def scanDocument(cfg, doc):
                 if cfg.shouldConcludeFileLicenses:
                     f.concludedLicense = expression
                 f.licenseInfoInFile = splitExpression(expression)
+
+            if copyrights := getCopyrightInfo(f.abspath):
+                f.copyrightText = "<text>\n" + "\n".join(copyrights) + "\n</text>"
 
             # check if any custom license IDs should be flagged for document
             for lic in f.licenseInfoInFile:

@@ -1,0 +1,6 @@
+board:
+  name: canbardo
+  full_name: CANbardo
+  vendor: others
+  socs:
+    - name: same70n20b

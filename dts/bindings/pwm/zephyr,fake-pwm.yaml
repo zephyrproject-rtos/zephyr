@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides a fake PWM for use as either a stub or a mock in Zephyr
+    testing.
+
+compatible: "zephyr,fake-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 2
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM
+      - period to set in ns
+  frequency:
+    type: int
+    description: |
+      Frequency for the underlying timer (in Hz)
+
+pwm-cells:
+  - channel
+  - period

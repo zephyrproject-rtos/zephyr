@@ -8,32 +8,26 @@
 #define ZEPHYR_INCLUDE_SENSING_H_
 
 /**
- * @defgroup sensing Sensing
- * @defgroup sensing_api Sensing Subsystem API
- * @ingroup sensing
- * @defgroup sensing_sensor_types Sensor Types
- * @ingroup sensing
- * @defgroup sensing_datatypes Data Types
- * @ingroup sensing
+ * @defgroup sensing_api Sensing
+ * @brief High-level sensor framework.
+ * @ingroup os_services
+ *
+ * The Sensing subsystem provides a high-level API for applications to discover sensors, open sensor
+ * instances, configure reporting behavior, and receive sampled data via callbacks.
+ * For low-level sensor access, see @ref sensor_interface.
+ *
+ * @{
  */
 
 #include <zephyr/sensing/sensing_datatypes.h>
 #include <zephyr/sensing/sensing_sensor_types.h>
 #include <zephyr/device.h>
 
-/**
- * @brief Sensing Subsystem API
- * @addtogroup sensing_api
- * @{
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 /**
- * @struct sensing_sensor_version
  * @brief Sensor Version
  */
 struct sensing_sensor_version {
@@ -49,8 +43,13 @@ struct sensing_sensor_version {
 };
 
 /**
- * @brief Macro to create a sensor version value.
+ * @brief Build a packed @ref sensing_sensor_version value.
  *
+ * @param _major  Major version.
+ * @param _minor  Minor version.
+ * @param _hotfix Hotfix version.
+ * @param _build  Build number.
+ * @return 32-bit packed version value
  */
 #define SENSING_SENSOR_VERSION(_major, _minor, _hotfix, _build)         \
 				(FIELD_PREP(GENMASK(31, 24), _major) |  \
@@ -58,33 +57,43 @@ struct sensing_sensor_version {
 				 FIELD_PREP(GENMASK(15, 8), _hotfix) |  \
 				 FIELD_PREP(GENMASK(7, 0), _build))
 
+/**
+ * @name Sensor reporting flags
+ * @{
+ */
 
 /**
- * @brief Sensor flag indicating if this sensor is on event reporting data.
+ * @brief Sensor flag indicating if this sensor is reporting data on event.
  *
  * Reporting sensor data when the sensor event occurs, such as a motion detect sensor reporting
  * a motion or motionless detected event.
+ *
+ * @note Mutually exclusive with \ref SENSING_SENSOR_FLAG_REPORT_ON_CHANGE
  */
 #define SENSING_SENSOR_FLAG_REPORT_ON_EVENT			BIT(0)
 
 /**
- * @brief Sensor flag indicating if this sensor is on change reporting data.
+ * @brief Sensor flag indicating if this sensor is reporting data on change.
  *
  * Reporting sensor data when the sensor data changes.
  *
- * Exclusive with \ref SENSING_SENSOR_FLAG_REPORT_ON_EVENT
+ * @note Mutually exclusive with \ref SENSING_SENSOR_FLAG_REPORT_ON_EVENT
  */
 #define SENSING_SENSOR_FLAG_REPORT_ON_CHANGE			BIT(1)
 
+/** @} */
+
 /**
- * @brief SENSING_SENSITIVITY_INDEX_ALL indicating sensitivity of each data field should be set
+ * @brief Sentinel index meaning "apply to all data fields".
  *
+ * Used with sensitivity configuration where a sensor provides multiple fields in a single sample.
  */
 #define SENSING_SENSITIVITY_INDEX_ALL -1
 
 /**
- * @brief Sensing subsystem sensor state.
+ * @brief Sensor state.
  *
+ * This enumeration defines the possible states of a sensor.
  */
 enum sensing_sensor_state {
 	SENSING_SENSOR_STATE_READY = 0,   /**< The sensor is ready. */
@@ -92,32 +101,53 @@ enum sensing_sensor_state {
 };
 
 /**
- * @brief Sensing subsystem sensor config attribute
+ * @brief Sensor configuration attribute.
  *
+ * This enumeration defines the possible attributes of a sensor configuration.
  */
 enum sensing_sensor_attribute {
-	/** The interval attribute of a sensor configuration. */
+	/**
+	 * Reporting interval between samples, in microseconds (us).
+	 *
+	 * See @ref sensing_sensor_config::interval.
+	 */
 	SENSING_SENSOR_ATTRIBUTE_INTERVAL = 0,
-	/** The sensitivity attribute of a sensor configuration. */
+
+	/**
+	 * Per-field sensitivity threshold.
+	 *
+	 * See @ref sensing_sensor_config::sensitivity.
+	 */
 	SENSING_SENSOR_ATTRIBUTE_SENSITIVITY = 1,
-	/** The latency attribute of a sensor configuration. */
+
+	/**
+	 * Maximum batching latency, in microseconds (us).
+	 *
+	 * See @ref sensing_sensor_config::latency.
+	 */
 	SENSING_SENSOR_ATTRIBUTE_LATENCY = 2,
-	/** The maximum number of attributes that a sensor configuration can have. */
+
+	/** Number of supported attributes. */
 	SENSING_SENSOR_ATTRIBUTE_MAX,
 };
 
 /**
- * @brief Define Sensing subsystem sensor handle
+ * @brief Opaque handle to an opened sensor instance.
  *
+ * A valid handle is obtained from @ref sensing_open_sensor or @ref sensing_open_sensor_by_dt and
+ * must be closed with @ref sensing_close_sensor when no longer needed.
  */
 typedef void *sensing_sensor_handle_t;
 
 /**
- * @brief Sensor data event receive callback.
+ * @brief Data event callback signature.
  *
- * @param handle The sensor instance handle.
- * @param buf The data buffer with sensor data.
- * @param context User provided context pointer.
+ * The Sensing subsystem invokes this callback to deliver buffered samples for the opened sensor.
+ *
+ * @param handle  Sensor instance handle passed to @ref sensing_open_sensor.
+ * @param buf     Pointer to a sensor-type-specific sample buffer; see @ref sensing_datatypes and
+ *                @ref sensing_sensor_types.
+ * @param context User context pointer as provided in @ref sensing_callback_list::context.
  */
 typedef void (*sensing_data_event_t)(
 		sensing_sensor_handle_t handle,
@@ -125,9 +155,7 @@ typedef void (*sensing_data_event_t)(
 		void *context);
 
 /**
- * @struct sensing_sensor_info
- * @brief Sensor basic constant information
- *
+ * @brief Read-only description of a sensor instance.
  */
 struct sensing_sensor_info {
 	/** Name of the sensor instance */
@@ -154,9 +182,13 @@ struct sensing_sensor_info {
  * @brief Sensing subsystem event callback list
  *
  */
+
+/**
+ * @brief Callback registration for a sensor instance.
+ */
 struct sensing_callback_list {
 	sensing_data_event_t on_data_event; /**< Callback function for a sensor data event. */
-	void *context;                      /**< Associated context with on_data_event */
+	void *context;                      /**< Context that will be passed to the callback. */
 };
 
 /**

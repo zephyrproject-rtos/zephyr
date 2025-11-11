@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

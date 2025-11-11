@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-23, NXP
+ * Copyright 2019-24, NXP
  * Copyright (c) 2022, Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 /* Define the heap size. 512 bytes of padding are included for kernel heap structures */
 K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
-static const uint32_t supported_fmts = PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888;
+static const uint32_t supported_fmts =
+	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -53,8 +54,11 @@ struct mcux_elcdif_data {
 	struct k_sem sem;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
+	bool running;
+#endif
 #ifdef CONFIG_MCUX_ELCDIF_PXP
-	/* Given to when PXP completes rotation */
+	/* Given to when PXP completes operation */
 	struct k_sem pxp_done;
 #endif
 };
@@ -138,12 +142,12 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 #ifdef CONFIG_MCUX_ELCDIF_PXP
 	if (full_fb) {
-		/* Configure PXP using DMA API, and rotate frame */
+		/* Configure PXP using DMA API, and rotate/flip frame */
 		struct dma_config pxp_dma = {0};
 		struct dma_block_config pxp_block = {0};
 
 		/* Source buffer is input to display_write, we will
-		 * place rotated output into a driver framebuffer.
+		 * place modified output into a driver framebuffer.
 		 */
 		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
 		pxp_block.source_address = (uint32_t)buf;
@@ -151,7 +155,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		pxp_block.block_size = desc->buf_size;
 
 		/* DMA slot sets pixel format and rotation angle */
-		if (dev_data->pixel_format == PIXEL_FORMAT_BGR_565) {
+		if (dev_data->pixel_format == PIXEL_FORMAT_RGB_565) {
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB565);
 		} else if (dev_data->pixel_format == PIXEL_FORMAT_RGB_888) {
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB888);
@@ -169,6 +173,17 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_270);
 		} else {
 			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_0);
+		}
+
+		/* DMA linked_channel sets the flip direction */
+		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_HORIZONTAL)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_HORIZONTAL);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_VERTICAL)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_VERTICAL);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_BOTH)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_BOTH);
+		} else {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_DISABLE);
 		}
 
 		pxp_dma.channel_direction = MEMORY_TO_MEMORY;
@@ -191,7 +206,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		}
 		k_sem_take(&dev_data->pxp_done, K_FOREVER);
 	} else {
-		LOG_WRN("PXP rotation will not work correctly unless a full sized "
+		LOG_WRN("PXP rotation/flip will not work correctly unless a full sized "
 			"framebuffer is provided");
 	}
 #endif /* CONFIG_MCUX_ELCDIF_PXP */
@@ -204,9 +219,15 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	dev_data->next_idx = (dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
 
-	if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
+	if (unlikely(!dev_data->running)) {
+		ELCDIF_RgbModeStart(config->base);
+		dev_data->running = true;
 	}
+#endif
+
+	/* Enable frame buffer completion interrupt */
+	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 	/* Wait for frame send to complete */
 	k_sem_take(&dev_data->sem, K_FOREVER);
 	return ret;
@@ -214,16 +235,26 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
+	if (config->backlight_gpio.port) {
+		return gpio_pin_set_dt(&config->backlight_gpio, 1);
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
-	return gpio_pin_set_dt(&config->backlight_gpio, 1);
+	return -ENOSYS;
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
+	if (config->backlight_gpio.port) {
+		return gpio_pin_set_dt(&config->backlight_gpio, 0);
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
-	return gpio_pin_set_dt(&config->backlight_gpio, 0);
+	return -ENOSYS;
 }
 
 static int mcux_elcdif_set_pixel_format(const struct device *dev,
@@ -238,7 +269,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	}
 
 	dev_data->pixel_format = pixel_format;
-	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / 8;
+	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / BITS_PER_BYTE;
 	dev_data->fb_bytes =
 		config->rgb_mode.panelWidth * config->rgb_mode.panelHeight * dev_data->pixel_bytes;
 
@@ -254,7 +285,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	}
 
 	dev_data->rgb_mode = config->rgb_mode;
-	if (pixel_format == PIXEL_FORMAT_BGR_565) {
+	if (pixel_format == PIXEL_FORMAT_RGB_565) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
@@ -299,11 +330,10 @@ static void mcux_elcdif_isr(const struct device *dev)
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
 	if (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb)) {
-		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-			/* Disable frame completion interrupt if Low power mode is activated*/
-			ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
-		}
-		/* Post to sem to notify that frame display is complete.*/
+		/* Disable frame completion interrupt, post to
+		 * sem to notify that frame send is complete.
+		 */
+		ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 		k_sem_give(&dev_data->sem);
 	}
 }
@@ -319,10 +349,14 @@ static int mcux_elcdif_init(const struct device *dev)
 		return err;
 	}
 
-	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
-	if (err) {
-		return err;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
+	if (config->backlight_gpio.port) {
+		err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err) {
+			return err;
+		}
 	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	k_sem_init(&dev_data->sem, 0, 1);
 #ifdef CONFIG_MCUX_ELCDIF_PXP
@@ -338,18 +372,20 @@ static int mcux_elcdif_init(const struct device *dev)
 	/* Set default pixel format obtained from device tree */
 	mcux_elcdif_set_pixel_format(dev, dev_data->pixel_format);
 
+#if CONFIG_MCUX_ELCDIF_FB_NUM != 0
 	dev_data->active_fb = dev_data->fb[0];
+	dev_data->rgb_mode.bufferAddr = (uint32_t)dev_data->active_fb;
+#endif
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
-	if (!IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
-	}
+#ifdef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	ELCDIF_RgbModeStart(config->base);
+#endif
 
 	return 0;
 }
 
-static const struct display_driver_api mcux_elcdif_api = {
+static DEVICE_API(display, mcux_elcdif_api) = {
 	.blanking_on = mcux_elcdif_display_blanking_on,
 	.blanking_off = mcux_elcdif_display_blanking_off,
 	.write = mcux_elcdif_write,
@@ -392,9 +428,9 @@ static const struct display_driver_api mcux_elcdif_api = {
 					DT_INST_ENUM_IDX(id, data_bus_width)),                     \
 			},                                                                         \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),                      \
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(id, backlight_gpios, {0}),              \
 		IF_ENABLED(CONFIG_MCUX_ELCDIF_PXP,                                                 \
-			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};               \
+			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};                \
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {                                   \
 		.next_idx = 0,                                                                     \
 		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \

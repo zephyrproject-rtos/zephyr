@@ -76,3 +76,11 @@ properties:
     description:
       overcurrent shutdown threshold in mA,
       default matches power on reset value
+
+  parallel-out12:
+    type: boolean
+    description: Enables parallel mode for OUT1 and OUT2
+
+  parallel-out34:
+    type: boolean
+    description: Enables parallel mode for OUT3 and OUT4

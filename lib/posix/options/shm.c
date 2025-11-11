@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <string.h>
 #include <stdio.h>
 
@@ -17,7 +20,7 @@
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/hash_function.h>
 
-#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (PAGE_SIZE))
+#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 
 static const struct fd_op_vtable shm_vtable;
 
@@ -156,7 +159,7 @@ static off_t shm_lseek(struct shm_obj *shm, off_t offset, int whence, size_t cur
 		return -1;
 	}
 
-	if ((INTPTR_MAX - addend) < offset) {
+	if ((addend > INTPTR_MAX) || ((INTPTR_MAX - addend) < offset)) {
 		errno = EOVERFLOW;
 		return -1;
 	}
@@ -208,7 +211,7 @@ static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write
 	if (offset >= shm->size) {
 		size = 0;
 	} else {
-		size = MIN(size, shm->size - offset);
+		size = min(size, shm->size - offset);
 	}
 
 	if (size > 0) {
@@ -302,7 +305,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	bool rw = (oflag & O_RDWR) != 0;
 	bool creat = (oflag & O_CREAT) != 0;
 	bool excl = (oflag & O_EXCL) != 0;
-	bool trunc = false; /* (oflag & O_TRUNC) != 0 */
+	bool trunc = (oflag & O_TRUNC) != 0;
 	size_t name_len = (name == NULL) ? 0 : strnlen(name, PATH_MAX);
 
 	/* revisit when file-based permissions are available */

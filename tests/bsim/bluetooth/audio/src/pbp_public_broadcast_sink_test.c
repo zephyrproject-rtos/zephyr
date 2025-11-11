@@ -1,11 +1,13 @@
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -21,12 +23,13 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -41,13 +44,12 @@ static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_base_received, 0U, 1U);
 static K_SEM_DEFINE(sem_syncable, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
-static K_SEM_DEFINE(sem_data_received, 0U, 1U);
 
 static struct bt_bap_broadcast_sink *broadcast_sink;
 static struct bt_le_per_adv_sync *bcast_pa_sync;
 
-static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
-static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
+static struct audio_test_stream test_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_stream *streams_p[ARRAY_SIZE(test_streams)];
 
 static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
@@ -59,7 +61,7 @@ static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
  * we have. We add an additional 1 since the bis indexes start from 1 and not
  * 0.
  */
-static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
+static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(test_streams) + 1U);
 static uint32_t bis_index_bitfield;
 static uint32_t broadcast_id;
 
@@ -93,40 +95,18 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->valid_rx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-}
-
-static void recv_cb(struct bt_bap_stream *stream,
-		    const struct bt_iso_recv_info *info,
-		    struct net_buf *buf)
-{
-	static uint32_t recv_cnt;
-
-	recv_cnt++;
-	if (recv_cnt >= MIN_SEND_COUNT) {
-		k_sem_give(&sem_data_received);
-	}
-	printk("Receiving ISO packets\n");
-}
-
-static uint16_t interval_to_sync_timeout(uint16_t interval)
-{
-	uint32_t interval_ms;
-	uint32_t timeout;
-
-	/* Add retries and convert to unit in 10's of ms */
-	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-
-	return (uint16_t)timeout;
 }
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
@@ -179,7 +159,7 @@ static void broadcast_pa_terminated(struct bt_le_per_adv_sync *sync,
 static struct bt_bap_stream_ops stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
-	.recv = recv_cb
+	.recv = bap_stream_rx_recv_cb,
 };
 
 static struct bt_le_per_adv_sync_cb broadcast_sync_cb = {
@@ -196,9 +176,9 @@ static int reset(void)
 	k_sem_reset(&sem_base_received);
 	k_sem_reset(&sem_syncable);
 	k_sem_reset(&sem_pa_sync_lost);
-	k_sem_reset(&sem_data_received);
+	UNSET_FLAG(flag_audio_received);
 
-	broadcast_id = INVALID_BROADCAST_ID;
+	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bis_index_bitfield = 0U;
 	pbs_found = false;
 
@@ -218,6 +198,12 @@ static int reset(void)
 
 static int init(void)
 {
+	const struct bt_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -229,6 +215,12 @@ static int init(void)
 
 	printk("Bluetooth initialized\n");
 
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return err;
+	}
+
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	bt_le_per_adv_sync_cb_register(&broadcast_sync_cb);
 
@@ -239,12 +231,9 @@ static int init(void)
 		return err;
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i].ops = &stream_ops;
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
-		streams_p[i] = &streams[i];
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
+		streams_p[i] = bap_stream_from_audio_test_stream(&test_streams[i]);
+		bt_bap_stream_cb_register(streams_p[i], &stream_ops);
 	}
 
 	return 0;
@@ -290,7 +279,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
 		/* Save broadcast_id */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 		}
 
@@ -307,7 +296,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		pbs_found = true;
 
 		/* Continue parsing if Broadcast Audio Announcement Service was not found */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return true;
 		}
 
@@ -331,7 +320,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&broadcast_id);
 
-	if ((broadcast_id != INVALID_BROADCAST_ID) && pbs_found) {
+	if ((broadcast_id != BT_BAP_INVALID_BROADCAST_ID) && pbs_found) {
 		sync_broadcast_pa(info);
 	}
 }
@@ -404,7 +393,7 @@ static void test_main(void)
 
 		/* Wait for data */
 		printk("Waiting for data\n");
-		k_sem_take(&sem_data_received, SEM_TIMEOUT);
+		WAIT_FOR_FLAG(flag_audio_received);
 
 		printk("Sending signal to broadcaster to stop\n");
 		backchannel_sync_send_all(); /* let the broadcast source know it can stop */

@@ -8,20 +8,23 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <zephyr/sys/byteorder.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vocs.h>
-#include <zephyr/sys/util.h>
-#include "btp/btp.h"
-
-#include <../../subsys/bluetooth/audio/micp_internal.h>
-#include <../../subsys/bluetooth/audio/aics_internal.h>
-#include <../../subsys/bluetooth/audio/vcp_internal.h>
-#include <../../subsys/bluetooth/audio/vocs_internal.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "../../subsys/bluetooth/audio/aics_internal.h"
+#include "../../subsys/bluetooth/audio/vcp_internal.h"
+#include "../../subsys/bluetooth/audio/vocs_internal.h"
+#include "btp/btp.h"
 
 #define LOG_MODULE_NAME bttester_vcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
@@ -69,15 +72,8 @@ static uint8_t vcs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_vcs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_VCS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_VCS_SET_VOL);
-	tester_set_bit(rp->data, BTP_VCS_VOL_UP);
-	tester_set_bit(rp->data, BTP_VCS_VOL_DOWN);
-	tester_set_bit(rp->data, BTP_VCS_MUTE);
-	tester_set_bit(rp->data, BTP_VCS_UNMUTE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_VCS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -144,12 +140,12 @@ static uint8_t unmute(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	LOG_DBG("VCP state cb err (%d)", err);
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	LOG_DBG("VCP flags cb err (%d)", err);
 }
@@ -199,15 +195,8 @@ static uint8_t vocs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_vocs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_VOCS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_VOCS_UPDATE_LOC);
-	tester_set_bit(rp->data, BTP_VOCS_UPDATE_DESC);
-	tester_set_bit(rp->data, BTP_VOCS_STATE_GET);
-	tester_set_bit(rp->data, BTP_VOCS_LOCATION_GET);
-	tester_set_bit(rp->data, BTP_VOCS_OFFSET_STATE_SET);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_VOCS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -476,10 +465,10 @@ struct bt_aics_cb aics_server_cb = {
 /* General profile handling */
 static void set_register_params(uint8_t gain_mode)
 {
-	char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT]
-		       [BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
-	char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT]
-			[BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE];
+	static char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT]
+			      [BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
+	static char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT]
+			      [BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE];
 
 	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
@@ -624,22 +613,8 @@ static uint8_t vcp_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_vcp_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_VCP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_DISCOVER);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_STATE_READ);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_FLAGS_READ);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_VOL_DOWN);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_VOL_UP);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_UNMUTE_VOL_DOWN);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_UNMUTE_VOL_UP);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_SET_VOL);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_UNMUTE);
-	tester_set_bit(rp->data, BTP_VCP_VOL_CTLR_MUTE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_VCP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -686,7 +661,7 @@ static void vcp_vol_ctlr_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, 
 	}
 
 	chrc_handles.vcp_handles.ctrl_pt = vol_ctlr->control_handle;
-	chrc_handles.vcp_handles.flags = vol_ctlr->flag_handle;
+	chrc_handles.vcp_handles.flags = vol_ctlr->vol_flag_handle;
 	chrc_handles.vcp_handles.state = vol_ctlr->state_handle;
 	btp_send_vcp_found_ev(conn, err, &chrc_handles);
 }

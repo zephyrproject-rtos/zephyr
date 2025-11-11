@@ -18,6 +18,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 
+#include <nsi_errno.h>
 #include <nsi_tracing.h>
 
 #include "cmdline.h"
@@ -48,6 +49,10 @@ struct native_tty_data {
 	uart_irq_callback_user_data_t callback;
 	/* IRQ callback data */
 	void *cb_data;
+	/* Instance-specific RX thread. */
+	struct k_thread rx_thread;
+	/* RX thread stack. */
+	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 #endif
 };
 
@@ -56,8 +61,6 @@ struct native_tty_config {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static struct k_thread rx_thread;
-static K_KERNEL_STACK_DEFINE(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 #define NATIVE_TTY_INIT_LEVEL POST_KERNEL
 #else
 #define NATIVE_TTY_INIT_LEVEL PRE_KERNEL_1
@@ -128,6 +131,73 @@ static int native_tty_conv_to_bottom_cfg(struct native_tty_bottom_cfg *bottom_cf
 	return 0;
 }
 
+/**
+ * @brief Convert from native_tty_bottom_cfg to uart_config
+ *
+ * @param bottom_cfg
+ * @param cfg
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int native_tty_conv_from_bottom_cfg(int fd, struct uart_config *cfg)
+{
+	struct native_tty_bottom_cfg bottom_cfg;
+	int rc = 0;
+
+	rc = native_tty_read_bottom_cfg(fd, &bottom_cfg);
+	if (rc != 0) {
+		return nsi_errno_from_mid(rc);
+	}
+
+	cfg->baudrate = bottom_cfg.baudrate;
+
+	switch (bottom_cfg.parity) {
+	case NTB_PARITY_NONE:
+		cfg->parity = UART_CFG_PARITY_NONE;
+		break;
+	case NTB_PARITY_ODD:
+		cfg->parity = UART_CFG_PARITY_ODD;
+		break;
+	case NTB_PARITY_EVEN:
+		cfg->parity = UART_CFG_PARITY_EVEN;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (bottom_cfg.stop_bits) {
+	case NTB_STOP_BITS_1:
+		cfg->stop_bits = UART_CFG_STOP_BITS_1;
+		break;
+	case NTB_STOP_BITS_2:
+		cfg->stop_bits = UART_CFG_STOP_BITS_2;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (bottom_cfg.data_bits) {
+	case NTB_DATA_BITS_5:
+		cfg->data_bits = UART_CFG_DATA_BITS_5;
+		break;
+	case NTB_DATA_BITS_6:
+		cfg->data_bits = UART_CFG_DATA_BITS_6;
+		break;
+	case NTB_DATA_BITS_7:
+		cfg->data_bits = UART_CFG_DATA_BITS_7;
+		break;
+	case NTB_DATA_BITS_8:
+		cfg->data_bits = UART_CFG_DATA_BITS_8;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+
+	return 0;
+}
+
 /*
  * @brief Output a character towards the serial port
  *
@@ -175,6 +245,20 @@ static int native_tty_configure(const struct device *dev, const struct uart_conf
 	return native_tty_configure_bottom(fd, &bottom_cfg);
 }
 
+static int native_tty_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	int fd = ((struct native_tty_data *)dev->data)->fd;
+	int rc = 0;
+
+	rc = native_tty_conv_from_bottom_cfg(fd, cfg);
+	if (rc) {
+		WARN("Could not convert native tty bottom cfg to uart config\n");
+		return rc;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int native_tty_uart_fifo_fill(const struct device *dev,
 				     const uint8_t *tx_data,
@@ -182,7 +266,7 @@ static int native_tty_uart_fifo_fill(const struct device *dev,
 {
 	struct native_tty_data *data = dev->data;
 
-	return nsi_host_write(data->fd, (void *)tx_data, size);
+	return nsi_host_write(data->fd, (const void *)tx_data, size);
 }
 
 static int native_tty_uart_fifo_read(const struct device *dev,
@@ -311,8 +395,10 @@ static void native_tty_uart_irq_callback_set(const struct device *dev,
 
 static void native_tty_irq_init(const struct device *dev)
 {
+	struct native_tty_data *data = dev->data;
+
 	/* Create a thread which will wait for data - replacement for IRQ */
-	k_thread_create(&rx_thread, rx_stack, K_KERNEL_STACK_SIZEOF(rx_stack),
+	k_thread_create(&data->rx_thread, data->rx_stack, K_KERNEL_STACK_SIZEOF(data->rx_stack),
 			native_tty_uart_irq_function,
 			(void *)dev, NULL, NULL,
 			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
@@ -366,11 +452,12 @@ static int native_tty_serial_init(const struct device *dev)
 	return 0;
 }
 
-static struct uart_driver_api native_tty_uart_driver_api = {
+static DEVICE_API(uart, native_tty_uart_driver_api) = {
 	.poll_out = native_tty_uart_poll_out,
 	.poll_in = native_tty_uart_poll_in,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = native_tty_configure,
+	.config_get = native_tty_config_get,
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill        = native_tty_uart_fifo_fill,
@@ -405,8 +492,8 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \
-			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,                 \
-			      &native_tty_uart_driver_api);
+			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL,                     \
+			      CONFIG_SERIAL_INIT_PRIORITY, &native_tty_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 

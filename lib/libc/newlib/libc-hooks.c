@@ -23,14 +23,20 @@
 #include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
+#ifdef CONFIG_XTENSA
+#include <xtensa/config/core-isa.h>
+#endif
+
 int _fstat(int fd, struct stat *st);
 int _read(int fd, void *buf, int nbytes);
 int _write(int fd, const void *buf, int nbytes);
-int _open(const char *name, int mode);
+int _open(const char *name, int flags, ...);
 int _close(int file);
 int _lseek(int file, int ptr, int dir);
 int _kill(int pid, int sig);
 int _getpid(void);
+
+#ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -86,6 +92,9 @@ int _getpid(void);
 		#elif defined(CONFIG_ARC)
 			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
 							  Z_ARC_MPU_ALIGN)
+		#elif defined(CONFIG_XTENSA)
+			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
+							  XCHAL_MPU_ALIGN)
 		#else
 			#error "Unsupported platform"
 		#endif /* CONFIG_<arch> */
@@ -112,7 +121,7 @@ static int malloc_prepare(void)
 
 #ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
-	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
+	max_heap_size = min(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
 			    k_mem_free_get());
 
 	if (max_heap_size != 0) {
@@ -146,6 +155,7 @@ SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
+#endif /* CONFIG_NEWLIB_LIBC_CUSTOM_SBRK */
 
 static int _stdout_hook_default(int c)
 {
@@ -236,7 +246,7 @@ int _write(int fd, const void *buf, int nbytes)
 }
 __weak FUNC_ALIAS(_write, write, int);
 
-int _open(const char *name, int mode)
+int _open(const char *name, int flags, ...)
 {
 	return -1;
 }
@@ -297,6 +307,7 @@ __weak void _exit(int status)
 	}
 }
 
+#ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 void *_sbrk(intptr_t count)
 {
 	void *ret, *ptr;
@@ -317,6 +328,7 @@ void *_sbrk(intptr_t count)
 	return ret;
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
+#endif /* CONFIG_NEWLIB_LIBC_CUSTOM_SBRK */
 
 #ifdef CONFIG_MULTITHREADING
 
@@ -513,7 +525,7 @@ int _open_r(struct _reent *r, const char *name, int flags, int mode)
 	ARG_UNUSED(r);
 	ARG_UNUSED(flags);
 
-	return _open(name, mode);
+	return _open(name, flags, mode);
 }
 
 int _close_r(struct _reent *r, int file)

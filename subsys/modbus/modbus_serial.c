@@ -13,7 +13,7 @@
  *
  *      Copyright 2003-2020 Silicon Laboratories Inc. www.silabs.com
  *
- *                   SPDX-License-Identifier: APACHE-2.0
+ *                   SPDX-License-Identifier: Apache-2.0
  *
  * This software is subject to an open source license and is distributed by
  *  Silicon Laboratories Inc. pursuant to the terms of the Apache License,
@@ -34,20 +34,43 @@ static void modbus_serial_tx_on(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->de != NULL) {
-		gpio_pin_set(cfg->de->port, cfg->de->pin, 1);
+		gpio_pin_set_dt(cfg->de, 1);
 	}
 
-	uart_irq_tx_enable(cfg->dev);
+	if (IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		int err;
+
+		err = uart_tx(cfg->dev, cfg->uart_buf, cfg->uart_buf_ctr, SYS_FOREVER_US);
+		if (err) {
+			LOG_ERR("uart_tx failed with %d", err);
+		}
+	} else {
+		uart_irq_tx_enable(cfg->dev);
+	}
 }
 
 static void modbus_serial_tx_off(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 
-	uart_irq_tx_disable(cfg->dev);
-	if (cfg->de != NULL) {
-		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
+	if (!IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		uart_irq_tx_disable(cfg->dev);
 	}
+
+	if (cfg->de != NULL) {
+		gpio_pin_set_dt(cfg->de, 0);
+	}
+}
+
+static void modbus_serial_rx_fifo_drain(struct modbus_context *ctx)
+{
+	struct modbus_serial_config *cfg = ctx->cfg;
+	uint8_t buf[8];
+	int n;
+
+	do {
+		n = uart_fifo_read(cfg->dev, buf, sizeof(buf));
+	} while (n == sizeof(buf));
 }
 
 static void modbus_serial_rx_on(struct modbus_context *ctx)
@@ -55,19 +78,37 @@ static void modbus_serial_rx_on(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->re != NULL) {
-		gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
+		gpio_pin_set_dt(cfg->re, 1);
 	}
 
-	uart_irq_rx_enable(cfg->dev);
+	atomic_set_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
+	if (IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		int err;
+
+		err = uart_rx_enable(cfg->dev, cfg->uart_buf,
+				     sizeof(cfg->uart_buf), cfg->rtu_timeout);
+		if (err) {
+			LOG_ERR("uart_rx_enable failed with %d", err);
+		}
+	} else {
+		uart_irq_rx_enable(cfg->dev);
+	}
 }
 
 static void modbus_serial_rx_off(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 
-	uart_irq_rx_disable(cfg->dev);
+	if (IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		uart_rx_disable(cfg->dev);
+	} else {
+		uart_irq_rx_disable(cfg->dev);
+	}
+
+	atomic_clear_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
+
 	if (cfg->re != NULL) {
-		gpio_pin_set(cfg->re->port, cfg->re->pin, 0);
+		gpio_pin_set_dt(cfg->re, 0);
 	}
 }
 
@@ -277,7 +318,7 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	return 0;
 }
 
-static void rtu_tx_adu(struct modbus_context *ctx)
+static void modbus_rtu_tx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t tx_bytes = 0;
@@ -311,6 +352,11 @@ static void rtu_tx_adu(struct modbus_context *ctx)
 static void cb_handler_rx(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
+
+	if (!atomic_test_bit(&ctx->state, MODBUS_STATE_RX_ENABLED)) {
+		modbus_serial_rx_fifo_drain(ctx);
+		return;
+	}
 
 	if ((ctx->mode == MODBUS_MODE_ASCII) &&
 	    IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
@@ -379,11 +425,33 @@ static void cb_handler_tx(struct modbus_context *ctx)
 		/* Disable transmission */
 		cfg->uart_buf_ptr = &cfg->uart_buf[0];
 		modbus_serial_tx_off(ctx);
+		modbus_serial_rx_fifo_drain(ctx);
 		modbus_serial_rx_on(ctx);
 	}
 }
 
 static void uart_cb_handler(const struct device *dev, void *app_data)
+{
+	struct modbus_context *ctx = (struct modbus_context *)app_data;
+
+	if (ctx == NULL) {
+		LOG_ERR("Modbus hardware is not properly initialized");
+		return;
+	}
+
+	if (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+
+		if (uart_irq_rx_ready(dev)) {
+			cb_handler_rx(ctx);
+		}
+
+		if (uart_irq_tx_ready(dev)) {
+			cb_handler_tx(ctx);
+		}
+	}
+}
+
+static void uart_cb_async_handler(const struct device *dev, struct uart_event *evt, void *app_data)
 {
 	struct modbus_context *ctx = (struct modbus_context *)app_data;
 	struct modbus_serial_config *cfg;
@@ -395,15 +463,29 @@ static void uart_cb_handler(const struct device *dev, void *app_data)
 
 	cfg = ctx->cfg;
 
-	if (uart_irq_update(cfg->dev) && uart_irq_is_pending(cfg->dev)) {
-
-		if (uart_irq_rx_ready(cfg->dev)) {
-			cb_handler_rx(ctx);
-		}
-
-		if (uart_irq_tx_ready(cfg->dev)) {
-			cb_handler_tx(ctx);
-		}
+	switch (evt->type) {
+	case UART_TX_DONE:
+		cfg->uart_buf_ctr = 0;
+		modbus_serial_tx_off(ctx);
+		modbus_serial_rx_on(ctx);
+		break;
+	case UART_RX_RDY:
+		cfg->uart_buf_ctr = evt->data.rx.len;
+		k_work_submit(&ctx->server_work);
+		break;
+	case UART_TX_ABORTED:
+		__fallthrough;
+	case UART_RX_STOPPED:
+		__fallthrough;
+	case UART_RX_BUF_REQUEST:
+		__fallthrough;
+	case UART_RX_BUF_RELEASED:
+		__fallthrough;
+	case UART_RX_DISABLED:
+		break;
+	default:
+		LOG_WRN("Unhandled UART event type: %d", evt->type);
+		break;
 	}
 }
 
@@ -427,7 +509,7 @@ static int configure_gpio(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->de != NULL) {
-		if (!device_is_ready(cfg->de->port)) {
+		if (!gpio_is_ready_dt(cfg->de)) {
 			return -ENODEV;
 		}
 
@@ -438,7 +520,7 @@ static int configure_gpio(struct modbus_context *ctx)
 
 
 	if (cfg->re != NULL) {
-		if (!device_is_ready(cfg->re->port)) {
+		if (!gpio_is_ready_dt(cfg->re)) {
 			return -ENODEV;
 		}
 
@@ -480,14 +562,14 @@ static inline int configure_uart(struct modbus_context *ctx,
 		return -EINVAL;
 	}
 
-	if (ctx->client) {
-		/* Allow custom stop bit settings only in client mode */
-		switch (param->serial.stop_bits_client) {
+	if (IS_ENABLED(CONFIG_MODBUS_NONCOMPLIANT_SERIAL_MODE)) {
+		/* Allow custom stop bit settings only in non-compliant mode */
+		switch (param->serial.stop_bits) {
 		case UART_CFG_STOP_BITS_0_5:
 		case UART_CFG_STOP_BITS_1:
 		case UART_CFG_STOP_BITS_1_5:
 		case UART_CFG_STOP_BITS_2:
-			uart_cfg.stop_bits = param->serial.stop_bits_client;
+			uart_cfg.stop_bits = param->serial.stop_bits;
 			break;
 		default:
 			return -EINVAL;
@@ -543,7 +625,7 @@ int modbus_serial_tx_adu(struct modbus_context *ctx)
 {
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
-		rtu_tx_adu(ctx);
+		modbus_rtu_tx_adu(ctx);
 		return 0;
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
@@ -563,6 +645,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	struct modbus_serial_config *cfg = ctx->cfg;
 	const uint32_t if_delay_max = 3500000;
 	const uint32_t numof_bits = 11;
+	int err;
 
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
@@ -584,6 +667,11 @@ int modbus_serial_init(struct modbus_context *ctx,
 		}
 	}
 
+	if (param.serial.baud == 0) {
+		LOG_ERR("Baudrate is 0");
+		return -EINVAL;
+	}
+
 	if (param.serial.baud <= 38400) {
 		cfg->rtu_timeout = (numof_bits * if_delay_max) /
 				   param.serial.baud;
@@ -598,14 +686,20 @@ int modbus_serial_init(struct modbus_context *ctx,
 	cfg->uart_buf_ctr = 0;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
 
-	uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
-	k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
-	k_timer_user_data_set(&cfg->rtu_timer, ctx);
+	if (IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		err = uart_callback_set(cfg->dev, uart_cb_async_handler, ctx);
+	} else {
+		err = uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
+		if (!err) {
+			k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
+			k_timer_user_data_set(&cfg->rtu_timer, ctx);
+			modbus_serial_rx_on(ctx);
+		}
+	}
 
-	modbus_serial_rx_on(ctx);
 	LOG_INF("RTU timeout %u us", cfg->rtu_timeout);
 
-	return 0;
+	return err;
 }
 
 void modbus_serial_disable(struct modbus_context *ctx)

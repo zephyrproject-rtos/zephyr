@@ -1,0 +1,14 @@
+identifier: stm32mp135f_dk
+name: ST STM32MP135F-DK Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - shell
+ram: 262144
+flash: 262144
+vendor: st

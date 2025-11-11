@@ -32,10 +32,10 @@ extern "C" {
 #define A2DP_SBC_SAMP_FREQ_48000 BIT(4)
 
 /* Channel Mode */
-#define A2DP_SBC_CH_MODE_MONO  BIT(3)
-#define A2DP_SBC_CH_MODE_DUAL  BIT(2)
-#define A2DP_SBC_CH_MODE_STREO BIT(1)
-#define A2DP_SBC_CH_MODE_JOINT BIT(0)
+#define A2DP_SBC_CH_MODE_MONO   BIT(3)
+#define A2DP_SBC_CH_MODE_DUAL   BIT(2)
+#define A2DP_SBC_CH_MODE_STEREO BIT(1)
+#define A2DP_SBC_CH_MODE_JOINT  BIT(0)
 
 /* Block Length */
 #define A2DP_SBC_BLK_LEN_4  BIT(7)
@@ -56,6 +56,8 @@ extern "C" {
 #define BT_A2DP_SBC_BLK_LEN(cap)      ((cap->config[1] >> 4) & 0x0f)
 #define BT_A2DP_SBC_SUB_BAND(cap)     ((cap->config[1] >> 2) & 0x03)
 #define BT_A2DP_SBC_ALLOC_MTHD(cap)   ((cap->config[1]) & 0x03)
+#define BT_A2DP_SBC_MIN_BITPOOL_VALUE  2
+#define BT_A2DP_SBC_MAX_BITPOOL_VALUE  250
 
 /** @brief SBC Codec */
 struct bt_a2dp_codec_sbc_params {

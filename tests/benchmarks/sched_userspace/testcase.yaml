@@ -5,12 +5,13 @@ tests:
       - kernel
       - benchmark
       - userspace
-    slow: true
     filter: CONFIG_ARCH_HAS_USERSPACE
+    slow: true
     arch_exclude:
       - posix
+    timeout: 300
     harness: console
     harness_config:
-      type: multi_line
+      type: one_line
       regex:
         - "SUCCESS"

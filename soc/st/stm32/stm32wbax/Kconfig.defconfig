@@ -7,11 +7,18 @@ if SOC_SERIES_STM32WBAX
 
 rsource "Kconfig.defconfig.stm32wba*"
 
+config ICACHE
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 config STM32_LPTIM_TIMER
 	default y if PM
-
-config STM32_FLASH_PREFETCH
-	default y
 
 config BT_STM32WBA
 	select DYNAMIC_INTERRUPTS
@@ -39,6 +46,29 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 2048
 
 endif
+
+config IEEE802154_STM32WBA
+	select DYNAMIC_INTERRUPTS
+	select DYNAMIC_DIRECT_INTERRUPTS
+	select ENTROPY_GENERATOR
+	select HAS_STM32LIB
+
+if IEEE802154_STM32WBA
+
+config FPU
+	default y
+
+choice LIBC_IMPLEMENTATION
+	default NEWLIB_LIBC
+endchoice
+
+config ENTROPY_STM32_CLK_CHECK
+	default n
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # IEEE802154_STM32WBA
 
 if PM_S2RAM
 

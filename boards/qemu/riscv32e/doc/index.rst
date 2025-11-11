@@ -1,7 +1,4 @@
-.. _qemu_riscv32e:
-
-RISCV32E Emulation (QEMU)
-#########################
+.. zephyr:board:: qemu_riscv32e
 
 Overview
 ********
@@ -10,6 +7,8 @@ The RISCV32E QEMU board configuration is used to emulate the RISCV32 (RV32E) arc
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``qemu_riscv32e`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and

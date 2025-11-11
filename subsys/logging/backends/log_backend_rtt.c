@@ -7,6 +7,7 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <SEGGER_RTT.h>
 
@@ -30,6 +31,10 @@
 #ifndef CONFIG_LOG_BACKEND_RTT_RETRY_CNT
 /* Big enough to detect host presence */
 #define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
+#endif
+
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
+static const uint8_t LOG_HEX_SEP[10] = "##ZLOGV1##";
 #endif
 
 #define DROP_MAX 99
@@ -85,7 +90,6 @@ static inline bool is_panic_mode(void)
 
 static int data_out_drop_mode(uint8_t *data, size_t length, void *ctx)
 {
-	(void) ctx;
 	uint8_t *pos;
 
 	if (is_sync_mode()) {
@@ -202,6 +206,8 @@ static void on_write(int retry_cnt)
 
 static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	int ret = 0;
 	/* This function is also called in drop mode for synchronous operation
 	 * in that case retry is undesired */
@@ -233,6 +239,8 @@ static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 
 static int data_out_overwrite_mode(uint8_t *data, size_t length, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	if (!is_sync_mode()) {
 		RTT_LOCK();
 		SEGGER_RTT_WriteWithOverwriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
@@ -247,12 +255,34 @@ static int data_out_overwrite_mode(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output_rtt,
-		  IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
-		  data_out_block_mode :
-		  IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_OVERWRITE) ?
-		  data_out_overwrite_mode : data_out_drop_mode,
-		  char_buf, sizeof(char_buf));
+static const log_output_func_t logging_func =
+	IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK)       ? data_out_block_mode
+	: IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_OVERWRITE) ? data_out_overwrite_mode
+							    : data_out_drop_mode;
+
+static int data_out(uint8_t *data, size_t length, void *ctx)
+{
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
+	for (size_t i = 0; i < length; i++) {
+		char c[2];
+		uint8_t x[2];
+
+		/* upper 8-bit */
+		x[0] = data[i] >> 4;
+		(void)hex2char(x[0], &c[0]);
+
+		/* lower 8-bit */
+		x[1] = data[i] & 0x0FU;
+		(void)hex2char(x[1], &c[1]);
+		logging_func(c, sizeof(c), ctx);
+	}
+	return length;
+#endif
+
+	return logging_func(data, length, ctx);
+}
+
+LOG_OUTPUT_DEFINE(log_output_rtt, data_out, char_buf, sizeof(char_buf));
 
 static void log_backend_rtt_cfg(void)
 {
@@ -267,12 +297,18 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 		log_backend_rtt_cfg();
 	}
 
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
+	logging_func((uint8_t *)LOG_HEX_SEP, sizeof(LOG_HEX_SEP), NULL);
+#endif
+
 	host_present = true;
 	line_pos = line_buf;
 }
 
 static void panic(struct log_backend const *const backend)
 {
+	ARG_UNUSED(backend);
+
 	panic_mode = true;
 	log_backend_std_panic(&log_output_rtt);
 }
@@ -281,12 +317,18 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_backend_std_dropped(&log_output_rtt, cnt);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)) {
+		log_dict_output_dropped_process(&log_output_rtt, cnt);
+	} else {
+		log_backend_std_dropped(&log_output_rtt, cnt);
+	}
 }
 
 static void process(const struct log_backend *const backend,
 		union log_msg_generic *msg)
 {
+	ARG_UNUSED(backend);
+
 	uint32_t flags = log_backend_std_get_flags();
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
@@ -296,6 +338,8 @@ static void process(const struct log_backend *const backend,
 
 static int format_set(const struct log_backend *const backend, uint32_t log_type)
 {
+	ARG_UNUSED(backend);
+
 	log_format_current = log_type;
 	return 0;
 }

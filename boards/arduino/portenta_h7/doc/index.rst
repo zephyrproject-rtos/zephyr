@@ -1,7 +1,4 @@
-.. _arduino_portenta_h7_board:
-
-Arduino Portenta H7
-###################
+.. zephyr:board:: arduino_portenta_h7
 
 Overview
 ********
@@ -19,12 +16,6 @@ Additionally, the board features:
 - USB OTG FS
 - 3 color user LEDs
 
-.. image:: img/arduino_portenta_h7.jpeg
-     :width: 500px
-     :align: center
-     :height: 325px
-     :alt: ARDUINO_PORTENTA_H7
-
 More information about the board can be found at the `ARDUINO_PORTENTA_H7 website`_.
 More information about STM32H747XIH6 can be found here:
 
@@ -35,44 +26,29 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr arduino_portenta_h7 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| EXTFLASH  | on-chip    | qspi                                |
-+-----------+------------+-------------------------------------+
-| SDRAM     | on-chip    | sdram                               |
-+-----------+------------+-------------------------------------+
-| USB       | on-board   | usb-hs                              |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-board   | eth                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
+.. zephyr:board-supported-hw::
 
 The high precision low speed external (LSE) clock is only fully supported on
 boards with hardware revision 4.10 or greater. By default the internal source
 is used; to enable the use of the external oscillator, manually specify the
 hardware revision at build time (see :ref:`application_board_version` for
 information on how to build for specific revisions of the board).
+
+Applications that intend to use BLE must specify hardware revision at build time.
+
+Currently only BLE is supported on this board, WiFi is not supported.
+
+Fetch Binary Blobs
+******************
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Resources sharing
 =================
@@ -90,7 +66,9 @@ two cores. This is done in 3 ways:
   to avoid potential concurrent access issues.
 
 Building and Flashing
-*************************
+*********************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_portenta_h7`` board should be built per core target,
 using either ``arduino_portenta_h7_m7`` or ``arduino_portenta_h7_m4`` as the target.
@@ -114,7 +92,7 @@ First, connect the Arduino Portenta H7 board to your host computer using
 the USB port to prepare it for flashing. Double tap the button to put the board
 into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

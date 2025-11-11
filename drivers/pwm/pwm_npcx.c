@@ -15,7 +15,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(pwm_npcx, CONFIG_PWM_LOG_LEVEL);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
 #define NPCX_PWM_MAX_PRESCALER      (1UL << (16))
@@ -58,6 +58,13 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 	/* Disable PWM for module configuration first */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
 
+	/*
+	 * NPCX PWM module mixes byte and word registers together. Make sure
+	 * word reg access via structure won't break into two byte reg accesses
+	 * unexpectedly by toolchains options or attributes. If so, stall here.
+	 */
+	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
+
 	/* Set default PWM polarity to normal */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
 
@@ -70,10 +77,11 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 			NPCX_PWM_CLOCK_APB2_LFCLK);
 
 	/* Select clock source to LFCLK by flag, otherwise APB clock source */
-	if (clk_bus == NPCX_CLOCK_BUS_LFCLK)
+	if (clk_bus == NPCX_CLOCK_BUS_LFCLK) {
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
-	else
+	} else {
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
+	}
 }
 
 /* PWM api functions */
@@ -162,7 +170,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver registration */
-static const struct pwm_driver_api pwm_npcx_driver_api = {
+static DEVICE_API(pwm, pwm_npcx_driver_api) = {
 	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };
@@ -171,17 +179,8 @@ static int pwm_npcx_init(const struct device *dev)
 {
 	const struct pwm_npcx_config *const config = dev->config;
 	struct pwm_npcx_data *const data = dev->data;
-	struct pwm_reg *const inst = config->base;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
-
-	/*
-	 * NPCX PWM module mixes byte and word registers together. Make sure
-	 * word reg access via structure won't break into two byte reg accesses
-	 * unexpectedly by toolchains options or attributes. If so, stall here.
-	 */
-	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
-
 
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");

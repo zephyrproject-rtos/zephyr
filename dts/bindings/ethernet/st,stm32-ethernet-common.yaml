@@ -1,0 +1,22 @@
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for STM32 Ethernet peripherals.
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  phy-connection-type:
+    required: true
+  phy-handle:
+    required: true

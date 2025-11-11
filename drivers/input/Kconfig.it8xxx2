@@ -6,5 +6,6 @@ config INPUT_ITE_IT8XXX2_KBD
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_KBD_ENABLED
 	select INPUT_KBD_MATRIX
+	select PINCTRL
 	help
 	  This option enables the ITE keyboard scan driver.

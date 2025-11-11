@@ -1,0 +1,24 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AXP2101 LED controller
+
+  The AXP2101 has one LED can automatically display error or charging status,
+  or be controlled by software.
+
+compatible: "x-powers,axp2101-led"
+
+on-bus: axp2101
+
+properties:
+  x-powers,mode:
+    type: string
+    enum:
+      - "type-a"
+      - "type-b"
+      - "by-reg"
+    description:
+      Select the LED control method.
+      If you select "by-reg", you can control it from software.
+      Please refer to the datasheet for details on "type-a" and "type-b".

@@ -7,17 +7,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
-#include <zephyr/usb/usb_device.h>
+#include <sample_usbd.h>
 #include <zephyr/net/net_config.h>
+
+static struct usbd_context *sample_usbd;
 
 int init_usb(void)
 {
-	int ret;
+	int err;
 
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Cannot enable USB (%d)", ret);
-		return ret;
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		return err;
 	}
 
 	(void)net_config_init_app(NULL, "Initializing network");

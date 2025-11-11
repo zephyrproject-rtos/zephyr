@@ -279,7 +279,7 @@ static void adc_cc32xx_isr_ch3(const struct device *dev)
 	adc_cc32xx_isr(dev, 3);
 }
 
-static const struct adc_driver_api cc32xx_driver_api = {
+static DEVICE_API(adc, cc32xx_driver_api) = {
 	.channel_setup = adc_cc32xx_channel_setup,
 	.read = adc_cc32xx_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -312,7 +312,7 @@ static const struct adc_driver_api cc32xx_driver_api = {
 	};									 \
 										 \
 	DEVICE_DT_INST_DEFINE(index,						 \
-			      &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
+			      adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
 			      &adc_cc32xx_cfg_##index, POST_KERNEL,		 \
 			      CONFIG_ADC_INIT_PRIORITY,				 \
 			      &cc32xx_driver_api);				 \

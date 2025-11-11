@@ -31,10 +31,8 @@ struct k_spinlock _track_list_k_msgq_lock;
 struct k_mbox *_track_list_k_mbox;
 struct k_spinlock _track_list_k_mbox_lock;
 
-#ifdef CONFIG_PIPES
 struct k_pipe *_track_list_k_pipe;
 struct k_spinlock _track_list_k_pipe_lock;
-#endif
 
 struct k_queue *_track_list_k_queue;
 struct k_spinlock _track_list_k_queue_lock;
@@ -103,13 +101,14 @@ void sys_track_k_mbox_init(struct k_mbox *mbox)
 			SYS_TRACK_LIST_PREPEND(_track_list_k_mbox, mbox));
 }
 
-#ifdef CONFIG_PIPES
-void sys_track_k_pipe_init(struct k_pipe *pipe)
+void sys_track_k_pipe_init(struct k_pipe *pipe, void *buffer, size_t size)
 {
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(size);
+
 	SYS_PORT_TRACING_TYPE_MASK(k_pipe,
 			SYS_TRACK_LIST_PREPEND(_track_list_k_pipe, pipe));
 }
-#endif
 
 void sys_track_k_queue_init(struct k_queue *queue)
 {
@@ -159,10 +158,8 @@ static int sys_track_static_init(void)
 	SYS_PORT_TRACING_TYPE_MASK(k_mbox,
 			SYS_TRACK_STATIC_INIT(k_mbox));
 
-#ifdef CONFIG_PIPES
 	SYS_PORT_TRACING_TYPE_MASK(k_pipe,
-			SYS_TRACK_STATIC_INIT(k_pipe));
-#endif
+			SYS_TRACK_STATIC_INIT(k_pipe, NULL, 0));
 
 	SYS_PORT_TRACING_TYPE_MASK(k_queue,
 			SYS_TRACK_STATIC_INIT(k_queue));

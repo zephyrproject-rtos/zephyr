@@ -16,10 +16,10 @@ ZTEST(framework_tests, test_assert_tests)
 {
 	zassert_true(1);
 	zassert_false(0);
-	zassert_is_null(NULL, NULL);
-	zassert_not_null("foo", NULL);
+	zassert_is_null(NULL);
+	zassert_not_null("foo");
 	zassert_equal(1, 1);
-	zassert_equal_ptr(NULL, NULL, NULL);
+	zassert_equal_ptr(NULL, NULL);
 	zassert_not_ok(-EIO);
 }
 
@@ -33,7 +33,7 @@ ZTEST(framework_tests, test_assert_mem_equal)
 	};
 	uint32_t actual[4] = {0};
 	memcpy(actual, expected, sizeof(actual));
-	zassert_mem_equal(actual, expected, sizeof(expected), NULL);
+	zassert_mem_equal(actual, expected, sizeof(expected));
 }
 
 ZTEST(framework_tests, test_assert_str_equal)
@@ -85,7 +85,7 @@ ZTEST_SUITE(fixture_tests, NULL, fixture_tests_setup, NULL, NULL, NULL);
 
 ZTEST_F(fixture_tests, test_fixture_pointer)
 {
-	zassert_equal_ptr(&test_fixture, fixture, "Test fixture should be at 0x%x but was at 0x%x",
+	zassert_equal_ptr(&test_fixture, fixture, "Test fixture should be at 0x%p but was at 0x%p",
 			  &test_fixture, fixture);
 }
 
@@ -153,8 +153,8 @@ static void rule_test_teardown(void *data)
 	 * after_each function was called.
 	 */
 	zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
-#ifdef CONFIG_ZTEST_SHUFFLE
-	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT);
+#ifdef CONFIG_ZTEST_REPEAT
+	zassert_equal(fixture->run_count, CONFIG_ZTEST_TEST_REPEAT_COUNT);
 #endif
 }
 

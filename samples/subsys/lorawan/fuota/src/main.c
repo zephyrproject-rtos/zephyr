@@ -24,11 +24,10 @@ LOG_MODULE_REGISTER(lorawan_fuota, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
-static void downlink_info(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
-			  uint8_t len, const uint8_t *data)
+static void downlink_info(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+			  const uint8_t *data)
 {
-	LOG_INF("Received from port %d, pending %d, RSSI %ddB, SNR %ddBm",
-		port, data_pending, rssi, snr);
+	LOG_INF("Received from port %d, flags %d, RSSI %ddB, SNR %ddBm", port, flags, rssi, snr);
 	if (data) {
 		LOG_HEXDUMP_INF(data, len, "Payload: ");
 	}
@@ -40,6 +39,18 @@ static void datarate_changed(enum lorawan_datarate dr)
 
 	lorawan_get_payload_sizes(&unused, &max_size);
 	LOG_INF("New Datarate: DR %d, Max Payload %d", dr, max_size);
+}
+
+int descriptor_cb(uint32_t descriptor)
+{
+	/*
+	 * In an actual application the firmware may be able to handle
+	 * the descriptor field
+	 */
+
+	LOG_INF("Received descriptor %u", descriptor);
+
+	return 0;
 }
 
 static void fuota_finished(void)
@@ -114,6 +125,8 @@ int main(void)
 	 * in that case.
 	 */
 	lorawan_frag_transport_run(fuota_finished);
+
+	lorawan_frag_transport_register_descriptor_callback(descriptor_cb);
 
 	/*
 	 * Regular uplinks are required to open downlink slots in class A for

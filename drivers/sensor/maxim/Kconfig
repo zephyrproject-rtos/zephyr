@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/maxim/ds18b20/Kconfig"
+source "drivers/sensor/maxim/ds3231/Kconfig"
 source "drivers/sensor/maxim/max17055/Kconfig"
 source "drivers/sensor/maxim/max17262/Kconfig"
 source "drivers/sensor/maxim/max30101/Kconfig"

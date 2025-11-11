@@ -1,0 +1,13 @@
+# Private config options for Latmon Sample app
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+
+mainmenu "Latmon Sample application"
+
+config LATMON_LOOPBACK_CALIBRATION
+	bool "Run the sample code in calibration mode"
+	default n
+	help
+	  Run Latmon in calibration mode.
+
+source "Kconfig.zephyr"

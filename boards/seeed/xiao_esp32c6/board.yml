@@ -1,0 +1,6 @@
+board:
+  name: xiao_esp32c6
+  full_name: XIAO ESP32C6
+  vendor: seeed
+  socs:
+  - name: esp32c6

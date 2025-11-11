@@ -13,7 +13,6 @@ Project and Governance
    release_process
    proposals
    code_flow
-   modifying_contributions.rst
    dev_env_and_tools
    issues
    communication

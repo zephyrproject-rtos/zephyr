@@ -24,6 +24,8 @@ extern "C" {
  * @brief USBD HID Device API
  * @defgroup usbd_hid_device USBD HID device API
  * @ingroup usb
+ * @since 3.7
+ * @version 0.2.0
  * @{
  */
 
@@ -157,7 +159,8 @@ struct hid_device_ops {
 	 * If the device does not use the callback, hid_device_submit_report()
 	 * will be processed synchronously.
 	 */
-	void (*input_report_done)(const struct device *dev);
+	void (*input_report_done)(const struct device *dev,
+				  const uint8_t *const report);
 
 	/**
 	 * New output report callback. Callback will only be called for reports
@@ -208,6 +211,38 @@ int hid_device_register(const struct device *dev,
  */
 int hid_device_submit_report(const struct device *dev,
 			     const uint16_t size, const uint8_t *const report);
+
+/**
+ * @brief Set input report polling period
+ *
+ * Similar to devicetree property in-polling-period-us, but it allows setting
+ * different polling periods at runtime.
+ *
+ * @kconfig_dep{CONFIG_USBD_HID_SET_POLLING_PERIOD}
+ *
+ * @param[in] dev       Pointer to HID device
+ * @param[in] period_us Polling period in microseconds
+ *
+ * @return 0 on success, negative errno code on failure.
+ * @retval -ENOTSUP If API is not enabled.
+ */
+int hid_device_set_in_polling(const struct device *dev, const unsigned int period_us);
+
+/**
+ * @brief Set output report polling period
+ *
+ * Similar to devicetree property out-polling-period-us, but it allows setting
+ * different polling periods at runtime.
+ *
+ * @kconfig_dep{CONFIG_USBD_HID_SET_POLLING_PERIOD}
+ *
+ * @param[in] dev       Pointer to HID device
+ * @param[in] period_us Polling period in microseconds
+ *
+ * @return 0 on success, negative errno code on failure.
+ * @retval -ENOTSUP If API is not enabled.
+ */
+int hid_device_set_out_polling(const struct device *dev, const unsigned int period_us);
 
 /**
  * @}

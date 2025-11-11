@@ -50,16 +50,22 @@ static sys_slist_t offload_handlers = SYS_SLIST_STATIC_INIT(&offload_handlers);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
-		      net_icmp_handler_t handler)
+int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t family, uint8_t type,
+		      uint8_t code, net_icmp_handler_t handler)
 {
 	if (ctx == NULL || handler == NULL) {
+		return -EINVAL;
+	}
+
+	if (family != AF_INET && family != AF_INET6) {
+		NET_ERR("Wrong address family");
 		return -EINVAL;
 	}
 
 	memset(ctx, 0, sizeof(struct net_icmp_ctx));
 
 	ctx->handler = handler;
+	ctx->family = family;
 	ctx->type = type;
 	ctx->code = code;
 
@@ -121,7 +127,8 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 				    struct net_if *iface,
 				    struct in_addr *dst,
 				    struct net_icmp_ping_params *params,
-				    void *user_data)
+				    void *user_data,
+				    k_timeout_t timeout)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmpv4_echo_req);
@@ -140,7 +147,7 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 					sizeof(struct net_icmpv4_echo_req)
 					+ params->data_size,
 					AF_INET, IPPROTO_ICMP,
-					PKT_WAIT_TIME);
+					timeout);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -206,7 +213,7 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	ctx->user_data = user_data;
 	ctx->iface = iface;
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
@@ -226,12 +233,14 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 				    struct net_if *iface,
 				    struct in_addr *dst,
 				    struct net_icmp_ping_params *params,
-				    void *user_data)
+				    void *user_data,
+				    k_timeout_t timeout)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
 	ARG_UNUSED(params);
+	ARG_UNUSED(timeout);
 
 	return -ENOTSUP;
 }
@@ -242,7 +251,8 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 				    struct net_if *iface,
 				    struct in6_addr *dst,
 				    struct net_icmp_ping_params *params,
-				    void *user_data)
+				    void *user_data,
+				    k_timeout_t timeout)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv6_access,
 					      struct net_icmpv6_echo_req);
@@ -261,7 +271,7 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 					sizeof(struct net_icmpv6_echo_req)
 					+ params->data_size,
 					AF_INET6, IPPROTO_ICMPV6,
-					PKT_WAIT_TIME);
+					timeout);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -326,7 +336,7 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	ctx->user_data = user_data;
 	ctx->iface = iface;
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
@@ -345,12 +355,14 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 				    struct net_if *iface,
 				    struct in6_addr *dst,
 				    struct net_icmp_ping_params *params,
-				    void *user_data)
+				    void *user_data,
+				    k_timeout_t timeout)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
 	ARG_UNUSED(params);
+	ARG_UNUSED(timeout);
 
 	return -ENOTSUP;
 }
@@ -404,11 +416,12 @@ static int get_offloaded_ping_handler(struct net_if *iface,
 	return ret;
 }
 
-int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
-			       struct net_if *iface,
-			       struct sockaddr *dst,
-			       struct net_icmp_ping_params *params,
-			       void *user_data)
+static int net_icmp_send_echo_request_timeout(struct net_icmp_ctx *ctx,
+					      struct net_if *iface,
+					      struct sockaddr *dst,
+					      struct net_icmp_ping_params *params,
+					      void *user_data,
+					      k_timeout_t timeout)
 {
 	if (ctx == NULL || dst == NULL) {
 		return -EINVAL;
@@ -451,7 +464,7 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 		}
 
 		return send_icmpv4_echo_request(ctx, iface, &net_sin(dst)->sin_addr,
-						params, user_data);
+						params, user_data, timeout);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == AF_INET6) {
@@ -460,10 +473,38 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 		}
 
 		return send_icmpv6_echo_request(ctx, iface, &net_sin6(dst)->sin6_addr,
-						params, user_data);
+						params, user_data, timeout);
 	}
 
 	return -ENOENT;
+}
+
+int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
+			       struct net_if *iface,
+			       struct sockaddr *dst,
+			       struct net_icmp_ping_params *params,
+			       void *user_data)
+{
+	return net_icmp_send_echo_request_timeout(ctx,
+						  iface,
+						  dst,
+						  params,
+						  user_data,
+						  PKT_WAIT_TIME);
+}
+
+int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
+				       struct net_if *iface,
+				       struct sockaddr *dst,
+				       struct net_icmp_ping_params *params,
+				       void *user_data)
+{
+	return net_icmp_send_echo_request_timeout(ctx,
+						  iface,
+						  dst,
+						  params,
+						  user_data,
+						  K_NO_WAIT);
 }
 
 static int icmp_call_handlers(struct net_pkt *pkt,
@@ -476,6 +517,10 @@ static int icmp_call_handlers(struct net_pkt *pkt,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, ctx, node) {
+		if (ip_hdr->family != ctx->family) {
+			continue;
+		}
+
 		if (ctx->type == icmp_hdr->type &&
 		    (ctx->code == icmp_hdr->code || ctx->code == 0U)) {
 			/* Do not use a handler that is expecting data from different

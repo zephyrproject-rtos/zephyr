@@ -28,7 +28,7 @@ The Zephyr end of the CAN fixture can be configured as follows:
 
 The host end of the CAN fixture can be configured through python-can. Available configuration
 options depend on the type of host CAN adapter used. The python-can library provides a lot of
-flexibility for configuration as decribed in the `python-can configuration`_ page, all centered
+flexibility for configuration as described in the `python-can configuration`_ page, all centered
 around the concept of a configuration "context. The configuration context for this test suite can be
 configured as follows:
 
@@ -46,7 +46,7 @@ Building and Running
 Running on native_sim
 =====================
 
-Running the test suite on :ref:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN driver
+Running the test suite on :zephyr:board:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN driver
 (vcan) providing a virtual CAN interface named ``zcan0``.
 
 On the host PC, a virtual SocketCAN interface needs to be created and brought up before running the
@@ -110,7 +110,7 @@ Next, python-can needs to be configured for the ``can0`` interface. One option i
    fd = True
 
 Once the SocketCAN interface has been brought up and configured the test suite can be launched using
-Twister. Below is an example for running on the :ref:`lpcxpresso55s36`:
+Twister. Below is an example for running on the :zephyr:board:`lpcxpresso55s36`:
 
 .. code-block:: shell
 

@@ -1,5 +1,3 @@
-# EFR32FG1P (Flex Gecko) MCU line
-
 # Copyright (c) 2018 Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,6 +16,3 @@ config SOC_SERIES_EFR32FG1P
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_HAS_ERRATA_RTCC_E201
 	select HAS_PM
-
-config SOC_GECKO_SDID
-	default 80 if SOC_SERIES_EFR32FG1P

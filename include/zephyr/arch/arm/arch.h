@@ -10,7 +10,7 @@
  *
  * This header contains the ARM AArch32 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arm/cpu.h)
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
@@ -18,9 +18,6 @@
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
-
-/* ARM GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 
 #include <zephyr/arch/arm/thread.h>
 #include <zephyr/arch/arm/exception.h>
@@ -43,9 +40,9 @@
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
 #include <zephyr/arch/arm/cortex_a_r/sys_io.h>
-#if defined(CONFIG_AARCH32_ARMV8_R)
+#if defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_CPU_CORTEX_A7)
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
-#include <zephyr/arch/arm/cortex_a_r/armv8_timer.h>
+#include <zephyr/arch/arm/cortex_a_r/armv7_v8_timer.h>
 #else
 #include <zephyr/arch/arm/cortex_a_r/timer.h>
 #endif
@@ -102,13 +99,25 @@ enum k_fatal_error_reason_arch {
 	K_ERR_ARM_ALIGNMENT_FAULT,
 	K_ERR_ARM_BACKGROUND_FAULT,
 	K_ERR_ARM_PERMISSION_FAULT,
+	K_ERR_ARM_PERMISSION_FAULT_2ND_LEVEL,
 	K_ERR_ARM_SYNC_EXTERNAL_ABORT,
 	K_ERR_ARM_ASYNC_EXTERNAL_ABORT,
 	K_ERR_ARM_SYNC_PARITY_ERROR,
 	K_ERR_ARM_ASYNC_PARITY_ERROR,
 	K_ERR_ARM_DEBUG_EVENT,
 	K_ERR_ARM_TRANSLATION_FAULT,
-	K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT
+	K_ERR_ARM_TRANSLATION_FAULT_2ND_LEVEL,
+	K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT,
+	K_ERR_ARM_ACCESS_FLAG_FAULT_1ST_LEVEL,
+	K_ERR_ARM_ACCESS_FLAG_FAULT_2ND_LEVEL,
+	K_ERR_ARM_CACHE_MAINTENANCE_INSTRUCTION_FAULT,
+	K_ERR_ARM_DOMAIN_FAULT_1ST_LEVEL,
+	K_ERR_ARM_DOMAIN_FAULT_2ND_LEVEL,
+	K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL,
+	K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL,
+	K_ERR_ARM_TLB_CONFLICT_ABORT,
+	K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL,
+	K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL,
 };
 
 #endif /* _ASMLANGUAGE */
@@ -270,9 +279,9 @@ enum k_fatal_error_reason_arch {
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-#ifdef CONFIG_CPU_HAS_NXP_MPU
+#ifdef CONFIG_CPU_HAS_NXP_SYSMPU
 #include <zephyr/arch/arm/mpu/nxp_mpu.h>
-#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_CPU_HAS_NXP_SYSMPU */
 #endif /* CONFIG_ARM_MPU */
 #ifdef CONFIG_ARM_AARCH32_MMU
 #include <zephyr/arch/arm/mmu/arm_mmu.h>

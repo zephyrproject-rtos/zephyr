@@ -1,7 +1,4 @@
-.. _gr716a_mini:
-
-GR716-MINI Development Board
-############################
+.. zephyr:board:: gr716a_mini
 
 Overview
 ********
@@ -16,12 +13,6 @@ The GR716-MINI development board provides:
 * 4x MMCX connectors (2 ADC, 2 DAC)
 * Miniature 80 pin mezzanine connector (bottom side)
 
-.. figure:: gr716a_mini.jpg
-   :align: center
-   :alt: GR716-MINI Development Board
-
-   GR716-MINI Development Board (Credit: Cobham Gaisler AB)
-
 Hardware
 ********
 
@@ -34,6 +25,8 @@ if enabled in GRMON, is preserved.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EGIS_ET171
+	imply XIP
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ANDES_EXECIT
+	select CPU_HAS_ANDES_HWDSP
+	select CPU_HAS_ANDES_PFT
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_HWDSP
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_PFT
+	select RISCV_PMP
+	select HAS_FLASH_LOAD_OFFSET
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_EGIS_ET171_FIRMWARE_VERSION
+	hex "Firmware version"
+	default 0xAAAAAAAA
+	help
+	  Firmware version info of bin header

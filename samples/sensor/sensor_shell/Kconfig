@@ -3,6 +3,8 @@
 
 config SAMPLES_SENSOR_SHELL_FAKE_SENSOR
 	bool "Enable fake sensor"
+	default y
+	depends on DT_HAS_VND_FAKE_SENSOR_ENABLED
 	help
 	  On boards that do not have a sensor, enabling this will build a fake
 	  sensor that can be interacted with via the sensor shell.

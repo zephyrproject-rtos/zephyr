@@ -63,7 +63,6 @@
 		compatible = "simple-bus";
 		ranges;
 
-
 		uart0: uart@f0004000 {
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;
@@ -117,6 +116,7 @@
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			s25fl256s: s25fl256s@0 {
 				compatible = "spansion,s25fl256s", "jedec,spi-nor";
 				reg = <0>;

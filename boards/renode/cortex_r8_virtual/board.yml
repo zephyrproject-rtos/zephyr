@@ -1,0 +1,6 @@
+board:
+  name: cortex_r8_virtual
+  full_name: Cortex-R8 Virtual
+  vendor: renode
+  socs:
+  - name: cortex_r8_virtual

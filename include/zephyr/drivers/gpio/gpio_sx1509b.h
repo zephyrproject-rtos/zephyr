@@ -4,11 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for SX1509B GPIO driver
+ * @ingroup gpio_sx1509b_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SX1509B_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SX1509B_H_
 
+/**
+ * @defgroup gpio_sx1509b_interface SX1509B
+ * @ingroup gpio_interface_ext
+ * @brief Semtech SX1509B low-voltage level-shifting GPIO controller
+ * @{
+ */
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Configure a pin for LED intensity.
@@ -41,5 +58,13 @@ int sx1509b_led_intensity_pin_configure(const struct device *dev,
  */
 int sx1509b_led_intensity_pin_set(const struct device *dev, gpio_pin_t pin,
 				  uint8_t intensity_val);
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SX1509B_H_ */

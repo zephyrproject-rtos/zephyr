@@ -1,5 +1,8 @@
 tests:
   portability.cmsis_rtos_v1:
+    platform_key:
+      - arch
+      - simulation
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34

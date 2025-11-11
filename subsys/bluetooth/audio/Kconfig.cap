@@ -20,7 +20,7 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	bool "Common Audio Profile Acceptor Role Set Member support"
 	depends on BT_CAP_ACCEPTOR
 	depends on BT_CSIP_SET_MEMBER
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  Enabling this will allow a CAP acceptor to be a set member.
 	  Enabling this will require a manual register of the CAS service.
@@ -48,3 +48,11 @@ config BT_CAP_COMMANDER
 		   BT_MCC
 	help
 	  Enabling this will enable the CAP Initiator role.
+
+config BT_CAP_HANDOVER
+	bool "Common Audio Profile Handover Procedures"
+	depends on BT_CAP_COMMANDER && BT_CAP_INITIATOR && BT_BAP_BROADCAST_ASSISTANT && \
+		   BT_BAP_BROADCAST_SOURCE && BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	help
+	  Enable support for the CAP Handover procedures, allowing a device to switch between
+	  broadcast and unicast for a usecase.

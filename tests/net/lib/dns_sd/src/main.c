@@ -18,13 +18,6 @@
 #include "dns_sd.h"
 
 #define BUFSZ 256
-#define IP_ADDR(a, b, c, d) ((uint32_t)		  \
-			     0			  \
-			     | ((a & 0xff) << 24) \
-			     | ((b & 0xff) << 16) \
-			     | ((c & 0xff) <<  8) \
-			     | ((d & 0xff) <<  0) \
-			     )
 
 extern bool label_is_valid(const char *label, size_t label_size);
 extern int add_a_record(const struct dns_sd_rec *inst, uint32_t ttl,
@@ -53,6 +46,7 @@ extern int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 extern size_t service_proto_size(const struct dns_sd_rec *ref);
 extern bool rec_is_valid(const struct dns_sd_rec *ref);
 extern int setup_dst_addr(int sock, sa_family_t family,
+			  struct sockaddr *src, socklen_t src_len,
 			  struct sockaddr *dst, socklen_t *dst_len);
 
 
@@ -440,7 +434,7 @@ ZTEST(dns_sd, test_add_a_record)
 	const uint32_t offset = 0;
 	const uint16_t host_offset = 0x59;
 	/* this one is made up */
-	const uint32_t addr = IP_ADDR(177, 5, 240, 13);
+	const struct in_addr addr = { { { 177, 5, 240, 13 } } };
 
 	static uint8_t actual_buf[BUFSZ];
 	static const uint8_t expected_buf[] = {
@@ -450,7 +444,7 @@ ZTEST(dns_sd, test_add_a_record)
 
 	int expected_int = sizeof(expected_buf);
 	int actual_int = add_a_record(&nasxxxxxx, ttl, host_offset,
-				      addr, actual_buf, offset,
+				      ntohl(addr.s_addr), actual_buf, offset,
 				      sizeof(actual_buf));
 
 	zassert_equal(actual_int, expected_int, "");
@@ -461,12 +455,12 @@ ZTEST(dns_sd, test_add_a_record)
 	/* test offset too large */
 	zassert_equal(-E2BIG,
 		      add_a_record(&nasxxxxxx, ttl, DNS_SD_PTR_MASK,
-				   addr, actual_buf, offset,
+				   ntohl(addr.s_addr), actual_buf, offset,
 				   sizeof(actual_buf)), "");
 
 	/* test buffer too small */
 	zassert_equal(-ENOSPC, add_a_record(&nasxxxxxx, ttl,
-					    host_offset, addr,
+					    host_offset, ntohl(addr.s_addr),
 					    actual_buf, offset,
 					    0), "");
 }
@@ -517,9 +511,7 @@ ZTEST(dns_sd, test_add_aaaa_record)
 /** Test for @ref dns_sd_handle_ptr_query */
 ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 {
-	struct in_addr addr = {
-		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
-	};
+	struct in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -585,9 +577,7 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 				DNS_SD_EMPTY_TXT,
 				CONST_PORT);
 
-	struct in_addr addr = {
-		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
-	};
+	struct in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
@@ -685,7 +675,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(v4 >= 0, "Create IPv4 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v4, AF_INET, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v4, AF_INET, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
 	(void)zsock_getsockopt(v4, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, &optlen);
@@ -708,7 +698,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	v6 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(v6 >= 0, "Create IPv6 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v6, AF_INET6, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v6, AF_INET6, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
 	(void)zsock_getsockopt(v6, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, &optlen);
@@ -729,7 +719,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_true(xx >= 0, "Create IPV4 udp socket failed");
 
 	zassert_equal(-EPFNOSUPPORT,
-		      setup_dst_addr(xx, AF_PACKET, &dst, &dst_len), "");
+		      setup_dst_addr(xx, AF_PACKET, NULL, 0, &dst, &dst_len), "");
 }
 
 /** test for @ref dns_sd_is_service_type_enumeration */

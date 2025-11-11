@@ -17,9 +17,9 @@
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(radio), fem)
 #define FEM_NODE             DT_PHANDLE(DT_NODELABEL(radio), fem)
-#if DT_NODE_HAS_STATUS(FEM_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(FEM_NODE)
 #define HAL_RADIO_HAVE_FEM
-#endif	/* DT_NODE_HAS_STATUS(FEM_NODE, okay) */
+#endif	/* DT_NODE_HAS_STATUS_OKAY(FEM_NODE) */
 #endif	/* DT_NODE_HAS_PROP(DT_NODELABEL(radio), fem)) */
 
 /* Does FEM_NODE have a particular DT compatible? */

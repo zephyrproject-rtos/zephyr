@@ -1,0 +1,119 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the ADI AD7124 Analog-to-Digital Converter.
+
+compatible: adi,ad7124-adc
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+
+  reference-enable:
+    type: boolean
+    description: |
+      Enable internal reference for AD7124
+      - true: Enable internal reference
+      - false: Disable internal reference
+
+  filter-type-mask:
+    type: int
+    default: 0
+    description: |
+      Filter type for AD7124:
+      Each bit set in this mask enables the filter type,
+      with the 0th bit corresponding to the 0th channel,
+      the 1st bit to the 1st channel, and so on.
+      - 0 means AD7124_FILTER_SINC4
+      - 1 means AD7124_FILTER_SINC3
+      The default is set to 0 because the filter type is set to SINC4
+      for all filter setups upon power-up or after reset.
+      Therefore, this setting is considered the default for all channels.
+
+  bipolar-mask:
+    type: int
+    default: 0xFFFF
+    description: |
+      Bipolar configuration for AD7124
+      Each bit set in this mask enables the polarity,
+      with the 0th bit corresponding to the 0th channel,
+      the 1st bit to the 1st channel, and so on.
+      - 0 Unipolar operation selection
+      - 1 Bipolar operation selection
+      The default is set to 0xFFFF because the bipolar configuration
+      is activated for all configuration setups upon power-up or after reset.
+      Therefore, this setting is considered the default for all channels.
+
+  inbuf-enable-mask:
+    type: int
+    default: 0xFFFF
+    description: |
+      Input buffer configuration for AD7124
+      Each bit set in this mask enables the input buffer,
+      with the 0th bit corresponding to the 0th channel,
+      the 1st bit to the 1st channel, and so on.
+      - 0 Analog input pin is unbuffered
+      - 1 Analog input pin is buffered
+      The default is set to 0xFFFF because the analog input buffer
+      is enabled for all configuration setups upon power-up or after reset.
+      Therefore, this setting is considered the default for all channels.
+
+  refbuf-enable-mask:
+    type: int
+    default: 0
+    description: |
+      Reference buffer configuration for AD7124
+      Each bit set in this mask enables the reference buffer,
+      with the 0th bit corresponding to the 0th channel,
+      the 1st bit to the 1st channel, and so on.
+      - 0 Reference input pin is unbuffered
+      - 1 Reference input pin is buffered
+      The default is set to 0 because the reference input buffer
+      is enabled for all configuration setups upon power-up or after reset.
+      Therefore, this setting is considered the default for all channels.
+
+  adc-mode:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    default: 0
+    description: |
+      ADC operating mode for AD7124
+      - 0 AD7124_CONTINUOUS
+      - 1 AD7124_SINGLE
+      - 2 AD7124_STANDBY
+      - 3 AD7124_POWER_DOWN
+      - 4 AD7124_IDLE
+      - 5 AD7124_IN_ZERO_SCALE_OFF
+      - 6 AD7124_IN_FULL_SCALE_GAIN
+      - 7 AD7124_SYS_ZERO_SCALE_OFF
+      - 8 AD7124_SYS_ZERO_SCALE_GAIN
+      The default is set to 0 because the continuous conversion mode
+      is enabled for control setup upon power-up or after reset.
+
+  power-mode:
+    type: int
+    enum: [0, 1, 2]
+    default: 0
+    description: |
+      Power mode of the ADC for AD7124
+      - 0 AD7124_LOW_POWER_MODE
+      - 1 AD7124_MID_POWER_MODE
+      - 2 AD7124_HIGH_POWER_MODE
+      The default is set to 0 because the low power mode
+      is enabled for control setup upon power-up or after reset.
+
+  active-device:
+    type: int
+    enum: [0, 1]
+    required: true
+    description: |
+      Active device for AD7124
+      - 0 ID_AD7124_4
+      - 1 ID_AD7124_8
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

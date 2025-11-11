@@ -7,7 +7,6 @@ flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - i2c

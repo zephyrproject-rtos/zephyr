@@ -1,7 +1,4 @@
-.. _stm32g081b_eval_board:
-
-ST STM32G081B Evaluation
-########################
+.. zephyr:board:: stm32g081b_eval
 
 Overview
 ********
@@ -84,10 +81,6 @@ through various use cases.
             - USB2.0 Type-A receptacle
             - 19 V power jack for USB PD
 
-.. image:: img/stm32g081b_eval.jpg
-   :align: center
-   :alt: STM32G081B-EVAL
-
 More information about the board can be found at the `STM32G081B-EVAL website`_.
 
 
@@ -100,29 +93,7 @@ More information about STM32G081RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32g081b_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| UCPD      | on-chip    + ucpd                                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g081b_eval/stm32g081b_eval_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -153,6 +124,10 @@ For more details please refer to `STM32G0 Evaluation board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``stm32g081b_eval`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -160,7 +135,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 .. code-block:: console
 
@@ -182,7 +158,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -206,3 +182,6 @@ References
 
 .. _G081RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g081rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

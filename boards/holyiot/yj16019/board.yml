@@ -1,5 +1,6 @@
 board:
   name: holyiot_yj16019
+  full_name: YJ-16019
   vendor: holyiot
   socs:
   - name: nrf52832

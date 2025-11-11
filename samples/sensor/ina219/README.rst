@@ -1,7 +1,8 @@
-.. _ina219:
+.. zephyr:code-sample:: ina219
+   :name: INA219 Bidirectional Power/Current Monitor
+   :relevant-api: sensor_interface
 
-INA219 Bidirectional Power/Current Monitor
-##########################################
+   Get shunt voltage, bus voltage, power and current from an INA219 sensor.
 
 Overview
 ********

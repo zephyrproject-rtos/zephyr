@@ -1,5 +1,6 @@
 board:
   name: nucleo_wb55rg
+  full_name: Nucleo WB55RG
   vendor: st
   socs:
     - name: stm32wb55xx

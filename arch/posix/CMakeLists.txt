@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
+if(NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
   message(FATAL_ERROR "The POSIX architecture only works on Linux. If on Windows or macOS "
           "consider using a virtual machine to run a Linux guest.")
 endif()
@@ -43,14 +43,14 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTE
   # @Intent: Set necessary compiler & linker options for this specific host architecture & OS
   include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
 else() # Linux.x86_64
-  if (CONFIG_64BIT)
+  if(CONFIG_64BIT)
     # some gcc versions fail to build without -fPIC
     zephyr_compile_options(-m64 -fPIC)
     zephyr_link_libraries(-m64)
 
     target_link_options(native_simulator INTERFACE "-m64")
     target_compile_options(native_simulator INTERFACE "-m64")
-  else ()
+  else()
     zephyr_compile_options(-m32)
     zephyr_link_libraries(-m32)
 
@@ -64,56 +64,50 @@ else() # Linux.x86_64
     check_set_compiler_property(APPEND PROPERTY fpsse2 "SHELL:-msse2 -mfpmath=sse")
     zephyr_compile_options($<TARGET_PROPERTY:compiler,fpsse2>)
     target_compile_options(native_simulator INTERFACE "$<TARGET_PROPERTY:compiler,fpsse2>")
-  endif ()
+  endif()
 endif()
 
 zephyr_compile_options(
   ${ARCH_FLAG}
   )
 
-if (CONFIG_NATIVE_APPLICATION)
+zephyr_compile_options(
+  -fvisibility=hidden
+)
+
+# While doing the partial linking of the native library, some symbols will be missing
+# which are provided by the native simulator runner
+zephyr_ld_options(
+  -Wl,--unresolved-symbols=ignore-all
+)
+
+if(NOT CONFIG_EXTERNAL_LIBC)
+  # Get the *compiler* include path, that is where the *compiler* provided headers are (not the
+  # default libC ones). This includes basic headers like stdint.h, stddef.h or float.h
+  # We expect something like
+  #  /usr/lib/gcc/x86_64-linux-gnu/12/include or /usr/lib/llvm-14/lib/clang/14.0.0/include
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} --print-file-name=include/stddef.h
+    OUTPUT_VARIABLE _OUTPUT
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+  get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
+
+  # Do not use the C library from this compiler/host,
+  # but still use the basic compiler headers,
+  # remove all operating system specific predefined macros,
+  # no_builtin to avoid the compiler using builtin replacements for std library functions
   zephyr_compile_options(
-    -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
+    -nostdinc
+    -isystem ${COMPILER_OWN_INCLUDE_PATH}
+    "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
+    $<TARGET_PROPERTY:compiler,freestanding>
+    $<TARGET_PROPERTY:compiler,no_builtin>
   )
-elseif (CONFIG_NATIVE_LIBRARY)
-  zephyr_compile_options(
-    -fvisibility=hidden
-  )
+endif()
 
-  # While doing the partial linking of the native library, some symbols will be missing
-  # which are provided by the native simulator runner
-  zephyr_ld_options(
-    -Wl,--unresolved-symbols=ignore-all
-  )
-
-  if (NOT CONFIG_EXTERNAL_LIBC)
-    # Get the *compiler* include path, that is where the *compiler* provided headers are (not the
-    # default libC ones). This includes basic headers like stdint.h, stddef.h or float.h
-    # We expect something like
-    #  /usr/lib/gcc/x86_64-linux-gnu/12/include or /usr/lib/llvm-14/lib/clang/14.0.0/include
-    execute_process(
-      COMMAND ${CMAKE_C_COMPILER} --print-file-name=include/stddef.h
-      OUTPUT_VARIABLE _OUTPUT
-      COMMAND_ERROR_IS_FATAL ANY
-    )
-    get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
-
-    # Do not use the C library from this compiler/host,
-    # but still use the basic compiler headers,
-    # remove all operating system specific predefined macros,
-    # no_builtin to avoid the compiler using builtin replacements for std library functions
-    zephyr_compile_options(
-      -nostdinc
-      -isystem ${COMPILER_OWN_INCLUDE_PATH}
-      "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
-      $<TARGET_PROPERTY:compiler,freestanding>
-      $<TARGET_PROPERTY:compiler,no_builtin>
-    )
-  endif()
-
-  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
-    target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
-  endif()
+if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+  target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
 endif()
 
 if(CONFIG_EXTERNAL_LIBC)
@@ -132,27 +126,12 @@ if(CONFIG_COVERAGE)
   target_link_options(native_simulator INTERFACE $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
-if (CONFIG_GPROF)
+if(CONFIG_GPROF)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
 
   target_link_options(native_simulator INTERFACE "-pg")
 endif()
-
-if (CONFIG_NATIVE_APPLICATION)
-  zephyr_ld_options(
-    -ldl
-    -pthread
-  )
-endif()
-
-# About the -include directive: The reason to do it this way, is because in this
-# manner it is transparent to the application. Otherwise posix_cheats.h needs to
-# be included in all the applications' files which define main( ), and in any
-# app file which uses the pthreads like API provided by Zephyr
-# ( include/posix/pthread.h / kernel/pthread.c ) [And any future API added to
-# Zephyr which will clash with the native POSIX API] . It would also need to
-# be included in a few zephyr kernel files.
 
 #
 # Support for the LLVM Sanitizer toolchain instrumentation frameworks
@@ -191,12 +170,10 @@ list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)
 if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
   zephyr_compile_options("${LLVM_SANITIZERS_ARG}")
-  if (CONFIG_NATIVE_APPLICATION)
-    zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
-  endif()
 
   target_link_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
+include(natsim_optional.cmake)
 add_subdirectory(core)

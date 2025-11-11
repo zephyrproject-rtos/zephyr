@@ -31,6 +31,7 @@ struct serial_vnd_data {
 	void *callback_data;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_isr;
+	void *irq_isr_user_data;
 	bool irq_rx_enabled;
 	bool irq_tx_enabled;
 #endif
@@ -80,7 +81,7 @@ static void irq_process(const struct device *dev)
 			LOG_ERR("no isr registered");
 			break;
 		}
-		data->irq_isr(dev, NULL);
+		data->irq_isr(dev, data->irq_isr_user_data);
 	};
 }
 
@@ -130,21 +131,16 @@ static void irq_tx_disable(const struct device *dev)
 static int irq_tx_ready(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
-	bool ready = (ring_buf_space_get(data->written) != 0);
+	int available = ring_buf_space_get(data->written);
 
-	LOG_DBG("tx ready: %d", ready);
-	return ready;
+	LOG_DBG("tx ready: %d", available);
+	return available;
 }
 
 static void irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 			     void *user_data)
 {
 	struct serial_vnd_data *data = dev->data;
-
-	/* Not implemented. Ok because `user_data` is always NULL in the current
-	 * implementation of core UART API.
-	 */
-	__ASSERT_NO_MSG(user_data == NULL);
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_ASYNC_API)
 	if (data->read_buf) {
@@ -155,7 +151,13 @@ static void irq_callback_set(const struct device *dev, uart_irq_callback_user_da
 #endif
 
 	data->irq_isr = cb;
+	data->irq_isr_user_data = user_data;
 	LOG_DBG("callback set");
+}
+
+static int irq_update(const struct device *dev)
+{
+	return 1;
 }
 
 static int fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
@@ -426,7 +428,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api serial_vnd_api = {
+static DEVICE_API(uart, serial_vnd_api) = {
 	.poll_in = serial_vnd_poll_in,
 	.poll_out = serial_vnd_poll_out,
 	.err_check = serial_vnd_err_check,
@@ -436,6 +438,7 @@ static const struct uart_driver_api serial_vnd_api = {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_callback_set = irq_callback_set,
+	.irq_update = irq_update,
 	.irq_rx_enable = irq_rx_enable,
 	.irq_rx_disable = irq_rx_disable,
 	.irq_rx_ready = irq_rx_ready,

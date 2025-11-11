@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This is a representation of the Serial Wire Debug Port interface
-  implementation by GPIO bit-banging.
+  Serial Wire Debug Port interface implementation by GPIO bit-banging.
 
   Schematic using dual-supply bus transceiver and separate dout and dnoe pins
 
@@ -92,6 +91,14 @@ properties:
     type: phandle-array
     description: |
       Optional GPIO pin used for RESET output.
+
+  keep-reset-deasserted:
+    type: boolean
+    description: |
+      When present, the driver will actively keep the target's RESET line
+      in its de-asserted (inactive) state even when no SWD communication
+      is occurring. This prevents the target from being unintentionally
+      reset. This property requires 'reset-gpios' to be defined.
 
   port-write-cycles:
     type: int

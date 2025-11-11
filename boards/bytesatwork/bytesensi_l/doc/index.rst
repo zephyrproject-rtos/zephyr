@@ -1,7 +1,4 @@
-.. _bytesensi_l:
-
-bytesatwork byteSENSI-L
-#######################
+.. zephyr:board:: bytesensi_l
 
 Overview
 ********
@@ -9,42 +6,13 @@ Overview
 The byteSENSI-L is a fun LoRa device based on nRF52 MCU that integrates many
 sensors.
 
-.. image:: img/byteSENSI-L.jpg
-   :width: 800px
-   :align: center
-   :alt: byteSENSI-L
-
 Hardware
 ********
 
 Supported Features
 ==================
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RADIO     | Semtech    | LoRa                 |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -127,12 +95,14 @@ External GPS Antenna @ J3
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 The byteSENSI-L board can be flashed with the SEGGER JLink programmer.
 
 You can build and flash applications in the usual way. Here is an example for
-the :ref:`hello_world` application.
+the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

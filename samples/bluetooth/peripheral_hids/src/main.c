@@ -42,7 +42,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s, err 0x%02x %s\n", addr,
+		       err, bt_hci_err_to_str(err));
 		return;
 	}
 
@@ -59,7 +60,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected from %s, reason 0x%02x %s\n", addr,
+	       reason, bt_hci_err_to_str(reason));
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level,
@@ -72,8 +74,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 	if (!err) {
 		printk("Security changed: %s level %u\n", addr, level);
 	} else {
-		printk("Security failed: %s level %u err %d\n", addr, level,
-		       err);
+		printk("Security failed: %s level %u err %s(%d)\n", addr, level,
+		       bt_security_err_to_str(err), err);
 	}
 }
 
@@ -98,7 +100,7 @@ static void bt_ready(int err)
 		settings_load();
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

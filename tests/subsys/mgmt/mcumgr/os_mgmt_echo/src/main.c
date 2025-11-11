@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
@@ -56,7 +56,7 @@ ZTEST(os_mgmt_echo, test_echo)
 	smp_dummy_disable();
 
 	zassert_equal(sizeof(expected_response), nb->len,
-		      "Expected to receive %d bytes but got %d\n", sizeof(expected_response),
+		      "Expected to receive %zu bytes but got %d\n", sizeof(expected_response),
 		      nb->len);
 
 	zassert_mem_equal(expected_response, nb->data, nb->len,

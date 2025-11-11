@@ -26,11 +26,13 @@
  * The Public Broadcast Profile (PBP) is used for public broadcasts by providing additional
  * information in the advertising data.
  */
+#include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 

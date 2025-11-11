@@ -17,6 +17,20 @@ properties:
   pinctrl-0:
     required: true
 
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    description: Input clock prescaler
+
   "#pwm-cells":
     const: 3
 

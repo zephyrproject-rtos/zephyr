@@ -1,0 +1,13 @@
+identifier: ctcc/nrf9161/ns
+name: CTHINGS.CO Connectivity Card nRF9161 Non Secure
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 192
+supported:
+  - gpio
+  - watchdog
+vendor: ct

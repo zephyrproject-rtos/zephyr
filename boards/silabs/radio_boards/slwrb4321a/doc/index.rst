@@ -1,7 +1,4 @@
-.. _slwrb4321a:
-
-WGM160P Wi-Fi Module (SLWRB4321A)
-#################################
+.. zephyr:board:: slwrb4321a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The WGM160P Starter Kit SLWSTK6121A comes with the BRD4321A radio board.
 This radio boards contains a WGM160P module, which combines the WF200 Wi-Fi
 transceiver with an EFM32GG11 microcontroller.
-
-.. figure:: wgm160p-starter-kit.jpg
-   :align: center
-   :alt: SLWSTK6121A
-
-   SLWSTK6121A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -42,37 +33,7 @@ For more information about the WGM160P and SLWSTK6121A board:
 Supported Features
 ==================
 
-The slwrb4321a board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/slwrb4321a/slwrb4321a_defconfig`
-
-Other hardware features, including the WF200 WiFi transceiver, are
-currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -119,9 +80,11 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -137,7 +100,7 @@ Flashing an application to SLWSTK6121A
 
 Connect the SLWSTK6121A to your host computer using the USB port.
 
-Here is an example to build and flash the :ref:`hello_world` application.
+Here is an example to build and flash the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -181,6 +144,3 @@ terminal session:
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

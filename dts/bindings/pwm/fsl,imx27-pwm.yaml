@@ -10,7 +10,7 @@ description: |
 
 compatible: "fsl,imx27-pwm"
 
-include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
@@ -23,11 +23,6 @@ properties:
     type: int
     required: true
     description: Set the PWM prescale between 0 and 4096
-
-  rdc:
-    type: int
-    required: true
-    description: Set the RDC permission for this peripheral
 
   "#pwm-cells":
     const: 2

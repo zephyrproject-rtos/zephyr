@@ -7,14 +7,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 /* MESH Service */
 /* commands */
 #define BTP_MESH_READ_SUPPORTED_COMMANDS	0x01
 struct btp_mesh_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_OUT_BLINK			BIT(0)
@@ -114,8 +117,7 @@ struct btp_mesh_health_generate_faults_rp {
 	uint8_t test_id;
 	uint8_t cur_faults_count;
 	uint8_t reg_faults_count;
-	uint8_t current_faults[0];
-	uint8_t registered_faults[0];
+	uint8_t faults[];
 } __packed;
 
 #define BTP_MESH_HEALTH_CLEAR_FAULTS		0x0c
@@ -155,7 +157,7 @@ struct btp_mesh_comp_data_get_cmd {
 	uint8_t page;
 } __packed;
 struct btp_mesh_comp_data_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_CFG_BEACON_GET			0x15
@@ -823,7 +825,7 @@ struct btp_mesh_large_comp_data_get_cmd {
 	uint16_t offset;
 } __packed;
 struct btp_mesh_large_comp_data_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_MODELS_METADATA_GET		0x54
@@ -834,7 +836,7 @@ struct btp_mesh_models_metadata_get_cmd {
 	uint16_t offset;
 } __packed;
 struct btp_mesh_models_metadata_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_OPCODES_AGGREGATOR_INIT	0x55
@@ -903,6 +905,57 @@ struct btp_rpr_reprov_remote_cmd {
 	uint16_t dst;
 	uint16_t addr;
 	bool comp_change;
+} __packed;
+
+#define BTP_MESH_SUBNET_BRIDGE_GET 0x62
+struct btp_mesh_subnet_bridge_get_cmd {
+	uint16_t addr;
+} __packed;
+
+#define BTP_MESH_SUBNET_BRIDGE_SET 0x63
+struct btp_mesh_subnet_bridge_set_cmd {
+	uint16_t addr;
+	uint8_t val;
+} __packed;
+
+#define BTP_MESH_BRIDGING_TABLE_ADD 0x64
+struct btp_mesh_bridging_table_add_cmd {
+	uint16_t addr;
+	uint8_t directions;
+	uint16_t net_idx1;
+	uint16_t net_idx2;
+	uint16_t addr1;
+	uint16_t addr2;
+} __packed;
+
+#define BTP_MESH_BRIDGING_TABLE_REMOVE 0x65
+struct btp_mesh_bridging_table_remove_cmd {
+	uint16_t addr;
+	uint16_t net_idx1;
+	uint16_t net_idx2;
+	uint16_t addr1;
+	uint16_t addr2;
+} __packed;
+
+#define BTP_MESH_BRIDGED_SUBNETS_GET 0x66
+struct btp_mesh_bridged_subnets_get_cmd {
+	uint16_t addr;
+	uint8_t filter;
+	uint16_t net_idx;
+	uint8_t start_idx;
+} __packed;
+
+#define BTP_MESH_BRIDGING_TABLE_GET 0x67
+struct btp_mesh_bridging_table_get_cmd {
+	uint16_t addr;
+	uint16_t net_idx1;
+	uint16_t net_idx2;
+	uint16_t start_idx;
+} __packed;
+
+#define BTP_MESH_BRIDGING_TABLE_SIZE_GET 0x68
+struct btp_mesh_bridging_table_size_get_cmd {
+	uint16_t addr;
 } __packed;
 
 #define BTP_MMDL_DFU_INFO_GET			0x5f
@@ -1010,6 +1063,9 @@ struct btp_priv_node_id_set_cmd {
 } __packed;
 
 #define BTP_MESH_PROXY_PRIVATE_IDENTITY		0x72
+struct btp_proxy_priv_identity_cmd {
+	uint8_t enabled;
+} __packed;
 
 #define BTP_MESH_OD_PRIV_PROXY_GET		0x73
 struct btp_od_priv_proxy_get_cmd {

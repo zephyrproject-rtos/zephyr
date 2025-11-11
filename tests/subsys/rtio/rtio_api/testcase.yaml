@@ -1,6 +1,10 @@
 common:
   # renode causes timeouts unfortunately
-  platform_exclude: m2gl025_miv m5stack_core2 hifive1
+  # xtensa dc233 (with mmu) has a TLB exception for unclear reasons
+  platform_exclude:
+    - m2gl025_miv
+    - hifive1
+    - qemu_xtensa/dc233c/mmu
   platform_key:
     - arch
     - simulation
@@ -8,6 +12,8 @@ tests:
   rtio.api:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
+    extra_configs:
+      - CONFIG_RTIO_SUBMIT_SEM=n
     integration_platforms:
       - native_sim
   rtio.api.submit_sem:
@@ -21,6 +27,7 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
+      - CONFIG_RTIO_SUBMIT_SEM=n
     arch_exclude:
       - posix
     tags:

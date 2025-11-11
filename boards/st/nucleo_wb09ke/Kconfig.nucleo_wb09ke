@@ -1,0 +1,5 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WB09KE
+	select SOC_STM32WB09XX

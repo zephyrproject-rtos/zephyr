@@ -32,6 +32,7 @@ ZTEST(rng_common, test_rand32)
 	int rnd_cnt;
 	int equal_count = 0;
 	uint32_t buf[N_VALUES];
+	int err;
 
 	/* Test early boot random number generation function */
 	/* Cover the case, where argument "length" is < size of "size_t" */
@@ -91,7 +92,7 @@ ZTEST(rng_common, test_rand32)
 
 	memset(buf, 0, sizeof(buf));
 
-	int err = sys_csrand_get(buf, sizeof(buf));
+	err = sys_csrand_get(buf, sizeof(buf));
 
 	zassert_true(err == 0, "sys_csrand_get returned an error");
 
@@ -110,7 +111,12 @@ ZTEST(rng_common, test_rand32)
 
 #else
 
-	printk("Cryptographically secure random number APIs not enabled\n");
+	printk("Cryptographically secure implementation not enabled\n");
+	printk("Ensure sys_csrand_get passes for library usage\n");
+
+	err = sys_csrand_get(buf, sizeof(buf));
+
+	zassert_true(err == 0, "sys_csrand_get returned an error");
 
 #endif /* CONFIG_CSPRNG_ENABLED */
 }

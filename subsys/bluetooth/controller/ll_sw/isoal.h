@@ -376,7 +376,8 @@ struct isoal_source_session {
 	uint32_t                   sdu_interval;
 	uint16_t                   handle;
 	uint16_t                   iso_interval;
-	uint8_t                    framed;
+	uint8_t                    framed: 1;
+	uint8_t                    bis: 1;
 	uint8_t                    burst_number;
 	uint8_t                    pdus_per_sdu;
 	uint8_t                    max_pdu_size;

@@ -212,7 +212,7 @@ static void process_unack(struct h5_data *h5)
 	LOG_DBG("Need to remove %u packet from the queue", number_removed);
 
 	while (number_removed) {
-		struct net_buf *buf = net_buf_get(&h5->unack_queue, K_NO_WAIT);
+		struct net_buf *buf = k_fifo_get(&h5->unack_queue, K_NO_WAIT);
 
 		if (!buf) {
 			LOG_ERR("Unack queue is empty");
@@ -349,22 +349,22 @@ static void retx_timeout(struct k_work *work)
 		k_fifo_init(&tmp_queue);
 
 		/* Queue to temporary queue */
-		while ((buf = net_buf_get(&h5->tx_queue, K_NO_WAIT))) {
-			net_buf_put(&tmp_queue, buf);
+		while ((buf = k_fifo_get(&h5->tx_queue, K_NO_WAIT))) {
+			k_fifo_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
-		while ((buf = net_buf_get(&h5->unack_queue, K_NO_WAIT))) {
+		while ((buf = k_fifo_get(&h5->unack_queue, K_NO_WAIT))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
-			net_buf_put(&h5->tx_queue, buf);
+			k_fifo_put(&h5->tx_queue, buf);
 			h5->tx_seq = (h5->tx_seq - 1) & 0x07;
 			h5->unack_queue_len--;
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = net_buf_get(&tmp_queue, K_NO_WAIT))) {
-			net_buf_put(&h5->tx_queue, buf);
+		while ((buf = k_fifo_get(&tmp_queue, K_NO_WAIT))) {
+			k_fifo_put(&h5->tx_queue, buf);
 		}
 	}
 }
@@ -408,7 +408,7 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 		net_buf_unref(buf);
 		break;
 	case HCI_3WIRE_LINK_PKT:
-		net_buf_put(&h5->rx_queue, buf);
+		k_fifo_put(&h5->rx_queue, buf);
 		break;
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
@@ -598,28 +598,10 @@ static uint8_t h5_get_type(struct net_buf *buf)
 static int h5_queue(const struct device *dev, struct net_buf *buf)
 {
 	struct h5_data *h5 = dev->data;
-	uint8_t type;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_CMD:
-		type = HCI_COMMAND_PKT;
-		break;
-	case BT_BUF_ACL_OUT:
-		type = HCI_ACLDATA_PKT;
-		break;
-	case BT_BUF_ISO_OUT:
-		type = HCI_ISODATA_PKT;
-		break;
-	default:
-		LOG_ERR("Unknown packet type %u", bt_buf_get_type(buf));
-		return -1;
-	}
-
-	memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
-
-	net_buf_put(&h5->tx_queue, buf);
+	k_fifo_put(&h5->tx_queue, buf);
 
 	return 0;
 }
@@ -653,7 +635,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			k_sleep(K_MSEC(100));
 			break;
 		case ACTIVE:
-			buf = net_buf_get(&h5->tx_queue, K_FOREVER);
+			buf = k_fifo_get(&h5->tx_queue, K_FOREVER);
 			type = h5_get_type(buf);
 
 			h5_send(dev, buf->data, type, buf->len);
@@ -661,7 +643,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			/* buf is dequeued from tx_queue and queued to unack
 			 * queue.
 			 */
-			net_buf_put(&h5->unack_queue, buf);
+			k_fifo_put(&h5->unack_queue, buf);
 			h5->unack_queue_len++;
 
 			k_work_reschedule(&h5->retx_work, H5_TX_ACK_TIMEOUT);
@@ -689,7 +671,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&h5->rx_queue, K_FOREVER);
+		buf = k_fifo_get(&h5->rx_queue, K_FOREVER);
 
 		hexdump("=> ", buf->data, buf->len);
 
@@ -801,7 +783,7 @@ static int h5_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api h5_driver_api = {
+static DEVICE_API(bt_hci, h5_driver_api) = {
 	.open = h5_open,
 	.send = h5_queue,
 };
@@ -822,7 +804,7 @@ static const struct bt_hci_driver_api h5_driver_api = {
 	}; \
 	static struct h5_data h5_##inst; \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
+			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &h5_driver_api)
 
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

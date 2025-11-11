@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUXpresso SDK System Timer Module (STM)
+
+config COUNTER_MCUX_STM
+	bool "MCUX STM driver"
+	default y
+	depends on DT_HAS_NXP_STM_ENABLED
+	help
+	  Enable support for the MCUX System Timer Module (STM).

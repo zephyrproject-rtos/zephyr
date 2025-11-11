@@ -2,13 +2,24 @@
 
 /*
  * Copyright (c) 2024 Codecoup
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/tmap.h>
 #include "btp/btp.h"
 
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
 LOG_MODULE_REGISTER(bttester_tmap, CONFIG_BTTESTER_LOG_LEVEL);
 
 static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
@@ -16,10 +27,8 @@ static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_tmap_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_TMAP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_TMAP_DISCOVER);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_TMAP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -81,12 +90,13 @@ static const struct btp_handler tmap_handlers[] = {
 
 uint8_t tester_init_tmap(void)
 {
-	const enum bt_tmap_role role = (BT_TMAP_CG_SUPPORTED ? BT_TMAP_ROLE_CG : 0U) |
-				       (BT_TMAP_CT_SUPPORTED ? BT_TMAP_ROLE_CT : 0U) |
-				       (BT_TMAP_UMS_SUPPORTED ? BT_TMAP_ROLE_UMS : 0U) |
-				       (BT_TMAP_UMR_SUPPORTED ? BT_TMAP_ROLE_UMR : 0U) |
-				       (BT_TMAP_BMS_SUPPORTED ? BT_TMAP_ROLE_BMS : 0U) |
-				       (BT_TMAP_BMR_SUPPORTED ? BT_TMAP_ROLE_BMR : 0U);
+	const enum bt_tmap_role role =
+		(IS_ENABLED(CONFIG_BT_TMAP_CG_SUPPORTED) ? BT_TMAP_ROLE_CG : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_CT_SUPPORTED) ? BT_TMAP_ROLE_CT : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_UMS_SUPPORTED) ? BT_TMAP_ROLE_UMS : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_UMR_SUPPORTED) ? BT_TMAP_ROLE_UMR : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_BMS_SUPPORTED) ? BT_TMAP_ROLE_BMS : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_BMR_SUPPORTED) ? BT_TMAP_ROLE_BMR : 0U);
 	int err;
 
 	err = bt_tmap_register(role);

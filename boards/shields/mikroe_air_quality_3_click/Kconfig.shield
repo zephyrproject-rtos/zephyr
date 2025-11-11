@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_AIR_QUALITY_3_CLICK
+	def_bool $(shields_list_contains,mikroe_air_quality_3_click)

@@ -17,6 +17,7 @@
 	uart0_tx_pb2_default: uart0_tx_pb2_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_C)>;
 	};
+
 	uart0_rx_pb3_default: uart0_rx_pb3_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_C)>;
 	};
@@ -26,6 +27,7 @@
 	uart1_tx_pc6_default: uart1_tx_pc6_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_6, B91_FUNC_C)>;
 	};
+
 	uart1_rx_pc7_default: uart1_rx_pc7_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_7, B91_FUNC_C)>;
 	};
@@ -41,9 +43,11 @@
 	pspi_clk_pc5_default: pspi_clk_pc5_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_5, B91_FUNC_A)>;
 	};
+
 	pspi_mosi_pc7_default: pspi_mosi_pc7_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_7, B91_FUNC_A)>;
 	};
+
 	pspi_miso_pc6_default: pspi_miso_pc6_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_C, B91_PIN_6, B91_FUNC_A)>;
 	};
@@ -53,9 +57,11 @@
 	hspi_clk_pa2_default: hspi_clk_pa2_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_2, B91_FUNC_C)>;
 	};
+
 	hspi_mosi_pa4_default: hspi_mosi_pa4_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_4, B91_FUNC_C)>;
 	};
+
 	hspi_miso_pa3_default: hspi_miso_pa3_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_3, B91_FUNC_C)>;
 	};
@@ -65,6 +71,7 @@
 	i2c_scl_pe1_default: i2c_scl_pe1_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_E, B91_PIN_1, B91_FUNC_A)>;
 	};
+
 	i2c_sda_pe3_default: i2c_sda_pe3_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_E, B91_PIN_3, B91_FUNC_A)>;
 	};

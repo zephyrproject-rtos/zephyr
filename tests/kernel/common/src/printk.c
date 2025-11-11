@@ -5,14 +5,13 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/printk-hooks.h>
 
 #define BUF_SZ 1024
 
 static int pos;
 char pk_console[BUF_SZ];
 
-void __printk_hook_install(int (*fn)(int));
-void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
 #if defined(CONFIG_PICOLIBC)
@@ -66,7 +65,7 @@ char expected_32[] = "22 113 10000 32768 40000 22\n"
 	"42 42 42 42\n"
 	"42 42 42 42\n"
 	"25542abcdef  42\n"
-#if defined(_WANT_MINIMAL_IO_LONG_LONG)
+#if defined(_WANT_MINIMAL_IO_LONG_LONG) || defined(__IO_MINIMAL_LONG_LONG)
 	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 #else
 	"-1 -1 4294967295 ffffffff\n"
@@ -182,8 +181,14 @@ static int ram_console_out(int character)
 	pos = (pos + 1) % BUF_SZ;
 	return _old_char_out(character);
 }
+
 /**
- * @addtogroup kernel_common_tests
+ * @defgroup kernel_printk_tests Printk
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ * @addtogroup kernel_printk_tests
  * @{
  */
 
@@ -254,9 +259,9 @@ ZTEST(printk, test_printk)
 	zassert_str_equal(pk_console, expected, "snprintk failed");
 }
 
-extern void *common_setup(void);
-ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}
  */
+extern void *common_setup(void);
+ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);

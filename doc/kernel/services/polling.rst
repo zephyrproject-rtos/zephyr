@@ -168,7 +168,7 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
                 ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
                 // handle data
             } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
-                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
+                bytes_read = k_pipe_read(events[3].pipe, buf, bytes_to_read, K_NO_WAIT);
                 // handle data
             }
         } else {
@@ -187,14 +187,17 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
             rc = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
-            } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
+            }
+            if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
                 // handle data
-            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+            }
+            if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
                 ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
                 // handle data
-            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
-                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
+            }
+            if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+                bytes_read = k_pipe_read(events[3].pipe, buf, bytes_to_read, K_NO_WAIT);
                 // handle data
             }
             events[0].state = K_POLL_STATE_NOT_READY;
@@ -293,7 +296,7 @@ been signaled.
                 // weird error
             }
 
-            k_poll_signal_reset(signal);
+            k_poll_signal_reset(&signal);
             events[0].state = K_POLL_STATE_NOT_READY;
         }
     }

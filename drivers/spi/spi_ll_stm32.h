@@ -24,6 +24,9 @@ struct spi_stm32_config {
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	uint32_t irq_line;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	bool use_subghzspi_nss;
@@ -34,7 +37,8 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
-	bool fifo_enabled;
+	bool fifo_enabled: 1;
+	bool ioswp: 1;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -61,6 +65,9 @@ struct stream {
 #endif
 
 struct spi_stm32_data {
+#ifdef CONFIG_SPI_RTIO
+	struct spi_rtio *rtio_ctx;
+#endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
@@ -180,6 +187,17 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
+static inline bool ll_func_are_int_disabled(SPI_TypeDef *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	return (spi->IER == 0U);
+#else
+	return !LL_SPI_IsEnabledIT_ERR(spi) &&
+	       !LL_SPI_IsEnabledIT_RXNE(spi) &&
+	       !LL_SPI_IsEnabledIT_TXE(spi);
+#endif
+}
+
 static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -218,27 +236,18 @@ static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (LL_SPI_IsActiveMasterTransfer(spi)) {
-		LL_SPI_SuspendMasterTransfer(spi);
-		while (LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
-		}
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+	/* Flush RX buffer */
+	while (ll_func_rx_is_not_empty(spi)) {
+		(void) LL_SPI_ReceiveData8(spi);
 	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
 
 	LL_SPI_Disable(spi);
+
 	while (LL_SPI_IsEnabled(spi)) {
 		/* NOP */
 	}
-
-	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXP(spi)) {
-		(void)LL_SPI_ReceiveData8(spi);
-	}
-	LL_SPI_ClearFlag_SUSP(spi);
-#else
-	LL_SPI_Disable(spi);
-#endif /* st_stm32h7_spi */
 }
 
 #endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

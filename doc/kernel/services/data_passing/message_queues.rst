@@ -108,6 +108,7 @@ The following code builds on the example above, and uses the message queue
 to pass data items from a producing thread to one or more consuming threads.
 If the message queue fills up because the consumers can't keep up, the
 producing thread throws away all existing data so the newer data can be saved.
+Note that this api will trigger reschedule.
 
 .. code-block:: c
 

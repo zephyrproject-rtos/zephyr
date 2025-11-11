@@ -10,6 +10,17 @@ zephyr_syscall_header(
   ${ZEPHYR_BASE}/include/zephyr/sys/time_units.h
 )
 
+# Helper macro to append files to the kernel_files list
+macro(kernel_sources_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    list(APPEND kernel_files ${ARGN})
+  endif()
+endmacro()
+
+macro(kernel_sources)
+    list(APPEND kernel_files ${ARGN})
+endmacro()
+
 if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
   zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
 endif()
@@ -47,7 +58,7 @@ else()
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
-list(APPEND kernel_files
+kernel_sources(
   main_weak.c
   banner.c
   busy_wait.c
@@ -55,21 +66,17 @@ list(APPEND kernel_files
   errno.c
   fatal.c
   init.c
-  init_static.c
   kheap.c
   mem_slab.c
   float.c
   version.c
   )
 
-if(CONFIG_SCHED_CPU_MASK)
-list(APPEND kernel_files
+kernel_sources_ifdef(CONFIG_SCHED_CPU_MASK
   cpu_mask.c
   )
-endif()
 
-if(CONFIG_MULTITHREADING)
-list(APPEND kernel_files
+kernel_sources_ifdef(CONFIG_MULTITHREADING
   idle.c
   mailbox.c
   msg_q.c
@@ -80,53 +87,29 @@ list(APPEND kernel_files
   system_work_q.c
   work.c
   condvar.c
-  priority_queues.c
   thread.c
   sched.c
+  pipe.c
   )
-if(CONFIG_SMP)
-list(APPEND kernel_files
+
+if(CONFIG_MULTITHREADING)
+if(CONFIG_SCHED_SCALABLE OR CONFIG_WAITQ_SCALABLE)
+kernel_sources(priority_queues.c)
+endif()
+
+kernel_sources_ifdef(CONFIG_SMP
      smp.c
      ipi.c)
-endif()
 else() # CONFIG_MULTITHREADING
-list(APPEND kernel_files
-  nothread.c
-  )
+kernel_sources(nothread.c)
 endif() # CONFIG_MULTITHREADING
 
-if(CONFIG_TIMESLICING)
-list(APPEND kernel_files
-     timeslicing.c)
-endif()
-
-if(CONFIG_SPIN_VALIDATE)
-list(APPEND kernel_files
-     spinlock_validate.c)
-endif()
-
-if(CONFIG_IRQ_OFFLOAD)
-list(APPEND kernel_files
-  irq_offload.c
-  )
-endif()
-
-
-if(CONFIG_THREAD_MONITOR)
-list(APPEND kernel_files
-     thread_monitor.c)
-endif()
-
-
-if(CONFIG_XIP)
-list(APPEND kernel_files
-     xip.c)
-endif()
-
-if(CONFIG_DEMAND_PAGING_STATS)
-list(APPEND kernel_files
-     paging/statistics.c)
-endif()
+kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
+kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
+kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
+kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
+kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
+kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 
 add_library(kernel ${kernel_files})
 
@@ -140,13 +123,12 @@ set_target_properties(
   __ZEPHYR_SUPERVISOR__
   )
 
-target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
+target_sources_ifdef(CONFIG_REQUIRES_STACK_CANARIES   kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
-target_sources_ifdef(CONFIG_PIPES                 kernel PRIVATE pipes.c)
 target_sources_ifdef(CONFIG_SCHED_THREAD_USAGE    kernel PRIVATE usage.c)
 target_sources_ifdef(CONFIG_OBJ_CORE              kernel PRIVATE obj_core.c)
 

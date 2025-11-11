@@ -28,8 +28,7 @@
  */
 static inline uint64_t z_arm_dwt_freq_get(void)
 {
-#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF) || \
-	defined(CONFIG_SOC_SERIES_IMXRT6XX)
+#if defined(CONFIG_CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK)
 	/*
 	 * DWT frequency is taken directly from the
 	 * System Core clock (CPU) frequency, if the
@@ -74,7 +73,6 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 		} while ((dcyc == 0) || (ddwt == 0));
 
 		dwt_frequency = (cyc_freq * ddwt) / dcyc;
-
 	}
 	return dwt_frequency;
 #endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
@@ -101,10 +99,9 @@ timing_t arch_timing_counter_get(void)
 	return (timing_t)z_arm_dwt_get_cycles();
 }
 
-uint64_t arch_timing_cycles_get(volatile timing_t *const start,
-				volatile timing_t *const end)
+uint64_t arch_timing_cycles_get(volatile timing_t *const start, volatile timing_t *const end)
 {
-	return (*end - *start);
+	return ((uint32_t)*end - (uint32_t)*start);
 }
 
 uint64_t arch_timing_freq_get(void)

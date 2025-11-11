@@ -1,5 +1,6 @@
 board:
   name: stm32f401_mini
+  full_name: STM32 Mini F401
   vendor: others
   socs:
     - name: stm32f401xc

@@ -1,7 +1,4 @@
-.. _weact_stm32g431_core:
-
-WeAct Studio STM32G431 Core Board
-#################################
+.. zephyr:board:: weact_stm32g431_core
 
 The WeAct STM32G431 Core Board is a low-cost bare-bones STM32G431-based development
 board. See the `STM32G431CB website`_ for more information about the MCU. More information
@@ -31,28 +28,7 @@ considered reserved for USB-C and not available for other applications.
 Supported Features
 ==================
 
-The Zephyr weact_stm32g431_core board configuration supports the following hardware
-features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | ADC Controller                      |
-+------------+------------+-------------------------------------+
-| USB        | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-| UCPD       | on-chip    | ucpd                                |
-+------------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-:zephyr_file:`boards/weact/stm32g431_core/weact_stm32g431_core_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -103,6 +79,8 @@ PLL instead of the internal 48 MHz oscillator.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The MCU is normally programmed using the ROM bootloader or the exposed SWD port.
 

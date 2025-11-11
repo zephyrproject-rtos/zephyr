@@ -9,11 +9,11 @@
  * @brief AIROC Wi-Fi driver.
  */
 
-#define DT_DRV_COMPAT infineon_airoc_wifi
-
 #include <zephyr/logging/log.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #include <airoc_wifi.h>
+#include <airoc_whd_hal_common.h>
+#include <whd_wlioctl.h>
 
 LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -76,8 +76,20 @@ static uint16_t sta_event_handler_index = 0xFF;
 static void airoc_event_task(void);
 static struct airoc_wifi_data airoc_wifi_data = {0};
 
+#if defined(SPI_DATA_IRQ_SHARED)
+PINCTRL_DT_INST_DEFINE(0);
+#endif
+
 static struct airoc_wifi_config airoc_wifi_config = {
-	.sdhc_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
+#if defined(CONFIG_AIROC_WIFI_BUS_SDIO)
+	.bus_dev.bus_sdio = DEVICE_DT_GET(DT_INST_PARENT(0)),
+#elif defined(CONFIG_AIROC_WIFI_BUS_SPI)
+	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION),
+	.bus_select_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), bus_select_gpios, {0}),
+#if defined(SPI_DATA_IRQ_SHARED)
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#endif
+#endif
 	.wifi_reg_on_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_reg_on_gpios, {0}),
 	.wifi_host_wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_host_wake_gpios, {0}),
 	.wifi_dev_wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_dev_wake_gpios, {0}),
@@ -141,11 +153,18 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 	case WHD_SECURITY_OPEN:
 		zephyr_security = WIFI_SECURITY_TYPE_NONE;
 		break;
+
 	case WHD_SECURITY_WEP_PSK:
+	case WHD_SECURITY_WEP_SHARED:
 		zephyr_security = WIFI_SECURITY_TYPE_WEP;
 		break;
 
+	case WHD_SECURITY_WPA2_WPA_MIXED_PSK:
+	case WHD_SECURITY_WPA2_WPA_AES_PSK:
 	case WHD_SECURITY_WPA3_WPA2_PSK:
+		zephyr_security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+		break;
+
 	case WHD_SECURITY_WPA2_AES_PSK:
 		zephyr_security = WIFI_SECURITY_TYPE_PSK;
 		break;
@@ -158,6 +177,8 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 		zephyr_security = WIFI_SECURITY_TYPE_SAE;
 		break;
 
+	case WHD_SECURITY_WPA_TKIP_PSK:
+	case WHD_SECURITY_WPA_MIXED_PSK:
 	case WHD_SECURITY_WPA_AES_PSK:
 		zephyr_security = WIFI_SECURITY_TYPE_WPA_PSK;
 		break;
@@ -169,6 +190,45 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 		break;
 	}
 	return zephyr_security;
+}
+
+static whd_security_t convert_zephyr_security_to_whd(int security)
+{
+	whd_security_t whd_security = WIFI_SECURITY_TYPE_UNKNOWN;
+
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		whd_security = WHD_SECURITY_OPEN;
+		break;
+
+	case WIFI_SECURITY_TYPE_WEP:
+		whd_security = WHD_SECURITY_WEP_PSK;
+		break;
+
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		whd_security = WHD_SECURITY_WPA3_WPA2_PSK;
+		break;
+
+	case WIFI_SECURITY_TYPE_PSK:
+		whd_security = WHD_SECURITY_WPA2_AES_PSK;
+		break;
+
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		whd_security = WIFI_SECURITY_TYPE_PSK_SHA256;
+		break;
+
+	case WIFI_SECURITY_TYPE_SAE:
+		whd_security = WHD_SECURITY_WPA3_SAE;
+		break;
+
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		whd_security = WHD_SECURITY_WPA_AES_PSK;
+		break;
+
+	default:
+		break;
+	}
+	return whd_security;
 }
 
 static void parse_scan_result(whd_scan_result_t *p_whd_result, struct wifi_scan_result *p_zy_result)
@@ -188,7 +248,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 {
 	struct airoc_wifi_data *data = user_data;
 	whd_scan_result_t whd_scan_result;
-	struct wifi_scan_result zephyr_scan_result;
+	struct wifi_scan_result zephyr_scan_result = {0};
 
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY || status == WHD_SCAN_ABORTED) {
 		data->scan_rslt_cb(data->iface, 0, NULL);
@@ -199,7 +259,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 		return;
 	}
 
-	/* We recived scan data so process it */
+	/* We received scan data so process it */
 	if ((result_ptr != NULL) && (*result_ptr != NULL)) {
 		memcpy(&whd_scan_result, *result_ptr, sizeof(whd_scan_result_t));
 		parse_scan_result(&whd_scan_result, &zephyr_scan_result);
@@ -363,6 +423,37 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 	}
 }
 
+static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETHERNET_HW_FILTERING;
+}
+
+static int airoc_set_config(const struct device *dev,
+			    enum ethernet_config_type type,
+			    const struct ethernet_config *config)
+{
+	ARG_UNUSED(dev);
+	whd_mac_t whd_mac_addr;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		for (int i = 0; i < WHD_ETHER_ADDR_LEN; i++) {
+			whd_mac_addr.octet[i] = config->filter.mac_address.addr[i];
+		}
+		if (config->filter.set) {
+			whd_wifi_register_multicast_address(airoc_if, &whd_mac_addr);
+		} else {
+			whd_wifi_unregister_multicast_address(airoc_if, &whd_mac_addr);
+		}
+		return 0;
+	default:
+		break;
+	}
+	return -ENOTSUP;
+}
+
 static void *link_events_handler(whd_interface_t ifp, const whd_event_header_t *event_header,
 				 const uint8_t *event_data, void *handler_user_data)
 {
@@ -460,8 +551,9 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct airoc_wifi_data *data = (struct airoc_wifi_data *)dev->data;
-	whd_ssid_t ssid = {0};
 	int ret = 0;
+	whd_scan_result_t scan_result;
+	whd_scan_result_t usr_result = {0};
 
 	if (k_sem_take(&data->sema_common, K_MSEC(AIROC_WIFI_WAIT_SEMA_MS)) != 0) {
 		return -EAGAIN;
@@ -479,30 +571,32 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		goto error;
 	}
 
-	ssid.length = params->ssid_length;
-	memcpy(ssid.value, params->ssid, params->ssid_length);
+	usr_result.SSID.length = params->ssid_length;
+	memcpy(usr_result.SSID.value, params->ssid, params->ssid_length);
 
-	whd_scan_result_t scan_result;
-	whd_scan_result_t usr_result = {0};
+	if ((params->security == WIFI_SECURITY_TYPE_NONE) && (params->psk_length > 0)) {
+		/* Try to scan ssid to define security */
 
-	usr_result.SSID.length = ssid.length;
-	memcpy(usr_result.SSID.value, ssid.value, ssid.length);
+		if (whd_wifi_scan(airoc_sta_if, WHD_SCAN_TYPE_ACTIVE, WHD_BSS_TYPE_ANY, NULL, NULL,
+				  NULL, NULL, airoc_wifi_scan_cb_search, &scan_result,
+				  &(usr_result)) != WHD_SUCCESS) {
+			LOG_ERR("Failed start scan");
+			ret = -EAGAIN;
+			goto error;
+		}
 
-	if (whd_wifi_scan(airoc_sta_if, WHD_SCAN_TYPE_ACTIVE, WHD_BSS_TYPE_ANY, NULL, NULL, NULL,
-			  NULL, airoc_wifi_scan_cb_search, &scan_result,
-			  &(usr_result)) != WHD_SUCCESS) {
-		LOG_ERR("Failed start scan");
-		ret = -EAGAIN;
-		goto error;
+		if (k_sem_take(&airoc_wifi_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) !=
+		    0) {
+			whd_wifi_stop_scan(airoc_sta_if);
+			ret = -EAGAIN;
+			goto error;
+		}
+	} else {
+		/* Get security from user, convert it to  */
+		usr_result.security = convert_zephyr_security_to_whd(params->security);
 	}
 
-	if (k_sem_take(&airoc_wifi_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) != 0) {
-		whd_wifi_stop_scan(airoc_sta_if);
-		ret = -EAGAIN;
-		goto error;
-	}
-
-	if (usr_result.security == 0) {
+	if (usr_result.security == WHD_SECURITY_UNKNOWN) {
 		ret = -EAGAIN;
 		LOG_ERR("Could not scan device");
 		goto error;
@@ -620,10 +714,18 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 			params->channel);
 	}
 
-	if (params->psk_length == 0) {
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
 		security = WHD_SECURITY_OPEN;
-	} else {
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
 		security = WHD_SECURITY_WPA2_AES_PSK;
+		break;
+	case WIFI_SECURITY_TYPE_SAE:
+		security = WHD_SECURITY_WPA3_SAE;
+		break;
+	default:
+		goto error;
 	}
 
 	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, (const uint8_t *)params->psk,
@@ -650,6 +752,7 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 
 	data->is_ap_up = true;
 	airoc_if = airoc_ap_if;
+	net_if_dormant_off(data->iface);
 error:
 
 	k_sem_give(&data->sema_common);
@@ -695,6 +798,7 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 	if (whd_ret == CY_RSLT_SUCCESS) {
 		data->is_ap_up = false;
 		airoc_if = airoc_sta_if;
+		net_if_dormant_on(data->iface);
 	} else {
 		LOG_ERR("Can't stop wifi ap: %u", whd_ret);
 	}
@@ -703,6 +807,80 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 
 	if (whd_ret != CY_RSLT_SUCCESS) {
 		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int airoc_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	struct airoc_wifi_data *data = dev->data;
+	whd_result_t result;
+	wl_bss_info_t bss_info;
+	whd_security_t security_info = 0;
+	uint32_t wpa_data_rate_value = 0;
+	uint32_t join_status;
+
+	if (airoc_if == NULL) {
+		return -ENOTSUP;
+	}
+
+	status->iface_mode =
+		(data->is_ap_up ? WIFI_MODE_AP
+				: (data->is_sta_connected ? WIFI_MODE_INFRA : WIFI_MODE_UNKNOWN));
+
+	join_status = whd_wifi_is_ready_to_transceive(airoc_if);
+
+	if (join_status == WHD_SUCCESS) {
+		status->state = WIFI_STATE_COMPLETED;
+	} else if (join_status == WHD_JOIN_IN_PROGRESS) {
+		status->state = WIFI_STATE_ASSOCIATING;
+	} else if (join_status == WHD_NOT_KEYED) {
+		status->state = WIFI_STATE_AUTHENTICATING;
+	} else {
+		status->state = WIFI_STATE_DISCONNECTED;
+	}
+
+	result = whd_wifi_get_ap_info(airoc_if, &bss_info, &security_info);
+
+	if (result == WHD_SUCCESS) {
+		memcpy(&(status->bssid[0]), &(bss_info.BSSID), sizeof(whd_mac_t));
+
+		whd_wifi_get_channel(airoc_if, (int *)&status->channel);
+
+		status->band = (status->channel <= CH_MAX_2G_CHANNEL) ? WIFI_FREQ_BAND_2_4_GHZ
+								      : WIFI_FREQ_BAND_5_GHZ;
+
+		status->rssi = (int)bss_info.RSSI;
+
+		status->ssid_len = bss_info.SSID_len;
+		strncpy(status->ssid, bss_info.SSID, status->ssid_len);
+
+		status->security = convert_whd_security_to_zephyr(security_info);
+
+		status->beacon_interval = (unsigned short)bss_info.beacon_period;
+		status->dtim_period = (unsigned char)bss_info.dtim_period;
+
+		status->twt_capable = false;
+	}
+
+	whd_wifi_get_ioctl_value(airoc_if, WLC_GET_RATE, &wpa_data_rate_value);
+	status->current_phy_tx_rate = wpa_data_rate_value;
+
+	/* Unbelievably, this appears to be the only way to determine the phy mode with
+	 *  the whd SDK that we're currently using. Note that the logic below is only valid on
+	 *  devices that are limited to the 2.4Ghz band. Other versions of the SDK and chip
+	 * evidently allow one to obtain a phy_mode value directly from bss_info
+	 */
+	if (wpa_data_rate_value > 54) {
+		status->link_mode = WIFI_4;
+	} else if (wpa_data_rate_value == 6 || wpa_data_rate_value == 9 ||
+		   wpa_data_rate_value == 12 || wpa_data_rate_value == 18 ||
+		   wpa_data_rate_value == 24 || wpa_data_rate_value == 36 ||
+		   wpa_data_rate_value == 48 || wpa_data_rate_value == 54) {
+		status->link_mode = WIFI_3;
+	} else {
+		status->link_mode = WIFI_1;
 	}
 
 	return 0;
@@ -761,7 +939,8 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 	.disconnect = airoc_mgmt_disconnect,
 	.ap_enable = airoc_mgmt_ap_enable,
 	.ap_disable = airoc_mgmt_ap_disable,
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.iface_status = airoc_iface_status,
+#if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = airoc_mgmt_wifi_stats,
 #endif
 };
@@ -769,6 +948,8 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 static const struct net_wifi_mgmt_offload airoc_api = {
 	.wifi_iface.iface_api.init = airoc_mgmt_init,
 	.wifi_iface.send = airoc_mgmt_send,
+	.wifi_iface.get_capabilities = airoc_get_capabilities,
+	.wifi_iface.set_config = airoc_set_config,
 	.wifi_mgmt_api = &airoc_wifi_mgmt,
 };
 

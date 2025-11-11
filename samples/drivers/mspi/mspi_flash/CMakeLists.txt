@@ -7,7 +7,7 @@ project(mspi_flash)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-if(CONFIG_FLASH_MSPI_ATXP032)
+if(CONFIG_FLASH_MSPI)
   target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/zephyr/drivers)
   target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/mspi)
 endif()

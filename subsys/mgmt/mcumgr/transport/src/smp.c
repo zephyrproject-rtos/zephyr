@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
@@ -32,7 +32,7 @@ K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_ST
 static struct k_work_q smp_work_queue;
 
 #ifdef CONFIG_SMP_CLIENT
-static sys_slist_t smp_transport_clients;
+static sys_slist_t smp_transport_clients = SYS_SLIST_STATIC_INIT(&smp_transport_clients);
 #endif
 
 static const struct k_work_queue_config smp_work_queue_config = {
@@ -136,7 +136,7 @@ smp_handle_reqs(struct k_work *work)
 	smpt = (void *)work;
 
 	/* Read and handle received messages */
-	while ((nb = net_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = k_fifo_get(&smpt->fifo, K_NO_WAIT)) != NULL) {
 		smp_process_packet(smpt, nb);
 	}
 }
@@ -199,14 +199,14 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry)
 WEAK void
 smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
-	net_buf_put(&smpt->fifo, nb);
+	k_fifo_put(&smpt->fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
 
 #ifdef CONFIG_SMP_CLIENT
-void smp_tx_req(struct k_work *work)
+struct k_work_q *smp_get_wq(void)
 {
-	k_work_submit_to_queue(&smp_work_queue, work);
+	return &smp_work_queue;
 }
 #endif
 
@@ -230,17 +230,17 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 	 */
 	k_fifo_init(&temp_fifo);
 
-	while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = k_fifo_get(&zst->fifo, K_NO_WAIT)) != NULL) {
 		if (!zst->functions.query_valid_check(nb, arg)) {
 			smp_free_buf(nb, zst);
 		} else {
-			net_buf_put(&temp_fifo, nb);
+			k_fifo_put(&temp_fifo, nb);
 		}
 	}
 
 	/* Re-insert the remaining queued operations into the original FIFO */
-	while ((nb = net_buf_get(&temp_fifo, K_NO_WAIT)) != NULL) {
-		net_buf_put(&zst->fifo, nb);
+	while ((nb = k_fifo_get(&temp_fifo, K_NO_WAIT)) != NULL) {
+		k_fifo_put(&zst->fifo, nb);
 	}
 
 	/* If at least one entry remains, queue the workqueue for running */
@@ -259,17 +259,13 @@ void smp_rx_clear(struct smp_transport *zst)
 	}
 
 	/* Drain the FIFO of all entries without re-adding any */
-	while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = k_fifo_get(&zst->fifo, K_NO_WAIT)) != NULL) {
 		smp_free_buf(nb, zst);
 	}
 }
 
 static int smp_init(void)
 {
-#ifdef CONFIG_SMP_CLIENT
-	sys_slist_init(&smp_transport_clients);
-#endif
-
 	k_work_queue_init(&smp_work_queue);
 
 	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,

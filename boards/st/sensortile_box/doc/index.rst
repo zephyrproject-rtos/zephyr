@@ -1,7 +1,4 @@
-.. _sensortile_box:
-
-ST SensorTile.box
-#################
+.. zephyr:board:: sensortile_box
 
 Overview
 ********
@@ -10,12 +7,8 @@ The STEVAL-MKSBOX1V1 (SensorTile.box) is a ready-to-use box kit for wireless
 IoT and wearable sensor platforms to help you use and develop apps based on
 remote motion and environmental sensor data.
 The SensorTile.box board fits into a small plastic box with a long-life rechargeable
-battery, and communicates with a standard smartphone through its Bluetooth interface,
+battery, and communicates with a standard smartphone through its Bluetooth |reg| interface,
 providing data coming from the sensors.
-
-.. image:: img/sensortile_box.jpg
-     :align: center
-     :alt: SensorTile.box
 
 More information about the board can be found at the `SensorTile.box website`_.
 
@@ -38,7 +31,7 @@ SensorTile.box provides the following hardware components:
 
 - Communication
 
-  - Bluetooth Smart connectivity v4.2 (SPBTLE-1S)
+  - Bluetooth |reg| Smart connectivity v4.2 (SPBTLE-1S)
   - 1 x USB OTG FS (SoC) with micro-B connector
     (USB device role only)
 
@@ -76,6 +69,8 @@ on a smartphone/PC to implement applications such as:
 - Vibration monitoring
 - Compass and inclinometer
 - Sensor data logger
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -127,6 +122,8 @@ functions.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32FL4Rx SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional
@@ -185,7 +182,7 @@ You should see following confirmation on your Linux host:
    usb 2-2: SerialNumber: 204A325D574D
 
 You can build and flash the provided sample application
-(:ref:`sensortile_box sensors`) that reads sensors data and outputs
+(:zephyr:code-sample:`sensortile_box_sensors`) that reads sensors data and outputs
 values on the console.
 
 References

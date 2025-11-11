@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(bosch_bmi323);
 /* Value taken from BMI323 Datasheet section 5.8.1 */
 #define IMU_BOSCH_FEATURE_ENGINE_STARTUP_CONFIG (0x012C)
 
-#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELCIUS (23000000LL)
-#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELCIUS_LSB    (1953L)
+#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
+#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
 
 typedef void (*bosch_bmi323_gpio_callback_ptr)(const struct device *dev, struct gpio_callback *cb,
 					       uint32_t pins);
@@ -103,15 +103,6 @@ static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int1
 	int64_t ll_value = (int64_t)value * lsb;
 	int32_t int_part = (int32_t)(ll_value / 1000000);
 	int32_t frac_part = (int32_t)(ll_value % 1000000);
-
-	result->val1 = int_part;
-	result->val2 = frac_part;
-}
-
-static void bosch_bmi323_sensor_value_from_micro(struct sensor_value *result, int64_t micro)
-{
-	int32_t int_part = (int32_t)(micro / 1000000);
-	int32_t frac_part = (int32_t)(micro % 1000000);
 
 	result->val1 = int_part;
 	result->val2 = frac_part;
@@ -991,13 +982,13 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 		return -ENODATA;
 	}
 
-	micro = bosch_bmi323_value_to_micro(buf, IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELCIUS_LSB);
+	micro = bosch_bmi323_value_to_micro(buf, IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB);
 
-	micro += IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELCIUS;
+	micro += IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS;
 
-	bosch_bmi323_sensor_value_from_micro(&data->temperature, micro);
+	ret = sensor_value_from_micro(&data->temperature, micro);
 
-	data->temperature_valid = true;
+	data->temperature_valid = (ret == 0);
 
 	return 0;
 }
@@ -1106,7 +1097,7 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 	return ret;
 }
 
-static const struct sensor_driver_api bosch_bmi323_api = {
+static DEVICE_API(sensor, bosch_bmi323_api) = {
 	.attr_set = bosch_bmi323_driver_api_attr_set,
 	.attr_get = bosch_bmi323_driver_api_attr_get,
 	.trigger_set = bosch_bmi323_driver_api_trigger_set,

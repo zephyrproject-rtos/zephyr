@@ -25,6 +25,21 @@ properties:
   interrupts:
     required: true
 
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Defaults to standard baudrate of 115200 if not specified.
+    default: 115200
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
   single-wire:
     type: boolean
     description: |
@@ -71,7 +86,7 @@ properties:
     type: int
     default: 0
     description: |
-      Defines the time between the activation of the DE signal and the beginning of the start bit.
+      Defines the time between the end of the stop bit and the deactivation of the DE signal.
       It is expressed in 16th of a bit time.
       Valid range: 0 - 31
 

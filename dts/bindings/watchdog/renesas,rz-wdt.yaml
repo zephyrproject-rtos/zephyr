@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Watchdog (wdt)
+
+compatible: "renesas,rz-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-freq:
+    required: true
+    type: int

@@ -44,6 +44,13 @@ config MM_DRV_INTEL_ADSP_TLB
 	  Driver for the translation lookup buffer on
 	  Intel Audio DSP hardware.
 
+config MM_DRV_INTEL_VIRTUAL_REGION_COUNT
+	int "Maximum number of regions defined in virtual memory"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
+	default 1
+	help
+	  This options defines a table size keeping all virtual memory region
+
 config EXTERNAL_ADDRESS_TRANSLATION
 	bool "Support for external address translation modules"
 	depends on !MMU

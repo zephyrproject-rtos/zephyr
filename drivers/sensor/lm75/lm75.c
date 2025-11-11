@@ -270,14 +270,7 @@ static inline int lm75_fetch_temp(const struct device *dev)
 
 static int lm75_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	enum pm_device_state pm_state;
 	int ret;
-
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		ret = -EIO;
-		return ret;
-	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
@@ -306,7 +299,7 @@ static int lm75_channel_get(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api lm75_driver_api = {
+static DEVICE_API(sensor, lm75_driver_api) = {
 	.attr_set = lm75_attr_set,
 	.attr_get = lm75_attr_get,
 #if LM75_TRIGGER_SUPPORT

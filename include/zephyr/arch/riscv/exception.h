@@ -45,6 +45,12 @@ struct soc_esf {
 };
 #endif
 
+#ifdef CONFIG_EXCEPTION_DEBUG
+/* Forward declaration */
+struct _callee_saved;
+typedef struct _callee_saved _callee_saved_t;
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 #if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
 	SOC_ISR_STACKING_ESF_DECLARE;
 #else
@@ -72,6 +78,10 @@ struct arch_esf {
 	unsigned long a7;		/* function argument */
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
+	unsigned long mcause;		/* machine cause register */
+#endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
+
 	unsigned long mepc;		/* machine exception program counter */
 	unsigned long mstatus;	/* machine status register */
 
@@ -80,6 +90,10 @@ struct arch_esf {
 #ifdef CONFIG_USERSPACE
 	unsigned long sp;		/* preserved (user or kernel) stack pointer */
 #endif
+
+#ifdef CONFIG_EXCEPTION_DEBUG
+	_callee_saved_t *csf;		/* pointer to callee-saved-registers */
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;

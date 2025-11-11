@@ -29,7 +29,7 @@ STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
 static struct service {
-	struct zsock_pollfd events[CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd events[CONFIG_ZVFS_POLL_MAX];
 	int count;
 } ctx;
 
@@ -71,9 +71,9 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 		goto out;
 	}
 
-	if (fds == NULL) {
-		cleanup_svc_events(svc);
-	} else {
+	cleanup_svc_events(svc);
+
+	if (fds != NULL) {
 		if (len > svc->pev_len) {
 			NET_DBG("Too many file descriptors, "
 				"max is %d for service %p",
@@ -119,27 +119,17 @@ static struct net_socket_service_desc *find_svc_and_event(
  * round will not notice it and call the callback again while we are
  * servicing the callback.
  */
-void net_socket_service_callback(struct k_work *work)
+void net_socket_service_callback(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-	struct net_socket_service_desc *svc = pev->svc;
 	struct net_socket_service_event ev = *pev;
 
-	ev.callback(&ev.work);
-
-	/* Copy back the socket fd to the global array because we marked
-	 * it as -1 when triggering the work.
-	 */
-	for (int i = 0; i < svc->pev_len; i++) {
-		ctx.events[get_idx(svc) + i] = svc->pev[i].event;
-	}
+	ev.callback(&ev);
 }
 
-static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
-		     struct k_work *work)
+static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *event)
 {
 	int ret = 0;
+	int fd = pev->fd;
 
 	/* Mark the global fd non pollable so that we do not
 	 * call the callback second time.
@@ -147,10 +137,12 @@ static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
 	pev->fd = -1;
 
 	/* Synchronous call */
-	net_socket_service_callback(work);
+	net_socket_service_callback(event);
+
+	/* Restore the fd so that new data can be re-triggered */
+	pev->fd = fd;
 
 	return ret;
-
 }
 
 static int trigger_work(struct zsock_pollfd *pev)
@@ -170,11 +162,15 @@ static int trigger_work(struct zsock_pollfd *pev)
 	 */
 	event->event = *pev;
 
-	return call_work(pev, svc->work_q, &event->work);
+	return call_work(pev, event);
 }
 
-static void socket_service_thread(void)
+static void socket_service_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int ret, i, fd, count = 0;
 	zvfs_eventfd_t value;
 
@@ -199,7 +195,7 @@ static void socket_service_thread(void)
 			"%zd poll entries configured.",
 			count + 1, ARRAY_SIZE(ctx.events));
 		NET_ERR("Please increase value of %s to at least %d",
-			"CONFIG_NET_SOCKETS_POLL_MAX", count + 1);
+			"CONFIG_ZVFS_POLL_MAX", count + 1);
 		goto fail;
 	}
 
@@ -248,12 +244,7 @@ restart:
 			break;
 		}
 
-		if (ret > 0 && ctx.events[0].revents) {
-			zvfs_eventfd_read(ctx.events[0].fd, &value);
-			NET_DBG("Received restart event.");
-			goto restart;
-		}
-
+		/* Process work here */
 		for (i = 1; i < (count + 1); i++) {
 			if (ctx.events[i].fd < 0) {
 				continue;
@@ -263,8 +254,17 @@ restart:
 				ret = trigger_work(&ctx.events[i]);
 				if (ret < 0) {
 					NET_DBG("Triggering work failed (%d)", ret);
+					goto restart;
 				}
 			}
+		}
+
+		/* Relocate after trigger work so the work gets done before restarting */
+		if (ctx.events[0].revents) {
+			zvfs_eventfd_read(ctx.events[0].fd, &value);
+			ctx.events[0].revents = 0;
+			NET_DBG("Received restart event.");
+			goto restart;
 		}
 	}
 

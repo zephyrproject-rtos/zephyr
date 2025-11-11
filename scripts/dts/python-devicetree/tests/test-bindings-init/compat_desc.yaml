@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Test inheritance rules applied to compatible strings
+# and bindings descriptions.
+
+description: Binding description.
+
+compatible: vnd,compat-desc
+
+include: compat_desc_base.yaml
+
+child-binding:
+  description: Child-binding description.
+  compatible: vnd,child-compat-desc
+
+  child-binding:
+    description: Grandchild-binding description.
+    compatible: vnd,grandchild-compat-desc

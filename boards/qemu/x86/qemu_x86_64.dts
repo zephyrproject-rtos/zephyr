@@ -9,7 +9,7 @@
 	cpus {
 		cpu@1 {
 			device_type = "cpu";
-			compatible = "intel,x86";
+			compatible = "intel,x86_64";
 			d-cache-line-size = <64>;
 			reg = <1>;
 		};
@@ -28,4 +28,8 @@
 
 		status = "okay";
 	};
+};
+
+&cpu {
+	compatible = "intel,x86_64";
 };

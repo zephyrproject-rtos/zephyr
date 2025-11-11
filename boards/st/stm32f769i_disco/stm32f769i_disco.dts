@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	model = "STMicroelectronics STM32F769I DISCOVERY board";
@@ -22,6 +23,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
+		zephyr,touch = &ft6202;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -29,7 +31,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
@@ -39,26 +41,26 @@
 
 	leds {
 		compatible = "gpio-leds";
-		red_led_1:led_1 {
+
+		red_led_1: led_1 {
 			gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-		green_led_2:led_2 {
+
+		green_led_2: led_2 {
 			gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
-		green_led_3:led_3 {
+
+		green_led_3: led_3 {
 			gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
-		};
-		red_led_4:led_4 {
-			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
-			label = "User LD4";
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
@@ -71,11 +73,24 @@
 		input = <&ft6202>;
 	};
 
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpioi 13 0>,	/* LCD_INT */
+			   <39 0 &gpiod 11 0>,	/* SPDIF_I2S */
+			   <40 0 &gpiob 7 0>,	/* I2C4_SDA */
+			   <44 0 &gpiod 12 0>,	/* I2C4_SCL */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioi 14 0>,	/* BL_CTRL */
+			   <57 0 &gpioj 15 0>;	/* DSI_RESET */
+	};
+
 	aliases {
 		led0 = &red_led_1;
 		led1 = &green_led_2;
 		led2 = &green_led_3;
-		led3 = &red_led_4;
 		sw0 = &user_button;
 	};
 
@@ -83,7 +98,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "QSPI_AVAIL";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 
@@ -110,7 +125,9 @@
 };
 
 arduino_i2c: &i2c1 {};
+
 arduino_spi: &spi2 {};
+
 arduino_serial: &usart6 {};
 
 &usart1 {
@@ -134,7 +151,7 @@ arduino_serial: &usart6 {};
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c4 {
+qsh_030_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -143,7 +160,7 @@ arduino_serial: &usart6 {};
 	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
-		int-gpios = <&gpioi 13 0>;
+		int-gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -155,16 +172,27 @@ arduino_serial: &usart6 {};
 
 &mac {
 	status = "okay";
-	pinctrl-0 = <&eth_mdc_pc1
-		     &eth_rxd0_pc4
+	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
 };
 
 &sdmmc2 {
@@ -174,6 +202,7 @@ arduino_serial: &usart6 {};
 		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &quadspi {
@@ -183,10 +212,12 @@ arduino_serial: &usart6 {};
 	pinctrl-names = "default";
 	status = "okay";
 
-	mx25l51245g: qspi-nor-flash@90000000 {
+	mx25l51245g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <DT_FREQ_M(66)>;
+		cs-high-time = <2>; /* >= 30 ns */
 		status = "okay";
 
 		partitions {
@@ -197,7 +228,7 @@ arduino_serial: &usart6 {};
 			slot1_partition: partition@0 {
 				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(16)>;
-				};
+			};
 
 			storage_partition: partition@1a0000 {
 				label = "storage";
@@ -252,19 +283,23 @@ arduino_serial: &usart6 {};
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
-			&usb_otg_hs_ulpi_d0_pa3
-			&usb_otg_hs_ulpi_d1_pb0
-			&usb_otg_hs_ulpi_d2_pb1
-			&usb_otg_hs_ulpi_d3_pb10
-			&usb_otg_hs_ulpi_d4_pb11
-			&usb_otg_hs_ulpi_d5_pb12
-			&usb_otg_hs_ulpi_d6_pb13
-			&usb_otg_hs_ulpi_d7_pb5
-			&usb_otg_hs_ulpi_stp_pc0
-			&usb_otg_hs_ulpi_dir_pi11
-			&usb_otg_hs_ulpi_nxt_ph4>;
+		     &usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_dir_pi11
+		     &usb_otg_hs_ulpi_nxt_ph4>;
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	phys = <&otghs_ulpi_phy>;
 	status = "okay";
 };
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+zephyr_lcd_controller: &ltdc {};

@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x Systick
+
+compatible: "wch,systick"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

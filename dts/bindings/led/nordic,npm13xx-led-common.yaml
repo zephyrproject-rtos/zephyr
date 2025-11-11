@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM13xx LED controller common properties
+
+properties:
+  nordic,led0-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 0 mode
+
+  nordic,led1-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 1 mode
+
+  nordic,led2-mode:
+    type: string
+    required: true
+    enum:
+    - error
+    - charging
+    - host
+    description: LED 2 mode

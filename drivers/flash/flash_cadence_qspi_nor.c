@@ -109,7 +109,7 @@ flash_cad_get_parameters(const struct device *dev)
 	return &flash_cad_parameters;
 }
 
-static const struct flash_driver_api flash_cad_api = {
+static DEVICE_API(flash, flash_cad_api) = {
 	.erase = flash_cad_erase,
 	.write = flash_cad_write,
 	.read = flash_cad_read,

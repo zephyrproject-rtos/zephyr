@@ -95,6 +95,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_CIS_TERMINATE:
 	case PROC_CIS_CREATE:
 	case PROC_SCA_UPDATE:
+	case PROC_PERIODIC_SYNC:
 		return 0U;
 	case PROC_PHY_UPDATE:
 	case PROC_CONN_UPDATE:
@@ -103,7 +104,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 		return 1U;
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -116,12 +117,12 @@ void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		struct proc_ctx *ctx_header;
 
 		ctx_header = llcp_rr_peek(conn);
-		LL_ASSERT(ctx_header == ctx);
+		LL_ASSERT_DBG(ctx_header == ctx);
 
 		/* If we have a node rx it must not be marked RETAIN as
 		 * the memory referenced would leak
 		 */
-		LL_ASSERT(ctx->node_ref.rx == NULL ||
+		LL_ASSERT_DBG(ctx->node_ref.rx == NULL ||
 			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
 
 		rr_dequeue(conn);
@@ -236,9 +237,12 @@ void llcp_rr_flush_procedures(struct ll_conn *conn)
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		struct node_rx_pdu *rx)
 {
-	/* Store RX node and link */
-	ctx->node_ref.rx = rx;
-	ctx->node_ref.link = link;
+	/* See comment in ull_llcp_local.c::llcp_lr_rx() */
+	if (!ctx->node_ref.rx) {
+		/* Store RX node and link */
+		ctx->node_ref.rx = rx;
+		ctx->node_ref.link = link;
+	}
 
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
@@ -308,9 +312,14 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case PROC_PERIODIC_SYNC:
+		llcp_rp_past_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -443,9 +452,14 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case PROC_PERIODIC_SYNC:
+		llcp_rp_past_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -461,7 +475,7 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -488,7 +502,7 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -501,7 +515,7 @@ static void rr_act_reject(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx = llcp_rr_peek(conn);
 
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
@@ -517,7 +531,7 @@ static void rr_act_unsupported(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx = llcp_rr_peek(conn);
 
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_UNSUPPORTED);
@@ -536,7 +550,7 @@ static void rr_act_complete(struct ll_conn *conn)
 	rr_set_collision(conn, 0U);
 
 	ctx = llcp_rr_peek(conn);
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	/* Stop procedure response timeout timer */
 	llcp_rr_prt_stop(conn);
@@ -763,7 +777,7 @@ static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -893,6 +907,9 @@ static const struct proc_role new_proc_lut[] = {
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { PROC_SCA_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	[PDU_DATA_LLCTRL_TYPE_PERIODIC_SYNC_IND] = { PROC_PERIODIC_SYNC, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 };
 
 void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx, bool valid_pdu)

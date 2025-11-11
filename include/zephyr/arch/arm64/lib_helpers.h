@@ -24,8 +24,9 @@
 
 #define write_sysreg(val, reg)						\
 ({									\
+	uint64_t reg_val = val;						\
 	__asm__ volatile ("msr " STRINGIFY(reg) ", %0"			\
-			  :: "r" (val) : "memory");			\
+			  :: "r" (reg_val) : "memory");			\
 })
 
 #define zero_sysreg(reg)						\
@@ -179,8 +180,9 @@ static inline bool is_el_highest_implemented(void)
 
 	curr_el = GET_EL(read_currentel());
 
-	if (curr_el < el_highest)
+	if (curr_el < el_highest) {
 		return false;
+	}
 
 	return true;
 }

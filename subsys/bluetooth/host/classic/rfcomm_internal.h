@@ -90,37 +90,12 @@ struct bt_rfcomm_rls {
 } __packed;
 
 #define BT_RFCOMM_RPN   0x24
-struct bt_rfcomm_rpn {
-	uint8_t  dlci;
-	uint8_t  baud_rate;
-	uint8_t  line_settings;
-	uint8_t  flow_control;
-	uint8_t  xon_char;
-	uint8_t  xoff_char;
-	uint16_t param_mask;
-} __packed;
 
 #define BT_RFCOMM_TEST  0x08
 #define BT_RFCOMM_NSC   0x04
 
 #define BT_RFCOMM_FCON  0x28
 #define BT_RFCOMM_FCOFF 0x18
-
-/* Default RPN Settings */
-#define BT_RFCOMM_RPN_BAUD_RATE_9600    0x03
-#define BT_RFCOMM_RPN_DATA_BITS_8       0x03
-#define BT_RFCOMM_RPN_STOP_BITS_1       0x00
-#define BT_RFCOMM_RPN_PARITY_NONE       0x00
-#define BT_RFCOMM_RPN_FLOW_NONE         0x00
-#define BT_RFCOMM_RPN_XON_CHAR          0x11
-#define BT_RFCOMM_RPN_XOFF_CHAR         0x13
-
-/* Set 1 to all the param mask except reserved */
-#define BT_RFCOMM_RPN_PARAM_MASK_ALL    0x3f7f
-
-#define BT_RFCOMM_SET_LINE_SETTINGS(data, stop, parity) ((data & 0x3) | \
-							 ((stop & 0x1) << 2) | \
-							 ((parity & 0x7) << 3))
 
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
@@ -132,15 +107,6 @@ struct bt_rfcomm_rpn {
 
 #define BT_RFCOMM_CHECK_MTU(mtu) (!!((mtu) >= BT_RFCOMM_SIG_MIN_MTU && \
 				     (mtu) <= BT_RFCOMM_SIG_MAX_MTU))
-
-/* Helper to calculate needed outgoing buffer size.
- * Length in rfcomm header can be two bytes depending on user data length.
- * One byte in the tail should be reserved for FCS.
- */
-#define BT_RFCOMM_BUF_SIZE(mtu) (BT_BUF_RESERVE + \
-				 BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
-				 sizeof(struct bt_rfcomm_hdr) + 1 + (mtu) + \
-				 BT_RFCOMM_FCS_SIZE)
 
 #define BT_RFCOMM_GET_DLCI(addr)                  (((addr) & 0xfc) >> 2)
 #define BT_RFCOMM_GET_FRAME_TYPE(ctrl)            ((ctrl) & 0xef)
@@ -192,7 +158,6 @@ struct bt_rfcomm_rpn {
 
 /* Length can be 2 bytes depending on data size */
 #define BT_RFCOMM_HDR_SIZE  (sizeof(struct bt_rfcomm_hdr) + 1)
-#define BT_RFCOMM_FCS_SIZE  1
 
 #define BT_RFCOMM_FCS_LEN_UIH      2
 #define BT_RFCOMM_FCS_LEN_NON_UIH  3

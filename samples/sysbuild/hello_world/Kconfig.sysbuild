@@ -1,7 +1,36 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"
+
+choice REMOTE_NRF54H20_CORE
+	prompt "Remote nRF54h20 core"
+	default REMOTE_NRF54H20_CPUFLPR_CORE
+	depends on SOC_NRF54H20_CPUAPP
+
+config REMOTE_NRF54H20_CPUFLPR_CORE
+	bool "flpr core"
+
+config REMOTE_NRF54H20_CPUFLPR_XIP_CORE
+	bool "flpr/xip core"
+
+config REMOTE_NRF54H20_CPUPPR_CORE
+	bool "ppr core"
+
+config REMOTE_NRF54H20_CPUPPR_XIP_CORE
+	bool "ppr/xip core"
+
+config REMOTE_NRF54H20_CPURAD_CORE
+	bool "cpurad"
+
+endchoice
 
 config REMOTE_BOARD
-	string "The board used for remote target"
+	string
+	default "$(BOARD)/nrf5340/cpunet" if SOC_NRF5340_CPUAPP
+	default "$(BOARD)/nrf54l15/cpuflpr" if SOC_NRF54L15_CPUAPP
+	default "$(BOARD)/nrf54h20/cpurad" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPURAD_CORE
+	default "$(BOARD)/nrf54h20/cpuppr" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUPPR_CORE
+	default "$(BOARD)/nrf54h20/cpuppr/xip" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUPPR_XIP_CORE
+	default "$(BOARD)/nrf54h20/cpuflpr" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUFLPR_CORE
+	default "$(BOARD)/nrf54h20/cpuflpr/xip" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUFLPR_XIP_CORE

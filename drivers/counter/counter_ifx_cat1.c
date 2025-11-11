@@ -189,10 +189,8 @@ static int ifx_cat1_counter_init(const struct device *dev)
 		rslt = cyhal_gpio_enable_output(config->external_pin, CYHAL_SIGNAL_TYPE_EDGE,
 						(cyhal_source_t *)&data->signal_source);
 		if (rslt != CY_RSLT_SUCCESS) {
-			if (rslt != CY_RSLT_SUCCESS) {
-				LOG_ERR("error in the enabling of Counter input pin output");
-				return -EIO;
-			}
+			LOG_ERR("error in the enabling of Counter input pin output");
+			return -EIO;
 		}
 
 		rslt = cyhal_timer_connect_digital(&data->counter_obj, data->signal_source,
@@ -485,7 +483,7 @@ static int ifx_cat1_counter_set_guard_period(const struct device *dev, uint32_t 
 	return 0;
 }
 
-static const struct counter_driver_api counter_api = {
+static DEVICE_API(counter, counter_api) = {
 	.start = ifx_cat1_counter_start,
 	.stop = ifx_cat1_counter_stop,
 	.get_value = ifx_cat1_counter_get_value,

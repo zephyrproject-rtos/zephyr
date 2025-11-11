@@ -7,8 +7,14 @@ description: Infineon CAT1 Watchdog
 
 compatible: "infineon,cat1-watchdog"
 
-include: base.yaml
+include: [base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   reg:
     required: true
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices

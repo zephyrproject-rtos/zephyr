@@ -39,9 +39,9 @@ static struct sockaddr tcp_server_addr;
 static struct zsock_pollfd fds[SOCK_ID_MAX];
 static struct sockaddr sock_addr[SOCK_ID_MAX];
 
-static void tcp_svc_handler(struct k_work *work);
+static void tcp_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, NULL, tcp_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, tcp_svc_handler,
 				      SOCK_ID_MAX);
 
 static void tcp_received(const struct sockaddr *addr, size_t datalen)
@@ -231,10 +231,8 @@ error:
 	return ret;
 }
 
-static void tcp_svc_handler(struct k_work *work)
+static void tcp_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = tcp_recv_data(pev);

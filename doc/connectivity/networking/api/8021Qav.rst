@@ -28,8 +28,8 @@ also priority queues ``ETHERNET_PRIORITY_QUEUES`` need to be supported.
 		ARG_UNUSED(dev);
 
 		return ETHERNET_QAV | ETHERNET_PRIORITY_QUEUES |
-		       ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
-		       ETHERNET_LINK_100BASE_T;
+		       ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE |
+		       ETHERNET_LINK_100BASE;
 	}
 
 See ``sam-e70-xplained`` board Ethernet driver

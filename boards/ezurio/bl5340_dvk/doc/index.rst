@@ -1,7 +1,4 @@
-.. _bl5340_dvk:
-
-Ezurio BL5340 DVK
-#################
+.. zephyr:board:: bl5340_dvk
 
 Overview
 ********
@@ -43,12 +40,6 @@ This development kit has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl5340_dvk_top.jpg
-     :align: center
-     :alt: BL5340 DVK
-
-     BL5340 DVK (Credit: Ezurio)
-
 More information about the module can be found on the
 `BL5340 homepage`_.
 
@@ -65,78 +56,8 @@ is 32MHz.
 Supported Features
 ==================
 
-The ``bl5340_dvk/nrf5340/cpuapp`` board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| QSPI(M)   | on-chip    | nor                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-The ``bl5340_dvk/nrf5340/cpunet`` board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_
 for a complete list of hardware features.
 
@@ -270,6 +191,8 @@ Security components
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The BL5340's application core supports the Armv8-M Security Extension.
 Applications built for the ``bl5340_dvk/nrf5340/cpuapp`` board by default
 boot in the Secure state.
@@ -379,7 +302,7 @@ applications as usual (:ref:`build_an_application` and
    Further information on how to install the nRF Command Line Tools can
    be found in :ref:`nordic_segger_flashing`.
 
-Here is an example for the :ref:`hello_world` application running on the
+Here is an example for the :zephyr:code-sample:`hello_world` application running on the
 BL5340's application core.
 
 First, run your favorite terminal program to listen for output.
@@ -409,9 +332,9 @@ Testing Bluetooth on the BL5340 DVK
 Many of the Bluetooth examples will work on the BL5340 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 References
 **********

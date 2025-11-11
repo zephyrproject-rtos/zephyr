@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 #
 # Common fields for MIPI-DBI devices
@@ -13,24 +13,34 @@ properties:
     description: Maximum clock frequency of device's MIPI interface in Hz
 
   mipi-mode:
-    type: int
+    type: string
     description: |
-      MIPI DBI mode in use. Use the macros, not the actual enum value. Here is
-      the concordance list (see dt-bindings/mipi_dbi/mipi_dbi.h)
-        1     MIPI_DBI_MODE_SPI_3WIRE
-        2     MIPI_DBI_MODE_SPI_4WIRE
-        3     MIPI_DBI_MODE_6800_BUS_16_BIT
-        4     MIPI_DBI_MODE_6800_BUS_9_BIT
-        5     MIPI_DBI_MODE_6800_BUS_8_BIT
-        6     MIPI_DBI_MODE_8080_BUS_16_BIT
-        7     MIPI_DBI_MODE_8080_BUS_9_BIT
-        8     MIPI_DBI_MODE_8080_BUS_8_BIT
+      MIPI DBI mode in use. These definitions should match those in
+      dt-bindings/mipi_dbi/mipi_dbi.h
     enum:
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
+      - "MIPI_DBI_MODE_SPI_3WIRE"
+      - "MIPI_DBI_MODE_SPI_4WIRE"
+      - "MIPI_DBI_MODE_6800_BUS_16_BIT"
+      - "MIPI_DBI_MODE_6800_BUS_9_BIT"
+      - "MIPI_DBI_MODE_6800_BUS_8_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_16_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_9_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_8_BIT"
+
+  te-mode:
+    type: string
+    default: "MIPI_DBI_TE_NO_EDGE"
+    description: |
+      MIPI DBI tearing enable signal mode. Defaults to disabled.
+    enum:
+      - "MIPI_DBI_TE_NO_EDGE"
+      - "MIPI_DBI_TE_RISING_EDGE"
+      - "MIPI_DBI_TE_FALLING_EDGE"
+
+  te-delay:
+    type: int
+    default: 0
+    description: |
+      Delay in microseconds to wait before transmitting display data after a
+      tearing enable synchronization signal is seen. Defaults to 0 since most
+      controllers will not need a delay.

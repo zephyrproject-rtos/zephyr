@@ -651,7 +651,7 @@ static void dma_gd32_isr(const struct device *dev)
 	}
 }
 
-static const struct dma_driver_api dma_gd32_driver_api = {
+static DEVICE_API(dma, dma_gd32_driver_api) = {
 	.config = dma_gd32_config,
 	.reload = dma_gd32_reload,
 	.start = dma_gd32_start,
@@ -696,7 +696,7 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 		.channels = dma_gd32##inst##_channels,                         \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, &dma_gd32_init, NULL,                      \
+	DEVICE_DT_INST_DEFINE(inst, dma_gd32_init, NULL,                       \
 			      &dma_gd32##inst##_data,                          \
 			      &dma_gd32##inst##_config, POST_KERNEL,           \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_gd32_driver_api);

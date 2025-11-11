@@ -1,7 +1,4 @@
-.. _bl652_dvk:
-
-Ezurio BL652 DVK
-################
+.. zephyr:board:: bl652_dvk
 
 Overview
 ********
@@ -31,12 +28,6 @@ Available BL652 DVK part numbers:
 * DVK-BL652-SA
 * DVK-BL652-SC
 
-.. figure:: img/bl652_dvk.jpg
-     :align: center
-     :alt: BL652 DVK
-
-     BL652 DVK Board
-
 .. figure:: img/BL652-SA_DVK_BoxContents.jpg
      :align: center
      :alt: BL652-SA DVK Box Contents
@@ -52,42 +43,8 @@ Hardware
 Supported Features
 ==================
 
-The BL652 DVK board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `BL652 Module Website`_.
 
 Connections and IOs
@@ -205,6 +162,8 @@ J32/J22 Digital I/O
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -214,7 +173,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -245,9 +204,9 @@ Testing Bluetooth on the BL652 DVK
 Many of the Bluetooth examples will work on the BL652 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 Testing the LEDs and buttons in the BL652 DVK
 *********************************************

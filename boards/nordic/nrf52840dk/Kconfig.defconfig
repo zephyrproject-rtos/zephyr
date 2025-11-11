@@ -5,7 +5,7 @@
 
 if BOARD_NRF52840DK
 
-config BT_CTLR
-	default BT
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
 
 endif # BOARD_NRF52840DK

@@ -1,7 +1,4 @@
-.. _black_f407zg_pro_board:
-
-Black STM32 F407ZG Pro Development Board
-########################################
+.. zephyr:board:: black_f407zg_pro
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the BLACK_F407ZG_PRO board:
 
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
-
-.. image:: img/black_f407zg_pro.jpg
-     :align: center
-     :alt: BLACK_F407ZG_PRO
 
 .. warning:: The +5V pins on this board are directly connected to the +5V pin
 	     of the USB connector. There is no protection in place. Do not
@@ -85,39 +78,11 @@ More information about STM32F407ZG SOC can be found here:
 Supported Features
 ==================
 
-The Zephyr black_f407zg_pro board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note:: CAN feature requires CAN transceiver.
 	  Zephyr default configuration uses CAN_2 exclusively, as
 	  simultaneous use of CAN_1 and CAN_2 is not yet supported.
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/others/black_f407zg_pro/black_f407zg_pro_defconfig`
-
 
 Pin Mapping
 ===========
@@ -170,6 +135,8 @@ it to UART2 pins (PA2/PA3).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``black_f407zg_pro`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -204,7 +171,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

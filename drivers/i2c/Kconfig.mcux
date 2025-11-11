@@ -12,6 +12,13 @@ menuconfig I2C_MCUX_FLEXCOMM
 	help
 	  Enable the mcux flexcomm i2c driver.
 
+config I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+	bool "Bus recovery support"
+	depends on I2C_MCUX_FLEXCOMM && PINCTRL
+	select I2C_BITBANG
+	help
+	  Enable flexcomm i2c driver bus recovery support via GPIO bitbanging.
+
 config I2C_NXP_TRANSFER_TIMEOUT
 	int "Transfer timeout [ms]"
 	default 0

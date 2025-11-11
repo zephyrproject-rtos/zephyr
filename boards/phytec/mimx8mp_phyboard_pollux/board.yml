@@ -1,5 +1,0 @@
-board:
-  name: mimx8mp_phyboard_pollux
-  vendor: phytec
-  socs:
-    - name: mimx8ml8

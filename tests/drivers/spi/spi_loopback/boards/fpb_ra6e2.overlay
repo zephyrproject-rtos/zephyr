@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	rx-dtc;
+	tx-dtc;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <3000000>;
+	};
+};

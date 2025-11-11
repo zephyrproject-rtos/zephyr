@@ -202,7 +202,7 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 /**
  * @brief Cancel ongoing create cis procedure
  */
-bool ull_cp_cc_cancel(struct ll_conn *conn);
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Get handle of ongoing create cis procedure.
@@ -226,14 +226,25 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
 void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
 
 /**
+ * @brief ACL disconnect.
+ */
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn);
+
+/**
  * @brief CIS creation ongoing.
+ */
+bool ull_cp_cc_is_active(struct ll_conn *conn);
+
+/**
+ * @brief Local CIS creation ongoing.
  */
 bool ull_lp_cc_is_active(struct ll_conn *conn);
 
 /**
- * @brief CIS creation ongoing or enqueued.
+ * @brief CIS creation ongoing or enqueued. If cis is NULL, it will return true if
+ *        any CIS Create is enqueued, otherwise it will look for the cis specified
  */
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn);
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.
@@ -274,3 +285,25 @@ void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_le
  */
 uint8_t ull_cp_req_peer_sca(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+struct ll_adv_sync_set;
+struct ll_sync_set;
+
+/**
+ * @brief Initiate a Periodic Advertising Sync Transfer Procedure.
+ */
+uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
+			     struct ll_adv_sync_set *adv_sync, uint16_t service_data);
+
+void ull_lp_past_offset_get_calc_params(struct ll_conn *conn,
+					uint8_t *adv_sync_handle, uint16_t *sync_handle);
+void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
+				   uint16_t pa_event_counter, uint16_t last_pa_event_counter);
+void ull_lp_past_conn_evt_done(struct ll_conn *conn, struct node_rx_event_done *done);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+/**
+ * @brief Validation of PHY, checking if exactly one bit set, and no bit set is rfu's
+ */
+bool phy_valid(uint8_t phy);

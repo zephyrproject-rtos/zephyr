@@ -17,6 +17,9 @@
 #ifdef CONFIG_MCUMGR_GRP_STAT
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_DTLS
+#include <zephyr/mgmt/mcumgr/transport/smp_udp.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -67,19 +70,24 @@ int main(void)
 	}
 #endif
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_DTLS
+	rc = setup_udp_dtls();
+
+	if (rc == 0) {
+		rc = smp_udp_open();
+
+		if (rc != 0) {
+			LOG_ERR("UDP transport open failed: %d", rc);
+		}
+	} else {
+		LOG_ERR("TLS init failed, cannot start UDP transport");
+	}
+#endif
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT
 	start_smp_bluetooth_adverts();
 #endif
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
-		rc = usb_enable(NULL);
-
-		/* Ignore EALREADY error as USB CDC is likely already initialised */
-		if (rc != 0 && rc != -EALREADY) {
-			LOG_ERR("Failed to enable USB");
-			return 0;
-		}
-	}
 	/* using __TIME__ ensure that a new binary will be built on every
 	 * compile which is convenient when testing firmware upgrade.
 	 */

@@ -9,8 +9,11 @@
  * @brief Full C support initialization
  */
 
-#include <kernel_internal.h>
 #include <zephyr/irq.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 static void interrupt_init(void)
 {
@@ -42,11 +45,16 @@ static void interrupt_init(void)
  * @return N/A
  */
 
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
-	z_bss_zero();
+	soc_prep_hook();
+
+	arch_bss_zero();
 
 	interrupt_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	z_cstart();
 	CODE_UNREACHABLE;

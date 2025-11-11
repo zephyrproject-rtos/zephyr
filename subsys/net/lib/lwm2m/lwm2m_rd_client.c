@@ -120,6 +120,7 @@ struct lwm2m_rd_client_info {
 	uint8_t engine_state;
 	uint8_t retries;
 	uint8_t retry_delay;
+	enum lwm2m_socket_states socket_state;
 
 	int64_t last_update;
 	int64_t last_tx;
@@ -170,6 +171,24 @@ struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void)
 	return &client.rd_message;
 }
 
+static bool ongoing_traffic(void)
+{
+	switch (client.socket_state) {
+	case LWM2M_SOCKET_STATE_NO_DATA:
+	case LWM2M_SOCKET_STATE_LAST:
+		return false;
+	default:
+		return true;
+	}
+}
+
+void lwm2m_rd_client_hint_socket_state(struct lwm2m_ctx *ctx, enum lwm2m_socket_states state)
+{
+	if (ctx && client.ctx == ctx) {
+		client.socket_state = state;
+	}
+}
+
 void engine_update_tx_time(void)
 {
 	client.last_tx = k_uptime_get();
@@ -205,9 +224,7 @@ static void set_sm_state_delayed(uint8_t sm_state, int64_t delay_ms)
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
 		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
-	} else if (sm_state == ENGINE_DEREGISTERED &&
-		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
-		    client.engine_state <= ENGINE_DEREGISTER_SENT) && !client.server_disabled) {
+	} else if (sm_state == ENGINE_DEREGISTERED && !client.server_disabled) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_UPDATE_REGISTRATION) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE;
@@ -291,22 +308,38 @@ static uint8_t get_sm_state(void)
 	return state;
 }
 
+/** Handle state transition when we have lost the connection. */
 static void sm_handle_timeout_state(enum sm_engine_state sm_state)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
-	/* Don't send BOOTSTRAP_REG_FAILURE event, that is only emitted from
-	 * do_network_error() once we are out of retries.
-	 */
-	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
+	switch (client.engine_state) {
+	case ENGINE_DO_BOOTSTRAP_REG:
+	case ENGINE_BOOTSTRAP_REG_SENT:
+	case ENGINE_BOOTSTRAP_REG_DONE:
+	case ENGINE_BOOTSTRAP_TRANS_DONE:
+		/* Don't send BOOTSTRAP_REG_FAILURE event, that is only emitted from
+		 * do_network_error() once we are out of retries.
+		 */
+		break;
+
+	case ENGINE_SEND_REGISTRATION:
+	case ENGINE_REGISTRATION_SENT:
+	case ENGINE_REGISTRATION_DONE:
+	case ENGINE_REGISTRATION_DONE_RX_OFF:
+	case ENGINE_UPDATE_REGISTRATION:
+	case ENGINE_UPDATE_SENT:
 		event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
-	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
-		event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
-	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
+		break;
+
+	case ENGINE_DEREGISTER:
+	case ENGINE_DEREGISTER_SENT:
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
-	} else {
-		/* TODO: unknown timeout state */
+		break;
+	default:
+		/* No default events for socket errors */
+		break;
 	}
 
 	set_sm_state(sm_state);
@@ -317,6 +350,7 @@ static void sm_handle_timeout_state(enum sm_engine_state sm_state)
 	k_mutex_unlock(&client.mutex);
 }
 
+/** Handle state transition where server have rejected the connection. */
 static void sm_handle_failure_state(enum sm_engine_state sm_state)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
@@ -376,7 +410,8 @@ static void socket_fault_cb(int error)
 		sm_handle_timeout_state(ENGINE_NETWORK_ERROR);
 	} else if (client.engine_state != ENGINE_SUSPENDED &&
 		   !client.server_disabled) {
-		sm_handle_failure_state(ENGINE_IDLE);
+		lwm2m_engine_stop(client.ctx);
+		sm_handle_timeout_state(ENGINE_IDLE);
 	}
 }
 
@@ -559,6 +594,8 @@ static int do_update_reply_cb(const struct coap_packet *response,
 	    (code == COAP_RESPONSE_CODE_CREATED)) {
 		/* remember the last reg time */
 		client.last_update = k_uptime_get();
+		client.server_disabled = false;
+		client.retries = 0;
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Update Done");
 		return 0;
@@ -768,7 +805,11 @@ static int sm_send_bootstrap_registration(void)
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		query_buffer);
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		LOG_ERR("Failed to send bootstrap message (err: %d)", ret);
+		goto cleanup;
+	}
 
 	return 0;
 
@@ -817,10 +858,14 @@ static void sm_do_bootstrap_reg(void)
 void engine_bootstrap_finish(void)
 {
 	LOG_INF("Bootstrap data transfer done!");
-	/* Delay the state transition, so engine have some time to send ACK
-	 * before we close the socket
+	/* Transition only if the client is bootstrapping, otherwise retransmissions of bootstrap
+	 * finish may restart an already registered client.
+	 * Delay the state transition, so engine have some time to send ACK before we close the
+	 * socket.
 	 */
-	set_sm_state_delayed(ENGINE_BOOTSTRAP_TRANS_DONE, DELAY_BEFORE_CLOSING);
+	if (get_sm_state() == ENGINE_BOOTSTRAP_REG_DONE) {
+		set_sm_state_delayed(ENGINE_BOOTSTRAP_TRANS_DONE, DELAY_BEFORE_CLOSING);
+	}
 }
 
 static int sm_bootstrap_trans_done(void)
@@ -831,6 +876,9 @@ static int sm_bootstrap_trans_done(void)
 	/* reset security object instance */
 	client.ctx->sec_obj_inst = -1;
 	client.use_bootstrap = false;
+
+	/* reset server timestamps */
+	lwm2m_server_reset_timestamps();
 
 	set_sm_state(ENGINE_DO_REGISTRATION);
 
@@ -967,7 +1015,10 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 	}
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		goto cleanup;
+	}
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
@@ -1112,7 +1163,11 @@ static int64_t next_update(void)
 static int64_t next_rx_off(void)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		if (!ongoing_traffic()) {
+			return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		} else {
+			return k_uptime_get() + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		}
 	} else {
 		return next_update();
 	}
@@ -1121,7 +1176,7 @@ static int64_t next_rx_off(void)
 /** Return timestamp to next even whether it is RX_OFF or update event */
 static int64_t calc_next_event(void)
 {
-	return Z_MIN(next_update(), next_rx_off());
+	return min(next_update(), next_rx_off());
 }
 
 static void sm_registration_done(void)
@@ -1239,7 +1294,11 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", client.server_ep);
 
-	lwm2m_send_message_async(msg);
+	ret = lwm2m_send_message_async(msg);
+	if (ret < 0) {
+		LOG_ERR("Failed to send deregistration message (err:%d).", ret);
+		goto cleanup;
+	}
 
 	set_sm_state(ENGINE_DEREGISTER_SENT);
 	return 0;
@@ -1378,6 +1437,7 @@ static void sm_do_network_error(void)
 stop_engine:
 
 	/* We are out of options, stop engine */
+	lwm2m_engine_stop(client.ctx);
 	if (client.ctx->event_cb) {
 		if (client.ctx->bootstrap_mode) {
 			client.ctx->event_cb(client.ctx,

@@ -3,8 +3,12 @@ sample:
 tests:
   sample.sensor.vcnl4040:
     harness: sensor
-    platform_allow: adafruit_feather_stm32f405
+    platform_allow:
+      - adafruit_feather_stm32f405
+      - adafruit_qt_py_rp2040/rp2040
     integration_platforms:
       - adafruit_feather_stm32f405
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_vcnl4040"
     tags: sensors
     filter: dt_compat_enabled("vishay,vcnl4040")

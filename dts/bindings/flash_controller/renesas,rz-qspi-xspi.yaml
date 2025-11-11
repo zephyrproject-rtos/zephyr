@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas RZ XSPI NOR FLASH supporting the JEDEC CFI interface
+
+    Representation of a serial flash on a quadspi bus:
+
+        mx25u51245g: qspi-nor-flash@60000000 {
+          compatible = "renesas,rz-qspi-xspi";
+          reg = <0x60000000 DT_SIZE_M(64)>; /* 512 Mbits */
+          write-block-size = <1>;
+          erase-block-size = <4096>;
+          status = "okay";
+        };
+
+compatible: "renesas,rz-qspi-xspi"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+    description: Flash Memory base address and size in bytes
+
+  erase-block-size:
+    type: int
+    default: 4096
+    description: Address alignment required by flash erase operations
+
+  write-block-size:
+    type: int
+    default: 1
+    description: Address alignment required by flash write operations

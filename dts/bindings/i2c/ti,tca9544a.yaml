@@ -1,0 +1,10 @@
+# Binding for TI TCA9544A, compatible with NXP PCA9544A
+
+description: Texas Instruments TCA9544A
+
+compatible: "ti,tca9544a"
+
+include: ti,tca954x-base.yaml
+
+child-binding:
+  compatible: "ti,tca9544a-channel"

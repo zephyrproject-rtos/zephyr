@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
- * Copyright 2022 NXP
+ * Copyright 2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,10 +37,29 @@ extern "C" {
 #define MCUX_ACMP_HAS_OFFSET 0
 #endif
 
-#if defined(FSL_FEATURE_ACMP_HAS_C3_REG) && (FSL_FEATURE_ACMP_HAS_C3_REG != 0U)
+#if defined(FSL_FEATURE_ACMP_HAS_C3_REG) && (FSL_FEATURE_ACMP_HAS_C3_REG != 0U) && \
+	(FSL_FEATURE_ACMP_HAS_NO_3V_DOMAIN == 0U)
 #define MCUX_ACMP_HAS_DISCRETE_MODE 1
 #else
 #define MCUX_ACMP_HAS_DISCRETE_MODE 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT) && (FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT == 1U)
+#define MCUX_ACMP_HAS_HYSTCTR 1
+#else
+#define MCUX_ACMP_HAS_HYSTCTR 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_NO_WINDOW_MODE) && (FSL_FEATURE_ACMP_HAS_NO_WINDOW_MODE == 1U)
+#define MCUX_ACMP_HAS_WINDOW_MODE 0
+#else
+#define MCUX_ACMP_HAS_WINDOW_MODE 1
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_NO_C0_SE_BIT) && (FSL_FEATURE_ACMP_HAS_NO_C0_SE_BIT == 1U)
+#define MCUX_ACMP_HAS_SAMPLE_CLOCK_SELECTION 0
+#else
+#define MCUX_ACMP_HAS_SAMPLE_CLOCK_SELECTION 1
 #endif
 
 enum sensor_channel_mcux_acmp {

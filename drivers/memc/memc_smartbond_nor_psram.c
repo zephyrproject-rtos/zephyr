@@ -220,6 +220,7 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 		 */
 		memc_set_status(true, DT_INST_PROP_OR(0, clock_div, 0));
 		memc_automode_configure();
+		break;
 	default:
 		return -ENOTSUP;
 	}

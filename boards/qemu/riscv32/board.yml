@@ -1,5 +1,6 @@
 board:
   name: qemu_riscv32
+  full_name: QEMU Emulation for RISCV32
   vendor: qemu
   socs:
     - name: qemu_virt_riscv32

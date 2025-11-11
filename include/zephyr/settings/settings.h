@@ -45,6 +45,9 @@ extern "C" {
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
+/* Maximum Settings name length including separators */
+#define SETTINGS_FULL_NAME_LEN ((SETTINGS_MAX_NAME_LEN) + (SETTINGS_EXTRA_LEN) + 1)
+
 /**
  * Function used to read the data from the settings storage in
  * h_set handler implementations.
@@ -69,6 +72,9 @@ struct settings_handler {
 
 	const char *name;
 	/**< Name of subtree. */
+
+	int cprio;
+	/**< Priority of commit, lower value is higher priority */
 
 	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
@@ -136,6 +142,9 @@ struct settings_handler_static {
 	const char *name;
 	/**< Name of subtree. */
 
+	int cprio;
+	/**< Priority of commit, lower value is higher priority */
+
 	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
@@ -196,21 +205,29 @@ struct settings_handler_static {
  * @param _set set routine (can be NULL)
  * @param _commit commit routine (can be NULL)
  * @param _export export routine (can be NULL)
+ * @param _cprio commit priority (lower value is higher priority)
  *
  * This creates a variable _hname prepended by settings_handler_.
  *
  */
 
-#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
-				       _export)				     \
+#define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
+						  _commit, _export, _cprio)  \
 	const STRUCT_SECTION_ITERABLE(settings_handler_static,		     \
 				      settings_handler_ ## _hname) = {       \
 		.name = _tree,						     \
+		.cprio = _cprio,					     \
 		.h_get = _get,						     \
 		.h_set = _set,						     \
 		.h_commit = _commit,					     \
 		.h_export = _export,					     \
 	}
+
+/* Handlers without commit priority are set to priority O */
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
+				       _export)				     \
+	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
+		_commit, _export, 0)
 
 /**
  * Initialization of settings and backend
@@ -224,7 +241,20 @@ struct settings_handler_static {
 int settings_subsys_init(void);
 
 /**
- * Register a handler for settings items stored in RAM.
+ * Register a handler for settings items stored in RAM with
+ * commit priority.
+ *
+ * @param cf   Structure containing registration info.
+ * @param cprio Commit priority (lower value is higher priority).
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_register_with_cprio(struct settings_handler *cf,
+				 int cprio);
+
+/**
+ * Register a handler for settings items stored in RAM with
+ * commit priority set to default.
  *
  * @param cf Structure containing registration info.
  *
@@ -250,6 +280,25 @@ int settings_load(void);
  * @return 0 on success, non-zero on failure.
  */
 int settings_load_subtree(const char *subtree);
+
+/**
+ * Load one serialized item from registered persistence sources.
+ *
+ * @param[in]  name    Name/key of the settings item.
+ * @param[out] buf     Pointer to the buffer where the data is going to be loaded
+ * @param[in]  buf_len Length of the allocated buffer.
+ * @return     actual size of value that corresponds to name on success, negative
+ *             value on failure.
+ */
+ssize_t settings_load_one(const char *name, void *buf, size_t buf_len);
+
+/**
+ * Get the data length of the value relative to the key
+ *
+ * @param[in] key Name/key of the settings item.
+ * @return length of value if item exists, 0 if not and negative value on failure.
+ */
+ssize_t settings_get_val_len(const char *key);
 
 /**
  * Callback function used for direct loading.
@@ -420,8 +469,8 @@ struct settings_store_itf {
 	/**< Loads values from storage limited to subtree defined by subtree.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node,
-	 *  - arg - Structure that holds additional data for data loading.
+	 *  - cs[in] - Corresponding backend handler node,
+	 *  - arg[in] - Structure that holds additional data for data loading.
 	 *
 	 * @note
 	 * Backend is expected not to provide duplicates of the entities.
@@ -430,11 +479,31 @@ struct settings_store_itf {
 	 * load callback only on the final entity.
 	 */
 
+	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name,
+				char *buf, size_t buf_len);
+	/**< Loads one value from storage that corresponds to the key defined by name.
+	 *
+	 * Parameters:
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
+	 *  - buf[in] - Buffer where data should be copied.
+	 *  - buf_len[in] - Length of buf.
+	 */
+
+	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
+	/**< Gets the value's length associated to the Key defined by name.
+	 * It returns 0 if the Key/Value doesn't exist.
+	 *
+	 * Parameters:
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
+	 */
+
 	int (*csi_save_start)(struct settings_store *cs);
 	/**< Handler called before an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	int (*csi_save)(struct settings_store *cs, const char *name,
@@ -442,23 +511,23 @@ struct settings_store_itf {
 	/**< Save a single key-value pair to storage.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
-	 *  - name - Key in string format
-	 *  - value - Binary value
-	 *  - val_len - Length of value in bytes.
+	 *  - cs[in] - Corresponding backend handler node
+	 *  - name[in] - Key in string format
+	 *  - value[in] - Binary value
+	 *  - val_len[in] - Length of value in bytes.
 	 */
 
 	int (*csi_save_end)(struct settings_store *cs);
 	/**< Handler called after an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	/**< Get pointer to the storage instance used by the backend.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 	void *(*csi_storage_get)(struct settings_store *cs);
 };

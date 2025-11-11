@@ -1,7 +1,4 @@
-.. _slwrb4104a:
-
-EFR32BG13 2.4 GHz 10 dBm (SLWRB4104A)
-#####################################
+.. zephyr:board:: slwrb4104a
 
 Overview
 ********
@@ -10,12 +7,6 @@ The EFR32BG13 Blue Gecko Bluetooth® Low Energy Radio Board is one of the two
 radio boards delivered with `SLWSTK6020B Bluetooth SoC Starter Kit`_. It
 contains a Wireless System-On-Chip from the EFR32BG13 family built on an
 ARM Cortex®-M4F processor with excellent low power capabilities.
-
-.. figure:: efr32bg13-slwrb4104a.jpg
-   :align: center
-   :alt: SLWRB4104A Blue Gecko Bluetooth® Low Energy Radio Board
-
-   SLWRB4104A (image courtesy of Silicon Labs)
 
 The BRD4104A a.k.a. SLWRB4104A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -46,33 +37,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/radio_boards/slwrb4104a/slwrb4104a_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -122,13 +87,15 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
 Connect the BRD4001A board with a mounted BRD4104A radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

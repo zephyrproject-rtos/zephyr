@@ -45,28 +45,8 @@ else()
   list(APPEND TOOLCHAIN_C_FLAGS "-m32")
 endif()
 
-
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
-
-list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-if(LIBGCC_DIR)
-  list(APPEND TOOLCHAIN_LIBS gcc)
-endif()
-
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-
-# Load toolchain_cc-family macros
-macro(toolchain_cc_nostdinc)
-    zephyr_compile_options( -nostdinc)
-endmacro()
 
 if(CONFIG_CPP)
   list(APPEND TOOLCHAIN_C_FLAGS "-no-intel-lib=libirc")

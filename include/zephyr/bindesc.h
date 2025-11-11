@@ -4,8 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for binary descriptors
+ * @ingroup bindesc
+ */
+
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
+
+/**
+ * @defgroup bindesc Binary Descriptors
+ * @ingroup os_services
+ * @{
+ */
 
 #include <zephyr/sys/util_macro.h>
 
@@ -17,16 +29,28 @@ extern "C" {
  * Corresponds to the definitions in scripts/west_commands/bindesc.py.
  * Do not change without syncing the definitions in both files!
  */
+
+/** Magic number used to identify binary descriptor sections in firmware images */
 #define BINDESC_MAGIC 0xb9863e5a7ea46046
+/** Required memory alignment for binary descriptor entries */
 #define BINDESC_ALIGNMENT 4
-#define BINDESC_TYPE_UINT 0x0
-#define BINDESC_TYPE_STR 0x1
-#define BINDESC_TYPE_BYTES 0x2
-#define BINDESC_TYPE_DESCRIPTORS_END 0xf
+
+/** @name Binary Descriptor Types */
+/** @{ */
+#define BINDESC_TYPE_UINT            0x0 /**< Unsigned integer data */
+#define BINDESC_TYPE_STR             0x1 /**< String data */
+#define BINDESC_TYPE_BYTES           0x2 /**< Byte array data */
+#define BINDESC_TYPE_DESCRIPTORS_END 0xf /**< Marks the end of binary descriptor section */
+/** @} */
+
+/** Size of the header of a binary descriptor entry */
+/* Needed as sizeof ignores the data as it's a flexible array */
+#define BINDESC_ENTRY_HEADER_SIZE (sizeof(struct bindesc_entry))
 
 /**
- * @brief Binary Descriptor Definition
- * @defgroup bindesc_define Bindesc Define
+ * @brief Macros for defining binary descriptors in firmware images
+ * @defgroup bindesc_define Binary Descriptor Definition
+ * @ingroup bindesc
  * @{
  */
 
@@ -50,6 +74,9 @@ extern "C" {
 /** The app version number such as 0x10203 */
 #define BINDESC_ID_APP_VERSION_NUMBER 0x804
 
+/** The app git reference such as "v3.3.0-18-g2c85d9224fca" */
+#define BINDESC_ID_APP_BUILD_VERSION 0x805
+
 /** The kernel version string such as "3.4.0" */
 #define BINDESC_ID_KERNEL_VERSION_STRING 0x900
 
@@ -64,6 +91,9 @@ extern "C" {
 
 /** The kernel version number such as 0x30400 */
 #define BINDESC_ID_KERNEL_VERSION_NUMBER 0x904
+
+/** The kernel git reference such as "v3.3.0-18-g2c85d9224fca" */
+#define BINDESC_ID_KERNEL_BUILD_VERSION 0x905
 
 /** The year the image was compiled in */
 #define BINDESC_ID_BUILD_TIME_YEAR 0xa00
@@ -110,6 +140,7 @@ extern "C" {
 /** The C++ compiler version */
 #define BINDESC_ID_CXX_COMPILER_VERSION 0xb04
 
+/** The end of binary descriptor section */
 #define BINDESC_TAG_DESCRIPTORS_END BINDESC_TAG(DESCRIPTORS_END, 0x0fff)
 
 /**
@@ -125,12 +156,20 @@ extern "C" {
 #define BINDESC_TAG(type, id) ((BINDESC_TYPE_##type & 0xf) << 12 | (id & 0x0fff))
 
 /**
+ * @brief Utility macro to get the type of a bindesc tag
+ *
+ * @param tag Tag to get the type of
+ */
+#define BINDESC_GET_TAG_TYPE(tag) ((tag >> 12) & 0xf)
+
+/**
  * @endcond
  */
 
-#if !defined(_LINKER)
+#if !defined(_LINKER) || defined(__DOXYGEN__)
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -164,12 +203,15 @@ extern "C" {
  * @param id Unique ID of the descriptor
  * @param value A string value for the descriptor
  */
-#define BINDESC_STR_DEFINE(name, id, value)	\
-	__BINDESC_ENTRY_DEFINE(name) = {	\
-		.tag = BINDESC_TAG(STR, id),	\
-		.len = (uint16_t)sizeof(value),	\
-		.data = value,			\
-	}
+#define BINDESC_STR_DEFINE(name, id, value)							\
+	__BINDESC_ENTRY_DEFINE(name) = {							\
+		.tag = BINDESC_TAG(STR, id),							\
+		.len = (uint16_t)sizeof(value),							\
+		.data = value,									\
+	};											\
+	BUILD_ASSERT(sizeof(value) <= CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE,			\
+		     "Bindesc " STRINGIFY(name) " exceeded maximum size, consider reducing the"	\
+		     " size or changing CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE. ")
 
 /**
  * @brief Define a binary descriptor of type uint.
@@ -210,12 +252,16 @@ extern "C" {
  * @param id Unique ID of the descriptor
  * @param value A uint8_t array as data for the descriptor
  */
-#define BINDESC_BYTES_DEFINE(name, id, value)				\
-	__BINDESC_ENTRY_DEFINE(name) = {				\
-		.tag = BINDESC_TAG(BYTES, id),				\
-		.len = (uint16_t)sizeof((uint8_t [])__DEBRACKET value),	\
-		.data = __DEBRACKET value,				\
-	}
+#define BINDESC_BYTES_DEFINE(name, id, value)							\
+	__BINDESC_ENTRY_DEFINE(name) = {							\
+		.tag = BINDESC_TAG(BYTES, id),							\
+		.len = (uint16_t)sizeof((uint8_t [])__DEBRACKET value),				\
+		.data = __DEBRACKET value,							\
+	};											\
+	BUILD_ASSERT(sizeof((uint8_t [])__DEBRACKET value) <=					\
+		     CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE,					\
+		     "Bindesc " STRINGIFY(name) " exceeded maximum size, consider reducing the"	\
+		     " size or changing CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE. ")
 
 /**
  * @brief Get the value of a string binary descriptor
@@ -264,9 +310,19 @@ extern "C" {
  */
 #define BINDESC_GET_SIZE(name) BINDESC_NAME(name).len
 
-/*
- * An entry of the binary descriptor header. Each descriptor is
- * described by one of these entries.
+/**
+ * @}
+ */
+
+/**
+ * @brief Functions for reading binary descriptors from firmware images
+ * @defgroup bindesc_read Binary Descriptor Reading
+ * @ingroup bindesc
+ * @{
+ */
+
+/**
+ * @brief Structure for a binary descriptor entry
  */
 struct bindesc_entry {
 	/** Tag of the entry */
@@ -277,6 +333,7 @@ struct bindesc_entry {
 	uint8_t data[];
 } __packed;
 
+/** @cond INTERNAL_HIDDEN */
 /*
  * We're assuming that `struct bindesc_entry` has a specific layout in
  * memory, so it's worth making sure that the layout is really what we
@@ -286,6 +343,177 @@ struct bindesc_entry {
 BUILD_ASSERT(offsetof(struct bindesc_entry, tag) == 0, "Incorrect memory layout");
 BUILD_ASSERT(offsetof(struct bindesc_entry, len) == 2, "Incorrect memory layout");
 BUILD_ASSERT(offsetof(struct bindesc_entry, data) == 4, "Incorrect memory layout");
+/** @endcond */
+
+/**
+ * @brief Handle for reading binary descriptors from firmware images
+ */
+struct bindesc_handle {
+	/** @cond INTERNAL_HIDDEN */
+	const uint8_t *address;
+	enum {
+		BINDESC_HANDLE_TYPE_RAM,
+		BINDESC_HANDLE_TYPE_MEMORY_MAPPED_FLASH,
+		BINDESC_HANDLE_TYPE_FLASH,
+	} type;
+	size_t size_limit;
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
+	const struct device *flash_device;
+	uint8_t buffer[sizeof(struct bindesc_entry) +
+			CONFIG_BINDESC_READ_FLASH_MAX_DATA_SIZE] __aligned(BINDESC_ALIGNMENT);
+#endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
+	/** @endcond */
+};
+
+/**
+ * @brief Callback type to be called on descriptors found during a walk
+ *
+ * @param entry Current descriptor
+ * @param user_data The user_data given to @ref bindesc_foreach
+ *
+ * @return Any non zero value will halt the walk
+ */
+typedef int (*bindesc_callback_t)(const struct bindesc_entry *entry, void *user_data);
+
+/**
+ * @brief Open an image's binary descriptors for reading, from a memory mapped flash
+ *
+ * @details
+ * Initializes a bindesc handle for subsequent calls to bindesc API.
+ * Memory mapped flash is any flash that can be directly accessed by the CPU,
+ * without needing to use the flash API for copying the data to RAM.
+ *
+ * @param[out] handle Bindesc handle to be given to subsequent calls
+ * @param offset The offset from the beginning of the flash that the bindesc magic can be found at
+ *
+ * @retval 0 On success
+ * @retval -ENOENT If no bindesc magic was found at the given offset
+ */
+int bindesc_open_memory_mapped_flash(struct bindesc_handle *handle, size_t offset);
+
+/**
+ * @brief Open an image's binary descriptors for reading, from RAM
+ *
+ * @details
+ * Initializes a bindesc handle for subsequent calls to bindesc API.
+ * It's assumed that the whole bindesc context was copied to RAM prior to calling
+ * this function, either by the user or by a bootloader.
+ *
+ * @note The given address must be aligned to @ref BINDESC_ALIGNMENT
+ *
+ * @param[out] handle Bindesc handle to be given to subsequent calls
+ * @param address The address that the bindesc magic can be found at
+ * @param max_size Maximum size of the given buffer
+ *
+ * @retval 0 On success
+ * @retval -ENOENT If no bindesc magic was found at the given address
+ * @retval -EINVAL If the given address is not aligned
+ */
+int bindesc_open_ram(struct bindesc_handle *handle, const uint8_t *address, size_t max_size);
+
+/**
+ * @brief Open an image's binary descriptors for reading, from flash
+ *
+ * @details
+ * Initializes a bindesc handle for subsequent calls to bindesc API.
+ * As opposed to reading bindesc from RAM or memory mapped flash, this
+ * backend requires reading the data from flash to an internal buffer
+ * using the flash API
+ *
+ * @param[out] handle Bindesc handle to be given to subsequent calls
+ * @param offset The offset from the beginning of the flash that the bindesc magic can be found at
+ * @param flash_device Flash device to read descriptors from
+ *
+ * @kconfig_dep{CONFIG_BINDESC_READ_FLASH}
+ *
+ * @retval 0 On success
+ * @retval -ENOENT If no bindesc magic was found at the given offset
+ */
+int bindesc_open_flash(struct bindesc_handle *handle, size_t offset,
+		       const struct device *flash_device);
+
+/**
+ * @brief Walk the binary descriptors and run a user defined callback on each of them
+ *
+ * @note
+ * If the callback returns a non zero value, the walk stops.
+ *
+ * @param handle An initialized bindesc handle
+ * @param callback A user defined callback to be called on each descriptor
+ * @param user_data User defined data to be given to the callback
+ *
+ * @return If the walk was finished prematurely by the callback,
+ *         return the callback's retval, zero otherwise
+ */
+int bindesc_foreach(struct bindesc_handle *handle, bindesc_callback_t callback, void *user_data);
+
+/**
+ * @brief Find a specific descriptor of type string
+ *
+ * @warning
+ * When using the flash backend, result will be invalidated by the next call to any bindesc API.
+ * Use the value immediately or copy it elsewhere.
+ *
+ * @param handle An initialized bindesc handle
+ * @param id ID to search for
+ * @param result Pointer to the found string
+ *
+ * @retval 0 If the descriptor was found
+ * @retval -ENOENT If the descriptor was not found
+ */
+int bindesc_find_str(struct bindesc_handle *handle, uint16_t id, const char **result);
+
+/**
+ * @brief Find a specific descriptor of type uint
+ *
+ * @warning
+ * When using the flash backend, result will be invalidated by the next call to any bindesc API.
+ * Use the value immediately or copy it elsewhere.
+ *
+ * @param handle An initialized bindesc handle
+ * @param id ID to search for
+ * @param result Pointer to the found uint
+ *
+ * @retval 0 If the descriptor was found
+ * @retval -ENOENT If the descriptor was not found
+ */
+int bindesc_find_uint(struct bindesc_handle *handle, uint16_t id, const uint32_t **result);
+
+/**
+ * @brief Find a specific descriptor of type bytes
+ *
+ * @warning
+ * When using the flash backend, result will be invalidated by the next call to any bindesc API.
+ * Use the value immediately or copy it elsewhere.
+ *
+ * @param handle An initialized bindesc handle
+ * @param id ID to search for
+ * @param result Pointer to the found bytes
+ * @param result_size Size of the found bytes
+ *
+ * @retval 0 If the descriptor was found
+ * @retval -ENOENT If the descriptor was not found
+ */
+int bindesc_find_bytes(struct bindesc_handle *handle, uint16_t id, const uint8_t **result,
+		       size_t *result_size);
+
+/**
+ * @brief Get the size of an image's binary descriptors
+ *
+ * @details
+ * Walks the binary descriptor structure to caluculate the total size of the structure
+ * in bytes. This is useful, for instance, if the whole structure is to be copied to RAM.
+ *
+ * @param handle An initialized bindesc handle
+ * @param result Pointer to write result to
+ *
+ * @return 0 On success, negative errno otherwise
+ */
+int bindesc_get_size(struct bindesc_handle *handle, size_t *result);
+
+/**
+ * @}
+ */
 
 #if defined(CONFIG_BINDESC_KERNEL_VERSION_STRING)
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_string);
@@ -307,6 +535,10 @@ extern const struct bindesc_entry BINDESC_NAME(kernel_version_patchlevel);
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_number);
 #endif /* defined(CONFIG_BINDESC_KERNEL_VERSION_NUMBER) */
 
+#if defined(CONFIG_BINDESC_KERNEL_BUILD_VERSION)
+extern const struct bindesc_entry BINDESC_NAME(kernel_build_version);
+#endif /* defined(CONFIG_BINDESC_KERNEL_BUILD_VERSION) */
+
 #if defined(CONFIG_BINDESC_APP_VERSION_STRING)
 extern const struct bindesc_entry BINDESC_NAME(app_version_string);
 #endif /* defined(CONFIG_BINDESC_APP_VERSION_STRING) */
@@ -326,6 +558,10 @@ extern const struct bindesc_entry BINDESC_NAME(app_version_patchlevel);
 #if defined(CONFIG_BINDESC_APP_VERSION_NUMBER)
 extern const struct bindesc_entry BINDESC_NAME(app_version_number);
 #endif /* defined(CONFIG_BINDESC_APP_VERSION_NUMBER) */
+
+#if defined(CONFIG_BINDESC_APP_BUILD_VERSION)
+extern const struct bindesc_entry BINDESC_NAME(app_build_version);
+#endif /* defined(CONFIG_BINDESC_APP_BUILD_VERSION) */
 
 #if defined(CONFIG_BINDESC_BUILD_TIME_YEAR)
 extern const struct bindesc_entry BINDESC_NAME(build_time_year);
@@ -389,12 +625,12 @@ extern const struct bindesc_entry BINDESC_NAME(cxx_compiler_version);
 
 #endif /* !defined(_LINKER) */
 
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_ */

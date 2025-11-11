@@ -29,11 +29,13 @@ config SX9500_TRIGGER_NONE
 
 config SX9500_TRIGGER_GLOBAL_THREAD
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SEMTECH_SX9500),int-gpios)
 	select SX9500_TRIGGER
 	bool "Use global thread"
 
 config SX9500_TRIGGER_OWN_THREAD
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SEMTECH_SX9500),int-gpios)
 	select SX9500_TRIGGER
 	bool "Use own thread"
 

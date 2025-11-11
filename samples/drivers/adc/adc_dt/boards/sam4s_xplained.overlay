@@ -17,21 +17,21 @@
 
 	/* External ADC(+) */
 	channel@5 {
- 		reg = <5>;
- 		zephyr,gain = "ADC_GAIN_1";
- 		zephyr,reference = "ADC_REF_EXTERNAL0";
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
- 		zephyr,input-positive = <5>;
+		zephyr,input-positive = <5>;
 		zephyr,resolution = <12>;
 	};
 
 	/* Internal temperature sensor */
 	channel@f {
- 		reg = <15>;
- 		zephyr,gain = "ADC_GAIN_1";
- 		zephyr,reference = "ADC_REF_EXTERNAL0";
+		reg = <15>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
- 		zephyr,input-positive = <15>;
+		zephyr,input-positive = <15>;
 		zephyr,resolution = <12>;
 	};
 };

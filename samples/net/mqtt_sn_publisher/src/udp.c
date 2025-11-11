@@ -17,6 +17,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mqtt_sn_publisher_sample);
 
+#ifdef CONFIG_NET_SAMPLE_MQTT_SN_STATIC_GATEWAY
+#define SAMPLE_GW_ADDRESS CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_ADDRESS
+#else
+#define SAMPLE_GW_ADDRESS ""
+#endif
+
 static void process_thread(void);
 
 K_THREAD_DEFINE(udp_thread_id, STACK_SIZE, process_thread, NULL, NULL, NULL, THREAD_PRIORITY,
@@ -55,6 +61,17 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 		break;
 	case MQTT_SN_EVT_PINGRESP: /* Received a PINGRESP */
 		LOG_INF("MQTT-SN event EVT_PINGRESP");
+		break;
+	case MQTT_SN_EVT_ADVERTISE: /* Received a ADVERTISE */
+		LOG_INF("MQTT-SN event EVT_ADVERTISE");
+		break;
+	case MQTT_SN_EVT_GWINFO: /* Received a GWINFO */
+		LOG_INF("MQTT-SN event EVT_GWINFO");
+		break;
+	case MQTT_SN_EVT_SEARCHGW: /* Received a SEARCHGW */
+		LOG_INF("MQTT-SN event EVT_SEARCHGW");
+		break;
+	default:
 		break;
 	}
 }
@@ -109,27 +126,57 @@ static int do_work(void)
 
 static void process_thread(void)
 {
-	struct sockaddr_in gateway = {0};
+	struct sockaddr bcaddr = {0};
 	int err;
+	bool success;
 
-	LOG_DBG("Parsing MQTT host IP " CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_IP);
-	gateway.sin_family = AF_INET;
-	gateway.sin_port = htons(CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_PORT);
-	err = inet_pton(AF_INET, CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_IP, &gateway.sin_addr);
-	__ASSERT(err == 1, "inet_pton() failed %d", err);
+	LOG_DBG("Parsing Broadcast Address " CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_ADDRESS);
+	success = net_ipaddr_parse(CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_ADDRESS,
+				   strlen(CONFIG_NET_SAMPLE_MQTT_SN_BROADCAST_ADDRESS), &bcaddr);
+	__ASSERT(success, "net_ipaddr_parse() failed");
 
 	LOG_INF("Waiting for connection...");
-	LOG_HEXDUMP_DBG(&gateway, sizeof(gateway), "gateway");
+	LOG_HEXDUMP_DBG(&bcaddr, sizeof(bcaddr), " broadcast address");
 
-	LOG_INF("Connecting client");
-
-	err = mqtt_sn_transport_udp_init(&tp, (struct sockaddr *)&gateway, sizeof((gateway)));
+	err = mqtt_sn_transport_udp_init(&tp, &bcaddr, sizeof((bcaddr)));
 	__ASSERT(err == 0, "mqtt_sn_transport_udp_init() failed %d", err);
 
 	err = mqtt_sn_client_init(&mqtt_client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf),
 				  rx_buf, sizeof(rx_buf));
 	__ASSERT(err == 0, "mqtt_sn_client_init() failed %d", err);
 
+	if (IS_ENABLED(CONFIG_NET_SAMPLE_MQTT_SN_STATIC_GATEWAY)) {
+		LOG_INF("Adding predefined Gateway");
+		struct sockaddr gwaddr = {0};
+
+		LOG_DBG("Parsing Gateway address %s", SAMPLE_GW_ADDRESS);
+		success = net_ipaddr_parse(SAMPLE_GW_ADDRESS, strlen(SAMPLE_GW_ADDRESS), &gwaddr);
+		__ASSERT(success, "net_ipaddr_parse() failed");
+		struct mqtt_sn_data gwaddr_data = {.data = (uint8_t *)&gwaddr,
+						   .size = sizeof(gwaddr)};
+		/* Reduce size to allow this to work with smaller values for
+		 * CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE.
+		 */
+		switch (gwaddr.sa_family) {
+		case AF_INET:
+			gwaddr_data.size = sizeof(struct sockaddr_in);
+			break;
+		case AF_INET6:
+			gwaddr_data.size = sizeof(struct sockaddr_in6);
+			break;
+		}
+
+		err = mqtt_sn_add_gw(&mqtt_client, 0x1f, gwaddr_data);
+		__ASSERT(err == 0, "mqtt_sn_add_gw() failed %d", err);
+	} else {
+		LOG_INF("Searching for Gateway");
+		err = mqtt_sn_search(&mqtt_client, 1);
+		k_sleep(K_SECONDS(10));
+		err = mqtt_sn_input(&mqtt_client);
+		__ASSERT(err == 0, "mqtt_sn_search() failed %d", err);
+	}
+
+	LOG_INF("Connecting client");
 	err = mqtt_sn_connect(&mqtt_client, false, true);
 	__ASSERT(err == 0, "mqtt_sn_connect() failed %d", err);
 

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH32V003F4P6_DEV_BOARD
+	select SOC_CH32V003

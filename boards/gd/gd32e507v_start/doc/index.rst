@@ -1,7 +1,4 @@
-.. _gd32e507v_start:
-
-GigaDevice GD32E507V-START
-##########################
+.. zephyr:board:: gd32e507v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32E507VE Cortex-M33 High Performance MCU.
 The GD32E507VE features a single-core ARM Cortex-M33 MCU which can run up
 to 180 MHz with flash accesses zero wait states, 512kiB of Flash, 128kiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32e507v_start.jpg
-     :align: center
-     :alt: gd32e507v_start
 
 Hardware
 ********
@@ -37,34 +30,7 @@ For more information about the GD32E507 SoC and GD32E507V-START board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-
-Other peripherals may be used if shields are connected to the board.
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -75,6 +41,8 @@ virtual COM port via the CN3 USB connector.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot jumpers as
 follows:
@@ -94,7 +62,7 @@ provided you install the necessary CMSIS-Pack:
 J-Link can also be used to program the board using the SWD interface exposed in
 the JP1 header.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

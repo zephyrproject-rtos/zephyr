@@ -1,7 +1,4 @@
-.. _mimxrt1060_evk:
-
-NXP MIMXRT1060-EVK
-##################
+.. zephyr:board:: mimxrt1060_evk
 
 Overview
 ********
@@ -15,9 +12,6 @@ ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1060 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
 
-.. image:: mimxrt1060_evk.jpg
-   :align: center
-   :alt: MIMXRT1060-EVK
 
 Hardware
 ********
@@ -93,7 +87,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| IS42S16160J        | FLEXSPI    | Enabled via flash configurationn    |
+| IS42S16160J        | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -101,64 +95,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1060_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1060_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
-|           |            | :ref:`rk043fn02h_ct`, and           |
-|           |            | :ref:`rk043fn66hs_ctg` shields      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| SAI       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1060_evk/mimxrt1060_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1060_evk board.
 
 Connections and I/Os
 ====================
@@ -191,6 +136,10 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_B1_00 | LPI2C1_SCL      | I2C                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS     | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS     | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
@@ -322,14 +271,49 @@ The MIMXRT1060 SoC has eight UARTs. ``LPUART1`` is configured for the console,
 ``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
+Board Revisions and Targets
+***************************
+
+There are three revisions of this board.
+
+Rev A:
+
+* Initial version
+
+Rev B:
+
+* adds the M.2 connector for Wi-Fi/BLE
+* adds audio expansion connector J23
+* USER LED1 changed to GPIO1 pin 8
+
+Rev C:
+
+* Replaces audio codec WM8960(EOL) to WM8962
+* Replaces 32.768 KHz oscillator from ASH7K-32.768KHz-T(EOL)to ASH7KW-32.768KHZ-L-T
+* Replaces motion sensor from FXOS8700CQ(EOL) to FXLS8974CFR3
+* Re-assigns Bluetooth Audio PCM with dedicated I2S2
+* Re-assigns Bluetooth interface UART_CTS, UART_RTS to hardware PIN
+
+This board has two variants that can be targeted,
+depending on which flash to set as ``zephyr,flash``:
+
+* ``mimxrt1060_evk/mimxrt1062/qspi`` is the default variant for the out of box
+  setup of the board using the qspi flash.
+* ``mimxrt1060_evk/mimxrt1062/hyperflash`` is for a board that has been reworked to use the
+  hyperflash instead of the qspi flash.
+* This board also has two revisions, the EVKA and EVKB. EVKA is the default target for this board.
+  To target EVKB, the board target string would become ``mimxrt1060_evk@B//qspi``, for example.
+
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`linkserver-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not Supported by NXP)
 
@@ -340,13 +324,27 @@ details).
 Configuring a Debug Probe
 =========================
 
-Two revisions of the RT1060 EVK exist. For the RT1060 EVK, J47/J48 are the SWD
-isolation jumpers, J42 is the DFU mode jumper, and the 20 pin JTAG/SWD header
-is present on J21. For the RT1060 EVKB, J9/J10 are the SWD isolation jumpers,
-J12 is the DFU mode jumper, and the 20 pin JTAG/SWD header is present on J2.
+Three revisions of the RT1060 EVK exist. For all of them, to replace the debug firmware, short the
+DFU jumper to boot the on board debugger to ISP mode.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+* RT1060 EVK (Revision A)
+
+  * SWD isolation jumpers: J47/48
+  * 20 pin JTAG/SWD header: J21
+  * DFU mode jumper: J42
+
+* RT1060 EVKB
+
+  * SWD isolation jumpers: J9/10
+  * 20 pin JTAG/SWD header: J2
+  * DFU mode jumper: J12
+
+* RT1060 EVKC
+
+  * Debugger choice jumper: JP5
+  * DFU mode jumper: JP3
+
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ or `Using J-Link with
 MIMXRT1060-EVKB`_ for more details.
@@ -378,12 +376,30 @@ SWO frequency of 7500KHz.
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mimxrt1060_evk
-   :goals: flash
+.. tabs::
+
+   .. group-tab:: i.MX RT1060 Rev A
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@A//qspi
+         :goals: flash
+
+   .. group-tab:: i.MX RT1060 Rev B
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@B//qspi
+         :goals: flash
+
+   .. group-tab:: i.MX RT1060 Rev C (default)
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@C//qspi
+         :goals: flash
 
 Open a serial terminal, reset the board (press the SW9 button), and you should
 see the following message in the terminal:
@@ -391,17 +407,36 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1060_evk
+   Hello World! mimxrt1060_evk//qspi
 
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mimxrt1060_evk
-   :goals: debug
+.. tabs::
+
+   .. group-tab:: i.MX RT1060 Rev A
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@A//qspi
+         :goals: debug
+
+   .. group-tab:: i.MX RT1060 Rev B
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@B//qspi
+         :goals: debug
+
+   .. group-tab:: i.MX RT1060 Rev C (default)
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@C//qspi
+         :goals: debug
+
 
 Open a serial terminal, step through the application in your debugger, and you
 should see the following message in the terminal:
@@ -409,7 +444,15 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1060_evk
+   Hello World! mimxrt1060_evk//qspi
+
+Shield for M.2 Wi-Fi and BT Interface
+=====================================
+
+Rev C version is tested with :ref:`nxp_m2_wifi_bt` shield to attach any M.2 module
+with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+HCI driver or SDIO driver to perform firmware-load and other setup configurations
+for NXP SoC IW416/IW612/IW610.
 
 Troubleshooting
 ===============
@@ -445,6 +488,8 @@ steps:
 If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly.
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1060-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1060-evaluation-kit:MIMXRT1060-EVKB

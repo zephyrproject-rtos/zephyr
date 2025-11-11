@@ -21,9 +21,9 @@
 #endif
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME_PHYS CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME_PHYS "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME_PHYS CONFIG_MMC_VOLUME_NAME
+#define DISK_NAME_PHYS "SD2"
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME_PHYS "NAND"
 #elif defined(CONFIG_NVME)
@@ -285,4 +285,11 @@ static void *disk_driver_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
+static void disk_driver_teardown(void *fixture)
+{
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	(void)loopback_disk_access_unregister(&lo_access);
+#endif
+}
+
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, disk_driver_teardown);

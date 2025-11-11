@@ -10,6 +10,7 @@ toolchain:
 supported:
   - can
   - counter
+  - flash
   - gpio
   - i2c
   - nvs

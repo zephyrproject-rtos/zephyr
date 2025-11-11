@@ -52,5 +52,13 @@ properties:
     type: int
     description: hardware trigger source (See ADCxTRGSEL field in user manual for more details)
 
+  has-differential-mode:
+    type: boolean
+    description: |
+      Controller instance supports differential channel conversion.
+      This expresses the hardware capability of this particular ADC
+      instance and should be set in SoC dtsi. Board dts files should
+      not modify this.
+
 io-channel-cells:
   - input

@@ -1,5 +1,5 @@
 common:
-  harness: net
+  depends_on: netif
   min_ram: 60
   tags:
     - http
@@ -9,8 +9,5 @@ common:
   integration_platforms:
     - native_sim
     - qemu_x86
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   net.http.server.crime: {}

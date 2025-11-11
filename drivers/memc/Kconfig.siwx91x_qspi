@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_SILABS_SIWX91X_QSPI
+	bool "Silabs SiWx91x QSPI memory controller"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_QSPI_MEMORY_ENABLED
+	select PINCTRL
+	help
+	  Enable Silabs SiWx91x QSPI (Quad Serial Peripheral Interface) memory
+	  controller.
+
+	  If you want to rely on the linker to place symbols in this memory
+	  (using`zephyr_code_relocate() or Z_GENERIC_SECTION()), you have to
+	  ensure this driver in initialized before KERNEL_INIT_PRIORITY_OBJECTS
+	  (=30). In addition, this driver may depends on a clock. Then, you have
+	  to ensure the clock will be started before this driver (see
+	  CLOCK_CONTROL_INIT_PRIORITY)

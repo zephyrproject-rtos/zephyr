@@ -1,5 +1,6 @@
 board:
   name: qemu_leon3
+  full_name: QEMU Emulation for LEON3
   vendor: gaisler
   socs:
   - name: leon3

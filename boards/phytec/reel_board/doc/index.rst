@@ -497,7 +497,7 @@ Build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -528,7 +528,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -552,6 +552,8 @@ your board.
 References
 **********
 
+.. target-notes::
+
 .. _reel board Website:
    https://www.phytec.de/reelboard/
 
@@ -561,4 +563,4 @@ References
    https://www.phytec.de/reelboard/
 
 .. _DAPLink reel board Firmware:
-   https://github.com/PHYTEC-Messtechnik-GmbH/DAPLink/tree/reel-board
+   https://github.com/phytec/DAPLink/tree/reel-board

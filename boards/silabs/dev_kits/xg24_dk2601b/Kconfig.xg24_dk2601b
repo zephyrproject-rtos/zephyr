@@ -1,7 +1,5 @@
-# EFR32XG24 DK2601B board
-
 # Copyright (c) 2021, Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_XG24_DK2601B
-	select SOC_PART_NUMBER_EFR32MG24B310F1536IM48
+	select SOC_EFR32MG24B310F1536IM48

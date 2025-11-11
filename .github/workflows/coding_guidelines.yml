@@ -2,35 +2,37 @@ name: Coding Guidelines
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   compliance_job:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
-    - name: cache-pip
-      uses: actions/cache@v4
+    - name: Set up Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/coding_guidelines.yml') }}
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: Install python dependencies
+    - name: Install Python packages
       run: |
-        pip3 install unidiff
-        pip3 install wheel
-        pip3 install sh
+        pip install -r scripts/requirements-actions.txt --require-hashes
 
     - name: Install Packages
       run: |
         sudo apt-get update
         sudo apt-get install coccinelle
 
-    - name: Run Coding Guildeines Checks
+    - name: Run Coding Guidelines Checks
       continue-on-error: true
       id: coding_guidelines
       env:
@@ -40,7 +42,10 @@ jobs:
         git config --global user.email "actions@zephyrproject.org"
         git config --global user.name "Github Actions"
         git remote -v
+        rm -fr ".git/rebase-apply"
+        rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
+        git clean -f -d
         source zephyr-env.sh
         # debug
         ls -la

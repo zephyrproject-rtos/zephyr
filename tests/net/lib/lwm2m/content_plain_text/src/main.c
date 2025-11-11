@@ -52,6 +52,7 @@ static void test_prepare_nodata(void *dummy)
 
 	context_reset();
 
+	test_packet.hdr_len = sizeof(test_payload);
 	test_packet.offset = sizeof(test_payload);
 	test_in.offset = sizeof(test_payload);
 }
@@ -353,6 +354,9 @@ ZTEST(net_content_plain_text, test_get_s64)
 	char * const payload[] = {
 		"0", "9223372036854775807", "-9223372036854775808"
 	};
+	char * const payload_overflow[] = {
+		"9223372036854775808", "-9223372036854775809"
+	};
 	int64_t expected_value[] = { 0, INT64_MAX, INT64_MIN };
 	int64_t value;
 
@@ -365,6 +369,13 @@ ZTEST(net_content_plain_text, test_get_s64)
 		zassert_equal(value, expected_value[i], "Invalid value parsed");
 		zassert_equal(test_in.offset, strlen(payload[i]) + 1,
 			      "Invalid packet offset");
+	}
+
+	for (i = 0; i < ARRAY_SIZE(payload_overflow); i++) {
+		test_payload_set(payload_overflow[i]);
+
+		ret = plain_text_reader.get_s64(&test_in, &value);
+		zassert_equal(ret, -EINVAL, "Error expected on too large value");
 	}
 }
 
@@ -391,6 +402,18 @@ ZTEST(net_content_plain_text, test_get_string)
 			  "Invalid value parsed");
 	zassert_equal(test_in.offset, strlen(test_string) + 1,
 		      "Invalid packet offset");
+}
+
+ZTEST(net_content_plain_text, test_get_string_truncate)
+{
+	int ret;
+	static const char test_string[] = "test_string";
+	uint8_t buf[16];
+
+	test_payload_set(test_string);
+
+	ret = plain_text_reader.get_string(&test_in, buf, sizeof(test_string) - 1);
+	zassert_equal(ret, -ENOMEM, "Invalid error returned %d", ret);
 }
 
 ZTEST(net_content_plain_text_nodata, test_get_string_nodata)

@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_COMP_SE_PSEL_AIN_INDEX
+	  int "Index of analog input for SE psel."
+	  default 5
+
+config TEST_COMP_SE_EXTREFSEL_AIN_INDEX
+	  int "Index of analog input for SE extrefsel."
+	  default 1
+
+config TEST_COMP_DIFF_PSEL_AIN_INDEX
+	  int "Index of analog input for DIFF psel."
+	  default 4
+
+config TEST_COMP_DIFF_EXTREFSEL_AIN_INDEX
+	  int "Index of analog input for DIFF extrefsel."
+	  default 5
+
+source "Kconfig.zephyr"

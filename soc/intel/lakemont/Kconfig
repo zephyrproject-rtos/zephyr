@@ -4,7 +4,7 @@
 
 config SOC_LAKEMONT
 	select X86
-	select CPU_LAKEMONT
+	select CPU_LAKEMONT_PERF
 	select X86_MMU if FPU
 	select X86_SSE if FPU
 	select X86_SSE2 if FPU

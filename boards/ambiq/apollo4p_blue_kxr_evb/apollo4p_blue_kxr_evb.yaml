@@ -10,12 +10,14 @@ toolchain:
 supported:
   - uart
   - watchdog
+  - adc
   - counter
   - gpio
   - spi
   - i2c
   - clock_control
   - ble
+  - usbd
 testing:
   ignore_tags:
     - net

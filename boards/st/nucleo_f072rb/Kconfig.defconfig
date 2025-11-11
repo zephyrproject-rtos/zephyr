@@ -1,0 +1,12 @@
+# NUCLEO_F072RB board configuration
+
+# Copyright (c) 2025 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F072RB
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_F072RB

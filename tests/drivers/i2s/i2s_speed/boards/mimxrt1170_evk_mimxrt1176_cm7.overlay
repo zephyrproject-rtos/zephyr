@@ -1,26 +1,15 @@
-/* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=y uses two I2S peripherals:
- *	i2s-node0 is the receiver    - uses SAI1 peripheral on RT1170
- *	i2s-node1 is the transmitter - uses SAI4 peripheral
+/* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=n uses only one I2S peripheral:
+ * i2s-node0 is both the transitter and receiver.
+ * uses SAI1 peripheral on RT1170
  */
-
 / {
 	aliases {
 		i2s-node0 = &sai1;
-		i2s-node1 = &sai4;
 	};
 };
 
-/* Enable SAI4, and set clocks to match SAI1 */
-&sai4 {
-	status = "okay";
-	podf = < 0x4 >;
-	pinctrl-0 = <&pinmux_sai4>;
-	pinctrl-names = "default";
-};
-
-/* On MIMXRT1170-EVK, there is a conflict with signal SAI4_TX_BCLK shared with
- * ENET_RST.  For i2s_speed test, disable ENET peripheral.
- */
-&enet {
-	status = "disabled";
+/* Default DMA channel 0 and 1 maybe used by other peripherals like UART. */
+&sai1 {
+	nxp,tx-dma-channel = <8>;
+	nxp,rx-dma-channel = <9>;
 };

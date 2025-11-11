@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
-zephyr_library_sources(pinmux.c)
-
 if(CONFIG_BOARD_MPS2_AN521_CPU1 AND NOT CONFIG_OPENAMP)
   # Building a firmware image for CPU1: this requires a binary
   # for CPU0, which will boot the device and wake up CPU1.
@@ -20,4 +17,5 @@ if(CONFIG_BOARD_MPS2_AN521_CPU1 AND NOT CONFIG_OPENAMP)
     BUILD_BYPRODUCTS "${CPU0_BINARY_DIR}/${KERNEL_BIN_NAME}"
     BUILD_ALWAYS True
   )
+  add_dependencies(app empty_cpu0)
 endif()

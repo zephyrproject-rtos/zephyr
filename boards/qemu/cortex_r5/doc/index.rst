@@ -1,7 +1,4 @@
-.. _qemu_cortex_r5:
-
-ARM Cortex-R5 Emulation (QEMU)
-##############################
+.. zephyr:board:: qemu_cortex_r5
 
 Overview
 ********
@@ -63,6 +60,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use this configuration to run basic Zephyr applications and kernel tests in the
 QEMU emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 
@@ -98,6 +97,8 @@ Refer to the detailed overview about :ref:`application_debugging`.
 
 References
 **********
+
+.. target-notes::
 
 1. ARMv7-A and ARMv7-R Architecture Reference Manual (ARM DDI 0406C ID051414)
 2. Cortex-R5 and Cortex-R5F Technical Reference Manual (ARM DDI 0460C ID021511)

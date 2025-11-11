@@ -3,7 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -12,10 +20,11 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <sys/types.h>
 
 #include "bap_unicast_server.h"
 #include "bap_stream.h"
-#include "gatt_expects.h"
 #include "conn.h"
 #include "gatt.h"
 #include "iso.h"
@@ -127,14 +136,14 @@ uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 }
 
 static struct bt_bap_stream *stream_allocated;
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 						enum bt_audio_dir dir,
 						const struct bt_audio_codec_cfg *codec_cfg,
 						struct bt_bap_stream **stream,
-						struct bt_audio_codec_qos_pref *const pref,
+						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
 	*stream = stream_allocated;
@@ -355,7 +364,7 @@ void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
 	test_preamble_state_streaming(conn, ase_id, stream, chan, source);
 	test_ase_control_client_release(conn, ase_id);
 
-	/* Reset the mocks espacially the function call count */
+	/* Reset the mocks especially the function call count */
 	mock_bap_unicast_server_cleanup();
 	mock_bt_iso_cleanup();
 	mock_bap_stream_cleanup();

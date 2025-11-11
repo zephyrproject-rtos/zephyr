@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
@@ -33,7 +35,7 @@ static inline void nsem_list_lock(void)
 
 static inline void nsem_list_unlock(void)
 {
-	k_mutex_unlock(&nsem_mutex);
+	(void)k_mutex_unlock(&nsem_mutex);
 }
 
 static struct nsem_obj *nsem_find(const char *name)
@@ -60,7 +62,7 @@ static void nsem_cleanup(struct nsem_obj *nsem)
 	}
 }
 
-/* Remove a named semaphore if it isn't unsed */
+/* Remove a named semaphore if it isn't used */
 static void nsem_unref(struct nsem_obj *nsem)
 {
 	nsem->ref_count -= 1;
@@ -159,31 +161,12 @@ int sem_post(sem_t *semaphore)
  */
 int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 {
-	int32_t timeout;
-	struct timespec current;
-	int64_t current_ms, abstime_ms;
-
-	__ASSERT(abstime, "abstime pointer NULL");
-
-	if ((abstime->tv_sec < 0) || (abstime->tv_nsec >= NSEC_PER_SEC)) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (clock_gettime(CLOCK_REALTIME, &current) < 0) {
-		return -1;
-	}
-
-	abstime_ms = (int64_t)_ts_to_ms(abstime);
-	current_ms = (int64_t)_ts_to_ms(&current);
-
-	if (abstime_ms <= current_ms) {
-		timeout = 0;
-	} else {
-		timeout = (int32_t)(abstime_ms - current_ms);
-	}
-
-	if (k_sem_take(semaphore, K_MSEC(timeout))) {
+	if (k_sem_take(semaphore, K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)))) {
 		errno = ETIMEDOUT;
 		return -1;
 	}
@@ -265,7 +248,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 		goto unlock;
 	}
 
-	/* Named sempahore doesn't exist, try to create new one */
+	/* Named semaphore doesn't exist, try to create new one */
 
 	if ((oflags & O_CREAT) == 0) {
 		errno = ENOENT;

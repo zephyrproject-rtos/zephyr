@@ -325,10 +325,46 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the data does not match");
 	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
 			"the data does not match");
+
+	/* Extensive tests for edge cases */
+	int ret;
+
+	sensor_value_from_double(&data, -2147483648.0);
+	zassert_equal(data.val1, -2147483648, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_double(&data, -2147483649.0);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_double(&data, 2147483647.0);
+	zassert_equal(data.val1, 2147483647, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_double(&data, 2147483648.0);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_float(&data, -2147483648.0f);
+	zassert_equal(data.val1, -2147483648, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_float(&data, -2147483904.0f);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	sensor_value_from_float(&data, 2147483520.0f);
+	zassert_equal(data.val1, 2147483520, "the data does not match");
+	zassert_equal(data.val2, 0, "the data does not match");
+
+	ret = sensor_value_from_float(&data, 2147483584.0f);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
 #endif
 	/* reset test data to positive value */
 	data.val1 = 3;
 	data.val2 = 300000;
+	zassert_equal(sensor_value_to_deci(&data), 33LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), 330LL,
+			"the result does not match");
 	zassert_equal(sensor_value_to_milli(&data), 3300LL,
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), 3300000LL,
@@ -336,11 +372,21 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* reset test data to negative value */
 	data.val1 = -data.val1;
 	data.val2 = -data.val2;
+	zassert_equal(sensor_value_to_deci(&data), -33LL,
+		"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), -330LL,
+		"the result does not match");
 	zassert_equal(sensor_value_to_milli(&data), -3300LL,
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), -3300000LL,
 			"the result does not match");
 	/* Test when result is greater than 32-bit wide */
+	data.val1 = 2123456789;
+	data.val2 = 876543;
+	zassert_equal(sensor_value_to_deci(&data), 21234567898LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_centi(&data), 212345678987LL,
+			"the result does not match");
 	data.val1 = 5432109;
 	data.val2 = 876543;
 	zassert_equal(sensor_value_to_milli(&data), 5432109876LL,

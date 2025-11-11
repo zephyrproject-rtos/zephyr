@@ -6,6 +6,18 @@
 #include <dt-bindings/pinctrl/samd21-da1gXabcd-pinctrl.h>
 
 &pinctrl {
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA2B_ADC_AIN0>,
+				 <PB2B_ADC_AIN10>,
+				 <PA11B_ADC_AIN19>,
+				 <PA10B_ADC_AIN18>,
+				 <PB8B_ADC_AIN2>,
+				 <PB9B_ADC_AIN3>,
+				 <PA9B_ADC_AIN17>;
+		};
+	};
+
 	pwm_default: pwm_default {
 		group1 {
 			pinmux = <PA17E_TCC2_WO1>;
@@ -26,6 +38,7 @@
 				 <PA19C_SERCOM1_PAD3>;
 		};
 	};
+
 	sercom2_spi_default: sercom2_spi_default {
 		group1 {
 			pinmux = <PA12C_SERCOM2_PAD0>,
@@ -40,6 +53,7 @@
 				 <PA22C_SERCOM3_PAD0>;
 		};
 	};
+
 	sercom5_uart_default: sercom5_uart_default {
 		group1 {
 			pinmux = <PB23D_SERCOM5_PAD3>,

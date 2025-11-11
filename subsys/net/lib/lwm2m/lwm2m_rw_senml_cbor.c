@@ -346,19 +346,19 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
-	int ret = 0;
 	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
 	struct record *record = GET_CBOR_FD_REC(fd);
 
 	/* With the first ri the resource name (and ri name) are already in place*/
-	if (path->res_inst_id > 0) {
-		ret = put_begin_ri(out, path);
-	} else if (record && record->record_t_present) {
-		/* Name need to be add for each time serialized record */
-		ret = put_begin_r(out, path);
+	if (record == NULL || !record->record_t_present) {
+		return 0;
+	}
+	/* Name need to be add for each time serialized record */
+	if (path->level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return put_begin_ri(out, path);
 	}
 
-	return ret;
+	return put_begin_r(out, path);
 }
 
 static int put_value(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, int64_t value)
@@ -541,7 +541,7 @@ static int get_opaque(struct lwm2m_input_context *in,
 	uint8_t *dest = NULL;
 
 	/* Get the CBOR header only on first read. */
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 
 		fd = engine_get_in_user_data(in);
 		if (!fd || !fd->current) {
@@ -601,7 +601,9 @@ static int get_time(struct lwm2m_input_context *in, time_t *value)
 	int ret;
 
 	ret = get_s64(in, &temp64);
-	*value = (time_t)temp64;
+	if (ret == 0) {
+		*value = (time_t)temp64;
+	}
 
 	return ret;
 }
@@ -615,7 +617,17 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->record_union.union_vf;
+	switch (fd->current->record_union.record_union_choice) {
+	case union_vi_c:
+		*value = (double)fd->current->record_union.union_vi;
+		break;
+	case union_vf_c:
+		*value = fd->current->record_union.union_vf;
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	fd->current = NULL;
 
 	return 0;
@@ -631,8 +643,10 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 		return -EINVAL;
 	}
 
-	len = MIN(buflen-1, fd->current->record_union.union_vs.len);
-
+	len = fd->current->record_union.union_vs.len;
+	if (len >= buflen) {
+		return -ENOMEM;
+	}
 	memcpy(buf, fd->current->record_union.union_vs.value, len);
 	buf[len] = '\0';
 

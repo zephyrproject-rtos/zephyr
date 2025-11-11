@@ -7,11 +7,11 @@
 #ifndef LITEX_MMCM_H
 #define LITEX_MMCM_H
 
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 /* Common values */
-#define PICOS_IN_SEC		1000000000000
-#define BITS_PER_BYTE		8
+#define PICOS_IN_SEC 1000000000000
 
 /* MMCM specific numbers */
 #define CLKOUT_MAX		7
@@ -73,7 +73,7 @@
 	lcko->margin.exp = CLKOUT_MARGIN_EXP(N);
 
 /* Devicetree clkout defines */
-#define CLKOUT_EXIST(N)		DT_NODE_HAS_STATUS(DT_NODELABEL(clk##N), okay)
+#define CLKOUT_EXIST(N)		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk##N))
 #define CLKOUT_ID(N)		DT_REG_ADDR(DT_NODELABEL(clk##N))
 #define CLKOUT_FREQ(N)		DT_PROP(DT_NODELABEL(clk##N), \
 				litex_clock_frequency)

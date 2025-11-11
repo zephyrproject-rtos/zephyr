@@ -4,7 +4,7 @@ tests:
     min_ram: 40
     harness: pytest
     extra_configs:
-      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
     integration_platforms:
       - native_sim
       - qemu_cortex_m3

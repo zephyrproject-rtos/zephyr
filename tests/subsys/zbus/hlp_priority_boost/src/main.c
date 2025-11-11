@@ -41,7 +41,7 @@ static void consumer_sub_thread(void *ptr1, void *ptr2, void *ptr3)
 	zbus_obs_attach_to_thread(ptr1);
 
 	char *name = ptr2;
-	struct zbus_observer *sub = ptr1;
+	const struct zbus_observer *sub = ptr1;
 	const struct zbus_channel *chan;
 	struct msg_testing_01 msg;
 
@@ -68,7 +68,7 @@ static void consumer_msg_sub_thread(void *ptr1, void *ptr2, void *ptr3)
 	zbus_obs_attach_to_thread(ptr1);
 
 	char *name = ptr2;
-	struct zbus_observer *msub = ptr1;
+	const struct zbus_observer *msub = ptr1;
 	const struct zbus_channel *chan;
 	struct msg_testing_01 msg;
 
@@ -126,10 +126,10 @@ ZTEST(hlp_priority_boost, test_priority_elevation)
 {
 	pub_thread_id = k_thread_create(&pub_thread, pub_thread_sz, STACK_SIZE, publisher_thread,
 					NULL, NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
-	(void)k_thread_create(&s1_thread, s1_thread_sz, STACK_SIZE, consumer_sub_thread, &sub1,
-			      "sub1", NULL, K_PRIO_PREEMPT(3), 0, K_NO_WAIT);
+	(void)k_thread_create(&s1_thread, s1_thread_sz, STACK_SIZE, consumer_sub_thread,
+			      (void *)&sub1, "sub1", NULL, K_PRIO_PREEMPT(3), 0, K_NO_WAIT);
 	(void)k_thread_create(&ms1_thread, ms1_thread_sz, STACK_SIZE, consumer_msg_sub_thread,
-			      &msub1, "msub1", NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+			      (void *)&msub1, "msub1", NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
 	_pub_and_sync();
 	zassert_true(prio == 1, "The priority must be 1, but it is %d", prio);
@@ -152,7 +152,7 @@ ZTEST(hlp_priority_boost, test_priority_elevation)
 	bool is_masked;
 
 	zbus_obs_is_chan_notification_masked(&msub1, &chan_testing_01, &is_masked);
-	zassert_true(is_masked, NULL);
+	zassert_true(is_masked);
 	_pub_and_sync();
 	zassert_true(prio == 2, "The priority must be 2, but it is %d", prio);
 	zbus_obs_set_chan_notification_mask(&msub1, &chan_testing_01, false);
@@ -177,4 +177,5 @@ ZTEST(hlp_priority_boost, test_priority_elevation)
 	zassert_true(prio == 8, "The priority must be 8, but it is %d", prio);
 }
 
-ZTEST_SUITE(hlp_priority_boost, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(hlp_priority_boost, NULL, NULL,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

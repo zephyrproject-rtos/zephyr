@@ -1,0 +1,9 @@
+# STM32H757I EVAL board configuration
+
+# Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2025 Foss Analytical A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H757I_EVAL
+	select SOC_STM32H757XX_M7 if BOARD_STM32H757I_EVAL_STM32H757XX_M7
+	select SOC_STM32H757XX_M4 if BOARD_STM32H757I_EVAL_STM32H757XX_M4

@@ -10,3 +10,6 @@ source "Kconfig.zephyr"
 config ADC_API_SAMPLE_INTERVAL_US
 	int "Interval between repeatead samples in us"
 	default 0
+
+config ADC_32_BITS_DATA
+	bool "ADC data is 32-bits long"

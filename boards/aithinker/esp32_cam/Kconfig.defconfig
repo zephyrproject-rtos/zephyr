@@ -1,0 +1,18 @@
+# Ai-Thinker ESP32-CAM board configuration
+
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32_CAM_ESP32_PROCPU
+
+config DISK_DRIVER_SDMMC
+	default y
+
+config ESP_SPIRAM
+	default y if !MCUBOOT
+
+choice SPIRAM_TYPE
+	default SPIRAM_TYPE_ESPPSRAM64
+endchoice
+
+endif # BOARD_ESP32_CAM_ESP32_PROCPU

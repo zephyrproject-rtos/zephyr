@@ -310,7 +310,7 @@ static int ms5607_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ms5607_api_funcs = {
+static DEVICE_API(sensor, ms5607_api_funcs) = {
 	.attr_set = ms5607_attr_set,
 	.sample_fetch = ms5607_sample_fetch,
 	.channel_get = ms5607_channel_get,
@@ -324,8 +324,7 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 	{								\
 		.tf = &ms5607_spi_transfer_function,			\
 		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst,		\
-						MS5607_SPI_OPERATION,	\
-						0),			\
+						MS5607_SPI_OPERATION)	\
 	}
 
 /* Initializes a struct ms5607_config for an instance on a I2C bus. */

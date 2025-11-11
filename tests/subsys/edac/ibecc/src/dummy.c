@@ -14,7 +14,7 @@
  * EDAC dummy is used for coverage tests for -ENOSYS returns
  */
 
-static const struct edac_driver_api edac_dummy_api = { 0 };
+static DEVICE_API(edac, edac_dummy_api) = { 0 };
 
 DEVICE_DEFINE(dummy_edac, "dummy_edac", NULL, NULL,
 	      NULL, NULL,

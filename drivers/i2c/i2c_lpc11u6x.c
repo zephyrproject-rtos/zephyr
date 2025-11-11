@@ -340,11 +340,14 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_api = {
+static DEVICE_API(i2c, i2c_api) = {
 	.configure = lpc11u6x_i2c_configure,
 	.transfer = lpc11u6x_i2c_transfer,
 	.target_register = lpc11u6x_i2c_slave_register,
 	.target_unregister = lpc11u6x_i2c_slave_unregister,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define LPC11U6X_I2C_INIT(idx)						      \

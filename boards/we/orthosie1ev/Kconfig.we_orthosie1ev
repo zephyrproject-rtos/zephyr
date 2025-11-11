@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Würth Elektronik GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WE_ORTHOSIE1EV
+	select SOC_ESP32C3

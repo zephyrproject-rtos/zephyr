@@ -12,6 +12,5 @@ tests:
     tags: test_framework
     platform_allow:
       - qemu_cortex_m3
-      - native_posix/native/64
       - native_sim/native/64
       - native_sim

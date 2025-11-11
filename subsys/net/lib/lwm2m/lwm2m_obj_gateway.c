@@ -159,6 +159,10 @@ int lwm2m_gw_handle_req(struct lwm2m_message *msg)
 		return ret;
 	}
 
+	if (ret == 0) {
+		return -ENOENT;
+	}
+
 	for (int index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		/* Skip uninitialized objects */
 		if (!inst[index].obj) {

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CC13XX_CC26XX_PINCTRL_COMMON_H_
-#define CC13XX_CC26XX_PINCTRL_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC13XX_CC26XX_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC13XX_CC26XX_PINCTRL_H_
 
 /* Adapted from hal/ti/simplelink/source/ti/devices/cc13x2_cc26x2/driverlib/ioc.h */
 
@@ -63,4 +63,4 @@
 #define IOC_RISING_EDGE  0x00020000 /* Edge detection on rising edge */
 #define IOC_BOTH_EDGES   0x00030000 /* Edge detection on both edges */
 
-#endif  /* CC13XX_CC26XX_PINCTRL_COMMON_H_ */
+#endif  /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC13XX_CC26XX_PINCTRL_H_ */

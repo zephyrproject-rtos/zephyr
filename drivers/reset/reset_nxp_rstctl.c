@@ -64,7 +64,7 @@ static int reset_nxp_rstctl_line_toggle(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static const struct reset_driver_api reset_nxp_rstctl_driver_api = {
+static DEVICE_API(reset, reset_nxp_rstctl_driver_api) = {
 	.status = reset_nxp_rstctl_status,
 	.line_assert = reset_nxp_rstctl_line_assert,
 	.line_deassert = reset_nxp_rstctl_line_deassert,

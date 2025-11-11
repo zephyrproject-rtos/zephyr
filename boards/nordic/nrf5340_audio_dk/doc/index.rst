@@ -1,7 +1,4 @@
-.. _nrf5340_audio_dk_nrf5340:
-
-nRF5340 Audio DK
-################
+.. zephyr:board:: nrf5340_audio_dk
 
 Overview
 ********
@@ -31,10 +28,6 @@ The nRF5340 Audio DK comes with the following hardware features:
 * Stereo analog input using 3.5 mm jack
 * USB soundcard capability
 
-.. figure:: img/nrf5340_audio_dk.jpg
-     :align: center
-     :alt: nRF5340 DK
-
 More information about the board can be found at the `nRF5340 Audio DK website`_. The `nRF5340 Audio DK hardware guide`_
 contains the processor's information and the datasheet.
 
@@ -59,12 +52,16 @@ the datasheet.
 Supported Features
 ==================
 
-See :ref:`nrf5340dk_nrf5340` and `nRF5340 Audio DK hardware guide`_
+.. zephyr:board-supported-hw::
+
+See :zephyr:board:`nrf5340dk` and `nRF5340 Audio DK hardware guide`_
 for a complete list of nRF5340 Audio DK board hardware features.
 
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -84,7 +81,7 @@ applications as usual (:ref:`build_an_application` and
 
    .. code-block:: console
 
-      west flash -H -r nrfjprog --skip-rebuild
+      west flash -H -r nrfutil --skip-rebuild
 
 .. note::
 

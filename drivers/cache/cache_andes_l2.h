@@ -54,6 +54,7 @@ struct nds_l2_cache_config {
 	uint32_t status_offset;
 	uint16_t status_shift;
 	uint8_t version;
+	uint8_t line_size;
 };
 
 static struct nds_l2_cache_config l2_cache_cfg;
@@ -78,14 +79,16 @@ static ALWAYS_INLINE void nds_l2_cache_wait_status(uint8_t hart_id)
 
 static ALWAYS_INLINE int nds_l2_cache_all(int op)
 {
-	/* L2 cache fixed to 64 byte cache line size and 16 way */
-	const unsigned long line_size = 64, ways = 16;
-	unsigned long sets, index, cmd;
+	unsigned long ways, sets, index, cmd;
 	uint8_t hart_id;
 	unsigned long status = csr_read(mstatus);
 
 	if (!l2_cache_cfg.size) {
 		return -ENOTSUP;
+	} else if (l2_cache_cfg.size >= 128 * 1024) {
+		ways = 16;
+	} else {
+		ways = 8;
 	}
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
@@ -118,14 +121,14 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 		/* Wait L2 CCTL Commands finished */
 		nds_l2_cache_wait_status(hart_id);
 	} else {
-		sets = l2_cache_cfg.size / (ways * line_size);
+		sets = l2_cache_cfg.size / (ways * l2_cache_cfg.line_size);
 		/* Invalidate all cache line by each way and each set */
 		for (int j = 0; j < ways; j++) {
 			/* Index of way */
 			index = j << L2C_CCTLACC_WAY_SHIFT;
 			for (int i = 0; i < sets; i++) {
 				/* Index of set */
-				index += line_size;
+				index += l2_cache_cfg.line_size;
 
 				/* Invalidate each cache line */
 				sys_write32(index, L2C_CCTLACC(hart_id));
@@ -142,7 +145,6 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 
 static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
 {
-	const unsigned long line_size = 64;
 	unsigned long last_byte, align_addr, cmd;
 	uint8_t hart_id;
 
@@ -165,13 +167,13 @@ static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
 	}
 
 	last_byte = (unsigned long)addr + size - 1;
-	align_addr = ROUND_DOWN(addr, line_size);
+	align_addr = ROUND_DOWN(addr, l2_cache_cfg.line_size);
 	hart_id = arch_proc_id();
 
 	while (align_addr <= last_byte) {
 		sys_write32(align_addr, L2C_CCTLACC(hart_id));
 		sys_write32(cmd, L2C_CCTLCMD(hart_id));
-		align_addr += line_size;
+		align_addr += l2_cache_cfg.line_size;
 
 		/* Wait L2 CCTL Commands finished */
 		nds_l2_cache_wait_status(hart_id);
@@ -204,9 +206,10 @@ static ALWAYS_INLINE void nds_l2_cache_disable(void)
 	}
 }
 
-static ALWAYS_INLINE int nds_l2_cache_init(void)
+static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 {
-	unsigned long line_size;
+	unsigned long size;
+	uint32_t l2c_ctrl;
 
 #if defined(CONFIG_SYSCON)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(syscon), andestech_atcsmu100, okay)
@@ -230,10 +233,10 @@ static ALWAYS_INLINE int nds_l2_cache_init(void)
 #endif /* andestech_atcsmu100 dts node status okay */
 #endif /* defined(CONFIG_SYSCON) */
 
-	uint32_t l2c_ctrl;
+	l2_cache_cfg.line_size = line_size;
 
-	line_size = (sys_read32(L2C_CONFIG) >> L2C_CONFIG_SIZE_SHIFT) & BIT_MASK(7);
-	l2_cache_cfg.size = line_size * 128 * 1024;
+	size = (sys_read32(L2C_CONFIG) >> L2C_CONFIG_SIZE_SHIFT) & BIT_MASK(7);
+	l2_cache_cfg.size = size * 128 * 1024;
 
 	if (sys_read32(L2C_CONFIG) & L2C_CONFIG_MAP) {
 		l2_cache_cfg.cmd_offset = 0x10;

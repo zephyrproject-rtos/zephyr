@@ -3,11 +3,8 @@ sample:
   name: OpenAMP example integration
 tests:
   sample.ipc.openamp:
-    platform_allow:
-      - lpcxpresso54114/lpc54114/m4
-      - lpcxpresso55s69/lpc55s69/cpu0
-      - mps2/an521/cpu0
-      - v2m_musca_b1/musca_b1
+    filter: dt_chosen_enabled("zephyr,ipc") and dt_chosen_enabled("zephyr,ipc_shm")
+      and not (CONFIG_SOC_ESP32_APPCPU or CONFIG_SOC_ESP32S3_APPCPU)
     integration_platforms:
       - mps2/an521/cpu0
     tags:

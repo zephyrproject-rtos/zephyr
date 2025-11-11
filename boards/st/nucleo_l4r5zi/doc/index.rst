@@ -1,7 +1,4 @@
-.. _nucleo_l4r5zi_board:
-
-ST Nucleo L4R5ZI
-################
+.. zephyr:board:: nucleo_l4r5zi
 
 Overview
 ********
@@ -25,10 +22,6 @@ some highlights of the Nucleo L4R5ZI board:
 
 - Three User LEDs: LD1 (Green), LD2 (Blue), LD3 (Red)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_l4r5zi.jpg
-     :align: center
-     :alt: Nucleo L4R5ZI
 
 More information about the board can be found at the `Nucleo L4R5ZI website`_.
 
@@ -116,39 +109,7 @@ More information about STM32L4R5ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l4r5zi board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l4r5zi/nucleo_l4r5zi_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -221,23 +182,31 @@ Ethernet over USB is configured as the default network interface (EEM)
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The NUCLEO-L4R5ZI board includes a ST-LINK/V2 embedded debug tool interface.
 
-The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its installation is required to be able to flash the board.
+Flashing
+========
 
-Alternatively, openocd (provided in Zephyr SDK) or JLink can also be used to
-flash the board using the ``--runner`` (or ``-r``) option:
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
    $ west flash --runner openocd
    $ west flash --runner jlink
 
+Flashing an application to Nucleo L4R4ZI
+----------------------------------------
+
 Connect the Nucleo L4R5ZI to your host computer using the USB port.
 Then build and flash an application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

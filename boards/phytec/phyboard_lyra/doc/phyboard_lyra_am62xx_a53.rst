@@ -45,6 +45,8 @@ features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
+| Mailbox   | on-chip    | IPC Mailbox                         |
++-----------+------------+-------------------------------------+
 
 Devices
 ========
@@ -80,7 +82,7 @@ Building
 
 You can build an application in the usual way. Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :board: phyboard_lyra/am6234/a53

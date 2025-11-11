@@ -23,7 +23,7 @@ int conn_mgr_if_connect(struct net_if *iface)
 	LOG_DBG("iface %p connect", iface);
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -41,6 +41,8 @@ int conn_mgr_if_connect(struct net_if *iface)
 		}
 	}
 
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, false);
+
 	status = api->connect(binding);
 
 out:
@@ -49,9 +51,7 @@ out:
 	return status;
 }
 
-static void conn_mgr_conn_if_auto_admin_down(struct net_if *iface);
-
-int conn_mgr_if_disconnect(struct net_if *iface)
+static int conn_mgr_if_disconnect_internal(struct net_if *iface, bool idle_timeout)
 {
 	struct conn_mgr_conn_binding *binding;
 	struct conn_mgr_conn_api *api;
@@ -60,7 +60,7 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 	LOG_DBG("iface %p disconnect", iface);
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -75,22 +75,21 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 		goto out;
 	}
 
+	if (!idle_timeout) {
+		conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, true);
+	}
+
 	status = api->disconnect(binding);
 
 out:
 	conn_mgr_binding_unlock(binding);
 
-	/* Since the connectivity implementation will not automatically attempt to reconnect after
-	 * a call to conn_mgr_if_disconnect, conn_mgr_conn_if_auto_admin_down should be called.
-	 *
-	 * conn_mgr_conn_handle_iface_down will only call conn_mgr_conn_if_auto_admin_down if
-	 * persistence is disabled. To ensure conn_mgr_conn_if_auto_admin_down is called in all
-	 * cases, we must call it directly from here. If persistence is disabled, this will result
-	 * in conn_mgr_conn_if_auto_admin_down being called twice, but that is not an issue.
-	 */
-	conn_mgr_conn_if_auto_admin_down(iface);
-
 	return status;
+}
+
+int conn_mgr_if_disconnect(struct net_if *iface)
+{
+	return conn_mgr_if_disconnect_internal(iface, false);
 }
 
 bool conn_mgr_if_is_bound(struct net_if *iface)
@@ -116,7 +115,7 @@ int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t 
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		*optlen = 0;
 		return -ENOTSUP;
 	}
@@ -147,7 +146,7 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -174,7 +173,7 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -192,7 +191,7 @@ bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag)
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return false;
 	}
 
@@ -204,8 +203,8 @@ int conn_mgr_if_get_timeout(struct net_if *iface)
 	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
 	int value;
 
-	if (!binding) {
-		return false;
+	if (binding == NULL) {
+		return CONN_MGR_IF_NO_TIMEOUT;
 	}
 
 	conn_mgr_binding_lock(binding);
@@ -221,7 +220,7 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 {
 	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
 
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -232,6 +231,54 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 	conn_mgr_binding_unlock(binding);
 
 	return 0;
+}
+
+int conn_mgr_if_get_idle_timeout(struct net_if *iface)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+	int value;
+
+	if (binding == NULL) {
+		return CONN_MGR_IF_NO_TIMEOUT;
+	}
+
+	conn_mgr_binding_lock(binding);
+
+	value = binding->idle_timeout;
+
+	conn_mgr_binding_unlock(binding);
+
+	return value;
+}
+
+int conn_mgr_if_set_idle_timeout(struct net_if *iface, int timeout)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+
+	if (binding == NULL) {
+		return -ENOTSUP;
+	}
+
+	conn_mgr_binding_lock(binding);
+
+	binding->idle_timeout = timeout;
+
+	conn_mgr_binding_unlock(binding);
+
+	return 0;
+}
+
+void conn_mgr_if_used(struct net_if *iface)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+
+	if (binding == NULL) {
+		return;
+	}
+	if (binding->idle_timeout == CONN_MGR_IF_NO_TIMEOUT) {
+		return;
+	}
+	k_work_reschedule(&binding->idle_worker, K_SECONDS(binding->idle_timeout));
 }
 
 /* Automated behavior handling */
@@ -272,6 +319,8 @@ static void conn_mgr_conn_handle_iface_admin_up(struct net_if *iface)
  */
 static void conn_mgr_conn_if_auto_admin_down(struct net_if *iface)
 {
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+
 	/* NOTE: This will be double-fired for ifaces that are both non-persistent
 	 * and are being directly requested to disconnect, since both of these conditions
 	 * separately trigger conn_mgr_conn_if_auto_admin_down.
@@ -281,15 +330,38 @@ static void conn_mgr_conn_if_auto_admin_down(struct net_if *iface)
 	 */
 
 	/* Ignore ifaces that don't have connectivity implementations */
-	if (!conn_mgr_if_is_bound(iface)) {
+	if (binding == NULL) {
 		return;
 	}
+
+	/* Cancel any pending idle timeouts */
+	k_work_cancel_delayable(&binding->idle_worker);
 
 	/* Take the iface admin-down if AUTO_DOWN is enabled */
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN) &&
 	    !conn_mgr_if_get_flag(iface, CONN_MGR_IF_NO_AUTO_DOWN)) {
 		net_if_down(iface);
 	}
+}
+
+static void conn_mgr_conn_handle_iface_up(struct net_if *iface)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+	int idle_timeout;
+
+	/* Ignore ifaces that don't have connectivity implementations */
+	if (binding == NULL) {
+		return;
+	}
+
+	idle_timeout = conn_mgr_if_get_idle_timeout(iface);
+	if (idle_timeout == CONN_MGR_IF_NO_TIMEOUT) {
+		/* No idle timeout configured for the interface */
+		return;
+	}
+
+	/* Start the idle timeout */
+	k_work_reschedule(&binding->idle_worker, K_SECONDS(idle_timeout));
 }
 
 /**
@@ -306,10 +378,15 @@ static void conn_mgr_conn_handle_iface_down(struct net_if *iface)
 		return;
 	}
 
-	/* If the iface is persistent, we expect it to try to reconnect, so nothing else to do */
-	if (conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT)) {
+	/* If the iface is persistent, we expect it to try to reconnect, unless
+	 * disconnect was explicitly initiated by the application.
+	 */
+	if (conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT) &&
+	    !conn_mgr_if_get_flag(iface, CONN_MGR_IF_DISCONNECTING)) {
 		return;
 	}
+
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_DISCONNECTING, false);
 
 	/* Otherwise, we do not expect the iface to reconnect, and we should call
 	 * conn_mgr_conn_if_auto_admin_down
@@ -318,7 +395,7 @@ static void conn_mgr_conn_handle_iface_down(struct net_if *iface)
 }
 
 static struct net_mgmt_event_callback conn_mgr_conn_iface_cb;
-static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 					struct net_if *iface)
 {
 	if ((mgmt_event & CONN_MGR_CONN_IFACE_EVENTS_MASK) != mgmt_event) {
@@ -326,6 +403,9 @@ static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint
 	}
 
 	switch (mgmt_event) {
+	case NET_EVENT_IF_UP:
+		conn_mgr_conn_handle_iface_up(iface);
+		break;
 	case NET_EVENT_IF_DOWN:
 		conn_mgr_conn_handle_iface_down(iface);
 		break;
@@ -336,7 +416,7 @@ static void conn_mgr_conn_iface_handler(struct net_mgmt_event_callback *cb, uint
 }
 
 static struct net_mgmt_event_callback conn_mgr_conn_self_cb;
-static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				       struct net_if *iface)
 {
 	if ((mgmt_event & CONN_MGR_CONN_SELF_EVENTS_MASK) != mgmt_event) {
@@ -361,8 +441,22 @@ static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint3
 		 */
 		conn_mgr_conn_if_auto_admin_down(iface);
 		break;
+	case NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT:
+		/* Interface is idle, disconnect */
+		LOG_DBG("iface %d (%p) idle", net_if_get_by_iface(iface), iface);
+		conn_mgr_if_disconnect_internal(iface, true);
+		break;
 	}
+}
 
+static void conn_mgr_iface_idle_fn(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct conn_mgr_conn_binding *binding =
+		CONTAINER_OF(dwork, struct conn_mgr_conn_binding, idle_worker);
+
+	LOG_DBG("iface %d (%p) idle", net_if_get_by_iface(binding->iface), binding->iface);
+	net_mgmt_event_notify(NET_EVENT_CONN_IF_IDLE_TIMEOUT, binding->iface);
 }
 
 void conn_mgr_conn_init(void)
@@ -375,9 +469,14 @@ void conn_mgr_conn_init(void)
 		} else if (binding->impl->api->init) {
 			conn_mgr_binding_lock(binding);
 
+			/* Initialise idle worker */
+
+			k_work_init_delayable(&binding->idle_worker, conn_mgr_iface_idle_fn);
+
 			/* Set initial default values for binding state */
 
 			binding->timeout = CONN_MGR_IF_NO_TIMEOUT;
+			binding->idle_timeout = CONN_MGR_IF_NO_TIMEOUT;
 
 			/* Call binding initializer */
 

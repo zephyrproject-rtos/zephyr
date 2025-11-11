@@ -1,0 +1,11 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt6xx_hifi4memsplit.dtsi>
+
+&dsp {
+	status = "okay";
+};

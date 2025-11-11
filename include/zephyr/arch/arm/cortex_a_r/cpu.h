@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Lexmark International, Inc.
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +56,12 @@
 #define SCTLR_C_BIT		BIT(2)
 #define SCTLR_I_BIT		BIT(12)
 
+/* Armv8-R Cortex-R52 Cache Segregation Control Register */
+#define IMP_CSCTLR_DFLW_SHIFT	(0)
+#define IMP_CSCTLR_IFLW_SHIFT	(8)
+#define IMP_CSCTLR(iway, dway)  ((iway << IMP_CSCTLR_IFLW_SHIFT) | \
+				((dway << IMP_CSCTLR_DFLW_SHIFT)))
+
 /* Hyp System Control Register */
 #define HSCTLR_RES1		(BIT(29) | BIT(28) | BIT(23) | \
 				 BIT(22) | BIT(18) | BIT(16) | \
@@ -84,8 +91,8 @@
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_EL3_EN_BIT	BIT(3)
 
-/* MPIDR */
-#define MPIDR_AFFLVL_MASK	(0xff)
+/* MPIDR mask to extract Aff0, Aff1, and Aff2 */
+#define MPIDR_AFFLVL_MASK (0xffffff)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)

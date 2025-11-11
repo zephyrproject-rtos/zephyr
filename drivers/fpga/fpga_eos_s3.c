@@ -36,8 +36,9 @@ static enum FPGA_status eos_s3_fpga_get_status(const struct device *dev)
 
 	if (PMU->FB_STATUS == FPGA_STATUS_ACTIVE) {
 		return FPGA_STATUS_ACTIVE;
-	} else
+	} else {
 		return FPGA_STATUS_INACTIVE;
+	}
 }
 
 static const char *eos_s3_fpga_get_info(const struct device *dev)
@@ -139,7 +140,7 @@ static int eos_s3_fpga_init(const struct device *dev)
 
 static struct quickfeather_fpga_data fpga_data;
 
-static const struct fpga_driver_api eos_s3_api = {
+static DEVICE_API(fpga, eos_s3_api) = {
 	.reset = eos_s3_fpga_reset,
 	.load = eos_s3_fpga_load,
 	.get_status = eos_s3_fpga_get_status,

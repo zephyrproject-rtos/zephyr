@@ -18,6 +18,8 @@
 /**
  * @brief HTTP HPACK
  * @defgroup http_hpack HTTP HPACK
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

@@ -1,0 +1,278 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "UICR generator options"
+
+config GEN_UICR_GENERATE_PERIPHCONF
+	bool "Generate PERIPHCONF hex alongside UICR"
+	default y
+	help
+	  When enabled, the UICR generator will populate the
+	  periphconf_partition partition.
+
+config GEN_UICR_SECURESTORAGE
+	bool "Enable UICR.SECURESTORAGE"
+	default y
+	depends on $(dt_nodelabel_enabled,secure_storage_partition)
+	help
+	  When enabled, the UICR generator will configure the
+	  secure storage region based on device tree partitions.
+
+	  The following device tree partitions are used:
+	  - secure_storage_partition: Main secure storage partition (required)
+	  - cpuapp_crypto_partition: Application processor crypto storage (optional)
+	  - cpurad_crypto_partition: Radio core crypto storage (optional)
+	  - cpuapp_its_partition: Application processor internal trusted storage (optional)
+	  - cpurad_its_partition: Radio core internal trusted storage (optional)
+
+	  Requirements:
+	  - The secure_storage_partition address and size must be aligned to 4KB
+	  - All subpartitions must be multiples of 1KB and laid out contiguously
+	      without gaps
+	  - At least one subpartition must be defined
+	  - Combined subpartition sizes must equal secure_storage_partition size
+
+config GEN_UICR_LOCK
+	bool "Enable UICR.LOCK"
+	help
+	  When enabled, locks the entire contents of the NVR0 page located in
+	  MRAM10. This includes all values in both the UICR and the BICR (Board
+	  Information Configuration Registers). Once locked, the UICR can only
+	  be modified by performing an ERASEALL operation.
+
+	  This should be enabled only in production devices to prevent
+	  unauthorized modification.
+
+config GEN_UICR_ERASEPROTECT
+	bool "Enable UICR.ERASEPROTECT"
+	depends on ! GEN_UICR_LOCK
+	help
+	  When enabled, ERASEALL operations are blocked.
+
+	  This option is mutually exclusive with UICR.LOCK in Kconfig to prevent
+	  accidental configuration where both are enabled simultaneously. If both
+	  were enabled, the UICR would become impossible to modify in any way.
+	  Note that gen_uicr.py can be used directly to create a configuration
+	  with both enabled if needed.
+
+menu "UICR.APPROTECT - Access Port Protection"
+
+config GEN_UICR_APPROTECT_APPLICATION_PROTECTED
+	bool "Protect application domain access port"
+	help
+	  When enabled, disables debug access to the application domain processor,
+	  preventing debugger connection to application memory, registers, and debug
+	  features. When disabled, full debug access is enabled.
+
+config GEN_UICR_APPROTECT_RADIOCORE_PROTECTED
+	bool "Protect radio core access port"
+	help
+	  When enabled, disables debug access to the radio core processor,
+	  preventing debugger connection to radio core memory, registers, and debug
+	  features. When disabled, full debug access is enabled.
+
+config GEN_UICR_APPROTECT_CORESIGHT_PROTECTED
+	bool "Disable CoreSight subsystem"
+	help
+	  When enabled will disable the coresight subsystem, preventing
+	  system level trace features.
+
+endmenu
+
+config GEN_UICR_PROTECTEDMEM
+	bool "Enable UICR.PROTECTEDMEM"
+	help
+	  When enabled, the UICR generator will configure the
+	  protected memory region.
+
+config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
+	int "Protected memory size in bytes"
+	default 4096
+	depends on GEN_UICR_PROTECTEDMEM
+	help
+	  Size of the protected memory region in bytes.
+	  This value must be divisible by 4096 (4 kiB).
+
+config GEN_UICR_WDTSTART
+	bool "Enable UICR.WDTSTART"
+	help
+	  When enabled, the UICR generator will configure an application
+	  domain watchdog timer to start automatically before the
+	  application core is booted.
+
+choice GEN_UICR_WDTSTART_INSTANCE
+	prompt "Watchdog timer instance"
+	depends on GEN_UICR_WDTSTART
+	default GEN_UICR_WDTSTART_INSTANCE_WDT0
+	help
+	  Select which watchdog timer instance to use.
+
+config GEN_UICR_WDTSTART_INSTANCE_WDT0
+	bool "WDT0"
+	help
+	  Use watchdog timer instance 0.
+
+config GEN_UICR_WDTSTART_INSTANCE_WDT1
+	bool "WDT1"
+	help
+	  Use watchdog timer instance 1.
+
+endchoice
+
+config GEN_UICR_WDTSTART_INSTANCE_CODE
+	hex
+	default 0xBD2328A8 if GEN_UICR_WDTSTART_INSTANCE_WDT0
+	default 0x1730C77F if GEN_UICR_WDTSTART_INSTANCE_WDT1
+	depends on GEN_UICR_WDTSTART
+
+config GEN_UICR_WDTSTART_CRV
+	int "Initial Counter Reload Value (CRV)"
+	default 65535
+	range 15 4294967295
+	depends on GEN_UICR_WDTSTART
+	help
+	  Initial Counter Reload Value (CRV) for the watchdog timer.
+	  This value determines the watchdog timeout period.
+	  Must be at least 15 (0xF) to ensure proper watchdog operation.
+	  Default value 65535 creates a 2-second timeout.
+
+config GEN_UICR_SECONDARY_WDTSTART
+	bool "Enable UICR.SECONDARY.WDTSTART"
+	depends on GEN_UICR_SECONDARY
+	help
+	  When enabled, the UICR generator will configure the
+	  watchdog timer to start automatically before the
+	  secondary firmware is booted.
+
+choice GEN_UICR_SECONDARY_WDTSTART_INSTANCE
+	prompt "Secondary watchdog timer instance"
+	depends on GEN_UICR_SECONDARY_WDTSTART
+	default GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	help
+	  Select which watchdog timer instance to use for secondary firmware.
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	bool "WDT0"
+	help
+	  Use watchdog timer instance 0 for secondary firmware.
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT1
+	bool "WDT1"
+	help
+	  Use watchdog timer instance 1 for secondary firmware.
+
+endchoice
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE
+	hex
+	default 0xBD2328A8 if GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	default 0x1730C77F if GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT1
+	depends on GEN_UICR_SECONDARY_WDTSTART
+
+config GEN_UICR_SECONDARY_WDTSTART_CRV
+	int "Secondary initial Counter Reload Value (CRV)"
+	default 65535
+	range 15 4294967295
+	depends on GEN_UICR_SECONDARY_WDTSTART
+	help
+	  Initial Counter Reload Value (CRV) for the secondary watchdog timer.
+	  This value determines the watchdog timeout period.
+	  Must be at least 15 (0xF) to ensure proper watchdog operation.
+	  Default value 65535 creates a 2-second timeout.
+
+config GEN_UICR_SECONDARY
+	bool "Enable UICR.SECONDARY.ENABLE"
+
+if GEN_UICR_SECONDARY
+
+config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
+	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
+	default y
+	help
+	  When enabled, the UICR generator will populate the
+	  secondary_periphconf_partition partition.
+
+choice GEN_UICR_SECONDARY_PROCESSOR
+	prompt "Secondary processor selection"
+	default GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	help
+	  Processor to boot for the secondary firmware.
+
+config GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	bool "APPLICATION processor"
+	help
+	  Boot secondary firmware on the APPLICATION processor.
+
+config GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+	bool "RADIOCORE processor"
+	help
+	  Boot secondary firmware on the RADIOCORE processor.
+
+endchoice
+
+config GEN_UICR_SECONDARY_PROCESSOR_VALUE
+	hex
+	default 0xBD2328A8 if GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	default 0x1730C77F if GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+
+config GEN_UICR_SECONDARY_TRIGGER
+	bool "Enable UICR.SECONDARY.TRIGGER"
+	help
+	  When enabled, configures automatic triggers that cause IronSide SE
+	  to boot the secondary firmware instead of the primary firmware based
+	  on specific reset reasons.
+
+if GEN_UICR_SECONDARY_TRIGGER
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0
+	bool "Trigger on Application domain watchdog 0 reset"
+	help
+	  Boot secondary firmware when Application domain watchdog 0 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1
+	bool "Trigger on Application domain watchdog 1 reset"
+	help
+	  Boot secondary firmware when Application domain watchdog 1 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP
+	bool "Trigger on Application domain CPU lockup reset"
+	help
+	  Boot secondary firmware when Application domain CPU lockup causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0
+	bool "Trigger on Radio core watchdog 0 reset"
+	help
+	  Boot secondary firmware when Radio core watchdog 0 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1
+	bool "Trigger on Radio core watchdog 1 reset"
+	help
+	  Boot secondary firmware when Radio core watchdog 1 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP
+	bool "Trigger on Radio core CPU lockup reset"
+	help
+	  Boot secondary firmware when Radio core CPU lockup causes a reset.
+
+endif # GEN_UICR_SECONDARY_TRIGGER
+
+config GEN_UICR_SECONDARY_PROTECTEDMEM
+	bool "Enable UICR.SECONDARY.PROTECTEDMEM"
+	depends on GEN_UICR_SECONDARY
+	help
+	  When enabled, the UICR generator will configure the
+	  protected memory region for the secondary firmware.
+
+config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
+	int "Secondary protected memory size in bytes"
+	default 4096
+	depends on GEN_UICR_SECONDARY_PROTECTEDMEM
+	help
+	  Size of the secondary protected memory region in bytes.
+	  This value must be divisible by 4096 (4 kiB).
+
+endif # GEN_UICR_SECONDARY
+
+endmenu
+
+source "Kconfig.zephyr"

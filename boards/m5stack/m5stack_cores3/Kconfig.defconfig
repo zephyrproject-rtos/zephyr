@@ -1,0 +1,11 @@
+# M5Stack CoreS3 board defconfig
+
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE
+
+config INPUT
+	default y
+
+endif # BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE

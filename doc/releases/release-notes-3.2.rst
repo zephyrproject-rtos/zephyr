@@ -505,7 +505,7 @@ Drivers and Sensors
 
 * CAN
 
-  * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
+  * A driver for bridging from ``native_posix`` to Linux SocketCAN has been added.
   * A driver for the Espressif ESP32 TWAI has been added. See the
     :dtcompatible:`espressif,esp32-twai` devicetree binding for more information.
   * The STM32 CAN-FD CAN driver clock configuration has been moved from Kconfig to :ref:`devicetree
@@ -1112,7 +1112,7 @@ Devicetree
     * :dtcompatible:`microchip,xec-espi`
     * :dtcompatible:`microchip,xec-i2c`
     * :dtcompatible:`microchip,xec-qmspi`
-    * :dtcompatible:`neorv32-machine-timer`
+    * :dtcompatible:`neorv32,machine-timer`
     * :dtcompatible:`nordic,nrf-ieee802154`
     * :dtcompatible:`nuclei,systimer`
     * :dtcompatible:`nuvoton,npcx-leakage-io`
@@ -1613,7 +1613,7 @@ MCUboot
 * Edited the DFU detection's GPIO-pin configuration to be done through DTS using the ``mcuboot-button0`` pin alias.
 * Edited the LED usage to prefer DTS' ``mcuboot-led0`` alias over the ``bootloader-led0`` alias.
 * Removed :c:func:`device_get_binding()` usage in favor of :c:func:`DEVICE_DT_GET()`.
-* Added support for generic `watchdog0` alias.
+* Added support for generic ``watchdog0`` alias.
 * Enabled watchdog feed by default.
 * Dropped the :kconfig:option:`CONFIG_BOOT_IMAGE_ACCESS_HOOKS_FILE` option.
   The inclusion of the Hooks implementation file is now up to the project's customization.

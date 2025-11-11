@@ -20,16 +20,15 @@ static void cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data
 	zassert_equal(exp_type[d_cnt], type, "Expected: %d got:%d", exp_type[d_cnt], type);
 
 	if (exp_ts[d_cnt] == UINT64_MAX) {
-		zassert_equal(ts, NULL, NULL);
+		zassert_equal(ts, NULL);
 	} else {
-		zassert_true(ts != NULL, NULL);
+		zassert_true(ts != NULL);
 		zassert_equal(exp_ts[d_cnt], *ts, "exp:%llx got:%llx", exp_ts[d_cnt], *ts);
 	}
 
-	zassert_equal(exp_marked[d_cnt], marked, NULL);
+	zassert_equal(exp_marked[d_cnt], marked);
 	zassert_equal(
-		memcmp((uint8_t *)&exp_data[d_cnt], (uint8_t *)&data.data, exp_data_len[d_cnt]), 0,
-		NULL);
+		memcmp((uint8_t *)&exp_data[d_cnt], (uint8_t *)&data.data, exp_data_len[d_cnt]), 0);
 	d_cnt++;
 }
 
@@ -56,20 +55,20 @@ ZTEST(mipi_stp_decoder_test, test_chunk_null)
 	ADD_ITEM(cnt, STP_DECODER_NULL, UINT64_MAX, false, (uint8_t)0);
 
 	mipi_stp_decoder_decode(data, sizeof(data));
-	zassert_equal(cnt, d_cnt, NULL);
+	zassert_equal(cnt, d_cnt);
 }
 
-ZTEST(mipi_stp_decoder_test, test_chunk_master)
+ZTEST(mipi_stp_decoder_test, test_chunk_major)
 {
 	/* 0x1(m8) 0xab 0x0 (null) 0xf1(m16) 0x3412 */
 	uint8_t data[] = {0xa1, 0x0b, 0x1f, 0x34, 0x12};
 
-	ADD_ITEM(cnt, STP_DECODER_MASTER, UINT64_MAX, false, (uint8_t)0xab);
+	ADD_ITEM(cnt, STP_DECODER_MAJOR, UINT64_MAX, false, (uint8_t)0xab);
 	ADD_ITEM(cnt, STP_DECODER_NULL, UINT64_MAX, false, (uint8_t)0);
-	ADD_ITEM(cnt, STP_DECODER_MASTER, UINT64_MAX, false, (uint16_t)0x4321);
+	ADD_ITEM(cnt, STP_DECODER_MAJOR, UINT64_MAX, false, (uint16_t)0x4321);
 
 	mipi_stp_decoder_decode(data, sizeof(data));
-	zassert_equal(cnt, d_cnt, NULL);
+	zassert_equal(cnt, d_cnt);
 }
 
 ZTEST(mipi_stp_decoder_test, test_chunk_channel)
@@ -78,12 +77,12 @@ ZTEST(mipi_stp_decoder_test, test_chunk_channel)
 	uint8_t data[] = {0x10, 0xba, 0xa3, 0xfb, 0x63, 0x44, 0x36, 0xbb, 0x01, 0x3b, 0xaa};
 
 	ADD_ITEM(cnt, STP_DECODER_NULL, UINT64_MAX, false, (uint8_t)0);
-	ADD_ITEM(cnt, STP_DECODER_MASTER, UINT64_MAX, false, (uint8_t)0xab);
+	ADD_ITEM(cnt, STP_DECODER_MAJOR, UINT64_MAX, false, (uint8_t)0xab);
 	ADD_ITEM(cnt, STP_DECODER_CHANNEL, UINT64_MAX, false, (uint8_t)0xab);
 	ADD_ITEM(cnt, STP_DECODER_CHANNEL, UINT64_MAX, false, (uint16_t)0x6446);
 	/* MSB byte is taken from previous C16 */
 	ADD_ITEM(cnt, STP_DECODER_CHANNEL, UINT64_MAX, false, (uint16_t)0x64bb);
-	ADD_ITEM(cnt, STP_DECODER_MASTER, UINT64_MAX, false, (uint8_t)0x0b);
+	ADD_ITEM(cnt, STP_DECODER_MAJOR, UINT64_MAX, false, (uint8_t)0x0b);
 	/* M8 resets current channel */
 	ADD_ITEM(cnt, STP_DECODER_CHANNEL, UINT64_MAX, false, (uint8_t)0xaa);
 

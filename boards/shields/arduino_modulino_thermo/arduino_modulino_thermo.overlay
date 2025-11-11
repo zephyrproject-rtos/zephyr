@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dht0 = &arduino_modulino_thermo;
+	};
+};
+
+&zephyr_i2c {
+	arduino_modulino_thermo: arduino-modulino-thermo@44 {
+		compatible = "renesas,hs300x";
+		reg = <0x44>;
+	};
+};

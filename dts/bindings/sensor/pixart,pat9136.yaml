@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: PAT9136 optical flow sensor
+
+compatible: "pixart,pat9136"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 19
+    description: |
+      The resolution of the sensor which indirectly results in counts per inch
+      (CPI), following the formula CPI = (1 + resolution) * 100.
+      Valid range is 0 to 199.
+      Default is value set during Performance Optimization Settings.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-low. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  backup-timer-ms:
+    type: int
+    default: 50
+    description: |
+      The back-up timer in milliseconds used to ensure sensor interaction
+      even if no motion is present, when Data-Ready streaming trigger is
+      configured.
+      Default is 1000X the fastest frame rate (20,000 fps).
+
+  cooldown-timer-ms:
+    type: int
+    default: 10
+    description: |
+      The cooldown timer in milliseconds used to prevent flooding the system
+      with interrupts (potentially at max 20,000 fps) while Data-Ready
+      streaming trigger is configured.
+      Default is 200X the fastest frame rate (20,000 fps).
+      Must be less than backup-timer-ms.

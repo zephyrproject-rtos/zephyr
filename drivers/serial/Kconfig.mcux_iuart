@@ -8,6 +8,7 @@ config UART_MCUX_IUART
 	default y
 	depends on DT_HAS_NXP_IMX_IUART_ENABLED
 	depends on CLOCK_CONTROL
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

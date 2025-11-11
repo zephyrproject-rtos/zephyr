@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_pse84_eval/pse846gps2dbzc4a/m55
+name: PSOC Edge84 Evaluation Kit (M55)
+type: mcu
+arch: arm
+sysbuild: true
+toolchain:
+  - zephyr
+supported:
+  - clock_control
+  - gpio
+  - pin_ctrl
+  - uart
+  - spi

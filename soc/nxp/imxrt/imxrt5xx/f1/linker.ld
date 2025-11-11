@@ -314,8 +314,10 @@ SECTIONS
     __text_region_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     *(.ResetVector.literal)
-    *(.entry.text)
     *(.init.literal)
+    *(.entry.text)
+    /* to support backtrace */
+    KEEP (*(.iram1.literal .iram1))
     KEEP(*(.init))
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.fini.literal)
@@ -433,6 +435,14 @@ SECTIONS
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
   .debug_ranges  0 :  { *(.debug_ranges) }
+  .debug_addr  0 :  { *(.debug_addr) }
+  .debug_line_str  0 :  { *(.debug_line_str) }
+  .debug_loclists  0 :  { *(.debug_loclists) }
+  .debug_macro  0 :  { *(.debug_macro) }
+  .debug_names  0 :  { *(.debug_names) }
+  .debug_rnglists  0 :  { *(.debug_rnglists) }
+  .debug_str_offsets  0 :  { *(.debug_str_offsets) }
+  .debug_sup  0 :  { *(.debug_sup) }
   .xtensa.info  0 :  { *(.xtensa.info) }
   .xt.insn 0 :
   {

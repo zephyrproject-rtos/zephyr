@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Norik Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Octopus SoM provides the user 2 options for connecting
+  a SIM card to the nRF9160. Option one is to use on-board eSIM or
+  external nano SIM. Which SIM is used can be selected using the 'sim'
+  property of the 'sim_select' dt node.
+
+compatible: "norik,sim_select"
+
+include: base.yaml
+
+properties:
+  sim-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to select which SIM is used
+
+  sim:
+    type: string
+    required: true
+    enum:
+      - "on-board"
+      - "external"
+    description: SIM choice (on-board eSIM or external nano SIM)

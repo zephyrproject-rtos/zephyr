@@ -15,6 +15,7 @@
 
 #include <zephyr/net/coap.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/tls_credentials.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +24,8 @@ extern "C" {
 /**
  * @brief CoAP Service API
  * @defgroup coap_service CoAP service API
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -54,10 +57,23 @@ struct coap_service {
 	struct coap_resource *res_begin;
 	struct coap_resource *res_end;
 	struct coap_service_data *data;
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	const sec_tag_t *sec_tag_list;
+	size_t sec_tag_list_size;
+#endif
 };
 
-#define __z_coap_service_define(_name, _host, _port, _flags, _res_begin, _res_end)		\
-	static struct coap_service_data coap_service_data_##_name = {				\
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+#define __z_coap_service_secure(_sec_tag_list, _sec_tag_list_size)				\
+		.sec_tag_list = _sec_tag_list,							\
+		.sec_tag_list_size = _sec_tag_list_size,
+#else
+#define __z_coap_service_secure(...)
+#endif
+
+#define __z_coap_service_define(_name, _host, _port, _flags, _res_begin, _res_end,		\
+				_sec_tag_list, _sec_tag_list_size)				\
+	static struct coap_service_data _CONCAT(coap_service_data_, _name) = {			\
 		.sock_fd = -1,									\
 	};											\
 	const STRUCT_SECTION_ITERABLE(coap_service, _name) = {					\
@@ -67,7 +83,8 @@ struct coap_service {
 		.flags = _flags,								\
 		.res_begin = (_res_begin),							\
 		.res_end = (_res_end),								\
-		.data = &coap_service_data_##_name,						\
+		.data = &_CONCAT(coap_service_data_, _name),					\
+		__z_coap_service_secure(_sec_tag_list, _sec_tag_list_size)			\
 	}
 
 /** @endcond */
@@ -109,8 +126,8 @@ struct coap_service {
  * @param _service Name of the associated service.
  */
 #define COAP_RESOURCE_DEFINE(_name, _service, ...)						\
-	STRUCT_SECTION_ITERABLE_ALTERNATE(coap_resource_##_service, coap_resource, _name)	\
-		= __VA_ARGS__
+	STRUCT_SECTION_ITERABLE_ALTERNATE(_CONCAT(coap_resource_, _service), coap_resource,	\
+					  _name) = __VA_ARGS__
 
 /**
  * @brief Define a CoAP service with static resources.
@@ -130,11 +147,43 @@ struct coap_service {
  * @param _flags Configuration flags @see @ref COAP_SERVICE_FLAGS.
  */
 #define COAP_SERVICE_DEFINE(_name, _host, _port, _flags)					\
-	extern struct coap_resource _CONCAT(_coap_resource_##_name, _list_start)[];		\
-	extern struct coap_resource _CONCAT(_coap_resource_##_name, _list_end)[];		\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[];	\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[];	\
 	__z_coap_service_define(_name, _host, _port, _flags,					\
-				&_CONCAT(_coap_resource_##_name, _list_start)[0],		\
-				&_CONCAT(_coap_resource_##_name, _list_end)[0])
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[0],	\
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[0],	\
+				NULL, 0)
+
+/**
+ * @brief Define a CoAP secure service with static resources.
+ *
+ * @note The @p _host parameter can be `NULL`. If not, it is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host, otherwise the any address is
+ * used.
+ *
+ * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
+ * number to use for the service. If the specified port number is zero, then an ephemeral port
+ * number will be used and the actual port number assigned will be written back to memory. For
+ * ephemeral port numbers, the memory pointed to by @p _port must be writeable.
+ *
+ * @note @kconfig{CONFIG_NET_SOCKETS_ENABLE_DTLS} has to be enabled for CoAP secure support.
+ *
+ * @param _name Name of the service.
+ * @param _host IP address or hostname associated with the service.
+ * @param[inout] _port Pointer to port associated with the service.
+ * @param _flags Configuration flags @see @ref COAP_SERVICE_FLAGS.
+ * @param _sec_tag_list DTLS security tag list used to setup a COAPS socket.
+ * @param _sec_tag_list_size DTLS security tag list size used to setup a COAPS socket.
+ */
+#define COAPS_SERVICE_DEFINE(_name, _host, _port, _flags, _sec_tag_list, _sec_tag_list_size)	\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS),				\
+		     "DTLS is required for CoAP secure (CONFIG_NET_SOCKETS_ENABLE_DTLS)");	\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[];	\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[];	\
+	__z_coap_service_define(_name, _host, _port, _flags,					\
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[0],	\
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[0],	\
+				_sec_tag_list, _sec_tag_list_size)
 
 /**
  * @brief Count the number of CoAP services.
@@ -175,7 +224,7 @@ struct coap_service {
  * @param _it Name of iterator (of type @ref coap_resource)
  */
 #define COAP_RESOURCE_FOREACH(_service, _it)							\
-	STRUCT_SECTION_FOREACH_ALTERNATE(coap_resource_##_service, coap_resource, _it)
+	STRUCT_SECTION_FOREACH_ALTERNATE(_CONCAT(coap_resource_, _service), coap_resource, _it)
 
 /**
  * @brief Iterate over all static resources associated with @p _service .

@@ -43,8 +43,8 @@ Ethernet
 ========
 
 You can use this application on a supported board with ethernet port.  There
-are many like :ref:`sam4e_xpro`, :ref:`sam_v71_xplained_ultra`,
-:ref:`frdm_k64f`, :ref:`nucleo_f767zi_board` etc.  Pick one and just build
+are many like :zephyr:board:`sam4e_xpro`, :zephyr:board:`sam_v71_xult`,
+:zephyr:board:`frdm_k64f`, :zephyr:board:`nucleo_f767zi` etc.  Pick one and just build
 tagoio-http-client sample application with minimal configuration:
 
 .. zephyr-app-commands::
@@ -58,7 +58,7 @@ WIFI
 ====
 
 To enable WIFI support, you need a board with an embedded WIFI support like
-:ref:`disco_l475_iot1_board` or you can add a shield like
+:zephyr:board:`disco_l475_iot1` or you can add a shield like
 :ref:`module_esp_8266` or :ref:`inventek_eswifi_shield`.  Additionally you
 need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
 ``CONFIG_TAGOIO_HTTP_WIFI_PSK`` with the correspondent password at

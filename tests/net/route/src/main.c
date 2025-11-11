@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_context.h>
@@ -116,8 +116,8 @@ static uint8_t *net_route_get_mac(const struct device *dev)
 		route->mac_addr[5] = sys_rand8_get();
 	}
 
-	route->ll_addr.addr = route->mac_addr;
-	route->ll_addr.len = 6U;
+	memcpy(route->ll_addr.addr, route->mac_addr, sizeof(route->mac_addr));
+	route->ll_addr.len = sizeof(route->mac_addr);
 
 	return route->mac_addr;
 }

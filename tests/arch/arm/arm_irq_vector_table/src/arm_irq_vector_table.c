@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
 #include <zephyr/linker/sections.h>
 
-
 /*
  * Offset (starting from the beginning of the vector table)
  * of the location where the ISRs will be manually installed.
  */
-#define _ISR_OFFSET 0
+#define _ISR_OFFSET CONFIG_ISR_OFFSET
 
 #if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #undef _ISR_OFFSET
@@ -27,8 +27,8 @@
 #elif defined(CONFIG_SOC_SERIES_NRF54LX)
 /* For nRF54L Series, use SWI00-02 interrupt lines. */
 #define _ISR_OFFSET SWI00_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
-/* For nRF54H Series, use BELLBOARD_0-2 interrupt lines. */
+#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
+/* For nRF54H and nRF92 Series, use BELLBOARD_0-2 interrupt lines. */
 #define _ISR_OFFSET BELLBOARD_0_IRQn
 #else
 /* For other nRF targets, use TIMER0-2 interrupt lines. */
@@ -46,7 +46,6 @@ struct k_sem sem[3];
 
 void isr0(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[0]);
 	z_arm_int_exit();
 }
@@ -59,7 +58,6 @@ void isr0(void)
 
 void isr1(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[1]);
 	z_arm_int_exit();
 }
@@ -72,7 +70,6 @@ void isr1(void)
 
 void isr2(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[2]);
 	z_arm_int_exit();
 }
@@ -82,7 +79,6 @@ void isr2(void)
  * @ingroup all_tests
  * @{
  */
-
 
 /**
  * @brief Test installation of ISRs directly in the vector table
@@ -98,7 +94,7 @@ void isr2(void)
  */
 ZTEST(vector_table, test_arm_irq_vector_table)
 {
-	printk("Test Cortex-M IRQs installed directly in the vector table\n");
+	TC_PRINT("Test Cortex-M IRQs installed directly in the vector table\n");
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
@@ -106,13 +102,12 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 		k_sem_init(&sem[ii], 0, K_SEM_MAX_LIMIT);
 	}
 
-	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) ||
-		      k_sem_take(&sem[1], K_NO_WAIT) ||
-		      k_sem_take(&sem[2], K_NO_WAIT)), NULL);
+	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) || k_sem_take(&sem[1], K_NO_WAIT) ||
+		      k_sem_take(&sem[2], K_NO_WAIT)));
 
 	for (int ii = 0; ii < 3; ii++) {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_SOC_TI_LM3S6965_QEMU) || \
+	defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 		/* the QEMU does not simulate the
 		 * STIR register: this is a workaround
 		 */
@@ -122,10 +117,17 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 #endif
 	}
 
-	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) ||
-		       k_sem_take(&sem[1], K_NO_WAIT) ||
-		       k_sem_take(&sem[2], K_NO_WAIT)), NULL);
+	/*
+	 * It is recommended to have a DSB followed by ISB while
+	 * enabling interrupts using NVIC. Also without this, the
+	 * test fails in scenarios where CONFIG_ROMSTART_RELOCATION_ROM is
+	 * enabled e.g. MPS3 Corstone310.
+	 */
+	__DSB(); /* Ensure write to NVIC completes before continuing */
+	__ISB(); /* Ensure that IRQ is executed */
 
+	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) || k_sem_take(&sem[1], K_NO_WAIT) ||
+		       k_sem_take(&sem[2], K_NO_WAIT)));
 }
 
 typedef void (*vth)(void); /* Vector Table Handler */
@@ -143,35 +145,38 @@ typedef void (*vth)(void); /* Vector Table Handler */
  */
 void nrfx_power_clock_irq_handler(void);
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
-#define POWER_CLOCK_IRQ_NUM	POWER_CLOCK_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
-#define POWER_CLOCK_IRQ_NUM	-1 /* not needed */
+#define POWER_CLOCK_IRQ_NUM POWER_CLOCK_IRQn
+#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
+#define POWER_CLOCK_IRQ_NUM -1 /* not needed */
 #else
-#define POWER_CLOCK_IRQ_NUM	CLOCK_POWER_IRQn
+#define POWER_CLOCK_IRQ_NUM CLOCK_POWER_IRQn
 #endif
 
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 void timer0_nrf_isr(void);
-#define TIMER_IRQ_HANDLER	timer0_nrf_isr
-#define TIMER_IRQ_NUM		TIMER0_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX)
+#define TIMER_IRQ_HANDLER timer0_nrf_isr
+#define TIMER_IRQ_NUM     TIMER0_IRQn
+#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX) ||                  \
+	defined(CONFIG_SOC_SERIES_NRF92X)
 void nrfx_grtc_irq_handler(void);
-#define TIMER_IRQ_HANDLER	nrfx_grtc_irq_handler
-#define TIMER_IRQ_NUM		GRTC_0_IRQn
+#define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
+#define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))
 #else
 void rtc_nrf_isr(void);
-#define TIMER_IRQ_HANDLER	rtc_nrf_isr
-#define TIMER_IRQ_NUM		RTC1_IRQn
+#define TIMER_IRQ_HANDLER rtc_nrf_isr
+#define TIMER_IRQ_NUM     RTC1_IRQn
 #endif
 
 #define IRQ_VECTOR_TABLE_SIZE (MAX(POWER_CLOCK_IRQ_NUM, MAX(TIMER_IRQ_NUM, _ISR_OFFSET + 2)) + 1)
 
-vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #if (POWER_CLOCK_IRQ_NUM != -1)
 	[POWER_CLOCK_IRQ_NUM] = nrfx_power_clock_irq_handler,
 #endif
 	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
-	[_ISR_OFFSET] = isr0, isr1, isr2,
+	[_ISR_OFFSET] = isr0,
+	isr1,
+	isr2,
 };
 #elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2) || defined(CONFIG_SOC_SERIES_CC13X2X7_CC26X2X7)
 /* TI CC13x2/CC26x2 based platforms also employ a Hardware RTC peripheral
@@ -180,25 +185,23 @@ vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
  * the custom vector table to handle the timer "tick" interrupts.
  */
 extern void rtc_isr(void);
-vth __irq_vector_table _irq_vector_table[] = {
-	isr0, isr1, isr2, 0,
-	rtc_isr
-};
-#elif (defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) ||	\
-	defined(CONFIG_SOC_SERIES_RW6XX)) && \
-	defined(CONFIG_MCUX_OS_TIMER)
+const vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2, 0, rtc_isr};
+
+/* clang-format off */
+#elif (defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) ||               \
+	defined(CONFIG_SOC_SERIES_RW6XX)) && defined(CONFIG_MCUX_OS_TIMER)
+/* clang-format on */
+
 /* MXRT685 employs a OS Event timer to implement the Kernel system
  * timer, instead of the ARM Cortex-M SysTick. Therefore, a pointer to
  * the timer ISR needs to be added in the custom vector table to handle
  * the timer "tick" interrupts.
  */
 extern void mcux_lpc_ostick_isr(void);
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	mcux_lpc_ostick_isr
-};
-#elif (defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)) && \
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_lpc_ostick_isr};
+#elif (defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)) &&            \
 	defined(CONFIG_MCUX_GPT_TIMER)
 /** MXRT parts employ a GPT timer peripheral to implement the Kernel system
  * timer, instead of the ARM Cortex-M Systick. Thereforce, a pointer to the
@@ -207,38 +210,83 @@ vth __irq_vector_table _irq_vector_table[] = {
  */
 extern void mcux_imx_gpt_isr(void);
 #if defined(CONFIG_SOC_MIMXRT1011)
+/* clang-format off */
 /* RT1011 GPT timer interrupt is at offset 30 */
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_imx_gpt_isr
 };
+/* clang-format on */
 #elif defined(CONFIG_SOC_SERIES_IMXRT10XX)
+/* clang-format off */
 /* RT10xx GPT timer interrupt is at offset 100 */
-vth __irq_vector_table _irq_vector_table[] = {
+const vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, mcux_imx_gpt_isr
 };
+/* clang-format on */
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 /* RT11xx GPT timer interrupt is at offset 119 */
-vth __irq_vector_table _irq_vector_table[] = {
-	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	mcux_imx_gpt_isr
-};
+const vth __irq_vector_table _irq_vector_table[] = {
+	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_imx_gpt_isr};
 #else
 #error "GPT timer enabled, but no known SOC selected. ISR table needs rework"
 #endif
+
+#elif defined(CONFIG_SOC_FAMILY_AMBIQ)
+
+#if defined(CONFIG_AMBIQ_STIMER_TIMER)
+extern void stimer_isr(void);
+#define TIMER_IRQ_NUM DT_IRQN(DT_INST(0, ambiq_stimer))
+#define TIMER_IRQ_HANDLER stimer_isr
+#define IRQ_VECTOR_TABLE_SIZE _ISR_OFFSET > TIMER_IRQ_NUM ? (_ISR_OFFSET + 3) : (TIMER_IRQ_NUM + 2)
 #else
-vth __irq_vector_table _irq_vector_table[] = {
-	isr0, isr1, isr2
+#define IRQ_VECTOR_TABLE_SIZE (_ISR_OFFSET + 3)
+#endif /* CONFIG_AMBIQ_STIMER_TIMER */
+
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+#ifdef CONFIG_AMBIQ_STIMER_TIMER
+	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X)
+	[TIMER_IRQ_NUM + 1] = TIMER_IRQ_HANDLER,
+#endif
+#endif
+#ifdef CONFIG_SOC_SERIES_APOLLO5X
+	[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = hal_internal_timer_isr,
+#endif
 };
-#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
+
+#else
+
+#if defined(CONFIG_MCUX_OS_TIMER)
+extern void mcux_lpc_ostick_isr(void);
+#define TIMER_IRQ_NUM DT_IRQN(DT_INST(0, nxp_os_timer))
+#define TIMER_IRQ_HANDLER mcux_lpc_ostick_isr
+#define IRQ_VECTOR_TABLE_SIZE _ISR_OFFSET > TIMER_IRQ_NUM ? (_ISR_OFFSET + 3) : (TIMER_IRQ_NUM + 1)
+#else
+#define IRQ_VECTOR_TABLE_SIZE (_ISR_OFFSET + 3)
+#endif /* CONFIG_MCUX_OS_TIMER */
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+#if defined(TIMER_IRQ_HANDLER) && !defined(CONFIG_CORTEX_M_SYSTICK)
+	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
+#endif
+};
+
+#endif
 
 /**
  * @}

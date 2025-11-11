@@ -16,6 +16,8 @@
 /**
  * @brief VLAN definitions and helpers
  * @defgroup vlan_api Virtual LAN definitions and helpers
+ * @since 1.12
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -28,6 +30,9 @@ extern "C" {
 
 /** Unspecified VLAN tag value */
 #define NET_VLAN_TAG_UNSPEC 0x0fff
+
+/** VLAN ID for forwarding to the native interface (priority tagging) */
+#define NET_VLAN_TAG_PRIORITY 0x0000
 
 /**
  * @brief Get VLAN identifier from TCI.

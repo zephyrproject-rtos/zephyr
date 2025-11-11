@@ -8,9 +8,9 @@ Overview
 ********
 
 This sample demonstrates using the :ref:`Flash API <flash_api>` on an SoC internal storage.
-The sample uses :ref:`Flash map API <flash_map_api>` to obtain a device that has
-partition defined with label `storage_partition`, then uses :ref:`Flash API <flash_api>`
-to directly access and modify contents of a device, within area defined for said
+The sample uses :ref:`Flash map API <flash_map_api>` to obtain a device that has one
+partition defined with the label ``storage_partition``, then uses :ref:`Flash API <flash_api>`
+to directly access and modify the contents of a device within the area defined for said
 partition.
 
 Within the sample, user may observe how read/write/erase operations
@@ -20,9 +20,9 @@ ready for operation.
 Building and Running
 ********************
 
-The application will build for any SoC with internal storage
-access enabled, as it is default for SoC devices with defined
-fixed-partition, over that internal storage, labeled `storage_partition`.
+The sample will be built for any SoC with internal storage, as long as
+there is a fixed-partition named ``storage_partition`` defined
+on that internal storage.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/soc_flash_nrf

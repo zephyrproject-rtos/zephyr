@@ -18,8 +18,9 @@ an Ethernet network interface.
 Prerequisites
 *************
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
@@ -47,6 +48,8 @@ driver for QEMU connectivity:
   Driver is called ``smsc911x`` in Zephyr source tree.
 * For ``qemu_cortex_a53``, ``Intel(R) PRO/1000 Gigabit Ethernet driver``
   Ethernet driver is selected by default.
+* Additionally, the :zephyr:code-sample:`sockets-echo-server` sample contains
+  overlay files for the VIRTIO Network device on ``qemu_x86_64``.
 
 Step 1 - Create Ethernet interface
 ==================================
@@ -84,4 +87,16 @@ In terminal #2, type:
    :goals: run
    :compact:
 
+Alternatively, if you decided to use the VIRTIO Network device on qemu_x86_64:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :host-os: unix
+   :board: qemu_x86_64
+   :gen-args: -DDTC_OVERLAY_FILE=virtnet.overlay -DEXTRA_CONF_FILE=overlay-virtnet.conf
+   :goals: run
+   :compact:
+
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

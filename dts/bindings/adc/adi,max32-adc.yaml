@@ -1,0 +1,79 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 ADC
+
+compatible: "adi,max32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  channel-count:
+    type: int
+    required: true
+    description: The maximum channels supported on each unit.
+
+  vref-mv:
+    type: int
+    required: true
+    description: Indicates the reference voltage of the ADC in mV (on the target board).
+
+  resolution:
+    type: int
+    required: true
+    description: Indicates the resolution supported by the ADC instance.
+
+  clock-source:
+    required: true
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      Clock source to be used by the ADC peripheral. The following options
+      are available:
+      - 0: "ADI_MAX32_PRPH_CLK_SRC_PCLK" Peripheral clock
+      - 1: "ADI_MAX32_PRPH_CLK_SRC_EXTCLK" External Clock
+      - 2: "ADI_MAX32_PRPH_CLK_SRC_IBRO" Internal Baud Rate Oscillator
+      - 3: "ADI_MAX32_PRPH_CLK_SRC_ERFO" External Radio Frequency Oscillator
+      The target device might not support every option please take a look on
+      target device user guide
+
+  clock-divider:
+    required: true
+    type: int
+    enum: [1, 2, 4, 8, 16]
+    description: |
+      The clock divider divides the ADC source clock to set the ADC clock frequency as follows:
+        F_sar_clk = F_clock_source / clock divider
+
+  track-count:
+    required: true
+    type: int
+    description: |
+      The number of cycles to add to the minimum track time.
+
+  idle-count:
+    required: true
+    type: int
+    description: |
+      The number of cycles to add to the minimum hold time.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

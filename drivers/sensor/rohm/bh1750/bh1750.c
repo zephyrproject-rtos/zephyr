@@ -187,7 +187,7 @@ static int bh1750_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api bh1750_driver_api = {
+static DEVICE_API(sensor, bh1750_driver_api) = {
 	.sample_fetch = bh1750_sample_fetch,
 	.channel_get = bh1750_channel_get
 };

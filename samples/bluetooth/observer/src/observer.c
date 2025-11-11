@@ -88,10 +88,11 @@ static struct bt_le_scan_cb scan_callbacks = {
 
 int observer_start(void)
 {
+	/* 30 ms continuous active scanning with duplicate filtering. */
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_LE_SCAN_TYPE_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_ACTIVE,
 		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
+		.interval   = BT_GAP_SCAN_FAST_INTERVAL_MIN,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
 	int err;

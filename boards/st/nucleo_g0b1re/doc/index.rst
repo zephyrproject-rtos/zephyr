@@ -1,7 +1,4 @@
-.. _nucleo_g0b1re_board:
-
-ST Nucleo G0B1RE
-################
+.. zephyr:board:: nucleo_g0b1re
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo G0B1RE board:
 - Three LEDs: USB communication (LD1), user LED (LD4), power LED (LD3)
 - Two push-buttons: USER and RESET
 - 32.768 kHz crystal oscillator
-
-.. image:: img/nucleo_g0b1re.jpg
-   :align: center
-   :alt: Nucleo G0B1RE
 
 More information about the board can be found at the `Nucleo G0B1RE website`_.
 
@@ -74,47 +67,7 @@ More information about STM32G0B1RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g0b1re board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | arm memory protection unit          |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| FDCAN     | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g0b1re/nucleo_g0b1re_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -147,6 +100,10 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo G0B1RE board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_g0b1re`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -154,20 +111,25 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G0B1RE board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-This interface is not yet supported by the openocd version included in the Zephyr SDK.
-But JLink, STM32CubeProgrammer and Pyocd interfaces are supported.
-Pyocd support is currently limited: As the stm32g0b1 target causes issues,
-the stm32g071 target is used. For STM32G0 support pyocd needs additional target
-information, which can be installed by adding "pack" support with the
-following pyocd command:
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
+
+For STM32G0 support pyocd needs additional target information,
+which can be installed by adding "pack" support with the following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32g0
-
 
 Flashing an application to Nucleo G0B1RE
 ----------------------------------------
@@ -185,7 +147,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -209,3 +171,6 @@ References
 
 .. _G0B1RE on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g0b1re.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

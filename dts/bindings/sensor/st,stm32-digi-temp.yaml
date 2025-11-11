@@ -1,11 +1,11 @@
 # Copyright (c) 2024, Aurelien Jarno
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 family Digital Temperature Sensor node
+description: STM32 Digital Temperature Sensor.
 
 compatible: "st,stm32-digi-temp"
 
-include: base.yaml
+include: [sensor-device.yaml, base.yaml]
 
 properties:
   reg:

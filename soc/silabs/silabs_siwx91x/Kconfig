@@ -1,0 +1,89 @@
+# Copyright (c) 2023 Antmicro
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SILABS_SIWX91X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SILABS_WISECONNECT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
+
+if SOC_FAMILY_SILABS_SIWX91X
+
+rsource "*/Kconfig"
+
+config SILABS_SIWX91X_NWP
+	bool "Silabs Network Coprocessor"
+	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select CMSIS_RTOS_V2
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+	help
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
+
+config SOC_SIWX91X_PM_BACKEND_PMGR
+	bool
+	select SILABS_SIWX91X_NWP
+	select SILABS_SLEEPTIMER_TIMER
+	default y if PM
+	help
+	  Implement PM using sl_power_manager service from Gecko SDK
+
+config SIWX91X_NWP_INIT_PRIORITY
+	int "SiWx91x Network Processor init priority"
+	default 39
+	help
+	  Initialization priority of the SiWx91x Network Processor. NWP init must
+	  have a higher priority than services that depend on it, such as Bluetooth,
+	  Wi-Fi and crypto.
+
+config SIWX91X_SIGN_KEY
+	string "Signing key"
+	help
+	  Sign the firmware using this private key. This value is passed as-is
+	  to the command "commander rps convert". The value is usually a path to
+	  PEM formatted file.
+
+config SIWX91X_MIC_KEY
+	string "Integrity Code (MIC) key"
+	help
+	  Check integrity of the firmware using MIC (AES CBC-MAC) based
+	  integrity check instead of CRC based check.
+	  This value is passed as-is to the command "commander rps convert". The
+	  value is usually a string of 32 hexadecimal number representing the
+	  AES-256 key.
+
+config SIWX91X_ENCRYPT
+	bool "Also encrypt the firmware"
+	depends on SIWX91X_MIC_KEY != ""
+	help
+	  Encrypt the application image using AES ECB encryption.
+	  The key used is the value of CONFIG_SIWX91X_MIC_KEY. This value is
+	  passed as-is to the command "commander rps convert".
+
+config SIWX91X_FIRMWARE_UPGRADE
+	bool "Support for firmware upgrade"
+	select SILABS_SIWX91X_NWP
+	help
+	  The firmware upgrade process for SiWx91x devices involves coordinated
+	  communication with both the Network Co-Processor (NCP) and the ROM
+	  bootloader. The NCP is responsible for writing the firmware image to
+	  flash memory, while the ROM bootloader handles the A/B upgrade logic
+	  to ensure reliable firmware switching.
+	  This option provides the necessary APIs to perform these upgrade tasks
+	  and is agnostic to the underlying transport protocol. It does not handle
+	  firmware retrieval directly; instead, the application layer is responsible
+	  for acquiring the firmware image (e.g., via an HTTP client or other means)
+	  and invoking the appropriate APIs to initiate and complete the upgrade
+	  process.
+	  For more information, visit:
+	  https://docs.silabs.com/wiseconnect/latest/wiseconnect-api-reference-guide-si91x-driver/si91-x-firmware-update-from-host-functions#sl-si91x-fwup-load
+
+endif # SOC_FAMILY_SILABS_SIWX91X

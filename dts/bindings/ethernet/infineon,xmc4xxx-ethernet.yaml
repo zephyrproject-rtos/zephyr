@@ -51,7 +51,7 @@ properties:
 
   rxd3-port-ctrl:
     type: string
-    description: Receive bit 2 (rxd2) signal GPIO connection. Only used for MII interface.
+    description: Receive bit 3 (rxd3) signal GPIO connection. Only used for MII interface.
     enum:
       - "P5_9"
       - "P6_3"

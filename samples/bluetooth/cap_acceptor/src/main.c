@@ -12,6 +12,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
@@ -19,6 +20,7 @@
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -31,19 +33,19 @@
 
 LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 
-#define SUPPORTED_DURATION  (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
-#define MAX_CHAN_PER_STREAM BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2)
-#define SUPPORTED_FREQ      BT_AUDIO_CODEC_CAP_FREQ_ANY
-#define SEM_TIMEOUT         K_SECONDS(5)
-#define MAX_SDU             155U
-#define MIN_SDU             30U
-#define FRAMES_PER_SDU      2
+#define SUPPORTED_DURATION (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
+#define SUPPORTED_FREQ     BT_AUDIO_CODEC_CAP_FREQ_ANY
+#define SEM_TIMEOUT        K_SECONDS(5)
+#define MAX_SDU            155U
+#define MIN_SDU            30U
+#define FRAMES_PER_SDU     2
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA_BYTES(BT_DATA_UUID16_SOME,
+		      BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
 		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
 		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED),
@@ -54,6 +56,10 @@ static const struct bt_data ad[] = {
 				  BT_BYTES_LIST_LE16(SINK_CONTEXT),
 				  BT_BYTES_LIST_LE16(SOURCE_CONTEXT),
 				  0x00, /* Metadata length */),
+	))
+	IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR,
+		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+				  BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
 	))
 };
 
@@ -82,7 +88,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	}
 
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(peer.conn);
 	peer.conn = NULL;
@@ -98,7 +104,7 @@ static int advertise(void)
 {
 	int err;
 
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
 	if (err) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
@@ -210,7 +216,7 @@ static int reset_cap_acceptor(void)
 
 /** Register the PAC records for PACS */
 static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
-			struct bt_pacs_cap *cap)
+			struct bt_pacs_cap *cap, enum bt_audio_location locations)
 {
 	int err;
 
@@ -221,7 +227,7 @@ static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
 		return err;
 	}
 
-	err = bt_pacs_set_location(dir, BT_AUDIO_LOCATION_MONO_AUDIO);
+	err = bt_pacs_set_location(dir, locations);
 	if (err != 0) {
 		LOG_ERR("Failed to set location: %d", err);
 
@@ -247,9 +253,12 @@ static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
 
 static int init_cap_acceptor(void)
 {
-	static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-		SUPPORTED_FREQ, SUPPORTED_DURATION, MAX_CHAN_PER_STREAM, MIN_SDU, MAX_SDU,
-		FRAMES_PER_SDU, (SINK_CONTEXT | SOURCE_CONTEXT));
+	const struct bt_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -261,13 +270,24 @@ static int init_cap_acceptor(void)
 
 	LOG_INF("Bluetooth initialized");
 
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		LOG_ERR("Could not register PACS (err %d)", err);
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		static const struct bt_audio_codec_cap lc3_codec_cap_sink =
+			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
+					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), MIN_SDU,
+					       MAX_SDU, FRAMES_PER_SDU, SINK_CONTEXT);
 		static struct bt_pacs_cap sink_cap = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &lc3_codec_cap_sink,
 		};
 		int err;
 
-		err = register_pac(BT_AUDIO_DIR_SINK, SINK_CONTEXT, &sink_cap);
+		err = register_pac(BT_AUDIO_DIR_SINK, SINK_CONTEXT, &sink_cap,
+				   BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT);
 		if (err != 0) {
 			LOG_ERR("Failed to register sink capabilities: %d", err);
 
@@ -276,12 +296,17 @@ static int init_cap_acceptor(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		static const struct bt_audio_codec_cap lc3_codec_cap_source =
+			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
+					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), MIN_SDU,
+					       MAX_SDU, FRAMES_PER_SDU, SOURCE_CONTEXT);
 		static struct bt_pacs_cap source_cap = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &lc3_codec_cap_source,
 		};
 		int err;
 
-		err = register_pac(BT_AUDIO_DIR_SOURCE, SOURCE_CONTEXT, &source_cap);
+		err = register_pac(BT_AUDIO_DIR_SOURCE, SOURCE_CONTEXT, &source_cap,
+				   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			LOG_ERR("Failed to register sink capabilities: %d", err);
 
@@ -303,6 +328,13 @@ int main(void)
 
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		err = init_cap_acceptor_unicast(&peer);
+		if (err != 0) {
+			return 0;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+		err = init_cap_acceptor_broadcast();
 		if (err != 0) {
 			return 0;
 		}
@@ -341,8 +373,6 @@ int main(void)
 			break;
 		}
 	}
-
-	/* TODO: Add CAP acceptor broadcast support */
 
 	return 0;
 }

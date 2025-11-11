@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
 
@@ -12,7 +13,7 @@
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
 
-#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>
@@ -56,7 +57,7 @@ static uint64_t get_systimer_alarm(void)
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
-static void sys_timer_isr(const void *arg)
+static void sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
@@ -143,12 +144,18 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
+	int ret;
 
-	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
-		0,
+	ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)) |
+		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)),
 		sys_timer_isr,
 		NULL,
 		NULL);
+
+	if (ret != 0) {
+		return ret;
+	}
 
 	systimer_hal_init(&systimer_hal);
 	systimer_hal_connect_alarm_counter(&systimer_hal,
@@ -161,5 +168,5 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1,
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

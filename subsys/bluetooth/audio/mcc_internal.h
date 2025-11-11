@@ -19,9 +19,16 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn);
+
+enum mcc_flag {
+	MCC_FLAG_BUSY,
+
+	MCC_FLAG_NUM_FLAGS, /* keep as last */
+};
 
 struct mcs_instance_t {
 	struct bt_conn *conn;
@@ -108,8 +115,7 @@ struct mcs_instance_t {
 	struct bt_gatt_read_params      read_params;
 	struct bt_gatt_write_params     write_params;
 
-/** Any fields below here cannot be memset as part of a reset */
-	bool busy;
+	/** Any fields below here cannot be memset as part of a reset */
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
 	struct bt_gatt_subscribe_params track_changed_sub_params;
@@ -152,6 +158,8 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_ots_client otc;
 #endif /* CONFIG_BT_MCC_OTS */
+
+	ATOMIC_DEFINE(flags, MCC_FLAG_NUM_FLAGS);
 };
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCP_INTERNAL_ */

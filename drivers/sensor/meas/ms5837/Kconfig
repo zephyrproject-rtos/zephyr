@@ -1,12 +1,13 @@
 # MS5837 pressure sensor configuration options
 
 # Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2025 Ivan Wagner <ivan.wagner@tecinvent.ch>
 # SPDX-License-Identifier: Apache-2.0
 
 config MS5837
 	bool "MS5837 pressure and temperature sensor"
 	default y
-	depends on DT_HAS_MEAS_MS5837_ENABLED
+	depends on DT_HAS_MEAS_MS5837_02BA_ENABLED || DT_HAS_MEAS_MS5837_30BA_ENABLED
 	select I2C
 	help
 	  Enable driver for MS5837 pressure and temperature sensor.

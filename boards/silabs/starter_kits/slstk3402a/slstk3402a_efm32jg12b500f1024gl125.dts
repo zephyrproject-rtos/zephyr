@@ -5,11 +5,10 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32jg12b500f1024gl125.dtsi>
+#include <silabs/xg12/efm32jg12b500f1024gl125.dtsi>
 #include "slstk3402a_common.dtsi"
 
 / {
 	model = "Silicon Labs EFM32JG12 STK3402A board ";
 	compatible = "silabs,slstk3402a_jg", "silabs,efm32jg12b";
-
 };

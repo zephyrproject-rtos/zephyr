@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Public APIs for the Device Multiplexer driver
+ * @ingroup demux_interface
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_
@@ -22,8 +23,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Devmux Driver APIs
- * @defgroup demux_interface Devmux Driver APIs
+ * @brief Interfaces for device multiplexers.
+ * @defgroup demux_interface Devmux
  * @ingroup misc_interfaces
  *
  * @details
@@ -62,7 +63,7 @@ extern "C" {
  * @return The index (>= 0) of the currently active multiplexed device on success
  * @retval -EINVAL If @p dev is invalid
  */
-__syscall ssize_t devmux_select_get(const struct device *dev);
+__syscall int devmux_select_get(const struct device *dev);
 
 /**
  * @brief Set the selection of a devmux device.

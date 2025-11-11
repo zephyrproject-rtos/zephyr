@@ -65,7 +65,7 @@ static int lm35_channel_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api lm35_driver_api = {
+static DEVICE_API(sensor, lm35_driver_api) = {
 	.sample_fetch = lm35_sample_fetch,
 	.channel_get = lm35_channel_get,
 };

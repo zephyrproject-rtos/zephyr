@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i3c.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,27 +48,24 @@ static int get_bytes_count_for_hex(char *arg)
  * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
  */
 /* i2c scan <device> */
-static int cmd_i2c_scan(const struct shell *shell_ctx,
-			size_t argc, char **argv)
+static int cmd_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
-		shell_error(shell_ctx, "I2C: Device driver %s not found.",
-			    argv[ARGV_DEV]);
+		shell_error(sh, "I2C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
 
-	shell_print(shell_ctx,
-		    "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
+	shell_print(sh, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
 	for (uint8_t i = 0; i <= last; i += 16) {
-		shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x: ", i);
+		shell_fprintf_normal(sh, "%02x: ", i);
 		for (uint8_t j = 0; j < 16; j++) {
 			if (i + j < first || i + j > last) {
-				shell_fprintf(shell_ctx, SHELL_NORMAL, "   ");
+				shell_fprintf_normal(sh, "   ");
 				continue;
 			}
 
@@ -79,47 +77,42 @@ static int cmd_i2c_scan(const struct shell *shell_ctx,
 			msgs[0].len = 0U;
 			msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 			if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
-				shell_fprintf(shell_ctx, SHELL_NORMAL,
-					      "%02x ", i + j);
+				shell_fprintf_normal(sh, "%02x ", i + j);
 				++cnt;
 			} else {
-				shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
+				shell_fprintf_normal(sh, "-- ");
 			}
 		}
-		shell_print(shell_ctx, "");
+		shell_print(sh, "");
 	}
 
-	shell_print(shell_ctx, "%u devices found on %s",
-		    cnt, argv[ARGV_DEV]);
+	shell_print(sh, "%u devices found on %s", cnt, argv[ARGV_DEV]);
 
 	return 0;
 }
 
 /* i2c recover <device> */
-static int cmd_i2c_recover(const struct shell *shell_ctx,
-			   size_t argc, char **argv)
+static int cmd_i2c_recover(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
-		shell_error(shell_ctx, "I2C: Device driver %s not found.",
-			    argv[1]);
+		shell_error(sh, "I2C: Device driver %s not found.", argv[1]);
 		return -ENODEV;
 	}
 
 	err = i2c_recover_bus(dev);
 	if (err) {
-		shell_error(shell_ctx, "I2C: Bus recovery failed (err %d)",
-			    err);
+		shell_error(sh, "I2C: Bus recovery failed (err %d)", err);
 		return err;
 	}
 
 	return 0;
 }
 
-static int i2c_write_from_buffer(const struct shell *shell_ctx,
+static int i2c_write_from_buffer(const struct shell *sh,
 		char *s_dev_name, char *s_dev_addr, char *s_reg_addr,
 		char **data, uint8_t data_length)
 {
@@ -135,10 +128,9 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 	int ret;
 	int i;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
-		shell_error(shell_ctx, "I2C: Device driver %s not found.",
-			    s_dev_name);
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
 	}
 
@@ -150,7 +142,7 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 
 	if (data_length + reg_addr_bytes > MAX_I2C_BYTES) {
 		data_length = MAX_I2C_BYTES - reg_addr_bytes;
-		shell_info(shell_ctx, "Too many bytes provided, limit is %d",
+		shell_info(sh, "Too many bytes provided, limit is %d",
 			   MAX_I2C_BYTES - reg_addr_bytes);
 	}
 
@@ -163,8 +155,7 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 			buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			reg_addr_bytes + data_length, dev_addr);
 	if (ret < 0) {
-		shell_error(shell_ctx, "Failed to write to device: %s",
-			    s_dev_addr);
+		shell_error(sh, "Failed to write to device: %s", s_dev_addr);
 		return -EIO;
 	}
 
@@ -172,24 +163,22 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 }
 
 /* i2c write <device> <dev_addr> <reg_addr> [<byte1>, ...] */
-static int cmd_i2c_write(const struct shell *shell_ctx,
-			 size_t argc, char **argv)
+static int cmd_i2c_write(const struct shell *sh, size_t argc, char **argv)
 {
-	return i2c_write_from_buffer(shell_ctx, argv[ARGV_DEV],
+	return i2c_write_from_buffer(sh, argv[ARGV_DEV],
 				     argv[ARGV_ADDR], argv[ARGV_REG],
 				     &argv[4], argc - 4);
 }
 
 /* i2c write_byte <device> <dev_addr> <reg_addr> <value> */
-static int cmd_i2c_write_byte(const struct shell *shell_ctx,
-			      size_t argc, char **argv)
+static int cmd_i2c_write_byte(const struct shell *sh, size_t argc, char **argv)
 {
-	return i2c_write_from_buffer(shell_ctx, argv[ARGV_DEV],
+	return i2c_write_from_buffer(sh, argv[ARGV_DEV],
 				     argv[ARGV_ADDR], argv[ARGV_REG],
 				     &argv[4], 1);
 }
 
-static int i2c_read_to_buffer(const struct shell *shell_ctx,
+static int i2c_read_to_buffer(const struct shell *sh,
 			      char *s_dev_name,
 			      char *s_dev_addr, char *s_reg_addr,
 			      uint8_t *buf, uint8_t buf_length)
@@ -198,10 +187,9 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 	int dev_addr;
 	int ret;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
-		shell_error(shell_ctx, "I2C: Device driver %s not found.",
-			    s_dev_name);
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
 	}
 
@@ -224,8 +212,7 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 	}
 
 	if (ret < 0) {
-		shell_error(shell_ctx, "Failed to read from device: %s",
-			    s_dev_addr);
+		shell_error(sh, "Failed to read from device: %s", s_dev_addr);
 		return -EIO;
 	}
 
@@ -233,24 +220,22 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 }
 
 /* i2c read_byte <device> <dev_addr> <reg_addr> */
-static int cmd_i2c_read_byte(const struct shell *shell_ctx,
-			     size_t argc, char **argv)
+static int cmd_i2c_read_byte(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t out;
 	int ret;
 
-
-	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV],
+	ret = i2c_read_to_buffer(sh, argv[ARGV_DEV],
 				 argv[ARGV_ADDR], argv[ARGV_REG], &out, 1);
 	if (ret == 0) {
-		shell_print(shell_ctx, "Output: 0x%x", out);
+		shell_print(sh, "Output: 0x%x", out);
 	}
 
 	return ret;
 }
 
 /* i2c read <device> <dev_addr> <reg_addr> [<numbytes>] */
-static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
+static int cmd_i2c_read(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t buf[MAX_I2C_BYTES];
 	int num_bytes;
@@ -265,18 +250,18 @@ static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
 		num_bytes = MAX_I2C_BYTES;
 	}
 
-	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV],
+	ret = i2c_read_to_buffer(sh, argv[ARGV_DEV],
 				 argv[ARGV_ADDR], argv[ARGV_REG],
 				 buf, num_bytes);
 	if (ret == 0) {
-		shell_hexdump(shell_ctx, buf, num_bytes);
+		shell_hexdump(sh, buf, num_bytes);
 	}
 
 	return ret;
 }
 
 /* i2c direct_read <device> <dev_addr> [<numbytes>] */
-static int cmd_i2c_direct_read(const struct shell *shell_ctx, size_t argc, char **argv)
+static int cmd_i2c_direct_read(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t buf[MAX_I2C_BYTES];
 	int num_bytes;
@@ -291,9 +276,9 @@ static int cmd_i2c_direct_read(const struct shell *shell_ctx, size_t argc, char 
 		num_bytes = MAX_I2C_BYTES;
 	}
 
-	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV], argv[ARGV_ADDR], NULL, buf, num_bytes);
+	ret = i2c_read_to_buffer(sh, argv[ARGV_DEV], argv[ARGV_ADDR], NULL, buf, num_bytes);
 	if (ret == 0) {
-		shell_hexdump(shell_ctx, buf, num_bytes);
+		shell_hexdump(sh, buf, num_bytes);
 	}
 
 	return ret;
@@ -302,7 +287,7 @@ static int cmd_i2c_direct_read(const struct shell *shell_ctx, size_t argc, char 
 /* i2c speed <device> <speed>
  * For: speed see constants like I2C_SPEED_STANDARD
  */
-static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv)
+static int cmd_i2c_speed(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[ARGV_DEV];
 	const struct device *dev;
@@ -310,10 +295,9 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	uint32_t speed;
 	int ret;
 
-	dev = device_get_binding(s_dev_name);
+	dev = shell_device_get_binding(s_dev_name);
 	if (!dev) {
-		shell_error(shell_ctx, "I2C: Device driver %s not found.",
-			    s_dev_name);
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
 	}
 
@@ -329,16 +313,73 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 
 	ret = i2c_configure(dev, dev_config);
 	if (ret < 0) {
-		shell_error(shell_ctx, "I2C: Failed to configure device: %s",
-			    s_dev_name);
+		shell_error(sh, "I2C: Failed to configure device: %s", s_dev_name);
 		return -EIO;
 	}
 	return 0;
 }
 
+/* i2c target register <device> */
+__maybe_unused static int cmd_i2c_target_register(const struct shell *sh, size_t argc, char **argv)
+{
+	char *s_dev_name = argv[ARGV_DEV];
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev) {
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	ret = i2c_target_driver_register(dev);
+	if (ret < 0) {
+		shell_error(sh, "I2C: Failed to register %s with err=%d", s_dev_name, ret);
+		return ret;
+	}
+
+	shell_print(sh, "I2C: Successfully registered %s", s_dev_name);
+
+	return 0;
+}
+
+/* i2c target unregister <device> */
+__maybe_unused static int cmd_i2c_target_unregister(const struct shell *sh, size_t argc,
+						    char **argv)
+{
+	char *s_dev_name = argv[ARGV_DEV];
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev) {
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	ret = i2c_target_driver_unregister(dev);
+	if (ret < 0) {
+		shell_error(sh, "I2C: Failed to unregister %s with err=%d", s_dev_name, ret);
+		return ret;
+	}
+
+	shell_print(sh, "I2C: Successfully unregistered %s", s_dev_name);
+
+	return 0;
+}
+
+static bool device_is_i2c(const struct device *dev)
+{
+#ifdef CONFIG_I3C
+	return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);
+#else
+	return DEVICE_API_IS(i2c, dev);
+#endif
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_i2c);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -347,6 +388,21 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
+#ifdef CONFIG_I2C_TARGET
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i2c_target,
+	SHELL_CMD_ARG(register, &dsub_device_name,
+		      "Register an i2c-target on its respective bus.\n"
+		      "Usage: target register <device>",
+		      cmd_i2c_target_register, 2, 0),
+	SHELL_CMD_ARG(unregister, &dsub_device_name,
+		      "Unegister an i2c-target from its respective bus.\n"
+		      "Usage: target unregister <device>",
+		      cmd_i2c_target_unregister, 2, 0),
+	SHELL_SUBCMD_SET_END     /* Array terminated. */
+);
+#endif /* CONFIG_I2C_TARGET */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
@@ -382,6 +438,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 		      "Configure I2C bus speed\n"
 		      "Usage: speed <device> <speed>",
 		      cmd_i2c_speed, 3, 0),
+#ifdef CONFIG_I2C_TARGET
+	SHELL_CMD_ARG(target, &sub_i2c_target,
+		      "Subcommands operating on i2c targets.",
+		      NULL, 3, 0),
+#endif /* CONFIG_I2C_TARGET */
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 

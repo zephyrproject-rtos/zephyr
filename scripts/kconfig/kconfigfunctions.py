@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import functools
 import inspect
+import operator
 import os
 import pickle
 import re
@@ -147,6 +149,18 @@ def dt_node_enabled(kconf, name, node):
     return "y" if node and node.status == "okay" else "n"
 
 
+def dt_nodelabel_exists(kconf, _, label):
+    """
+    This function returns "y" if a nodelabel exists and "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.label2node.get(label)
+
+    return "y" if node else "n"
+
+
 def dt_nodelabel_enabled(kconf, _, label):
     """
     This function is like dt_node_enabled(), but the 'label' argument
@@ -176,6 +190,28 @@ def _node_reg_addr(node, index, unit):
         return 0
 
     return node.regs[int(index)].addr >> _dt_units_to_scale(unit)
+
+
+def _node_reg_addr_by_name(node, name, unit):
+    if not node:
+        return 0
+
+    if not node.regs:
+        return 0
+
+    index = None
+    for i, reg in enumerate(node.regs):
+        if reg.name == name:
+            index = i
+            break
+
+    if index is None:
+        return 0
+
+    if node.regs[index].addr is None:
+        return 0
+
+    return node.regs[index].addr >> _dt_units_to_scale(unit)
 
 
 def _node_reg_size(node, index, unit):
@@ -406,6 +442,32 @@ def _dt_node_reg_addr(kconf, path, index=0, unit=None):
     return _node_reg_addr(node, index, unit)
 
 
+def _dt_node_reg_addr_by_name(kconf, path, name, unit=None):
+    """
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look to see if that node has a register with the
+    given 'name' and return the address value of that reg, if not we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
+    """
+    if doc_mode or edt is None:
+        return 0
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return 0
+
+    return _node_reg_addr_by_name(node, name, unit)
+
+
 def _dt_node_reg_size(kconf, path, index=0, unit=None):
     """
     This function takes a 'path' and looks for an EDT node at that path. If it
@@ -445,6 +507,17 @@ def dt_node_reg(kconf, name, path, index=0, unit=None):
         return str(_dt_node_reg_addr(kconf, path, index, unit))
     if name == "dt_node_reg_addr_hex":
         return hex(_dt_node_reg_addr(kconf, path, index, unit))
+
+
+def dt_node_reg_by_name(kconf, name, path, reg_name, unit=None):
+    """
+    This function just routes to the proper function and converts
+    the result to either a string int or string hex value.
+    """
+
+    if name == "dt_node_reg_addr_by_name_hex":
+        return hex(_dt_node_reg_addr_by_name(kconf, path, reg_name, unit))
+
 
 def dt_nodelabel_reg(kconf, name, label, index=0, unit=None):
     """
@@ -517,6 +590,23 @@ def dt_nodelabel_bool_prop(kconf, _, label, prop):
         return "n"
 
     return _dt_node_bool_prop_generic(edt.label2node.get, label, prop)
+
+def dt_nodelabel_int_prop(kconf, _, label, prop):
+    """
+    This function takes a 'label' and looks for an EDT node with that label.
+    If it finds an EDT node, it will look to see if that node has a int
+    property by the name of 'prop'.  If the 'prop' exists it will return the
+    value of the property, otherwise it returns "0".
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.label2node.get(label)
+    except edtlib.EDTError:
+        return "0"
+
+    return str(_node_int_prop(node, prop))
 
 def dt_chosen_bool_prop(kconf, _, chosen, prop):
     """
@@ -734,9 +824,20 @@ def dt_compat_enabled(kconf, _, compat):
     return "y" if compat in edt.compat2okay else "n"
 
 
+def dt_compat_enabled_num(kconf, _, compat):
+    """
+    This function takes a 'compat' and the returns number of status "okay"
+    compatible nodes in the EDT.
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    return str(len(edt.compat2okay[compat]))
+
+
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
-    This function takes a 'compat' and returns "y" if we find an "enabled"
+    This function takes a 'compat' and returns "y" if we find an enabled
     compatible node in the EDT which is on bus 'bus'. It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -749,10 +850,13 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
     return "n"
 
-def dt_compat_any_has_prop(kconf, _, compat, prop):
+def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
     """
-    This function takes a 'compat' and a 'prop' and returns "y" if any
-    node with compatible 'compat' also has a valid property 'prop'.
+    This function takes a 'compat', a 'prop', and a 'value'.
+    If value=None, the function returns "y" if any
+    enabled node with compatible 'compat' also has a valid property 'prop'.
+    If value is given, the function returns "y" if any enabled node with compatible 'compat'
+    also has a valid property 'prop' with value 'value'.
     It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -761,6 +865,25 @@ def dt_compat_any_has_prop(kconf, _, compat, prop):
     if compat in edt.compat2okay:
         for node in edt.compat2okay[compat]:
             if prop in node.props:
+                if value is None:
+                    return "y"
+                elif str(node.props[prop].val) == value:
+                    return "y"
+    return "n"
+
+def dt_compat_any_not_has_prop(kconf, _, compat, prop):
+    """
+    This function takes a 'compat', and a 'prop'.
+    The function returns "y" if any enabled node with compatible 'compat'
+    does NOT contain the property 'prop'.
+    It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    if compat in edt.compat2okay:
+        for node in edt.compat2okay[compat]:
+            if prop not in node.props:
                 return "y"
 
     return "n"
@@ -803,7 +926,7 @@ def dt_node_has_compat(kconf, _, path, compat):
 
 def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
     """
-    This function takes a 'label' and returns "y" if an "enabled" node with
+    This function takes a 'label' and returns "y" if an enabled node with
     such label can be found in the EDT and that node is compatible with the
     provided 'compat', otherwise it returns "n".
     """
@@ -917,6 +1040,91 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def arith(kconf, name, *args):
+    """
+    The arithmetic operations on integers.
+    If three or more arguments are given, it returns the result of performing
+    the operation on the first two arguments and operates the same operation as
+    the result and the following argument.
+    For interoperability with inc and dec,
+    each argument can be a single number or a comma-separated list of numbers,
+    but all numbers are processed as if they were individual arguments.
+
+    Examples in Kconfig:
+
+    $(add, 10, 3)          # -> 13
+    $(add, 10, 3, 2)       # -> 15
+    $(sub, 10, 3)          # -> 7
+    $(sub, 10, 3, 2)       # -> 5
+    $(mul, 10, 3)          # -> 30
+    $(mul, 10, 3, 2)       # -> 60
+    $(div, 10, 3)          # -> 3
+    $(div, 10, 3, 2)       # -> 1
+    $(mod, 10, 3)          # -> 1
+    $(mod, 10, 3, 2)       # -> 1
+    $(inc, 1)              # -> 2
+    $(inc, 1, 1)           # -> "2,2"
+    $(inc, $(inc, 1, 1))   # -> "3,3"
+    $(dec, 1)              # -> 0
+    $(dec, 1, 1)           # -> "0,0"
+    $(dec, $(dec, 1, 1))   # -> "-1,-1"
+    $(add, $(inc, 1, 1))   # -> 4
+    $(div, $(dec, 1, 1))   # Error (0 div 0)
+    """
+
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
+
+    if name == "add":
+        return str(int(functools.reduce(operator.add, intarray)))
+    elif name == "add_hex":
+        return hex(int(functools.reduce(operator.add, intarray)))
+    elif name == "sub":
+        return str(int(functools.reduce(operator.sub, intarray)))
+    elif name == "sub_hex":
+        return hex(int(functools.reduce(operator.sub, intarray)))
+    elif name == "mul":
+        return str(int(functools.reduce(operator.mul, intarray)))
+    elif name == "mul_hex":
+        return hex(int(functools.reduce(operator.mul, intarray)))
+    elif name == "div":
+        return str(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "div_hex":
+        return hex(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "mod":
+        return str(int(functools.reduce(operator.mod, intarray)))
+    elif name == "mod_hex":
+        return hex(int(functools.reduce(operator.mod, intarray)))
+    elif name == "max":
+        return str(int(functools.reduce(max, intarray)))
+    elif name == "max_hex":
+        return hex(int(functools.reduce(max, intarray)))
+    elif name == "min":
+        return str(int(functools.reduce(min, intarray)))
+    elif name == "min_hex":
+        return hex(int(functools.reduce(min, intarray)))
+    else:
+        assert False
+
+
+def inc_dec(kconf, name, *args):
+    """
+    Calculate the increment and the decrement of integer sequence.
+    Returns a string that concatenates numbers with a comma as a separator.
+    """
+
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
+
+    if name == "inc":
+        return ",".join(map(lambda a: str(a + 1), intarray))
+    if name == "inc_hex":
+        return ",".join(map(lambda a: hex(a + 1), intarray))
+    elif name == "dec":
+        return ",".join(map(lambda a: str(a - 1), intarray))
+    elif name == "dec_hex":
+        return ",".join(map(lambda a: hex(a - 1), intarray))
+    else:
+        assert False
+
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -930,14 +1138,17 @@ def substring(kconf, _, string, start, stop=None):
 functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
-        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 2),
+        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
+        "dt_compat_any_not_has_prop": (dt_compat_any_not_has_prop, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
         "dt_chosen_has_compat": (dt_chosen_has_compat, 2, 2),
         "dt_path_enabled": (dt_node_enabled, 1, 1),
         "dt_alias_enabled": (dt_node_enabled, 1, 1),
+        "dt_nodelabel_exists": (dt_nodelabel_exists, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_nodelabel_enabled_with_compat": (dt_nodelabel_enabled_with_compat, 2, 2),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
@@ -946,6 +1157,7 @@ functions = {
         "dt_chosen_reg_size_hex": (dt_chosen_reg, 1, 3),
         "dt_node_reg_addr_int": (dt_node_reg, 1, 3),
         "dt_node_reg_addr_hex": (dt_node_reg, 1, 3),
+        "dt_node_reg_addr_by_name_hex": (dt_node_reg_by_name, 2, 3),
         "dt_node_reg_size_int": (dt_node_reg, 1, 3),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_nodelabel_reg_addr_int": (dt_nodelabel_reg, 1, 3),
@@ -954,6 +1166,7 @@ functions = {
         "dt_nodelabel_reg_size_hex": (dt_nodelabel_reg, 1, 3),
         "dt_node_bool_prop": (dt_node_bool_prop, 2, 2),
         "dt_nodelabel_bool_prop": (dt_nodelabel_bool_prop, 2, 2),
+        "dt_nodelabel_int_prop": (dt_nodelabel_int_prop, 2, 2),
         "dt_chosen_bool_prop": (dt_chosen_bool_prop, 2, 2),
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
         "dt_nodelabel_has_prop": (dt_nodelabel_has_prop, 2, 2),
@@ -976,4 +1189,22 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "add": (arith, 1, 255),
+        "add_hex": (arith, 1, 255),
+        "sub": (arith, 1, 255),
+        "sub_hex": (arith, 1, 255),
+        "mul": (arith, 1, 255),
+        "mul_hex": (arith, 1, 255),
+        "div": (arith, 1, 255),
+        "div_hex": (arith, 1, 255),
+        "mod": (arith, 1, 255),
+        "mod_hex": (arith, 1, 255),
+        "max": (arith, 1, 255),
+        "max_hex": (arith, 1, 255),
+        "min": (arith, 1, 255),
+        "min_hex": (arith, 1, 255),
+        "inc": (inc_dec, 1, 255),
+        "inc_hex": (inc_dec, 1, 255),
+        "dec": (inc_dec, 1, 255),
+        "dec_hex": (inc_dec, 1, 255),
 }

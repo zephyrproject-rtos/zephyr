@@ -392,7 +392,7 @@ static int auxdisplay_serlcd_init(const struct device *dev)
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_serlcd_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_serlcd_auxdisplay_api) = {
 	.display_on = auxdisplay_serlcd_display_on,
 	.display_off = auxdisplay_serlcd_display_off,
 	.cursor_set_enabled = auxdisplay_serlcd_cursor_set_enabled,

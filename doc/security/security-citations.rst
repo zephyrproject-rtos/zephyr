@@ -8,7 +8,7 @@ Security Document Citations
 .. [SALT75] J. H. Saltzer and M. D. Schroeder, "The protection of
    information in computer systems," Proceedings of the IEEE, vol. 63, no.
    9, pp. 1278-1308, Sep 1975. [Online].
-   Available: http://web.mit.edu/Saltzer/www/publications/protection/.
+   Available: https://web.mit.edu/Saltzer/www/publications/protection/.
 
 .. [PAUL09] M. Paul, "The Ten Best Practices for Secure Software
    Development," International Information Systems Security Certification

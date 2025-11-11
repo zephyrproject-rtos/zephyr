@@ -1,0 +1,134 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <mem.h>
+#include <nxp/nxp_imx94x.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+			cpu-power-states = <&wait &stop &suspend>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			d-cache-line-size = <32>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			wait: power-state-wait {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <50>;
+			};
+
+			stop: power-state-stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+				exit-latency-us = <200>;
+			};
+
+			suspend: power-state-suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				exit-latency-us = <1000>;
+			};
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem0: memory@44611000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44611000 0x80>;
+		};
+	};
+
+	soc {
+		itcm: itcm@00000000 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+		};
+
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+	};
+
+	mailbox_m70_m71_for_m70_as_master: ipm-mbox4 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m70 1>, <&mu_m70_m71_for_m70 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m70_m71_for_m70_as_remote: ipm-mbox5 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m70 0>, <&mu_m70_m71_for_m70 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m70_for_m70_as_master: ipm-mbox6 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m70_for_m70 1>, <&mu_m33s_m70_for_m70 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m70_for_m70_as_remote: ipm-mbox7 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m70_for_m70 0>, <&mu_m33s_m70_for_m70 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&scmi {
+	shmem = <&scmi_shmem0>;
+	mboxes = <&mu5 0>;
+};
+
+&mu5 {
+	status = "okay";
+};
+
+&mu_m70_m71_for_m70 {
+	interrupts = <130 0>;
+	status = "okay";
+};
+
+/* m70 and m33s secure */
+&mu_m33s_secure_m70_for_m70 {
+	interrupts = <133 0>;
+	status = "okay";
+};
+
+/* m70 and m33s non secure */
+&mu_m33s_m70_for_m70 {
+	interrupts = <134 0>;
+	status = "okay";
+};

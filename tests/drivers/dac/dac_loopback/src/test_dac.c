@@ -165,6 +165,43 @@
 #define ADC_CHANNEL_ID		1
 #define ADC_1ST_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN1
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+
+#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
+#define DAC_RESOLUTION  12
+#define DAC_CHANNEL_ID  0
+
+#define ADC_DEVICE_NODE      DT_NODELABEL(adc0)
+#define ADC_RESOLUTION       12
+#define ADC_GAIN             ADC_GAIN_1
+#define ADC_REFERENCE        ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#if defined(CONFIG_BOARD_EK_RA4L1)
+#define ADC_CHANNEL_ID 1
+#elif defined(CONFIG_BOARD_EK_RA4W1)
+#define ADC_CHANNEL_ID 4
+#else
+#define ADC_CHANNEL_ID 0
+#endif
+
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
+
+/* VDAC0CH0 output is internally available on IADC_INPUT_DAC0 */
+
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(vdac0)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_VDD_1
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_CHANNEL_ID		0
+#define ADC_1ST_CHANNEL_INPUT	IADC_INPUT_DAC0
+
 #else
 #error "Unsupported board."
 #endif
@@ -172,7 +209,11 @@
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DAC_CHANNEL_ID,
 	.resolution = DAC_RESOLUTION,
-	.buffered = true
+#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
+	.buffered = false,
+#else
+	.buffered = true,
+#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
 
 static const struct adc_channel_cfg adc_ch_cfg = {
@@ -185,7 +226,8 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
 	defined(CONFIG_BOARD_BL5340_DVK) || \
-	defined(CONFIG_BOARD_LPCXPRESSO55S36)
+	defined(CONFIG_BOARD_LPCXPRESSO55S36) || \
+	defined(CONFIG_SOC_FAMILY_SILABS_S2)
 	.input_positive   = ADC_1ST_CHANNEL_INPUT,
 #endif
 };

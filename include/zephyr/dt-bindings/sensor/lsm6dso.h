@@ -42,4 +42,8 @@
 #define LSM6DSO_DT_ODR_6667Hz			0xa
 #define LSM6DSO_DT_ODR_1Hz6			0xb
 
+/* Tap mode */
+#define LSM6DSO_DT_SINGLE_TAP			0
+#define LSM6DSO_DT_SINGLE_DOUBLE_TAP		1
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSO_H_ */

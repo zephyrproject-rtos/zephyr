@@ -8,11 +8,11 @@ import argparse
 import os
 import time
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import canopen
-    from progress.bar import Bar
+    from tqdm import tqdm
     MISSING_REQUIREMENTS = False
 except ImportError:
     MISSING_REQUIREMENTS = True
@@ -24,10 +24,7 @@ DEFAULT_CAN_CONTEXT = 'default'
 DEFAULT_PROGRAM_NUMBER = 1
 
 # Program download buffer size in bytes
-PROGRAM_DOWNLOAD_BUFFER_SIZE = 1024
-
-# Program download chunk size in bytes
-PROGRAM_DOWNLOAD_CHUNK_SIZE = PROGRAM_DOWNLOAD_BUFFER_SIZE // 2
+DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE = 1024
 
 # Default timeouts and retries
 DEFAULT_TIMEOUT = 10.0 # seconds
@@ -47,18 +44,13 @@ PROGRAM_CTRL_RESET = 0x02
 PROGRAM_CTRL_CLEAR = 0x03
 PROGRAM_CTRL_ZEPHYR_CONFIRM = 0x80
 
-class ToggleAction(argparse.Action):
-    '''Toggle argument parser'''
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, not option_string.startswith('--no-'))
-
 class CANopenBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for CANopen.'''
     def __init__(self, cfg, dev_id, can_context=DEFAULT_CAN_CONTEXT,
                  program_number=DEFAULT_PROGRAM_NUMBER, confirm=True,
                  confirm_only=True, timeout=DEFAULT_TIMEOUT,
                  sdo_retries=DEFAULT_SDO_RETRIES, sdo_timeout=DEFAULT_SDO_TIMEOUT,
-                 block_transfer=False):
+                 download_buffer_size=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE, block_transfer=False):
         if MISSING_REQUIREMENTS:
             raise RuntimeError('one or more Python dependencies were missing; '
                                "see the getting started guide for details on "
@@ -76,7 +68,9 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                                                    program_number=program_number,
                                                    sdo_retries=sdo_retries,
                                                    sdo_timeout=sdo_timeout,
-                                                   block_transfer=block_transfer)
+                                                   download_buffer_size=download_buffer_size,
+                                                   block_transfer=block_transfer,
+                                                   )
 
     @classmethod
     def name(cls):
@@ -100,9 +94,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                             help=f'Python-CAN context to use (default: {DEFAULT_CAN_CONTEXT})')
         parser.add_argument('--program-number', type=int, default=DEFAULT_PROGRAM_NUMBER,
                             help=f'program number (default: {DEFAULT_PROGRAM_NUMBER})')
-        parser.add_argument('--confirm', '--no-confirm',
-                            dest='confirm', nargs=0,
-                            action=ToggleAction,
+        parser.add_argument('--confirm', action=argparse.BooleanOptionalAction,
                             help='confirm after starting? (default: yes)')
         parser.add_argument('--confirm-only', default=False, action='store_true',
                             help='confirm only, no program download (default: no)')
@@ -113,6 +105,10 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--sdo-timeout', type=float, default=DEFAULT_SDO_TIMEOUT,
                             help=f'''CANopen SDO response timeout in seconds
                             (default: {DEFAULT_SDO_TIMEOUT})''')
+        parser.add_argument('--download-buffer-size', type=int,
+                            default=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE,
+                            help=f'''Program download buffer size in bytes
+                            (default: {DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE})''')
         parser.add_argument('--block-transfer', default=False, action='store_true',
                             help='Use SDO block transfers (experimental, default: no)')
 
@@ -128,6 +124,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                                    timeout=args.timeout,
                                    sdo_retries=args.sdo_retries,
                                    sdo_timeout=args.sdo_timeout,
+                                   download_buffer_size=args.download_buffer_size,
                                    block_transfer=args.block_transfer)
 
     def do_run(self, command, **kwargs):
@@ -149,8 +146,8 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         if status == 0:
             self.downloader.swid()
         else:
-            self.logger.warning('Flash status 0x{:02x}, '
-                                'skipping software identification'.format(status))
+            self.logger.warning(f'Flash status 0x{status:02x}, '
+                                'skipping software identification')
 
         self.downloader.enter_pre_operational()
 
@@ -170,7 +167,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         status = self.downloader.wait_for_flash_status_ok(self.timeout)
         if status != 0:
             raise ValueError('Program download failed: '
-                             'flash status 0x{:02x}'.format(status))
+                             f'flash status 0x{status:02x}')
 
         self.downloader.swid()
         self.downloader.start_program()
@@ -183,13 +180,13 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
         self.downloader.disconnect()
 
-class CANopenProgramDownloader(object):
+class CANopenProgramDownloader:
     '''CANopen program downloader'''
     def __init__(self, logger, node_id, can_context=DEFAULT_CAN_CONTEXT,
                  program_number=DEFAULT_PROGRAM_NUMBER,
                  sdo_retries=DEFAULT_SDO_RETRIES, sdo_timeout=DEFAULT_SDO_TIMEOUT,
-                 block_transfer=False):
-        super(CANopenProgramDownloader, self).__init__()
+                 download_buffer_size=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE, block_transfer=False):
+        super().__init__()
         self.logger = logger
         self.node_id = node_id
         self.can_context = can_context
@@ -201,6 +198,7 @@ class CANopenProgramDownloader(object):
         self.ctrl_sdo = self.node.sdo[H1F51_PROGRAM_CTRL][self.program_number]
         self.swid_sdo = self.node.sdo[H1F56_PROGRAM_SWID][self.program_number]
         self.flash_sdo = self.node.sdo[H1F57_FLASH_STATUS][self.program_number]
+        self.download_buffer_size = download_buffer_size
 
         self.node.sdo.MAX_RETRIES = sdo_retries
         self.node.sdo.RESPONSE_TIMEOUT = sdo_timeout
@@ -211,8 +209,8 @@ class CANopenProgramDownloader(object):
         '''Connect to CAN network'''
         try:
             self.network.connect(context=self.can_context)
-        except:
-            raise ValueError('Unable to connect to CAN network')
+        except Exception as err:
+            raise ValueError('Unable to connect to CAN network') from err
 
     def disconnect(self):
         '''Disconnect from CAN network'''
@@ -223,15 +221,15 @@ class CANopenProgramDownloader(object):
         self.logger.info("Entering pre-operational mode")
         try:
             self.node.nmt.state = 'PRE-OPERATIONAL'
-        except:
-            raise ValueError('Failed to enter pre-operational mode')
+        except Exception as err:
+            raise ValueError('Failed to enter pre-operational mode') from err
 
     def _ctrl_program(self, cmd):
         '''Write program control command to CANopen object dictionary (0x1f51)'''
         try:
             self.ctrl_sdo.raw = cmd
-        except:
-            raise ValueError('Unable to write control command 0x{:02x}'.format(cmd))
+        except Exception as err:
+            raise ValueError(f'Unable to write control command 0x{cmd:02x}') from err
 
     def stop_program(self):
         '''Write stop control command to CANopen object dictionary (0x1f51)'''
@@ -257,17 +255,17 @@ class CANopenProgramDownloader(object):
         '''Read software identification from CANopen object dictionary (0x1f56)'''
         try:
             swid = self.swid_sdo.raw
-        except:
-            raise ValueError('Failed to read software identification')
-        self.logger.info('Program software identification: 0x{:08x}'.format(swid))
+        except Exception as err:
+            raise ValueError('Failed to read software identification') from err
+        self.logger.info(f'Program software identification: 0x{swid:08x}')
         return swid
 
     def flash_status(self):
         '''Read flash status identification'''
         try:
             status = self.flash_sdo.raw
-        except:
-            raise ValueError('Failed to read flash status identification')
+        except Exception as err:
+            raise ValueError('Failed to read flash status identification') from err
         return status
 
     def download(self, bin_file):
@@ -275,21 +273,21 @@ class CANopenProgramDownloader(object):
         self.logger.info('Downloading program: %s', bin_file)
         try:
             size = os.path.getsize(bin_file)
-            infile = open(bin_file, 'rb')
-            outfile = self.data_sdo.open('wb', buffering=PROGRAM_DOWNLOAD_BUFFER_SIZE,
+            infile = open(bin_file, 'rb')  # noqa: SIM115
+            outfile = self.data_sdo.open('wb', buffering=self.download_buffer_size,
                                          size=size, block_transfer=self.block_transfer)
 
-            progress = Bar('%(percent)d%%', max=size, suffix='%(index)d/%(max)dB')
+            progress = tqdm(total=size, unit='B', unit_scale=True)
             while True:
-                chunk = infile.read(PROGRAM_DOWNLOAD_CHUNK_SIZE)
+                chunk = infile.read(self.download_buffer_size // 2)
                 if not chunk:
                     break
                 outfile.write(chunk)
-                progress.next(n=len(chunk))
-        except:
-            raise ValueError('Failed to download program')
+                progress.update(len(chunk))
+        except Exception as err:
+            raise ValueError('Failed to download program') from err
         finally:
-            progress.finish()
+            progress.close()
             infile.close()
             outfile.close()
 
@@ -298,8 +296,8 @@ class CANopenProgramDownloader(object):
         self.logger.info('Waiting for boot-up message...')
         try:
             self.node.nmt.wait_for_bootup(timeout=timeout)
-        except:
-            raise ValueError('Timeout waiting for boot-up message')
+        except Exception as err:
+            raise ValueError('Timeout waiting for boot-up message') from err
 
     def wait_for_flash_status_ok(self, timeout=DEFAULT_TIMEOUT):
         '''Wait for flash status ok'''

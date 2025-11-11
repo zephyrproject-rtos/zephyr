@@ -20,6 +20,7 @@
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
+
 		uart {
 			gpios = <&gpio1 9 0>, <&gpio1 8 0>, <&gpio1 11 0>, <&gpio1 10 0>;
 		};
@@ -51,12 +52,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		rgb1_red_pwm_led: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		rgb1_green_pwm_led: pwm_led_1 {
 			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		rgb1_blue_pwm_led: pwm_led_2 {
 			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -70,6 +74,23 @@
 		green-pwm-led = &rgb1_green_pwm_led;
 		blue-pwm-led = &rgb1_blue_pwm_led;
 	};
+};
+
+&vregmain {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregradio {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregh {
+	status = "okay";
+};
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
 };
 
 &adc {
@@ -86,6 +107,10 @@
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <8>;
 	};
+};
+
+&nfct {
+	status = "okay";
 };
 
 &gpiote {
@@ -187,20 +212,22 @@ arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,
-		<&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
+		   <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
+		spi-max-frequency = <8000000>;
+
 		sdmmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
-
-		spi-max-frequency = <8000000>;
 	};
 
 	cs47l63: cs47l63@2 {
@@ -220,55 +247,6 @@ arduino_spi: &spi4 {
 	pinctrl-names = "default", "sleep";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-		};
-		slot0_ns_partition: partition@50000 {
-			label = "image-0-nonsecure";
-		};
-		slot1_partition: partition@80000 {
-			label = "image-1";
-		};
-		slot1_ns_partition: partition@c0000 {
-			label = "image-1-nonsecure";
-		};
-		storage_partition: partition@fa000 {
-			label = "storage";
-			reg = <0x000fa000 0x00006000>;
-		};
-	};
-};
-
-/ {
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sram0_image: image@20000000 {
-			/* Zephyr image(s) memory */
-		};
-
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-		};
-
-		sram0_ns: image_ns@20040000 {
-			/* Non-Secure image memory */
-		};
-	};
-};
-
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
@@ -285,6 +263,4 @@ zephyr_udc0: &usbd {
 	};
 };
 
-/* Include partition configuration file */
-#include "nrf5340_audio_dk_nrf5340_cpuapp_partition_conf.dtsi"
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"

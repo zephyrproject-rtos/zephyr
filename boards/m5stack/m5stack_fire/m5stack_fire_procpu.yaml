@@ -1,0 +1,16 @@
+identifier: m5stack_fire/esp32/procpu
+name: M5Stack Fire PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+  - pwm
+vendor: m5stack

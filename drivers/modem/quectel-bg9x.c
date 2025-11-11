@@ -484,8 +484,8 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	}
 
 	/* Write all data on the console and send CTRL+Z. */
-	mctx.iface.write(&mctx.iface, buf, buf_len);
-	mctx.iface.write(&mctx.iface, &ctrlz, 1);
+	modem_cmd_send_data_nolock(&mctx.iface, buf, buf_len);
+	modem_cmd_send_data_nolock(&mctx.iface, &ctrlz, 1);
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
 	k_sem_reset(&mdata.sem_response);
@@ -692,7 +692,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	char		    *protocol = "TCP";
 	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
 	char		    buf[sizeof("AT+QIOPEN=#,#,'###','###',"
-				       "####.####.####.####.####.####.####.####,######,"
+				       "####:####:####:####:####:####:xxx.xxx.xxx.xxx,######,"
 				       "0,0")] = {0};
 	int		    ret;
 	char		    ip_str[NET_IPV6_ADDR_LEN];

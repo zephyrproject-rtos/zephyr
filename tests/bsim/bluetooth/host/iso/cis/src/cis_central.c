@@ -1,14 +1,30 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2023-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+#include "bstests.h"
+#include "common.h"
 
 #define ENQUEUE_COUNT 2
 
@@ -25,7 +41,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
 
-CREATE_FLAG(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void send_data_cb(struct k_work *work)
 {
@@ -35,7 +51,7 @@ static void send_data_cb(struct k_work *work)
 	struct net_buf *buf;
 	int ret;
 
-	if (!TEST_FLAG(flag_iso_connected)) {
+	if (!IS_FLAG_SET(flag_iso_connected)) {
 		/* TX has been aborted */
 		return;
 	}
@@ -86,7 +102,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_le_scan_stop();
 	if (err) {
-		FAIL("Failed to stop scanning (err %d)\n", err);
+		TEST_FAIL("Failed to stop scanning (err %d)", err);
 
 		return;
 	}
@@ -94,7 +110,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		FAIL("Failed to create connection (err %d)\n", err);
+		TEST_FAIL("Failed to create connection (err %d)", err);
 
 		return;
 	}
@@ -102,6 +118,12 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
@@ -113,16 +135,29 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 		SET_FLAG(flag_iso_connected);
 	}
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
+	int err;
+
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
 	if (chan == default_chan) {
 		k_work_cancel_delayable(&iso_send_work);
 
 		UNSET_FLAG(flag_iso_connected);
+	}
+
+	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
+
+	if (seq_num < 100) {
+		printk("Channel disconnected early, bumping seq_num to 1000 to end test\n");
+		seq_num = 1000;
 	}
 }
 
@@ -132,14 +167,14 @@ static void sdu_sent_cb(struct bt_iso_chan *chan)
 
 	enqueue_cnt++;
 
-	if (!TEST_FLAG(flag_iso_connected)) {
+	if (!IS_FLAG_SET(flag_iso_connected)) {
 		/* TX has been aborted */
 		return;
 	}
 
 	err = k_work_schedule(&iso_send_work, K_NO_WAIT);
 	if (err < 0) {
-		FAIL("Failed to schedule TX for chan %p: %d\n", chan, err);
+		TEST_FAIL("Failed to schedule TX for chan %p: %d", chan, err);
 	}
 }
 
@@ -154,7 +189,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
-		.path = NULL,
 	};
 	static struct bt_iso_chan_qos iso_qos = {
 		.tx = &iso_tx,
@@ -164,7 +198,7 @@ static void init(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth enable failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth enable failed (err %d)", err);
 
 		return;
 	}
@@ -208,7 +242,7 @@ static void create_cig(size_t iso_channels)
 
 	err = bt_iso_cig_create(&param, &cig);
 	if (err != 0) {
-		FAIL("Failed to create CIG (%d)\n", err);
+		TEST_FAIL("Failed to create CIG (%d)", err);
 
 		return;
 	}
@@ -224,14 +258,14 @@ static int reconfigure_cig_interval(struct bt_iso_cig_param *param)
 	param->p_to_c_interval = param->c_to_p_interval;
 	err = bt_iso_cig_reconfigure(cig, param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG to new interval (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG to new interval (%d)", err);
 
 		return err;
 	}
 
 	err = bt_iso_cig_reconfigure(cig, param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG to same interval (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG to same interval (%d)", err);
 
 		return err;
 	}
@@ -241,7 +275,7 @@ static int reconfigure_cig_interval(struct bt_iso_cig_param *param)
 	param->p_to_c_interval = 2500; /* us */
 	err = bt_iso_cig_reconfigure(cig, param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG to new interval (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG to new interval (%d)", err);
 
 		return err;
 	}
@@ -259,7 +293,7 @@ static int reconfigure_cig_latency(struct bt_iso_cig_param *param)
 	param->p_to_c_latency = param->c_to_p_latency;
 	err = bt_iso_cig_reconfigure(cig, param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG latency (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG latency (%d)", err);
 
 		return err;
 	}
@@ -268,7 +302,7 @@ static int reconfigure_cig_latency(struct bt_iso_cig_param *param)
 	param->p_to_c_latency = 40; /* ms */
 	err = bt_iso_cig_reconfigure(cig, param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG for different latencies (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG for different latencies (%d)", err);
 
 		return err;
 	}
@@ -293,7 +327,7 @@ static void reconfigure_cig(void)
 
 	err = bt_iso_cig_reconfigure(cig, &param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIS to new RTN (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIS to new RTN (%d)", err);
 
 		return;
 	}
@@ -316,7 +350,8 @@ static void reconfigure_cig(void)
 
 	err = bt_iso_cig_reconfigure(cig, &param);
 	if (err != 0) {
-		FAIL("Failed to reconfigure CIG with new CIS and original parameters (%d)\n", err);
+		TEST_FAIL("Failed to reconfigure CIG with new CIS and original parameters (%d)",
+			  err);
 
 		return;
 	}
@@ -328,12 +363,12 @@ static void connect_acl(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 
 		return;
 	}
 
-	WAIT_FOR_FLAG_SET(flag_connected);
+	WAIT_FOR_FLAG(flag_connected);
 }
 
 static void connect_cis(void)
@@ -346,12 +381,12 @@ static void connect_cis(void)
 
 	err = bt_iso_chan_connect(&connect_param, 1);
 	if (err) {
-		FAIL("Failed to connect ISO (%d)\n", err);
+		TEST_FAIL("Failed to connect ISO (%d)", err);
 
 		return;
 	}
 
-	WAIT_FOR_FLAG_SET(flag_iso_connected);
+	WAIT_FOR_FLAG(flag_iso_connected);
 }
 
 static void disconnect_cis(void)
@@ -360,7 +395,7 @@ static void disconnect_cis(void)
 
 	err = bt_iso_chan_disconnect(default_chan);
 	if (err) {
-		FAIL("Failed to disconnect ISO (err %d)\n", err);
+		TEST_FAIL("Failed to disconnect ISO (err %d)", err);
 
 		return;
 	}
@@ -374,7 +409,7 @@ static void disconnect_acl(void)
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		FAIL("Failed to disconnect ACL (err %d)\n", err);
+		TEST_FAIL("Failed to disconnect ACL (err %d)", err);
 
 		return;
 	}
@@ -388,7 +423,7 @@ static void terminate_cig(void)
 
 	err = bt_iso_cig_terminate(cig);
 	if (err != 0) {
-		FAIL("Failed to terminate CIG (%d)\n", err);
+		TEST_FAIL("Failed to terminate CIG (%d)", err);
 
 		return;
 	}
@@ -404,7 +439,7 @@ static void reset_bluetooth(void)
 
 	err = bt_disable();
 	if (err != 0) {
-		FAIL("Failed to disable (%d)\n", err);
+		TEST_FAIL("Failed to disable (%d)", err);
 
 		return;
 	}
@@ -414,7 +449,7 @@ static void reset_bluetooth(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Failed to re-enable (%d)\n", err);
+		TEST_FAIL("Failed to re-enable (%d)", err);
 
 		return;
 	}
@@ -432,11 +467,18 @@ static void test_main(void)
 		k_sleep(K_USEC(interval_us));
 	}
 
-	disconnect_cis();
-	disconnect_acl();
-	terminate_cig();
+	if (seq_num == 100) {
+		disconnect_cis();
+		disconnect_acl();
+		terminate_cig();
+	}
 
-	PASS("Test passed\n");
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&tx_pool.avail_count) == ENQUEUE_COUNT,
+		    "tx_pool has non returned buffers, should be %u but is %u",
+		    ENQUEUE_COUNT, atomic_get(&tx_pool.avail_count));
+
+	TEST_PASS("Test passed");
 }
 
 static void test_main_disable(void)
@@ -464,22 +506,18 @@ static void test_main_disable(void)
 	disconnect_acl();
 	terminate_cig();
 
-	PASS("Disable test passed\n");
+	TEST_PASS("Disable test passed");
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "central_disable",
 		.test_descr = "CIS central that tests bt_disable for ISO",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main_disable,
 	},
 	BSTEST_END_MARKER,

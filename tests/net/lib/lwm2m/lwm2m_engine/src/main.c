@@ -14,7 +14,7 @@
 
 #include "stubs.h"
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#include "nsi_timer_model.h"
 #endif
 
 #define LOG_LEVEL	LOG_LEVEL_DBG
@@ -32,12 +32,15 @@ static int lwm2m_get_res_buf_custom_fake(const struct lwm2m_obj_path *path, void
 					 uint16_t *buffer_len, uint16_t *data_len,
 					 uint8_t *data_flags)
 {
-	if (buffer_ptr)
+	if (buffer_ptr) {
 		*buffer_ptr = my_buf;
-	if (buffer_len)
+	}
+	if (buffer_len) {
 		*buffer_len = sizeof(my_buf);
-	if (data_len)
+	}
+	if (data_len) {
 		*data_len = my_data_len;
+	}
 
 	return 0;
 }
@@ -102,7 +105,6 @@ ZTEST(lwm2m_engine, test_start_stop)
 	ctx.load_credentials = NULL;
 	ctx.desthostname = host_name;
 	ctx.desthostnamelen = strlen(host_name);
-	ctx.hostname_verify = true;
 	ctx.use_dtls = true;
 
 	ret = lwm2m_engine_start(&ctx);
@@ -433,7 +435,6 @@ ZTEST(lwm2m_engine, test_security)
 	ctx.load_credentials = NULL;
 	ctx.desthostname = host_name;
 	ctx.desthostnamelen = strlen(host_name);
-	ctx.hostname_verify = true;
 	ctx.use_dtls = false;
 
 	lwm2m_security_mode_fake.return_val = LWM2M_SECURITY_NOSEC;
@@ -449,9 +450,8 @@ ZTEST(lwm2m_engine, test_security)
 	lwm2m_security_mode_fake.return_val = LWM2M_SECURITY_PSK;
 	zassert_equal(lwm2m_engine_start(&ctx), 0);
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[0], TLS_SEC_TAG_LIST);
-	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[1], TLS_HOSTNAME);
-	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[2], TLS_PEER_VERIFY);
-	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[3], TLS_CIPHERSUITE_LIST);
+	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[1], TLS_PEER_VERIFY);
+	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[2], TLS_CIPHERSUITE_LIST);
 	zassert_true(tls_credential_delete_fake.call_count > 3);
 	zassert_true(tls_credential_add_fake.call_count == 2);
 	zassert_equal(tls_credential_add_fake.arg1_history[0], TLS_CREDENTIAL_PSK_ID);
@@ -461,13 +461,13 @@ ZTEST(lwm2m_engine, test_security)
 	RESET_FAKE(z_impl_zsock_setsockopt);
 	RESET_FAKE(tls_credential_add);
 	lwm2m_security_mode_fake.return_val = LWM2M_SECURITY_CERT;
-	ctx.hostname_verify = false;
+	ctx.desthostname = NULL;
 	zassert_equal(lwm2m_engine_start(&ctx), 0);
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[0], TLS_SEC_TAG_LIST);
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[1], TLS_PEER_VERIFY);
 	zassert_equal(z_impl_zsock_setsockopt_fake.arg2_history[2], TLS_CIPHERSUITE_LIST);
 	zassert_true(tls_credential_add_fake.call_count == 3);
-	zassert_equal(tls_credential_add_fake.arg1_history[0], TLS_CREDENTIAL_SERVER_CERTIFICATE);
+	zassert_equal(tls_credential_add_fake.arg1_history[0], TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
 	zassert_equal(tls_credential_add_fake.arg1_history[1], TLS_CREDENTIAL_PRIVATE_KEY);
 	zassert_equal(tls_credential_add_fake.arg1_history[2], TLS_CREDENTIAL_CA_CERTIFICATE);
 	zassert_equal(lwm2m_engine_stop(&ctx), 0);

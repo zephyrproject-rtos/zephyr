@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Logic control Unit node for S32 SoCs.
+  Logic control Unit for NXP S32 SoCs.
   LCU selects multiple inputs from timers, Pulse Width Modulation
   signals, and Input/Output (I/O) pads, and combines them
   using a programmable logic function to create output waveforms

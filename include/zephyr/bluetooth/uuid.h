@@ -17,6 +17,7 @@
  * @{
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/sys/util.h>
@@ -4220,7 +4221,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_DEVT_VAL 0x2b90
 /**
- *  @brief GATT Characteristic String
+ *  @brief GATT Characteristic Device Time
  */
 #define BT_UUID_GATT_DEVT \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_DEVT_VAL)
@@ -5091,6 +5092,16 @@ struct bt_uuid_128 {
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SL_VAL)
 
 /**
+ *  @brief GATT Characteristic UDI for Medical Devices UUID Value
+ */
+#define BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL 0x2bff
+/**
+ *  @brief GATT Characteristic UDI for Medical Devices
+ */
+#define BT_UUID_UDI_FOR_MEDICAL_DEVICES \
+	BT_UUID_DECLARE_16(BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL)
+
+/**
  *  @brief Gaming Service UUID value
  */
 #define BT_UUID_GMAS_VAL 0x1858
@@ -5185,6 +5196,8 @@ struct bt_uuid_128 {
 #define BT_UUID_HCRP_NOTE             BT_UUID_DECLARE_16(BT_UUID_HCRP_NOTE_VAL)
 #define BT_UUID_AVCTP_VAL             0x0017
 #define BT_UUID_AVCTP                 BT_UUID_DECLARE_16(BT_UUID_AVCTP_VAL)
+#define BT_UUID_AVCTP_BROWSING_VAL    0x0018
+#define BT_UUID_AVCTP_BROWSING        BT_UUID_DECLARE_16(BT_UUID_AVCTP_BROWSING_VAL)
 #define BT_UUID_AVDTP_VAL             0x0019
 #define BT_UUID_AVDTP                 BT_UUID_DECLARE_16(BT_UUID_AVDTP_VAL)
 #define BT_UUID_CMTP_VAL              0x001b

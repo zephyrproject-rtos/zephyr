@@ -10,8 +10,14 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/sys_heap.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
+
 #ifdef CONFIG_LV_Z_MEMORY_POOL_CUSTOM_SECTION
 #define HEAP_MEM_ATTRIBUTES Z_GENERIC_SECTION(.lvgl_heap) __aligned(8)
+#elif defined(CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION)
+#define HEAP_MEM_ATTRIBUTES Z_GENERIC_SECTION(CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME)
+			    __aligned(8)
 #else
 #define HEAP_MEM_ATTRIBUTES __aligned(8)
 #endif /* CONFIG_LV_Z_MEMORY_POOL_CUSTOM_SECTION */
@@ -60,6 +66,20 @@ void lvgl_print_heap_info(bool dump_chunks)
 	key = k_spin_lock(&lvgl_heap_lock);
 	sys_heap_print_info(&lvgl_heap, dump_chunks);
 	k_spin_unlock(&lvgl_heap_lock, key);
+}
+
+void lvgl_heap_stats(struct sys_memory_stats *stats)
+{
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lvgl_heap_lock);
+	sys_heap_runtime_stats_get(&lvgl_heap, stats);
+	k_spin_unlock(&lvgl_heap_lock, key);
+#else
+	ARG_UNUSED(stats);
+	LOG_WRN_ONCE("Enable CONFIG_SYS_HEAP_RUNTIME_STATS to use the mem monitor feature");
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 }
 
 void lvgl_heap_init(void)

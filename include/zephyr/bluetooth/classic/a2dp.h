@@ -11,6 +11,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 
+/**
+ * @file
+ * @brief Advanced Audio Distribution Profile (A2DP)
+ * @defgroup bt_a2dp Advanced Audio Distribution Profile (A2DP)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -21,43 +29,44 @@
 extern "C" {
 #endif
 
-#define BT_A2DP_STREAM_BUF_RESERVE (12u + BT_L2CAP_BUF_SIZE(0))
-
 /** SBC IE length */
-#define BT_A2DP_SBC_IE_LENGTH      (4u)
+#define BT_A2DP_SBC_IE_LENGTH      (4U)
 /** MPEG1,2 IE length */
-#define BT_A2DP_MPEG_1_2_IE_LENGTH (4u)
+#define BT_A2DP_MPEG_1_2_IE_LENGTH (4U)
 /** MPEG2,4 IE length */
-#define BT_A2DP_MPEG_2_4_IE_LENGTH (6u)
+#define BT_A2DP_MPEG_2_4_IE_LENGTH (6U)
 /** The max IE (Codec Info Element) length */
-#define A2DP_MAX_IE_LENGTH (8U)
+#define BT_A2DP_MAX_IE_LENGTH      (8U)
 
 /** @brief define the audio endpoint
  *  @param _role BT_AVDTP_SOURCE or BT_AVDTP_SINK.
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_EP_INIT(_role, _codec, _capability)\
-{\
-	.codec_type = _codec,\
-	.sep = {.sep_info = {.media_type = BT_AVDTP_AUDIO, .tsep = _role}},\
-	.codec_cap = _capability,\
-	.stream = NULL,\
-}
+#define BT_A2DP_EP_INIT(_role, _codec, _capability, _delay_report)                                 \
+	{                                                                                          \
+		.codec_type = _codec,                                                              \
+		.sep = {.sep_info = {.media_type = BT_AVDTP_AUDIO, .tsep = _role}},                \
+		.codec_cap = _capability, .stream = NULL,                                          \
+		.delay_report = _delay_report,                                                     \
+	}
 
 /** @brief define the audio sink endpoint
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_SINK_EP_INIT(_codec, _capability)\
-BT_A2DP_EP_INIT(BT_AVDTP_SINK, _codec, _capability)
+#define BT_A2DP_SINK_EP_INIT(_codec, _capability, _delay_report)                                   \
+	BT_A2DP_EP_INIT(BT_AVDTP_SINK, _codec, _capability, _delay_report)
 
 /** @brief define the audio source endpoint
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_SOURCE_EP_INIT(_codec, _capability)\
-BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
+#define BT_A2DP_SOURCE_EP_INIT(_codec, _capability, _delay_report)                                 \
+	BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability, _delay_report)
 
 /** @brief define the SBC sink endpoint that can be used as
  * bt_a2dp_register_endpoint's parameter.
@@ -69,7 +78,7 @@ BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -78,15 +87,17 @@ BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
  *               for example: A2DP_SBC_ALLOC_MTHD_LOUDNESS
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
+ *  @param _delay_report delay report capability
  *  @
  */
-#define BT_A2DP_SBC_SINK_EP(_name, _freq, _ch_mode, _blk_len, _subband,\
-_alloc_mthd, _min_bitpool, _max_bitpool)\
-static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name =\
-{.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {_freq | _ch_mode,\
-_blk_len | _subband | _alloc_mthd, _min_bitpool, _max_bitpool}};\
-static struct bt_a2dp_ep _name = BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC,\
-(&bt_a2dp_ep_cap_ie##_name))
+#define BT_A2DP_SBC_SINK_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd, _min_bitpool, \
+			    _max_bitpool, _delay_report)                                           \
+	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {_freq | _ch_mode, _blk_len | _subband | _alloc_mthd, _min_bitpool,    \
+			     _max_bitpool}};                                                       \
+	static struct bt_a2dp_ep _name =                                                           \
+		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, (&bt_a2dp_ep_cap_ie##_name), _delay_report)
 
 /** @brief define the SBC source endpoint that can be used as bt_a2dp_register_endpoint's
  * parameter.
@@ -98,7 +109,7 @@ static struct bt_a2dp_ep _name = BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC,\
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -107,14 +118,16 @@ static struct bt_a2dp_ep _name = BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC,\
  *               for example: A2DP_SBC_ALLOC_MTHD_LOUDNESS
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_SBC_SOURCE_EP(_name, _freq, _ch_mode, _blk_len, _subband,\
-_alloc_mthd, _min_bitpool, _max_bitpool)\
-static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name =\
-{.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {_freq | _ch_mode,\
-_blk_len | _subband | _alloc_mthd, _min_bitpool, _max_bitpool}};\
-static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
-&bt_a2dp_ep_cap_ie##_name)
+#define BT_A2DP_SBC_SOURCE_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd,             \
+			      _min_bitpool, _max_bitpool, _delay_report)                           \
+	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {_freq | _ch_mode, _blk_len | _subband | _alloc_mthd, _min_bitpool,    \
+			     _max_bitpool}};                                                       \
+	static struct bt_a2dp_ep _name =                                                           \
+		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, _delay_report)
 
 /** @brief define the default SBC sink endpoint that can be used as
  * bt_a2dp_register_endpoint's parameter.
@@ -124,14 +137,17 @@ static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
  *
  *  @param _name the endpoint variable name.
  */
-#define BT_A2DP_SBC_SINK_EP_DEFAULT(_name)\
-static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name =\
-{.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {A2DP_SBC_SAMP_FREQ_44100 |\
-A2DP_SBC_SAMP_FREQ_48000 | A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO |\
-A2DP_SBC_CH_MODE_JOINT, A2DP_SBC_BLK_LEN_16 |\
-A2DP_SBC_SUBBAND_8 | A2DP_SBC_ALLOC_MTHD_LOUDNESS, 18U, 35U}};\
-static struct bt_a2dp_ep _name = BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC,\
-&bt_a2dp_ep_cap_ie##_name)
+#define BT_A2DP_SBC_SINK_EP_DEFAULT(_name)                                                         \
+	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
+				     A2DP_SBC_CH_MODE_JOINT,                                       \
+			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
+				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
+			     18U, 35U}};                                                           \
+	static struct bt_a2dp_ep _name =                                                           \
+		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, true)
 
 /** @brief define the default SBC source endpoint that can be used as bt_a2dp_register_endpoint's
  * parameter.
@@ -141,14 +157,18 @@ static struct bt_a2dp_ep _name = BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC,\
  *
  *  @param _name the endpoint variable name.
  */
-#define BT_A2DP_SBC_SOURCE_EP_DEFAULT(_name)\
-static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name =\
-{.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | \
-A2DP_SBC_SAMP_FREQ_48000 | A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO | \
-A2DP_SBC_CH_MODE_JOINT, A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 | A2DP_SBC_ALLOC_MTHD_LOUDNESS,\
-18U, 35U},};\
-static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
-&bt_a2dp_ep_cap_ie##_name)
+#define BT_A2DP_SBC_SOURCE_EP_DEFAULT(_name)                                                       \
+	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
+				     A2DP_SBC_CH_MODE_JOINT,                                       \
+			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
+				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
+			     18U, 35U},                                                            \
+	};                                                                                         \
+	static struct bt_a2dp_ep _name =                                                           \
+		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, false)
 
 /** @brief define the SBC default configuration.
  *
@@ -166,23 +186,34 @@ static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
  *  @param _min_bitpool_cfg sbc codec min bit pool. for example: 18
  *  @param _max_bitpool_cfg sbc codec max bit pool. for example: 35
  */
-#define BT_A2DP_SBC_EP_CFG(_name, _freq_cfg, _ch_mode_cfg, _blk_len_cfg, _subband_cfg,\
-_alloc_mthd_cfg, _min_bitpool_cfg, _max_bitpool_cfg)\
-static struct bt_a2dp_codec_ie bt_a2dp_codec_ie##_name = {\
-.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {_freq_cfg | _ch_mode_cfg,\
-_blk_len_cfg | _subband_cfg | _alloc_mthd_cfg, _min_bitpool_cfg, _max_bitpool_cfg},};\
-struct bt_a2dp_codec_cfg _name = {.codec_config = &bt_a2dp_codec_ie##_name,}
+#define BT_A2DP_SBC_EP_CFG(_name, _freq_cfg, _ch_mode_cfg, _blk_len_cfg, _subband_cfg,             \
+			   _alloc_mthd_cfg, _min_bitpool_cfg, _max_bitpool_cfg)                    \
+	static struct bt_a2dp_codec_ie bt_a2dp_codec_ie##_name = {                                 \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {_freq_cfg | _ch_mode_cfg,                                             \
+			     _blk_len_cfg | _subband_cfg | _alloc_mthd_cfg, _min_bitpool_cfg,      \
+			     _max_bitpool_cfg},                                                    \
+	};                                                                                         \
+	struct bt_a2dp_codec_cfg _name = {                                                         \
+		.codec_config = &bt_a2dp_codec_ie##_name,                                          \
+	}
 
 /** @brief define the SBC default configuration.
  *
  *  @param _name unique structure name postfix.
  *  @param _freq_cfg the frequency to configure the remote same codec type endpoint.
  */
-#define BT_A2DP_SBC_EP_CFG_DEFAULT(_name, _freq_cfg)\
-static struct bt_a2dp_codec_ie bt_a2dp_codec_ie##_name = {\
-.len = BT_A2DP_SBC_IE_LENGTH, .codec_ie = {_freq_cfg | A2DP_SBC_CH_MODE_JOINT,\
-A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 | A2DP_SBC_ALLOC_MTHD_LOUDNESS, 18U, 35U},};\
-struct bt_a2dp_codec_cfg _name = {.codec_config = &bt_a2dp_codec_ie##_name,}
+#define BT_A2DP_SBC_EP_CFG_DEFAULT(_name, _freq_cfg)                                               \
+	static struct bt_a2dp_codec_ie bt_a2dp_codec_ie##_name = {                                 \
+		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
+		.codec_ie = {_freq_cfg | A2DP_SBC_CH_MODE_JOINT,                                   \
+			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
+				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
+			     18U, 35U},                                                            \
+	};                                                                                         \
+	struct bt_a2dp_codec_cfg _name = {                                                         \
+		.codec_config = &bt_a2dp_codec_ie##_name,                                          \
+	}
 
 /**
  * @brief A2DP error code
@@ -278,6 +309,8 @@ enum bt_a2dp_codec_type {
 	BT_A2DP_MPEG1 = 0x01,
 	/** Codec MPEG-2 */
 	BT_A2DP_MPEG2 = 0x02,
+	/** Codec MPEG-D */
+	BT_A2DP_MPEGD = 0x03,
 	/** Codec ATRAC */
 	BT_A2DP_ATRAC = 0x04,
 	/** Codec Non-A2DP */
@@ -295,11 +328,13 @@ struct bt_a2dp_codec_ie {
 	/** Length of codec_cap */
 	uint8_t len;
 	/** codec information element */
-	uint8_t codec_ie[A2DP_MAX_IE_LENGTH];
+	uint8_t codec_ie[BT_A2DP_MAX_IE_LENGTH];
 };
 
 /** @brief The endpoint configuration */
 struct bt_a2dp_codec_cfg {
+	/** the delay reporting configured state */
+	bool delay_report;
 	/** The media codec configuration content */
 	struct bt_a2dp_codec_ie *codec_config;
 };
@@ -308,6 +343,8 @@ struct bt_a2dp_codec_cfg {
 struct bt_a2dp_ep {
 	/** Code Type @ref bt_a2dp_codec_type */
 	uint8_t codec_type;
+	/** Whether the endpoint has delay reporting service */
+	bool delay_report;
 	/** Capabilities */
 	struct bt_a2dp_codec_ie *codec_cap;
 	/** AVDTP Stream End Point Identifier */
@@ -319,10 +356,12 @@ struct bt_a2dp_ep {
 struct bt_a2dp_ep_info {
 	/** Code Type @ref bt_a2dp_codec_type */
 	uint8_t codec_type;
+	/** Whether the endpoint has delay reporting service */
+	bool delay_report;
 	/** Codec capabilities, if SBC, use function of a2dp_codec_sbc.h to parse it */
 	struct bt_a2dp_codec_ie codec_cap;
 	/** Stream End Point Information */
-	struct bt_avdtp_sep_info sep_info;
+	struct bt_avdtp_sep_info *sep_info;
 };
 
 /** @brief Helper enum to be used as return value of bt_a2dp_discover_ep_cb.
@@ -358,8 +397,8 @@ enum {
  *  for next endpoint. By returning BT_A2DP_DISCOVER_EP_STOP user allows this
  *  discovery continuation.
  */
-typedef uint8_t (*bt_a2dp_discover_ep_cb)(struct bt_a2dp *a2dp,
-		struct bt_a2dp_ep_info *info, struct bt_a2dp_ep **ep);
+typedef uint8_t (*bt_a2dp_discover_ep_cb)(struct bt_a2dp *a2dp, struct bt_a2dp_ep_info *info,
+					  struct bt_a2dp_ep **ep);
 
 struct bt_a2dp_discover_param {
 	/** discover callback */
@@ -370,6 +409,15 @@ struct bt_a2dp_discover_param {
 	 *  it save endpoint info internally.
 	 */
 	struct bt_avdtp_sep_info *seps_info;
+	/** The AVDTP version of the peer's A2DP sdp service.
+	 *  Stack uses it to determine using get_all_cap or get_cap cmd. When both
+	 *  versions are v1.3 or bigger version, get_all_cap is used, otherwise
+	 *  get_cap is used.
+	 *  It is the same value of the avdtp sepcificaiton's version value.
+	 *  For example: 0x0103 means version 1.3
+	 *  If the value is 0 (unknown), stack process it as less than v1.3
+	 */
+	uint16_t avdtp_version;
 	/** The max count of seps (stream endpoint) that can be got in this call route */
 	uint8_t sep_count;
 };
@@ -411,9 +459,23 @@ struct bt_a2dp_cb {
 	 * @return 0 in case of success or negative value in case of error.
 	 */
 	int (*config_req)(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
-			struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
-			uint8_t *rsp_err_code);
-	/** @brief Callback function for bt_a2dp_stream_config()
+			  struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
+			  uint8_t *rsp_err_code);
+	/**
+	 * @brief Endpoint config request callback
+	 *
+	 * The callback is called whenever an endpoint is requested to be
+	 * reconfigured.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[out] rsp_err_code  give the error code if response error.
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*reconfig_req)(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			    uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_config() and bt_a2dp_stream_reconfig()
 	 *
 	 *  Called when the codec configure operation is completed.
 	 *
@@ -423,7 +485,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*config_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream establishment request callback
+	 * @brief Stream establishment request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * established (open cmd and create the stream l2cap channel).
@@ -446,7 +508,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*establish_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream release request callback
+	 * @brief Stream release request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * released (release cmd and release the l2cap channel)
@@ -469,7 +531,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*release_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief stream start request callback
+	 * @brief Stream start request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * started.
@@ -491,7 +553,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*start_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief Endpoint suspend request callback
+	 * @brief Stream suspend request callback
 	 *
 	 * The callback is called whenever an stream is requested to be
 	 * suspended.
@@ -513,10 +575,10 @@ struct bt_a2dp_cb {
 	 */
 	void (*suspend_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 	/**
-	 * @brief Endpoint config request callback
+	 * @brief Stream abort request callback
 	 *
-	 * The callback is called whenever an endpoint is requested to be
-	 * reconfigured.
+	 * The callback is called whenever an stream is requested to be
+	 * aborted.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
 	 *  @param[out] rsp_err_code  give the error code if response error.
@@ -524,16 +586,67 @@ struct bt_a2dp_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*reconfig_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
-	/** @brief Callback function for bt_a2dp_stream_reconfig()
+	int (*abort_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_abort()
 	 *
-	 *  Called when the reconfig operation is completed.
+	 *  Called when the abort operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
 	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
-	void (*reconfig_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+	void (*abort_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+	/**
+	 * @brief Stream get config callback
+	 *
+	 * The callback is called whenever an stream is requested to response
+	 * configured configuration.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[out] rsp_err_code  give the error code if response error.
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*get_config_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_get_config()
+	 *
+	 *  Called when the get configuration operation is completed.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] codec_cfg the codec configuration that is got
+	 *  @param[in] rsp_err_code the remote responded error code
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 */
+	void (*get_config_rsp)(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			       uint8_t rsp_err_code);
+#ifdef CONFIG_BT_A2DP_SOURCE
+	/**
+	 * @brief Stream delay report is received
+	 *
+	 * The callback is called whenever an stream's delay report is received.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] value     The delay report value in 1/10 milliseconds.
+	 *  @param[out] rsp_err_code  give the error code if response error.
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*delay_report_req)(struct bt_a2dp_stream *stream, uint16_t value,
+				uint8_t *rsp_err_code);
+#endif
+#ifdef CONFIG_BT_A2DP_SINK
+	/** @brief Callback function for bt_a2dp_stream_delay_report()
+	 *
+	 *  Called when the delay report sending is completed.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] rsp_err_code the remote responded error code
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 */
+	void (*delay_report_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+#endif
 };
 
 /** @brief A2DP Connect.
@@ -566,12 +679,12 @@ int bt_a2dp_disconnect(struct bt_a2dp *a2dp);
 /** @brief Endpoint Registration.
  *
  *  @param ep Pointer to bt_a2dp_ep structure.
- *  @param media_type Media type that the Endpoint is.
- *  @param role Role of Endpoint.
+ *  @param media_type Media type that the Endpoint is, #bt_avdtp_media_type.
+ *  @param sep_type Stream endpoint type, #bt_avdtp_sep_type.
  *
  *  @return 0 in case of success and error code in case of error.
  */
-int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t role);
+int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_type);
 
 /** @brief register callback.
  *
@@ -582,6 +695,16 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t role)
  *  @return 0 in case of success and error code in case of error.
  */
 int bt_a2dp_register_cb(struct bt_a2dp_cb *cb);
+
+/** @brief Obtain the ACL connection corresponding to A2DP.
+ *
+ *  @param a2dp The A2DP instance.
+ *
+ *  @return Connection object associated with the A2DP context. The caller gets a new
+ *  reference to the connection object which must be released with bt_conn_unref()
+ *  once done using the object.
+ */
+struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp);
 
 /** @brief Discover remote endpoints.
  *
@@ -600,6 +723,8 @@ struct bt_a2dp_stream {
 	struct bt_a2dp_ep *remote_ep;
 	/** remote endpoint's Stream End Point ID */
 	uint8_t remote_ep_id;
+	/** whether the delay report is configured on the stream */
+	bool delay_report;
 	/** Audio stream operations */
 	struct bt_a2dp_stream_ops *ops;
 	/** the a2dp connection */
@@ -613,7 +738,7 @@ struct bt_a2dp_stream_ops {
 	/**
 	 * @brief Stream configured callback
 	 *
-	 * The callback is called whenever an Audio Stream has been configured.
+	 * The callback is called whenever an Audio Stream has been configured or reconfigured.
 	 *
 	 * @param stream Stream object that has been configured.
 	 */
@@ -629,7 +754,12 @@ struct bt_a2dp_stream_ops {
 	/**
 	 * @brief Stream release callback
 	 *
+	 * The release procedure (bt_a2dp_stream_release, release_req, release_rsp and
+	 * disconnect l2cap media channel), the abort procedure (bt_a2dp_stream_abort, abort_req,
+	 * abort_rsp and disconnect l2cap media channel) and the error procedure (for example,
+	 * the l2cap channel disconnected unexpectedly) will cause the stream to be released.
 	 * The callback is called whenever an Audio Stream has been released.
+	 * After released, the stream becomes invalid to control.
 	 *
 	 * @param stream Stream object that has been released.
 	 */
@@ -650,14 +780,6 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object that has been suspended.
 	 */
 	void (*suspended)(struct bt_a2dp_stream *stream);
-	/**
-	 * @brief Stream reconfigured callback
-	 *
-	 * The callback is called whenever an Audio Stream has been reconfigured.
-	 *
-	 * @param stream Stream object that has been reconfigured.
-	 */
-	void (*reconfigured)(struct bt_a2dp_stream *stream);
 #if defined(CONFIG_BT_A2DP_SINK)
 	/** @brief the media streaming data, only for sink
 	 *
@@ -665,8 +787,8 @@ struct bt_a2dp_stream_ops {
 	 *  @param seq_num the sequence number
 	 *  @param ts the time stamp
 	 */
-	void (*recv)(struct bt_a2dp_stream *stream,
-		struct net_buf *buf, uint16_t seq_num, uint32_t ts);
+	void (*recv)(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
+		     uint32_t ts);
 #endif
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	/**
@@ -682,6 +804,16 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object.
 	 */
 	void (*sent)(struct bt_a2dp_stream *stream);
+	/**
+	 * @brief The delay report value is received
+	 *
+	 * This callback will be called once delay report is replied with accept
+	 * (If `delay_report_req` is not set or `delay_report_req` reply success).
+	 *
+	 * @param stream Stream object.
+	 * @param value The delay report value in 1/10 milliseconds.
+	 */
+	void (*delay_report)(struct bt_a2dp_stream *stream, uint16_t value);
 #endif
 };
 
@@ -711,8 +843,18 @@ void bt_a2dp_stream_cb_register(struct bt_a2dp_stream *stream, struct bt_a2dp_st
  *  @return 0 in case of success and error code in case of error.
  */
 int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
-		struct bt_a2dp_ep *local_ep, struct bt_a2dp_ep *remote_ep,
-		struct bt_a2dp_codec_cfg *config);
+			  struct bt_a2dp_ep *local_ep, struct bt_a2dp_ep *remote_ep,
+			  struct bt_a2dp_codec_cfg *config);
+
+/** @brief get config of the stream
+ *
+ * This function sends the AVDTP_GET_CONFIGURATION command.
+ *
+ *  @param stream The stream object.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_get_config(struct bt_a2dp_stream *stream);
 
 /** @brief establish a2dp streamer.
  *
@@ -727,6 +869,7 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream);
 /** @brief release a2dp streamer.
  *
  * This function sends the AVDTP_CLOSE command and release the l2cap channel.
+ * After release, the stream becomes invalid.
  *
  *  @param stream The stream object.
  *
@@ -765,6 +908,17 @@ int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *config);
 
+/** @brief abort a2dp streamer.
+ *
+ * This function sends the AVDTP_ABORT command.
+ * After abort, the stream becomes invalid.
+ *
+ *  @param stream The stream object.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
+
 /** @brief get the stream l2cap mtu
  *
  *  @param stream The stream object.
@@ -773,7 +927,6 @@ int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_
  */
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 
-#if defined(CONFIG_BT_A2DP_SOURCE)
 /** @brief send a2dp media data
  *
  * Only A2DP source side can call this function.
@@ -785,12 +938,41 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  *
  *  @return 0 in case of success and error code in case of error.
  */
-int bt_a2dp_stream_send(struct bt_a2dp_stream *stream,  struct net_buf *buf,
-			uint16_t seq_num, uint32_t ts);
-#endif
+int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			uint32_t ts);
+
+/**
+ * @brief Allocate a net_buf for bt_a2dp_stream_send
+ *
+ * This function allocates a buffer from the specified pool, reserves
+ * sufficient headroom for protocol headers required by L2CAP over Bluetooth, fills
+ * the AVDTP header.
+ *
+ * @param pool    The buffer pool to allocate from.
+ * @param timeout Non-negative waiting period to obtain a buffer or one of
+ *                the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return A newly allocated net_buf.
+ */
+struct net_buf *bt_a2dp_stream_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout);
+
+/** @brief send delay report
+ *
+ * Only A2DP sink side can call this function.
+ *
+ *  @param stream The stream object.
+ *  @param delay Value in 1/10 milliseconds.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay);
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_ */

@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 #define XEC_PWM_MAX_LOW_CLK_FREQ			\
 	(MCHP_PWM_INPUT_FREQ_LO / XEC_PWM_LOWEST_ON_OFF)
 /* Precision factor for frequency calculation
- * To mitigate frequency comparision up to the first digit after 0.
+ * To mitigate frequency comparison up to the first digit after 0.
  */
 #define XEC_PWM_FREQ_PF		10U
 /* Precision factor for DC calculation
@@ -327,8 +327,9 @@ static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel,
 		return -EIO;
 	}
 
-	if (flags & PWM_POLARITY_INVERTED)
+	if (flags & PWM_POLARITY_INVERTED) {
 		regs->CONFIG |= MCHP_PWM_CFG_ON_POL_LO;
+	}
 
 	on = pulse_cycles;
 	off = period_cycles - pulse_cycles;
@@ -417,7 +418,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct pwm_driver_api pwm_xec_driver_api = {
+static DEVICE_API(pwm, pwm_xec_driver_api) = {
 	.set_cycles = pwm_xec_set_cycles,
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec,
 };

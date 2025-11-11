@@ -8,7 +8,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_NATIVE_LIBC)
+#define ARPHRD_CAN 280
+#define ARPHRD_PPP 512
+#else
 #include <zephyr/posix/net/if_arp.h>
+#endif
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/capture.h>
@@ -285,7 +290,7 @@ static int init_app(void)
 #define EVENT_MASK (NET_EVENT_CAPTURE_STARTED | NET_EVENT_CAPTURE_STOPPED)
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(cb);
@@ -307,7 +312,7 @@ int main(void)
 {
 	static struct net_mgmt_event_callback mgmt_cb;
 	struct net_if *iface;
-	uint32_t event;
+	uint64_t event;
 	int ret;
 
 	LOG_INF("Starting network capture sample");

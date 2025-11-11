@@ -11,10 +11,8 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 32768
 flash: 8192
 supported:
   - counter
   - sdhc
-vendor: nxp

@@ -55,16 +55,33 @@ extern "C" {
  */
 struct pm_notifier {
 	sys_snode_t _node;
-	/**
-	 * Application defined function for doing any target specific operations
-	 * for power state entry.
-	 */
-	void (*state_entry)(enum pm_state state);
-	/**
-	 * Application defined function for doing any target specific operations
-	 * for power state exit.
-	 */
-	void (*state_exit)(enum pm_state state);
+	union {
+		struct {
+			/**
+			 * Application defined function for doing any target specific operations
+			 * for power state entry.
+			 */
+			void (*state_entry)(enum pm_state state);
+			/**
+			 * Application defined function for doing any target specific operations
+			 * for power state exit.
+			 */
+			void (*state_exit)(enum pm_state state);
+		};
+		struct {
+			/**
+			 * Application defined function for doing any target specific operations
+			 * for power state entry. Reports the substate id additionally.
+			 */
+			void (*substate_entry)(enum pm_state state, uint8_t substate_id);
+			/**
+			 * Application defined function for doing any target specific operations
+			 * for power state exit. Reports the substate id additionally.
+			 */
+			void (*substate_exit)(enum pm_state state, uint8_t substate_id);
+		};
+	};
+	bool report_substate; /* 0 is for backwards compatibility that didn't report substates */
 };
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
@@ -135,11 +152,6 @@ const struct pm_state_info *pm_state_next_get(uint8_t cpu);
  */
 void pm_system_resume(void);
 
-
-/** @cond INTERNAL_HIDDEN */
-__deprecated void z_pm_save_idle_exit(void);
-/** @endcond */
-
 /**
  * @}
  */
@@ -198,9 +210,6 @@ static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 	ARG_UNUSED(cpu);
 
 	return NULL;
-}
-static inline void z_pm_save_idle_exit(void)
-{
 }
 
 static inline void pm_system_resume(void)

@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <zephyr/sys/printk.h>
 #include <ctype.h>

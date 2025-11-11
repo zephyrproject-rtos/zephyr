@@ -1,7 +1,4 @@
-.. _cc3235sf_launchxl:
-
-CC3235SF LaunchXL
-#################
+.. zephyr:board:: cc3235sf_launchxl
 
 Overview
 ********
@@ -50,17 +47,7 @@ Supported Features
 Zephyr has been ported to the Applications MCU, with basic peripheral
 driver support.
 
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| UART      | on-chip    | serial port-interrupt |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| I2C       | on-chip    | i2c                   |
-+-----------+------------+-----------------------+
-| SPI_0     | on-chip    | Wi-Fi host driver     |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
 
@@ -73,6 +60,8 @@ accessible through the BoosterPack, are not currently supported.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 TI officially supports development on the CC3235SF using the TI
 `CC32xx SDK`_ on Windows and Linux using TI tools: Code Composer
@@ -172,7 +161,7 @@ Flashing
 To build and flash an application, execute the following commands for <my_app>:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: cc3235sf_launchxl
    :goals: flash
 
@@ -199,7 +188,7 @@ To debug a previously flashed image, after resetting the board, use the 'debug'
 build target:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: cc3235sf_launchxl
    :maybe-skip-config:
    :goals: debug
@@ -218,7 +207,7 @@ Usage:
 
 Set :kconfig:option:`CONFIG_WIFI_SIMPLELINK` and :kconfig:option:`CONFIG_WIFI` to ``y``
 to enable Wi-Fi.
-See :zephyr_file:`samples/net/wifi/boards/cc3235sf_launchxl.conf`.
+See :zephyr_file:`samples/net/wifi/shell/boards/cc3235sf_launchxl.conf`.
 
 Provisioning:
 =============
@@ -265,6 +254,8 @@ using the TI UniFlash tool for certificate programming.
 
 References
 **********
+
+.. target-notes::
 
 TI SimpleLink MCUs:
     http://www.ti.com/microcontrollers/simplelink-mcus/overview.html

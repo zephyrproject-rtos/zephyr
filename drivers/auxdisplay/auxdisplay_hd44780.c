@@ -70,53 +70,151 @@ struct auxdisplay_hd44780_config {
 	uint8_t line_addresses[4];
 	uint16_t enable_line_rise_delay;
 	uint16_t enable_line_fall_delay;
+	uint16_t rs_line_delay;
 	uint16_t clear_delay;
 	uint16_t boot_delay;
 };
 
 static void auxdisplay_hd44780_set_entry_mode(const struct device *dev);
 static void auxdisplay_hd44780_set_display_mode(const struct device *dev, bool enabled);
+static int auxdisplay_hd44780_clear(const struct device *dev);
 
-static void auxdisplay_hd44780_command(const struct device *dev, bool rs, uint8_t cmd,
-				       uint8_t mode)
+static void hd44780_pulse_enable_line(const struct device *dev)
 {
-	const struct auxdisplay_hd44780_config *config = dev->config;
-	int8_t i = 7;
-
-	if (mode == AUXDISPLAY_HD44780_MODE_8_BIT) {
-		while (i >= 0) {
-			gpio_pin_set_dt(&config->db_gpios[i], ((cmd & BIT(i)) ? 1 : 0));
-			--i;
-		}
-	} else {
-		while (i >= 4) {
-			gpio_pin_set_dt(&config->db_gpios[i], ((cmd & BIT(i)) ? 1 : 0));
-			--i;
-		}
-	}
-
-	gpio_pin_set_dt(&config->rs_gpio, rs);
-
-	if (config->rw_gpio.port) {
-		gpio_pin_set_dt(&config->rw_gpio, 0);
-	}
+	const struct auxdisplay_hd44780_config *const config = dev->config;
 
 	gpio_pin_set_dt(&config->e_gpio, 1);
-	k_sleep(K_USEC(config->enable_line_rise_delay));
+	k_sleep(K_NSEC(config->enable_line_rise_delay));
 	gpio_pin_set_dt(&config->e_gpio, 0);
-	k_sleep(K_USEC(config->enable_line_fall_delay));
+	k_sleep(K_NSEC(config->enable_line_fall_delay));
+}
 
-	if (mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
-		while (i >= 0) {
-			gpio_pin_set_dt(&config->db_gpios[(i + 4)], ((cmd & BIT(i)) ? 1 : 0));
+static inline void hd44780_set_rs_rw_lines(const struct device *dev, bool rs, bool rw)
+{
+	const struct auxdisplay_hd44780_config *const config = dev->config;
+
+	gpio_pin_set_dt(&config->rs_gpio, rs);
+	if (config->rw_gpio.port) {
+		gpio_pin_set_dt(&config->rw_gpio, rw);
+	}
+
+	k_sleep(K_NSEC(config->rs_line_delay));
+}
+
+static int hd44780_db_gpios_configure(const struct device *dev, uint8_t lsb_line,
+				      gpio_flags_t flags)
+{
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	int rc;
+
+	for (int line = 7; line >= lsb_line; --line) {
+		rc = gpio_pin_configure_dt(&config->db_gpios[line], flags);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
+static void auxdisplay_hd44780_command(const struct device *dev, bool rs,
+				       uint8_t cmd, uint8_t mode)
+{
+	int rc;
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	int8_t i = 7;
+	const int8_t lsb_line = (mode == AUXDISPLAY_HD44780_MODE_8_BIT) ? 0 : 4;
+	int8_t ncommands = (mode == AUXDISPLAY_HD44780_MODE_4_BIT) ? 2 : 1;
+	const bool check_busy_flag = (!config->rw_gpio.port ||
+				      (mode == AUXDISPLAY_HD44780_MODE_4_BIT_ONCE)) ?
+				      false : true;
+
+	if (check_busy_flag) {
+		bool busy;
+
+		rc = hd44780_db_gpios_configure(dev, lsb_line, GPIO_INPUT | GPIO_PULL_DOWN);
+		if (rc < 0) {
+			LOG_ERR("Configuration of db-gpios as inputs failed: %d", rc);
+			return;
+		}
+
+		hd44780_set_rs_rw_lines(dev, 0, 1);
+		do {
+			hd44780_pulse_enable_line(dev);
+
+			/* We don't care about the other pins. */
+			busy = gpio_pin_get_dt(&config->db_gpios[7]);
+
+			if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
+				/* In this mode we have to initiate two separate readbacks. */
+				hd44780_pulse_enable_line(dev);
+			}
+		} while (busy);
+
+		rc = hd44780_db_gpios_configure(dev, lsb_line, GPIO_OUTPUT);
+		if (rc < 0) {
+			LOG_ERR("Configuration of db-gpios as outputs failed: %d", rc);
+			return;
+		}
+	}
+
+	hd44780_set_rs_rw_lines(dev, rs, 0);
+	while (ncommands--) {
+		for (int8_t line = 7; line >= lsb_line; --line) {
+			gpio_pin_set_dt(&config->db_gpios[line], ((cmd & BIT(i)) ? 1 : 0));
 			--i;
 		}
 
-		gpio_pin_set_dt(&config->e_gpio, 1);
-		k_sleep(K_USEC(config->enable_line_rise_delay));
-		gpio_pin_set_dt(&config->e_gpio, 0);
-		k_sleep(K_USEC(config->enable_line_fall_delay));
+		hd44780_pulse_enable_line(dev);
 	}
+
+	if (!check_busy_flag) {
+		/* Sleep for a max execution time for a given instruction. */
+		uint16_t cmd_delay_us = (cmd == AUXDISPLAY_HD44780_CMD_CLEAR) ? 1520 : 37;
+
+		k_sleep(K_USEC(cmd_delay_us));
+	}
+}
+
+static void hd44780_ic_initialize(const struct device *dev)
+{
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	uint8_t cmd;
+
+	/*
+	 * If proper power supply is used to power the HD44780, it initializes correctly
+	 * on a reset condition all by itself. However, if the power supply is below
+	 * its expectations (e.g. supplying it with some 3.3V Nucleo board),
+	 * it won't initialize properly on its own, and the MCU has to carry out
+	 * the initialization as listed in the reference manual.
+	 * Since we cannot determine it properly in the runtime,
+	 * always carry out the initialization procedure.
+	 */
+	cmd = AUXDISPLAY_HD44780_CMD_SETUP | AUXDISPLAY_HD44780_8_BIT_CONFIG;
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(4100));
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(100));
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(100));
+
+	if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
+		/* Put display into 4-bit mode */
+		cmd = AUXDISPLAY_HD44780_CMD_SETUP;
+		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	}
+
+	/* Configure display */
+	if (config->capabilities.rows > 1) {
+		cmd |= AUXDISPLAY_HD44780_2_LINE_CONFIG;
+	}
+	auxdisplay_hd44780_command(dev, false, cmd, config->capabilities.mode);
+
+	auxdisplay_hd44780_set_display_mode(dev, false);
+	auxdisplay_hd44780_clear(dev);
+	auxdisplay_hd44780_set_entry_mode(dev);
+
+	auxdisplay_hd44780_set_display_mode(dev, true);
 }
 
 static int auxdisplay_hd44780_init(const struct device *dev)
@@ -125,7 +223,6 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 	struct auxdisplay_hd44780_data *data = dev->data;
 	int rc;
 	uint8_t i = 0;
-	uint8_t cmd = AUXDISPLAY_HD44780_CMD_SETUP | AUXDISPLAY_HD44780_8_BIT_CONFIG;
 
 	if (config->capabilities.mode > AUXDISPLAY_HD44780_MODE_8_BIT) {
 		/* This index is reserved for internal driver usage */
@@ -139,15 +236,6 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 	if (rc < 0) {
 		LOG_ERR("Configuration of RS GPIO failed: %d", rc);
 		return rc;
-	}
-
-	if (config->rw_gpio.port) {
-		rc = gpio_pin_configure_dt(&config->rw_gpio, GPIO_OUTPUT);
-
-		if (rc < 0) {
-			LOG_ERR("Configuration of RW GPIO failed: %d", rc);
-			return rc;
-		}
 	}
 
 	rc = gpio_pin_configure_dt(&config->e_gpio, GPIO_OUTPUT);
@@ -182,6 +270,15 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		++i;
 	}
 
+	if (config->rw_gpio.port) {
+		rc = gpio_pin_configure_dt(&config->rw_gpio, GPIO_OUTPUT);
+
+		if (rc < 0) {
+			LOG_ERR("Configuration of RW GPIO failed: %d", rc);
+			return rc;
+		}
+	}
+
 	if (config->backlight_gpio.port) {
 		rc = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT);
 
@@ -207,28 +304,7 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		k_sleep(K_MSEC(config->boot_delay));
 	}
 
-	if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
-		/* Reset display to known state in 8-bit mode */
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-
-		/* Put display into 4-bit mode */
-		cmd = AUXDISPLAY_HD44780_CMD_SETUP;
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-	}
-
-	if (config->capabilities.rows > 1) {
-		cmd |= AUXDISPLAY_HD44780_2_LINE_CONFIG;
-	}
-
-	/* Configure display */
-	auxdisplay_hd44780_command(dev, false, cmd, config->capabilities.mode);
-	auxdisplay_hd44780_set_display_mode(dev, true);
-	auxdisplay_hd44780_set_entry_mode(dev);
-	auxdisplay_hd44780_command(dev, false, AUXDISPLAY_HD44780_CMD_CLEAR,
-				   config->capabilities.mode);
-
-	k_sleep(K_USEC(config->clear_delay));
+	hd44780_ic_initialize(dev);
 
 	return 0;
 }
@@ -523,7 +599,7 @@ static int auxdisplay_hd44780_write(const struct device *dev, const uint8_t *tex
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_hd44780_auxdisplay_api) = {
 	.display_on = auxdisplay_hd44780_display_on,
 	.display_off = auxdisplay_hd44780_display_off,
 	.cursor_set_enabled = auxdisplay_hd44780_cursor_set_enabled,
@@ -577,8 +653,9 @@ static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
 		.line_addresses[2] = DT_INST_PROP_BY_IDX(inst, line_addresses, 2),		\
 		.line_addresses[3] = DT_INST_PROP_BY_IDX(inst, line_addresses, 3),		\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),		\
-		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_us),	\
-		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_us),	\
+		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_ns),	\
+		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_ns),	\
+		.rs_line_delay = DT_INST_PROP(inst, rs_line_delay_ns),				\
 		.clear_delay = DT_INST_PROP(inst, clear_command_delay_us),			\
 		.boot_delay = DT_INST_PROP(inst, boot_delay_ms),				\
 	};											\

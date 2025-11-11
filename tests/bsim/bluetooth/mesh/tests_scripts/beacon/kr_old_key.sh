@@ -7,8 +7,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_beacon_kr_old_key \
 	beacon_tx_kr_old_key \
 	beacon_rx_kr_old_key
-
-overlay=overlay_psa_conf
-RunTest mesh_beacon_kr_old_key_psa \
-	beacon_tx_kr_old_key \
-	beacon_rx_kr_old_key

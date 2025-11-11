@@ -247,7 +247,7 @@ static int gpio_stellaris_manage_callback(const struct device *dev,
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_stellaris_driver_api = {
+static DEVICE_API(gpio, gpio_stellaris_driver_api) = {
 	.pin_configure = gpio_stellaris_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_stellaris_get_config,

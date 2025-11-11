@@ -5,8 +5,7 @@
 menu "POSIX scheduler options"
 
 config POSIX_PRIORITY_SCHEDULING
-	bool "POSIX priority-based process scheduling [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX priority-based process scheduling"
 	help
 	  This enables POSIX scheduling APIs (_POSIX_PRIORITY_SCHEDULING).
 

@@ -24,11 +24,11 @@ if(CONFIG_BT_HAS)
     target_sources(app PRIVATE btp_has.c)
 endif()
 
-if (CONFIG_BT_CSIP_SET_MEMBER)
+if(CONFIG_BT_CSIP_SET_MEMBER)
     target_sources(app PRIVATE btp_csis.c)
 endif()
 
-if (CONFIG_BT_CSIP_SET_COORDINATOR)
+if(CONFIG_BT_CSIP_SET_COORDINATOR)
     target_sources(app PRIVATE btp_csip.c)
 endif()
 
@@ -40,11 +40,11 @@ if(CONFIG_BT_AICS)
     target_sources(app PRIVATE btp_aics.c)
 endif()
 
-if (CONFIG_BT_TBS_CLIENT)
+if(CONFIG_BT_TBS_CLIENT)
     target_sources(app PRIVATE btp_ccp.c)
 endif()
 
-if (CONFIG_BT_CAP_ACCEPTOR)
+if(CONFIG_BT_CAP_ACCEPTOR)
     target_sources(app PRIVATE btp_cas.c)
 endif()
 
@@ -60,10 +60,14 @@ if(CONFIG_BT_CAP_INITIATOR)
     target_sources(app PRIVATE btp_cap.c)
 endif()
 
-if(CONFIG_BT_TBS OR CONFIG_BT_GTBS)
+if(CONFIG_BT_TBS)
     target_sources(app PRIVATE btp_ccp.c)
 endif()
 
 if(CONFIG_BT_TMAP)
     target_sources(app PRIVATE btp_tmap.c)
+endif()
+
+if(CONFIG_BT_PBP)
+    target_sources(app PRIVATE btp_pbp.c)
 endif()

@@ -269,8 +269,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		value_changed(&vol_rend, NOTIFY_STATE);
 
 		if (vol_rend.cb && vol_rend.cb->state) {
-			vol_rend.cb->state(0, vol_rend.state.volume,
-					       vol_rend.state.mute);
+			vol_rend.cb->state(conn, 0, vol_rend.state.volume, vol_rend.state.mute);
 		}
 	}
 
@@ -282,7 +281,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		}
 
 		if (vol_rend.cb && vol_rend.cb->flags) {
-			vol_rend.cb->flags(0, vol_rend.flags);
+			vol_rend.cb->flags(conn, 0, vol_rend.flags);
 		}
 	}
 	return len;
@@ -524,8 +523,7 @@ int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 int bt_vcp_vol_rend_get_state(void)
 {
 	if (vol_rend.cb && vol_rend.cb->state) {
-		vol_rend.cb->state(0, vol_rend.state.volume,
-				   vol_rend.state.mute);
+		vol_rend.cb->state(NULL, 0, vol_rend.state.volume, vol_rend.state.mute);
 	}
 
 	return 0;
@@ -534,7 +532,7 @@ int bt_vcp_vol_rend_get_state(void)
 int bt_vcp_vol_rend_get_flags(void)
 {
 	if (vol_rend.cb && vol_rend.cb->flags) {
-		vol_rend.cb->flags(0, vol_rend.flags);
+		vol_rend.cb->flags(NULL, 0, vol_rend.flags);
 	}
 
 	return 0;

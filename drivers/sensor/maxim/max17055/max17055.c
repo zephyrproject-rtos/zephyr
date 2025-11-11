@@ -166,6 +166,13 @@ static int max17055_channel_get(const struct device *dev,
 		valp->val1 = tmp / 1000000;
 		valp->val2 = tmp % 1000000;
 		break;
+	case SENSOR_CHAN_CURRENT: {
+		int current_ma;
+
+		current_ma = current_to_ma(config->rsense_mohms, priv->current);
+		set_millis(valp, current_ma);
+		break;
+	}
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT: {
 		int current_ma;
 
@@ -250,6 +257,13 @@ static int max17055_sample_fetch(const struct device *dev,
 	if (chan == SENSOR_CHAN_ALL ||
 	    (enum sensor_channel_max17055)chan == SENSOR_CHAN_MAX17055_VFOCV) {
 		ret = max17055_reg_read(dev, VFOCV, &priv->ocv);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_CURRENT) {
+		ret = max17055_reg_read(dev, CURRENT, &priv->current);
 		if (ret < 0) {
 			return ret;
 		}
@@ -469,7 +483,7 @@ static int max17055_gauge_init(const struct device *dev)
 	return max17055_reg_write(dev, STATUS, tmp);
 }
 
-static const struct sensor_driver_api max17055_battery_driver_api = {
+static DEVICE_API(sensor, max17055_battery_driver_api) = {
 	.sample_fetch = max17055_sample_fetch,
 	.channel_get = max17055_channel_get,
 };

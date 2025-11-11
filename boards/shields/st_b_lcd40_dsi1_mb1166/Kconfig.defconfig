@@ -4,25 +4,11 @@
 
 if SHIELD_ST_B_LCD40_DSI1_MB1166 || SHIELD_ST_B_LCD40_DSI1_MB1166_A09
 
-# Double frame buffer maintained by lvgl.
+orsource "boards/*.defconfig"
+
 if LVGL
 
-config STM32_LTDC_FB_NUM
-	default 0
-
 config INPUT
-	default y
-
-config LV_Z_VDB_SIZE
-	default 100
-
-config LV_Z_DOUBLE_VDB
-	default y
-
-config LV_Z_VBD_CUSTOM_SECTION
-	default y
-
-config LV_Z_FULL_REFRESH
 	default y
 
 config LV_Z_BITS_PER_PIXEL

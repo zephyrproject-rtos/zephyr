@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include "bs_tracing.h"
 #include "bstests.h"
 #include "common.h"
 #ifdef CONFIG_BT_CSIP_SET_MEMBER
@@ -24,12 +25,9 @@ extern enum bst_result_t bst_result;
 static volatile bool g_locked;
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 struct bt_csip_set_member_register_param param = {
-	.set_size = 3,
-	.rank = 1,
 	.lockable = true,
 	/* Using the CSIS test sample SIRK */
-	.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-		  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+	.sirk = TEST_SAMPLE_SIRK,
 };
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
@@ -53,11 +51,7 @@ static struct bt_csip_set_member_cb csip_cbs = {
 
 static void bt_ready(int err)
 {
-	uint8_t rsi[BT_CSIP_RSI_SIZE];
-	struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-		BT_CSIP_DATA_RSI(rsi),
-	};
+	struct bt_le_ext_adv *ext_adv;
 
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
@@ -74,23 +68,20 @@ static void bt_ready(int err)
 		return;
 	}
 
-	err = bt_csip_set_member_generate_rsi(svc_inst, rsi);
+	err = bt_csip_set_member_generate_rsi(svc_inst, csip_rsi);
 	if (err != 0) {
 		FAIL("Failed to generate RSI (err %d)\n", err);
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-	}
+	setup_connectable_adv(&ext_adv);
 }
 
 static void test_sirk(void)
 {
 	const uint8_t new_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 				    0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
-	uint8_t tmp_sirk[BT_CSIP_SIRK_SIZE];
+	struct bt_csip_set_member_set_info info;
 	int err;
 
 	printk("Setting new SIRK\n");
@@ -101,18 +92,68 @@ static void test_sirk(void)
 	}
 
 	printk("Getting new SIRK\n");
-	err = bt_csip_set_member_get_sirk(svc_inst, tmp_sirk);
+	err = bt_csip_set_member_get_info(svc_inst, &info);
 	if (err != 0) {
 		FAIL("Failed to get SIRK: %d\n", err);
 		return;
 	}
 
-	if (memcmp(new_sirk, tmp_sirk, BT_CSIP_SIRK_SIZE) != 0) {
-		FAIL("The SIRK set and the SIRK set were different\n");
+	if (memcmp(new_sirk, info.sirk, BT_CSIP_SIRK_SIZE) != 0) {
+		FAIL("The SIRK set and the set SIRK were different\n");
 		return;
 	}
 
 	printk("New SIRK correctly set and retrieved\n");
+}
+
+static void update_set_size_and_rank(void)
+{
+	struct bt_csip_set_member_set_info info;
+	uint8_t old_set_size;
+	uint8_t old_rank;
+	uint8_t new_set_size;
+	uint8_t new_rank;
+	int err;
+
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	/* Simulate a new device being added as rank 1 to the set, making the set size increase by 1
+	 * and this device's rank increase by 1
+	 */
+	old_set_size = info.set_size;
+	old_rank = info.rank;
+	new_set_size = old_set_size + 1U;
+	new_rank = old_rank + 1U;
+
+	printk("Setting new SIRK\n");
+	err = bt_csip_set_member_set_size_and_rank(svc_inst, new_set_size, new_rank);
+	if (err != 0) {
+		FAIL("Failed to set new size and rank: %d\n", err);
+		return;
+	}
+
+	printk("Getting new SIRK\n");
+	err = bt_csip_set_member_get_info(svc_inst, &info);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	if (info.set_size != new_set_size) {
+		FAIL("Unexpected set size %u != %u\n", info.set_size, new_set_size);
+		return;
+	}
+
+	if (info.rank != new_rank) {
+		FAIL("Unexpected rank %u != %u\n", info.rank, new_rank);
+		return;
+	}
+
+	printk("New size correctly set and retrieved\n");
 }
 
 static void test_main(void)
@@ -217,6 +258,76 @@ static void test_new_sirk(void)
 	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
+static void test_new_set_size_and_rank(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	update_set_size_and_rank();
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
+}
+
+static void test_register(void)
+{
+	for (size_t iteration = 1; iteration <= 5; iteration++) {
+		struct bt_csip_set_member_svc_inst
+			*svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
+		int err;
+
+		printk("Running iteration %zu\n", iteration);
+
+		ARRAY_FOR_EACH(svc_insts, i) {
+			err = bt_csip_set_member_register(&param, &svc_insts[i]);
+			if (err != 0) {
+				FAIL("[%zu]: Could not register CSIS (err %d)\n", i, err);
+				return;
+			}
+		}
+
+		err = bt_csip_set_member_register(&param, &svc_inst);
+		if (err == 0) {
+			FAIL("Registered more CSIS than expected\n");
+			return;
+		}
+
+		ARRAY_FOR_EACH(svc_insts, i) {
+			err = bt_csip_set_member_unregister(svc_insts[i]);
+			if (err != 0) {
+				FAIL("[%zu]: Could not unregister CSIS (err %d)\n", i, err);
+				return;
+			}
+			svc_insts[i] = NULL;
+		}
+	}
+
+	PASS("CSIP Set member register passed\n");
+	/* We can terminate the test immediately here as there is no peer devices we keep
+	 * communicating with.
+	 */
+	bs_trace_silent_exit(0);
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (size_t argn = 0; argn < argc; argn++) {
@@ -272,6 +383,20 @@ static const struct bst_test_instance test_connect[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_new_size_and_rank",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_set_size_and_rank,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_register",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_register,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,

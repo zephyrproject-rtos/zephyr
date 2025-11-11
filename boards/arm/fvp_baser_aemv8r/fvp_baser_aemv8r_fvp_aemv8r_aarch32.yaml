@@ -6,6 +6,9 @@ identifier: fvp_baser_aemv8r/fvp_aemv8r_aarch32
 name: FVP Emulation FVP_BaseR_AEMv8R AArch32
 arch: arm
 type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_BaseR_AEMv8R
 toolchain:
   - zephyr
   - cross-compile

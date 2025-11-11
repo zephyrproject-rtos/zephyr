@@ -1,0 +1,24 @@
+identifier: nucleo_u385rg_q
+name: ST Nucleo U385RG Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - can
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - usart
+  - usb_device
+  - usbd
+  - watchdog
+ram: 256
+flash: 1024

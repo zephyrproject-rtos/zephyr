@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,19 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <fsl_io_mux.h>
 #include "soc.h"
 #include "flexspi_clock_setup.h"
 #include "fsl_ocotp.h"
+
+#define NON_AON_PINS_START      0
+#define NON_AON_PINS_BREAK      21
+#define NON_AON_PINS_RESTART    28
+#define NON_AON_PINS_END        63
+#define RF_CNTL_PINS_START      0
+#define RF_CNTL_PINS_END        3
+
+extern void nxp_nbu_init(void);
 #ifdef CONFIG_NXP_RW6XX_BOOT_HEADER
 extern char z_main_stack[];
 extern char _flash_used[];
@@ -65,12 +75,6 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_RW6XX_BOOT_HEADER */
 
-const clock_avpll_config_t avpll_config = {
-	.ch1Freq = kCLOCK_AvPllChFreq12p288m,
-	.ch2Freq = kCLOCK_AvPllChFreq64m,
-	.enableCali = true
-};
-
 /**
  * @brief Initialize the system clocks and peripheral clocks
  *
@@ -78,7 +82,7 @@ const clock_avpll_config_t avpll_config = {
  * clock needs to be re-initialized on exit from Standby mode. Hence
  * this function is relocated to RAM.
  */
-__ramfunc void clock_init(void)
+__weak __ramfunc void clock_init(void)
 {
 	POWER_DisableGDetVSensors();
 
@@ -93,8 +97,6 @@ __ramfunc void clock_init(void)
 
 	/* Initialize T3 clocks and t3pll_mci_48_60m_irc configured to 48.3MHz */
 	CLOCK_InitT3RefClk(kCLOCK_T3MciIrc48m);
-	/* Enable FFRO */
-	CLOCK_EnableClock(kCLOCK_T3PllMciIrcClk);
 	/* Enable T3 256M clock and SFRO */
 	CLOCK_EnableClock(kCLOCK_T3PllMci256mClk);
 
@@ -112,16 +114,8 @@ __ramfunc void clock_init(void)
 	/* Enable tcpu_mci_clk 260MHz. Keep tcpu_mci_flexspi_clk gated. */
 	CLOCK_EnableClock(kCLOCK_TcpuMciClk);
 
-	/* tddr_mci_flexspi_clk 320MHz */
-	CLOCK_InitTddrRefClk(kCLOCK_TddrFlexspiDiv10);
-	CLOCK_EnableClock(kCLOCK_TddrMciFlexspiClk); /* 320MHz */
-
 	/* Enable AUX0 PLL to 260 MHz */
 	CLOCK_SetClkDiv(kCLOCK_DivAux0PllClk, 1U);
-
-	/* Init AVPLL and enable both channels */
-	CLOCK_InitAvPll(&avpll_config);
-	CLOCK_SetClkDiv(kCLOCK_DivAudioPllClk, 1U);
 
 	/* Configure MainPll to 260MHz, then let CM33 run on Main PLL. */
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1U);
@@ -131,6 +125,8 @@ __ramfunc void clock_init(void)
 	/* Set SYSTICKFCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivSystickClk, 1U);
 	CLOCK_AttachClk(kSYSTICK_DIV_to_SYSTICK_CLK);
+
+	SystemCoreClockUpdate();
 
 	/* Set PLL FRG clock to 20MHz. */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 13U);
@@ -197,6 +193,10 @@ __ramfunc void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2c, okay)) && CONFIG_I2C
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32)))
+	CLOCK_EnableXtal32K(true);
+	CLOCK_AttachClk(kXTAL32K_to_CLK32K);
+#endif
 
 /* Clock flexcomms when used as SPI */
 #ifdef CONFIG_SPI
@@ -221,36 +221,64 @@ __ramfunc void clock_init(void)
 #endif
 #endif /* CONFIG_SPI */
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dmic0), okay) && CONFIG_AUDIO_DMIC_MCUX
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmic0)) && CONFIG_AUDIO_DMIC_MCUX) || CONFIG_I2S
+	const clock_avpll_config_t avpll_config = {
+		.ch1Freq = kCLOCK_AvPllChFreq12p288m,
+		.ch2Freq = kCLOCK_AvPllChFreq64m,
+		.enableCali = true
+	};
+
+	/* Init AVPLL and enable both channels */
+	CLOCK_InitAvPll(&avpll_config);
+	CLOCK_SetClkDiv(kCLOCK_DivAudioPllClk, 1U);
+
 	/* Clock DMIC from Audio PLL. PLL output is sourced from AVPLL
 	 * channel 1, which is clocked at 12.288 MHz. We can divide this
 	 * by 4 to achieve the desired DMIC bit clk of 3.072 MHz
 	 */
 	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 4);
+
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM0);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM1);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM2);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
+	#endif
+	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2s, okay))
+		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM14);
+	#endif
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdic), okay) && CONFIG_MIPI_DBI_NXP_LCDIC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lcdic)) && CONFIG_MIPI_DBI_NXP_LCDIC
 	CLOCK_AttachClk(kMAIN_CLK_to_LCD_CLK);
 	RESET_PeripheralReset(kLCDIC_RST_SHIFT_RSTn);
 #endif
 
-#ifdef CONFIG_COUNTER_MCUX_CTIMER
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER0);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer1), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER1);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer2), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER2);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer3), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER3);
 #endif
-#endif /* CONFIG_COUNTER_MCUX_CTIMER */
+#endif /* CONFIG_COUNTER_MCUX_CTIMER || CONFIG_PWM_MCUX_CTIMER */
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb_otg), okay) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb_otg)) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI) || \
+	(CONFIG_UHC_NXP_EHCI)
 	/* Enable system xtal from Analog */
 	SYSCTL2->ANA_GRP_CTRL |= SYSCTL2_ANA_GRP_CTRL_PU_AG_MASK;
 	/* reset USB */
@@ -261,24 +289,23 @@ __ramfunc void clock_init(void)
 	CLOCK_EnableUsbhsPhyClock();
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET
 	RESET_PeripheralReset(kENET_IPG_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kENET_IPG_S_RST_SHIFT_RSTn);
 #endif
 
 }
 
+extern void nxp_rw6xx_power_init(void);
 /**
  *
  * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
 
-static int nxp_rw600_init(void)
+void soc_early_init_hook(void)
 {
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
 	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
@@ -290,7 +317,7 @@ static int nxp_rw600_init(void)
 #define PMU_RESET_CAUSES \
 	COND_CODE_0(IS_EMPTY(PMU_RESET_CAUSES_), (PMU_RESET_CAUSES_), (0))
 #define WDT_RESET \
-	COND_CODE_1(DT_NODE_HAS_STATUS(wwdt, okay), (kPOWER_ResetSourceWdt), (0))
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
 #define RESET_CAUSES \
 	(PMU_RESET_CAUSES | WDT_RESET)
 #else
@@ -302,17 +329,34 @@ static int nxp_rw600_init(void)
 	/* Initialize clock */
 	clock_init();
 
-#if defined(CONFIG_ADC_MCUX_GAU) ||  defined(CONFIG_DAC_MCUX_GAU)
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
+#if CONFIG_PM
+	nxp_rw6xx_power_init();
 
-	return 0;
+	int32_t i;
+	/* Set all non-AON pins output low level in sleep mode. */
+	for (i = NON_AON_PINS_START; i <= NON_AON_PINS_BREAK; i++) {
+		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
+	for (i = NON_AON_PINS_RESTART; i <= NON_AON_PINS_END; i++) {
+		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
+
+	/* Set RF_CNTL 0-3 output low level in sleep mode. */
+	for (i = RF_CNTL_PINS_START; i <= RF_CNTL_PINS_END; i++) {
+		IO_MUX_SetRfPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
+#endif
+
+#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
+	nxp_nbu_init();
+#endif
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* This is provided by the SDK */
 	SystemInit();
 }
-
-SYS_INIT(nxp_rw600_init, PRE_KERNEL_1, 0);

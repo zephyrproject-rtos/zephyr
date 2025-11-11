@@ -45,18 +45,12 @@ config SPI_NOR_SFDP_RUNTIME
 endchoice
 
 config SPI_NOR_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 80
 	help
 	  Device driver initialization priority.
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
-
-config SPI_NOR_CS_WAIT_DELAY
-	int "Delay time in us"
-	default 0
-	help
-	  This is the wait delay (in us) to allow for CS switching to take effect
 
 config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	bool "Sleep while waiting for flash operations to complete"
@@ -68,6 +62,15 @@ config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	  result in significant flash savings if this driver is the only user
 	  of "k_sleep". This can be the case when building as a bootloader.
 
+config SPI_NOR_SLEEP_ERASE_MS
+	int "Delay between polls while waiting for an erase operation in ms"
+	default 50
+	depends on SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+	help
+	  The delay between polling while waiting for the flash to finish
+	  an erase operation.
+
+
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
 	default 65536
@@ -78,16 +81,15 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  (32768), the sector size (4096), or any non-zero multiple of the
 	  sector size.
 
-config SPI_NOR_IDLE_IN_DPD
-	bool "Use Deep Power-Down mode when flash is not being accessed."
+config SPI_NOR_ACTIVE_DWELL_MS
+	int "Dwell period (ms) after last use to stay in active mode"
+	depends on PM_DEVICE_RUNTIME
+	default 10
 	help
-	  Where supported deep power-down mode can reduce current draw
-	  to as little as 0.1% of standby current.  However it takes
-	  some milliseconds to enter and exit from this mode.
-
-	  Select this option for applications where device power
-	  management is not enabled, the flash remains inactive for
-	  long periods, and when used the impact of waiting for mode
-	  enter and exit delays is acceptable.
+	  Flash accesses commonly occur in bursts, where entering and exiting DPD
+	  mode between each access adds significantly to the total operation time.
+	  This option controls how long to remain in active mode after each API
+	  call, eliminating the active->idle->active transition sequence if another
+	  transaction occurs before the dwell period expires.
 
 endif # SPI_NOR

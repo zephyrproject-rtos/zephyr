@@ -1,0 +1,10 @@
+# Copyright (c) 2018-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MPS3_CORSTONE300
+
+config NUM_IRQS
+	default 128
+
+endif

@@ -11,6 +11,9 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
+#include <ctype.h>
+#include <stdbool.h>
+#include <string.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -22,25 +25,23 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/platform/hooks.h>
 #include <ksched.h>
 #include <kthread.h>
-#include <string.h>
+#include <ipi.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/tracing/tracing.h>
-#include <stdbool.h>
 #include <zephyr/debug/gcov.h>
 #include <kswap.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/internal/syscall_handler.h>
-LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
+#include <zephyr/arch/common/init.h>
 
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
-	     "CONFIG_MP_NUM_CPUS and CONFIG_MP_MAX_NUM_CPUS need to be set the same");
+LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* the only struct z_kernel instance */
 __pinned_bss
@@ -178,160 +179,31 @@ static struct k_obj_core_stats_desc  kernel_stats_desc = {
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 #endif /* CONFIG_OBJ_CORE_SYSTEM */
 
-/* LCOV_EXCL_START
- *
- * This code is called so early in the boot process that code coverage
- * doesn't work properly. In addition, not all arches call this code,
- * some like x86 do this with optimized assembly
- */
-
-/**
- * @brief equivalent of memset() for early boot usage
- *
- * Architectures that can't safely use the regular (optimized) memset very
- * early during boot because e.g. hardware isn't yet sufficiently initialized
- * may override this with their own safe implementation.
- */
-__boot_func
-void __weak z_early_memset(void *dst, int c, size_t n)
-{
-	(void) memset(dst, c, n);
-}
-
-/**
- * @brief equivalent of memcpy() for early boot usage
- *
- * Architectures that can't safely use the regular (optimized) memcpy very
- * early during boot because e.g. hardware isn't yet sufficiently initialized
- * may override this with their own safe implementation.
- */
-__boot_func
-void __weak z_early_memcpy(void *dst, const void *src, size_t n)
-{
-	(void) memcpy(dst, src, n);
-}
-
-/**
- * @brief Clear BSS
- *
- * This routine clears the BSS region, so all bytes are 0.
- */
-__boot_func
-void z_bss_zero(void)
-{
-	if (IS_ENABLED(CONFIG_SKIP_BSS_CLEAR)) {
-		return;
-	}
-
-	z_early_memset(__bss_start, 0, __bss_end - __bss_start);
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-	z_early_memset(&__ccm_bss_start, 0,
-		       (uintptr_t) &__ccm_bss_end
-		       - (uintptr_t) &__ccm_bss_start);
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-	z_early_memset(&__dtcm_bss_start, 0,
-		       (uintptr_t) &__dtcm_bss_end
-		       - (uintptr_t) &__dtcm_bss_start);
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
-	z_early_memset(&__ocm_bss_start, 0,
-		       (uintptr_t) &__ocm_bss_end
-		       - (uintptr_t) &__ocm_bss_start);
-#endif
-#ifdef CONFIG_CODE_DATA_RELOCATION
-	extern void bss_zeroing_relocation(void);
-
-	bss_zeroing_relocation();
-#endif	/* CONFIG_CODE_DATA_RELOCATION */
-#ifdef CONFIG_COVERAGE_GCOV
-	z_early_memset(&__gcov_bss_start, 0,
-		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
-#endif /* CONFIG_COVERAGE_GCOV */
-}
-
-#ifdef CONFIG_LINKER_USE_BOOT_SECTION
-/**
- * @brief Clear BSS within the bot region
- *
- * This routine clears the BSS within the boot region.
- * This is separate from z_bss_zero() as boot region may
- * contain symbols required for the boot process before
- * paging is initialized.
- */
-__boot_func
-void z_bss_zero_boot(void)
-{
-	z_early_memset(&lnkr_boot_bss_start, 0,
-		       (uintptr_t)&lnkr_boot_bss_end
-		       - (uintptr_t)&lnkr_boot_bss_start);
-}
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-/**
- * @brief Clear BSS within the pinned region
- *
- * This routine clears the BSS within the pinned region.
- * This is separate from z_bss_zero() as pinned region may
- * contain symbols required for the boot process before
- * paging is initialized.
- */
-#ifdef CONFIG_LINKER_USE_BOOT_SECTION
-__boot_func
-#else
-__pinned_func
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-void z_bss_zero_pinned(void)
-{
-	z_early_memset(&lnkr_pinned_bss_start, 0,
-		       (uintptr_t)&lnkr_pinned_bss_end
-		       - (uintptr_t)&lnkr_pinned_bss_start);
-}
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 #ifdef CONFIG_STACK_CANARIES_TLS
-extern __thread volatile uintptr_t __stack_chk_guard;
+extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #else
 extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
-#endif /* CONFIG_STACK_CANARIES */
-
-/* LCOV_EXCL_STOP */
+#endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
 __pinned_bss
 bool z_sys_post_kernel;
 
-static int do_device_init(const struct init_entry *entry)
+/* defined in device.c */
+extern int do_device_init(const struct device *dev);
+
+/**
+ * @brief Initialize state for all static devices.
+ *
+ * The state object is always zero-initialized, but this may not be
+ * sufficient.
+ */
+static void z_device_state_init(void)
 {
-	const struct device *dev = entry->dev;
-	int rc = 0;
-
-	if (entry->init_fn.dev != NULL) {
-		rc = entry->init_fn.dev(dev);
-		/* Mark device initialized. If initialization
-		 * failed, record the error condition.
-		 */
-		if (rc != 0) {
-			if (rc < 0) {
-				rc = -rc;
-			}
-			if (rc > UINT8_MAX) {
-				rc = UINT8_MAX;
-			}
-			dev->state->init_res = rc;
-		}
+	STRUCT_SECTION_FOREACH(device, dev) {
+		k_object_init(dev);
 	}
-
-	dev->state->initialized = true;
-
-	if (rc == 0) {
-		/* Run automatic device runtime enablement */
-		(void)pm_device_runtime_auto_enable(dev);
-	}
-
-	return rc;
 }
 
 /**
@@ -363,46 +235,43 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
-		int result;
+		int result = 0;
 
 		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
-			result = do_device_init(entry);
+			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
+				result = do_device_init(dev);
+			}
 		} else {
-			result = entry->init_fn.sys();
+			result = entry->init_fn();
 		}
 		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
 
-
-int z_impl_device_init(const struct device *dev)
-{
-	if (dev == NULL) {
-		return -ENOENT;
-	}
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
-		if (entry->dev == dev) {
-			return do_device_init(entry);
-		}
-	}
-
-	return -ENOENT;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_device_init(const struct device *dev)
-{
-	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
-
-	return z_impl_device_init(dev);
-}
-#include <zephyr/syscalls/device_init_mrsh.c>
-#endif
-
+/* defined in banner.c */
 extern void boot_banner(void);
 
+
+#ifdef CONFIG_STATIC_INIT_GNU
+
+extern void (*__zephyr_init_array_start[])();
+extern void (*__zephyr_init_array_end[])();
+
+static void z_static_init_gnu(void)
+{
+	void	(**fn)();
+
+	for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++) {
+		/* MWDT toolchain sticks a NULL at the end of the array */
+		if (*fn == NULL) {
+			break;
+		}
+		(**fn)();
+	}
+}
+
+#endif
 
 /**
  * @brief Mainline for kernel's background thread
@@ -427,14 +296,23 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
+#if CONFIG_IRQ_OFFLOAD
+	arch_irq_offload_init();
+#endif
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
+
+	soc_late_init_hook();
+
+	board_late_init_hook();
+
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-	void z_init_static(void);
-	z_init_static();
+#ifdef CONFIG_STATIC_INIT_GNU
+	z_static_init_gnu();
+#endif /* CONFIG_STATIC_INIT_GNU */
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
@@ -456,9 +334,18 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_mem_manage_boot_finish();
 #endif /* CONFIG_MMU */
 
+#ifdef CONFIG_BOOTARGS
+	extern int main(int, char **);
+	extern char **prepare_main_args(int *argc);
+
+	int argc = 0;
+	char **argv = prepare_main_args(&argc);
+	(void)main(argc, argv);
+#else
 	extern int main(void);
 
 	(void)main();
+#endif /* CONFIG_BOOTARGS */
 
 	/* Mark non-essential since main() has no more work to do */
 	z_thread_essential_clear(&z_main_thread);
@@ -466,6 +353,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
+#elif defined(CONFIG_COVERAGE_SEMIHOST)
+	gcov_coverage_semihost();
 #endif /* CONFIG_COVERAGE_DUMP */
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
@@ -494,7 +383,7 @@ static void init_idle_thread(int i)
 			  stack_size, idle, &_kernel.cpus[i],
 			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
 			  tname);
-	z_mark_thread_as_started(thread);
+	z_mark_thread_as_not_sleeping(thread);
 
 #ifdef CONFIG_SMP
 	thread->base.is_idle = 1U;
@@ -530,6 +419,10 @@ void z_init_cpu(int id)
 				  _kernel.cpus[id].usage,
 				  sizeof(struct k_cycle_stats));
 #endif
+#endif
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	sys_dlist_init(&_kernel.cpus[id].ipi_workq);
 #endif
 }
 
@@ -571,7 +464,7 @@ static char *prepare_multithreading(void)
 				       NULL, NULL, NULL,
 				       CONFIG_MAIN_THREAD_PRIORITY,
 				       K_ESSENTIAL, "main");
-	z_mark_thread_as_started(&z_main_thread);
+	z_mark_thread_as_not_sleeping(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
 	z_init_cpu(0);
@@ -622,8 +515,8 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 		state = state + k_cycle_get_32();
 		state = state * 2862933555777941757ULL + 3037000493ULL;
 		val = (uint32_t)(state >> 32);
-		rc = MIN(length, sizeof(val));
-		z_early_memcpy((void *)buf, &val, rc);
+		rc = min(length, sizeof(val));
+		arch_early_memcpy((void *)buf, &val, rc);
 
 		length -= rc;
 		buf += rc;
@@ -661,6 +554,10 @@ FUNC_NORETURN void z_cstart(void)
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
+	soc_early_init_hook();
+
+	board_early_init_hook();
+
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
 #if defined(CONFIG_SMP)
@@ -668,13 +565,13 @@ FUNC_NORETURN void z_cstart(void)
 #endif
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 	uintptr_t stack_guard;
 
 	z_early_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
-#endif	/* CONFIG_STACK_CANARIES */
+#endif	/* CONFIG_REQUIRES_STACK_CANARIES */
 
 #ifdef CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT
 	timing_init();

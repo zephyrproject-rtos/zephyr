@@ -1,16 +1,19 @@
 boards:
 
   - name: intel_ish_5_4_1
+    full_name: Integrated Sensor Hub (ISH) 5.4.1
     vendor: intel
     socs:
       - name: intel_ish_5_4_1
 
   - name: intel_ish_5_6_0
+    full_name: Integrated Sensor Hub (ISH) 5.6.0
     vendor: intel
     socs:
       - name: intel_ish_5_6_0
 
   - name: intel_ish_5_8_0
+    full_name: Integrated Sensor Hub (ISH) 5.8.0
     vendor: intel
     socs:
       - name: intel_ish_5_8_0

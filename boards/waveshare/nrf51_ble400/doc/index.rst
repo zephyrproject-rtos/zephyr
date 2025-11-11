@@ -1,7 +1,4 @@
-.. _nrf51_ble400:
-
-Waveshare BLE400
-#################
+.. zephyr:board:: nrf51_ble400
 
 Overview
 ********
@@ -35,7 +32,7 @@ Features
 ========
 
 - 2.4 GHz multiprotocol RF transceiver
-- ARM® Cortex™-M0 32 bit processor
+- ARM® Cortex |reg|-M0 32 bit processor
 - 128 bit AES HW encryption
 - 256kB flash & 32kB RAM
 - Programmable Peripheral Interconnect (PPI)
@@ -159,6 +156,8 @@ UART (USB)
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -168,7 +167,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

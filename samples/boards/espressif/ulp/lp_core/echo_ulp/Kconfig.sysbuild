@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config ULP_REMOTE_BOARD
+	string
+	default "esp32c6_devkitc/esp32c6/lpcore" if $(BOARD) = "esp32c6_devkitc"

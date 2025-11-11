@@ -3,6 +3,15 @@
 CLion
 #####
 
+.. note::
+
+   This guide describes how to set up, build, and debug Zephyr's sample application in CLion, using
+   the IDE's CMake integration. This approach is no longer optimal.
+
+   CLion now features `native Zephyr West integration`_ which provides an easier and more intuitive
+   way to open, build, and run/debug Zephyr projects. This guide will be updated soon, but is still
+   valid if you prefer to use CMake.
+
 CLion_ is a cross-platform C/C++ IDE that supports multi-threaded RTOS debugging.
 
 This guide describes the process of setting up, building, and debugging Zephyr's
@@ -58,12 +67,10 @@ not happen, go to :menuselection:`Settings --> Build, Execution, Deployment --> 
 #. Click :menuselection:`Add environment --> From file` and select
    ``..\.venv\Scripts\activate.bat``.
 
-   .. only:: html
-
-      .. figure:: img/clion_toolchain_mingw.webp
-         :width: 600px
-         :align: center
-         :alt: MinGW toolchain with environment script
+   .. figure:: img/clion_toolchain_mingw.webp
+      :width: 600px
+      :align: center
+      :alt: MinGW toolchain with environment script
 
    Click :guilabel:`Apply` to save the changes.
 
@@ -74,12 +81,10 @@ not happen, go to :menuselection:`Settings --> Build, Execution, Deployment --> 
 
       -DBOARD=nrf52840dk/nrf52840
 
-   .. only:: html
-
-      .. figure:: img/clion_cmakeprofile.webp
-         :width: 600px
-         :align: center
-         :alt: CMake profile
+   .. figure:: img/clion_cmakeprofile.webp
+      :width: 600px
+      :align: center
+      :alt: CMake profile
 
 #. Click :guilabel:`Apply` to save the changes.
 
@@ -170,21 +175,17 @@ your setup is different, make sure to adjust the configuration settings accordin
         * - :guilabel:`TCP/IP port`
           - Auto
 
-   .. only:: html
-
-      .. figure:: img/clion_gdbserverconfig.webp
-         :width: 500px
-         :align: center
-         :alt: Embedded GDB server configuration
+    .. figure:: img/clion_gdbserverconfig.webp
+       :width: 500px
+       :align: center
+       :alt: Embedded GDB server configuration
 
 #. Click :guilabel:`Next` to set the Segger J-Link parameters.
 
-   .. only:: html
-
-      .. figure:: img/clion_segger_settings.webp
-         :width: 500px
-         :align: center
-         :alt: Segger J-Link parameters
+    .. figure:: img/clion_segger_settings.webp
+       :width: 500px
+       :align: center
+       :alt: Segger J-Link parameters
 
 #. Click :guilabel:`Create` when ready.
 
@@ -201,15 +202,14 @@ Start debugging
    Zephyr tasks are listed in the :guilabel:`Threads & Variables` pane. You can switch between them
    and inspect the variables for each task.
 
-   .. only:: html
-
-      .. figure:: img/clion_debug_threads.webp
-         :width: 800px
-         :align: center
-         :alt: Viewing Zephyr tasks during a debug session
+    .. figure:: img/clion_debug_threads.webp
+       :width: 800px
+       :align: center
+       :alt: Viewing Zephyr tasks during a debug session
 
    Refer to `CLion web help`_ for detailed description of the IDE debug capabilities.
 
+.. _native Zephyr West integration: https://jb.gg/cl_zephyr_doc
 .. _CLion: https://www.jetbrains.com/clion/
 .. _Download CLion: https://www.jetbrains.com/clion/download
 .. _Project security: https://www.jetbrains.com/help/clion/project-security.html#projects_security

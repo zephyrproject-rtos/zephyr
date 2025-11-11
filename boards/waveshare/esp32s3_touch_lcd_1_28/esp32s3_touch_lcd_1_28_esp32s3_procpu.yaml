@@ -15,8 +15,4 @@ supported:
   - pinmux
   - nvs
   - display
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: waveshare

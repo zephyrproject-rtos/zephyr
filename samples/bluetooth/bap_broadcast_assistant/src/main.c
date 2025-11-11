@@ -1,26 +1,42 @@
 /*
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <strings.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #define NAME_LEN 30
 #define PA_SYNC_SKIP         5
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 /* Broadcast IDs are 24bit, so this is out of valid range */
-#define INVALID_BROADCAST_ID 0xFFFFFFFFU
+/* Default semaphore timeout when waiting for an action */
+#define SEM_TIMEOUT                       K_SECONDS(10)
 
 static void scan_for_broadcast_sink(void);
 
@@ -56,6 +72,7 @@ static K_SEM_DEFINE(sem_sink_disconnected, 0, 1);
 static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_bass_discovered, 0, 1);
 static K_SEM_DEFINE(sem_pa_synced, 0, 1);
+static K_SEM_DEFINE(sem_pa_sync_terminted, 0, 1);
 static K_SEM_DEFINE(sem_received_base_subgroups, 0, 1);
 
 static bool device_found(struct bt_data *data, void *user_data)
@@ -135,6 +152,7 @@ static bool base_store(struct bt_data *data, void *user_data)
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	int base_size;
 	int base_subgroup_count;
+	int err;
 
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
@@ -156,13 +174,19 @@ static bool base_store(struct bt_data *data, void *user_data)
 	}
 
 	/* Compare BASE and copy if different */
-	k_mutex_lock(&base_store_mutex, K_FOREVER);
+	err = k_mutex_lock(&base_store_mutex, K_MSEC(100));
+	if (err != 0) {
+		/* Could not get BASE mutex, wait for new to avoid blocking */
+		return false;
+	}
+
 	if ((size_t)base_size != received_base_size ||
 	    memcmp(base, received_base, (size_t)base_size) != 0) {
 		(void)memcpy(received_base, base, base_size);
 		received_base_size = (size_t)base_size;
 	}
-	k_mutex_unlock(&base_store_mutex);
+	err = k_mutex_unlock(&base_store_mutex);
+	__ASSERT_NO_MSG(err == 0);
 
 	/* Stop parsing */
 	k_sem_give(&sem_received_base_subgroups);
@@ -181,7 +205,7 @@ static bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_b
 {
 	struct bt_bap_bass_subgroup *subgroup_param = user_data;
 
-	subgroup_param->bis_sync |= BIT(bis->index);
+	subgroup_param->bis_sync |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }
@@ -248,12 +272,13 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 		/* Use maximum value to maximize chance of success */
 		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	} else {
-		uint32_t interval_ms;
+		uint32_t interval_us;
 		uint32_t timeout;
 
 		/* Add retries and convert to unit in 10's of ms */
-		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
+		interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(pa_interval);
+		timeout = BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us) *
+			  PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO;
 
 		/* Enforce restraints */
 		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
@@ -284,7 +309,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	if (scanning_for_broadcast_source) {
 		/* Scan for and select Broadcast Source */
 
-		sr_info.broadcast_id = INVALID_BROADCAST_ID;
+		sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 		/* We are only interested in non-connectable periodic advertisers */
 		if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0 ||
@@ -294,7 +319,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 
 		bt_data_parse(ad, device_found, (void *)&sr_info);
 
-		if (sr_info.broadcast_id != INVALID_BROADCAST_ID) {
+		if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 			printk("Broadcast Source Found:\n");
 			printk("  BT Name:        %s\n", sr_info.bt_name);
 			printk("  Broadcast Name: %s\n", sr_info.broadcast_name);
@@ -370,8 +395,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			printk("Connecting to Broadcast Sink: %s\n", sr_info.bt_name);
 
 			err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
-						BT_LE_CONN_PARAM_DEFAULT,
-						&broadcast_sink_conn);
+						BT_BAP_CONN_PARAM_RELAXED, &broadcast_sink_conn);
 			if (err != 0) {
 				printk("Failed creating connection (err=%u)\n", err);
 				scan_for_broadcast_sink();
@@ -407,9 +431,7 @@ static void scan_for_broadcast_source(void)
 	printk("Scanning for Broadcast Source successfully started\n");
 
 	err = k_sem_take(&sem_source_discovered, K_FOREVER);
-	if (err != 0) {
-		printk("Failed to take sem_source_discovered (err %d)\n", err);
-	}
+	__ASSERT_NO_MSG(err == 0);
 }
 
 static void scan_for_broadcast_sink(void)
@@ -427,9 +449,7 @@ static void scan_for_broadcast_sink(void)
 	printk("Scanning for Broadcast Sink successfully started\n");
 
 	err = k_sem_take(&sem_sink_discovered, K_FOREVER);
-	if (err != 0) {
-		printk("Failed to take sem_sink_discovered (err %d)\n", err);
-	}
+	__ASSERT_NO_MSG(err == 0);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -439,7 +459,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(broadcast_sink_conn);
 		broadcast_sink_conn = NULL;
@@ -466,7 +486,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(broadcast_sink_conn);
 	broadcast_sink_conn = NULL;
@@ -481,7 +501,7 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 		printk("Security level changed: %u\n", level);
 		k_sem_give(&sem_security_updated);
 	} else {
-		printk("Failed to set security level: %u\n", err);
+		printk("Failed to set security level: %s(%u)\n", bt_security_err_to_str(err), err);
 	}
 }
 
@@ -516,6 +536,16 @@ static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		k_sem_give(&sem_pa_synced);
 	}
 }
+static void pa_sync_term_cb(struct bt_le_per_adv_sync *sync,
+			    const struct bt_le_per_adv_sync_term_info *info)
+{
+	if (sync == pa_sync) {
+		printk("PA sync %p terminated with reason %u\n", sync, info->reason);
+
+		k_sem_give(&sem_pa_sync_terminted);
+		pa_sync = NULL;
+	}
+}
 
 static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.discover = bap_broadcast_assistant_discover_cb,
@@ -524,15 +554,50 @@ static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 
 static struct bt_le_per_adv_sync_cb pa_synced_cb = {
 	.synced = pa_sync_synced_cb,
+	.term = pa_sync_term_cb,
 	.recv = pa_recv,
 };
 
 static void reset(void)
 {
-	printk("\n\nReset...\n\n");
+	int err;
 
-	broadcast_sink_conn = NULL;
-	selected_broadcast_id = INVALID_BROADCAST_ID;
+	printk("\n\nResetting...\n\n");
+
+	if (broadcast_sink_conn != NULL) {
+		err = bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+
+		if (err != 0) {
+			printk("bt_conn_disconnect failed with %d\n", err);
+		} else {
+			if (k_sem_take(&sem_sink_disconnected, SEM_TIMEOUT) != 0) {
+				/* This should not happen */
+
+				__ASSERT_NO_MSG(false);
+			}
+		}
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	/* Ignore return value as scanning may already be stopped */
+	(void)bt_le_scan_stop();
+
+	if (pa_sync != NULL) {
+		err = bt_le_per_adv_sync_delete(pa_sync);
+
+		if (err != 0) {
+			printk("bt_le_per_adv_sync_delete failed with %d\n", err);
+		} else {
+			if (k_sem_take(&sem_pa_sync_terminted, SEM_TIMEOUT) != 0) {
+				/* This should not happen */
+
+				__ASSERT_NO_MSG(false);
+			}
+		}
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	selected_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	selected_sid = 0;
 	selected_pa_interval = 0;
 	(void)memset(&selected_addr, 0, sizeof(selected_addr));
@@ -556,7 +621,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int main(void)
 {
 	int err;
-	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -573,45 +637,33 @@ int main(void)
 	k_mutex_init(&base_store_mutex);
 
 	while (true) {
+		struct bt_bap_broadcast_assistant_add_src_param param = {0};
+
+		reset();
+
 		scan_for_broadcast_sink();
 
-		err = k_sem_take(&sem_sink_connected, K_FOREVER);
+		err = k_sem_take(&sem_sink_connected, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("Failed to take sem_sink_connected (err %d)\n", err);
+			continue;
 		}
 
 		err = bt_bap_broadcast_assistant_discover(broadcast_sink_conn);
 		if (err != 0) {
 			printk("Failed to discover BASS on the sink (err %d)\n", err);
-		}
-
-		err = k_sem_take(&sem_security_updated, K_SECONDS(10));
-		if (err != 0) {
-			printk("Failed to take sem_security_updated (err %d), resetting\n", err);
-			bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_AUTH_FAIL);
-
-			if (k_sem_take(&sem_sink_disconnected, K_SECONDS(10)) != 0) {
-				/* This should not happen */
-				return -ETIMEDOUT;
-			}
-
-			reset();
 			continue;
 		}
 
-		err = k_sem_take(&sem_bass_discovered, K_SECONDS(10));
+		err = k_sem_take(&sem_security_updated, SEM_TIMEOUT);
 		if (err != 0) {
-			if (err == -EAGAIN) {
-				printk("Failed to take sem_bass_discovered (err %d)\n", err);
-			}
-			bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE);
+			printk("Failed to take sem_security_updated (err %d)\n", err);
+			continue;
+		}
 
-			if (k_sem_take(&sem_sink_disconnected, K_SECONDS(10)) != 0) {
-				/* This should not happen */
-				return -ETIMEDOUT;
-			}
-
-			reset();
+		err = k_sem_take(&sem_bass_discovered, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("Failed to take sem_bass_discovered (err %d)\n", err);
 			continue;
 		}
 
@@ -624,19 +676,19 @@ int main(void)
 
 		scan_for_broadcast_source();
 
-		printk("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X\n",
+		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
 		       selected_broadcast_id);
 		err = pa_sync_create();
 		if (err != 0) {
-			printk("Could not create Broadcast PA sync: %d, resetting\n", err);
-			return -ETIMEDOUT;
+			printk("Could not create Broadcast PA sync: %d\n", err);
+			continue;
 		}
 
 		printk("Waiting for PA synced\n");
-		err = k_sem_take(&sem_pa_synced, K_FOREVER);
+		err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
 		if (err != 0) {
-			printk("sem_pa_synced timed out, resetting\n");
-			return err;
+			printk("Failed to take sem_pa_synced (err %d)\n", err);
+			continue;
 		}
 
 		memset(bass_subgroups, 0, sizeof(bass_subgroups));
@@ -649,42 +701,29 @@ int main(void)
 
 		/* Wait to receive subgroups */
 		err = k_sem_take(&sem_received_base_subgroups, K_FOREVER);
-		if (err != 0) {
-			printk("Failed to take sem_received_base_subgroups (err %d)\n", err);
-			return err;
-		}
+		__ASSERT_NO_MSG(err == 0);
 
-		k_mutex_lock(&base_store_mutex, K_FOREVER);
+		err = k_mutex_lock(&base_store_mutex, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 		err = bt_bap_base_foreach_subgroup((const struct bt_bap_base *)received_base,
 						   add_pa_sync_base_subgroup_cb, &param);
-		k_mutex_unlock(&base_store_mutex);
+		err = k_mutex_unlock(&base_store_mutex);
+		__ASSERT_NO_MSG(err == 0);
 
-		if (err < 0) {
+		if (err != 0) {
 			printk("Could not add BASE to params %d\n", err);
 			continue;
 		}
 
 		err = bt_bap_broadcast_assistant_add_src(broadcast_sink_conn, &param);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to add source: %d\n", err);
-			bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE);
-
-			if (k_sem_take(&sem_sink_disconnected, K_SECONDS(10)) != 0) {
-				/* This should not happen */
-				return -ETIMEDOUT;
-			}
-
-			reset();
 			continue;
 		}
 
 		/* Reset if the sink disconnects */
 		err = k_sem_take(&sem_sink_disconnected, K_FOREVER);
-		if (err != 0) {
-			printk("Failed to take sem_sink_disconnected (err %d)\n", err);
-		}
-
-		reset();
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	return 0;

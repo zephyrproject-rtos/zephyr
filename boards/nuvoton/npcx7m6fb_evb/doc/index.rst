@@ -1,7 +1,4 @@
-.. _npcx7m6fb_evb:
-
-Nuvoton NPCX7M6FB_EVB
-#####################
+.. zephyr:board:: npcx7m6fb_evb
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The NPCX7M6FB_EVB kit is a development platform to evaluate the
 Nuvoton NPCX7 series microcontrollers. This board needs to be mated with
 part number NPCX796FB.
-
-.. image:: npcx7m6fb_evb.jpg
-     :align: center
-     :alt: NPCX7M6FB Evaluation Board
 
 Hardware
 ********
@@ -28,28 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcx7m6fb_evb/npcx7m6fb_evb_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -71,6 +43,8 @@ UART1 is configured for serial logs.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 This board comes with a Cortex ETM port which facilitates tracing and debugging
 using a single physical connection.  In addition, it comes with sockets for

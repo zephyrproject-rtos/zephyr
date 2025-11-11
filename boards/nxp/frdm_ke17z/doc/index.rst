@@ -1,7 +1,4 @@
-.. _frdm_ke17z:
-
-NXP FRDM-KE17Z
-##############
+.. zephyr:board:: frdm_ke17z
 
 Overview
 ********
@@ -11,12 +8,6 @@ MCU-based platforms. The FRDM-KE17Z contains a robust TSI module
 with up to 50 channels which makes this board highly flexible
 for touch keys. Offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: frdmke17z.webp
-   :align: center
-   :alt: FRDM-KE17Z
-
-   FRDM-KE17Z (Credit: NXP)
 
 Hardware
 ********
@@ -43,27 +34,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The frdm_ke17z board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | uart                                |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/frdm_ke17z/frdm_ke17z_defconfig`.
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -77,6 +48,8 @@ The KE17Z SoC has three UARTs. UART0 is configured for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -140,7 +113,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -158,7 +131,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -172,6 +145,8 @@ should see the following message in the terminal:
 
    *** Booting Zephyr OS build xxxxxxxxxxxx ***
    Hello World! frdm_ke17z/mke17z7
+
+.. include:: ../../common/board-footer.rst.inc
 
 .. _FRDM-KE17Z Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/freedom-development-platform-for-72mhz-ke17z-ke13z-ke12z-mcus:FRDM-KE17Z

@@ -1,0 +1,67 @@
+/*
+ * Copyright (C) 2025 Aesc Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <aesc/elemrv-n.dtsi>
+
+/ {
+	model = "ElemRV-N";
+	compatible = "aesc,elemrv-n";
+
+	aliases {
+		led0 = &led0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &hyperbus;
+		zephyr,flash = &flash;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "LED_0";
+		};
+	};
+
+	soc {
+		ocram: memory@80000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x80000000 DT_SIZE_K(1)>;
+		};
+
+		hyperbus: memory@90000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x90000000 DT_SIZE_K(32)>;
+		};
+
+		flash: flash@a0010000 {
+			compatible = "soc-nv-flash";
+			reg = <0xa0010000 DT_SIZE_K(32)>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(20)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	clock-frequency = <DT_FREQ_M(20)>;
+	current-speed = <115200>;
+	status = "okay";
+};

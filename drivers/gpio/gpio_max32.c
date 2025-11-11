@@ -101,8 +101,8 @@ static int api_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 	} else if (flags & GPIO_INPUT) {
 		gpio_cfg.func = MXC_GPIO_FUNC_IN;
 	} else {
-		/* this case will not occur this function call for gpio mode in/out */
-		gpio_cfg.func = MXC_GPIO_FUNC_ALT1; /* TODO: Think on it */
+		gpio_cfg.func = MXC_GPIO_FUNC_IN;
+		gpio_cfg.pad = MXC_GPIO_PAD_NONE;
 	}
 
 	if (flags & MAX32_GPIO_VSEL_VDDIOH) {
@@ -201,7 +201,7 @@ static int api_manage_callback(const struct device *dev, struct gpio_callback *c
 	return gpio_manage_callback(&(data->cb_list), callback, set);
 }
 
-static const struct gpio_driver_api gpio_max32_driver = {
+static DEVICE_API(gpio, gpio_max32_driver) = {
 	.pin_configure = api_pin_configure,
 	.port_get_raw = api_port_get_raw,
 	.port_set_masked_raw = api_port_set_masked_raw,

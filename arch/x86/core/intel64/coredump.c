@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/debug/coredump.h>
 
 #define ARCH_HDR_VER			1
@@ -106,3 +107,22 @@ uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_X86_64;
 }
+
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+void arch_coredump_priv_stack_dump(struct k_thread *thread)
+{
+	struct z_x86_thread_stack_header *hdr_stack_obj;
+	uintptr_t start_addr, end_addr;
+
+#if defined(CONFIG_THREAD_STACK_MEM_MAPPED)
+	hdr_stack_obj = (struct z_x86_thread_stack_header *)thread->stack_info.mapped.addr;
+#else
+	hdr_stack_obj = (struct z_x86_thread_stack_header *)thread->stack_obj;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED) */
+
+	start_addr = (uintptr_t)&hdr_stack_obj->privilege_stack[0];
+	end_addr = start_addr + sizeof(hdr_stack_obj->privilege_stack);
+
+	coredump_memory_dump(start_addr, end_addr);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */

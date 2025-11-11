@@ -17,9 +17,9 @@
 #include "fsl_flashiap.h"
 
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc11), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc11))
 #define DT_DRV_COMPAT nxp_iap_fmc11
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc54), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc54))
 #define DT_DRV_COMPAT nxp_iap_fmc54
 #else
 #error No matching compatible for soc_flash_lpc.c
@@ -145,7 +145,7 @@ flash_lpc_get_parameters(const struct device *dev)
 
 static struct flash_priv flash_data;
 
-static const struct flash_driver_api flash_lpc_api = {
+static DEVICE_API(flash, flash_lpc_api) = {
 	.erase = flash_lpc_erase,
 	.write = flash_lpc_write,
 	.read = flash_lpc_read,

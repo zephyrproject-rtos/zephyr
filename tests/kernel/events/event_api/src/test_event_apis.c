@@ -46,6 +46,10 @@ static void entry_extra2(void *p1, void *p2, void *p3)
 
 	k_event_post(&test_event, events);
 }
+/**
+ * @ingroup kernel_event_tests
+ * @{
+ */
 
 /**
  * Test the k_event_init() API.
@@ -53,7 +57,6 @@ static void entry_extra2(void *p1, void *p2, void *p3)
  * This is a white-box test to verify that the k_event_init() API initializes
  * the fields of a k_event structure as expected.
  */
-
 ZTEST(events_api, test_k_event_init)
 {
 	static struct k_event  event;
@@ -431,3 +434,45 @@ ZTEST(events_api, test_event_receive)
 
 	test_wake_multiple_threads();
 }
+
+ZTEST(events_api, test_k_event_wait_safe)
+{
+	uint32_t events;
+
+	k_event_set(&test_event, 0x73);
+
+	events = k_event_wait_safe(&test_event, 0x11, false, K_NO_WAIT);
+	zexpect_equal(events, 0x11, "expected 0x11, got %x", events);
+
+	events = k_event_wait_safe(&test_event, 0x11, false, K_NO_WAIT);
+	zexpect_equal(events, 0x0, "phantom events %x not removed from event object", events);
+
+	events = k_event_wait_safe(&test_event, 0x62, false, K_NO_WAIT);
+	zexpect_equal(events, 0x62, "expected 0x62, got %x", events);
+
+	events = k_event_wait_safe(&test_event, -1, false, K_NO_WAIT);
+	zexpect_equal(events, 0x0, "phantom events %x not removed from event object", events);
+}
+
+ZTEST(events_api, test_k_event_wait_all_safe)
+{
+	uint32_t events;
+
+	k_event_set(&test_event, 0x73);
+
+	events = k_event_wait_all_safe(&test_event, 0x81, false, K_NO_WAIT);
+	zexpect_equal(events, 0x0, "expected 0x0, got %x", events);
+
+	events = k_event_wait_all_safe(&test_event, 0x11, false, K_NO_WAIT);
+	zexpect_equal(events, 0x11, "expected 0x11, got %x", events);
+
+	events = k_event_wait_all_safe(&test_event, 0x63, false, K_NO_WAIT);
+	zexpect_equal(events, 0x0, "expected 0x0, got %x", events);
+
+	events = k_event_wait_all_safe(&test_event, 0x62, false, K_NO_WAIT);
+	zexpect_equal(events, 0x62, "expected 0x62, got %x", events);
+}
+
+/**
+ * @}
+ */

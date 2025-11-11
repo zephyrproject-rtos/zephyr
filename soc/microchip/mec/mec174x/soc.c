@@ -10,15 +10,7 @@
 #include <soc.h>
 #include <soc_cmn_init.h>
 
-static int soc_init(void)
+void soc_prep_hook(void)
 {
 	mec5_soc_common_init();
-	return 0;
 }
-
-/* Enabling HW debug and initializing the MEC interrupt aggregator should be done
- * before driver are loaded to not overwrite driver interrupt configuration.
- * Use early initialization category called soon after Zephyr z_cstart and before
- * Zephyr starts making driver initialization calls.
- */
-SYS_INIT(soc_init, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

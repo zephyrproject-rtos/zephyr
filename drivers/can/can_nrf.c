@@ -13,6 +13,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
@@ -27,7 +28,7 @@ struct can_nrf_config {
 	uint32_t mcan;
 	uint32_t mrba;
 	uint32_t mram;
-	const struct device *clock;
+	const struct device *auxpll;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_configure)(void);
 	uint16_t irq;
@@ -54,10 +55,10 @@ static int can_nrf_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_nrf_config *config = mcan_config->custom;
 
-	return clock_control_get_rate(config->clock, NULL, rate);
+	return clock_control_get_rate(config->auxpll, NULL, rate);
 }
 
-static const struct can_driver_api can_nrf_api = {
+static DEVICE_API(can, can_nrf_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,
@@ -137,11 +138,11 @@ static int can_nrf_init(const struct device *dev)
 	const struct can_nrf_config *config = mcan_config->custom;
 	int ret;
 
-	if (!device_is_ready(config->clock)) {
+	if (!device_is_ready(config->auxpll)) {
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, NULL);
+	ret = nrf_clock_control_request_sync(config->auxpll, NULL, K_FOREVER);
 	if (ret < 0) {
 		return ret;
 	}
@@ -150,6 +151,7 @@ static int can_nrf_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
 
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_0);
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_1);
@@ -186,7 +188,7 @@ static int can_nrf_init(const struct device *dev)
 		.mcan = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
 		.mrba = CAN_MCAN_DT_INST_MRBA(n),                                                  \
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                             \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \
+		.auxpll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, auxpll)),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq = DT_INST_IRQN(n),                                                            \
 		.irq_configure = can_nrf_irq_configure##n,                                         \

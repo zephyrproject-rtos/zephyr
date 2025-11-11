@@ -15,12 +15,12 @@
 };
 
 &stm2 {
-	prescaler = <16>;
+	prescaler = <32>;
 	status = "okay";
 };
 
 &stm3 {
-	prescaler = <32>;
+	prescaler = <64>;
 	status = "okay";
 };
 

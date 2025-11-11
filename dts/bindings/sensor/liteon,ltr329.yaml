@@ -1,0 +1,63 @@
+# Copyright (c) 2025 Konrad Sikora
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteOn LTR-329 Digital Ambient Light Sensor
+
+compatible: "liteon,ltr329"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  gain:
+    type: int
+    default: 0
+    description: |
+      This parameter adjusts the ADC gain factor, impacting the sensor's
+      light sensitivity range. The default setting, corresponding to the
+      register reset value (1X).
+      Possible values are:
+      - 0 # Gain 1X (1 lux to 64k lux)
+      - 1 # Gain 2X (0.5 lux to 32k lux)
+      - 2 # Gain 4X (0.25 lux to 16k lux)
+      - 3 # Gain 8X (0.125 lux to 8k lux)
+      - 6 # Gain 48X (0.02 lux to 1.3k lux)
+      - 7 # Gain 96X (0.01 lux to 600 lux)
+    enum: [0, 1, 2, 3, 6, 7]
+
+  integration-time:
+    type: int
+    default: 0
+    description: |
+      ALS Integration Time is the measurement time for each ALS cycle.
+      Default value is a register reset value (100ms).
+      Possible values are:
+      - 0 # 100ms
+      - 1 # 50ms
+      - 2 # 200ms
+      - 3 # 400ms
+      - 4 # 150ms
+      - 5 # 250ms
+      - 6 # 300ms
+      - 7 # 350ms
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  measurement-rate:
+    type: int
+    default: 3
+    description: |
+      ALS Measurement Rate is the rate at which the sensor
+      takes measurements in the active mode. This is the interval
+      between ALS_DATA registers update. ALS Measurement Repeat Rate
+      must be set to be equal or larger than the Integration Time.
+      If ALS Measurement Repeat Rate  is set to be smaller than
+      ALS Integration Time, it will automatically be reset to be
+      equal to ALS Integration Time by the IC internally. Default value
+      is a register reset value (500ms).
+      Possible values are:
+      - 0 # 50ms
+      - 1 # 100ms
+      - 2 # 200ms
+      - 3 # 500ms
+      - 4 # 1000ms
+      - 5 # 2000ms
+    enum: [0, 1, 2, 3, 4, 5]

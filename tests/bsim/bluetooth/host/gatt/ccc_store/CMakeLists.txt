@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
+if(NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
   message(FATAL_ERROR "This test requires the BabbleSim simulator. Please set  \
           the  environment variable BSIM_COMPONENTS_PATH to point to its       \
           components folder. More information can be found in                  \
@@ -12,9 +12,11 @@ endif()
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_ccc_store)
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+target_link_libraries(app PRIVATE babblekit)
+
 target_sources(app PRIVATE
   src/main.c
-  src/common.c
 
   src/central.c
   src/peripheral.c

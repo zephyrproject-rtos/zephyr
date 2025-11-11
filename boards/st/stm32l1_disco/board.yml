@@ -1,9 +1,11 @@
 boards:
   - name: stm32l1_disco
+    full_name: STM32L1 Discovery
     vendor: st
     socs:
       - name: stm32l151xb
   - name: stm32l152c_disco
+    full_name: STM32L152C Discovery
     vendor: st
     socs:
       - name: stm32l152xc

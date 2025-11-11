@@ -9,30 +9,31 @@
 		compatible = "ti,boosterpack-header";
 		#gpio-cells = <2>;
 		gpio-map = <4 0 &gpioa1 4 0>,	/* GPIO_12 */
-				<5 0 &gpioa0 6 0>,	/* GPIO_06 */
-				<7 0 &gpioa1 6 0>,	/* GPIO_14 */
-				<9 0 &gpioa1 2 0>,	/* I2C_SCL | YELLOW_LED */
-				<10 0 &gpioa1 3 0>,	/* I2C_SDA | GREEN_LED  */
-				<11 0 &gpioa2 6 0>,	/* GPIO_22 */
-				<12 0 &gpioa0 1 0>,	/* GPIO_01 */
-				<13 0 &gpioa3 1 0>,	/* GPIO_25 */
-				<14 0 &gpioa1 7 0>,	/* GPIO_15 */
-				<15 0 &gpioa1 3 0>,	/* GPIO_16 */
-				<17 0 &gpioa3 7 0>,	/* GPIO_31 */
-				<18 0 &gpioa2 3 0>,	/* GPIO_17 */
-				<19 0 &gpioa3 4 0>,	/* GPIO_28 */
-				<23 0 &gpioa0 2 0>,	/* GPIO_02 | AIN0 */
-				<24 0 &gpioa0 5 0>,	/* GPIO_05 | AIN3 */
-				<25 0 &gpioa1 3 0>,	/* GPIO_03 | AIN1 */
-				<26 0 &gpioa0 4 0>,	/* GPIO_04 | AIN2 */
-				<27 0 &gpioa1 0 0>,	/* GPIO_08 */
-				<28 0 &gpioa3 6 0>,	/* GPIO_30 */
-				<29 0 &gpioa1 1 0>,	/* GPIO_09 | RED_LED | I2S_DOUT*/
-				<30 0 &gpioa0 0 0>,	/* GPIO_00 */
-				<31 0 &gpioa3 0 0>,	/* GPIO_24 */
-				<32 0 &gpioa2 7 0>;	/* GPIO_23 */
+			   <5 0 &gpioa0 6 0>,	/* GPIO_06 */
+			   <7 0 &gpioa1 6 0>,	/* GPIO_14 */
+			   <9 0 &gpioa1 2 0>,	/* I2C_SCL | YELLOW_LED */
+			   <10 0 &gpioa1 3 0>,	/* I2C_SDA | GREEN_LED  */
+			   <11 0 &gpioa2 6 0>,	/* GPIO_22 */
+			   <12 0 &gpioa0 1 0>,	/* GPIO_01 */
+			   <13 0 &gpioa3 1 0>,	/* GPIO_25 */
+			   <14 0 &gpioa1 7 0>,	/* GPIO_15 */
+			   <15 0 &gpioa1 3 0>,	/* GPIO_16 */
+			   <17 0 &gpioa3 7 0>,	/* GPIO_31 */
+			   <18 0 &gpioa2 3 0>,	/* GPIO_17 */
+			   <19 0 &gpioa3 4 0>,	/* GPIO_28 */
+			   <23 0 &gpioa0 2 0>,	/* GPIO_02 | AIN0 */
+			   <24 0 &gpioa0 5 0>,	/* GPIO_05 | AIN3 */
+			   <25 0 &gpioa1 3 0>,	/* GPIO_03 | AIN1 */
+			   <26 0 &gpioa0 4 0>,	/* GPIO_04 | AIN2 */
+			   <27 0 &gpioa1 0 0>,	/* GPIO_08 */
+			   <28 0 &gpioa3 6 0>,	/* GPIO_30 */
+			   <29 0 &gpioa1 1 0>,	/* GPIO_09 | RED_LED | I2S_DOUT*/
+			   <30 0 &gpioa0 0 0>,	/* GPIO_00 */
+			   <31 0 &gpioa3 0 0>,	/* GPIO_24 */
+			   <32 0 &gpioa2 7 0>;	/* GPIO_23 */
 	};
 };
 
 boosterpack_i2c: &i2c0 {};
+
 boosterpack_serial: &uart0 {};

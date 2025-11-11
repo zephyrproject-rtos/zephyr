@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/sem.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "../../socket_helpers.h"
 
@@ -63,7 +63,6 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	 */
 	result = net_buf_alloc(&test_dns_msg_pool, K_FOREVER);
 	if (!result) {
-		ret = -ENOMEM;
 		return false;
 	}
 
@@ -97,7 +96,7 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	/* In this test we are just checking if the query came to us in correct
 	 * form, we are not creating a DNS server implementation here.
 	 */
-	if (strncmp(result->data + 1, QUERY_HOST,
+	if (strncmp(result->data, QUERY_HOST,
 		    sizeof(QUERY_HOST) - 1)) {
 		net_buf_unref(result);
 		return false;
@@ -108,8 +107,12 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	return true;
 }
 
-static int process_dns(void)
+static void process_dns(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct zsock_pollfd pollfds[2];
 	struct sockaddr *addr;
 	socklen_t addr_len;
@@ -164,8 +167,6 @@ static int process_dns(void)
 			}
 		}
 	}
-
-	return -errno;
 }
 
 K_THREAD_DEFINE(dns_server_thread_id, STACK_SIZE,

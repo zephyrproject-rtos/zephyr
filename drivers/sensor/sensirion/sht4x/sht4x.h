@@ -13,6 +13,7 @@
 #define SHT4X_CMD_RESET		0x94
 
 #define SHT4X_RESET_WAIT_MS	1
+#define SHT4X_POR_WAIT_MS	1
 
 #define SHT4X_HEATER_POWER_IDX_MAX	3
 #define SHT4X_HEATER_DURATION_IDX_MAX	2
@@ -41,7 +42,7 @@ static const uint8_t measure_cmd[3] = {
 };
 
 static const uint16_t measure_wait_us[3] = {
-	1700, 4500, 8200
+	1600, 4500, 8300
 };
 
 /*

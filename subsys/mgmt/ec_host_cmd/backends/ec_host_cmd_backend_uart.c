@@ -67,6 +67,16 @@ enum uart_host_command_state {
 	UART_HOST_CMD_RX_OVERRUN,
 };
 
+static const char * const state_name[] = {
+	[UART_HOST_CMD_STATE_DISABLED] = "DISABLED",
+	[UART_HOST_CMD_READY_TO_RX] = "READY_TO_RX",
+	[UART_HOST_CMD_RECEIVING] = "RECEIVING",
+	[UART_HOST_CMD_PROCESSING] = "PROCESSING",
+	[UART_HOST_CMD_SENDING] = "SENDING",
+	[UART_HOST_CMD_RX_BAD] = "RX_BAD",
+	[UART_HOST_CMD_RX_OVERRUN] = "RX_OVERRUN",
+};
+
 struct ec_host_cmd_uart_ctx {
 	const struct device *uart_dev;
 	struct ec_host_cmd_rx_ctx *rx_ctx;
@@ -100,9 +110,6 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 		.ctx = &_name##_hc_uart,                                                           \
 	}
 
-/* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT K_MSEC(150)
-
 /*
  * Max data size for a version 3 request/response packet. This is big enough
  * to handle a request/response header, flash write offset/size and 512 bytes
@@ -116,32 +123,11 @@ static void rx_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ec_host_cmd_uart_ctx *hc_uart =
 		CONTAINER_OF(dwork, struct ec_host_cmd_uart_ctx, timeout_work);
-	int res;
 
-	switch (hc_uart->state) {
-	case UART_HOST_CMD_RECEIVING:
-		/* If state is receiving then timeout was hit due to underrun */
-		LOG_ERR("Request underrun detected");
-		break;
-	case UART_HOST_CMD_RX_OVERRUN:
-		/* If state is rx_overrun then timeout was hit because
-		 * process request was cancelled and extra rx bytes were
-		 * dropped
-		 */
-		LOG_ERR("Request overrun detected");
-		break;
-	case UART_HOST_CMD_RX_BAD:
-		/* If state is rx_bad then packet header was bad and process
-		 * request was cancelled to drop all incoming bytes.
-		 */
-		LOG_ERR("Bad packet header detected");
-		break;
-	default:
-		LOG_ERR("Request timeout mishandled, state: %d", hc_uart->state);
-	}
+	LOG_ERR("Request error in state: %s", state_name[hc_uart->state]);
 
-	res = uart_rx_disable(hc_uart->uart_dev);
-	res = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
+	uart_rx_disable(hc_uart->uart_dev);
+	uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
 	hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 }
@@ -156,10 +142,11 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		if (hc_uart->state == UART_HOST_CMD_READY_TO_RX) {
 			hc_uart->rx_ctx->len = 0;
 			hc_uart->state = UART_HOST_CMD_RECEIVING;
-			k_work_reschedule(&hc_uart->timeout_work, UART_REQ_RX_TIMEOUT);
+			k_work_reschedule(&hc_uart->timeout_work,
+					  K_MSEC(CONFIG_EC_HOST_CMD_BACKEND_UART_TIMEOUT));
 		} else if (hc_uart->state == UART_HOST_CMD_PROCESSING ||
 			   hc_uart->state == UART_HOST_CMD_SENDING) {
-			LOG_ERR("UART HOST CMD ERROR: Received data while processing or sending");
+			LOG_ERR("Received data while in state: %s", state_name[hc_uart->state]);
 			return;
 		} else if (hc_uart->state == UART_HOST_CMD_RX_BAD ||
 			   hc_uart->state == UART_HOST_CMD_RX_OVERRUN) {
@@ -217,13 +204,13 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		break;
 	case UART_TX_DONE:
 		if (hc_uart->state != UART_HOST_CMD_SENDING) {
-			LOG_ERR("UART HOST CMD ERROR: unexpected end of sending");
+			LOG_ERR("Unexpected end of sending");
 		}
 		/* Receiving is already enabled in the send function. */
 		hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 		break;
 	case UART_RX_STOPPED:
-		LOG_ERR("UART HOST CMD ERROR: Receiving data stopped");
+		LOG_ERR("Receiving data stopped");
 		break;
 	default:
 		break;
@@ -273,7 +260,7 @@ static int ec_host_cmd_uart_send(const struct ec_host_cmd_backend *backend)
 	int ret;
 
 	if (hc_uart->state != UART_HOST_CMD_PROCESSING) {
-		LOG_ERR("UART HOST CMD ERROR: unexpected state while sending");
+		LOG_ERR("Unexpected state while sending");
 	}
 
 	/* The state is changed to UART_HOST_CMD_READY_TO_RX in the UART_TX_DONE event */
@@ -293,7 +280,7 @@ static int ec_host_cmd_uart_send(const struct ec_host_cmd_backend *backend)
 	/* If sending fails, reset the state */
 	if (ret) {
 		hc_uart->state = UART_HOST_CMD_READY_TO_RX;
-		LOG_ERR("UART HOST CMD ERROR: sending failed");
+		LOG_ERR("Sending failed");
 	}
 
 	return ret;

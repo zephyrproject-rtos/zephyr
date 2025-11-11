@@ -13,9 +13,8 @@
 #define ZEPHYR_INCLUDE_ARCH_CACHE_H_
 
 /**
- * @brief Cache Controller Interface
- * @defgroup cache_arch_interface Cache Controller Interface
- * @ingroup io_interfaces
+ * @defgroup arch-cache Architecture-specific cache controllers.
+ * @ingroup arch-interface
  * @{
  */
 
@@ -24,6 +23,9 @@
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
 #endif
+
+#include <stddef.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
 
@@ -348,6 +350,9 @@ void __sparse_cache *arch_cache_cached_ptr_get(void *ptr);
 void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
 #define cache_uncached_ptr(ptr) arch_cache_uncached_ptr_get(ptr)
 #endif /* CONFIG_CACHE_DOUBLEMAP */
+
+
+void arch_cache_init(void);
 
 /**
  * @}

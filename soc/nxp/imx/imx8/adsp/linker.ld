@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,6 +171,12 @@ EXTERN(ext_man_fw_ver)
 
 SECTIONS
 {
+#ifdef CONFIG_OPENAMP_RSC_TABLE
+    SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
+    {
+      KEEP(*(.resource_table*))
+    } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 #include <zephyr/linker/rel-sections.ld>
 
@@ -470,6 +476,14 @@ SECTIONS
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
   .debug_ranges  0 :  { *(.debug_ranges) }
+  .debug_addr  0 :  { *(.debug_addr) }
+  .debug_line_str  0 :  { *(.debug_line_str) }
+  .debug_loclists  0 :  { *(.debug_loclists) }
+  .debug_macro  0 :  { *(.debug_macro) }
+  .debug_names  0 :  { *(.debug_names) }
+  .debug_rnglists  0 :  { *(.debug_rnglists) }
+  .debug_str_offsets  0 :  { *(.debug_str_offsets) }
+  .debug_sup  0 :  { *(.debug_sup) }
   .xtensa.info  0 :  { *(.xtensa.info) }
   .xt.insn 0 :
   {

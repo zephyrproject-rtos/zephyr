@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	mcp2515_keyestudio_can_bus_ks0411: can@0 {
 		compatible = "microchip,mcp2515";
 		spi-max-frequency = <1000000>;
-		int-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
 		status = "okay";
 		reg = <0x0>;
 		osc-freq = <16000000>;

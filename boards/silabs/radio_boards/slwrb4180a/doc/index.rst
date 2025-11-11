@@ -1,7 +1,4 @@
-.. _slwrb4180a:
-
-EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
-#####################################
+.. zephyr:board:: slwrb4180a
 
 Overview
 ********
@@ -10,12 +7,6 @@ The EFR32MG21 Mighty Gecko Radio Board is one of the two
 radio boards delivered with `EFR32-SLWSTK6006A Website`_. It contains
 a Wireless System-On-Chip from the EFR32MG21 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
-
-.. figure:: efr32mg21-slwrb4180a.jpg
-   :align: center
-   :alt: SLWRB4180A Mighty Gecko Radio Board
-
-   SLWRB4180A (image courtesy of Silicon Labs)
 
 The BRD4180A a.k.a. SLWRB4180A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -43,32 +34,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -113,13 +79,15 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
 Connect the BRD4001A board with a mounted BRD4180A radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

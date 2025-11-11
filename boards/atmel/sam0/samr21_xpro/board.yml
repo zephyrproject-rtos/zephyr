@@ -1,5 +1,6 @@
 board:
   name: samr21_xpro
+  full_name: SAM R21 Xplained Pro Evaluation Kit
   vendor: atmel
   socs:
     - name: samr21g18a

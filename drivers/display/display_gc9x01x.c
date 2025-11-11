@@ -518,7 +518,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <= desc->buf_size,
-		 "Input buffer to small");
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
 	ret = gc9x01x_set_mem_area(dev, x, y, desc->width, desc->height);
@@ -530,7 +530,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * data->bytes_per_pixel;
+		mipi_desc.buf_size = desc->width * data->bytes_per_pixel;
 	} else {
 		write_h = desc->height;
 		mipi_desc.height = desc->height;
@@ -541,6 +541,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	mipi_desc.width = desc->width;
 	/* Per MIPI API, pitch must always match width */
 	mipi_desc.pitch = desc->width;
+	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MEMWR, NULL, 0);
 	if (ret < 0) {
@@ -608,7 +609,7 @@ static int gc9x01x_pm_action(const struct device *dev, enum pm_device_action act
 #endif /* CONFIG_PM_DEVICE */
 
 /* Device driver API*/
-static const struct display_driver_api gc9x01x_api = {
+static DEVICE_API(display, gc9x01x_api) = {
 	.blanking_on = gc9x01x_display_blanking_on,
 	.blanking_off = gc9x01x_display_blanking_off,
 	.write = gc9x01x_write,

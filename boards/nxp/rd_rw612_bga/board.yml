@@ -1,5 +1,6 @@
 board:
   name: rd_rw612_bga
+  full_name: RD-RW612-BGA
   vendor: nxp
   socs:
     - name: rw612

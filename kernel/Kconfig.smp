@@ -38,13 +38,6 @@ config SMP_BOOT_DELAY
 	  (architecture/SoC/board/application) to boot secondary CPUs at
 	  a later time.
 
-config MP_NUM_CPUS
-	int "Number of CPUs/cores [DEPRECATED]"
-	default MP_MAX_NUM_CPUS
-	range 1 12
-	help
-	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
-
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
@@ -55,6 +48,7 @@ config MP_MAX_NUM_CPUS
 
 config SCHED_IPI_SUPPORTED
 	bool
+	select EVENTS
 	help
 	  True if the architecture supports a call to arch_sched_broadcast_ipi()
 	  to broadcast an interrupt that will call z_sched_ipi() on other CPUs

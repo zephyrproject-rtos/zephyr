@@ -5,8 +5,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/micp.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 static struct bt_micp_mic_ctlr_cb *micp_cb;
 

@@ -5,10 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	nxp_kinetis_dspi
+#define DT_DRV_COMPAT	nxp_dspi
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_dspi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -686,12 +687,20 @@ static int transceive(const struct device *dev,
 	SPI_Type *base = config->base;
 #endif
 
+	if (rx_bufs == NULL) {
+		/* FIXME: for some reason this messes up the DMA configuration
+		 * probably because CITER is 0 and transfer is starting for some reason
+		 */
+		return -ENOTSUP;
+	}
+
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
 	}
+
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
@@ -703,7 +712,10 @@ static int transceive(const struct device *dev,
 	DSPI_ClearStatusFlags(base, (uint32_t)kDSPI_AllStatusFlag);
 	/* setup the tx buffer with end  */
 	mcux_init_inner_buffer_with_cmd(dev, 0);
-	mcux_spi_context_data_update(dev);
+	ret = mcux_spi_context_data_update(dev);
+	if (ret) {
+		goto out;
+	}
 	if (config->is_dma_chn_shared) {
 		data->transfer_len = data->frame_size >> 3;
 	} else {
@@ -722,6 +734,7 @@ static int transceive(const struct device *dev,
 	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+
 out:
 	spi_context_release(&data->ctx, ret);
 
@@ -794,10 +807,13 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_mcux_driver_api = {
+static DEVICE_API(spi, spi_mcux_driver_api) = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_mcux_release,
 };
@@ -902,23 +918,23 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		    DT_INST_PROP_OR(id, ctar, 0),			\
 		.samplePoint =						\
 		    DT_INST_PROP_OR(id, sample_point, 0),		\
-		.enable_continuous_sck =					\
+		.enable_continuous_sck =				\
 		    DT_INST_PROP(id, continuous_sck),			\
 		.enable_rxfifo_overwrite =				\
 		    DT_INST_PROP(id, rx_fifo_overwrite),		\
-		.enable_modified_timing_format =				\
+		.enable_modified_timing_format =			\
 		    DT_INST_PROP(id, modified_timing_format),		\
 		.is_dma_chn_shared =					\
 		    DT_INST_PROP(id, nxp_rx_tx_chn_share),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
-			    &spi_mcux_init,				\
+	SPI_DEVICE_DT_INST_DEFINE(id,					\
+			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\

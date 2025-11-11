@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 
 #include <zephyr/tc_util.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
@@ -182,12 +182,12 @@ ZTEST(icmpv6_fn, test_icmpv6)
 	struct net_pkt *pkt;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx1, NET_ICMPV6_ECHO_REPLY,
+	ret = net_icmp_init_ctx(&ctx1, AF_INET6, NET_ICMPV6_ECHO_REPLY,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
-	ret = net_icmp_init_ctx(&ctx2, NET_ICMPV6_ECHO_REQUEST,
+	ret = net_icmp_init_ctx(&ctx2, AF_INET6, NET_ICMPV6_ECHO_REQUEST,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REQUEST), ret);

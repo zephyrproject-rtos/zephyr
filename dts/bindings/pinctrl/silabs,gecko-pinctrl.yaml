@@ -1,9 +1,12 @@
 # Copyright (c) 2022 Silicon Labs
 # SPDX-License-Identifier: Apache-2.0
 
+title: Silabs Gecko Pin Controller
+
 description: |
-    The Silabs pin controller is a singleton node responsible for controlling
-    pin function selection and pin properties. For example, you can use this
+    Singleton node responsible for controlling pin function selection and pin
+    properties. For example, you can use this node to route UART0 RX to pin P0.1
+    and enable the pull-up resistor on the pin.
     node to route UART0 RX to pin P0.1 and enable the pull-up resistor on the
     pin.
 

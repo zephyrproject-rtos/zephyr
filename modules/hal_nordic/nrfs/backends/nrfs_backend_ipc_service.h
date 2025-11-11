@@ -36,6 +36,7 @@ enum nrfs_backend_error {
 	NRFS_ERROR_IPC_OPEN_INSTANCE,
 	NRFS_ERROR_IPC_REGISTER_ENDPOINT,
 	NRFS_ERROR_BACKEND_NOT_CONNECTED,
+	NRFS_ERROR_SEND_DATA_FROM_QUEUE,
 	NRFS_ERROR_COUNT
 };
 
@@ -85,6 +86,21 @@ nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout,
  * @param error_id parameter to identify error.
  */
 void nrfs_backend_fatal_error_handler(enum nrfs_backend_error error_id);
+
+typedef void (*nrfs_backend_bound_info_cb_t)(void);
+struct nrfs_backend_bound_info_subs {
+	sys_snode_t node;
+	nrfs_backend_bound_info_cb_t cb;
+};
+/**
+ * @brief Register callback function to notify when nrfs is connected.
+ * There can be multiple callbacks registered.
+ *
+ * @param subs Subcription instance.
+ * @param cb Callback
+ */
+void nrfs_backend_register_bound_subscribe(struct nrfs_backend_bound_info_subs *subs,
+				    nrfs_backend_bound_info_cb_t cb);
 
 #ifdef __cplusplus
 }

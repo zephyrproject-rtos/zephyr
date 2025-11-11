@@ -14,6 +14,22 @@
 #define LLL_CONN_MIC_PASS 1
 #define LLL_CONN_MIC_FAIL 2
 
+
+struct path_loss_params {
+	uint16_t min_time_spent;
+	uint8_t  enabled;
+	uint8_t  high_threshold;
+	uint8_t  high_hysteresis;
+	uint8_t  low_threshold;
+	uint8_t  low_hysteresis;
+} __packed;
+
+struct path_loss_state {
+	uint16_t conn_handle;
+	uint16_t min_time_counter;
+	uint8_t  new_zone;
+} __packed;
+
 struct lll_tx {
 	uint16_t handle;
 	void *node;
@@ -43,11 +59,17 @@ struct lll_conn {
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
 
+	uint16_t tifs_tx_us;
+	uint16_t tifs_rx_us;
+	uint16_t tifs_hcto_us;
+	uint16_t tifs_cis_us;
+
 	uint16_t handle;
 	uint16_t interval;
-	uint16_t latency;
 
+	uint16_t latency;
 	uint16_t latency_prepare;
+	uint16_t lazy_prepare;
 	uint16_t latency_event;
 	uint16_t event_counter;
 
@@ -69,12 +91,25 @@ struct lll_conn {
 		struct {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
+			uint8_t forced:1;
+		};
+
+		struct {
+			uint8_t initiated:1;
+			uint8_t cancelled:1;
+			uint8_t forced:1;
 		} central;
+
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
-			uint8_t  initiated:1;
-			uint8_t  cancelled:1;
-			uint8_t  latency_enabled:1;
+			uint8_t initiated:1;
+			uint8_t cancelled:1;
+			uint8_t forced:1;
+			uint8_t latency_enabled:1;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+			uint8_t phy_rx_event:3;
+#endif /* CONFIG_BT_CTLR_PHY */
 
 			uint32_t window_widening_periodic_us;
 			uint32_t window_widening_max_us;
@@ -138,6 +173,11 @@ struct lll_conn {
 	uint8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+	struct path_loss_params pl_params;
+	struct path_loss_state	pl_state;
+	uint8_t pl_current_zone;
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	struct lll_conn_meta conn_meta;
@@ -160,6 +200,10 @@ int lll_conn_reset(void);
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll);
 
 void lll_conn_prepare_reset(void);
+int lll_conn_central_is_abort_cb(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb);
+int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
+				    lll_prepare_cb_t *resume_cb);
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 void lll_conn_isr_rx(void *param);
 void lll_conn_isr_tx(void *param);

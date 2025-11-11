@@ -1,0 +1,10 @@
+tests:
+  bluetooth.tester_bsim:
+    build_only: true
+    tags:
+      - bluetooth
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_tester_prj_conf
+    platform_allow:
+      - nrf52_bsim/native

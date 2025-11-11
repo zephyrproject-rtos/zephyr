@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Fabian Blatz <fabianblatz@gmail.com>
+ * Copyright 2025 Abderrahmane JARMOUNI
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,12 +28,13 @@ struct lvgl_pointer_input_data {
 	uint32_t point_y;
 };
 
-static void lvgl_pointer_process_event(const struct device *dev, struct input_event *evt)
+static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	const struct lvgl_pointer_input_config *cfg = dev->config;
 	struct lvgl_pointer_input_data *data = dev->data;
-	lv_disp_t *disp = lv_disp_get_default();
-	struct lvgl_disp_data *disp_data = disp->driver->user_data;
+	lv_display_t *disp = lv_indev_get_display(data->common_data.indev);
+	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
 	struct display_capabilities *cap = &disp_data->cap;
 	lv_point_t *point = &data->common_data.pending_event.point;
 
@@ -53,7 +55,7 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 		break;
 	case INPUT_BTN_TOUCH:
 		data->common_data.pending_event.state =
-			evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 		break;
 	}
 
@@ -136,6 +138,8 @@ int lvgl_pointer_input_init(const struct device *dev)
 			  lvgl_pointer_process_event);                                             \
 	static const struct lvgl_pointer_input_config lvgl_pointer_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, pointer),                 \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
 		.invert_x = DT_INST_PROP(inst, invert_x),                                          \
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \

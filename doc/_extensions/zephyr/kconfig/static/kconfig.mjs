@@ -5,6 +5,8 @@
 
 const DB_FILE = 'kconfig.json';
 const RESULTS_PER_PAGE_OPTIONS = [10, 25, 50];
+let zephyr_gh_base_url;
+let zephyr_version;
 
 /* search state */
 let db;
@@ -58,12 +60,41 @@ function showProgress(message) {
 }
 
 /**
+ * Generate a GitHub link for a given file path in the Zephyr repository.
+ * @param {string} path - The file path in the repository.
+ * @param {number} [line] - Optional line number to link to.
+ * @param {string} [mode=blob] - The mode (blob or edit). Defaults to 'blob'.
+ * @param {string} [revision=main] - The branch, tag, or commit hash. Defaults to 'main'.
+ * @returns {string} - The generated GitHub URL.
+ */
+function getGithubLink(path, line, mode = "blob", revision = "main") {
+    if (!zephyr_gh_base_url) {
+        return;
+    }
+
+    let url = [
+        zephyr_gh_base_url,
+        mode,
+        revision,
+        path
+    ].join("/");
+
+    if (line !== undefined){
+        url +=  `#L${line}`;
+    }
+
+    return url;
+}
+
+
+/**
  * Render a Kconfig literal property.
  * @param {Element} parent Parent element.
  * @param {String} title Title.
- * @param {String} content Content.
+ * @param {Element} contentElement Content Element.
  */
-function renderKconfigPropLiteral(parent, title, content) {
+function renderKconfigPropLiteralElement(parent, title, contentElement)
+{
     const term = document.createElement('dt');
     parent.appendChild(term);
 
@@ -81,8 +112,18 @@ function renderKconfigPropLiteral(parent, title, content) {
     literal.className = 'pre';
     code.appendChild(literal);
 
-    const literalText = document.createTextNode(content);
-    literal.appendChild(literalText);
+    literal.appendChild(contentElement);
+}
+
+/**
+ * Render a Kconfig literal property.
+ * @param {Element} parent Parent element.
+ * @param {String} title Title.
+ * @param {String} content Content.
+ */
+function renderKconfigPropLiteral(parent, title, content) {
+    const contentElement = document.createTextNode(content);
+    renderKconfigPropLiteralElement(parent, title, contentElement);
 }
 
 /**
@@ -268,7 +309,21 @@ function renderKconfigEntry(entry) {
     renderKconfigPropList(props, 'Implied by', entry.implied_by, true);
     renderKconfigPropList(props, 'Ranges', entry.ranges, false);
     renderKconfigPropList(props, 'Choices', entry.choices, false);
-    renderKconfigPropLiteral(props, 'Location', `${entry.filename}:${entry.linenr}`);
+
+    /* symbol location with permalink */
+    const locationElement = document.createTextNode(`${entry.filename}:${entry.linenr}`);
+    locationElement.class = "pre";
+
+    let locationPermalink = getGithubLink(entry.filename, entry.linenr, "blob", zephyr_version);
+    if (locationPermalink) {
+        const locationPermalinkElement = document.createElement('a');
+        locationPermalinkElement.href = locationPermalink;
+        locationPermalinkElement.appendChild(locationElement);
+        renderKconfigPropLiteralElement(props, 'Location', locationPermalinkElement);
+    } else {
+        renderKconfigPropLiteralElement(props, 'Location', locationElement);
+    }
+
     renderKconfigPropLiteral(props, 'Menu path', entry.menupath);
 
     return container;
@@ -294,28 +349,39 @@ function doSearch() {
     const regexes = input.value.trim().split(/\s+/).map(
         element => new RegExp(element.toLowerCase())
     );
-    let count = 0;
 
-    const searchResults = db.filter(entry => {
-        let matches = 0;
+    const scoredResults = db.map(entry => {
+        let nameMatches = 0;
+        let promptMatches = 0;
         const name = entry.name.toLowerCase();
         const prompt = entry.prompt ? entry.prompt.toLowerCase() : "";
 
         regexes.forEach(regex => {
-            if (name.search(regex) >= 0 || prompt.search(regex) >= 0) {
-                matches++;
-            }
+            if (name.search(regex) >= 0) nameMatches++;
+            if (prompt.search(regex) >= 0) promptMatches++;
         });
 
-        if (matches === regexes.length) {
-            count++;
-            if (count > searchOffset && count <= (searchOffset + maxResults)) {
-                return true;
-            }
+        const totalMatches = Math.max(nameMatches, promptMatches);
+        if (totalMatches < regexes.length) {
+            return null;
         }
 
-        return false;
-    });
+        const NAME_WEIGHT = 2.0;
+        const PROMPT_WEIGHT = 1.0;
+        /* Apply field-length normalization (the shorter the field, the higher its relevance) */
+        const nameFieldNorm = 1.0 / Math.sqrt(name.length);
+        const promptFieldNorm = prompt ? 1.0 / Math.sqrt(prompt.length) : 0;
+
+        const score = (nameMatches * NAME_WEIGHT * nameFieldNorm) +
+                      (promptMatches * PROMPT_WEIGHT * promptFieldNorm);
+
+        return { entry, score };
+    }).filter(result => result !== null)
+      .sort((a, b) => b.score - a.score);
+
+    const count = scoredResults.length;
+    const searchResults = scoredResults.slice(searchOffset, searchOffset + maxResults)
+                                       .map(result => result.entry);
 
     /* show results count and search tools */
     summaryText.nodeValue = `${count} options match your search.`;
@@ -483,7 +549,9 @@ function setupKconfigSearch() {
     fetch(DB_FILE)
         .then(response => response.json())
         .then(json => {
-            db = json;
+            db = json["symbols"];
+            zephyr_gh_base_url = json["gh_base_url"];
+            zephyr_version = json["zephyr_version"];
 
             results.replaceChildren();
 

@@ -11,14 +11,14 @@ find_program(CMAKE_LINKER xt-ld ${LD_SEARCH_PATH})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
-if(CONFIG_CPP_EXCEPTIONS)
+if(CONFIG_CPP_EXCEPTIONS AND CRTBEGIN_PATH AND CRTEND_PATH)
   # When building with C++ Exceptions, it is important that crtbegin and crtend
   # are linked at specific locations.
   # The location is so important that we cannot let this be controlled by normal
   # link libraries, instead we must control the link command specifically as
   # part of toolchain.
   set(CMAKE_CXX_LINK_EXECUTABLE
-      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LIBGCC_DIR}/crtend.o")
+      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${CRTBEGIN_PATH} <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${CRTEND_PATH}")
 endif()
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
@@ -59,7 +59,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     endif()
 
     zephyr_get_include_directories_for_lang(C current_includes)
-    get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
     add_custom_command(
       OUTPUT ${linker_script_gen}
@@ -75,9 +74,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
       -D_LINKER
       -D_ASMLANGUAGE
+      -D__GCC_LINKER_CMD__
       -imacros ${AUTOCONF_H}
       ${current_includes}
-      ${current_defines}
       ${template_script_defines}
       -E ${LINKER_SCRIPT}
       -P # Prevent generation of debug `#line' directives.
@@ -130,18 +129,46 @@ function(toolchain_ld_link_elf)
     ${LINKERFLAGPREFIX},--no-whole-archive
     ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
-    ${LIB_INCLUDE_DIR}
     -L${PROJECT_BINARY_DIR}
-    ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
   )
 endfunction(toolchain_ld_link_elf)
 
+# Function for finalizing link setup after Zephyr configuration has completed.
+#
+# This function will generate the correct CMAKE_C_LINK_EXECUTABLE / CMAKE_CXX_LINK_EXECUTABLE
+# rule to ensure that standard c and runtime libraries are correctly placed
+# and the end of link invocation and doesn't appear in the middle of the link
+# command invocation.
+macro(toolchain_linker_finalize)
+  get_property(zephyr_std_libs TARGET linker PROPERTY lib_include_dir)
+  get_property(link_order TARGET linker PROPERTY link_order_library)
+  foreach(lib ${link_order})
+    get_property(link_flag TARGET linker PROPERTY ${lib}_library)
+    list(APPEND zephyr_std_libs "${link_flag}")
+  endforeach()
+  string(REPLACE ";" " " zephyr_std_libs "${zephyr_std_libs}")
+
+ set(common_link "<LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
+ set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
+ set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> ${common_link}")
+ set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
+
+ compiler_file_path(crtbegin.o CRTBEGIN_PATH)
+ compiler_file_path(crtend.o CRTEND_PATH)
+
+endmacro()
+
+# Function to map compiler flags into suitable linker flags
+# When using the compiler driver to run the linker, just pass
+# them all through
+
+function(toolchain_linker_add_compiler_options)
+  add_link_options(${ARGV})
+endfunction()
+
 # xt-ld is Xtensa's own version of binutils' ld.
 # So we can reuse most of the ld configurations.
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

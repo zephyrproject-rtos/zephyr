@@ -5,8 +5,8 @@ Zephyr's is capable of running as a guest under the x86 ACRN
 hypervisor (see https://projectacrn.org/).  The process for getting
 this to work is somewhat involved, however.
 
-ACRN hypervisor supports a hybrid scenario where Zephyr runs in a so-
-called "pre-launched" mode. This means Zephyr will access the ACRN
+ACRN hypervisor supports a hybrid scenario where Zephyr runs in a so-called
+"pre-launched" mode. This means Zephyr will access the ACRN
 hypervisor directly without involving the SOS VM. This is the most
 practical user scenario in the real world because Zephyr's real-time
 and safety capability can be assured without influence from other

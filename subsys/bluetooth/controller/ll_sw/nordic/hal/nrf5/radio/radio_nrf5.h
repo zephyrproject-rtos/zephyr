@@ -20,11 +20,7 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 /* SoC specific defines */
-#if defined(CONFIG_BOARD_NRF52_BSIM)
-#include "radio_sim_nrf52.h"
-#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
-#include "radio_sim_nrf5340.h"
-#elif defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
 #include "radio_nrf52805.h"
@@ -43,19 +39,36 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#elif defined(CONFIG_BOARD_NRF52_BSIM)
+#include "radio_sim_nrf52.h"
+#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
+#include <hal/nrf_vreqctrl.h>
+#include "radio_sim_nrf5340.h"
+#elif defined(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUAPP)
+#include <hal/nrf_ppib.h>
+#include "radio_sim_nrf54l.h"
+#else
 #error "Unsupported SoC."
 #endif
 
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#include <hal/nrf_grtc.h>
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #include <hal/nrf_rtc.h>
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+
 #include <hal/nrf_timer.h>
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 #include <hal/nrf_ccm.h>
-#include <hal/nrf_aar.h>
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#include <hal/nrf_aar.h>
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 /* Define to reset PPI registration.
  * This has to come before the ppi/dppi includes below.
@@ -65,16 +78,17 @@
 /* This has to come before the ppi/dppi includes below. */
 #include "radio_nrf5_fem.h"
 
-#if defined(PPI_PRESENT)
+/* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
+#include "hal/cntr.h"
+
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include <hal/nrf_ppi.h>
 #include "radio_nrf5_ppi_resources.h"
 #include "radio_nrf5_ppi.h"
-#elif defined(DPPI_PRESENT)
+#else
 #include <hal/nrf_dppi.h>
 #include "radio_nrf5_dppi_resources.h"
 #include "radio_nrf5_dppi.h"
-#else
-#error "PPI or DPPI abstractions missing."
 #endif
 
 #include "radio_nrf5_txp.h"
@@ -100,3 +114,6 @@
 #else /* For simulated targets there is no delay for the PPI task -> TIMER start */
 #define HAL_RADIO_TMR_START_DELAY_US 0U
 #endif
+
+/* This is the minimum prepare duration required to setup radio for deferred transmission */
+#define HAL_RADIO_TMR_DEFERRED_TX_DELAY_US 50U

@@ -1,0 +1,33 @@
+/*
+ * Copyright 2024 Université Gustave Eiffel
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rockchip/rk3588s.dtsi>
+
+/ {
+	model = "Khadas Edge2";
+	compatible = "khadas,edge2";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	cpus {
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+		/delete-node/ cpu@4;
+		/delete-node/ cpu@5;
+		/delete-node/ cpu@6;
+		/delete-node/ cpu@7;
+	};
+};
+
+&uart2 {
+	status = "okay";
+};

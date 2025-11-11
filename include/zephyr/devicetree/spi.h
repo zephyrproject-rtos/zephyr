@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-spi Devicetree SPI API
  * @ingroup devicetree
+ * @ingroup spi_interface
  * @{
  */
 
@@ -114,7 +115,8 @@ extern "C" {
  * @return 1 if spi_dev's bus node DT_BUS(spi_dev) has a chip select
  *         pin at index DT_REG_ADDR(spi_dev), 0 otherwise
  */
-#define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev) DT_SPI_HAS_CS_GPIOS(DT_BUS(spi_dev))
+#define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev)                                                           \
+	DT_PROP_HAS_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
 
 /**
  * @brief Get a SPI device's chip select GPIO controller's node identifier
@@ -148,7 +150,7 @@ extern "C" {
  * @return node identifier for spi_dev's chip select GPIO controller
  */
 #define DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev) \
-	DT_GPIO_CTLR_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+	DT_GPIO_CTLR_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
 
 /**
  * @brief Get a SPI device's chip select GPIO pin number
@@ -181,7 +183,7 @@ extern "C" {
  * @return pin number of spi_dev's chip select GPIO
  */
 #define DT_SPI_DEV_CS_GPIOS_PIN(spi_dev) \
-	DT_GPIO_PIN_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+	DT_GPIO_PIN_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
 
 /**
  * @brief Get a SPI device's chip select GPIO flags
@@ -209,7 +211,7 @@ extern "C" {
  *         zero if there is none
  */
 #define DT_SPI_DEV_CS_GPIOS_FLAGS(spi_dev) \
-	DT_GPIO_FLAGS_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+	DT_GPIO_FLAGS_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
 
 /**
  * @brief Equivalent to DT_SPI_DEV_HAS_CS_GPIOS(DT_DRV_INST(inst)).

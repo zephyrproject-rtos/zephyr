@@ -24,7 +24,9 @@ extern "C" {
 
 /**
  * @brief Socket NET_MGMT library
- * @defgroup socket_net_mgmt Network Core Library
+ * @defgroup socket_net_mgmt Socket NET_MGMT library
+ * @since 2.0
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -39,6 +41,19 @@ extern "C" {
 #define SOL_NET_MGMT_RAW (SOL_NET_MGMT_BASE + 1)
 
 /** @endcond */
+
+/**
+ * @name Socket options for NET_MGMT sockets
+ * @{
+ */
+
+/** Set Ethernet Qav parameters */
+#define SO_NET_MGMT_ETHERNET_SET_QAV_PARAM 1
+
+/** Get Ethernet Qav parameters */
+#define SO_NET_MGMT_ETHERNET_GET_QAV_PARAM 2
+
+/** @} */ /* for @name */
 
 /**
  * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets
@@ -71,7 +86,7 @@ struct sockaddr_nm {
 	uintptr_t nm_pid;
 
 	/** net_mgmt mask */
-	uint32_t nm_mask;
+	uint64_t nm_mask;
 };
 
 

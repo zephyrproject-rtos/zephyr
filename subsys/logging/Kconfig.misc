@@ -6,19 +6,20 @@ menu "Misc"
 config LOG_CMDS
 	bool "Shell commands"
 	depends on SHELL
-	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
+	depends on !LOG_MODE_MINIMAL
 
 config LOG_TEST_CLEAR_MESSAGE_SPACE
 	bool "Clear message after allocation"
 	default y
 	depends on ZTEST
 	help
-	  Used in testing to simplify message comparision if message contains
+	  Used in testing to simplify message comparison if message contains
 	  paddings.
 
 config LOG_USE_VLA
 	bool "Using variable length arrays"
 	default y if !MISRA_SANE
+	depends on TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 	help
 	  Using VLA slightly decreases stack usage in some cases it may not be
 	  supported. Note that VLA are used for arrays which size is resolved at
@@ -58,7 +59,7 @@ config LOG_FMT_SECTION
 
 config LOG_FMT_SECTION_STRIP
 	bool "Strip log strings from binary"
-	depends on LOG_DICTIONARY_SUPPORT
+	depends on LOG_DICTIONARY_DB
 	depends on LOG_FMT_SECTION
 	depends on LINKER_DEVNULL_SUPPORT
 	depends on !LOG_ALWAYS_RUNTIME

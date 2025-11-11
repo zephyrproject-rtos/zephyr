@@ -90,3 +90,38 @@ properties:
     description: |
       Activate 16bit high dynamic output mode.
       Cannot be used with threshold interrupt.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal connection.
+      The signal is active-low as produced by the sensor.
+
+  int-mode:
+    type: string
+    default: "normal"
+    enum: ["normal", "first high", "logic high / low"]
+    description: |
+      Specifies the interrupt behavior.
+        - "normal": signal if exceeds high or falls below lower threshold
+          and proximity count is reached.
+        - "first high": signal if exceeds high threshold first time and signal again
+          if falls below lower threshold, and proximity count is reached.
+          Do not trigger if high threshold was never exceeded.
+        - "logic high / low": signal if high threshold is exceeded and proximity counts is reached,
+          deactivate if falls below lower threshold.
+      Defaults to "normal" as this is the easiest configurable mode.
+
+  int-proximity-count:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4]
+    description: |
+      Number of consecutive measurements above/below threshold to signal an interrupt.
+      Defaults to sensor reset value
+
+  int-smart-persistence:
+    type: boolean
+    description: |
+      Activates "smart persistence" feature, aimed to reduce total reaction time
+      until an interrupt is issued.

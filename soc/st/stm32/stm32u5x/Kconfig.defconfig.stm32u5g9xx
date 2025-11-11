@@ -1,0 +1,11 @@
+# STMicroelectronics STM32U5G9XX MCU
+
+# Copyright (c) 2025 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U5G9XX
+
+config NUM_IRQS
+	default 141
+
+endif # SOC_STM32U5G9XX

@@ -8,7 +8,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
@@ -25,8 +25,6 @@ static struct k_spinlock obs_slock;
 
 NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
 			 sizeof(struct zbus_channel *), NULL);
-
-BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0, "MSG_SUBSCRIBER feature requires heap memory pool.");
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
@@ -77,9 +75,52 @@ int _zbus_init(void)
 		++(curr->data->observers_end_idx);
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		/* Check for duplicate channel IDs */
+		if (chan->id == ZBUS_CHAN_ID_INVALID) {
+			continue;
+		}
+		/* Iterate over all previous channels */
+		STRUCT_SECTION_FOREACH(zbus_channel, chan_prev) {
+			if (chan_prev == chan) {
+				break;
+			}
+			if (chan->id == chan_prev->id) {
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+				LOG_WRN("Channels %s and %s have matching IDs (%d)", chan->name,
+					chan_prev->name, chan->id);
+#else
+				LOG_WRN("Channels %p and %p have matching IDs (%d)", chan,
+					chan_prev, chan->id);
+#endif /* CONFIG_ZBUS_CHANNEL_NAME */
+			}
+		}
+	}
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
+
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
+
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+
+const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
+{
+	if (channel_id == ZBUS_CHAN_ID_INVALID) {
+		return NULL;
+	}
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		if (chan->id == channel_id) {
+			/* Found matching channel */
+			return chan;
+		}
+	}
+	/* No matching channel exists */
+	return NULL;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
 
 static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 					const struct zbus_observer *obs, k_timepoint_t end_time,
@@ -101,7 +142,7 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 			return -ENOMEM;
 		}
 
-		net_buf_put(obs->message_fifo, cloned_buf);
+		k_fifo_put(obs->message_fifo, cloned_buf);
 
 		break;
 	}
@@ -339,6 +380,8 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -357,6 +400,11 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 		return err;
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS)
+	chan->data->publish_timestamp = k_uptime_ticks();
+	chan->data->publish_count += 1;
+#endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
+
 	memcpy(chan->message, msg, chan->message_size);
 
 	err = _zbus_vded_exec(chan, end_time);
@@ -370,6 +418,8 @@ int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeo
 {
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -392,6 +442,8 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout)
 	int err;
 
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -416,6 +468,8 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout)
 int zbus_chan_claim(const struct zbus_channel *chan, k_timeout_t timeout)
 {
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
@@ -464,7 +518,7 @@ int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
 
-	struct net_buf *buf = net_buf_get(sub->message_fifo, timeout);
+	struct net_buf *buf = k_fifo_get(sub->message_fifo, timeout);
 
 	if (buf == NULL) {
 		return -ENOMSG;
@@ -551,7 +605,7 @@ int zbus_obs_is_chan_notification_masked(const struct zbus_observer *obs,
 	return err;
 }
 
-int zbus_obs_set_enable(struct zbus_observer *obs, bool enabled)
+int zbus_obs_set_enable(const struct zbus_observer *obs, bool enabled)
 {
 	_ZBUS_ASSERT(obs != NULL, "obs is required");
 

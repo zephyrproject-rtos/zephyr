@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -22,7 +23,7 @@
 
 #define PA_RETRY_COUNT 6
 
-#define BIS_ISO_CHAN_COUNT 2
+#define BIS_ISO_CHAN_COUNT MIN(2U, CONFIG_BT_ISO_MAX_CHAN)
 
 static bool         per_adv_found;
 static bool         per_adv_lost;
@@ -42,9 +43,8 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#ifdef CONFIG_ISO_BLINK_LED0
 static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-#define HAS_LED     1
 #define BLINK_ONOFF K_MSEC(500)
 
 static struct k_work_delayable blink_work;
@@ -234,7 +234,19 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+	if (err != 0) {
+		printk("Failed to setup ISO RX data path: %d\n", err);
+	}
+
 	k_sem_give(&sem_big_sync);
 }
 
@@ -276,7 +288,7 @@ static struct bt_iso_chan *bis[] = {
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
-	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
+	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT)),
 	.mse = BT_ISO_SYNC_MSE_ANY, /* any number of subevents */
 	.sync_timeout = 100, /* in 10 ms units */
 };
@@ -303,7 +315,7 @@ int main(void)
 
 	printk("Starting Synchronized Receiver Demo\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 	printk("Get reference to LED device...");
 
 	if (!gpio_is_ready_dt(&led_gpio)) {
@@ -320,7 +332,7 @@ int main(void)
 	printk("done.\n");
 
 	k_work_init_delayable(&blink_work, blink_timeout);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
@@ -349,13 +361,13 @@ int main(void)
 		}
 		printk("success.\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		blink = true;
 		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 		k_work_reschedule(&blink_work, BLINK_ONOFF);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 		printk("Waiting for periodic advertising...\n");
 		per_adv_found = false;
@@ -456,7 +468,7 @@ big_sync_create:
 		}
 		printk("BIG sync established.\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 		printk("Stop blinking LED.\n");
 		blink = false;
 		/* If this fails, we'll exit early in the handler because blink
@@ -467,7 +479,7 @@ big_sync_create:
 		/* Keep LED on */
 		led_is_on = true;
 		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			printk("Waiting for BIG sync lost chan %u...\n", chan);

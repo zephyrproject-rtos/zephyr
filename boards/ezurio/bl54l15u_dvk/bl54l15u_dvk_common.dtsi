@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "bl54l15u_dvk_nrf54l15-pinctrl.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+
+		led3: led_3 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/*
+		 * PWM signal can be exposed on GPIO pin only within same domain.
+		 * There is only one domain which contains both PWM and GPIO:
+		 * PWM20/21/22 and GPIO Port P1.
+		 * Only LEDs connected to P1 can work with PWM, for example LED1.
+		 */
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm20 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button3: button_3 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		pwm-led0 = &pwm_led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+		watchdog0 = &wdt31;
+	};
+};
+
+&uart20 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_default>;
+	pinctrl-1 = <&pwm20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Get a node label for wi-fi spi to use in shield files */
+wifi_spi: &spi22 {};

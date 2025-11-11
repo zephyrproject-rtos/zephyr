@@ -1,0 +1,35 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 Divider IC multiplexer.
+
+  This node selects a clock input and a divider.
+
+  For instance:
+    &ic6 {
+      pll-src = <2>;
+      div = <16>;
+      status = "okay";
+    };
+
+compatible: "st,stm32n6-ic-clock-mux"
+
+properties:
+  pll-src:
+    type: int
+    required: true
+    description: |
+        PLL clock source
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  ic-div:
+    type: int
+    description: |
+        ICx integer division factor
+        The input ICx frequency is divided by the specified value
+        Valid range: 1 - 256

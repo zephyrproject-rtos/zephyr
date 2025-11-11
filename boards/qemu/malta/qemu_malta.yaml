@@ -1,11 +1,11 @@
 identifier: qemu_malta
 name: QEMU emulation for MIPS (little endian)
 type: qemu
-simulation: qemu
+simulation:
+  - name: qemu
 arch: mips
 toolchain:
   - zephyr
-  - xtools
 ram: 1024
 flash: 512
 testing:

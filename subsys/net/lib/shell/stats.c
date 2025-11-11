@@ -14,7 +14,15 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "../ip/net_stats.h"
 
+enum net_shell_stats_format {
+	NET_SHELL_STATS_FORMAT_DEFAULT,
+	NET_SHELL_STATS_FORMAT_KEY_VALUE,
+	NET_SHELL_STATS_FORMAT_HEX_BLOB,
+	NET_SHELL_STATS_FORMAT_BOTH
+};
+
 #if defined(CONFIG_NET_STATISTICS)
+
 
 #if NET_TC_COUNT > 1
 static const char *priority2str(enum net_priority priority)
@@ -45,13 +53,13 @@ static const char *priority2str(enum net_priority priority)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
-			    const struct shell *sh)
+			    const struct shell *sh, struct net_shell_user_data *user_data)
 {
 	PR("Statistics for Ethernet interface %p [%d]\n", iface,
 	       net_if_get_by_iface(iface));
 
-	PR("Bytes received   : %u\n", data->bytes.received);
-	PR("Bytes sent       : %u\n", data->bytes.sent);
+	PR("Bytes received   : %llu\n", data->bytes.received);
+	PR("Bytes sent       : %llu\n", data->bytes.sent);
 	PR("Packets received : %u\n", data->pkts.rx);
 	PR("Packets sent     : %u\n", data->pkts.tx);
 	PR("Bcast received   : %u\n", data->broadcast.rx);
@@ -110,16 +118,42 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
 	if (data->vendor) {
-		PR("Vendor specific statistics for Ethernet "
-		   "interface %p [%d]:\n",
-			iface, net_if_get_by_iface(iface));
 		size_t i = 0;
+		enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
 
-		do {
-			PR("%s : %u\n", data->vendor[i].key,
-			   data->vendor[i].value);
-			i++;
-		} while (data->vendor[i].key);
+		if (user_data != NULL) {
+			format = *(enum net_shell_stats_format *)user_data->user_data;
+		}
+
+		PR("Vendor specific statistics for Ethernet interface %p [%d]:\n",
+		   iface, net_if_get_by_iface(iface));
+
+		/* Print key-value pairs if requested */
+		if (format == NET_SHELL_STATS_FORMAT_DEFAULT ||
+		    format == NET_SHELL_STATS_FORMAT_KEY_VALUE ||
+		    format == NET_SHELL_STATS_FORMAT_BOTH) {
+			do {
+				PR("%s : %u\n", data->vendor[i].key, data->vendor[i].value);
+				i++;
+			} while (data->vendor[i].key != NULL);
+		}
+
+		/* Print hex blob if requested */
+		if (format == NET_SHELL_STATS_FORMAT_HEX_BLOB ||
+		    format == NET_SHELL_STATS_FORMAT_BOTH) {
+			/* Suitable for parsing */
+			PR("Vendor stats hex blob: ");
+			for (i = 0; data->vendor[i].key != NULL; i++) {
+				uint32_t v = data->vendor[i].value;
+
+				PR("%02x%02x%02x%02x",
+				   (uint8_t)(v & 0xFF),
+				   (uint8_t)((v >> 8) & 0xFF),
+				   (uint8_t)((v >> 16) & 0xFF),
+				   (uint8_t)((v >> 24) & 0xFF));
+			}
+			PR("\n");
+		}
 	}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 }
@@ -315,13 +349,13 @@ static void print_tc_tx_stats(const struct shell *sh, struct net_if *iface)
 		net_stats_t count = GET_STAT(iface,
 					     tc.sent[i].tx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
@@ -336,7 +370,7 @@ static void print_tc_tx_stats(const struct shell *sh, struct net_if *iface)
 	PR("TC  Priority\tSent pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
-		PR("[%d] %s (%d)\t%d\t\t%d\n", i,
+		PR("[%d] %s (%u)\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 		   GET_STAT(iface, tc.sent[i].priority),
 		   GET_STAT(iface, tc.sent[i].pkts),
@@ -368,22 +402,24 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 	PR("RX traffic class statistics:\n");
 
 #if defined(CONFIG_NET_PKT_RXTIME_STATS)
-	PR("TC  Priority\tRecv pkts\tbytes\ttime\n");
+	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\ttime\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		net_stats_t count = GET_STAT(iface,
 					     tc.recv[i].rx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes),
 			   (uint32_t)(GET_STAT(iface,
 					    tc.recv[i].rx_time.sum) /
@@ -392,13 +428,14 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 		}
 	}
 #else
-	PR("TC  Priority\tRecv pkts\tbytes\n");
+	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		PR("[%d] %s (%d)\t%d\t\t%d\n", i,
+		PR("[%d] %s (%u)\t%u\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 		   GET_STAT(iface, tc.recv[i].priority),
 		   GET_STAT(iface, tc.recv[i].pkts),
+		   GET_STAT(iface, tc.recv[i].dropped),
 		   GET_STAT(iface, tc.recv[i].bytes));
 	}
 #endif /* CONFIG_NET_PKT_RXTIME_STATS */
@@ -456,19 +493,25 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	}
 
 #if defined(CONFIG_NET_STATISTICS_IPV6) && defined(CONFIG_NET_NATIVE_IPV6)
-	PR("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+	PR("IPv6 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u\n",
 	   GET_STAT(iface, ipv6.recv),
 	   GET_STAT(iface, ipv6.sent),
 	   GET_STAT(iface, ipv6.drop),
 	   GET_STAT(iface, ipv6.forwarded));
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
-	PR("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d\n",
+	PR("IPv6 ND recv   %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, ipv6_nd.recv),
 	   GET_STAT(iface, ipv6_nd.sent),
 	   GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+	PR("IPv6 PMTU recv %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, ipv6_pmtu.recv),
+	   GET_STAT(iface, ipv6_pmtu.sent),
+	   GET_STAT(iface, ipv6_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
-	PR("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
+	PR("IPv6 MLD recv  %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, ipv6_mld.recv),
 	   GET_STAT(iface, ipv6_mld.sent),
 	   GET_STAT(iface, ipv6_mld.drop));
@@ -476,71 +519,99 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV4) && defined(CONFIG_NET_NATIVE_IPV4)
-	PR("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+	PR("IPv4 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u\n",
 	   GET_STAT(iface, ipv4.recv),
 	   GET_STAT(iface, ipv4.sent),
 	   GET_STAT(iface, ipv4.drop),
 	   GET_STAT(iface, ipv4.forwarded));
 #endif /* CONFIG_NET_STATISTICS_IPV4 */
 
-	PR("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
+	PR("IP vhlerr      %u\thblener\t%u\tlblener\t%u\n",
 	   GET_STAT(iface, ip_errors.vhlerr),
 	   GET_STAT(iface, ip_errors.hblenerr),
 	   GET_STAT(iface, ip_errors.lblenerr));
-	PR("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d\n",
+	PR("IP fragerr     %u\tchkerr\t%u\tprotoer\t%u\n",
 	   GET_STAT(iface, ip_errors.fragerr),
 	   GET_STAT(iface, ip_errors.chkerr),
 	   GET_STAT(iface, ip_errors.protoerr));
 
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+	PR("IPv4 PMTU recv %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, ipv4_pmtu.recv),
+	   GET_STAT(iface, ipv4_pmtu.sent),
+	   GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
+
 #if defined(CONFIG_NET_STATISTICS_ICMP) && defined(CONFIG_NET_NATIVE_IPV4)
-	PR("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
+	PR("ICMP recv      %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, icmp.recv),
 	   GET_STAT(iface, icmp.sent),
 	   GET_STAT(iface, icmp.drop));
-	PR("ICMP typeer    %d\tchkerr\t%d\n",
+	PR("ICMP typeer    %u\tchkerr\t%u\n",
 	   GET_STAT(iface, icmp.typeerr),
 	   GET_STAT(iface, icmp.chkerr));
 #endif
 #if defined(CONFIG_NET_STATISTICS_IGMP)
-	PR("IGMP recv      %d\tsent\t%d\tdrop\t%d\n",
+	PR("IGMP recv      %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, ipv4_igmp.recv),
 	   GET_STAT(iface, ipv4_igmp.sent),
 	   GET_STAT(iface, ipv4_igmp.drop));
 #endif /* CONFIG_NET_STATISTICS_IGMP */
 #if defined(CONFIG_NET_STATISTICS_UDP) && defined(CONFIG_NET_NATIVE_UDP)
-	PR("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
+	PR("UDP recv       %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, udp.recv),
 	   GET_STAT(iface, udp.sent),
 	   GET_STAT(iface, udp.drop));
-	PR("UDP chkerr     %d\n",
+	PR("UDP chkerr     %u\n",
 	   GET_STAT(iface, udp.chkerr));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
-	PR("TCP bytes recv %u\tsent\t%d\tresent\t%d\n",
+	PR("TCP bytes recv %llu\tsent\t%llu\tresent\t%u\n",
 	   GET_STAT(iface, tcp.bytes.received),
 	   GET_STAT(iface, tcp.bytes.sent),
 	   GET_STAT(iface, tcp.resent));
-	PR("TCP seg recv   %d\tsent\t%d\tdrop\t%d\n",
+	PR("TCP seg recv   %u\tsent\t%u\tdrop\t%u\n",
 	   GET_STAT(iface, tcp.recv),
 	   GET_STAT(iface, tcp.sent),
 	   GET_STAT(iface, tcp.seg_drop));
-	PR("TCP seg resent %d\tchkerr\t%d\tackerr\t%d\n",
+	PR("TCP seg resent %u\tchkerr\t%u\tackerr\t%u\n",
 	   GET_STAT(iface, tcp.rexmit),
 	   GET_STAT(iface, tcp.chkerr),
 	   GET_STAT(iface, tcp.ackerr));
-	PR("TCP seg rsterr %d\trst\t%d\n",
+	PR("TCP seg rsterr %u\trst\t%u\n",
 	   GET_STAT(iface, tcp.rsterr),
 	   GET_STAT(iface, tcp.rst));
-	PR("TCP conn drop  %d\tconnrst\t%d\n",
+	PR("TCP conn drop  %u\tconnrst\t%u\n",
 	   GET_STAT(iface, tcp.conndrop),
 	   GET_STAT(iface, tcp.connrst));
-	PR("TCP pkt drop   %d\n", GET_STAT(iface, tcp.drop));
+	PR("TCP pkt drop   %u\n", GET_STAT(iface, tcp.drop));
 #endif
+#if defined(CONFIG_NET_STATISTICS_DNS)
+	PR("DNS recv       %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, dns.recv),
+	   GET_STAT(iface, dns.sent),
+	   GET_STAT(iface, dns.drop));
+#endif /* CONFIG_NET_STATISTICS_DNS */
+#if defined(CONFIG_NET_STATISTICS_PKT_FILTER)
+	PR("Filter drop rx %u"
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK, ("\tIPv4\t%u"))
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK, ("\tIPv6\t%u"))
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK, ("\tlocal\t%u"))
+	   "\ttx\t%u\n",
+	   GET_STAT(iface, pkt_filter.rx.drop),
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK,
+		      (GET_STAT(iface, pkt_filter.rx.ipv4_drop),))
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK,
+		      (GET_STAT(iface, pkt_filter.rx.ipv6_drop),))
+	   IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK,
+		      (GET_STAT(iface, pkt_filter.rx.local_drop),))
+	   GET_STAT(iface, pkt_filter.tx.drop));
+#endif /* CONFIG_NET_STATISTICS_DNS */
 
-	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
-	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
-	PR("Processing err %d\n", GET_STAT(iface, processing_error));
+	PR("Bytes received %llu\n", GET_STAT(iface, bytes.received));
+	PR("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
+	PR("Processing err %u\n", GET_STAT(iface, processing_error));
 
 	print_tc_tx_stats(sh, iface);
 	print_tc_rx_stats(sh, iface);
@@ -554,7 +625,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		ret = net_mgmt(NET_REQUEST_STATS_GET_ETHERNET, iface,
 			       &eth_data, sizeof(eth_data));
 		if (!ret) {
-			print_eth_stats(iface, &eth_data, sh);
+			print_eth_stats(iface, &eth_data, sh, data);
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
@@ -575,14 +646,14 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 
 	print_net_pm_stats(sh, iface);
 }
-#endif /* CONFIG_NET_STATISTICS */
 
-#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 static void net_shell_print_statistics_all(struct net_shell_user_data *data)
 {
-	net_if_foreach(net_shell_print_statistics, data);
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_PER_INTERFACE)) {
+		net_if_foreach(net_shell_print_statistics, data);
+	}
 }
-#endif
+#endif /* CONFIG_NET_STATISTICS */
 
 int cmd_net_stats_all(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -591,7 +662,22 @@ int cmd_net_stats_all(const struct shell *sh, size_t argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_STATISTICS)
+	enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
+
 	user_data.sh = sh;
+
+	/* Parse format argument if provided */
+	if (argc > 1) {
+		if (strcmp(argv[1], "key-value") == 0) {
+			format = NET_SHELL_STATS_FORMAT_KEY_VALUE;
+		} else if (strcmp(argv[1], "hex-blob") == 0) {
+			format = NET_SHELL_STATS_FORMAT_HEX_BLOB;
+		} else if (strcmp(argv[1], "both") == 0) {
+			format = NET_SHELL_STATS_FORMAT_BOTH;
+		}
+	}
+
+	user_data.user_data = &format;
 
 	/* Print global network statistics */
 	net_shell_print_statistics_all(&user_data);
@@ -636,7 +722,22 @@ int cmd_net_stats_iface(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
+
 	data.sh = sh;
+
+	/* Parse format argument if provided */
+	if (argc > 2) {
+		if (strcmp(argv[2], "key-value") == 0) {
+			format = NET_SHELL_STATS_FORMAT_KEY_VALUE;
+		} else if (strcmp(argv[2], "hex-blob") == 0) {
+			format = NET_SHELL_STATS_FORMAT_HEX_BLOB;
+		} else if (strcmp(argv[2], "both") == 0) {
+			format = NET_SHELL_STATS_FORMAT_BOTH;
+		}
+	}
+
+	data.user_data = &format;
 
 	net_shell_print_statistics(iface, &data);
 #else
@@ -665,7 +766,8 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 	if (strcmp(argv[1], "reset") == 0) {
 		net_stats_reset(NULL);
 	} else {
-		cmd_net_stats_iface(sh, argc, argv);
+		/* Shift arguments for iface command */
+		cmd_net_stats_iface(sh, argc - 1, &argv[1]);
 	}
 #else
 	ARG_UNUSED(argc);
@@ -686,15 +788,20 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_stats,
 	SHELL_CMD(all, NULL,
-		  "Show network statistics for all network interfaces.",
+		  "Show network statistics for all network interfaces.\n"
+		  "Usage: net stats all [key-value|hex-blob|both]",
 		  cmd_net_stats_all),
 	SHELL_CMD(iface, IFACE_DYN_CMD,
-		  "'net stats <index>' shows network statistics for "
-		  "one specific network interface.",
+		  "'net stats <index> [key-value|hex-blob|both]' shows network statistics for "
+		  "one specific network interface.\n"
+		  "Format options:\n"
+		  "  key-value: Show vendor stats as key-value pairs (default)\n"
+		  "  hex-blob:  Show vendor stats as hex blob for parsing\n"
+		  "  both:      Show both key-value and hex blob formats",
 		  cmd_net_stats_iface),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_SUBCMD_ADD((net), stats, &net_cmd_stats,
 		 "Show network statistics.",
-		 cmd_net_stats, 1, 1);
+		 cmd_net_stats, 1, 3);

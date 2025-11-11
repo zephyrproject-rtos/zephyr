@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "okay";
+	bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+		status = "okay";
+	};
+};

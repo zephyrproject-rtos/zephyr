@@ -1,5 +1,6 @@
 board:
   name: stm32c0116_dk
+  full_name: STM32C0116-DK Discovery Kit
   vendor: st
   socs:
     - name: stm32c011xx

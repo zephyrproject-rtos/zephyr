@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATSAME51
+	bool
+	select SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable support for Microchip SAME51 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "atsame51" if SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51G18A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51G19A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51J18A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51J19A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51J20A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51N19A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC_ATSAME51N20A
+	bool
+	select SOC_SERIES_ATSAME51
+
+config SOC
+	default "atsame51g18a" if SOC_ATSAME51G18A
+	default "atsame51g19a" if SOC_ATSAME51G19A
+	default "atsame51j18a" if SOC_ATSAME51J18A
+	default "atsame51j19a" if SOC_ATSAME51J19A
+	default "atsame51j20a" if SOC_ATSAME51J20A
+	default "atsame51n19a" if SOC_ATSAME51N19A
+	default "atsame51n20a" if SOC_ATSAME51N20A

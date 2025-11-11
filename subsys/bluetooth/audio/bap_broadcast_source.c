@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Source */
 
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,8 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
@@ -33,6 +34,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
 
+#include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_stream.h"
@@ -54,6 +56,7 @@ static struct bt_bap_broadcast_subgroup
 	broadcast_source_subgroups[CONFIG_BT_BAP_BROADCAST_SRC_COUNT]
 				  [CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 static struct bt_bap_broadcast_source broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
+static sys_slist_t bap_broadcast_source_cbs = SYS_SLIST_STATIC_INIT(&bap_broadcast_source_cbs);
 
 /**
  * 2 octets UUID
@@ -82,9 +85,9 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 {
 	uint8_t old_state;
 
-	old_state = ep->status.state;
+	old_state = ep->state;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
+	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->id, bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(state));
 
 	switch (old_state) {
@@ -118,7 +121,7 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		return;
 	}
 
-	ep->status.state = state;
+	ep->state = state;
 }
 
 static void broadcast_source_set_state(struct bt_bap_broadcast_source *source, uint8_t state)
@@ -188,6 +191,9 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	stream->_prev_seq_num = 0U;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
+	/* Setup the ISO data path */
+	bt_bap_setup_iso_data_path(stream);
+
 	ops = stream->ops;
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(stream);
@@ -197,8 +203,6 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 }
 
@@ -231,21 +235,19 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
 static struct bt_iso_chan_ops broadcast_source_iso_ops = {
-	.sent		= broadcast_source_iso_sent,
-	.connected	= broadcast_source_iso_connected,
-	.disconnected	= broadcast_source_iso_disconnected,
+	.sent = broadcast_source_iso_sent,
+	.connected = broadcast_source_iso_connected,
+	.disconnected = broadcast_source_iso_disconnected,
 };
 
-bool bt_bap_ep_is_broadcast_src(const struct bt_bap_ep *ep)
+bool bt_bap_broadcast_source_has_ep(const struct bt_bap_ep *ep)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_source_eps); i++) {
-		if (PART_OF_ARRAY(broadcast_source_eps[i], ep)) {
+		if (IS_ARRAY_ELEMENT(broadcast_source_eps[i], ep)) {
 			return true;
 		}
 	}
@@ -292,7 +294,7 @@ static struct bt_bap_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t i
 
 static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 					 struct bt_audio_codec_cfg *codec_cfg,
-					 struct bt_audio_codec_qos *qos,
+					 struct bt_bap_qos_cfg *qos,
 					 struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_iso *iso;
@@ -312,9 +314,10 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_iso_init(iso, &broadcast_source_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
+	stream->iso = &iso->chan;
 
-	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
-	bt_bap_iso_configure_data_path(ep, codec_cfg);
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -323,6 +326,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = qos;
+	stream->group = source;
 	ep->broadcast_source = source;
 
 	return 0;
@@ -439,8 +443,7 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	 */
 	streams_encoded = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		if (!encode_base_subgroup(subgroup,
-					  &source->stream_data[streams_encoded],
+		if (!encode_base_subgroup(subgroup, &source->stream_data[streams_encoded],
 					  &streams_encoded, buf)) {
 			return false;
 		}
@@ -449,55 +452,24 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	return true;
 }
 
-static int generate_broadcast_id(struct bt_bap_broadcast_source *source)
-{
-	bool unique;
-
-	do {
-		int err;
-
-		err = bt_rand(&source->broadcast_id,
-			      BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
-			return err;
-		}
-
-		/* Ensure uniqueness */
-		unique = true;
-		for (int i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
-			if (&broadcast_sources[i] == source) {
-				continue;
-			}
-
-			if (broadcast_sources[i].broadcast_id == source->broadcast_id) {
-				unique = false;
-				break;
-			}
-		}
-	} while (!unique);
-
-	return 0;
-}
-
 static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup,
-					  next_subgroup, _node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup, next_subgroup, _node) {
 		struct bt_bap_stream *stream, *next_stream;
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream,
-						  next_stream, _node) {
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
+			stream->iso = NULL;
 			stream->ep->stream = NULL;
+			stream->ep->broadcast_source = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
 			stream->qos = NULL;
 			stream->group = NULL;
 
-			sys_slist_remove(&subgroup->streams, NULL,
-					 &stream->_node);
+			sys_slist_remove(&subgroup->streams, NULL, &stream->_node);
 		}
 		sys_slist_remove(&source->subgroups, NULL, &subgroup->_node);
 	}
@@ -508,7 +480,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
 					 const struct bt_bap_broadcast_source *source)
 {
-	const struct bt_audio_codec_qos *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -645,7 +617,7 @@ static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_s
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 			if (stream->ep != NULL) {
-				state = MAX(state, stream->ep->status.state);
+				state = MAX(state, stream->ep->state);
 			}
 		}
 	}
@@ -715,7 +687,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t stream_count;
 	uint8_t index;
 	uint8_t bis_count;
@@ -806,8 +778,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				bis_count++;
 			}
 
-			err = broadcast_source_setup_stream(index, stream,
-							    codec_cfg, qos, source);
+			err = broadcast_source_setup_stream(index, stream, codec_cfg, qos, source);
 			if (err != 0) {
 				LOG_DBG("Failed to setup streams[%zu]: %d", i, err);
 				broadcast_source_cleanup(source);
@@ -829,12 +800,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 		}
 	}
 
-	err = generate_broadcast_id(source);
-	if (err != 0) {
-		LOG_DBG("Could not generate broadcast id: %d", err);
-		return err;
-	}
-
 	/* Finalize state changes and store information */
 	broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	source->qos = qos;
@@ -851,8 +816,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 			     sizeof(source->broadcast_code));
 	}
 
-	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
-
 	*out_source = source;
 
 	return 0;
@@ -863,7 +826,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t subgroup_cnt;
 	uint8_t bis_count;
 
@@ -1007,7 +970,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-			bt_bap_iso_configure_data_path(stream->ep, codec_cfg);
 		}
 	}
 
@@ -1019,7 +981,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			struct bt_iso_chan_io_qos *iso_qos;
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
-			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
+			bt_bap_qos_cfg_to_iso_qos(iso_qos, qos);
 			stream->qos = qos;
 		}
 	}
@@ -1076,7 +1038,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv *adv)
 {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
-	struct bt_iso_big_create_param param = { 0 };
+	struct bt_iso_big_create_param param = {0};
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
 	struct bt_bap_stream *stream;
@@ -1115,8 +1077,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	param.latency = source->qos->latency;
 	param.encryption = source->encryption;
 	if (param.encryption) {
-		(void)memcpy(param.bcode, source->broadcast_code,
-			     sizeof(param.bcode));
+		(void)memcpy(param.bcode, source->broadcast_code, sizeof(param.bcode));
 	}
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	param.irc = source->irc;
@@ -1162,13 +1123,11 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 		return -EALREADY;
 	}
 
-	err =  bt_iso_big_terminate(source->big);
+	err = bt_iso_big_terminate(source->big);
 	if (err) {
 		LOG_DBG("Failed to terminate BIG (err %d)", err);
 		return err;
 	}
-
-	source->big = NULL;
 
 	return 0;
 }
@@ -1192,32 +1151,6 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 
 	/* Reset the broadcast source */
 	broadcast_source_cleanup(source);
-
-	return 0;
-}
-
-int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-				   uint32_t *const broadcast_id)
-{
-	enum bt_bap_ep_state broadcast_state;
-
-	CHECKIF(source == NULL) {
-		LOG_DBG("source is NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(broadcast_id == NULL) {
-		LOG_DBG("broadcast_id is NULL");
-		return -EINVAL;
-	}
-
-	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_state == BT_BAP_EP_STATE_IDLE) {
-		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
-		return -EBADMSG;
-	}
-
-	*broadcast_id = source->broadcast_id;
 
 	return 0;
 }
@@ -1247,6 +1180,136 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 		LOG_DBG("base_buf %p with size %u not large enough", base_buf, base_buf->size);
 
 		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+static struct bt_bap_broadcast_source *get_broadcast_source_by_big(const struct bt_iso_big *big)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].big == big) {
+			return &broadcast_sources[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void big_started_cb(struct bt_iso_big *big)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->started != NULL) {
+			listener->started(source);
+		}
+	}
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	source->big = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->stopped != NULL) {
+			listener->stopped(source, reason);
+		}
+	}
+}
+
+int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	static bool iso_big_cb_registered;
+
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bap_broadcast_source_cbs, &cb->_node, NULL)) {
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	if (!iso_big_cb_registered) {
+		static struct bt_iso_big_cb big_cb = {
+			.started = big_started_cb,
+			.stopped = big_stopped_cb,
+		};
+		const int err = bt_iso_big_register_cb(&big_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register ISO BIG callbacks: %d", err);
+		}
+
+		iso_big_cb_registered = true;
+	}
+
+	sys_slist_append(&bap_broadcast_source_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bap_broadcast_source_cbs, &cb->_node)) {
+		LOG_DBG("cb %p is not registered", cb);
+
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data)
+{
+	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
+
+	if (source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup, next_subgroup, _node) {
+		struct bt_bap_stream *stream, *next_stream;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
+			const bool stop = func(stream, user_data);
+
+			if (stop) {
+				return -ECANCELED;
+			}
+		}
 	}
 
 	return 0;

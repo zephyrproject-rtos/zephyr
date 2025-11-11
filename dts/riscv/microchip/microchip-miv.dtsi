@@ -11,12 +11,14 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "microchip,miv", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32ima_zicsr_zifencei";
+
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -46,6 +48,13 @@
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic 3>, <&hlic 7>;
 			reg = <0x44000000 0x10000>;
+		};
+
+		mtimer: timer@4400bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0x4400bff8 0x8 0x44004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: interrupt-controller@40000000 {

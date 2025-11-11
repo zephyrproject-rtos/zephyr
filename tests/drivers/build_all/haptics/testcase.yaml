@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.haptics.build:
+    tags:
+      - drivers
+      - haptics
+    build_only: true
+    platform_allow:
+      - native_sim

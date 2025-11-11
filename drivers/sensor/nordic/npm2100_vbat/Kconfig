@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NPM2100_VBAT
+	bool "NPM2100 Battery Voltage"
+	default y
+	depends on DT_HAS_NORDIC_NPM2100_VBAT_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable NPM2100 battery voltage driver.

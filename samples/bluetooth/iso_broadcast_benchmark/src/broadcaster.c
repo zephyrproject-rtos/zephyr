@@ -1,17 +1,24 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/console/console.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 
 #define DEFAULT_BIS_RTN           2
@@ -66,7 +73,18 @@ static const struct bt_data ad[] = {
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	LOG_INF("ISO Channel %p connected", chan);
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	if (err != 0) {
+		printk("Failed to setup ISO TX data path: %d\n", err);
+	}
 
 	connected_bis++;
 	if (connected_bis == big_create_param.num_bis) {
@@ -81,7 +99,7 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	       chan, reason);
 
 	connected_bis--;
-	if (connected_bis == big_create_param.num_bis) {
+	if (connected_bis == 0) {
 		k_sem_give(&sem_big_term);
 	}
 }
@@ -589,7 +607,7 @@ static void iso_timer_timeout(struct k_work *work)
 	k_work_reschedule(&iso_send_work, K_USEC(big_create_param.interval - 100));
 
 	for (int i = 0; i < big_create_param.num_bis; i++) {
-		buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
+		buf = net_buf_alloc(&bis_tx_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Could not allocate buffer");
 			return;
@@ -613,13 +631,60 @@ static void iso_timer_timeout(struct k_work *work)
 	seq_num++;
 }
 
+static uint16_t calc_adv_interval(uint32_t sdu_interval_us)
+{
+	/* Default to 6 times the SDU interval and then reduce until we reach a reasonable maximum
+	 * advertising interval (BT_GAP_PER_ADV_SLOW_INT_MAX)
+	 * sdu_interval_us can never be larger than 1048ms (BT_ISO_SDU_INTERVAL_MAX)
+	 * so a multiple of it will always be possible to keep under BT_GAP_PER_ADV_SLOW_INT_MAX
+	 * (1200ms)
+	 */
+
+	/* Convert from microseconds to advertising interval units (0.625ms)*/
+	const uint32_t interval = BT_GAP_US_TO_ADV_INTERVAL(sdu_interval_us);
+	uint32_t adv_interval = interval * 6U;
+
+	/* Ensure that the adv interval is between BT_GAP_PER_ADV_FAST_INT_MIN_1 and
+	 * BT_GAP_PER_ADV_SLOW_INT_MAX for the sake of interopability
+	 */
+	while (adv_interval < BT_GAP_PER_ADV_FAST_INT_MIN_1) {
+		adv_interval += interval;
+	}
+
+	while (adv_interval > BT_GAP_PER_ADV_SLOW_INT_MAX) {
+		adv_interval -= interval;
+	}
+
+	/* If we cannot convert back then it's not a lossless conversion */
+	if (big_create_param.framing == BT_ISO_FRAMING_UNFRAMED &&
+	    BT_GAP_ADV_INTERVAL_TO_US(interval) != sdu_interval_us) {
+		LOG_INF("Advertising interval of 0x04%x is not a multiple of the advertising "
+			"interval unit (0.625 ms) and may be subpar. Suggest to adjust SDU "
+			"interval %u to be a multiple of 0.625 ms",
+			adv_interval, sdu_interval_us);
+	}
+
+	return adv_interval;
+}
+
 static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 {
+	/* Some controllers work best when Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	const uint16_t adv_interval = calc_adv_interval(big_create_param.interval);
+	const uint16_t ext_adv_interval = adv_interval - BT_GAP_MS_TO_ADV_INTERVAL(10U);
+	const struct bt_le_adv_param *ext_adv_param =
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, ext_adv_interval, ext_adv_interval, NULL);
+	const struct bt_le_per_adv_param *per_adv_param =
+		BT_LE_PER_ADV_PARAM(adv_interval, adv_interval, BT_LE_PER_ADV_OPT_NONE);
 	int err;
 
 	/* Create a non-connectable advertising set */
 	LOG_INF("Creating Extended Advertising set");
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
+	err = bt_le_ext_adv_create(ext_adv_param, NULL, adv);
 	if (err != 0) {
 		LOG_ERR("Failed to create advertising set (err %d)", err);
 		return err;
@@ -629,12 +694,12 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		LOG_ERR("Failed to set advertising data (err %d)", err);
-		return 0;
+		return err;
 	}
 
 	LOG_INF("Setting Periodic Advertising parameters");
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
+	err = bt_le_per_adv_set_param(*adv, per_adv_param);
 	if (err != 0) {
 		LOG_ERR("Failed to set periodic advertising parameters (err %d)",
 			err);
@@ -687,32 +752,41 @@ static int delete_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 {
 	int err;
 
-	err = bt_iso_big_terminate(*big);
-	if (err != 0) {
-		LOG_ERR("Failed to terminate BIG (err %d)", err);
-		return err;
-	}
-	*big = NULL;
-
-	err = bt_le_per_adv_stop(*adv);
-	if (err != 0) {
-		LOG_ERR("Failed to stop periodic advertising (err %d)", err);
-		return err;
-	}
-
-	err = bt_le_ext_adv_stop(*adv);
-	if (err != 0) {
-		LOG_ERR("Failed to stop advertising (err %d)", err);
-		return err;
+	if (*big != NULL) {
+		err = bt_iso_big_terminate(*big);
+		if (err != 0) {
+			LOG_ERR("Failed to terminate BIG (err %d)", err);
+			return err;
+		}
+		err = k_sem_take(&sem_big_term, K_FOREVER);
+		if (err != 0) {
+			LOG_ERR("failed to take sem_big_term (err %d)", err);
+			return err;
+		}
+		*big = NULL;
 	}
 
-	err = bt_le_ext_adv_delete(*adv);
-	if (err != 0) {
-		LOG_ERR("Failed to delete advertiser (err %d)", err);
-		return err;
-	}
+	if (*adv != NULL) {
+		err = bt_le_per_adv_stop(*adv);
+		if (err != 0) {
+			LOG_ERR("Failed to stop periodic advertising (err %d)", err);
+			return err;
+		}
 
-	*adv = NULL;
+		err = bt_le_ext_adv_stop(*adv);
+		if (err != 0) {
+			LOG_ERR("Failed to stop advertising (err %d)", err);
+			return err;
+		}
+
+		err = bt_le_ext_adv_delete(*adv);
+		if (err != 0) {
+			LOG_ERR("Failed to delete advertiser (err %d)", err);
+			return err;
+		}
+
+		*adv = NULL;
+	}
 
 	return 0;
 }
@@ -758,7 +832,15 @@ int test_run_broadcaster(void)
 
 	err = create_big(&adv, &big);
 	if (err) {
+		int del_err;
+
 		LOG_ERR("Could not create BIG: %d", err);
+
+		del_err = delete_big(&adv, &big);
+		if (del_err) {
+			LOG_ERR("Could not delete BIG: %d", del_err);
+		}
+
 		return err;
 	}
 

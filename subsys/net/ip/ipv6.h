@@ -85,7 +85,7 @@ const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state);
  */
 struct net_ipv6_nbr_data {
 	/** Any pending packet waiting ND to finish. */
-	struct net_pkt *pending;
+	struct k_fifo pending_queue;
 
 	/** IPv6 address. */
 	struct in6_addr addr;
@@ -109,7 +109,10 @@ struct net_ipv6_nbr_data {
 	uint8_t ns_count;
 
 	/** Is the neighbor a router */
-	bool is_router;
+	bool is_router : 1;
+
+	/** Have we initialized the pending queue */
+	bool pending_queue_initialized : 1;
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
 	/** Stale counter used to removed oldest nbr in STALE state,
@@ -197,48 +200,6 @@ static inline int net_ipv6_finalize(struct net_pkt *pkt,
 	return -ENOTSUP;
 }
 #endif
-
-/**
- * @brief Join a given multicast group.
- *
- * @param iface Network interface where join message is sent
- * @param addr Multicast group to join
- *
- * @return Return 0 if joining was done, <0 otherwise.
- */
-#if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
-#else
-static inline int
-net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
-
-	return -ENOTSUP;
-}
-#endif /* CONFIG_NET_IPV6_MLD */
-
-/**
- * @brief Leave a given multicast group.
- *
- * @param iface Network interface where leave message is sent
- * @param addr Multicast group to leave
- *
- * @return Return 0 if leaving is done, <0 otherwise.
- */
-#if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
-#else
-static inline int
-net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
-
-	return -ENOTSUP;
-}
-#endif /* CONFIG_NET_IPV6_MLD */
 
 /**
  * @brief Send MLDv2 report message with a single entry.
@@ -683,7 +644,7 @@ static inline int net_ipv6_pe_init(struct net_if *iface)
 #endif /* CONFIG_NET_IPV6_PE */
 
 typedef void (*net_ipv6_pe_filter_cb_t)(struct in6_addr *prefix,
-					bool is_blacklist,
+					bool is_denylist,
 					void *user_data);
 
 /**

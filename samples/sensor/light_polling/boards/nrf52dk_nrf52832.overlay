@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	aliases {
+		light-sensor = &grove_light;
+	};
+
+	grove_light: grove_light {
+		compatible = "seeed,grove-light";
+		io-channels = <&arduino_adc 0>;
+	};
+};

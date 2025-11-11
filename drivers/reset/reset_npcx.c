@@ -66,7 +66,7 @@ static int reset_npcx_line_toggle(const struct device *dev, uint32_t id)
 	return ret;
 }
 
-static const struct reset_driver_api reset_npcx_driver_api = {
+static DEVICE_API(reset, reset_npcx_driver_api) = {
 	.line_toggle = reset_npcx_line_toggle,
 };
 

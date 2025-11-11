@@ -656,7 +656,7 @@ static int fxos8700_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api fxos8700_driver_api = {
+static DEVICE_API(sensor, fxos8700_driver_api) = {
 	.sample_fetch = fxos8700_sample_fetch,
 	.channel_get = fxos8700_channel_get,
 	.attr_set = fxos8700_attr_set,
@@ -744,7 +744,7 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 
 #define FXOS8700_CONFIG_SPI(n)						\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(n,		\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) },	\
+			SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },	\
 		.ops = &fxos8700_spi_ops,				\
 		.power_mode =  DT_INST_PROP(n, power_mode),		\
 		.range = DT_INST_PROP(n, range),			\

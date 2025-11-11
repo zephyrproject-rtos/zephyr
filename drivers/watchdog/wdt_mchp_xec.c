@@ -166,7 +166,7 @@ static void wdt_xec_isr(const struct device *dev)
 	regs->IEN &= ~MCHP_WDT_IEN_EVENT_IRQ_EN;
 }
 
-static const struct wdt_driver_api wdt_xec_api = {
+static DEVICE_API(wdt, wdt_xec_api) = {
 	.setup = wdt_xec_setup,
 	.disable = wdt_xec_disable,
 	.install_timeout = wdt_xec_install_timeout,

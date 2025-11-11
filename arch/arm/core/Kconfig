@@ -16,6 +16,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_HAS_RAMFUNC_SUPPORT
+	select ARCH_HAS_VECTOR_TABLE_RELOCATION if CPU_CORTEX_M_HAS_VTOR
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select SWAP_NONATOMIC
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
@@ -166,10 +167,13 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via z_arm_nmi_set_handler().
 
 config PLATFORM_SPECIFIC_INIT
-	bool "Platform (SOC) specific startup hook"
+	bool "Platform (SOC) specific startup hook [DEPRECATED]"
+	select DEPRECATED
 	help
 	  The platform specific initialization code (z_arm_platform_init) is
 	  executed at the beginning of the startup code (__start).
+
+	  This option is deprecated, use SOC_RESET_HOOK instead.
 
 config FAULT_DUMP
 	int "Fault dump level"

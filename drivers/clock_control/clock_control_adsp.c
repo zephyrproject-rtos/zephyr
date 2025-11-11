@@ -24,7 +24,7 @@ static int cavs_clock_ctrl_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api cavs_clock_api = {
+static DEVICE_API(clock_control, cavs_clock_api) = {
 	.set_rate = cavs_clock_ctrl_set_rate
 };
 

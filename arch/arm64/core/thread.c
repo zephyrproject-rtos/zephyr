@@ -12,7 +12,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/cpu.h>
 
 /*
@@ -30,7 +30,7 @@
  *   privileged portion of the user stack without touching SP_EL0. This portion
  *   is marked as not user accessible in the MMU/MPU.
  *
- * - a stack guard region will be added bellow the kernel stack when
+ * - a stack guard region will be added below the kernel stack when
  *   ARM64_STACK_PROTECTION is enabled. In this case, SP_EL0 will always point
  *   to the safe exception stack in the kernel space. For the kernel thread,
  *   SP_EL0 will not change always pointing to safe exception stack. For the
@@ -199,3 +199,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	CODE_UNREACHABLE;
 }
 #endif
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}

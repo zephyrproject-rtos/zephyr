@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup can_transceiver
+ * @brief Header file for CAN transceiver driver API
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_TRANSCEIVER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CAN_TRANSCEIVER_H_
 
@@ -15,11 +21,11 @@ extern "C" {
 #endif
 
 /**
- * @brief CAN Transceiver Driver APIs
+ * @brief Interfaces for CAN transceivers
  * @defgroup can_transceiver CAN Transceiver
  * @since 3.1
  * @version 0.1.0
- * @ingroup io_interfaces
+ * @ingroup can_interface
  * @{
  */
 
@@ -65,10 +71,7 @@ __subsystem struct can_transceiver_driver_api {
  */
 static inline int can_transceiver_enable(const struct device *dev, can_mode_t mode)
 {
-	const struct can_transceiver_driver_api *api =
-		(const struct can_transceiver_driver_api *)dev->api;
-
-	return api->enable(dev, mode);
+	return DEVICE_API_GET(can_transceiver, dev)->enable(dev, mode);
 }
 
 /**
@@ -87,10 +90,7 @@ static inline int can_transceiver_enable(const struct device *dev, can_mode_t mo
  */
 static inline int can_transceiver_disable(const struct device *dev)
 {
-	const struct can_transceiver_driver_api *api =
-		(const struct can_transceiver_driver_api *)dev->api;
-
-	return api->disable(dev);
+	return DEVICE_API_GET(can_transceiver, dev)->disable(dev);
 }
 
 /**

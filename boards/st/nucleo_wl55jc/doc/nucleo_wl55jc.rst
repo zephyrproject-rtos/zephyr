@@ -1,7 +1,4 @@
-.. _nucleo_wl55jc_board:
-
-ST Nucleo WL55JC
-################
+.. zephyr:board:: nucleo_wl55jc
 
 Overview
 ********
@@ -36,16 +33,10 @@ power consumption, and features.
   mass storage, Virtual COM port, and debug port
 - Comprehensive free software libraries and examples available with the
   STM32CubeWL MCU Package
-- Support of a wide choice of Integrated Development Environments (IDEs)
-  including IAR Embedded Workbench®, MDK-ARM, and STM32CubeIDE
 - Suitable for rapid prototyping of end nodes based on LoRaWAN, Sigfox, wM-Bus,
   and many other proprietary protocols
 - Fully open hardware platform
 
-
-.. image:: img/nucleo_wl55jc.jpg
-   :align: center
-   :alt: Nucleo WL55JC
 
 More information about the board can be found at the `Nucleo WL55JC website`_.
 
@@ -171,53 +162,7 @@ More information about STM32WL55JC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wl55jc board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock_control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| MPU       | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | LoRa                                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in:
-
-- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc_defconfig`
-- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc.dts`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -258,16 +203,25 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo WL55JC board includes an STLINK-V3 embedded debug tool interface.
+
 Applications for the ``nucleo_wl55jc`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
 ========
 
-Nucleo WL55JC board includes an STLINK-V3 embedded debug tool
-interface.  This interface is supported by the openocd version included in the
-Zephyr SDK since v0.11.0.
-You can also choose the ``stm32cubeprogrammer`` runner.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 
 Flashing an application to Nucleo WL55JC
@@ -275,7 +229,7 @@ Flashing an application to Nucleo WL55JC
 
 Connect the Nucleo WL55JC to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -328,3 +282,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WL55JC reference manual:
    https://www.st.com/resource/en/reference_manual/dm00451556-stm32wl5x-advanced-armbased-32bit-mcus-with-subghz-radio-solution-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

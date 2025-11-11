@@ -1,7 +1,4 @@
-.. _pico_pi:
-
-Pico-Pi i.MX7D - Android Things IoT Development Platform
-#############################################################
+.. zephyr:board:: pico_pi
 
 Overview
 ********
@@ -10,11 +7,6 @@ The i.MX7D SoC is a Hybrid multi-core processor composed of Single Cortex A7
 core and Single Cortex M4 core.
 Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
-
-
-.. image:: pico_pi.jpg
-   :align: center
-   :alt: Pico-Pi i.MX7D
 
 Hardware
 ********
@@ -52,28 +44,7 @@ For more information about the i.MX7 SoC and Pico-Pi i.MX7D, see these reference
 Supported Features
 ==================
 
-The Pico-Pi i.MX7D configuration supports the following hardware features on the
-Cortex M4 Core:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/technexion/pico_pi/pico_pi_mcimx7d_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

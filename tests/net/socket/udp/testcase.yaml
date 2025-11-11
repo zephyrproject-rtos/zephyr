@@ -5,6 +5,7 @@ common:
     - socket
     - udp
   min_ram: 21
+  min_flash: 194
   filter: CONFIG_FULL_LIBC_SUPPORTED
 tests:
   net.socket.udp:
@@ -19,6 +20,12 @@ tests:
   net.socket.udp.pktinfo:
     extra_configs:
       - CONFIG_NET_CONTEXT_RECV_PKTINFO=y
+  net.socket.udp.hoplimit:
+    extra_configs:
+      - CONFIG_NET_CONTEXT_RECV_HOPLIMIT=y
+  net.socket.udp.port_range:
+    extra_configs:
+      - CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE=y
   net.socket.udp.ttl:
     extra_configs:
       - CONFIG_NET_SOCKETS_PACKET=y
@@ -38,3 +45,6 @@ tests:
       - CONFIG_TRACING_BACKEND_POSIX=y
       - CONFIG_TRACING_PACKET_MAX_SIZE=256
       - CONFIG_TRACING_SYNC=y
+  net.socket.udp.v4_mapping_to_v6_enabled:
+    extra_configs:
+      - CONFIG_NET_IPV4_MAPPING_TO_IPV6=y

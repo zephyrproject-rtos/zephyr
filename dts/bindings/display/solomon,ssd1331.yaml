@@ -1,0 +1,96 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1331 display controller
+
+compatible: "solomon,ssd1331"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 63. Typically 64 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 63.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 16MUX to 64MUX, ranges from 15 to 63.
+      Typically same value as height - 1.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase 2 Period (7:4) and Phase 1 Period (3:0).
+
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4).
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0xF0. Note this increases power consumption.
+
+  precharge-time-a:
+    type: int
+    required: true
+    description: Set precharge time for segments A. Typically around 0x70.
+
+  precharge-time-b:
+    type: int
+    required: true
+    description: Set precharge time for segments B. Typically around 0x70.
+
+  precharge-time-c:
+    type: int
+    required: true
+    description: Set precharge time for segments C. Typically around 0x70.
+
+  precharge-voltage:
+    type: int
+    required: true
+    description: Set precharge voltage. A[5:1], from 0 (0.10 x VCC) to 0x3E (0.5 x VCC)
+
+  vcomh-voltage:
+    type: int
+    required: true
+    enum:
+      - 0x0
+      - 0x10
+      - 0x20
+      - 0x30
+      - 0x3E
+    description: Set COM deselect voltage. A[5:1]. 0.44, 0.52, 0.61, 0.71, 0.83 x VCC.
+
+  current-att:
+    type: int
+    required: true
+    description: Set Master current attenuation. A[3:0], from 1/16 to 16/16.
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      - A[0] HTiled or VTiled. Must be 0 for this driver.
+      - A[1] Invert segment order
+      - A[2] Invert ABC segment order
+      - A[3] Left-Right Swap COMs
+      - A[4] Invert COM order
+      - A[5] Stripped odd/even display
+      - A[7:6] Set color format. Must be 0x1 for this driver.
+
+  power-save:
+    type: boolean
+    description: Enable Power Save mode
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting

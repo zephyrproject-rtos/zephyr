@@ -14,23 +14,19 @@
 LOG_MODULE_REGISTER(spi_ambiq_bleif);
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
-#include <am_mcu_apollo.h>
-
-#define PWRCTRL_MAX_WAIT_US 5
-
-typedef int (*ambiq_spi_pwr_func_t)(void);
+#include <soc.h>
 
 struct spi_ambiq_config {
 	uint32_t base;
 	int size;
 	const struct pinctrl_dev_config *pcfg;
-	ambiq_spi_pwr_func_t pwr_func;
 };
 
 struct spi_ambiq_data {
@@ -158,25 +154,29 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 	return 0;
 }
 
-static struct spi_driver_api spi_ambiq_driver_api = {
+static DEVICE_API(spi, spi_ambiq_driver_api) = {
 	.transceive = spi_ambiq_transceive,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_ambiq_release,
 };
 
 static int spi_ambiq_init(const struct device *dev)
 {
 	struct spi_ambiq_data *data = dev->data;
-	const struct spi_ambiq_config *cfg = dev->config;
 	int ret;
 
 #if defined(CONFIG_SPI_AMBIQ_BLEIF_TIMING_TRACE)
+	const struct spi_ambiq_config *cfg = dev->config;
+
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
 #endif /* CONFIG_SPI_AMBIQ_BLEIF_TIMING_TRACE */
 
-	ret = am_hal_ble_initialize((cfg->base - REG_BLEIF_BASEADDR) / cfg->size, &data->BLEhandle);
+	ret = am_hal_ble_initialize(0, &data->BLEhandle);
 	if (ret) {
 		return ret;
 	}
@@ -186,30 +186,20 @@ static int spi_ambiq_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = cfg->pwr_func();
-
 	return ret;
 }
 
 #define AMBIQ_SPI_BLEIF_INIT(n)                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static int pwr_on_ambiq_spi_##n(void)                                                      \
-	{                                                                                          \
-		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
-				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx)};                                    \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
-	DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n, &spi_ambiq_config##n,   \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_ambiq_driver_api);
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n,                     \
+				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+				  &spi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_SPI_BLEIF_INIT)

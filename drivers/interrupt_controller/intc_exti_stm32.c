@@ -2,271 +2,360 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2019-23 Linaro Limited
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief Driver for External interrupt/event controller in STM32 MCUs
+ * @brief STM32 External Interrupt/Event Controller (EXTI) Driver
  */
 
-#define EXTI_NODE DT_INST(0, st_stm32_exti)
-
-#include <zephyr/device.h>
 #include <soc.h>
-#include <stm32_ll_exti.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
-#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "stm32_hsem.h"
+#include "intc_exti_stm32_priv.h"
 
-/** @brief EXTI line ranges hold by a single ISR */
-struct stm32_exti_range {
-	/** Start of the range */
-	uint8_t start;
-	/** Range length */
-	uint8_t len;
-};
+LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+#define IS_VALID_EXTI_LINE_NUM(line_num) ((line_num) < STM32_EXTI_TOTAL_LINES_NUM)
 
-static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
-
-/* wrapper for user callback */
-struct __exti_cb {
-	stm32_exti_callback_t cb;
-	void *data;
-};
-
-/* driver data */
-struct stm32_exti_data {
-	/* per-line callbacks */
-	struct __exti_cb cb[NUM_EXTI_LINES];
-};
-
-void stm32_exti_enable(int line)
-{
-	int irqnum = 0;
-
-	if (line >= NUM_EXTI_LINES) {
-		__ASSERT_NO_MSG(line);
-	}
-
-	/* Get matching exti irq provided line thanks to irq_table */
-	irqnum = exti_irq_table[line];
-	if (irqnum == 0xFF) {
-		__ASSERT_NO_MSG(line);
-	}
-
-	/* Enable requested line interrupt */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(BIT((uint32_t)line));
-#else
-	LL_EXTI_EnableIT_0_31(BIT((uint32_t)line));
-#endif
-
-	/* Enable exti irq interrupt */
-	irq_enable(irqnum);
-}
-
-void stm32_exti_disable(int line)
-{
-	if (line < 32) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
-#else
-		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
-#endif
-	} else {
-		__ASSERT_NO_MSG(line);
-	}
-}
-
-/**
- * @brief check if interrupt is pending
- *
- * @param line line number
+/*
+ * The boilerplate for COND_CODE_x is needed because the values are not 0/1
  */
-static inline int stm32_exti_is_pending(int line)
-{
-	if (line < 32) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
-			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		return LL_C2_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
-#else
-		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
-#endif
-	} else {
-		__ASSERT_NO_MSG(line);
-		return 0;
+#if STM32_EXTI_TOTAL_LINES_NUM > 32
+#define HAS_LINES_32_63	1
+#if STM32_EXTI_TOTAL_LINES_NUM > 64
+#define HAS_LINES_64_95	1
+#endif /* STM32_EXTI_TOTAL_LINES_NUM > 64 */
+#endif /* STM32_EXTI_TOTAL_LINES_NUM > 32 */
+
+#define EXTI_FN_HANDLER(_fn, line_num, line)					\
+	if (line_num < 32U) {							\
+		_fn(0_31, line);						\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		_fn(32_63, line);						\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		_fn(64_95, line);						\
+))										\
+	} else {								\
+		LOG_ERR("Invalid line number %u", line_num);			\
+		__ASSERT_NO_MSG(0);						\
 	}
-}
 
-/**
- * @brief clear pending interrupt bit
- *
- * @param line line number
- */
-static inline void stm32_exti_clear_pending(int line)
-{
-	if (line < 32) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
-		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
-#else
-		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
-#endif
-	} else {
-		__ASSERT_NO_MSG(line);
+#define EXTI_FN_RET_HANDLER(_fn, ret, line_num, line)				\
+	if (line_num < 32U) {							\
+		*ret = _fn(0_31, line);						\
+IF_ENABLED(HAS_LINES_32_63, (							\
+	} else if (line_num < 64U) {						\
+		*ret = _fn(32_63, line);					\
+))										\
+IF_ENABLED(HAS_LINES_64_95, (							\
+	} else if (line_num < 96U) {						\
+		*ret = _fn(64_95, line);					\
+))										\
+	} else {								\
+		LOG_ERR("Invalid line number %u", line_num);			\
+		__ASSERT_NO_MSG(0);						\
 	}
-}
 
-void stm32_exti_trigger(int line, int trigger)
+
+bool stm32_exti_is_pending(uint32_t line_num)
 {
+	bool ret = false;
+	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
-	if (line >= 32) {
-		__ASSERT_NO_MSG(line);
+	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
+		LOG_ERR("Invalid line number %u", line_num);
+		return false;
 	}
 
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	switch (trigger) {
-	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
-		break;
-	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
-		break;
-	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
-		break;
-	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
-		break;
-	default:
-		__ASSERT_NO_MSG(trigger);
-		break;
-	}
+	/*
+	 * Note: we can't use EXTI_FN_HANDLER here because we care
+	 * about the return value of EXTI_IS_ACTIVE_FLAG.
+	 */
+	EXTI_FN_RET_HANDLER(EXTI_IS_ACTIVE_FLAG, &ret, line_num, line);
+
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return ret;
+}
+
+int stm32_exti_clear_pending(uint32_t line_num)
+{
+	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
+
+	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
+		LOG_ERR("Invalid line number %u", line_num);
+		return -EINVAL;
+	}
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	EXTI_FN_HANDLER(EXTI_CLEAR_FLAG, line_num, line);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return 0;
+}
+
+int stm32_exti_sw_interrupt(uint32_t line_num)
+{
+	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
+
+	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
+		LOG_ERR("Invalid line number %u", line_num);
+		return -EINVAL;
+	}
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	EXTI_FN_HANDLER(EXTI_GENERATE_SWI, line_num, line);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return 0;
+}
+
+/** Enables the peripheral clock required to access EXTI registers */
+static int stm32_exti_enable_clocks(void)
+{
+	/* Initialize to 0 for series where there is nothing to do. */
+	int ret = 0;
+
+#if DT_NODE_HAS_PROP(EXTI_NODE, clocks)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("Clock control device not ready");
+		return -ENODEV;
+	}
+
+	const struct stm32_pclken pclken = {
+		.bus = DT_CLOCKS_CELL(EXTI_NODE, bus),
+		.enr = DT_CLOCKS_CELL(EXTI_NODE, bits)
+	};
+
+	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
+#endif
+	return ret;
 }
 
 /**
- * @brief EXTI ISR handler
- *
- * Check EXTI lines in exti_range for pending interrupts
- *
- * @param exti_range Pointer to a exti_range structure
- */
-static void stm32_exti_isr(const void *exti_range)
-{
-	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
-	const struct stm32_exti_range *range = exti_range;
-	int line;
-
-	/* see which bits are set */
-	for (uint8_t i = 0; i <= range->len; i++) {
-		line = range->start + i;
-		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line) != 0) {
-			/* clear pending interrupt */
-			stm32_exti_clear_pending(line);
-
-			/* run callback only if one is registered */
-			if (!data->cb[line].cb) {
-				continue;
-			}
-
-			data->cb[line].cb(line, data->cb[line].data);
-		}
-	}
-}
-
-static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
-{
-	for (int i = 0; i < len; i++) {
-		exti_irq_table[start + i] = irqn;
-	}
-}
-
-/* This macro:
- * - populates line_range_x from line_range dt property
- * - fill exti_irq_table through stm32_fill_irq_table()
- * - calls IRQ_CONNECT for each irq & matching line_range
- */
-
-#define STM32_EXTI_INIT(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {	\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	      \
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))) \
-	};								\
-	stm32_fill_irq_table(line_range_##idx.start,			\
-			     line_range_##idx.len,			\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));		\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			\
-		DT_IRQ_BY_IDX(node_id, idx, priority),			\
-		stm32_exti_isr, &line_range_##idx,			\
-		0);
-
-/**
- * @brief initialize EXTI device driver
+ * @brief Initializes the EXTI interrupt controller driver
  */
 static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
-			     interrupt_names,
-			     STM32_EXTI_INIT);
-
-	return 0;
+	return stm32_exti_enable_clocks();
 }
-
-static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-		 NULL,
-		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
 
 /**
- * @brief set & unset for the interrupt callbacks
+ * @brief Enable EXTI interrupts.
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
  */
-int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
+static void stm32_exti_enable_it(uint32_t line_num, uint32_t line)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
+	EXTI_FN_HANDLER(EXTI_ENABLE_IT, line_num, line);
+}
 
-	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
-		return 0;
+/**
+ * @brief Disable EXTI interrupts.
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_disable_it(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_DISABLE_IT, line_num, line);
+}
+
+/**
+ * @brief Enables rising trigger for specified EXTI line
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_enable_rising_trig(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_ENABLE_RISING_TRIG, line_num, line);
+}
+
+/**
+ * @brief Disables rising trigger for specified EXTI line
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_disable_rising_trig(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_DISABLE_RISING_TRIG, line_num, line);
+}
+
+/**
+ * @brief Enables falling trigger for specified EXTI line
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void  stm32_exti_enable_falling_trig(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_ENABLE_FALLING_TRIG, line_num, line);
+}
+
+/**
+ * @brief Disables falling trigger for specified EXTI line
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_disable_falling_trig(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_DISABLE_FALLING_TRIG, line_num, line);
+}
+
+/**
+ * @brief Selects EXTI trigger mode
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ * @param mode	EXTI mode
+ */
+static void stm32_exti_select_line_trigger(uint32_t line_num, uint32_t line,
+					   uint32_t trg)
+{
+	switch (trg) {
+	case STM32_EXTI_TRIG_NONE:
+		stm32_exti_disable_rising_trig(line_num, line);
+		stm32_exti_disable_falling_trig(line_num, line);
+		break;
+	case STM32_EXTI_TRIG_RISING:
+		stm32_exti_enable_rising_trig(line_num, line);
+		stm32_exti_disable_falling_trig(line_num, line);
+		break;
+	case STM32_EXTI_TRIG_FALLING:
+		stm32_exti_enable_falling_trig(line_num, line);
+		stm32_exti_disable_rising_trig(line_num, line);
+		break;
+	case STM32_EXTI_TRIG_BOTH:
+		stm32_exti_enable_rising_trig(line_num, line);
+		stm32_exti_enable_falling_trig(line_num, line);
+		break;
+	default:
+		LOG_ERR("Unsupported EXTI trigger 0x%X", trg);
+		break;
+	}
+}
+
+/**
+ * @brief Enable EXTI event.
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_enable_event(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_ENABLE_EVENT, line_num, line);
+}
+
+/**
+ * @brief Disable EXTI interrupts.
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ */
+static void stm32_exti_disable_event(uint32_t line_num, uint32_t line)
+{
+	EXTI_FN_HANDLER(EXTI_DISABLE_EVENT, line_num, line);
+}
+
+/**
+ * @brief Enables external interrupt/event for specified EXTI line
+ *
+ * @param line_num	EXTI line number
+ * @param line	LL EXTI line
+ * @param mode	EXTI mode
+ */
+static void stm32_exti_set_mode(uint32_t line_num, uint32_t line,
+				stm32_exti_mode mode)
+{
+	switch (mode) {
+	case STM32_EXTI_MODE_NONE:
+		stm32_exti_disable_event(line_num, line);
+		stm32_exti_disable_it(line_num, line);
+		break;
+	case STM32_EXTI_MODE_IT:
+		stm32_exti_disable_event(line_num, line);
+		stm32_exti_enable_it(line_num, line);
+		break;
+	case STM32_EXTI_MODE_EVENT:
+		stm32_exti_disable_it(line_num, line);
+		stm32_exti_enable_event(line_num, line);
+		break;
+	case STM32_EXTI_MODE_BOTH:
+		stm32_exti_enable_it(line_num, line);
+		stm32_exti_enable_event(line_num, line);
+		break;
+	default:
+		LOG_ERR("Unsupported EXTI mode %u", mode);
+		break;
+	}
+}
+
+int stm32_exti_enable(uint32_t line_num, stm32_exti_trigger_type trigger,
+		      stm32_exti_mode mode)
+{
+	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
+
+	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
+		LOG_ERR("Invalid line number %u", line_num);
+		return -EINVAL;
 	}
 
-	/* if callback already exists/maybe-running return busy */
-	if (data->cb[line].cb != NULL) {
-		return -EBUSY;
-	}
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	data->cb[line].cb = cb;
-	data->cb[line].data = arg;
+	stm32_exti_select_line_trigger(line_num, line, trigger);
+	stm32_exti_set_mode(line_num, line, mode);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 
 	return 0;
 }
 
-void stm32_exti_unset_callback(int line)
+int stm32_exti_disable(uint32_t line_num)
 {
-	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-	struct stm32_exti_data *data = dev->data;
+	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
-	data->cb[line].cb = NULL;
-	data->cb[line].data = NULL;
+	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
+		LOG_ERR("Invalid line number %u", line_num);
+		return -EINVAL;
+	}
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	stm32_exti_set_mode(line_num, line, STM32_EXTI_MODE_NONE);
+	stm32_exti_select_line_trigger(line_num, line, STM32_EXTI_TRIG_NONE);
+
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+
+	return 0;
 }
+
+DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
+	NULL, NULL, NULL,
+	PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+	NULL);

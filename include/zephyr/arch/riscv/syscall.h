@@ -158,7 +158,7 @@ static inline bool arch_is_user_context(void)
 	}
 
 	/* Defined in arch/riscv/core/thread.c */
-	extern __thread uint8_t is_user_mode;
+	extern Z_THREAD_LOCAL uint8_t is_user_mode;
 
 	return is_user_mode != 0;
 }

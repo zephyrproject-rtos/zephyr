@@ -127,6 +127,13 @@ application-provided callback is responsible for doing the underlying
 allocation from one of the managed heaps, and may use the
 configuration parameter in any way it likes to make that decision.
 
+For modifying the size of an allocated buffer (whether shrinking
+or enlarging it), you can use the
+:c:func:`sys_multi_heap_realloc` and
+:c:func:`sys_multi_heap_aligned_realloc` APIs.  If the buffer cannot be
+enlarged on the heap where it currently resides,
+any of the eligible heaps specified by the configuration parameter may be used.
+
 When unused, a multi heap may be freed via
 :c:func:`sys_multi_heap_free`.  The application does not need to pass
 a configuration parameter.  Memory allocated from any of the managed

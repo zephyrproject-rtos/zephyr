@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2021 Lexmark International, Inc.
- * Copyright (c) 2023 Arm Limited
+ * Copyright (c) 2023, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,22 +15,22 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/llext/symbol.h>
-#include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
 #include <cmsis_core.h>
+#include <zephyr/random/random.h>
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
-#define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \
-				 MPU_GUARD_ALIGN_AND_SIZE)
+#define FP_GUARD_EXTRA_SIZE (MPU_GUARD_ALIGN_AND_SIZE_FLOAT - MPU_GUARD_ALIGN_AND_SIZE)
 #else
-#define FP_GUARD_EXTRA_SIZE	0
+#define FP_GUARD_EXTRA_SIZE 0
 #endif
 
 #ifndef EXC_RETURN_FTYPE
 /* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
-#define EXC_RETURN_FTYPE           (0x00000010UL)
+#define EXC_RETURN_FTYPE (0x00000010UL)
 #endif
 
 /* Default last octet of EXC_RETURN, for threads that have not run yet.
@@ -46,6 +46,35 @@
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
+#ifdef CONFIG_USERSPACE
+static void setup_priv_stack(struct k_thread *thread)
+{
+	/* Set up privileged stack before entering user mode */
+	thread->arch.priv_stack_start = (uint32_t)z_priv_stack_find(thread->stack_obj);
+
+	/* CONFIG_PRIVILEGED_STACK_SIZE does not account for MPU_GUARD_ALIGN_AND_SIZE or
+	 * MPU_GUARD_ALIGN_AND_SIZE_FLOAT. Therefore, we must compute priv_stack_end here before
+	 * adjusting priv_stack_start for the mpu guard alignment
+	 */
+	thread->arch.priv_stack_end = thread->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/* Stack guard area reserved at the bottom of the thread's
+	 * privileged stack. Adjust the available (writable) stack
+	 * buffer area accordingly.
+	 */
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	thread->arch.priv_stack_start +=
+		((thread->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0)
+			? MPU_GUARD_ALIGN_AND_SIZE_FLOAT
+			: MPU_GUARD_ALIGN_AND_SIZE;
+#else
+	thread->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+#endif /* CONFIG_MPU_STACK_GUARD */
+}
+#endif
+
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -58,9 +87,8 @@ K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
  * addresses, we have to unset it manually before storing it in the 'pc' field
  * of the ESF.
  */
-void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     char *stack_ptr, k_thread_entry_t entry,
-		     void *p1, void *p2, void *p3)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
+		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
 	struct __basic_sf *iframe;
 
@@ -89,7 +117,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
 #if defined(CONFIG_USERSPACE)
+	thread->arch.priv_stack_start = 0;
 	if ((thread->base.user_options & K_USER) != 0) {
+		setup_priv_stack(thread);
+		iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, thread->arch.priv_stack_end);
 		iframe->pc = (uint32_t)arch_user_mode_enter;
 	} else {
 		iframe->pc = (uint32_t)z_thread_entry;
@@ -105,8 +136,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe->a3 = (uint32_t)p2;
 	iframe->a4 = (uint32_t)p3;
 
-	iframe->xpsr =
-		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
+	iframe->xpsr = 0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
 	thread->callee_saved.psp = (uint32_t)iframe;
 	thread->arch.basepri = 0;
@@ -121,9 +151,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
 	}
 #endif
-#if defined(CONFIG_USERSPACE)
-	thread->arch.priv_stack_start = 0;
 #endif
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/* Generate PAC key and save it in thread context to be set later
+	 * when the thread is actually switched in
+	 */
+	sys_csrand_get(&thread->arch.pac_keys, sizeof(struct pac_keys));
 #endif
 	/*
 	 * initial values in all other registers/thread entries are
@@ -131,52 +164,42 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 }
 
-#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) \
-	&& defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
-static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
-	bool use_large_guard)
+static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread, bool use_large_guard)
 {
 	if (use_large_guard) {
 		/* Switch to use a large MPU guard if not already. */
-		if ((thread->arch.mode &
-			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0) {
+		if ((thread->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0) {
 			/* Default guard size is used. Update required. */
 			thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
 #if defined(CONFIG_USERSPACE)
 			if (thread->arch.priv_stack_start) {
 				/* User thread */
-				thread->arch.priv_stack_start +=
-					FP_GUARD_EXTRA_SIZE;
+				thread->arch.priv_stack_start += FP_GUARD_EXTRA_SIZE;
 			} else
 #endif /* CONFIG_USERSPACE */
 			{
 				/* Privileged thread */
-				thread->stack_info.start +=
-					FP_GUARD_EXTRA_SIZE;
-				thread->stack_info.size -=
-					FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.start += FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.size -= FP_GUARD_EXTRA_SIZE;
 			}
 		}
 	} else {
 		/* Switch to use the default MPU guard size if not already. */
-		if ((thread->arch.mode &
-			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
+		if ((thread->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
 			/* Large guard size is used. Update required. */
 			thread->arch.mode &= ~Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
 #if defined(CONFIG_USERSPACE)
 			if (thread->arch.priv_stack_start) {
 				/* User thread */
-				thread->arch.priv_stack_start -=
-					FP_GUARD_EXTRA_SIZE;
+				thread->arch.priv_stack_start -= FP_GUARD_EXTRA_SIZE;
 			} else
 #endif /* CONFIG_USERSPACE */
 			{
 				/* Privileged thread */
-				thread->stack_info.start -=
-					FP_GUARD_EXTRA_SIZE;
-				thread->stack_info.size +=
-					FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.start -= FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.size += FP_GUARD_EXTRA_SIZE;
 			}
 		}
 	}
@@ -190,7 +213,7 @@ static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
 uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread)
 {
 	if (((thread->base.user_options & K_FP_REGS) != 0) ||
-		((thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0)) {
+	    ((thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0)) {
 		/* The thread has been pre-tagged (at creation or later) with
 		 * K_FP_REGS, i.e. it is expected to be using the FPU registers
 		 * (if not already). Activate lazy stacking and program a large
@@ -226,13 +249,10 @@ uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread)
 #endif
 
 #ifdef CONFIG_USERSPACE
-FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
-					void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void *p3)
 {
+	uint32_t sp_is_priv = 1;
 
-	/* Set up privileged stack before entering user mode */
-	_current->arch.priv_stack_start =
-		(uint32_t)z_priv_stack_find(_current->stack_obj);
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_THREAD_STACK_INFO)
 	/* We're dropping to user mode which means the guard area is no
@@ -249,27 +269,28 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
 	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_THREAD_STACK_INFO */
-
-	/* Stack guard area reserved at the bottom of the thread's
-	 * privileged stack. Adjust the available (writable) stack
-	 * buffer area accordingly.
-	 */
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	_current->arch.priv_stack_start +=
-		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
-		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
-#else
-	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-	z_arm_userspace_enter(user_entry, p1, p2, p3,
-			     (uint32_t)_current->stack_info.start,
-			     _current->stack_info.size -
-			     _current->stack_info.delta);
+	/* 2 ways how arch_user_mode_enter is called:
+	 * - called as part of context switch from z_arm_pendsv, in this case privileged stack is
+	 *   already setup and stack pointer points to privileged stack.
+	 * - called directly from k_thread_user_mode_enter, in this case privileged stack is not
+	 *   setup and stack pointer points to user stack.
+	 *
+	 * When called from k_thread_user_mode_enter, we need to check and setup the privileged
+	 * stack and then instruct z_arm_userspace_enter to change the PSP to the privileged stack.
+	 * Note that we do not change the PSP in this function to avoid any conflict with compiler's
+	 * sequence which has already pushed stuff on the user stack.
+	 */
+	if (0 == _current->arch.priv_stack_start) {
+		setup_priv_stack(_current);
+		sp_is_priv = 0;
+	}
+
+	z_arm_userspace_enter(user_entry, p1, p2, p3, (uint32_t)_current->stack_info.start,
+			      _current->stack_info.size - _current->stack_info.delta, sp_is_priv);
 	CODE_UNREACHABLE;
 }
-
 
 bool z_arm_thread_is_in_user_mode(void)
 {
@@ -311,14 +332,12 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 	 * than the default thread stack (ensured by design).
 	 */
 	uint32_t guard_start =
-		((thread->arch.priv_stack_start) &&
-			(__get_PSP() >= thread->arch.priv_stack_start)) ?
-		(uint32_t)thread->arch.priv_stack_start :
-		(uint32_t)thread->stack_obj;
+		((thread->arch.priv_stack_start) && (__get_PSP() >= thread->arch.priv_stack_start))
+			? (uint32_t)thread->arch.priv_stack_start
+			: (uint32_t)thread->stack_obj;
 
 	__ASSERT(thread->stack_info.start == ((uint32_t)thread->stack_obj),
-		"stack_info.start does not point to the start of the"
-		"thread allocated area.");
+		 "stack_info.start does not point to the start of the thread allocated area.");
 #else
 	uint32_t guard_start = thread->stack_info.start;
 #endif
@@ -332,13 +351,11 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 
-#define IS_MPU_GUARD_VIOLATION(guard_start, guard_len, fault_addr, stack_ptr) \
-	((fault_addr != -EINVAL) ? \
-	((fault_addr >= guard_start) && \
-	(fault_addr < (guard_start + guard_len)) && \
-	(stack_ptr < (guard_start + guard_len))) \
-	: \
-	(stack_ptr < (guard_start + guard_len)))
+#define IS_MPU_GUARD_VIOLATION(guard_start, guard_len, fault_addr, stack_ptr)                      \
+	((fault_addr != -EINVAL)                                                                   \
+		 ? ((fault_addr >= guard_start) && (fault_addr < (guard_start + guard_len)) &&     \
+		    (stack_ptr < (guard_start + guard_len)))                                       \
+		 : (stack_ptr < (guard_start + guard_len)))
 
 /**
  * @brief Assess occurrence of current thread's stack corruption
@@ -386,11 +403,10 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 	}
 #endif
 
-#if (defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)) && \
-	defined(CONFIG_MPU_STACK_GUARD)
-	uint32_t guard_len =
-		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
-		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
+#if (defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)) && defined(CONFIG_MPU_STACK_GUARD)
+	uint32_t guard_len = ((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0)
+				     ? MPU_GUARD_ALIGN_AND_SIZE_FLOAT
+				     : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	/* If MPU_STACK_GUARD is not enabled, the guard length is
 	 * effectively zero. Stack overflows may be detected only
@@ -404,10 +420,8 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 		/* User thread */
 		if (z_arm_thread_is_in_user_mode() == false) {
 			/* User thread in privilege mode */
-			if (IS_MPU_GUARD_VIOLATION(
-				thread->arch.priv_stack_start - guard_len,
-					guard_len,
-				fault_addr, psp)) {
+			if (IS_MPU_GUARD_VIOLATION(thread->arch.priv_stack_start - guard_len,
+						   guard_len, fault_addr, psp)) {
 				/* Thread's privilege stack corruption */
 				return thread->arch.priv_stack_start;
 			}
@@ -419,26 +433,21 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 		}
 	} else {
 		/* Supervisor thread */
-		if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start -
-				guard_len,
-				guard_len,
-				fault_addr, psp)) {
+		if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start - guard_len, guard_len,
+					   fault_addr, psp)) {
 			/* Supervisor thread stack corruption */
 			return thread->stack_info.start;
 		}
 	}
 #else /* CONFIG_USERSPACE */
 #if defined(CONFIG_MULTITHREADING)
-	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start - guard_len,
-			guard_len,
-			fault_addr, psp)) {
+	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start - guard_len, guard_len, fault_addr,
+				   psp)) {
 		/* Thread stack corruption */
 		return thread->stack_info.start;
 	}
 #else
-	if (IS_MPU_GUARD_VIOLATION((uint32_t)z_main_stack,
-			guard_len,
-			fault_addr, psp)) {
+	if (IS_MPU_GUARD_VIOLATION((uint32_t)z_main_stack, guard_len, fault_addr, psp)) {
 		/* Thread stack corruption */
 		return (uint32_t)K_THREAD_STACK_BUFFER(z_main_stack);
 	}
@@ -484,10 +493,21 @@ int arch_float_disable(struct k_thread *thread)
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	/* This is not supported in Cortex-M */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
 
 /* Internal function for Cortex-M initialization,
  * applicable to either case of running Zephyr
@@ -522,7 +542,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 {
 	z_arm_prepare_switch_to_main();
 
-	_current = main_thread;
+	z_current_thread_set(main_thread);
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* On Cortex-M, TLS uses a global variable as pointer to
@@ -559,6 +579,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 #endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	__set_PAC_KEY_P((uint32_t *)&main_thread->arch.pac_keys);
+#endif
 	/*
 	 * Set PSP to the highest address of the main stack
 	 * before enabling interrupts and jumping to main.
@@ -572,23 +595,27 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	 * When calling arch_irq_unlock_outlined, LR is lost which is fine since
 	 * we do not intend to return after calling z_thread_entry.
 	 */
-	__asm__ volatile (
-	"mov   r4,  %0\n"	/* force _main to be stored in a register */
-	"msr   PSP, %1\n"	/* __set_PSP(stack_ptr) */
+	__asm__ volatile("mov   r4,  %0\n" /* force _main to be stored in a register */
+			 "msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
 
-	"mov   r0,  #0\n"	/* arch_irq_unlock(0) */
-	"ldr   r3, =arch_irq_unlock_outlined\n"
-	"blx   r3\n"
+			 "movs  r0,  #0\n" /* arch_irq_unlock(0) */
+			 "ldr   r3, =arch_irq_unlock_outlined\n"
+			 "blx   r3\n"
 
-	"mov   r0, r4\n"	/* z_thread_entry(_main, NULL, NULL, NULL) */
-	"mov   r1, #0\n"
-	"mov   r2, #0\n"
-	"mov   r3, #0\n"
-	"ldr   r4, =z_thread_entry\n"
-	"bx    r4\n"		/* We don’t intend to return, so there is no need to link. */
-	: "+r" (_main)
-	: "r" (stack_ptr)
-	: "r0", "r1", "r2", "r3", "r4", "ip", "lr");
+			 "mov   r0, r4\n" /* z_thread_entry(_main, NULL, NULL, NULL) */
+			 "movs  r1, #0\n"
+			 "movs  r2, #0\n"
+			 "movs  r3, #0\n"
+			 "ldr   r4, =z_thread_entry\n"
+			 /* We don’t intend to return, so there is no need to link. */
+			 "bx    r4\n"
+			 /* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
+			 ".ltorg\n"
+#endif
+			 :
+			 : "r"(_main), "r"(stack_ptr)
+			 : "r0", "r1", "r2", "r3", "r4", "ip", "lr", "memory");
 
 	CODE_UNREACHABLE;
 }
@@ -597,7 +624,7 @@ __used void arch_irq_unlock_outlined(unsigned int key)
 {
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__enable_fault_irq(); /* alters FAULTMASK */
-	__enable_irq(); /* alters PRIMASK */
+	__enable_irq();       /* alters PRIMASK */
 #endif
 	arch_irq_unlock(key);
 }
@@ -609,14 +636,13 @@ __used unsigned int arch_irq_lock_outlined(void)
 
 #if !defined(CONFIG_MULTITHREADING)
 
-FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
-	k_thread_entry_t main_entry, void *p1, void *p2, void *p3)
+FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_entry, void *p1,
+							  void *p2, void *p3)
 {
 	z_arm_prepare_switch_to_main();
 
 	/* Set PSP to the highest address of the main stack. */
-	char *psp =	K_THREAD_STACK_BUFFER(z_main_stack) +
-		K_THREAD_STACK_SIZEOF(z_main_stack);
+	char *psp = K_THREAD_STACK_BUFFER(z_main_stack) + K_THREAD_STACK_SIZEOF(z_main_stack);
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	char *psplim = (K_THREAD_STACK_BUFFER(z_main_stack));
@@ -636,31 +662,35 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	 * with the thread entry process.
 	 */
 
-	__asm__ volatile (
+	__asm__ volatile(
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-	"msr  PSPLIM, %[_psplim]\n" /* __set_PSPLIM(_psplim) */
+		"msr  PSPLIM, %[_psplim]\n" /* __set_PSPLIM(_psplim) */
 #endif
-	"msr  PSP, %[_psp]\n"       /* __set_PSP(psp) */
-	"mov r0, #0\n"
-	"ldr r1, =arch_irq_unlock_outlined\n"
-	"blx r1\n"
+		"msr  PSP, %[_psp]\n" /* __set_PSP(psp) */
+		"movs r0, #0\n"
+		"ldr r1, =arch_irq_unlock_outlined\n"
+		"blx r1\n"
 
-	"mov r0, %[_p1]\n"
-	"mov r1, %[_p2]\n"
-	"mov r2, %[_p3]\n"
-	"blx  %[_main_entry]\n"     /* main_entry(p1, p2, p3) */
+		"mov r0, %[_p1]\n"
+		"mov r1, %[_p2]\n"
+		"mov r2, %[_p3]\n"
+		"blx  %[_main_entry]\n" /* main_entry(p1, p2, p3) */
 
-	"ldr r0, =arch_irq_lock_outlined\n"
-	"blx r0\n"
-	"loop: b loop\n\t"    /* while (true); */
-	:
-	: [_p1]"r" (p1), [_p2]"r" (p2), [_p3]"r" (p3),
-	  [_psp]"r" (psp), [_main_entry]"r" (main_entry)
+		"ldr r0, =arch_irq_lock_outlined\n"
+		"blx r0\n"
+		"loop: b loop\n\t" /* while (true); */
+		/* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
+		".ltorg\n"
+#endif
+		:
+		: [_p1] "r"(p1), [_p2] "r"(p2), [_p3] "r"(p3), [_psp] "r"(psp),
+		  [_main_entry] "r"(main_entry)
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-	, [_psplim]"r" (psplim)
+			  ,
+		  [_psplim] "r"(psplim)
 #endif
-	: "r0", "r1", "r2", "ip", "lr"
-	);
+		: "r0", "r1", "r2", "ip", "lr", "memory");
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

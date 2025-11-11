@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_AMBIENT_2_CLICK
+	def_bool $(shields_list_contains,mikroe_ambient_2_click)

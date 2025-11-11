@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32h573i_dk-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
+	compatible = "st,stm32h573i-dk";
+
+	chosen {
+		zephyr,flash = &ext_flash;
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set the partitions with first MB to make use of the whole Bank1 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		storage_partition: partition@10000 {
+			label = "storage";
+			reg = <0x00010000 DT_SIZE_K(960)>;
+		};
+	};
+};
+
+&ext_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_M(32)>;
+		};
+
+		slot1_partition: partition@2000000 {
+			label = "image-1";
+			reg = <0x02000000 DT_SIZE_M(32)>;
+		};
+	};
+};

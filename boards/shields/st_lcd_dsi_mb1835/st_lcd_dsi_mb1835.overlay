@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2025 Charles Dias
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	chosen {
+		zephyr,display = &zephyr_lcd_controller;
+	};
+};
+
+&pll3 {
+	div-m = <4>;	/* Input divider: 16MHz / 4 = 4MHz */
+	mul-n = <125>;	/* Multiplier: 4MHz * 125 = 500MHz VCO */
+	div-p = <8>;	/* P output: 500MHz / 8 = 62.5MHz (for DSI clock lane) */
+	div-q = <2>;	/* Q output: 500MHz / 2 = 250MHz */
+	div-r = <24>;	/* R output: 500MHz / 24 = 20.83MHz (for LTDC pixel clock) */
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+
+	pll-ndiv = <125>;	/* PLLDSINDIV = 125 */
+	pll-idf = <4>;		/* DSI_PLL_IN_DIV4 */
+	pll-odf = <2>;		/* DSI_PLL_OUT_DIV2 */
+	pll-vco-range = <0x1>;	/* DSI_DPHY_VCO_FRANGE_800MHZ_1GHZ */
+	pll-charge-pump = <0x0>;/* DSI_PLL_CHARGE_PUMP_2000HZ_4400HZ */
+	pll-tuning = <0x0>;	/* DSI_PLL_LOOP_FILTER_2000HZ_4400HZ */
+
+	phy-freq-range = <0x8>;		/* DSI_DPHY_FRANGE_450MHZ_510MHZ */
+	phy-low-power-offset = <0x0>;	/* PHY_LP_OFFSSET_0_CLKP */
+
+	hs-active-high;
+	vs-active-high;
+	de-active-high;
+	largest-packet-size = <0>;
+
+	host-timeouts = <1>,	/* TimeoutCkdiv */
+			<0>,	/* HighSpeedTransmissionTimeout */
+			<0>,	/* LowPowerReceptionTimeout */
+			<0>,	/* HighSpeedReadTimeout */
+			<0>,	/* LowPowerReadTimeout */
+			<0>,	/* HighSpeedWriteTimeout */
+			<0>,	/* HighSpeedWritePrespMode */
+			<0>,	/* LowPowerWriteTimeout */
+			<0>;	/* BTATimeout */
+
+	phy-timings = <11>,	/* ClockLaneHS2LPTime */
+		      <40>,	/* ClockLaneLP2HSTime */
+		      <12>,	/* DataLaneHS2LPTime */
+		      <23>,	/* DataLaneLP2HSTime */
+		      <0>,	/* DataLaneMaxReadTime */
+		      <7>;	/* StopWaitTime */
+
+	hx8379c: hx8379c@0 {
+		status = "okay";
+		compatible = "himax,hx8379c";
+		reg = <0x0>; /* Virtual channel 0 */
+		width = <480>;
+		height = <480>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+
+		reset-gpios = <&dsi_lcd_qsh_030 57 GPIO_ACTIVE_HIGH>;
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			hsync-active = <1>;
+			vsync-active = <1>;
+			de-active = <0>;
+			pixelclk-active = <0>;
+			hsync-len = <2>;
+			hback-porch = <1>;
+			hfront-porch = <1>;
+			vsync-len = <1>;
+			vback-porch = <13>;
+			vfront-porch = <50>;
+		};
+	};
+};
+
+&zephyr_lcd_controller {
+	status = "okay";
+	width = <480>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+
+	bl-ctrl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
+
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+
+	/* J025F1CN0201W display module */
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-active = <1>;
+		vsync-active = <1>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-len = <2>;
+		hback-porch = <1>;
+		hfront-porch = <1>;
+		vsync-len = <1>;
+		vback-porch = <13>;
+		vfront-porch = <50>;
+	};
+};

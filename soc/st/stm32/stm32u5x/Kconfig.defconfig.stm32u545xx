@@ -1,0 +1,11 @@
+# ST Microelectronics STM32U545XX MCU
+
+# Copyright (c) 2024 Opito
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U545XX
+
+config NUM_IRQS
+	default 126
+
+endif # SOC_STM32U545XX

@@ -1,0 +1,15 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw236_ns.dtsi>
+#include "frdm_mcxw23_common.dtsi"
+
+/ {
+	model = "NXP FRDM-MCXW23 board";
+	compatible = "nxp,mcxw236", "nxp,mcx";
+};

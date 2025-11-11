@@ -384,13 +384,13 @@ static int crypto_smartbond_hash_set_algo(enum hash_algo algo)
 						(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Pos));
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
 }
 
-static int crypto_smartbond_set_in_out_buf(uint8_t *in_buf, uint8_t *out_buf, int len)
+static int crypto_smartbond_set_in_out_buf(const uint8_t *in_buf, uint8_t *out_buf, int len)
 {
 	if (in_buf == NULL) {
 		return -EIO;
@@ -921,7 +921,7 @@ crypto_smartbond_hash_set_async_callback(const struct device *dev, hash_completi
 }
 #endif
 
-static const struct crypto_driver_api crypto_smartbond_driver_api = {
+static DEVICE_API(crypto, crypto_smartbond_driver_api) = {
 	.cipher_begin_session = crypto_smartbond_cipher_begin_session,
 	.cipher_free_session = crypto_smartbond_cipher_free_session,
 #if defined(CONFIG_CRYPTO_ASYNC)

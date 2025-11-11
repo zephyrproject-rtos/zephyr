@@ -1,7 +1,4 @@
-.. _stm32h735g_disco_board:
-
-ST STM32H735G Discovery
-#######################
+.. zephyr:board:: stm32h735g_disco
 
 Overview
 ********
@@ -27,10 +24,6 @@ programmer for the STM32 MCU and USB Virtual COM port bridge. STM32H735G-DK boar
 comes with the STM32CubeH7 MCU Package, which provides an STM32 comprehensive
 software HAL library as well as various software examples.
 
-.. image:: img/stm32h735g_disco.jpg
-     :align: center
-     :alt: STM32H735G-DISCO
-
 More information about the board can be found at the `STM32H735G-DISCO website`_.
 More information about STM32H735 can be found here:
 
@@ -41,46 +34,7 @@ More information about STM32H735 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h735g_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| FDCAN1    | on-chip    | CAN-FD Controller                   |
-+-----------+------------+-------------------------------------+
-| FDCAN2    | on-chip    | CAN-FD Controller                   |
-+-----------+------------+-------------------------------------+
-| FDCAN3    | on-chip    | CAN-FD Controller (disabled by      |
-|           |            | default. Solder bridges SB29 and    |
-|           |            | SB30 need to be closed for FDCAN3   |
-|           |            | to work)                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb_device                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h735g_disco/stm32h735g_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -114,23 +68,35 @@ COM port interface. Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+STM32H735G-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+
 See :ref:`build_an_application` for more information about application builds.
 
 
 Flashing
 ========
 
-Flashing operation will depend on the target to be flashed and the SoC
-option bytes configuration.
-It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
-configuration and flash the ``stm32h735g_disco`` target.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
+configuration.
 
 Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -1,0 +1,11 @@
+# Copyright 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config APP_CPUPPR_RUN
+	bool "Use PPR"
+
+config APP_CPUFLPR_RUN
+	bool "Use FLPR"

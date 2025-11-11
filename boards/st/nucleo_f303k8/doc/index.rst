@@ -1,7 +1,4 @@
-.. _nucleo_f303k8_board:
-
-ST Nucleo F303K8
-################
+.. zephyr:board:: nucleo_f303k8
 
 Overview
 ********
@@ -23,10 +20,6 @@ Here are some highlights of the Nucleo F303K8 board:
 
 - One user LED
 - One push-buttons: RESET
-
-.. image:: img/nucleo_f303k8.jpg
-   :align: center
-   :alt: Nucleo F303K8
 
 More information about the board can be found at the `Nucleo F303K8 website`_,
 and in the `STM32 Nucleo-32 board User Manual`_.
@@ -70,34 +63,7 @@ More information about the STM32F303K8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f303k8 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f303k8/nucleo_f303k8_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -139,8 +105,24 @@ to UART2.  Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Nucleo F303K8 board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 
 .. _Nucleo F303K8 website:
@@ -157,3 +139,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F303K8 datasheet:
    https://www.st.com/resource/en/datasheet/stm32f303k8.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

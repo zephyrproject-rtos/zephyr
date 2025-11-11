@@ -474,11 +474,11 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	net_pkt_lladdr_src(pkt)->addr = src_mac;
-	net_pkt_lladdr_src(pkt)->len = 8U;
+	(void)net_linkaddr_create(net_pkt_lladdr_src(pkt), src_mac,
+				  sizeof(src_mac), NET_LINK_IEEE802154);
 
-	net_pkt_lladdr_dst(pkt)->addr = dst_mac;
-	net_pkt_lladdr_dst(pkt)->len = 8U;
+	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt), dst_mac,
+				  sizeof(dst_mac), NET_LINK_IEEE802154);
 
 	frag = net_pkt_get_frag(pkt, NET_IPV6UDPH_LEN, K_FOREVER);
 	if (!frag) {

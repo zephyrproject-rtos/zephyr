@@ -1,0 +1,20 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SHELL
+	bool "Video shell"
+	depends on SHELL
+	help
+	  This shell provides control and query commands for video drivers.
+
+if VIDEO_SHELL
+
+config VIDEO_SHELL_CTRL_NAME_SIZE
+	int "Maximum size for the control string identifier"
+	default 40
+	help
+	  Video controls have a human-friendly name that is converted into a string identifier.
+	  This Kconfig controls the maximum size of the string identifier after which the name
+	  would be truncated. The default value is enough for all standard control names.
+
+endif

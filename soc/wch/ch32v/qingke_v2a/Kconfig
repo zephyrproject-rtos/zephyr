@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V2A
+	select RISCV_ISA_RV32E
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_C

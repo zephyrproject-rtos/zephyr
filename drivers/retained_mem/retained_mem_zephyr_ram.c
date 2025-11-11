@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT zephyr_retained_ram
 
 #include <string.h>
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/retained_mem.h>
@@ -85,30 +86,40 @@ static int zephyr_retained_mem_ram_write(const struct device *dev, off_t offset,
 					 const uint8_t *buffer, size_t size)
 {
 	const struct zephyr_retained_mem_ram_config *config = dev->config;
+	int err = 0;
 
 	zephyr_retained_mem_ram_lock_take(dev);
 
 	memcpy((config->address + offset), buffer, size);
 
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	err = sys_cache_data_flush_range(config->address + offset, size);
+#endif /* defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+
 	zephyr_retained_mem_ram_lock_release(dev);
 
-	return 0;
+	return err;
 }
 
 static int zephyr_retained_mem_ram_clear(const struct device *dev)
 {
 	const struct zephyr_retained_mem_ram_config *config = dev->config;
+	int err = 0;
 
 	zephyr_retained_mem_ram_lock_take(dev);
 
 	memset(config->address, 0, config->size);
 
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	err = sys_cache_data_flush_range(config->address, config->size);
+#endif /* defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+
 	zephyr_retained_mem_ram_lock_release(dev);
 
-	return 0;
+	return err;
 }
 
-static const struct retained_mem_driver_api zephyr_retained_mem_ram_api = {
+static DEVICE_API(retained_mem, zephyr_retained_mem_ram_api) = {
 	.size = zephyr_retained_mem_ram_size,
 	.read = zephyr_retained_mem_ram_read,
 	.write = zephyr_retained_mem_ram_write,

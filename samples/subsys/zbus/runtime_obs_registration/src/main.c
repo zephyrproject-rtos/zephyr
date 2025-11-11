@@ -41,7 +41,9 @@ ZBUS_SUBSCRIBER_DEFINE(state_change_sub, 5);
 
 int main(void)
 {
-	LOG_INF("System started");
+	LOG_INF("System started, runtime observers %s allocated",
+		IS_ENABLED(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC) ? "dynamically"
+									     : "statically");
 
 	const struct zbus_channel *chan;
 

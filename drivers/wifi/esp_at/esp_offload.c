@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(wifi_esp_at_offload, CONFIG_WIFI_LOG_LEVEL);
 
 #include "esp.h"
 
+#define TCP_SEND_TIMEOUT                                        \
+	K_MSEC(CONFIG_WIFI_ESP_AT_TCP_SEND_TIMEOUT)
+
 static int esp_listen(struct net_context *context, int backlog)
 {
 	return -ENOTSUP;
@@ -37,6 +40,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	struct sockaddr src;
 	struct sockaddr dst;
 	int ret;
+	int mode;
 
 	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
@@ -65,11 +69,39 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 			net_addr_ntop(src.sa_family,
 				      &net_sin(&src)->sin_addr,
 				      src_addr_str, sizeof(src_addr_str));
+			/* <mode>: In the UDP Wi-Fi passthrough
+			 *
+			 * 0: After UDP data is received, the parameters <"remote host">
+			 * and <remote port> will stay unchanged (default).
+			 * 1: Only the first time that UDP data is received from an IP
+			 * address and port that are different from the initially set
+			 * value of parameters <remote host> and <remote port>, will
+			 * they be changed to the IP address and port of the device that
+			 * sends the data.
+			 * 2: Each time UDP data is received, the <"remote host"> and
+			 * <remote port> will be changed to the IP address and port of the
+			 * device that sends the data.
+			 *
+			 * When remote IP and port are both 0, it means that the socket is
+			 * being used as a server, and you need to set the connection mode
+			 * to 2.
+			 */
+			if ((net_sin(&dst)->sin_addr.s_addr == 0) &&
+			    (ntohs(net_sin(&dst)->sin_port) == 0)) {
+				mode = 2;
+				/* Port 0 is reserved and a valid port needs to be provided when
+				 * connecting.
+				 */
+				net_sin(&dst)->sin_port = 65535;
+			} else {
+				mode = 0;
+			}
+
 			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"",
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d,\"%s\"",
 				 sock->link_id, dst_addr_str,
 				 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&src)->sin_port),
-				 src_addr_str);
+				 mode, src_addr_str);
 		} else {
 			snprintk(connect_msg, sizeof(connect_msg),
 				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
@@ -295,13 +327,17 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag && pkt_len) {
 		write_len = MIN(pkt_len, frag->len);
-		dev->mctx.iface.write(&dev->mctx.iface, frag->data, write_len);
+		modem_cmd_send_data_nolock(&dev->mctx.iface, frag->data, write_len);
 		pkt_len -= write_len;
 		frag = frag->frags;
 	}
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
-	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
+	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+		ret = k_sem_take(&dev->sem_response, TCP_SEND_TIMEOUT);
+	} else {
+		ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
+	}
 	if (ret < 0) {
 		LOG_DBG("No send response");
 		goto out;
@@ -445,7 +481,7 @@ static int esp_send(struct net_pkt *pkt,
 
 #define CIPRECVDATA_CMD_MIN_LEN (sizeof("+CIPRECVDATA,L:") - 1)
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL,\"255.255.255.255\",65535:") - 1)
 #else
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
@@ -472,7 +508,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char *strstart = endptr + 1;
 	char *strend = strchr(strstart, ',');
 
@@ -518,11 +554,17 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
-	struct esp_socket *sock = dev->rx_sock;
+	struct esp_socket *sock;
 	int data_offset, data_len;
 	int err;
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	sock = esp_socket_ref(dev->rx_sock);
+	if (!sock) {
+		LOG_ERR("No rx_sock socket");
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
 	int port = 0;
 
@@ -534,17 +576,17 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 #endif
 	if (err) {
 		if (err == -EAGAIN) {
-			return -EAGAIN;
+			goto socket_unref;
 		}
 
-		return err;
+		goto socket_unref;
 	}
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	struct sockaddr_in *recv_addr =
 			(struct sockaddr_in *) &sock->context->remote;
 
-	recv_addr->sin_port = ntohs(port);
+	recv_addr->sin_port = htons(port);
 	recv_addr->sin_family = AF_INET;
 
 	/* IP addr comes within quotation marks, which is disliked by
@@ -562,12 +604,18 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	if (net_addr_pton(AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
 		LOG_ERR("Invalid src addr %s", remote_ip_addr);
 		err = -EIO;
-		return err;
+		goto socket_unref;
 	}
 #endif
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	return data_offset + data_len;
+	err = data_offset + data_len;
+	goto socket_unref;
+
+socket_unref:
+	esp_socket_unref(sock);
+
+	return err;
 }
 
 void esp_recvdata_work(struct k_work *work)

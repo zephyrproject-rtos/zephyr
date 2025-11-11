@@ -19,6 +19,7 @@
 LOG_MODULE_REGISTER(spi_telink);
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include "spi_context.h"
 #include <zephyr/drivers/pinctrl.h>
 
@@ -397,17 +398,13 @@ static int spi_b91_transceive(const struct device *dev,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	/* if cs is defined: software cs control, set active true */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, true);
-	}
+	spi_context_cs_control(&data->ctx, true);
 
 	/* transceive data */
 	spi_b91_txrx(dev, txrx_len);
 
 	/* if cs is defined: software cs control, set active false */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, false);
-	}
+	spi_context_cs_control(&data->ctx, false);
 
 	/* release context */
 	status = spi_context_wait_for_completion(&data->ctx);
@@ -452,12 +449,15 @@ static int spi_b91_release(const struct device *dev,
 }
 
 /* SPI driver APIs structure */
-static const struct spi_driver_api spi_b91_api = {
+static DEVICE_API(spi, spi_b91_api) = {
 	.transceive = spi_b91_transceive,
 	.release = spi_b91_release,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_b91_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 };
 
 /* SPI driver registration */
@@ -479,7 +479,7 @@ static const struct spi_driver_api spi_b91_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		  \
 	};								  \
 									  \
-	DEVICE_DT_INST_DEFINE(inst, spi_b91_init,			  \
+	SPI_DEVICE_DT_INST_DEFINE(inst, spi_b91_init,			  \
 			      NULL,					  \
 			      &spi_b91_data_##inst,			  \
 			      &spi_b91_cfg_##inst,			  \

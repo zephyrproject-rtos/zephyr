@@ -1,7 +1,4 @@
-.. _nucleo_wb55rg_board:
-
-ST Nucleo WB55RG
-################
+.. zephyr:board:: nucleo_wb55rg
 
 Overview
 ********
@@ -14,7 +11,7 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 - STM32 microcontroller in VFQFPN68 package
 - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
+- Dedicated Arm® 32-bit Cortex®-M0+ CPU for real-time Radio layer
 - Three user LEDs
 - Board connector: USB user with Micro-B
 - Two types of extension resources:
@@ -29,17 +26,13 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 - On-board ST-LINK/V2-1 debugger/programmer with USB re- enumeration capability:
   mass storage, virtual COM port and debug port
 
-.. image:: img/nucleowb55rg.jpg
-   :align: center
-   :alt: Nucleo WB55RG
-
 More information about the board can be found at the `Nucleo WB55RG website`_.
 
 Hardware
 ********
 
 STM32WB55RG is an ultra-low-power dual core Arm Cortex-M4 MCU 64 MHz,Cortex-M0 32MHz
-with 1 Mbyte of Flash memory, Bluetooth 5, 802.15.4, USB, LCD, AES-256 SoC and
+with 1 Mbyte of Flash memory, Bluetooth |reg| 5, 802.15.4, USB, LCD, AES-256 SoC and
 provides the following hardware capabilities:
 
 - Ultra-low-power with FlexPowerControl (down to 600 nA Standby mode with RTC and 32KB RAM)
@@ -48,12 +41,12 @@ provides the following hardware capabilities:
 
   - 2.4GHz
   - RF transceiver supporting Bluetooth® 5 specification, IEEE 802.15.4-2011 PHY and MAC,
-    supporting Thread and ZigBee|reg| 3.0
-  - RX Sensitivity: -96 dBm (Bluetooth|reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+    supporting Thread and ZigBee |reg| 3.0
+  - RX Sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Support for 2 Mbps
-  - Dedicated Arm|reg| 32-bit Cortex|reg| M0 + CPU for real-time Radio layer
+  - Dedicated Arm |reg| 32-bit Cortex |reg|-M0+ CPU for real-time Radio layer
   - Accurate RSSI to enable power control
   - Suitable for systems requiring compliance with radio frequency regulations
     ETSI EN 300 328, EN 300 440, FCC CFR47 Part 15 and ARIB STD-T66
@@ -98,7 +91,7 @@ provides the following hardware capabilities:
 - System peripherals
 
   - Inter processor communication controller (IPCC) for communication with
-    Bluetooth|reg| Low Energy and 802.15.4
+    Bluetooth |reg| Low Energy and 802.15.4
   - HW semaphores for resources sharing between CPUs
   - 2x DMA controllers (7x channels each) supporting ADC, SPI, I2C, USART,
     QSPI, SAI, AES, Timers
@@ -121,7 +114,7 @@ provides the following hardware capabilities:
 - Security and ID
 
  - 3x hardware encryption AES maximum 256-bit for the application,
-   the Bluetooth|reg| Low Energy and IEEE802.15.4
+   the Bluetooth |reg| Low Energy and IEEE802.15.4
  - Customer key storage / key manager services
  - HW public key authority (PKA)
  - Cryptographic algorithms: RSA, Diffie-Helman, ECC over GF(p)
@@ -130,7 +123,7 @@ provides the following hardware capabilities:
  - CRC calculation unit
  - 96-bit unique ID
  - 64-bit unique ID. Possibility to derive 802.15.5 64-bit and
-   Bluetooth|reg| Low Energy 48-bit EUI
+   Bluetooth |reg| Low Energy 48-bit EUI
 
 - Up to 72 fast I/Os, 70 of them 5 V-tolerant
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
@@ -139,58 +132,25 @@ provides the following hardware capabilities:
 More information about STM32WB55RG can be found here:
 
 - `STM32WB55RG on www.st.com`_
-- `STM32WB5RG datasheet`_
-- `STM32WB5RG reference manual`_
+- `STM32WB55RG datasheet`_
+- `STM32WB55RG reference manual`_
 
 Supported Features
 ==================
 
-The Zephyr nucleo_wb55rg board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
+Bluetooth |reg| and compatibility with STM32WB Copro Wireless Binaries
+======================================================================
 
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb55rg/nucleo_wb55rg_defconfig`
-
-Bluetooth and compatibility with STM32WB Copro Wireless Binaries
-================================================================
-
-To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
+To operate Bluetooth |reg| on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
-Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
+
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README <https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README>`__
-in the hal_stm32 repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
+
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
 anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
 side.
@@ -241,18 +201,29 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_wb55rg`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
 ========
 
-Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version included in the
-Zephyr SDK since v0.11.0.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-If you prefer, you can use pyocd, but it requires to enable "pack" support with
-the following pyocd command:
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+
+If you prefer, you can use pyOCD, but it requires to enable "pack" support with
+the following pyOCD command:
 
 .. code-block:: console
 
@@ -265,7 +236,7 @@ Flashing an application to Nucleo WB55RG
 
 Connect the Nucleo WB55RG to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -304,8 +275,11 @@ You can debug an application in the usual way.  Here is an example for the
 .. _STM32WB55RG on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32wb55rg.html
 
-.. _STM32WB5RG datasheet:
+.. _STM32WB55RG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb55rg.pdf
 
-.. _STM32WB5RG reference manual:
+.. _STM32WB55RG reference manual:
    https://www.st.com/resource/en/reference_manual/dm00318631.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

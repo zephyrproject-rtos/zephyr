@@ -582,6 +582,25 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GC)
+
+static int littlefs_gc(struct fs_mount_t *mountp)
+{
+	ssize_t ret;
+	struct fs_littlefs *fs = mountp->fs_data;
+	struct lfs *lfs = &fs->lfs;
+
+	fs_lock(fs);
+
+	ret = lfs_fs_gc(lfs);
+
+	fs_unlock(fs);
+
+	return lfs_to_errno(ret);
+}
+
+#endif /* CONFIG_FILE_SYSTEM_GC */
+
 #ifdef CONFIG_FS_LITTLEFS_FMP_DEV
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
@@ -657,7 +676,7 @@ static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 	/* Open flash area */
 	ret = flash_area_open(area_id, fap);
 	if ((ret < 0) || (*fap == NULL)) {
-		LOG_ERR("can't open flash area %d", area_id);
+		LOG_ERR("can't open flash area %d, err %d", area_id, ret);
 		return -ENODEV;
 	}
 
@@ -789,6 +808,17 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
 	}
 
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+	uint32_t disk_version = lcp->disk_version;
+
+	if (disk_version == 0) {
+		disk_version = CONFIG_FS_LITTLEFS_DISK_VERSION_NUMBER;
+		if (disk_version == 0) {
+			disk_version = LFS_DISK_VERSION;
+		}
+	}
+#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
+
 	/* No, you don't get to override this. */
 	lfs_size_t block_count = 0;
 
@@ -817,7 +847,7 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 			dev->name,
 			(uint32_t)((struct flash_area *)fs->backend)->fa_off,
 			block_count, block_size, block_cycles);
-		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
+		LOG_INF("partition sizes: rd %u ; pr %u ; ca %u ; la %u",
 			read_size, prog_size, cache_size, lookahead_size);
 	}
 #endif /* CONFIG_FS_LITTLEFS_FMP_DEV */
@@ -842,11 +872,18 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
-		lcp->cache_size = block_size;
-		lcp->lookahead_size = block_size * 4;
+
+		if (cache_size < block_size) {
+			LOG_ERR("Configured cache size is too small: %d < %d", cache_size,
+				block_size);
+		}
+		lcp->cache_size = ROUND_DOWN(cache_size, block_size);
+
+		lcp->lookahead_size = lookahead_size;
+
 		lcp->sync = lfs_api_sync_blk;
 
-		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
+		LOG_INF("partition sizes: rd %u ; pr %u ; ca %u ; la %u",
 			lcp->read_size, lcp->prog_size, lcp->cache_size,
 			lcp->lookahead_size);
 	} else {
@@ -865,6 +902,13 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->lookahead_size = lookahead_size;
 		lcp->sync = lfs_api_sync;
 	}
+
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+	lcp->disk_version = disk_version;
+	LOG_INF("partition disk version: %u.%u",
+		(uint32_t)FS_LITTLEFS_DISK_VERSION_MAJOR_GET(disk_version),
+		(uint32_t)FS_LITTLEFS_DISK_VERSION_MINOR_GET(disk_version));
+#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
 
 	lcp->block_size = block_size;
 	lcp->block_count = block_count;
@@ -1031,6 +1075,9 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_GC)
+	.gc = littlefs_gc,
+#endif
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 	.mkfs = littlefs_mkfs,
 #endif
@@ -1038,6 +1085,12 @@ static const struct fs_file_system_t littlefs_fs = {
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
+#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#define FS_DISK_VERSION(inst) \
+	.disk_version = DT_INST_PROP_OR(inst, disk_version, LFS_DISK_VERSION),
+#else
+#define FS_DISK_VERSION(inst)
+#endif
 
 #define DEFINE_FS(inst) \
 static uint8_t __aligned(4) \
@@ -1061,14 +1114,16 @@ static struct fs_littlefs fs_data_##inst = { \
 		.prog_size = DT_INST_PROP(inst, prog_size), \
 		.cache_size = DT_INST_PROP(inst, cache_size), \
 		.lookahead_size = DT_INST_PROP(inst, lookahead_size), \
+		.block_cycles = DT_INST_PROP(inst, block_cycles), \
 		.read_buffer = read_buffer_##inst, \
 		.prog_buffer = prog_buffer_##inst, \
 		.lookahead_buffer = lookahead_buffer_##inst, \
+		FS_DISK_VERSION(inst) \
 	}, \
 }; \
 struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
-	.mnt_point = DT_INST_PROP(inst, mount_point), \
+	.mnt_point = FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst), \
 	.fs_data = &fs_data_##inst, \
 	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \

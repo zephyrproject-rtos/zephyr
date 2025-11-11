@@ -60,8 +60,8 @@ ZTEST(rtc_api, test_set_get_time)
 
 	zassert_equal(datetime_get.tm_isdst, -1, "Invalid tm_isdst");
 
-	zassert_true((datetime_get.tm_nsec > -1) && (datetime_get.tm_yday < 1000000000),
-		     "Invalid tm_yday");
+	zassert_true((datetime_get.tm_nsec > -1) && (datetime_get.tm_nsec < 1000000000),
+		     "Invalid tm_nsec");
 
 	timer_get = timeutil_timegm((struct tm *)(&datetime_get));
 

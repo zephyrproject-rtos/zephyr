@@ -7,13 +7,13 @@
 zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE)
 
 zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
 
 zephyr_include_directories(.)
 
-zephyr_sources(
-  soc.c
-  flash_clock_setup.c
-  )
+zephyr_sources(soc.c)
+
+zephyr_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_XIP flash_clock_setup.c)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
 

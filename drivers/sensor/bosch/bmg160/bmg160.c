@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Datasheet:
- * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
+ * https://web.archive.org/web/20181111220522/https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
  */
 
 #define DT_DRV_COMPAT bosch_bmg160
@@ -272,7 +272,7 @@ static int bmg160_channel_get(const struct device *dev,
 	}
 }
 
-static const struct sensor_driver_api bmg160_api = {
+static DEVICE_API(sensor, bmg160_api) = {
 	.attr_set = bmg160_attr_set,
 #ifdef CONFIG_BMG160_TRIGGER
 	.trigger_set = bmg160_trigger_set,

@@ -1,8 +1,0 @@
-# Copyright 2024 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-description: NXP MSF1 Flash Memory Module (FMU)
-
-compatible: "nxp,iap-msf1"
-
-include: flash-controller.yaml

@@ -120,10 +120,13 @@ Programming
 Set ``--shield nxp_btb44_ov5640`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/video/capture
+   :zephyr-app: samples/drivers/video/capture
    :board: mimxrt1170_evk/mimxrt1176/cm7
    :shield: nxp_btb44_ov5640
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

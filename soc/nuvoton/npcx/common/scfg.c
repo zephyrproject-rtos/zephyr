@@ -98,6 +98,7 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
 
+	/* Set SMB_SEL bit to select port 1, otherwise select port 0 */
 	if (port != 0) {
 		inst_glue->SMB_SEL |= BIT(controller);
 	} else {
@@ -105,14 +106,50 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 	}
 }
 
+void npcx_i2c_target_start_wk_enable(int controller, bool enable)
+{
+	struct glue_reg *const inst_glue = HAL_GLUE_INST();
+
+	if (enable) {
+		/* Clear Start condition detection status */
+		inst_glue->SMB_SBD |= BIT(controller);
+		/* Enable wake up event assertion */
+		inst_glue->SMB_EEN |= BIT(controller);
+	} else {
+		/* Disable wake up event assertion */
+		inst_glue->SMB_EEN &= ~BIT(controller);
+	}
+}
+
+void npcx_i2c_target_clear_detection_event(void)
+{
+	struct glue_reg *const inst_glue = HAL_GLUE_INST();
+	uint8_t een = inst_glue->SMB_EEN;
+	uint8_t sbd = inst_glue->SMB_SBD;
+
+	/* Clear Start condition detection status */
+	for (uint8_t i = 0; i < 8; i++) {
+		if ((een & BIT(i)) != 0 && (sbd & BIT(i)) != 0) {
+			inst_glue->SMB_SBD |= BIT(i);
+		}
+	}
+}
+
 int npcx_pinctrl_flash_write_protect_set(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
+#if defined(CONFIG_PINCTRL_NPCX_EX)
+	inst_scfg->DEV_CTL3 |= BIT(NPCX_DEV_CTL3_WP_IF);
+	if (!IS_BIT_SET(inst_scfg->DEV_CTL3, NPCX_DEV_CTL3_WP_IF)) {
+		return -EIO;
+	}
+#else
 	inst_scfg->DEV_CTL4 |= BIT(NPCX_DEV_CTL4_WP_IF);
 	if (!IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF)) {
 		return -EIO;
 	}
+#endif
 
 	return 0;
 }
@@ -121,7 +158,11 @@ bool npcx_pinctrl_flash_write_protect_is_set(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
+#if defined(CONFIG_PINCTRL_NPCX_EX)
+	return IS_BIT_SET(inst_scfg->DEV_CTL3, NPCX_DEV_CTL3_WP_IF);
+#else
 	return IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF);
+#endif
 }
 
 void npcx_host_interface_sel(enum npcx_hif_type hif_type)
@@ -129,6 +170,21 @@ void npcx_host_interface_sel(enum npcx_hif_type hif_type)
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
 	SET_FIELD(inst_scfg->DEVCNT, NPCX_DEVCNT_HIF_TYP_SEL_FIELD, hif_type);
+}
+
+void npcx_i3c_target_sel(uint8_t module_id, bool enable)
+{
+#if defined(CONFIG_SOC_SERIES_NPCX4)
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	if (enable == true) {
+		inst_scfg->DEV_CTL3 |= NPCX_DEV_CTL3_I3C_MODE_BIT(module_id);
+	} else {
+		inst_scfg->DEV_CTL3 &= ~NPCX_DEV_CTL3_I3C_MODE_BIT(module_id);
+	}
+#else
+	LOG_ERR("%s: i3c target select not supported yet", __func__);
+#endif
 }
 
 void npcx_dbg_freeze_enable(bool enable)
@@ -143,14 +199,15 @@ void npcx_dbg_freeze_enable(bool enable)
 }
 
 /* Pin-control driver registration */
-static int npcx_scfg_init(void)
+void scfg_init(void)
 {
+	/* If booter doesn't set the host interface type */
+	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
+		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
+	}
+
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
 		npcx_pinctrl_alt_sel(&def_alts[i], 0);
 	}
-
-	return 0;
 }
-
-SYS_INIT(npcx_scfg_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

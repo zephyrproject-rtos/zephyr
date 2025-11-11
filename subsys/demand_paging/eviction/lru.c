@@ -36,6 +36,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm/demand_paging.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
 #include <mmu.h>
 #include <kernel_arch_interface.h>
 
@@ -51,7 +52,7 @@
  * boundary for best compromize between code performance and space saving.
  * The extra entry is used to store head and tail indexes.
  */
-#define PF_IDX_BITS ROUND_UP(LOG2CEIL(K_MEM_NUM_PAGE_FRAMES + 1), 8)
+#define PF_IDX_BITS ROUND_UP(LOG2CEIL(K_MEM_NUM_PAGE_FRAMES + 1), BITS_PER_BYTE)
 
 /* For each page frame, track the previous and next page frame in the queue. */
 struct lru_pf_idx {
@@ -111,8 +112,10 @@ static void lru_pf_remove(uint32_t pf_idx)
 
 	lru_pf_unlink(pf_idx);
 
-	if (was_head && (LRU_PF_HEAD != 0)) {
-		/* make new head PF unaccessible */
+	/* make new head PF unaccessible if it exists and it is not alone */
+	if (was_head &&
+	    (LRU_PF_HEAD != 0) &&
+	    (lru_pf_queue[LRU_PF_HEAD].next != 0)) {
 		struct k_mem_page_frame *pf = idx_to_pf(LRU_PF_HEAD);
 		uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, true);
 

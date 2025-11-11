@@ -402,6 +402,17 @@ void bt_mesh_health_cli_timeout_set(int32_t timeout)
 	msg_timeout = timeout;
 }
 
+static int update_callback(const struct bt_mesh_model *model)
+{
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
+
+	if (cli->update) {
+		return cli->update(cli, &cli->pub_buf);
+	}
+
+	return -EINVAL;
+}
+
 static int health_cli_init(const struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_cli *cli = model->rt->user_data;
@@ -417,6 +428,7 @@ static int health_cli_init(const struct bt_mesh_model *model)
 	msg_timeout = CONFIG_BT_MESH_HEALTH_CLI_TIMEOUT;
 
 	cli->pub.msg = &cli->pub_buf;
+	cli->pub.update = update_callback;
 	net_buf_simple_init_with_data(&cli->pub_buf, cli->pub_data, sizeof(cli->pub_data));
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);

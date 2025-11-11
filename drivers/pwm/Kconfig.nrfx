@@ -20,3 +20,13 @@ config PWM_NRFX
 	select PINCTRL
 	help
 	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.
+
+config PWM_NRFX_NO_GLITCH_DUTY_100
+	bool "No glitches when using 100% duty"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_PWM),idleout-supported,True)
+	default y
+	help
+	  Due to how IDLEOUT feature in PWM works it is possible to see a glitch on a channel
+	  with 100% duty cycle when all other channels switches to 0% or 100%. Enabling this
+	  option ensures that there are no glitches but it also means that 100% duty cycle
+	  on any channels requires PWM peripheral to be active.

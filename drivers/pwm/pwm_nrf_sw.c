@@ -206,6 +206,9 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 			nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_STOP);
 		} else {
 			nrf_timer_task_trigger(timer, NRF_TIMER_TASK_STOP);
+#if NRF_TIMER_HAS_SHUTDOWN
+			nrf_timer_task_trigger(timer, NRF_TIMER_TASK_SHUTDOWN);
+#endif
 		}
 
 		return 0;
@@ -335,7 +338,7 @@ static int pwm_nrf_sw_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_nrf_sw_drv_api_funcs = {
+static DEVICE_API(pwm, pwm_nrf_sw_drv_api_funcs) = {
 	.set_cycles = pwm_nrf_sw_set_cycles,
 	.get_cycles_per_sec = pwm_nrf_sw_get_cycles_per_sec,
 };

@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2018 Prevas A/S
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -55,7 +57,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -126,7 +128,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
-				erase-block-size = <2048>;
+				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <8>;
 			};
 		};
@@ -194,31 +196,31 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
 		portd: pinmux@4004c000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
 		porte: pinmux@4004d000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
 		};
@@ -274,7 +276,7 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
@@ -284,7 +286,7 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
@@ -300,47 +302,47 @@
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 		};
 
-		ftm0: ftm@40038000{
-			compatible = "nxp,kinetis-ftm";
+		ftm0: ftm@40038000 {
+			compatible = "nxp,ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm1: ftm@40039000{
-			compatible = "nxp,kinetis-ftm";
+		ftm1: ftm@40039000 {
+			compatible = "nxp,ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm2: ftm@4003a000{
-			compatible = "nxp,kinetis-ftm";
+		ftm2: ftm@4003a000 {
+			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm3: ftm@400b9000{
-			compatible = "nxp,kinetis-ftm";
+		ftm3: ftm@400b9000 {
+			compatible = "nxp,ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <39 0>;
@@ -372,6 +374,14 @@
 			interrupts = <53 1>;
 			interrupt-names = "usb_otg";
 			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		usbh: usbh@40072000 {
+			compatible = "nxp,uhc-khci";
+			reg = <0x40072000 0x1000>;
+			interrupts = <53 1>;
+			interrupt-names = "usb_otg";
 			status = "disabled";
 		};
 

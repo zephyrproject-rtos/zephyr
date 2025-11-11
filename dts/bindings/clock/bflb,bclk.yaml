@@ -1,0 +1,19 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The BCLK clock, or peripheral clock
+  Source Clock -> Root Clock -> / divider -> BCLK
+
+compatible: "bflb,bclk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  divider:
+    type: int
+    required: true
+    description: Divide root clock by this 8-bits value
+
+  "#clock-cells":
+    const: 0

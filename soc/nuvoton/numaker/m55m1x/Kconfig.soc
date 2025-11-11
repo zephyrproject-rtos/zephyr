@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M55M1X
+	bool
+	select SOC_FAMILY_NUMAKER
+	help
+	  Enable support for Nuvoton M55M1X MCU series
+
+config SOC_M55M1XXX
+	bool
+	select SOC_SERIES_M55M1X
+
+config SOC_SERIES
+	default "m55m1x" if SOC_SERIES_M55M1X
+
+config SOC
+	default "m55m1xxx" if SOC_M55M1XXX

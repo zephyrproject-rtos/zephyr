@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include <zephyr/settings/settings.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/mesh.h>
 
@@ -218,6 +218,10 @@ static int va_set(const char *name, size_t len_rd,
 	struct bt_mesh_va *lab;
 	uint16_t index;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");

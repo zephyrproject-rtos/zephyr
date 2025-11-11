@@ -7,7 +7,7 @@
 Overview
 ********
 
-A sample application that demonstrates how to use LVGL and the :ref:`sensor API <sensor_api>` to
+A sample application that demonstrates how to use LVGL and the :ref:`sensor` to
 display acceleration data on a line chart that is updated in real time.
 
 This sample creates a line chart with three series, one for each axis of the accelerometer. An LVGL
@@ -25,7 +25,7 @@ Requirements
 .. note::
 
    A Devicetree overlay declaring an emulated BMI160 accelerometer is provided for the
-   ``native_posix*`` and ``native_sim*`` board variants, making it possible to run this sample on
+   ``native_sim*`` board variants, making it possible to run this sample on
    your local machine.
 
 .. _lvgl_accelerometer_chart_building_and_running:

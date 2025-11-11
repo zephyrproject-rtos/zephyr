@@ -144,10 +144,10 @@ MEMORY
 #endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef CONFIG_PICOLIBC
-/* For Picolibc libc-hook.c. */
+/* For Picolibc, all files under lib/libc/picolibc */
 #define LIB_C_IN_SECT(lsect)						\
-	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect)		\
-	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect##.*)
+	*liblib__libc__picolibc.a:(.##lsect)				\
+	*liblib__libc__picolibc.a:(.##lsect##.*)
 
 #endif /* CONFIG_PICOLIBC */
 
@@ -639,6 +639,8 @@ SECTIONS
 	*(.init)
 	*(.fini)
 	*(.eini)
+
+#include <snippets-text-sections.ld>
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-text.ld>

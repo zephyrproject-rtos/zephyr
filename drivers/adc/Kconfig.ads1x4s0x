@@ -1,0 +1,45 @@
+# Copyright (c) 2023 SILA  Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADC_ADS1X4S0X
+	bool "Texas instruments ADS1X4S0X"
+	default y
+	depends on DT_HAS_TI_ADS114S06_ENABLED || DT_HAS_TI_ADS114S08_ENABLED \
+		|| DT_HAS_TI_ADS124S06_ENABLED || DT_HAS_TI_ADS124S08_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	select ADC_CONFIGURABLE_VBIAS_PIN
+	help
+	  Enable the driver implementation for the ADS1X4S0X family
+
+config ADC_ADS1X4S0X_ASYNC_THREAD_INIT_PRIO
+	int "ADC ADS1X4S0X async thread priority"
+	default 0
+	depends on ADC_ADS1X4S0X
+
+config ADC_ADS1X4S0X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	depends on ADC_ADS1X4S0X
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_ADS1X4S0X_GPIO
+	bool "GPIO support"
+	default n
+	depends on GPIO && ADC_ADS1X4S0X
+	help
+	  Enable GPIO child device support in the ADS1X4S0X ADC driver.
+
+	  The GPIO functionality is handled by the ADS1X4S0X GPIO
+	  driver.
+
+config ADC_ADS1X4S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS
+	int "Timeout for wait for completion of a read in ms"
+	default 1000
+	depends on ADC_ADS1X4S0X
+	help
+	  This is the wait time in ms until a read is completed.

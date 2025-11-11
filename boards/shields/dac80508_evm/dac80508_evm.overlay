@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	dac80508_dac80508_evm: dac80508@0 {
 		compatible = "ti,dac80508";

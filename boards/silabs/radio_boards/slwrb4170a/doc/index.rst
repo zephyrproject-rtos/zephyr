@@ -1,7 +1,4 @@
-.. _slwrb4170a:
-
-EFR32MG12 2400/868-915 MHz 19 dBm Dual Band (SLWRB4170A)
-########################################################
+.. zephyr:board:: slwrb4170a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32MG12 Mighty Gecko Radio Board contains a Wireless System-On-Chip
 from the EFR32MG12 family built on an ARM Cortex®-M4F processor with excellent
 low power capabilities.
-
-.. figure:: efr32mg12-slwrb4170a.jpg
-   :align: center
-   :alt: SLWRB4170A Mighty Gecko Radio Board
-
-   SLWRB4170A (image courtesy of Silicon Labs)
 
 The BRD4170A a.k.a. SLWRB4170A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -41,33 +32,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtcc                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI(M)    | on-chip    | spi port-polling                    |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/radio_boards/slwrb4170a/slwrb4170a_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -116,13 +81,15 @@ USART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
 Connect the BRD4001A board with a mounted BRD4170A radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

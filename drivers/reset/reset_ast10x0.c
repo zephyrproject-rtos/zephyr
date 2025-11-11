@@ -91,7 +91,7 @@ static int aspeed_reset_line_toggle(const struct device *dev, uint32_t id)
 	return ret;
 }
 
-static const struct reset_driver_api aspeed_reset_api = {
+static DEVICE_API(reset, aspeed_reset_api) = {
 	.status = aspeed_reset_status,
 	.line_assert = aspeed_reset_line_assert,
 	.line_deassert = aspeed_reset_line_deassert,

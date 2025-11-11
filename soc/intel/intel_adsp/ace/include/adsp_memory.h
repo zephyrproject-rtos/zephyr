@@ -41,6 +41,7 @@
  * memory.  There's no ability to change this offset, it's a magic
  * number from rimage we simply need to honor.
  */
+/* FIXME: most of these macros aren't related to the bootloader */
 #define IMR_BOOT_LDR_MANIFEST_OFFSET	0x42000
 #define IMR_BOOT_LDR_MANIFEST_SIZE	0x6000
 #define IMR_BOOT_LDR_MANIFEST_BASE	(L3_MEM_BASE_ADDR + IMR_BOOT_LDR_MANIFEST_OFFSET)
@@ -61,13 +62,21 @@
 
 #define IMR_BOOT_LDR_BSS_OFFSET		0x110000
 #define IMR_BOOT_LDR_BSS_BASE		(L3_MEM_BASE_ADDR + IMR_BOOT_LDR_BSS_OFFSET)
-#define IMR_BOOT_LDR_BSS_SIZE		0x10000
+#define IMR_BOOT_LDR_BSS_SIZE		0x40000
 
 /* stack to be used at boot, when RAM is not yet powered up */
 #define IMR_BOOT_LDR_STACK_BASE		(IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE)
 #define IMR_BOOT_LDR_STACK_SIZE		0x1000
 
+/* ROM_EXT sections, used only for MMU mapping */
+#define IMR_ROM_EXT_OFFSET		0xB000
+#define IMR_ROM_EXT_CODE_BASE		(L3_MEM_BASE_ADDR + IMR_ROM_EXT_OFFSET)
+#define IMR_ROM_EXT_CODE_SIZE		0xD000
+#define IMR_ROM_EXT_DATABSS_BASE	(IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE)
+#define IMR_ROM_EXT_DATABSS_SIZE	0x18000
+
 /* position of L3 heap, size of L3 heap - till end of the L3 memory */
+/* !!! FIXME: L3 heap base MUST be automatically calculated. !!! */
 #define IMR_L3_HEAP_BASE		(IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE)
 #define IMR_L3_HEAP_SIZE		(L3_MEM_SIZE - \
 					(IMR_L3_HEAP_BASE - L3_MEM_BASE_ADDR))
@@ -97,7 +106,7 @@
 /* L2 Local Memory Management */
 
 /* These registers are for the L2 memory control and status. */
-#define DFL2MM_REG 0x71d00
+#define DFL2MM_REG (DT_REG_ADDR(DT_NODELABEL(hsbcap)))
 
 struct ace_l2mm {
 	uint32_t l2mcap;

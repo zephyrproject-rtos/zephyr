@@ -34,7 +34,7 @@ struct zcbor_map_decode_key_val {
  */
 #define ZCBOR_MAP_DECODE_KEY_DECODER(k, dec, vp)		\
 	{							\
-		{						\
+		.key = {					\
 			.value = k,				\
 			.len = sizeof(k) - 1,			\
 		},						\

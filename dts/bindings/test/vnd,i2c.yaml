@@ -7,9 +7,3 @@ compatible: "vnd,i2c"
 
 include:
   - name: i2c-controller.yaml
-    property-blocklist:
-      - label
-
-properties:
-  label:
-    type: string

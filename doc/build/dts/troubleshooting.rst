@@ -21,6 +21,15 @@ This is general advice which is especially applicable to debugging devicetree
 issues, because the outputs are created during the CMake configuration phase,
 and are not always regenerated when one of their inputs changes.
 
+Use Devicetree diagnostics tool (DT Doctor)
+*******************************************
+
+An optional Devicetree diagnostics tool is available to help diagnose Devicetree issues. It can
+be enabled by passing the ``-DZEPHYR_SCA_VARIANT=dtdoctor`` argument to
+:ref:`west build <west-building>`.
+
+See :ref:`dtdoctor` for more information.
+
 Make sure <devicetree.h> is included
 ************************************
 
@@ -261,7 +270,7 @@ Look at the preprocessor output
 
 To save preprocessor output files, enable the
 :kconfig:option:`CONFIG_COMPILER_SAVE_TEMPS` option. For example, to build
-:ref:`hello_world` with west with this option set, use:
+:zephyr:code-sample:`hello_world` with west with this option set, use:
 
 .. code-block:: sh
 
@@ -300,7 +309,7 @@ To prevent the compiler from doing this, you can disable the
 :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option. This typically
 reduces the output to one message per error.
 
-For example, to build :ref:`hello_world` with west and this option disabled,
+For example, to build :zephyr:code-sample:`hello_world` with west and this option disabled,
 use:
 
 .. code-block:: sh

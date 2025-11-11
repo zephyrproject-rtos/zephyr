@@ -1,7 +1,4 @@
-.. _we_proteus3ev_nrf52840:
-
-Würth Elektronik Proteus-III-EV
-###############################
+.. zephyr:board:: we_proteus3ev
 
 Overview
 ********
@@ -25,12 +22,6 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/we_proteus3ev_nrf52840.jpg
-     :align: center
-     :alt: Proteus-III EV
-
-     Proteus-III EV (Credit: Würth Elektronik)
-
 More information about the radio module can be found the Würth Elektronik
 web page https://www.we-online.com/katalog/de/PROTEUS-III .
 
@@ -45,43 +36,7 @@ clock is 32 MHz.
 Supported Features
 ==================
 
-The we_proteus3ev/nrf52840 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features are not supported by the Zephyr kernel.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -100,6 +55,8 @@ Push buttons
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``we_proteus3ev/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
@@ -114,7 +71,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

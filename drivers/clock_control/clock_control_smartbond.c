@@ -39,7 +39,7 @@ struct lpc_clock_state {
 #define CALIBRATION_INTERVAL CONFIG_SMARTBOND_LP_OSC_CALIBRATION_INTERVAL
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-extern int z_clock_hw_cycles_per_sec;
+extern unsigned int z_clock_hw_cycles_per_sec;
 #endif
 
 static void calibration_work_cb(struct k_work *work);
@@ -265,7 +265,7 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
 		/* RC32K is used by POWERUP and WAKEUP HW FSM */
-		BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rc32k), okay),
+		BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rc32k)),
 				"RC32K is not allowed to be turned off");
 		ret = -EPERM;
 		break;
@@ -472,12 +472,12 @@ static void smartbond_clock_control_update_memory_settings(uint32_t sys_clock_fr
 {
 	if (sys_clock_freq > 32000000) {
 		da1469x_qspi_set_read_pipe_delay(QSPIC_ID, 7);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 		da1469x_qspi_set_read_pipe_delay(QSPIC2_ID, 7);
 #endif
 	} else {
 		da1469x_qspi_set_read_pipe_delay(QSPIC_ID, 2);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 		da1469x_qspi_set_read_pipe_delay(QSPIC2_ID, 2);
 #endif
 	}
@@ -485,7 +485,7 @@ static void smartbond_clock_control_update_memory_settings(uint32_t sys_clock_fr
 	da1469x_qspi_set_cs_delay(QSPIC_ID, SystemCoreClock,
 		DT_PROP(DT_NODELABEL(flash_controller), read_cs_idle_delay),
 		DT_PROP(DT_NODELABEL(flash_controller), erase_cs_idle_delay));
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 	da1469x_qspi_set_cs_delay(QSPIC2_ID, SystemCoreClock,
 		DT_PROP(DT_NODELABEL(memc), read_cs_idle_min_ns),
 		DT_PROP_OR(DT_NODELABEL(memc), erase_cs_idle_min_ns, 0));
@@ -565,7 +565,7 @@ int smartbond_clocks_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 	/* Make sure QSPIC2 is enabled */
 	da1469x_clock_amba_enable(CRG_TOP_CLK_AMBA_REG_QSPI2_ENABLE_Msk);
 #endif
@@ -579,12 +579,12 @@ int smartbond_clocks_init(const struct device *dev)
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(crg, osc), ENABLE_OSC, (;));
 
 	/* Make sure that selected sysclock is enabled */
-	BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_PROP(DT_NODELABEL(sys_clk), clock_src), okay),
+	BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_PROP(DT_NODELABEL(sys_clk), clock_src)),
 		     "Clock selected as system clock no enabled in DT");
-	BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_PROP(DT_NODELABEL(lp_clk), clock_src), okay),
+	BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_PROP(DT_NODELABEL(lp_clk), clock_src)),
 		     "Clock selected as LP clock no enabled in DT");
 	BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(pll), disabled) ||
-		     DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay),
+		     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)),
 		     "PLL enabled in DT but XTAL32M is disabled");
 
 	clk_id = DT_DEP_ORD(DT_PROP(DT_NODELABEL(lp_clk), clock_src));
@@ -603,7 +603,7 @@ int smartbond_clocks_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api smartbond_clock_control_api = {
+static DEVICE_API(clock_control, smartbond_clock_control_api) = {
 	.on = smartbond_clock_control_on,
 	.off = smartbond_clock_control_off,
 	.get_rate = smartbond_clock_control_get_rate,
@@ -616,7 +616,7 @@ static int smartbond_clocks_pm_action(const struct device *dev, enum pm_device_a
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 		/* Make sure QSPIC2 is enabled */
 		da1469x_clock_amba_enable(CRG_TOP_CLK_AMBA_REG_QSPI2_ENABLE_Msk);
 #endif

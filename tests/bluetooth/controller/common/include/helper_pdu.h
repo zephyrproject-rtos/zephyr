@@ -62,6 +62,8 @@ void helper_pdu_encode_cis_terminate_ind(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_sca_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_sca_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_periodic_sync_ind(struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
@@ -155,6 +157,9 @@ void helper_pdu_verify_cis_terminate_ind(const char *file, uint32_t line, struct
 void helper_pdu_verify_sca_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_sca_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_pdu_verify_periodic_sync_ind(const char *file, uint32_t line, struct pdu_data *pdu,
+					 void *param);
+
 void helper_node_verify_peer_sca_update(const char *file, uint32_t line, struct node_rx_pdu *rx,
 				   void *param);
 
@@ -193,6 +198,7 @@ enum helper_pdu_opcode {
 	LL_CIS_RSP,
 	LL_CIS_IND,
 	LL_CIS_TERMINATE_IND,
+	LL_PERIODIC_SYNC_IND,
 	LL_ZERO,
 };
 

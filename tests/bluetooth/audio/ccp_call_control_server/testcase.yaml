@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - bluetooth_audio
+tests:
+  bluetooth.audio.ccp_call_control_server.test:
+    type: unit

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -37,6 +38,11 @@
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
 		};
 	};
 };
@@ -46,8 +52,9 @@
 	#size-cells = <1>;
 
 	sramx: memory@4000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAMX";
 	};
 
 	sram0: memory@20000000 {
@@ -56,17 +63,16 @@
 	};
 
 	sram1: memory@20010000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
+		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@20020000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
+		compatible = "mmio-sram";
 		reg = <0x20020000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "SRAM2";
 	};
 
+	/* SRAM 4 is used by PowerQuad when enabled */
 	sram4: memory@20040000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20040000 DT_SIZE_K(16)>;
@@ -75,9 +81,9 @@
 
 	usb_sram: memory@40100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x40100000  DT_SIZE_K(16)>;
+		reg = <0x40100000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "USB_SRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -89,6 +95,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
 		#clock-cells = <1>;
+
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
@@ -126,6 +133,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
@@ -161,7 +169,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<32 2>, <33 2>, <34 2>, <35 2>;
+			     <32 2>, <33 2>, <34 2>, <35 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
@@ -256,14 +264,34 @@
 		status = "disabled";
 	};
 
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		clocks = <&syscon MCUX_SCTIMER_CLK>;
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
+
+	sdif: sdif@9b000 {
+		compatible = "nxp,lpc-sdif";
+		reg = <0x9b000 0x1000>;
+		interrupts = <42 0>;
+		clocks = <&syscon MCUX_SDIF_CLK>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
-		 rather than Flexcomm SS */
+		 * rather than Flexcomm SS
+		 */
 		/* cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
-			<&gpio1 1 GPIO_ACTIVE_LOW>,
-			<&gpio1 12 GPIO_ACTIVE_LOW>,
-			<&gpio1 26 GPIO_ACTIVE_LOW>; */
+		 * <&gpio1 1 GPIO_ACTIVE_LOW>,
+		 * <&gpio1 12 GPIO_ACTIVE_LOW>,
+		 * <&gpio1 26 GPIO_ACTIVE_LOW>;
+		 */
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
@@ -294,7 +322,7 @@
 		status = "disabled";
 		clk-divider = <8>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -303,11 +331,32 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
-	usbhs: usbhs@144000 {
+	usbhs: usbhs@94000 {
 		compatible = "nxp,lpcip3511";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
 		num-bidir-endpoints = <6>;
+		status = "disabled";
+	};
+
+	usbhfs: usbhfs@A2000 {
+		compatible = "nxp,uhc-ohci";
+		reg = <0xa2000 0x1000>;
+		interrupts = <28 1>;
+		maximum-speed = "full-speed";
+		status = "disabled";
+	};
+
+	usbhhs: usbhhs@A3000 {
+		compatible = "nxp,uhc-ip3516hs";
+		reg = <0xa3000 0x1000>;
+		interrupts = <47 1>;
+		status = "disabled";
+	};
+
+	usbphy1: usbphy@38000 {
+		compatible = "nxp,usbphy";
+		reg = <0x38000 0x1000>;
 		status = "disabled";
 	};
 };

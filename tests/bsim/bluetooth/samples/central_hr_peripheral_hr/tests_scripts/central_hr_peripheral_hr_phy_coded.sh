@@ -12,10 +12,10 @@ EXECUTE_TIMEOUT=60
 cd ${BSIM_OUT_PATH}/bin
 
 Execute ./bs_${BOARD_TS}_samples_bluetooth_peripheral_hr_prj_conf_overlay-phy_coded_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1
+  -v=${verbosity_level} -s=${simulation_id} -d=0
 
 Execute ./bs_${BOARD_TS}_${test_long_name}_prj_conf_overlay-phy_coded_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 \
+  -v=${verbosity_level} -s=${simulation_id} -d=1 \
   -testid=central_hr_peripheral_hr
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

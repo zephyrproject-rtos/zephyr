@@ -76,7 +76,7 @@ This setup relies on a "dual-chip" :ref:`configuration <bluetooth-configs>`
 which is comprised of the following devices:
 
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
-   :ref:`QEMU <application_run_qemu>` emulator or the :ref:`native_sim <native_sim>` native
+   :ref:`QEMU <application_run_qemu>` emulator or the :zephyr:board:`native_sim <native_sim>` native
    port of Zephyr
 #. A Controller, which can be one of the following types:
 
@@ -117,7 +117,7 @@ native_sim
 .. note::
    This is currently only available on GNU/Linux
 
-The :ref:`native_sim <native_sim>` target builds your Zephyr application
+The :zephyr:board:`native_sim <native_sim>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 
@@ -139,21 +139,21 @@ Simulated nRF5x with BabbleSim
 The :ref:`nrf52_bsim <nrf52_bsim>` and :ref:`nrf5340bsim <nrf5340bsim>` boards,
 are simulated target boards
 which emulate the necessary peripherals of a nRF52/53 SOC to be able to develop
-and test BLE applications.
+and test Bluetooth LE applications.
 These boards, use:
 
    * `BabbleSim`_ to simulate the nRF5x modem and the radio environment.
    * The POSIX arch and native simulator to emulate the processor, and run natively on your host.
    * `Models of the nrf5x HW <https://github.com/BabbleSim/ext_NRF_hw_models/>`_
 
-Just like with the :ref:`native_sim <native_sim>` target, the build result is a normal Linux
-executable.
+Just like with the :zephyr:board:`native_sim <native_sim>` target, the build result is a normal
+Linux executable.
 You can find more information on how to run simulations with one or several
 devices in either of :ref:`these boards's documentation <nrf52bsim_build_and_run>`.
 
 With the :ref:`nrf52_bsim <nrf52_bsim>`, typically you do :ref:`Combined builds
 <bluetooth-build-types>`, but it is also possible to build the controller with one of the
-:ref:`HCI UART <bluetooth-hci-uart-sample>` samples in one simulated device, and the host with
+:zephyr:code-sample:`bluetooth_hci_uart` samples in one simulated device, and the host with
 the H4 driver instead of the integrated controller in another simulated device.
 
 With the :ref:`nrf5340bsim <nrf5340bsim>`, you can build with either, both controller and host
@@ -189,7 +189,7 @@ and scan response data.
 More Examples
 *************
 
-More :ref:`sample Bluetooth applications <bluetooth-samples>` are available in
+More :zephyr:code-sample-category:`sample Bluetooth applications <bluetooth>` are available in
 ``samples/bluetooth/``.
 
 .. _BabbleSim: https://babblesim.github.io/

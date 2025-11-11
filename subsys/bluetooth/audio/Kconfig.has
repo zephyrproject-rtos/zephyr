@@ -6,8 +6,8 @@
 
 menuconfig BT_HAS
 	bool "Hearing Access Service support"
-	select UTF8
-	select BT_GATT_DYNAMIC_DB
+	depends on UTF8
+	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_BAP_UNICAST_SERVER
 	help
 	  This option enables support for Hearing Access Service.
@@ -23,7 +23,7 @@ config BT_HAS_FEATURES_NOTIFIABLE
 config BT_HAS_PRESET_COUNT
 	int "Preset record list size"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option sets the number of Hearing Access Service Presets
 	  that can be registered. Setting this value to 0 disables Presets support.
@@ -56,9 +56,10 @@ endif # BT_HAS
 
 config BT_HAS_CLIENT
 	bool "Hearing Access Service Client support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
-	select UTF8
+	depends on UTF8
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_SMP
 	help
 	  This option enables support for Hearing Access Service Client.

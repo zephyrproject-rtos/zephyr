@@ -6,8 +6,10 @@
 /**
  * @file
  * @brief Xtensa specific kernel interface header
- * This header contains the Xtensa specific kernel interface.  It is included
- * by the generic kernel interface header (include/zephyr/arch/cpu.h)
+ *
+ * This header contains the Xtensa specific kernel interface.  It is
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
@@ -45,6 +47,7 @@
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
+ * @ingroup arch-interface
  * @{
  * @}
  *
@@ -54,7 +57,7 @@
  * @}
  */
 
-#include <zephyr/arch/xtensa/exception.h>
+#include <zephyr/arch/exception.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,15 +65,25 @@ extern "C" {
 
 struct arch_mem_domain {
 #ifdef CONFIG_XTENSA_MMU
-	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint32_t *ptables;
 	uint8_t asid;
 	bool dirty;
+
+	/* Following are used to program registers when changing page tables. */
+	uint32_t reg_asid;
+	uint32_t reg_ptevaddr;
+	uint32_t reg_ptepin_as;
+	uint32_t reg_ptepin_at;
+	uint32_t reg_vecpin_as;
+	uint32_t reg_vecpin_at;
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	struct xtensa_mpu_map mpu_map;
 #endif
 	sys_snode_t node;
 };
+
+typedef struct arch_mem_domain arch_mem_domain_t;
 
 /**
  * @brief Generate hardware exception.

@@ -1,7 +1,4 @@
-.. _samr21_xpro:
-
-SAM R21 Xplained Pro Evaluation Kit
-###################################
+.. zephyr:board:: samr21_xpro
 
 Overview
 ********
@@ -11,10 +8,6 @@ SAMR21G18A SoC. The SoC includes a SAMR21 ARM Cortex-M0+ micro-controller
 bundled with Atmel's AT86RF233, a 2.4GHz IEEE802.15.4 compatible radio.
 The kit includes Atmel’s Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
-
-.. image:: img/atsamr21_xpro.jpg
-     :align: center
-     :alt: SAMR21-XPRO
 
 Hardware
 ********
@@ -30,33 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The samr21_xpro board configuration supports the following hardware
-features:
-
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vector interrupt controller   |
-+-----------+------------+--------------------------------------+
-| SYSTICK   | on-chip    | systick                              |
-+-----------+------------+--------------------------------------+
-| WDT       | on-chip    | Watchdog                             |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | I/O ports                            |
-+-----------+------------+--------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation               |
-+-----------+------------+--------------------------------------+
-| USART     | on-chip    | Serial ports                         |
-+-----------+------------+--------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports    |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | I2C Peripheral Interface ports       |
-+-----------+------------+--------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samr21_xpro/samr21_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -159,13 +126,15 @@ externally connected SPI devices.
 +-------------+------------------------------------------------------------------------------------------+
 
 Zephyr provide several samples that can use this technology. You can check
-:zephyr:code-sample:`wpan-usb` and :zephyr:code-sample:`wpan-serial` examples as starting
-points. Another good test can be done with IPv6 by using the server/client
+:zephyr:code-sample:`wpan-serial` example as starting points.
+Another good test can be done with IPv6 by using the server/client
 echo demo. More information at :zephyr:code-sample:`sockets-echo-server` and
 :zephyr:code-sample:`sockets-echo-client`.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The SAM R21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMR21 chip and is supported by
@@ -174,7 +143,7 @@ OpenOCD.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

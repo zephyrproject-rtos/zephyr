@@ -476,7 +476,7 @@ int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_nct38xx_driver = {
+static DEVICE_API(gpio, gpio_nct38xx_driver) = {
 	.pin_configure = gpio_nct38xx_pin_config,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_nct38xx_pin_get_config,

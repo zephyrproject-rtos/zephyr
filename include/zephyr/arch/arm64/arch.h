@@ -10,7 +10,7 @@
  *
  * This header contains the ARM64 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arm64/cpu.h)
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ARCH_H_
@@ -20,7 +20,7 @@
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/arm64/thread.h>
-#include <zephyr/arch/arm64/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/arm64/irq.h>
 #include <zephyr/arch/arm64/misc.h>
 #include <zephyr/arch/arm64/asm_inline.h>

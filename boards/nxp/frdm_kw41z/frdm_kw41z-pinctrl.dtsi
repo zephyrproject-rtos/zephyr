@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MKW41Z512VHT4-pinctrl.h>
 
 &pinctrl {
@@ -21,7 +20,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <I2C1_SCL_PTC2>,
-				<I2C1_SDA_PTC3>;
+				 <I2C1_SDA_PTC3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -33,6 +32,7 @@
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
+
 		group1 {
 			pinmux = <UART0_RX_PTC6>;
 			drive-strength = "low";
@@ -43,9 +43,9 @@
 	spi0_default: spi0_default {
 		group0 {
 			pinmux = <SPI0_SCK_PTC16>,
-				<SPI0_SIN_PTC18>,
-				<SPI0_SOUT_PTC17>,
-				<SPI0_PCS0_PTC19>;
+				 <SPI0_SIN_PTC18>,
+				 <SPI0_SOUT_PTC17>,
+				 <SPI0_PCS0_PTC19>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -54,7 +54,7 @@
 	tmp2_default: tmp2_default {
 		group0 {
 			pinmux = <TPM2_CH0_PTA18>,
-				<TPM2_CH1_PTA19>;
+				 <TPM2_CH1_PTA19>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -67,5 +67,4 @@
 			slew-rate = "slow";
 		};
 	};
-
 };

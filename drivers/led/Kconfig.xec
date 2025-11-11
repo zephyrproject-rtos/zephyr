@@ -5,6 +5,7 @@ config LED_XEC
 	bool "Microchip XEC BB-LED driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_BBLED_ENABLED
+	select PINCTRL
 	help
 	  Enable driver for the Microchip XEC Breathing-Blinking
 	  LED controller for MEC15xx and MEC172x

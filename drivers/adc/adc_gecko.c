@@ -280,7 +280,7 @@ static int adc_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api api_gecko_adc_driver_api = {
+static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 	.channel_setup = adc_gecko_channel_setup,
 	.read = adc_gecko_read,
 };
@@ -307,7 +307,7 @@ static const struct adc_driver_api api_gecko_adc_driver_api = {
 		irq_enable(DT_INST_IRQN(n));	\
 	}; \
 	DEVICE_DT_INST_DEFINE(n,					 \
-			      &adc_gecko_init, NULL,			 \
+			      adc_gecko_init, NULL,			 \
 			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
 			      &api_gecko_adc_driver_api);

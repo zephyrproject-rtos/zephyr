@@ -1,0 +1,7 @@
+shield:
+  name: adafruit_aw9523
+  full_name: Adafruit AW9523 GPIO Expander and LED Driver
+  vendor: adafruit
+  supported_features:
+    - mfd
+    - gpio

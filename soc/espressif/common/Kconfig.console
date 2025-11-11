@@ -1,0 +1,79 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESPRESSIF_ESP32
+
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
+if !$(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
+
+config ESP_CONSOLE_UART_NUM
+	int
+	default -1
+
+config ESP_CONSOLE_UART_BAUDRATE
+	int
+	default 0
+
+endif # !$(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
+
+if $(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
+
+if $(dt_nodelabel_enabled,uart0)
+	ESP32_UART0_NODE_PATH := $(dt_nodelabel_path,uart0)
+	ESP32_UART0_CURR_SPEED := $(dt_node_int_prop_int,$(ESP32_UART0_NODE_PATH),current-speed)
+endif # $(dt_nodelabel_enabled,uart0)
+
+if $(dt_nodelabel_enabled,uart1)
+	ESP32_UART1_NODE_PATH := $(dt_nodelabel_path,uart1)
+	ESP32_UART1_CURR_SPEED := $(dt_node_int_prop_int,$(ESP32_UART1_NODE_PATH),current-speed)
+endif # $(dt_nodelabel_enabled,uart1)
+
+if $(dt_nodelabel_enabled,uart2)
+	ESP32_UART2_NODE_PATH := $(dt_nodelabel_path,uart2)
+	ESP32_UART2_CURR_SPEED := $(dt_node_int_prop_int,$(ESP32_UART2_NODE_PATH),current-speed)
+endif # $(dt_nodelabel_enabled,uart2)
+
+if $(dt_nodelabel_enabled,usb_serial)
+	ESP32_USB_SERIAL_CURR_SPEED := 1
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+	int
+	default 4 if SOC_SERIES_ESP32S3
+	default 3
+
+endif # $(dt_nodelabel_enabled,usb_serial)
+
+config ESP_CONSOLE_UART
+	bool
+	default y if $(dt_nodelabel_enabled,uart0) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart0) || \
+		     $(dt_nodelabel_enabled,uart1) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart1) || \
+		     $(dt_nodelabel_enabled,uart2) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart2)
+
+config ESP_CONSOLE_USB_SERIAL_JTAG
+	bool
+	default y if $(dt_nodelabel_enabled,usb_serial) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,usb_serial)
+
+config ESP_CONSOLE_UART_NUM
+	int
+	default 0 if $(dt_nodelabel_enabled,uart0) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart0)
+	default 1 if $(dt_nodelabel_enabled,uart1) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart1)
+	default 2 if $(dt_nodelabel_enabled,uart2) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart2)
+	default ESP_ROM_USB_SERIAL_DEVICE_NUM if $(dt_nodelabel_enabled,usb_serial) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,usb_serial)
+	default -1
+
+config ESP_CONSOLE_UART_BAUDRATE
+	int
+	default $(ESP32_UART0_CURR_SPEED) if $(dt_nodelabel_enabled,uart0) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart0)
+	default $(ESP32_UART1_CURR_SPEED) if $(dt_nodelabel_enabled,uart1) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart1)
+	default $(ESP32_UART2_CURR_SPEED) if $(dt_nodelabel_enabled,uart2) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,uart2)
+	default $(ESP32_USB_SERIAL_CURR_SPEED) if $(dt_nodelabel_enabled,usb_serial) && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CONSOLE)) = $(dt_nodelabel_reg_addr_hex,usb_serial)
+	default 0
+
+config ESP_CONSOLE
+	bool
+	default y if ESP_CONSOLE_UART || ESP_CONSOLE_USB_SERIAL_JTAG
+
+endif # $(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
+
+endif # SOC_FAMILY_ESPRESSIF_ESP32

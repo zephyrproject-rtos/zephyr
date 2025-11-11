@@ -117,7 +117,7 @@ struct dwt_context {
 };
 
 static const struct dwt_hi_cfg dw1000_0_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 };
@@ -274,16 +274,6 @@ static inline uint32_t dwt_reg_read_u32(const struct device *dev,
 	return sys_get_le32(buf);
 }
 
-static inline uint16_t dwt_reg_read_u16(const struct device *dev,
-				     uint8_t reg, uint16_t offset)
-{
-	uint8_t buf[sizeof(uint16_t)];
-
-	dwt_spi_transfer(dev, reg, offset, sizeof(buf), buf, false);
-
-	return sys_get_le16(buf);
-}
-
 static inline uint8_t dwt_reg_read_u8(const struct device *dev,
 				   uint8_t reg, uint16_t offset)
 {
@@ -416,7 +406,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	rx_pacc = (rx_finfo & DWT_RX_FINFO_RXPACC_MASK) >>
 		   DWT_RX_FINFO_RXPACC_SHIFT;
 
-	if (!(IS_ENABLED(CONFIG_IEEE802154_RAW_MODE))) {
+	if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		pkt_len -= DWT_FCS_LENGTH;
 	}
 

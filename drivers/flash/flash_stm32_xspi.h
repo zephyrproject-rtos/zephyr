@@ -67,8 +67,9 @@ struct stream {
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct flash_stm32_xspi_config {
-	const struct stm32_pclken *pclken;
-	size_t pclk_len;
+	const struct stm32_pclken pclken;
+	const struct stm32_pclken pclken_ker;
+	const struct stm32_pclken pclken_mgr;
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;

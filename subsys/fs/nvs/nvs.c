@@ -88,7 +88,7 @@ static void nvs_lookup_cache_invalidate(struct nvs_fs *fs, uint32_t sector)
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 {
-	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+	size_t write_block_size = fs->flash_parameters->write_block_size;
 
 	if (write_block_size <= 1U) {
 		return len;
@@ -467,11 +467,8 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 	nvs_ate_crc8_update(&entry);
 
 	rc = nvs_flash_ate_wrt(fs, &entry);
-	if (rc) {
-		return rc;
-	}
 
-	return 0;
+	return rc;
 }
 /* end of flash routines */
 
@@ -744,10 +741,8 @@ gc_done:
 
 	/* Erase the gc'ed sector */
 	rc = nvs_flash_erase_sector(fs, sec_addr);
-	if (rc) {
-		return rc;
-	}
-	return 0;
+
+	return rc;
 }
 
 static int nvs_startup(struct nvs_fs *fs)
@@ -786,10 +781,23 @@ static int nvs_startup(struct nvs_fs *fs)
 			}
 		}
 	}
-	/* all sectors are closed, this is not a nvs fs */
+	/* all sectors are closed, this is not a nvs fs or irreparably corrupted */
 	if (closed_sectors == fs->sector_count) {
+#ifdef CONFIG_NVS_INIT_BAD_MEMORY_REGION
+		LOG_WRN("All sectors closed, erasing all sectors...");
+		rc = flash_flatten(fs->flash_device, fs->offset,
+				   fs->sector_size * fs->sector_count);
+		if (rc) {
+			goto end;
+		}
+
+		i = fs->sector_count;
+		addr = ((fs->sector_count - 1) << ADDR_SECT_SHIFT) +
+		       (uint16_t)(fs->sector_size - ate_size);
+#else
 		rc = -EDEADLK;
 		goto end;
+#endif
 	}
 
 	if (i == fs->sector_count) {
@@ -997,7 +1005,6 @@ int nvs_clear(struct nvs_fs *fs)
 
 int nvs_mount(struct nvs_fs *fs)
 {
-
 	int rc;
 	struct flash_pages_info info;
 	size_t write_block_size;
@@ -1015,6 +1022,13 @@ int nvs_mount(struct nvs_fs *fs)
 	/* check that the write block size is supported */
 	if (write_block_size > NVS_BLOCK_SIZE || write_block_size == 0) {
 		LOG_ERR("Unsupported write block size");
+		return -EINVAL;
+	}
+
+	/* check that sector size is not greater than max */
+	if (fs->sector_size > NVS_MAX_SECTOR_SIZE) {
+		LOG_ERR("Sector size %u too large, maximum is %zu",
+			fs->sector_size, NVS_MAX_SECTOR_SIZE);
 		return -EINVAL;
 	}
 
@@ -1129,7 +1143,10 @@ no_cached_entry:
 		} else if (len + NVS_DATA_CRC_SIZE == wlk_ate.len) {
 			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
-			rc = nvs_flash_block_cmp(fs, rd_addr, data, len + NVS_DATA_CRC_SIZE);
+			/* note: data CRC is not taken into account here, as it has not yet been
+			 * appended to the data buffer
+			 */
+			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
 			if (rc <= 0) {
 				return rc;
 			}
@@ -1296,7 +1313,6 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 
 ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 {
-
 	int rc;
 	struct nvs_ate step_ate, wlk_ate;
 	uint32_t step_addr, wlk_addr;
@@ -1309,14 +1325,13 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	free_space = 0;
-	for (uint16_t i = 1; i < fs->sector_count; i++) {
-		/*
-		 * There is always a closing ATE and a reserved ATE for
-		 * deletion in each sector
-		 */
-		free_space += (fs->sector_size - (2 * ate_size));
-	}
+	/*
+	 * There is always a closing ATE and a reserved ATE for
+	 * deletion in each sector.
+	 * Take into account one less sector because it is reserved for the
+	 * garbage collection.
+	 */
+	free_space = (fs->sector_count - 1) * (fs->sector_size - (2 * ate_size));
 
 	step_addr = fs->ate_wra;
 
@@ -1357,4 +1372,41 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 		}
 	}
 	return free_space;
+}
+
+size_t nvs_sector_max_data_size(struct nvs_fs *fs)
+{
+	size_t ate_size;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	return fs->ate_wra - fs->data_wra - ate_size - NVS_DATA_CRC_SIZE;
+}
+
+int nvs_sector_use_next(struct nvs_fs *fs)
+{
+	int ret;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
+	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+
+	ret = nvs_sector_close(fs);
+	if (ret != 0) {
+		goto end;
+	}
+
+	ret = nvs_gc(fs);
+
+end:
+	k_mutex_unlock(&fs->nvs_lock);
+	return ret;
 }

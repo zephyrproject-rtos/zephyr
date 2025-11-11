@@ -20,6 +20,7 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/mutex.h>
+#include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 
@@ -51,19 +52,19 @@ static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* On ARM & ARC MPU we may have two different alignment requirement
+/* On ARM & ARC MPU & RISC-V PMP we may have two different alignment requirement
  * when dynamically allocating thread stacks, one for the privileged
  * stack and other for the user stack, so we need to account the
  * worst alignment scenario and reserve space for that.
  */
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 #define STACK_ELEMENT_DATA_SIZE(size) \
 	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
 	Z_THREAD_STACK_OBJ_ALIGN(size) + K_THREAD_STACK_LEN(size))
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
 	K_THREAD_STACK_LEN(size))
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) K_THREAD_STACK_LEN(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
@@ -71,7 +72,7 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
-#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
+#define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
@@ -150,13 +151,13 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 
 #ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
-#ifndef CONFIG_MPU_STACK_GUARD
-#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
-	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
-#else
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_PMP_STACK_GUARD)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
-#endif /* !CONFIG_MPU_STACK_GUARD */
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
+#endif /* CONFIG_MPU_STACK_GUARD || CONFIG_PMP_STACK_GUARD */
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(ARCH_STACK_PTR_ALIGN)
@@ -349,13 +350,13 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		stack_data->priv = (uint8_t *)dyn->data;
 		stack_data->size = adjusted_size;
 		dyn->kobj.data.stack_data = stack_data;
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 		dyn->kobj.name = (void *)ROUND_UP(
 			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
 #else
 		dyn->kobj.name = dyn->data;
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 		dyn->kobj.name = dyn->data;
 		dyn->kobj.data.stack_size = adjusted_size;
@@ -363,7 +364,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
 		if (dyn->data == NULL) {
-			k_free(dyn->data);
+			k_free(dyn);
 			return NULL;
 		}
 		dyn->kobj.name = dyn->data;
@@ -520,6 +521,33 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
+/* In the earlier linker-passes before we have the real generated
+ * implementation of the lookup functions, we need some weak dummies.
+ * Being __weak, they will be replaced by the generated implementations in
+ * the later linker passes.
+ */
+#ifdef CONFIG_DYNAMIC_OBJECTS
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *z_object_gperf_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#else
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *k_object_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#endif
+
 static unsigned int thread_index_get(struct k_thread *thread)
 {
 	struct k_object *ko;
@@ -563,11 +591,6 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
-#ifdef CONFIG_PIPES
-	case K_OBJ_PIPE:
-		k_pipe_cleanup((struct k_pipe *)ko->name);
-		break;
-#endif /* CONFIG_PIPES */
 	case K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;

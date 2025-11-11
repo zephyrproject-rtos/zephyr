@@ -63,7 +63,7 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   string(REGEX MATCH "VERSION_TWEAK = ([0-9]*)" _ ${ver})
   set(${type}_VERSION_TWEAK ${CMAKE_MATCH_1})
 
-  string(REGEX MATCH "EXTRAVERSION = ([a-z0-9]*)" _ ${ver})
+  string(REGEX MATCH "EXTRAVERSION = ([a-z0-9\.\-]*)" _ ${ver})
   set(${type}_VERSION_EXTRA ${CMAKE_MATCH_1})
 
   # Validate all version fields fit in a single byte
@@ -129,7 +129,7 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
       set(BUILD_VERSION_STR ", build: ${BUILD_VERSION}")
     endif()
 
-    if (NOT NO_PRINT_VERSION)
+    if(NOT NO_PRINT_VERSION)
         message(STATUS "Zephyr version: ${PROJECT_VERSION_STR} (${ZEPHYR_BASE})${BUILD_VERSION_STR}")
     endif()
   endif()

@@ -555,9 +555,9 @@ static int nvme_cmd_qpair_fill_prp_list(struct nvme_cmd_qpair *qpair,
 
 	p_addr = (uintptr_t)request->payload;
 	request->cmd.dptr.prp1 =
-		(uint64_t)sys_cpu_to_le64(p_addr);
+		sys_cpu_to_le64((uint64_t)p_addr);
 	request->cmd.dptr.prp2 =
-		(uint64_t)sys_cpu_to_le64(&prp_list->prp);
+		sys_cpu_to_le64((uint64_t)(uintptr_t)&prp_list->prp);
 	p_addr = NVME_PRP_NEXT_PAGE(p_addr);
 
 	for (idx = 0; idx < n_prp; idx++) {
@@ -576,13 +576,13 @@ static int compute_n_prp(uintptr_t addr, uint32_t size)
 
 	/* See Common Command Format, Data Pointer (DPTR) field */
 
-	n_prp = size / CONFIG_MMU_PAGE_SIZE;
+	n_prp = size / CONFIG_NVME_PRP_PAGE_SIZE;
 	if (n_prp == 0) {
 		n_prp = 1;
 	}
 
-	if (size != CONFIG_MMU_PAGE_SIZE) {
-		size = size % CONFIG_MMU_PAGE_SIZE;
+	if (size != CONFIG_NVME_PRP_PAGE_SIZE) {
+		size = size % CONFIG_NVME_PRP_PAGE_SIZE;
 	}
 
 	if (n_prp == 1) {
@@ -602,7 +602,7 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 	switch (request->type) {
 	case NVME_REQUEST_NULL:
 		break;
-	case NVME_REQUEST_VADDR:
+	case NVME_REQUEST_VADDR: {
 		int n_prp;
 
 		if (request->payload_size > qpair->ctrlr->max_xfer_size) {
@@ -614,7 +614,7 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 				      request->payload_size);
 		if (n_prp <= 2) {
 			request->cmd.dptr.prp1 =
-				(uint64_t)sys_cpu_to_le64(request->payload);
+				sys_cpu_to_le64((uint64_t)(uintptr_t)request->payload);
 			if (n_prp == 2) {
 				request->cmd.dptr.prp2 = (uint64_t)sys_cpu_to_le64(
 					NVME_PRP_NEXT_PAGE(
@@ -627,6 +627,7 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 		}
 
 		return nvme_cmd_qpair_fill_prp_list(qpair, request, n_prp);
+	}
 	default:
 		break;
 	}

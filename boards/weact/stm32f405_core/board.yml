@@ -1,0 +1,6 @@
+board:
+  name: weact_stm32f405_core
+  full_name: STM32F405 Core Board V1.0
+  vendor: weact
+  socs:
+    - name: stm32f405xx

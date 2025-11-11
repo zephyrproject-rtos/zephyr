@@ -1,5 +1,6 @@
 board:
   name: s32z2xxdc2
+  full_name: X-S32Z27X-DC (DC2)
   vendor: nxp
   revision:
     format: letter

@@ -207,6 +207,10 @@ __net_socket struct tls_context {
 
 		bool dtls_handshake_on_connect;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+		struct tls_cert_verify_cb cert_verify;
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -1056,7 +1060,7 @@ static int tls_set_psk(struct tls_context *tls,
 		       struct tls_credential *psk,
 		       struct tls_credential *psk_id)
 {
-#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
 	int err = mbedtls_ssl_conf_psk(&tls->config,
 				       psk->buf, psk->len,
 				       (const unsigned char *)psk_id->buf,
@@ -1078,7 +1082,7 @@ static int tls_set_credential(struct tls_context *tls,
 	case TLS_CREDENTIAL_CA_CERTIFICATE:
 		return tls_add_ca_certificate(tls, cred);
 
-	case TLS_CREDENTIAL_SERVER_CERTIFICATE:
+	case TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
 		return tls_add_own_cert(tls, cred);
 
 	case TLS_CREDENTIAL_PRIVATE_KEY:
@@ -1133,7 +1137,7 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 
 			if (cred->type == TLS_CREDENTIAL_CA_CERTIFICATE) {
 				ca_cert_present = true;
-			} else if (cred->type == TLS_CREDENTIAL_SERVER_CERTIFICATE) {
+			} else if (cred->type == TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
 				own_cert_present = true;
 			}
 		}
@@ -1421,6 +1425,18 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	}
 #endif
 
+#if defined(MBEDTLS_SSL_EARLY_DATA)
+	mbedtls_ssl_conf_early_data(&context->config, MBEDTLS_SSL_EARLY_DATA_ENABLED);
+#endif
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+	if (context->options.cert_verify.cb != NULL) {
+		mbedtls_ssl_conf_verify(&context->config,
+					context->options.cert_verify.cb,
+					context->options.cert_verify.ctx);
+	}
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
+
 	ret = mbedtls_ssl_setup(&context->ssl,
 				&context->config);
 	if (ret != 0) {
@@ -1448,10 +1464,161 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	return 0;
 }
 
+static int tls_check_cert(struct tls_credential *cert)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_x509_crt cert_ctx;
+	int err;
+
+	mbedtls_x509_crt_init(&cert_ctx);
+
+	if (crt_is_pem(cert->buf, cert->len)) {
+		err = mbedtls_x509_crt_parse(&cert_ctx, cert->buf, cert->len);
+	} else {
+		/* For DER case, use the no copy version of the parsing function
+		 * to avoid unnecessary heap allocations.
+		 */
+		err = mbedtls_x509_crt_parse_der_nocopy(&cert_ctx, cert->buf,
+							cert->len);
+	}
+
+	if (err != 0) {
+		NET_ERR("Failed to parse %s on tag %d, err: -0x%x",
+			"certificate", cert->tag, -err);
+		return -EINVAL;
+	}
+
+	mbedtls_x509_crt_free(&cert_ctx);
+
+	return err;
+#else
+	NET_ERR("TLS with certificates disabled. "
+		"Reconfigure mbed TLS to support certificate based key exchange.");
+
+	return -ENOTSUP;
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+}
+
+static int tls_check_priv_key(struct tls_credential *priv_key)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_pk_context key_ctx;
+	int err;
+
+	mbedtls_pk_init(&key_ctx);
+
+	err = mbedtls_pk_parse_key(&key_ctx, priv_key->buf,
+				   priv_key->len, NULL, 0,
+				   tls_ctr_drbg_random, NULL);
+	if (err != 0) {
+		NET_ERR("Failed to parse %s on tag %d, err: -0x%x",
+			"private key", priv_key->tag, -err);
+		err = -EINVAL;
+	}
+
+	mbedtls_pk_free(&key_ctx);
+
+	return err;
+#else
+	NET_ERR("TLS with certificates disabled. "
+		"Reconfigure mbed TLS to support certificate based key exchange.");
+
+	return -ENOTSUP;
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+}
+
+static int tls_check_psk(struct tls_credential *psk)
+{
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	struct tls_credential *psk_id;
+
+	psk_id = credential_get(psk->tag, TLS_CREDENTIAL_PSK_ID);
+	if (psk_id == NULL) {
+		NET_ERR("No matching PSK ID found for tag %d", psk->tag);
+		return -EINVAL;
+	}
+
+	if (psk->len == 0 || psk_id->len == 0) {
+		NET_ERR("PSK or PSK ID empty on tag %d", psk->tag);
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	NET_ERR("TLS with PSK disabled. "
+		"Reconfigure mbed TLS to support PSK based key exchange.");
+
+	return -ENOTSUP;
+#endif
+}
+
+static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
+{
+	int err = 0;
+
+	credentials_lock();
+
+	for (int i = 0; i < sec_tag_count; i++) {
+		sec_tag_t tag = sec_tags[i];
+		struct tls_credential *cred = NULL;
+		bool tag_found = false;
+
+		while ((cred = credential_next_get(tag, cred)) != NULL) {
+			tag_found = true;
+
+			switch (cred->type) {
+			case TLS_CREDENTIAL_CA_CERTIFICATE:
+				__fallthrough;
+			case TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
+				err = tls_check_cert(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PRIVATE_KEY:
+				err = tls_check_priv_key(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PSK:
+				err = tls_check_psk(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PSK_ID:
+				/* Ignore PSK ID - it will be verified together
+				 * with PSK.
+				 */
+				break;
+			default:
+				return -EINVAL;
+			}
+		}
+
+		/* If no credential is found with such a tag, report an error. */
+		if (!tag_found) {
+			NET_ERR("No TLS credential found with tag %d", tag);
+			err = -ENOENT;
+			goto exit;
+		}
+	}
+
+exit:
+	credentials_unlock();
+
+	return err;
+}
+
 static int tls_opt_sec_tag_list_set(struct tls_context *context,
 				    const void *optval, socklen_t optlen)
 {
 	int sec_tag_cnt;
+	int ret;
 
 	if (!optval) {
 		return -EINVAL;
@@ -1465,6 +1632,11 @@ static int tls_opt_sec_tag_list_set(struct tls_context *context,
 	if (sec_tag_cnt >
 		ARRAY_SIZE(context->options.sec_tag_list.sec_tags)) {
 		return -EINVAL;
+	}
+
+	ret = tls_check_credentials((const sec_tag_t *)optval, sec_tag_cnt);
+	if (ret < 0) {
+		return ret;
 	}
 
 	memcpy(context->options.sec_tag_list.sec_tags, optval, optlen);
@@ -1780,13 +1952,16 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
 	int enabled = false;
 	int ret;
+	size_t optlen_local;
 
 	if (!context->is_initialized) {
 		return -ENOTCONN;
 	}
 
-	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, optlen);
-	if (!enabled) {
+	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, &optlen_local);
+	if (enabled) {
+		*optlen = optlen_local;
+	} else {
 		*optlen = 0;
 	}
 	return ret;
@@ -1941,6 +2116,18 @@ static int tls_opt_session_cache_get(struct tls_context *context,
 	return 0;
 }
 
+static int tls_opt_cert_verify_result_get(struct tls_context *context,
+					  void *optval, socklen_t *optlen)
+{
+	if (*optlen != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	*(uint32_t *)optval = mbedtls_ssl_get_verify_result(&context->ssl);
+
+	return 0;
+}
+
 static int tls_opt_session_cache_purge_set(struct tls_context *context,
 					   const void *optval, socklen_t optlen)
 {
@@ -2028,13 +2215,49 @@ static int tls_opt_dtls_role_set(struct tls_context *context,
 	return 0;
 }
 
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
+static int tls_opt_cert_verify_callback_set(struct tls_context *context,
+					    const void *optval,
+					    socklen_t optlen)
+{
+	struct tls_cert_verify_cb *cert_verify;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (optlen != sizeof(struct tls_cert_verify_cb)) {
+		return -EINVAL;
+	}
+
+	cert_verify = (struct tls_cert_verify_cb *)optval;
+	if (cert_verify->cb == NULL) {
+		return -EINVAL;
+	}
+
+	context->options.cert_verify = *cert_verify;
+
+	return 0;
+}
+#else /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
+static int tls_opt_cert_verify_callback_set(struct tls_context *context,
+					    const void *optval,
+					    socklen_t optlen)
+{
+	NET_ERR("TLS_CERT_VERIFY_CALLBACK option requires "
+		"CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK enabled");
+
+	return -ENOPROTOOPT;
+}
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
+
 static int protocol_check(int family, int type, int *proto)
 {
 	if (family != AF_INET && family != AF_INET6) {
 		return -EAFNOSUPPORT;
 	}
 
-	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_2) {
+	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_3) {
 		if (type != SOCK_STREAM) {
 			return -EPROTOTYPE;
 		}
@@ -2104,7 +2327,7 @@ free_fd:
 	return -1;
 }
 
-int ztls_close_ctx(struct tls_context *ctx)
+int ztls_close_ctx(struct tls_context *ctx, int sock)
 {
 	int ret, err = 0;
 
@@ -2115,6 +2338,10 @@ int ztls_close_ctx(struct tls_context *ctx)
 
 	err = tls_release(ctx);
 	ret = zsock_close(ctx->sock);
+
+	if (ret == 0) {
+		(void)sock_obj_core_dealloc(sock);
+	}
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -2133,13 +2360,15 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 {
 	int ret;
 	int sock_flags;
+	bool is_non_block;
 
 	sock_flags = zsock_fcntl(ctx->sock, F_GETFL, 0);
 	if (sock_flags < 0) {
 		return -EIO;
 	}
 
-	if (sock_flags & O_NONBLOCK) {
+	is_non_block = sock_flags & O_NONBLOCK;
+	if (is_non_block) {
 		(void)zsock_fcntl(ctx->sock, F_SETFL,
 				  sock_flags & ~O_NONBLOCK);
 	}
@@ -2149,7 +2378,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		return ret;
 	}
 
-	if (sock_flags & O_NONBLOCK) {
+	if (is_non_block) {
 		(void)zsock_fcntl(ctx->sock, F_SETFL, sock_flags);
 	}
 
@@ -2177,8 +2406,13 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
 		 */
-		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
+		ret = tls_mbedtls_handshake(
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 		if (ret < 0) {
+			if ((ret == -EAGAIN) && !is_non_block) {
+				ret = -ETIMEDOUT;
+			}
+
 			goto error;
 		}
 
@@ -2234,7 +2468,8 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket.
 	 */
-	ret = tls_mbedtls_handshake(child, K_FOREVER);
+	ret = tls_mbedtls_handshake(
+		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 	if (ret < 0) {
 		goto error;
 	}
@@ -2375,6 +2610,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 
 		/* TODO For simplicity, TLS handshake blocks the socket even for
 		 * non-blocking socket.
+		 * DTLS handshake timeout/retransmissions are limited by
+		 * mbed TLS, so K_FOREVER is fine here, the function will not
+		 * block indefinitely.
 		 */
 		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
 		if (ret < 0) {
@@ -2600,7 +2838,8 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
+			    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 				int timeout_ms;
 
 				if (!is_block) {
@@ -3240,9 +3479,11 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd);
-		if (ret == -EAGAIN && pfd->revents != 0) {
+		if (ret == -EAGAIN && pfd->revents == 0) {
 			(*pev - 1)->state = K_POLL_STATE_NOT_READY;
 			goto exit;
+		} else {
+			ret = 0;
 		}
 	}
 exit:
@@ -3298,7 +3539,7 @@ static bool poll_offload_dtls_client_retry(struct tls_context *ctx,
 
 static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 {
-	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	int fd_backup[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
 	void *ctx;
 	int ret = 0;
@@ -3471,6 +3712,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_session_cache_get(ctx, optval, optlen);
 		break;
 
+	case TLS_CERT_VERIFY_RESULT:
+		err = tls_opt_cert_verify_result_get(ctx, optval, optlen);
+		break;
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	case TLS_DTLS_HANDSHAKE_TIMEOUT_MIN:
 		err = tls_opt_dtls_handshake_timeout_get(ctx, optval,
@@ -3591,6 +3836,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 
 	case TLS_SESSION_CACHE_PURGE:
 		err = tls_opt_session_cache_purge_set(ctx, optval, optlen);
+		break;
+
+	case TLS_CERT_VERIFY_CALLBACK:
+		err = tls_opt_cert_verify_callback_set(ctx, optval, optlen);
 		break;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -3814,9 +4063,9 @@ static int tls_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return ztls_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int tls_sock_close_vmeth(void *obj)
+static int tls_sock_close2_vmeth(void *obj, int sock)
 {
-	return ztls_close_ctx(obj);
+	return ztls_close_ctx(obj, sock);
 }
 
 static int tls_sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
@@ -3839,7 +4088,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = tls_sock_read_vmeth,
 		.write = tls_sock_write_vmeth,
-		.close = tls_sock_close_vmeth,
+		.close2 = tls_sock_close2_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
 	.shutdown = tls_sock_shutdown_vmeth,

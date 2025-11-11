@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Texas Instruments Inc.
+# Copyright (c) 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 oscillator
+
+compatible: "ti,mspm0-osc"
+
+include: [fixed-clock.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  ti,xtal-startup-delay-us:
+    type: int
+    description: |
+      Crystal Oscillator startup delay in micro seconds.
+
+  ti,low-cap:
+    type: boolean
+    description: |
+      Specifies if capacitance is less than 3pF to reduce power consumption.

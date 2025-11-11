@@ -43,14 +43,20 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 #define INFINEON_OUI_B1 0x03
 #define INFINEON_OUI_B2 0x19
 
-#define MODULO_INC_TX(val) {(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0; }
-#define MODULO_INC_RX(val) {(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0; }
+#define MODULO_INC_TX(val)                                                                         \
+	{                                                                                          \
+		(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+	}
+#define MODULO_INC_RX(val)                                                                         \
+	{                                                                                          \
+		(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+	}
 
 #define IS_OWNED_BY_DMA_TX(desc) (((desc)->status & ETH_MAC_DMA_TDES0_OWN) != 0)
 #define IS_OWNED_BY_DMA_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_OWN) != 0)
 
 #define IS_START_OF_FRAME_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_FS) != 0)
-#define IS_END_OF_FRAME_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_LS) != 0)
+#define IS_END_OF_FRAME_RX(desc)   (((desc)->status & ETH_MAC_DMA_RDES0_LS) != 0)
 
 #define IS_TIMESTAMP_AVAILABLE_RX(desc) (((desc)->status & ETH_MAC_DMA_RDES0_TSA) != 0)
 #define IS_TIMESTAMP_AVAILABLE_TX(desc) (((desc)->status & ETH_MAC_DMA_TDES0_TTSS) != 0)
@@ -69,23 +75,23 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 	 XMC_ETH_MAC_EVENT_RECEIVE | XMC_ETH_MAC_EVENT_TRANSMIT | ETH_INTERRUPT_ENABLE_NIE_Msk |   \
 	 ETH_INTERRUPT_ENABLE_AIE_Msk)
 
-#define ETH_MAC_DISABLE_MMC_INTERRUPT_MSK              0x03ffffffu
-#define ETH_MAC_DISABLE_MMC_IPC_RECEIVE_INTERRUPT_MSK  0x3fff3fffu
+#define ETH_MAC_DISABLE_MMC_INTERRUPT_MSK             0x03ffffffu
+#define ETH_MAC_DISABLE_MMC_IPC_RECEIVE_INTERRUPT_MSK 0x3fff3fffu
 
 #define ETH_STATUS_CLEARABLE_BITS 0x1e7ffu
 
 #define ETH_RX_DMA_DESC_SECOND_ADDR_CHAINED_MASK BIT(14)
 
-#define ETH_RESET_TIMEOUT_USEC 200000u
+#define ETH_RESET_TIMEOUT_USEC                 200000u
 #define ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC 100000u
 
-#define ETH_LINK_SPEED_10M 0
+#define ETH_LINK_SPEED_10M  0
 #define ETH_LINK_SPEED_100M 1
 
 #define ETH_LINK_DUPLEX_HALF 0
 #define ETH_LINK_DUPLEX_FULL 1
 
-#define ETH_PTP_CLOCK_FREQUENCY 50000000
+#define ETH_PTP_CLOCK_FREQUENCY       50000000
 #define ETH_PTP_RATE_ADJUST_RATIO_MIN 0.9
 #define ETH_PTP_RATE_ADJUST_RATIO_MAX 1.1
 
@@ -104,6 +110,7 @@ struct eth_xmc4xxx_data {
 	struct net_buf *rx_frag_list[NUM_RX_DMA_DESCRIPTORS];
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	const struct device *ptp_clock;
+	uint32_t timestamp_addend;
 #endif
 };
 
@@ -466,7 +473,6 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 		dma_desc = &rx_dma_desc[tail];
 	}
 
-
 	MODULO_INC_RX(tail);
 	dev_data->dma_desc_rx_tail = tail;
 
@@ -604,12 +610,10 @@ static inline void eth_xmc4xxx_set_link(ETH_GLOBAL_TypeDef *regs, struct phy_lin
 
 	reg &= ~(ETH_MAC_CONFIGURATION_DM_Msk | ETH_MAC_CONFIGURATION_FES_Msk);
 
-	val = PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_LINK_DUPLEX_FULL :
-						      ETH_LINK_DUPLEX_HALF;
+	val = PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_LINK_DUPLEX_FULL : ETH_LINK_DUPLEX_HALF;
 	reg |= FIELD_PREP(ETH_MAC_CONFIGURATION_DM_Msk, val);
 
-	val = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_LINK_SPEED_100M :
-						     ETH_LINK_SPEED_10M;
+	val = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_LINK_SPEED_100M : ETH_LINK_SPEED_10M;
 	reg |= FIELD_PREP(ETH_MAC_CONFIGURATION_FES_Msk, val);
 
 	regs->MAC_CONFIGURATION = reg;
@@ -633,6 +637,13 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);
 	}
+}
+
+static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
+{
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+
+	return dev_cfg->phy_dev;
 }
 
 static void eth_xmc4xxx_iface_init(struct net_if *iface)
@@ -700,8 +711,8 @@ static int eth_xmc4xxx_rx_dma_descriptors_init(const struct device *dev)
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		XMC_ETH_MAC_DMA_DESC_t *dma_desc = &rx_dma_desc[i];
-		struct net_buf *rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE,
-								     K_NO_WAIT);
+		struct net_buf *rx_buf =
+			net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 
 		if (rx_buf == NULL) {
 			eth_xmc4xxx_free_rx_bufs(dev);
@@ -725,8 +736,8 @@ static inline int eth_xmc4xxx_reset(const struct device *dev)
 	dev_cfg->regs->BUS_MODE |= ETH_BUS_MODE_SWR_Msk;
 
 	/* reset may fail if the clocks are not properly setup */
-	if (!WAIT_FOR((dev_cfg->regs->BUS_MODE & ETH_BUS_MODE_SWR_Msk) == 0,
-		      ETH_RESET_TIMEOUT_USEC,)) {
+	if (!WAIT_FOR((dev_cfg->regs->BUS_MODE & ETH_BUS_MODE_SWR_Msk) == 0, ETH_RESET_TIMEOUT_USEC,
+		      NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -755,14 +766,14 @@ static inline void eth_xmc4xxx_mask_unused_interrupts(ETH_GLOBAL_TypeDef *regs)
 static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *regs)
 {
 #if defined(CONFIG_NET_GPTP)
-	regs->TIMESTAMP_CONTROL = ETH_TIMESTAMP_CONTROL_TSENA_Msk |
-				  ETH_TIMESTAMP_CONTROL_TSENALL_Msk;
+	regs->TIMESTAMP_CONTROL =
+		ETH_TIMESTAMP_CONTROL_TSENA_Msk | ETH_TIMESTAMP_CONTROL_TSENALL_Msk;
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	/* use fine control */
-	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSCFUPDT_Msk |
-				  ETH_TIMESTAMP_CONTROL_TSCTRLSSR_Msk;
+	regs->TIMESTAMP_CONTROL |=
+		ETH_TIMESTAMP_CONTROL_TSCFUPDT_Msk | ETH_TIMESTAMP_CONTROL_TSCTRLSSR_Msk;
 
 	/* make ptp run at 50MHz - implies 20ns increment for each increment of the */
 	/* sub_second_register */
@@ -772,20 +783,20 @@ static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *reg
 	/* Therefore, K = ceil(f_out * 2^32 / f_cpu) */
 
 	uint32_t f_cpu = XMC_SCU_CLOCK_GetSystemClockFrequency();
-	uint32_t K = (BIT64(32) * ETH_PTP_CLOCK_FREQUENCY  + f_cpu / 2) / f_cpu;
+	uint32_t K = (BIT64(32) * ETH_PTP_CLOCK_FREQUENCY + f_cpu / 2) / f_cpu;
 
 	regs->TIMESTAMP_ADDEND = K;
 
 	/* Addend register update */
 	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSADDREG_Msk;
 	if (!WAIT_FOR((regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSADDREG_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
 	regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSINIT_Msk;
 	if (!WAIT_FOR((regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSINIT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 #endif
@@ -800,8 +811,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	int ret;
 
 	sys_slist_init(&dev_data->tx_frame_list);
-	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS,
-					   NUM_TX_DMA_DESCRIPTORS);
+	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS, NUM_TX_DMA_DESCRIPTORS);
 
 	if (!device_is_ready(dev_cfg->phy_dev)) {
 		LOG_ERR("Phy device not ready");
@@ -834,7 +844,6 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	/* disable jumbo frames */
 	dev_cfg->regs->MAC_CONFIGURATION &= ~ETH_MAC_CONFIGURATION_JE_Msk;
 
-
 	/* Initialize Filter registers - disable zero quanta pause*/
 	dev_cfg->regs->FLOW_CONTROL = ETH_FLOW_CONTROL_DZPQ_Msk;
 
@@ -859,7 +868,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
@@ -871,14 +880,22 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	reg |= ETH_MAC_FRAME_FILTER_PM_Msk;
 	dev_cfg->regs->MAC_FRAME_FILTER = reg;
 
-	return eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	ret = eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	dev_data->timestamp_addend = dev_cfg->regs->TIMESTAMP_ADDEND;
+#endif
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-	       ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
+				     ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	caps |= ETHERNET_PTP;
@@ -886,6 +903,10 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 
 #if defined(CONFIG_NET_VLAN)
 	caps |= ETHERNET_HW_VLAN;
+#endif
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
 
 	return caps;
@@ -908,6 +929,20 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {
+		uint32_t reg = dev_cfg->regs->MAC_FRAME_FILTER;
+
+		if (config->promisc_mode) {
+			reg |= ETH_MAC_FRAME_FILTER_PR_Msk;
+		} else {
+			reg &= ~ETH_MAC_FRAME_FILTER_PR_Msk;
+		}
+		dev_cfg->regs->MAC_FRAME_FILTER = reg;
+
+		return 0;
+	}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	default:
 		break;
 	}
@@ -931,7 +966,6 @@ static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
 }
 #endif
 
-
 #if defined(CONFIG_ETH_XMC4XXX_VLAN_HW_FILTER)
 int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint16_t tag,
 			   bool enable)
@@ -943,8 +977,7 @@ int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint1
 
 	if (enable) {
 		dev_cfg->regs->VLAN_TAG = FIELD_PREP(ETH_VLAN_TAG_VL_Msk, tag) |
-					  ETH_VLAN_TAG_ETV_Msk |
-					  ETH_VLAN_TAG_ESVL_Msk;
+					  ETH_VLAN_TAG_ETV_Msk | ETH_VLAN_TAG_ESVL_Msk;
 		dev_cfg->regs->MAC_FRAME_FILTER |= ETH_MAC_FRAME_FILTER_VTFE_Msk;
 	} else {
 		dev_cfg->regs->VLAN_TAG = 0;
@@ -959,6 +992,7 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 	.iface_api.init = eth_xmc4xxx_iface_init,
 	.send = eth_xmc4xxx_send,
 	.set_config = eth_xmc4xxx_set_config,
+	.get_phy = eth_xmc4xxx_get_phy,
 	.get_capabilities = eth_xmc4xxx_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_xmc4xxx_stats,
@@ -979,19 +1013,18 @@ static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.port_ctrl = {
-	    .rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
-	    .rxd1 = DT_INST_ENUM_IDX(0, rxd1_port_ctrl),
-	    .rxd2 = DT_INST_ENUM_IDX_OR(0, rxd2_port_ctrl, 0),
-	    .rxd3 = DT_INST_ENUM_IDX_OR(0, rxd3_port_ctrl, 0),
-	    .clk_rmii = DT_INST_ENUM_IDX(0, rmii_rx_clk_port_ctrl),
-	    .crs_dv = DT_INST_ENUM_IDX(0, crs_rx_dv_port_ctrl),
-	    .crs = DT_INST_ENUM_IDX_OR(0, crs_port_ctrl, 0),
-	    .rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
-	    .col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
-	    .clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
-	    .mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
-	}
-};
+		.rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
+		.rxd1 = DT_INST_ENUM_IDX(0, rxd1_port_ctrl),
+		.rxd2 = DT_INST_ENUM_IDX_OR(0, rxd2_port_ctrl, 0),
+		.rxd3 = DT_INST_ENUM_IDX_OR(0, rxd3_port_ctrl, 0),
+		.clk_rmii = DT_INST_ENUM_IDX(0, rmii_rx_clk_port_ctrl),
+		.crs_dv = DT_INST_ENUM_IDX(0, crs_rx_dv_port_ctrl),
+		.crs = DT_INST_ENUM_IDX_OR(0, crs_port_ctrl, 0),
+		.rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
+		.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
+		.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
+		.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+	}};
 
 static struct eth_xmc4xxx_data eth_xmc4xxx_data = {
 	.mac_addr = DT_INST_PROP_OR(0, local_mac_address, {0}),
@@ -1018,7 +1051,7 @@ static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_ti
 
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSINIT_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSINIT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -1071,7 +1104,7 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSUPDT_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSUPDT_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -1082,7 +1115,8 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 {
 	struct ptp_context *ptp_context = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
-	uint64_t K = dev_cfg->regs->TIMESTAMP_ADDEND;
+	struct eth_xmc4xxx_data *dev_data = ptp_context->eth_dev->data;
+	uint64_t K = dev_data->timestamp_addend;
 
 	if (ratio < ETH_PTP_RATE_ADJUST_RATIO_MIN || ratio > ETH_PTP_RATE_ADJUST_RATIO_MAX) {
 		return -EINVAL;
@@ -1098,14 +1132,14 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 	/* Addend register update */
 	dev_cfg->regs->TIMESTAMP_CONTROL |= ETH_TIMESTAMP_CONTROL_TSADDREG_Msk;
 	if (!WAIT_FOR((dev_cfg->regs->TIMESTAMP_CONTROL & ETH_TIMESTAMP_CONTROL_TSADDREG_Msk) == 0,
-		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC,)) {
+		      ETH_TIMESTAMP_CONTROL_REG_TIMEOUT_USEC, NULL)) {
 		return -ETIMEDOUT;
 	}
 
 	return 0;
 }
 
-static const struct ptp_clock_driver_api ptp_api_xmc4xxx = {
+static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.set = eth_xmc4xxx_ptp_clock_set,
 	.get = eth_xmc4xxx_ptp_clock_get,
 	.adjust = eth_xmc4xxx_ptp_clock_adjust,

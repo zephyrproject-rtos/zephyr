@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <cmsis_os.h>
 #include <kernel_internal.h>
 
@@ -41,5 +40,5 @@ osStatus osKernelStart(void)
  */
 int32_t osKernelRunning(void)
 {
-	return z_has_thread_started(&z_main_thread);
+	return !z_is_thread_suspended(&z_main_thread);
 }

@@ -13,8 +13,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	aliases {
-	};
+	aliases {};
 
 	chosen {
 		zephyr,console = &uart1;
@@ -41,7 +40,7 @@
 		};
 	};
 
-	mram0: mram@a080400 {
+	mram0: mram@a080000 {
 		/* Internal code eMRAM */
 		reg = <0x0a080000 0x80000>;
 	};

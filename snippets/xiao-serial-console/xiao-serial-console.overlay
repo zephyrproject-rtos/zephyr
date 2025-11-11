@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Pete Johanson <peter@peterjohanson.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&xiao_serial {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		zephyr,console = &xiao_serial;
+		zephyr,shell-uart = &xiao_serial;
+	};
+};

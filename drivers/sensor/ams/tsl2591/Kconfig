@@ -37,11 +37,13 @@ config TSL2591_TRIGGER_NONE
 config TSL2591_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AMS_TSL2591),int-gpios)
 	select TSL2591_TRIGGER
 
 config TSL2591_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AMS_TSL2591),int-gpios)
 	select TSL2591_TRIGGER
 
 endchoice

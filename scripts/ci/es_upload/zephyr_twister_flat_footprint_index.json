@@ -1,0 +1,158 @@
+{
+    "properties": {
+        "environment": {
+            "properties": {
+                "commit_date": {
+                    "type": "date"
+                },
+                "os": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_branch": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_workflow": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_id": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_attempt": {
+                    "type": "integer"
+                },
+                "run_date": {
+                    "type": "date"
+                },
+                "toolchain": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "zephyr_version": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "options": {
+                    "type": "object",
+                    "enabled": true,
+                    "dynamic": true,
+                    "subobjects": true
+                }
+            }
+        },
+        "name": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "component": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "sub_component": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "arch": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "platform": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "used_ram": {
+            "type": "unsigned_long"
+        },
+        "used_rom": {
+            "type": "unsigned_long"
+        },
+        "available_ram": {
+            "type": "unsigned_long"
+        },
+        "available_rom": {
+            "type": "unsigned_long"
+        },
+        "retries": {
+            "type": "integer"
+        },
+        "status": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "build_time": {
+            "type": "float"
+        },
+        "reason": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+           }
+        },
+        "log": {
+            "type": "text"
+        },
+        "footprint_name": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "footprint_name_depth": {
+            "type": "integer"
+        },
+        "footprint_identifier": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "footprint_area": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "footprint_path": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "footprint_symbol": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "footprint_address": {
+            "type": "unsigned_long"
+        },
+        "footprint_size": {
+            "type": "long"
+        },
+        "footprint_total_size": {
+            "type": "unsigned_long"
+        }
+    }
+}

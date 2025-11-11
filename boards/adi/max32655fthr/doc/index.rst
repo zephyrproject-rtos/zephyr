@@ -1,7 +1,4 @@
-.. _max32655_fthr:
-
-MAX32655FTHR
-############
+.. zephyr:board:: max32655fthr
 
 Overview
 ********
@@ -85,21 +82,7 @@ Hardware
 Supported Features
 ==================
 
-Below are the interfaces supported by Zephyr on MAX32655FTHR.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Push Buttons
 ************
@@ -169,6 +152,8 @@ used as a user LED.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -176,7 +161,8 @@ The MAX32625 microcontroller on the board is flashed with DAPLink firmware at th
 It allows debugging and flashing the MAX32655 Arm Core over USB.
 
 Once the USB cable is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 Debugging
 =========

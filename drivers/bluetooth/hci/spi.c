@@ -86,7 +86,7 @@ static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -318,19 +318,6 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	default:
-		LOG_ERR("Unsupported type");
-		k_sem_give(&sem_busy);
-		return -EINVAL;
-	}
-
 	ret = bt_spi_get_header(SPI_WRITE, &size);
 	size = MIN(buf->len, size);
 
@@ -359,17 +346,16 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 
 	k_sem_give(&sem_busy);
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Error %d", ret);
-		goto out;
+		return ret;
 	}
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
-out:
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
@@ -377,7 +363,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	struct bt_spi_data *hci = dev->data;
 	int err;
 
-	/* Configure RST pin and hold BLE in Reset */
+	/* Configure RST pin and hold Bluetooth LE in Reset */
 	err = gpio_pin_configure_dt(&rst_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
 		return err;
@@ -403,7 +389,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 
 	hci->recv = recv;
 
-	/* Take BLE out of reset */
+	/* Take Bluetooth LE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 	gpio_pin_set_dt(&rst_gpio, 0);
 
@@ -413,14 +399,17 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 			bt_spi_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
+	k_thread_name_set(&spi_rx_thread_data, "bt_spi_rx_thread");
 
 	/* Device will let us know when it's ready */
-	k_sem_take(&sem_initialised, K_FOREVER);
+	if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+		return -EIO;
+	}
 
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
 };

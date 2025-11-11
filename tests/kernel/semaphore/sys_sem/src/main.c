@@ -27,7 +27,6 @@ static ZTEST_DMEM int flag;
 static ZTEST_DMEM atomic_t atomic_count;
 
 /**
- * @defgroup kernel_sys_sem_tests Semaphore
  * @ingroup all_tests
  * @{
  * @}
@@ -73,7 +72,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  * - Use semaphore normally
  * - Use semaphore with different priority threads
  *
- * @ingroup kernel_sys_sem_tests
+ * @ingroup kernel_semaphore_tests
  */
 ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 {
@@ -168,7 +167,7 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  * - Verify more than max count about semaphore can reach.
  * - Take sem by multiple threads and verify if sem count is correct.
  *
- * @ingroup kernel_sys_sem_tests
+ * @ingroup kernel_semaphore_tests
  */
 ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 {

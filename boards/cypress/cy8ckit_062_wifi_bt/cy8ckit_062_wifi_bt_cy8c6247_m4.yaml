@@ -5,7 +5,7 @@
 #
 
 identifier: cy8ckit_062_wifi_bt/cy8c6247/m4
-name: Cypress PSoC6 WiFi-BT Pioneer Kit (M4)
+name: Cypress PSOC 6 WiFi-BT Pioneer Kit (M4)
 type: mcu
 arch: arm
 ram: 288
@@ -13,7 +13,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
 vendor: cypress

@@ -1,0 +1,55 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	aliases {
+		adc0 = &sar_adc0;
+	};
+	zephyr,user {
+		io-channels = <&sar_adc0 3>, <&sar_adc0 4>, <&sar_adc0 5>, <&sar_adc0 6>;
+	};
+};
+
+&sar_adc0 {
+	group-channel = "standard";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

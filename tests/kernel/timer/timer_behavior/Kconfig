@@ -10,11 +10,11 @@ source "Kconfig.zephyr"
 
 config TIMER_TEST_SAMPLES
 	int "The number of timer samples to gather for statistics"
-	default 1000 if (SRAM_SIZE < 24)
-	default 2000 if (SRAM_SIZE < 32)
-	default 3000 if (SRAM_SIZE < 48)
-	default 5000 if (SRAM_SIZE < 64)
-	default 7000 if (SRAM_SIZE < 96)
+	default 1000 if (SRAM_SIZE <= 24)
+	default 2000 if (SRAM_SIZE <= 32)
+	default 3000 if (SRAM_SIZE <= 48)
+	default 5000 if (SRAM_SIZE <= 64)
+	default 7000 if (SRAM_SIZE <= 96)
 	default 10000
 
 config TIMER_TEST_PERIOD

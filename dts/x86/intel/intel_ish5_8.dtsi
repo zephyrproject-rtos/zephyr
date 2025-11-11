@@ -6,6 +6,15 @@
 
 #include <intel/intel_ish5.dtsi>
 
+&soc {
+	interrupts = <
+		8 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+		11 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+		12 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+	>;
+	interrupt-names = "reset_prep", "pcidev", "pmu2ioapic";
+};
+
 &hpet {
 	interrupts = <17 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
 
@@ -16,6 +25,18 @@
 	interrupts = <28 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
 
 	status = "okay";
+};
+
+&uart1 {
+	interrupts = <29 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+	status = "disabled";
+};
+
+&uart2 {
+	interrupts = <30 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+	status = "disabled";
 };
 
 &i2c0 {
@@ -50,6 +71,12 @@
 
 &spi1 {
 	interrupts = <24 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};
+
+&dma0 {
+	interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 	status = "disabled";
 };

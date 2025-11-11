@@ -51,6 +51,9 @@ static void isr_done(void *param);
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 static void isr_tx(void *param);
+static int aux_ptr_get(struct pdu_adv *pdu, struct pdu_adv_aux_ptr **aux_ptr);
+static void chain_pdu_aux_ptr_chan_idx_set(struct lll_adv_sync *lll);
+static void aux_ptr_chan_idx_set(struct lll_adv_sync *lll, struct pdu_adv *pdu);
 static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll, uint8_t phy_s);
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 
@@ -83,11 +86,11 @@ void lll_adv_sync_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int init_reset(void)
@@ -173,7 +176,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	upd = 0U;
 	pdu = lll_adv_sync_data_latest_get(lll, NULL, &upd);
-	LL_ASSERT(pdu);
+	LL_ASSERT_DBG(pdu);
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	lll_df_cte_tx_enable(lll, pdu, &cte_len_us);
@@ -181,21 +184,37 @@ static int prepare_cb(struct lll_prepare_param *p)
 	cte_len_us = 0U;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX) */
 
-	radio_pkt_tx_set(pdu);
-
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+		/* Set the last used auxiliary PDU for transmission */
 		lll->last_pdu = pdu;
+
+		/* Populate chan idx for AUX_ADV_IND PDU */
+		aux_ptr_chan_idx_set(lll, pdu);
 
 		radio_isr_set(isr_tx, lll);
 		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
 		switch_radio_complete_and_b2b_tx(lll, phy_s);
-	} else
-#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
+	} else {
+		/* No chain PDU */
+		lll->last_pdu = NULL;
+
+#else /* !CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 	{
+#endif /* !CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
+
 		radio_isr_set(isr_done, lll);
 		radio_switch_complete_and_disable();
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	if (lll->iso) {
+		ull_adv_iso_lll_biginfo_fill(pdu, lll);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	/* Set the Radio Tx Packet */
+	radio_pkt_tx_set(pdu);
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -253,14 +272,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-	if (lll->iso) {
-		ull_adv_iso_lll_biginfo_fill(pdu, lll);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+	/* Populate chan idx for AUX_CHAIN_IND PDU */
+	chain_pdu_aux_ptr_chan_idx_set(lll);
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_A(1);
 
@@ -287,7 +305,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
@@ -318,7 +336,7 @@ static void isr_done(void *param)
 		 * the thread context.
 		 */
 		rx = ull_pdu_rx_alloc();
-		LL_ASSERT(rx);
+		LL_ASSERT_ERR(rx);
 
 		rx->hdr.type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
 		rx->rx_ftr.param = lll;
@@ -332,10 +350,12 @@ static void isr_done(void *param)
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 static void isr_tx(void *param)
 {
+	struct pdu_adv_aux_ptr *aux_ptr;
 	struct lll_adv_sync *lll_sync;
 	struct pdu_adv *pdu;
 	struct lll_adv *lll;
 	uint32_t cte_len_us;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -344,14 +364,22 @@ static void isr_tx(void *param)
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
+	/* Get reference to sync and primary advertising LLL contexts */
 	lll_sync = param;
 	lll = lll_sync->adv;
 
-	/* FIXME: Use implementation defined channel index */
-	lll_chan_set(0);
+	/* Get reference to aux pointer structure */
+	err = aux_ptr_get(lll_sync->last_pdu, &aux_ptr);
+	LL_ASSERT_ERR(!err && aux_ptr);
 
+	/* Use channel idx that was in aux_ptr */
+	lll_chan_set(aux_ptr->chan_idx);
+
+	/* Get reference to the auxiliary chain PDU */
 	pdu = lll_adv_pdu_linked_next_get(lll_sync->last_pdu);
-	LL_ASSERT(pdu);
+	LL_ASSERT_DBG(pdu);
+
+	/* Set the last used auxiliary PDU for transmission */
 	lll_sync->last_pdu = pdu;
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
@@ -373,7 +401,12 @@ static void isr_tx(void *param)
 	radio_pkt_tx_set(pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT_ERR(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -403,11 +436,97 @@ static void isr_tx(void *param)
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
+	/* Populate chan idx for AUX_CHAIN_IND PDU */
+	chain_pdu_aux_ptr_chan_idx_set(lll_sync);
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
 	}
 }
 
+static int aux_ptr_get(struct pdu_adv *pdu, struct pdu_adv_aux_ptr **aux_ptr)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *hdr;
+	uint8_t *dptr;
+
+	/* Get reference to common extended header */
+	com_hdr = (void *)&pdu->adv_ext_ind;
+	if (com_hdr->ext_hdr_len == 0U) {
+		return -EINVAL;
+	}
+
+	/* Get reference to extended header flags and header fields */
+	hdr = (void *)com_hdr->ext_hdr_adv_data;
+	dptr = hdr->data;
+
+	/* No traverse through of AdvA and TargetA.
+	 * These are RFU for periodic advertising, is not set by local device.
+	 */
+
+	/* traverse through CTEInfo flag, if present */
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (hdr->cte_info) {
+		dptr += sizeof(struct pdu_cte_info);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	/* traverse through adi, if present */
+	if (hdr->adi) {
+		dptr += sizeof(struct pdu_adv_adi);
+	}
+
+	/* check for aux_ptr flag */
+	if (hdr->aux_ptr) {
+		/* Return reference to aux pointer structure */
+		*aux_ptr = (void *)dptr;
+	} else {
+		*aux_ptr = NULL;
+	}
+
+	return 0;
+}
+
+static void chain_pdu_aux_ptr_chan_idx_set(struct lll_adv_sync *lll)
+{
+	struct pdu_adv *chain_pdu;
+
+	/* No chain PDU */
+	if (!lll->last_pdu) {
+		return;
+	}
+
+	/* Get reference to the auxiliary chain PDU */
+	chain_pdu = lll_adv_pdu_linked_next_get(lll->last_pdu);
+
+	/* Check if there is further chain PDU */
+	if (chain_pdu && chain_pdu->adv_ext_ind.ext_hdr_len &&
+	    chain_pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+		aux_ptr_chan_idx_set(lll, chain_pdu);
+	}
+}
+
+static void aux_ptr_chan_idx_set(struct lll_adv_sync *lll, struct pdu_adv *pdu)
+{
+	struct pdu_adv_aux_ptr *aux_ptr;
+	uint8_t chan_idx;
+	int err;
+
+	/* Get reference to aux pointer structure */
+	err = aux_ptr_get(pdu, &aux_ptr);
+	LL_ASSERT_ERR(!err && aux_ptr);
+
+	/* Calculate a new channel index */
+	chan_idx = lll_chan_sel_2(lll->data_chan_counter, lll->data_chan_id,
+				  lll->chm[lll->chm_first].data_chan_map,
+				  lll->chm[lll->chm_first].data_chan_count);
+
+	/* Increment counter, for next channel index calculation */
+	lll->data_chan_counter++;
+
+	/* Set the channel index for the auxiliary chain PDU */
+	aux_ptr->chan_idx = chan_idx;
+}
 static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll,
 					     uint8_t phy_s)
 {

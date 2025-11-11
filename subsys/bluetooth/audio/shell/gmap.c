@@ -29,7 +29,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "shell/bt.h"
+#include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
@@ -66,15 +67,14 @@ static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role ro
 			     struct bt_gmap_feat features)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "gmap discovery (err %d)", err);
+		bt_shell_error("gmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell,
-		    "gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
-		    "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
-		    conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
-		    features.bgr_feat);
+	bt_shell_print("gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
+		       "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
+		       conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
+		       features.bgr_feat);
 }
 
 static const struct bt_gmap_cb gmap_cb = {
@@ -96,18 +96,18 @@ static void set_gmap_features(struct bt_gmap_feat *features)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_GMAP_UGT_SUPPORTED)) {
-#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
+#if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0
 		features->ugt_feat |= (BT_GMAP_UGT_FEAT_SOURCE | BT_GMAP_UGT_FEAT_80KBPS_SOURCE);
-#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 1
+#if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 1
 		features->ugt_feat |= BT_GMAP_UGT_FEAT_MULTISOURCE;
-#endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 1 */
-#endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 0 */
-#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 1 */
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0 */
+#if CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 0
 		features->ugt_feat |= (BT_GMAP_UGT_FEAT_SINK | BT_GMAP_UGT_FEAT_64KBPS_SINK);
-#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 1
+#if CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 1
 		features->ugt_feat |= BT_GMAP_UGT_FEAT_MULTISINK;
-#endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 1 */
-#endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 1 */
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 0 */
 	}
 
 	if (IS_ENABLED(CONFIG_BT_GMAP_BGS_SUPPORTED)) {
@@ -199,10 +199,6 @@ static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
-
 	err = bt_gmap_discover(default_conn);
 	if (err != 0) {
 		shell_error(sh, "bt_gmap_discover (err %d)", err);
@@ -268,7 +264,7 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 #if UNICAST_SINK_SUPPORTED
 static int cmd_gmap_ac_1(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_1",
 		.conn_cnt = 1,
 		.snk_cnt = {1U},
@@ -284,7 +280,7 @@ static int cmd_gmap_ac_1(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SRC_SUPPORTED
 static int cmd_gmap_ac_2(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_2",
 		.conn_cnt = 1,
 		.snk_cnt = {0U},
@@ -300,7 +296,7 @@ static int cmd_gmap_ac_2(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 static int cmd_gmap_ac_3(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_3",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -316,7 +312,7 @@ static int cmd_gmap_ac_3(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED
 static int cmd_gmap_ac_4(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_4",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -332,7 +328,7 @@ static int cmd_gmap_ac_4(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 static int cmd_gmap_ac_5(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_5",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -349,7 +345,7 @@ static int cmd_gmap_ac_5(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
 static int cmd_gmap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -365,7 +361,7 @@ static int cmd_gmap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_gmap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_II",
 		.conn_cnt = 2,
 		.snk_cnt = {1U, 1U},
@@ -383,7 +379,7 @@ static int cmd_gmap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_gmap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_7_II",
 		.conn_cnt = 2,
 		.snk_cnt = {1U, 0U},
@@ -399,7 +395,7 @@ static int cmd_gmap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
 static int cmd_gmap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -415,7 +411,7 @@ static int cmd_gmap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_gmap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -431,7 +427,7 @@ static int cmd_gmap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
 static int cmd_gmap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -449,7 +445,7 @@ static int cmd_gmap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_gmap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},

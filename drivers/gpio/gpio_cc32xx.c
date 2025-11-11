@@ -229,7 +229,7 @@ static void gpio_cc32xx_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
-static const struct gpio_driver_api api_funcs = {
+static DEVICE_API(gpio, api_funcs) = {
 	.pin_configure = gpio_cc32xx_config,
 	.port_get_raw = gpio_cc32xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc32xx_port_set_masked_raw,

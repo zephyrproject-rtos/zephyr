@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/dt-bindings/pinctrl/max32-pinctrl.h>
-#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <gpio.h>
@@ -67,20 +66,7 @@ static int pinctrl_configure_pin(pinctrl_soc_pin_t soc_pin)
 		gpio_cfg.vssel = MXC_GPIO_VSSEL_VDDIO;
 	}
 
-	switch (pincfg & MAX32_GPIO_DRV_STRENGTH_MASK) {
-	case MAX32_GPIO_DRV_STRENGTH_1:
-		gpio_cfg.drvstr = MXC_GPIO_DRVSTR_1;
-		break;
-	case MAX32_GPIO_DRV_STRENGTH_2:
-		gpio_cfg.drvstr = MXC_GPIO_DRVSTR_2;
-		break;
-	case MAX32_GPIO_DRV_STRENGTH_3:
-		gpio_cfg.drvstr = MXC_GPIO_DRVSTR_3;
-		break;
-	default:
-		gpio_cfg.drvstr = MXC_GPIO_DRVSTR_0;
-		break;
-	}
+	gpio_cfg.drvstr = (pincfg >> MAX32_DRV_STRENGTH_SHIFT) & MAX32_DRV_STRENGTH_MASK;
 
 	if (MXC_GPIO_Config(&gpio_cfg) != 0) {
 		return -ENOTSUP;

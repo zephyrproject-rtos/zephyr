@@ -167,7 +167,7 @@ static int pms7003_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api pms7003_api = {
+static DEVICE_API(sensor, pms7003_api) = {
 	.sample_fetch = &pms7003_sample_fetch,
 	.channel_get = &pms7003_channel_get,
 };

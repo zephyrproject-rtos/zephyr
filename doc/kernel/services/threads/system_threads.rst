@@ -35,9 +35,6 @@ The kernel spawns the following system threads:
     and never terminates.
 
     The idle thread always uses the lowest configured thread priority.
-    If this makes it a cooperative thread, the idle thread repeatedly
-    yields the CPU to allow the application's other threads to run when
-    they need to.
 
     The idle thread is an essential thread, which means a fatal system error
     is raised if the thread aborts.
@@ -53,11 +50,12 @@ Implementation
 Writing a main() function
 =========================
 
-An application-supplied :c:func:`main` function begins executing once
+An application-supplied ``main()`` function begins executing once
 kernel initialization is complete. The kernel does not pass any arguments
-to the function.
+to the function, unless ``CONFIG_BOOTARGS`` is selected. In such case the
+kernel passes arguments to it and ``main(int, char **)`` can be used.
 
-The following code outlines a trivial :c:func:`main` function.
+The following code outlines a trivial ``main(void)`` function.
 The function used by a real application can be as complex as needed.
 
 .. code-block:: c

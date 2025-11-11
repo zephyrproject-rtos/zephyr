@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <string.h>
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/unistd.h>
@@ -21,7 +24,7 @@ static void create_file(const char *filename, uint32_t size)
 {
 	int fh;
 
-	fh = open(filename, O_CREAT | O_WRONLY);
+	fh = open(filename, O_CREAT | O_WRONLY, 0440);
 	zassert(fh >= 0, "Failed creating test file");
 
 	uint8_t filling[FILL_SIZE];
@@ -101,4 +104,61 @@ ZTEST(posix_fs_stat_test, test_fs_stat_dir)
 
 	/* note: for posix compatibility should should actually work */
 	zassert_not_equal(0, stat(TEST_ROOT, &buf));
+}
+
+/**
+ * @brief Test fstat command on file
+ *
+ * @details Tests file in root, file in directroy, and empty file
+ */
+ZTEST(posix_fs_stat_test, test_fs_fstat_file)
+{
+	struct stat buf;
+
+	int test_file_fd = open(TEST_FILE, O_RDONLY);
+	int dir_file_fd = open(TEST_DIR_FILE, O_RDONLY);
+	int empty_file_fd = open(TEST_EMPTY_FILE, O_RDONLY);
+
+	zassert_not_equal(-1, test_file_fd);
+	zassert_equal(0, fstat(test_file_fd, &buf));
+	zassert_equal(TEST_FILE_SIZE, buf.st_size);
+	zassert_equal(S_IFREG, buf.st_mode);
+	close(test_file_fd);
+
+	zassert_not_equal(-1, dir_file_fd);
+	zassert_equal(0, fstat(dir_file_fd, &buf));
+	zassert_equal(TEST_DIR_FILE_SIZE, buf.st_size);
+	zassert_equal(S_IFREG, buf.st_mode);
+	close(dir_file_fd);
+
+	zassert_not_equal(-1, empty_file_fd);
+	zassert_equal(0, fstat(empty_file_fd, &buf));
+	zassert_equal(0, buf.st_size);
+	zassert_equal(S_IFREG, buf.st_mode);
+	close(empty_file_fd);
+}
+
+/**
+ * @brief Test fstat command on dir
+ *
+ * @details Tests if we can retrieve stastics for a directory.
+ */
+ZTEST(posix_fs_stat_test, test_fs_fstat_dir)
+{
+	struct stat buf;
+
+	int fd = open(TEST_DIR, O_RDONLY);
+
+	/*
+	 * if this failed it means open doesn't support directories
+	 * so skip the rest of the test
+	 */
+	if (fd == -1) {
+		ztest_test_skip();
+	}
+
+	zassert_equal(0, fstat(fd, &buf));
+	zassert_equal(0, buf.st_size);
+	zassert_equal(S_IFDIR, buf.st_mode);
+	close(fd);
 }

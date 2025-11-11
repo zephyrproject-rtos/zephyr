@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 #include <zephyr/device.h>
@@ -12,6 +13,7 @@
 #include <zephyr/sys/kobject.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/pm/device_runtime.h>
 
 /**
  * @brief Initialize state for all static devices.
@@ -26,6 +28,71 @@ void z_device_state_init(void)
 	}
 }
 
+int do_device_init(const struct device *dev)
+{
+	int rc = 0;
+
+	if (dev->ops.init != NULL) {
+		rc = dev->ops.init(dev);
+		/* If initialization failed, record in dev->state->init_res
+		 * the POSITIVE value of the resulting errno
+		 */
+		if (rc != 0) {
+			/* device's init function should return:
+			 *   0 on success
+			 *   a negative value on failure (-errno)
+			 * errno value maps to an uint8_t range as of now.
+			 */
+			__ASSERT(rc >= -UINT8_MAX && rc < 0, "device %s init: invalid error (%d)",
+				 dev->name, rc);
+
+			if (rc < 0) {
+				rc = -rc;
+			}
+			/* handle error value overflow in production
+			 * this is likely a bug in the device's init function. Signals it
+			 */
+			if (rc > UINT8_MAX) {
+				rc = UINT8_MAX;
+			}
+			dev->state->init_res = rc;
+		}
+	}
+
+	/* device initialization has been invoked */
+	dev->state->initialized = true;
+
+	if (rc == 0) {
+		/* Run automatic device runtime enablement */
+		(void)pm_device_runtime_auto_enable(dev);
+	}
+
+	/* here, the value of rc is either 0 or +errno
+	 * flip the sign to return a negative value on failure as expected
+	 */
+	return -rc;
+}
+
+int z_impl_device_init(const struct device *dev)
+{
+	if (dev->state->initialized) {
+		return -EALREADY;
+	}
+
+	return do_device_init(dev);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_init(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_init(dev);
+}
+#include <zephyr/syscalls/device_init_mrsh.c>
+#endif
+
+
 const struct device *z_impl_device_get_binding(const char *name)
 {
 	/* A null string identifies no device.  So does an empty
@@ -35,20 +102,10 @@ const struct device *z_impl_device_get_binding(const char *name)
 		return NULL;
 	}
 
-	/* Split the search into two loops: in the common scenario, where
-	 * device names are stored in ROM (and are referenced by the user
-	 * with CONFIG_* macros), only cheap pointer comparisons will be
-	 * performed. Reserve string comparisons for a fallback.
-	 */
+	/* Return NULL if the device matching 'name' is not ready. */
 	STRUCT_SECTION_FOREACH(device, dev) {
-		if (z_impl_device_is_ready(dev) && (dev->name == name)) {
-			return dev;
-		}
-	}
-
-	STRUCT_SECTION_FOREACH(device, dev) {
-		if (z_impl_device_is_ready(dev) && (strcmp(name, dev->name) == 0)) {
-			return dev;
+		if ((dev->name == name) || (strcmp(name, dev->name) == 0)) {
+			return z_impl_device_is_ready(dev) ? dev : NULL;
 		}
 	}
 
@@ -98,7 +155,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev)) {
+		if (!z_impl_device_is_ready(dev) || nl == NULL) {
 			continue;
 		}
 
@@ -117,7 +174,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 #ifdef CONFIG_USERSPACE
 static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char *nodelabel)
 {
-	const char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
+	char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
 
 	if (k_usermode_string_copy(nl_copy, (char *)nodelabel, sizeof(nl_copy)) != 0) {
 		return NULL;
@@ -151,6 +208,43 @@ bool z_impl_device_is_ready(const struct device *dev)
 
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
+
+int z_impl_device_deinit(const struct device *dev)
+{
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
+	int ret;
+
+	if (!dev->state->initialized) {
+		return -EPERM;
+	}
+
+	if (dev->ops.deinit == NULL) {
+		return -ENOTSUP;
+	}
+
+	ret = dev->ops.deinit(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->state->initialized = false;
+
+	return 0;
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_deinit(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_deinit(dev);
+}
+#include <zephyr/syscalls/device_deinit_mrsh.c>
+#endif
 
 #ifdef CONFIG_DEVICE_DEPS
 

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config USBD_CDC_ECM_CLASS
-	bool "USB CDC ECM implementation [EXPERIMENTAL]"
+	bool "USB CDC ECM implementation"
 	default y
 	depends on NET_L2_ETHERNET
 	depends on DT_HAS_ZEPHYR_CDC_ECM_ETHERNET_ENABLED

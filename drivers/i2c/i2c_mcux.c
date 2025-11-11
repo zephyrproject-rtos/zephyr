@@ -342,11 +342,14 @@ static int i2c_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_mcux_driver_api = {
+static DEVICE_API(i2c, i2c_mcux_driver_api) = {
 	.configure = i2c_mcux_configure,
 	.transfer = i2c_mcux_transfer,
 #ifdef CONFIG_I2C_CALLBACK
 	.transfer_cb = i2c_mcux_transfer_cb,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 

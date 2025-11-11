@@ -10,6 +10,7 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/pm/pm.h>
 
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -19,6 +20,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
+#ifdef CONFIG_EMPTY_IRQ_SPURIOUS
+	while (1) {
+	}
+
+	CODE_UNREACHABLE;
+#else
 	unsigned long mcause;
 
 	ARG_UNUSED(unused);
@@ -37,6 +44,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+#endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -68,3 +76,19 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 }
 #endif /* CONFIG_SHARED_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
+#ifdef CONFIG_PM
+void arch_isr_direct_pm(void)
+{
+	unsigned int key;
+
+	key = irq_lock();
+
+	if (_kernel.idle) {
+		_kernel.idle = 0;
+		pm_system_resume();
+	}
+
+	irq_unlock(key);
+}
+#endif

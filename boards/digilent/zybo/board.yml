@@ -1,5 +1,6 @@
 board:
   name: zybo
+  full_name: Zybo
   vendor: digilent
   socs:
   - name: xc7z010

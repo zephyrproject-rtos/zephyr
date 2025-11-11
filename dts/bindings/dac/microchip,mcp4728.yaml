@@ -8,7 +8,7 @@ properties:
   "#io-channel-cells":
     const: 1
 
-  voltage_reference:
+  voltage-reference:
     type: array
     required: true
     description: |
@@ -17,7 +17,7 @@ properties:
       1 - Internal voltage reference (2.048V)
       Note: array entries correspond to the successive channels
 
-  power_down_mode:
+  power-down-mode:
     type: array
     required: true
     description: |

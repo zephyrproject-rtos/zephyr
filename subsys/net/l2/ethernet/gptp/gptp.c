@@ -35,6 +35,7 @@ K_FIFO_DEFINE(gptp_rx_queue);
 static k_tid_t tid;
 static struct k_thread gptp_thread_data;
 struct gptp_domain gptp_domain;
+struct gptp_clock_data gptp_clock;
 
 int gptp_get_port_number(struct net_if *iface)
 {
@@ -320,9 +321,19 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	}
 }
 
-enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt)
+static enum net_verdict net_gptp_recv(struct net_if *iface, uint16_t ptype,
+				      struct net_pkt *pkt)
 {
 	struct gptp_hdr *hdr = GPTP_HDR(pkt);
+
+	ARG_UNUSED(ptype);
+
+	if (!(net_eth_is_addr_ptp_multicast(
+		      (struct net_eth_addr *)net_pkt_lladdr_dst(pkt)->addr) ||
+	      net_eth_is_addr_lldp_multicast(
+		      (struct net_eth_addr *)net_pkt_lladdr_dst(pkt)->addr))) {
+		return NET_DROP;
+	}
 
 	if ((hdr->ptp_version != GPTP_VERSION) ||
 			(hdr->transport_specific != GPTP_TRANSPORT_802_1_AS)) {
@@ -345,6 +356,8 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt)
 	/* Message not propagated up in the stack. */
 	return NET_DROP;
 }
+
+ETH_NET_L3_REGISTER(gPTP, NET_ETH_PTYPE_PTP, net_gptp_recv);
 
 static void gptp_init_clock_ds(void)
 {
@@ -574,7 +587,7 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
-	int *num_ports = user_data;
+	uint8_t *num_ports = user_data;
 	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
@@ -899,6 +912,18 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
+double gptp_servo_pi(int64_t nanosecond_diff)
+{
+	double kp = 0.7;
+	double ki = 0.3;
+	double ppb;
+
+	gptp_clock.pi_drift += ki * nanosecond_diff;
+	ppb = kp * nanosecond_diff + gptp_clock.pi_drift;
+
+	return ppb;
+}
+
 static void init_ports(void)
 {
 	net_if_foreach(gptp_add_port, &gptp_domain.default_ds.nb_ports);
@@ -916,6 +941,9 @@ static void init_ports(void)
 void net_gptp_init(void)
 {
 	gptp_domain.default_ds.nb_ports = 0U;
+
+	gptp_clock.domain = &gptp_domain;
+	gptp_clock.pi_drift = 0.0;
 
 	init_ports();
 }

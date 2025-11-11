@@ -146,7 +146,7 @@ static int gd32_fwdgt_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api fwdgt_gd32_api = {
+static DEVICE_API(wdt, fwdgt_gd32_api) = {
 	.setup = gd32_fwdgt_setup,
 	.disable = gd32_fwdgt_disable,
 	.install_timeout = gd32_fwdgt_install_timeout,

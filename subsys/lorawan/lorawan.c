@@ -52,9 +52,8 @@
 /* Use version 1.0.3.0 for ABP */
 #define LORAWAN_ABP_VERSION 0x01000300
 
-#define LOG_LEVEL CONFIG_LORAWAN_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(lorawan);
+LOG_MODULE_REGISTER(lorawan, CONFIG_LORAWAN_LOG_LEVEL);
 
 K_SEM_DEFINE(mlme_confirm_sem, 0, 1);
 K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
@@ -62,13 +61,20 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
+/* lorawan flags: store lorawan states */
+enum {
+	LORAWAN_FLAG_ADR_ENABLE,
+	LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE,
+	LORAWAN_FLAG_COUNT,
+};
+
 /* We store both the default datarate requested through lorawan_set_datarate
  * and the current datarate so that we can use the default datarate for all
  * join requests, even as the current datarate changes due to ADR.
  */
 static enum lorawan_datarate default_datarate;
 static enum lorawan_datarate current_datarate;
-static bool lorawan_adr_enable;
+static ATOMIC_DEFINE(lorawan_flags, LORAWAN_FLAG_COUNT);
 
 static sys_slist_t dl_callbacks;
 
@@ -87,6 +93,7 @@ static enum lorawan_channels_mask_size region_channels_mask_size =
 
 static lorawan_battery_level_cb_t battery_level_cb;
 static lorawan_dr_changed_cb_t dr_changed_cb;
+static lorawan_link_check_ans_cb_t link_check_cb;
 
 /* implementation required by the soft-se (software secure element) */
 void BoardGetUniqueId(uint8_t *id)
@@ -138,7 +145,7 @@ static void mcps_confirm_handler(McpsConfirm_t *mcps_confirm)
 	}
 
 	/* Datarate may have changed due to a missed ADRACK */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		datarate_observe(false);
 	}
 
@@ -149,6 +156,7 @@ static void mcps_confirm_handler(McpsConfirm_t *mcps_confirm)
 static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 {
 	struct lorawan_downlink_cb *cb;
+	uint8_t flags = 0;
 
 	LOG_DBG("Received McpsIndication %d", mcps_indication->McpsIndication);
 
@@ -159,19 +167,26 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 	}
 
 	/* Datarate can change as result of ADR command from server */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		datarate_observe(false);
 	}
+
+	/* Save time has been updated at least once */
+	if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE) &&
+	    mcps_indication->DeviceTimeAnsReceived) {
+		atomic_set_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE);
+	}
+
+	/* IsUplinkTxPending also indicates pending downlinks */
+	flags |= (mcps_indication->IsUplinkTxPending == 1 ? LORAWAN_DATA_PENDING : 0);
+	flags |= (mcps_indication->DeviceTimeAnsReceived ? LORAWAN_TIME_UPDATED : 0);
 
 	/* Iterate over all registered downlink callbacks */
 	SYS_SLIST_FOR_EACH_CONTAINER(&dl_callbacks, cb, node) {
 		if ((cb->port == LW_RECV_PORT_ANY) ||
 		    (cb->port == mcps_indication->Port)) {
-			cb->cb(mcps_indication->Port,
-			       /* IsUplinkTxPending also indicates pending downlinks */
-			       mcps_indication->IsUplinkTxPending == 1,
-			       mcps_indication->Rssi, mcps_indication->Snr,
-			       mcps_indication->BufferSize,
+			cb->cb(mcps_indication->Port, flags, mcps_indication->Rssi,
+			       mcps_indication->Snr, mcps_indication->BufferSize,
 			       mcps_indication->Buffer);
 		}
 	}
@@ -199,8 +214,13 @@ static void mlme_confirm_handler(MlmeConfirm_t *mlme_confirm)
 		LOG_INF("Joined network! DevAddr: %08x", mib_req.Param.DevAddr);
 		break;
 	case MLME_LINK_CHECK:
-		/* Not implemented */
-		LOG_INF("Link check not implemented yet!");
+		if (link_check_cb != NULL) {
+			link_check_cb(mlme_confirm->DemodMargin, mlme_confirm->NbGateways);
+		}
+		LOG_INF("Link check done");
+		break;
+	case MLME_DEVICE_TIME:
+		LOG_INF("DevTimeReq done");
 		break;
 	default:
 		break;
@@ -382,6 +402,63 @@ int lorawan_set_region(enum lorawan_region region)
 	return 0;
 }
 
+int lorawan_request_link_check(bool force_request)
+{
+	int ret = 0;
+	LoRaMacStatus_t status;
+	MlmeReq_t mlme_req;
+
+	mlme_req.Type = MLME_LINK_CHECK;
+	status = LoRaMacMlmeRequest(&mlme_req);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("LinkCheckReq failed: %s", lorawan_status2str(status));
+		ret = lorawan_status2errno(status);
+		return ret;
+	}
+
+	if (force_request) {
+		ret = lorawan_send(0U, "", 0U, LORAWAN_MSG_UNCONFIRMED);
+	}
+
+	return ret;
+}
+
+int lorawan_request_device_time(bool force_request)
+{
+	int ret = 0;
+	LoRaMacStatus_t status;
+	MlmeReq_t mlme_req;
+
+	mlme_req.Type = MLME_DEVICE_TIME;
+	status = LoRaMacMlmeRequest(&mlme_req);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("DeviceTime Req. failed: %s", lorawan_status2str(status));
+		ret = lorawan_status2errno(status);
+		return ret;
+	}
+
+	if (force_request) {
+		ret = lorawan_send(0U, "", 0U, LORAWAN_MSG_UNCONFIRMED);
+	}
+
+	return ret;
+}
+
+int lorawan_device_time_get(uint32_t *gps_time)
+{
+	SysTime_t local_time;
+
+	__ASSERT(gps_time != NULL, "gps_time parameter is required");
+
+	if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE)) {
+		return -EAGAIN;
+	}
+
+	local_time = SysTimeGet();
+	*gps_time = local_time.Seconds - UNIX_GPS_EPOCH_OFFSET;
+	return 0;
+}
+
 int lorawan_join(const struct lorawan_join_config *join_cfg)
 {
 	MibRequestConfirm_t mib_req;
@@ -440,7 +517,7 @@ out:
 		 * performed when ADR is disabled as it the network servers
 		 * responsibility to increase datarates when ADR is enabled.
 		 */
-		if (!lorawan_adr_enable) {
+		if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 			MibRequestConfirm_t mib_req2;
 
 			mib_req2.Type = MIB_CHANNELS_DATARATE;
@@ -520,7 +597,7 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 	MibRequestConfirm_t mib_req;
 
 	/* Bail out if using ADR */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		return -EINVAL;
 	}
 
@@ -564,11 +641,11 @@ void lorawan_enable_adr(bool enable)
 {
 	MibRequestConfirm_t mib_req;
 
-	if (enable != lorawan_adr_enable) {
-		lorawan_adr_enable = enable;
+	if (enable != atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
+		atomic_set_bit_to(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE, enable);
 
 		mib_req.Type = MIB_ADR;
-		mib_req.Param.AdrEnable = lorawan_adr_enable;
+		mib_req.Param.AdrEnable = atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE);
 		LoRaMacMibSetRequestConfirm(&mib_req);
 	}
 }
@@ -677,6 +754,11 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
 void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 {
 	dr_changed_cb = cb;
+}
+
+void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb)
+{
+	link_check_cb = cb;
 }
 
 int lorawan_start(void)

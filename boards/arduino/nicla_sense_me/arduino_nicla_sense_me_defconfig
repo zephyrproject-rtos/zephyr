@@ -13,6 +13,3 @@ CONFIG_SERIAL=y
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

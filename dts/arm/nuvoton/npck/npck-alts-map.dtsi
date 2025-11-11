@@ -1,0 +1,573 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	npcx-alts-map {
+		compatible = "nuvoton,npcx-pinctrl-conf";
+
+		/* SCFG device alternative table */
+		/* SCFG DEVALT 0 */
+		alt0_sp1i_sl: alt00 {
+			alts = <&scfg 0x00 0x0 0>;
+		};
+
+		alt0_sp1o_sl: alt01 {
+			alts = <&scfg 0x00 0x1 0>;
+		};
+
+		alt0_ckout_sl: alt02 {
+			alts = <&scfg 0x00 0x2 0>;
+		};
+
+		alt0_spip1_sl: alt03 {
+			alts = <&scfg 0x00 0x3 0>;
+		};
+
+		alt0_sp2ctl_sl: alt04 {
+			alts = <&scfg 0x00 0x4 0>;
+		};
+
+		alt0_pvt_spi_sl: alt05 {
+			alts = <&scfg 0x00 0x5 0>;
+		};
+
+		alt0_shd_bkp_spi_sl: alt05-inv {
+			alts = <&scfg 0x00 0x5 1>;
+		};
+
+		alt0_shdf_spi_quad: alt06 {
+			alts = <&scfg 0x00 0x6 0>;
+		};
+
+		alt0_shd1_spi: alt07 {
+			alts = <&scfg 0x00 0x7 0>;
+		};
+
+		/* SCFG DEVALT 1 */
+		alt1_ovt_sl: alt10 {
+			alts = <&scfg 0x01 0x0 0>;
+		};
+
+		alt1_urti_sl: alt11 {
+			alts = <&scfg 0x01 0x1 0>;
+		};
+
+		alt1_urto1_sl: alt12 {
+			alts = <&scfg 0x01 0x2 0>;
+		};
+
+		alt1_sp1ctl_sl: alt14 {
+			alts = <&scfg 0x01 0x4 0>;
+		};
+
+		alt1_dpwrok_sl_def: alt15 {
+			alts = <&scfg 0x01 0x5 0>;
+		};
+
+		alt1_vcc_pwrgd_sl_def: alt16 {
+			alts = <&scfg 0x01 0x6 0>;
+		};
+
+		alt1_lpc_espi_def: alt17 {
+			alts = <&scfg 0x01 0x7 0>;
+		};
+
+		/* SCFG DEVALT 2 */
+		alt2_lpcpd_sl: alt21 {
+			alts = <&scfg 0x02 0x1 0>;
+		};
+
+		alt2_clkrun_sl: alt22 {
+			alts = <&scfg 0x02 0x2 0>;
+		};
+
+		alt2_smi_sl: alt23 {
+			alts = <&scfg 0x02 0x3 0>;
+		};
+
+		alt2_serirq_sl: alt24 {
+			alts = <&scfg 0x02 0x4 0>;
+		};
+
+		alt2_ecsci_sl_def: alt25 {
+			alts = <&scfg 0x02 0x5 0>;
+		};
+
+		alt2_smb1a_sl: alt26 {
+			alts = <&scfg 0x02 0x6 0>;
+		};
+
+		alt2_smb1b_sl: alt27 {
+			alts = <&scfg 0x02 0x7 0>;
+		};
+
+		/* SCFG DEVALT 3 */
+		alt3_ta1_1_sl: alt30 {
+			alts = <&scfg 0x03 0x0 0>;
+		};
+
+		alt3_ta2_1_sl: alt31 {
+			alts = <&scfg 0x03 0x1 0>;
+		};
+
+		alt3_tb1_1_sl: alt32 {
+			alts = <&scfg 0x03 0x2 0>;
+		};
+
+		alt3_tb2_1_sl: alt33 {
+			alts = <&scfg 0x03 0x3 0>;
+		};
+
+		alt3_ta3_1_sl: alt34 {
+			alts = <&scfg 0x03 0x4 0>;
+		};
+
+		alt3_tb3_1_sl: alt35 {
+			alts = <&scfg 0x03 0x5 0>;
+		};
+
+		alt3_tb1_2_sl: alt36 {
+			alts = <&scfg 0x03 0x6 0>;
+		};
+
+		alt3_ta1_2_sl: alt37 {
+			alts = <&scfg 0x03 0x7 0>;
+		};
+
+		/* SCFG DEVALT 4 */
+		alt4_shd2_spi: alt40 {
+			alts = <&scfg 0x04 0x0 0>;
+		};
+
+		alt4_noshd2_spi: alt40-inv {
+			alts = <&scfg 0x04 0x0 1>;
+		};
+
+		alt4_ckout2_sl: alt41 {
+			alts = <&scfg 0x04 0x1 0>;
+		};
+
+		alt4_clk24m_in2_sl: alt42 {
+			alts = <&scfg 0x04 0x2 0>;
+		};
+
+		alt4_clk24m_in1_sl: alt43 {
+			alts = <&scfg 0x04 0x3 0>;
+		};
+
+		alt4_ps2_3_sl: alt44 {
+			alts = <&scfg 0x04 0x4 0>;
+		};
+
+		alt4_ps2_2_sl: alt46 {
+			alts = <&scfg 0x04 0x6 0>;
+		};
+
+		/* SCFG DEVALT 5 */
+		alt5_a_pwm_sl: alt50 {
+			alts = <&scfg 0x05 0x0 0>;
+		};
+
+		alt5_b_pwm_sl: alt51 {
+			alts = <&scfg 0x05 0x1 0>;
+		};
+
+		alt5_c_pwm_sl: alt52 {
+			alts = <&scfg 0x05 0x2 0>;
+		};
+
+		alt5_d_pwm_sl: alt53 {
+			alts = <&scfg 0x05 0x3 0>;
+		};
+
+		alt5_f_pwm_sl: alt55 {
+			alts = <&scfg 0x05 0x5 0>;
+		};
+
+		/* SCFG DEVALT 6 */
+		alt6_adc0_sl: alt60 {
+			alts = <&scfg 0x06 0x0 0>;
+		};
+
+		alt6_adc1_sl: alt61 {
+			alts = <&scfg 0x06 0x1 0>;
+		};
+
+		alt6_adc2_sl: alt62 {
+			alts = <&scfg 0x06 0x2 0>;
+		};
+
+		alt6_adc3_sl: alt63 {
+			alts = <&scfg 0x06 0x3 0>;
+		};
+
+		alt6_adc4_sl: alt64 {
+			alts = <&scfg 0x06 0x4 0>;
+		};
+
+		alt6_adc5_sl: alt65 {
+			alts = <&scfg 0x06 0x5 0>;
+		};
+
+		alt6_adc6_sl: alt66 {
+			alts = <&scfg 0x06 0x6 0>;
+		};
+
+		alt6_adc7_sl: alt67 {
+			alts = <&scfg 0x06 0x7 0>;
+		};
+
+		/* SCFG DEVALT 7 */
+		alt7_kso12_sl_def: alt72 {
+			alts = <&scfg 0x07 0x2 0>;
+		};
+
+		alt7_kso13_sl_def: alt73 {
+			alts = <&scfg 0x07 0x3 0>;
+		};
+
+		alt7_kso14_sl_def: alt74 {
+			alts = <&scfg 0x07 0x4 0>;
+		};
+
+		alt7_kso15_sl_def: alt75 {
+			alts = <&scfg 0x07 0x5 0>;
+		};
+
+		alt7_kso16_sl: alt76 {
+			alts = <&scfg 0x07 0x6 0>;
+		};
+
+		alt7_kso17_sl: alt77 {
+			alts = <&scfg 0x07 0x7 0>;
+		};
+
+		/* SCFG DEVALT 8 */
+		alt8_ga20_sl: alt81 {
+			alts = <&scfg 0x08 0x1 0>;
+		};
+
+		alt8_kbrst_sl_def: alt82 {
+			alts = <&scfg 0x08 0x2 0>;
+		};
+
+		alt8_k_pwm_sl: alt85 {
+			alts = <&scfg 0x08 0x5 0>;
+		};
+
+		alt8_j_pwm_sl: alt86 {
+			alts = <&scfg 0x08 0x6 0>;
+		};
+
+		alt8_i_pwm_sl: alt87 {
+			alts = <&scfg 0x08 0x7 0>;
+		};
+
+		/* SCFG DEVALT 9 */
+		alt9_no_ksi0_ksi1_ksi2_ksi3_sl: alt90-inv {
+			alts = <&scfg 0x09 0x0 1>;
+		};
+
+		alt9_no_ksi4_ksi5_sl: alt92-inv {
+			alts = <&scfg 0x09 0x2 1>;
+		};
+
+		alt9_no_ksi6_ksi7_sl: alt93-inv {
+			alts = <&scfg 0x09 0x3 1>;
+		};
+
+		alt9_no_kso0_kso1_kso2_kso3_sl: alt94-inv {
+			alts = <&scfg 0x09 0x4 1>;
+		};
+
+		alt9_no_kso4_kso5_kso6_kso7_sl: alt95-inv {
+			alts = <&scfg 0x09 0x5 1>;
+		};
+
+		alt9_no_kso8_kso9_sl: alt96-inv {
+			alts = <&scfg 0x09 0x6 1>;
+		};
+
+		alt9_no_kso10_kso11_sl: alt97-inv {
+			alts = <&scfg 0x09 0x7 1>;
+		};
+
+		/* SCFG DEVALT A */
+		alta_shi_sl: alta0 {
+			alts = <&scfg 0x0a 0x0 0>;
+		};
+
+		alta_smb6a_sl: alta1 {
+			alts = <&scfg 0x0a 0x1 0>;
+		};
+
+		alta_smb5a_sl: alta2 {
+			alts = <&scfg 0x0a 0x2 0>;
+		};
+
+		alta_13c1a_sl: alta4 {
+			alts = <&scfg 0x0a 0x4 0>;
+		};
+
+		alta_13c1b_sl: alta5 {
+			alts = <&scfg 0x0a 0x5 0>;
+		};
+
+		alta_smb3a_sl: alta6 {
+			alts = <&scfg 0x0a 0x6 0>;
+		};
+
+		alta_smb4a_sl: alta7 {
+			alts = <&scfg 0x0a 0x7 0>;
+		};
+
+		/* SCFG DEVALT B */
+		altb_sp2i_sl: altb0 {
+			alts = <&scfg 0x0b 0x0 0>;
+		};
+
+		altb_sp2o_sl: altb1 {
+			alts = <&scfg 0x0b 0x1 0>;
+		};
+
+		altb_ri1_sl: altb2 {
+			alts = <&scfg 0x0b 0x2 0>;
+		};
+
+		altb_cts1_sl: altb3 {
+			alts = <&scfg 0x0b 0x3 0>;
+		};
+
+		altb_rts1_sl: altb4 {
+			alts = <&scfg 0x0b 0x4 0>;
+		};
+
+		altb_ri2_sl: altb5 {
+			alts = <&scfg 0x0b 0x5 0>;
+		};
+
+		altb_cts2_sl: altb6 {
+			alts = <&scfg 0x0b 0x6 0>;
+		};
+
+		altb_rts2_sl: altb7 {
+			alts = <&scfg 0x0b 0x7 0>;
+		};
+
+		/* SCFG DEVALT C */
+		altc_smb4b_sl: altc4 {
+			alts = <&scfg 0x0C 0x4 0>;
+		};
+
+		altc_smb3b_sl: altc5 {
+			alts = <&scfg 0x0C 0x5 0>;
+		};
+
+		altc_smb2b_sl: altc6 {
+			alts = <&scfg 0x0C 0x6 0>;
+		};
+
+		altc_smb2a_sl: altc7 {
+			alts = <&scfg 0x0C 0x7 0>;
+		};
+
+		/* SCFG DEVALT D */
+		altd_gpstby0_out_in_sby: altd0 {
+			alts = <&scfg 0x0d 0x0 0>;
+		};
+
+		altd_gpstby1_out_in_sby: altd1 {
+			alts = <&scfg 0x0d 0x1 0>;
+		};
+
+		altd_psl_in0_en_out_def: altd2 {
+			alts = <&scfg 0x0d 0x2 0>;
+		};
+
+		altd_psl_in1_en_out_def: altd3 {
+			alts = <&scfg 0x0d 0x3 0>;
+		};
+
+		altd_psl_in2_en_out_def: altd4 {
+			alts = <&scfg 0x0d 0x4 0>;
+		};
+
+		altd_psl_in3_en_out_def: altd5 {
+			alts = <&scfg 0x0d 0x5 0>;
+		};
+
+		altd_psl_in4_en_out_def: altd6 {
+			alts = <&scfg 0x0d 0x6 0>;
+		};
+
+		altd_psl_in5_en_out_def: altd7 {
+			alts = <&scfg 0x0d 0x7 0>;
+		};
+
+		/* SCFG DEVALT E */
+		alte_spip2_sl: alte5 {
+			alts = <&scfg 0x0e 0x5 0>;
+		};
+
+		/* SCFG DEVALT F */
+		altf_psl_in0_en_def: altf1 {
+			alts = <&scfg 0x0f 0x1 0>;
+		};
+
+		altf_psl_in1_en_def: altf2 {
+			alts = <&scfg 0x0f 0x2 0>;
+		};
+
+		altf_psl_in2_en: altf3 {
+			alts = <&scfg 0x0f 0x3 0>;
+		};
+
+		altf_psl_in3_en: altf4 {
+			alts = <&scfg 0x0f 0x4 0>;
+		};
+
+		altf_psl_in4_en: altf5 {
+			alts = <&scfg 0x0f 0x5 0>;
+		};
+
+		altf_psl_in5_en: altf6 {
+			alts = <&scfg 0x0f 0x6 0>;
+		};
+
+		altf_psl_out_en_def: altf7 {
+			alts = <&scfg 0x0f 0x7 0>;
+		};
+
+		/* SCFG DEVALT 10 */
+		alt10_tb5_sl: alt100 {
+			alts = <&scfg 0x10 0x0 0>;
+		};
+
+		alt10_ta5_sl: alt101 {
+			alts = <&scfg 0x10 0x1 0>;
+		};
+
+		alt10_tb4_sl: alt102 {
+			alts = <&scfg 0x10 0x2 0>;
+		};
+
+		alt10_ta4_sl: alt103 {
+			alts = <&scfg 0x10 0x3 0>;
+		};
+
+		alt10_tb3_2_sl: alt104 {
+			alts = <&scfg 0x10 0x4 0>;
+		};
+
+		alt10_ta3_2_sl: alt105 {
+			alts = <&scfg 0x10 0x5 0>;
+		};
+
+		alt10_tb2_2_sl: alt106 {
+			alts = <&scfg 0x10 0x6 0>;
+		};
+
+		alt10_ta2_2_sl: alt107 {
+			alts = <&scfg 0x10 0x7 0>;
+		};
+
+		/* SCFG DEVALT 11 */
+		alt11_adc8_sl: alt110 {
+			alts = <&scfg 0x11 0x0 0>;
+		};
+
+		alt11_adc9_sl: alt111 {
+			alts = <&scfg 0x11 0x1 0>;
+		};
+
+		alt11_adc10_sl: alt112 {
+			alts = <&scfg 0x11 0x2 0>;
+		};
+
+		alt11_adc11_sl: alt113 {
+			alts = <&scfg 0x11 0x3 0>;
+		};
+
+		/* SCFG DEVALT 12 */
+		smb1a_pu_sl: alt120 {
+			alts = <&scfg 0x12 0x0 0>;
+		};
+
+		smb1b_pu_sl: alt121 {
+			alts = <&scfg 0x12 0x1 0>;
+		};
+
+		smb2a_pu_sl: alt122 {
+			alts = <&scfg 0x12 0x2 0>;
+		};
+
+		smb2b_pu_sl: alt123 {
+			alts = <&scfg 0x12 0x3 0>;
+		};
+
+		smb3a_pu_sl: alt124 {
+			alts = <&scfg 0x12 0x4 0>;
+		};
+
+		smb3b_pu_sl: alt125 {
+			alts = <&scfg 0x12 0x5 0>;
+		};
+
+		smb4a_pu_sl: alt126 {
+			alts = <&scfg 0x12 0x6 0>;
+		};
+
+		smb4b_pu_sl: alt127 {
+			alts = <&scfg 0x12 0x7 0>;
+		};
+
+		/* SCFG DEVALT CX */
+		altcx_psl_in0_ahi: alt131 {
+			alts = <&scfg 0x13 0x1 0>;
+		};
+
+		altcx_psl_in1_ahi: alt132 {
+			alts = <&scfg 0x13 0x2 0>;
+		};
+
+		altcx_psl_in2_ahi: alt133 {
+			alts = <&scfg 0x13 0x3 0>;
+		};
+
+		altcx_psl_in3_ahi: alt134 {
+			alts = <&scfg 0x13 0x4 0>;
+		};
+
+		altcx_psl_in4_ahi: alt135 {
+			alts = <&scfg 0x13 0x5 0>;
+		};
+
+		altcx_psl_in5_ahi: alt136 {
+			alts = <&scfg 0x13 0x6 0>;
+		};
+
+		altcx_gpio_out_pullen: alt137 {
+			alts = <&scfg 0x13 0x7 0>;
+		};
+
+		/* SCFG DEVALT DX */
+		altdx_psl_out_gpo: alt140 {
+			alts = <&scfg 0x14 0x0 0>;
+		};
+
+		altdx_psl_fw_ctl_high: alt141 {
+			alts = <&scfg 0x14 0x1 0>;
+		};
+
+		altdx_psl_fw_ctl_low: alt141-inv {
+			alts = <&scfg 0x14 0x1 1>;
+		};
+
+		altdx_gpstby_rst_bit: alt147 {
+			alts = <&scfg 0x14 0x7 0>;
+		};
+	};
+};

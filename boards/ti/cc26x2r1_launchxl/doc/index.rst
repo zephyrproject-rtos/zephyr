@@ -1,7 +1,4 @@
-.. _cc26x2r1_launchxl:
-
-CC26x2R1 LaunchXL
-#################
+.. zephyr:board:: cc26x2r1_launchxl
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC26x2R LaunchPad |trade| (LAUNCHXL-CC26X2R1) is a
 development kit for the SimpleLink |trade| multi-Standard CC2652R wireless MCU.
 
 See the `TI CC26x2R LaunchPad Product Page`_ for details.
-
-.. figure:: img/cc26x2r1_launchxl.jpg
-   :align: center
-   :alt: TI CC26x2R LaunchPad
-
-   Texas Instruments CC26x2R LaunchPad |trade|
 
 Hardware
 ********
@@ -33,34 +24,7 @@ See the `TI CC2652R Product Page`_ for additional details.
 Supported Features
 ==================
 
-The CC26x2R LaunchPad board configuration supports the following hardware
-features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| AUX_ADC   | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| HWINFO    | on-chip    | hwinfo               |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -137,6 +101,8 @@ aligns with the LaunchPad standard.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the TXD and RXD signals for a serial
 console using the XDS110 application serial port.
@@ -173,7 +139,7 @@ Applications for the ``CC26x2R LaunchPad`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -195,7 +161,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

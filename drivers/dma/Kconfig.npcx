@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# NPCX GDMA driver configuration options
+
+config DMA_NPCX_GDMA
+	bool "NPCX GDMA driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_GDMA_ENABLED
+	help
+	  GDMA driver for NPCX series
+
+config DMA_NPCX_GDMA_EX
+	bool "Extended NPCX GDMA driver support"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_GDMA),support-npckn-v1,True)
+	help
+	  This option enables extended GDMA support for NPCKn variant of processors.

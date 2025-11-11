@@ -11,6 +11,7 @@ config SDHC_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_CAT1_SDHC_SDIO_ENABLED
 	select USE_INFINEON_SDIO
 	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
 	help
 	  This option enables the SDHC driver for Infineon CAT1 family.
 

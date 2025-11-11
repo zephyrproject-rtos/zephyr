@@ -15,7 +15,7 @@
 /**
  * @brief Volume Control Profile (VCP)
  *
- * @defgroup bt_gatt_vcp Volume Control Profile (VCP)
+ * @defgroup bt_vcp Volume Control Profile (VCP)
  *
  * @since 2.7
  * @version 0.8.0
@@ -163,12 +163,14 @@ struct bt_vcp_vol_rend_cb {
 	 * bt_vcp_vol_rend_get_state(), or if the state is changed by either
 	 * the Volume Renderer or a remote Volume Controller.
 	 *
+	 * @param conn    Pointer to the connection to a remote device if
+	 *                the change was caused by it, otherwise NULL.
 	 * @param err     Error value. 0 on success, GATT error on positive value
 	 *                or errno on negative value.
 	 * @param volume  The volume of the Volume Control Service server.
 	 * @param mute    The mute setting of the Volume Control Service server.
 	 */
-	void (*state)(int err, uint8_t volume, uint8_t mute);
+	void (*state)(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute);
 
 	/**
 	 * @brief Callback function for Volume Control Service flags.
@@ -177,11 +179,13 @@ struct bt_vcp_vol_rend_cb {
 	 * Called when the value is remotely read as the client.
 	 * Called if the value is changed by either the server or client.
 	 *
+	 * @param conn    Pointer to the connection to a remote device if
+	 *                the change was caused by it, otherwise NULL.
 	 * @param err     Error value. 0 on success, GATT error on positive value
 	 *                or errno on negative value.
 	 * @param flags   The flags of the Volume Control Service server.
 	 */
-	void (*flags)(int err, uint8_t flags);
+	void (*flags)(struct bt_conn *conn, int err, uint8_t flags);
 };
 
 /**
@@ -401,8 +405,10 @@ struct bt_vcp_vol_ctlr_cb {
 	/** Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**

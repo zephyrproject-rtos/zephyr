@@ -7,11 +7,11 @@ BabbleSim and Zephyr
 ********************
 
 In the Zephyr project we use the `Babblesim`_ simulator to test some of the Zephyr radio protocols,
-including the BLE stack, 802.15.4, and some of the networking stack.
+including the Bluetooth LE stack, 802.15.4, and some of the networking stack.
 
 BabbleSim_ is a physical layer simulator, which in combination with the Zephyr
 :ref:`bsim boards<bsim boards>`
-can be used to simulate a network of BLE and 15.4 devices.
+can be used to simulate a network of Bluetooth LE and 15.4 devices.
 When we build Zephyr targeting a :ref:`bsim board<bsim boards>` we produce a Linux
 executable, which includes the application, Zephyr OS, and models of the HW.
 
@@ -34,7 +34,7 @@ Tests without radio activity: bsim tests with twister
 
 The :ref:`bsim boards<bsim boards>` can be used without radio activity, and in that case, it is not
 necessary to connect them to a physical layer simulation. Thanks to this, these target boards can
-be used just like :ref:`native_sim<native_sim>` with :ref:`twister <twister_script>`,
+be used just like :zephyr:board:`native_sim<native_sim>` with :ref:`twister <twister_script>`,
 to run all standard Zephyr twister tests, but with models of a real SOC HW, and their drivers.
 
 Tests with radio activity

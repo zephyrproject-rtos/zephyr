@@ -1,7 +1,4 @@
-.. _stm32f030_demo:
-
-STM32F030 DEMO BOARD
-####################
+.. zephyr:board:: stm32f030_demo
 
 This board has the bare minimum components required to power on
 the STM32F030F4P6 MCU. Most of the GPIOs on the STM32 SoC have
@@ -10,10 +7,6 @@ that match the SoC's pin names.
 
 For practical use, you'll need to add additional components
 and circuits using a breadboard, for example.
-
-.. image:: img/stm32f030_demo.jpg
-   :align: center
-   :alt: STM32F030 DEMO BOARD
 
 More information about the board can be found at the `stm32-base.org website`_.
 
@@ -38,29 +31,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr stm32f030_demo board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/others/stm32f030_demo/stm32f030_demo_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -73,6 +44,8 @@ Default Zephyr Peripheral Mapping:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``stm32f030_demo`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

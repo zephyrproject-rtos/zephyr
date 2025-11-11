@@ -13,20 +13,19 @@
 #include <zephyr/devicetree.h>
 #include <stdio.h>
 
+#define TEST_PARTITION storage_partition
+#define TEST_PARTITION_OFFSET FIXED_PARTITION_OFFSET(TEST_PARTITION)
+#define TEST_PARTITION_DEVICE FIXED_PARTITION_DEVICE(TEST_PARTITION)
 
-#define TEST_PARTITION	storage_partition
+#if defined(CONFIG_SOC_NRF54H20)
+#define FLASH_PAGE_SIZE 2048
+#else
+#define FLASH_PAGE_SIZE 4096
+#endif
 
-#define TEST_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(TEST_PARTITION)
-#define TEST_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(TEST_PARTITION)
-
-#define FLASH_PAGE_SIZE   4096
-#define TEST_DATA_WORD_0  0x1122
-#define TEST_DATA_WORD_1  0xaabb
-#define TEST_DATA_WORD_2  0xabcd
-#define TEST_DATA_WORD_3  0x1234
-
-#define FLASH_TEST_OFFSET2 0x41234
-#define FLASH_TEST_PAGE_IDX 37
+#define TEST_DATA_SIZE_IN_BYTES 128
+#define FLASH_TEST_OFFSET2      0x41234
+#define FLASH_TEST_PAGE_IDX     37
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&	\
 	defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
@@ -63,22 +62,67 @@ static void erase_when_needed(const struct device *dev, bool condition,
 	}
 }
 
+/*
+ * Fill test data with incrementing values
+ */
+static void prepare_test_data(uint8_t *test_data_buf)
+{
+	uint32_t counter;
+
+	for (counter = 0; counter < TEST_DATA_SIZE_IN_BYTES; counter++) {
+		*(test_data_buf + counter) = counter;
+	}
+}
+
+/*
+ * The function align writes with write-block-size of a device,
+ * the additional_address_offset parameter can be
+ * used to de-align writes by a provided value.
+ */
+static void write_and_verify_test_data(const struct device *flash_dev, uint8_t *test_data,
+				       uint8_t write_block_size, uint8_t addtitonal_address_offset)
+{
+	uint32_t i, offset;
+	uint8_t write_cycles;
+	uint8_t read_buffer[TEST_DATA_SIZE_IN_BYTES];
+
+	write_cycles = TEST_DATA_SIZE_IN_BYTES / write_block_size;
+	printf("	Write block size: %u\n", write_block_size);
+	printf("	Required write cycles for given data and memory: %u\n", write_cycles);
+
+	for (i = 0U; i < write_cycles; i++) {
+		offset = TEST_PARTITION_OFFSET + i * write_block_size + addtitonal_address_offset;
+		printf("	Writing %u data bytes to 0x%x\n", write_block_size, offset);
+		if (flash_write(flash_dev, offset, &test_data[i * write_block_size],
+				write_block_size) != 0) {
+			printf("	Write failed!\n");
+			return;
+		}
+		printf("	Reading %u data bytes from 0x%x\n", write_block_size, offset);
+		if (flash_read(flash_dev, offset, &read_buffer[i * write_block_size],
+			       write_block_size) != 0) {
+			printf("	Read failed!\n");
+			return;
+		}
+	}
+
+	if (memcmp(test_data, read_buffer, TEST_DATA_SIZE_IN_BYTES)) {
+		printf("	Data read does not match data written!\n");
+	} else {
+		printf("	Data read matches data written. Good!\n");
+	}
+}
+
 int main(void)
 {
+	uint32_t offset;
 	const struct device *flash_dev = TEST_PARTITION_DEVICE;
 	struct flash_parameters flash_params;
-	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
-				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
-	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
-				    TEST_DATA_WORD_2, TEST_DATA_WORD_0 };
-	uint32_t buf_array_3[8] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
-				    TEST_DATA_WORD_2, TEST_DATA_WORD_3,
-				    TEST_DATA_WORD_0, TEST_DATA_WORD_1,
-				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
-	uint32_t buf_word = 0U;
-	uint32_t i, offset;
+
+	uint8_t test_data[TEST_DATA_SIZE_IN_BYTES];
 
 	memcpy(&flash_params, flash_get_parameters(flash_dev), sizeof(flash_params));
+	prepare_test_data(test_data);
 
 	printf("\nNordic nRF5 Internal Storage Sample\n");
 	printf("=====================================\n");
@@ -93,86 +137,26 @@ int main(void)
 			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
 			  TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE);
 
-	printf("\nTest 2: Internal storage write (word array 1)\n");
-	for (i = 0U; i < ARRAY_SIZE(buf_array_1); i++) {
-		offset = TEST_PARTITION_OFFSET + (i << 2);
-		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
-				offset);
-		if (flash_write(flash_dev, offset, &buf_array_1[i],
-					sizeof(uint32_t)) != 0) {
-			printf("   Write failed!\n");
-			return 0;
-		}
-		printf("   Attempted to read 0x%x\n", offset);
-		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(uint32_t)) != 0) {
-			printf("   Read failed!\n");
-			return 0;
-		}
-		printf("   Data read: %x\n", buf_word);
-		if (buf_array_1[i] == buf_word) {
-			printf("   Data read matches data written. Good!\n");
-		} else {
-			printf("   Data read does not match data written!\n");
-		}
-	}
+	printf("\nTest 2: Internal storage write\n");
+	write_and_verify_test_data(flash_dev, test_data, flash_params.write_block_size, 0);
 
 	offset = TEST_PARTITION_OFFSET;
 	printf("\nTest 3: Internal storage erase (2 pages at 0x%x)\n", offset);
 	erase_when_needed(flash_dev,
 			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
 			  offset, FLASH_PAGE_SIZE * 2);
-	printf("\nTest 4: Internal storage write (word array 2)\n");
-	for (i = 0U; i < ARRAY_SIZE(buf_array_2); i++) {
-		offset = TEST_PARTITION_OFFSET + (i << 2);
-		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
-				offset);
-		if (flash_write(flash_dev, offset, &buf_array_2[i],
-					sizeof(uint32_t)) != 0) {
-			printf("   Write failed!\n");
-			return 0;
-		}
-		printf("   Attempted to read 0x%x\n", offset);
-		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(uint32_t)) != 0) {
-			printf("   Read failed!\n");
-			return 0;
-		}
-		printf("   Data read: %x\n", buf_word);
-		if (buf_array_2[i] == buf_word) {
-			printf("   Data read matches data written. Good!\n");
-		} else {
-			printf("   Data read does not match data written!\n");
-		}
-	}
 
-	printf("\nTest 5: Internal storage erase page at 0x%x\n", TEST_PARTITION_OFFSET);
+	printf("\nTest 4: Internal storage erase page at 0x%x\n", TEST_PARTITION_OFFSET);
 	erase_when_needed(flash_dev,
 			  flash_params_get_erase_cap(&flash_params) & FLASH_ERASE_C_EXPLICIT,
 			  TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE);
 
-	printf("\nTest 6: Non-word aligned write (word array 3)\n");
-	for (i = 0U; i < ARRAY_SIZE(buf_array_3); i++) {
-		offset = TEST_PARTITION_OFFSET + (i << 2) + 1;
-		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
-				offset);
-		if (flash_write(flash_dev, offset, &buf_array_3[i],
-					sizeof(uint32_t)) != 0) {
-			printf("   Write failed!\n");
-			return 0;
-		}
-		printf("   Attempted to read 0x%x\n", offset);
-		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(uint32_t)) != 0) {
-			printf("   Read failed!\n");
-			return 0;
-		}
-		printf("   Data read: %x\n", buf_word);
-		if (buf_array_3[i] == buf_word) {
-			printf("   Data read matches data written. Good!\n");
-		} else {
-			printf("   Data read does not match data written!\n");
-		}
+	printf("\nTest 5: Non-word aligned write\n");
+
+	if (flash_params.write_block_size != 1) {
+		printf("	Skipping unaligned write, not supported\n");
+	} else {
+		write_and_verify_test_data(flash_dev, test_data, flash_params.write_block_size, 1);
 	}
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -181,7 +165,7 @@ int main(void)
 
 	rc = flash_get_page_info_by_offs(flash_dev, FLASH_TEST_OFFSET2, &info);
 
-	printf("\nTest 7: Page layout API\n");
+	printf("\nTest 6: Page layout API\n");
 
 	if (!rc) {
 		printf("   Offset  0x%08x:\n", FLASH_TEST_OFFSET2);
@@ -206,7 +190,6 @@ int main(void)
 			printf("     ERROR: Page index resolved to %u\n",
 			       info.index);
 		}
-
 	} else {
 		printf("   Error: flash_get_page_info_by_idx returns %d\n", rc);
 	}
@@ -216,9 +199,8 @@ int main(void)
 
 #endif
 
-	printf("\nTest 8: Write block size API\n");
+	printf("\nTest 7: Write block size API\n");
 	printf("   write-block-size = %u\n", flash_params.write_block_size);
-
 	printf("\nFinished!\n");
 	return 0;
 }

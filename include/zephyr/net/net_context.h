@@ -7,6 +7,8 @@
 /*
  * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +19,8 @@
 /**
  * @brief Application network context
  * @defgroup net_context Application network context
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -198,7 +202,7 @@ struct net_conn_handle;
 
 /**
  * Note that we do not store the actual source IP address in the context
- * because the address is already be set in the network interface struct.
+ * because the address is already set in the network interface struct.
  * If there is no such source address there, the packet cannot be sent
  * anyway. This saves 12 bytes / context in IPv6.
  */
@@ -314,6 +318,20 @@ __net_socket struct net_context {
 			socklen_t addrlen;
 		} proxy;
 #endif
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+		/** Restrict local port range between these values.
+		 * The option takes an uint32_t value with the high 16 bits
+		 * set to the upper range bound, and the low 16 bits set to
+		 * the lower range bound.  Range bounds are inclusive. The
+		 * 16-bit values should be in host byte order.
+		 * The lower bound has to be less than the upper bound when
+		 * both bounds are not zero. Otherwise, setting the option
+		 * fails with EINVAL.
+		 * If either bound is outside of the global local port range,
+		 * or is zero, then that bound has no effect.
+		 */
+		uint32_t port_range;
+#endif
 #if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
 		/** Receive timeout */
 		k_timeout_t rcvtimeo;
@@ -353,6 +371,10 @@ __net_socket struct net_context {
 		/** Receive network packet information in recvmsg() call */
 		bool recv_pktinfo;
 #endif
+#if defined(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)
+		/** Receive IPv6 hop limit or IPv4 TTL as ancillary data in recvmsg() call */
+		bool recv_hoplimit;
+#endif
 #if defined(CONFIG_NET_IPV6)
 		/**
 		 * Source address selection preferences. Currently used only for IPv6,
@@ -360,6 +382,27 @@ __net_socket struct net_context {
 		 */
 		uint16_t addr_preferences;
 #endif
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+		union {
+			/**
+			 * IPv6 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM or SOCK_RAW type sockets.
+			 */
+			uint8_t ipv6_mcast_ifindex;
+
+			/**
+			 * IPv4 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM type sockets.
+			 */
+			uint8_t ipv4_mcast_ifindex;
+		};
+		/** Flag to enable/disable multicast loop */
+		union {
+			bool ipv6_mcast_loop;  /**< IPv6 multicast loop */
+			bool ipv4_mcast_loop;  /**< IPv4 multicast loop */
+		};
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
 		uint8_t timestamping;
@@ -806,6 +849,38 @@ static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
 	context->ipv4_mcast_ttl = ttl;
 }
 
+#if defined(CONFIG_NET_IPV4)
+/**
+ * @brief Get IPv4 multicast loop value for this context.
+ *
+ * @details This function returns the IPv4 multicast loop value
+ *	    that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv4 multicast loop value
+ */
+static inline bool net_context_get_ipv4_mcast_loop(struct net_context *context)
+{
+	return context->options.ipv4_mcast_loop;
+}
+
+/**
+ * @brief Set IPv4 multicast loop value for this context.
+ *
+ * @details This function sets the IPv4 multicast loop value for
+ *	    this context.
+ *
+ * @param context Network context.
+ * @param ipv4_mcast_loop IPv4 multicast loop value.
+ */
+static inline void net_context_set_ipv4_mcast_loop(struct net_context *context,
+						   bool ipv4_mcast_loop)
+{
+	context->options.ipv4_mcast_loop = ipv4_mcast_loop;
+}
+#endif
+
 /**
  * @brief Get IPv6 hop limit value for this context.
  *
@@ -864,6 +939,40 @@ static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *cont
 {
 	context->ipv6_mcast_hop_limit = hop_limit;
 }
+
+#if defined(CONFIG_NET_IPV6)
+
+/**
+ * @brief Get IPv6 multicast loop value for this context.
+ *
+ * @details This function returns the IPv6 multicast loop value
+ *          that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv6 multicast loop value
+ */
+static inline bool net_context_get_ipv6_mcast_loop(struct net_context *context)
+{
+	return context->options.ipv6_mcast_loop;
+}
+
+/**
+ * @brief Set IPv6 multicast loop value for this context.
+ *
+ * @details This function sets the IPv6 multicast loop value for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param ipv6_mcast_loop IPv6 multicast loop value.
+ */
+static inline void net_context_set_ipv6_mcast_loop(struct net_context *context,
+						   bool ipv6_mcast_loop)
+{
+	context->options.ipv6_mcast_loop = ipv6_mcast_loop;
+}
+
+#endif
 
 /**
  * @brief Enable or disable socks proxy support for this context.
@@ -1167,7 +1276,7 @@ int net_context_send(struct net_context *context,
  * @param dst_addr Destination address.
  * @param addrlen Length of the address.
  * @param cb Caller-supplied callback function.
- * @param timeout Currently this value is not used.
+ * @param timeout Timeout for the send attempt.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
@@ -1290,6 +1399,12 @@ enum net_context_option {
 	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
 	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
 	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
+	NET_OPT_MCAST_IFINDEX     = 19, /**< IPv6 multicast output network interface index */
+	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
+	NET_OPT_LOCAL_PORT_RANGE  = 21, /**< Clamp local port range */
+	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
+	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
+	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
 };
 
 /**
@@ -1304,7 +1419,7 @@ enum net_context_option {
  */
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
-			   const void *value, size_t len);
+			   const void *value, uint32_t len);
 
 /**
  * @brief Get connection option value for this context.
@@ -1318,7 +1433,7 @@ int net_context_set_option(struct net_context *context,
  */
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
-			   void *value, size_t *len);
+			   void *value, uint32_t *len);
 
 /**
  * @typedef net_context_cb_t

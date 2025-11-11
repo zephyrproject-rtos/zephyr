@@ -1,0 +1,21 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/mp2/stm32mp255_m33.dtsi>
+
+/ {
+	ddr_code: memory0@80100000 {
+		reg = <0x80100000 DT_SIZE_M(8)>;
+	};
+
+	ddr_sys: memory1@80a00000 {
+		reg = <0x80a00000 DT_SIZE_M(8)>;
+	};
+
+	soc {
+		compatible = "st,stm32mp257", "st,stm32mp2", "simple-bus";
+	};
+};

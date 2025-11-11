@@ -1,8 +1,12 @@
 # Copyright (c) 2017 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MPS2
+	select SOC_MPS2_AN383 if BOARD_MPS2_AN383
 	select SOC_MPS2_AN385 if BOARD_MPS2_AN385
+	select SOC_MPS2_AN386 if BOARD_MPS2_AN386
+	select SOC_MPS2_AN500 if BOARD_MPS2_AN500
 	select SOC_MPS2_AN521_CPU0 if BOARD_MPS2_AN521_CPU0
 	select SOC_MPS2_AN521_CPU0 if BOARD_MPS2_AN521_CPU0_NS
 	select SOC_MPS2_AN521_CPU1 if BOARD_MPS2_AN521_CPU1

@@ -27,10 +27,12 @@ interface is used as a postfix. In Ethernet networks, the link local address
 refers to MAC address. For example, if the link local address is
 ``01:02:03:04:05:06``, then the unique hostname could be
 ``zephyr010203040506``. If you want to set the prefix yourself, then call
-``net_hostname_set_postfix()`` before the network interfaces are created.
-For example for the Ethernet networks, the initialization priority is set by
-:kconfig:option:`CONFIG_ETH_INIT_PRIORITY` so you would need to set the postfix before
-that. The postfix can be set only once.
+``net_hostname_set_postfix_str()`` before the network interfaces are created.
+Alternatively, if you prefer a hexadecimal conversion for the prefix, then call
+``net_hostname_set_postfix()``. For example for the Ethernet networks,
+the initialization priority is set by :kconfig:option:`CONFIG_ETH_INIT_PRIORITY`
+so you would need to set the postfix before that.
+The postfix can be set only once.
 
 API Reference
 *************

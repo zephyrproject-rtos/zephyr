@@ -16,10 +16,12 @@ printf "\n\n======== Public Broadcaster test =========\n\n"
 SIMULATION_ID="pbp_broadcaster"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=public_broadcast_source -rs=27 -D=2
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=public_broadcast_source \
+  -RealEncryption=1 -rs=27 -D=2
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=public_broadcast_sink -rs=27 -D=2
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=public_broadcast_sink \
+  -RealEncryption=1 -rs=27 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

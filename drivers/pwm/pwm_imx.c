@@ -152,7 +152,7 @@ static int imx_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api imx_pwm_driver_api = {
+static DEVICE_API(pwm, imx_pwm_driver_api) = {
 	.set_cycles = imx_pwm_set_cycles,
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };

@@ -66,7 +66,7 @@
  * 'watchdog0' property, or one of the following watchdog compatibles
  * must have an enabled node.
  */
-#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
@@ -82,8 +82,8 @@
 #define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
 #define WDT_NODE DT_INST(0, silabs_gecko_wdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
-#define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_wdog32)
+#define WDT_NODE DT_INST(0, nxp_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_watchdog)
@@ -98,6 +98,8 @@
 #define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_siwx91x_wdt)
+#define WDT_NODE DT_INST(0, silabs_siwx91x_wdt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wwdt)
 #define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
 #define TIMEOUTS 1
@@ -107,12 +109,15 @@
 #define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
-#define WDT_TEST_MAX_WINDOW 20000U
+#define WDT_TEST_MAX_WINDOW 8000U
 #define TIMEOUTS 0
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
 #define TIMEOUTS 0
 #define WDT_TEST_MAX_WINDOW 3000U
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_wdog32)
+#define WDT_TEST_MAX_WINDOW 1000U
 #endif
 
 #define WDT_TEST_STATE_IDLE        0
@@ -148,7 +153,7 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define NOINIT_SECTION ".dtcm_noinit.test_wdt"
 #else
 #define NOINIT_SECTION ".noinit.test_wdt"
@@ -257,6 +262,12 @@ static int test_wdt_callback_1(void)
 		}
 	}
 
+	err = wdt_disable(wdt);
+	if (err < 0 && err != -EPERM && err != -EFAULT) {
+		TC_PRINT("Watchdog disable error\n");
+		return TC_FAIL;
+	}
+
 	m_testvalue = 0U;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.callback = wdt_int_cb0;
@@ -316,6 +327,11 @@ static int test_wdt_callback_2(void)
 		}
 	}
 
+	err = wdt_disable(wdt);
+	if (err < 0 && err != -EPERM && err != -EFAULT) {
+		TC_PRINT("Watchdog disable error\n");
+		return TC_FAIL;
+	}
 
 	m_testvalue = 0U;
 	m_cfg_wdt0.callback = wdt_int_cb0;
@@ -370,6 +386,12 @@ static int test_wdt_bad_window_max(void)
 
 	TC_PRINT("Testcase: %s\n", __func__);
 
+	err = wdt_disable(wdt);
+	if (err < 0 && err != -EPERM && err != -EFAULT) {
+		TC_PRINT("Watchdog disable error\n");
+		return TC_FAIL;
+	}
+
 	m_cfg_wdt0.callback = NULL;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.window.max = 0U;
@@ -381,9 +403,74 @@ static int test_wdt_bad_window_max(void)
 	return TC_FAIL;
 }
 
+static int test_wdt_enable_wait_mode(void)
+{
+#ifndef CONFIG_PM
+	TC_PRINT("Testcase: %s\n", __func__);
+	ztest_test_skip();
+	m_state = WDT_TEST_STATE_IDLE;
+	return TC_SKIP;
+#else
+	int err;
+	int wdt_channel_id;
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
+		m_state = WDT_TEST_STATE_IDLE;
+		TC_PRINT("Testcase passed\n");
+		return TC_PASS;
+	}
+
+	struct wdt_timeout_cfg wdt_config = {
+		/* Reset SoC when watchdog timer expires. */
+		.flags = WDT_FLAG_RESET_SOC,
+
+		/* Expire watchdog after max window */
+		.window.min = 0U,
+		.window.max = 1000U,
+	};
+
+	wdt_channel_id = wdt_install_timeout(wdt, &wdt_config);
+	if (wdt_channel_id < 0) {
+		printk("Watchdog install error\n");
+		return TC_FAIL;
+	}
+
+	err = wdt_setup(wdt, (WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP));
+	if (err < 0) {
+		printk("Watchdog setup error\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+
+	for (int i = 0; i < 20; ++i) {
+		printk("Feeding watchdog... %d\n", i);
+		wdt_feed(wdt, 0);
+		k_sleep(K_MSEC(2000));
+	}
+
+	TC_PRINT("Waiting to restart MCU\n");
+	m_testvalue = 0U;
+	m_state = WDT_TEST_STATE_CHECK_RESET;
+	while (1) {
+		k_yield();
+	}
+
+	return TC_PASS;
+#endif
+}
+
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
-	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
+	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)
+		&& (m_testcase_index != 3U)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS);
 	}
 	if (m_testcase_index == 1U) {
@@ -401,10 +488,14 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 	}
 	if (m_testcase_index == 3U) {
+		zassert_true(test_wdt_enable_wait_mode() == TC_PASS);
+		m_testcase_index++;
+	}
+	if (m_testcase_index == 4U) {
 		zassert_true(test_wdt_bad_window_max() == TC_PASS);
 		m_testcase_index++;
 	}
-	if (m_testcase_index > 3) {
+	if (m_testcase_index > 4) {
 		m_state = WDT_TEST_STATE_IDLE;
 	}
 }

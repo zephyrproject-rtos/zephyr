@@ -1,7 +1,0 @@
-# Copyright 2023 The ChromiumOS Authors
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MT8195_ADSP
-	select SOC_MT8195_ADSP
-	help
-	  Board with Mediatek MT8195 Audio DSP

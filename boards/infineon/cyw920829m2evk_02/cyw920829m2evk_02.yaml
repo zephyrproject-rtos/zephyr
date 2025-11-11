@@ -17,8 +17,12 @@ supported:
   - uart
   - clock_control
   - bluetooth
+  - adc
   - watchdog
   - spi
   - i2c
-
+  - rtc
+  - dma
+  - pwm
+  - watchdog
 vendor: infineon

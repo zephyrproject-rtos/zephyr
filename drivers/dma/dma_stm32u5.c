@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
 
+#define STM32U5_DMA_LINKED_LIST_NODE_SIZE (2)
+
 static const uint32_t table_src_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
@@ -263,10 +265,9 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		dma_stm32_clear_stream_irq(dev, id);
 		return;
 	}
-	callback_arg = id + STM32_DMA_STREAM_OFFSET;
-	stream->busy = false;
+	callback_arg = id;
 
-	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
+	/* The dma stream id is in range from 0..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -274,6 +275,10 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
+		/* Assuming not cyclic transfer */
+		if (stream->cyclic == false) {
+			stream->busy = false;
+		}
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
@@ -281,6 +286,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
 	} else {
 		LOG_ERR("Transfer Error.");
+		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 		stream->dma_callback(dev, stream->user_data,
@@ -343,16 +349,11 @@ static int dma_stm32_configure(const struct device *dev,
 					     struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config = dev->config;
-	struct dma_stm32_stream *stream =
-				&dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
+	struct dma_stm32_stream *stream = &dev_config->streams[id];
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
-	LL_DMA_InitTypeDef DMA_InitStruct;
+	uint32_t ll_priority;
+	uint32_t ll_direction;
 	int ret;
-
-	LL_DMA_StructInit(&DMA_InitStruct);
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= dev_config->max_streams) {
 		LOG_ERR("cannot configure the dma stream %d.", id);
@@ -404,17 +405,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/*
-	 * STM32's circular mode will auto reset both source address
-	 * counter and destination address counter.
-	 */
-	if (config->head_block->source_reload_en !=
-		config->head_block->dest_reload_en) {
-		LOG_ERR("source_reload_en and dest_reload_en must "
-			"be the same.");
-		return -EINVAL;
-	}
-
 	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
@@ -431,30 +421,28 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
-	DMA_InitStruct.SrcAddress = config->head_block->source_address;
-	DMA_InitStruct.DestAddress = config->head_block->dest_address;
-	DMA_InitStruct.BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
-	DMA_InitStruct.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+	LL_DMA_ConfigAddresses(dma, dma_stm32_id_to_stream(id), config->head_block->source_address,
+			       config->head_block->dest_address);
 
-	ret = dma_stm32_get_priority(config->channel_priority,
-				     &DMA_InitStruct.Priority);
+	ret = dma_stm32_get_priority(config->channel_priority, &ll_priority);
 	if (ret < 0) {
 		return ret;
 	}
+	LL_DMA_SetChannelPriorityLevel(dma, dma_stm32_id_to_stream(id), ll_priority);
 
-	ret = dma_stm32_get_direction(config->channel_direction,
-				      &DMA_InitStruct.Direction);
+	ret = dma_stm32_get_direction(config->channel_direction, &ll_direction);
 	if (ret < 0) {
 		return ret;
 	}
+	LL_DMA_SetDataTransferDirection(dma, dma_stm32_id_to_stream(id), ll_direction);
 
 	/* This part is for source */
 	switch (config->head_block->source_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		DMA_InitStruct.SrcIncMode = LL_DMA_SRC_INCREMENT;
+		LL_DMA_SetSrcIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_SRC_INCREMENT);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		DMA_InitStruct.SrcIncMode = LL_DMA_SRC_FIXED;
+		LL_DMA_SetSrcIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_SRC_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
@@ -463,16 +451,16 @@ static int dma_stm32_configure(const struct device *dev,
 			config->head_block->source_addr_adj);
 		return -EINVAL;
 	}
-	LOG_DBG("Channel (%d) src inc (%x).",
-				id, DMA_InitStruct.SrcIncMode);
+	LOG_DBG("Channel (%d) src inc (%x).", id,
+		LL_DMA_GetSrcIncMode(dma, dma_stm32_id_to_stream(id)));
 
 	/* This part is for dest */
 	switch (config->head_block->dest_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		DMA_InitStruct.DestIncMode = LL_DMA_DEST_INCREMENT;
+		LL_DMA_SetDestIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_DEST_INCREMENT);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		DMA_InitStruct.DestIncMode = LL_DMA_DEST_FIXED;
+		LL_DMA_SetDestIncMode(dma, dma_stm32_id_to_stream(id), LL_DMA_DEST_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
@@ -481,35 +469,74 @@ static int dma_stm32_configure(const struct device *dev,
 			config->head_block->dest_addr_adj);
 		return -EINVAL;
 	}
-	LOG_DBG("Channel (%d) dest inc (%x).",
-				id, DMA_InitStruct.DestIncMode);
+	LOG_DBG("Channel (%d) dest inc (%x).", id,
+		LL_DMA_GetDestIncMode(dma, dma_stm32_id_to_stream(id)));
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
 	/* Set the data width, when source_data_size equals dest_data_size */
 	int index = find_lsb_set(config->source_data_size) - 1;
 
-	DMA_InitStruct.SrcDataWidth = table_src_size[index];
+	LL_DMA_SetSrcDataWidth(dma, dma_stm32_id_to_stream(id), table_src_size[index]);
 
 	index = find_lsb_set(config->dest_data_size) - 1;
-	DMA_InitStruct.DestDataWidth = table_dst_size[index];
+	LL_DMA_SetDestDataWidth(dma, dma_stm32_id_to_stream(id), table_dst_size[index]);
 
-	DMA_InitStruct.BlkDataLength = config->head_block->block_size;
+	LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), config->head_block->block_size);
 
 	/* The request ID is stored in the dma_slot */
-	DMA_InitStruct.Request = config->dma_slot;
+	LL_DMA_SetPeriphRequest(dma, dma_stm32_id_to_stream(id), config->dma_slot);
 
-	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+	if (config->head_block->source_reload_en == 0) {
+		LL_DMA_SetLinkStepMode(dma, dma_stm32_id_to_stream(id), LL_DMA_LSM_1LINK_EXECUTION);
+		/* Initialize the DMA structure in non-cyclic mode only */
+		LL_DMA_SetLinkedListAddrOffset(dma, dma_stm32_id_to_stream(id), 0);
+	} else {/* cyclic mode */
+		uint32_t linked_list_flags = 0;
+		volatile uint32_t *linked_list_node =
+			&dev_config->linked_list_buffer[id * STM32U5_DMA_LINKED_LIST_NODE_SIZE];
+		/* We use "linked list" to emulate circular mode.
+		 * The linked list can consists of just source and/or destination address.
+		 * Other registers can remain the same. Linked list itself doesn't contain
+		 * pointer to other item, since LLR register is not updated (ULL bit = 0).
+		 */
+		if (config->head_block->source_addr_adj == config->head_block->dest_addr_adj) {
+			/* We update both source and destination address */
+			linked_list_node[0] = config->head_block->source_address;
+			linked_list_node[1] = config->head_block->dest_address;
+			linked_list_flags = LL_DMA_UPDATE_CSAR | LL_DMA_UPDATE_CDAR;
+		} else if (config->head_block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			/* We update only source address */
+			linked_list_node[0] = config->head_block->source_address;
+			linked_list_flags = LL_DMA_UPDATE_CSAR;
+		} else if (config->head_block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			/* We update only destination address */
+			linked_list_node[0] = config->head_block->dest_address;
+			linked_list_flags = LL_DMA_UPDATE_CDAR;
+		}
+		/* We update only destination address */
+		LL_DMA_SetLinkedListBaseAddr(dma, dma_stm32_id_to_stream(id),
+					     (uint32_t)&linked_list_node[0]);
+		LL_DMA_ConfigLinkUpdate(dma, dma_stm32_id_to_stream(id), linked_list_flags,
+					(uint32_t)&linked_list_node[0]);
+
+		/* Continuous transfers with Linked List */
+		stream->cyclic = true;
+		LL_DMA_SetLinkStepMode(dma, dma_stm32_id_to_stream(id), LL_DMA_LSM_FULL_EXECUTION);
+
+		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	}
+
+#ifdef CONFIG_ARM_SECURE_FIRMWARE
+	LL_DMA_ConfigChannelSecure(dma, dma_stm32_id_to_stream(id),
+		LL_DMA_CHANNEL_SEC | LL_DMA_CHANNEL_SRC_SEC | LL_DMA_CHANNEL_DEST_SEC);
+	LL_DMA_EnableChannelPrivilege(dma, dma_stm32_id_to_stream(id));
+#endif
 
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
 	LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
 	LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
 	LL_DMA_EnableIT_DTE(dma, dma_stm32_id_to_stream(id));
-
-	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (config->head_block->source_reload_en) {
-		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
-	}
 
 	return ret;
 }
@@ -521,9 +548,6 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
@@ -539,9 +563,7 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	LL_DMA_ConfigAddresses(dma,
-				dma_stm32_id_to_stream(id),
-				src, dst);
+	LL_DMA_ConfigAddresses(dma, dma_stm32_id_to_stream(id), src, dst);
 
 	LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), size);
 
@@ -558,9 +580,6 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	/* Only M2P or M2M mode can be started manually. */
 	if (id >= config->max_streams) {
@@ -588,9 +607,6 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
-
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
@@ -599,7 +615,7 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	LL_DMA_SuspendChannel(dma, dma_stm32_id_to_stream(id));
 	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
 	do {
-		k_msleep(1); /* A delay is needed (1ms is valid) */
+		k_busy_wait(800); /* A delay is needed (800us is valid) */
 	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
 
 	/* Do not Reset the channel to allow resuming later */
@@ -610,9 +626,6 @@ static int dma_stm32_resume(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
@@ -627,14 +640,16 @@ static int dma_stm32_resume(const struct device *dev, uint32_t id)
 static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
-	struct dma_stm32_stream *stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
+	struct dma_stm32_stream *stream = &config->streams[id];
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
+	}
+
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
 	}
 
 	/* Repeated stop : return now if channel is already stopped */
@@ -687,8 +702,6 @@ static int dma_stm32_get_status(const struct device *dev,
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
@@ -701,7 +714,7 @@ static int dma_stm32_get_status(const struct device *dev,
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = {
+static DEVICE_API(dma, dma_funcs) = {
 	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_configure,
 	.start		 = dma_stm32_start,
@@ -766,6 +779,11 @@ static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels,	\
 		DT_NUM_IRQS(DT_DRV_INST(index)))];	\
 									\
+static volatile uint32_t dma_stm32_linked_list_buffer##index	\
+		[STM32U5_DMA_LINKED_LIST_NODE_SIZE * \
+		 DT_INST_PROP_OR(index, dma_channels,	\
+				 DT_NUM_IRQS(DT_DRV_INST(index)))] __nocache_noinit;	\
+									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
@@ -775,13 +793,14 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 		DT_NUM_IRQS(DT_DRV_INST(index))				\
 	),		\
 	.streams = dma_stm32_streams_##index,				\
+	.linked_list_buffer = dma_stm32_linked_list_buffer##index	\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &dma_stm32_init,					\
+		    dma_stm32_init,					\
 		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\

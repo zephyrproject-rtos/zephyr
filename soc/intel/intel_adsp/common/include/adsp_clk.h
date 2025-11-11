@@ -64,10 +64,10 @@ struct adsp_cpu_clock_info *adsp_cpu_clocks_get(void);
 
 /* Clock sources used by dai */
 #define ADSP_CLOCK_SOURCE_XTAL_OSC		0
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(audioclk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(audioclk))
 #define ADSP_CLOCK_SOURCE_AUDIO_CARDINAL	1
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pllclk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pllclk))
 #define ADSP_CLOCK_SOURCE_AUDIO_PLL_FIXED	2
 #endif
 

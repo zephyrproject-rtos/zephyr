@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_MCHP_MSS
+	bool "Microchip PolarFire SoC and PIC64GX reset driver"
+	depends on DT_HAS_MICROCHIP_MPFS_RESET_ENABLED
+	help
+	  This option enables the reset driver for Microchip's PolarFire SoC
+	  and PIC64GX platform.

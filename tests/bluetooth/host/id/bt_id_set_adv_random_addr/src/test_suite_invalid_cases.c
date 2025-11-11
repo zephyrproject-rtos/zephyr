@@ -73,17 +73,17 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_null_arguments)
 /*
  *  Test setting advertising random address while 'CONFIG_BT_EXT_ADV' is enabled
  *  and 'BT_ADV_PARAMS_SET' flag in advertising parameters reference is set.
- *  bt_hci_cmd_create() fails to allocate buffers and returns NULL.
+ *  bt_hci_cmd_alloc() fails to allocate buffers and returns NULL.
  *
  *  Constraints:
  *   - 'CONFIG_BT_EXT_ADV' is enabled
  *   - 'BT_ADV_PARAMS_SET' flag in advertising parameters reference is set
- *   - bt_hci_cmd_create() returns null
+ *   - bt_hci_cmd_alloc() returns null
  *
  *  Expected behaviour:
  *   - bt_id_set_adv_random_addr() returns a negative error code (failure)
  */
-ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_create_returns_null)
+ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_alloc_returns_null)
 {
 	int err;
 	struct bt_le_ext_adv adv_param = {0};
@@ -92,7 +92,7 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_create_returns_nu
 
 	atomic_set_bit(adv_param.flags, BT_ADV_PARAMS_SET);
 
-	bt_hci_cmd_create_fake.return_val = NULL;
+	bt_hci_cmd_alloc_fake.return_val = NULL;
 
 	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
 
@@ -107,7 +107,7 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_create_returns_nu
  *  Constraints:
  *   - 'CONFIG_BT_EXT_ADV' is enabled
  *   - 'BT_ADV_PARAMS_SET' flag in advertising parameters reference is set
- *   - bt_hci_cmd_create() returns a valid buffer pointer
+ *   - bt_hci_cmd_alloc() returns a valid buffer pointer
  *   - bt_hci_cmd_send_sync() fails and returns a negative error code.
  *
  *  Expected behaviour:
@@ -125,7 +125,7 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_send_sync_fails)
 	atomic_set_bit(adv_param.flags, BT_ADV_PARAMS_SET);
 
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = -1;
 
 	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);

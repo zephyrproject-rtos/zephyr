@@ -1,0 +1,6 @@
+board:
+  name: verdin_imx8mm
+  full_name: Verdin iMX8M Mini
+  vendor: toradex
+  socs:
+    - name: mimx8mm6

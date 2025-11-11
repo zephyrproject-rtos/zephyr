@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA External Bus Clock
+
+compatible: "renesas,ra-cgc-busclk"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clk-out-div:
+    type: int
+    enum:
+    - 0
+    - 1
+    - 2
+    description: |
+      Select EBCLK division ratio from BCLK
+      - 0: disable
+      - 1: EBCLK div/1
+      - 2: EBCLK div/2
+
+  sdclk:
+    type: int
+    enum:
+    - 0
+    - 1
+    description: |
+      SDCLK enable or disable
+      - 0: disable
+      - 1: enable

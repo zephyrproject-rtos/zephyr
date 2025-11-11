@@ -30,12 +30,20 @@ struct spi_esp32_config {
 	int duty_cycle;
 	int input_delay_ns;
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 	const struct pinctrl_dev_config *pcfg;
 	clock_control_subsys_t clock_subsys;
 	bool use_iomux;
 	bool dma_enabled;
-	int dma_clk_src;
 	int dma_host;
+#if defined(SOC_GDMA_SUPPORTED)
+	const struct device *dma_dev;
+	uint8_t dma_tx_ch;
+	uint8_t dma_rx_ch;
+#else
+	int dma_clk_src;
+#endif
 	int cs_setup;
 	int cs_hold;
 	bool line_idle_low;

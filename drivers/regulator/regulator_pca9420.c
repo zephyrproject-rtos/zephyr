@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright (c) 2021, 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -157,7 +157,7 @@ static const struct linear_range buck2_ranges[] = {
 };
 
 static const struct linear_range ldo1_ranges[] = {
-	LINEAR_RANGE_INIT(1700000, 25000U, 0x0U, 0x9U),
+	LINEAR_RANGE_INIT(1700000, 25000U, 0x0U, 0x8U),
 	LINEAR_RANGE_INIT(1900000, 0U, 0x9U, 0xFU),
 };
 
@@ -359,7 +359,7 @@ static int regulator_pca9420_disable(const struct device *dev)
 				      config->desc->enable_mask, dis_val);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_pca9420_enable,
 	.disable = regulator_pca9420_disable,
 	.count_voltages = regulator_pca9420_count_voltages,
@@ -455,7 +455,7 @@ int regulator_pca9420_dvs_state_set(const struct device *dev,
 	return 0;
 }
 
-static const struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_pca9420_dvs_state_set,
 };
 

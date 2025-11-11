@@ -1,0 +1,24 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+	};
+	chosen {
+		zephyr,rtk-serial = &lpuart1;
+	};
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+
+	gnss: gnss {
+		status = "okay";
+		compatible = "u-blox,f9p";
+	};
+};

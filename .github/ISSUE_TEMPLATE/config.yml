@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Zephyr Community Support
+    url: https://github.com/zephyrproject-rtos/zephyr/discussions
+    about: Please ask and answer questions here.

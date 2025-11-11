@@ -36,8 +36,13 @@ def pytest_addoption(parser: pytest.Parser):
         type=float,
         default=60.0,
         help='Set base timeout (in seconds) used during monitoring if some '
-             'operations are finished in a finite amount of time (e.g. waiting '
-             'for flashing).'
+             'operations are finished in a finite amount of time.'
+    )
+    twister_harness_group.addoption(
+        '--flash-timeout',
+        type=float,
+        default=60.0,
+        help='Set timeout for device flashing (in seconds).'
     )
     twister_harness_group.addoption(
         '--build-dir',
@@ -98,6 +103,10 @@ def pytest_addoption(parser: pytest.Parser):
              'will translate to "west flash -- --board-id=foobar --erase".'
     )
     twister_harness_group.addoption(
+        '--flash-command',
+        help='Use a custom flash command for flashing.'
+    )
+    twister_harness_group.addoption(
         '--pre-script',
         metavar='PATH',
         help='Script executed before flashing and connecting to serial.'
@@ -118,8 +127,17 @@ def pytest_addoption(parser: pytest.Parser):
         help='The scope for which `dut` and `shell` fixtures are shared.'
     )
     twister_harness_group.addoption(
+        '--required-build', action='append', default=[], metavar='PATH',
+        help='Required build directory / shared applications for the test. '
+             'May be given multiple times.'
+    )
+    twister_harness_group.addoption(
         '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
         help='Twister fixture supported by this platform. May be given multiple times.'
+    )
+    twister_harness_group.addoption(
+        '--extra-test-args',
+        help='Additional args passed to the test binary'
     )
 
 

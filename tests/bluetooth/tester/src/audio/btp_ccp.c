@@ -5,13 +5,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
+#include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
-#include <../../subsys/bluetooth/audio/tbs_internal.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "../../subsys/bluetooth/audio/tbs_internal.h"
+#include "btp/btp.h"
+
 #define LOG_MODULE_NAME bttester_ccp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -26,38 +37,8 @@ static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_ccp_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_CCP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CCP_DISCOVER_TBS);
-	tester_set_bit(rp->data, BTP_CCP_ACCEPT_CALL);
-	tester_set_bit(rp->data, BTP_CCP_TERMINATE_CALL);
-	tester_set_bit(rp->data, BTP_CCP_ORIGINATE_CALL);
-	tester_set_bit(rp->data, BTP_CCP_READ_CALL_STATE);
-	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_NAME);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_UCI);
-	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_TECH);
-	tester_set_bit(rp->data, BTP_CCP_READ_URI_LIST);
-	tester_set_bit(rp->data, BTP_CCP_READ_SIGNAL_STRENGTH);
-	tester_set_bit(rp->data, BTP_CCP_READ_SIGNAL_INTERVAL);
-	tester_set_bit(rp->data, BTP_CCP_READ_CURRENT_CALLS);
-	tester_set_bit(rp->data, BTP_CCP_READ_CCID);
-
-	/* octet 2 */
-	tester_set_bit(rp->data, BTP_CCP_READ_CALL_URI);
-	tester_set_bit(rp->data, BTP_CCP_READ_STATUS_FLAGS);
-	tester_set_bit(rp->data, BTP_CCP_READ_OPTIONAL_OPCODES);
-	tester_set_bit(rp->data, BTP_CCP_READ_FRIENDLY_NAME);
-	tester_set_bit(rp->data, BTP_CCP_READ_REMOTE_URI);
-	tester_set_bit(rp->data, BTP_CCP_SET_SIGNAL_INTERVAL);
-	tester_set_bit(rp->data, BTP_CCP_HOLD_CALL);
-
-	/* octet 3 */
-	tester_set_bit(rp->data, BTP_CCP_RETRIEVE_CALL);
-	tester_set_bit(rp->data, BTP_CCP_JOIN_CALLS);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CCP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -277,7 +258,7 @@ static void tbs_client_cp_cb(struct bt_conn *conn, int err, uint8_t inst_index, 
 	tbs_client_cp_ev(conn, err);
 }
 
-static const struct bt_tbs_client_cb tbs_client_callbacks = {
+static struct bt_tbs_client_cb tbs_client_callbacks = {
 	.discover = tbs_client_discover_cb,
 	.originate_call = tbs_client_cp_cb,
 	.terminate_call = tbs_client_cp_cb,
@@ -860,10 +841,15 @@ static const struct btp_handler ccp_handlers[] = {
 
 uint8_t tester_init_ccp(void)
 {
+	int err;
+
 	tester_register_command_handlers(BTP_SERVICE_ID_CCP, ccp_handlers,
 					 ARRAY_SIZE(ccp_handlers));
 
-	bt_tbs_client_register_cb(&tbs_client_callbacks);
+	err = bt_tbs_client_register_cb(&tbs_client_callbacks);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -879,21 +865,8 @@ static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_tbs_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_TBS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_TBS_REMOTE_INCOMING);
-	tester_set_bit(rp->data, BTP_TBS_HOLD);
-	tester_set_bit(rp->data, BTP_TBS_SET_BEARER_NAME);
-	tester_set_bit(rp->data, BTP_TBS_SET_TECHNOLOGY);
-	tester_set_bit(rp->data, BTP_TBS_SET_URI_SCHEME);
-	tester_set_bit(rp->data, BTP_TBS_SET_STATUS_FLAGS);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_TBS_REMOTE_HOLD);
-	tester_set_bit(rp->data, BTP_TBS_ORIGINATE);
-	tester_set_bit(rp->data, BTP_TBS_SET_SIGNAL_STRENGTH);
-
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_TBS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -945,7 +918,8 @@ static uint8_t tbs_originate(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	uri[cp->uri_len] = '\0';
 
 	err = bt_tbs_originate(cp->index, uri, &call_index);
-	if (err) {
+	/* TODO should we extend BTP to return call ID? */
+	if (err < 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1084,6 +1058,22 @@ static uint8_t tbs_set_signal_strength(const void *cmd, uint16_t cmd_len, void *
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t tbs_terminate_call(const void *cmd, uint16_t cmd_len, void *rsp,
+				  uint16_t *rsp_len)
+{
+	const struct btp_tbs_terminate_call_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("index=%u", cp->index);
+
+	err = bt_tbs_terminate(cp->index);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, const char *uri)
 {
 	LOG_DBG("TBS Originate Call cb");
@@ -1153,14 +1143,54 @@ static const struct btp_handler tbs_handlers[] = {
 		.expect_len = sizeof(struct btp_tbs_set_signal_strength_cmd),
 		.func = tbs_set_signal_strength,
 	},
+	{
+		.opcode = BTP_TBS_TERMINATE_CALL,
+		.expect_len = sizeof(struct btp_tbs_terminate_call_cmd),
+		.func = tbs_terminate_call
+	},
 };
 
 uint8_t tester_init_tbs(void)
 {
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
+	const struct bt_tbs_register_param tbs_param = {
+		.provider_name = "TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = false,
+		.authorization_required = false,
+		/* Set different technologies per bearer */
+		.technology = BT_TBS_TECHNOLOGY_4G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
+	int err;
+
 	bt_tbs_register_cb(&tbs_cbs);
 
 	tester_register_command_handlers(BTP_SERVICE_ID_TBS, tbs_handlers,
 					 ARRAY_SIZE(tbs_handlers));
+
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		LOG_DBG("Failed to register GTBS: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_register_bearer(&tbs_param);
+	if (err < 0) {
+		LOG_DBG("Failed to register TBS: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }

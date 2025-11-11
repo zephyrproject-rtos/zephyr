@@ -36,66 +36,66 @@ properties:
     description: location of MDC and MDIO pins, configuration defined as <location>
 
   # PHY management pins
-  location-phy_mdc:
+  location-phy-mdc:
     type: array
     required: true
     description: PHY MDC individual pin configuration defined as <location port pin>
 
-  location-phy_mdio:
+  location-phy-mdio:
     type: array
     required: true
     description: PHY MDIO individual pin configuration defined as <location port pin>
 
   # RMII interface pins
-  location-rmii_refclk:
+  location-rmii-refclk:
     type: array
     required: true
     description: Reference clock individual pin configuration defined as <location port pin>
 
-  location-rmii_crs_dv:
+  location-rmii-crs-dv:
     type: array
     required: true
     description: Receive data valid individual pin configuration defined as <location port pin>
 
-  location-rmii_txd0:
+  location-rmii-txd0:
     type: array
     required: true
     description: Transmit data 0 individual pin configuration defined as <location port pin>
 
-  location-rmii_txd1:
+  location-rmii-txd1:
     type: array
     required: true
     description: Transmit data 1 individual pin configuration defined as <location port pin>
 
-  location-rmii_tx_en:
+  location-rmii-tx-en:
     type: array
     required: true
     description: Transmit enable individual pin configuration defined as <location port pin>
 
-  location-rmii_rxd0:
+  location-rmii-rxd0:
     type: array
     required: true
     description: Receive data 0 individual pin configuration defined as <location port pin>
 
-  location-rmii_rxd1:
+  location-rmii-rxd1:
     type: array
     required: true
     description: Receive data 1 individual pin configuration defined as <location port pin>
 
-  location-rmii_rx_er:
+  location-rmii-rx-er:
     type: array
     required: true
     description: Receive error individual pin configuration defined as <location port pin>
 
   # PHY control pins
-  location-phy_pwr_enable:
+  location-phy-pwr-enable:
     type: array
     description: PHY power enable individual pin configuration defined as <port pin>
 
-  location-phy_reset:
+  location-phy-reset:
     type: array
     description: PHY reset individual pin configuration defined as <port pin>
 
-  location-phy_interrupt:
+  location-phy-interrupt:
     type: array
     description: PHY interrupt individual pin configuration defined as <port pin>

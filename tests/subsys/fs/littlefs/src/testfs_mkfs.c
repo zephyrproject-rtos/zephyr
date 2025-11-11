@@ -49,7 +49,7 @@ ZTEST(littlefs, test_fs_mkfs_ops_lfs)
 FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(custom_cfg,
 		4,
 		CONFIG_FS_LITTLEFS_READ_SIZE,
-		CONFIG_FS_LITTLEFS_PROG_SIZE * 2,
+		CONFIG_FS_LITTLEFS_PROG_SIZE,
 		CONFIG_FS_LITTLEFS_CACHE_SIZE,
 		CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE);
 
@@ -74,7 +74,7 @@ ZTEST(littlefs, test_fs_mkfs_custom)
 
 	TC_PRINT("f_bsize= %lu", sbuf.f_bsize);
 	/* Prog size is returned in f_bsize field. */
-	zassert_equal(sbuf.f_bsize, 2 * CONFIG_FS_LITTLEFS_PROG_SIZE);
+	zassert_equal(sbuf.f_bsize, CONFIG_FS_LITTLEFS_PROG_SIZE);
 
 	ret = fs_unmount(&mnt);
 	zassert_equal(ret, 0, "Expected success (ret=%d)", ret);

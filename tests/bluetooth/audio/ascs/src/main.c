@@ -2,12 +2,20 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -17,10 +25,13 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <sys/types.h>
 
 #include "assert.h"
-#include "ascs_internal.h"
 #include "bap_unicast_server.h"
 #include "bap_unicast_server_expects.h"
 #include "bap_stream.h"
@@ -29,8 +40,6 @@
 #include "gatt.h"
 #include "gatt_expects.h"
 #include "iso.h"
-#include "mock_kernel.h"
-#include "pacs.h"
 
 #include "test_common.h"
 
@@ -60,18 +69,27 @@ struct ascs_test_suite_fixture {
 
 static void ascs_test_suite_fixture_init(struct ascs_test_suite_fixture *fixture)
 {
+	struct bt_bap_unicast_server_register_param param = {
+		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	};
+	int err;
+
 	memset(fixture, 0, sizeof(*fixture));
+
+	err = bt_bap_unicast_server_register(&param);
+	zassert_equal(err, 0, "Unexpected err response %d", err);
 
 	fixture->ase_cp = test_ase_control_point_get();
 
 	test_conn_init(&fixture->conn);
 
-	test_ase_snk_get(1, &fixture->ase_snk.attr);
+	test_ase_snk_get(CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT, &fixture->ase_snk.attr);
 	if (fixture->ase_snk.attr != NULL) {
 		fixture->ase_snk.id = test_ase_id_get(fixture->ase_snk.attr);
 	}
 
-	test_ase_src_get(1, &fixture->ase_src.attr);
+	test_ase_src_get(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, &fixture->ase_src.attr);
 	if (fixture->ase_src.attr != NULL) {
 		fixture->ase_src.id = test_ase_id_get(fixture->ase_src.attr);
 	}
@@ -84,9 +102,13 @@ static void *ascs_test_suite_setup(void)
 	fixture = malloc(sizeof(*fixture));
 	zassert_not_null(fixture);
 
-	ascs_test_suite_fixture_init(fixture);
-
 	return fixture;
+}
+
+static void ascs_test_suite_before(void *f)
+{
+	memset(f, 0, sizeof(struct ascs_test_suite_fixture));
+	ascs_test_suite_fixture_init(f);
 }
 
 static void ascs_test_suite_teardown(void *f)
@@ -96,11 +118,21 @@ static void ascs_test_suite_teardown(void *f)
 
 static void ascs_test_suite_after(void *f)
 {
-	bt_ascs_cleanup();
+	int err;
+
+	/* If any of these fails, it's a fatal error for any tests running afterwards */
+	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected err response %d", err);
+
+	/* Sleep to trigger any pending state changes from unregister_cb */
+	k_sleep(K_SECONDS(1));
+
+	err = bt_bap_unicast_server_unregister();
+	zassert_equal(err, 0, "Unexpected err response %d", err);
 }
 
-ZTEST_SUITE(ascs_test_suite, NULL, ascs_test_suite_setup, NULL, ascs_test_suite_after,
-	    ascs_test_suite_teardown);
+ZTEST_SUITE(ascs_test_suite, NULL, ascs_test_suite_setup, ascs_test_suite_before,
+	    ascs_test_suite_after, ascs_test_suite_teardown);
 
 ZTEST_F(ascs_test_suite, test_has_sink_ase_chrc)
 {
@@ -144,6 +176,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	struct bt_conn *conn = &fixture->conn;
 	struct bt_gatt_notify_params *notify_params;
 	uint8_t ase_id;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		ase = fixture->ase_snk.attr;
@@ -156,7 +189,8 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	/* Set ASE to non-idle state */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
@@ -164,7 +198,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	/* Reset mock, as we expect ASE notification to be sent */
 	bt_gatt_notify_cb_reset();
 
-	/* Unregister the callbacks - whis will clean up the ASCS */
+	/* Unregister the callbacks - which will clean up the ASCS */
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 
 	/* Expected to notify the upper layers */
@@ -225,6 +259,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection)
 	const struct bt_gatt_attr *ase;
 	struct bt_iso_chan *chan;
 	uint8_t ase_id;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		ase = fixture->ase_snk.attr;
@@ -237,7 +272,8 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection)
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	/* Set ASE to non-idle state */
 	test_preamble_state_streaming(conn, ase_id, stream, &chan,
@@ -251,8 +287,6 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection)
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
@@ -282,7 +316,8 @@ ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
 	ase_src_id = fixture->ase_src.id;
 	zexpect_true(ase_src_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_ase_control_client_config_codec(conn, ase_snk_id, &snk_stream);
 	test_ase_control_client_config_qos(conn, ase_snk_id);
@@ -312,8 +347,6 @@ ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_recv_in_streaming_state)
@@ -327,10 +360,12 @@ ZTEST_F(ascs_test_suite, test_recv_in_streaming_state)
 	};
 	struct bt_iso_chan *chan;
 	struct net_buf buf;
+	int err;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_streaming(conn, ase_id, stream, &chan, false);
 
@@ -338,8 +373,6 @@ ZTEST_F(ascs_test_suite, test_recv_in_streaming_state)
 
 	/* Verification */
 	expect_bt_bap_stream_ops_recv_called_once(stream, &info, &buf);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_recv_in_enabling_state)
@@ -357,7 +390,8 @@ ZTEST_F(ascs_test_suite, test_recv_in_enabling_state)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 
@@ -370,8 +404,6 @@ ZTEST_F(ascs_test_suite, test_recv_in_enabling_state)
 
 	/* Verification */
 	expect_bt_bap_stream_ops_recv_not_called();
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
@@ -381,6 +413,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	const struct bt_gatt_attr *ase;
 	struct bt_iso_chan *chan;
 	uint8_t ase_id;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		ase = fixture->ase_snk.attr;
@@ -392,7 +425,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_streaming(conn, ase_id, stream, &chan,
 				      !IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK));
@@ -405,8 +439,6 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	expect_bt_bap_stream_ops_disabled_called_once(stream);
 	expect_bt_bap_stream_ops_released_not_called();
 	expect_bt_bap_stream_ops_disconnected_called_once(stream);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture *fixture,
@@ -426,7 +458,8 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
@@ -450,8 +483,6 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	expect_bt_bap_stream_ops_disabled_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
 	expect_bt_bap_stream_ops_disconnected_called_once(stream);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_cis_link_loss_in_disabling_state_v1)
@@ -485,7 +516,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
@@ -509,8 +541,6 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 		/* Server-initiated disable operation that shall not cause transition to QoS */
 		expect_bt_bap_stream_ops_qos_set_not_called();
 	}
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
@@ -532,7 +562,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	zexpect_not_null(ase);
 	zexpect_true(ase_id != 0x00);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
@@ -559,19 +590,17 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 
 	expect_bt_bap_stream_ops_connected_called_twice(stream);
 	expect_bt_bap_stream_ops_started_called_once(stream);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
 
 static struct bt_bap_stream *stream_allocated;
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 						enum bt_audio_dir dir,
 						const struct bt_audio_codec_cfg *codec_cfg,
 						struct bt_bap_stream **stream,
-						struct bt_audio_codec_qos_pref *const pref,
+						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
 	*stream = stream_allocated;
@@ -606,7 +635,8 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	cp = test_ase_control_point_get();
 	zexpect_not_null(cp);
 
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	stream_allocated = stream;
 	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
@@ -640,6 +670,4 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	k_sleep(K_MSEC(BT_CONN_INTERVAL_TO_MS(info.le.interval)));
 
 	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
-
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }

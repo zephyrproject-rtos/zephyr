@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <cmdline.h>
+#include <posix_native_task.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
@@ -16,6 +18,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
+#include <zephyr/sys/util.h>
 
 #include "can_native_linux_adapt.h"
 #include "nsi_host_trampolines.h"
@@ -45,6 +48,8 @@ struct can_native_linux_config {
 	const struct can_driver_config common;
 	const char *if_name;
 };
+
+static const char *if_name_cmd_opt;
 
 static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 {
@@ -382,8 +387,10 @@ static void can_native_linux_set_state_change_callback(const struct device *dev,
 
 static int can_native_linux_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	/* Return 16MHz as an realistic value for the testcases */
-	*rate = 16000000;
+	ARG_UNUSED(dev);
+
+	/* Recommended CAN clock from CiA 601-3 */
+	*rate = MHZ(80);
 
 	return 0;
 }
@@ -395,7 +402,7 @@ static int can_native_linux_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_native_linux_driver_api = {
+static DEVICE_API(can, can_native_linux_driver_api) = {
 	.start = can_native_linux_start,
 	.stop = can_native_linux_stop,
 	.get_capabilities = can_native_linux_get_capabilities,
@@ -408,35 +415,37 @@ static const struct can_driver_api can_native_linux_driver_api = {
 	.set_state_change_callback = can_native_linux_set_state_change_callback,
 	.get_core_clock = can_native_linux_get_core_clock,
 	.get_max_filters = can_native_linux_get_max_filters,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 2,
+		.phase_seg2 = 2,
+		.prescaler = 1
 	},
 	.timing_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 128,
+		.prop_seg = 0,
+		.phase_seg1 = 256,
+		.phase_seg2 = 128,
+		.prescaler = 32
 	},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_native_linux_set_timing_data,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_data_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 1,
+		.phase_seg2 = 1,
+		.prescaler = 1
 	},
 	.timing_data_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 16,
+		.prop_seg = 0,
+		.phase_seg1 = 32,
+		.phase_seg2 = 16,
+		.prescaler = 32
 	},
 #endif /* CONFIG_CAN_FD_MODE */
 };
@@ -445,13 +454,21 @@ static int can_native_linux_init(const struct device *dev)
 {
 	const struct can_native_linux_config *cfg = dev->config;
 	struct can_native_linux_data *data = dev->data;
+	const char *if_name;
 
 	k_mutex_init(&data->filter_mutex);
 	k_sem_init(&data->tx_idle, 1, 1);
 
-	data->dev_fd = linux_socketcan_iface_open(cfg->if_name);
+	if (if_name_cmd_opt != NULL) {
+		if_name = if_name_cmd_opt;
+	} else {
+		if_name = cfg->if_name;
+	}
+
+	LOG_DBG("Opening %s", if_name);
+	data->dev_fd = linux_socketcan_iface_open(if_name);
 	if (data->dev_fd < 0) {
-		LOG_ERR("Cannot open %s (%d)", cfg->if_name, data->dev_fd);
+		LOG_ERR("Cannot open %s (%d)", if_name, data->dev_fd);
 		return -ENODEV;
 	}
 
@@ -466,10 +483,16 @@ static int can_native_linux_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_CAN_FD_MODE
+#define CAN_NATIVE_LINUX_MAX_BITRATE 8000000
+#else /* CONFIG_CAN_FD_MODE */
+#define CAN_NATIVE_LINUX_MAX_BITRATE 1000000
+#endif /* CONFIG_CAN_FD_MODE */
+
 #define CAN_NATIVE_LINUX_INIT(inst)						\
 										\
 static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
-	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),			\
+	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, CAN_NATIVE_LINUX_MAX_BITRATE),	\
 	.if_name = DT_INST_PROP(inst, host_interface),				\
 };										\
 										\
@@ -482,3 +505,22 @@ CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
 			  &can_native_linux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
+
+static void add_native_options(void)
+{
+	static struct args_struct_t can_native_options[] = {
+		{
+			.is_mandatory = false,
+			.option = "can-if",
+			.name = "name",
+			.type = 's',
+			.dest = (void *)&if_name_cmd_opt,
+			.descript = "Name of the host CAN interface to use",
+		},
+		ARG_TABLE_ENDMARKER,
+	};
+
+	native_add_command_line_opts(can_native_options);
+}
+
+NATIVE_TASK(add_native_options, PRE_BOOT_1, 10);

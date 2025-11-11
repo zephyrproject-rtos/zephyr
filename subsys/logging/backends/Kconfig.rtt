@@ -4,9 +4,8 @@
 config LOG_BACKEND_RTT
 	bool "Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
-	default y if !SHELL_BACKEND_RTT
+	default y if !SHELL_LOG_BACKEND
 	select SEGGER_RTT_CUSTOM_LOCKING
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  When enabled, backend will use RTT for logging. This backend works on a per
@@ -105,5 +104,13 @@ config LOG_BACKEND_RTT_FORCE_PRINTK
 	bool
 	default y if LOG_BACKEND_RTT_BUFFER = 0 && RTT_CONSOLE
 	select LOG_PRINTK
+
+if LOG_BACKEND_RTT_OUTPUT_DICTIONARY
+
+config LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX
+	bool "Whether to output the dictionary log hex encoded (y) or as a raw binary (n)"
+	default y
+
+endif # LOG_BACKEND_RTT_OUTPUT_DICTIONARY
 
 endif # LOG_BACKEND_RTT

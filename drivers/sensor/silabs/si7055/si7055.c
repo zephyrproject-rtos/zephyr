@@ -101,14 +101,13 @@ static int si7055_channel_get(const struct device *dev,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
-		int32_t temp_ucelcius = (((SI7055_CONV_FACTOR_1 *
-					(int32_t)si_data->temperature) /
-					(__UINT16_MAX__ + 1)) -
-					SI7055_CONV_FACTOR_2) *
+		int32_t temp_ucelsius = (((SI7055_CONV_FACTOR_1 * (int32_t)si_data->temperature) /
+					  (__UINT16_MAX__ + 1)) -
+					 SI7055_CONV_FACTOR_2) *
 					SI7055_MULTIPLIER;
 
-		val->val1 = temp_ucelcius / SI7055_DIVIDER;
-		val->val2 = temp_ucelcius % SI7055_DIVIDER;
+		val->val1 = temp_ucelsius / SI7055_DIVIDER;
+		val->val2 = temp_ucelsius % SI7055_DIVIDER;
 
 		LOG_DBG("temperature = val1:%d, val2:%d",
 			val->val1, val->val2);
@@ -119,7 +118,7 @@ static int si7055_channel_get(const struct device *dev,
 	}
 }
 
-static const struct sensor_driver_api si7055_api = {
+static DEVICE_API(sensor, si7055_api) = {
 	.sample_fetch = &si7055_sample_fetch,
 	.channel_get = &si7055_channel_get,
 };

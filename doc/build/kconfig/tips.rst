@@ -375,6 +375,8 @@ error-prone, since it can be hard to spot that the same dependency is added
 twice.
 
 
+.. _stuck_symbols:
+
 "Stuck" symbols in menuconfig and guiconfig
 *******************************************
 
@@ -876,31 +878,10 @@ For a Kconfig symbol that enables a driver/subsystem FOO, consider having just
 usually be clear in the context of an option that can be toggled on/off, and
 makes things consistent.
 
+Style
+=====
 
-Header comments and other nits
-==============================
-
-A few formatting nits, to help keep things consistent:
-
-- Use this format for any header comments at the top of ``Kconfig`` files:
-
-  .. code-block:: none
-
-     # <Overview of symbols defined in the file, preferably in plain English>
-     (Blank line)
-     # Copyright (c) 2019 ...
-     # SPDX-License-Identifier: <License>
-     (Blank line)
-     (Kconfig definitions)
-
-- Format comments as ``# Comment`` rather than ``#Comment``
-
-- Put a blank line before/after each top-level ``if`` and ``endif``
-
-- Use a single tab for each indentation
-
-- Indent help text with two extra spaces
-
+See :ref:`coding_style` for style guidelines.
 
 Lesser-known/used Kconfig features
 **********************************
@@ -1075,5 +1056,5 @@ Other resources
 ***************
 
 The *Intro to symbol values* section in the `Kconfiglib docstring
-<https://github.com/ulfalizer/Kconfiglib/blob/master/kconfiglib.py>`__ goes
+<https://github.com/zephyrproject-rtos/Kconfiglib/blob/main/kconfiglib.py>`__ goes
 over how symbols values are calculated in more detail.

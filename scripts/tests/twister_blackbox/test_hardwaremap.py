@@ -6,17 +6,18 @@
 Blackbox tests for twister's command line functions
 """
 import importlib
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
 
-from conftest import ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+# pylint: disable=no-name-in-module
+from conftest import ZEPHYR_BASE, suite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/twisterlib"))
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestHardwaremap:
     TESTDATA_1 = [
         (

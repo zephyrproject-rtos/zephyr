@@ -1,9 +1,12 @@
 common:
   min_ram: 16
   depends_on: netif
+  tags:
+    - net
+    - iface
+    - userspace
 tests:
-  net.offloaded_netdev:
-    tags:
-      - net
-      - iface
-      - userspace
+  net.offloaded_netdev: {}
+  net.offloaded_netdev.no_native:
+    extra_configs:
+      - CONFIG_NET_NATIVE=n

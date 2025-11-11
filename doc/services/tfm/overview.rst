@@ -1,7 +1,7 @@
 Trusted Firmware-M Overview
 ###########################
 
-`Trusted Firmware-M (TF-M) <https://tf-m-user-guide.trustedfirmware.org/>`__
+`Trusted Firmware-M (TF-M) <https://tf-m.docs.trustedfirmware.org/en/latest/>`__
 is a reference implementation of the Platform Security Architecture (PSA)
 `IoT Security Framework <https://www.psacertified.org/what-is-psa-certified/>`__.
 It defines and implements an architecture and a set of software components
@@ -210,7 +210,7 @@ As of TF-M 1.8.0, the following secure services are generally available (althoug
 A template also exists for creating your own custom services.
 
 For full details on these services, and their exposed APIs, please consult the
-`TF-M Documentation <https://tf-m-user-guide.trustedfirmware.org/>`__.
+`TF-M Documentation <https://tf-m.docs.trustedfirmware.org/en/latest/>`__.
 
 Key Management and Derivation
 -----------------------------
@@ -261,8 +261,8 @@ Non-Secure Processing Environment
 Zephyr is used for the NSPE, using a board that is supported by TF-M where the
 :kconfig:option:`CONFIG_BUILD_WITH_TFM` flag has been enabled.
 
-Generally, you simply need to select the ``*_ns`` variant of a valid target
-(for example ``mps2_an521_ns``), which will configure your Zephyr application
+Generally, you simply need to select the ``*/ns`` board target of a valid board
+(for example ``mps2/an521/cpu0/ns``), which will configure your Zephyr application
 to run in the NSPE, correctly build and link it with the TF-M secure images,
 sign the secure and non-secure images, and merge the three binaries into a
 single ``tfm_merged.hex`` file. The :ref:`west flash <west-flashing>` command

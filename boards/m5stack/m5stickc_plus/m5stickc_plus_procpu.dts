@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "M5StickC Plus PROCPU";
@@ -27,7 +28,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
@@ -41,7 +42,7 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			gpios =  <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED0";
 		};
 	};
@@ -54,6 +55,7 @@
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User button 1";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
@@ -95,7 +97,7 @@
 			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
 			ram-param = [00 F0];
 			rgb-param = [40 02 14];
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 	};
 };
@@ -154,6 +156,7 @@
 				regulator-init-microvolt = <3000000>;
 			};
 		};
+
 		axp192_gpio: axp192_gpio {
 			compatible = "x-powers,axp192-gpio";
 			gpio-controller;
@@ -181,7 +184,7 @@
 	#size-cells = <0>;
 	status = "okay";
 	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio11
-				&spim2_sclk_gpio14 &spim2_csel_gpio16>;
+		     &spim2_sclk_gpio14 &spim2_csel_gpio16>;
 	pinctrl-names = "default";
 };
 
@@ -214,45 +217,10 @@
 	status = "okay";
 };
 
-&flash0 {
+&esp32_bt_hci {
 	status = "okay";
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* Reserve 60kB for the bootloader */
-		boot_partition: partition@1000 {
-			label = "mcuboot";
-			reg = <0x00001000 0x0000F000>;
-			read-only;
-		};
-
-		/* Reserve 1024kB for the application in slot 0 */
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 0x00100000>;
-		};
-
-		/* Reserve 1024kB for the application in slot 1 */
-		slot1_partition: partition@110000 {
-			label = "image-1";
-			reg = <0x00110000 0x00100000>;
-		};
-
-		/* Reserve 256kB for the scratch partition */
-		scratch_partition: partition@210000 {
-			label = "image-scratch";
-			reg = <0x00210000 0x00040000>;
-		};
-
-		storage_partition: partition@250000 {
-			label = "storage";
-			reg = <0x00250000 0x00006000>;
-		};
-	};
 };
 
-&esp32_bt_hci {
+&wifi {
 	status = "okay";
 };

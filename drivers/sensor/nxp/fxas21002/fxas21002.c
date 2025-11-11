@@ -437,7 +437,7 @@ static int fxas21002_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api fxas21002_driver_api = {
+static DEVICE_API(sensor, fxas21002_driver_api) = {
 	.sample_fetch = fxas21002_sample_fetch,
 	.channel_get = fxas21002_channel_get,
 #if CONFIG_FXAS21002_TRIGGER
@@ -452,7 +452,7 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 
 #define FXAS21002_CONFIG_SPI(inst)								\
 		.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,					\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) },				\
+			SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },				\
 		.ops = &fxas21002_spi_ops,							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),				\
 		.inst_on_bus = FXAS21002_BUS_SPI,						\

@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ST_LCD_DSI_MB1835
+
+orsource "boards/*.defconfig"
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 32
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_32
+endchoice
+
+endif # LVGL
+
+endif # SHIELD_ST_LCD_DSI_MB1835

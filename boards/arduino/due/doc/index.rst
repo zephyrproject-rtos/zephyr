@@ -1,7 +1,4 @@
-.. _arduino_due:
-
-Arduino Due
-###########
+.. zephyr:board:: arduino_due
 
 Overview
 ********
@@ -23,40 +20,16 @@ the processor.
 .. note::
    This configuration is not supported by Arduino.
 
-.. image:: img/arduino_due.jpg
-     :align: center
-     :alt: Arduino Due
-
 Hardware
 ********
+
 Supported Features
 ==================
 
-The arduino_due board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| Watchdog  | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features are not currently supported by the Zephyr kernel.
 See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
 list of Arduino Due board hardware features.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/due/arduino_due_defconfig`.
 
 .. note::
    For I2C, pull-up resistors are required for using SCL1 and SDA1 (near IO13).
@@ -131,6 +104,8 @@ default, is utilizing this controller.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -175,7 +150,7 @@ Applications for the ``arduino_due`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application. After
+Here is an example for the :zephyr:code-sample:`hello_world` application. After
 building the application, press the Reset button before running the
 flash command, so the board will boot into the SAM-BA bootloader and
 be prepared to receive the new program.
@@ -204,6 +179,8 @@ Now press the Reset button and you should see "Hello World! arduino_due" in your
 
 References
 **********
+
+.. target-notes::
 
 .. _Arduino Due website: https://www.arduino.cc/en/Main/ArduinoBoardDue
 

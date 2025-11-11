@@ -7,6 +7,7 @@
 
 
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 
 
@@ -61,7 +62,7 @@ void print_loop(const char *name)
  *
  */
 
-void __attribute__((noinline)) check_input(const char *name, const char *input)
+void __noinline check_input(const char *name, const char *input)
 {
 	/* Stack will overflow when input is more than 16 characters */
 	char buf[16];
@@ -83,6 +84,13 @@ void alternate_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
+	/*
+	 * Padding buffer to absorb the intentional overflow inside the thread stack.
+	 * This prevents writes from crossing the thread stack boundary into the next
+	 * MPU-protected region. Required to make the test independent of compiler-
+	 * specific stack frame layouts.
+	 */
+	volatile __unused char overflow_guard_area[32] = "Forcing Initialization!";
 
 	TC_PRINT("Starts %s\n", __func__);
 	check_input(__func__,
@@ -143,7 +151,7 @@ ZTEST(stackprot, test_create_alt_thread)
 }
 
 #ifdef CONFIG_STACK_CANARIES_TLS
-extern __thread volatile uintptr_t __stack_chk_guard;
+extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #else
 extern volatile uintptr_t __stack_chk_guard;
 #endif

@@ -1,0 +1,86 @@
+# Distributed Switch Architecture [DSA] device configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_DSA_SUPPORT_DEPRECATED
+	bool
+	help
+	  Set by an ethernet driver that supports DSA. This is obsolete,
+	  and only used for legacy dsa device.
+
+menuconfig DSA_DRIVERS
+	bool "Distributed Switch Architecture device drivers"
+	default y if NET_DSA
+	help
+	  Enable Distributed Switch Architecture support.
+
+if DSA_DRIVERS
+
+config DSA_KSZ8XXX
+	bool
+
+config DSA_KSZ8794
+	bool "Support for KSZ8794"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8794_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8794),spi)
+	help
+	  Add support for KSZ8794 DSA device driver.
+
+config DSA_KSZ8863
+	bool "Support for KSZ8863"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8863_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8863),spi)
+	help
+	  Add support for KSZ8863 DSA device driver.
+
+config DSA_KSZ8463
+	bool "Support for KSZ8463"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8463_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8463),spi)
+	help
+	  Add support for KSZ8463 DSA device driver.
+
+config DSA_KSZ_TAIL_TAGGING
+	bool "Support for tail tagging"
+	depends on DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
+	help
+	  Add support for tail tagging on DSA device.
+
+config DSA_KSZ_PORT_ISOLATING
+	bool "Support for ports isolating"
+	depends on DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
+	help
+	  Add support for traffic isolation on DSA slave ports
+
+config DSA_SPI
+	bool "Support for PHY SPI interface"
+	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463)
+	help
+	  Use SPI bus to communicate with PHY
+
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
+
+endif # DSA_DRIVERS
+
+config DSA_NXP_NETC_GCL_LEN
+	int "Gate control list length for i.MX NETC DSA"
+	default 64
+	range 1 256
+	depends on DSA_NXP_IMX_NETC && NET_QBV
+	help
+	  Amount of Gate control list to use, reduce to save RAM.
+	  The Max of the value can be 64,128,256.

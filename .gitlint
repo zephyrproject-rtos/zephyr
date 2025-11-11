@@ -1,6 +1,7 @@
 # All these sections are optional, edit this file as you like.
 # Zephyr-specific defaults are located in scripts/gitlint/zephyr_commit_rules.py
 [general]
+regex-style-search=true
 ignore=title-trailing-punctuation, T3, title-max-length, T1, body-hard-tab, B3, B1
 # verbosity should be a value between 1 and 3, the commandline -v flags take precedence over this
 verbosity = 3
@@ -59,3 +60,7 @@ ignore-merge-commits=false
 # By specifying this rule, developers can only change the file when they explicitly reference
 # it in the commit message.
 #files=gitlint/rules.py,README.md
+
+[ignore-by-author-name]
+regex=^dependabot\[bot\]$
+ignore=all

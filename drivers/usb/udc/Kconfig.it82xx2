@@ -5,6 +5,7 @@ config UDC_IT82XX2
 	bool "IT82XX2 USB device controller driver"
 	default y
 	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select PINCTRL
 	help
 	  IT82xx2 USB device controller driver.
 

@@ -1,0 +1,15 @@
+tests:
+  boards.esp32.i2s.gpio_loopback:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_saola
+    harness_config:
+      fixture: gpio_loopback

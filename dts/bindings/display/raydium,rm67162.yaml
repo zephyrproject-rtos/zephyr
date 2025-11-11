@@ -4,7 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Raydium RM67162 Panel
+title: Raydium RM67162 display controller
+
+description: |
+    The Raydium RM67162 is a 16.7M colors OLED controller
+    with a maximum 480RGBx480 resolution.
 
 compatible: "raydium,rm67162"
 

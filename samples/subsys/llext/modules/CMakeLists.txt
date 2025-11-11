@@ -11,7 +11,7 @@ if(CONFIG_HELLO_WORLD_MODE STREQUAL "m")
 
   set(ext_name hello_world)
   set(ext_src src/${ext_name}_ext.c)
-  set(ext_bin ${ZEPHYR_BINARY_DIR}/${ext_name}.llext)
+  set(ext_bin ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext)
   set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}_ext.inc)
   add_llext_target(${ext_name}_ext
     OUTPUT  ${ext_bin}

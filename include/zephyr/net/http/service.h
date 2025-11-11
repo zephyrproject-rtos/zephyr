@@ -13,10 +13,13 @@
  * @brief HTTP service API
  *
  * @defgroup http_service HTTP service API
+ * @since 3.4
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
 
+#include "zephyr/net/http/server.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -62,30 +65,59 @@ struct http_resource_desc {
 
 /** @cond INTERNAL_HIDDEN */
 
+struct http_service_runtime_data {
+	int num_clients;
+};
+
+struct http_service_desc;
+
+/** Custom socket creation function type */
+typedef int (*http_socket_create_fn)(const struct http_service_desc *svc, int af, int proto);
+
+/** HTTP service configuration */
+struct http_service_config {
+	/** Custom socket creation for the service if needed */
+	http_socket_create_fn socket_create;
+	/* If any more service-specific configuration is needed, it can be added here. */
+};
+
 struct http_service_desc {
 	const char *host;
 	uint16_t *port;
+	int *fd;
 	void *detail;
 	size_t concurrent;
 	size_t backlog;
+	struct http_service_runtime_data *data;
 	struct http_resource_desc *res_begin;
 	struct http_resource_desc *res_end;
+	struct http_resource_detail *res_fallback;
+	const struct http_service_config *config;
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	const sec_tag_t *sec_tag_list;
 	size_t sec_tag_list_size;
 #endif
 };
 
-#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin,   \
-				_res_end, ...)                                                     \
-	static const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                         \
+#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
+				_res_fallback, _res_begin, _res_end, _config, ...)                 \
+	BUILD_ASSERT(_concurrent <= CONFIG_HTTP_SERVER_MAX_CLIENTS,                                \
+		     "can't accept more then MAX_CLIENTS");                                        \
+	BUILD_ASSERT(_backlog > 0, "backlog can't be 0");                                          \
+	static int _name##_fd = -1;                                                                \
+	static struct http_service_runtime_data _name##_data = {0};                                \
+	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                                \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
+		.fd = &_name##_fd,                                                                 \
 		.detail = (void *)(_detail),                                                       \
 		.concurrent = (_concurrent),                                                       \
 		.backlog = (_backlog),                                                             \
+		.data = &_name##_data,                                                             \
 		.res_begin = (_res_begin),                                                         \
 		.res_end = (_res_end),                                                             \
+		.res_fallback = (_res_fallback),                                                   \
+		.config = (_config),                                                               \
 		COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,                                        \
 			    (.sec_tag_list = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (NULL),  \
 							 (GET_ARG_N(1, __VA_ARGS__))),), ())       \
@@ -99,8 +131,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTP service without static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -110,18 +143,23 @@ struct http_service_desc {
  * @param _name Name of the service.
  * @param _host IP address or hostname associated with the service.
  * @param[inout] _port Pointer to port associated with the service.
- * @param _concurrent Maximum number of concurrent clients.
- * @param _backlog Maximum number queued connections.
- * @param _detail Implementation-specific detail associated with the service.
+ * @param _concurrent Maximum number of concurrent clients. (max. CONFIG_HTTP_SERVER_MAX_CLIENTS)
+ * @param _backlog Maximum number of queued connections. (min. 1)
+ * @param _detail User-defined detail associated with the service.
+ * @param _res_fallback Fallback resource to be served if no other resource matches path
+ * @param _config Pointer to http_service_config structure (can be NULL for default behavior)
  */
-#define HTTP_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail)             \
-	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, NULL, NULL)
+#define HTTP_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail,             \
+				  _res_fallback, _config)                                          \
+	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
+				_res_fallback, NULL, NULL, _config)
 
 /**
  * @brief Define an HTTPS service without static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -131,15 +169,18 @@ struct http_service_desc {
  * @param _name Name of the service.
  * @param _host IP address or hostname associated with the service.
  * @param[inout] _port Pointer to port associated with the service.
- * @param _concurrent Maximum number of concurrent clients.
- * @param _backlog Maximum number queued connections.
- * @param _detail Implementation-specific detail associated with the service.
+ * @param _concurrent Maximum number of concurrent clients. (max. CONFIG_HTTP_SERVER_MAX_CLIENTS)
+ * @param _backlog Maximum number of queued connections. (min. 1)
+ * @param _detail User-defined detail associated with the service.
+ * @param _res_fallback Fallback resource to be served if no other resource matches path
+ * @param _config Pointer to http_service_config structure (can be NULL for default behavior)
  * @param _sec_tag_list TLS security tag list used to setup a HTTPS socket.
  * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
  */
 #define HTTPS_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail,          \
-				   _sec_tag_list, _sec_tag_list_size)                            \
-	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, NULL, NULL, \
+				   _res_fallback, _config, _sec_tag_list, _sec_tag_list_size)    \
+	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,             \
+				_res_fallback, NULL, NULL, _config,                              \
 				_sec_tag_list, _sec_tag_list_size);				 \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),				 \
 		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")
@@ -147,8 +188,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTP service with static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -158,22 +200,27 @@ struct http_service_desc {
  * @param _name Name of the service.
  * @param _host IP address or hostname associated with the service.
  * @param[inout] _port Pointer to port associated with the service.
- * @param _concurrent Maximum number of concurrent clients.
- * @param _backlog Maximum number queued connections.
- * @param _detail Implementation-specific detail associated with the service.
+ * @param _concurrent Maximum number of concurrent clients. (max. CONFIG_HTTP_SERVER_MAX_CLIENTS)
+ * @param _backlog Maximum number of queued connections. (min. 1)
+ * @param _detail User-defined detail associated with the service.
+ * @param _res_fallback Fallback resource to be served if no other resource matches path
+ * @param _config Pointer to http_service_config structure (can be NULL for default behavior)
  */
-#define HTTP_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail)                   \
+#define HTTP_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail, _res_fallback,    \
+			    _config)                                                               \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_start)[];      \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_end)[];        \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
+				_res_fallback,                                                     \
 				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],             \
-				&_CONCAT(_http_resource_desc_##_name, _list_end)[0])
+				&_CONCAT(_http_resource_desc_##_name, _list_end)[0], _config);
 
 /**
  * @brief Define an HTTPS service with static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -183,19 +230,22 @@ struct http_service_desc {
  * @param _name Name of the service.
  * @param _host IP address or hostname associated with the service.
  * @param[inout] _port Pointer to port associated with the service.
- * @param _concurrent Maximum number of concurrent clients.
- * @param _backlog Maximum number queued connections.
- * @param _detail Implementation-specific detail associated with the service.
+ * @param _concurrent Maximum number of concurrent clients. (max. CONFIG_HTTP_SERVER_MAX_CLIENTS)
+ * @param _backlog Maximum number of queued connections. (min. 1)
+ * @param _detail User-defined detail associated with the service.
+ * @param _res_fallback Fallback resource to be served if no other resource matches path
+ * @param _config Pointer to http_service_config structure (can be NULL for default behavior)
  * @param _sec_tag_list TLS security tag list used to setup a HTTPS socket.
  * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
  */
 #define HTTPS_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail,              \
-			     _sec_tag_list, _sec_tag_list_size)                                \
+			     _res_fallback, _config, _sec_tag_list, _sec_tag_list_size)        \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_start)[];  \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_end)[];    \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,           \
+				_res_fallback,                                                 \
 				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],         \
-				&_CONCAT(_http_resource_desc_##_name, _list_end)[0],           \
+				&_CONCAT(_http_resource_desc_##_name, _list_end)[0], _config,  \
 				_sec_tag_list, _sec_tag_list_size);                            \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),                               \
 		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")

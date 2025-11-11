@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/ztest.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
@@ -237,7 +238,7 @@ static void test_iface_carrier_off_on(void)
 }
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
 		/* Spurious callback. */
@@ -253,7 +254,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+		       uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
 		/* Spurious callback. */
@@ -269,7 +270,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	uint32_t event;
+	uint64_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {
@@ -556,7 +557,7 @@ static void test_catch_query(void)
 
 	is_query_received = false;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY,
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_MLD_QUERY,
 				0, handle_mld_query);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_MLD_QUERY), ret);

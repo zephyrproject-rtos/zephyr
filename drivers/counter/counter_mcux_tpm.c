@@ -10,10 +10,16 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 #include <fsl_tpm.h>
 
 LOG_MODULE_REGISTER(mcux_tpm, CONFIG_COUNTER_LOG_LEVEL);
+
+struct mcux_tpm_channel_data {
+	counter_alarm_callback_t alarm_callback;
+	void *alarm_user_data;
+};
 
 #define DEV_CFG(_dev) ((const struct mcux_tpm_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_tpm_data *)(_dev)->data)
@@ -28,14 +34,14 @@ struct mcux_tpm_config {
 
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
+	void (*irq_config_func)(void);
 };
 
 struct mcux_tpm_data {
 	DEVICE_MMIO_NAMED_RAM(tpm_mmio);
-	counter_alarm_callback_t alarm_callback;
 	counter_top_callback_t top_callback;
 	uint32_t freq;
-	void *alarm_user_data;
+	struct mcux_tpm_channel_data channels[TPM_CONTROLS_COUNT];
 	void *top_user_data;
 };
 
@@ -81,29 +87,33 @@ static int mcux_tpm_set_alarm(const struct device *dev, uint8_t chan_id,
 	struct mcux_tpm_data *data = dev->data;
 	uint32_t ticks = alarm_cfg->ticks;
 
-	if (chan_id != kTPM_Chnl_0) {
+	if (chan_id >= DEV_CFG(dev)->info.channels) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
-	if (ticks > (top_value))
-		return -EINVAL;
-
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		if (top_value - current >= ticks)
-			ticks += current;
-		else
-			ticks -= top_value - current;
+	if (data->channels[chan_id].alarm_callback != NULL) {
+		LOG_ERR("channel already in use");
+		return -EBUSY;
 	}
 
-	if (data->alarm_callback)
-		return -EBUSY;
+	if (ticks > (top_value)) {
+		return -EINVAL;
+	}
 
-	data->alarm_callback = alarm_cfg->callback;
-	data->alarm_user_data = alarm_cfg->user_data;
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		if (top_value - current >= ticks) {
+			ticks += current;
+		} else {
+			ticks -= top_value - current;
+		}
+	}
 
-	TPM_SetupOutputCompare(base, kTPM_Chnl_0, kTPM_NoOutputSignal, ticks);
-	TPM_EnableInterrupts(base, kTPM_Chnl0InterruptEnable);
+	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
+	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
+
+	TPM_SetupOutputCompare(base, chan_id, kTPM_NoOutputSignal, ticks);
+	TPM_EnableInterrupts(base, BIT(chan_id));
 
 	return 0;
 }
@@ -113,13 +123,14 @@ static int mcux_tpm_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	TPM_Type *base = get_base(dev);
 	struct mcux_tpm_data *data = dev->data;
 
-	if (chan_id != kTPM_Chnl_0) {
+	if (chan_id >= DEV_CFG(dev)->info.channels) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
-	TPM_DisableInterrupts(base, kTPM_Chnl0InterruptEnable);
-	data->alarm_callback = NULL;
+	TPM_DisableInterrupts(base, BIT(chan_id));
+	data->channels[chan_id].alarm_callback = NULL;
+	data->channels[chan_id].alarm_user_data = NULL;
 
 	return 0;
 }
@@ -131,17 +142,20 @@ void mcux_tpm_isr(const struct device *dev)
 	uint32_t current = TPM_GetCurrentTimerCount(base);
 	uint32_t status;
 
-	status =  TPM_GetStatusFlags(base) & (kTPM_Chnl0Flag | kTPM_TimeOverflowFlag);
+	status = TPM_GetStatusFlags(base);
 	TPM_ClearStatusFlags(base, status);
 	barrier_dsync_fence_full();
 
-	if ((status & kTPM_Chnl0Flag) && data->alarm_callback) {
-		TPM_DisableInterrupts(base,
-				      kTPM_Chnl0InterruptEnable);
-		counter_alarm_callback_t alarm_cb = data->alarm_callback;
+	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
+		if ((status & BIT(chan)) != 0 && (data->channels[chan].alarm_callback != NULL)) {
+			counter_alarm_callback_t alarm_callback =
+				data->channels[chan].alarm_callback;
+			void *alarm_user_data = data->channels[chan].alarm_user_data;
 
-		data->alarm_callback = NULL;
-		alarm_cb(dev, 0, current, data->alarm_user_data);
+			data->channels[chan].alarm_callback = NULL;
+			data->channels[chan].alarm_user_data = NULL;
+			alarm_callback(dev, chan, current, alarm_user_data);
+		}
 	}
 
 	if ((status & kTPM_TimeOverflowFlag) && data->top_callback) {
@@ -153,7 +167,7 @@ static uint32_t mcux_tpm_get_pending_int(const struct device *dev)
 {
 	TPM_Type *base = get_base(dev);
 
-	return (TPM_GetStatusFlags(base) & kTPM_Chnl0Flag);
+	return TPM_GetStatusFlags(base) ? 1 : 0;
 }
 
 static int mcux_tpm_set_top_value(const struct device *dev,
@@ -163,8 +177,11 @@ static int mcux_tpm_set_top_value(const struct device *dev,
 	TPM_Type *base = get_base(dev);
 	struct mcux_tpm_data *data = dev->data;
 
-	if (data->alarm_callback)
-		return -EBUSY;
+	for (uint8_t chan = 0; chan < config->info.channels; chan++) {
+		if (data->channels[chan].alarm_callback) {
+			return -EBUSY;
+		}
+	}
 
 	/* Check if timer already enabled. */
 #if defined(FSL_FEATURE_TPM_HAS_SC_CLKS) && FSL_FEATURE_TPM_HAS_SC_CLKS
@@ -173,8 +190,9 @@ static int mcux_tpm_set_top_value(const struct device *dev,
 	if (base->SC & TPM_SC_CMOD_MASK) {
 #endif
 		/* Timer already enabled, check flags before resetting */
-		if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET)
+		if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
 			return -ENOTSUP;
+		}
 
 		TPM_StopTimer(base);
 		base->CNT = 0;
@@ -222,6 +240,11 @@ static int mcux_tpm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
+		data->channels[chan].alarm_callback = NULL;
+		data->channels[chan].alarm_user_data = NULL;
+	}
+
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
 		LOG_ERR("Could not turn on clock");
 		return -EINVAL;
@@ -243,10 +266,12 @@ static int mcux_tpm_init(const struct device *dev)
 	/* Set the modulo to max value. */
 	base->MOD = TPM_MAX_COUNTER_VALUE(base);
 
+	config->irq_config_func();
+
 	return 0;
 }
 
-static const struct counter_driver_api mcux_tpm_driver_api = {
+static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	.start = mcux_tpm_start,
 	.stop = mcux_tpm_stop,
 	.get_value = mcux_tpm_get_value,
@@ -262,6 +287,7 @@ static const struct counter_driver_api mcux_tpm_driver_api = {
 
 #define TPM_DEVICE_INIT_MCUX(n)							\
 	static struct mcux_tpm_data mcux_tpm_data_ ## n;			\
+	static void mcux_tpm_irq_config_ ## n(void);				\
 										\
 	static const struct mcux_tpm_config mcux_tpm_config_ ## n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),		\
@@ -273,14 +299,15 @@ static const struct counter_driver_api mcux_tpm_driver_api = {
 		.info = {							\
 			.max_top_value = TPM_MAX_COUNTER_VALUE(TPM(n)),		\
 			.freq = 0,						\
-			.channels = 1,						\
+			.channels = FSL_FEATURE_TPM_CHANNEL_COUNTn(		\
+					(TPM_Type *)DT_INST_REG_ADDR(n)),	\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 		},								\
+		.irq_config_func = mcux_tpm_irq_config_ ## n,			\
 	};									\
 										\
-	static int mcux_tpm_## n ##_init(const struct device *dev);		\
 	DEVICE_DT_INST_DEFINE(n,						\
-			mcux_tpm_## n ##_init,					\
+			mcux_tpm_init,						\
 			NULL,							\
 			&mcux_tpm_data_ ## n,					\
 			&mcux_tpm_config_ ## n,					\
@@ -288,13 +315,12 @@ static const struct counter_driver_api mcux_tpm_driver_api = {
 			CONFIG_COUNTER_INIT_PRIORITY,				\
 			&mcux_tpm_driver_api);					\
 										\
-	static int mcux_tpm_## n ##_init(const struct device *dev)		\
+	static void mcux_tpm_irq_config_ ## n(void)				\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n),					\
 			DT_INST_IRQ(n, priority),				\
 			mcux_tpm_isr, DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQN(n));					\
-		return mcux_tpm_init(dev);					\
 	}									\
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE_INIT_MCUX)

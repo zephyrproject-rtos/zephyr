@@ -301,7 +301,7 @@ static int adc_numaker_read_async(const struct device *dev,
 }
 #endif
 
-static const struct adc_driver_api adc_numaker_driver_api = {
+static DEVICE_API(adc, adc_numaker_driver_api) = {
 	.channel_setup = adc_numaker_channel_setup,
 	.read = adc_numaker_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -397,7 +397,7 @@ done:
 		ADC_CONTEXT_INIT_SYNC(adc_numaker_data_##inst, ctx),			     \
 	};									             \
 	DEVICE_DT_INST_DEFINE(inst,                                                          \
-			      &adc_numaker_init, NULL,                                       \
+			      adc_numaker_init, NULL,                                        \
 			      &adc_numaker_data_##inst, &adc_numaker_cfg_##inst,             \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			     \
 			      &adc_numaker_driver_api);

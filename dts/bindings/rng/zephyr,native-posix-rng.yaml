@@ -6,3 +6,5 @@ description: Native POSIX RNG/Entropy
 compatible: "zephyr,native-posix-rng"
 
 include: base.yaml
+
+# This binding is deprecated in favor of zephyr,native-sim-rng

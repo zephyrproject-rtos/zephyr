@@ -48,10 +48,6 @@ GEN_OFFSET_SYM(_kernel_t, ready_q);
 GEN_OFFSET_SYM(_ready_q_t, cache);
 #endif /* CONFIG_SMP */
 
-#ifdef CONFIG_FPU_SHARING
-GEN_OFFSET_SYM(_kernel_t, current_fp);
-#endif /* CONFIG_FPU_SHARING */
-
 GEN_OFFSET_SYM(_thread_base_t, user_options);
 
 GEN_OFFSET_SYM(_thread_t, base);
@@ -71,6 +67,7 @@ GEN_OFFSET_SYM(_thread_t, tls);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
+GEN_ABSOLUTE_SYM(__z_interrupt_all_stacks_SIZEOF, sizeof(z_interrupt_stacks));
 
 /* member offsets in the device structure. Used in image post-processing */
 #ifdef CONFIG_DEVICE_DEPS

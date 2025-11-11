@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2022 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8ml_m7.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "phyboard_pollux-pinctrl.dtsi"
+
+/ {
+	model = "phyBOARD-Pollux i.MX8MP";
+	compatible = "nxp,phyboard_pollux";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	soc {
+		/*
+		 * BSP-Linux standard output. Can cause problems if used with standard bsp
+		 */
+		uart1: uart@30860000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
+			pinctrl-0 = <&uart1_default>;
+			pinctrl-names = "default";
+			status = "disabled";
+		};
+
+		/*
+		 * to Bluetooth module (currently not supported by zephyr)
+		 * Expansion header Pin 31(RX) 33(TX)
+		 */
+		uart3: uart@30880000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30880000 0x10000>;
+			interrupts = <28 3>;
+			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
+			pinctrl-0 = <&uart3_default>;
+			pinctrl-names = "default";
+			hw-flow-control;
+			status = "disabled";
+		};
+	};
+};
+
+/*
+ * Standard uart for the M7-Core
+ */
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Has PMIC and EEPROM connected to it.
+ * Used by u-boot and Linux.
+ */
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Has PCA9533 I2C expander and a EEPROM connected.
+ * There is no driver for the PCA9533 in zephyr yet.
+ * Accessible via X6(Expansion header) and X10(mini PCIe).
+ */
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Nothing connected.
+ * Accessible via connector X11 (phyCAM-M).
+ */
+&i2c3 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Nothing connected.
+ * Accessible via connector X15(A/V), X24(Display) and X21(MIPI-DSI).
+ */
+&i2c4 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
+};
+
+&mailbox0 {
+	status = "okay";
+};

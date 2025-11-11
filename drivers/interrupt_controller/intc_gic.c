@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Marvell
  * Copyright (c) 2018 Lexmark International, Inc.
  * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +80,16 @@ bool arm_gic_irq_is_pending(unsigned int irq)
 	return (enabler & (1 << int_off)) != 0;
 }
 
+void arm_gic_irq_set_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	sys_write32((1 << int_off), (GICD_ISPENDRn + int_grp * 4));
+}
+
 void arm_gic_irq_clear_pending(unsigned int irq)
 {
 	int int_grp, int_off;
@@ -102,13 +113,16 @@ void arm_gic_irq_set_priority(
 	int_grp = (irq / 16) * 4;
 	int_off = (irq % 16) * 2;
 
-	val = sys_read32(GICD_ICFGRn + int_grp);
-	val &= ~(GICD_ICFGR_MASK << int_off);
-	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICD_ICFGR_TYPE << int_off);
-	}
+	/* GICD_ICFGR0 is read-only; SGIs are always edge-triggered */
+	if (int_grp != 0) {
+		val = sys_read32(GICD_ICFGRn + int_grp);
+		val &= ~(GICD_ICFGR_MASK << int_off);
+		if (flags & IRQ_TYPE_EDGE) {
+			val |= (GICD_ICFGR_TYPE << int_off);
+		}
 
-	sys_write32(val, GICD_ICFGRn + int_grp);
+		sys_write32(val, GICD_ICFGRn + int_grp);
+	}
 }
 
 unsigned int arm_gic_get_active(void)

@@ -74,7 +74,8 @@ static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
 					    struct in_addr *sender_ip,
 					    struct in_addr *target_ip)
 {
-	struct net_pkt *pkt;
+	struct net_pkt *pkt, *arp;
+	int ret;
 
 	/* We provide AF_UNSPEC to the allocator: this packet does not
 	 * need space for any IPv4 header.
@@ -88,7 +89,13 @@ static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ipv4_acd(pkt, true);
 
-	return net_arp_prepare(pkt, target_ip, sender_ip);
+	ret = net_arp_prepare(pkt, target_ip, sender_ip, &arp);
+	if (ret == NET_ARP_PKT_REPLACED) {
+		pkt = arp;
+	} else if (ret < 0)  {
+		pkt = NULL;
+	}
+	return pkt;
 }
 
 static void ipv4_acd_send_probe(struct net_if_addr *ifaddr)
@@ -288,15 +295,18 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 		ll_addr = net_if_get_link_addr(addr_iface);
 
 		/* RFC 5227, ch. 2.1.1 Probe Details:
-		 * - Sender IP address match OR,
-		 * - Target IP address match with different sender HW address,
+		 * - ARP Request/Reply with Sender IP address match OR,
+		 * - ARP Probe where Target IP address match with different sender HW address,
 		 * indicate a conflict.
+		 * ARP Probe has an all-zero sender IP address
 		 */
 		if (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
 					  (uint8_t *)&ifaddr->address.in_addr) ||
 		    (net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
 					  (uint8_t *)&ifaddr->address.in_addr) &&
-		     memcmp(&arp_hdr->src_hwaddr, ll_addr->addr, ll_addr->len) != 0)) {
+				 (memcmp(&arp_hdr->src_hwaddr, ll_addr->addr, ll_addr->len) != 0) &&
+				 (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
+						(uint8_t *)&(struct in_addr)INADDR_ANY_INIT)))) {
 			NET_DBG("Conflict detected from %s for %s",
 				net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
 						   arp_hdr->hwlen),

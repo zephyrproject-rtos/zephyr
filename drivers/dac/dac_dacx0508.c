@@ -163,6 +163,11 @@ static int dacx0508_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	data->configured |= BIT(channel_cfg->channel_id);
 
 	return 0;
@@ -356,7 +361,7 @@ static int dacx0508_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api dacx0508_driver_api = {
+static DEVICE_API(dac, dacx0508_driver_api) = {
 	.channel_setup = dacx0508_channel_setup,
 	.write_value = dacx0508_write_value,
 };
@@ -368,7 +373,7 @@ static const struct dac_driver_api dacx0508_driver_api = {
 	static const struct dacx0508_config dac##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t), \
 			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-			SPI_WORD_SET(8) | SPI_MODE_CPHA, 0), \
+			SPI_WORD_SET(8) | SPI_MODE_CPHA), \
 		.resolution = res, \
 		.reference = DT_PROP(INST_DT_DACX0508(n, t), \
 					     voltage_reference), \

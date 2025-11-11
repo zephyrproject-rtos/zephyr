@@ -56,6 +56,7 @@ endmenu
 config BMC150_MAGN_TRIGGER
 	bool "Triggers"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMC150_MAGN),drdy-gpios)
 	help
 	  Enable triggers for BMC150 magnetometer
 

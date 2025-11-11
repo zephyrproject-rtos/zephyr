@@ -21,19 +21,9 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * Assumption:
- * MAINCLK = 24Mhz
- *
- * @return 0
  */
-static int arm_beetle_init(void)
+void soc_early_init_hook(void)
 {
 	/* Setup various clocks and wakeup sources */
 	soc_power_init();
-
-	return 0;
 }
-
-SYS_INIT(arm_beetle_init, PRE_KERNEL_1, 0);

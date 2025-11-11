@@ -28,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red0_led: led_0 {
 			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -66,7 +67,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -92,10 +92,12 @@
 			label = "image-0";
 			reg = <0x00020000 0x00060000>;
 		};
+
 		slot1_partition: partition@80000 {
 			label = "image-1";
 			reg = <0x00080000 0x00060000>;
 		};
+
 		scratch_partition: partition@e0000 {
 			label = "image-scratch";
 			reg = <0x000e0000 0x00020000>;
@@ -116,6 +118,7 @@
 	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
@@ -144,14 +147,11 @@
 		dsa-master-port = <&enet_mac>;
 		dsa-slave-ports = <3>;
 
-		lan3: lan_3 {
-		};
+		lan3: lan_3 {};
 
-		lan2: lan_2 {
-		};
+		lan2: lan_2 {};
 
-		lan1: lan_1 {
-		};
+		lan1: lan_1 {};
 	};
 };
 

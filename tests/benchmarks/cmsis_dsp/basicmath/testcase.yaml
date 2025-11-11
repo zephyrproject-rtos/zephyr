@@ -17,7 +17,7 @@ tests:
     filter: CONFIG_CPU_HAS_FPU
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - fpu
     extra_configs:

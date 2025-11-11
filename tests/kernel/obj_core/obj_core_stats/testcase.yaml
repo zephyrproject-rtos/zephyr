@@ -6,4 +6,3 @@ tests:
       - qemu_x86
     platform_exclude:
       - qemu_x86_tiny
-      - qemu_x86_tiny/ia32/768

@@ -9,11 +9,13 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - adc
   - watchdog
   - counter
   - gpio
   - spi
   - i2c
+  - logging
 testing:
   ignore_tags:
     - net

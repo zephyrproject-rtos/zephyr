@@ -1,13 +1,25 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
@@ -36,18 +48,12 @@ enum {
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
-	BT_DEV_PUB_KEY_BUSY,
-
-	/** The application explicitly instructed the stack to scan for advertisers
-	 * using the API @ref bt_le_scan_start().
-	 */
-	BT_DEV_EXPLICIT_SCAN,
 
 	/** The application either explicitly or implicitly instructed the stack to scan
 	 * for advertisers.
 	 *
 	 * Examples of such cases
-	 *  - Explicit scanning, @ref BT_DEV_EXPLICIT_SCAN.
+	 *  - Explicit scanning, @ref BT_LE_SCAN_USER_EXPLICIT_SCAN.
 	 *  - The application instructed the stack to automatically connect if a given device
 	 *    is detected.
 	 *  - The application wants to connect to a peer device using private addresses, but
@@ -63,13 +69,9 @@ enum {
 	 */
 	BT_DEV_SCANNING,
 
-	/* Cached parameters used when initially enabling the scanner.
-	 * These are needed to ensure the same parameters are used when restarting
-	 * the scanner after refreshing an RPA.
+	/**
+	 * Scanner is configured with a timeout.
 	 */
-	BT_DEV_ACTIVE_SCAN,
-	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
 
 	BT_DEV_INITIATING,
@@ -84,6 +86,7 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */
@@ -92,7 +95,8 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID))
+				 BIT(BT_DEV_PRESET_ID) | \
+				 BIT(BT_DEV_DISABLE))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
@@ -112,6 +116,10 @@ enum {
 	BT_ADV_PARAMS_SET,
 	/* Advertising data has been set in the controller. */
 	BT_ADV_DATA_SET,
+	/* Advertising random address has been updated in the controller before
+	 * enabling advertising.
+	 */
+	BT_ADV_RANDOM_ADDR_UPDATED,
 	/* Advertising random address pending to be set in the controller. */
 	BT_ADV_RANDOM_ADDR_PENDING,
 	/* The private random address of the advertiser is valid for this cycle
@@ -126,10 +134,6 @@ enum {
 	BT_ADV_LIMITED,
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
-	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME_AD,
-	/* Advertiser should include name in scan response data */
-	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -140,10 +144,6 @@ enum {
 	 * the identity address instead.
 	 */
 	BT_ADV_USE_IDENTITY,
-	/* Advertiser has been configured to keep advertising after a connection
-	 * has been established as long as there are connections available.
-	 */
-	BT_ADV_PERSIST,
 	/* Advertiser has been temporarily disabled. */
 	BT_ADV_PAUSED,
 	/* Periodic Advertising has been enabled in the controller. */
@@ -171,6 +171,17 @@ struct bt_le_ext_adv {
 	/* Advertising handle */
 	uint8_t                 handle;
 
+#if defined(CONFIG_BT_EXT_ADV)
+	/* TX Power in use by the controller */
+	int8_t                    tx_power;
+
+	/* Advertising Set ID */
+	uint8_t                   sid;
+
+	/* Callbacks for the advertising set */
+	const struct bt_le_ext_adv_cb *cb;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
 
@@ -178,13 +189,6 @@ struct bt_le_ext_adv {
 	bt_addr_le_t            target_addr;
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
-#if defined(CONFIG_BT_EXT_ADV)
-	const struct bt_le_ext_adv_cb *cb;
-
-	/* TX Power in use by the controller */
-	int8_t                    tx_power;
-#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
 
@@ -281,7 +285,7 @@ struct bt_le_per_adv_sync {
 
 struct bt_dev_le {
 	/* LE features */
-	uint8_t			features[8];
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
 	/* LE states */
 	uint64_t			states;
 
@@ -317,14 +321,12 @@ struct bt_dev_le {
 	sys_slist_t		conn_ready;
 };
 
-#if defined(CONFIG_BT_CLASSIC)
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
 	struct k_sem  pkts;
 	uint16_t         esco_pkt_type;
 };
-#endif
 
 /* The theoretical max for these is 8 and 64, but there's no point
  * in allocating the full memory if we only support a small subset.
@@ -412,12 +414,7 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 	const struct device *hci;
-#else
-	/* Registered HCI driver */
-	const struct bt_hci_driver *drv;
-#endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
@@ -446,15 +443,11 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 int bt_hci_recv(const struct device *dev, struct net_buf *buf);
-#endif
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -477,6 +470,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
+int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy);
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
 uint8_t bt_get_phy(uint8_t hci_phy);
@@ -489,36 +483,11 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
 
-/** Start or restart scanner if needed
- *
- * Examples of cases where it may be required to start/restart a scanner:
- * - When the auto-connection establishement feature is used:
- *   - When the host sets a connection context for auto-connection establishment.
- *   - When a connection was established.
- *     The host may now be able to retry to automatically set up a connection.
- *   - When a connection was disconnected/lost.
- *     The host may now be able to retry to automatically set up a connection.
- *   - When the application stops explicit scanning.
- *     The host may now be able to retry to automatically set up a connection.
- *   - The application tries to connect to another device, but fails.
- *     The host may now be able to retry to automatically set up a connection.
- * - When the application wants to connect to a device, but we need
- *   to fallback to host privacy.
- * - When the application wants to establish a periodic sync to a device
- *   and the application has not already started scanning.
- *
- * @param fast_scan Use fast scan parameters or slow scan parameters
- *
- * @return 0 in case of success, or a negative error code on failure.
- */
-int bt_le_scan_update(bool fast_scan);
-
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
 int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
 			     uint8_t subevent);
 
-bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
@@ -549,10 +518,6 @@ void bt_hci_user_passkey_notify(struct net_buf *buf);
 void bt_hci_user_passkey_req(struct net_buf *buf);
 void bt_hci_auth_complete(struct net_buf *buf);
 
-/* ECC HCI event handlers */
-void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
-void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
-
 /* Common HCI event handlers */
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt);
 
@@ -571,6 +536,16 @@ void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
 void bt_hci_le_past_received_v2(struct net_buf *buf);
 
+/* CS HCI event handlers */
+void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *buf);
+void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf);
+void bt_hci_le_cs_config_complete_event(struct net_buf *buf);
+void bt_hci_le_cs_security_enable_complete(struct net_buf *buf);
+void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf);
+void bt_hci_le_cs_subevent_result(struct net_buf *buf);
+void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf);
+void bt_hci_le_cs_test_end_complete(struct net_buf *buf);
+
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);
 void bt_hci_le_scan_req_received(struct net_buf *buf);
@@ -588,6 +563,9 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf);
 void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
@@ -596,5 +574,11 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
 
 void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
 void bt_hci_le_per_adv_response_report(struct net_buf *buf);
+
+int bt_hci_read_remote_version(struct bt_conn *conn);
+int bt_hci_le_read_remote_features(struct bt_conn *conn);
+int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
+
+bool bt_drv_quirk_no_auto_dle(void);
 
 void bt_tx_irq_raise(void);

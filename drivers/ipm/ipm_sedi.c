@@ -260,7 +260,7 @@ static int ipm_power_ctrl(const struct device *dev,
 }
 #endif
 
-static const struct ipm_driver_api ipm_funcs = {
+static DEVICE_API(ipm, ipm_funcs) = {
 	.send = ipm_sedi_send,
 	.register_callback = ipm_sedi_register_callback,
 	.max_data_size_get = ipm_sedi_get_max_data_size,
@@ -284,10 +284,10 @@ static const struct ipm_driver_api ipm_funcs = {
 			    DT_INST_PROP(n, peripheral_id),		\
 			    DT_INST_IRQ(n, sense));			\
 	}								\
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(ipm##n), ipm_power_ctrl);	\
+	PM_DEVICE_DT_INST_DEFINE(n, ipm_power_ctrl);			\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      &ipm_init,				\
-			      PM_DEVICE_DT_GET(DT_NODELABEL(ipm##n)),   \
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &ipm_data_##n,				\
 			      &ipm_config_##n,				\
 			      POST_KERNEL,				\

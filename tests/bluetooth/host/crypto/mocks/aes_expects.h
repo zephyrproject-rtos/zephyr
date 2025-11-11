@@ -7,9 +7,9 @@
 #include <zephyr/kernel.h>
 
 /*
- *  Validate expected behaviour when tc_aes_encrypt() is called
+ *  Validate expected behaviour when psa_cipher_encrypt() is called
  *
  *  Expected behaviour:
- *   - tc_aes_encrypt() to be called once with correct parameters
+ *   - psa_cipher_encrypt() to be called once with correct parameters
  */
-void expect_single_call_tc_aes_encrypt(uint8_t *out);
+void expect_single_call_psa_cipher_encrypt(uint8_t *out);

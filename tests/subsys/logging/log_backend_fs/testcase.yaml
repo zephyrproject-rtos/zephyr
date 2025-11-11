@@ -12,6 +12,10 @@ common:
     - native_sim/native/64
     - nrf52840dk/nrf52840
     - mr_canhubk3
+    - s32z2xxdc2/s32z270/rtu0
+    - s32z2xxdc2/s32z270/rtu1
+    - s32z2xxdc2@D/s32z270/rtu0
+    - s32z2xxdc2@D/s32z270/rtu1
   integration_platforms:
     - native_sim
 tests:

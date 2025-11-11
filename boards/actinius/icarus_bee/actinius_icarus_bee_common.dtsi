@@ -75,7 +75,6 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
-		bootloader-led0 = &blue_led;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
@@ -90,7 +89,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &gpiote {
@@ -119,11 +118,12 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>,
-			  <&gpio0 28 GPIO_ACTIVE_HIGH>;
+			    <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -136,6 +136,7 @@
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -156,59 +157,5 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x10000>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-		};
-		slot0_ns_partition: partition@50000 {
-			label = "image-0-nonsecure";
-		};
-		slot1_partition: partition@80000 {
-			label = "image-1";
-		};
-		slot1_ns_partition: partition@c0000 {
-			label = "image-1-nonsecure";
-		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
-		};
-		storage_partition: partition@fa000 {
-			label = "storage";
-			reg = <0x000fa000 0x00006000>;
-		};
-	};
-};
-
-/ {
-
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-		};
-
-		sram0_modem: image_modem@20016000 {
-			/* Modem (shared) memory */
-		};
-
-		sram0_ns: image_ns@20020000 {
-			/* Non-Secure image memory */
-		};
-	};
-};
-
-/* Include partition configuration file */
-#include "actinius_icarus_bee_partition_conf.dtsi"
+/* Include default memory partition configuration file */
+#include <nordic/nrf91xx_partition.dtsi>

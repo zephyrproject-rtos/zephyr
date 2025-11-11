@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic fixed-rate clock provider
+
+compatible: "infineon,fixed-clock"
+
+include: fixed-clock.yaml
+
+properties:
+  system-clock:
+    type: int
+    required: true
+    description: |
+      The type of clock (refer to include/.../dt-bindings/clock/ifx_clock_source_common.h):
+      clk_iho  : system-clock = <IFX_IHO>
+      clk_pilo : system-clock = <IFX_PILO>

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_EXPCEPTION_H_
-#define ZEPHYR_INCLUDE_ARCH_X86_IA32_EXPCEPTION_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_EXCEPTION_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -67,4 +67,4 @@ struct _x86_syscall_stack_frame {
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_EXPCEPTION_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_EXCEPTION_H_ */

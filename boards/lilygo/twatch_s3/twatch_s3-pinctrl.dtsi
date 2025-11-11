@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_GPIO11>,
+				 <I2C0_SDA_GPIO10>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SCL_GPIO40>,
+				 <I2C1_SDA_GPIO39>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_SCLK_GPIO18>,
+				 <SPIM3_CSEL_GPIO12>;
+		};
+
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO13>;
+			output-low;
+		};
+	};
+
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO45>;
+			output-enable;
+		};
+	};
+};

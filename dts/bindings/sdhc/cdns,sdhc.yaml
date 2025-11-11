@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cadence SDHC Controller node
+description: Cadence SDHC Controller
 
 compatible: "cdns,sdhc"
 
@@ -14,7 +14,7 @@ properties:
   reg:
     required: true
     description: register space
-  power_delay_ms:
+  power-delay-ms:
     type: int
     required: true
     description: delay required to switch on the SDHC

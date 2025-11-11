@@ -1,0 +1,16 @@
+# STM32H7S3L8 NUCLEO board configuration
+#
+# Copyright (c) 2024 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_H7S3L8
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NUCLEO_H7S3L8

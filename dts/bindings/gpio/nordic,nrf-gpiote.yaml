@@ -1,13 +1,14 @@
 # Copyright (c) 2018, marc-cpdesign
 # SPDX-License-Identifier: Apache-2.0
 
-description: NRF5 GPIOTE node
+description: NRF5 GPIOTE
 
 compatible: "nordic,nrf-gpiote"
 
 include:
   - base.yaml
   - nordic,split-channels.yaml
+  - pinctrl-device.yaml
 
 properties:
   reg:
@@ -15,6 +16,17 @@ properties:
 
   interrupts:
     required: true
+
+  no-port-event:
+    type: boolean
+    description: |
+      Indicates that the GPIOTE instance does not support PORT event.
+
+  fixed-channels-supported:
+    type: boolean
+    description: |
+      Indicates that the GPIOTE instance has fixed connection between pins and TE channels.
+      It means that a specific TE channel must be used for a given pin.
 
   instance:
     type: int

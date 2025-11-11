@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Seagate Technology LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP LPC11U6X GPIO node
+description: NXP LPC11U6X GPIO
 
 compatible: "nxp,lpc11u6x-gpio"
 

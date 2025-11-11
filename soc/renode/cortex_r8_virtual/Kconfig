@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CORTEX_R8_VIRTUAL
+	select ARM
+	select CPU_CORTEX_R8
+	select PLATFORM_SPECIFIC_INIT
+	select CPU_HAS_ARM_MPU
+	select VFP_DP_D16

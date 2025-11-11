@@ -21,10 +21,6 @@ LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
  * Compare old style USB BOS definition with section aligned
  */
 
-static const uint8_t dummy_descriptor[] = {
-	0x00, 0x01, 0x02
-};
-
 static struct webusb_bos_desc {
 	struct usb_bos_descriptor bos;
 	struct usb_bos_platform_descriptor platform_webusb;
@@ -91,8 +87,8 @@ static struct webusb_bos_desc {
 	.capability_data_msos = {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
-		.wMSOSDescriptorSetTotalLength =
-			sys_cpu_to_le16(sizeof(dummy_descriptor)),
+		/* The MSOS2.0 descriptor is not relevant here. */
+		.wMSOSDescriptorSetTotalLength = 0,
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00
 	}
@@ -160,8 +156,8 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2 {
 	.cap = {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
-		.wMSOSDescriptorSetTotalLength =
-			sys_cpu_to_le16(sizeof(dummy_descriptor)),
+		/* The MSOS2.0 descriptor is not relevant here. */
+		.wMSOSDescriptorSetTotalLength = 0,
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00,
 	},

@@ -1,0 +1,81 @@
+# Copyright (c), 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM2100 PMIC
+
+  The PMIC has one boost converter and one LDO/LDSW.
+  The regulators need to be defined as child nodes,
+  strictly following the BOOST, LDOSW node names.
+  For example:
+
+  pmic@74 {
+    reg = <0x74>;
+    ...
+    regulators {
+      compatible = "nordic,npm2100-regulator";
+
+      BOOST {
+        /* all properties for BOOST */
+      };
+      LDOSW {
+        /* all properties for LDOSW */
+      };
+    };
+  };
+
+compatible: "nordic,npm2100-regulator"
+
+include: base.yaml
+
+properties:
+  dvs-gpios:
+    type: phandle-array
+    description: |
+      List of SOC GPIOs connected to PMIC GPIOs.
+      Set_dvs_mode will drive these pins as follows:
+        DVS mode 1 will enable the first pin
+        DVS mode 2 will enable the second pin
+      The effect of the mode change is defined by the mode-gpios
+      fields for each of the regulator blocks.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+        - regulator-allowed-modes
+        - regulator-initial-mode
+        - regulator-min-microamp
+        - regulator-max-microamp
+        - regulator-init-microamp
+
+  properties:
+    mode-gpios:
+      type: phandle-array
+      description: |
+        Regulator mode controlled by specified regulator GPIO pin.
+
+    ldosw-wd-reset:
+      type: boolean
+      description: |
+        LDOSW turned off by watchdog reset.
+
+    dps-timer-us:
+      type: int
+      description: |
+        Interval between DPS refresh cycles in microseconds.
+      enum:
+        - 100
+        - 200
+        - 400
+        - 800
+
+    dps-pulse-limit:
+      type: int
+      description: |
+        DPS coil pulse limit per refresh cycle.

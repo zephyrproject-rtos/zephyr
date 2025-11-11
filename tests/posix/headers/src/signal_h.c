@@ -6,11 +6,9 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
+#include <limits.h>
 #include <signal.h>
-#else
-#include <zephyr/posix/signal.h>
-#endif
+#include <stdlib.h>
 
 /**
  * @brief existence test for `<signal.h>`
@@ -19,14 +17,25 @@
  */
 ZTEST(posix_headers, test_signal_h)
 {
-	/* zassert_not_equal(-1, SIG_DFL); */ /* not implemented */
-	/* zassert_not_equal(-1, SIG_ERR); */ /* not implemented */
+	typedef void (*my_sig_handler_t)(int signo);
+
+	my_sig_handler_t handler;
+
+	handler = SIG_DFL;
+	handler = SIG_ERR;
+	handler = SIG_IGN;
+
+#if defined(CONFIG_POSIX_SIGNALS)
 	/* zassert_not_equal(-1, SIG_HOLD); */ /* not implemented */
-	/* zassert_not_equal(-1, SIG_IGN); */ /* not implemented */
+#endif
 
 	zassert_not_equal((sig_atomic_t)-1, (sig_atomic_t)0);
-	/* zassert_not_equal((pid_t)-1, (pid_t)0); */ /* not implemented */
 
+#if defined(CONFIG_POSIX_SIGNALS)
+	zassert_not_equal((pid_t)-1, (pid_t)0);
+#endif
+
+#if defined(CONFIG_POSIX_REALTIME_SIGNALS)
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_notify));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_signo));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_value));
@@ -36,16 +45,29 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, SIGEV_NONE);
 	zassert_not_equal(-1, SIGEV_SIGNAL);
 	zassert_not_equal(-1, SIGEV_THREAD);
+#endif
 
+#if defined(CONFIG_POSIX_SIGNALS)
 	zassert_not_equal(-1, offsetof(union sigval, sival_int));
 	zassert_not_equal(-1, offsetof(union sigval, sival_ptr));
 
-	zassert_not_equal(-1, RTSIG_MAX);
-	zassert_true(SIGRTMAX - SIGRTMIN >= RTSIG_MAX);
+	zassert_true(SIGRTMAX - SIGRTMIN >= 0);
 
 	zassert_not_equal(-1, SIG_BLOCK);
 	zassert_not_equal(-1, SIG_UNBLOCK);
 	zassert_not_equal(-1, SIG_SETMASK);
+
+	zassert_not_equal(-1, offsetof(struct sigaction, sa_handler));
+	zassert_not_equal(-1, offsetof(struct sigaction, sa_mask));
+	zassert_not_equal(-1, offsetof(struct sigaction, sa_flags));
+#if defined(CONFIG_POSIX_REALTIME_SIGNALS) && !defined(CONFIG_NEWLIB_LIBC)
+	zassert_not_equal(-1, offsetof(struct sigaction, sa_sigaction));
+#endif
+
+	zassert_not_equal(-1, offsetof(siginfo_t, si_signo));
+	zassert_not_equal(-1, offsetof(siginfo_t, si_code));
+	zassert_not_equal(-1, offsetof(siginfo_t, si_value));
+#endif
 
 	/* zassert_not_equal(-1, SA_NOCLDSTOP); */ /* not implemented */
 	/* zassert_not_equal(-1, SA_ONSTACK); */ /* not implemented */
@@ -117,18 +139,11 @@ ZTEST(posix_headers, test_signal_h)
 	/* zassert_not_equal(-1, CLD_STOPPED); */ /* not implemented */
 	/* zassert_not_equal(-1, CLD_CONTINUED); */ /* not implemented */
 
-	/* zassert_not_equal(-1, POLL_IN); */ /* not implemented */
-	/* zassert_not_equal(-1, POLL_OUT); */ /* not implemented */
-	/* zassert_not_equal(-1, POLL_MSG); */ /* not implemented */
-	/* zassert_not_equal(-1, POLL_ERR); */ /* not implemented */
-	/* zassert_not_equal(-1, POLL_PRI); */ /* not implemented */
-	/* zassert_not_equal(-1, POLL_HUP); */ /* not implemented */
-
-	/* zassert_not_equal(-1, SI_USER); */ /* not implemented */
-	/* zassert_not_equal(-1, SI_QUEUE); */ /* not implemented */
-	/* zassert_not_equal(-1, SI_TIMER); */ /* not implemented */
-	/* zassert_not_equal(-1, SI_ASYNCIO); */ /* not implemented */
-	/* zassert_not_equal(-1, SI_MESGQ); */ /* not implemented */
+	zassert_not_equal(-1, SI_USER);
+	zassert_not_equal(-1, SI_QUEUE);
+	zassert_not_equal(-1, SI_TIMER);
+	zassert_not_equal(-1, SI_ASYNCIO);
+	zassert_not_equal(-1, SI_MESGQ);
 
 #ifdef CONFIG_POSIX_SIGNALS
 	zassert_true(SIGRTMIN >= 0);
@@ -157,38 +172,38 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, SIGURG);
 	zassert_not_equal(-1, SIGXCPU);
 	zassert_not_equal(-1, SIGXFSZ);
-	zassert_not_equal(((sigset_t){.sig[0] = 0}).sig[0], ((sigset_t){.sig[0] = -1}).sig[0]);
-	zassert_not_null(sigemptyset);
-	zassert_not_null(sigfillset);
+	zassert_not_null(abort);
+	zassert_not_null(kill);
+	zassert_not_null(pthread_sigmask);
+	zassert_not_null(raise);
+	zassert_not_null(sigaction);
 	zassert_not_null(sigaddset);
 	zassert_not_null(sigdelset);
+	zassert_not_null(sigemptyset);
+	zassert_not_null(sigfillset);
 	zassert_not_null(sigismember);
-	zassert_not_null(strsignal);
+	zassert_not_null(signal);
+	zassert_not_null(sigpending);
 	zassert_not_null(sigprocmask);
-	zassert_not_null(pthread_sigmask);
+	zassert_not_null(sigsuspend);
+	zassert_not_null(sigwait);
+	zassert_not_null(strsignal);
 #endif /* CONFIG_POSIX_SIGNALS */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(kill); */ /* not implemented */
 		/* zassert_not_null(killpg); */ /* not implemented */
 		/* zassert_not_null(psiginfo); */ /* not implemented */
 		/* zassert_not_null(psignal); */ /* not implemented */
 		/* zassert_not_null(pthread_kill); */ /* not implemented */
-		/* zassert_not_null(raise); */ /* not implemented */
-		/* zassert_not_null(sigaction); */ /* not implemented */
 		/* zassert_not_null(sigaltstack); */ /* not implemented */
 		/* zassert_not_null(sighold); */ /* not implemented */
 		/* zassert_not_null(sigignore); */ /* not implemented */
 		/* zassert_not_null(siginterrupt); */ /* not implemented */
-		/* zassert_not_null(signal); */ /* not implemented */
 		/* zassert_not_null(sigpause); */ /* not implemented */
-		/* zassert_not_null(sigpending); */ /* not implemented */
 		/* zassert_not_null(sigqueue); */ /* not implemented */
 		/* zassert_not_null(sigrelse); */ /* not implemented */
 		/* zassert_not_null(sigset); */ /* not implemented */
-		/* zassert_not_null(sigsuspend); */ /* not implemented */
 		/* zassert_not_null(sigtimedwait); */ /* not implemented */
-		/* zassert_not_null(sigwait); */ /* not implemented */
 		/* zassert_not_null(sigwaitinfo); */ /* not implemented */
 	}
 }

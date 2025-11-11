@@ -22,14 +22,14 @@ The overall design of the LE Audio stack is that the implementation follows the 
 as closely as possible,
 both in terms of structure but also naming.
 Most API functions are prefixed by the specification acronym
-(e.g. `bt_bap` for the Basic Audio Profile (BAP) and `bt_vcp` for the Volume Control Profile (VCP)).
-The functions are then further prefixed with the specific role from each profile where applicable
-(e.g. :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_vcp_vol_rend_set_vol`).
+(e.g. ``bt_bap`` for the Basic Audio Profile (BAP) and ``bt_vcp`` for the Volume Control Profile
+(VCP)). The functions are then further prefixed with the specific role from each profile where
+applicable (e.g. :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_vcp_vol_rend_set_vol`).
 There are usually a function per procedure defined by the profile or service specifications,
 and additional helper or meta functions that do not correspond to procedures.
 
 The structure of the files generally also follow this,
-where BAP related files are prefixed with `bap` and VCP related files are prefixed with `vcp`.
+where BAP related files are prefixed with ``bap`` and VCP related files are prefixed with ``vcp``.
 If the file is specific for a profile role, the role is also embedded in the file name.
 
 Generic Audio Framework (GAF)
@@ -294,6 +294,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
                cluster=true;
                label="CCP";
                style=solid;
+               CCP_H [label="ccp.h"];
                TBS_H [label="tbs.h"];
             }
          }
@@ -331,6 +332,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
       CAP_H -> MCS_H;
       CAP_H -> MCC_H;
       CAP_H -> MP_H;
+      CAP_H -> CCP_H;
       CAP_H -> TBS_H;
       CAP_H -> BAP_H;
       CAP_H -> BAP_PRESET_H;
@@ -341,6 +343,7 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
       CSIP_H -> MCS_H;
       CSIP_H -> MCC_H;
       CSIP_H -> MP_H;
+      CSIP_H -> CCP_H;
       CSIP_H -> TBS_H;
       CSIP_H -> BAP_H;
       CSIP_H -> BAP_PRESET_H;
@@ -348,6 +351,340 @@ GAF and the top layer profiles gave been implemented in Zephyr with the followin
       CSIP_H -> MICP_H;
       CSIP_H -> VCP_H;
    }
+
+Profile Dependencies
+====================
+
+The LE Audio profiles depend on other profiles and services, as outlined in the following tables.
+In these tables 'Server' refers to acting in the GATT server role, and 'Client' refers to acting in the GATT client role for the specific
+service.
+If a profile role depends on another profile that depends on a service, then that dependency is implicitly also applied to that profile.
+For example, if the CAP Acceptor uses the BAP Unicast Server role, then the requirements on the ASCS Server and PACS Server also apply to the CAP Acceptor.
+
+The dependencies for Stream Control (BAP) are in the following table.
+
+.. table:: BAP dependencies
+   :widths: auto
+   :align: center
+
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   |                    | Unicast Server | Unicast Client | Broadcast Source | Broadcast Sink | Scan Delegator | Broadcast Assistant |
+   +====================+================+================+==================+================+================+=====================+
+   | BAP Scan Delegator |                |                |                  | M              |                |                     |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | ASCS Client        |                | M              |                  |                |                |                     |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | ASCS Server        | M              |                |                  |                |                |                     |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | PACS Client        |                | M              |                  |                |                | O                   |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | PACS Server        | M              |                |                  | M              |                |                     |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | BASS Client        |                |                |                  |                |                | M                   |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+   | BASS Server        |                |                |                  |                | M              |                     |
+   +--------------------+----------------+----------------+------------------+----------------+----------------+---------------------+
+
+Note:
+
+* As the table shows, the Broadcast Source role has no dependencies on other LE Audio profiles or services
+
+The dependencies for Content Control (MCP and CCP) are in the following tables.
+
+.. table:: MCP dependencies
+   :widths: auto
+   :align: center
+
+   +-------------+----------------------+----------------------+
+   |             | Media Control Server | Media Control Client |
+   +=============+======================+======================+
+   | GMCS Server | M                    |                      |
+   +-------------+----------------------+----------------------+
+   | GMCS Client |                      | M                    |
+   +-------------+----------------------+----------------------+
+   | MCS Server  | O                    |                      |
+   +-------------+----------------------+----------------------+
+   | MCS Client  |                      | O                    |
+   +-------------+----------------------+----------------------+
+   | OTS Server  | O                    |                      |
+   +-------------+----------------------+----------------------+
+   | OTS Client  |                      | O                    |
+   +-------------+----------------------+----------------------+
+
+.. table:: CCP dependencies
+   :widths: auto
+   :align: center
+
+   +--------------+---------------------+---------------------+
+   |              | Call Control Server | Call Control Client |
+   +==============+=====================+=====================+
+   | GTBS Server  | M                   |                     |
+   +--------------+---------------------+---------------------+
+   | GTBS Client  |                     | M                   |
+   +--------------+---------------------+---------------------+
+   | TBS Server   | M                   |                     |
+   +--------------+---------------------+---------------------+
+   | TBS Client   |                     | M                   |
+   +--------------+---------------------+---------------------+
+
+
+The dependencies for Rendering Control (MICP and VCP) are in the following tables.
+
+.. table:: MICP dependencies
+   :widths: auto
+   :align: center
+
+   +-------------+-----------------------+-------------------+
+   |             | Microphone Controller | Microphone Device |
+   +=============+=======================+===================+
+   | MICS Server | M                     |                   |
+   +-------------+-----------------------+-------------------+
+   | MICS Client |                       | M                 |
+   +-------------+-----------------------+-------------------+
+   | AICS Server | O                     |                   |
+   +-------------+-----------------------+-------------------+
+   | AICS Client |                       | O                 |
+   +-------------+-----------------------+-------------------+
+
+.. table:: VCP dependencies
+   :widths: auto
+   :align: center
+
+   +-------------+------------------+-------------------+
+   |             | Volume Renderer  | Volume Controller |
+   +=============+==================+===================+
+   | VCS Server  | M                |                   |
+   +-------------+------------------+-------------------+
+   | VCS Client  |                  | M                 |
+   +-------------+------------------+-------------------+
+   | VOCS Server | O                |                   |
+   +-------------+------------------+-------------------+
+   | VOCS Client |                  | O                 |
+   +-------------+------------------+-------------------+
+   | AICS Server | O                |                   |
+   +-------------+------------------+-------------------+
+   | AICS Client |                  | O                 |
+   +-------------+------------------+-------------------+
+
+The last element in GAF is Transition and Coordination Control (CAP and CSIP) with the dependencies from the following tables.
+
+.. table:: CAP dependencies
+   :widths: auto
+   :align: center
+
+   +----------------------------+----------+-----------+-----------+
+   |                            | Acceptor | Initiator | Commander |
+   +============================+==========+===========+===========+
+   | CAS Server                 | M        |           | C.8       |
+   +----------------------------+----------+-----------+-----------+
+   | CAS Client                 |          | M         | M         |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Unicast Client         |          | C.1       |           |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Unicast Server         | C.2      |           |           |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Broadcast Source       |          | C.1       |           |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Broadcast Sink         | C.2      |           |           |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Broadcast Assistant    |          |           | C.4, C.6  |
+   +----------------------------+----------+-----------+-----------+
+   | BAP Scan Delegator         | C.3      |           | C.6       |
+   +----------------------------+----------+-----------+-----------+
+   | VCP Volume Controller      |          |           | C.6       |
+   +----------------------------+----------+-----------+-----------+
+   | VCP Volume Renderer        | O        |           |           |
+   +----------------------------+----------+-----------+-----------+
+   | MICP Microphone Controller |          |           | C.6       |
+   +----------------------------+----------+-----------+-----------+
+   | MICP Microphone Device     | O        |           |           |
+   +----------------------------+----------+-----------+-----------+
+   | CCP Call Control Server    |          | O         |           |
+   +----------------------------+----------+-----------+-----------+
+   | CCP Call Control Client    | O        |           | C.6       |
+   +----------------------------+----------+-----------+-----------+
+   | MCP Media Control Server   |          | O         |           |
+   +----------------------------+----------+-----------+-----------+
+   | MCP Media Control Client   | O        |           | C.6       |
+   +----------------------------+----------+-----------+-----------+
+   | CSIP Set Coordinator       |          | C.5       | M         |
+   +----------------------------+----------+-----------+-----------+
+   | CSIP Set Member            | C.7      |           |           |
+   +----------------------------+----------+-----------+-----------+
+
+Notes:
+
+* C.1: Support at least one of BAP Unicast Client or BAP Broadcast Source
+* C.2: Support at least one of BAP Unicast Server or BAP Broadcast Sink
+* C.3: Mandatory if BAP Broadcast Sink
+* C.4: Mandatory if BAP Scan Delegator
+* C.5: Mandatory if BAP Unicast Client
+* C.6: Support at least one
+* C.7: Mandatory if part of a coordinated set
+* C.8: Mandatory if the Commander transmits CAP announcements
+
+
+.. table:: CSIP dependencies
+   :widths: auto
+   :align: center
+
+   +------------+------------+-----------------+
+   |            | Set Member | Set Coordinator |
+   +============+============+=================+
+   | CSIS Server| M          |                 |
+   +------------+------------+-----------------+
+   | CSIS Client|            | M               |
+   +------------+------------+-----------------+
+
+
+The dependencies of the higher level profiles (GMAP, HAP, PBP and TMAP) are listed in the following tables.
+
+.. table:: GMAP dependencies
+   :widths: auto
+   :align: center
+
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   |                            | Unicast Game Gateway | Unicast Game Terminal | Broadcast Game Sender | Broadcast Game Receiver |
+   +============================+======================+=======================+=======================+=========================+
+   | GMAS Server                | M                    | M                     | O                     | M                       |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | GMAS Client                | M                    | O                     | O                     | O                       |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | CAP Initiator              | M                    |                       | M                     |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | CAP Acceptor               |                      | M                     |                       | M                       |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | CAP Commander              | M                    |                       | M                     |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | BAP Broadcast Source       |                      |                       | M                     |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | BAP Broadcast Sink         |                      |                       |                       | M                       |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | BAP Unicast Client         | M                    |                       |                       |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | BAP Unicast Server         |                      | M                     |                       |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | VCP Volume Controller      | M                    |                       |                       |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | VCP Volume Renderer        |                      | C.1                   |                       | M                       |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | MICP Microphone Controller | O                    |                       |                       |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+   | MICP Microphone Device     |                      | C.2                   |                       |                         |
+   +----------------------------+----------------------+-----------------------+-----------------------+-------------------------+
+
+Notes:
+
+* C.1 Mandatory if the UGT supports the UGT Sink feature
+* C.2 Optional if the UGT supports the UGT Source feature
+
+.. table:: HAP dependencies
+   :widths: auto
+   :align: center
+
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   |                            | Hearing Aid | Hearing Aid Unicast Client | Hearing Aid Remote Controller |
+   +============================+=============+============================+===============================+
+   | HAS Client                 |             |                            | M                             |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | HAS Server                 | M           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CAP Initiator              |             | M                          |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CAP Acceptor               | M           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CAP Commander              |             |                            | M                             |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | BAP Unicast Client         |             | M                          |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | BAP Unicast Server         | M           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | VCP Volume Controller      |             |                            | M                             |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | VCP Volume Renderer        | M           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | VOCS Server                | C.1         |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | AICS Server                | O           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | MICP Microphone Controller |             |                            | O                             |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | MICP Microphone Device     | C.2         |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CCP Call Control Client    | O           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CCP Call Control Server    |             | O                          |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CSIP Set Coordinator       |             | M                          | M                             |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | CSIP Set Member            | C.3         |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | BAS Server                 | C.4         |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+   | IAS Server                 | O           |                            |                               |
+   +----------------------------+-------------+----------------------------+-------------------------------+
+
+Notes:
+
+* C.1 Mandatory if the HA supports the Volume Baslance feature and is part of a Binaural Hearing Aid Set
+* C.2 Mandatory if the HA supports the BAP Audio Source Role
+* C.3 Mandatory if the HA is capable of being part of a Binaural Hearing Aid set
+* C.4 If equipped with batteries
+* C.5 If CCP Call Control Server is supported
+
+.. table:: PBP dependencies
+   :widths: auto
+   :align: center
+
+   +-------------------------+-------------------------+-----------------------+----------------------------+
+   |                         | Public Broadcast Source | Public Broadcast sink | Public Broadcast Assistant |
+   +=========================+=========================+=======================+============================+
+   | CAP Initiator           | M                       |                       |                            |
+   +-------------------------+-------------------------+-----------------------+----------------------------+
+   | CAP Acceptor            |                         | M                     |                            |
+   +-------------------------+-------------------------+-----------------------+----------------------------+
+   | CAP Commander           |                         |                       | M                          |
+   +-------------------------+-------------------------+-----------------------+----------------------------+
+   | BAP Broadcast Assistant |                         |                       | M                          |
+   +-------------------------+-------------------------+-----------------------+----------------------------+
+
+.. table:: TMAP dependencies
+   :widths: auto
+   :align: center
+
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   |                                   | Call Gateway | Call Terminal | Unicast Media Sender | Unicast Media Receiver | Broadcast Media Sender | Broadcast Media Receiver |
+   +===================================+==============+===============+======================+========================+========================+==========================+
+   | TMAS Server                       | M            | M             | M                    | M                      | O                      | M                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | TMAS Client                       | O            | O             | O                    | O                      | O                      | O                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | CAP Initiator                     | M            |               | M                    |                        | M                      |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | CAP Acceptor                      |              | M             |                      | M                      |                        | M                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | CAP Commander                     | M            | O             | M                    | O                      | O                      | O                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | BAP Broadcast Source              |              |               |                      |                        | M                      |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | BAP Broadcast Sink                |              |               |                      |                        |                        | M                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | BAP Unicast Client                | M            |               | M                    |                        |                        |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | BAP Unicast Server                |              | M             |                      | M                      |                        |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | VCP Volume Controller             | M            |               | M                    |                        |                        |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | VCP Volume Renderer               |              | C.1           |                      | M                      |                        | M                        |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | MCP Media Control Server          |              |               | M                    |                        |                        |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+   | CCP Call Control Server           | M            |               |                      |                        |                        |                          |
+   +-----------------------------------+--------------+---------------+----------------------+------------------------+------------------------+--------------------------+
+
+Notes:
+
+* C.1 Mandatory to support if the BAP Unicast Server is acting as an Audio Sink
 
 Bluetooth Audio Stack Status
 ============================
@@ -361,19 +698,19 @@ Bluetooth Audio Stack.
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | Module | Role                          | Version | Added in Release | Status                | Remaining                                        |
    +========+===============================+=========+==================+=======================+==================================================+
-   | VCP    | Volume Renderer               | 1.0     | 2.6              | - Feature complete    | - Sample Application                             |
+   | VCP    | Volume Renderer               | 1.0.0   | 2.6              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Volume Controller             | 1.0     | 2.6              | - Feature complete    | - Sample Application                             |
+   |        | Volume Controller             | 1.0.0   | 2.6              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | MICP   | Microphone Device             | 1.0     | 2.7              | - Feature complete    | - Sample Application                             |
+   | MICP   | Microphone Device             | 1.0.0   | 2.7              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Microphone Controller         | 1.0     | 2.7              | - Feature complete    | - Sample Application                             |
+   |        | Microphone Controller         | 1.0.0   | 2.7              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
@@ -385,19 +722,19 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CCP    | Call Control Server           | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
-   |        |                               |         |                  | - Shell Module        | - Sample Application                             |
+   | CCP    | Call Control Server           | 1.0.0   | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
-   |        |                               |         |                  | - Shell Module        | - Sample Application                             |
+   |        | Call Control Client           | 1.0.0   | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | MCP    | Media Control Server          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
+   | MCP    | Media Control Server          | 1.0.0   | 3.0              | - Feature complete    | - API refactor                                   |
    |        |                               |         |                  | - Shell Module        | - Support for multiple instances and connections |
    |        |                               |         |                  | - BSIM test           | - Sample Application                             |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Media Control Client          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
+   |        | Media Control Client          | 1.0.0   | 3.0              | - Feature complete    | - API refactor                                   |
    |        |                               |         |                  | - Shell Module        | - Sample Application                             |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
@@ -431,27 +768,27 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | CAP    | Acceptor                      | 1.0     | 3.2              | - Feature complete    |                                                  |
+   | CAP    | Acceptor                      | 1.0.1   | 3.2              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Initiator                     | 1.0     | 3.3              | - Feature complete    |                                                  |
+   |        | Initiator                     | 1.0.1   | 3.3              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Commander                     |         |                  | - Feature complete    | - Shell Module                                   |
+   |        |                               |         |                  | - BSIM test           | - Sample Application                             |
+   |        |                               |         |                  |                       |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | HAP    | Hearing Aid                   | 1.0     | 3.1              | - Feature complete    |                                                  |
+   | HAP    | Hearing Aid                   | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Hearing Aid Unicast Client    | 1.0     | 3.1              | - Feature complete    |                                                  |
+   |        | Hearing Aid Unicast Client    | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
@@ -461,42 +798,42 @@ Bluetooth Audio Stack.
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | TMAP   | Call Gateway                  | 1.0     | 3.4              | - Feature complete    |                                                  |
+   | TMAP   | Call Gateway                  | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Terminal                 | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Call Terminal                 | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Media Sender          | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Unicast Media Sender          | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Media Receiver        | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Unicast Media Receiver        | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Media Sender        | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Broadcast Media Sender        | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Media Receiver      | 1.0     | 3.4              | - Feature complete    |                                                  |
+   |        | Broadcast Media Receiver      | 1.0.0   | 3.4              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | PBP    | Public Broadcast Source       |         | 3.5              | - Feature complete    |                                                  |
+   | PBP    | Public Broadcast Source       | 1.0.0   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Public Broadcast Sink         |         | 3.5              | - Feature complete    |                                                  |
+   |        | Public Broadcast Sink         | 1.0.0   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
@@ -506,22 +843,22 @@ Bluetooth Audio Stack.
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | GMAP   | Unicast Game Gateway          |         | 3.5              | - Feature complete    | - Sample Application                             |
+   | GMAP   | Unicast Game Gateway          | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Game Terminal         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Unicast Game Terminal         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Sender         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Sender         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Receiver       |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Receiver       | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
@@ -731,8 +1068,8 @@ but the GTBS instance will report 2 calls,
 making it possible for a simple Call Control Client to control all calls from a single bearer.
 Similarly the supported URIs for each bearer are also made into a union in GTBS, and when placing
 a call using the GTBS the server will pick the most suited bearer depending on the URI.
-For example calls with URI `tel` would go to the regular phone application,
-and calls with the URI `skype` would go to the Teams application.
+For example calls with URI ``tel`` would go to the regular phone application,
+and calls with the URI ``skype`` would go to the Teams application.
 
 In conclusion the GTBS implementation in Zephyr is a union of the non-generic telephone bearers.
 
@@ -841,8 +1178,8 @@ the data is kept in and controlled by the application.
 
 As a rule of thumb, the return types of the callbacks for each profile implementation indicate
 whether the data is controlled by the stack or the application.
-For example all the callbacks for the VCP Volume Renderer have the return type of `void`,
-but the return type of the BAP Unicast Server callbacks are `int`,
+For example all the callbacks for the VCP Volume Renderer have the return type of ``void``,
+but the return type of the BAP Unicast Server callbacks are ``int``,
 indicating that the application not only controls a lot of the Unicast Server data,
 but can also reject the requests.
 The choice of what the return type of the callbacks often depend on the specifications,
@@ -868,7 +1205,7 @@ In Zephyr we do not force the device to always use these, as a device that uses 
 use other profiles and services that do not require such security.
 We guard all access to services using a custom security check implemented in
 :zephyr_file:`subsys/bluetooth/audio/audio.c`, where all LE Audio services must use the
-internal `BT_AUDIO_CHRC` macro for proper security verification.
+internal :c:macro:`BT_AUDIO_CHRC` macro for proper security verification.
 
 Access to the LTK for encrypted SIRKs in CSIS
 ---------------------------------------------
@@ -901,10 +1238,10 @@ The LE audio channel on Discord
 
 Zephyr has a specific Discord channel for LE Audio development, which is open to all.
 Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
-search for `ble-audio` from within Discord.
-Since the `ble-audio` channel is open for all,
+search for "bt-audio" from within Discord.
+Since the ``#bt-audio`` channel is open for all,
 we cannot discuss any specifications that are in development in that channel.
-For discussions that require a Bluetooth SIG membership we refer to the `bluetooth-sig`
+For discussions that require a Bluetooth SIG membership we refer to the ``#bt-sig``
 Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
 
 Zephyr weekly meetings

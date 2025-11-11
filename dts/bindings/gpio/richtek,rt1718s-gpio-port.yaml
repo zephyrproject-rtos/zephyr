@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Richtek RT1718S TCPC chip GPIO port
+    Richtek RT1718S TCPC chip GPIO Port
 
     "richtek,rt1718s-gpio-port" node handles GPIO feature of the RT1718S TCPC
     chip.

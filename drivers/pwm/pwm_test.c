@@ -48,7 +48,7 @@ static int vnd_pwm_get_cycles_per_sec(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct pwm_driver_api vnd_pwm_api = {
+static DEVICE_API(pwm, vnd_pwm_api) = {
 	.set_cycles = vnd_pwm_set_cycles,
 #ifdef CONFIG_PWM_CAPTURE
 	.configure_capture = vnd_pwm_configure_capture,

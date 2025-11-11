@@ -1,7 +1,4 @@
-.. _sam4l_ek:
-
-SAM4L-EK
-########
+.. zephyr:board:: sam4l_ek
 
 Overview
 ********
@@ -21,10 +18,6 @@ The SAM4L-EK is a full featured design to develop for Atmel SAM4L SoC series.
 The kit is equipped with a rich set of peripherals that make the ATSAM4L-EK a
 perfect evaluation platform.  Download the `SAM4L-EK Online User Guide`_ for
 more details.
-
-.. image:: img/atmel-sam4l-ek-callouts.jpg
-     :align: center
-     :alt: SAM4L-EK
 
 Hardware
 ********
@@ -56,38 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4l_ek board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique 120 bit serial number        |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| TWIM      | on-chip    | i2c master port-interrupt           |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb device                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4l_ek/sam4l_ek_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -110,6 +72,8 @@ between all others headers and RS-485 port.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The SAM4L-EK board have a Segger Embedded Debugger Unit
 `J-Link OB <https://www.segger.com/jlink-ob.html>`_.  This provides a debug
@@ -140,7 +104,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM4L-EK board to your host computer using the USB debug port.
-   Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -153,7 +117,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -20,7 +20,8 @@
 #include <xtensa/core-macros.h>
 #include <esp_private/esp_clk.h>
 
-void __esp_platform_start(void);
+void __esp_platform_mcuboot_start(void);
+void __esp_platform_app_start(void);
 
 static inline void esp32_set_mask32(uint32_t v, uint32_t mem_addr)
 {
