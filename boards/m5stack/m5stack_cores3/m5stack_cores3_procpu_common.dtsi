@@ -6,6 +6,7 @@
 
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
 #include "m5stack_cores3-pinctrl.dtsi"
 #include "m5stack_mbus_connectors.dtsi"
 #include "grove_connectors.dtsi"
@@ -16,6 +17,7 @@
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
+		zephyr,display = &ili9342c;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,rtc = &bm8563_rtc;
 		zephyr,bt-hci = &esp32_bt_hci;
@@ -38,6 +40,28 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&ft6336_touch>;
+	};
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&aw9523b_gpio 9 GPIO_ACTIVE_LOW>;
+		spi-dev = <&spi2>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9342c: ili9342c@0 {
+			compatible = "ilitek,ili9342c";
+			mipi-max-frequency = <30000000>;
+			reg = <0>;
+			vin-supply = <&vcc_bl>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			display-inversion;
+			width = <320>;
+			height = <240>;
+			rotation = <0>;
+		};
 	};
 };
 
