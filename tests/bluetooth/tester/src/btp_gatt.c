@@ -452,6 +452,7 @@ static int alloc_characteristic(struct add_characteristic *ch)
 	chrc_data->uuid = attr_value->uuid;
 
 	ch->char_id = attr_chrc->handle;
+
 	return 0;
 }
 
@@ -2139,6 +2140,71 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
+static uint8_t get_handle_from_uuid(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gatt_get_handle_from_uuid_cmd *cp = cmd;
+	struct btp_gatt_get_handle_from_uuid_rp *rp = rsp;
+	struct bt_uuid search_uuid;
+
+	if (btp2bt_uuid(cp->uuid, cp->uuid_length, &search_uuid)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	__maybe_unused char uuid_str[BT_UUID_STR_LEN];
+
+	bt_uuid_to_str(&search_uuid, uuid_str, sizeof(uuid_str));
+
+	LOG_DBG("Searching handle for UUID %s", uuid_str);
+
+	for (int i = 0; i < attr_count; i++) {
+		if (server_db[i].uuid != NULL &&
+		    bt_uuid_cmp(server_db[i].uuid, &search_uuid) == 0) {
+			rp->handle = sys_cpu_to_le16(server_db[i].handle);
+			*rsp_len = sizeof(*rp);
+
+			return BTP_STATUS_SUCCESS;
+		}
+	}
+
+	LOG_DBG("No handle found");
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t remove_by_handle_from_db(const void *cmd, uint16_t cmd_len, void *rsp,
+						uint16_t *rsp_len)
+{
+	const struct btp_gatt_remove_handle_from_db_cmd *cp = cmd;
+	uint16_t handle = sys_le16_to_cpu(cp->handle);
+
+	/* Search for the service that contains the attribute with the given handle and unregister
+	 * it.
+	 */
+
+	for (int i = 0; i < svc_count; i++) {
+		for (int j = 0; j < server_svcs[i].attr_count; j++) {
+			if (server_svcs[i].attrs[j].handle == handle) {
+				int err;
+
+				err = bt_gatt_service_unregister(&server_svcs[i]);
+				if (err < 0 && err != -ENOENT) {
+					LOG_ERR("Failed to unregister service [%d]: %d", i, err);
+					return BTP_STATUS_FAILED;
+				}
+
+				if (err == -ENOENT) {
+					LOG_WRN("Service [%d] already unregistered", i);
+				} else {
+					LOG_DBG("Service [%d] unregistered", i);
+				}
+
+				return BTP_STATUS_SUCCESS;
+			}
+		}
+	}
+
+	return BTP_STATUS_FAILED;
+}
+
 struct get_attrs_foreach_data {
 	struct net_buf_simple *buf;
 	const struct bt_uuid *uuid;
@@ -2564,6 +2630,16 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_NOTIFY_MULTIPLE,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = notify_mult,
+	},
+	{
+		.opcode = BTP_GATT_GET_HANDLE_FROM_UUID,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = get_handle_from_uuid,
+	},
+	{
+		.opcode = BTP_GATT_REMOVE_HANDLE_FROM_DB,
+		.expect_len = sizeof(struct btp_gatt_remove_handle_from_db_cmd),
+		.func = remove_by_handle_from_db,
 	},
 };
 
