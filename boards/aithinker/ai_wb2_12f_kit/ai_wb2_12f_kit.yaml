@@ -22,4 +22,5 @@ supported:
   - spi
   - flash
   - input
+  - pwm
 vendor: bflb
