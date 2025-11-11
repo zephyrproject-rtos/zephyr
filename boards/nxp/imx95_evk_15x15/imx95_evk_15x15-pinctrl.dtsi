@@ -6,6 +6,16 @@
 #include <nxp/nxp_imx/mimx9596cvtxn-pinctrl.dtsi>
 
 &pinctrl {
+	emdio_default: emdio_default {
+		group1 {
+			pinmux = <&iomuxc_enet2_mdc_netc_mdc_netc_mdc>,
+				 <&iomuxc_enet2_mdio_netc_mdio_netc_mdio>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+	};
+
 	eth0_default: eth0_default {
 		group1 {
 			pinmux = <&iomuxc_enet1_rx_ctl_eth_rgmii_rx_ctl_eth0_rgmii_rx_ctl>,
