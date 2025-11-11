@@ -462,9 +462,11 @@ struct bt_gatt_authorization_cb {
 /**
  *  @brief Characteristic Authenticated Signed Writes property.
  *
+ *  @deprecated  This API is deprecated.
+ *
  *  If set, permits signed writes to the Characteristic Value.
  */
-#define BT_GATT_CHRC_AUTH			0x40
+#define BT_GATT_CHRC_AUTH			0x40 __DEPRECATED_MACRO
 /**
  *  @brief Characteristic Extended Properties property.
  *
