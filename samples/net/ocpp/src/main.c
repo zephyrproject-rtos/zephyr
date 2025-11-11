@@ -7,6 +7,12 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
+
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
