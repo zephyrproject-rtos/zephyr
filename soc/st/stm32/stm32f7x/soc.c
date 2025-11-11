@@ -16,6 +16,7 @@
 #include <soc.h>
 
 #include <cmsis_core.h>
+#include <stm32_ll_bus.h>
 #include <stm32_ll_system.h>
 
 /**
@@ -38,8 +39,6 @@ void soc_early_init_hook(void)
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;
 
-#if defined(CONFIG_PM)
 	/* Ensure PWR peripheral clock is enabled on APB1 */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-#endif
 }
