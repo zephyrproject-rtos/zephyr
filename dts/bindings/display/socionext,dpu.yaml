@@ -10,3 +10,16 @@ include: [base.yaml, display-controller.yaml]
 properties:
   reg:
     required: true
+
+  interrupts:
+    required: true
+
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "rgb-565"
+      - "rgb-888"
+      - "argb-8888"
+    description:
+      Display pixel format.
