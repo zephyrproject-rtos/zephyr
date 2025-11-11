@@ -410,8 +410,6 @@ static bool is_valid_gatt_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		}
 	case BTP_GATT_WRITE_WITHOUT_RSP:
 		return buf_simple->len == 0U;
-	case BTP_GATT_SIGNED_WRITE_WITHOUT_RSP:
-		return buf_simple->len == 0U;
 	case BTP_GATT_WRITE:
 		return buf_simple->len == sizeof(struct btp_gatt_write_rp);
 	case BTP_GATT_WRITE_LONG:

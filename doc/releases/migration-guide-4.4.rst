@@ -43,6 +43,12 @@ QSPI
 Bluetooth
 *********
 
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_SIGNING` has been deprecated.
+* :c:macro:`BT_GATT_CHRC_AUTH` has been deprecated.
+
 Networking
 **********
 
