@@ -31,7 +31,6 @@
 		vfront-porch = <10>;
 		vback-porch = <10>;
 		de-active = <0>;
-		pixelclk-active = <0>;
 		hsync-active = <1>;
 		vsync-active = <1>;
 		clock-frequency = <148444444>;
