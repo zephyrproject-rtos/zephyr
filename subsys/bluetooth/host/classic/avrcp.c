@@ -2328,6 +2328,16 @@ static inline uint8_t get_cmd_min_len_by_pdu(uint8_t pdu_id)
 	return 0;
 }
 
+static bool is_valid_cmd_pdu_id(uint8_t pdu_id)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(cmd_vendor_handlers); i++) {
+		if (cmd_vendor_handlers[i].pdu_id == pdu_id) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 					       struct net_buf *buf)
 {
@@ -2359,7 +2369,14 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 	}
 
 	pdu = net_buf_pull_mem(buf, sizeof(*pdu));
+
+	if (!is_valid_cmd_pdu_id(pdu->pdu_id)) {
+		LOG_ERR("Invalid PDU ID: 0x%02x", pdu->pdu_id);
+		error_code = BT_AVRCP_STATUS_INVALID_COMMAND;
+		goto err_rsp;
+	}
 	pdu_id = pdu->pdu_id;
+
 	if (sys_get_be24(pdu->company_id) != BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG) {
 		LOG_ERR("Invalid company id: 0x%06x", sys_get_be24(pdu->company_id));
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
