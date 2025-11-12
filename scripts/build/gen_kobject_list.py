@@ -89,35 +89,38 @@ from collections import OrderedDict
 # Regular dictionaries are ordered only with Python 3.6 and
 # above. Good summary and pointers to official documents at:
 # https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
-kobjects = OrderedDict([
-    ("k_mem_slab", (None, False, True)),
-    ("k_msgq", (None, False, True)),
-    ("k_mutex", (None, False, True)),
-    ("k_pipe", (None, False, True)),
-    ("k_queue", (None, False, True)),
-    ("k_poll_signal", (None, False, True)),
-    ("k_sem", (None, False, True)),
-    ("k_stack", (None, False, True)),
-    ("k_thread", (None, False, True)), # But see #
-    ("k_timer", (None, False, True)),
-    ("z_thread_stack_element", (None, False, False)),
-    ("device", (None, False, False)),
-    ("NET_SOCKET", (None, False, False)),
-    ("net_if", (None, False, False)),
-    ("sys_mutex", (None, True, False)),
-    ("k_futex", (None, True, False)),
-    ("k_condvar", (None, False, True)),
-    ("k_event", ("CONFIG_EVENTS", False, True)),
-    ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
-    ("ztest_suite_stats", ("CONFIG_ZTEST", True, False)),
-    ("ztest_unit_test", ("CONFIG_ZTEST", True, False)),
-    ("ztest_test_rule", ("CONFIG_ZTEST", True, False)),
-    ("rtio", ("CONFIG_RTIO", False, False)),
-    ("rtio_iodev", ("CONFIG_RTIO", False, False)),
-    ("rtio_pool", ("CONFIG_RTIO", False, False)),
-    ("adc_decoder_api", ("CONFIG_ADC_STREAM", True, False)),
-    ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False))
-])
+kobjects = OrderedDict(
+    [
+        ("k_mem_slab", (None, False, True)),
+        ("k_msgq", (None, False, True)),
+        ("k_mutex", (None, False, True)),
+        ("k_pipe", (None, False, True)),
+        ("k_queue", (None, False, True)),
+        ("k_poll_signal", (None, False, True)),
+        ("k_sem", (None, False, True)),
+        ("k_stack", (None, False, True)),
+        ("k_thread", (None, False, True)),  # But see #
+        ("k_timer", (None, False, True)),
+        ("z_thread_stack_element", (None, False, False)),
+        ("device", (None, False, False)),
+        ("NET_SOCKET", (None, False, False)),
+        ("net_if", (None, False, False)),
+        ("sys_mutex", (None, True, False)),
+        ("k_futex", (None, True, False)),
+        ("k_condvar", (None, False, True)),
+        ("k_event", ("CONFIG_EVENTS", False, True)),
+        ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
+        ("ztest_suite_stats", ("CONFIG_ZTEST", True, False)),
+        ("ztest_unit_test", ("CONFIG_ZTEST", True, False)),
+        ("ztest_test_rule", ("CONFIG_ZTEST", True, False)),
+        ("rtio", ("CONFIG_RTIO", False, False)),
+        ("rtio_iodev", ("CONFIG_RTIO", False, False)),
+        ("rtio_pool", ("CONFIG_RTIO", False, False)),
+        ("adc_decoder_api", ("CONFIG_ADC_STREAM", True, False)),
+        ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False)),
+    ]
+)
+
 
 def kobject_to_enum(kobj):
     if kobj.startswith("k_") or kobj.startswith("z_"):
@@ -127,17 +130,19 @@ def kobject_to_enum(kobj):
 
     return f"K_OBJ_{name.upper():s}"
 
+
 subsystems = [
     # Editing the list is deprecated, add the __subsystem sentinel to your driver
     # api declaration instead. e.x.
     #
     # __subsystem struct my_driver_api {
     #    ....
-    #};
+    # };
 ]
 
 # Names of all structs tagged with __net_socket, found by parse_syscalls.py
-net_sockets = [ ]
+net_sockets = []
+
 
 def subsystem_to_enum(subsys):
     if not subsys.endswith("_driver_api"):
@@ -145,17 +150,21 @@ def subsystem_to_enum(subsys):
 
     return "K_OBJ_DRIVER_" + subsys[:-11].upper()
 
+
 # --- debug stuff ---
 
 scr = os.path.basename(sys.argv[0])
+
 
 def debug(text):
     if not args.verbose:
         return
     sys.stdout.write(scr + ": " + text + "\n")
 
+
 def error(text):
     sys.exit(f"{scr:s} ERROR: {text:s}")
+
 
 def debug_die(die, text):
     lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
@@ -173,6 +182,7 @@ def debug_die(die, text):
     debug(f"File '{path:s}', line {lineno:d}:")
     debug(f"    {text:s}")
 
+
 # -- ELF processing
 
 DW_OP_addr = 0x3
@@ -187,6 +197,7 @@ stack_counter = 0
 # Global type environment. Populated by pass 1.
 type_env = {}
 extern_env = {}
+
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
@@ -275,20 +286,23 @@ class AggregateTypeMember:
             # DWARF v2, location encoded as set of operations
             # only "DW_OP_plus_uconst" with ULEB128 argument supported
             if member_offset[0] == 0x23:
-                self.member_offset = member_offset[1] & 0x7f
-                for i in range(1, len(member_offset)-1):
+                self.member_offset = member_offset[1] & 0x7F
+                for i in range(1, len(member_offset) - 1):
                     if member_offset[i] & 0x80:
-                        self.member_offset += (
-                            member_offset[i+1] & 0x7f) << i*7
+                        self.member_offset += (member_offset[i + 1] & 0x7F) << i * 7
             else:
-                raise Exception("not yet supported location operation "
-                                f"({self.member_name:s}:{self.member_type:d}:{self.member_offset[0]:d})")
+                raise Exception(
+                    "not yet supported location operation "
+                    f"({self.member_name:s}:{self.member_type:d}:{self.member_offset[0]:d})"
+                )
         else:
             self.member_offset = member_offset
 
     def __repr__(self):
-        return f"<member {self.member_name:s}, type {self.member_type:d}, " \
-               f"offset {self.member_offset:d}>"
+        return (
+            f"<member {self.member_name:s}, type {self.member_type:d}, "
+            f"offset {self.member_offset:d}>"
+        )
 
     def has_kobject(self):
         if self.member_type not in type_env:
@@ -357,6 +371,7 @@ class AggregateType:
 
 # --- helper functions for getting data from DIEs ---
 
+
 def die_get_spec(die):
     if 'DW_AT_specification' not in die.attributes:
         return None
@@ -423,8 +438,7 @@ def analyze_die_struct(die):
             child_type = die_get_type_offset(child)
             member_offset = data_member_location.value
             cname = die_get_name(child) or "<anon>"
-            m = AggregateTypeMember(child.offset, cname, child_type,
-                                    member_offset)
+            m = AggregateTypeMember(child.offset, cname, child_type, member_offset)
             at.add_member(m)
 
         return
@@ -493,8 +507,7 @@ def unpack_pointer(elf, data, offset):
         size_code = "Q"
         size = 8
 
-    return struct.unpack(endian_code + size_code,
-                         data[offset:offset + size])[0]
+    return struct.unpack(endian_code + size_code, data[offset : offset + size])[0]
 
 
 def addr_deref(elf, addr):
@@ -595,8 +608,9 @@ def find_kobjects(elf, syms):
             continue
 
         if "DW_AT_location" not in die.attributes:
-            debug_die(die,
-                      f"No location information for object '{name:s}'; possibly stack allocated")
+            debug_die(
+                die, f"No location information for object '{name:s}'; possibly stack allocated"
+            )
             continue
 
         loc = die.attributes["DW_AT_location"]
@@ -606,28 +620,38 @@ def find_kobjects(elf, syms):
 
         opcode = loc.value[0]
         if opcode != DW_OP_addr:
-
             # Check if frame pointer offset DW_OP_fbreg
             if opcode == DW_OP_fbreg:
                 debug_die(die, f"kernel object '{name:s}' found on stack")
             else:
-                debug_die(die,
-                          f"kernel object '{name:s}' unexpected exprloc opcode {hex(opcode):s}")
+                debug_die(
+                    die, f"kernel object '{name:s}' unexpected exprloc opcode {hex(opcode):s}"
+                )
             continue
 
         if "CONFIG_64BIT" in syms:
-            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
-                    (loc.value[3] << 16) | (loc.value[4] << 24) |
-                    (loc.value[5] << 32) | (loc.value[6] << 40) |
-                    (loc.value[7] << 48) | (loc.value[8] << 56))
+            addr = (
+                (loc.value[1] << 0)
+                | (loc.value[2] << 8)
+                | (loc.value[3] << 16)
+                | (loc.value[4] << 24)
+                | (loc.value[5] << 32)
+                | (loc.value[6] << 40)
+                | (loc.value[7] << 48)
+                | (loc.value[8] << 56)
+            )
         else:
-            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
-                    (loc.value[3] << 16) | (loc.value[4] << 24))
+            addr = (
+                (loc.value[1] << 0)
+                | (loc.value[2] << 8)
+                | (loc.value[3] << 16)
+                | (loc.value[4] << 24)
+            )
 
             # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
             # a DW_OP_plus_uconst.
             if len(loc.value) >= 7 and loc.value[5] == DW_OP_plus_uconst:
-                addr += (loc.value[6])
+                addr += loc.value[6]
 
         if addr == 0:
             # Never linked; gc-sections deleted it
@@ -651,14 +675,14 @@ def find_kobjects(elf, syms):
             continue
 
         _, user_ram_allowed, _ = kobjects[ko.type_obj.name]
-        if (not user_ram_allowed and
-            ((app_smem_start <= addr < app_smem_end)
-             or (app_smem_pinned_start <= addr < app_smem_pinned_end))):
+        if not user_ram_allowed and (
+            (app_smem_start <= addr < app_smem_end)
+            or (app_smem_pinned_start <= addr < app_smem_pinned_end)
+        ):
             debug(f"object '{ko.type_obj.name:s}' found in invalid location {hex(addr):s}")
             continue
 
-        if (ko.type_obj.name == STACK_TYPE and
-                (addr < user_stack_start or addr >= user_stack_end)):
+        if ko.type_obj.name == STACK_TYPE and (addr < user_stack_start or addr >= user_stack_end):
             debug(f"skip kernel-only stack at {hex(addr):s}")
             continue
 
@@ -708,11 +732,11 @@ def find_kobjects(elf, syms):
     # 3. Sorting memory address looks good.
     return OrderedDict(sorted(ret.items()))
 
+
 def get_symbols(elf):
     for section in elf.iter_sections():
         if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value
-                    for sym in section.iter_symbols()}
+            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     raise LookupError("Could not find symbol table")
 
@@ -783,9 +807,9 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         fp.write("};\n")
 
     metadata_names = {
-        "K_OBJ_THREAD" : "thread_id",
-        "K_OBJ_SYS_MUTEX" : "mutex",
-        "K_OBJ_FUTEX" : "futex_data"
+        "K_OBJ_THREAD": "thread_id",
+        "K_OBJ_SYS_MUTEX": "mutex",
+        "K_OBJ_FUTEX": "futex_data",
     }
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:
@@ -793,10 +817,12 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         if stack_counter != 0:
             # Same as K_KERNEL_STACK_ARRAY_DEFINE, but routed to a different
             # memory section.
-            fp.write("static uint8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
-                     " __aligned(Z_KERNEL_STACK_OBJ_ALIGN)"
-                     f" priv_stacks[{stack_counter:d}]"
-                     "[K_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n")
+            fp.write(
+                "static uint8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
+                " __aligned(Z_KERNEL_STACK_OBJ_ALIGN)"
+                f" priv_stacks[{stack_counter:d}]"
+                "[K_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
+            )
 
             fp.write(f"static const struct z_stack_data stack_data[{stack_counter:d}] = {{\n")
             counter = 0
@@ -889,17 +915,22 @@ def write_validation_output(fp):
     fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
     fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
-    fp.write("#define K_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\\n"
-             "\t(K_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\\n"
-             "\tK_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))\n")
+    fp.write(
+        "#define K_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\\n"
+        "\t(K_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\\n"
+        "\tK_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))\n"
+    )
 
     for subsystem in subsystems:
         subsystem = subsystem.replace("_driver_api", "")
 
-        fp.write(driver_macro_tpl % {
-            "driver_lower": subsystem.lower(),
-            "driver_upper": subsystem.upper(),
-        })
+        fp.write(
+            driver_macro_tpl
+            % {
+                "driver_lower": subsystem.lower(),
+                "driver_upper": subsystem.upper(),
+            }
+        )
 
     fp.write("#endif /* DRIVER_VALIDATION_GEN_H */\n")
 
@@ -967,37 +998,51 @@ def parse_subsystems_list_file(path):
     subsystems.extend(subsys_list["__subsystem"])
     net_sockets.extend(subsys_list["__net_socket"])
 
+
 def parse_args():
     global args
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-k", "--kernel", required=False,
-                        help="Input zephyr ELF binary")
+    parser.add_argument("-k", "--kernel", required=False, help="Input zephyr ELF binary")
     parser.add_argument(
-        "-g", "--gperf-output", required=False,
-        help="Output list of kernel object addresses for gperf use")
+        "-g",
+        "--gperf-output",
+        required=False,
+        help="Output list of kernel object addresses for gperf use",
+    )
     parser.add_argument(
-        "-V", "--validation-output", required=False,
-        help="Output driver validation macros")
+        "-V", "--validation-output", required=False, help="Output driver validation macros"
+    )
     parser.add_argument(
-        "-K", "--kobj-types-output", required=False,
-        help="Output k_object enum constants")
+        "-K", "--kobj-types-output", required=False, help="Output k_object enum constants"
+    )
     parser.add_argument(
-        "-S", "--kobj-otype-output", required=False,
-        help="Output case statements for otype_to_str()")
+        "-S",
+        "--kobj-otype-output",
+        required=False,
+        help="Output case statements for otype_to_str()",
+    )
     parser.add_argument(
-        "-Z", "--kobj-size-output", required=False,
-        help="Output case statements for obj_size_get()")
-    parser.add_argument("-i", "--include-subsystem-list", required=False, action='append',
+        "-Z", "--kobj-size-output", required=False, help="Output case statements for obj_size_get()"
+    )
+    parser.add_argument(
+        "-i",
+        "--include-subsystem-list",
+        required=False,
+        action='append',
         help='''Specifies a file with a JSON encoded list of subsystem names to append to
         the driver subsystems list. Can be specified multiple times:
-        -i file1 -i file2 ...''')
+        -i file1 -i file2 ...''',
+    )
 
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print extra debugging information")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print extra debugging information"
+    )
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
@@ -1021,14 +1066,20 @@ def main():
                 sys.stderr.write(f"WARNING: zero kobject found in {args.kernel:s}\n")
 
         if thread_counter > max_threads:
-            sys.exit(f"Too many thread objects ({thread_counter})\n"
-                     f"Increase CONFIG_MAX_THREAD_BYTES to {-(-thread_counter // 8)}"
-                     )
+            sys.exit(
+                f"Too many thread objects ({thread_counter})\n"
+                f"Increase CONFIG_MAX_THREAD_BYTES to {-(-thread_counter // 8)}"
+            )
 
         with open(args.gperf_output, "w") as fp:
-            write_gperf_table(fp, syms, objs, elf.little_endian,
-                              syms["_static_kernel_objects_begin"],
-                              syms["_static_kernel_objects_end"])
+            write_gperf_table(
+                fp,
+                syms,
+                objs,
+                elf.little_endian,
+                syms["_static_kernel_objects_begin"],
+                syms["_static_kernel_objects_end"],
+            )
 
     if args.validation_output:
         with open(args.validation_output, "w") as fp:

@@ -1179,7 +1179,6 @@ exclude = [
     "./scripts/build/gen_isr_tables.py",
     "./scripts/build/gen_isr_tables_parser_carrays.py",
     "./scripts/build/gen_isr_tables_parser_local.py",
-    "./scripts/build/gen_kobject_list.py",
     "./scripts/build/gen_offset_header.py",
     "./scripts/build/gen_strerror_table.py",
     "./scripts/build/gen_strsignal_table.py",
