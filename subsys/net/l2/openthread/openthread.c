@@ -191,18 +191,13 @@ static void ot_receive_handler(otMessage *message, void *context)
 	}
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
-	NET_DBG("Injecting %s packet to Zephyr net stack",
-		PKT_IS_IPv4(pkt) ? "translated IPv4" : "Ip6");
+	NET_DBG("Injecting IPv6 packet to Zephyr net stack");
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
-		if (IS_ENABLED(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) && PKT_IS_IPv4(pkt)) {
-			net_pkt_hexdump(pkt, "Received NAT64 IPv4 packet");
-		} else {
-			net_pkt_hexdump(pkt, "Received IPv6 packet");
-		}
+		net_pkt_hexdump(pkt, "Received IPv6 packet");
 	}
 
-	net_pkt_set_ll_proto_type(pkt, PKT_IS_IPv4(pkt) ? ETH_P_IP : ETH_P_IPV6);
+	net_pkt_set_ll_proto_type(pkt, ETH_P_IPV6);
 
 	if (!pkt_list_is_full(ot_context)) {
 		if (pkt_list_add(ot_context, pkt) != 0) {
@@ -227,6 +222,32 @@ out:
 
 	otMessageFree(message);
 }
+
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+static void ot_receive_nat64_handler(otMessage *message, void *context)
+{
+	struct otbr_msg_ctx *req = NULL;
+	uint16_t len = otMessageGetLength(message);
+
+	NET_DBG("Injecting IPv4 packet to Zephyr net stack");
+
+	if (openthread_border_router_allocate_message((void **)&req) != 0) {
+		goto out;
+	}
+	if (otMessageRead(message, 0, req->buffer, len) != len) {
+		goto out;
+	}
+
+	infra_if_send_raw_message(req->buffer, len);
+
+out:
+	if (req != NULL) {
+		openthread_border_router_deallocate_message((void *)req);
+	}
+
+	otMessageFree(message);
+}
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 static bool is_ipv6_frag(struct net_pkt *pkt)
 {
@@ -326,6 +347,9 @@ static int openthread_l2_init(struct net_if *iface)
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+		openthread_set_nat64_receive_cb(ot_receive_nat64_handler, (void *)ot_l2_context);
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR*/
 		openthread_border_router_init(ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 

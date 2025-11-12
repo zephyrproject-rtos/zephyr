@@ -27,6 +27,10 @@
 #include <zephyr/net/openthread.h>
 #include <zephyr/sys/util.h>
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -41,6 +45,7 @@ static uint32_t ail_iface_index;
 static struct net_if *ail_iface_ptr;
 static struct net_if *ot_iface_ptr;
 static bool is_border_router_started;
+static bool nat64_translator_enabled;
 char otbr_vendor_name[] = OTBR_VENDOR_NAME;
 char otbr_base_service_instance_name[] = OTBR_BASE_SERVICE_INSTANCE_NAME;
 char otbr_model_name[] = OTBR_MODEL_NAME;
@@ -56,6 +61,10 @@ K_MEM_SLAB_DEFINE_STATIC(border_router_messages_slab, sizeof(struct otbr_msg_ctx
 
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
 static void openthread_border_router_add_route_to_multicast_groups(void);
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+static void openthread_border_router_start_nat64_service(void);
+static void openthread_border_router_stop_nat64_service(void);
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 #if defined(CONFIG_NET_IPV4)
 static void openthread_border_router_check_for_dhcpv4_addr(struct net_if *iface,
@@ -135,6 +144,11 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	otBorderRoutingDhcp6PdSetEnabled(instance, true);
 	otBackboneRouterSetEnabled(instance, true);
 	otSrpServerSetAutoEnableMode(instance, true);
+#if (defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) || \
+	defined(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING)) && \
+	defined(CONFIG_NET_IPV4)
+	openthread_border_router_set_nat64_translator_enabled(true);
+#endif
 
 #if defined(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY)
 	otDnssdUpstreamQuerySetEnabled(instance, true);
@@ -175,6 +189,9 @@ static int openthread_stop_border_router_services(struct net_if *ot_iface,
 		border_agent_deinit();
 		infra_if_stop_icmp6_listener();
 		udp_plat_deinit();
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+		openthread_border_router_stop_nat64_service();
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 	}
 exit:
@@ -267,6 +284,9 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 	}
 
 	mdns_plat_monitor_interface(iface);
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+	openthread_border_router_start_nat64_service();
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -611,3 +631,51 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 		}
 	}
 }
+
+
+#if (defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) || \
+	defined(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING)) && \
+	defined(CONFIG_NET_IPV4)
+void openthread_border_router_set_nat64_translator_enabled(bool enable)
+{
+	otInstance *instance = openthread_get_default_instance();
+
+	if (nat64_translator_enabled != enable) {
+		nat64_translator_enabled = enable;
+		otNat64SetEnabled(instance, enable);
+	}
+}
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+static void openthread_border_router_start_nat64_service(void)
+{
+	otInstance *instance = openthread_get_default_instance();
+	struct in_addr *ipv4_addr = NULL;
+	struct in_addr ipv4_def_route = {0};
+	bool translator_state = false;
+	otIp4Cidr cidr;
+
+	ipv4_addr = net_if_ipv4_get_global_addr(ail_iface_ptr, NET_ADDR_PREFERRED);
+	ipv4_def_route = net_if_ipv4_get_gw(ail_iface_ptr);
+
+	if (ipv4_addr != NULL && ipv4_def_route.s_addr != 0) {
+		if (infra_if_nat64_init() == 0) {
+			memcpy(&cidr.mAddress.mFields.m32, &(ipv4_addr->s_addr),
+			       sizeof(otIp4Address));
+			cidr.mLength = 32U;
+			otNat64SetIp4Cidr(instance, &cidr);
+			translator_state = nat64_translator_enabled;
+
+			openthread_border_router_set_nat64_translator_enabled(translator_state);
+		}
+	}
+}
+
+static void openthread_border_router_stop_nat64_service(void)
+{
+	otInstance *instance = openthread_get_default_instance();
+
+	otNat64ClearIp4Cidr(instance);
+	openthread_border_router_set_nat64_translator_enabled(nat64_translator_enabled);
+}
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif
