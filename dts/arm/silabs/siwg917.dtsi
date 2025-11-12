@@ -81,6 +81,7 @@
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
 		interrupt-names = "nwp_stack", "nwp_irq";
+		soc-120mhz-clk;
 		status = "okay";
 
 		bt_hci0: bt_hci {
