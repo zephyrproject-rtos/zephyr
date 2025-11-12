@@ -20,8 +20,14 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/socket_service.h>
 #include <zephyr/net/icmp.h>
 #include <icmpv6.h>
+
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <zephyr/net/icmp.h>
+#include <openthread/nat64.h>
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 static struct otInstance *ot_instance;
 static struct net_if *ail_iface_ptr;
@@ -32,6 +38,15 @@ static struct net_icmp_ctx na_ctx;
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#define MAX_SERVICES 1
+
+static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
+static void raw_receive_handler(struct net_socket_service_event *evt);
+static int raw_infra_if_sock = -1;
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(handle_infra_if_raw_recv, raw_receive_handler, MAX_SERVICES);
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDestAddress,
 				 const uint8_t *aBuffer, uint16_t aBufferLength)
@@ -126,6 +141,9 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 	net_ipv6_addr_create_ll_allrouters_mcast(&addr);
 	VerifyOrExit(net_ipv6_mld_join(ail_iface, &addr) == 0, error = OT_ERROR_FAILED);
 
+	for (uint8_t i = 0; i < MAX_SERVICES; i++) {
+		sockfd_raw[i].fd = -1;
+	}
 exit:
 	return error;
 }
@@ -257,3 +275,75 @@ void infra_if_stop_icmp6_listener(void)
 	(void)net_icmp_cleanup_ctx(&rs_ctx);
 	(void)net_icmp_cleanup_ctx(&na_ctx);
 }
+
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+otError infra_if_nat64_init(void)
+{
+	otError error = OT_ERROR_NONE;
+	struct sockaddr_in anyaddr = {.sin_family = AF_INET,
+				      .sin_port = 0,
+				      .sin_addr = INADDR_ANY_INIT};
+
+	raw_infra_if_sock = zsock_socket(AF_INET, SOCK_RAW, IPPROTO_IP);
+	VerifyOrExit(raw_infra_if_sock >= 0, error = OT_ERROR_FAILED);
+	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct sockaddr *)&anyaddr,
+				sizeof(struct sockaddr_in)) == 0,
+		     error = OT_ERROR_FAILED);
+
+	sockfd_raw[0].fd = raw_infra_if_sock;
+	sockfd_raw[0].events = ZSOCK_POLLIN;
+
+	VerifyOrExit(net_socket_service_register(&handle_infra_if_raw_recv, sockfd_raw,
+						 ARRAY_SIZE(sockfd_raw), NULL) == 0,
+		     error = OT_ERROR_FAILED);
+
+exit:
+	return error;
+}
+
+static void raw_receive_handler(struct net_socket_service_event *evt)
+{
+	int len;
+	struct net_pkt *ot_pkt = NULL;
+	struct otbr_msg_ctx *req = NULL;
+	otError error = OT_ERROR_NONE;
+
+	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
+	VerifyOrExit(evt->event.revents & ZSOCK_POLLIN);
+
+	len = zsock_recv(raw_infra_if_sock, req->buffer, sizeof(req->buffer), 0);
+	VerifyOrExit(len >= 0, error = OT_ERROR_FAILED);
+
+	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, AF_INET, 0, K_NO_WAIT);
+	VerifyOrExit(ot_pkt != NULL, error = OT_ERROR_FAILED);
+
+	VerifyOrExit(net_pkt_write(ot_pkt, req->buffer, len) == 0, error = OT_ERROR_FAILED);
+
+	openthread_border_router_deallocate_message((void *)req);
+	req = NULL;
+
+	VerifyOrExit(notify_new_tx_frame(ot_pkt) == 0, error = OT_ERROR_FAILED);
+
+exit:
+	if (error != OT_ERROR_NONE) {
+		if (ot_pkt != NULL) {
+			net_pkt_unref(ot_pkt);
+		}
+		if (req != NULL) {
+			openthread_border_router_deallocate_message((void *)req);
+		}
+	}
+}
+
+otError infra_if_send_raw_message(uint8_t *buf, uint16_t len)
+{
+	otError error = OT_ERROR_NONE;
+
+	VerifyOrExit(zsock_send(raw_infra_if_sock, buf, len, 0) > 0,
+		     error = OT_ERROR_FAILED);
+
+exit:
+	return error;
+}
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
