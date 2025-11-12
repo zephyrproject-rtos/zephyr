@@ -20,7 +20,7 @@ static bool test_end;
 
 static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
-static struct onoff_manager *hf_mgr;
+static struct device *hf_dev;
 static struct onoff_client cli;
 static uint32_t iteration;
 
@@ -29,8 +29,10 @@ static void *setup(void)
 	zassert_true(device_is_ready(entropy));
 	zassert_true(device_is_ready(clock_dev));
 
-	hf_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
-	zassert_true(hf_mgr);
+	hf_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+					       (nordic_nrf_clock_hfclk),
+					       (nordic_nrf_clock_xo)));
+	zassert_true(hf_dev);
 
 	return NULL;
 }
@@ -115,7 +117,7 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 		backoff = 3 * rand;
 
 		sys_notify_init_spinwait(&cli.notify);
-		err = onoff_request(hf_mgr, &cli);
+		err = nrf_clock_control_request(hf_dev, NULL, &cli);
 		zassert_true(err >= 0);
 
 		k_busy_wait(backoff);
@@ -124,7 +126,7 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 			check_hf_status(clock_dev, true, true);
 		}
 
-		err = onoff_cancel_or_release(hf_mgr, &cli);
+		err = nrf_clock_control_cancel_or_release(hf_dev, NULL, &cli);
 		zassert_true(err >= 0);
 
 		elapsed = k_uptime_get() - start_time;

@@ -9,7 +9,7 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/dt-bindings/clock/nrf-auxpll.h>
+#include <zephyr/dt-bindings/clock/nr-fauxpll.h>
 #include <soc.h>
 #include <dmm.h>
 #include <nrfx_pdm.h>
@@ -41,7 +41,7 @@ struct dmic_nrfx_pdm_drv_data {
 #if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	const struct device *audiopll_dev;
 #elif CONFIG_CLOCK_CONTROL_NRF
-	struct onoff_manager *clk_mgr;
+	const struct device *clk_dev;
 #endif
 	struct onoff_client clk_cli;
 	struct k_mem_slab *mem_slab;
@@ -86,7 +86,7 @@ static int request_clock(struct dmic_nrfx_pdm_drv_data *drv_data)
 #if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	return nrf_clock_control_request(drv_data->audiopll_dev, NULL, &drv_data->clk_cli);
 #elif CONFIG_CLOCK_CONTROL_NRF
-	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
+	return nrf_clock_control_request(drv_data->clk_dev, NULL, &drv_data->clk_cli);
 #else
 	return -ENOTSUP;
 #endif
@@ -100,7 +100,7 @@ static int release_clock(struct dmic_nrfx_pdm_drv_data *drv_data)
 #if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	return nrf_clock_control_release(drv_data->audiopll_dev, NULL);
 #elif CONFIG_CLOCK_CONTROL_NRF
-	return onoff_release(drv_data->clk_mgr);
+	return nrf_clock_control_release(drv_data->clk_dev, NULL);
 #else
 	return -ENOTSUP;
 #endif
@@ -467,21 +467,21 @@ static void init_clock_manager(const struct device *dev)
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 	drv_data->audiopll_dev = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
 #elif CONFIG_CLOCK_CONTROL_NRF
-	clock_control_subsys_t subsys;
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 	const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;
 
 	if (drv_cfg->clk_src == ACLK) {
-		subsys = CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO;
+		drv_data->clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclkaudio);
 	} else
 #endif
 	{
-		subsys = CLOCK_CONTROL_NRF_SUBSYS_HF;
+		drv_data->clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+								  (nordic_nrf_clock_hfclk),
+								  (nordic_nrf_clock_xo)));
 	}
 
-	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
-	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
+	__ASSERT_NO_MSG(drv_data->clk_dev != NULL);
 #elif CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 

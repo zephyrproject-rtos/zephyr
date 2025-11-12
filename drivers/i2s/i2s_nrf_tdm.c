@@ -106,9 +106,6 @@ struct tdm_drv_cfg {
 };
 
 struct tdm_drv_data {
-#if CONFIG_CLOCK_CONTROL_NRF
-	struct onoff_manager *clk_mgr;
-#endif
 	struct onoff_client clk_cli;
 	struct stream_cfg tx;
 	struct k_msgq tx_queue;
@@ -129,9 +126,7 @@ struct tdm_drv_data {
 
 static int audio_clock_request(struct tdm_drv_data *drv_data)
 {
-#if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
-	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
+#if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	return nrf_clock_control_request(audiopll, &aclk_spec, &drv_data->clk_cli);
 #else
 	(void)drv_data;
@@ -142,9 +137,7 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 
 static int audio_clock_release(struct tdm_drv_data *drv_data)
 {
-#if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
-	return onoff_release(drv_data->clk_mgr);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
+#if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	(void)drv_data;
 
 	return nrf_clock_control_release(audiopll, &aclk_spec);
@@ -1110,20 +1103,6 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 	}
 }
 
-static void clock_manager_init(const struct device *dev)
-{
-#if CONFIG_CLOCK_CONTROL_NRF && NRF_CLOCK_HAS_HFCLKAUDIO
-	clock_control_subsys_t subsys;
-	struct tdm_drv_data *drv_data = dev->data;
-
-	subsys = CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO;
-	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
-	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
-#else
-	(void)dev;
-#endif
-}
-
 static int data_init(const struct device *dev)
 {
 	struct tdm_drv_data *drv_data = dev->data;
@@ -1190,7 +1169,6 @@ static DEVICE_API(i2s, tdm_nrf_drv_api) = {
 			    sizeof(struct tdm_buf), ARRAY_SIZE(tx_msgs##idx));                     \
 		k_msgq_init(&tdm_nrf_data##idx.rx_queue, (char *)rx_msgs##idx,                     \
 			    sizeof(struct tdm_buf), ARRAY_SIZE(rx_msgs##idx));                     \
-		clock_manager_init(dev);                                                           \
 		return 0;                                                                          \
 	}                                                                                          \
 	BUILD_ASSERT((TDM_SCK_CLK_SRC(idx) != ACLK && TDM_MCK_CLK_SRC(idx) != ACLK) ||             \

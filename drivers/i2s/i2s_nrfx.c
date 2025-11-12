@@ -29,7 +29,7 @@ struct i2s_buf {
 };
 
 struct i2s_nrfx_drv_data {
-	struct onoff_manager *clk_mgr;
+	struct device *clk_dev;
 	struct onoff_client clk_cli;
 	struct stream_cfg tx;
 	struct k_msgq tx_queue;
@@ -184,7 +184,7 @@ static void data_handler(const struct device *dev,
 		}
 		nrfx_i2s_uninit(&drv_data->i2s);
 		if (drv_data->request_clock) {
-			(void)onoff_release(drv_data->clk_mgr);
+			(void)nrf_clock_control_release(drv_data->clk_dev, NULL);
 		}
 	}
 
@@ -602,7 +602,7 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 
 	nrfx_i2s_uninit(&drv_data->i2s);
 	if (drv_data->request_clock) {
-		(void)onoff_release(drv_data->clk_mgr);
+		(void)nrf_clock_control_release(drv_data->clk_dev, NULL);
 	}
 
 	if (initial_buffers.p_tx_buffer) {
@@ -630,7 +630,7 @@ static void clock_started_callback(struct onoff_manager *mgr,
 	 */
 	if (drv_data->state == I2S_STATE_READY) {
 		nrfx_i2s_uninit(&drv_data->i2s);
-		(void)onoff_release(drv_data->clk_mgr);
+		(void)nrf_clock_control_release(drv_data->clk_dev, NULL);
 	} else {
 		(void)start_transfer(drv_data);
 	}
@@ -667,7 +667,7 @@ static int trigger_start(const struct device *dev)
 	if (drv_data->request_clock) {
 		sys_notify_init_callback(&drv_data->clk_cli.notify,
 					 clock_started_callback);
-		ret = onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
+		ret = nrf_clock_control_request(drv_data->clk_dev, NULL, &drv_data->clk_cli);
 		if (ret < 0) {
 			nrfx_i2s_uninit(&drv_data->i2s);
 			drv_data->state = I2S_STATE_READY;
@@ -796,21 +796,21 @@ static int i2s_nrfx_trigger(const struct device *dev,
 static void init_clock_manager(const struct device *dev)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
-	clock_control_subsys_t subsys;
 
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 	const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;
 
 	if (drv_cfg->clk_src == ACLK) {
-		subsys = CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO;
+		drv_data->clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclkaudio);
 	} else
 #endif
 	{
-		subsys = CLOCK_CONTROL_NRF_SUBSYS_HF;
+		drv_data->clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+								  (nordic_nrf_clock_hfclk),
+								  (nordic_nrf_clock_xo)));
 	}
 
-	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
-	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
+	__ASSERT_NO_MSG(drv_data->clk_dev != NULL);
 }
 
 static DEVICE_API(i2s, i2s_nrf_drv_api) = {
