@@ -1688,7 +1688,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 		return -EBUSY;
 	}
 
-	if ((prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) || (prompt_length == 0)) {
+	if (prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) {
 		z_shell_unlock(sh);
 		return -EINVAL;
 	}
