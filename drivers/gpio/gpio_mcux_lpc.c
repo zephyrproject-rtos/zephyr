@@ -104,10 +104,9 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 		*pinconfig |= IOCON_PIO_OD_MASK;
 	}
 
-	if ((flags & GPIO_INPUT) != 0) {
-		/* Set DIGIMODE bit */
-		*pinconfig |= IOCON_PIO_DIGIMODE_MASK;
-	}
+	/* Set DIGIMODE bit */
+	*pinconfig |= IOCON_PIO_DIGIMODE_MASK;
+
 	/* Select GPIO mux for this pin (func 0 is always GPIO) */
 	*pinconfig &= ~(IOCON_PIO_FUNC_MASK);
 #endif
