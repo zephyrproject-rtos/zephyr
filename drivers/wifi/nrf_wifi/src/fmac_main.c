@@ -102,6 +102,61 @@ static const unsigned int rx3_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 static K_MUTEX_DEFINE(reg_lock);
 
+/**
+ * @brief Format a link layer address to a string buffer.
+ *
+ * @param ll Pointer to the link layer address bytes.
+ * @param ll_len Length of the link layer address (typically 6 for MAC).
+ * @param buf Buffer to store the formatted string.
+ * @param buflen Size of the buffer.
+ *
+ * @return Pointer to the buffer on success, NULL on failure.
+ */
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen)
+{
+	uint8_t i, len, blen;
+	char *ptr = buf;
+
+	if (ll == NULL) {
+		return "<unknown>";
+	}
+
+	switch (ll_len) {
+	case 8:
+		len = 8U;
+		break;
+	case 6:
+		len = 6U;
+		break;
+	case 2:
+		len = 2U;
+		break;
+	default:
+		len = 6U;
+		break;
+	}
+
+	for (i = 0U, blen = buflen; i < len && blen > 0; i++) {
+		uint8_t high = (ll[i] >> 4) & 0x0f;
+		uint8_t low = ll[i] & 0x0f;
+
+		*ptr++ = (high < 10) ? (char)(high + '0') :
+			 (char)(high - 10 + 'A');
+		*ptr++ = (low < 10) ? (char)(low + '0') :
+			 (char)(low - 10 + 'A');
+		*ptr++ = ':';
+		blen -= 3U;
+	}
+
+	if (!(ptr - buf)) {
+		return NULL;
+	}
+
+	*(ptr - 1) = '\0';
+	return buf;
+}
+
 const char *nrf_wifi_get_drv_version(void)
 {
 	return NRF70_DRIVER_VERSION;
