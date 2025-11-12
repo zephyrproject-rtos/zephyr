@@ -266,6 +266,7 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			clk-source = <0>;
+			nxp,max-mb = <32>;
 			status = "disabled";
 		};
 

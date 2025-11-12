@@ -39,12 +39,14 @@
 	compatible = "nxp,flexcan";
 	interrupts = <85 0>, <86 0>, <88 0>;
 	interrupt-names = "ored-warning-bus-off", "error", "mb-0-15";
+	nxp,max-mb = <16>;
 };
 
 &flexcan2 {
 	compatible = "nxp,flexcan";
 	interrupts = <92 0>, <93 0>, <95 0>;
 	interrupt-names = "ored-warning-bus-off", "error", "mb-0-15";
+	nxp,max-mb = <16>;
 };
 
 /delete-node/ &ftm4;

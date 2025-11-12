@@ -774,6 +774,7 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
 		clk-source = <0>;
+		nxp,max-mb = <96>;
 		status = "disabled";
 	};
 
@@ -784,6 +785,7 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
 		clk-source = <0>;
+		nxp,max-mb = <96>;
 		status = "disabled";
 	};
 
@@ -794,6 +796,7 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
 		clk-source = <0>;
+		nxp,max-mb = <96>;
 		status = "disabled";
 	};
 
