@@ -20,6 +20,7 @@ properties:
     enum:
       - 0 # RGB565
       - 1 # RGB888
+      - 2 # BGR565
     description:
       Display pixel format. Note that when RGB888 pixel format is selected
       only 6 color bits are actually used being in practice equivalent to
