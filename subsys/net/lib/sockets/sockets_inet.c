@@ -217,8 +217,13 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 		net_context_ref(new_ctx);
 
 		(void)k_condvar_signal(&parent->cond.recv);
-	}
+	} else if (status < 0) {
+		parent->user_data = INT_TO_POINTER(-status);
+		sock_set_error(parent);
 
+		k_fifo_cancel_wait(&parent->recv_q);
+		(void)k_condvar_signal(&parent->cond.recv);
+	}
 }
 
 static void zsock_received_cb(struct net_context *ctx,
