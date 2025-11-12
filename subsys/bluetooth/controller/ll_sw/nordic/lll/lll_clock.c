@@ -35,7 +35,7 @@ static void clock_ready(struct onoff_manager *mgr, struct onoff_client *cli,
 	k_sem_give(&clk_state->sem);
 }
 
-static int blocking_on(struct onoff_manager *mgr, uint32_t timeout)
+static int blocking_on(struct device *dev, uint32_t timeout)
 {
 
 	struct lll_clock_state state;
@@ -43,7 +43,7 @@ static int blocking_on(struct onoff_manager *mgr, uint32_t timeout)
 
 	k_sem_init(&state.sem, 0, 1);
 	sys_notify_init_callback(&state.cli.notify, clock_ready);
-	err = onoff_request(mgr, &state.cli);
+	err = nrf_clock_control_request(dev, NULL, &state.cli);
 	if (err < 0) {
 		return err;
 	}
@@ -53,28 +53,19 @@ static int blocking_on(struct onoff_manager *mgr, uint32_t timeout)
 
 int lll_clock_init(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-
 	sys_notify_init_spinwait(&lf_cli.notify);
 
-	return onoff_request(mgr, &lf_cli);
+	return nrf_clock_control_request(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL, &lf_cli);
 }
 
 int lll_clock_deinit(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-
 	/* Cancel any ongoing request */
-	(void)onoff_cancel(mgr, &lf_cli);
-
-	return onoff_release(mgr);
+	return nrf_clock_control_cancel_or_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL, &lf_cli);
 }
 
 int lll_clock_wait(void)
 {
-	struct onoff_manager *mgr;
 	static bool done;
 	int err;
 
@@ -83,13 +74,12 @@ int lll_clock_wait(void)
 	}
 	done = true;
 
-	mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-	err = blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
+	err = blocking_on(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), LFCLOCK_TIMEOUT_MS);
 	if (err) {
 		return err;
 	}
 
-	err = onoff_release(mgr);
+	err = nrf_clock_control_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
 	if (err != ONOFF_STATE_ON) {
 		return -EIO;
 	}
@@ -111,13 +101,15 @@ int lll_hfclock_on(void)
 
 int lll_hfclock_on_wait(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	int err;
 
 	atomic_inc(&hf_refcnt);
 
-	err = blocking_on(mgr, HFCLOCK_TIMEOUT_MS);
+	struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+							       (nordic_nrf_clock_hfclk),
+							       (nordic_nrf_clock_xo)));
+
+	err = blocking_on(clk_dev, HFCLOCK_TIMEOUT_MS);
 	if (err >= 0) {
 		DEBUG_RADIO_XTAL(1);
 	}

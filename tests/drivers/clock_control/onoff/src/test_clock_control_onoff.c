@@ -10,10 +10,9 @@ LOG_MODULE_REGISTER(test);
 
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
-static struct onoff_manager *get_mgr(void)
-{
-	return z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
-}
+	static struct device *dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+								  (nordic_nrf_clock_hfclk),
+								  (nordic_nrf_clock_xo)));
 
 static bool clock_is_off(void)
 {
@@ -27,10 +26,8 @@ static bool clock_is_off(void)
 
 static void clock_off(void)
 {
-	struct onoff_manager *mgr = get_mgr();
-
 	do {
-		(void)onoff_release(mgr);
+		(void)nrf_clock_control_release(dev, NULL);
 
 	} while (!clock_is_off());
 }
@@ -38,13 +35,12 @@ static void clock_off(void)
 ZTEST(clock_control_onoff, test_clock_blocking_on)
 {
 	struct onoff_client cli;
-	struct onoff_manager *mgr = get_mgr();
 	int err;
 
 	clock_off();
 
 	sys_notify_init_spinwait(&cli.notify);
-	err = onoff_request(mgr, &cli);
+	err = nrf_clock_control_request(dev, NULL, &cli);
 	zassert_true(err >= 0, "");
 
 	while (sys_notify_fetch_result(&cli.notify, &err) < 0) {
@@ -54,25 +50,24 @@ ZTEST(clock_control_onoff, test_clock_blocking_on)
 
 	/* clock on, now turn it off */
 
-	err = onoff_release(mgr);
+	err = nrf_clock_control_release(dev, NULL);
 	zassert_true(err >= 0, "");
 }
 
 ZTEST(clock_control_onoff, test_clock_spinwait_release_before_start)
 {
 	struct onoff_client cli;
-	struct onoff_manager *mgr = get_mgr();
 	int err;
 
 	clock_off();
 	k_busy_wait(10000);
 
 	sys_notify_init_spinwait(&cli.notify);
-	err = onoff_request(mgr, &cli);
+	err = nrf_clock_control_request(dev, NULL, &cli);
 	zassert_true(err >= 0, "err: %d", err);
 
 	/* Attempt to release while ongoing start. Cannot do that */
-	err = onoff_cancel_or_release(mgr, &cli);
+	err = nrf_clock_control_cancel_or_release(dev, NULL, &cli);
 	zassert_true(err >= 0, "err: %d", err);
 
 	k_busy_wait(100000);
@@ -96,14 +91,13 @@ static void request_cb(struct onoff_manager *mgr, struct onoff_client *cli,
 ZTEST(clock_control_onoff, test_clock_release_from_callback)
 {
 	struct onoff_client cli;
-	struct onoff_manager *mgr = get_mgr();
 	int err;
 
 	clock_off();
 	k_busy_wait(100);
 
 	sys_notify_init_callback(&cli.notify, request_cb);
-	err = onoff_request(mgr, &cli);
+	err = nrf_clock_control_request(dev, NULL, &cli);
 	zassert_true(err >= 0, "err: %d", err);
 
 	k_busy_wait(100000);
