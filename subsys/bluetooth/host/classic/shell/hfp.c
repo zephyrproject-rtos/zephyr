@@ -1069,6 +1069,12 @@ static bool has_ongoing_calls;
 
 static char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
 
+static bool has_ag_indicator_value;
+static uint8_t ag_indicator_service;
+static uint8_t ag_indicator_strength;
+static uint8_t ag_indicator_roam;
+static uint8_t ag_indicator_battery;
+
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
 	ARRAY_FOR_EACH(hfp_ag_call, i) {
@@ -1151,6 +1157,32 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	} else {
 		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hfp_ag_sco_conn, sco_conn);
 	}
+}
+
+static int ag_get_indicator_value(struct bt_hfp_ag *ag, uint8_t *service, uint8_t *strength,
+				  uint8_t *roam, uint8_t *battery)
+{
+	if (!has_ag_indicator_value) {
+		return -ENODATA;
+	}
+
+	if (service != NULL) {
+		*service = ag_indicator_service;
+	}
+
+	if (strength != NULL) {
+		*strength = ag_indicator_strength;
+	}
+
+	if (roam != NULL) {
+		*roam = ag_indicator_roam;
+	}
+
+	if (battery != NULL) {
+		*battery = ag_indicator_battery;
+	}
+
+	return 0;
 }
 
 static int ag_get_ongoing_call(struct bt_hfp_ag *ag)
@@ -1372,6 +1404,7 @@ static struct bt_hfp_ag_cb ag_cb = {
 	.disconnected = ag_disconnected,
 	.sco_connected = ag_sco_connected,
 	.sco_disconnected = ag_sco_disconnected,
+	.get_indicator_value = ag_get_indicator_value,
 	.get_ongoing_call = ag_get_ongoing_call,
 	.memory_dial = ag_memory_dial,
 	.number_call = ag_number_call,
@@ -1473,6 +1506,27 @@ static int set_ongoing_calls(void)
 		bt_shell_error("Failed to set ongoing calls (err %d)", err);
 	}
 	return err;
+}
+static int cmd_ag_indicator_value(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		has_ag_indicator_value = false;
+		return 0;
+	}
+
+	if (argc != 5) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	ag_indicator_service  = (uint8_t)atoi(argv[1]);
+	ag_indicator_strength = (uint8_t)atoi(argv[2]);
+	ag_indicator_roam     = (uint8_t)atoi(argv[3]);
+	ag_indicator_battery  = (uint8_t)atoi(argv[4]);
+
+	has_ag_indicator_value = true;
+
+	return 0;
 }
 
 static int cmd_ag_ongoing_calls(const struct shell *sh, size_t argc, char **argv)
@@ -2056,11 +2110,16 @@ static int cmd_ag_last_number(const struct shell *sh, size_t argc, char **argv)
 	"<[R-ready][S-send][P-processing]> "        \
 	"<id> <type> <operation> <text string>"
 
+#define HELP_AG_INDICATOR_VALUE \
+	"[<service availability 0-1> <signal strength 0-5> " \
+	"<roaming status 0-1> <battery level 0-5>]"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(ag_cmds,
 	SHELL_CMD_ARG(reg, NULL, HELP_NONE, cmd_ag_reg_enable, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_ag_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_ag_disconnect, 1, 0),
 	SHELL_CMD_ARG(sco_disconnect, NULL, HELP_NONE, cmd_ag_sco_disconnect, 1, 0),
+	SHELL_CMD_ARG(indicator_value, NULL, HELP_AG_INDICATOR_VALUE, cmd_ag_indicator_value, 1, 4),
 	SHELL_CMD_ARG(ongoing_calls, NULL, "<yes or no>", cmd_ag_ongoing_calls, 2, 0),
 	SHELL_CMD_ARG(set_ongoing_calls, NULL, "<number> <type> <status> <dir> [all]",
 		      cmd_ag_set_ongoing_calls, 5, 1),
