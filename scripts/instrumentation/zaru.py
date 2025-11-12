@@ -417,64 +417,75 @@ def get_stream(port):
 # Generator for getting an event with symbols resolved.
 # The event returned is a dict().
 def get_trace_event_generator(msg_it, symbols):
-    for msg in msg_it:
-        if isinstance(msg, bt2._EventMessageConst):
-            event = msg.event
+    while True:
+        try:
+            msg = next(msg_it, None)
+        except bt2._Error as er:
+            print("Cannot get next CTF event")
+            print(er)
+            break
 
-            # Entry / exit events (w/ or wo/ context) are converted to
-            # 'entry' and 'exit' types just to simplify the matching
-            # code using them -- match against a shorter string.  It can
-            # be enhanced if necessary. Currently just handle entry /
-            # exit with context and sched switch in/out events.
-            if "entry" in event.name:
-                event_type = "entry"
-            elif "exit" in event.name:
-                event_type = "exit"
-            elif "switched_in" in event.name:
-                event_type = "switched_in"
-            elif "switched_out" in event.name:
-                event_type = "switched_out"
-            else:
-                continue
+        if msg is None:
+            break
+        if not isinstance(msg, bt2._EventMessageConst):
+            continue
 
-            # Resolve callee symbol.
-            callee = event.payload_field.get("callee").real
-            callee_symbol = symbols.get(callee)
+        event = msg.event
 
-            if callee_symbol is None:
-                print(
-                    Fore.RED + f"Symbol address {callee} could not be resolved! "
-                    "Are you sure FW flashed matches provided zephyr.elf in build dir?\n"
-                    "Tracing will be aborted because it's unreliable when symbols can't be "
-                    "properly resolved."
-                )
+        # Entry / exit events (w/ or wo/ context) are converted to
+        # 'entry' and 'exit' types just to simplify the matching
+        # code using them -- match against a shorter string.  It can
+        # be enhanced if necessary. Currently just handle entry /
+        # exit with context and sched switch in/out events.
+        if "entry" in event.name:
+            event_type = "entry"
+        elif "exit" in event.name:
+            event_type = "exit"
+        elif "switched_in" in event.name:
+            event_type = "switched_in"
+        elif "switched_out" in event.name:
+            event_type = "switched_out"
+        else:
+            continue
 
-                sys.exit(1)
+        # Resolve callee symbol.
+        callee = event.payload_field.get("callee").real
+        callee_symbol = symbols.get(callee)
 
-            thread_id = event.payload_field.get("thread_id")
-            # When tracing non-application code usually there isn't
-            # a thread ID associated to the context, so in this case
-            # change thread ID to "none-thread".
-            if thread_id == 0:
-                thread_id = "none-thread"
-            else:
-                thread_id = hex(thread_id)
+        if callee_symbol is None:
+            print(
+                Fore.RED + f"Symbol address {callee} could not be resolved! "
+                "Are you sure FW flashed matches provided zephyr.elf in build dir?\n"
+                "Tracing will be aborted because it's unreliable when symbols can't be "
+                "properly resolved."
+            )
 
-            cpu = event.payload_field.get("cpu")
-            mode = event.payload_field.get("mode")
-            timestamp = event.payload_field.get("timestamp").real
-            thread_name = event.payload_field.get("thread_name")
+            sys.exit(1)
 
-            e = dict()
-            e["type"] = str(event_type)
-            e["func"] = str(callee_symbol)
-            e["thread_id"] = str(thread_id)
-            e["cpu"] = str(cpu)
-            e["mode"] = str(mode)
-            e["timestamp"] = str(timestamp)
-            e["thread_name"] = str(thread_name)
+        thread_id = event.payload_field.get("thread_id")
+        # When tracing non-application code usually there isn't
+        # a thread ID associated to the context, so in this case
+        # change thread ID to "none-thread".
+        if thread_id == 0:
+            thread_id = "none-thread"
+        else:
+            thread_id = hex(thread_id)
 
-            yield e  # event
+        cpu = event.payload_field.get("cpu")
+        mode = event.payload_field.get("mode")
+        timestamp = event.payload_field.get("timestamp").real
+        thread_name = event.payload_field.get("thread_name")
+
+        e = dict()
+        e["type"] = str(event_type)
+        e["func"] = str(callee_symbol)
+        e["thread_id"] = str(thread_id)
+        e["cpu"] = str(cpu)
+        e["mode"] = str(mode)
+        e["timestamp"] = timestamp
+        e["thread_name"] = str(thread_name)
+
+        yield e  # event
 
 
 def get_and_print_trace(args, tmpdir, elf, demangle, annotate_ret=False, verbose=False):
@@ -525,7 +536,7 @@ def get_and_print_trace(args, tmpdir, elf, demangle, annotate_ret=False, verbose
             + ") "
             + cur_mode.rjust(4)
             + " | "
-            + cur_ts.rjust(12)
+            + str(cur_ts).rjust(12)
             + " ns |"
         )
         line_buffer_first_half.append(line)
