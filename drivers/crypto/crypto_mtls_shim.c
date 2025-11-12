@@ -110,7 +110,7 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_DECRYPT,
 				    pkt->in_buf, pkt->out_buf);
 	if (ret) {
-		LOG_ERR("Could not encrypt (%d)", ret);
+		LOG_ERR("Could not decrypt (%d)", ret);
 		return -EINVAL;
 	}
 
@@ -168,7 +168,7 @@ int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv
 	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len,
 				    p_iv, pkt->in_buf + iv_bytes, pkt->out_buf);
 	if (ret) {
-		LOG_ERR("Could not encrypt (%d)", ret);
+		LOG_ERR("Could not decrypt (%d)", ret);
 		return -EINVAL;
 	}
 
