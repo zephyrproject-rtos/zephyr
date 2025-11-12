@@ -97,6 +97,29 @@ ZTEST_F(eventfd, test_read_then_write_block)
 	k_thread_join(&thread, K_FOREVER);
 }
 
+static void thread_eventfd_posix_read_42(void *arg1, void *arg2, void *arg3)
+{
+	uint64_t value;
+	struct eventfd_fixture *fixture = arg1;
+	int ret;
+
+	ret = read(fixture->fd, &value, sizeof(value));
+	zassert(ret == sizeof(value), "read(2) failed");
+	zassert_equal(value, 42);
+}
+
+ZTEST_F(eventfd, test_posix_read_then_write_block)
+{
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_posix_read_42, fixture, NULL, NULL, 0, 0, K_NO_WAIT);
+
+	k_msleep(100);
+
+	zassert_ok(eventfd_write(fixture->fd, 42));
+
+	k_thread_join(&thread, K_FOREVER);
+}
+
 static void thread_eventfd_write(void *arg1, void *arg2, void *arg3)
 {
 	struct eventfd_fixture *fixture = arg1;
