@@ -204,6 +204,16 @@ if(DEFINED uicr_path)
   endif()
 endif()
 
+dt_nodelabel(tampc_path NODELABEL "tampc")
+if(DEFINED tampc_path)
+  dt_prop(swd_pins_as_gpios PATH ${tampc_path} PROPERTY "swd-pins-as-gpios")
+  if(${swd_pins_as_gpios})
+    zephyr_library_compile_definitions(
+      NRF_CONFIG_SWD_PINS_AS_GPIOS
+    )
+  endif()
+endif()
+
 if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
   # Ideally, hfpll should taken as a phandle from clocks property from cpu but it
   # seems that there is no such option in DT cmake functions. Assuming that nrf54l
