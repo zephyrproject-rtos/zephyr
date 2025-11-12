@@ -21,6 +21,11 @@ extern "C" {
 void instr_buffer_init(void);
 
 /**
+ * @brief Reset instrumentation buffer state.
+ */
+void instr_buffer_reset(void);
+
+/**
  * @brief Get the instrumentation ring buffer.
  *
  * @return Pointer to the instrumentation ring buffer.
