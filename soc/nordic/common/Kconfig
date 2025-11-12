@@ -21,14 +21,43 @@ config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
 
+if NRF_SYS_EVENT
+
+config NRF_SYS_EVENT_IRQ_LATENCY
+	bool "Register events to reduce interrupt handling latency"
+	default y
+	depends on HAS_HW_NRF_RRAMC && !TRUSTED_EXECUTION_NONSECURE
+
+config NRF_SYS_EVENT_IRQ_LATENCY_MANUAL
+	def_bool !RISCV
+	depends on NRF_SYS_EVENT_IRQ_LATENCY
+	help
+	  If enabled, that indicates that manual control of NVM memory power
+	  mode is available.
+
+config NRF_SYS_EVENT_GRTC_CHAN_CNT
+	int "GRTC channel for RRAMC wake up"
+	default 1
+	range 0 16
+	depends on NRF_SYS_EVENT_IRQ_LATENCY
+	help
+	  Maximum number of GRTC channel dedicated for waking up RRAMC using DPPI
+	  connection between GRTC compare channel and RRAMC wake up task.
+
+config NRF_SYS_EVENT_USE_GPPI
+	def_bool NRF_SYS_EVENT_GRTC_CHAN_CNT > 0
+	select NRFX_GPPI
+
 config SOC_NRF_FORCE_CONSTLAT
 	bool "Force constant latency mode in system ON"
-	depends on NRF_SYS_EVENT && !RISCV
+	depends on !RISCV
 	help
 	  In constant latency mode the CPU wakeup latency and the PPI task response
 	  will be constant and kept at a minimum. This is secured by forcing a set
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
+
+endif # NRF_SYS_EVENT
 
 config MRAM_LATENCY
 	bool "MRAM latency manager"
