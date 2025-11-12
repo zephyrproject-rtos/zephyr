@@ -10,7 +10,7 @@
 #if NRF_CLOCK_HAS_HFCLK
 static const struct device_subsys_data subsys_data_hfclk[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF,
+		.subsys = NULL,
 		.startup_us = CONFIG_TEST_NRF_HF_STARTUP_TIME_US
 	}
 };
@@ -18,7 +18,7 @@ static const struct device_subsys_data subsys_data_hfclk[] = {
 #if NRF_CLOCK_HAS_XO
 static const struct device_subsys_data subsys_data_xo[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF,
+		.subsys = NULL,
 		.startup_us =  CONFIG_TEST_NRF_HF_STARTUP_TIME_US
 	}
 };
@@ -26,7 +26,7 @@ static const struct device_subsys_data subsys_data_xo[] = {
 #if !defined(CONFIG_SOC_NRF52832)
 static const struct device_subsys_data subsys_data_lfclk[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_LF,
+		.subsys = NULL,
 		.startup_us = (CLOCK_CONTROL_NRF_K32SRC ==
 			    NRF_CLOCK_LFCLK_RC) ? 1000 : 500000
 	}
@@ -35,7 +35,7 @@ static const struct device_subsys_data subsys_data_lfclk[] = {
 #if NRF_CLOCK_HAS_HFCLK192M
 static const struct device_subsys_data subsys_data_hfclk192m[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF192M,
+		.subsys = NULL,
 		.startup_us = 5
 	}
 };
@@ -43,7 +43,7 @@ static const struct device_subsys_data subsys_data_hfclk192m[] = {
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 static const struct device_subsys_data subsys_data_hfclkaudio[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO,
+		.subsys = NULL,
 		.startup_us = 30
 	}
 };
@@ -51,7 +51,7 @@ static const struct device_subsys_data subsys_data_hfclkaudio[] = {
 #if NRF_CLOCK_HAS_XO24M
 static const struct device_subsys_data subsys_data_xo24m[] = {
 	{
-		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF24M,
+		.subsys = NULL,
 		.startup_us = 5
 	}
 };
