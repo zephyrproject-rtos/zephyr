@@ -47,6 +47,7 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
+extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len, char *buf, int buflen);
 
 /* 3 bytes for addreess, 3 bytes for length */
 #define MAX_PKT_RAM_TX_ALIGN_OVERHEAD 6
@@ -100,6 +101,22 @@ static const unsigned int rx3_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 static K_MUTEX_DEFINE(reg_lock);
+
+/**
+ * @brief Format a link layer address to a string buffer.
+ *
+ * @param ll Pointer to the link layer address bytes.
+ * @param ll_len Length of the link layer address (typically 6 for MAC).
+ * @param buf Buffer to store the formatted string.
+ * @param buflen Size of the buffer.
+ *
+ * @return Pointer to the buffer on success, NULL on failure.
+ */
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen)
+{
+	return net_sprint_ll_addr_buf(ll, NET_ETH_ADDR_LEN, buf, buflen);
+}
 
 const char *nrf_wifi_get_drv_version(void)
 {

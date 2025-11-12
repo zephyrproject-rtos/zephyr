@@ -75,7 +75,7 @@ struct nrf_wifi_vif_ctx_zep {
 #endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 	struct net_stats_eth eth_stats;
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
-#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_RX)
+#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_TX)
 	bool authorized;
 #endif
 #ifdef CONFIG_NRF70_STA_MODE
@@ -154,6 +154,8 @@ void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_p
 void configure_board_dep_params(struct nrf_wifi_board_params *board_params);
 void set_tx_pwr_ceil_default(struct nrf_wifi_tx_pwr_ceil_params *pwr_ceil_params);
 const char *nrf_wifi_get_drv_version(void);
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
