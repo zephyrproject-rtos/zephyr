@@ -523,6 +523,7 @@
 					  "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
+			number-of-mb = <16>;
 			status = "disabled";
 		};
 

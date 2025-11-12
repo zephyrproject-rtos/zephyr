@@ -411,6 +411,7 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
+			number-of-mb = <16>;
 			status = "disabled";
 		};
 
@@ -422,6 +423,7 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
+			number-of-mb = <16>;
 			status = "disabled";
 		};
 
