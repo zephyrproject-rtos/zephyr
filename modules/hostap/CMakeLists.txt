@@ -383,6 +383,9 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
   ${HOSTAP_SRC_BASE}/wps/wps_enrollee.c
   ${HOSTAP_SRC_BASE}/wps/wps_registrar.c
   ${HOSTAP_SRC_BASE}/crypto/dh_groups.c
+  ${HOSTAP_SRC_BASE}/eap_server/eap_server_wsc.c
+  ${HOSTAP_SRC_BASE}/eap_server/eap_server.c
+  ${HOSTAP_SRC_BASE}/eap_server/eap_server_methods.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
@@ -394,6 +397,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
   CONFIG_WPS
   EAP_WSC
+  EAP_SERVER_WSC
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_WPS
