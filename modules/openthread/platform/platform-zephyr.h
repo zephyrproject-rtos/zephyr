@@ -132,6 +132,9 @@ void border_agent_deinit(void);
 otError trel_plat_init(otInstance *instance, struct net_if *ail_iface_ptr);
 otError dhcpv6_pd_client_init(otInstance *ot_instance, uint32_t ail_iface_index);
 otError dns_upstream_resolver_init(otInstance *ot_instance);
+void openthread_border_router_set_nat64_translator_enabled(bool enable);
+otError infra_if_nat64_init(void);
+otError infra_if_send_raw_message(uint8_t *buf, uint16_t len);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #endif /* PLATFORM_ZEPHYR_H_ */
