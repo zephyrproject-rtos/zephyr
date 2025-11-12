@@ -11,7 +11,7 @@
 
 / {
 	model = "CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit (Dual Core, M4)";
-	compatible = "infineon,cy8ckit_062s2_ai_dual", "cypress,PSOC6";
+	compatible = "infineon,cy8ckit-062s2-ai", "cypress,PSOC6";
 
 	cpus {
 		/delete-node/ cpu@0;
@@ -20,11 +20,11 @@
 	chosen {
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,sram = &sram_m4;
+		zephyr,flash = &flash_m4;
 	};
 
-	// M4 Flash: Remaining 1.5MB
+	/* M4 Flash: Remaining 1.5MB */
 	flash_m4: flash@10080000 {
 		compatible = "soc-nv-flash";
 		reg = <0x10080000 DT_SIZE_K(1536)>;
@@ -32,13 +32,13 @@
 		erase-block-size = <512>;
 	};
 
-	// M4 SRAM: Remaining 896KB (starts after shared)
+	/* M4 SRAM: Remaining 896KB (starts after shared) */
 	sram_m4: memory@8021000 {
 		compatible = "mmio-sram";
-		reg = <0x08021000 DT_SIZE_K(896)>;
+		reg = <0x08021000 DT_SIZE_K(892)>;
 	};
 
-	// Shared SRAM: Same 4KB for inter-core communication
+	/* Shared SRAM: Same 4KB for inter-core communication */
 	sram_shared: memory@8020000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08020000 DT_SIZE_K(4)>;

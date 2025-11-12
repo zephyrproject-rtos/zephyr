@@ -12,7 +12,7 @@
 
 / {
 	model = "CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit (Dual Core, M0)";
-	compatible = "infineon,cy8ckit_062s2_ai_dual", "cypress,PSOC6";
+	compatible = "infineon,cy8ckit-062s2-ai", "cypress,PSOC6";
 
 	cpus {
 		/delete-node/ cpu@1;
@@ -26,7 +26,7 @@
 		zephyr,bt-hci = &bt_hci_uart;
 	};
 
-	// M0 Flash: First 512KB
+	/* M0 Flash: First 512KB */
 	flash_m0: flash@10000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x10000000 DT_SIZE_K(512)>;
@@ -34,13 +34,13 @@
 		erase-block-size = <512>;
 	};
 
-	// M0 SRAM: First 128KB
+	/* M0 SRAM: First 128KB */
 	sram_m0: memory@8000000 {
 		compatible = "mmio-sram";
 		reg = <0x08000000 DT_SIZE_K(128)>;
 	};
 
-	// Shared SRAM: 4KB for inter-core communication
+	/* Shared SRAM: 4KB for inter-core communication */
 	sram_shared: memory@8020000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08020000 DT_SIZE_K(4)>;
@@ -49,7 +49,6 @@
 
 	aliases {
 		led0 = &user_led0;
-		sw0 = &user_bt;
 		sdhc0 = &sdhc0;
 	};
 
@@ -58,15 +57,6 @@
 		user_led0: led_0 {
 			label = "LED_0";
 			gpios = <&gpio_prt5 3 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_bt: button_0 {
-			label = "SW_0";
-			gpios = <&gpio_prt5 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

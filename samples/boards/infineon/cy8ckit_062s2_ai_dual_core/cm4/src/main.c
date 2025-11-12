@@ -1,13 +1,15 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
 /* Aliases defined in the board's device tree */
 #define LED_NODE    DT_ALIAS(led1)
-
-#if !DT_NODE_HAS_STATUS(LED_NODE, okay)
-#error "Unsupported board: led1 devicetree alias is not defined"
-#endif
 
 LOG_MODULE_REGISTER(main_CM4);
 
@@ -33,6 +35,7 @@ int main(void)
 	}
 
 	LOG_INF("CM4 initialized - LED1 will blink continuously");
+	k_sleep(K_MSEC(2000));
 
 	/* Blink LED1 continuously */
 	while (1) {

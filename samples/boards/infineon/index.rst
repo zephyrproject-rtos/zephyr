@@ -7,4 +7,4 @@
 .. toctree::
    :maxdepth: 1
 
-   cy8ckit_062s2_ai_dual_dual_core
+   cy8ckit_062s2_ai_dual_core

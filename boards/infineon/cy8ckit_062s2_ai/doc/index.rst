@@ -14,6 +14,28 @@ The board features an AIROC |reg| CYW43439 Wi-Fi & Bluetooth |reg| combo device,
 a 512 MB NOR flash, an onboard programmer/debugger (KitProg3), USB host and device features,
 two user LEDs, and one push button.
 
+Board Variants
+==============
+
+The CY8CKIT-062S2-AI board supports multiple core configurations:
+
+- **M4-only** (default): ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4``
+  - Runs on Cortex-M4 core only
+  - Full 2048 KB flash and 1024 KB SRAM available
+
+- **M0-only**: ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0``
+  - Runs on Cortex-M0+ core only
+  - Full 2048 KB flash and 1024 KB SRAM available
+  - Typically used for Wi-Fi/Bluetooth stack on M0+ while M4 handles application
+
+- **Dual-core**: ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0`` + ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4_dual``
+  - Both cores run simultaneously
+  - Memory partitioning:
+    - M0+: 512 KB flash (0x10000000-0x10080000), 128 KB SRAM (0x08000000-0x08020000)
+    - M4: 1536 KB flash (0x10080000-0x10200000), 892 KB SRAM (0x08021000-0x080FF000)
+    - Shared: 4 KB SRAM (0x08020000-0x08021000) for inter-core communication
+  - See :zephyr-sample:`boards.infineon.cy8ckit_062s2_ai_dual_core` for a dual-core example
+
 Hardware
 ********
 
@@ -33,9 +55,12 @@ Supported Features
 System Clock
 ============
 
-The PCY8C624ABZI-S2D44 MCU SoC is configured to use the internal IMO+FLL as a source for
+The CY8C624ABZI-S2D44 MCU SoC is configured to use the internal IMO+FLL as a source for
 the system clock. CM0+ works at 50MHz, CM4 - at 100MHz. Other sources for the
 system clock are provided in the SoC, depending on your system requirements.
+
+In dual-core mode, clock configuration is handled by the M0+ core to avoid hardware conflicts.
+The M4 core uses pre-configured clocks set by M0+.
 
 
 Fetch Binary Blobs
@@ -50,15 +75,38 @@ To fetch Binary Blobs:
    west blobs fetch hal_infineon
 
 
-Build blinking led sample
-*************************
+Build Examples
+**************
 
-Here is an example for building the :zephyr:code-sample:`blinky` sample application.
+M4-only Build
+=============
+
+Here is an example for building the :zephyr:code-sample:`blinky` sample application for M4-only:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: cy8ckit_062s2_ai/cy8c624abzi_s2d44
+   :board: cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4
    :goals: build
+
+M0-only Build
+=============
+
+To build for M0-only:
+
+.. code-block:: console
+
+   west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0 samples/basic/blinky
+
+Dual-core Build
+===============
+
+To build a dual-core application using Zephyr's sysbuild system:
+
+.. code-block:: console
+
+   west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0 samples/boards/infineon/cy8ckit_062s2_ai_dual_core --sysbuild
+
+See :zephyr-sample:`boards.infineon.cy8ckit_062s2_ai_dual_core` for more details on dual-core operation.
 
 Programming and Debugging
 *************************
@@ -102,7 +150,7 @@ The example below uses a permanent CMake argument to set the CMake variable ``OP
             west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd.exe
 
             # Do a pristine build once after setting CMake argument
-            west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44 -p always samples/basic/blinky
+            west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4 -p always samples/basic/blinky
 
             west flash
             west debug
@@ -115,7 +163,7 @@ The example below uses a permanent CMake argument to set the CMake variable ``OP
             west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd
 
             # Do a pristine build once after setting CMake argument
-            west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44 -p always samples/basic/blinky
+            west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4 -p always samples/basic/blinky
 
             west flash
             west debug
