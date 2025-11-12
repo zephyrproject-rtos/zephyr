@@ -134,6 +134,20 @@ int openthread_stop(void);
 void openthread_set_receive_cb(openthread_receive_cb cb, void *context);
 
 /**
+ * @brief Set the additional callback for receiving NAT64 translated packets.
+ *
+ * @details This callback is called once a packet from OpenThread NAT64 translator
+ * is received and can be used to inject packets into the Zephyr networking stack.
+ * Setting this callback is optional.
+ *
+ * @param cb Callback to set.
+ * @param context Context to pass to the callback.
+ */
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+void openthread_set_nat64_receive_cb(openthread_receive_cb cb, void *context);
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+/**
  * @brief Lock internal mutex before accessing OpenThread API.
  *
  * @details OpenThread API is not thread-safe. Therefore, before accessing any
