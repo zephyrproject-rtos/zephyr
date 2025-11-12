@@ -4765,7 +4765,18 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 	}
 
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
-	net_tcp_put(context, true);
+	if (net_context_get_state(context) != NET_CONTEXT_LISTENING) {
+		net_tcp_put(context, true);
+	} else {
+		if (context->conn_handler) {
+			net_conn_unregister(context->conn_handler);
+			context->conn_handler = NULL;
+		}
+
+		if (conn->accept_cb != NULL) {
+			conn->accept_cb(conn->context, NULL, 0, -ENETDOWN, context->user_data);
+		}
+	}
 }
 
 void net_tcp_close_all_for_iface(struct net_if *iface)
