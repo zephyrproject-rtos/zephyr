@@ -28,29 +28,18 @@ config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 	  Maximum number of wait loop iterations for the MCUX FlexCAN HAL when entering/leaving
 	  freeze mode.
 
-config CAN_MAX_MB
-	int "Maximum number of message buffers for concurrent active instances"
-	default 16
-	depends on SOC_SERIES_S32K3 || SOC_SERIES_S32K1 || SOC_SERIES_S32ZE
-	range 1 96 if SOC_SERIES_S32K3
-	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
-	range 1 64 if SOC_S32K142W || SOC_S32K144W
-	range 1 128 if SOC_SERIES_S32ZE
-	help
-	  Defines maximum number of message buffers for concurrent active instances.
-
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
 	default 5
-	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
-	range 1 13 if (SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX) && CAN_MCUX_FLEXCAN_FD
-	range 1 63 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
-	range 1 96 if SOC_SERIES_S32K3
-	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
-	range 1 64 if SOC_S32K142W || SOC_S32K144W
-	range 1 128 if SOC_SERIES_S32ZE
 	help
 	  Defines maximum number of concurrent active RX filters
+
+config CAN_MCUX_FLEXCAN_HEAP_SIZE
+	int "The heap memory pool that FlexCAN message buffer needed"
+	default 2048
+	help
+	  Defines the heap memory pool size for FlexCAN message buffer allocation
+	  This can be adjusted based on specific platform
 
 endif # CAN_MCUX_FLEXCAN
 

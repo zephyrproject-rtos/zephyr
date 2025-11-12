@@ -33,20 +33,6 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 #define RX_START_IDX 0
 #endif
 
-/* The maximum number of message buffers for concurrent active instances */
-#ifdef CONFIG_CAN_MAX_MB
-#define MCUX_FLEXCAN_MAX_MB CONFIG_CAN_MAX_MB
-#else
-#define MCUX_FLEXCAN_MAX_MB FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0)
-#endif
-
-/*
- * RX message buffers (filters) will take up the first N message
- * buffers. The rest are available for TX use.
- */
-#define MCUX_FLEXCAN_MAX_RX (CONFIG_CAN_MAX_FILTER + RX_START_IDX)
-#define MCUX_FLEXCAN_MAX_TX (MCUX_FLEXCAN_MAX_MB - MCUX_FLEXCAN_MAX_RX)
-
 /*
  * Convert from RX message buffer index to allocated filter ID and
  * vice versa.
@@ -58,8 +44,8 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
  * Convert from TX message buffer index to allocated TX ID and vice
  * versa.
  */
-#define TX_MBIDX_TO_ALLOC_IDX(x) (x - MCUX_FLEXCAN_MAX_RX)
-#define ALLOC_IDX_TO_TXMB_IDX(x) (x + MCUX_FLEXCAN_MAX_RX)
+#define TX_MBIDX_TO_ALLOC_IDX(x) (x - data->max_rx_mb)
+#define ALLOC_IDX_TO_TXMB_IDX(x) (x + data->max_rx_mb)
 
 /* Convert from back from FLEXCAN IDs to Zephyr CAN IDs. */
 #define FLEXCAN_ID_TO_CAN_ID_STD(id) \
@@ -79,6 +65,7 @@ struct mcux_flexcan_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int clk_source;
+	uint16_t max_mb;
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	bool flexcan_fd;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
@@ -113,16 +100,24 @@ struct mcux_flexcan_data {
 	const struct device *dev;
 	flexcan_handle_t handle;
 
-	ATOMIC_DEFINE(rx_allocs, MCUX_FLEXCAN_MAX_RX);
-	struct k_mutex rx_mutex;
-	struct mcux_flexcan_rx_callback rx_cbs[MCUX_FLEXCAN_MAX_RX];
-
-	ATOMIC_DEFINE(tx_allocs, MCUX_FLEXCAN_MAX_TX);
-	struct k_sem tx_allocs_sem;
-	struct k_mutex tx_mutex;
-	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
 	enum can_state state;
 	struct can_timing timing;
+
+	uint32_t max_tx_mb;
+	uint32_t max_rx_mb;
+
+	struct k_heap instance_heap;
+	uint8_t heap_buffer[CONFIG_CAN_MCUX_FLEXCAN_HEAP_SIZE];
+
+	atomic_t *rx_allocs;
+	atomic_t *tx_allocs;
+	struct mcux_flexcan_rx_callback *rx_cbs;
+	struct mcux_flexcan_tx_callback *tx_cbs;
+
+	struct k_mutex rx_mutex;
+	struct k_mutex tx_mutex;
+	struct k_sem tx_allocs_sem;
+
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	struct can_timing timing_data;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
@@ -131,6 +126,116 @@ struct mcux_flexcan_data {
 static inline CAN_Type *get_base(const struct device *dev)
 {
 	return (CAN_Type *)DEVICE_MMIO_NAMED_GET(dev, flexcan_mmio);
+}
+
+static int mcux_flexcan_get_mb_config(const struct device *dev, uint32_t *max_mb,
+				      uint32_t *max_rx, uint32_t *max_tx)
+{
+	const struct mcux_flexcan_config *config = dev->config;
+
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+	/*
+	 * When CAN FD is enabled, FlexCAN RAM can be partitioned into several blocks.
+	 * Each block can accommodate 7 message buffers if payload size is 64-byte.
+	 * Each block can accommodate 32 message buffers if payload size is 8-byte.
+	 * First calculate how many RAM blocks each FlexCAN instance support, then get
+	 * maximum accommodated message buffers under 64-byte payload size.
+	 */
+	if (config->flexcan_fd) {
+		/* For FlexCAN FD instances with 64-byte payload */
+		*max_mb = config->max_mb / 32U * 7U;
+	} else {
+		/*
+		 * For non-FD FlexCAN instances.
+		 * Some platforms have both classical CAN and CAN FD instances.
+		 * In this case, use the maximum message buffers.
+		 */
+		*max_mb = config->max_mb;
+	}
+#else
+	*max_mb = config->max_mb;
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+
+	/*
+	 * RX message buffers (filters) will take up the first N message
+	 * buffers. The rest are available for TX use.
+	 */
+	*max_rx = (CONFIG_CAN_MAX_FILTER + RX_START_IDX);
+
+	if (*max_mb < *max_rx) {
+		LOG_ERR("Insufficient message buffers for RX filters");
+		return -EINVAL;
+	}
+
+	*max_tx = *max_mb - *max_rx;
+
+	return 0;
+}
+
+static int mcux_flexcan_allocate_memory(const struct device *dev)
+{
+	struct mcux_flexcan_data *data = dev->data;
+	size_t rx_bitmap_size, tx_bitmap_size;
+	size_t rx_cb_array_size, tx_cb_array_size;
+	size_t total_size;
+
+	rx_bitmap_size = ATOMIC_BITMAP_SIZE(data->max_rx_mb) * sizeof(atomic_t);
+	tx_bitmap_size = ATOMIC_BITMAP_SIZE(data->max_tx_mb) * sizeof(atomic_t);
+	rx_cb_array_size = data->max_rx_mb * sizeof(struct mcux_flexcan_rx_callback);
+	tx_cb_array_size = data->max_tx_mb * sizeof(struct mcux_flexcan_tx_callback);
+	total_size = rx_bitmap_size + tx_bitmap_size + rx_cb_array_size + tx_cb_array_size;
+
+	if (total_size > sizeof(data->heap_buffer)) {
+		LOG_ERR("Insufficient heap memory for CAN buffers. Required: %zu, Available: %zu",
+			 total_size, sizeof(data->heap_buffer));
+		return -ENOMEM;
+	}
+
+	LOG_DBG("Total memory size to allocate: %zu bytes", total_size);
+
+	data->rx_allocs = NULL;
+	data->tx_allocs = NULL;
+	data->rx_cbs = NULL;
+	data->tx_cbs = NULL;
+
+	/* Dynamic allocate memory for TX RX data structures using heap */
+	k_heap_init(&data->instance_heap, data->heap_buffer, sizeof(data->heap_buffer));
+
+	data->rx_allocs = k_heap_alloc(&data->instance_heap, rx_bitmap_size, K_NO_WAIT);
+	data->tx_allocs = k_heap_alloc(&data->instance_heap, tx_bitmap_size, K_NO_WAIT);
+	data->rx_cbs = k_heap_alloc(&data->instance_heap, rx_cb_array_size, K_NO_WAIT);
+	data->tx_cbs = k_heap_alloc(&data->instance_heap, tx_cb_array_size, K_NO_WAIT);
+
+	if (!data->rx_allocs || !data->tx_allocs || !data->rx_cbs || !data->tx_cbs) {
+		LOG_ERR("Failed to allocate memory for CAN buffers");
+		goto cleanup;
+	}
+
+	memset(data->rx_allocs, 0, rx_bitmap_size);
+	memset(data->tx_allocs, 0, tx_bitmap_size);
+	memset(data->rx_cbs, 0, rx_cb_array_size);
+	memset(data->tx_cbs, 0, tx_cb_array_size);
+
+	return 0;
+
+cleanup:
+	if (data->tx_cbs) {
+		k_heap_free(&data->instance_heap, data->tx_cbs);
+		data->tx_cbs = NULL;
+	}
+	if (data->rx_cbs) {
+		k_heap_free(&data->instance_heap, data->rx_cbs);
+		data->rx_cbs = NULL;
+	}
+	if (data->tx_allocs) {
+		k_heap_free(&data->instance_heap, data->tx_allocs);
+		data->tx_allocs = NULL;
+	}
+	if (data->rx_allocs) {
+		k_heap_free(&data->instance_heap, data->rx_allocs);
+		data->rx_allocs = NULL;
+	}
+	return -ENOMEM;
 }
 
 static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -209,7 +314,7 @@ static status_t mcux_flexcan_mb_start(const struct device *dev, int alloc)
 	flexcan_mb_transfer_t xfer;
 	status_t status;
 
-	__ASSERT_NO_MSG(alloc >= 0 && alloc < ARRAY_SIZE(data->rx_cbs));
+	__ASSERT_NO_MSG(alloc >= 0 && alloc < data->max_rx_mb);
 
 	xfer.mbIdx = ALLOC_IDX_TO_RXMB_IDX(alloc);
 
@@ -237,7 +342,7 @@ static void mcux_flexcan_mb_stop(const struct device *dev, int alloc)
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
 
-	__ASSERT_NO_MSG(alloc >= 0 && alloc < ARRAY_SIZE(data->rx_cbs));
+	__ASSERT_NO_MSG(alloc >= 0 && alloc < data->max_rx_mb);
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if ((data->common.mode & CAN_MODE_FD) != 0U) {
@@ -288,7 +393,7 @@ static int mcux_flexcan_start(const struct device *dev)
 		/* Re-add all RX filters using current mode */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < MCUX_FLEXCAN_MAX_RX; alloc++) {
+		for (alloc = RX_START_IDX; alloc < data->max_rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				status = mcux_flexcan_mb_start(dev, alloc);
 				if (status != kStatus_Success) {
@@ -351,7 +456,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 	data->common.started = false;
 
 	/* Abort any pending TX frames before entering freeze mode */
-	for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
+	for (alloc = 0; alloc < data->max_tx_mb; alloc++) {
 		function = data->tx_cbs[alloc].function;
 		arg = data->tx_cbs[alloc].arg;
 
@@ -382,7 +487,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 		 */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < MCUX_FLEXCAN_MAX_RX; alloc++) {
+		for (alloc = RX_START_IDX; alloc < data->max_rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				mcux_flexcan_mb_stop(dev, alloc);
 			}
@@ -744,7 +849,7 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -EAGAIN;
 	}
 
-	for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
+	for (alloc = 0; alloc < data->max_tx_mb; alloc++) {
 		if (!atomic_test_and_set_bit(data->tx_allocs, alloc)) {
 			break;
 		}
@@ -817,7 +922,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
 	/* Find and allocate RX message buffer */
-	for (i = RX_START_IDX; i < MCUX_FLEXCAN_MAX_RX; i++) {
+	for (i = RX_START_IDX; i < data->max_rx_mb; i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
 			alloc = i;
 			break;
@@ -920,7 +1025,7 @@ static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_i
 {
 	struct mcux_flexcan_data *data = dev->data;
 
-	if (filter_id < 0 || filter_id >= MCUX_FLEXCAN_MAX_RX) {
+	if (filter_id < 0 || filter_id >= data->max_rx_mb) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -996,7 +1101,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 
 	if (state == CAN_STATE_BUS_OFF) {
 		/* Abort any pending TX frames in case of bus-off */
-		for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
+		for (alloc = 0; alloc < data->max_tx_mb; alloc++) {
 			/* Copy callback function and argument before clearing bit */
 			function = data->tx_cbs[alloc].function;
 			arg = data->tx_cbs[alloc].arg;
@@ -1159,6 +1264,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base;
 	flexcan_config_t flexcan_config;
+	uint32_t max_mb, max_rx, max_tx;
 	uint32_t clock_freq;
 	int err;
 
@@ -1176,10 +1282,30 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, flexcan_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
+	err = mcux_flexcan_get_mb_config(dev, &max_mb, &max_rx, &max_tx);
+	if (err != 0) {
+		return err;
+	}
+
+	if (max_mb == 0 || max_rx == 0 || max_tx == 0) {
+		LOG_ERR("Invalid message buffer configuration. max_mb: %d, rx_mb: %d, tx_mb: %d",
+			 max_mb, max_rx, max_tx);
+		return -EINVAL;
+	}
+
+	LOG_DBG("max_mb: %d, rx_mb: %d, tx_mb: %d", max_mb, max_rx, max_tx);
+
+	data->max_rx_mb = max_rx;
+	data->max_tx_mb = max_tx;
+
+	err = mcux_flexcan_allocate_memory(dev);
+	if (err != 0) {
+		return err;
+	}
+
 	k_mutex_init(&data->rx_mutex);
 	k_mutex_init(&data->tx_mutex);
-	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
-		   MCUX_FLEXCAN_MAX_TX);
+	k_sem_init(&data->tx_allocs_sem, max_tx, max_tx);
 
 	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
@@ -1235,7 +1361,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	data->dev = dev;
 
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
-	flexcan_config.maxMbNum = MCUX_FLEXCAN_MAX_MB;
+	flexcan_config.maxMbNum = max_mb;
 	flexcan_config.clkSrc = config->clk_source;
 	flexcan_config.baudRate = clock_freq /
 	      (1U + data->timing.prop_seg + data->timing.phase_seg1 +
@@ -1446,6 +1572,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(id, name),			\
 		.clk_source = DT_INST_PROP(id, clk_source),		\
+		.max_mb = DT_INST_PROP(id, nxp_max_mb),			\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT), \
 		))							\
