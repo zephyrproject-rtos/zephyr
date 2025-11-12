@@ -39,14 +39,14 @@ Flash Memory Configuration
 The IRIS-W1 board uses different flash vendors depending on revision:
 
 - ``@macronix``: Module build up to 2023 week 45
-- ``@fidelex``: Module build 2023 week 46 (2346) onward
+- ``@fidelix``: Module build 2023 week 46 (2346) onward
 
 To build for a specific flash version:
 
 .. code-block:: bash
 
    west build -b ubx_evk_iris_w1@macronix
-   west build -b ubx_evk_iris_w1@fidelex
+   west build -b ubx_evk_iris_w1@fidelix
 
 Supported Features
 ==================
