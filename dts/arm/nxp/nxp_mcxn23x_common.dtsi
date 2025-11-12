@@ -926,6 +926,7 @@
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
 		status = "disabled";
 	};
 
@@ -936,6 +937,7 @@
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
 		status = "disabled";
 	};
 

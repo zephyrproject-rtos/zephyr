@@ -479,6 +479,8 @@
 			interrupts = <109 0>, <110 0>, <111 0>, <112 0>;
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
 			status = "disabled";
 		};
 
@@ -489,6 +491,8 @@
 			clk-source = <0>;
 			interrupts = <113 0>, <114 0>, <115 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -499,6 +503,8 @@
 			clk-source = <0>;
 			interrupts = <116 0>, <117 0>, <118 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -509,6 +515,8 @@
 			clk-source = <0>;
 			interrupts = <119 0>, <120 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -519,6 +527,8 @@
 			clk-source = <0>;
 			interrupts = <121 0>, <122 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -529,6 +539,8 @@
 			clk-source = <0>;
 			interrupts = <123 0>, <124 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
