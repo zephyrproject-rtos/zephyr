@@ -1355,10 +1355,8 @@ static int process_set_absolute_volume_rsp(struct bt_avrcp *avrcp, uint8_t tid,
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 	absolute_volume = net_buf_pull_u8(buf);
-	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
-		return BT_AVRCP_STATUS_INVALID_PARAMETER;
-	}
+	/* PTS may respond with bit 7 set in the absolute volume parameter invalid behavior */
+	absolute_volume &= BT_AVRCP_MAX_ABSOLUTE_VOLUME;
 
 	avrcp_ct_cb->set_absolute_volume(get_avrcp_ct(avrcp), tid, status, absolute_volume);
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
@@ -2214,10 +2212,9 @@ static int process_set_absolute_volume_cmd(struct bt_avrcp *avrcp, uint8_t tid,
 	}
 
 	absolute_volume = net_buf_pull_u8(buf);
-	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
-		return BT_AVRCP_STATUS_INVALID_PARAMETER;
-	}
+	/* PTS may Set command with bit 7 set in the absolute volume parameter invalid behavior */
+	absolute_volume &= BT_AVRCP_MAX_ABSOLUTE_VOLUME;
+
 	avrcp_tg_cb->set_absolute_volume(get_avrcp_tg(avrcp), tid, absolute_volume);
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
 }
