@@ -16,7 +16,6 @@ properties:
 
   clock-frequency:
     type: int
-    required: true
     description: HPET timer clock frequency in Hz
 
   no-legacy-irq:
