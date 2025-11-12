@@ -187,6 +187,11 @@ Modem HL78XX
 
   Applications depending on the previous defaults must update their configuration.
 
+Video
+*****
+
+* ``CONFIG_VIDEO_HIMAX_HM01B0`` has been renamed into :kconfig:option:`CONFIG_VIDEO_HM01B0`.
+
 Other subsystems
 ****************
 
