@@ -41,6 +41,11 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+* :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
+  <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
+
 API Changes
 ***********
 
@@ -169,6 +174,11 @@ Libraries / Subsystems
 
 Other notable changes
 *********************
+
+* TF-M was updated to version 2.2.2 (from 2.2.0). The release notes can be found at:
+
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
