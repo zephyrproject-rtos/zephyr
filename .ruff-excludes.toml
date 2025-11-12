@@ -215,10 +215,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "W191",     # https://docs.astral.sh/ruff/rules/tab-indentation
 ]
-"./scripts/build/gen_kobject_placeholders.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
 "./scripts/build/gen_offset_header.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
