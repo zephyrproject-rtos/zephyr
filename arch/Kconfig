@@ -241,6 +241,20 @@ config XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
+config XIP_NOT
+	bool
+	default y
+	depends on !XIP
+	select EXECUTABLE_RAM if (MMU || MPU)
+	help
+	  Helper symbol that forces EXECUTABLE_RAM if !XIP.
+
+config EXECUTABLE_RAM
+	bool "Configure RAM to be executable"
+	depends on (MMU || MPU)
+	default y if LLEXT
+	help
+	  Configure RAM to be executable. Changes the attributes of REGION_RAM_ATTR.
 
 if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
 
