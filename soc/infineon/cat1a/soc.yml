@@ -69,6 +69,7 @@ family:
       cpuclusters:
       - name: m0
       - name: m4
+      - name: m4_dual
     - name: cy8c624aazi_s2d44
     - name: cy8c624afni_s2d43
     - name: cy8c624abzi_s2d04

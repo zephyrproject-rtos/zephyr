@@ -1,8 +1,8 @@
 sample:
-  name: Dual Core Sample for CY8CKIT-062S2-AI-DUAL
+  name: Dual Core Sample for CY8CKIT-062S2-AI
   description: |
-    Dual core sample application for CY8CKIT-062S2-AI-DUAL board.
-    CM0+ core handles button press to toggle LED0 and starts CM4 core.
+    Dual core sample application for CY8CKIT-062S2-AI board.
+    CM0+ core blinks LED0 and starts CM4 core.
     CM4 core blinks LED1 continuously.
 
 common:
@@ -13,9 +13,7 @@ common:
     regex:
       - "Hello from CM0\\+ - Dual Core Sample"
       - "Hello from CM4 - Dual Core Sample"
-      - "CM0\\+ initialized - Button press will toggle LED0"
       - "Starting CM4 core\\.\\.\\."
-      - "CM4 core started - CM0\\+ now handling button/LED0"
       - "CM4 initialized - LED1 will blink continuously"
       - "Button pressed - LED0 toggled to ON"
       - "Button pressed - LED0 toggled to OFF"

@@ -1,9 +1,9 @@
-# CY8CPROTO-062-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit configuration
+# CY8CKIT-062S2-AI PSOC™ 6 Artificial Intelligence Evaluation Kit configuration
 
 # Copyright (c) 2021 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_CY8CKIT_062S2_AI_DUAL
+if BOARD_CY8CKIT_062S2_AI
 
 if WIFI || BT
 
@@ -44,4 +44,4 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 15000 if WIFI
 	default 4096
 
-endif   # BOARD_CY8CKIT_062S2_AI
+endif # BOARD_CY8CKIT_062S2_AI

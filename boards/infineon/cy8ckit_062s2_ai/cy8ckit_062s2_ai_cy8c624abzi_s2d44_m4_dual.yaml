@@ -2,17 +2,16 @@
 # an affiliate of Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: cy8ckit_062s2_ai_dual/cy8c624abzi_s2d44/m0
-name: CY8CKIT-062S2-AI Dual Core (M0+)
+identifier: cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4_dual
+name: CY8CKIT-062S2-AI Dual Core (M4)
 type: mcu
 arch: arm
-ram: 128
-flash: 512
+ram: 892
+flash: 1536
 toolchain:
   - zephyr
 supported:
   - gpio
   - uart
-  - wifi
-  - bluetooth
+  - watchdog
 vendor: infineon
