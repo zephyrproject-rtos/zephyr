@@ -49,6 +49,7 @@ zephyr_library_sources_ifdef(CONFIG_ETH_IVSHMEM eth_ivshmem.c eth_ivshmem_queue.
 zephyr_library_sources_ifdef(CONFIG_ETH_LAN865X eth_lan865x.c oa_tc6.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_LAN9250 eth_lan9250.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_LITEX_LITEETH eth_litex_liteeth.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_MCHP_GMAC_G1 eth_mchp_gmac_g1.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER eth_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NXP_ENET eth_nxp_enet.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NXP_S32_GMAC eth_nxp_s32_gmac.c)

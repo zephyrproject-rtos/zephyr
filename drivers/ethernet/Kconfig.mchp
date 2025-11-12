@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Define menu symbol for configuring ethernet features
+menuconfig ETH_MCHP_GMAC_G1
+	bool "Microchip G1 Ethernet driver"
+	default y
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on DT_HAS_MICROCHIP_GMAC_G1_ETH_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_GMAC_G1_ETH),nvmem-cells)
+	help
+	  Enable Microchip MCU Family Ethernet driver.
+
+if ETH_MCHP_GMAC_G1
+
+config ETH_MCHP_BUF_RX_COUNT
+	int "Network RX buffers preallocated by the SAM ETH driver"
+	default 12
+	help
+	  Number of network buffers that will be permanently allocated by the
+	  Ethernet driver. These buffers are used in receive path. They are
+	  preallocated by the driver and made available to the GMAC module to be
+	  filled in with incoming data. Their number has to be large enough to fit
+	  at least one complete Ethernet frame. SAM ETH driver will always allocate
+	  that amount of buffers for itself thus reducing the NET_BUF_RX_COUNT
+	  which is a total amount of RX data buffers used by the whole networking
+	  stack. One has to ensure that NET_PKT_RX_COUNT is large enough to
+	  fit at least two Ethernet frames: one being received by the GMAC module
+	  and the other being processed by the higher layer networking stack.
+
+config ETH_MCHP_RX_THREAD_STACK_SIZE
+	int "MCHP RX Work thread stack size"
+	default 1600
+	help
+	  RX thread stack size in bytes.
+
+config ETH_MCHP_RX_THREAD_PRIORITY
+	int "MCHP RX work thread priority"
+	default 2
+	help
+	  Ethernet Driver handles RX in thread.
+	  This options sets the priority of that thread.
+
+endif # ETH_MCHP_GMAC_G1
