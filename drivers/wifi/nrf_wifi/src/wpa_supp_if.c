@@ -17,6 +17,7 @@
 #include "common/fmac_util.h"
 #include "wifi_mgmt.h"
 #include "wpa_supp_if.h"
+#include <system/fmac_peer.h>
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
@@ -1103,6 +1104,7 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_umac_chg_sta_info chg_sta_info;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	int ret = -1;
 
@@ -1124,6 +1126,12 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 		goto out;
 	}
 
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL", __func__);
+		goto out;
+	}
+
 	if (vif_ctx_zep->if_op_state != NRF_WIFI_FMAC_IF_OP_STATE_UP) {
 		LOG_DBG("%s: Interface not UP, ignoring", __func__);
 		ret = 0;
@@ -1135,7 +1143,6 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 	memcpy(chg_sta_info.mac_addr, bssid, ETH_ALEN);
 
 	vif_ctx_zep->authorized = authorized;
-
 	if (authorized) {
 		/* BIT(NL80211_STA_FLAG_AUTHORIZED) */
 		chg_sta_info.sta_flags2.nrf_wifi_mask = 1 << 1;
@@ -1151,6 +1158,10 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		ret = -1;
 		goto out;
+	}
+
+	if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_STATION) {
+		sys_dev_ctx->tx_config.peers[0].authorized = authorized;
 	}
 
 	ret = 0;
@@ -2952,8 +2963,11 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_umac_chg_sta_info chg_sta = {0};
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	int peer_id = -1;
 	int ret = -1;
+	char buf[18] = {0};
 
 	if (!if_priv || !addr) {
 		LOG_ERR("%s: Invalid params", __func__);
@@ -2975,17 +2989,45 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 
 	memcpy(chg_sta.mac_addr, addr, sizeof(chg_sta.mac_addr));
 
+	if (!net_eth_is_addr_valid((struct net_eth_addr *)&chg_sta.mac_addr)) {
+		LOG_ERR("%s: Invalid peer MAC address: %s", __func__,
+			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
+						    sizeof(buf)));
+		goto out;
+	}
+
+	peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, chg_sta.mac_addr);
+	if (peer_id == -1) {
+		LOG_ERR("%s: Unknown PEER: %s", __func__,
+			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
+						    sizeof(buf)));
+		goto out;
+	}
+
+	if (peer_id == MAX_PEERS) {
+		LOG_ERR("%s: Invalid PEER (group): %s", __func__,
+			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
+						    sizeof(buf)));
+		goto out;
+	}
+
 	chg_sta.sta_flags2.nrf_wifi_mask = nrf_wifi_sta_flags_to_nrf(flags_or | ~flags_and);
 	chg_sta.sta_flags2.nrf_wifi_set = nrf_wifi_sta_flags_to_nrf(flags_or);
 
 	LOG_DBG("%s %x, %x", __func__,
 		chg_sta.sta_flags2.nrf_wifi_set, chg_sta.sta_flags2.nrf_wifi_mask);
 
-	status = nrf_wifi_sys_fmac_chg_sta(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &chg_sta);
+	status = nrf_wifi_sys_fmac_chg_sta(rpu_ctx_zep->rpu_ctx,
+		vif_ctx_zep->vif_idx, &chg_sta);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		goto out;
 	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+
+	sys_dev_ctx->tx_config.peers[peer_id].authorized =
+		!!(chg_sta.sta_flags2.nrf_wifi_set & NRF_WIFI_STA_FLAG_AUTHORIZED);
 
 	ret = 0;
 
