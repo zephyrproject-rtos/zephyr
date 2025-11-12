@@ -4933,6 +4933,7 @@ TI MSPM0 Platforms:
   status: maintained
   maintainers:
     - ssekar15
+    - d-philpot
   files:
     - soc/ti/mspm0/
     - boards/ti/lp_mspm0g3507/
@@ -5826,6 +5827,7 @@ West:
   maintainers:
     - vaishnavachath
     - ssekar15
+    - d-philpot
   files: []
   labels:
     - "platform: TI"
