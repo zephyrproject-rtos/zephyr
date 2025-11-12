@@ -8,6 +8,7 @@
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
+#include <zephyr/arch/riscv/pmp.h>
 
 /* Checks if the Machine Privilege Register Virtualization (MPRV) bit in mstatus is 1 (enabled). */
 static bool riscv_mprv_is_enabled(void)
@@ -122,6 +123,75 @@ ZTEST(riscv_pmp_memattr_entries, test_dt_pmp_perm_conversion)
 					  DT_MEM_RISCV_TYPE_IO_X);
 	zassert_equal(result, PMP_R | PMP_W | PMP_X, "Expected R|W|X (0x%x), got 0x%x",
 		      PMP_R | PMP_W | PMP_X, result);
+}
+
+ZTEST(riscv_pmp_memattr_entries, test_pmp_change_perm_invalid_permission)
+{
+	/* Invalid permission: 0x08 (bit 3) is outside of R|W|X (0x7) mask */
+	zassert_equal(z_riscv_pmp_change_permissions(0, 0x08), -EINVAL,
+		      "Should return -EINVAL for invalid permission bits.");
+}
+
+ZTEST(riscv_pmp_memattr_entries, test_pmp_change_perm_invalid_region_index)
+{
+	/* region_idx = 2, which is out of bounds */
+	size_t idx = 2;
+
+	zassert_equal(z_riscv_pmp_change_permissions(idx, PMP_R), -EINVAL,
+		      "Should return -EINVAL for region index out of bounds.");
+}
+
+ZTEST(riscv_pmp_memattr_entries, test_successful_permission_change)
+{
+	const uint8_t new_perm = 0x03; /* Read (0x1) | Write (0x2) */
+	const size_t idx = 0;
+
+	zassert_not_equal(new_perm, dt_regions[idx].perm,
+			  "Ensure new permission is different from existing permission");
+
+	int ret = z_riscv_pmp_change_permissions(idx, new_perm);
+
+	dt_regions[idx].perm = new_perm;
+
+	zassert_equal(ret, 0, "Function should return 0 on success.");
+
+	const size_t num_pmpcfg_regs = CONFIG_PMP_SLOTS / sizeof(unsigned long);
+	const size_t num_pmpaddr_regs = CONFIG_PMP_SLOTS;
+
+	unsigned long current_pmpcfg_regs[num_pmpcfg_regs];
+	unsigned long current_pmpaddr_regs[num_pmpaddr_regs];
+
+	/* Read the current PMP configuration from the control registers */
+	z_riscv_pmp_read_config(current_pmpcfg_regs, num_pmpcfg_regs);
+	z_riscv_pmp_read_addr(current_pmpaddr_regs, num_pmpaddr_regs);
+
+	const uint8_t *const current_pmp_cfg_entries = (const uint8_t *)current_pmpcfg_regs;
+
+	for (unsigned int index = 0; index < CONFIG_PMP_SLOTS; ++index) {
+		unsigned long start, end;
+		uint8_t cfg_byte = current_pmp_cfg_entries[index];
+
+		/* Decode the configured PMP region (start and end addresses) */
+		pmp_decode_region(cfg_byte, current_pmpaddr_regs, index, &start, &end);
+
+		/* Compare the decoded region against the list of expected DT regions */
+		for (size_t i = 0; i < ARRAY_SIZE(dt_regions); ++i) {
+			if ((start == dt_regions[i].base) &&
+			    (end == dt_regions[i].base + dt_regions[i].size - 1) &&
+			    ((cfg_byte & 0x07) == dt_regions[i].perm)) {
+
+				dt_regions[i].found = true;
+				break;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(dt_regions); i++) {
+		zassert_true(dt_regions[i].found,
+			     "PMP entry for DT region %zu (base 0x%lx, size 0x%zx, perm 0x%x) not "
+			     "found.",
+			     i + 1, dt_regions[i].base, dt_regions[i].size, dt_regions[i].perm);
+	}
 }
 
 ZTEST_SUITE(riscv_pmp_memattr_entries, NULL, NULL, NULL, NULL, NULL);
