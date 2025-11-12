@@ -50,6 +50,96 @@ Issues fixed
 
 These GitHub issues were addressed since the previous 3.7.1 tagged release:
 
+* :github:`67637` - Telnet shell asserts if connection is closed
+* :github:`72840` - sensor_shell: strange and unexpected output when getting single axis from 3-axis data
+* :github:`75119` - Doc: Graphviz fontcolor switched between light and dark themes
+* :github:`75121` - Doc: Graphviz figures do not use the same font as the documentation
+* :github:`77088` - net: buf: Pre-initialize `user_data` on `net_buf_alloc()`
+* :github:`79042` - net: dns: Out of bounds array access in DNS dispatcher
+* :github:`79066` - STM32 Ethernet stops receiving under heavy load
+* :github:`79805` - Compile error when using networking and SystemView Tracing
+* :github:`80574` - Meta-IRQ does not preempt cooperative threads when woken from IRQ  (cortex_m)
+* :github:`81343` - shell cmd: "devmem load" only works for addresses below 0x80000000
+* :github:`81380` - test: twister: hwmap: missing serial_pty definition
+* :github:`81454` - drivers: rtc: sam: Missing function rtc_sam_validate_tm
+* :github:`81513` - I2C eeprom target does not fully support 16 bit addresses
+* :github:`81570` - ESP32 fails on assert when WiFi enabled (3.7.x LTS)
+* :github:`81777` - Flash API: `flash_erase` has incorrect userspace handler
+* :github:`81781` - posix:fpu: Enabling CONFIG_FPU and CONFIG_FPU_SHARING causes compiler error
+* :github:`82139` - Fix DNS parsing errors
+* :github:`82370` - modem: the UART exchange between the MCU and the modem is disrupted after rebooting the MCU or modem.
+* :github:`82427` - net: lwm2m: Missing mutex unlock in LwM2M Registry
+* :github:`82437` - drivers: flash: flash_mcux_flexspi: since adding support for W25Q512JV, FlexSPI with the W25Q128JV no longer works
+* :github:`82652` - sockets_service: dns: Sockets service calling closed dispatch socket callback causes fatal
+* :github:`82710` - [backport] pm: device_runtime: Fix bitfields misuse
+* :github:`82933` - VFS/ext2: Buffer overflow  in ext2_inode_read
+* :github:`83041` - samples: mgmt: mcumgr: smp_svr: Bluetooth advertising restarted on connection
+* :github:`83331` - spi_mcux_ecspi does not handle gpio chipselect correctly
+* :github:`83332` - spi_mcux_ecspi does not handle transfers with 32 bits.
+* :github:`83354` - log/mpsc_pbuf: logging in spinlock held context can cause recurring exception
+* :github:`83399` - auxdisplay: jhd1313: Out-of-bounds read
+* :github:`83447` - native_posix entropy driver produces very bad entropy for 64 bit targets
+* :github:`83599` - NXP drivers: flash: soc_flash_mcux: CMD_MARGIN_CHECK fails infrequently
+* :github:`83625` - vfs/ext2: Incorrectly calculated nbytes_to_read in ext2_inode_read potentially causing data corruption
+* :github:`83794` - lis2de12 sensor driver giving 0 values
+* :github:`84148` - 3.7: Bluetooth: TBS: TBS client may return NULL instead of the empty string in callbacks
+* :github:`84274` - Shell API unsafe to use outside of command handlers
+* :github:`84306` - drivers: can: tcan4x5x: Build fails/emits warnings when optional reset-gpios property is not supplied in device tree
+* :github:`84384` - RTIO Workqueue - Race condition leads to dead-lock in high-demand applications
+* :github:`84438` - Memory leak with socket() + close() when socket offloading is enabled
+* :github:`84538` - http_server leak RX buffers when zsock_poll fails in http_server_run
+* :github:`84614` - [v3.7-branch] Update MCUboot to include fixes
+* :github:`84737` - eth_stm32_hal: Failed to obtain RX buffer - error makes device unreachable
+* :github:`84842` - STM32WBA: zephyr/drivers/flash/flash_stm32wba_fm.c: flash_stm32_erase: unexpected erase size
+* :github:`84902` - mgmt: mcumgr: grp: img_mgmt: DFU confirmed callback does not check status
+* :github:`84952` - logging: log_cmds: backend ID is wrong for backend(s) that do not autostart
+* :github:`85211` - dts: atmel sam4s: incorrect sram addresses
+* :github:`85301` - Bluetooth: host: missing `NULL` check in `bt_le_create_conn_cancel`
+* :github:`85380` - DHCP address disappears when TCP socket is closed.
+* :github:`85521` - Issue with User-Defined Payload Transmission Over SMP: Payload Length Calculation and Memory Address Handling
+* :github:`85674` - net: ipv6: Neigbor reachablity detection is not compliant with RFC 4861
+* :github:`85759` - RTIO Workqueue does not work during Device Initialization (POST_KERNEL)
+* :github:`85816` - tests: tests/net/conn_mgr_monitor/net.conn_mgr.dad failed with W5500
+* :github:`86116` - soc: NXP: RW61x: SystemCoreClock frequency incorrect
+* :github:`86499` - net: Critical Mutex Deadlock
+* :github:`86954` - sample.smf.hsm_psicc2 is flaky on SMP platforms
+* :github:`87323` - Network buffer leak if sending IPv4 TTL 0 or IPv6 hop limit 0 packets
+* :github:`87947` - Check possible recursion when parsing DNS response
+* :github:`88047` - __nocache section conflicts with __ramfunc on stm32h750
+* :github:`88229` - mbedtls: update to 3.6.3 in 3.7 branch
+* :github:`88233` - net: coap_client library asserts on boot
+* :github:`88328` - Using I/O pads sourced from VHIF without enabling the eSPI or SHI drivers may lead to issues
+* :github:`88506` - stm32: STM32 I2C LL Driver: Stuck in an infinite loop when SDA/SCL is short-circuited
+* :github:`88558` - disco_l475_iot1/arduino_r3_connector.dtsi arduino_i2c should be i2c1
+* :github:`88694` - mgmt: ec_host_cmd: npcx: add workaround for backend SHI
+* :github:`88946` - driver: timer: npcx: fix timer accuracy issue
+* :github:`89331` - Many threads locking two mutexes can cause a crash
+* :github:`89349` - Flash Map: Bounds checking not immune to integer overflow
+* :github:`89413` - Zephyr SPDX does not pass validation
+* :github:`89641` - net: dhcp: current DHCP client implementation does not follow RFC2131 and RFC2132
+* :github:`89984` - drivers: watchdog: npcx: fix T0 timer reload procedure
+* :github:`89990` - STM32: USB: USB CDC IN Endpoint stuck forever after receiving Clear feature - endpoint halt request
+* :github:`90103` - http_server: Wildcard resource matching reports incorrect path length
+* :github:`90655` - LE-Audio: BAP scan delegator does not send further notifications after add source or modify source are rejected by application layer
+* :github:`90688` - coap_resource_parse_observe returns 0 (register) instead of 1 (deregister) upon a deregister of an unknown observer
+* :github:`90777` - arch.shared_interrupt.lto.speed compile fail on apollo5 platform
+* :github:`90784` - drivers: flash: npcx: add k_usleep when polling busy status
+* :github:`90989` - gpio: gpio_adp5585_gpio incorrect gpio gaps handling
+* :github:`91360` - [v3.7-branch] Update MCUboot with fixes from 2.2.0 release
+* :github:`91799` - Docs version switcher always displays "v: latest"
+* :github:`92243` - tls_credentials.h is not found when building ES-Wifi with CONFIG_TLS_CREDENTIALS (v3.7 branch)
+* :github:`92413` - Issue with thread suspension in zephyr 3.7.1
+* :github:`92557` - ARC: nsim/nsim_vpx5 applications fail to execute on nsimdrv
+* :github:`92764` - [ARC][Userspace][v3.7.1] Regression: User threads fail to run with user space enabled (MW toolchain)
+* :github:`93790` - drivers: console: posix_arch_console: build warning with `CONFIG_PRINTK=n`
+* :github:`94000` - EXT2 fs_stat on mount point fails with a NULL pointer dereference.
+* :github:`94925` - mbedtls: update to 3.6.4 in 3.7 branch
+* :github:`95297` - Links to the pyOCD repository are outdated
+* :github:`95787` - Backport fixes to MCUboot for zephyr v3.7
+* :github:`95850` - Applications do not watch MCUboot key file for changes
+* :github:`96172` - Backport #95101 (arch: arm: switch to privilege stack in SVC handler)
+* :github:`97304` - Backport #96850 (arch: arm: start threads on privileged stack)
+
 Mbed TLS
 ********
 
