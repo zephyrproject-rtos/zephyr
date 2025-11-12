@@ -359,7 +359,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: 87b08682a111ebb085cd8b1ea41d603191d6d146
+      revision: afeed6ed87146d9828e0ff862f3533790df8c421
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
@@ -370,7 +370,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: a90702bcb8fadb6f70daf0ffbb13888dfe63fc99
+      revision: cde5b6ed540d3ff5a09564fded6b39b0a70ad3bf
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
@@ -380,7 +380,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: c2f9edc77f72838e7d6f5f9c0b95e4318ddfced1
+      revision: 9889df41022c6679b71da55d93f9e3693a804976
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
