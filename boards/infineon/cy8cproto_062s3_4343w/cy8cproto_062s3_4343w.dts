@@ -1,0 +1,134 @@
+/*
+ * Copyright (c) 2021 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/cat1a/mpns/CY8C6245LQI_S3D72.dtsi>
+#include <infineon/cat1a/system_clocks.dtsi>
+#include "cy8cproto_062s3_4343w-common.dtsi"
+#include "cy8cproto_062s3_4343w-pinctrl.dtsi"
+
+/ {
+	model = "cy8cproto_062s3_4343w with an Cypress PSOC™ 6 SoC";
+	compatible = "cypress,cy8cproto_062s3_4343w", "cypress,PSOC6";
+
+	aliases {
+		uart-1 = &uart1;
+		i2c-0 = &i2c6;
+		sdhc0 = &sdhc0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+
+uart1: &scb1 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p10_1_scb1_uart_tx &p10_0_scb1_uart_rx>;
+	pinctrl-names = "default";
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+
+	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+	 * as the default baudrate defined in CYW43xx firmware (default 115200).
+	 */
+	current-speed = <115200>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p9_2_scb2_uart_rts &p9_3_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		murata-1dx {
+			status = "okay";
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
+
+			/* Configuration UART speeds for firmware download (fw-download-speed)
+			 * and HCI operation (hci-operation-speed).
+			 * If hci-operation-speed or fw-download-speed are not defined in
+			 * bt-hci{...} node, cyw43xx driver will use bus/current-speed as
+			 * default speed.
+			 */
+			fw-download-speed = <3000000>;
+		};
+	};
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
+		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+	pinctrl-names = "default";
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* System clock configuration */
+&fll0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&clk_hf0 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+};
+
+/* CM4 core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_fast clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_fast {
+	clock-div = <1>;
+};
+
+/* CM0+ core clock = 50MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_slow clock-div = 100MHz / 1 / 2 = 50MHz
+ */
+&clk_slow {
+	clock-div = <2>;
+};
+
+/* PERI core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_peri clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_peri {
+	clock-div = <1>;
+};
+
+i2c6: &scb6 {
+	compatible = "infineon,cat1-i2c";
+
+	/* I2C pins */
+	pinctrl-0 = <&p6_4_scb6_i2c_scl &p6_5_scb6_i2c_sda>;
+	pinctrl-names = "default";
+};
+

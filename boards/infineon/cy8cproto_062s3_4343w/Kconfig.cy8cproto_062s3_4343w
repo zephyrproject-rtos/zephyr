@@ -1,0 +1,14 @@
+# CY8CPROTO-062-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit
+
+# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CPROTO_062S3_4343W
+	select SOC_CY8C6245LQI_S3D72
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+    int "Additional heap size for this board"
+    default 4096
+    help
+      Extra heap bytes added on top of the base configuration.
+      Increased when Wi-Fi is enabled to accommodate network stacks.
