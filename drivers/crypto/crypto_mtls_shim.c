@@ -231,9 +231,6 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	apkt->pkt->out_len = apkt->pkt->in_len;
-	apkt->pkt->out_len += ctx->mode_params.ccm_info.tag_len;
-
 	return 0;
 }
 
@@ -289,9 +286,6 @@ static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 		LOG_ERR("Could not decrypt/auth (%d)", ret);
 		return -EINVAL;
 	}
-
-	apkt->pkt->out_len = apkt->pkt->in_len;
-	apkt->pkt->out_len += ctx->mode_params.gcm_info.tag_len;
 
 	return 0;
 }
