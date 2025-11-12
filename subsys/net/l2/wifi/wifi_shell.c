@@ -3722,6 +3722,112 @@ static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *arg
 	PR("P2P find stopped\n");
 	return 0;
 }
+
+static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	const char *method_arg = NULL;
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"go-intent", sys_getopt_required_argument, 0, 'g'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"join", sys_getopt_no_argument, 0, 'j'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}
+	};
+	long val;
+
+	context.sh = sh;
+
+	if (argc < 3) {
+		PR_ERROR("Usage: wifi p2p connect <MAC address> <pbc|pin> [PIN] "
+			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join]\n");
+		return -EINVAL;
+	}
+
+	/* Parse MAC address */
+	if (sscanf(argv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		   &mac_addr[0], &mac_addr[1], &mac_addr[2],
+		   &mac_addr[3], &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+		PR_ERROR("Invalid MAC address format. Use: XX:XX:XX:XX:XX:XX\n");
+		return -EINVAL;
+	}
+	memcpy(params.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+
+	method_arg = argv[2];
+	if (strcmp(method_arg, "pbc") == 0) {
+		params.connect.method = WIFI_P2P_METHOD_PBC;
+	} else if (strcmp(method_arg, "pin") == 0) {
+		if (argc > 3 && argv[3][0] != '-') {
+			params.connect.method = WIFI_P2P_METHOD_KEYPAD;
+			strncpy(params.connect.pin, argv[3], WIFI_WPS_PIN_MAX_LEN);
+			params.connect.pin[WIFI_WPS_PIN_MAX_LEN] = '\0';
+		} else {
+			params.connect.method = WIFI_P2P_METHOD_DISPLAY;
+			params.connect.pin[0] = '\0';
+		}
+	} else {
+		PR_ERROR("Invalid connection method. Use: pbc or pin\n");
+		return -EINVAL;
+	}
+
+	/* Set default GO intent */
+	params.connect.go_intent = 0;
+	/* Set default frequency to 2462 MHz (channel 11, 2.4 GHz) */
+	params.connect.freq = 2462;
+	/* Set default join to false */
+	params.connect.join = false;
+
+	while ((opt = sys_getopt_long(argc, argv, "g:f:ji:h", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'g':
+			if (!parse_number(sh, &val, state->optarg, "go-intent", 0, 15)) {
+				return -EINVAL;
+			}
+			params.connect.go_intent = (uint8_t)val;
+			break;
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.connect.freq = (unsigned int)val;
+			break;
+		case 'j':
+			params.connect.join = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'h':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	params.oper = WIFI_P2P_CONNECT;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P connect request failed\n");
+		return -ENOEXEC;
+	}
+
+	/* Display the generated PIN for DISPLAY method */
+	if (params.connect.method == WIFI_P2P_METHOD_DISPLAY && params.connect.pin[0] != '\0') {
+		PR("%s\n", params.connect.pin);
+	} else {
+		PR("P2P connection initiated\n");
+	}
+	return 0;
+}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
@@ -4452,6 +4558,25 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<MAC address>: Show detailed info for specific peer (format: XX:XX:XX:XX:XX:XX)\n"
 		      "[-i, --iface=<interface index>]: Interface index\n",
 		      cmd_wifi_p2p_peer, 1, 3),
+	SHELL_CMD_ARG(connect, NULL,
+		      "Connect to a P2P peer\n"
+		      "Usage: connect <MAC address> <pbc|pin> [PIN] [options]\n"
+		      "<MAC address>: Peer device MAC address (format: XX:XX:XX:XX:XX:XX)\n"
+		      "<pbc>: Use Push Button Configuration\n"
+		      "<pin>: Use PIN method\n"
+		      "  - Without PIN: Device displays generated PIN for peer to enter\n"
+		      "  - With PIN: Device uses provided PIN to connect\n"
+		      "[PIN]: 8-digit PIN (optional, generates if omitted)\n"
+		      "[-g, --go-intent=<0-15>]: GO intent (0=client, 15=GO, default: 0)\n"
+		      "[-f, --freq=<frequency>]: Frequency in MHz (default: 2462)\n"
+		      "[-j, --join]: Join an existing group (as a client) instead of starting GO negotiation\n"
+		      "[-i, --iface=<interface index>]: Interface index\n"
+		      "[-h, --help]: Show help\n"
+		      "Examples:\n"
+		      "  wifi p2p connect 9c:b1:50:e3:81:96 pin -g 0  (displays PIN)\n"
+		      "  wifi p2p connect 9c:b1:50:e3:81:96 pin 12345670 -g 0  (uses PIN)\n"
+		      "  wifi p2p connect f4:ce:36:01:00:38 pbc --join  (join existing group)\n",
+		      cmd_wifi_p2p_connect, 3, 6),
 	SHELL_SUBCMD_SET_END
 );
 
