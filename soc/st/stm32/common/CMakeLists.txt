@@ -3,8 +3,8 @@
 zephyr_include_directories(.)
 
 zephyr_sources(
-	stm32cube_hal.c
-	soc_config.c
+  stm32cube_hal.c
+  soc_config.c
 )
 
 if(DEFINED CONFIG_STM32_CCM)
