@@ -14,7 +14,6 @@
 
 #define UPDATE_INTERVAL_S 10
 
-static const struct device *const clock0 = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 static const struct device *const timer0 = DEVICE_DT_GET(DT_NODELABEL(timer0));
 static struct timeutil_sync_config sync_config;
 static uint64_t counter_ref;
@@ -100,14 +99,18 @@ static void show_clocks(const char *tag)
 	enum clock_control_status clkstat;
 	bool running;
 
-	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK,
-				       &src.lf);
+	clkstat = clock_control_get_status(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
+	running = nrfx_clock_lfclk_running_check(&src.lf);
 	printk("%s: LFCLK[%s]: %s %s ; ", tag, clkstat_s[clkstat],
 	       running ? "Running" : "Off", lfsrc_s[src.lf]);
-	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_HFCLK,
-				       &src.hf);
+	clkstat = clock_control_get_status(DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+									 (nordic_nrf_clock_hfclk),
+									 (nordic_nrf_clock_xo))),
+					   NULL);
+
+	running = COND_CODE_1((NRF_CLOCK_HAS_HFCLK), 
+			      (nrfx_clock_hfclk_running_check),
+			      (nrfx_clock_xo_running_check))(&src.hf);
 	printk("HFCLK[%s]: %s %s\n", clkstat_s[clkstat],
 	       running ? "Running" : "Off", hfsrc_s[src.hf]);
 }
@@ -196,19 +199,22 @@ static void sync_work_handler(struct k_work *work)
 
 int main(void)
 {
+	struct device *clock = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+							     (nordic_nrf_clock_hfclk),
+							     (nordic_nrf_clock_xo)));
 	uint32_t top;
 	int rc;
 
 	/* Grab the clock driver */
-	if (!device_is_ready(clock0)) {
-		printk("%s: device not ready.\n", clock0->name);
+	if (!device_is_ready(clock)) {
+		printk("%s: device not ready.\n", clock->name);
 		return 0;
 	}
 
 	show_clocks("Power-up clocks");
 
 	if (IS_ENABLED(CONFIG_APP_ENABLE_HFXO)) {
-		rc = clock_control_on(clock0, CLOCK_CONTROL_NRF_SUBSYS_HF);
+		rc = clock_control_on(clock, NULL);
 		printk("Enable HFXO got %d\n", rc);
 	}
 

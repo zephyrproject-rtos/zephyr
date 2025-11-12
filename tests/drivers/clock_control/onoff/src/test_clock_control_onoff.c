@@ -16,11 +16,13 @@ LOG_MODULE_REGISTER(test);
 
 static bool clock_is_off(void)
 {
-	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+								       (nordic_nrf_clock_hfclk),
+								       (nordic_nrf_clock_xo)));
 
 	zassert_true(device_is_ready(clk), "Device is not ready");
 
-	return clock_control_get_status(clk, CLOCK_CONTROL_NRF_SUBSYS_HF) ==
+	return clock_control_get_status(clk, NULL) ==
 			CLOCK_CONTROL_STATUS_OFF;
 }
 
