@@ -115,6 +115,22 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 0x4000>;
+			interrupts = <46 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 0x4000>;
+			interrupts = <47 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO2>;
+			status = "disabled";
+		};
+
 		flexspi: spi@425e0000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x425e0000 0x4000>, <0x28000000 DT_SIZE_M(128)>;
