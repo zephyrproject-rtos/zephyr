@@ -295,7 +295,7 @@ ili9xxx_set_pixel_format(const struct device *dev,
 	uint8_t tx_data;
 	uint8_t bytes_per_pixel;
 
-	if (pixel_format == PIXEL_FORMAT_RGB_565) {
+	if (pixel_format == PIXEL_FORMAT_RGB_565  || pixel_format == PIXEL_FORMAT_BGR_565) {
 		bytes_per_pixel = 2U;
 		tx_data = ILI9XXX_PIXSET_MCU_16_BIT | ILI9XXX_PIXSET_RGB_16_BIT;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
@@ -324,7 +324,8 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	uint8_t tx_data = ILI9XXX_MADCTL_BGR;
+	uint8_t tx_data = config->pixel_format == PIXEL_FORMAT_BGR_565
+			? ILI9XXX_MADCTL_BGR : 0;
 	if (config->quirks->cmd_set == CMD_SET_1) {
 		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 			tx_data |= ILI9XXX_MADCTL_MX;
@@ -368,7 +369,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_BGR_565;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -394,6 +395,8 @@ static int ili9xxx_configure(const struct device *dev)
 	/* pixel format */
 	if (config->pixel_format == ILI9XXX_PIXEL_FORMAT_RGB565) {
 		pixel_format = PIXEL_FORMAT_RGB_565;
+	} else if (config->pixel_format == ILI9XXX_PIXEL_FORMAT_BGR565) {
+		pixel_format = PIXEL_FORMAT_BGR_565;
 	} else {
 		pixel_format = PIXEL_FORMAT_RGB_888;
 	}
@@ -511,7 +514,7 @@ static const struct ili9xxx_quirks ili9340_quirks = {
 
 #ifdef CONFIG_ILI9341
 static const struct ili9xxx_quirks ili9341_quirks = {
-	.cmd_set = CMD_SET_1,
+	.cmd_set = CMD_SET_2,
 };
 #endif
 
