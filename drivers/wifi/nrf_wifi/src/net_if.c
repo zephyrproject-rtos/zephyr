@@ -25,6 +25,7 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 #include "util.h"
 #include "common/fmac_util.h"
+#include "system/fmac_peer.h"
 #include "shim.h"
 #include "fmac_main.h"
 #include "wpa_supp_if.h"
@@ -388,6 +389,8 @@ int nrf_wifi_if_send(const struct device *dev,
 	struct rpu_host_stats *host_stats = NULL;
 	void *nbuf = NULL;
 	bool locked = false;
+	unsigned char *ra = NULL;
+	int peer_id = -1;
 
 	if (!dev || !pkt) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -436,12 +439,20 @@ int nrf_wifi_if_send(const struct device *dev,
 						      nbuf);
 	} else {
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
+
+		ra = nrf_wifi_util_get_ra(sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx], nbuf);
+		peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, ra);
+		if (peer_id == -1) {
+			nrf_wifi_osal_log_err("%s: Invalid peer",
+				      __func__);
+			goto out;
+		}
+
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
-		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
+		    (!sys_dev_ctx->tx_config.peers[peer_id].authorized && !is_eapol(pkt))) {
 			ret = -EPERM;
 			goto drop;
 		}
-
 		ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx,
 					       vif_ctx_zep->vif_idx,
 					       nbuf);
