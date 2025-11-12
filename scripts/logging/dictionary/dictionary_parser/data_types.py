@@ -14,6 +14,7 @@ import struct
 
 class DataTypes:
     """Class regarding data types, their alignments and sizes"""
+
     INT = 0
     UINT = 1
     LONG = 2
@@ -47,14 +48,13 @@ class DataTypes:
         self.add_data_type(self.DOUBLE, "d")
         self.add_data_type(self.LONG_DOUBLE, "d")
 
-
     @staticmethod
     def get_stack_min_align(arch, is_tgt_64bit):
         '''
         Correspond to the VA_STACK_ALIGN and VA_STACK_MIN_ALIGN
         in cbprintf_internal.h. Note that there might be some
-	variations that is obtained via actually running through
-	the log parser.
+        variations that is obtained via actually running through
+        the log parser.
 
         Return a tuple where the first element is stack alignment
         value. The second element is true if alignment needs to
@@ -102,7 +102,6 @@ class DataTypes:
 
         return (stack_min_align, need_further_align)
 
-
     @staticmethod
     def get_data_type_align(data_type, is_tgt_64bit):
         '''
@@ -120,7 +119,6 @@ class DataTypes:
             align = 4
 
         return align
-
 
     def add_data_type(self, data_type, fmt):
         """Add one data type"""
@@ -158,30 +156,25 @@ class DataTypes:
         # 'stack_align' should correspond to VA_STACK_ALIGN
         # in cbprintf_internal.h
         stack_align, need_more_align = DataTypes.get_stack_min_align(
-                                        self.database.get_arch(),
-                                        self.database.is_tgt_64bit())
+            self.database.get_arch(), self.database.is_tgt_64bit()
+        )
 
         if need_more_align:
-            stack_align = DataTypes.get_data_type_align(data_type,
-                                                        self.database.is_tgt_64bit())
+            stack_align = DataTypes.get_data_type_align(data_type, self.database.is_tgt_64bit())
 
         self.data_types[data_type]['stack_align'] = stack_align
-
 
     def get_sizeof(self, data_type):
         """Get sizeof() of a data type"""
         return self.data_types[data_type]['sizeof']
 
-
     def get_alignment(self, data_type):
         """Get the alignment of a data type"""
         return self.data_types[data_type]['align']
 
-
     def get_stack_alignment(self, data_type):
         """Get the stack alignment of a data type"""
         return self.data_types[data_type]['stack_align']
-
 
     def get_formatter(self, data_type):
         """Get the formatter for a data type"""
