@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip GMAC Ethernet binding
+
+  Group G1 Ethernet driver supports following hardware peripherals:
+    - module name="GMAC" id="U2005" version="1.0.0"
+
+  The MDIO bus is provided by this device and is used to communicate
+  with Ethernet PHY.
+
+compatible: "microchip,gmac-g1-eth"
+
+include:
+  - name: ethernet-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  phy-handle:
+    required: true
+
+  num-queues:
+    type: int
+    required: true
+    description: |
+      Number of hardware TX and RX queues.
+      Range: 1 - 8
+
+  phy-connection-type:
+    default: "rmii"
+
+  clocks:
+    type: phandle-array
+
+examples:
+  - |
+    &gmac {
+      compatible = "microchip,gmac-g1-eth";
+      interrupts = <84 0>;
+      interrupt-names = "gmac";
+      num-queues = <1>;
+    };
