@@ -203,18 +203,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/build/gen_kobject_list.py" = [
-    "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "W191",     # https://docs.astral.sh/ruff/rules/tab-indentation
-]
 "./scripts/build/gen_offset_header.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
