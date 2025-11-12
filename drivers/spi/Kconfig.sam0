@@ -8,6 +8,14 @@ config SPI_SAM0
 	default y
 	depends on DT_HAS_ATMEL_SAM0_SPI_ENABLED
 	select PINCTRL
-	select DMA if SPI_ASYNC
 	help
 	  Enable support for the SAM0 SERCOM SPI driver.
+
+config SPI_SAM0_DMA
+	bool "Atmel SAM0 dma support"
+	default y
+	depends on SPI_SAM0
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ATMEL_SAM0_SPI),dmas)
+	select DMA
+	help
+	  Enable DMA-based data transfers for the Atmel SAM0 SPI driver.
