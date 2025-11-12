@@ -1098,6 +1098,44 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
+static void bt_hfp_ag_check_ind_value(struct bt_hfp_ag *ag, uint8_t ind)
+{
+	if ((ag_ind[ind].max < ag->indicator_value[ind]) ||
+	    (ag_ind[ind].min > ag->indicator_value[ind])) {
+		LOG_WRN("Invalid value of indicator[%u] %u", ind, ag->indicator_value[ind]);
+		ag->indicator_value[ind] = 0;
+	}
+}
+
+static void bt_hfp_ag_get_ind_values(struct bt_hfp_ag *ag)
+{
+	int err;
+
+	if ((bt_ag == NULL) || (bt_ag->get_indicator_value == NULL)) {
+		LOG_DBG("No indicator value retrieval method available");
+		return;
+	}
+
+	if (ag->state == BT_HFP_CONNECTED) {
+		LOG_ERR("Only works during SLC establishment phase");
+		return;
+	}
+
+	err = bt_ag->get_indicator_value(ag, &ag->indicator_value[BT_HFP_AG_SERVICE_IND],
+					 &ag->indicator_value[BT_HFP_AG_SIGNAL_IND],
+					 &ag->indicator_value[BT_HFP_AG_ROAM_IND],
+					 &ag->indicator_value[BT_HFP_AG_BATTERY_IND]);
+	if (err != 0) {
+		LOG_DBG("No indicator value call retrieved");
+		return;
+	}
+
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_SERVICE_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_SIGNAL_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_ROAM_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_BATTERY_IND);
+}
+
 static int bt_hfp_ag_get_ongoing_calls(struct bt_hfp_ag *ag)
 {
 	int err;
@@ -1229,6 +1267,8 @@ static int bt_hfp_ag_cind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			ag_ind[BT_HFP_AG_BATTERY_IND].min, ag_ind[BT_HFP_AG_BATTERY_IND].connector,
 			ag_ind[BT_HFP_AG_BATTERY_IND].max);
 	} else {
+		bt_hfp_ag_get_ind_values(ag);
+
 		err = bt_hfp_ag_get_ongoing_calls(ag);
 		if (err != 0) {
 			err = bt_hfp_ag_notify_cind_value(ag);

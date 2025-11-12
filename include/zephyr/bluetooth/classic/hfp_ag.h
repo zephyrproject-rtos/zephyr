@@ -147,6 +147,41 @@ struct bt_hfp_ag_cb {
 	 */
 	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
 
+	/** Get indicator values callback
+	 *
+	 *  If this callback is provided it will be called whenever the AG needs to provide current
+	 *  indicator values to the HF.
+	 *  This typically occurs when the HF sends `AT+CIND?` command to query the current status
+	 *  of AG indicators.
+	 *
+	 *  The application should populate the indicator values through the provided pointers. All
+	 *  indicator values should be set according to the current status of the AG.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param service Pointer to store service availability indicator value.
+	 *                 0 = service is not available, 1 = service is available.
+	 *  @param strength Pointer to store signal strength indicator value.
+	 *                Range: 0-5 (0 = no signal, 5 = maximum signal).
+	 *  @param roam Pointer to store roaming status indicator value.
+	 *              0 = not roaming, 1 = roaming.
+	 *  @param battery Pointer to store battery level indicator value.
+	 *                 Range: 0-5 (0 = battery exhausted, 5 = battery full).
+	 *
+	 *  @note The AG is in SLC establishment phase. The AG callback `connected()` is not
+	 *        notified at this time.
+	 *
+	 *  @note If the callback is not provided by the application or the returned error is no
+	 *        zero, the value of these all indicators will be set to 0 by default. And the
+	 *        specific can be set and notified by calling the dedicated function. Such as
+	 *        `service availability indicator value` can be set by calling the function
+	 *        `bt_hfp_ag_service_availability()`. The `signal strength value` can be set
+	 *        by calling `bt_hfp_ag_signal_strength()`, and so on.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*get_indicator_value)(struct bt_hfp_ag *ag, uint8_t *service, uint8_t *strength,
+				   uint8_t *roam, uint8_t *battery);
+
 	/** Get ongoing call information Callback
 	 *
 	 *  If this callback is provided it will be called whenever the AT command `AT+CIND?` is
