@@ -21,6 +21,20 @@ include:
       - t-exit-dpd
 
 properties:
+  chip-family:
+    type: string
+    description: |
+      Some flash chips need special handling in certain aspects, for example,
+      to be configured properly at initialization. This property determines
+      what specific routines need to be used for the flash chip. If not set,
+      only generic handling is used.
+    enum:
+      - "mxicy,mx25r"
+      - "mxicy,mx25um"
+      - "mxicy,mx25uw"
+      - "mxicy,mx66um"
+      - "mxicy,mx66uw"
+
   reset-gpios:
     type: phandle-array
     description: |
