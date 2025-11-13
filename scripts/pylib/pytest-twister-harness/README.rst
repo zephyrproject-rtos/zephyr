@@ -26,6 +26,9 @@ Run exemplary test shell application by Twister:
   # hardware
   ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-serial /dev/ttyACM0 -T samples/subsys/testsuite/pytest/shell
 
+  # hardware over RTT
+  ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-rtt -T samples/subsys/testsuite/pytest/shell --test sample.pytest.rtt
+
 or build shell application by west and call pytest directly:
 
 .. code-block:: sh
@@ -45,3 +48,7 @@ or build shell application by west and call pytest directly:
   # hardware
   west build -p -b nrf52840dk/nrf52840
   pytest --twister-harness --device-type=hardware --device-serial=/dev/ttyACM0 --build-dir=build -p twister_harness.plugin
+
+  # hardware over RTT
+  west build -p -b nrf52840dk/nrf52840 . -T sample.pytest.rtt
+  pytest --twister-harness --device-type=hardware --device-rtt=True --build-dir=build -p twister_harness.plugin
