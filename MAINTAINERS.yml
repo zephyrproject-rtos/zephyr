@@ -1135,12 +1135,13 @@ Disk:
     - drivers.disk
 
 Display drivers:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - JarmouniA
   collaborators:
     - jfischer-no
     - danieldegrasse
     - VynDragon
-    - jarmouniA
   files:
     - drivers/display/
     - dts/bindings/display/
