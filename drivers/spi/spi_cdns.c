@@ -503,6 +503,7 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
  */
 static void spi_cdns_isr(const struct device *dev)
 {
+	const struct spi_cdns_cfg *dev_config = dev->config;
 	struct spi_cdns_data *data = dev->data;
 	int32_t int_status;
 	int error = 0;
@@ -531,6 +532,13 @@ static void spi_cdns_isr(const struct device *dev)
 			k_busy_wait(10);
 		}
 		spi_cdns_pull_data(dev);
+
+		/* Set threshold to one if transfer length
+		 * is less than half FIFO depth
+		 */
+		if (data->tx_remain_entry < dev_config->tx_fifo_depth >> 1) {
+			sys_write32(1, SPI_REG(dev, SPI_TX_THRESHOLD));
+		}
 	}
 
 	if (!spi_context_tx_buf_on(&data->ctx) && !spi_context_rx_buf_on(&data->ctx)) {
@@ -617,6 +625,7 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			       bool asynchronous, spi_callback_t cb, void *userdata)
 {
+	const struct spi_cdns_cfg *dev_config = dev->config;
 	struct spi_cdns_data *data = dev->data;
 	uint32_t dfs;
 	int ret;
@@ -663,6 +672,13 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 		goto out;
 	}
 
+	/* Set slave TX fifo threshold */
+	if (spi_context_is_slave(&data->ctx) && data->tx_remain_entry > dev_config->tx_fifo_depth) {
+		/* Set TX threshold to half FIFO depth
+		 * when transfer size exceeds FIFO depth
+		 */
+		sys_write32(dev_config->tx_fifo_depth >> 1, SPI_REG(dev, SPI_TX_THRESHOLD));
+	}
 	if (spi_cs_is_gpio(data->ctx.config)) {
 		spi_context_cs_control(&data->ctx, true);
 	} else {
