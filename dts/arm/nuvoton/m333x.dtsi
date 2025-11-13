@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/numaker_m333x_clock.h>
 #include <zephyr/dt-bindings/reset/numaker_m333x_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -237,6 +238,42 @@
 				  NUMAKER_CLK_CLKDIV1_CANFD1(1)>;
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@40080000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40080000 0x1000>;
+			interrupts = <38 0>;
+			resets = <&rst NUMAKER_I2C0_RST>;
+			clocks = <&pcc NUMAKER_I2C0_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c1: i2c@40081000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40081000 0x1000>;
+			interrupts = <39 0>;
+			resets = <&rst NUMAKER_I2C1_RST>;
+			clocks = <&pcc NUMAKER_I2C1_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c2: i2c@40082000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40082000 0x1000>;
+			interrupts = <82 0>;
+			resets = <&rst NUMAKER_I2C2_RST>;
+			clocks = <&pcc NUMAKER_I2C2_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		rtc: rtc@40041000 {
