@@ -32,6 +32,10 @@ config SOC_MSPM0G1507
 	bool
 	select SOC_SERIES_MSPM0G
 
+config SOC_MSPM0G1518
+	bool
+	select SOC_SERIES_MSPM0G
+
 config SOC_MSPM0G1519
 	bool
 	select SOC_SERIES_MSPM0G
@@ -60,6 +64,10 @@ config SOC_MSPM0G3507
 	bool
 	select SOC_SERIES_MSPM0G
 
+config SOC_MSPM0G3518
+	bool
+	select SOC_SERIES_MSPM0G
+
 config SOC_MSPM0G3519
 	bool
 	select SOC_SERIES_MSPM0G
@@ -74,6 +82,7 @@ config SOC
 	default "mspm0g1505" if SOC_MSPM0G1505
 	default "mspm0g1506" if SOC_MSPM0G1506
 	default "mspm0g1507" if SOC_MSPM0G1507
+	default "mspm0g1518" if SOC_MSPM0G1518
 	default "mspm0g1519" if SOC_MSPM0G1519
 	default "mspm0g3105" if SOC_MSPM0G3105
 	default "mspm0g3106" if SOC_MSPM0G3106
@@ -81,4 +90,5 @@ config SOC
 	default "mspm0g3505" if SOC_MSPM0G3505
 	default "mspm0g3506" if SOC_MSPM0G3506
 	default "mspm0g3507" if SOC_MSPM0G3507
+	default "mspm0g3518" if SOC_MSPM0G3518
 	default "mspm0g3519" if SOC_MSPM0G3519
