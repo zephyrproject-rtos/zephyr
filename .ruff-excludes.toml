@@ -1138,7 +1138,6 @@
 
 [format]
 exclude = [
-    "./arch/x86/gen_gdt.py",
     "./arch/x86/gen_idt.py",
     "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
