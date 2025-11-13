@@ -10,6 +10,12 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <errno.h>
 #include <stdio.h>
 
+#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/socket.h>
+
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_if.h>
