@@ -752,7 +752,22 @@ class DeviceHandler(Handler):
             timeout = 30
             if script_param:
                 timeout = script_param.get("pre_script_timeout", timeout)
-            self.run_custom_script(pre_script, timeout)
+                pre_script_args = script_param.get("pre_script_arg", [])
+
+                if isinstance(pre_script_args, str):
+                    pre_script_args = [pre_script_args]
+                elif not isinstance(pre_script_args, (list | tuple)):
+                    pre_script_args = []
+            else:
+                pre_script_args = []
+
+            pre_cmd = [pre_script]
+            if pre_script_args:
+                pre_cmd.extend(pre_script_args)
+
+            # Preserve original behavior when no args
+            cmd_to_call = pre_cmd[0] if len(pre_cmd) == 1 else pre_cmd
+            self.run_custom_script(cmd_to_call, timeout)
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
@@ -822,8 +837,22 @@ class DeviceHandler(Handler):
         if post_flash_script:
             timeout = 30
             if script_param:
-                timeout = script_param.get("post_flash_timeout", timeout)
-            self.run_custom_script(post_flash_script, timeout)
+                timeout = script_param.get("post_flash_script_timeout", timeout)
+                post_flash_script_args = script_param.get("post_flash_script_arg", [])
+                if isinstance(post_flash_script_args, str):
+                    post_flash_script_args = [post_flash_script_args]
+                elif not isinstance(post_flash_script_args, (list | tuple)):
+                    post_flash_script_args = []
+
+            else:
+                post_flash_script_args = []
+
+            post_flash_cmd = [post_flash_script]
+            if post_flash_script_args:
+                post_flash_cmd.extend(post_flash_script_args)
+
+            cmd_to_call = post_flash_cmd[0] if len(post_flash_cmd) == 1 else post_flash_cmd
+            self.run_custom_script(cmd_to_call, timeout)
 
         # Connect to device after flashing it
         if hardware.flash_before:
@@ -889,7 +918,21 @@ class DeviceHandler(Handler):
             timeout = 30
             if script_param:
                 timeout = script_param.get("post_script_timeout", timeout)
-            self.run_custom_script(post_script, timeout)
+                post_script_args = script_param.get("post_script_arg", [])
+                if isinstance(post_script_args, str):
+                    post_script_args = [post_script_args]
+                elif not isinstance(post_script_args, (list | tuple)):
+                    post_script_args = []
+
+            else:
+                post_script_args = []
+
+            post_cmd = [post_script]
+            if post_flash_script_args:
+                post_cmd.extend(post_script_args)
+
+            cmd_to_call = post_cmd[0] if len(post_cmd) == 1 else post_cmd
+            self.run_custom_script(cmd_to_call, timeout)
 
         self.make_dut_available(hardware)
 
