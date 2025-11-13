@@ -267,6 +267,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct net_linkaddr *lladdr;
 	uint16_t type;
 	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
+	struct net_if *iface_eth = iface;
 
 	/* This expects that the Ethernet header is in the first net_buf
 	 * fragment. This is a safe expectation here as it would not make
@@ -288,6 +289,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		verdict = eth_bridge_input_process(iface, pkt);
 		if (verdict == NET_DROP) {
 			goto drop;
+		}
+
+		/* Handled by bridge locally */
+		if (verdict == NET_OK) {
+			iface = net_eth_get_bridge(ctx);
 		}
 	}
 
@@ -402,7 +408,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		} else {
 			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
 				net_if_get_by_iface(iface), iface);
-			eth_stats_update_unknown_protocol(iface);
+			eth_stats_update_unknown_protocol(iface_eth);
 			return NET_DROP;
 		}
 	}
@@ -412,10 +418,10 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 out:
-	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
+	ethernet_update_rx_stats(iface_eth, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
-	eth_stats_update_errors_rx(iface);
+	eth_stats_update_errors_rx(iface_eth);
 	return NET_DROP;
 }
 
