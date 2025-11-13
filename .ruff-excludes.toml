@@ -5,12 +5,6 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
-"./arch/x86/gen_mmu.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP034",    # https://docs.astral.sh/ruff/rules/extraneous-parentheses
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./arch/x86/zefi/zefi.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
