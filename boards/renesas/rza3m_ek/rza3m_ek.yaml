@@ -8,6 +8,8 @@ toolchain:
 supported:
   - uart
   - gpio
+  - display
+  - mipi_dsi
 testing:
   ignore_tags:
     - bluetooth

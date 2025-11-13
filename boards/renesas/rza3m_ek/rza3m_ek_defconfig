@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-FileCopyrightText: 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_XIP=n
@@ -17,3 +17,6 @@ CONFIG_SERIAL=y
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+#Enable GPIO
+CONFIG_GPIO=y
