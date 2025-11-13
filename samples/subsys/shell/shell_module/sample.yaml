@@ -13,6 +13,7 @@ tests:
       - native_sim
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
   sample.shell.shell_module.usb:
     depends_on: usbd
     tags:

@@ -7,3 +7,16 @@ config SOC_ARC_IOT
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 	select SOC_EARLY_INIT_HOOK
+
+config ARC_IOT_CUSTOM_CPU_IDLE
+	bool "Use custom CPU idle that skips sleep"
+	default n
+	depends on SOC_ARC_IOT
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	help
+	  The ARC IoT SoC has a hardware limitation where entering sleep mode
+	  causes peripherals (e.g., UART) to lose power, preventing wake-up
+	  from peripheral interrupts. Enable this option to use a custom idle
+	  implementation that skips sleep, keeping peripherals powered.
+	  Enable for tests that require continuous UART operation during idle.
