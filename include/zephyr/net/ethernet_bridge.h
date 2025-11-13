@@ -9,6 +9,7 @@
 /*
  * Copyright (c) 2021 BayLibre SAS
  * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,6 +177,16 @@ static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
 	return NULL;
 #endif
 }
+
+/**
+ * @brief Process pkt received on bridged interface.
+ *
+ * @param iface Pointer to bridged iface
+ * @param pkt Pointer to pkt
+ *
+ * @return net_verdict.
+ */
+enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @}

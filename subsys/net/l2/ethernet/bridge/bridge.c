@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 BayLibre SAS
  * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -234,20 +235,6 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 	return 0;
 }
 
-static inline bool is_link_local_addr(struct net_eth_addr *addr)
-{
-	if (addr->addr[0] == 0x01 &&
-	    addr->addr[1] == 0x80 &&
-	    addr->addr[2] == 0xc2 &&
-	    addr->addr[3] == 0x00 &&
-	    addr->addr[4] == 0x00 &&
-	    (addr->addr[5] & 0x0f) == 0x00) {
-		return true;
-	}
-
-	return false;
-}
-
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
 	sys_rand_get(linkaddr, len);
@@ -350,21 +337,17 @@ static int bridge_iface_stop(const struct device *dev)
 	return 0;
 }
 
-static enum net_verdict bridge_iface_process(struct net_if *iface,
-					     struct net_pkt *pkt,
-					     bool is_send)
+/*
+ * For direct TX, send pkt to all ifaces.
+ * For forward TX (pkt from an original iface), send to all other ifaces.
+ */
+static enum net_verdict bridge_iface_send_process(struct net_if *iface,
+						  struct net_pkt *pkt)
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
 	struct net_if *orig_iface;
 	struct net_pkt *send_pkt = pkt;
 	int fwd_iface_num = 0;
-
-	/* Drop all link-local packets for now. */
-	if (is_link_local_addr((struct net_eth_addr *)net_pkt_lladdr_dst(pkt))) {
-		NET_DBG("DROP: lladdr");
-		net_pkt_unref(pkt);
-		return NET_OK;
-	}
 
 	lock_bridge(ctx);
 
@@ -404,8 +387,7 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 			net_pkt_set_iface(send_pkt, ctx->eth_iface[i]);
 			net_if_queue_tx(ctx->eth_iface[i], send_pkt);
 
-			NET_DBG("%s iface %d pkt %p (ref %d)",
-				is_send ? "Send" : "Recv",
+			NET_DBG("Send iface %d pkt %p (ref %d)",
 				net_if_get_by_iface(ctx->eth_iface[i]),
 				send_pkt, (int)atomic_get(&send_pkt->atomic_ref));
 		}
@@ -432,24 +414,28 @@ int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_hexdump(pkt, str);
 	}
 
-	(void)bridge_iface_process(iface, pkt, true);
+	(void)bridge_iface_send_process(iface, pkt);
 
 	return 0;
 }
 
-static enum net_verdict bridge_iface_recv(struct net_if *iface,
-					  struct net_pkt *pkt)
+static enum net_verdict bridge_iface_recv(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+
 	if (DEBUG_RX) {
-		char str[sizeof("RX iface xx")];
+		char str[sizeof("RX bridge xx")];
 
-		snprintk(str, sizeof(str), "RX iface %d",
-			 net_if_get_by_iface(net_pkt_iface(pkt)));
-
+		snprintk(str, sizeof(str), "RX bridge %d", net_if_get_by_iface(iface));
 		net_pkt_hexdump(pkt, str);
 	}
 
-	return bridge_iface_process(iface, pkt, false);
+	if (!ctx->status) {
+		NET_DBG("Bridge interface %d not active", net_if_get_by_iface(iface));
+		return NET_DROP;
+	}
+
+	return NET_CONTINUE;
 }
 
 /* We cannot attach the bridge interface to Ethernet interface because
