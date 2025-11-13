@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/rt/MIMXRT798SGFOA-pinctrl.h>
+#include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
