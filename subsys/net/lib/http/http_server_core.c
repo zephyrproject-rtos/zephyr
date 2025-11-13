@@ -612,9 +612,14 @@ static int http_server_run(struct http_server_ctx *ctx)
 					continue;
 				}
 
-				/* Listening socket error, abort. */
-				LOG_ERR("Listening socket error, aborting.");
 				ret = -sock_error;
+
+				if (ret == -ENETDOWN) {
+					LOG_INF("Network is down");
+				} else {
+					LOG_ERR("Listening socket error, aborting. (%d)", ret);
+				}
+
 				goto closing;
 
 			}
