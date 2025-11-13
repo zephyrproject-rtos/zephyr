@@ -1,0 +1,13 @@
+# Copyright (c) 2025 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - memc
+  build_only: true
+tests:
+  drivers.memc.stm32_xspi_psram.build:
+    platform_allow:
+      - stm32h7s78_dk
+      - stm32h573i_dk
