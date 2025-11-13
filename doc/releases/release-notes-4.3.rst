@@ -42,13 +42,13 @@ Major enhancements with this release include:
 **CPU load and dynamic frequency scaling subsystems**
   A new experimental :ref:`CPU frequency <cpu_freq>` scaling subsystem enables dynamic,
   policy-driven, clock adjustments to balance power consumption and performance.
-  Alongside it, a new :ref:`cpu_load` subsystem allows to obtain CPU usage metrics based on
+  Alongside it, a new :ref:`cpu_load` subsystem allows users to obtain CPU usage metrics based on
   scheduler statistics, which can be used to drive the frequency scaling policy.
 
 **Instrumentation Subsystem**
   A new :ref:`instrumentation subsystem <instrumentation>` simplifies tracing and profiling of
-  Zephyr applications by leveraging compiler-managed function instrumentation, allowing to record
-  call-graph traces and statistical profiles at runtime.
+  Zephyr applications by leveraging compiler-managed function instrumentation, allowing the
+  recording of call-graph traces and statistical profiles at runtime.
 
 **OCPP 1.6 library**
   A new :ref:`OCPP (Open Charge Point Protocol) <ocpp_interface>` library enables EV charging
@@ -115,9 +115,9 @@ Removed APIs and options
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
-* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
-* STM32 LPTIM clock source selection through Kconfig was removed. Device Tree must now be used instead.
-  Affected Kconfig symbols: ``CONFIG_STM32_LPTIM_CLOCK_LSI`` / ``CONFIG_STM32_LPTIM_CLOCK_LSI``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in Devicetree.
+* STM32 LPTIM clock source selection through Kconfig was removed. Devicetree must now be used instead.
+  Affected Kconfig symbols: :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSI` / :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSE`
 
 Deprecated APIs and options
 ===========================
@@ -437,7 +437,7 @@ New APIs and options
   * Wi-Fi
 
     * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS`
-    * Set enterprise crypto insecure because certifcate validation is disabled.
+    * Set enterprise crypto insecure because certificate validation is disabled.
     * If the usage mode option has AP enabled, then automatically enable AP mode.
     * Add configuration options for background scanning (bgscan) in wpa_supplicant.
     * Add support for multiple virtual interfaces (VIF).
@@ -458,7 +458,7 @@ New APIs and options
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
    * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
-     only needs to enable any "suspend-to-ram" power state in the devicetree.
+     only needs to enable any "suspend-to-ram" power state in the Devicetree.
    * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
      :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
      is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
