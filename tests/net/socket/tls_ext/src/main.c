@@ -9,6 +9,8 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
