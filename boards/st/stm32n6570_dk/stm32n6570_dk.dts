@@ -15,3 +15,12 @@
 		zephyr,sram = &axisram1;
 	};
 };
+
+&bsec {
+	status = "okay";
+};
+
+&mac {
+	nvmem-cells = <&mac_address0>;
+	nvmem-cell-names = "mac-address";
+};

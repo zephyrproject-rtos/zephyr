@@ -1,0 +1,34 @@
+# Fuse driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FUSE
+	bool "One Time Programmable (OTPs/Fuses) handling drivers"
+	help
+	  Enable support for fuse hardware.
+
+if FUSE
+
+module = FUSE
+module-str = fuse
+
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/fuse/Kconfig.stm32"
+
+config FUSE_INIT_PRIORITY
+	int "FUSE init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  FUSE device drivers initialization priority. This initialization
+	  priority is used unless the driver implementation has its own
+	  initialization priority.
+
+config FUSE_PROGRAM
+	bool "Yes if fuse programming through Zephyr is allowed"
+	help
+	  Allowing the programming of fuses may cause irreversible damage
+	  to a platform. Use it very carefully and at your own risk.
+
+endif # FUSE
