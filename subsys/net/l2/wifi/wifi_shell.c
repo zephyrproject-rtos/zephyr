@@ -3828,6 +3828,256 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 	}
 	return 0;
 }
+
+static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"ht40", sys_getopt_no_argument, 0, 'h'},
+		{"vht", sys_getopt_no_argument, 0, 'v'},
+		{"he", sys_getopt_no_argument, 0, 'H'},
+		{"edmg", sys_getopt_no_argument, 0, 'e'},
+		{"go-bssid", sys_getopt_required_argument, 0, 'b'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, '?'},
+		{0, 0, 0, 0}
+	};
+	long val;
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_GROUP_ADD;
+	params.group_add.freq = 0;
+	params.group_add.persistent = -1;
+	params.group_add.ht40 = false;
+	params.group_add.vht = false;
+	params.group_add.he = false;
+	params.group_add.edmg = false;
+	params.group_add.go_bssid_length = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "f:p:hvHeb:i:?", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.group_add.freq = (int)val;
+			break;
+		case 'p':
+			if (!parse_number(sh, &val, state->optarg, "persistent", -1, 255)) {
+				return -EINVAL;
+			}
+			params.group_add.persistent = (int)val;
+			break;
+		case 'h':
+			params.group_add.ht40 = true;
+			break;
+		case 'v':
+			params.group_add.vht = true;
+			params.group_add.ht40 = true;
+			break;
+		case 'H':
+			params.group_add.he = true;
+			break;
+		case 'e':
+			params.group_add.edmg = true;
+			break;
+		case 'b':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid GO BSSID format. Use: XX:XX:XX:XX:XX:XX\n");
+				return -EINVAL;
+			}
+			memcpy(params.group_add.go_bssid, mac_addr, WIFI_MAC_ADDR_LEN);
+			params.group_add.go_bssid_length = WIFI_MAC_ADDR_LEN;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case '?':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P group add request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P group add initiated\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Interface name required. Usage: wifi p2p group_remove <ifname>\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_GROUP_REMOVE;
+	strncpy(params.group_remove.ifname, argv[1],
+		CONFIG_NET_INTERFACE_NAME_LEN);
+	params.group_remove.ifname[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P group remove request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P group remove initiated\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"group", sys_getopt_required_argument, 0, 'g'},
+		{"peer", sys_getopt_required_argument, 0, 'P'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"go-dev-addr", sys_getopt_required_argument, 0, 'd'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}
+	};
+	long val;
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_INVITE;
+	params.invite.type = WIFI_P2P_INVITE_PERSISTENT;
+	params.invite.persistent_id = -1;
+	params.invite.group_ifname[0] = '\0';
+	params.invite.freq = 0;
+	params.invite.go_dev_addr_length = 0;
+	memset(params.invite.peer_addr, 0, WIFI_MAC_ADDR_LEN);
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p invite --persistent=<id> <peer MAC> OR "
+			 "wifi p2p invite --group=<ifname> --peer=<MAC> [options]\n");
+		return -EINVAL;
+	}
+
+	while ((opt = sys_getopt_long(argc, argv, "p:g:P:f:d:i:h", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'p':
+			if (!parse_number(sh, &val, state->optarg, "persistent", 0, 255)) {
+				return -EINVAL;
+			}
+			params.invite.type = WIFI_P2P_INVITE_PERSISTENT;
+			params.invite.persistent_id = (int)val;
+			break;
+		case 'g':
+			params.invite.type = WIFI_P2P_INVITE_GROUP;
+			strncpy(params.invite.group_ifname, state->optarg,
+				CONFIG_NET_INTERFACE_NAME_LEN);
+			params.invite.group_ifname[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
+			break;
+		case 'P':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid peer MAC address format\n");
+				return -EINVAL;
+			}
+			memcpy(params.invite.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+			break;
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.invite.freq = (int)val;
+			break;
+		case 'd':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid GO device address format\n");
+				return -EINVAL;
+			}
+			memcpy(params.invite.go_dev_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+			params.invite.go_dev_addr_length = WIFI_MAC_ADDR_LEN;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'h':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	state = sys_getopt_state_get();
+
+	if (params.invite.type == WIFI_P2P_INVITE_PERSISTENT &&
+	    params.invite.persistent_id >= 0 &&
+	    params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0 &&
+	    argc > state->optind && argv[state->optind][0] != '-') {
+		if (sscanf(argv[state->optind], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+			   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+			   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+			PR_ERROR("Invalid peer MAC address format\n");
+			return -EINVAL;
+		}
+		memcpy(params.invite.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+	}
+
+	if (params.invite.type == WIFI_P2P_INVITE_PERSISTENT) {
+		if (params.invite.persistent_id < 0) {
+			PR_ERROR("Persistent group ID required. Use --persistent=<id>\n");
+			return -EINVAL;
+		}
+		if (params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0) {
+			PR_ERROR("Peer MAC address required\n");
+			return -EINVAL;
+		}
+	} else if (params.invite.type == WIFI_P2P_INVITE_GROUP) {
+		if (params.invite.group_ifname[0] == '\0') {
+			PR_ERROR("Group interface name required. Use --group=<ifname>\n");
+			return -EINVAL;
+		}
+		if (params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0) {
+			PR_ERROR("Peer MAC address required. Use --peer=<MAC>\n");
+			return -EINVAL;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P invite request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P invite initiated\n");
+	return 0;
+}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
@@ -4577,6 +4827,35 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "  wifi p2p connect 9c:b1:50:e3:81:96 pin 12345670 -g 0  (uses PIN)\n"
 		      "  wifi p2p connect f4:ce:36:01:00:38 pbc --join  (join existing group)\n",
 		      cmd_wifi_p2p_connect, 3, 6),
+	SHELL_CMD_ARG(group_add, NULL,
+		      "Add a P2P group (start as GO)\n"
+		      "Usage: group_add [options]\n"
+		      "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
+		      "[-p, --persistent=<id>]: Persistent group ID (-1 = not persistent)\n"
+		      "[-h, --ht40]: Enable HT40\n"
+		      "[-v, --vht]: Enable VHT (also enables HT40)\n"
+		      "[-H, --he]: Enable HE\n"
+		      "[-e, --edmg]: Enable EDMG\n"
+		      "[-b, --go-bssid=<MAC>]: GO BSSID (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_group_add, 1, 10),
+	SHELL_CMD_ARG(group_remove, NULL,
+		      "Remove a P2P group\n"
+		      "Usage: group_remove <ifname>\n"
+		      "<ifname>: Interface name (e.g., wlan0)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_group_remove, 2, 3),
+	SHELL_CMD_ARG(invite, NULL,
+		      "Invite a peer to a P2P group\n"
+		      "Usage: invite --persistent=<id> <peer MAC> OR\n"
+		      "       invite --group=<ifname> --peer=<MAC> [options]\n"
+		      "[-p, --persistent=<id>]: Persistent group ID\n"
+		      "[-g, --group=<ifname>]: Group interface name\n"
+		      "[-P, --peer=<MAC>]: Peer MAC address (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
+		      "[-d, --go-dev-addr=<MAC>]: GO device address (for group type)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_invite, 2, 8),
 	SHELL_SUBCMD_SET_END
 );
 
