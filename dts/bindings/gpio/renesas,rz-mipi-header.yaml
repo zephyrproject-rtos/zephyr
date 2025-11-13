@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on Renesas MIPI lcd display headers.
+
+  The Renesas MIPI lcd display layout provides 2 columns of 20 pins headers
+
+  This binding provides a mapping for the default 40 pins as depicted below:
+
+      1  GND                 DIMMER    21
+      2  GND                 I2C SCL   22
+      3  DATA0_P             TP_INT    23
+      4  DATA1_P             TP_RESET  24
+      5  DATA0_N             GND       25
+      6  DATA1_N             GND       26
+      7  GND                 NC        27
+      8  GND                 NC        28
+      9  DATA2_P             NC        29
+      10 DATA3_P             NC        30
+      11 DATA2_N             NC        31
+      12 DATA3_N             NC        32
+      13 GND                 GND       33
+      14 GND                 GND       34
+      15 CLK_P               1.8V      35
+      16 NC                  1.8V      36
+      17 CLK_N               3.3V      37
+      18 GND                 3.3V      38
+      19 GND                 5V        39
+      20 I2C SDA             5V        40
+
+compatible: "renesas,rz-gpio-mipi-header"
+
+include: [gpio-nexus.yaml, base.yaml]

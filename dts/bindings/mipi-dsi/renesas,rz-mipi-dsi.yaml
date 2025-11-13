@@ -1,0 +1,102 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ MIPI DSI host
+
+compatible: "renesas,rz-mipi-dsi"
+
+include: [mipi-dsi-host.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    type: string-array
+    required: true
+    description: name of each interrupt
+
+  ulps-wakeup-period:
+    type: int
+    description: ULPS wakeup period.
+
+  video-mode-delay:
+    type: int
+    description: |
+      Set the delay value inside DSI Host until the transfer begins.
+
+  timing:
+    type: array
+    description: |
+      MIPI DSI timing parameter: <CLKSTPT CLKBFHT CLKKPT GOLPBKT>
+
+child-binding:
+  description: |
+    MIPI PHY timing configuration. The child node must be named "phys-timing".
+
+  properties:
+    t-init:
+      type: int
+      required: true
+      description: |
+        Minimum duration of the TINIT state (Units: PCLKA cycles).
+
+    t-clk-prep:
+      type: int
+      required: true
+      description: |
+        Duration of the clock lane LP-00 state (immediately before entry to the HS-0 state).
+
+    t-hs-prep:
+      type: int
+      required: true
+      description: |
+        Duration of the data lane LP-00 state (immediately before entry to the HS-0 state.
+
+    t-clk-zero:
+      type: int
+      required: true
+      description: |
+        TCLKZERO setting.
+
+    t-clk-pre:
+      type: int
+      required: true
+      description: |
+        TCLKPRE setting.
+
+    t-clk-post:
+      type: int
+      required: true
+      description: |
+        TCLKPOST setting.
+
+    t-clk-trail:
+      type: int
+      required: true
+      description: |
+        TCLKTRAIL setting.
+
+    t-hs-zero:
+      type: int
+      required: true
+      description: |
+        THSZERO setting.
+
+    t-hs-trail:
+      type: int
+      required: true
+      description: |
+        THSTRAIL setting.
+
+    t-hs-exit:
+      type: int
+      required: true
+      description: |
+        THSEXIT setting.
+
+    t-lp-exit:
+      type: int
+      required: true
+      description: |
+        Low-power transition time to High-Speed mode.

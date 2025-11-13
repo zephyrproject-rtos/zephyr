@@ -1,0 +1,12 @@
+# Renesas RZ Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_RENESAS_RZ
+	bool "Renesas RZ MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_RENESAS_RZ_MIPI_DSI_ENABLED
+	select USE_RZ_FSP_MIPI_DSI
+	help
+	  Renesas RZ MIPI DSI controller driver
