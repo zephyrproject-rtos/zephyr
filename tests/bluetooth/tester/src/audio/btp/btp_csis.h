@@ -12,6 +12,10 @@
 #include <zephyr/bluetooth/audio/csip.h>
 
 /* CSIS commands */
+#define BTP_CSIS_SIRK_TYPE_PLAINTEXT		0x00
+#define BTP_CSIS_SIRK_TYPE_ENCRYPTED		0x01
+#define BTP_CSIS_SIRK_TYPE_OOB_ONLY		0x02
+
 #define BTP_CSIS_READ_SUPPORTED_COMMANDS	0x01
 struct btp_csis_read_supported_commands_rp {
 	uint8_t data[0];
@@ -33,7 +37,7 @@ struct btp_csis_get_member_rsi_rp {
 	uint8_t rsi[BT_CSIP_RSI_SIZE];
 } __packed;
 
-#define BTP_CSIS_ENC_SIRK_TYPE			0x04
-struct btp_csis_sirk_type_cmd {
-	uint8_t encrypted;
+#define BTP_CSIS_SET_SIRK_TYPE			0x04
+struct btp_csis_sirk_set_type_cmd {
+	uint8_t type;
 } __packed;
