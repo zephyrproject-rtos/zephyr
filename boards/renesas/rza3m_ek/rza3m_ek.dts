@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-FileCopyrightText: 2025-2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 #include "rza3m_ek-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "Renesas RZ/A3M EK";
@@ -22,6 +23,7 @@
 		zephyr,console = &scif0;
 		zephyr,shell-uart = &scif0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &zephyr_lcdif;
 	};
 
 	ddr: memory@40200000 {
@@ -39,6 +41,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &sw1;
+		mipi-dsi = &mipi_dsi;
 	};
 
 	leds {
@@ -74,6 +77,17 @@
 			gpios = <&gpio11 1 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	renesas_mipi_connector: mipi-connector {
+		compatible = "renesas,rz-gpio-mipi-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <20 0 &gpio8 2 0>,  /* I2C_SDA */
+			   <21 0 &gpio10 2 0>, /* DIMMER */
+			   <22 0 &gpio8 3 0>,  /* I2C_SCL */
+			   <23 0 &gpio8 1 0>;  /* TP_INT */
 	};
 };
 
@@ -136,6 +150,10 @@
 	status = "okay";
 };
 
+&gpio8 {
+	status = "okay";
+};
+
 &gpio10 {
 	irqs = <&tint0 1>, <&tint1 3>;
 	status = "okay";
@@ -147,5 +165,25 @@
 };
 
 &gpio20 {
+	status = "okay";
+};
+
+/* alias used by display shields */
+zephyr_lcdif: &lcdif {};
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+
+renesas_mipi_i2c: &i2c1 {};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
