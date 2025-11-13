@@ -368,6 +368,10 @@ uint64_t z_nrf_grtc_timer_startup_value_get(void)
 #if defined(CONFIG_POWEROFF) && defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 {
+	if (!nrfx_grtc_init_check()) {
+		return -ENOTSUP;
+	}
+
 	nrfx_err_t err_code;
 	static struct k_spinlock lock;
 	static uint8_t systemoff_channel;
@@ -459,6 +463,21 @@ ISR_DIRECT_DECLARE(nrfx_grtc_direct_irq_handler)
 	return 1;
 }
 #endif
+
+void sys_clock_disable(void)
+{
+	nrfx_grtc_uninit();
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
+	int err;
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK);
+
+	err = onoff_release(mgr);
+	__ASSERT_NO_MSG(err >= 0);
+
+	nrfx_coredep_delay_us(1000);
+#endif
+}
 
 static int sys_clock_driver_init(void)
 {
