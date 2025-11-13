@@ -1370,7 +1370,7 @@ int bt_obex_add_header_session_seq_number(struct net_buf *buf, uint32_t session_
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_add_header_action_id(struct net_buf *buf, uint32_t action_id);
+int bt_obex_add_header_action_id(struct net_buf *buf, uint8_t action_id);
 
 /** @brief Add Header: the destination object name (used in certain ACTION operations).
  *
@@ -1677,7 +1677,7 @@ int bt_obex_get_header_session_seq_number(struct net_buf *buf, uint32_t *session
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id);
+int bt_obex_get_header_action_id(struct net_buf *buf, uint8_t *action_id);
 
 /** @brief Get header value: the destination object name (used in certain ACTION operations).
  *

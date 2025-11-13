@@ -3015,7 +3015,7 @@ int bt_obex_add_header_session_seq_number(struct net_buf *buf, uint32_t session_
 	return 0;
 }
 
-int bt_obex_add_header_action_id(struct net_buf *buf, uint32_t action_id)
+int bt_obex_add_header_action_id(struct net_buf *buf, uint8_t action_id)
 {
 	size_t total;
 
@@ -3030,7 +3030,7 @@ int bt_obex_add_header_action_id(struct net_buf *buf, uint32_t action_id)
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_ACTION_ID);
-	net_buf_add_be32(buf, action_id);
+	net_buf_add_u8(buf, action_id);
 	return 0;
 }
 
@@ -3825,7 +3825,7 @@ int bt_obex_get_header_session_seq_number(struct net_buf *buf, uint32_t *session
 	return 0;
 }
 
-int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id)
+int bt_obex_get_header_action_id(struct net_buf *buf, uint8_t *action_id)
 {
 	struct bt_obex_find_header_data data;
 	int err;
@@ -3849,7 +3849,7 @@ int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id)
 		return -ENODATA;
 	}
 
-	*action_id = sys_get_be32(data.hdr.data);
+	*action_id = data.hdr.data[0];
 	return 0;
 }
 

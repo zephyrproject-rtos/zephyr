@@ -932,7 +932,7 @@ static int cmd_add_header_action_id(const struct shell *sh, size_t argc, char *a
 
 	action_id = strtoul(argv[1], NULL, 16);
 
-	err = bt_obex_add_header_action_id(goep_app.tx_buf, action_id);
+	err = bt_obex_add_header_action_id(goep_app.tx_buf, (uint8_t)action_id);
 	if (err) {
 		shell_error(sh, "Fail to add header action_id");
 	}
