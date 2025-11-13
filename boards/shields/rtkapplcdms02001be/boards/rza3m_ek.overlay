@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+};
+
+&zephyr_lcdif {
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+};
+
+&mipi_dsi {
+	status = "okay";
+	ulps-wakeup-period = <130>;
+	video-mode-delay = <216>;
+	timing = <162 53 45 52>;
+
+	phys-timing {
+		t-init = <79801>;
+		t-clk-prep = <8>;
+		t-hs-prep = <9>;
+		t-clk-zero = <33>;
+		t-clk-pre = <4>;
+		t-clk-post = <35>;
+		t-clk-trail = <7>;
+		t-hs-zero = <16>;
+		t-hs-trail = <9>;
+		t-hs-exit = <13>;
+		t-lp-exit = <6>;
+	};
+};

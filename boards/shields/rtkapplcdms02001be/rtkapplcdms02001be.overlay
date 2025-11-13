@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/{
+	chosen {
+		zephyr,display = &zephyr_lcdif;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_rtkapplcdms02001be>;
+	};
+};
+
+&renesas_mipi_i2c {
+	status = "okay";
+
+	gt911_rtkapplcdms02001be: gt911-rtkapplcdms02001be@14 {
+		compatible = "goodix,gt911";
+		reg = <0x14>;
+		irq-gpios = <&renesas_mipi_connector 23 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+
+	ili9881c: ili9881c@0 {
+		status = "okay";
+		compatible = "ilitek,ili9881c-dsi";
+		reg = <0x0>;
+		height = <1280>;
+		width = <720>;
+		data-lanes = <4>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+	};
+};
+
+&zephyr_lcdif {
+	status = "okay";
+	width = <720>;
+	height = <1280>;
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <33>;
+		hback-porch = <100>;
+		vsync-len = <2>;
+		vback-porch = <30>;
+		hsync-active = <1>;
+		vsync-active = <1>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+		hfront-porch = <133>;
+		vfront-porch = <22>;
+	};
+	backlight-gpios = <&renesas_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+};

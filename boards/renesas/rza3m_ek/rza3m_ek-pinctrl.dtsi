@@ -15,4 +15,37 @@
 			slew-rate = "fast";
 		};
 	};
+
+	/omit-if-no-ref/ lcdc_default: lcdc {
+		lcdc-pinmux {
+			pinmux = <RZA_PINMUX(PORT_00, 2, 1)>, /* DISP_CLK */
+				 <RZA_PINMUX(PORT_01, 0, 1)>, /* DISP_DATA0 */
+				 <RZA_PINMUX(PORT_01, 1, 1)>, /* DISP_DATA1 */
+				 <RZA_PINMUX(PORT_01, 2, 1)>, /* DISP_DATA2 */
+				 <RZA_PINMUX(PORT_01, 3, 1)>, /* DISP_DATA3 */
+				 <RZA_PINMUX(PORT_01, 4, 1)>, /* DISP_DATA4 */
+				 <RZA_PINMUX(PORT_02, 0, 1)>, /* DISP_DATA5 */
+				 <RZA_PINMUX(PORT_02, 1, 1)>, /* DISP_DATA6 */
+				 <RZA_PINMUX(PORT_02, 2, 1)>, /* DISP_DATA7 */
+				 <RZA_PINMUX(PORT_02, 3, 1)>, /* DISP_DATA8 */
+				 <RZA_PINMUX(PORT_03, 0, 1)>, /* DISP_DATA9 */
+				 <RZA_PINMUX(PORT_03, 1, 1)>, /* DISP_DATA10 */
+				 <RZA_PINMUX(PORT_03, 2, 1)>, /* DISP_DATA11 */
+				 <RZA_PINMUX(PORT_03, 3, 1)>, /* DISP_DATA12 */
+				 <RZA_PINMUX(PORT_04, 0, 1)>, /* DISP_DATA13 */
+				 <RZA_PINMUX(PORT_04, 1, 1)>, /* DISP_DATA14 */
+				 <RZA_PINMUX(PORT_04, 2, 1)>, /* DISP_DATA15 */
+				 <RZA_PINMUX(PORT_04, 3, 1)>, /* DISP_DATA16 */
+				 <RZA_PINMUX(PORT_04, 4, 1)>, /* DISP_DATA17 */
+				 <RZA_PINMUX(PORT_04, 5, 1)>, /* DISP_DATA18 */
+				 <RZA_PINMUX(PORT_05, 0, 1)>, /* DISP_DATA19 */
+				 <RZA_PINMUX(PORT_05, 1, 1)>, /* DISP_DATA20 */
+				 <RZA_PINMUX(PORT_05, 2, 1)>, /* DISP_DATA21 */
+				 <RZA_PINMUX(PORT_05, 3, 1)>, /* DISP_DATA22 */
+				 <RZA_PINMUX(PORT_05, 4, 1)>, /* DISP_DATA23 */
+				 <RZA_PINMUX(PORT_00, 1, 1)>, /* DISP_DE */
+				 <RZA_PINMUX(PORT_00, 0, 1)>, /* DISP_HSYNC */
+				 <RZA_PINMUX(PORT_00, 3, 1)>; /* DISP_VSYNC */
+		};
+	};
 };
