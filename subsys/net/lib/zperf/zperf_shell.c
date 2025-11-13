@@ -49,22 +49,22 @@ static const char *CONFIG =
 #endif
 		"";
 
-static struct net_sockaddr_in6 in6_addr_my = {
+static struct net_sockaddr_in6 ipv6_addr_my = {
 	.sin6_family = NET_AF_INET6,
 	.sin6_port = net_htons(MY_SRC_PORT),
 };
 
-static struct net_sockaddr_in6 in6_addr_dst = {
+static struct net_sockaddr_in6 ipv6_addr_dst = {
 	.sin6_family = NET_AF_INET6,
 	.sin6_port = net_htons(DEF_PORT),
 };
 
-static struct net_sockaddr_in in4_addr_dst = {
+static struct net_sockaddr_in ipv4_addr_dst = {
 	.sin_family = NET_AF_INET,
 	.sin_port = net_htons(DEF_PORT),
 };
 
-static struct net_sockaddr_in in4_addr_my = {
+static struct net_sockaddr_in ipv4_addr_my = {
 	.sin_family = NET_AF_INET,
 	.sin_port = net_htons(MY_SRC_PORT),
 };
@@ -1365,7 +1365,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	family = !strcmp(argv[start + 1], "v4") ? NET_AF_INET : NET_AF_INET6;
 
 	if (family == NET_AF_INET6) {
-		if (net_ipv6_is_addr_unspecified(&in6_addr_dst.sin6_addr)) {
+		if (net_ipv6_is_addr_unspecified(&ipv6_addr_dst.sin6_addr)) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Invalid destination IPv6 address.\n");
 			return -ENOEXEC;
@@ -1373,11 +1373,11 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connecting to %s\n",
-			      net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
+			      net_sprint_ipv6_addr(&ipv6_addr_dst.sin6_addr));
 
-		memcpy(&param.peer_addr, &in6_addr_dst, sizeof(in6_addr_dst));
+		memcpy(&param.peer_addr, &ipv6_addr_dst, sizeof(ipv6_addr_dst));
 	} else {
-		if (net_ipv4_is_addr_unspecified(&in4_addr_dst.sin_addr)) {
+		if (net_ipv4_is_addr_unspecified(&ipv4_addr_dst.sin_addr)) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Invalid destination IPv4 address.\n");
 			return -ENOEXEC;
@@ -1385,9 +1385,9 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connecting to %s\n",
-			      net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
+			      net_sprint_ipv4_addr(&ipv4_addr_dst.sin_addr));
 
-		memcpy(&param.peer_addr, &in4_addr_dst, sizeof(in4_addr_dst));
+		memcpy(&param.peer_addr, &ipv4_addr_dst, sizeof(ipv4_addr_dst));
 	}
 
 	if (argc > 2) {
@@ -1852,16 +1852,16 @@ void zperf_shell_init(void)
 
 	if (IS_ENABLED(MY_IP6ADDR_SET) && MY_IP6ADDR) {
 		ret = net_addr_pton(NET_AF_INET6, MY_IP6ADDR,
-				    &in6_addr_my.sin6_addr);
+				    &ipv6_addr_my.sin6_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set %s address\n", "IPv6");
 		} else {
 			NET_INFO("Setting IP address %s",
-				 net_sprint_ipv6_addr(&in6_addr_my.sin6_addr));
+				 net_sprint_ipv6_addr(&ipv6_addr_my.sin6_addr));
 		}
 
 		ret = net_addr_pton(NET_AF_INET6, DST_IP6ADDR,
-				    &in6_addr_dst.sin6_addr);
+				    &ipv6_addr_dst.sin6_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set destination %s address %s",
 				 "IPv6",
@@ -1869,22 +1869,22 @@ void zperf_shell_init(void)
 					     : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
-				 net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
+				 net_sprint_ipv6_addr(&ipv6_addr_dst.sin6_addr));
 		}
 	}
 
 	if (IS_ENABLED(MY_IP4ADDR_SET) && MY_IP4ADDR) {
 		ret = net_addr_pton(NET_AF_INET, MY_IP4ADDR,
-				    &in4_addr_my.sin_addr);
+				    &ipv4_addr_my.sin_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set %s address\n", "IPv4");
 		} else {
 			NET_INFO("Setting IP address %s",
-				 net_sprint_ipv4_addr(&in4_addr_my.sin_addr));
+				 net_sprint_ipv4_addr(&ipv4_addr_my.sin_addr));
 		}
 
 		ret = net_addr_pton(NET_AF_INET, DST_IP4ADDR,
-				    &in4_addr_dst.sin_addr);
+				    &ipv4_addr_dst.sin_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set destination %s address %s",
 				 "IPv4",
@@ -1892,7 +1892,7 @@ void zperf_shell_init(void)
 					      : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
-				 net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
+				 net_sprint_ipv4_addr(&ipv4_addr_dst.sin_addr));
 		}
 	}
 }
