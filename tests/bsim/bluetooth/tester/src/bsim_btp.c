@@ -1236,7 +1236,7 @@ static bool is_valid_csis_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		return buf_simple->len == 0U;
 	case BTP_CSIS_GET_MEMBER_RSI:
 		return buf_simple->len == sizeof(struct btp_csis_get_member_rsi_rp);
-	case BTP_CSIS_ENC_SIRK_TYPE:
+	case BTP_CSIS_SET_SIRK_TYPE:
 		return buf_simple->len == 0U;
 
 	/* No events */

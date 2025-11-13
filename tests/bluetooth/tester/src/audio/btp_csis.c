@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
 
 static struct bt_csip_set_member_svc_inst *csis_svc_inst;
-static bool enc_sirk;
+static uint8_t sirk_read_response;
 
 static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
@@ -65,13 +65,27 @@ static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
-static uint8_t csis_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
-	const struct btp_csis_sirk_type_cmd *cp = cmd;
+	const struct btp_csis_sirk_set_type_cmd *cp = cmd;
 
-	enc_sirk = cp->encrypted != 0U;
-
-	LOG_DBG("SIRK type: %s", enc_sirk ? "encrypted" : "plain text");
+	switch (cp->type) {
+	case BTP_CSIS_SIRK_TYPE_PLAINTEXT:
+		LOG_DBG("SIRK type: plain text");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
+		break;
+	case BTP_CSIS_SIRK_TYPE_ENCRYPTED:
+		LOG_DBG("SIRK type: encrypted");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+		break;
+	case BTP_CSIS_SIRK_TYPE_OOB_ONLY:
+		LOG_DBG("SIRK type: OOB procedure only");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY;
+		break;
+	default:
+		LOG_ERR("Unknown SIRK type: %u", cp->type);
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -94,9 +108,9 @@ static const struct btp_handler csis_handlers[] = {
 		.func = csis_get_member_rsi,
 	},
 	{
-		.opcode = BTP_CSIS_ENC_SIRK_TYPE,
-		.expect_len = sizeof(struct btp_csis_sirk_type_cmd),
-		.func = csis_sirk_type,
+		.opcode = BTP_CSIS_SET_SIRK_TYPE,
+		.expect_len = sizeof(struct btp_csis_sirk_set_type_cmd),
+		.func = csis_set_sirk_type,
 	},
 };
 
@@ -108,11 +122,7 @@ static void lock_changed_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_
 
 static uint8_t sirk_read_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst)
 {
-	if (enc_sirk) {
-		return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
-	} else {
-		return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
-	}
+	return sirk_read_response;
 }
 
 static struct bt_csip_set_member_cb csis_cb = {
@@ -131,6 +141,8 @@ uint8_t tester_init_csis(void)
 		.cb = &csis_cb,
 	};
 	int err = bt_csip_set_member_register(&register_params, &csis_svc_inst);
+
+	sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
 	tester_register_command_handlers(BTP_SERVICE_ID_CSIS, csis_handlers,
 					 ARRAY_SIZE(csis_handlers));
