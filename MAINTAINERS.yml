@@ -6046,11 +6046,11 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -6083,11 +6083,11 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -6133,11 +6133,11 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files:
     - modules/trusted-firmware-m/
