@@ -297,9 +297,8 @@
 		gpio_out: gpio@e0005800 {
 			compatible = "litex,gpio";
 			reg = <0xe0005800 0x4>;
-			reg-names = "control";
+			reg-names = "out";
 			ngpios = <4>;
-			port-is-output;
 			status = "okay";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -314,11 +313,11 @@
 			      <0xe0006014 0x4>;
 			interrupt-parent = <&intc0>;
 			interrupts = <4 2>;
-			reg-names = "base",
-				    "irq_mode",
-				    "irq_edge",
-				    "irq_pend",
-				    "irq_en";
+			reg-names = "in",
+				    "mode",
+				    "edge",
+				    "ev_pending",
+				    "ev_enable";
 			ngpios = <4>;
 			status = "okay";
 			gpio-controller;
