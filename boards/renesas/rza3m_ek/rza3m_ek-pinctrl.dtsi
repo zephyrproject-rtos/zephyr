@@ -15,4 +15,20 @@
 			slew-rate = "fast";
 		};
 	};
+
+	/omit-if-no-ref/ i2c0_pins: i2c0 {
+		i2c0-spins {
+			pins = <BSP_IO_RIIC0_SDA>, <BSP_IO_RIIC0_SCL>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c1_pins: i2c1 {
+		i2c1-pinmux {
+			pinmux = <RZA_PINMUX(PORT_08, 2, 5)>, /* SDA */
+				 <RZA_PINMUX(PORT_08, 3, 5)>; /* SCL */
+			drive-strength = <1>;
+			slew-rate = "slow";
+		};
+	};
 };
