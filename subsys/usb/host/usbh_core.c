@@ -85,6 +85,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
+		usbh_class_remove_all(ctx->root);
 		usbh_device_free(ctx->root);
 		ctx->root = NULL;
 		LOG_DBG("Device removed");
