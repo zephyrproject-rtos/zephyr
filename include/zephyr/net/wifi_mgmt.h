@@ -1467,6 +1467,12 @@ enum wifi_p2p_op {
 	WIFI_P2P_PEER,
 	/** P2P connect to peer */
 	WIFI_P2P_CONNECT,
+	/** P2P group add */
+	WIFI_P2P_GROUP_ADD,
+	/** P2P group remove */
+	WIFI_P2P_GROUP_REMOVE,
+	/** P2P invite */
+	WIFI_P2P_INVITE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1522,6 +1528,50 @@ struct wifi_p2p_params {
 		/** Frequency in MHz (0 = not specified, use default) */
 		unsigned int freq;
 	} connect;
+	/** Group add specific parameters */
+	struct {
+		/** Frequency in MHz (0 = auto) */
+		int freq;
+		/** Persistent group ID (-1 = not persistent) */
+		int persistent;
+		/** Enable HT40 */
+		bool ht40;
+		/** Enable VHT */
+		bool vht;
+		/** Enable HE */
+		bool he;
+		/** Enable EDMG */
+		bool edmg;
+		/** GO BSSID (NULL = auto) */
+		uint8_t go_bssid[WIFI_MAC_ADDR_LEN];
+		/** GO BSSID length */
+		uint8_t go_bssid_length;
+	} group_add;
+	/** Group remove specific parameters */
+	struct {
+		/** Interface name (e.g., "wlan0") */
+		char ifname[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	} group_remove;
+	/** Invite specific parameters */
+	struct {
+		/** Invite type: persistent or group */
+		enum {
+			WIFI_P2P_INVITE_PERSISTENT = 0,
+			WIFI_P2P_INVITE_GROUP,
+		} type;
+		/** Persistent group ID (for persistent type) */
+		int persistent_id;
+		/** Group interface name (for group type) */
+		char group_ifname[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+		/** Peer MAC address */
+		uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+		/** Frequency in MHz (0 = auto) */
+		int freq;
+		/** GO device address (for group type, NULL = auto) */
+		uint8_t go_dev_addr[WIFI_MAC_ADDR_LEN];
+		/** GO device address length */
+		uint8_t go_dev_addr_length;
+	} invite;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
