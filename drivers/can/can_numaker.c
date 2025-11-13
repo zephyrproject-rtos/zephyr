@@ -49,7 +49,7 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 	clkdiv_divider = CLK_GetModuleClockDivider(config->clk_modidx) + 1;
 
 	switch (clksrc_rate_idx) {
-#if defined(CONFIG_SOC_SERIES_M46X)
+#if defined(CONFIG_SOC_SERIES_M46X) || defined(CONFIG_SOC_SERIES_M333X)
 	case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
 		*rate = __HXT / clkdiv_divider;
 		break;
