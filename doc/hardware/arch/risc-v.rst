@@ -34,6 +34,6 @@ SMP support
 
 SMP is supported on RISC-V for both QEMU-virtualized and hardware-based
 platforms. In order to test the SMP support, one can use
-:zephyr:board:`qemu_riscv32` or :zephyr:board:`qemu_riscv64` for QEMU-based
+:zephyr:board:`qemu_riscv` for QEMU-based
 platforms, or :zephyr:board:`beaglev_fire` or :zephyr:board:`mpfs_icicle` for
 hardware-based platforms.

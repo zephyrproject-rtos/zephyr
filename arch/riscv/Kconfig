@@ -13,8 +13,11 @@ config FLOAT_HARD
 	bool "Hard-float calling convention"
 	default y
 	depends on FPU
+	depends on !RISCV_ISA_RV32E
+	depends on RISCV_ISA_EXT_F
 	help
 	  This option enables the hard-float calling convention.
+	  Adds eight floating-point argument registers.
 
 choice RISCV_GP_PURPOSE
 	prompt "Purpose of the global pointer (GP) register"

@@ -70,3 +70,18 @@ set(scobc_module1_DEPRECATED
 set(raytac_an54l15q_db/nrf54l15/cpuapp_DEPRECATED
     raytac_an54lq_db_15/nrf54l15/cpuapp
 )
+set(qemu_riscv32_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32
+)
+set(qemu_riscv32/qemu_virt_riscv32/smp_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32/smp
+)
+set(qemu_riscv32e_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32e
+)
+set(qemu_riscv64_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv64
+)
+set(qemu_riscv64/qemu_virt_riscv64/smp_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv64/smp
+)

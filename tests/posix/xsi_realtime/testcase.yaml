@@ -12,7 +12,7 @@ common:
   integration_platforms:
     - qemu_x86
     - qemu_cortex_a53
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv64
   platform_exclude:
     # linker_zephyr_pre0.cmd:140: syntax error (??)
     - qemu_xtensa/dc233c

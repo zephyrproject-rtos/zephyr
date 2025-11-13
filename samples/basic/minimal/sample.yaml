@@ -100,11 +100,11 @@ tests:
   sample.minimal.riscv.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf;no-mt.conf;riscv.conf'
-    platform_allow: qemu_riscv32
+    platform_allow: qemu_riscv/qemu_virt_riscv/rv32
     tags:
       - kernel
     integration_platforms:
-      - qemu_riscv32
+      - qemu_riscv/qemu_virt_riscv/rv32
   sample.minimal.no-mt-no-sw-isr-table.arm:
     extra_args: EXTRA_CONF_FILE='common.conf;no-mt.conf;no-sw-isr-table.conf;arm.conf'
     build_only: true

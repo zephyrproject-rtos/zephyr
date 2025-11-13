@@ -12,7 +12,7 @@
 #define TEST_MEMORY_VALUE_1 0xcdcdcdcd
 #define TEST_MEMORY_VALUE_2 0xefefefef
 
-#if defined(CONFIG_BOARD_QEMU_RISCV32)
+#if defined(CONFIG_BOARD_QEMU_RISCV_QEMU_VIRT_RISCV_RV32)
 #define TEST_MEMORY_VALUE_3 0x12121212
 #define TEST_MEMORY_VALUE_4 0x34343434
 #define TEST_MEMORY_VALUE_5 0x56565656
@@ -58,7 +58,7 @@ static void test_coredump_callback(uintptr_t dump_area, size_t dump_area_size)
 
 static void *coredump_tests_suite_setup(void)
 {
-#if defined(CONFIG_BOARD_QEMU_RISCV32)
+#if defined(CONFIG_BOARD_QEMU_RISCV_QEMU_VIRT_RISCV_RV32)
 	/* Get addresses of memory regions specified in device tree to fill with test data */
 	uint32_t *mem0 =
 		(uint32_t *)DT_PROP_BY_IDX(DT_NODELABEL(coredump_device0), memory_regions, 0);

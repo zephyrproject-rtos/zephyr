@@ -24,7 +24,7 @@ adding the following overlay:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sensor_shell
-   :board: qemu_riscv64
+   :board: qemu_riscv//rv64
    :goals: run
    :gen-args: -DEXTRA_DTC_OVERLAY_FILE=fake_sensor.overlay
 

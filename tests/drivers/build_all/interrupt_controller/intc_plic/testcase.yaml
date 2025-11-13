@@ -2,13 +2,13 @@ common:
   build_only: true
   filter: CONFIG_PLIC
   platform_allow:
-    - qemu_riscv32
-    - qemu_riscv32/qemu_virt_riscv32/smp
-    - qemu_riscv64
-    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv32/smp
+    - qemu_riscv/qemu_virt_riscv/rv64
+    - qemu_riscv/qemu_virt_riscv/rv64/smp
   integration_platforms:
-    - qemu_riscv32
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv64
   tags:
     - drivers
     - interrupt

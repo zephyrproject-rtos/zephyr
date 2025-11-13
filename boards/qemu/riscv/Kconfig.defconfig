@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_RISCV
+
+# Use thread local storage by default so that this feature gets more CI coverage.
+configdefault THREAD_LOCAL_STORAGE
+	default y
+
+configdefault BUILD_OUTPUT_BIN
+	default n
+
+configdefault QEMU_ICOUNT_SHIFT
+	default 6
+
+endif # BOARD_QEMU_RISCV
