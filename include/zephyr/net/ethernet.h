@@ -30,10 +30,6 @@
 #include <zephyr/net/dsa.h>
 #endif
 
-#if defined(CONFIG_NET_ETHERNET_BRIDGE)
-#include <zephyr/net/ethernet_bridge.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/net/ethernet_bridge.h>
 #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa_core.h>
 #endif
@@ -30,7 +31,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv6.h"
 #include "ipv4.h"
-#include "bridge.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
