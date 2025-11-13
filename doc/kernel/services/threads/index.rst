@@ -287,6 +287,14 @@ priorities, even if those threads are cooperative and/or have taken a
 scheduler lock. Meta-IRQ threads are still threads, however,
 and can still be interrupted by any hardware interrupt.
 
+.. note::
+   When a cooperative (or schedule-locked) thread that was preempted by a
+   meta-IRQ thread resumes its execution after the meta-IRQ thread completes,
+   it will be on the same CPU--assuming it was neither suspended nor aborted.
+   This helps ensure that these threads are not unexpectedly shuffled to
+   another CPU while in the midst of querying the properties associated
+   with their own CPU.
+
 This behavior makes the act of unblocking a meta-IRQ thread (by any
 means, e.g. creating it, calling k_sem_give(), etc.) into the
 equivalent of a synchronous system call when done by a lower
