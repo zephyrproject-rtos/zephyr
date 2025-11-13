@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE /* for FNM_LEADING_DIR in fnmatch.h */
+#include <fnmatch.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -21,7 +23,6 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
-#include <zephyr/posix/fnmatch.h>
 #include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);

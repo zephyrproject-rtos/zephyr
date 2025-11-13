@@ -90,6 +90,7 @@ config MINIMAL_LIBC
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	select COMMON_LIBC_FNMATCH
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_CALLOC
 	imply COMMON_LIBC_REALLOCARRAY
@@ -119,6 +120,7 @@ config NEWLIB_LIBC
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
 	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	select COMMON_LIBC_FNMATCH
 	imply POSIX_DEVICE_IO_ALIAS_CLOSE
 	imply POSIX_DEVICE_IO_ALIAS_OPEN
 	imply POSIX_DEVICE_IO_ALIAS_READ
@@ -137,6 +139,7 @@ config ARCMWDT_LIBC
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	select STATIC_INIT_GNU
 	select LIBC_ALLOW_LESS_THAN_64BIT_TIME
+	select COMMON_LIBC_FNMATCH
 	help
 	  C library provided by ARC MWDT toolchain.
 
@@ -151,6 +154,7 @@ config IAR_LIBC
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
 	select COMMON_LIBC_STRNLEN
 	select COMMON_LIBC_TIME
+	select COMMON_LIBC_FNMATCH
 	help
 	  Use the full IAR Compiler runtime libraries.
 	  A reduced Zephyr minimal libc will be used for library functionality

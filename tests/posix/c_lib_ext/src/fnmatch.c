@@ -30,8 +30,20 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("a*.c", "a/x.c", FNM_PATHNAME), FNM_NOMATCH);
 	zassert_ok(fnmatch("*/foo", "/foo", FNM_PATHNAME));
 	zassert_ok(fnmatch("-O[01]", "-O1", 0));
-	zassert_ok(fnmatch("[[?*\\]", "\\", 0));
-	zassert_ok(fnmatch("[]?*\\]", "]", 0));
+	if (!IS_ENABLED(CONFIG_COMMON_LIBC_FNMATCH)) {
+		/* \\ escapes ], no bracket expr, no match */
+		zassert_equal(fnmatch("[[?*\\]", "\\", 0), FNM_NOMATCH);
+		/* \\ escapes ], no bracket expr, no match */
+		zassert_equal(fnmatch("[]?*\\]", "]", 0), FNM_NOMATCH);
+	}
+	/* \\ unescaped, match */
+	zassert_ok(fnmatch("[[?*\\]", "\\", FNM_NOESCAPE));
+	/* \\ escapes \\, match */
+	zassert_ok(fnmatch("[[?*\\\\]", "\\", 0));
+	/* \\ unescaped, match */
+	zassert_ok(fnmatch("[]?*\\]", "]", FNM_NOESCAPE));
+	/* \\ escapes \\, match */
+	zassert_ok(fnmatch("[]?*\\\\]", "]", 0));
 	zassert_ok(fnmatch("[!]a-]", "b", 0));
 	zassert_ok(fnmatch("[]-_]", "^", 0));
 	zassert_ok(fnmatch("[!]-_]", "X", 0));
@@ -73,9 +85,14 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("*/*", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
 	zassert_ok(fnmatch("*?*/*", "a/.b", FNM_PERIOD));
 	zassert_ok(fnmatch("*[.]/b", "a./b", FNM_PATHNAME | FNM_PERIOD));
-	/* zassert_ok(fnmatch("*[[:alpha:]]/""*[[:alnum:]]", "a/b", FNM_PATHNAME)); */
-	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/b", FNM_PATHNAME), 0);
-	zassert_not_equal(fnmatch("*[![:digit:]]*/[[:d-d]", "a/[", FNM_PATHNAME), 0);
+
+	/* Disable tests that fail when using Zephyr's fnmatch implementation */
+	if (!IS_ENABLED(CONFIG_POSIX_C_LIB_EXT)) {
+		zassert_ok(fnmatch("*[[:alpha:]]/""*[[:alnum:]]", "a/b", FNM_PATHNAME));
+		zassert_ok(fnmatch("*[![:digit:]]*/[![:d-d]", "a/b", FNM_PATHNAME));
+		zassert_ok(fnmatch("*[![:digit:]]*/[[:d-d]", "a/[", FNM_PATHNAME));
+	}
+
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/[", FNM_PATHNAME), 0);
 	zassert_ok(fnmatch("a?b", "a.b", FNM_PATHNAME | FNM_PERIOD));
 	zassert_ok(fnmatch("a*b", "a.b", FNM_PATHNAME | FNM_PERIOD));
