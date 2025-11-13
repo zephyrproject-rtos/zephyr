@@ -152,6 +152,11 @@ const void *usbh_desc_get_next_function(const void *const desc_beg, const void *
 		return usbh_desc_get_by_type(desc_beg, desc_end, type_mask);
 	}
 
+	desc = usbh_desc_get_next(desc_beg, desc_end);
+	if (desc == NULL) {
+		return NULL;
+	}
+
 	while (skip_num > 0) {
 		desc = usbh_desc_get_by_type(desc, desc_end, type_mask);
 		if (desc == NULL) {
@@ -168,6 +173,14 @@ const void *usbh_desc_get_next_function(const void *const desc_beg, const void *
 			if (if_desc->bInterfaceNumber != iface) {
 				iface = if_desc->bInterfaceNumber;
 				skip_num--;
+				if(skip_num == 0) {
+					return desc;
+				}
+			}
+
+			desc = usbh_desc_get_next(desc, desc_end);
+			if (desc == NULL) {
+				return NULL;
 			}
 		} else {
 			__ASSERT(false, "invalid implementation of usbh_desc_get_by_iface()");
