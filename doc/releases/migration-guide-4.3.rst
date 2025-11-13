@@ -559,6 +559,3 @@ Trusted Firmware-M
   the in-tree versions of these modules will be used instead. To use custom versions, create a
   :ref:`west manifest <west-manifest-files>` which pulls in the desired versions of these
   repositories instead.
-
-Architectures
-*************
