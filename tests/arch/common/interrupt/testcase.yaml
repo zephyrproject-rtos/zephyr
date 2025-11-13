@@ -39,6 +39,9 @@ tests:
       # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
       # does not trigger interrupts
       - it8xxx2_evb
+      - max32655evkit/max32655/rv32
+      - max32690evkit/max32690/rv32
+      - max78002evkit/max78002/rv32
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -52,7 +55,11 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
   arch.shared_interrupt.lto: &shared-interrupt-lto
     # excluded because of failures during test_prevent_interruption
-    platform_exclude: qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      - max32655evkit/max32655/rv32
+      - max32690evkit/max32690/rv32
+      - max78002evkit/max78002/rv32
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa

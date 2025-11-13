@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <adi/max32/max32680.dtsi>
+#include <adi/max32/max32680-m4.dtsi>
 #include <adi/max32/max32680-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
