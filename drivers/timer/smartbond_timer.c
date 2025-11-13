@@ -180,7 +180,7 @@ void sys_clock_disable(void)
 	TIMER2->TIMER2_CTRL_REG &= ~TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk;
 }
 
-static void timer2_isr(const void *arg)
+void timer2_isr(const void *arg)
 {
 	uint32_t val;
 	int32_t delta;
