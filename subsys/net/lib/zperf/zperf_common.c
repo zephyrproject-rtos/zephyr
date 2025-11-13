@@ -21,24 +21,24 @@ LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "ipv6.h" /* to get infinite lifetime */
 
-static struct net_sockaddr_in6 in6_addr_my = {
+static struct net_sockaddr_in6 ipv6_addr_my = {
 	.sin6_family = NET_AF_INET6,
 	.sin6_port = net_htons(MY_SRC_PORT),
 };
 
-static struct net_sockaddr_in in4_addr_my = {
+static struct net_sockaddr_in ipv4_addr_my = {
 	.sin_family = NET_AF_INET,
 	.sin_port = net_htons(MY_SRC_PORT),
 };
 
 struct net_sockaddr_in6 *zperf_get_sin6(void)
 {
-	return &in6_addr_my;
+	return &ipv6_addr_my;
 }
 
 struct net_sockaddr_in *zperf_get_sin(void)
 {
-	return &in4_addr_my;
+	return &ipv4_addr_my;
 }
 
 #define ZPERF_WORK_Q_THREAD_PRIORITY					\
