@@ -12,3 +12,9 @@ description: |
 compatible: "st,stm32h7-ethernet"
 
 include: st,stm32-ethernet-common.yaml
+
+properties:
+  memory-region:
+    type: phandle
+    description: |
+      Reference to SRAM node used for Ethernet DMA buffer and descriptor.

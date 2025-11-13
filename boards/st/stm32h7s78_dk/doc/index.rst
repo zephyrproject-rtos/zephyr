@@ -181,6 +181,7 @@ Default Zephyr Peripheral Mapping:
 - XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
 - I2C1 SCL/SDA: PB6/PB9
 - FDCAN1 RX/TX : PB8/PB9
+- ETH: PA2/PA7/PB0/PB1/PC1/PC4/PC5/PD7/PG11
 
 System Clock
 ------------
@@ -207,6 +208,12 @@ FDCAN
 STM32H7S78-DK Discovery board has 2 FDCAN bus interfaces.
 FDCAN1 is configured but not enabled by default. To enable it, make sure
 that ``i2c1`` is disabled, since they share the PB9 pin.
+
+Ethernet
+--------
+
+In order to use Ethernet on STM32H7S78-DK, you need to set the ``JP6`` jumper
+to PC1 position on the back side of the board.
 
 Programming and Debugging
 *************************
