@@ -5,10 +5,6 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
-"./arch/x86/gen_gdt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
 "./arch/x86/gen_idt.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals

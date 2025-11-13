@@ -36,16 +36,14 @@ flat code/data segments for ring 3 execution.
 """
 
 import argparse
-import sys
-import struct
 import os
-
-from packaging import version
+import struct
+import sys
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -75,7 +73,7 @@ ACCESS_RW = 1 << 1  # read or write permission
 
 def create_gdt_pseudo_desc(addr, size):
     """Create pseudo GDT descriptor"""
-    debug("create pseudo descriptor: %x %x" % (addr, size))
+    debug(f"create pseudo descriptor: {addr:x} {size:x}")
     # ...and take back one byte for the Intel god whose Ark this is...
     size = size - 1
     return struct.pack(GDT_PD_FMT, size, addr, 0)
@@ -98,8 +96,7 @@ GDT_ENT_FMT = "<HHBBBB"
 
 def create_code_data_entry(base, limit, dpl, flags, access):
     """Create GDT entry for code or data"""
-    debug("create code or data entry: %x %x %x %x %x" %
-          (base, limit, dpl, flags, access))
+    debug(f"create code or data entry: {base:x} {limit:x} {dpl:x} {flags:x} {access:x}")
 
     base_lo, base_mid, base_hi, limit_lo, limit_hi = chop_base_limit(base,
                                                                      limit)
@@ -127,7 +124,7 @@ def create_code_data_entry(base, limit, dpl, flags, access):
 
 def create_tss_entry(base, limit, dpl):
     """Create GDT TSS entry"""
-    debug("create TSS entry: %x %x %x" % (base, limit, dpl))
+    debug(f"create TSS entry: {base:x} {limit:x} {dpl:x}")
     present = 1
 
     base_lo, base_mid, base_hi, limit_lo, limit_hi, = chop_base_limit(base,
