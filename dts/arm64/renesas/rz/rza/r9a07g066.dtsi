@@ -380,5 +380,15 @@
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
 		};
+
+		lcdif: display-controller@10870000 {
+			compatible = "renesas,rz-lcdc";
+			reg = <0x10870000 0x10000>, <0x10880000 0x10000>, <0x10890000 0x10000>;
+			reg-names = "vcpd", "fcpvd", "du";
+			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "vspd_int", "du_int";
+			status = "disabled";
+		};
 	};
 };
