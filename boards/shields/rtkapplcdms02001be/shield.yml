@@ -1,0 +1,7 @@
+shield:
+  name: rtkapplcdms02001be
+  full_name: RTKAPPLCDMS02001BE MIPI Display
+  vendor: renesas
+  supported_features:
+    - input
+    - display
