@@ -31,7 +31,7 @@ static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
 {
 	switch (eid) {
 	case REMOTE_HELLO_EID:
-		LOG_INF("got mctp message %s for eid %d, replying to 5 with \"world\"", (char *)msg,
+		LOG_INF("got mctp message \"%s\" from eid %d, replying with \"world\"", (char *)msg,
 			eid);
 		mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "world", sizeof("world"));
 		break;
