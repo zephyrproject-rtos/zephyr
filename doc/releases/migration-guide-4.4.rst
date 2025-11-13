@@ -55,6 +55,14 @@ Ethernet
     * Removed ``mac-eeprom`` property from :dtcompatible:`atmel,sam-gmac` and
       :dtcompatible:`atmel,sam0-gmac`
 
+GPIO
+====
+
+* The LiteX GPIO driver :dtcompatible:`litex,gpio` has been reworked to support changing direction.
+  The driver now uses the reg-names property to detect supported modes of the GPIO controller.
+  The Devicetree property ``port-is-output`` has been removed.
+  The reg-names are now taken directly from LiteX. (:github:`99329`)
+
 MDIO
 ====
 
