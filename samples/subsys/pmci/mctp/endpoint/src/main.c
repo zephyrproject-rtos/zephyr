@@ -58,8 +58,8 @@ int main(void)
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
 
 	/* MCTP poll loop */
+	mctp_uart_start_rx(&mctp_endpoint);
 	while (true) {
-		mctp_uart_start_rx(&mctp_endpoint);
 		k_sem_take(&mctp_rx, K_FOREVER);
 	}
 
