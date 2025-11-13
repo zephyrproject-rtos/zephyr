@@ -31,7 +31,13 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_FLASH_ATTR(REGION_2K)),
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
-#define sram_eth_node DT_NODELABEL(sram2)
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
+#define sram_eth_node	DT_NODELABEL(sram2)
+#else
+#define sram_eth_node	DT_NODELABEL(sram1)
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 	/* Region 5 - Ethernet DMA buffer RAM */
 	MPU_REGION_ENTRY("SRAM_ETH_BUF", DT_REG_ADDR(sram_eth_node),
