@@ -52,6 +52,7 @@
 		led0 = &led1;
 		led1 = &led2;
 		sw0 = &sw1;
+		watchdog0 = &iwdt;
 	};
 };
 
@@ -69,6 +70,10 @@
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&iwdtlsclk {
 	status = "okay";
 };
 
@@ -118,5 +123,11 @@
 &adc0 {
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdt {
+	window-start = <0x3000>;
+	window-end = <0x0300>;
 	status = "okay";
 };
