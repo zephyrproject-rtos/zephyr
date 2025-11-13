@@ -1,10 +1,12 @@
 /* test_common.c - common procedures for unit test of CAP initiator */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -32,9 +34,9 @@ void test_mocks_cleanup(void)
 	mock_cap_initiator_cleanup();
 }
 
-void test_conn_init(struct bt_conn *conn)
+void test_conn_init(struct bt_conn *conn, uint8_t index)
 {
-	conn->index = 0;
+	conn->index = index;
 	conn->info.type = BT_CONN_TYPE_LE;
 	conn->info.role = BT_CONN_ROLE_CENTRAL;
 	conn->info.state = BT_CONN_STATE_CONNECTED;
