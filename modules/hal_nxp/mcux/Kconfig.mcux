@@ -82,4 +82,11 @@ config NXP_RF_IMU
 	help
 	   RF_IMU adapter is needed for intercore messaging.
 
+config NXP_IEEE802154_MAC
+	bool "Narrowband Unit (15.4) using MAC intercore messaging"
+	depends on !IEEE802154
+	help
+	   If enabled, the NBU firmware used by the device will be use the 802.15.4
+	   MAC interface.
+
 endif # HAS_MCUX
