@@ -245,6 +245,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define MSR_RI 0x40   /* complement of ring signal */
 #define MSR_DCD 0x80  /* complement of dcd */
 
+/* constants for uart status register */
+#define USR_TFNF 0x02 /* Transmit FIFO Not Full */
+#define USR_TFE 0x04 /* Transmit FIFO Empty */
+#define USR_RFNE 0x08 /* Receive FIFO Not Empty */
+
 #define THR(dev) (get_port(dev) + (REG_THR * reg_interval(dev)))
 #define RDR(dev) (get_port(dev) + (REG_RDR * reg_interval(dev)))
 #define BRDL(dev) (get_port(dev) + (REG_BRDL * reg_interval(dev)))
@@ -1170,7 +1175,15 @@ static int uart_ns16550_irq_tx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if TX FIFO has space */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	int ret = ((ns16550_inbyte(dev_cfg, USR(dev)) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
+#endif
 
 #ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
 	if (ret == 0 && data->sw_tx_irq) {
@@ -1254,7 +1267,15 @@ static int uart_ns16550_irq_rx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if RX FIFO has data */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	int ret = ((ns16550_inbyte(dev_cfg, USR(dev)) & USR_RFNE) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_RXRDY)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_RBRF) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1309,7 +1330,18 @@ static int uart_ns16550_irq_is_pending(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if any IRQ is pending */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	bool tx_pending = ((ns16550_inbyte(dev_cfg, USR(dev)) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE));
+	bool rx_pending = ((ns16550_inbyte(dev_cfg, USR(dev)) & USR_RFNE) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_RXRDY));
+	int ret = (tx_pending || rx_pending) ? 1 : 0;
+#else
 	int ret = (!(IIRC(dev) & IIR_NIP)) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
