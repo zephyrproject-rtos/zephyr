@@ -31,10 +31,8 @@ void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 	uint32_t tmp = heth->Instance->MACFFR;
 
 	/* clear all multicast filter bits, resulting in perfect filtering */
-	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
-		 ETH_MULTICASTFRAMESFILTER_HASHTABLE |
-		 ETH_MULTICASTFRAMESFILTER_PERFECT |
-		 ETH_MULTICASTFRAMESFILTER_NONE);
+	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE | ETH_MULTICASTFRAMESFILTER_HASHTABLE |
+		 ETH_MULTICASTFRAMESFILTER_PERFECT | ETH_MULTICASTFRAMESFILTER_NONE);
 
 	if (IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER)) {
 		/* enable multicast hash receive filter */
@@ -134,8 +132,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
 
-	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface,
-					   total_len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
@@ -155,8 +152,7 @@ release_desc:
 	/* Set Own bit in Rx descriptors: gives the buffers back to DMA */
 	for (int i = 0; i < heth->RxFrameInfos.SegCount; i++) {
 		dma_rx_desc->Status |= ETH_DMARXDESC_OWN;
-		dma_rx_desc = (ETH_DMADescTypeDef *)
-			(dma_rx_desc->Buffer2NextDescAddr);
+		dma_rx_desc = (ETH_DMADescTypeDef *)(dma_rx_desc->Buffer2NextDescAddr);
 	}
 
 	/* Clear Segment_Count */
@@ -216,12 +212,12 @@ int eth_stm32_hal_init(const struct device *dev)
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
-	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-				      &dma_tx_buffer[0][0], ETH_TXBUFNB) != HAL_OK) {
+	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab, &dma_tx_buffer[0][0], ETH_TXBUFNB) !=
+	    HAL_OK) {
 		return -EIO;
 	}
-	if (HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-				      &dma_rx_buffer[0][0], ETH_RXBUFNB) != HAL_OK) {
+	if (HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab, &dma_rx_buffer[0][0], ETH_RXBUFNB) !=
+	    HAL_OK) {
 		return -EIO;
 	}
 
@@ -280,9 +276,8 @@ int eth_stm32_hal_stop(const struct device *dev)
 	return 0;
 }
 
-int eth_stm32_hal_set_config(const struct device *dev,
-				    enum ethernet_config_type type,
-				    const struct ethernet_config *config)
+int eth_stm32_hal_set_config(const struct device *dev, enum ethernet_config_type type,
+			     const struct ethernet_config *config)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -290,15 +285,12 @@ int eth_stm32_hal_set_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
-		heth->Instance->MACA0HR = (dev_data->mac_addr[5] << 8) |
-			dev_data->mac_addr[4];
+		heth->Instance->MACA0HR = (dev_data->mac_addr[5] << 8) | dev_data->mac_addr[4];
 		heth->Instance->MACA0LR = (dev_data->mac_addr[3] << 24) |
-			(dev_data->mac_addr[2] << 16) |
-			(dev_data->mac_addr[1] << 8) |
-			dev_data->mac_addr[0];
+					  (dev_data->mac_addr[2] << 16) |
+					  (dev_data->mac_addr[1] << 8) | dev_data->mac_addr[0];
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr),
-				     NET_LINK_ETHERNET);
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
