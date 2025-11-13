@@ -21,9 +21,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-/* select MSI as wake-up system clock if configured, HSI otherwise */
-#if STM32_SYSCLK_SRC_MSI
-#define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSI
+/* select MSIS as wake-up system clock if configured, HSI otherwise */
+#if STM32_SYSCLK_SRC_MSIS
+#define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSIS
 #else
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
