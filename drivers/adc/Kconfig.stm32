@@ -13,6 +13,7 @@ config ADC_STM32
 	default y
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	select PINCTRL
+	select ADC_ASYNC if ADC_STREAM
 	help
 	  Enable the driver implementation for the stm32xx ADC
 

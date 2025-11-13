@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_cache.h>
@@ -209,7 +210,19 @@ struct adc_stm32_data {
 	volatile int dma_error;
 	struct stream dma;
 #endif
+#ifdef CONFIG_ADC_STREAM
+	struct rtio_iodev_sqe *sqe;
+#endif /* CONFIG_ADC_STREAM */
 };
+
+#ifdef CONFIG_ADC_STREAM
+struct adc_stm32_rtio_data {
+	uint64_t timestamp;
+	uint16_t vref_mv;
+	uint16_t res: 5;
+	uint16_t channel_count: 6;
+} __packed;
+#endif /* CONFIG_ADC_STREAM */
 
 struct adc_stm32_cfg {
 	ADC_TypeDef *base;
@@ -959,6 +972,7 @@ static int start_read(const struct device *dev,
 	data->channels = sequence->channels;
 	data->channel_count = POPCOUNT(data->channels);
 	data->samples_count = 0;
+	data->resolution = sequence->resolution;
 
 	if (data->channel_count == 0) {
 		LOG_ERR("No channels selected");
@@ -1038,8 +1052,14 @@ static int start_read(const struct device *dev,
 #endif
 #endif /* CONFIG_ADC_STM32_DMA */
 
+	LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
+#ifdef CONFIG_ADC_STREAM
+	data->ctx.asynchronous = true;
+	adc_context_start_sampling(&data->ctx);
+#else /* CONFIG_ADC_STREAM */
 	/* This call will start the DMA */
 	adc_context_start_read(&data->ctx, sequence);
+#endif /* CONFIG_ADC_STREAM */
 
 	int result = adc_context_wait_for_completion(&data->ctx);
 
@@ -1086,8 +1106,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static void adc_stm32_isr(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
+	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
@@ -1105,6 +1124,8 @@ static void adc_stm32_isr(const struct device *dev)
 #else
 	if (LL_ADC_IsActiveFlag_EOC(adc) == 1) {
 #endif
+
+#ifndef CONFIG_ADC_STREAM
 		*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
 		/* ISR is triggered after each conversion, and at the end-of-sequence. */
 		if (++data->samples_count == data->channel_count) {
@@ -1117,6 +1138,38 @@ static void adc_stm32_isr(const struct device *dev)
 							 PM_ALL_SUBSTATES);
 			}
 		}
+#else /* CONFIG_ADC_STREAM */
+		if (data->samples_count == 0U) {
+			uint8_t *buf;
+			uint32_t buf_len;
+			const size_t read_size = sizeof(struct adc_stm32_rtio_data) +
+						 data->channel_count * sizeof(adc_data_size_t);
+			struct adc_stm32_rtio_data *hdr;
+
+			if (rtio_sqe_rx_buf(data->sqe, read_size, read_size, &buf, &buf_len) != 0) {
+				rtio_iodev_sqe_err(data->sqe, -ENOMEM);
+				return;
+			}
+
+			hdr = (struct adc_stm32_rtio_data *)buf;
+			hdr->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+			hdr->vref_mv = STM32_ADC_VREF_MV;
+			hdr->res = data->resolution;
+			hdr->channel_count = data->channel_count;
+		}
+
+		adc_data_size_t *read_buf = (adc_data_size_t *)(data->sqe->sqe.rx.buf +
+					    sizeof(struct adc_stm32_rtio_data) +
+					    data->samples_count * sizeof(adc_data_size_t));
+
+		*read_buf = LL_ADC_REG_ReadConversionData32(adc);
+
+		if (++data->samples_count == data->channel_count) {
+			data->samples_count = 0;
+			adc_context_on_sampling_done(&data->ctx, dev);
+			rtio_iodev_sqe_ok(data->sqe, 0);
+		}
+#endif /* CONFIG_ADC_STREAM */
 	}
 
 	LOG_DBG("%s ISR triggered.", dev->name);
@@ -1724,6 +1777,95 @@ static int adc_stm32_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+#ifdef CONFIG_ADC_STREAM
+static void adc_stm32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct adc_stm32_data *data = dev->data;
+	const struct adc_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+	int rc;
+
+	data->sqe = iodev_sqe;
+
+	adc_context_lock(&data->ctx, false, NULL);
+	rc = start_read(dev, read_cfg->sequence);
+	adc_context_release(&data->ctx, rc);
+
+	if (rc < 0) {
+		LOG_ERR("Error starting conversion (%d)", rc);
+	}
+}
+
+static int adc_stm32_decoder_get_frame_count(const uint8_t *buffer, uint32_t channel,
+					     uint16_t *frame_count)
+{
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(channel);
+
+	*frame_count = 1U;
+
+	return 0;
+}
+
+static int adc_stm32_convert_q31(q31_t *out, const uint8_t *buff,
+				 uint16_t resolution, uint16_t vref_mv, uint8_t adc_shift)
+{
+	int32_t data_in = 0;
+	uint32_t scale = BIT(resolution);
+
+	uint32_t sensitivity = (vref_mv * (scale - 1)) / scale * 1000 / scale; /* uV / LSB */
+
+	data_in = sys_get_le16(buff);
+
+	*out =  BIT(31 - adc_shift) * sensitivity / 1000000 * data_in;
+	return 0;
+}
+
+static int adc_stm32_decoder_decode(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
+				    uint16_t max_count, void *data_out)
+{
+	const struct adc_stm32_rtio_data *enc_data = (const struct adc_stm32_rtio_data *)buffer;
+
+	if (*fit != 0U) {
+		return 0;
+	}
+
+	if (channel >= enc_data->channel_count) {
+		return -EINVAL;
+	}
+
+	struct adc_data *data = (struct adc_data *)data_out;
+
+	memset(data, 0, sizeof(struct adc_data));
+	data->header.base_timestamp_ns = enc_data->timestamp;
+	data->header.reading_count = 1;
+
+	data->shift = find_msb_set(enc_data->vref_mv) - 1;
+
+	buffer += sizeof(struct adc_stm32_rtio_data) + channel * sizeof(adc_data_size_t);
+
+	adc_stm32_convert_q31(&data->readings[0].value, buffer,
+			      enc_data->res, enc_data->vref_mv, data->shift);
+
+	*fit = 1U;
+
+	return 0;
+
+}
+
+ADC_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = adc_stm32_decoder_get_frame_count,
+	.decode = adc_stm32_decoder_decode,
+};
+
+static int adc_stm32_get_decoder(const struct device *dev, const struct adc_decoder_api **api)
+{
+	ARG_UNUSED(dev);
+	*api = &ADC_DECODER_NAME();
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(adc, api_stm32_driver_api) = {
 	.channel_setup = adc_stm32_channel_setup,
 	.read = adc_stm32_read,
@@ -1731,6 +1873,10 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 	.read_async = adc_stm32_read_async,
 #endif
 	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
+#ifdef CONFIG_ADC_STREAM
+	.submit = adc_stm32_submit_stream,
+	.get_decoder = adc_stm32_get_decoder,
+#endif /* CONFIG_ADC_STREAM */
 };
 
 /* Macros for ADC clock source and prescaler */
