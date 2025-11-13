@@ -1240,6 +1240,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_config *config = dev->config;
+	struct video_buffer *vbuf;
 	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -1298,6 +1299,12 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 	if (pipe->active != NULL) {
 		k_fifo_put(&pipe->fifo_in, pipe->active);
+	}
+
+	/* Forward all buffers in fifo_in to fifo_out */
+	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
+		vbuf->bytesused = 0;
+		k_fifo_put(&pipe->fifo_out, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
