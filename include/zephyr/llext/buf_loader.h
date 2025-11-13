@@ -38,6 +38,7 @@ struct llext_buf_loader {
 /** @cond ignore */
 int llext_buf_read(struct llext_loader *ldr, void *buf, size_t len);
 int llext_buf_seek(struct llext_loader *ldr, size_t pos);
+size_t llext_buf_get_size(struct llext_loader *ldr);
 void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 
 #define Z_LLEXT_BUF_LOADER(_buf, _buf_len, _storage)                                               \
@@ -48,6 +49,7 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 				.read = llext_buf_read,                                            \
 				.seek = llext_buf_seek,                                            \
 				.peek = llext_buf_peek,                                            \
+				.get_size = llext_buf_get_size,                                    \
 				.finalize = NULL,                                                  \
 				.storage = _storage,                                               \
 			},                                                                         \

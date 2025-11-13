@@ -5,13 +5,19 @@
  *
  */
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/llext/elf.h>
+#include <zephyr/llext/loader.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/buf_loader.h>
 #include <zephyr/llext/fs_loader.h>
+
+#ifdef CONFIG_LLEXT_COMPRESSION_LZ4
+#include <lz4frame.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
@@ -126,6 +132,32 @@ static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 
 static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_OBJ_ALIGN);
 
+#ifdef CONFIG_LLEXT_COMPRESSION_LZ4
+
+static void set_compression(const struct shell *sh, uint32_t *llext_header,
+			    struct llext_load_param *ldr_parm)
+{
+	uint32_t lz4_header_le = sys_cpu_to_le32(LZ4F_MAGICNUMBER);
+
+	if (lz4_header_le == *llext_header) {
+		/* lz4 compressed archive */
+		ldr_parm->compression_type = LLEXT_COMPRESSION_TYPE_LZ4;
+	} else {
+		shell_print(sh, "Magic for LZ4 compressed archive does not match, "
+				"assuming uncompressed extension!");
+	}
+}
+
+#else
+static void set_compression(const struct shell *sh, uint32_t *llext_header,
+			    struct llext_load_param *ldr_parm)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(llext_header);
+	ARG_UNUSED(ldr_parm);
+}
+#endif
+
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
 	char *name = argv[1];
@@ -152,6 +184,7 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext;
+	set_compression(sh, (uint32_t *)llext_buf, &ldr_parm);
 	int res = llext_load(ldr, name, &ext, &ldr_parm);
 
 	if (res == 0) {
@@ -197,6 +230,7 @@ static int cmd_llext_load_fs(const struct shell *sh, size_t argc, char *argv[])
 {
 	int res;
 	struct fs_dirent dirent;
+	uint32_t file_header;
 
 	res = fs_stat(argv[2], &dirent);
 	if (res) {
@@ -213,6 +247,22 @@ static int cmd_llext_load_fs(const struct shell *sh, size_t argc, char *argv[])
 	struct llext_loader *ldr = &fs_loader.loader;
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext;
+
+	res = llext_seek(ldr, 0);
+
+	if (!res) {
+		shell_print(sh, "Failed to load extension %s: Could not seek!\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	res = llext_read(ldr, &file_header, sizeof(file_header));
+
+	if (!res) {
+		shell_print(sh, "Failed to load extension %s: Could not read header!\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	set_compression(sh, &file_header, &ldr_parm);
 
 	res = llext_load(ldr, argv[1], &ext, &ldr_parm);
 	if (res < 0) {
