@@ -183,12 +183,12 @@ def round_down(val, align):
 # access or set caching properties at leaf levels.
 INT_FLAGS = FLAG_P | FLAG_RW | FLAG_US
 
+
 class MMUTable:
     """Represents a particular table in a set of page tables, at any level"""
 
     def __init__(self):
-        self.entries = array.array(self.type_code,
-                                   [0 for i in range(self.num_entries)])
+        self.entries = array.array(self.type_code, [0 for i in range(self.num_entries)])
 
     def get_binary(self):
         """Return a bytearray representation of this table"""
@@ -260,79 +260,107 @@ class MMUTable:
         this is the physical address of the next level table"""
         index = self.entry_index(virt_addr)
 
-        verbose(f"{self.__class__.__name__:s}: "
-                f"mapping 0x{phys_addr:x} to 0x{virt_addr:x} : "
-                f"{dump_flags(entry_flags):s}")
+        verbose(
+            f"{self.__class__.__name__:s}: "
+            f"mapping 0x{phys_addr:x} to 0x{virt_addr:x} : "
+            f"{dump_flags(entry_flags):s}"
+        )
 
-        self.entries[index] = ((phys_addr & self.addr_mask) |
-                               (entry_flags & self.supported_flags))
+        self.entries[index] = (phys_addr & self.addr_mask) | (entry_flags & self.supported_flags)
 
     def set_perms(self, virt_addr, entry_flags):
-        """"For the table entry corresponding to the provided virtual address,
+        """For the table entry corresponding to the provided virtual address,
         update just the flags, leaving the physical mapping alone.
         Unsupported flags will be filtered out."""
         index = self.entry_index(virt_addr)
 
-        verbose(f"{self.__class__.__name__:s}: "
-                f"changing perm at 0x{virt_addr:x} : "
-                f"{dump_flags(entry_flags):s}")
+        verbose(
+            f"{self.__class__.__name__:s}: "
+            f"changing perm at 0x{virt_addr:x} : "
+            f"{dump_flags(entry_flags):s}"
+        )
 
-        self.entries[index] = ((self.entries[index] & self.addr_mask) |
-                               (entry_flags & self.supported_flags))
+        self.entries[index] = (self.entries[index] & self.addr_mask) | (
+            entry_flags & self.supported_flags
+        )
 
 
 # Specific supported table types
 class Pml4(MMUTable):
     """Page mapping level 4 for IA-32e"""
+
     addr_shift = 39
     addr_mask = 0x7FFFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
     supported_flags = INT_FLAGS
 
+
 class Pdpt(MMUTable):
     """Page directory pointer table for IA-32e"""
+
     addr_shift = 30
     addr_mask = 0x7FFFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
     supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
+
 class PdptPAE(Pdpt):
     """Page directory pointer table for PAE"""
+
     num_entries = 4
+
 
 class Pd(MMUTable):
     """Page directory for 32-bit"""
+
     addr_shift = 22
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
     supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
+
 class PdXd(Pd):
     """Page directory for either PAE or IA-32e"""
+
     addr_shift = 21
     addr_mask = 0x7FFFFFFFFFFFF000
     num_entries = 512
     type_code = 'Q'
 
+
 class Pt(MMUTable):
     """Page table for 32-bit"""
+
     addr_shift = 12
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD | FLAG_D |
-                       FLAG_IGNORED0 | FLAG_IGNORED1)
+    supported_flags = (
+        FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD | FLAG_D | FLAG_IGNORED0 | FLAG_IGNORED1
+    )
+
 
 class PtXd(Pt):
     """Page table for either PAE or IA-32e"""
+
     addr_mask = 0x07FFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD | FLAG_CD |
-                       FLAG_D | FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
+    supported_flags = (
+        FLAG_P
+        | FLAG_RW
+        | FLAG_US
+        | FLAG_G
+        | FLAG_XD
+        | FLAG_CD
+        | FLAG_D
+        | FLAG_IGNORED0
+        | FLAG_IGNORED1
+        | FLAG_IGNORED2
+    )
 
 
 class PtableSet:
@@ -344,8 +372,7 @@ class PtableSet:
         self.toplevel = self.levels[0]()
         self.page_pos = pages_start
 
-        debug(f"{self.__class__.__name__:s} "
-              f"starting at physical address 0x{self.page_pos:x}")
+        debug(f"{self.__class__.__name__:s} starting at physical address 0x{self.page_pos:x}")
 
         # Database of page table pages. Maps physical memory address to
         # MMUTable objects, excluding the top-level table which is tracked
@@ -442,8 +469,9 @@ class PtableSet:
         scope = 1 << self.levels[PD_LEVEL].addr_shift
 
         if virt_base % scope != 0:
-            error(f"misaligned virtual address space, 0x{virt_base:x} "
-                  f"not a multiple of 0x{scope:x}")
+            error(
+                f"misaligned virtual address space, 0x{virt_base:x} not a multiple of 0x{scope:x}"
+            )
 
         for addr in range(virt_base, virt_base + size, scope):
             self.map_page(addr, 0, 0, True, to_level)
@@ -568,25 +596,33 @@ class PtableSet:
             # in PAE, the top-level PDPT has only 4 entries and is not a
             # full page in size. We do not put it in the tables dictionary
             # and treat it as a special case.
-            debug(f"top-level {self.toplevel.__class__.__name__:s} at "
-                  f"physical addr 0x{self.get_new_mmutable_addr():x}")
+            debug(
+                f"top-level {self.toplevel.__class__.__name__:s} at "
+                f"physical addr 0x{self.get_new_mmutable_addr():x}"
+            )
             top_level_bin = self.toplevel.get_binary()
             output_fp.write(top_level_bin)
             written_size += len(top_level_bin)
 
         return written_size
 
+
 # Paging mode classes, we'll use one depending on configuration
 class Ptables32bit(PtableSet):
     """32-bit Page Tables"""
+
     levels = [Pd, Pt]
+
 
 class PtablesPAE(PtableSet):
     """PAE Page Tables"""
+
     levels = [PdptPAE, PdXd, PtXd]
+
 
 class PtablesIA32e(PtableSet):
     """Page Tables under IA32e mode"""
+
     levels = [Pml4, Pdpt, PdXd, PtXd]
 
 
@@ -596,14 +632,16 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-k", "--kernel", required=True,
-                        help="path to prebuilt kernel ELF binary")
-    parser.add_argument("-o", "--output", required=True,
-                        help="output file")
-    parser.add_argument("--map", action='append',
-                        help=textwrap.dedent('''\
+    parser.add_argument("-k", "--kernel", required=True, help="path to prebuilt kernel ELF binary")
+    parser.add_argument("-o", "--output", required=True, help="output file")
+    parser.add_argument(
+        "--map",
+        action='append',
+        help=textwrap.dedent('''\
                             Map extra memory:
                             <physical address>,<size>[,<flags:LUWXD>[,<virtual address>]]
                             where flags can be empty or combination of:
@@ -617,9 +655,9 @@ def parse_args():
                                 supervisor only,
                                 read only,
                                 and execution disabled.
-                            '''))
-    parser.add_argument("-v", "--verbose", action="count",
-                        help="Print extra debugging information")
+                            '''),
+    )
+    parser.add_argument("-v", "--verbose", action="count", help="Print extra debugging information")
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
@@ -629,10 +667,10 @@ def get_symbols(elf_obj):
     """Get all symbols from the ELF file"""
     for section in elf_obj.iter_sections():
         if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value
-                    for sym in section.iter_symbols()}
+            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     raise LookupError("Could not find symbol table")
+
 
 def isdef(sym_name):
     """True if symbol is defined in ELF file"""
@@ -665,7 +703,7 @@ def map_extra_regions(pt):
 
         one_map['cmdline'] = entry
         one_map['phys'] = int(elements[0], 0)
-        one_map['size']= int(elements[1], 0)
+        one_map['size'] = int(elements[1], 0)
         one_map['large_page'] = False
 
         flags = FLAG_P | ENTRY_XD
@@ -684,7 +722,7 @@ def map_extra_regions(pt):
             if 'U' in map_flags:
                 flags |= ENTRY_US
             if 'L' in map_flags:
-                flags |=  FLAG_SZ
+                flags |= FLAG_SZ
                 one_map['large_page'] = True
             if 'D' in map_flags:
                 flags |= FLAG_CD
@@ -709,8 +747,9 @@ def map_extra_regions(pt):
         # Check if addresses have already been mapped.
         # Error out if so as they could override kernel mappings.
         if pt.is_region_mapped(virt, size, level):
-            error(f"Region 0x{virt:x} ({size:d}) already been mapped "
-                  f"for --map {one_map['cmdline']:x}")
+            error(
+                f"Region 0x{virt:x} ({size:d}) already been mapped for --map {one_map['cmdline']:x}"
+            )
 
         # Reserve space in page table, and map the region
         pt.reserve_unaligned(virt, size, level)
@@ -773,12 +812,15 @@ def main():
 
     debug(f"Address space: 0x{vm_base:x} - 0x{vm_base + vm_size - 1:x} size 0x{vm_size:x}")
 
-    debug(f"Zephyr image: 0x{image_base:x} - 0x{image_base + image_size - 1:x} "
-          f"size 0x{image_size:x}")
+    debug(
+        f"Zephyr image: 0x{image_base:x} - 0x{image_base + image_size - 1:x} size 0x{image_size:x}"
+    )
 
     if virt_to_phys_offset != 0:
-        debug(f"Physical address space: 0x{sram_base:x} - 0x{sram_base + sram_size - 1:x} "
-              f"size 0x{sram_size:x}")
+        debug(
+            f"Physical address space: 0x{sram_base:x} - 0x{sram_base + sram_size - 1:x} "
+            f"size 0x{sram_size:x}"
+        )
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
@@ -819,8 +861,9 @@ def main():
         # Note that this only does the identity mapping
         # at the page directory level to minimize wasted space.
         pt.reserve_unaligned(image_base_phys, image_size, to_level=PD_LEVEL)
-        pt.identity_map_unaligned(image_base_phys, image_size,
-                                  FLAG_P | FLAG_RW | FLAG_SZ, level=PD_LEVEL)
+        pt.identity_map_unaligned(
+            image_base_phys, image_size, FLAG_P | FLAG_RW | FLAG_SZ, level=PD_LEVEL
+        )
 
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs
@@ -832,8 +875,12 @@ def main():
 
     if isdef("CONFIG_XIP"):
         # Additionally identity-map all ROM as read-only
-        pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"], None,
-               syms["CONFIG_FLASH_SIZE"] * 1024, map_flags | FLAG_P)
+        pt.map(
+            syms["CONFIG_FLASH_BASE_ADDRESS"],
+            None,
+            syms["CONFIG_FLASH_SIZE"] * 1024,
+            map_flags | FLAG_P,
+        )
 
     if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
         pt.map_region("lnkr_boot", map_flags | FLAG_P | ENTRY_RW, virt_to_phys_offset)
@@ -884,8 +931,7 @@ def main():
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its
             # common data area
-            pt.set_region_perms("__gcov_bss",
-                                FLAG_P | ENTRY_RW | ENTRY_US | ENTRY_XD)
+            pt.set_region_perms("__gcov_bss", FLAG_P | ENTRY_RW | ENTRY_US | ENTRY_XD)
 
         if isdef("CONFIG_X86_64"):
             # Set appropriate permissions for locore areas much like we did
@@ -926,8 +972,10 @@ def main():
 
         reason = "big" if reserved_pt_size > written_size else "small"
 
-        error(f"Reserved space for page table is too {reason:s}."
-              f" Set CONFIG_X86_EXTRA_PAGE_TABLE_PAGES={extra_pages_needed:d}")
+        error(
+            f"Reserved space for page table is too {reason:s}."
+            f" Set CONFIG_X86_EXTRA_PAGE_TABLE_PAGES={extra_pages_needed:d}"
+        )
 
 
 if __name__ == "__main__":
