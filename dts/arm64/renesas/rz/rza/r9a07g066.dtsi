@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	compatible = "renesas,r9a07g066";
@@ -388,6 +389,21 @@
 			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 					<GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "vspd_int", "du_int";
+			status = "disabled";
+		};
+
+		mipi_dsi: dsihost@10860000 {
+			compatible = "renesas,rz-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10860000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 143 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 145 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 147 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "sq0", "sq1", "vin1", "rcv", "ferr", "ppi";
 			status = "disabled";
 		};
 	};
