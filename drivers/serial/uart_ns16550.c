@@ -355,6 +355,7 @@ struct uart_ns16550_dev_config {
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
+	bool loopback;
 };
 
 /** Device data structure */
@@ -705,6 +706,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		mdc |= MCR_AFCE;
 	}
 #endif
+
+	if (dev_cfg->loopback) {
+		mdc |= MCR_LOOP;
+	}
 
 	ns16550_outbyte(dev_cfg, MDC(dev), mdc);
 
@@ -2031,7 +2036,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		IF_ENABLED(CONFIG_PINCTRL,                                           \
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
-			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		.loopback = DT_INST_PROP(n, loopback),
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
