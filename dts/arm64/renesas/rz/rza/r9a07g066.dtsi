@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "renesas,r9a07g066";
@@ -378,6 +379,44 @@
 					<GIC_SPI 403 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 					<GIC_SPI 404 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c0: i2c@10058000 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10058000 0x400>;
+			interrupts = <GIC_SPI 348 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 349 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 350 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 351 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 352 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 354 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 355 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		i2c1: i2c@10058400 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10058400 0x400>;
+			interrupts = <GIC_SPI 356 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 357 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 358 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 360 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 361 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 362 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 363 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
 			status = "disabled";
 		};
 	};
