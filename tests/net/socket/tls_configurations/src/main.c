@@ -151,7 +151,7 @@ void close_socket(void)
 
 static int setup_credentials(void)
 {
-	int err;
+	__maybe_unused int err;
 
 #if defined(USE_CERTIFICATE)
 	err = tls_credential_add(CA_CERTIFICATE_TAG,
