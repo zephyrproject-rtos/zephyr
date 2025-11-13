@@ -3730,7 +3730,7 @@ int net_tcp_put(struct net_context *context, bool force_close)
 						    K_MSEC(TCP_RTO_MS));
 
 		} else {
-			NET_ERR("[%p] TCP connection in %s close, "
+			NET_DBG("[%p] TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
 				conn, "active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
