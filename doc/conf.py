@@ -209,8 +209,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.3.0", "/4.3.0/"),
         ("4.2.0", "/4.2.0/"),
-        ("4.1.0", "/4.1.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,
