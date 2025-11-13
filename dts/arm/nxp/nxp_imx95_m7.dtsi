@@ -677,6 +677,63 @@
 			};
 		};
 
+		disp_irqsteer: interrupt-controller@4b0b0000 {
+			compatible = "nxp,irqsteer-intc";
+			reg = <0x4b0b0000 DT_SIZE_K(64)>;
+			#size-cells = <0>;
+			#address-cells = <1>;
+			nxp,irq-offset = <874>;
+			nxp,num-irqs = <512>;
+
+			disp_irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 214 0>;
+			};
+
+			disp_irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 215 0>;
+			};
+
+			disp_irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 216 0>;
+			};
+
+			disp_irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 217 0>;
+			};
+
+			disp_irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 218 0>;
+			};
+
+			disp_irqsteer_master7: interrupt-controller@7 {
+				compatible = "nxp,irqsteer-master";
+				reg = <7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 219 0>;
+			};
+		};
+
 		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
 			compatible = "nxp,imx-netc-blk-ctrl";
 			reg = <0x4cde0000 0x10000>,
