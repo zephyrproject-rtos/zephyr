@@ -13,6 +13,7 @@ source "drivers/disk/Kconfig.flash"
 source "drivers/disk/Kconfig.sdmmc"
 source "drivers/disk/Kconfig.mmc"
 source "drivers/disk/Kconfig.loopback"
+source "drivers/disk/Kconfig.ufs"
 
 rsource "nvme/Kconfig"
 
