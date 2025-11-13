@@ -5388,7 +5388,7 @@ enum pipe_flags {
 
 struct k_pipe {
 	size_t waiting;
-	struct ring_buf buf;
+	struct ring_buffer buf;
 	struct k_spinlock lock;
 	_wait_q_t data;
 	_wait_q_t space;
@@ -5407,7 +5407,7 @@ struct k_pipe {
 #define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)	\
 {								\
 	.waiting = 0,						\
-	.buf = RING_BUF_INIT(pipe_buffer, pipe_buffer_size),	\
+	.buf = RING_BUFFER_INIT(pipe_buffer, pipe_buffer_size),	\
 	.data = Z_WAIT_Q_INIT(&obj.data),			\
 	.space = Z_WAIT_Q_INIT(&obj.space),			\
 	.flags = PIPE_FLAG_OPEN,				\
