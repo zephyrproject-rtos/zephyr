@@ -25,13 +25,13 @@ if(CONFIG_CMAKE_LINKER_GENERATOR)
     zephyr_linker_section_configure(SECTION .fsp_dtc_vector_table KEEP INPUT ".fsp_dtc_vector_table*")
   endif()
 
-  zephyr_linker_section(NAME .option_setting_ofs0 GROUP FLASH ADDRESS ${ofs0_addr})
+  zephyr_linker_section(NAME .option_setting_ofs0 GROUP ROM_REGION ADDRESS ${ofs0_addr})
   zephyr_linker_section_configure(SECTION .option_setting_ofs0 KEEP INPUT ".option_setting_ofs0*")
 
-  zephyr_linker_section(NAME .option_setting_ofs1 GROUP FLASH ADDRESS ${ofs1_addr})
+  zephyr_linker_section(NAME .option_setting_ofs1 GROUP ROM_REGION ADDRESS ${ofs1_addr})
   zephyr_linker_section_configure(SECTION .option_setting_ofs1 KEEP INPUT ".option_setting_ofs1*")
 
-  zephyr_linker_section(NAME .option_setting_secmpu GROUP FLASH ADDRESS ${secmpu_addr})
+  zephyr_linker_section(NAME .option_setting_secmpu GROUP ROM_REGION ADDRESS ${secmpu_addr})
   zephyr_linker_section_configure(SECTION .option_setting_secmpu KEEP INPUT ".option_setting_secmpu*")
 
   if(${osis_status})
