@@ -24,6 +24,17 @@ def parse_args():
                         required=False, help="tracing data output file")
     args = parser.parse_args()
 
+def capture(ser: serial.Serial, output_file: str):
+    with open(output_file, "wb") as file_desc:
+        while True:
+            count = ser.inWaiting()
+            if count > 0:
+                while count > 0:
+                    data = ser.read()
+                    file_desc.write(data)
+                    count -= 1
+
+
 def main():
     parse_args()
     serial_port = args.serial_port
@@ -38,22 +49,17 @@ def main():
     print("serial open success")
 
     #enable device tracing
-    ser.write("enable\r".encode())
+    ser.write(b"enable\r")
 
-    with open(output_file, "wb") as file_desc:
-        while True:
-            count = ser.inWaiting()
-            if count > 0:
-                while count > 0:
-                    data = ser.read()
-                    file_desc.write(data)
-                    count -= 1
+    try:
+        capture(ser, output_file)
+    except KeyboardInterrupt:
+        print('Data capture interrupted, data saved into {}'.format(output_file))
+
+    # disable device tracing
+    ser.write(b"disable\r")
 
     ser.close()
 
 if __name__=="__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('Data capture interrupted, data saved into {}'.format(args.output))
-        sys.exit(0)
+    main()
