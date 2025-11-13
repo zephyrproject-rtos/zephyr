@@ -331,6 +331,14 @@ Ethernet
   reworked to be used as active low, you may have to set the pin as
   ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
 
+GPIO
+====
+
+* The LiteX GPIO driver :dtcompatible:`litex,gpio` has been reworked to support changing direction.
+  The driver now uses the reg-names property to detect supported modes of the GPIO controller.
+  The Devicetree property ``port-is-output`` has been removed.
+  The reg-names are now taken directly from LiteX. (:github:`99329`)
+
 Infineon
 ========
 
