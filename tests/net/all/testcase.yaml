@@ -13,3 +13,12 @@ tests:
   net.build.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.build.no_compat_namespacing:
+    extra_configs:
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
+      - CONFIG_POSIX_API=n
+      - CONFIG_SHELL_GETOPT=n
+      - CONFIG_NET_L2_WIFI_SHELL=n
+  net.build.compat_namespacing:
+    extra_configs:
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=y
