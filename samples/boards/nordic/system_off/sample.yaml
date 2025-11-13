@@ -47,6 +47,44 @@ tests:
         - "Off count: 0"
         - "Active Ticks:"
         - "Entering system off; press sw0 to restart"
+  sample.boards.nrf.system_off.grtc_off:
+    platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_configs:
+      - CONFIG_SYS_CLOCK_DISABLE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "system off demo"
+        - "Retained data not supported"
+        - "System clock will be disabled"
+        - "Entering system off; press sw0 to restart"
+  sample.boards.nrf.system_off.retained_mem.grtc_off:
+    platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_configs:
+      - CONFIG_APP_USE_RETAINED_MEM=y
+      - CONFIG_SYS_CLOCK_DISABLE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "system off demo"
+        - "Retained data: valid"
+        - "Boot count: 1"
+        - "Off count: 0"
+        - "Active Ticks:"
+        - "System clock will be disabled"
+        - "Entering system off; press sw0 to restart"
   sample.boards.nrf.system_off.grtc_wakeup:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
