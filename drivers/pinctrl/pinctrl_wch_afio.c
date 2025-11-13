@@ -66,22 +66,18 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		if (remap != 0) {
-			RCC->APB2PCENR |= RCC_AFIOEN;
-
-			if (bit0 == CH32V003_PINMUX_I2C1_RM) {
-				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
-							<< CH32V003_PINMUX_I2C1_RM) |
-					       ((uint32_t)((remap >> 1) & 1)
-							<< CH32V003_PINMUX_I2C1_RM1);
-			} else if (bit0 == CH32V003_PINMUX_USART1_RM) {
-				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
-							<< CH32V003_PINMUX_USART1_RM) |
-					       ((uint32_t)((remap >> 1) & 1)
-							<< CH32V003_PINMUX_USART1_RM1);
-			} else {
-				AFIO->PCFR1 |= (uint32_t)remap << bit0;
-			}
+		if (bit0 == CH32V003_PINMUX_I2C1_RM) {
+			AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+						<< CH32V003_PINMUX_I2C1_RM) |
+					((uint32_t)((remap >> 1) & 1)
+						<< CH32V003_PINMUX_I2C1_RM1);
+		} else if (bit0 == CH32V003_PINMUX_USART1_RM) {
+			AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+						<< CH32V003_PINMUX_USART1_RM) |
+					((uint32_t)((remap >> 1) & 1)
+						<< CH32V003_PINMUX_USART1_RM1);
+		} else {
+			AFIO->PCFR1 |= (uint32_t)remap << bit0;
 		}
 	}
 
