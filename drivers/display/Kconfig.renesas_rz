@@ -1,0 +1,35 @@
+# Renesas RZ Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RZ_LCDC
+	bool "Renesas display controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_LCDC_ENABLED
+	select USE_RZ_FSP_DISPLAY
+	select NOCACHE_MEMORY
+	help
+	  Enable Renesas display controller.
+
+if RENESAS_RZ_LCDC
+
+config RENESAS_RZ_LCDC_FB_NUM
+	int "Frame buffer number"
+	default 2
+	range 0 2
+	help
+	  RENESAS RZ LCDC frame buffer number config:
+	    - 0 frame buffer maintained by application, must write with full screen pixels.
+	    - 1 single frame buffer in RENESAS RZ LCDC driver.
+	    - 2 double frame buffer in RENESAS RZ LCDC driver.
+
+if LVGL
+
+# Force display buffers to be aligned to cache line size (64 bytes)
+config LV_Z_VDB_ALIGN
+	default 64
+
+endif # LVGL
+
+endif # RENESAS_RZ_LCDC
