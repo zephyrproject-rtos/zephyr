@@ -86,10 +86,10 @@ static void verify_background_color(int x, int y, size_t width, size_t height, u
 	for (size_t i = 0; i < width * height; i++) {
 		switch (bpp) {
 		case 4:
-			zassert_equal(buf32[i], color, "@%d", i);
+			zassert_equal(buf32[i], color, "@%zu", i);
 			break;
 		case 2:
-			zassert_equal(buf16[i], (uint16_t)color, "@%d", i);
+			zassert_equal(buf16[i], (uint16_t)color, "@%zu", i);
 			break;
 		case 1:
 			if (is_vtiled) {
@@ -100,13 +100,13 @@ static void verify_background_color(int x, int y, size_t width, size_t height, u
 
 				uint8_t *tptr = disp_buffer + (tile * width + x);
 
-				zassert_equal(!!(*tptr & BIT(y)), !!(color), "@%d", i);
+				zassert_equal(!!(*tptr & BIT(y)), !!(color), "@%zu", i);
 			} else if (is_htiled) {
 				uint8_t *tptr = disp_buffer + i / 8;
 
-				zassert_equal(!!(*tptr & BIT(i % 8)), !!(color), "@%d", i);
+				zassert_equal(!!(*tptr & BIT(i % 8)), !!(color), "@%zu", i);
 			} else {
-				zassert_equal(buf8[i], (uint8_t)color, "@%d", i);
+				zassert_equal(buf8[i], (uint8_t)color, "@%zu", i);
 			}
 			break;
 		}
