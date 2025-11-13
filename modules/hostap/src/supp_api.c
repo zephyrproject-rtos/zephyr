@@ -2941,6 +2941,147 @@ int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params
 		break;
 	}
 
+	case WIFI_P2P_GROUP_ADD: {
+		int len = 0;
+
+		if (params == NULL) {
+			wpa_printf(MSG_ERROR, "P2P group add params are NULL");
+			return -EINVAL;
+		}
+
+		len = snprintk(cmd_buf, sizeof(cmd_buf), "P2P_GROUP_ADD");
+
+		if (params->group_add.freq > 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " freq=%d",
+					params->group_add.freq);
+		}
+
+		if (params->group_add.persistent >= 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " persistent=%d",
+					params->group_add.persistent);
+		}
+
+		if (params->group_add.ht40 != 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " ht40");
+		}
+
+		if (params->group_add.vht != 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " vht");
+		}
+
+		if (params->group_add.he != 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " he");
+		}
+
+		if (params->group_add.edmg != 0) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " edmg");
+		}
+
+		if (params->group_add.go_bssid_length == WIFI_MAC_ADDR_LEN) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len,
+					" go_bssid=%02x:%02x:%02x:%02x:%02x:%02x",
+					params->group_add.go_bssid[0],
+					params->group_add.go_bssid[1],
+					params->group_add.go_bssid[2],
+					params->group_add.go_bssid[3],
+					params->group_add.go_bssid[4],
+					params->group_add.go_bssid[5]);
+		}
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_GROUP_ADD command failed: %d", ret);
+			return -EIO;
+		}
+		ret = 0;
+		break;
+	}
+
+	case WIFI_P2P_GROUP_REMOVE:
+		if (params == NULL) {
+			wpa_printf(MSG_ERROR, "P2P group remove params are NULL");
+			return -EINVAL;
+		}
+
+		if (params->group_remove.ifname[0] == '\0') {
+			wpa_printf(MSG_ERROR, "Interface name required for P2P_GROUP_REMOVE");
+			return -EINVAL;
+		}
+
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_GROUP_REMOVE %s",
+			 params->group_remove.ifname);
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_GROUP_REMOVE command failed: %d", ret);
+			return -EIO;
+		}
+		ret = 0;
+		break;
+
+	case WIFI_P2P_INVITE: {
+		char addr_str[18];
+		int len = 0;
+
+		if (params == NULL) {
+			wpa_printf(MSG_ERROR, "P2P invite params are NULL");
+			return -EINVAL;
+		}
+
+		snprintk(addr_str, sizeof(addr_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+			 params->invite.peer_addr[0], params->invite.peer_addr[1],
+			 params->invite.peer_addr[2], params->invite.peer_addr[3],
+			 params->invite.peer_addr[4], params->invite.peer_addr[5]);
+
+		if (params->invite.type == WIFI_P2P_INVITE_PERSISTENT) {
+			if (params->invite.persistent_id < 0) {
+				wpa_printf(MSG_ERROR, "Persistent group ID required");
+				return -EINVAL;
+			}
+			len = snprintk(cmd_buf, sizeof(cmd_buf), "P2P_INVITE persistent=%d peer=%s",
+					params->invite.persistent_id, addr_str);
+
+			if (params->invite.freq > 0) {
+				len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " freq=%d",
+						params->invite.freq);
+			}
+		} else if (params->invite.type == WIFI_P2P_INVITE_GROUP) {
+			if (params->invite.group_ifname[0] == '\0') {
+				wpa_printf(MSG_ERROR, "Group interface name required");
+				return -EINVAL;
+			}
+			len = snprintk(cmd_buf, sizeof(cmd_buf), "P2P_INVITE group=%s peer=%s",
+					params->invite.group_ifname, addr_str);
+
+			if (params->invite.freq > 0) {
+				len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " freq=%d",
+						params->invite.freq);
+			}
+
+			if (params->invite.go_dev_addr_length == WIFI_MAC_ADDR_LEN) {
+				len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len,
+						" go_dev_addr=%02x:%02x:%02x:%02x:%02x:%02x",
+						params->invite.go_dev_addr[0],
+						params->invite.go_dev_addr[1],
+						params->invite.go_dev_addr[2],
+						params->invite.go_dev_addr[3],
+						params->invite.go_dev_addr[4],
+						params->invite.go_dev_addr[5]);
+			}
+		} else {
+			wpa_printf(MSG_ERROR, "Invalid invite type: %d", params->invite.type);
+			return -EINVAL;
+		}
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_INVITE command failed: %d", ret);
+			return -EIO;
+		}
+		ret = 0;
+		break;
+	}
+
 	default:
 		wpa_printf(MSG_ERROR, "Unknown P2P operation: %d", params->oper);
 		ret = -EINVAL;
