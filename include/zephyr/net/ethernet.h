@@ -18,8 +18,6 @@
 #include <stdbool.h>
 #include <zephyr/sys/atomic.h>
 
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/lldp.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>

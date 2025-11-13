@@ -7,14 +7,49 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_POSIX_AIO_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_POSIX_AIO_H_
 
+/* size_t must be defined by the libc stddef.h */
+#include <stddef.h>
+#include <stdint.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <time.h>
 
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if !defined(_OFF_T_DECLARED) && !defined(__off_t_defined)
+typedef long off_t;
+#define _OFF_T_DECLARED
+#define __off_t_defined
+#endif
+
+#ifndef __SIZE_TYPE__
+#define __SIZE_TYPE__ unsigned long
+#endif
+
+#if !defined(_SSIZE_T_DECLARED) && !defined(__ssize_t_defined)
+#define unsigned signed /* parasoft-suppress MISRAC2012-RULE_20_4-a MISRAC2012-RULE_20_4-b */
+typedef __SIZE_TYPE__ ssize_t;
+#undef unsigned
+#define _SSIZE_T_DECLARED
+#define __ssize_t_defined
+#endif
+
+/* time_t must be defined by the libc time.h */
+#include <time.h>
+
+#if __STDC_VERSION__ >= 201112L
+/* struct timespec must be defined in the libc time.h */
+#else
+#if !defined(_TIMESPEC_DECLARED) && !defined(__timespec_defined)
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
+#define _TIMESPEC_DECLARED
+#define __timespec_defined
+#endif
 #endif
 
 struct aiocb {
@@ -23,7 +58,9 @@ struct aiocb {
 	volatile void *aio_buf;
 	size_t aio_nbytes;
 	int aio_reqprio;
+#if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 	struct sigevent aio_sigevent;
+#endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */
 	int aio_lio_opcode;
 };
 

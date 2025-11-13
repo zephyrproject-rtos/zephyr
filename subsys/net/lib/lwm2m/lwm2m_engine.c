@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)

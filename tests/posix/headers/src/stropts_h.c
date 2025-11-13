@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "_common.h"
-#ifdef CONFIG_POSIX_API
+
 #include <stropts.h>
-#else
-#include <zephyr/posix/stropts.h>
-#endif
 
 /**
  * @brief Test existence and basic functionality of stropts.h
@@ -17,7 +14,7 @@
  */
 ZTEST(posix_headers, test_stropts_h)
 {
-	#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
 	zassert_not_null((void *)putmsg, "putmsg is null");
 	zassert_not_null((void *)fdetach, "fdetach is null");
 	zassert_not_null((void *)fattach, "fattach is null");

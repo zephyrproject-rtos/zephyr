@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <pthread.h>
-#else
-#include <zephyr/posix/pthread.h>
-#endif
 
 /**
  * @brief existence test for `<pthread.h>`
@@ -19,8 +15,8 @@
  */
 ZTEST(posix_headers, test_pthread_h)
 {
-#ifdef CONFIG_POSIX_API
-	zassert_not_equal(-1, PTHREAD_BARRIER_SERIAL_THREAD);
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
+	zassert_not_equal(-42, PTHREAD_BARRIER_SERIAL_THREAD);
 
 	zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS);
 	zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED);

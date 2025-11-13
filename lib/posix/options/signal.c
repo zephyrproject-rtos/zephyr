@@ -6,11 +6,12 @@
 #include "posix/strsignal_table.h"
 
 #include <errno.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <time.h>
 
-#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/util.h>
 
 #define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))

@@ -85,10 +85,10 @@ leverages the ``nanosleep()`` and ``perror()`` POSIX functions.
 .. code-block:: cfg
    :caption: `prj.conf` for a simple POSIX app in Zephyr
 
-    CONFIG_POSIX_API=y
+    CONFIG_POSIX_AEP_REALTIME_MINIMAL=y
 
 .. code-block:: c
-   :caption: A simple app that uses Zephyr's POSIX API
+   :caption: A simple app that uses the POSIX API
 
     #include <stddef.h>
     #include <stdio.h>
@@ -128,7 +128,7 @@ explicitly choose to enable POSIX options via :ref:`Kconfig<kconfig>` selection.
 Subprofiles
 +++++++++++
 
-Enable one of the Kconfig options below to quickly configure a pre-defined
+Applications should enable one of the Kconfig options below to quickly configure a pre-defined
 :ref:`POSIX subprofile <posix_subprofiles>`.
 
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_BASE` (:ref:`Base <posix_system_interfaces_required>`)
@@ -136,12 +136,11 @@ Enable one of the Kconfig options below to quickly configure a pre-defined
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE52` (:ref:`PSE52 <posix_aep_pse52>`)
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE53` (:ref:`PSE53 <posix_aep_pse53>`)
 
-Additional POSIX :ref:`Options and Option Groups <posix_option_groups>` may be enabled as needed
-via Kconfig (e.g. ``CONFIG_POSIX_C_LIB_EXT=y``). Further fine-tuning may be accomplished via
-:ref:`additional POSIX-related Kconfig options <posix_kconfig_options>`.
+Libraries should depend on :kconfig:option:`CONFIG_POSIX_SYSTEM_INTERFACES` and other
+POSIX :ref:`Option Groups <posix_option_groups>`, as needed.
 
-Subprofiles, Options, and Option Groups should be considered the preferred way to configure POSIX
-in Zephyr going forward.
+Further fine-tuning may be accomplished via
+:ref:`additional POSIX-related Kconfig options <posix_kconfig_options>`.
 
 Legacy
 ++++++
@@ -149,17 +148,10 @@ Legacy
 Historically, Zephyr used :kconfig:option:`CONFIG_POSIX_API` to configure a set of POSIX features
 that was overloaded and always increasing in size.
 
-* :kconfig:option:`CONFIG_POSIX_API`
+The :kconfig:option:`CONFIG_POSIX_API` is now deprecated and is slated for removal in Zephyr
+v4.5.0.
 
-The option is now frozen, and can be considered equivalent to the following:
-
-* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51`
-* :kconfig:option:`CONFIG_POSIX_FD_MGMT`
-* :kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`
-* :kconfig:option:`CONFIG_POSIX_NETWORKING`
-
-However, :kconfig:option:`CONFIG_POSIX_API` should be considered legacy and should not be used for
-new Zephyr applications.
+Applications should select a POSIX subprofile mentioned above.
 
 .. _IEEE: https://www.ieee.org/
 .. _IEEE Computer Society: https://www.computer.org/

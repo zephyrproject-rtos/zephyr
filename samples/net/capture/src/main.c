@@ -8,16 +8,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_NATIVE_LIBC)
-#define ARPHRD_CAN 280
-#define ARPHRD_PPP 512
-#else
-#include <zephyr/posix/net/if_arp.h>
-#endif
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/if_arp.h>
 #include <zephyr/net/virtual_mgmt.h>
 
 #if defined(CONFIG_NET_CAPTURE_COOKED_MODE)

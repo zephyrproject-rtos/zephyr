@@ -190,7 +190,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_null(strsignal);
 #endif /* CONFIG_POSIX_SIGNALS */
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_AEP_CHOICE_PSE53)) {
 		/* zassert_not_null(killpg); */ /* not implemented */
 		/* zassert_not_null(psiginfo); */ /* not implemented */
 		/* zassert_not_null(psignal); */ /* not implemented */

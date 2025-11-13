@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include <zephyr/ztest.h>
 
@@ -19,6 +19,6 @@ ZTEST(net, test_inet_ntoa)
 	in.s_addr = htonl(0);
 	zassert_mem_equal(inet_ntoa(in), "0.0.0.0", strlen("0.0.0.0") + 1);
 
-	in.s_addr = htonl(0xffffffff);
+	in.s_addr = htonl(0xffffffffU);
 	zassert_mem_equal(inet_ntoa(in), "255.255.255.255", strlen("255.255.255.255") + 1);
 }

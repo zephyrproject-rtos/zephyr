@@ -30,7 +30,7 @@ config POSIX_HOST_NAME_MAX
 
 config POSIX_IPV6
 	bool "POSIX IPv6 support"
-	select NET_IPV6
+	default y if NET_CONFIG_NEED_IPV6
 	help
 	  Enable this option to support the POSIX IPv6 API.
 

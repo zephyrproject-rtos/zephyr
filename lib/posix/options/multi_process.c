@@ -5,14 +5,15 @@
  */
 
 #include <errno.h>
+#include <sys/times.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sys/times.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 pid_t getpid(void)
 {

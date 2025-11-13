@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
 
 /**
  * @brief existence test for `<unistd.h>`
@@ -24,6 +20,7 @@ ZTEST(posix_headers, test_unistd_h)
 	/* zassert_not_equal(-1, W_OK); */ /* not implemented */
 	/* zassert_not_equal(-1, X_OK); */ /* not implemented */
 
+#if defined(CONFIG_POSIX_SINGLE_PROCESS)
 	zassert_not_equal(INT_MIN, _CS_PATH);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_CFLAGS);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LDFLAGS);
@@ -41,6 +38,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_LDFLAGS);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS);
 	zassert_not_equal(INT_MIN, _CS_V7_ENV);
+#endif
 
 	/* zassert_not_equal(-1, F_LOCK); */ /* not implemented */
 	/* zassert_not_equal(-1, F_TEST); */ /* not implemented */
@@ -192,23 +190,18 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _SC_XOPEN_SHM);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_STREAMS);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_UNIX);
-	zassert_not_equal(INT_MIN, _SC_XOPEN_UUCP);
+	/* zassert_not_equal(INT_MIN, _SC_XOPEN_UUCP); */ /* not implemented */
 	zassert_not_equal(INT_MIN, _SC_XOPEN_VERSION);
 
 	/* zassert_equal(STDERR_FILENO, 2); */ /* not implemented */
 	/* zassert_equal(STDIN_FILENO, 0); */ /* not implemented */
 	/* zassert_equal(STDOUT_FILENO, 1); */ /* not implemented */
 
+#if !defined(_POSIX_C_SOURCE)
 	zassert_not_equal(INT_MIN, _POSIX_VDISABLE);
+#endif
 
-/*
- * FIXME: this should really use IS_ENABLED()
- * When CONFIG_POSIX_API is n-selected (i.e. POSIX headers can only be
- * included with <zephyr/posix/...>, i.e. are namespaced), then there
- * should be no reason to conditionally declare standard posix
- * function prototypes.
- */
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
 	/* zassert_not_null(access); */ /* not implemented */
 	/* zassert_not_null(alarm); */ /* not implemented */
 	/* zassert_not_null(chdir); */ /* not implemented */

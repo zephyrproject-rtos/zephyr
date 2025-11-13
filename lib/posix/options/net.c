@@ -12,10 +12,10 @@
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/net/if.h>
-#include <zephyr/posix/sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <sys/socket.h>
 
 /* From arpa/inet.h */
 

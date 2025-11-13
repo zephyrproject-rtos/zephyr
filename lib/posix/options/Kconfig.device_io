@@ -6,7 +6,6 @@ menu "POSIX device I/O"
 
 config POSIX_DEVICE_IO
 	bool "POSIX device I/O"
-	select REQUIRES_FULL_LIBC
 	select ZVFS
 	select ZVFS_POLL
 	select ZVFS_SELECT

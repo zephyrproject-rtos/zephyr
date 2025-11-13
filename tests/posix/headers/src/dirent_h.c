@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <dirent.h>
-#else
-#include <zephyr/posix/dirent.h>
-#endif
 
 /**
  * @brief existence test for `<dirent.h>`
@@ -19,7 +15,7 @@
  */
 ZTEST(posix_headers, test_dirent_h)
 {
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
 	zassert_not_equal((DIR *)-1, (DIR *)NULL);
 
 	zassert_not_equal(-1, offsetof(struct dirent, d_ino));

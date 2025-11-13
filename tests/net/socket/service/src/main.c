@@ -8,6 +8,13 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+
 #include <zephyr/ztest_assert.h>
 
 #include <zephyr/net/socket_service.h>
