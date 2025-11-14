@@ -1027,12 +1027,12 @@ static void dma_mcux_lpc_restore_reg(const struct device *dev)
 
 #else /* !CONFIG_PM */
 
-static inline static void dma_mcux_lpc_backup_reg(const struct device *dev)
+static inline void dma_mcux_lpc_backup_reg(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static inline static void dma_mcux_lpc_restore_reg(const struct device *dev)
+static inline void dma_mcux_lpc_restore_reg(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
