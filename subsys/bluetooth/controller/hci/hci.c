@@ -1642,6 +1642,7 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_chan_tx_power *rp;
+	uint8_t status;
 
 	if (adv_cmds_legacy_check(evt)) {
 		return;
@@ -1649,9 +1650,10 @@ static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
-	rp->status = 0x00;
+	status = ll_tx_pwr_lvl_get(BT_HCI_VS_LL_HANDLE_TYPE_ADV,
+				   0, 0, &rp->tx_power_level);
 
-	rp->tx_power_level = 0;
+	rp->status = status;
 }
 
 static void le_set_adv_data(struct net_buf *buf, struct net_buf **evt)
