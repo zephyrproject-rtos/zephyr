@@ -6,6 +6,7 @@
  */
 #include "bl5340_dvk_nrf5340_cpuapp_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -122,6 +123,7 @@
 			rotation = <270>;
 			width = <320>;
 			height = <240>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 		};
 	};
 };
