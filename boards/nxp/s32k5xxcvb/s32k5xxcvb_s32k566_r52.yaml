@@ -13,4 +13,5 @@ supported:
   - gpio
   - counter
   - watchdog
+  - adc
 vendor: nxp

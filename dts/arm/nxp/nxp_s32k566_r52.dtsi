@@ -279,3 +279,15 @@
 &swt_startup {
 	interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&sar_adc0 {
+	interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&sar_adc1 {
+	interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpe_sar_adc {
+	interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
