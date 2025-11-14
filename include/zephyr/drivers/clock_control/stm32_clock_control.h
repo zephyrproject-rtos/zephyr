@@ -840,10 +840,10 @@ struct stm32_pclken {
 /* Get STM32 clock information for a named clock phandle in DT node */
 #define STM32_CLOCK_INFO_BY_NAME(node_id, name)				\
 	{								\
-		.bus = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus),	\
-		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits) &	\
+		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
+		.bus = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) &	\
 		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),		\
-		.div = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits) >>	\
+		.div = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) >>	\
 		       STM32_CLOCK_DIV_SHIFT,				\
 	}
 
