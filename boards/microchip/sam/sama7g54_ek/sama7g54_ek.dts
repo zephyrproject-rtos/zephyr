@@ -471,6 +471,16 @@
 			bias-disable;
 		};
 	};
+
+	pinctrl_usba_vbus_det: usba_vbus_det {
+		pinmux = <PIN_PD11__GPIO>;
+		bias-disable;
+	};
+
+	pinctrl_usbb_vbus_det: usbb_vbus_det {
+		pinmux = <PIN_PC12__GPIO>;
+		bias-disable;
+	};
 };
 
 &pit64b0 {
@@ -538,3 +548,17 @@ mikrobus_header: &mikrobus_1_header {};
 mikrobus_i2c: &i2c9 {};
 
 mikrobus_spi: &spi11 {};
+
+zephyr_udc0: &udphsa {
+	vbus-gpios = <&piod 11 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usba_vbus_det>;
+	status = "okay";
+};
+
+zephyr_udc1: &udphsb {
+	vbus-gpios = <&pioc 12 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usbb_vbus_det>;
+	status = "disabled";
+};

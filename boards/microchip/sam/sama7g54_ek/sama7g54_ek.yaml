@@ -19,4 +19,5 @@ supported:
   - rtc
   - sdhc
   - uart
+  - usbd
 vendor: microchip
