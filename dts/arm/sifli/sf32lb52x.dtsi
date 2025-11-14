@@ -304,6 +304,16 @@
 			reg = <0x5000b000 0x1000>;
 		};
 
+		gpadc: adc@50087000 {
+			compatible = "sifli,sf32lb-gpadc";
+			reg = <0x50087000 0x1000>;
+			interrupts = <65 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_GPADC>;
+			sifli,cfg = <&cfg>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		aon: syscon@500c0000 {
 			compatible = "sifli,sf32lb-aon", "syscon";
 			reg = <0x500c0000 0x1000>;
