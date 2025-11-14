@@ -7,9 +7,8 @@ description: |
 
   Example:
     /* Lead A is connected Lead C and Lead B is connected to Lead D*/
-    stepper: stepper {
+    h_bridge_stepper: h_bridge_stepper {
         compatible = "zephyr,h-bridge-stepper";
-        en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
         gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
                 <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
                 <&gpiob 0 GPIO_ACTIVE_HIGH>,  /* Lead A2/C */
@@ -18,11 +17,34 @@ description: |
 
 compatible: "zephyr,h-bridge-stepper"
 
-include: stepper-controller.yaml
-
 properties:
+  invert-direction:
+    type: boolean
+    description: |
+      Invert motor direction.
+
   gpios:
     type: phandle-array
     required: true
     description: |
       The gpio pin array on which the stepper inputs are to be connected
+
+  lut-step-gap:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Step mode selection.
+      1 - Half step mode
+      2 - Full step mode
+
+  counter:
+    type: phandle
+    description: |
+      Counter used for generating step-accurate pulse signals.
+      This should be a reference to a counter node in the device tree.
+      When this property is present, the stepper motion controller will use
+      the counter as a timing source instead of the default work queue timing.
+      This enables more precise step timing control.

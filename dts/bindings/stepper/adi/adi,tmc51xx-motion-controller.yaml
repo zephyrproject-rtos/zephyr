@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,tmc51xx-motion-controller"
+
+include:
+  - name: adi,trinamic-stallguard.yaml
+    property-allowlist:
+      - activate-stallguard2
+      - stallguard-threshold-velocity
+      - stallguard-velocity-check-interval-ms
+  - name: adi,trinamic-ramp-generator.yaml
+    property-allowlist:
+      - vstart
+      - a1
+      - v1
+      - amax
+      - vmax
+      - dmax
+      - d1
+      - vstop
+      - tzerowait
+      - thigh
+      - tcoolthrs
+      - tpwmthrs
+      - tpowerdown
+      - ihold
+      - irun
+      - iholddelay

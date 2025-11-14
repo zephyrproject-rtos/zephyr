@@ -1,18 +1,30 @@
-/ {
-	aliases {
-		stepper = &h_bridge_stepper;
-	};
-};
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 / {
-	h_bridge_stepper: h_bridge_stepper {
-		compatible = "zephyr,h-bridge-stepper";
-		status = "okay";
-		micro-step-res = <2>;
+	aliases {
+		stepper-drv = &tmc2209;
+		stepper = &step_dir_motion_control;
+	};
+
+	tmc2209: tmc2209 {
+		compatible = "adi,tmc2209";
 		en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>; /* D12 */
-		gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,	/* D8 */
-			<&gpioc 7 GPIO_ACTIVE_HIGH>,	/* D9 */
-			<&gpiob 0 GPIO_ACTIVE_HIGH>,	/* D10 */
-			<&gpioa 7 GPIO_ACTIVE_HIGH>;	/* D11 */
+		msx-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>, /* D10 */
+			    <&gpioa 7 GPIO_ACTIVE_HIGH>; /* D11 */
+		micro-step-res = <32>;
+	};
+
+	step_dir_motion_control: step_dir_motion_control {
+		compatible = "zephyr,gpio-step-dir-controller";
+
+		step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>; /* D8 */
+		dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>; /* D9 */
+		invert-direction;
+		dual-edge-step;
+		step-width-ns = <1000>;
 	};
 };

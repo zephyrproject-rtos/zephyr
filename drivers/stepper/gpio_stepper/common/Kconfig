@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_STEPPER
+	bool
+	help
+	  Enable library used for gpio based stepper controllers.
+
+if GPIO_STEPPER
+
+config GPIO_STEPPER_COUNTER_TIMING
+	bool "Counter use for stepping"
+	select COUNTER
+	default y
+	help
+	  Enable usage of a counter device for accurate stepping.
+
+module = GPIO_STEPPER
+module-str = gpio_stepper
+source "drivers/stepper/Kconfig.stepper_event_template"
+
+endif # GPIO_STEPPER

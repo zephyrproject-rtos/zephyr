@@ -10,21 +10,14 @@ description: |
       enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
       msx-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
                   <&gpio0 2 GPIO_ACTIVE_HIGH>;
-      step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-      dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-      dual-edge-step;
   }
 
 compatible: "adi,tmc2209"
 
 include:
-  - name: stepper-controller.yaml
-  - name: step-dir-timing.yaml
+  - name: stepper-driver.yaml
 
 properties:
-  step-width-ns:
-    default: 100
-
   msx-gpios:
     type: phandle-array
     description: |
@@ -32,9 +25,3 @@ properties:
       The pins should be listed in the following order:
       - MS1
       - MS2
-
-  dual-edge-step:
-    type: boolean
-    description: |
-      If present, the stepper motor controller supports dual edge step signals.
-      This means that the step signal can be toggled on both the rising and falling edge.

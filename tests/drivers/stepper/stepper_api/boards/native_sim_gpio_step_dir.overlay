@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+
+/ {
+	aliases {
+		stepper = &gpio_step_dir_controller;
+	};
+
+	gpio_step_dir_controller: gpio_step_dir_controller {
+		compatible = "zephyr,gpio-step-dir-controller";
+		step-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		dir-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+		step-width-ns = <100>;
+		counter = <&counter0>;
+	};
+};
