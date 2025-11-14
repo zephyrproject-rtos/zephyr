@@ -32,6 +32,8 @@
 
 #include "radio_internal.h"
 
+#include "hal/debug.h"
+
 /* Converts the GPIO controller in a FEM property's GPIO specification
  * to its nRF register map pointer.
  *
@@ -166,6 +168,53 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 	isr_cb = cb;
 }
 
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+static volatile uint8_t mram_no_latency_start_req;
+static volatile uint8_t mram_no_latency_stop_req;
+static uint8_t mram_no_latency_start_ack;
+static uint8_t mram_no_latency_stop_ack;
+static struct onoff_client mram_cli;
+static atomic_val_t mram_refcnt;
+
+static void mram_no_latency_callback(struct onoff_manager *mgr,
+				     struct onoff_client *cli,
+				     uint32_t state, int res)
+{
+	ARG_UNUSED(mgr);
+	ARG_UNUSED(cli);
+
+	if (res != 0) {
+		goto mram_no_latency_callback_error;
+	}
+
+	if (state == ONOFF_STATE_ON) {
+		LL_ASSERT_ERR(mram_no_latency_start_ack != mram_no_latency_start_req);
+
+		mram_no_latency_start_ack++;
+
+		LL_ASSERT_ERR(mram_no_latency_start_ack == mram_no_latency_start_req);
+
+		if (mram_no_latency_stop_req != mram_no_latency_stop_ack) {
+			int ret;
+
+			mram_no_latency_stop_ack++;
+
+			LL_ASSERT_ERR(mram_no_latency_stop_ack == mram_no_latency_stop_req);
+
+			ret = mram_no_latency_cancel_or_release(&mram_cli);
+			LL_ASSERT_ERR(ret == ONOFF_STATE_ON);
+		}
+	} else {
+		goto mram_no_latency_callback_error;
+	}
+
+	return;
+
+mram_no_latency_callback_error:
+	LL_ASSERT_ERR(0);
+}
+#endif /* CONFIG_SOC_SERIES_NRF54H */
+
 void radio_setup(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
@@ -194,11 +243,6 @@ void radio_setup(void)
 
 	hal_radio_ram_prio_setup();
 }
-
-#if defined(CONFIG_SOC_SERIES_NRF54H)
-static struct onoff_client mram_cli;
-static atomic_val_t mram_refcnt;
-#endif /* CONFIG_SOC_SERIES_NRF54H */
 
 void radio_reset(void)
 {
@@ -244,11 +288,33 @@ void radio_reset(void)
 #if defined(CONFIG_SOC_SERIES_NRF54H)
 	atomic_val_t refcnt;
 
+	/* Check and request mram no latency if we are the first instance */
 	refcnt = atomic_inc(&mram_refcnt);
 	if (refcnt == 0) {
-		sys_notify_init_spinwait(&mram_cli.notify);
+		uint8_t old = mram_no_latency_start_req;
+		uint8_t ack = mram_no_latency_start_ack;
+		uint8_t req = old + 1U;
 
-		(void)mram_no_latency_request(&mram_cli);
+		/* Check rollover condition, which shall not happen by design */
+		LL_ASSERT_ERR(req != ack);
+
+		/* Mark for mram no latency requested */
+		mram_no_latency_start_req = req;
+
+		if (mram_no_latency_stop_req == mram_no_latency_stop_ack) {
+			int ret;
+
+			sys_notify_init_callback(&mram_cli.notify, mram_no_latency_callback);
+
+			ret = mram_no_latency_request(&mram_cli);
+			LL_ASSERT_ERR(ret >= 0);
+		} else {
+			/* Revert marked request as a cancel or release is
+			 * pending.
+			 */
+			mram_no_latency_start_req = old;
+			(void)atomic_dec(&mram_refcnt);
+		}
 	} else {
 		/* Nothing to do, reference count increased. */
 	}
@@ -312,16 +378,43 @@ void radio_stop(void)
 #if defined(CONFIG_SOC_SERIES_NRF54H)
 	atomic_val_t refcnt;
 
+	/* Check and request a cancel or release if we are the last instance */
 	refcnt = atomic_get(&mram_refcnt);
 	if (refcnt > 0) {
 		refcnt = atomic_dec(&mram_refcnt);
 		if (refcnt == 1) {
-			(void)mram_no_latency_cancel_or_release(&mram_cli);
+			uint8_t old = mram_no_latency_stop_req;
+			uint8_t ack = mram_no_latency_stop_ack;
+			uint8_t req = old + 1U;
+
+			/* Mark for cancel or release being requested */
+			LL_ASSERT_ERR(req != ack);
+			mram_no_latency_stop_req = req;
+
+			if (mram_no_latency_start_req == mram_no_latency_start_ack) {
+				int ret;
+
+				ret = mram_no_latency_cancel_or_release(&mram_cli);
+				LL_ASSERT_ERR((ret == ONOFF_STATE_TO_ON) ||
+					      (ret == ONOFF_STATE_ON));
+
+				/* Unmark cancel or release, as its handled here
+				 * with successful value being returned.
+				 */
+				mram_no_latency_stop_req = old;
+			} else {
+				/* Nothing to do, mram_no_latency not started
+				 * yet, cancel or release will be performed in
+				 * the callback when mram_no_latency is started.
+				 */
+			}
 		} else {
 			/* Nothing to do, reference count decremented. */
 		}
 	} else {
-		/* TODO: Development assertion on already cancel/release. */
+		/* NOTE: radio_stop() will be called more times than radio_reset
+		 *       hence it is ok for the refcnt being zero.
+		 */
 	}
 #endif /* CONFIG_SOC_SERIES_NRF54H */
 }
