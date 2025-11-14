@@ -15,6 +15,7 @@ config BT_LLL_VENDOR_NORDIC
 				   !SOC_COMPATIBLE_NRF54LX && \
 				   !SOC_SERIES_NRF54H
 	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
+	select MRAM_LATENCY if SOC_SERIES_NRF54H
 	select EXPERIMENTAL if !ENTROPY_HAS_DRIVER
 	select BT_HAS_HCI_VS
 	select BT_HCI_VS_FATAL_ERROR_SUPPORT
@@ -913,7 +914,7 @@ config BT_CTLR_ULL_LOW_PRIO
 config BT_CTLR_LLL_PREPARE_AT_MARGIN
 	bool "LLL prepare at margin"
 	depends on !BT_CTLR_LOW_LAT
-	default y if SOC_COMPATIBLE_NRF54LX
+	default y if SOC_COMPATIBLE_NRF54LX || SOC_SERIES_NRF54H
 	help
 	  Execute LLL prepare callback at the prepare margin, even when no
 	  overlapping state/role is currently active.
