@@ -41,8 +41,17 @@ static inline bool in_kernel_thread_stack_bound(uintptr_t addr, const struct k_t
 #ifdef CONFIG_THREAD_STACK_INFO
 	uintptr_t start, end;
 
-	start = thread->stack_info.start;
-	end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	/*
+	 * Special handling to support stacktrace in dummy thread during system initialization,
+	 * as its stack info isn't initialized.
+	 */
+	if (is_thread_dummy(thread)) {
+		start = (uintptr_t)z_interrupt_stacks;
+		end = Z_STACK_PTR_ALIGN(start + __z_interrupt_stack_SIZEOF);
+	} else {
+		start = thread->stack_info.start;
+		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	}
 
 	return (addr >= start) && (addr < end);
 #else

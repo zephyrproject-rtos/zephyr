@@ -80,13 +80,10 @@ static inline int thread_is_metairq(const struct k_thread *thread)
 #endif /* CONFIG_NUM_METAIRQ_PRIORITIES */
 }
 
-#ifdef CONFIG_ASSERT
 static inline bool is_thread_dummy(const struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_DUMMY) != 0U;
 }
-#endif /* CONFIG_ASSERT */
-
 
 static inline bool z_is_thread_suspended(const struct k_thread *thread)
 {
