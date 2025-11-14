@@ -6222,6 +6222,7 @@ Xilinx Platforms:
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
+    - kedareswararao
   files:
     - boards/amd/
     - drivers/*/*xilinx*
