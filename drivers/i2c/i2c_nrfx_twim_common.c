@@ -151,6 +151,7 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 	return pm_device_driver_init(dev, twim_nrfx_pm_action);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 int i2c_nrfx_twim_common_deinit(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_common_config *config = dev->config;
@@ -178,3 +179,4 @@ int i2c_nrfx_twim_common_deinit(const struct device *dev)
 	nrfx_twim_uninit(&config->twim);
 	return 0;
 }
+#endif

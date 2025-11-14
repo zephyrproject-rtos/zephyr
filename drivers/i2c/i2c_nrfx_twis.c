@@ -292,6 +292,7 @@ static int shim_nrf_twis_init(const struct device *dev)
 	return pm_device_driver_init(dev, shim_nrf_twis_pm_action_cb);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int shim_nrf_twis_deinit(const struct device *dev)
 {
 	const struct shim_nrf_twis_config *dev_config = dev->config;
@@ -320,6 +321,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 	nrfx_twis_uninit(&dev_config->twis);
 	return 0;
 }
+#endif
 
 #define SHIM_NRF_TWIS_NAME(id, name) \
 	_CONCAT_4(shim_nrf_twis_, name, _, id)
