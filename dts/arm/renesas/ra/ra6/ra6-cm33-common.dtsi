@@ -118,7 +118,7 @@
 			status = "disabled";
 		};
 
-		pinctrl: pin-contrller@40080800 {
+		pinctrl: pin-controller@40080800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40080800 0x3c0>;
 			status = "okay";
