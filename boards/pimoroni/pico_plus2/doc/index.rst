@@ -53,6 +53,14 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
    :goals: build flash
    :flash-args: --openocd /usr/local/bin/openocd
 
+The blinky sample is also supported on Pico Plus 2W:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/basic/blinky
+    :board: pico_plus2/rp2350b/m33/w
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
+
 .. target-notes::
 
 .. _Pimoroni Pico Plus 2:
