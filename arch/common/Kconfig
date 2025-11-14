@@ -192,3 +192,4 @@ config ARM_PACBTI_NONE
 	This option instructs the compiler to generate code without branch protection or return
 	address signing
 endchoice
+source "arch/common/acpi/Kconfig"
