@@ -312,7 +312,7 @@ static int mbedtls_get_unused_session_index(void)
 	return -1;
 }
 
-static int mbedtls_session_setup(const struct device *dev,
+static int mbedtls_cipher_session_setup(const struct device *dev,
 			      struct cipher_ctx *ctx,
 			      enum cipher_algo algo, enum cipher_mode mode,
 			      enum cipher_op op_type)
@@ -448,7 +448,7 @@ static int mbedtls_session_setup(const struct device *dev,
 	return ret;
 }
 
-static int mbedtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
+static int mbedtls_cipher_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
 	struct mbedtls_shim_session *mbedtls_session =
 		(struct mbedtls_shim_session *)ctx->drv_sessn_state;
@@ -609,8 +609,8 @@ static int mbedtls_query_caps(const struct device *dev)
 }
 
 static DEVICE_API(crypto, mbedtls_crypto_funcs) = {
-	.cipher_begin_session = mbedtls_session_setup,
-	.cipher_free_session = mbedtls_session_free,
+	.cipher_begin_session = mbedtls_cipher_session_setup,
+	.cipher_free_session = mbedtls_cipher_session_free,
 	.cipher_async_callback_set = NULL,
 	.hash_begin_session = mbedtls_hash_session_setup,
 	.hash_free_session = mbedtls_hash_session_free,
