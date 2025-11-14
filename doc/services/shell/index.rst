@@ -690,9 +690,11 @@ in the FreeBSD project. This feature is activated by:
 :kconfig:option:`CONFIG_POSIX_C_LIB_EXT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
 set to ``y``.
 
-This feature can be used in thread safe as well as non thread safe manner.
-The former is full compatible with regular getopt usage while the latter
-a bit differs.
+This feature can be used in thread safe as well as non thread safe
+manner.  The former is full compatible with regular getopt usage while
+the latter differs a bit. To gain access to the thread-safe APIs, add
+`#define __need_getopt_newlib` before `#include <getopt.h>` in your
+source code.
 
 An example non-thread safe usage:
 
@@ -714,20 +716,20 @@ An example thread safe usage:
 .. code-block:: c
 
   char *cvalue = NULL;
-  struct getopt_state *state;
-  while ((char c = getopt(argc, argv, "abhc:")) != -1) {
-        state = getopt_state_get();
+  struct getopt_data state = GETOPT_DATA_INITIALIZER;
+  while ((char c = getopt_r(argc, argv, "abhc:", &state)) != -1) {
         switch (c) {
         case 'c':
-                cvalue = state->optarg;
+                cvalue = state.optarg;
                 break;
         default:
                 break;
         }
   }
 
-Thread safe getopt functionality is activated by
-:kconfig:option:`CONFIG_SHELL_GETOPT` set to ``y``.
+Thread safe getopt functionality is enabled by defining `__need_getopt_newlib`
+before including getopt.h
+
 
 Obscured Input Feature
 **********************

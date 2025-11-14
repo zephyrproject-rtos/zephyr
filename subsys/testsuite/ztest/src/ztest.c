@@ -1253,7 +1253,7 @@ static int cmd_runall(const struct shell *sh, size_t argc, char **argv)
 static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 {
 
-	struct getopt_state *state;
+	struct getopt_data state = GETOPT_DATA_INITIALIZER;
 	int opt;
 	static struct option long_options[] = {{"suite_iter", required_argument, 0, 's'},
 					       {"case_iter", required_argument, 0, 'c'},
@@ -1265,11 +1265,10 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 	int suite_iter = 1;
 	int case_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = getopt_long_r(argc, argv, "s:c:", long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 's':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 			if (val < 1) {
 				shell_error(sh, "Invalid number of suite iterations");
 				return -ENOEXEC;
@@ -1278,7 +1277,7 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 			opt_num++;
 			break;
 		case 'c':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 			if (val < 1) {
 				shell_error(sh, "Invalid number of case iterations");
 				return -ENOEXEC;
@@ -1301,7 +1300,7 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
-	struct getopt_state *state;
+	struct getopt_data state = GETOPT_DATA_INITIALIZER;
 	int opt;
 	static struct option long_options[] = {{"repeat_iter", required_argument, NULL, 'r'},
 		{NULL, 0, NULL, 0}};
@@ -1311,11 +1310,10 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	void *param = NULL;
 	int repeat_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = getopt_long_r(argc, argv, "r:p:", long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'r':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 			if (val < 1) {
 				shell_fprintf(sh, SHELL_ERROR,
 					"Invalid number of suite interations\n");
@@ -1325,7 +1323,7 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 			opt_num++;
 			break;
 		case 'p':
-			param = state->optarg;
+			param = state.optarg;
 			opt_num++;
 			break;
 		default:

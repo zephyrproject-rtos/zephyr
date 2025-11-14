@@ -14,15 +14,13 @@
 #include <unistd.h>
 #else
 #include <zephyr/posix/unistd.h>
+#define __need_getopt_newlib
+#include <getopt.h>
 #endif
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-
-#ifndef CONFIG_NATIVE_LIBC
-extern void getopt_init(void);
-#endif
 
 static inline bool is_ascii(uint8_t data)
 {
@@ -114,6 +112,13 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 	return 0;
 }
 
+#ifdef CONFIG_NATIVE_LIBC
+#define getopt_r(c, v, o, s) getopt(c, v, o)
+#define opt_state(v) (v)
+#else
+#define opt_state(v) state.v
+#endif
+
 static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	int rv;
@@ -121,31 +126,31 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	size_t size = -1;
 	size_t width = 32;
 	mem_addr_t addr = -1;
-
-	optind = 1;
 #ifndef CONFIG_NATIVE_LIBC
-	getopt_init();
+	struct getopt_data state = GETOPT_DATA_INITIALIZER;
+#else
+	optind = 0;
 #endif
-	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
+	while ((rv = getopt_r(argc, argv, "a:s:w:", &state)) != -1) {
 		switch (rv) {
 		case 'a':
-			addr = (mem_addr_t)shell_strtoul(optarg, 16, &err);
+			addr = (mem_addr_t)shell_strtoul(opt_state(optarg), 16, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid addr '%s'", optarg);
+				shell_error(sh, "invalid addr '%s'", opt_state(optarg));
 				return -EINVAL;
 			}
 			break;
 		case 's':
-			size = (size_t)shell_strtoul(optarg, 0, &err);
+			size = (size_t)shell_strtoul(opt_state(optarg), 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid size '%s'", optarg);
+				shell_error(sh, "invalid size '%s'", opt_state(optarg));
 				return -EINVAL;
 			}
 			break;
 		case 'w':
-			width = (size_t)shell_strtoul(optarg, 0, &err);
+			width = (size_t)shell_strtoul(opt_state(optarg), 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid width '%s'", optarg);
+				shell_error(sh, "invalid width '%s'", opt_state(optarg));
 				return -EINVAL;
 			}
 			break;

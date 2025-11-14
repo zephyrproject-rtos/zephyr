@@ -3,66 +3,54 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
-#if CONFIG_SHELL_GETOPT
-#include <zephyr/sys/iterable_sections.h>
-#endif
-
-#include "getopt.h"
+#define __need_getopt_legacy
+#include "getopt_common.h"
 
 /* Referring  below variables is not thread safe. They reflects getopt state
  * only when 1 thread is using getopt.
- * When more threads are using getopt please call getopt_state_get to know
- * getopt state for the current thread.
+ * When more threads are using getopt please use getopt_r and friends
+ * to hold the getopt state in local variables
  */
-int opterr = 1; /* if error message should be printed */
-int optind = 1; /* index into parent argv vector */
+int opterr;	/* if error message should be printed */
+int optind;	/* index into parent argv vector */
 int optopt;     /* character checked for validity */
 int optreset;   /* reset getopt */
 char *optarg;   /* argument associated with option */
 
-/* Common state for all threads that did not have own getopt state. */
-static struct getopt_state m_getopt_common_state = {
-	.opterr = 1,
-	.optind = 1,
-	.optopt = 0,
-	.optreset = 0,
-	.optarg = NULL,
-
-	.place = "", /* EMSG */
-
+static char *place;
 #if CONFIG_GETOPT_LONG
-	.nonopt_start = -1, /* first non option argument (for permute) */
-	.nonopt_end = -1,   /* first option after non options (for permute) */
+static int nonopt_start;
+static int nonopt_end;
 #endif
-};
 
 /* This function is not thread safe. All threads using getopt are calling
  * this function.
  */
-void z_getopt_global_state_update(struct getopt_state *state)
+void z_getopt_global_state_put(struct getopt_data *state)
 {
 	opterr = state->opterr;
 	optind = state->optind;
 	optopt = state->optopt;
 	optreset = state->optreset;
 	optarg = state->optarg;
+	place = state->place;
+#if CONFIG_GETOPT_LONG
+	nonopt_start = state->nonopt_start;
+	nonopt_end = state->nonopt_end;
+#endif
 }
 
-/* It is internal getopt API function, it shall not be called by the user. */
-struct getopt_state *getopt_state_get(void)
+/* Place the global state into a struct */
+void z_getopt_global_state_get(struct getopt_data *state)
 {
-#if CONFIG_SHELL_GETOPT
-	k_tid_t tid;
-
-	tid = k_current_get();
-	STRUCT_SECTION_FOREACH(shell, sh) {
-		if (tid == sh->ctx->tid) {
-			return &sh->ctx->getopt;
-		}
-	}
+	state->opterr = opterr;
+	state->optind = optind;
+	state->optopt = optopt;
+	state->optreset = optreset;
+	state->optarg = optarg;
+	state->place = place;
+#if CONFIG_GETOPT_LONG
+	state->nonopt_start = nonopt_start;
+	state->nonopt_end = nonopt_end;
 #endif
-	/* If not a shell thread return a common pointer */
-	return &m_getopt_common_state;
 }

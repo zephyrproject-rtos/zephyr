@@ -50,7 +50,6 @@
  */
 
 #include <string.h>
-#include "getopt.h"
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
@@ -78,9 +77,9 @@ LOG_MODULE_DECLARE(getopt);
 #define W_PREFIX  2
 #endif
 
-static int getopt_internal(struct getopt_state *, int, char *const *, const char *,
+static int getopt_internal(struct getopt_data *, int, char *const *, const char *,
 			   const struct option *, int *, int);
-static int parse_long_options(struct getopt_state *, char *const *, const char *,
+static int parse_long_options(struct getopt_data *, char *const *, const char *,
 			      const struct option *, int *, int, int);
 static int gcd(int, int);
 static void permute_args(int, int, int, char *const *);
@@ -161,7 +160,7 @@ static void permute_args(int panonopt_start, int panonopt_end, int opt_end, char
  *	Parse long options in argc/argv argument vector.
  * Returns -1 if short_too is set and the option does not match long_options.
  */
-static int parse_long_options(struct getopt_state *state, char *const *nargv, const char *options,
+static int parse_long_options(struct getopt_data *state, char *const *nargv, const char *options,
 			      const struct option *long_options, int *idx, int short_too, int flags)
 {
 	char *current_argv, *has_equal;
@@ -332,7 +331,7 @@ static int parse_long_options(struct getopt_state *state, char *const *nargv, co
  * getopt_internal --
  *	Parse argc/argv argument vector.  Called by user level routines.
  */
-static int getopt_internal(struct getopt_state *state, int nargc, char *const *nargv,
+static int getopt_internal(struct getopt_data *state, int nargc, char *const *nargv,
 			   const char *options, const struct option *long_options, int *idx,
 			   int flags)
 {
@@ -341,6 +340,20 @@ static int getopt_internal(struct getopt_state *state, int nargc, char *const *n
 
 	if (options == NULL) {
 		return -1;
+	}
+
+	/* glibc/picolibc compatibility -- reset if optind is 0 */
+	if (state->optind == 0) {
+		state->opterr = 1;
+		state->optind = 1;
+		state->optopt = 0;
+		state->optreset = 0;
+		state->optarg = NULL;
+		state->place = "";
+#if CONFIG_GETOPT_LONG
+		state->nonopt_start = -1;
+		state->nonopt_end = -1;
+#endif
 	}
 
 	/*
@@ -361,14 +374,6 @@ static int getopt_internal(struct getopt_state *state, int nargc, char *const *n
 #endif
 	if (*options == '+' || *options == '-') {
 		options++;
-	}
-
-	/*
-	 * XXX Some GNU programs (like cvs) set optind to 0 instead of
-	 * XXX using optreset.  Work around this braindamage.
-	 */
-	if (state->optind == 0) {
-		state->optind = state->optreset = 1;
 	}
 
 	state->optarg = NULL;
@@ -563,19 +568,21 @@ start:
  * getopt_long --
  *	Parse argc/argv argument vector.
  */
+int __getopt_long_r(int nargc, char *const *nargv, const char *options,
+		    const struct option *long_options, int *idx, struct getopt_data *state)
+{
+	return getopt_internal(state, nargc, nargv, options, long_options, idx, FLAG_PERMUTE);
+}
+
 int getopt_long(int nargc, char *const *nargv, const char *options,
 		const struct option *long_options, int *idx)
 {
-	struct getopt_state *state;
-	int ret;
+	struct getopt_data	state;
+	int			ret;
 
-	/* Get state of the current thread */
-	state = getopt_state_get();
-
-	ret = getopt_internal(state, nargc, nargv, options, long_options, idx, FLAG_PERMUTE);
-
-	z_getopt_global_state_update(state);
-
+	z_getopt_global_state_get(&state);
+	ret = __getopt_long_r(nargc, nargv, options, long_options, idx, &state);
+	z_getopt_global_state_put(&state);
 	return ret;
 }
 
@@ -583,19 +590,21 @@ int getopt_long(int nargc, char *const *nargv, const char *options,
  * getopt_long_only --
  *	Parse argc/argv argument vector.
  */
+int __getopt_long_only_r(int nargc, char *const *nargv, const char *options,
+			 const struct option *long_options, int *idx, struct getopt_data *state)
+{
+	return getopt_internal(state, nargc, nargv, options, long_options, idx,
+			       FLAG_PERMUTE | FLAG_LONGONLY);
+}
+
 int getopt_long_only(int nargc, char *const *nargv, const char *options,
 		     const struct option *long_options, int *idx)
 {
-	struct getopt_state *state;
-	int ret;
+	struct getopt_data	state;
+	int			ret;
 
-	/* Get state of the current thread */
-	state = getopt_state_get();
-
-	ret = getopt_internal(state, nargc, nargv, options, long_options, idx,
-			      FLAG_PERMUTE | FLAG_LONGONLY);
-
-	z_getopt_global_state_update(state);
-
+	z_getopt_global_state_get(&state);
+	ret = __getopt_long_only_r(nargc, nargv, options, long_options, idx, &state);
+	z_getopt_global_state_put(&state);
 	return ret;
 }
