@@ -407,12 +407,10 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.pclken_ptp = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_ptp),
 #endif
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
-	.pclken_mac = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bus),
-		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bits)},
+	.pclken_mac = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk),
 #endif
 #if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
-	.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bus),
-		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bits)},
+	.pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, eth_ker),
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
