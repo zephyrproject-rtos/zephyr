@@ -105,17 +105,11 @@ extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
 	struct stm32_pclken pclken;
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
 	struct stm32_pclken pclken_mac;
-#endif
-#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
 	struct stm32_pclken pclken_ker;
-#endif
 	struct stm32_pclken pclken_rx;
 	struct stm32_pclken pclken_tx;
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 	struct stm32_pclken pclken_ptp;
-#endif
 	const struct pinctrl_dev_config *pcfg;
 };
 
