@@ -112,21 +112,6 @@
 # Areas are sorted by name
 
 # zephyr-keep-sorted-start strip(":) nofold
-ACPI:
-  status: maintained
-  maintainers:
-    - najumon1980
-  files:
-    - lib/acpi/
-    - include/zephyr/acpi/
-    - tests/lib/acpi/
-    - dts/bindings/acpi/
-    - include/zephyr/dt-bindings/acpi/
-  labels:
-    - "area: ACPI"
-  tests:
-    - acpi
-
 ADI Platforms:
   status: maintained
   maintainers:
@@ -6379,8 +6364,15 @@ x86 arch:
     - drivers/interrupt_controller/*ioapic*
     - drivers/interrupt_controller/*loapic*
     - doc/hardware/arch/x86.rst
+    - include/zephyr/acpi/
+    - tests/arch/x86/acpi/
+    - dts/bindings/acpi/
+    - include/zephyr/dt-bindings/acpi/
   labels:
     - "area: X86"
+  tests:
+    - acpi
+    - arch.x86
 
 zbus:
   status: maintained
