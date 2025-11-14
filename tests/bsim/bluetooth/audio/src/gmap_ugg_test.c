@@ -532,6 +532,29 @@ static void init(void)
 	}
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_cap_initiator_unregister_cb(&cap_cb);
+	if (err != 0) {
+		FAIL("Failed to unregister CAP callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_bap_unicast_client_unregister_cb(&unicast_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to unregister BAP callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks (err %d)\n", err);
+		return;
+	}
+}
+
 static void scan_and_connect(void)
 {
 	int err;
@@ -1029,6 +1052,8 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 		connected_conns[i] = NULL;
 	}
 
+	deinit();
+
 	PASS("GMAP UGG passed for %s with Sink Preset %s and Source Preset %s\n", param->name,
 	     param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
 	     param->src_named_preset != NULL ? param->src_named_preset->name : "None");
@@ -1235,6 +1260,8 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 
 	stop_and_delete_extended_adv(adv);
 	adv = NULL;
+
+	deinit();
 
 	PASS("CAP initiator broadcast passed\n");
 

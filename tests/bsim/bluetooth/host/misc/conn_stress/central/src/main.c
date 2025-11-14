@@ -741,6 +741,12 @@ void test_central_main(void)
 		k_msleep(10);
 	}
 
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		TEST_FAIL("Unregister GATT callbacks failed (%d)", err);
+		return;
+	}
+
 	TEST_PASS("Central tests passed");
 }
 
