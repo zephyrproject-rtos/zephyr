@@ -1,0 +1,15 @@
+# Copyright (c) 2025, Atym, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AIROC Wifi GPIO Port
+
+compatible: "infineon,airoc-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 1
+
+gpio-cells:
+  - pin

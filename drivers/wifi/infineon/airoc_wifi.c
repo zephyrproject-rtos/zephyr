@@ -953,6 +953,100 @@ static const struct net_wifi_mgmt_offload airoc_api = {
 	.wifi_mgmt_api = &airoc_wifi_mgmt,
 };
 
+#if DT_NODE_EXISTS(DT_INST_CHILD(0, gpio))
+
+static int airoc_gpio_init(const struct device *dev)
+{
+	return 0;
+}
+
+static int airoc_gpio_pin_configure(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
+{
+	return 0;
+}
+
+int airoc_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
+{
+	whd_result_t res;
+
+	res = whd_wifi_get_iovar_buffer(airoc_sta_if, "ccgpioin", (uint8_t *)value, 4);
+
+	if (res != WHD_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int airoc_gpio_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
+				   gpio_port_value_t value)
+{
+	uint8_t buffer[8];
+	whd_result_t res;
+
+	memcpy(buffer, (void *)&mask, 4);
+	memcpy(buffer + 4, (void *)&value, 4);
+	res = whd_wifi_set_iovar_buffer(airoc_sta_if, "gpioout", buffer, 8);
+	if (res != WHD_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int airoc_gpio_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
+{
+	uint8_t buffer[8];
+	whd_result_t res;
+
+	memcpy(buffer, (void *)&pins, 4);
+	memcpy(buffer + 4, (void *)&pins, 4);
+	res = whd_wifi_set_iovar_buffer(airoc_sta_if, "gpioout", buffer, 8);
+	if (res != WHD_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int airoc_gpio_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
+{
+	uint8_t buffer[8];
+	whd_result_t res;
+
+	memcpy(buffer, (void *)&pins, 4);
+	memset(buffer + 4, 0x00, 4);
+	res = whd_wifi_set_iovar_buffer(airoc_sta_if, "gpioout", buffer, 8);
+	if (res != WHD_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int airoc_gpio_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
+{
+	gpio_port_pins_t current;
+
+	airoc_gpio_port_get_raw(port, &current);
+	airoc_gpio_port_set_masked_raw(port, pins, current ^ pins);
+	return 0;
+}
+
+static DEVICE_API(gpio, api_table) = {
+	.pin_configure = airoc_gpio_pin_configure,
+	.port_get_raw = airoc_gpio_port_get_raw,
+	.port_set_masked_raw = airoc_gpio_port_set_masked_raw,
+	.port_set_bits_raw = airoc_gpio_port_set_bits_raw,
+	.port_clear_bits_raw = airoc_gpio_port_clear_bits_raw,
+	.port_toggle_bits = airoc_gpio_port_toggle_bits,
+};
+
+DEVICE_DT_DEFINE(DT_INST_CHILD(0, gpio), airoc_gpio_init, NULL, NULL, NULL, POST_KERNEL,
+		 CONFIG_WIFI_INIT_PRIORITY, &api_table);
+
+#endif
+
 NET_DEVICE_DT_INST_DEFINE(0, airoc_init, NULL, &airoc_wifi_data, &airoc_wifi_config,
 			  CONFIG_WIFI_INIT_PRIORITY, &airoc_api, ETHERNET_L2,
 			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), WHD_LINK_MTU);
