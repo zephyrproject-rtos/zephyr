@@ -336,6 +336,51 @@ static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 	}
 }
 
+static uint32_t mspi_set_celatency(am_hal_mspi_clock_e clock, uint32_t t_setup)
+{
+	uint32_t step = 0;
+
+	switch (clock) {
+	case AM_HAL_MSPI_CLK_250MHZ:
+	case AM_HAL_MSPI_CLK_125MHZ:
+	case AM_HAL_MSPI_CLK_62P5MHZ:
+	case AM_HAL_MSPI_CLK_41P67MHZ:
+	case AM_HAL_MSPI_CLK_31P25MHZ:
+	case AM_HAL_MSPI_CLK_20P83MHZ:
+	case AM_HAL_MSPI_CLK_15P63MHZ:
+	case AM_HAL_MSPI_CLK_10P42MHZ:
+	case AM_HAL_MSPI_CLK_7P81MHZ:
+	case AM_HAL_MSPI_CLK_5P21MHZ:
+	case AM_HAL_MSPI_CLK_3P91MHZ:
+		step = 4;
+		break;
+	case AM_HAL_MSPI_CLK_192MHZ:
+	case AM_HAL_MSPI_CLK_96MHZ:
+	case AM_HAL_MSPI_CLK_48MHZ:
+	case AM_HAL_MSPI_CLK_32MHZ:
+	case AM_HAL_MSPI_CLK_24MHZ:
+	case AM_HAL_MSPI_CLK_16MHZ:
+	case AM_HAL_MSPI_CLK_12MHZ:
+	case AM_HAL_MSPI_CLK_8MHZ:
+	case AM_HAL_MSPI_CLK_6MHZ:
+	case AM_HAL_MSPI_CLK_4MHZ:
+	case AM_HAL_MSPI_CLK_3MHZ:
+		step = 5;
+		break;
+	case AM_HAL_MSPI_CLK_1P5MHZ:
+		step = 10;
+		break;
+	default:
+		return -1;
+	}
+
+	if (t_setup <= step) {
+		return 0;
+	} else {
+		return (t_setup + step - 1) / step - 1;
+	}
+}
+
 static uint32_t mspi_set_time_limit(am_hal_mspi_clock_e clock, uint32_t time_limit)
 {
 	/* TODO */
@@ -390,22 +435,6 @@ static int mspi_get_mem_apsize(const struct mspi_ambiq_config *cfg, uint32_t mem
 	}
 }
 
-static inline void mspi_context_ce_control(struct mspi_context *ctx, bool on)
-{
-	if (ctx->owner) {
-		if (ctx->xfer.hold_ce &&
-		    ctx->xfer.ce_sw_ctrl.gpio.port != NULL) {
-			if (on) {
-				gpio_pin_set_dt(&ctx->xfer.ce_sw_ctrl.gpio, 1);
-				k_busy_wait(ctx->xfer.ce_sw_ctrl.delay);
-			} else {
-				k_busy_wait(ctx->xfer.ce_sw_ctrl.delay);
-				gpio_pin_set_dt(&ctx->xfer.ce_sw_ctrl.gpio, 0);
-			}
-		}
-	}
-}
-
 static inline void mspi_context_release(struct mspi_context *ctx)
 {
 	ctx->owner = NULL;
@@ -414,8 +443,6 @@ static inline void mspi_context_release(struct mspi_context *ctx)
 
 static inline void mspi_context_unlock_unconditionally(struct mspi_context *ctx)
 {
-	mspi_context_ce_control(ctx, false);
-
 	if (!k_sem_count_get(&ctx->lock)) {
 		ctx->owner = NULL;
 		k_sem_give(&ctx->lock);
@@ -883,7 +910,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 	} else if (param_mask != MSPI_DEVICE_CONFIG_ALL) {
 		if ((param_mask & (~(MSPI_DEVICE_CONFIG_FREQUENCY |
 				     MSPI_DEVICE_CONFIG_IO_MODE |
-				     MSPI_DEVICE_CONFIG_CE_NUM |
+				     MSPI_DEVICE_CONFIG_CE |
 				     MSPI_DEVICE_CONFIG_DATA_RATE |
 				     MSPI_DEVICE_CONFIG_CMD_LEN |
 				     MSPI_DEVICE_CONFIG_ADDR_LEN |
@@ -939,7 +966,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 		}
 
 		if ((param_mask & MSPI_DEVICE_CONFIG_IO_MODE) ||
-		    (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) ||
+		    (param_mask & MSPI_DEVICE_CONFIG_CE) ||
 		    (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE)) {
 			enum mspi_io_mode   io_mode;
 			enum mspi_data_rate data_rate;
@@ -951,10 +978,22 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				io_mode = data->dev_cfg.io_mode;
 			}
 
-			if (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) {
-				ce_num = dev_cfg->ce_num;
+			if (param_mask & MSPI_DEVICE_CONFIG_CE) {
+				if (dev_cfg->ce.ce_mode != MSPI_CE_MODE_HARDWARE) {
+					LOG_INST_ERR(cfg->log, "%u, only hardware CE is supported",
+						     __LINE__);
+					ret = -ENOTSUP;
+					goto e_return;
+				}
+				if (dev_cfg->ce.ce_polarity != MSPI_CE_ACTIVE_LOW) {
+					LOG_INST_ERR(cfg->log, "%u, only support active low CE.",
+						     __LINE__);
+					ret = -ENOTSUP;
+					goto e_return;
+				}
+				ce_num = dev_cfg->ce.ce_num;
 			} else {
-				ce_num = data->dev_cfg.ce_num;
+				ce_num = data->dev_cfg.ce.ce_num;
 			}
 
 			if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
@@ -981,9 +1020,9 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
-			data->dev_cfg.freq      = io_mode;
+			data->dev_cfg.io_mode   = io_mode;
 			data->dev_cfg.data_rate = data_rate;
-			data->dev_cfg.ce_num    = ce_num;
+			data->dev_cfg.ce.ce_num = ce_num;
 
 			if (cfg->apmemory_supp || cfg->hyperbus_supp) {
 				hal_rx_cfg.ui8Sfturn  = data_rate ? 2 : 1;
@@ -1146,9 +1185,22 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 			goto e_return;
 		}
 
+		if (dev_cfg->ce.ce_mode != MSPI_CE_MODE_HARDWARE) {
+			/* TODO: Add GPIO CE support */
+			LOG_INST_ERR(cfg->log, "%u, only hardware CE is supported", __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+
+		if (dev_cfg->ce.ce_polarity != MSPI_CE_ACTIVE_LOW) {
+			LOG_INST_ERR(cfg->log, "%u, only support active low CE.", __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+
 		hal_dev_cfg.eDeviceConfig = mspi_set_line(dev_cfg->io_mode,
 							  dev_cfg->data_rate,
-							  dev_cfg->ce_num);
+							  dev_cfg->ce.ce_num);
 		if (hal_dev_cfg.eDeviceConfig == AM_HAL_MSPI_FLASH_MAX ||
 		    (data->hal_cfg.bClkonD4 &&
 		     dev_cfg->io_mode > MSPI_IO_MODE_QUAD_1_4_4)) {
@@ -1201,8 +1253,25 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 			goto e_return;
 		}
 
+		const struct mspi_ce_timing *ct = &dev_cfg->ce_timing;
+
+		if (ct->t_ce_hold || ct->t_ce_min_inact) {
+			LOG_INST_WRN(cfg->log, "%u, CE hold/inactive not supported, ignoring.",
+				     __LINE__);
+		}
+
+		uint32_t lat_code = mspi_set_celatency(hal_dev_cfg.eClockFreq,
+						       ct->t_ce_setup);
+
+		if (lat_code > AM_HAL_MSPI_CE_LATENCY_ADD3) {
+			LOG_INST_ERR(cfg->log, "%u, ce setup time too large.", __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+		hal_dev_cfg.eCeLatency = (am_hal_mspi_ce_latency_e)lat_code;
+
 		hal_dev_cfg.ui16DMATimeLimit = mspi_set_time_limit(hal_dev_cfg.eClockFreq,
-								   dev_cfg->time_to_break);
+								   ct->t_ce_max_act);
 
 		if (hal_dev_cfg.eClockFreq >= AM_HAL_MSPI_CLK_96MHZ &&
 		    hal_dev_cfg.bEmulateDDR) {

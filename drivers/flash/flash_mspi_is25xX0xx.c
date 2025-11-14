@@ -951,7 +951,10 @@ static int flash_mspi_is25xX0xx_read_jedec_id(const struct device *flash, uint8_
 {
 	struct flash_mspi_is25xX0xx_data *data = flash->data;
 
-	id = &data->id;
+	if (id == NULL) {
+		return -EINVAL;
+	}
+	memcpy(id, data->id, MIN(3, sizeof(data->id)));
 	return 0;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
@@ -972,13 +975,12 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 
 #define MSPI_DEVICE_CONFIG_SERIAL(n)                                                              \
 	{                                                                                         \
-		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
+		.ce                 = MSPI_DEVICE_CE_DT_INST(n),                                  \
 		.freq               = 12000000,                                                   \
 		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
-		.ce_polarity        = MSPI_CE_ACTIVE_LOW,                                         \
 		.dqs_enable         = false,                                                      \
 		.rx_dummy           = 8,                                                          \
 		.tx_dummy           = 0,                                                          \
@@ -987,7 +989,7 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 3,                                                          \
 		.mem_boundary       = 0,                                                          \
-		.time_to_break      = 0,                                                          \
+		.ce_timing          = MSPI_DEVICE_CE_TIMING_DT_INST(n),                           \
 	}
 
 #define MSPI_TIMING_CONFIG(n)                                                                     \

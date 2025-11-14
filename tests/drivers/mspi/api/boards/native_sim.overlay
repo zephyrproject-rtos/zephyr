@@ -16,5 +16,9 @@
 		compatible = "zephyr,mspi-emul-device";
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
+		mspi-ce-max-active = <10>;
+		mspi-ce-setup = <2>;
+		mspi-ce-hold = <2>;
+		mspi-ce-min-inactive = <2>;
 	};
 };
