@@ -1,0 +1,20 @@
+identifier: pico_plus2/rp2350b/m33/w
+name: Pimoroni Pico Plus2W (Cortex-M33) WiFi
+type: mcu
+arch: arm
+flash: 16384
+ram: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - wifi

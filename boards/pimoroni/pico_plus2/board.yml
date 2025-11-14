@@ -3,4 +3,7 @@ board:
   full_name: Pimoroni Pico Plus2
   vendor: pimoroni
   socs:
-  - name: rp2350b
+    - name: rp2350b
+      variants:
+        - name: w
+          cpucluster: m33
