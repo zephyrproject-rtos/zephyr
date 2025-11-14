@@ -177,6 +177,8 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
 
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
@@ -184,8 +186,6 @@
 					sdclk = <0>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <2>;
-				status = "okay";
 			};
 
 			uclk: uclk {
