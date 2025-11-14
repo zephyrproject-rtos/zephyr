@@ -27,7 +27,7 @@ extern "C" {
  * @brief Interfaces for Field-Programmable Gate Arrays (FPGA).
  * @defgroup fpga_interface FPGA
  * @since 2.7
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

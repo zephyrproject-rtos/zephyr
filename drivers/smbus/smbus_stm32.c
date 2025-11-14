@@ -355,12 +355,12 @@ static int smbus_stm32_pcall(const struct device *dev, uint16_t periph_addr, uin
 			.flags = I2C_MSG_WRITE,
 		},
 		{
-			.buf = &send_word,
+			.buf = (uint8_t *)&send_word,
 			.len = sizeof(send_word),
 			.flags = I2C_MSG_WRITE,
 		},
 		{
-			.buf = recv_word,
+			.buf = (uint8_t *)recv_word,
 			.len = sizeof(*recv_word),
 			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
 		},

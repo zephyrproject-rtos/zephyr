@@ -499,12 +499,13 @@ class DevicetreeLintingCheck(ComplianceTest):
     NPX_EXECUTABLE = "npx"
 
     def ensure_npx(self) -> bool:
-        if not shutil.which(self.NPX_EXECUTABLE):
+        if not (npx_executable := shutil.which(self.NPX_EXECUTABLE)):
             return False
         try:
+            self.npx_exe = npx_executable
             # --no prevents npx from fetching from registry
             subprocess.run(
-                [self.NPX_EXECUTABLE, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
+                [self.npx_exe, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
@@ -535,6 +536,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}")
 
     def run(self):
+        self.npx_exe = self.NPX_EXECUTABLE
         # Get changed DTS files
         dts_files = [
             file for file in get_files(filter="d")
@@ -560,7 +562,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             temp_patch_files.append(temp_patch)
 
             cmd = [
-                "npx", "--prefix", "./scripts/ci", "--no",
+                self.npx_exe, "--prefix", "./scripts/ci", "--no",
                 "dts-linter", "--", "--outputFormat",
                 "json", "--format",
                 "--patchFile", temp_patch,

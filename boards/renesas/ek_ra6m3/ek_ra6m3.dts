@@ -216,7 +216,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	phy: ethernet-phy@5 {
+	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
 		status = "okay";

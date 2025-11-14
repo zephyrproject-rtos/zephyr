@@ -56,7 +56,7 @@
 };
 
 /*
- * RT1040 RM descibes the SPI peripheral at 0x403a0000 as LPSPI3.
+ * RT1040 RM describes the SPI peripheral at 0x403a0000 as LPSPI3.
  * other RT10xx SOCs describe this as LPSPI4, so just add an alias.
  */
 lpspi3: &lpspi4 {};

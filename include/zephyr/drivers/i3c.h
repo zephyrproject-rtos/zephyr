@@ -18,7 +18,7 @@
  * @brief Interfaces for Improved Inter-Integrated Circuit (I3C) controllers.
  * @defgroup i3c_interface I3C
  * @since 3.2
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

@@ -25,7 +25,7 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 	default 10
 	range 2 10
 	help
-	  As per RFC2131 4.1.1, we wait a random period between
+	  As per RFC2131 4.4.1, we wait a random period between
 	  1 and 10 seconds before sending the initial discover.
 
 config NET_DHCPV4_OPTION_CALLBACKS

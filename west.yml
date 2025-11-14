@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: cf8f1631e862528ee044850bcc70273975b90771
+      revision: 6d6ab91d5cc71c872353af1957d19f3d930df0fd
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 62136a8ff8a2e644b72f0dc902d33b397991cace
+      revision: a279c14e196cb0904593035888a334dcd2c720bd
       groups:
         - hal
     - name: hal_rpi_pico
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 93e7944879c99bc5e0bb6371f9d2cb5d9a9f3482
+      revision: 286dd285b5bb4fddafdfff27b5405264e5a61bfe
       path: modules/hal/stm32
       groups:
         - hal
@@ -316,7 +316,7 @@ manifest:
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: f4c0283ca55fc4085815d4793a26e19f20be2f97
+      revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -369,7 +369,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: d3341a660f2f33156e1a8bb8ea47ad83066defea
+      revision: 04aa7243e04946b5422b124bea9c0675ab6b120f
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -14,6 +14,10 @@
  */
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa7 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -27,4 +31,8 @@
 		reg = <0x56>;
 		size = <256>;
 	};
+};
+
+&spi1 {
+	status = "disabled";
 };

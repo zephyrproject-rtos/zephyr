@@ -2006,7 +2006,36 @@ This has been fixed in main for v4.2.0
 :cve:`2025-9408`
 ----------------
 
-Under embargo until 2025-11-10
+Userspace privilege escalation vulnerability on Cortex M
+
+System call entry on Cortex M (and possibly R and A, but I think not) has a race which allows very
+practical privilege escalation for malicious userspace processes.
+
+
+- `Zephyr project bug tracker GHSA-3r6j-5mp3-75wr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3r6j-5mp3-75wr>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 95101 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/95101>`_
+- `PR 96850 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/96850>`_
+
+- `PR 96014 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/96014>`_
+- `PR 97306 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97306>`_
+
+- `PR 96015 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/96015>`_
+- `PR 97305 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97305>`_
+
+- `PR 96030 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/96030>`_
+- `PR 97313 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97313>`_
 
 :cve:`2025-9557`
 ----------------
@@ -2022,3 +2051,25 @@ Under embargo until 2025-11-24
 -----------------
 
 Under embargo until 2025-12-13
+
+:cve:`2025-12890`
+-----------------
+
+Bluetooth: peripheral: Invalid handling of malformed connection request
+
+Improper handling of malformed Connection Request with the interval
+set to be 1 (which supposed to be illegal) and the chM 0x7CFFFFFFFF
+triggers a crash. The peripheral will not be connectable after it.
+
+- `Zephyr project bug tracker GHSA-8hrf-pfww-83v9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8hrf-pfww-83v9>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 89955 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/89955>`_
+
+:cve:`2025-12899`
+-----------------
+
+Under embargo until 2026-01-28

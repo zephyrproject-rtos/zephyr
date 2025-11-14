@@ -136,6 +136,10 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_acquire(void)
 
 	if (cis) {
 		(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
+
+		cis->node_rx_terminate.rx.hdr.link = ll_rx_link_alloc();
+		/* Link allocation should never fail */
+		LL_ASSERT_DBG(cis->node_rx_terminate.rx.hdr.link != NULL);
 	}
 
 	return cis;
@@ -145,6 +149,13 @@ void ll_conn_iso_stream_release(struct ll_conn_iso_stream *cis)
 {
 	cis->cis_id = 0;
 	cis->group = NULL;
+
+	if (cis->node_rx_terminate.rx.hdr.type == NODE_RX_TYPE_NONE &&
+	    cis->node_rx_terminate.rx.hdr.link != NULL) {
+		/* Free unused link */
+		ll_rx_link_release(cis->node_rx_terminate.rx.hdr.link);
+		cis->node_rx_terminate.rx.hdr.link = NULL;
+	}
 
 	mem_release(cis, &cis_free);
 }
@@ -1116,6 +1127,27 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	cis->lll.active = 1U;
 }
 
+void ull_conn_iso_cis_terminate_done(struct node_rx_pdu *rx)
+{
+	DECLARE_MAYFLY_ARRAY(mfys, cis_disabled_cb, CONFIG_BT_CTLR_CONN_ISO_GROUPS);
+	struct ll_conn_iso_stream *cis;
+
+	cis = ll_conn_iso_stream_get(rx->hdr.handle);
+	LL_ASSERT_DBG(rx == &cis->node_rx_terminate.rx);
+
+	rx->hdr.link = NULL;
+	rx->hdr.type = NODE_RX_TYPE_NONE;
+
+	if (cis->lll.flush != LLL_CIS_FLUSH_NONE) {
+		struct ll_conn_iso_group *cig = cis->group;
+
+		/* Complete teardown of CIS in ULL_HIGH context */
+		mfys[cig->lll.handle].param = &cig->lll;
+		(void)mayfly_enqueue(TICKER_USER_ID_THREAD,
+				     TICKER_USER_ID_ULL_HIGH, 1, &mfys[cig->lll.handle]);
+	}
+}
+
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 static void cis_lazy_fill(struct ll_conn_iso_stream *cis)
 {
@@ -1267,6 +1299,14 @@ static void cis_disabled_cb(void *param)
 		} else if (cis->lll.flush == LLL_CIS_FLUSH_COMPLETE) {
 			ll_iso_stream_released_cb_t cis_released_cb;
 
+			if (cis->node_rx_terminate.rx.hdr.type == NODE_RX_TYPE_TERMINATE) {
+				/* Termination node type is still set, so it is waiting to
+				 * be processed. Wait for this to happen before finalizing
+				 * teardown
+				 */
+				continue;
+			}
+
 			conn = ll_conn_get(cis->lll.acl_handle);
 			LL_ASSERT_DBG(conn != NULL);
 
@@ -1323,8 +1363,7 @@ static void cis_disabled_cb(void *param)
 				/* Create and enqueue termination node. This shall prevent
 				 * further enqueuing of TX nodes for terminating CIS.
 				 */
-				node_terminate = ull_pdu_rx_alloc();
-				LL_ASSERT_ERR(node_terminate);
+				node_terminate = &cis->node_rx_terminate.rx;
 				node_terminate->hdr.handle = cis->lll.handle;
 				node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
 				*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;

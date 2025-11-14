@@ -71,6 +71,8 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+* :cve:`2025-12890` `Bluetooth: peripheral: Invalid handling of malformed connection request
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8hrf-pfww-83v9>`_
 * :cve:`2025-27809` `TLS clients may unwittingly skip server authentication
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
@@ -1393,8 +1395,8 @@ Other notable changes
   * 3.6.3: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
   * 3.6.4: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.4
 
-* Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
-  https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
+* Updated TF-M to version 2.2.0 (from 2.1.1). The release notes can be found at:
+  https://trustedfirmware-m.readthedocs.io/en/latest/releases/2.2.0.html
 
 * Updated all boards with an external I2C connectors (Qwiic, Stemma, Grove...)
   to use the ``zephyr_i2c`` devicetree label. This allows using the existing

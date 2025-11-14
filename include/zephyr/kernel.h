@@ -711,6 +711,16 @@ static inline bool k_is_pre_kernel(void)
 		return false;
 	}
 
+	/*
+	 * Some compilers might optimize by pre-reading
+	 * z_sys_post_kernel. This is absolutely not desirable.
+	 * We are trying to avoid reading it if we are in user
+	 * context as reading z_sys_post_kernel in user context
+	 * will result in access fault. So add a compiler barrier
+	 * here to stop that kind of optimizations.
+	 */
+	compiler_barrier();
+
 	return !z_sys_post_kernel;
 }
 

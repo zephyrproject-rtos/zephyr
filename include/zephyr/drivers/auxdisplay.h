@@ -17,7 +17,7 @@
  * @brief Interfaces for auxiliary (textual/non-graphical) displays.
  * @defgroup auxdisplay_interface Auxiliary (Text) Display
  * @since 3.4
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

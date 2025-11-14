@@ -1398,7 +1398,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 	struct lwm2m_cache_read_entry *read_info;
 	size_t  length = lwm2m_cache_size(cached_data);
 
-	LOG_DBG("Read cached data size %u", length);
+	LOG_DBG("Read cached data size %zu", length);
 
 	if (msg->cache_info) {
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
@@ -1408,7 +1408,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
-			LOG_DBG("Limited number of read %d", length);
+			LOG_DBG("Limited number of read %zu", length);
 		}
 	}
 

@@ -26,14 +26,6 @@
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./arch/xtensa/core/gen_vectors.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/xtensa/core/gen_zsr.py" = [
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-]
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
@@ -1154,8 +1146,6 @@ exclude = [
     "./arch/x86/gen_idt.py",
     "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
-    "./arch/xtensa/core/gen_vectors.py",
-    "./arch/xtensa/core/gen_zsr.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",

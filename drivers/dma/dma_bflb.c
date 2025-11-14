@@ -273,6 +273,12 @@ static int dma_bflb_start(const struct device *dev, uint32_t channel)
 		cfg->base_reg + DMA_CxDSTADDR_OFFSET + BFLB_DMA_CH_OFFSET(channel));
 
 	pending_length *= dma_bflb_get_transfer_size(dev, channel);
+
+	sys_cache_data_flush_and_invd_range((void *)addr, pending_length);
+
+	addr = sys_read32(
+		cfg->base_reg + DMA_CxSRCADDR_OFFSET + BFLB_DMA_CH_OFFSET(channel));
+
 	sys_cache_data_flush_and_invd_range((void *)addr, pending_length);
 #endif
 

@@ -349,15 +349,6 @@ since C11. The definition of ``struct timespec`` is as shown below.
        long   tv_nsec; /* nanoseconds */
    };
 
-.. _note:
-
-    The C standard does not define the size of ``time_t``. However, Zephyr
-    uses 64-bits for ``time_t``. The ``long`` type is required to be at least
-    32-bits, but usually matches the word size of the architecture. Both
-    elements of ``struct timespec`` are signed integers. ``time_t`` is defined
-    to be 64-bits both for historical reasons and to be robust enough to
-    represent times in the future.
-
 The ``tv_nsec`` field is only valid with values in the range ``[0, 999999999]``. The
 ``tv_sec`` field is the number of seconds since the epoch. If ``struct timespec`` is
 used to express a difference, the ``tv_sec`` field may fall into a negative range.

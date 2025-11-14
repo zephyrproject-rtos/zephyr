@@ -837,6 +837,9 @@ static void check_subnet_list_get(struct bt_mesh_brg_cfg_filter_netkey filter, u
 
 	net_buf_simple_init(rsp.list, 0);
 
+	/* Sleep here to avoid packet collision. */
+	k_sleep(K_MSEC(100));
+
 	LOG_INF("Getting subnet list, filter = (filter: %d, subnet: %d), start_idx = %d",
 		filter.filter, filter.net_idx, start_idx);
 	ASSERT_OK(bt_mesh_brg_cfg_cli_subnets_get(0, BRIDGE_ADDR, filter, start_idx, &rsp));

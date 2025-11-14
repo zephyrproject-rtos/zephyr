@@ -890,6 +890,7 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 {
 	struct modem_cmux *cmux = dlci->cmux;
 	uint32_t written;
+	bool previous_state = dlci->rx_full;
 
 	if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
 		LOG_DBG("Unexpected UIH frame");
@@ -899,14 +900,18 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
 	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
-	if (written != cmux->frame.data_len) {
-		LOG_WRN("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
+	if (written < cmux->frame.data_len) {
+		LOG_ERR("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
 			dlci->dlci_address, cmux->frame.data_len - written, cmux->frame.data_len);
-	}
-	if (written < cmux->frame.data_len ||
-	    ring_buf_space_get(&dlci->receive_rb) < MODEM_CMUX_DATA_FRAME_SIZE_MAX) {
-		LOG_WRN("DLCI %u receive buffer is full", dlci->dlci_address);
 		dlci->rx_full = true;
+	}
+	if ((CONFIG_MODEM_CMUX_MSC_FC_THRESHOLD > 0) &&
+	    (ring_buf_space_get(&dlci->receive_rb) < CONFIG_MODEM_CMUX_MSC_FC_THRESHOLD)) {
+		LOG_WRN("DLCI %u receive buffer low, set flow control", dlci->dlci_address);
+		dlci->rx_full = true;
+	}
+
+	if (previous_state != dlci->rx_full) {
 		modem_cmux_send_msc(cmux, dlci);
 	}
 	modem_pipe_notify_receive_ready(&dlci->pipe);
@@ -1449,10 +1454,9 @@ static int modem_cmux_dlci_pipe_api_receive(void *data, uint8_t *buf, size_t siz
 
 	ret = ring_buf_get(&dlci->receive_rb, buf, size);
 	k_mutex_unlock(&dlci->receive_rb_lock);
-
 	/* Release FC if set */
 	if (dlci->rx_full &&
-	    ring_buf_space_get(&dlci->receive_rb) >= MODEM_CMUX_DATA_FRAME_SIZE_MAX) {
+	    ring_buf_space_get(&dlci->receive_rb) >= CONFIG_MODEM_CMUX_MTU) {
 		LOG_DBG("DLCI %u receive buffer is no longer full", dlci->dlci_address);
 		dlci->rx_full = false;
 		modem_cmux_send_msc(dlci->cmux, dlci);

@@ -34,7 +34,7 @@ extern "C" {
  * @retval -errno code in case of failure.
  *
  */
-int cpu_load_get(int cpu_id);
+int cpu_load_metric_get(int cpu_id);
 
 /**
  * @}

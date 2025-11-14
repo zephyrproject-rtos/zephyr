@@ -2920,6 +2920,7 @@ Instrumentation Subsystem:
     - fkokosinski
     - tgorochowik
   files:
+    - doc/services/instrumentation/
     - include/zephyr/instrumentation/
     - samples/subsys/instrumentation/
     - scripts/instrumentation/
@@ -5088,6 +5089,7 @@ USB:
     - jfischer-no
   collaborators:
     - tmon-nordic
+    - josuah
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -5741,9 +5743,9 @@ West:
   status: maintained
   maintainers:
     - afontaine-invn
-  collaborators:
     - rbuisson-invn
     - gjabouley-invn
+  collaborators:
     - sriccardi-invn
   files:
     - modules/hal_tdk/Kconfig
@@ -5836,9 +5838,10 @@ West:
     - "area: MCTP"
 
 "West project: libmetal":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - arnopo
+    - iuliana-prodan
   files:
     - modules/Kconfig.libmetal
   labels:
@@ -5991,10 +5994,12 @@ West:
     - "area: Wi-Fi"
 
 "West project: open-amp":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - arnopo
+    - iuliana-prodan
   collaborators:
     - uLipe
-    - iuliana-prodan
   files:
     - modules/Kconfig.open-amp
   labels:
