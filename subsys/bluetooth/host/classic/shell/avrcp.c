@@ -403,12 +403,13 @@ static void print_notification_event(uint8_t event_id, struct bt_avrcp_event_dat
 	case BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED:
 		bt_shell_print(" PLAYBACK_STATUS_CHANGED: status=0x%02x", data->play_status);
 		break;
-	case BT_AVRCP_EVT_TRACK_CHANGED:
+	case BT_AVRCP_EVT_TRACK_CHANGED: {
 		uint64_t identifier;
 
 		memcpy(&identifier, data->identifier, sizeof(identifier));
 		bt_shell_print(" TRACK_CHANGED: identifier value: %llx", identifier);
 		break;
+	}
 	case BT_AVRCP_EVT_PLAYBACK_POS_CHANGED:
 		bt_shell_print(" PLAYBACK_POS_CHANGED: pos=%u", data->playback_pos);
 		break;
