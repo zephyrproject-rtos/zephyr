@@ -111,6 +111,16 @@ static uint32_t idle_timer_pre_idle;
 
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
+
+/* Stub callback to satisfy Counter API (cannot be NULL) */
+static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
+				uint32_t ticks, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(user_data);
+}
 #endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 #endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
@@ -123,7 +133,7 @@ static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m
 void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 {
 	struct counter_alarm_cfg cfg = {
-		.callback = NULL,
+		.callback = idle_timer_alarm_stub,
 		.ticks = counter_us_to_ticks(idle_timer, max_lpm_time_us),
 		.user_data = NULL,
 		.flags = 0,
