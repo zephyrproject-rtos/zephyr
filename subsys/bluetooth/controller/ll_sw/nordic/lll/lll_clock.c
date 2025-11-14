@@ -29,6 +29,7 @@
 #endif
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
+static atomic_val_t hf_refcnt;
 
 #if defined(CONFIG_SOC_SERIES_NRF54H)
 #define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U /* FIXME: */
@@ -72,9 +73,34 @@ int lll_clock_wait(void)
 	return 0;
 }
 
+#if !defined(CONFIG_BT_CTLR_ZLI)
+const static struct device *clock_dev_hfxo = DEVICE_DT_GET(DT_NODELABEL(hfxo));
+const static struct nrf_clock_spec clock_req_spec_hfxo = {
+	.frequency = 0, /* Ignore or use default */
+	.accuracy = 1, /* Use maximum accuracy */
+	.precision = 1, /* 0 for low precision, 1 for high precision */
+};
+static struct onoff_client clock_cli_hfxo;
+#endif
+
 int lll_hfclock_on(void)
 {
-	/* TODO: */
+	if (atomic_inc(&hf_refcnt) > 0) {
+		return 0;
+	}
+
+#if defined(CONFIG_BT_CTLR_ZLI)
+	nrf_clock_control_hfxo_request();
+#else
+	int err;
+
+	sys_notify_init_spinwait(&clock_cli_hfxo.notify);
+
+	err = nrf_clock_control_request(clock_dev_hfxo, &clock_req_spec_hfxo, &clock_cli_hfxo);
+	if (err) {
+		return err;
+	}
+#endif
 
 	return 0;
 }
@@ -88,7 +114,24 @@ int lll_hfclock_on_wait(void)
 
 int lll_hfclock_off(void)
 {
-	/* TODO: */
+	if (atomic_get(&hf_refcnt) < 1) {
+		return -EALREADY;
+	}
+
+	if (atomic_dec(&hf_refcnt) > 1) {
+		return 0;
+	}
+
+#if defined(CONFIG_BT_CTLR_ZLI)
+	nrf_clock_control_hfxo_release();
+#else
+	int err;
+
+	err = nrf_clock_control_release(clock_dev_hfxo, &clock_req_spec_hfxo);
+	if (err) {
+		return err;
+	}
+#endif
 
 	return 0;
 }
@@ -98,9 +141,7 @@ struct lll_clock_state {
 	struct onoff_client cli;
 	struct k_sem sem;
 };
-
 static struct onoff_client lf_cli;
-static atomic_val_t hf_refcnt;
 
 static void clock_ready(struct onoff_manager *mgr, struct onoff_client *cli,
 			uint32_t state, int res)
