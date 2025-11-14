@@ -35,7 +35,7 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 				    .sin6_scope_id = 0};
 	socklen_t len = sizeof(addr);
 
-	trel_sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	trel_sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(trel_sock >= 0);
 	VerifyOrExit(zsock_bind(trel_sock, (struct sockaddr *)&addr, sizeof(addr)) == 0);
 
