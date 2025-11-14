@@ -2288,7 +2288,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_select)
  * make sure poll() returns proper error for the closed
  * connection.
  */
-ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
+void test_connect_and_wait_for_v4_poll_common(uint16_t events)
 {
 	struct net_sockaddr_in addr = { 0 };
 	struct zsock_pollfd fds[1];
@@ -2296,6 +2296,8 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	int fd, flags, ret, optval;
 	bool closed = false;
 	net_socklen_t optlen = sizeof(optval);
+	int64_t start_time, time_diff;
+	int timeout_ms = 1000;
 
 	fd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, 0);
 
@@ -2318,13 +2320,23 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	while (1) {
 		memset(fds, 0, sizeof(fds));
 		fds[0].fd = fd;
-		fds[0].events = ZSOCK_POLLOUT;
+		fds[0].events = events;
 
-		/* Check if the connection is there, this should timeout */
-		ret = zsock_poll(fds, 1, 10);
+		/* Peer should reject the connection with RST as port is closed.
+		 * Connection error should be notified as soon as it happens,
+		 * not after a timeout. Otherwise, blocking poll() would never
+		 * recover.
+		 */
+		start_time = k_uptime_get();
+
+		ret = zsock_poll(fds, 1, timeout_ms);
 		if (ret < 0) {
 			break;
 		}
+
+		time_diff = k_uptime_get() - start_time;
+
+		zassert(time_diff < timeout_ms, "poll() should quit before a timeout");
 
 		if (fds[0].revents > 0) {
 			if (fds[0].revents & ZSOCK_POLLERR) {
@@ -2347,6 +2359,16 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 
 	ret = zsock_close(fd);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll_pollout)
+{
+	test_connect_and_wait_for_v4_poll_common(ZSOCK_POLLOUT);
+}
+
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll_pollin)
+{
+	test_connect_and_wait_for_v4_poll_common(ZSOCK_POLLIN);
 }
 
 ZTEST(net_socket_tcp, test_so_keepalive_opt)
