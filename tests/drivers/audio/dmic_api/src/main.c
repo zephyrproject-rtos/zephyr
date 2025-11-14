@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/ztest.h>
 
@@ -289,6 +290,66 @@ ZTEST(dmic, test_bad_pair)
 	ret = dmic_configure(dmic_dev, &dmic_cfg);
 	zassert_not_equal(ret, 0, "DMIC configure should fail with "
 			  "non adjacent channels in map");
+}
+
+/**
+ * @brief Test the dmic_get_caps API function
+ *
+ * This test validates the DMIC get_caps API functionality by testing both
+ * successful operation and error handling scenarios.
+ */
+ZTEST(dmic, test_get_caps)
+{
+	int ret;
+	struct audio_caps caps;
+
+	zassert_true(device_is_ready(dmic_dev), "DMIC device is not ready");
+
+	/**
+	 * Test Case 1: Normal operation - Valid parameters
+	 * Expected: Function should return 0 (success) or -ENOSYS (not implemented)
+	 */
+	ret = dmic_get_caps(dmic_dev, &caps);
+
+	/* Handle case where driver doesn't implement get_caps */
+	if (ret == -ENOSYS) {
+		TC_PRINT("DMIC get_caps not implemented by driver\n");
+		ztest_test_skip();
+		return;
+	}
+
+	/* Verify successful execution */
+	zassert_equal(ret, 0, "dmic_get_caps should return 0, got %d", ret);
+
+	/**
+	 * Test Case 2: Capability value validation
+	 * Verify that returned capability values are within reasonable ranges
+	 */
+	zassert_true(caps.min_total_channels >= 1, "min_total_channels should be >= 1, got %d",
+		     caps.min_total_channels);
+
+	zassert_true(caps.max_total_channels >= caps.min_total_channels,
+		     "max_total_channels (%u) should be >= min_total_channels (%u)",
+		     caps.max_total_channels, caps.min_total_channels);
+
+	zassert_not_equal(caps.supported_sample_rates, 0, "supported_sample_rates should not be 0");
+
+	zassert_not_equal(caps.supported_bit_widths, 0, "supported_bit_widths should not be 0");
+
+	zassert_true(caps.min_num_buffers >= 1, "min_num_buffers should be >= 1, got %u",
+		     caps.min_num_buffers);
+
+	zassert_true(caps.max_frame_interval >= caps.min_frame_interval,
+		     "max_frame_interval (%u) should be >= min_frame_interval (%u)",
+		     caps.max_frame_interval, caps.min_frame_interval);
+
+	/**
+	 * Test Case 3: Error handling - NULL caps pointer
+	 * Expected: Function should return -EINVAL for invalid parameter
+	 */
+	ret = dmic_get_caps(dmic_dev, NULL);
+	zassert_equal(ret, -EINVAL,
+		      "dmic_get_caps should return -EINVAL for NULL caps pointer, got %d", ret);
 }
 
 ZTEST_SUITE(dmic, NULL, NULL, NULL, NULL, NULL);
