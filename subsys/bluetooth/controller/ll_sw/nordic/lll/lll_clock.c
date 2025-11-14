@@ -10,6 +10,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
+#include "lll_clock.h"
+
 #include "hal/debug.h"
 
 /* LF (XO, RC) clock setup timeout.
@@ -29,15 +31,39 @@
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 
 #if defined(CONFIG_SOC_SERIES_NRF54H)
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U /* FIXME: */
+
+const static struct device *clock_dev_lf = DEVICE_DT_GET(DT_NODELABEL(lfclk));
+const static struct nrf_clock_spec clock_req_spec_lf = {
+	.frequency = 32768,
+	.accuracy = sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY],
+	.precision = 0, /* 0 for low precision, 1 for high precision */
+};
+static struct onoff_client clock_cli_lf;
 
 int lll_clock_init(void)
 {
+	int err;
+
+	sys_notify_init_spinwait(&clock_cli_lf.notify);
+
+	err = nrf_clock_control_request(clock_dev_lf, &clock_req_spec_lf, &clock_cli_lf);
+	if (err) {
+		return err;
+	}
+
 	return 0;
 }
 
 int lll_clock_deinit(void)
 {
+	int err;
+
+	err = nrf_clock_control_release(clock_dev_lf, &clock_req_spec_lf);
+	if (err) {
+		return err;
+	}
+
 	return 0;
 }
 
@@ -48,16 +74,22 @@ int lll_clock_wait(void)
 
 int lll_hfclock_on(void)
 {
+	/* TODO: */
+
 	return 0;
 }
 
 int lll_hfclock_on_wait(void)
 {
+	/* TODO: */
+
 	return 0;
 }
 
 int lll_hfclock_off(void)
 {
+	/* TODO: */
+
 	return 0;
 }
 
@@ -227,7 +259,7 @@ int lll_hfclock_off(void)
 
 uint8_t lll_clock_sca_local_get(void)
 {
-#ifdef CONFIG_CLOCK_CONTROL_NRF
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_SOC_SERIES_NRF54H)
 	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
 #else
 	return DT_ENUM_IDX(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk),
@@ -237,7 +269,7 @@ uint8_t lll_clock_sca_local_get(void)
 
 uint32_t lll_clock_ppm_local_get(void)
 {
-#ifdef CONFIG_CLOCK_CONTROL_NRF
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_SOC_SERIES_NRF54H)
 	return sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY];
 #else
 	return sca_ppm_lut[DT_ENUM_IDX(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk),
