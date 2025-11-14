@@ -1770,7 +1770,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 {
 
-	SYS_PORT_TRACING_FUNC_ENTER(rtio, submit, rtio, wait_count);
+	SYS_PORT_TRACING_FUNC_ENTER(rtio, submit, r, wait_count);
 	int res = 0;
 	uintptr_t cq_count = (uintptr_t)atomic_get(&r->cq_count);
 	uintptr_t cq_complete_count = cq_count + wait_count;
