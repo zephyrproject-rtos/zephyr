@@ -102,6 +102,13 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* NVMEM
+
+  * Flash device support
+
+    * :kconfig:option:`CONFIG_NVMEM_FLASH`
+    * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
