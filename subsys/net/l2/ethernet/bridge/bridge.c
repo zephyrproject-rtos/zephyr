@@ -255,8 +255,8 @@ static void bridge_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
-	net_if_flag_clear(iface, NET_IF_IPV4);
-	net_if_flag_clear(iface, NET_IF_IPV6);
+	net_if_flag_set(iface, NET_IF_IPV4);
+	net_if_flag_set(iface, NET_IF_IPV6);
 	net_if_flag_clear(iface, NET_IF_FORWARD_MULTICASTS);
 
 	net_virtual_set_flags(iface, NET_L2_PROMISC_MODE);
