@@ -3939,10 +3939,8 @@ Networking:
     - rlubos
   collaborators:
     - pdgendt
-    - canisLupus1313
     - kkasperczyk-no
     - edmont
-    - maciejbaczmanski
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -6042,10 +6040,8 @@ West:
     - rlubos
   collaborators:
     - pdgendt
-    - canisLupus1313
-    - mariuszpos
+    - kkasperczyk-no
     - edmont
-    - maciejbaczmanski
   files:
     - modules/openthread/
   labels:
