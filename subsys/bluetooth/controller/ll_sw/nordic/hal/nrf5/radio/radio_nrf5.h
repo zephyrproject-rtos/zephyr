@@ -43,6 +43,7 @@
 #include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
 #elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#include <hal/nrf_ipct.h>
 #include "radio_nrf54hx.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"

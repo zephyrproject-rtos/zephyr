@@ -60,12 +60,18 @@ void cntr_init(void)
 	 *        with ability to select/set IRQ group.
 	 *        Shared interrupts is an option? It may add ISR latencies?
 	 */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	NRF_GRTC->INTENSET1 = HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk;
 	if (IS_ENABLED(CONFIG_SOC_SERIES_BSIM_NRF54LX)) {
 		extern void nhw_GRTC_regw_sideeffects_INTENSET(uint32_t inst, uint32_t n);
 
 		nhw_GRTC_regw_sideeffects_INTENSET(0, 1);
 	}
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+	NRF_GRTC->INTENSET6 = HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk;
+#else
+#error "Unknown SoC."
+#endif
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC_START)
 	NRF_GRTC->MODE = ((GRTC_MODE_SYSCOUNTEREN_Enabled <<
