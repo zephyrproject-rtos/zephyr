@@ -302,6 +302,7 @@
 			#size-cells = <1>;
 			interrupts = <49 0>;
 			sifli,cfg = <&cfg>;
+			alarms-count = <1>;
 			status = "disabled";
 
 			backup-registers@30 {
