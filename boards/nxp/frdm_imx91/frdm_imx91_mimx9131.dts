@@ -35,16 +35,6 @@
 	pinctrl-names = "default";
 };
 
-&edma4_2 {
-	status = "disabled";
-};
-
-&sai3_2 {
-	status = "disabled";
-	pinctrl-0 = <&sai3_default>;
-	pinctrl-names = "default";
-};
-
 &tpm2 {
 	status = "okay";
 };
