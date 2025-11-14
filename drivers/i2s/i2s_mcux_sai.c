@@ -21,10 +21,7 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
-#ifdef CONFIG_CLOCK_CONTROL_MCUX_CCM
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
-#endif
-
 #include <zephyr/sys/barrier.h>
 #include <zephyr/device.h>
 #include <soc.h>
@@ -452,24 +449,6 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 	*mclk = rate;
 }
 
-#ifndef CONFIG_I2S_HAS_PLL_SETTING
-static void set_mclk_rate(const struct device *dev, uint32_t rate)
-{
-	const struct i2s_mcux_config *dev_cfg = dev->config;
-	const struct device *ccm_dev = dev_cfg->ccm_dev;
-	clock_control_subsys_t clk_sub_sys = dev_cfg->clk_sub_sys;
-
-	if (device_is_ready(ccm_dev)) {
-		clock_control_set_rate(ccm_dev, clk_sub_sys,
-					(clock_control_subsys_rate_t)rate);
-		clock_control_on(ccm_dev, clk_sub_sys);
-	} else {
-		LOG_ERR("CCM driver is not installed");
-		return;
-	}
-}
-#endif
-
 static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 			   const struct i2s_config *i2s_cfg)
 {
@@ -520,9 +499,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	memset(&config, 0, sizeof(config));
 
-	if (dev_cfg->mclk_control_base) {
-		enable_mclk_direction(dev, dev_cfg->mclk_output);
-	}
+	enable_mclk_direction(dev, dev_cfg->mclk_output);
 
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
@@ -1127,8 +1104,6 @@ static void audio_clock_settings(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES */
 
 	CLOCK_InitAudioPll(&audioPllConfig);
-#else
-	set_mclk_rate(dev, 12288000);
 #endif
 }
 
@@ -1170,9 +1145,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/*clock configuration*/
 	audio_clock_settings(dev);
 
-	if (dev_cfg->mclk_control_base) {
-		enable_mclk_direction(dev, dev_cfg->mclk_output);
-	}
+	enable_mclk_direction(dev, dev_cfg->mclk_output);
 
 	SAI_Init(base);
 
@@ -1231,10 +1204,9 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.pll_pd = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, pd, value, 0),        \
 		.pll_num = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, num, value, 0),      \
 		.pll_den = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, den, value, 0),      \
-		.mclk_control_base = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(i2s_id), pinmuxes),  \
-				(DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes))), (0)),    \
-		.mclk_pin_mask = DT_PHA_BY_IDX_OR(DT_DRV_INST(i2s_id), pinmuxes, 0, mask, 0),      \
-		.mclk_pin_offset = DT_PHA_BY_IDX_OR(DT_DRV_INST(i2s_id), pinmuxes, 0, offset, 0),  \
+		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
+		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask),            \
+		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
 		.mclk_output = DT_INST_PROP_OR(i2s_id, mclk_output, 0),                            \
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
