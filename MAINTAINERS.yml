@@ -748,6 +748,7 @@ Build system:
     - misc/empty_file.c
     - misc/generated/
     - snippets/
+    - scripts/schemas/snippet-schema.yaml
     - modules/Kconfig.sysbuild
     - scripts/list_boards.py
     - scripts/list_hardware.py
@@ -762,6 +763,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+    - scripts/tests/build/test_subfolder_list.py
+    - scripts/tests/build_helpers/test_domains.py
   files-exclude:
     - doc/build/dts/
   labels:
@@ -860,6 +863,7 @@ CPU Frequency Scaling:
     - include/zephyr/cpu_freq/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
+    - doc/services/cpu_freq/
   labels:
     - "area: CPU Frequency Scaling"
 
@@ -871,6 +875,7 @@ CRC:
     - include/zephyr/sys/crc.h
     - subsys/crc/
     - tests/subsys/crc/
+    - doc/hardware/peripherals/crc.rst
   labels:
     - "area: CRC"
 
@@ -884,6 +889,7 @@ Cache:
     - doc/hardware/cache/index.rst
     - drivers/cache/
     - tests/kernel/cache/
+    - doc/hardware/cache/
   labels:
     - "area: Cache"
   tests:
@@ -928,6 +934,7 @@ Console:
   files:
     - include/zephyr/console/
     - subsys/console/
+    - doc/services/console.rst
   labels:
     - "area: Console"
   tests:
@@ -949,6 +956,7 @@ Continuous Integration:
     - .checkpatch.conf
     - scripts/gitlint/
     - scripts/set_assignees.py
+    - scripts/footprint/
   labels:
     - "area: Continuous Integration"
 
@@ -1106,6 +1114,7 @@ Devicetree Bindings:
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
+    - scripts/bindings_properties_allowlist.yaml
   labels:
     - "area: Devicetree Bindings"
 
@@ -1202,6 +1211,7 @@ Documentation Infrastructure:
     - carlescufi
     - nashif
   files:
+    - doc/404.rst
     - doc/requirements.in
     - doc/requirements.txt
     - doc/_*/
@@ -2499,6 +2509,7 @@ Documentation Infrastructure:
     - doc/services/virtualization/
     - include/zephyr/drivers/virtualization/ivshmem.h
     - samples/drivers/virtualization/
+    - doc/hardware/virtualization/
   labels:
     - "area: Virtualization"
   tests:
@@ -2512,6 +2523,7 @@ Documentation Infrastructure:
     - casparfriedrich
   files:
     - doc/hardware/peripherals/w1.rst
+    - doc/hardware/peripherals/1-Wire_bus_topology.drawio.svg
     - drivers/w1/
     - dts/bindings/w1/
     - include/zephyr/drivers/w1.h
@@ -3115,6 +3127,7 @@ Kernel:
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/
+    - include/zephyr/linker/llext-sections.ld
   labels:
     - "area: llext"
   tests:
@@ -3916,6 +3929,7 @@ Networking:
     - samples/net/ocpp/
     - subsys/net/lib/ocpp/
     - tests/net/lib/ocpp/
+    - doc/connectivity/networking/api/ocpp.rst
   labels:
     - "area: OCPP"
 
@@ -4324,6 +4338,22 @@ Realtek EC Platforms:
     - soc/realtek/ec/
   labels:
     - "platform: Realtek EC"
+
+Release:
+  status: maintained
+  maintainers:
+    - nashif
+  collaborators:
+    - kartben
+  files:
+    - VERSION
+    - scripts/dump_bugs_pickle.py
+    - SDK_VERSION
+    - LICENSE
+    - LICENSES/
+    - scripts/release/
+  labels:
+    - "Release"
 
 Release Notes:
   status: maintained
@@ -5668,7 +5698,8 @@ West:
     - thaoluonguw
     - binhnguyen2434
     - nhutnguyenkc
-  files: []
+  files:
+    - modules/Kconfig.renesas
   labels:
     - "platform: Renesas"
 
