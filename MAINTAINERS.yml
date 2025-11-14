@@ -5938,10 +5938,10 @@ West:
   maintainers:
     - d3zd3z
     - ceolin
-  collaborators:
-    - wearyzen
     - valeriosetti
     - tomi-font
+  collaborators:
+    - wearyzen
     - ithinuel
   files:
     - modules/mbedtls/
