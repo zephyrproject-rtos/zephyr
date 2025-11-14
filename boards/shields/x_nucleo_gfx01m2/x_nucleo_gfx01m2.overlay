@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <freq.h>
 #include <mem.h>
@@ -74,7 +74,7 @@
 			width = <240>;
 			height = <320>;
 			rotation = <180>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB565>;
 			frmctr1 = [00 1f]; /* 60Hz frame rate */
 		};
 	};
