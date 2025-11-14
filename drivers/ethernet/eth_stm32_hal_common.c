@@ -42,6 +42,13 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 #define ETH_STM32_HAL_MTU NET_ETH_MTU
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
 
+/* Temporary helper macro to smooth moving clocks from mac node to controller (parent) node */
+#if DT_CLOCKS_HAS_NAME(DT_INST_PARENT(0), mac_clk_tx)
+#define MAC_CLOCKS_NODE		DT_INST_PARENT(0)
+#else
+#define MAC_CLOCKS_NODE		DT_DRV_INST(0)
+#endif
+
 uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
@@ -159,16 +166,16 @@ static int eth_initialize(const struct device *dev)
 		(clock_control_subsys_t)&cfg->pclken_tx);
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_rx);
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, mac_clk_ptp)
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_ptp);
 #endif
-#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, eth_ker)
 	ret |= clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				       (clock_control_subsys_t)&cfg->pclken_ker,
 				       NULL);
 #endif
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, mac_clk)
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t)&cfg->pclken_mac);
 #endif
@@ -401,16 +408,16 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), stm_eth),
-	.pclken_tx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_tx),
-	.pclken_rx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_rx),
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	.pclken_ptp = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_ptp),
+	.pclken_tx = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk_tx),
+	.pclken_rx = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk_rx),
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, mac_clk_ptp)
+	.pclken_ptp = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk_ptp),
 #endif
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
-	.pclken_mac = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk),
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, mac_clk)
+	.pclken_mac = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk),
 #endif
-#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
-	.pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, eth_ker),
+#if DT_CLOCKS_HAS_NAME(MAC_CLOCKS_NODE, eth_ker)
+	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, eth_ker),
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
