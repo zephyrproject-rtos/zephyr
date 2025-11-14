@@ -408,7 +408,7 @@ extern "C" {
 /**
  * @brief Get nth argument from argument list.
  *
- * @param N Argument index to fetch. Counter from 1.
+ * @param N Argument index to fetch. Counter from 1. N is valid if N < 64.
  * @param ... Variable list of arguments from which one argument is returned.
  *
  * @return Nth argument.
@@ -418,7 +418,7 @@ extern "C" {
 /**
  * @brief Strips n first arguments from the argument list.
  *
- * @param N Number of arguments to discard.
+ * @param N Number of arguments to discard. N is valid if N < 64.
  * @param ... Variable list of arguments.
  *
  * @return argument list without N first arguments.
