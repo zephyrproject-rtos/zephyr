@@ -1,0 +1,22 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip SAM UDPHS USB Device High Speed Port
+
+compatible: "microchip,sam-udphs"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
