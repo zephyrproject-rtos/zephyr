@@ -72,6 +72,24 @@ static K_MUTEX_DEFINE(mbedtls_sessions_lock);
 #define MBEDTLS_GET_ALGO(c) \
 	(((struct mbedtls_shim_session *)c->drv_sessn_state)->algo)
 
+static int mbedtls_get_unused_session_index(void)
+{
+	int i;
+
+	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
+
+	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
+		if (!mbedtls_sessions[i].in_use) {
+			mbedtls_sessions[i].in_use = true;
+			k_mutex_unlock(&mbedtls_sessions_lock);
+			return i;
+		}
+	}
+
+	k_mutex_unlock(&mbedtls_sessions_lock);
+	return -1;
+}
+
 int mbedtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	int ret;
@@ -293,24 +311,6 @@ static int mbedtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 #endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
-
-static int mbedtls_get_unused_session_index(void)
-{
-	int i;
-
-	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
-
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (!mbedtls_sessions[i].in_use) {
-			mbedtls_sessions[i].in_use = true;
-			k_mutex_unlock(&mbedtls_sessions_lock);
-			return i;
-		}
-	}
-
-	k_mutex_unlock(&mbedtls_sessions_lock);
-	return -1;
-}
 
 static int mbedtls_cipher_session_setup(const struct device *dev,
 			      struct cipher_ctx *ctx,
