@@ -1599,6 +1599,24 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call)
 	return 0;
 }
 
+static void bt_hfp_ag_auto_select_codec(struct bt_hfp_ag *ag)
+{
+	uint32_t supported_codec;
+
+	supported_codec = BT_HFP_AG_SUPPORTED_CODEC_IDS & ag->hf_codec_ids;
+
+	/* Automatically select the best available codec */
+	if (supported_codec == 0) {
+		LOG_WRN("No supported Codec. Selected Codec CVSD as default");
+		ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
+
+		return;
+	}
+
+	ag->selected_codec_id = find_msb_set(supported_codec) - 1;
+	LOG_DBG("Selected codec ID: %u", ag->selected_codec_id);
+}
+
 static int bt_hfp_ag_codec_select(struct bt_hfp_ag *ag)
 {
 	int err;
@@ -1607,8 +1625,8 @@ static int bt_hfp_ag_codec_select(struct bt_hfp_ag *ag)
 
 	hfp_ag_lock(ag);
 	if (ag->selected_codec_id == 0) {
-		LOG_WRN("Codec is invalid, set default value");
-		ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
+		bt_hfp_ag_auto_select_codec(ag);
+		LOG_WRN("Codec is invalid, selected codec ID: %u", ag->selected_codec_id);
 	}
 
 	if (!(ag->hf_codec_ids & BIT(ag->selected_codec_id))) {
