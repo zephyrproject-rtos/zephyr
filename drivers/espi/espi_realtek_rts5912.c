@@ -1272,7 +1272,7 @@ static void vw_pltrst_handler(const struct device *dev)
 
 		espi_rts5912_send_vwire(dev, ESPI_VWIRE_SIGNAL_SMI, 1);
 		espi_rts5912_send_vwire(dev, ESPI_VWIRE_SIGNAL_SCI, 1);
-		espi_rts5912_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 1);
+		espi_rts5912_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 0);
 		espi_rts5912_send_vwire(dev, ESPI_VWIRE_SIGNAL_RST_CPU_INIT, 1);
 	}
 
