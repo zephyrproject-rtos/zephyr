@@ -166,3 +166,15 @@
 &lpuart20 {
 	interrupts = <175 0>;
 };
+
+&sar_adc0 {
+	interrupts = <64 0>;
+};
+
+&sar_adc1 {
+	interrupts = <65 0>;
+};
+
+&lpe_sar_adc {
+	interrupts = <217 0>;
+};
