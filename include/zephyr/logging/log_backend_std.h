@@ -46,8 +46,20 @@ static inline uint32_t log_backend_std_get_flags(void)
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_CRLF_NONE)) {
+		flags |= LOG_OUTPUT_FLAG_CRLF_NONE;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_CRLF_LFONLY)) {
+		flags |= LOG_OUTPUT_FLAG_CRLF_LFONLY;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX)) {
 		flags |= LOG_OUTPUT_FLAG_THREAD;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SKIP_SOURCE)) {
+		flags |= LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	}
 
 	return flags;
