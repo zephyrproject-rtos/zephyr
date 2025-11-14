@@ -22,4 +22,5 @@ supported:
   - wifi
   - rtc
   - counter
+  - pwm
 vendor: silabs
