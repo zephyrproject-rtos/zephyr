@@ -433,7 +433,6 @@ config BT_AVDTP
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
-	imply LIBSBC
 	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
@@ -467,26 +466,6 @@ config BT_A2DP_SINK
 	bool "Bluetooth A2DP Profile Sink Function"
 	help
 	  This option enables the A2DP profile sink function
-
-config BT_A2DP_SOURCE_DISCOVER_RESULT_COUNT
-	int "Maximum result count per device discovery"
-	default 10
-
-config BT_A2DP_SOURCE_EPS_DISCOVER_COUNT
-	int "Maximum result count per a2dp endpoint discovery"
-	default 10
-
-config BT_A2DP_SOURCE_SBC_BIT_RATE_DEFAULT
-	int "default sbc bit rate"
-	default 229
-
-config BT_A2DP_SOURCE_DATA_SEND_INTERVAL
-	int "data send interval (ms)"
-	default 20
-
-config BT_A2DP_SOURCE_DATA_BUF_SIZE
-	int "data buffer size (bytes)"
-	default 1000
 
 endif # BT_A2DP
 
@@ -626,15 +605,6 @@ config BT_OEBX_RSP_CODE_TO_STR
 	  See bt_obex_rsp_code_to_str() for more details.
 
 endif # BT_GOEP
-
-config BT_A2DP_SOURCE_SBC_AUDIO_SHELL
-	bool "A2DP Source SBC Audio Shell Support"
-	depends on BT_A2DP_SOURCE && SHELL
-	default n
-	help
-	  Enable A2DP source SBC audio encoding and playback functionality
-	  in the shell. This includes SBC encoder support, audio streaming,
-	  and related shell commands for testing A2DP source functionality.
 
 endif # BT_CLASSIC
 
