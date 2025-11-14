@@ -211,10 +211,12 @@ static int i2c_nrfx_twim_rtio_init(const struct device *dev)
 	return i2c_nrfx_twim_common_init(dev);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 {
 	return i2c_nrfx_twim_common_deinit(dev);
 }
+#endif
 
 #define CONCAT_BUF_SIZE(idx)                                                                       \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),                            \
