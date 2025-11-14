@@ -235,6 +235,10 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 
 	heth->Init.Speed = PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
 
+	/* The default configuration is ETH_SOURCEADDRESS_REPLACE_ADDR0,
+	 * which is bad for bridging. */
+	mac_config.SourceAddrControl = ETH_SOURCEADDRESS_DISABLE;
+
 	hal_ret = HAL_ETH_ConfigMAC(heth, NULL);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_ConfigMAC: failed: %d", hal_ret);
