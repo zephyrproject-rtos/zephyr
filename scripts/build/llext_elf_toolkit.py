@@ -7,10 +7,10 @@
 ELF utilities shared by LLEXT scripts
 """
 
+import struct
+
 import elftools.elf.elffile
 import elftools.elf.sections
-
-import struct
 
 
 def get_target_specific_structure(struct_desc: str, ptr_size: int, endianness: str):
@@ -27,7 +27,7 @@ def get_target_specific_structure(struct_desc: str, ptr_size: int, endianness: s
         ptr_size: Pointer size of target, in bytes (4/8)
         endianness: Endianness of target ('little'/'big')
     """
-    assert ptr_size == 4 or ptr_size == 8
+    assert ptr_size in (4, 8)
     assert endianness in ['little', 'big']
 
     endspec = "<" if endianness == 'little' else ">"
