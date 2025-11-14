@@ -9,6 +9,7 @@
 #include <sifli/sf32lb52x-ram012.dtsi>
 #include <zephyr/dt-bindings/dma/sf32lb52x-dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "sf32lb52_devkit_lcd-pinctrl.dtsi"
@@ -54,6 +55,7 @@
 		led0 = &led0;
 		sw0 = &key1;
 		sw1 = &key2;
+		rtc = &rtc;
 		watchdog0 = &wdt;
 	};
 };
@@ -135,4 +137,15 @@
 
 &wdt {
 	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };

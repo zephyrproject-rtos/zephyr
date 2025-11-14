@@ -132,7 +132,7 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  * @param buf Data to transmit
  * @param size Number of bytes to transmit
  *
- * @retval Number of bytes placed in pipe
+ * @return Number of bytes placed in pipe
  * @retval -EPERM if pipe is closed
  * @retval -errno code on error
  *
@@ -147,7 +147,7 @@ int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size
  * @param buf Destination for received data; must not be already in use in a modem module.
  * @param size Capacity of destination for received data
  *
- * @retval Number of bytes received from pipe
+ * @return Number of bytes received from pipe
  * @retval -EPERM if pipe is closed
  * @retval -errno code on error
  *

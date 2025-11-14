@@ -173,6 +173,46 @@
 			status = "disabled";
 		};
 
+		i2c1: i2c@5009c000 {
+			compatible = "sifli,sf32lb-i2c";
+			reg = <0x5009c000 0x1000>;
+			interrupts = <61 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_I2C1>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@5009d000 {
+			compatible = "sifli,sf32lb-i2c";
+			reg = <0x5009d000 0x1000>;
+			interrupts = <76 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_I2C2>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@5009e000 {
+			compatible = "sifli,sf32lb-i2c";
+			reg = <0x5009e000 0x1000>;
+			interrupts = <93 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_I2C3>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@5009f000 {
+			compatible = "sifli,sf32lb-i2c";
+			reg = <0x5009f000 0x1000>;
+			interrupts = <78 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_I2C4>;
+			status = "disabled";
+		};
+
 		gpioa: gpio@500a0000 {
 			compatible = "sifli,sf32lb-gpio-parent";
 			reg = <0x500a0000 0x1000>;
@@ -230,6 +270,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			interrupts = <49 0>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 
 			backup-registers@30 {

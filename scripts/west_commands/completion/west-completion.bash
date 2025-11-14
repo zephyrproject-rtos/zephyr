@@ -842,7 +842,8 @@ __comp_west_runner_cmd()
 	# Common arguments for runners
 	local bool_opts="
 		--context -H
-		--skip-rebuild
+		--rebuild
+		--no-rebuild
 	"
 
 	local dir_opts="

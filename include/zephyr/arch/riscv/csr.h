@@ -233,4 +233,44 @@
 				: "memory");			\
 })
 
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
+#define MISELECT 0x350
+#define MIREG    0x351
+#define MIREG2   0x352
+#define MIREG3   0x353
+#define MIREG4   0x355
+#define MIREG5   0x356
+#define MIREG6   0x357
+
+static inline unsigned long icsr_read(unsigned int index)
+{
+	csr_write(MISELECT, index);
+	return csr_read(MIREG);
+}
+
+static inline void icsr_write(unsigned int index, unsigned long value)
+{
+	csr_write(MISELECT, index);
+	csr_write(MIREG, value);
+}
+
+static inline unsigned long icsr_read_set(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val | mask);
+	return val;
+}
+
+static inline unsigned long icsr_read_clear(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val & ~mask);
+	return val;
+}
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
 #endif /* CSR_H_ */

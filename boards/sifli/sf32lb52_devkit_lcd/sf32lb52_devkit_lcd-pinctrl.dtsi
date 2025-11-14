@@ -17,4 +17,11 @@
 			bias-pull-up;
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <PA33_I2C1_SDA>, <PA30_I2C1_SCL>;
+			input-enable;
+		};
+	};
 };

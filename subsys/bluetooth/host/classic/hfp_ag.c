@@ -1475,6 +1475,33 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 	}
 }
 
+static int hfp_ag_set_voice_setting(struct bt_hfp_ag *ag)
+{
+	uint16_t air_coding_fmt;
+
+	switch (ag->selected_codec_id) {
+	case BT_HFP_AG_CODEC_CVSD:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
+		break;
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+	case BT_HFP_AG_CODEC_MSBC:
+	case BT_HFP_AG_CODEC_LC3_SWB:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+	default:
+		LOG_ERR("Unsupported codec ID %u", ag->selected_codec_id);
+		return -EINVAL;
+	}
+
+	ag->sco_chan.voice_setting = BT_HCI_VOICE_SETTINGS(
+		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
+		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
+		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
+
+	return 0;
+}
+
 static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 {
 	static const struct bt_sco_chan_ops ops = {
@@ -1485,7 +1512,15 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 	LOG_DBG("");
 
 	if (ag->sco_conn == NULL) {
+		int err;
+
 		ag->sco_chan.ops = &ops;
+
+		err = hfp_ag_set_voice_setting(ag);
+		if (err < 0) {
+			LOG_ERR("Fail to set voice setting :(%d)", err);
+			return NULL;
+		}
 
 		/* create SCO connection*/
 		ag->sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
@@ -1595,7 +1630,7 @@ static int bt_hfp_ag_create_audio_connection(struct bt_hfp_ag *ag, struct bt_hfp
 	return err;
 }
 
-static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag)
 {
 	struct bt_hfp_ag_ongoing_call *ongoing_call;
 	struct bt_hfp_ag_call *call;
@@ -1678,7 +1713,7 @@ static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data
 	ag->indicator_value[BT_HFP_AG_CALL_SETUP_IND] = call_setup_value;
 }
 
-static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag)
 {
 	bool is_inband_ringtone;
 
@@ -1689,14 +1724,17 @@ static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
 
 		atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, err == 0);
 	}
-
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_notify_ongoing_calls, NULL);
 }
 
 static void bt_hfp_ag_slc_connected(struct bt_hfp_ag *ag, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	bt_hfp_ag_set_state(ag, BT_HFP_CONNECTED);
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_set_in_band_ring, NULL);
+
+	bt_hfp_ag_set_in_band_ring(ag);
+
+	bt_hfp_ag_notify_ongoing_calls(ag);
 }
 
 static int bt_hfp_ag_cmer_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
@@ -2358,6 +2396,8 @@ static int bt_hfp_ag_chup_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			}
 		} else if (call_state == BT_HFP_CALL_ACTIVE) {
 			next_step = bt_hfp_ag_unit_call_terminate;
+		} else if (call_state == BT_HFP_CALL_OUTGOING) {
+			next_step = bt_hfp_ag_call_terminate;
 		}
 
 		if (next_step) {
@@ -2856,11 +2896,6 @@ static int bt_hfp_ag_outgoing_call(struct bt_hfp_ag *ag, const char *number, uin
 		return -ENAMETOOLONG;
 	}
 
-	hfp_ag_lock(ag);
-	(void)strcpy(ag->last_number, number);
-	ag->type = type;
-	hfp_ag_unlock(ag);
-
 	call = get_call_from_number(ag, number, type);
 	if (call) {
 		return -EBUSY;
@@ -2914,25 +2949,43 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
 	char *number = NULL;
+	uint8_t *data;
 	bool is_memory_dial = false;
-
-	if (buf->data[buf->len - 1] != '\r') {
-		return -ENOTSUP;
-	}
+	uint16_t len;
 
 	if (is_char(buf, '>')) {
 		is_memory_dial = true;
 	}
 
-	if ((buf->len - 1) > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
+	len = sizeof(uint8_t) + sizeof(uint8_t);
+	if (buf->len <= len) {
+		LOG_WRN("Short packet");
+		return -EINVAL;
+	}
+
+	len = buf->len - len;
+	data = net_buf_pull_mem(buf, len);
+
+	if (!is_char(buf, ';')) {
+		LOG_WRN("Missing semicolon character");
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		LOG_WRN("Missing enter character");
+		return -ENOTSUP;
+	}
+
+	/* Change the `;` to `\0` */
+	data[len] = 0;
+
+	if (len > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
 		return -ENAMETOOLONG;
 	}
 
-	buf->data[buf->len - 1] = '\0';
-
 	if (is_memory_dial) {
-		if (bt_ag && bt_ag->memory_dial) {
-			err = bt_ag->memory_dial(ag, &buf->data[0], &number);
+		if ((bt_ag != NULL) && (bt_ag->memory_dial != NULL)) {
+			err = bt_ag->memory_dial(ag, data, &number);
 			if ((err != 0) || (number == NULL)) {
 				return -ENOTSUP;
 			}
@@ -2940,10 +2993,10 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			return -ENOTSUP;
 		}
 	} else {
-		number = &buf->data[0];
-		if (bt_ag && bt_ag->number_call) {
-			err = bt_ag->number_call(ag, &buf->data[0]);
-			if (err) {
+		number = (char *)data;
+		if ((bt_ag != NULL) && (bt_ag->number_call != NULL)) {
+			err = bt_ag->number_call(ag, number);
+			if (err != 0) {
 				return err;
 			}
 		} else {
@@ -2956,11 +3009,27 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static int bt_hfp_ag_bldn_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
+	int err;
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+
 	if (!is_char(buf, '\r')) {
 		return -ENOTSUP;
 	}
 
-	return bt_hfp_ag_outgoing_call(ag, ag->last_number, ag->type);
+	if ((bt_ag == NULL) || (bt_ag->redial == NULL)) {
+		return -ENOTSUP;
+	}
+
+	memset(number, 0, sizeof(number));
+	err = bt_ag->redial(ag, number);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Add null-terminated to avoid unexpected issue. */
+	number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN] = '\0';
+
+	return bt_hfp_ag_outgoing_call(ag, number, 0);
 }
 
 static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
@@ -3929,6 +3998,7 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Set the supported features*/
 	ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
+	ag->ag_features |= BT_FEAT_SC(bt_dev.features) ? BT_HFP_AG_FEATURE_ESCO_S4 : 0;
 
 	/* Support HF indicators */
 	if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
@@ -4889,6 +4959,11 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 	LOG_DBG("");
 
 	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if ((BT_HFP_AG_SUPPORTED_CODEC_IDS & BIT(id)) == 0) {
+		LOG_ERR("Unsupported Codec ID %u", id);
 		return -EINVAL;
 	}
 

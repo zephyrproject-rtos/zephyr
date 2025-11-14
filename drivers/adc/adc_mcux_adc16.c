@@ -157,15 +157,26 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 		((struct mcux_adc16_data *)dev->data)->diff_channels |= BIT(channel_id);
 	}
 
-	if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
+	/* - Analog Power (VDDA)
+	 * ... In some packages, VDDA is connected internally to VDD...
+	 * - Analog Ground (VSSA)
+	 * ... In some packages, VSSA is connected internally to VSS...
+	 * - Voltage Reference Select
+	 * ... In some packages, VREFH is connected in the package to VDDA and VREFL to VSSA.
+	 *
+	 * So, selecting "ADC_REF_INTERNAL" should have the same behavior as "ADC_REF_EXTERNAL0".
+	 */
+	if (channel_cfg->reference == ADC_REF_INTERNAL ||
+	    channel_cfg->reference == ADC_REF_EXTERNAL0) {
 		/* Select Vrefh and Vrefl as reference */
 		config->base->SC2 &= ~ADC_SC2_REFSEL_MASK;
-	} else if (channel_cfg->reference == ADC_REF_VDD_1) {
+	} else if (channel_cfg->reference == ADC_REF_VDD_1 ||
+		   channel_cfg->reference == ADC_REF_EXTERNAL1) {
 		/* Select Valth and Valtl as reference */
-		config->base->SC2 = ((config->base->SC2 & ~ADC_SC2_REFSEL_MASK) |
-					ADC_SC2_REFSEL(1));
+		config->base->SC2 =
+			((config->base->SC2 & ~ADC_SC2_REFSEL_MASK) | ADC_SC2_REFSEL(1));
 	} else {
-		LOG_DBG("ref not support");
+		LOG_DBG("reference not support");
 		return -EINVAL;
 	}
 

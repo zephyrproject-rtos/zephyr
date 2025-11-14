@@ -7,10 +7,9 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include <soc.h>
 
-#include <stm32f4xx_ll_bus.h>
-#include <stm32f4xx_ll_cortex.h>
-#include <stm32f4xx_ll_pwr.h>
-#include <stm32f4xx.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/counter.h>

@@ -8,6 +8,8 @@ set(OPENOCD_DEFAULT_PATH ${OPENOCD_ROOT}/tcl)
 board_runner_args(openocd "--tcl-port=6666")
 board_runner_args(openocd --cmd-pre-init "gdb_report_data_abort enable")
 board_runner_args(openocd "--no-halt")
+board_runner_args(blackmagicprobe "--connect-rst")
 
 include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
 # FIXME: official openocd runner not yet available.
+include(${ZEPHYR_BASE}/boards/common/blackmagicprobe.board.cmake)

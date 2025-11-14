@@ -30,7 +30,7 @@ extern "C" {
  *
  * @param cpu_id The ID of the CPU for which to get the load.
  *
- * @retval CPU load in percent (0-100) in case of success
+ * @return CPU load in percent (0-100) in case of success
  * @retval -errno code in case of failure.
  *
  */

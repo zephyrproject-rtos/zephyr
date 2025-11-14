@@ -887,10 +887,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 	/* If we already have connection handler, then it effectively
 	 * means that it's already bound to an interface/port, and we
 	 * don't support rebinding connection to new address/port in
-	 * the code below. Doesn't apply for packet sockets.
+	 * the code below. Only applies for stream sockets.
 	 * TODO: Support rebinding.
 	 */
-	if (addr->sa_family != AF_PACKET) {
+	if (net_context_get_type(context) == SOCK_STREAM) {
 		if (context->conn_handler != NULL) {
 			return -EISCONN;
 		}

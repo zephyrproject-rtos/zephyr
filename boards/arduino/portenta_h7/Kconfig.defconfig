@@ -3,15 +3,11 @@
 
 if BOARD_ARDUINO_PORTENTA_H7
 
-if NETWORKING
+configdefault REGULATOR
+	default y if NETWORKING
 
-config REGULATOR
+configdefault NET_L2_ETHERNET
 	default y
-
-config NET_L2_ETHERNET
-	default y
-
-endif # NETWORKING
 
 if BOARD_ARDUINO_PORTENTA_H7_STM32H747XX_M7
 

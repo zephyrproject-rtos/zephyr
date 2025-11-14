@@ -18,4 +18,5 @@ supported:
   - dma
   - input
   - crypto
+  - retained_mem
 vendor: espressif

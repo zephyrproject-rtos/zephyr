@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ptp_clock.h>
@@ -286,7 +286,7 @@ const struct ptp_clock *ptp_clock_init(void)
 		return NULL;
 	}
 
-	ptp_clk.pollfd[0].fd = eventfd(0, EFD_NONBLOCK);
+	ptp_clk.pollfd[0].fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	ptp_clk.pollfd[0].events = ZSOCK_POLLIN;
 
 	sys_slist_init(&ptp_clk.ports_list);
@@ -301,9 +301,9 @@ struct zsock_pollfd *ptp_clock_poll_sockets(void)
 	clock_check_pollfd();
 	ret = zsock_poll(ptp_clk.pollfd, PTP_SOCKET_CNT * ptp_clk.default_ds.n_ports + 1, -1);
 	if (ret > 0 && ptp_clk.pollfd[0].revents) {
-		eventfd_t value;
+		zvfs_eventfd_t value;
 
-		eventfd_read(ptp_clk.pollfd[0].fd, &value);
+		zvfs_eventfd_read(ptp_clk.pollfd[0].fd, &value);
 	}
 
 	return &ptp_clk.pollfd[1];
@@ -658,7 +658,7 @@ void ptp_clock_pollfd_invalidate(void)
 
 void ptp_clock_signal_timeout(void)
 {
-	eventfd_write(ptp_clk.pollfd[0].fd, 1);
+	zvfs_eventfd_write(ptp_clk.pollfd[0].fd, 1);
 }
 
 void ptp_clock_state_decision_req(void)

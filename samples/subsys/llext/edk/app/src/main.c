@@ -8,6 +8,7 @@
 #include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/buf_loader.h>
+#include <zephyr/sys/libc-hooks.h>
 
 #include <app_api.h>
 
@@ -160,6 +161,12 @@ int main(void)
 	k_mem_domain_init(&domain2, 0, NULL);
 	k_mem_domain_init(&domain3, 0, NULL);
 	k_mem_domain_init(&kdomain1, 0, NULL);
+
+#if Z_LIBC_PARTITION_EXISTS
+	k_mem_domain_add_partition(&domain1, &z_libc_partition);
+	k_mem_domain_add_partition(&domain2, &z_libc_partition);
+	k_mem_domain_add_partition(&domain3, &z_libc_partition);
+#endif
 
 #ifndef EDK_BUILD
 #ifndef CONFIG_LLEXT_EDK_USERSPACE_ONLY

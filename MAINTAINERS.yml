@@ -2920,6 +2920,7 @@ Instrumentation Subsystem:
     - fkokosinski
     - tgorochowik
   files:
+    - doc/services/instrumentation/
     - include/zephyr/instrumentation/
     - samples/subsys/instrumentation/
     - scripts/instrumentation/

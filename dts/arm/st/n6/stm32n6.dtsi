@@ -467,6 +467,9 @@
 			sampling-times = <2 3 7 12 14 47 247 1500>;
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "none";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
 			status = "disabled";
 		};
 

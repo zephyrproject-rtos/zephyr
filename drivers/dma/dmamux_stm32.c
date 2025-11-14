@@ -365,35 +365,30 @@ static DEVICE_API(dma, dma_funcs) = {
 #define DMAMUX_CHANNELS_INIT(index, count)                \
 	LISTIFY(count, INIT_INST##index##_CHANNEL, (,))
 
-#define DMAMUX_CLOCK_INIT(index) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, clocks),		\
-	(.pclken = {	.bus = DT_INST_CLOCKS_CELL(index, bus),		\
-			.enr = DT_INST_CLOCKS_CELL(index, bits)},),	\
-	())
-
-#define DMAMUX_INIT(index)						\
-static const struct dmamux_stm32_channel				\
-	dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {   \
-		DMAMUX_CHANNELS_INIT(index, DT_INST_PROP(index, dma_channels))\
-	};								       \
-									\
-const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
-	DMAMUX_CLOCK_INIT(index)					\
-	.base = DT_INST_REG_ADDR(index),				\
-	.channel_nb = DT_INST_PROP(index, dma_channels),		\
-	.gen_nb = DT_INST_PROP(index, dma_generators),			\
-	.req_nb = DT_INST_PROP(index, dma_requests),			\
-	.mux_channels = dmamux_stm32_channels_##index,			\
-};									\
-									\
-static struct dmamux_stm32_data dmamux_stm32_data_##index;		\
-									\
-DEVICE_DT_INST_DEFINE(index,						\
-		    dmamux_stm32_init,					\
-		    NULL,						\
-		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
-		    PRE_KERNEL_1, CONFIG_DMAMUX_STM32_INIT_PRIORITY,	\
-		    &dma_funcs);
+#define DMAMUX_INIT(index)									\
+	static const struct dmamux_stm32_channel						\
+		dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {		\
+			DMAMUX_CHANNELS_INIT(index, DT_INST_PROP(index, dma_channels))		\
+	};											\
+												\
+	const struct dmamux_stm32_config dmamux_stm32_config_##index = {			\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(index, clocks),				\
+			   (.pclken = STM32_DT_INST_CLOCK_INFO(index),))			\
+		.base = DT_INST_REG_ADDR(index),						\
+		.channel_nb = DT_INST_PROP(index, dma_channels),				\
+		.gen_nb = DT_INST_PROP(index, dma_generators),					\
+		.req_nb = DT_INST_PROP(index, dma_requests),					\
+		.mux_channels = dmamux_stm32_channels_##index,					\
+	};											\
+												\
+	static struct dmamux_stm32_data dmamux_stm32_data_##index;				\
+												\
+	DEVICE_DT_INST_DEFINE(index,								\
+			      dmamux_stm32_init,						\
+			      NULL,								\
+			      &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,		\
+			      PRE_KERNEL_1, CONFIG_DMAMUX_STM32_INIT_PRIORITY,			\
+			      &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)
 

@@ -93,6 +93,18 @@ pmpcfg_done:
 	add t0, t0, a0
 	jr t0
 
+/*
+ * Prototype:
+ *
+ * void z_riscv_clear_all_pmp_entries(void)
+ *
+ * Called from pmp.c to clear all PMP entries.
+ *
+ * Note: this is shared with tail clearing code above, hence the same section.
+ */
+GTEXT(z_riscv_clear_all_pmp_entries)
+z_riscv_clear_all_pmp_entries:
+
 pmpcfg_zerotail:
 
 	.option push

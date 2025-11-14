@@ -714,7 +714,7 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 {
 	int ret;
 	struct netmidi2_ep *ep = pev->user_data;
-	struct pollfd *pfd = &pev->event;
+	struct zsock_pollfd *pfd = &pev->event;
 	struct sockaddr peer_addr;
 	socklen_t peer_addr_len = sizeof(peer_addr);
 	struct net_buf *rxbuf;
@@ -798,7 +798,7 @@ int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 	}
 
 	ep->pollsock.fd = sock;
-	ep->pollsock.events = POLLIN;
+	ep->pollsock.events = ZSOCK_POLLIN;
 	ret = net_socket_service_register(&netmidi2_service, &ep->pollsock, 1, ep);
 	if (ret < 0) {
 		zsock_close(sock);

@@ -134,6 +134,11 @@ config USE_RA_FSP_SPI_B
 	help
 	  Enable RA FSP SPI-B driver
 
+config USE_RA_FSP_SCI_B_SPI
+	bool
+	help
+	  Enable RA FSP SCI-B SPI driver
+
 config USE_RA_FSP_FLASH_HP
 	bool
 	help

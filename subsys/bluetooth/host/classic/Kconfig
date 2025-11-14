@@ -289,6 +289,18 @@ config BT_HFP_AG_CODEC_NEG
 	help
 	  This option enables Codec Negotiation for HFP AG
 
+if BT_HFP_AG_CODEC_NEG
+config BT_HFP_AG_CODEC_MSBC
+	bool "Support Codec mSBC for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP AG
+
+config BT_HFP_AG_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP AG
+endif # BT_HFP_AG_CODEC_NEG
+
 config BT_HFP_AG_ECNR
 	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
 	help
@@ -494,6 +506,17 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_VD_RX_SIZE
+	int "AVRCP Vendor Dependent RX data buffer Size"
+	default 1024
+	range 512 $(INT16_MAX)
+	help
+	  Size of the AVRCP Vendor Dependent RX data buffer in bytes.
+	  This buffer is used for reassembling fragmented AVRCP Vendor Dependent
+	  commands and responses received from the CT device. If the remote CT
+	  sends large Vendor-specific PDUs or frequent fragmentation occurs,
+	  consider increasing this value to avoid incomplete message handling.
+
 config BT_AVRCP_BROWSING
 	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -605,6 +628,13 @@ config BT_OEBX_RSP_CODE_TO_STR
 	  See bt_obex_rsp_code_to_str() for more details.
 
 endif # BT_GOEP
+
+config BT_BIP
+	bool "Bluetooth BIP Profile [EXPERIMENTAL]"
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the BIP profile
 
 endif # BT_CLASSIC
 

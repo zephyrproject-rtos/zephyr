@@ -50,6 +50,17 @@ static int axisram_stm32_init(const struct device *dev)
 	return 0;
 }
 
+#define STM32N6_AXISRAM_INIT(idx)							\
+	static const struct axisram_stm32_cfg axisram_stm32_cfg_##idx = {		\
+		.base = (RAMCFG_TypeDef *)DT_INST_REG_ADDR(idx),			\
+		.pclken_axisram = STM32_CLOCK_INFO_BY_NAME(idx, axisram),		\
+		.pclken_ramcfg = STM32_CLOCK_INFO_BY_NAME(idx, ramcfg),			\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(idx, &axisram_stm32_init, NULL,				\
+			      NULL, &axisram_stm32_cfg_##idx,				\
+			      PRE_KERNEL_2, 0, NULL);
+
 /**
  * On other series which have no RAMCFG, whether RAMs are enabled
  * or not can be controlled by changing their "status" in Device Tree.
@@ -57,24 +68,7 @@ static int axisram_stm32_init(const struct device *dev)
  * of RAMCFG nodes whether they have an enabled child (= RAM node) and
  * perform our own instantiation only if so thanks to COND_CODE.
  */
-#define STM32N6_AXISRAM_INIT(idx)						\
-										\
-COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(idx), (), (				\
-										\
-static const struct axisram_stm32_cfg axisram_stm32_cfg_##idx = {		\
-	.base = (RAMCFG_TypeDef *)DT_INST_REG_ADDR(idx),			\
-	.pclken_axisram = {							\
-		.enr = DT_INST_CLOCKS_CELL_BY_NAME(idx, axisram, bits),		\
-		.bus = DT_INST_CLOCKS_CELL_BY_NAME(idx, axisram, bus),		\
-	},									\
-	.pclken_ramcfg = {							\
-		.enr = DT_INST_CLOCKS_CELL_BY_NAME(idx, ramcfg, bits),		\
-		.bus = DT_INST_CLOCKS_CELL_BY_NAME(idx, ramcfg, bus),		\
-	},									\
-};										\
-										\
-DEVICE_DT_INST_DEFINE(idx, &axisram_stm32_init, NULL,				\
-		      NULL, &axisram_stm32_cfg_##idx,				\
-		      PRE_KERNEL_2, 0, NULL);))
+#define STM32N6_AXISRAM_MAYBE_INIT(idx)							\
+	IF_ENABLED(DT_INST_CHILD_NUM_STATUS_OKAY(idx), (STM32N6_AXISRAM_INIT(idx)))
 
-DT_INST_FOREACH_STATUS_OKAY(STM32N6_AXISRAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(STM32N6_AXISRAM_MAYBE_INIT)

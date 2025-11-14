@@ -36,7 +36,7 @@ enum ssd16xx_ram {
  * @param desc Structure describing the buffer layout
  * @param buf Output buffer
  *
- * @retval 0 on success, negative errno on failure.
+ * @return 0 on success, negative errno on failure.
  */
 int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 		     const uint16_t x, const uint16_t y,

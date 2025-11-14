@@ -21,6 +21,7 @@ config COMPARATOR_INIT_PRIORITY
 rsource "Kconfig.fake_comp"
 rsource "Kconfig.silabs_acmp"
 rsource "Kconfig.it51xxx_vcmp"
+rsource "Kconfig.mchp"
 rsource "Kconfig.mcux_acmp"
 rsource "Kconfig.nxp_cmp"
 rsource "Kconfig.nrf_comp"

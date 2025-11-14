@@ -522,21 +522,9 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
-# CONFIG_CSPRNG_AVAILABLE must automatically enable CONFIG_ENTROPY_GENERATOR.
-# But we're doing it here because this enablement should be gated by Mbed TLS
-# being also enabled in the build, otherwise this will result in entropy
-# drivers being enabled without anyone needing them.
-config CSPRNG_AVAILABLE
-	select ENTROPY_GENERATOR
-
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
-	# The only way to check if there is any entropy driver available on the
-	# platform is to check if the "zephyr,entropy" chosen property exists.
-	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
-	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
-	# is disabled by default.
 	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
@@ -592,6 +580,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
+	select CSPRNG_NEEDED
 
 config MBEDTLS_USE_PSA_CRYPTO
 	bool "Use PSA APIs instead of legacy MbedTLS when possible"

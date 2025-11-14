@@ -14,14 +14,62 @@ family:
   - name: cyt4bf
     socs:
     - name: cyt4bf8ces
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bf8cee
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bf8cds
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bf8cde
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfbcjs
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfbcje
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfbchs
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfbche
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfccjs
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfccje
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfcchs
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
     - name: cyt4bfcche
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1

@@ -11,21 +11,26 @@ import re
 # -dM") core-isa.h file for the current architecture and assigns
 # registers to usages.
 
+
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
 
-    parser.add_argument("--flush-reg", action="store_true",
-                        help="Enable scratch register ZSR_FLUSH for cache flushing")
-    parser.add_argument("--mmu", action="store_true",
-                        help="Enable scratch registers for MMU usage")
-    parser.add_argument("--syscall-scratch", action="store_true",
-                        help="Enable scratch registers for syscalls if needed")
-    parser.add_argument("coreisa",
-                        help="Path to preprocessed core-isa.h")
-    parser.add_argument("outfile",
-                        help="Output file")
+    parser.add_argument(
+        "--flush-reg",
+        action="store_true",
+        help="Enable scratch register ZSR_FLUSH for cache flushing",
+    )
+    parser.add_argument("--mmu", action="store_true", help="Enable scratch registers for MMU usage")
+    parser.add_argument(
+        "--syscall-scratch",
+        action="store_true",
+        help="Enable scratch registers for syscalls if needed",
+    )
+    parser.add_argument("coreisa", help="Path to preprocessed core-isa.h")
+    parser.add_argument("outfile", help="Output file")
 
     return parser.parse_args()
+
 
 args = parse_args()
 
@@ -40,8 +45,10 @@ outfile = args.outfile
 
 syms = {}
 
+
 def get(s):
-    return syms[s] if s in syms else 0
+    return syms.get(s, 0)
+
 
 with open(coreisa) as infile:
     for line in infile.readlines():
@@ -50,7 +57,7 @@ with open(coreisa) as infile:
             syms[m.group(1)] = m.group(2)
 
 # Use MISC registers first if available, that's what they're for
-regs = [ f"MISC{n}" for n in range(0, int(get("XCHAL_NUM_MISC_REGS"))) ]
+regs = [f"MISC{n}" for n in range(0, int(get("XCHAL_NUM_MISC_REGS")))]
 
 if args.syscall_scratch:
     # If there is no THREADPTR, we need to use syscall for

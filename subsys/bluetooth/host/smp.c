@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (c) 2025 Xiaomi Corporation
  * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
@@ -716,7 +717,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 {
 	struct bt_l2cap_chan *chan;
 
-	if (conn->type == BT_CONN_TYPE_LE) {
+	if (bt_conn_is_le(conn)) {
 		struct bt_smp *smp;
 
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_SMP);
@@ -734,7 +735,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 	}
 
 #if defined(CONFIG_BT_CLASSIC)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (bt_conn_is_br(conn)) {
 		struct bt_smp_br *smp;
 
 		chan = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
@@ -5728,12 +5729,12 @@ int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
 {
 	struct bt_smp *smp;
 
-	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
+	if (!bt_conn_is_br(conn) && !bt_conn_is_le(conn)) {
 		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+	if (bt_conn_is_br(conn)) {
 		if (enable && atomic_test_and_set_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
 			return -EALREADY;
 		}

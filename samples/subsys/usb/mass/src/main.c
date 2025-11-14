@@ -174,7 +174,7 @@ static void setup_disk(void)
 			printk("End of files\n");
 			break;
 		}
-		printk("  %c %u %s\n",
+		printk("  %c %zu %s\n",
 		       (ent.type == FS_DIR_ENTRY_FILE) ? 'F' : 'D',
 		       ent.size,
 		       ent.name);

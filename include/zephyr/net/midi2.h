@@ -31,7 +31,6 @@
 #include <stdint.h>
 #include <zephyr/audio/midi.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/poll.h>
 
 /**
  * Size, in bytes, of the nonce sent to the client for authentication
@@ -214,7 +213,7 @@ struct netmidi2_ep {
 		struct sockaddr_in6 addr6;
 	};
 	/** The listening socket wrapped in a poll descriptor */
-	struct pollfd pollsock;
+	struct zsock_pollfd pollsock;
 	/** The function to call when data is received from a client */
 	void (*rx_packet_cb)(struct netmidi2_session *session,
 			     const struct midi_ump ump);

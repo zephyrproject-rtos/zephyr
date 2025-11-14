@@ -29,6 +29,7 @@
 
 #include <time.h>
 #include <zephyr/kernel.h>
+#include <zephyr/types.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/lwm2m_path.h>
@@ -1618,6 +1619,15 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
  */
 int lwm2m_set_cache_filter(const struct lwm2m_obj_path *path,
 			   lwm2m_cache_filter_cb_t filter_cb);
+
+/**
+ * @brief Return number of free slots in a cached resource.
+ *
+ * @param path LwM2M path to the cached resource.
+ *
+ * @return Number of free slots, or negative errno code in case of error.
+ */
+int lwm2m_cache_free_slots_get(const struct lwm2m_obj_path *path);
 
 /**
  * @brief Security modes as defined in LwM2M Security object.

@@ -24,17 +24,13 @@ config STEPPER_SHELL
 	help
 	  Enable stepper shell for testing.
 
-comment "Stepper Driver Common"
-
-rsource "step_dir/Kconfig"
-
 comment "Stepper Drivers"
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.fake"
-rsource "Kconfig.h_bridge"
 rsource "adi_tmc/Kconfig"
 rsource "allegro/Kconfig"
+rsource "gpio_stepper/Kconfig"
 rsource "ti/Kconfig"
 # zephyr-keep-sorted-stop
 

@@ -15,6 +15,21 @@ LOG_MODULE_REGISTER(cpu_freq_on_demand_test, LOG_LEVEL_INF);
 
 #define WAIT_US 1000
 
+extern const struct pstate *soc_pstates[];
+extern const size_t soc_pstates_count;
+
+/*
+ * Test that P-states are defined in decreasing load_threshold order in devicetree.
+ */
+ZTEST(cpu_freq_on_demand, test_pstates_order)
+{
+	for (int i = 1; i < soc_pstates_count; ++i) {
+		zassert_true(soc_pstates[i]->load_threshold <
+			soc_pstates[i-1]->load_threshold,
+			"P-states must be in decreasing threshold order");
+	}
+}
+
 /*
  * Test APIs of on_demand CPU frequency policy.
  */

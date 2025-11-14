@@ -7,6 +7,21 @@
 #include <nxp/nxp_imx/mimx9131cvvxj-pinctrl.dtsi>
 
 &pinctrl {
+	sai3_default: sai3_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io16_sai_tx_bclk_sai3_tx_bclk>,
+				 <&iomuxc1_gpio_io17_sai_mclk_sai3_mclk>,
+				 <&iomuxc1_gpio_io18_sai_rx_bclk_sai3_rx_bclk>,
+				 <&iomuxc1_gpio_io19_sai_rx_sync_sai3_rx_sync>,
+				 <&iomuxc1_gpio_io20_sai_rx_data_sai3_rx_data0>,
+				 <&iomuxc1_gpio_io21_sai_tx_data_sai3_tx_data0>,
+				 <&iomuxc1_gpio_io26_sai_tx_sync_sai3_tx_sync>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
@@ -30,7 +45,7 @@
 	pinmux_usdhc1: pinmux_usdhc1 {
 		group0 {
 			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
-				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+				 <&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
 			drive-strength = "x1";
 			bias-pull-down;
 			slew-rate = "fast";
@@ -39,14 +54,14 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
-				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
-				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
-				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
-				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
-				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
-				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
-				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
-				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+				 <&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				 <&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				 <&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				 <&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				 <&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				 <&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				 <&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				 <&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
 			drive-strength = "x1";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -58,7 +73,7 @@
 	pinmux_usdhc1_100mhz: pinmux_usdhc1_100mhz {
 		group0 {
 			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
-				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+				 <&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
 			drive-strength = "x3";
 			bias-pull-down;
 			slew-rate = "fast";
@@ -67,14 +82,14 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
-				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
-				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
-				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
-				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
-				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
-				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
-				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
-				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+				 <&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				 <&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				 <&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				 <&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				 <&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				 <&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				 <&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				 <&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
 			drive-strength = "x3";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -86,7 +101,7 @@
 	pinmux_usdhc1_200mhz: pinmux_usdhc1_200mhz {
 		group0 {
 			pinmux = <&iomuxc1_sd1_clk_usdhc_clk_usdhc1_clk>,
-				<&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
+				 <&iomuxc1_sd1_strobe_usdhc_strobe_usdhc1_strobe>;
 			drive-strength = "x6";
 			bias-pull-down;
 			slew-rate = "fast";
@@ -95,14 +110,14 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd1_cmd_usdhc_cmd_usdhc1_cmd>,
-				<&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
-				<&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
-				<&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
-				<&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
-				<&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
-				<&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
-				<&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
-				<&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
+				 <&iomuxc1_sd1_data0_usdhc_data_usdhc1_data0>,
+				 <&iomuxc1_sd1_data1_usdhc_data_usdhc1_data1>,
+				 <&iomuxc1_sd1_data2_usdhc_data_usdhc1_data2>,
+				 <&iomuxc1_sd1_data3_usdhc_data_usdhc1_data3>,
+				 <&iomuxc1_sd1_data4_usdhc_data_usdhc1_data4>,
+				 <&iomuxc1_sd1_data5_usdhc_data_usdhc1_data5>,
+				 <&iomuxc1_sd1_data6_usdhc_data_usdhc1_data6>,
+				 <&iomuxc1_sd1_data7_usdhc_data_usdhc1_data7>;
 			drive-strength = "x6";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -122,10 +137,10 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
-				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
-				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
-				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
-				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+				 <&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				 <&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				 <&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				 <&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
 			drive-strength = "x1";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -141,7 +156,7 @@
 
 		group3 {
 			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
-				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+				 <&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
 			drive-strength = "x4";
 			slew-rate = "slightly_fast";
 			bias-pull-up;
@@ -159,10 +174,10 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
-				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
-				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
-				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
-				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+				 <&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				 <&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				 <&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				 <&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
 			drive-strength = "x3";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -178,7 +193,7 @@
 
 		group3 {
 			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
-				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+				 <&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
 			drive-strength = "x4";
 			slew-rate = "slightly_fast";
 			bias-pull-up;
@@ -196,10 +211,10 @@
 
 		group1 {
 			pinmux = <&iomuxc1_sd2_cmd_usdhc_cmd_usdhc2_cmd>,
-				<&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
-				<&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
-				<&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
-				<&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
+				 <&iomuxc1_sd2_data0_usdhc_data_usdhc2_data0>,
+				 <&iomuxc1_sd2_data1_usdhc_data_usdhc2_data1>,
+				 <&iomuxc1_sd2_data2_usdhc_data_usdhc2_data2>,
+				 <&iomuxc1_sd2_data3_usdhc_data_usdhc2_data3>;
 			drive-strength = "x6";
 			slew-rate = "fast";
 			input-schmitt-enable;
@@ -215,7 +230,7 @@
 
 		group3 {
 			pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io0>,
-				<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
+				 <&iomuxc1_sd2_reset_b_gpio_io_gpio3_io7>;
 			drive-strength = "x4";
 			slew-rate = "slightly_fast";
 			bias-pull-up;

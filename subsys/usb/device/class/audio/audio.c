@@ -902,7 +902,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 	}
 
 	if (len > buffer->size) {
-		LOG_ERR("Cannot send %d bytes, to much data", len);
+		LOG_ERR("Cannot send %zu bytes, to much data", len);
 		return -EINVAL;
 	}
 

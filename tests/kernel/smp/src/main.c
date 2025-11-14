@@ -1112,7 +1112,7 @@ ZTEST(smp, test_inc_concurrency)
 }
 
 /**
- * @brief Torture test for context switching code
+ * @brief Stress test for context switching code
  *
  * @ingroup kernel_smp_tests
  *
@@ -1151,13 +1151,13 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
 	}
 }
 
-ZTEST(smp, test_smp_switch_torture)
+ZTEST(smp_stress, test_smp_switch_stress)
 {
 	unsigned int num_threads = arch_num_cpus();
 
 	if (CONFIG_SMP_TEST_RUN_FACTOR == 0) {
 		/* If CONFIG_SMP_TEST_RUN_FACTOR is zero,
-		 * the switch torture test is effectively
+		 * the switch stress test is effectively
 		 * not doing anything as the k_sleep()
 		 * below is not going to sleep at all,
 		 * and all created threads are being
@@ -1193,7 +1193,7 @@ ZTEST(smp, test_smp_switch_torture)
 }
 
 /**
- * @brief Torture test for cpu affinity code
+ * @brief Stress test for cpu affinity code
  *
  * @ingroup kernel_smp_tests
  *
@@ -1248,3 +1248,4 @@ static void *smp_tests_setup(void)
 }
 
 ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, NULL, NULL);

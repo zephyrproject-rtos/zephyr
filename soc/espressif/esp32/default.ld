@@ -34,6 +34,14 @@ procpu_ext_ram_org = DCACHE1_START;
 procpu_ext_ram_len = DCACHE1_SIZE;
 #endif
 
+/* RTC RAM memory segments */
+rtc_slow_org = RCT_SLOW_RAM_START;
+rtc_slow_len = RCT_SLOW_RAM_SIZE;
+rtc_data_org = RCT_FAST_RAM_START;
+rtc_data_len = RCT_FAST_RAM_SIZE;
+rtc_iram_org = RCT_FAST_RAM_START + RTC_FAST_IRAM_DRAM_OFFSET;
+rtc_iram_len = RCT_FAST_RAM_SIZE;
+
 /* Aliases */
 #define FLASH_CODE_REGION irom0_0_seg
 #define RODATA_REGION     drom0_0_seg
@@ -87,9 +95,9 @@ MEMORY
   irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
   drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
-  rtc_iram_seg(RWX): org = 0x400c0000, len = 0x2000
-  rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
-  rtc_data_seg(RW):  org = 0x3ff80000, len = 0x2000
+  rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len
+  rtc_slow_seg(RW):  org = rtc_slow_org, len = rtc_slow_len - CONFIG_RESERVE_RTC_MEM
+  rtc_data_seg(RW):  org = rtc_data_org, len = rtc_data_len
 
   /* We reduced the size of rtc_slow_seg by CONFIG_RESERVE_RTC_MEM value.
    *  It reserves the amount of RTC slow memory that we use for this memory segment.
@@ -98,7 +106,7 @@ MEMORY
    *  org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM
    */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  rtc_slow_reserved_seg(RW): org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
+  rtc_slow_reserved_seg(RW): org = rtc_slow_org + rtc_slow_len - CONFIG_RESERVE_RTC_MEM,
                              len = CONFIG_RESERVE_RTC_MEM
 #endif
 
@@ -199,10 +207,7 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- RTC BEGIN --- */
 

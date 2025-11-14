@@ -5,9 +5,6 @@
 
 if BOARD_ESP32_CAM_ESP32_PROCPU
 
-config DISK_DRIVER_SDMMC
-	default y
-
 config ESP_SPIRAM
 	default y if !MCUBOOT
 

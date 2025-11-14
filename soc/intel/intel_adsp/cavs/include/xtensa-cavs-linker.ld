@@ -507,8 +507,5 @@ SECTIONS {
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 }

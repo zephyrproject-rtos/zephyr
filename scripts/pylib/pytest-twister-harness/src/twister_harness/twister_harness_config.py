@@ -74,7 +74,7 @@ class TwisterHarnessConfig:
             base_timeout=config.option.base_timeout,
             flash_timeout=config.option.flash_timeout,
             platform=config.option.platform,
-            serial=config.option.device_serial,
+            serial=config.option.device_serial[0] if config.option.device_serial else '',
             baud=config.option.device_serial_baud,
             runner=config.option.runner,
             runner_params=runner_params,

@@ -948,8 +948,14 @@ static const struct ec2i_t pmc2_settings[] = {
 #endif
 #endif
 
-static uint8_t h2ram_pool[MAX(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX)]
-					__attribute__((section(".h2ram_pool")));
+#ifdef CONFIG_ESPI_IT8XXX2_H2RAM_SHARED
+#define H2RAM_STORAGE
+#else
+#define H2RAM_STORAGE static
+#endif
+
+H2RAM_STORAGE uint8_t h2ram_pool[MAX(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX)]
+	__attribute__((section(".h2ram_pool")));
 
 #define H2RAM_WINDOW_SIZE(ram_size) ((find_msb_set((ram_size) / 16) - 1) & 0x7)
 

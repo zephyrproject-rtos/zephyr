@@ -36,6 +36,8 @@ source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.mcux_rtc"
 
+source "drivers/counter/Kconfig.mcux_rtc_jdp"
+
 source "drivers/counter/Kconfig.mcux_lpc_rtc"
 
 source "drivers/counter/Kconfig.nrfx"
@@ -131,5 +133,7 @@ source "drivers/counter/Kconfig.cc23x0_rtc"
 source "drivers/counter/Kconfig.cc23x0_lgpt"
 
 source "drivers/counter/Kconfig.mspm0"
+
+source "drivers/counter/Kconfig.npcx"
 
 endif # COUNTER

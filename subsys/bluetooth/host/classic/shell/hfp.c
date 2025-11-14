@@ -1067,6 +1067,8 @@ static size_t ag_ongoing_calls;
 
 static bool has_ongoing_calls;
 
+static char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+
 static void ag_add_a_call(struct bt_hfp_ag_call *call)
 {
 	ARRAY_FOR_EACH(hfp_ag_call, i) {
@@ -1186,6 +1188,17 @@ static int ag_number_call(struct bt_hfp_ag *ag, const char *number)
 	if (strcmp(number, phone)) {
 		return -ENOTSUP;
 	}
+
+	return 0;
+}
+
+static int ag_redial(struct bt_hfp_ag *ag, char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1])
+{
+	if (strlen(last_number) == 0) {
+		return -EINVAL;
+	}
+
+	strncpy(number, last_number, CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN);
 
 	return 0;
 }
@@ -1362,6 +1375,7 @@ static struct bt_hfp_ag_cb ag_cb = {
 	.get_ongoing_call = ag_get_ongoing_call,
 	.memory_dial = ag_memory_dial,
 	.number_call = ag_number_call,
+	.redial = ag_redial,
 	.outgoing = ag_outgoing,
 	.incoming = ag_incoming,
 	.incoming_held = ag_incoming_held,
@@ -2028,6 +2042,16 @@ static int cmd_ag_hf_indicator(const struct shell *sh, size_t argc, char **argv)
 }
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 
+static int cmd_ag_last_number(const struct shell *sh, size_t argc, char **argv)
+{
+	memset(last_number, 0, sizeof(last_number));
+	if (argc > 1) {
+		memcpy(last_number, argv[1], sizeof(last_number) - 1);
+	}
+
+	return 0;
+}
+
 #define HELP_AG_TEXTUAL_REPRESENTATION          \
 	"<[R-ready][S-send][P-processing]> "        \
 	"<id> <type> <operation> <text string>"
@@ -2081,6 +2105,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ag_cmds,
 	SHELL_CMD_ARG(hf_indicator, NULL, "<indicator> <enable/disable>", cmd_ag_hf_indicator, 3,
 		      0),
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+	SHELL_CMD_ARG(last_number, NULL, "[number]", cmd_ag_last_number, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 #endif /* CONFIG_BT_HFP_AG */

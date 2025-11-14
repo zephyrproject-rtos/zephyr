@@ -84,8 +84,8 @@ static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 
 /** @brief Determine equality of two Bluetooth device addresses.
  *
- *  @retval #true if the two addresses are equal
- *  @retval #false otherwise
+ *  @retval true if the two addresses are equal
+ *  @retval false otherwise
  */
 static inline bool bt_addr_eq(const bt_addr_t *a, const bt_addr_t *b)
 {
@@ -111,8 +111,8 @@ static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
  *  The Bluetooth LE addresses are equal if and only if both the types and
  *  the 48-bit addresses are numerically equal.
  *
- *  @retval #true if the two addresses are equal
- *  @retval #false otherwise
+ *  @retval true if the two addresses are equal
+ *  @retval false otherwise
  */
 static inline bool bt_addr_le_eq(const bt_addr_le_t *a, const bt_addr_le_t *b)
 {

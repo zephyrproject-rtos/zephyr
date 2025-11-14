@@ -91,11 +91,14 @@ static int devb_pm_action(const struct device *dev,
 }
 
 
-PM_DEVICE_DT_DEFINE(TEST_DOMAIN, domain_pm_action);
+PM_DEVICE_DT_DEFINE(TEST_DOMAIN, domain_pm_action,
+	COND_CODE_1(CONFIG_TEST_PM_DEVICE_ISR_SAFE, (PM_DEVICE_ISR_SAFE), (0)));
+
 DEVICE_DT_DEFINE(TEST_DOMAIN, NULL, PM_DEVICE_DT_GET(TEST_DOMAIN),
 		 NULL, NULL, POST_KERNEL, 10, NULL);
 
-PM_DEVICE_DT_DEFINE(TEST_DEVA, deva_pm_action);
+PM_DEVICE_DT_DEFINE(TEST_DEVA, deva_pm_action,
+	COND_CODE_1(CONFIG_TEST_PM_DEVICE_ISR_SAFE, (PM_DEVICE_ISR_SAFE), (0)));
 DEVICE_DT_DEFINE(TEST_DEVA, NULL, PM_DEVICE_DT_GET(TEST_DEVA),
 		 NULL, NULL, POST_KERNEL, 20, NULL);
 
@@ -157,18 +160,22 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 
 	pm_device_state_get(deva, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	zassert_true(atomic_test_bit(&deva->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	pm_device_state_get(domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
 	ret = pm_device_runtime_get(devc);
 	zassert_equal(ret, 0);
+	zassert_true(atomic_test_bit(&devc->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	ret = pm_device_runtime_get(devb);
 	zassert_equal(ret, 0);
+	zassert_true(atomic_test_bit(&devb->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	ret = pm_device_runtime_put(deva);
 	zassert_equal(ret, 0);
+	zassert_false(atomic_test_bit(&deva->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	/*
 	 * The domain has to still be active since device B
@@ -183,9 +190,11 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	 */
 	ret = pm_device_runtime_put(devb);
 	zassert_equal(ret, 0);
+	zassert_false(atomic_test_bit(&devb->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	ret = pm_device_runtime_put(devc);
 	zassert_equal(ret, 0);
+	zassert_false(atomic_test_bit(&devc->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
 
 	pm_device_state_get(domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);

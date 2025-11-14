@@ -138,7 +138,7 @@ enum conn_mgr_if_flag {
  * @retval 0 on success.
  * @retval -ESHUTDOWN if the iface is not admin-up.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_connect(struct net_if *iface);
 
@@ -154,7 +154,7 @@ int conn_mgr_if_connect(struct net_if *iface);
  *
  * @retval 0 on success.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_disconnect(struct net_if *iface);
 
@@ -185,7 +185,7 @@ bool conn_mgr_if_is_bound(struct net_if *iface);
  * @retval -ENOBUFS if optlen is too long.
  * @retval -EINVAL if NULL optval pointer provided.
  * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @return implementation-specific error code otherwise.
  */
 int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, size_t optlen);
 
@@ -213,7 +213,7 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
  * @retval -EINVAL if invalid retrieval buffer length is provided, or if NULL optval or
  *		   optlen pointer provided.
  * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @return implementation-specific error code otherwise.
  */
 int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t *optlen);
 

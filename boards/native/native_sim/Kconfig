@@ -28,14 +28,6 @@ config NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
 	  case the zephyr kernel and application cannot tell the difference unless they
 	  interact with some other driver/device which runs at real time.
 
-config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
-	bool "Slow down execution to real time (native_posix compat)"
-	select NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
-	select DEPRECATED
-	help
-	  Transitional option which allows applications which targeted native_posix
-	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-
 config NATIVE_SIM_REBOOT
 	bool "Reboot support"
 	depends on REBOOT

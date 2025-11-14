@@ -736,42 +736,41 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 	return pm_device_driver_init(dev, gpio_stm32_pm_action);
 }
 
-#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
-	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
-		.common = {						       \
-			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
-		},							       \
-		.base = (uint32_t *)__base_addr,				       \
-		.port = __port,						       \
-		COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		       \
-			   (.pclken = { .bus = __bus, .enr = __cenr },),       \
-			   (/* Nothing if clocks not present */))	       \
-	};								       \
-	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
-	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
-	DEVICE_DT_DEFINE(__node,					       \
-			    COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),      \
-					(gpio_stm32_init),		       \
-					(NULL)),			       \
-			    PM_DEVICE_DT_GET(__node),			       \
-			    &gpio_stm32_data_## __suffix,		       \
-			    &gpio_stm32_cfg_## __suffix,		       \
-			    PRE_KERNEL_1,				       \
-			    CONFIG_GPIO_INIT_PRIORITY,			       \
-			    &gpio_stm32_driver)
+#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port)			\
+	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
+		.common = {							\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),	\
+		},								\
+		.base = (uint32_t *)__base_addr,				\
+		.port = __port,							\
+		IF_ENABLED(DT_NODE_HAS_PROP(__node, clocks),			\
+			   (.pclken = STM32_CLOCK_INFO(0, __node),))		\
+	};									\
+										\
+	static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
+										\
+	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);			\
+										\
+	DEVICE_DT_DEFINE(__node,						\
+			 COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		\
+				     (gpio_stm32_init),				\
+				     (NULL)),					\
+			 PM_DEVICE_DT_GET(__node),				\
+			 &gpio_stm32_data_## __suffix,				\
+			 &gpio_stm32_cfg_## __suffix,				\
+			 PRE_KERNEL_1,						\
+			 CONFIG_GPIO_INIT_PRIORITY,				\
+			 &gpio_stm32_driver)
 
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),	\
-			 __suffix,					\
-			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),	\
-			 STM32_PORT##__SUFFIX,				\
-			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bits),\
-			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
+	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),				\
+			 __suffix,						\
+			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),		\
+			 STM32_PORT##__SUFFIX)
 
-#define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)), \
-		    (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)), \
-		    ())
+#define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
+		   (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
 GPIO_DEVICE_INIT_STM32_IF_OKAY(a, A);
 GPIO_DEVICE_INIT_STM32_IF_OKAY(b, B);

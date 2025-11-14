@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
  *
  * PN would be 10 bytes, but that is not implemented
  */
-#define MODEM_CMUX_CMD_DATA_SIZE_MAX		5
+#define MODEM_CMUX_CMD_DATA_SIZE_MAX		5 /* Max size of information field of UIH frame */
+#define MODEM_CMUX_CMD_HEADER_SIZE		2 /* command type + length */
 #define MODEM_CMUX_CMD_FRAME_SIZE_MAX           (MODEM_CMUX_HEADER_SIZE +  \
 						MODEM_CMUX_CMD_DATA_SIZE_MAX)
 
@@ -80,7 +81,7 @@ struct modem_cmux_command_length {
 struct modem_cmux_command {
 	struct modem_cmux_command_type type;
 	struct modem_cmux_command_length length;
-	uint8_t value[];
+	uint8_t value[MODEM_CMUX_CMD_DATA_SIZE_MAX - 2]; /* Subtract type and length bytes */
 };
 
 struct modem_cmux_msc_signals {
@@ -98,33 +99,8 @@ struct modem_cmux_msc_addr {
 	uint8_t dlci_address: 6;               /**< DLCI channel address */
 };
 
-struct modem_cmux_command_msc {
-	struct modem_cmux_command command;
-	uint8_t value[2];
-};
-
 static struct modem_cmux_dlci *modem_cmux_find_dlci(struct modem_cmux *cmux, uint8_t dlci_address);
 static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux);
-
-static int modem_cmux_wrap_command(struct modem_cmux_command **command, const uint8_t *data,
-				   uint16_t data_len)
-{
-	if ((data == NULL) || (data_len < 2)) {
-		return -EINVAL;
-	}
-
-	(*command) = (struct modem_cmux_command *)data;
-
-	if (((*command)->length.ea == 0) || ((*command)->type.ea == 0)) {
-		return -EINVAL;
-	}
-
-	if ((*command)->length.value != (data_len - 2)) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
 
 static void set_state(struct modem_cmux *cmux, enum modem_cmux_state state)
 {
@@ -142,9 +118,163 @@ static bool is_connected(struct modem_cmux *cmux)
 	return cmux->state == MODEM_CMUX_STATE_CONNECTED;
 }
 
-static struct modem_cmux_command *modem_cmux_command_wrap(const uint8_t *data)
+static bool modem_cmux_command_type_is_valid(const struct modem_cmux_command_type type)
 {
-	return (struct modem_cmux_command *)data;
+	/* All commands are only 7 bits, so EA is always set */
+	if (type.ea == 0) {
+		return false;
+	}
+	switch (type.value) {
+	case MODEM_CMUX_COMMAND_NSC:
+	case MODEM_CMUX_COMMAND_TEST:
+	case MODEM_CMUX_COMMAND_PSC:
+	case MODEM_CMUX_COMMAND_RLS:
+	case MODEM_CMUX_COMMAND_FCOFF:
+	case MODEM_CMUX_COMMAND_PN:
+	case MODEM_CMUX_COMMAND_RPN:
+	case MODEM_CMUX_COMMAND_FCON:
+	case MODEM_CMUX_COMMAND_CLD:
+	case MODEM_CMUX_COMMAND_SNC:
+	case MODEM_CMUX_COMMAND_MSC:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static bool modem_cmux_command_length_is_valid(const struct modem_cmux_command_length length)
+{
+	/* All commands are shorter than 127 bytes, so EA is always set */
+	if (length.ea == 0) {
+		return false;
+	}
+	if (length.value > (MODEM_CMUX_CMD_DATA_SIZE_MAX - MODEM_CMUX_CMD_HEADER_SIZE)) {
+		return false;
+	}
+	return true;
+}
+
+static bool modem_cmux_command_is_valid(const struct modem_cmux_command *command)
+{
+	if (!modem_cmux_command_type_is_valid(command->type)) {
+		return false;
+	}
+	if (!modem_cmux_command_length_is_valid(command->length)) {
+		return false;
+	}
+	/* Verify known value sizes as specified in 3GPP TS 27.010
+	 * section 5.4.6.3 Message Type and Actions
+	 */
+	switch (command->type.value) {
+	case MODEM_CMUX_COMMAND_PN:
+		return command->length.value == 8;
+	case MODEM_CMUX_COMMAND_TEST:
+		return (command->length.value > 0 &&
+			command->length.value <= MODEM_CMUX_CMD_DATA_SIZE_MAX - 2);
+	case MODEM_CMUX_COMMAND_MSC:
+		return command->length.value == 2 || command->length.value == 3;
+	case MODEM_CMUX_COMMAND_NSC:
+		return command->length.value == 1;
+	case MODEM_CMUX_COMMAND_RPN:
+		return command->length.value == 1 || command->length.value == 8;
+	case MODEM_CMUX_COMMAND_RLS:
+		return command->length.value == 2;
+	case MODEM_CMUX_COMMAND_SNC:
+		return command->length.value == 1 || command->length.value == 3;
+	default:
+		return command->length.value == 0;
+	}
+}
+
+static struct modem_cmux_command_type modem_cmux_command_type_decode(const uint8_t byte)
+{
+	struct modem_cmux_command_type type = {
+		.ea = (byte & MODEM_CMUX_EA) ? 1 : 0,
+		.cr = (byte & MODEM_CMUX_CR) ? 1 : 0,
+		.value = (byte >> 2) & 0x3F,
+	};
+
+	if (type.ea == 0) {
+		return (struct modem_cmux_command_type){0};
+	}
+
+	return type;
+}
+
+static uint8_t modem_cmux_command_type_encode(const struct modem_cmux_command_type type)
+{
+	return (type.ea ? MODEM_CMUX_EA : 0) |
+	       (type.cr ? MODEM_CMUX_CR : 0) |
+	       ((type.value & 0x3F) << 2);
+}
+
+static struct modem_cmux_command_length modem_cmux_command_length_decode(const uint8_t byte)
+{
+	struct modem_cmux_command_length length = {
+		.ea = (byte & MODEM_CMUX_EA) ? 1 : 0,
+		.value = (byte >> 1) & 0x7F,
+	};
+
+	if (length.ea == 0) {
+		return (struct modem_cmux_command_length){0};
+	}
+
+	return length;
+}
+
+static uint8_t modem_cmux_command_length_encode(const struct modem_cmux_command_length length)
+{
+	return (length.ea ? MODEM_CMUX_EA : 0) |
+	       ((length.value & 0x7F) << 1);
+}
+
+static struct modem_cmux_command modem_cmux_command_decode(const uint8_t *data, size_t len)
+{
+	if (len < 2) {
+		return (struct modem_cmux_command){0};
+	}
+
+	struct modem_cmux_command command = {
+		.type = modem_cmux_command_type_decode(data[0]),
+		.length = modem_cmux_command_length_decode(data[1]),
+	};
+
+	if (command.type.ea == 0 || command.length.ea == 0 ||
+	    command.length.value > MODEM_CMUX_CMD_DATA_SIZE_MAX ||
+	    (2 + command.length.value) > len) {
+		return (struct modem_cmux_command){0};
+	}
+
+	memcpy(&command.value[0], &data[2], command.length.value);
+
+	return command;
+}
+
+/**
+ * @brief Encode command into a shared buffer
+ *
+ * Not a thread safe, so can only be used within a workqueue context and data
+ * must be copied out to a TX ringbuffer.
+ *
+ * @param command command to encode
+ * @param len encoded length of the command is written here
+ * @return pointer to encoded command buffer on success, NULL on failure
+ */
+static uint8_t *modem_cmux_command_encode(struct modem_cmux_command *command, uint16_t *len)
+{
+	static uint8_t buf[MODEM_CMUX_CMD_DATA_SIZE_MAX];
+
+	__ASSERT_NO_MSG(len != NULL);
+	__ASSERT_NO_MSG(command != NULL);
+	__ASSERT_NO_MSG(modem_cmux_command_is_valid(command));
+
+	buf[0] = modem_cmux_command_type_encode(command->type);
+	buf[1] = modem_cmux_command_length_encode(command->length);
+	if (command->length.value > 0) {
+		memcpy(&buf[2], &command->value[0], command->length.value);
+	}
+	*len = 2 + command->length.value;
+	return buf;
 }
 
 static struct modem_cmux_msc_signals modem_cmux_msc_signals_decode(const uint8_t byte)
@@ -421,7 +551,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
 	uint16_t space;
-	struct modem_cmux_command *command;
+	struct modem_cmux_command command;
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	space = ring_buf_space_get(&cmux->transmit_rb);
@@ -433,8 +563,9 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 	}
 
 	modem_cmux_log_transmit_frame(frame);
-	if (modem_cmux_wrap_command(&command, frame->data, frame->data_len) == 0) {
-		modem_cmux_log_transmit_command(command);
+	command = modem_cmux_command_decode(frame->data, frame->data_len);
+	if (modem_cmux_command_is_valid(&command)) {
+		modem_cmux_log_transmit_command(&command);
 	}
 
 	modem_cmux_transmit_frame(cmux, frame);
@@ -477,7 +608,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 
 static void modem_cmux_acknowledge_received_frame(struct modem_cmux *cmux)
 {
-	struct modem_cmux_command *command;
+	struct modem_cmux_command_type command;
 	struct modem_cmux_frame frame;
 	uint8_t data[MODEM_CMUX_CMD_DATA_SIZE_MAX];
 
@@ -488,8 +619,9 @@ static void modem_cmux_acknowledge_received_frame(struct modem_cmux *cmux)
 
 	memcpy(&frame, &cmux->frame, sizeof(cmux->frame));
 	memcpy(data, cmux->frame.data, cmux->frame.data_len);
-	modem_cmux_wrap_command(&command, data, cmux->frame.data_len);
-	command->type.cr = 0;
+	command = modem_cmux_command_type_decode(data[0]);
+	command.cr = 0;
+	data[0] = modem_cmux_command_type_encode(command);
 	frame.data = data;
 	frame.data_len = cmux->frame.data_len;
 
@@ -516,29 +648,34 @@ static void modem_cmux_send_msc(struct modem_cmux *cmux, struct modem_cmux_dlci 
 		.rtr = dlci->state == MODEM_CMUX_DLCI_STATE_OPEN ? 1 : 0,
 		.dv = 1,
 	};
-	struct modem_cmux_command_msc cmd = {
-		.command = {
-			.type = {
-				.ea = 1,
-				.cr = 1,
-				.value = MODEM_CMUX_COMMAND_MSC,
-			},
-			.length = {
-				.ea = 1,
-				.value = sizeof(cmd.value),
-			},
+	struct modem_cmux_command cmd = {
+		.type = {
+			.ea = 1,
+			.cr = 1,
+			.value = MODEM_CMUX_COMMAND_MSC,
+		},
+		.length = {
+			.ea = 1,
+			.value = 2,
 		},
 		.value[0] = modem_cmux_msc_addr_encode(addr),
 		.value[1] = modem_cmux_msc_signals_encode(signals),
 	};
+
+	uint16_t len;
+	uint8_t *data = modem_cmux_command_encode(&cmd, &len);
+
+	if (data == NULL) {
+		return;
+	}
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
 		.cr = cmux->initiator,
 		.pf = false,
 		.type = MODEM_CMUX_FRAME_TYPE_UIH,
-		.data = (void *)&cmd,
-		.data_len = sizeof(cmd),
+		.data = data,
+		.data_len = len,
 	};
 
 	LOG_DBG("Sending MSC command for DLCI %u, FC:%d RTR: %d DV: %d", addr.dlci_address,
@@ -655,41 +792,44 @@ static void modem_cmux_on_control_frame_ua(struct modem_cmux *cmux)
 static void modem_cmux_respond_unsupported_cmd(struct modem_cmux *cmux)
 {
 	struct modem_cmux_frame frame = cmux->frame;
-	struct modem_cmux_command *cmd;
+	struct modem_cmux_command cmd = modem_cmux_command_decode(frame.data, frame.data_len);
 
-	if (modem_cmux_wrap_command(&cmd, frame.data, frame.data_len) < 0) {
+	if (!modem_cmux_command_is_valid(&cmd)) {
 		LOG_WRN("Invalid command");
 		return;
 	}
 
-	struct {
-		/* 3GPP TS 27.010: 5.4.6.3.8 Non Supported Command Response (NSC) */
-		struct modem_cmux_command nsc;
-		struct modem_cmux_command_type value;
-	} nsc_cmd = {
-		.nsc = {
-			.type = {
-				.ea = 1,
-				.cr = 0,
-				.value = MODEM_CMUX_COMMAND_NSC,
-			},
-			.length = {
-				.ea = 1,
-				.value = 1,
-			},
+
+	/* 3GPP TS 27.010: 5.4.6.3.8 Non Supported Command Response (NSC) */
+	struct modem_cmux_command nsc_cmd = {
+		.type = {
+			.ea = 1,
+			.cr = 0,
+			.value = MODEM_CMUX_COMMAND_NSC,
 		},
-		.value = cmd->type,
+		.length = {
+			.ea = 1,
+			.value = 1,
+		},
+		.value[0] = modem_cmux_command_type_encode(cmd.type),
 	};
 
-	frame.data = (uint8_t *)&nsc_cmd;
-	frame.data_len = sizeof(nsc_cmd);
+	uint16_t len;
+	uint8_t *data = modem_cmux_command_encode(&nsc_cmd, &len);
+
+	if (data == NULL) {
+		return;
+	}
+
+	frame.data = data;
+	frame.data_len = len;
 
 	modem_cmux_transmit_cmd_frame(cmux, &frame);
 }
 
 static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 {
-	struct modem_cmux_command *command;
+	struct modem_cmux_command command;
 
 	if ((cmux->state != MODEM_CMUX_STATE_CONNECTED) &&
 	    (cmux->state != MODEM_CMUX_STATE_DISCONNECTING)) {
@@ -697,18 +837,19 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		return;
 	}
 
-	if (modem_cmux_wrap_command(&command, cmux->frame.data, cmux->frame.data_len) < 0) {
+	command = modem_cmux_command_decode(cmux->frame.data, cmux->frame.data_len);
+	if (!modem_cmux_command_is_valid(&command)) {
 		LOG_WRN("Invalid command");
 		return;
 	}
 
-	modem_cmux_log_received_command(command);
+	modem_cmux_log_received_command(&command);
 
-	if (!command->type.cr) {
+	if (!command.type.cr) {
 		LOG_DBG("Received response command");
-		switch (command->type.value) {
+		switch (command.type.value) {
 		case MODEM_CMUX_COMMAND_CLD:
-			modem_cmux_on_cld_command(cmux, command);
+			modem_cmux_on_cld_command(cmux, &command);
 			break;
 		default:
 			/* Responses to other commands are ignored */
@@ -717,13 +858,13 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		return;
 	}
 
-	switch (command->type.value) {
+	switch (command.type.value) {
 	case MODEM_CMUX_COMMAND_CLD:
-		modem_cmux_on_cld_command(cmux, command);
+		modem_cmux_on_cld_command(cmux, &command);
 		break;
 
 	case MODEM_CMUX_COMMAND_MSC:
-		modem_cmux_on_msc_command(cmux, command);
+		modem_cmux_on_msc_command(cmux, &command);
 		break;
 
 	case MODEM_CMUX_COMMAND_FCON:
@@ -1326,8 +1467,6 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, disconnect_work);
-	struct modem_cmux_command *command;
-	uint8_t data[2];
 
 	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
 		disconnect(cmux);
@@ -1336,12 +1475,21 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 		k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
 	}
 
-	command = modem_cmux_command_wrap(data);
-	command->type.ea = 1;
-	command->type.cr = 1;
-	command->type.value = MODEM_CMUX_COMMAND_CLD;
-	command->length.ea = 1;
-	command->length.value = 0;
+	struct modem_cmux_command command = {
+		.type.ea = 1,
+		.type.cr = 1,
+		.type.value = MODEM_CMUX_COMMAND_CLD,
+		.length.ea = 1,
+		.length.value = 0,
+	};
+
+	uint16_t len;
+	uint8_t *data = modem_cmux_command_encode(&command, &len);
+
+	if (data == NULL) {
+		return;
+	}
+
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
@@ -1349,7 +1497,7 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 		.pf = false,
 		.type = MODEM_CMUX_FRAME_TYPE_UIH,
 		.data = data,
-		.data_len = sizeof(data),
+		.data_len = len,
 	};
 
 	/* Transmit close down command */

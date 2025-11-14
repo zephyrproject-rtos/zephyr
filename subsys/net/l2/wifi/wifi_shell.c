@@ -620,6 +620,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"ignore-broadcast-ssid", required_argument, 0, 'g'},
 		{"ieee-80211r", no_argument, 0, 'R'},
 		{"iface", required_argument, 0, 'i'},
+		{"server-cert-domain-exact", required_argument, 0, 'e'},
+		{"server-cert-domain-suffix", required_argument, 0, 'x'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -871,6 +873,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'e':
+			params->server_cert_domain_exact = state->optarg;
+			params->server_cert_domain_exact_len =
+					strlen(params->server_cert_domain_exact);
+			break;
+		case 'x':
+			params->server_cert_domain_suffix = state->optarg;
+			params->server_cert_domain_suffix_len =
+					strlen(params->server_cert_domain_suffix);
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -4028,10 +4040,12 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-P, --eap-pwd1]: Client Password.\n"
 		 "Default no password for eap user.\n"
 		 "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
+		 "[-e, --server-cert-domain-exact]: Full domain names for server certificate match.\n"
+		 "[-x, --server-cert-domain-suffix]: Domain name suffixes for server certificate match.\n"
 		 "[-h, --help]: Print out the help for the connect command.\n"
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_connect,
-		 2, 42);
+		 2, 46);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n"

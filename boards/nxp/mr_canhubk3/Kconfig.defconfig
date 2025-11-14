@@ -23,14 +23,7 @@ config WDT_NXP_FS26_INIT_PRIORITY
 endif # WDT_NXP_FS26
 endif # SPI
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
-
-config MDIO
-	default y if NET_L2_ETHERNET
-
-endif # NETWORKING
 
 endif # BOARD_MR_CANHUBK3

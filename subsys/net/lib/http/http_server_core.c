@@ -20,7 +20,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/zvfs/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -98,7 +98,7 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	/* Create an eventfd that can be used to trigger events during polling */
-	fd = eventfd(0, 0);
+	fd = zvfs_eventfd(0, 0);
 	if (fd < 0) {
 		fd = -errno;
 		LOG_ERR("eventfd failed (%d)", fd);
@@ -555,7 +555,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
 	const struct http_service_desc *service;
-	eventfd_t value;
+	zvfs_eventfd_t value;
 	bool found_slot;
 	int new_socket;
 	int ret, i, j;
@@ -578,7 +578,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 		}
 
 		if (ret == 1 && ctx->fds[0].revents) {
-			eventfd_read(ctx->fds[0].fd, &value);
+			zvfs_eventfd_read(ctx->fds[0].fd, &value);
 			LOG_DBG("Received stop event. exiting ..");
 			ret = 0;
 			goto closing;
@@ -968,7 +968,7 @@ int http_server_stop(void)
 
 	server_running = false;
 	k_sem_reset(&server_start);
-	eventfd_write(server_ctx.fds[0].fd, 1);
+	zvfs_eventfd_write(server_ctx.fds[0].fd, 1);
 
 	LOG_DBG("Stopping HTTP server");
 

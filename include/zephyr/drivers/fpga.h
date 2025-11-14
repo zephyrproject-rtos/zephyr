@@ -89,7 +89,7 @@ static inline enum FPGA_status fpga_get_status(const struct device *dev)
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval Failed Otherwise.
+ * @return Failed Otherwise.
  */
 static inline int fpga_reset(const struct device *dev)
 {
@@ -111,7 +111,7 @@ static inline int fpga_reset(const struct device *dev)
  * @param img_size Bitstream size in bytes.
  *
  * @retval 0 if successful.
- * @retval Failed Otherwise.
+ * @return Failed Otherwise.
  */
 static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
 			    uint32_t img_size)
@@ -132,7 +132,7 @@ static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval <0 negative errno code on failure.
  */
 static inline int fpga_on(const struct device *dev)
 {
@@ -173,7 +173,7 @@ static inline const char *fpga_get_info(const struct device *dev)
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval <0 negative errno code on failure.
  */
 static inline int fpga_off(const struct device *dev)
 {

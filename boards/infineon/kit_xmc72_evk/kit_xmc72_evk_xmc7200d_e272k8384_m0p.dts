@@ -16,8 +16,8 @@
 	compatible = "infineon,kit_xmc72_evk", "infineon,XMC7200";
 
 	chosen {
-		zephyr,sram = &m0p_code;
-		zephyr,flash = &m0p_data;
+		zephyr,sram = &sram_m0p;
+		zephyr,flash = &flash_m0p;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 	};

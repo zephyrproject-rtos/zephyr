@@ -511,7 +511,6 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 
 	u_stream->conn_id = bt_conn_index(stream->conn);
 	u_conn = &connections[u_stream->conn_id];
-	u_stream->ase_id = info.id;
 
 	stream_state_changed(stream);
 }
@@ -1272,6 +1271,12 @@ static int client_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 		memcpy(&stream->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 		err = bt_bap_stream_config(conn, stream_unicast_to_bap(stream), ep,
 					   &stream->codec_cfg);
+
+		if (err == 0) {
+			stream->ase_id = ase_id;
+		} else {
+			stream->in_use = false;
+		}
 	} else {
 		/* Reconfigure a stream */
 		memcpy(&stream->codec_cfg, codec_cfg, sizeof(*codec_cfg));

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32TG
+	select ARM
+	select CPU_CORTEX_M3
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_SILABS_GECKO
+	select SOC_GECKO_CMU
+	select SOC_GECKO_GPIO
+	select HAS_PM

@@ -53,6 +53,13 @@ struct net_if *ppp_fsm_iface(struct ppp_fsm *fsm)
 	return ctx->iface;
 }
 
+static bool ppp_fsm_is_dead(struct ppp_fsm *fsm)
+{
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+
+	return ctx->phase == PPP_DEAD;
+}
+
 static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 {
 	struct net_pkt *pkt = NULL;
@@ -246,6 +253,10 @@ void ppp_fsm_close(struct ppp_fsm *fsm, const uint8_t *reason)
 
 	case PPP_STOPPING:
 		ppp_change_state(fsm, PPP_CLOSING);
+		if (ppp_fsm_is_dead(fsm)) {
+			fsm->retransmits = 0;
+			k_work_reschedule(&fsm->timer, K_NO_WAIT);
+		}
 		break;
 
 	default:

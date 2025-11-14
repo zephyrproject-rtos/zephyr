@@ -11,6 +11,9 @@ tests:
     integration_platforms:
       - mimxrt1064_evk
       - mimxrt595_evk/mimxrt595s/cm33
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
   drivers.disk.disk_performance.disk.nvme:
     extra_configs:
       - CONFIG_NVME=y

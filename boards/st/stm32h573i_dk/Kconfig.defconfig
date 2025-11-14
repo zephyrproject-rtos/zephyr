@@ -7,19 +7,11 @@
 
 if BOARD_STM32H573I_DK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
-
-if DISK_DRIVER_SDMMC
-
-config SDMMC_STM32_CLOCK_CHECK
+configdefault SDMMC_STM32_CLOCK_CHECK
 	default n
-
-endif # DISK_DRIVER_SDMMC
 
 if DISPLAY
 

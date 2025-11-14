@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
- * Copyright 2024 NXP
+ * Copyright 2024, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_RTC_JDP
+	DEVS_FOR_DT_COMPAT(nxp_rtc_jdp)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_QTMR
 	DEVS_FOR_DT_COMPAT(nxp_imx_tmr)
@@ -161,6 +164,9 @@ static const struct device *const devices[] = {
 static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_RTC_JDP
+	DEVS_FOR_DT_COMPAT(nxp_rtc_jdp)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)

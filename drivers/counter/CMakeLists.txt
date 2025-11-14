@@ -19,6 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT51XXX         counter_ite_it51
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT8XXX2         counter_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_CTIMER         counter_mcux_ctimer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_RTC            counter_mcux_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_RTC_JDP        counter_mcux_rtc_jdp.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPC_RTC        counter_mcux_lpc_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_TIMER           counter_nrfx_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_RTC             counter_nrfx_rtc.c)
@@ -68,3 +69,4 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_WUT_MAX32           counter_max32_wu
 zephyr_library_sources_ifdef(CONFIG_COUNTER_CC23X0_RTC          counter_cc23x0_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_CC23X0_LGPT         counter_cc23x0_lgpt.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MSPM0_TIMER         counter_mspm0_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_NPCX_LCT            counter_npcx_lct.c)

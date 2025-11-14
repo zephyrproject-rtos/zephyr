@@ -232,7 +232,7 @@ void log_backend_disable(struct log_backend const *const backend);
  *
  * @param[in] backend_name Name of the backend as defined by the LOG_BACKEND_DEFINE.
  *
- * @retval Pointer to the backend instance if found, NULL if backend is not found.
+ * @return Pointer to the backend instance if found, NULL if backend is not found.
  */
 const struct log_backend *log_backend_get_by_name(const char *backend_name);
 
@@ -240,7 +240,7 @@ const struct log_backend *log_backend_get_by_name(const char *backend_name);
  *
  * @param log_type Log format.
  *
- * @retval Pointer to the last backend that failed, NULL for success.
+ * @return Pointer to the last backend that failed, NULL for success.
  */
 const struct log_backend *log_format_set_all_active_backends(size_t log_type);
 

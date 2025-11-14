@@ -90,10 +90,7 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /*
      * The .plt and .iplt are here according to
@@ -173,6 +170,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
+#endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
 #endif
@@ -190,6 +190,9 @@ SECTIONS
 
 #ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(EXCLUDE_FILE (
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+			*libarch__riscv__core.a:*
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
@@ -226,6 +229,9 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SWITCH_IN_RAM
+		*libarch__riscv__core.a:*(.text .text.*)
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 		*libdrivers__serial.a:*(.text .text.*)

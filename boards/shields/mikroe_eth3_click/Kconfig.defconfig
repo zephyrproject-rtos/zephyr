@@ -3,12 +3,8 @@
 
 if SHIELD_MIKROE_ETH3_CLICK
 
-if NETWORKING
-
 # LAN9250 is L2 chip slave on SPI
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # SHIELD_MIKROE_ETH3_CLICK

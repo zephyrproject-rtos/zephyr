@@ -112,7 +112,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
@@ -346,6 +347,34 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);
+}
+
+/**
+ * @brief Clear and disable all Physical Memory Protection (PMP) entries.
+ *
+ * This function clears all PMP configuration CSRs (pmpcfgX) by writing
+ * zero to them for all entries defined by CONFIG_PMP_SLOTS.
+ *
+ * This unconditional write sets the Address Matching Mode ('A' field) to
+ * 'OFF' (0x00) for every entry, effectively disabling the PMP mechanism.
+ *
+ * This routine does not check the Lock bit. Changes to locked PMP entries
+ * will be silently ignored by the hardware.
+ *
+ * It is implemented in assembly (pmp.S) for efficient RISC-V CSR access.
+ */
+extern void z_riscv_clear_all_pmp_entries(void);
+
+void z_riscv_pmp_clear_all(void)
+{
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0). We also set MPP to M-mode to establish a predictable prior privilege level.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
+	z_riscv_clear_all_pmp_entries();
 }
 
 /**

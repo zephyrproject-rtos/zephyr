@@ -15,4 +15,14 @@ config SPI_PW_INTERRUPT
 	help
 	  Enable Interrupt support for the SPI Driver.
 
+config SPI_PW_LPSS_DMA
+	bool "USE SPI DMA for synchronous Transfers"
+	select DMA
+	select DMA_INTEL_LPSS
+	depends on SPI_PW_INTERRUPT
+	help
+	  This option enables SPI DMA feature to be used for synchrounous
+	  data transfers. All Tx operaton are done using dma channel 0 and
+	  all Rx operations are done using dma channel 1.
+
 endif # SPI_PW

@@ -98,6 +98,15 @@ config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	  escape sequences). However, if bulk data is transferred it may be
 	  required to increase it.
 
+config SHELL_BACKEND_SERIAL_NEEDS_LARGE_RING_BUFFER
+	bool
+	default y if SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE > $(INT16_MAX)
+	default y if SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE > $(INT16_MAX)
+	select RING_BUFFER_LARGE
+	help
+	  This is a helper Kconfig to select RING_BUFFER_LARGE when the implementation
+	  requires a ring buffer of > 32kB.
+
 if SHELL_BACKEND_SERIAL_API_ASYNC
 
 config SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT
@@ -321,6 +330,14 @@ config SHELL_MQTT_RX_BUF_SIZE
 	default 256
 	help
 	  Buffer size for the MQTT data reception.
+
+config SHELL_MQTT_NEEDS_LARGE_RING_BUFFER
+	bool
+	default y if SHELL_MQTT_RX_BUF_SIZE > $(INT16_MAX)
+	select RING_BUFFER_LARGE
+	help
+	  This is a helper Kconfig to select RING_BUFFER_LARGE when the implementation
+	  requires a ring buffer of > 32kB.
 
 config SHELL_MQTT_TX_BUF_SIZE
 	int "TX buffer size"

@@ -12,11 +12,7 @@ config SPI_STM32_INTERRUPT
 config INPUT
 	default y if LVGL
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_STM32F769I_DISCO

@@ -43,6 +43,13 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(ENET1G_CLOCK);
 		return 0;
 #endif
+#ifdef CONFIG_I2S_MCUX_SAI
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111)
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_EnableClock(kCLOCK_Sai1 + instance);
+		return 0;
+#endif
+#endif
 	default:
 		(void)instance;
 		return 0;
@@ -127,12 +134,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_DMA_MCUX_EDMA_V4
+#if !defined(CONFIG_SOC_MIMX9352) && !defined(CONFIG_SOC_MIMX9131) && !defined(CONFIG_SOC_MIMX9111)
 	case IMX_CCM_EDMA3_CLK:
 		clock_root = kCLOCK_Root_M33;
 		break;
 	case IMX_CCM_EDMA4_CLK:
 		clock_root = kCLOCK_Root_Wakeup_Axi;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_PWM_MCUX
@@ -160,18 +169,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_I2S_MCUX_SAI
+#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111))
 	case IMX_CCM_SAI1_CLK:
-		clock_root =  kCLOCK_Root_Sai1;
+		clock_root = kCLOCK_Root_Sai1 + instance;
+		break;
+#else
+	case IMX_CCM_SAI1_CLK:
+		clock_root = kCLOCK_Root_Sai1;
 		break;
 	case IMX_CCM_SAI2_CLK:
-		clock_root =  kCLOCK_Root_Sai2;
+		clock_root = kCLOCK_Root_Sai2;
 		break;
 	case IMX_CCM_SAI3_CLK:
-		clock_root =  kCLOCK_Root_Sai3;
+		clock_root = kCLOCK_Root_Sai3;
 		break;
 	case IMX_CCM_SAI4_CLK:
-		clock_root =  kCLOCK_Root_Sai4;
+		clock_root = kCLOCK_Root_Sai4;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_ETH_NXP_ENET
@@ -405,6 +420,40 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_CAM_PIX_CLK:
 		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
 #endif
+
+#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || \
+	defined(CONFIG_SOC_MIMX9111)) && defined(CONFIG_I2S_MCUX_SAI)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		uint32_t clock_root, instance;
+		clock_root_config_t saiClkCfg;
+		fracn_pll_init_t g_audioPllCfg;
+
+		instance = (clock_name & IMX_CCM_INSTANCE_MASK);
+		clock_root = kCLOCK_Root_Sai1 + instance;
+
+		/* Fixed AUDIO_PLL's frequency at 393216000 Hz */
+#define AUDIO_PLL_CLK_FREQ 393216000
+		g_clockSourceFreq[kCLOCK_AudioPll1Out] = AUDIO_PLL_CLK_FREQ;
+		g_clockSourceFreq[kCLOCK_AudioPll1] = AUDIO_PLL_CLK_FREQ;
+		g_audioPllCfg.rdiv = 1;
+		g_audioPllCfg.mfi = 163;
+		g_audioPllCfg.mfn = 84;
+		g_audioPllCfg.mfd = 100;
+		g_audioPllCfg.odiv = 10;
+
+		CLOCK_PllInit(AUDIOPLL, &g_audioPllCfg);
+
+		saiClkCfg.clockOff = false;
+		saiClkCfg.mux = 1;
+		saiClkCfg.div = (AUDIO_PLL_CLK_FREQ + (clock_rate - 1)) / clock_rate;
+
+		CLOCK_SetRootClock(clock_root, &saiClkCfg);
+
+		return 0;
+#endif
+
 	default:
 		/* Silence unused variable warning */
 		ARG_UNUSED(clock_rate);

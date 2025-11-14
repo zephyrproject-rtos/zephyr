@@ -744,14 +744,14 @@ static DEVICE_API(dma, dma_funcs) = {
  * Loop to CONNECT and enable each irq for each channel
  * Expecting as many irq as property <dma_channels>
  */
-#define DMA_STM32_IRQ_CONNECT(index) \
-static void dma_stm32_config_irq_##index(const struct device *dev)	\
-{									\
-	ARG_UNUSED(dev);						\
-									\
-	LISTIFY(DT_INST_PROP(index, dma_channels),			\
-		DMA_STM32_IRQ_CONNECT_CHANNEL, (;), index);		\
-}
+#define DMA_STM32_IRQ_CONNECT(index)						\
+	static void dma_stm32_config_irq_##index(const struct device *dev)	\
+	{									\
+		ARG_UNUSED(dev);						\
+										\
+		LISTIFY(DT_INST_PROP(index, dma_channels),			\
+			DMA_STM32_IRQ_CONNECT_CHANNEL, (;), index);		\
+	}
 
 /*
  * Macro to instanciate the irq handler (order is given by the 'listify')
@@ -759,51 +759,48 @@ static void dma_stm32_config_irq_##index(const struct device *dev)	\
  *       stm32U5x has 16 channels
  * dma : dma instance (one GPDMA instance on stm32U5x)
  */
-#define DMA_STM32_DEFINE_IRQ_HANDLER(chan, dma)				\
-static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
-{									\
-	dma_stm32_irq_handler(dev, chan);				\
-}
+#define DMA_STM32_DEFINE_IRQ_HANDLER(chan, dma)					\
+	static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
+	{									\
+		dma_stm32_irq_handler(dev, chan);				\
+	}
 
-#define DMA_STM32_INIT_DEV(index)					\
-BUILD_ASSERT(DT_INST_PROP(index, dma_channels)				\
-	== DT_NUM_IRQS(DT_DRV_INST(index)),				\
-	"Nb of Channels and IRQ mismatch");				\
-									\
-LISTIFY(DT_INST_PROP(index, dma_channels),				\
-	DMA_STM32_DEFINE_IRQ_HANDLER, (;), index);			\
-									\
-DMA_STM32_IRQ_CONNECT(index);						\
-									\
-static struct dma_stm32_stream						\
-	dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels,	\
-		DT_NUM_IRQS(DT_DRV_INST(index)))];	\
-									\
-static volatile uint32_t dma_stm32_linked_list_buffer##index	\
-		[STM32U5_DMA_LINKED_LIST_NODE_SIZE * \
-		 DT_INST_PROP_OR(index, dma_channels,	\
-				 DT_NUM_IRQS(DT_DRV_INST(index)))] __nocache_noinit;	\
-									\
-const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
-	.config_irq = dma_stm32_config_irq_##index,			\
-	.base = DT_INST_REG_ADDR(index),				\
-	.max_streams = DT_INST_PROP_OR(index, dma_channels,		\
-		DT_NUM_IRQS(DT_DRV_INST(index))				\
-	),		\
-	.streams = dma_stm32_streams_##index,				\
-	.linked_list_buffer = dma_stm32_linked_list_buffer##index	\
-};									\
-									\
-static struct dma_stm32_data dma_stm32_data_##index = {			\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index,						\
-		    dma_stm32_init,					\
-		    NULL,						\
-		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
-		    &dma_funcs);
+#define DMA_STM32_INIT_DEV(index)						\
+	BUILD_ASSERT(DT_INST_PROP(index, dma_channels) ==			\
+		     DT_NUM_IRQS(DT_DRV_INST(index)),				\
+		     "Nb of Channels and IRQ mismatch");			\
+										\
+	LISTIFY(DT_INST_PROP(index, dma_channels),				\
+		DMA_STM32_DEFINE_IRQ_HANDLER, (;), index);			\
+										\
+	DMA_STM32_IRQ_CONNECT(index);						\
+										\
+	static struct dma_stm32_stream dma_stm32_streams_##index		\
+		[DT_INST_PROP_OR(index, dma_channels,				\
+				 DT_NUM_IRQS(DT_DRV_INST(index)))];		\
+										\
+	static volatile uint32_t dma_stm32_linked_list_buffer##index		\
+		[STM32U5_DMA_LINKED_LIST_NODE_SIZE *				\
+		 DT_INST_PROP_OR(index, dma_channels,				\
+				 DT_NUM_IRQS(DT_DRV_INST(index)))]		\
+		__nocache_noinit;						\
+										\
+	const struct dma_stm32_config dma_stm32_config_##index = {		\
+		.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
+		.config_irq = dma_stm32_config_irq_##index,			\
+		.base = DT_INST_REG_ADDR(index),				\
+		.max_streams = DT_INST_PROP_OR(index, dma_channels,		\
+					       DT_NUM_IRQS(DT_DRV_INST(index))),\
+		.streams = dma_stm32_streams_##index,				\
+		.linked_list_buffer = dma_stm32_linked_list_buffer##index	\
+	};									\
+										\
+	static struct dma_stm32_data dma_stm32_data_##index;			\
+										\
+	DEVICE_DT_INST_DEFINE(index, dma_stm32_init, NULL,			\
+			      &dma_stm32_data_##index,				\
+			      &dma_stm32_config_##index,			\
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
+			      &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_STM32_INIT_DEV)

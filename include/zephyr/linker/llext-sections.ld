@@ -1,5 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+/*
+ * Only define LLEXT sections if the subsystem is enabled.
+ * Check here to avoid duplication in every linker script.
+ */
+#ifdef CONFIG_LLEXT
 	/*
 	 * Save the current address to avoid changing it in this file.
 	 */
@@ -35,3 +40,4 @@
 #endif
 
 	. = __llext_current_addr;
+#endif /* CONFIG_LLEXT */

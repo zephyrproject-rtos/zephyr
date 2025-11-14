@@ -67,8 +67,8 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
-  lp_ram_seg(RW):    org = LPSRAM_IRAM_START,
-                     len = LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM
+  lp_ram_seg(RW):  org = LPSRAM_IRAM_START,
+                   len = LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM
 
   /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
      It reserves the amount of LP memory that we use for this memory segment.
@@ -78,8 +78,8 @@ MEMORY
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  lp_reserved_seg(RW) :  org = LPSRAM_IRAM_START + LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM,
-                         len = CONFIG_RESERVE_RTC_MEM
+  lp_reserved_seg(RW): org = LPSRAM_IRAM_START + LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM,
+                       len = CONFIG_RESERVE_RTC_MEM
 #endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -181,10 +181,7 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- START OF RTC --- */
   .rtc.text :

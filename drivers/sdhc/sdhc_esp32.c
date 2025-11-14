@@ -186,12 +186,7 @@ static int handle_idle_state_events(struct sdhc_esp32_data *data)
 	 */
 	struct sdmmc_event evt;
 
-	int64_t yield_delay_us = 100 * 1000; /* initially 100ms */
-	int64_t t0 = esp_timer_get_time();
-	int64_t t1 = 0;
-
 	while (sdmmc_host_wait_for_event(data, 0, &evt) == 0) {
-
 		if (evt.sdmmc_status & SDMMC_INTMASK_CD) {
 			LOG_DBG("card detect event");
 			evt.sdmmc_status &= ~SDMMC_INTMASK_CD;
@@ -200,18 +195,6 @@ static int handle_idle_state_events(struct sdhc_esp32_data *data)
 		if (evt.sdmmc_status != 0 || evt.dma_status != 0) {
 			LOG_DBG("%s unhandled: %08" PRIx32 " %08" PRIx32, __func__,
 				evt.sdmmc_status, evt.dma_status);
-		}
-
-		/* Loop timeout */
-		t1 = esp_timer_get_time();
-
-		if (t1 - t0 > SDMMC_HOST_WAIT_EVENT_TIMEOUT_US) {
-			return ESP_ERR_TIMEOUT;
-		}
-
-		if (t1 - t0 > yield_delay_us) {
-			yield_delay_us *= 2;
-			k_sleep(K_MSEC(1));
 		}
 	}
 
@@ -1286,11 +1269,11 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Pin configuration */
 
-	/* Set power GPIO high, so card starts powered */
 	if (cfg->pwr_gpio.port) {
-		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_ACTIVE);
+		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 
 		if (ret) {
+			LOG_ERR("Failed to configure SDHC power pin");
 			return -EIO;
 		}
 	}
@@ -1306,11 +1289,14 @@ static int sdhc_esp32_init(const struct device *dev)
 	configure_pin_iomux(cfg->d2_pin);
 	configure_pin_iomux(cfg->d3_pin);
 
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	/* GPIO matrix routed pins */
+	if (cfg->pcfg != NULL) {
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
-	if (ret < 0) {
-		LOG_ERR("Failed to configure SDHC pins");
-		return -EINVAL;
+		if (ret < 0) {
+			LOG_ERR("Failed to configure SDHC I/O pins");
+			return -EINVAL;
+		}
 	}
 
 	if (!device_is_ready(cfg->clock_dev)) {
@@ -1377,20 +1363,11 @@ static int sdhc_esp32_init(const struct device *dev)
 		return ret;
 	}
 
-	/* post init settings */
-	ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot, data->bus_clock / 1000);
-
-	if (ret != 0) {
-		LOG_ERR("Error configuring card clock");
-		return err_esp2zep(ret);
-	}
-
-	ret = sdmmc_host_set_bus_width(sdio_hw, cfg->slot, data->bus_width);
-
-	if (ret != 0) {
-		LOG_ERR("Error configuring bus width");
-		return err_esp2zep(ret);
-	}
+	/* Clear slot data so card is initialized at set_io() */
+	data->bus_clock = 0;
+	data->bus_width = 0;
+	data->power_mode = 0;
+	data->timing = 0;
 
 	return 0;
 }
@@ -1406,7 +1383,8 @@ static DEVICE_API(sdhc, sdhc_api) = {
 
 #define SDHC_ESP32_INIT(n)                                                                         \
                                                                                                    \
-	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
+	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
+			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
 	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
                                                                                                    \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
@@ -1418,7 +1396,8 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \
+		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
+			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
 		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \

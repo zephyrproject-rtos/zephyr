@@ -374,7 +374,7 @@ void usbc_set_dpm_data(const struct device *dev, void *dpm_data);
  *
  * @param dev Runtime device structure
  *
- * @retval pointer to dpm data that was set with usbc_set_dpm_data
+ * @return pointer to dpm data that was set with usbc_set_dpm_data
  * @retval NULL if dpm data was not set
  */
 void *usbc_get_dpm_data(const struct device *dev);

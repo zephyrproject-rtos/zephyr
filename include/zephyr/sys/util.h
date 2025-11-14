@@ -645,7 +645,7 @@ extern "C" {
  * @param[in] first_match If true returns when first match is found, else returns the best fit.
  *
  * @retval -1 Contiguous bits not found.
- * @retval non-negative Starting index of the bits group.
+ * @retval >=0 Starting index of the bits group.
  */
 int bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits, bool first_match);
 
@@ -1086,17 +1086,19 @@ static inline size_t sys_count_bits(const void *value, size_t len)
  * @param delay_stmt Delay statement to perform each poll iteration
  *                   e.g.: NULL, k_yield(), k_msleep(1) or k_busy_wait(1)
  *
- * @retval expr As a boolean return, if false then it has timed out.
+ * @return expr As a boolean return, if false then it has timed out.
  */
 #define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
 	({                                                                                         \
 		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
 		uint32_t _wf_start = k_cycle_get_32();                                             \
-		while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {            \
+		bool _wf_ret;                                                                      \
+		while (!(_wf_ret = (expr)) &&                                                      \
+		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
 			delay_stmt;                                                                \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
-		(expr);                                                                            \
+		(_wf_ret);                                                                         \
 	})
 
 /**

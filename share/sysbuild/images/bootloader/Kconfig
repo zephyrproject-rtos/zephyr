@@ -59,12 +59,6 @@ config MCUBOOT_MODE_SWAP_USING_MOVE
 	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
 
-config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
-	bool "Swap without scratch (swap using move) [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This Kconfig is deprecated, use MCUBOOT_MODE_SWAP_USING_MOVE instead.
-
 config MCUBOOT_MODE_SWAP_SCRATCH
 	bool "Swap using scratch"
 	help

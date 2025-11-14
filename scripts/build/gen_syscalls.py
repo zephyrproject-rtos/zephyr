@@ -531,7 +531,7 @@ def main():
             # Export symbols for emitted syscalls
             extern_refs = "\n".join("extern void * const %s;"
                                   % e for e in exported)
-            exported_symbols = "\n".join("EXPORT_SYMBOL(%s);"
+            exported_symbols = "\n".join("EXPORT_GROUP_SYMBOL(SYSCALL, %s);"
                                          % e for e in exported)
             fp.write(llext_exports_template % (extern_refs, exported_symbols))
 

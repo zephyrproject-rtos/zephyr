@@ -2,19 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 if BOARD_APARD32690
 
-config MDIO_INIT_PRIORITY
+configdefault MDIO_INIT_PRIORITY
 	default 81
-	depends on MDIO
 
-config PHY_INIT_PRIORITY
+configdefault PHY_INIT_PRIORITY
 	default 82
-	depends on NET_L2_ETHERNET && ETH_DRIVER
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_APARD32690

@@ -251,6 +251,7 @@ zephyr_udc0: &usbotg_hs {
 		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
 	pinctrl-names = "default";
 	dual-flash;
+	ssht-enable;
 	status = "okay";
 
 	mt25ql512ab1: qspi-nor-flash-1@0 {

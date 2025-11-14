@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config NET_L2_ETHERNET
+if BOARD_FRDM_K64F
+
+configdefault NET_L2_ETHERNET
 	default n
-	depends on BOARD_FRDM_K64F
+
+endif # BOARD_FRDM_K64F

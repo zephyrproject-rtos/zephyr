@@ -30,8 +30,8 @@
 #include <zephyr/pm/pm.h>
 #include "app_conf.h"
 #include "linklayer_plat.h"
-#include <stm32wbaxx_ll_bus.h>
-#include <stm32wbaxx_ll_pwr.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 #endif
 
 #include <linklayer_plat_local.h>

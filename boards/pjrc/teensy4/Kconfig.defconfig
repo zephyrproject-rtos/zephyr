@@ -10,15 +10,8 @@ config BUILD_OUTPUT_HEX
 	bool
 	default y
 
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
-
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default n if BOARD_TEENSY40
 	default y if BOARD_TEENSY41
-
-endif # NETWORKING
 
 endif # BOARD_TEENSY40 || BOARD_TEENSY41
