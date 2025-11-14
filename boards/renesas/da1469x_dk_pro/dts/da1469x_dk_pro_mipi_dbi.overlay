@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
@@ -52,7 +52,7 @@
 		reg = <0>;
 		width = <240>;
 		height = <320>;
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 		rotation = <0>;
 	};
 };
