@@ -1,0 +1,46 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Microchip SAM UDPHS USB Device High Speed Port
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &pinctrl {
+        pinctrl_usba_vbus_det: usba_vbus_det {
+          pinmux = <PIN_PD11__GPIO>;
+          bias-disable;
+        };
+      };
+
+      zephyr_udc0: &udphsa {
+        vbus-gpios = <&piod 11 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_usba_vbus_det>;
+        status = "okay";
+      };
+
+compatible: "microchip,sam-udphs"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  dma-disable:
+    type: boolean
+    description: |
+      Force disable DMA function, data will be transferred via FIFO.
