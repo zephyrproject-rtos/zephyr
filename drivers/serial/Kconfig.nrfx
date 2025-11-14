@@ -58,7 +58,6 @@ config UART_ASYNC_TX_CACHE_SIZE
 config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	bool "Use TIMER to count RX bytes"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	depends on !ARCH_POSIX # Mode not supported on BSIM target
 	select NRFX_GPPI
 
