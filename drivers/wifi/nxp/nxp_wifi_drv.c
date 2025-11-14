@@ -498,7 +498,6 @@ static int nxp_wifi_wlan_init(void)
 	return 0;
 }
 
-
 static int nxp_wifi_wlan_start(void)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
