@@ -1103,6 +1103,8 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
 	uint16_t expected_len;
 	struct bt_avrcp_ct *ct = get_avrcp_ct(avrcp);
+	uint8_t failed_evt = 0;
+	bool found = false;
 
 	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->notification == NULL)) {
 		return BT_AVRCP_STATUS_NOT_IMPLEMENTED;
@@ -1263,12 +1265,11 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 			cb(ct, event_id, (struct bt_avrcp_event_data *)event_data);
 		}
 	}
+
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
 notify_callback:
 	/* Find the event registered with this TID and clear ONLY that one */
-	uint8_t failed_evt = 0;
-	bool found = false;
-
 	ARRAY_FOR_EACH(ct->ct_notify, i) {
 		if (ct->ct_notify[i].tid == tid && ct->ct_notify[i].cb != NULL) {
 			failed_evt = i;
@@ -3805,11 +3806,12 @@ static int build_notification_rsp_data(uint8_t event_id, struct bt_avrcp_event_d
 		}
 		net_buf_add_u8(buf, data->play_status);
 		break;
-	case BT_AVRCP_EVT_TRACK_CHANGED:
+	case BT_AVRCP_EVT_TRACK_CHANGED: {
 		uint64_t identifier = sys_get_be64(data->identifier);
 
 		net_buf_add_be64(buf, identifier);
 		break;
+	}
 	case BT_AVRCP_EVT_PLAYBACK_POS_CHANGED:
 		net_buf_add_be32(buf, data->playback_pos);
 		break;
