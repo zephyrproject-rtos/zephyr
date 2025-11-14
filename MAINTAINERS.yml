@@ -155,9 +155,9 @@
 ACPI:
   status: odd fixes
   files:
-    - lib/acpi/
+    - arch/common/acpi/
     - include/zephyr/acpi/
-    - tests/lib/acpi/
+    - tests/arch/common/acpi/
     - dts/bindings/acpi/
     - include/zephyr/dt-bindings/acpi/
   labels:
