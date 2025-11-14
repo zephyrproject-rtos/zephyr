@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ typedef DMA_Type DMAx_Type;
 #endif
 
 struct dma_mcux_edma_config {
-	DEVICE_MMIO_NAMED_ROM(edma_mmio);
+	DMAx_Type *base;
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	DMAMUX_Type **dmamux_base;
 #endif
@@ -91,7 +91,6 @@ struct call_back {
 };
 
 struct dma_mcux_edma_data {
-	DEVICE_MMIO_NAMED_RAM(edma_mmio);
 	struct dma_context dma_ctx;
 	struct call_back *data_cb;
 	atomic_t *channels_atomic;
@@ -100,7 +99,7 @@ struct dma_mcux_edma_data {
 #define DEV_CFG(dev) \
 	((const struct dma_mcux_edma_config *const)dev->config)
 #define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
-#define DEV_BASE(dev) ((DMAx_Type *)DEVICE_MMIO_NAMED_GET(dev, edma_mmio))
+#define DEV_BASE(dev) ((DMAx_Type *)DEV_CFG(dev)->base)
 
 #define DEV_CHANNEL_DATA(dev, ch) \
 	((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
@@ -1014,8 +1013,6 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 	LOG_DBG("INIT NXP EDMA");
 
-	DEVICE_MMIO_NAMED_MAP(dev, edma_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	uint8_t i;
 
@@ -1159,7 +1156,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 	static __aligned(DMA_TCD_ALIGN_SIZE) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t	\
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
-		DEVICE_MMIO_NAMED_ROM_INIT(edma_mmio, DT_DRV_INST(n)),		\
+		.base = (DMAx_Type *)DT_INST_REG_ADDR(n),			\
 		DMAMUX_BASE_INIT(n)						\
 		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
