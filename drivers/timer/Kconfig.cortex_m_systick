@@ -97,7 +97,7 @@ endif # PM
 endchoice # CORTEX_M_SYSTICK_LPM_TIMER
 
 config CORTEX_M_SYSTICK_RESET_BY_LPM
-	bool
+	bool "SysTick reset by low-power mode"
 	depends on !CORTEX_M_SYSTICK_LPM_TIMER_NONE
 	help
 	  Some SoCs provide one or more low-power mode which, as part of their
