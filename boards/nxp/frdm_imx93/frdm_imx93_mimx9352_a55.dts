@@ -173,12 +173,6 @@
 	status = "okay";
 };
 
-&sai3_2 {
-	status = "disabled";
-	pinctrl-0 = <&sai3_default>;
-	pinctrl-names = "default";
-};
-
 &wdog4 {
 	status = "okay";
 };
