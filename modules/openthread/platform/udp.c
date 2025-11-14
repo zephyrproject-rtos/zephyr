@@ -78,7 +78,7 @@ otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
 	VerifyOrExit(sock_cnt < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES,
 		     error = OT_ERROR_INVALID_STATE);
 
-	sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(sock >= 0, error = OT_ERROR_FAILED);
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)

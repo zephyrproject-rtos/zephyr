@@ -120,7 +120,7 @@ static void dhcpv6_pd_client_socket_init(uint32_t infra_if_index)
 				    .sin6_addr = IN6ADDR_ANY_INIT,
 				    .sin6_scope_id = 0};
 
-	dhcpv6_pd_client_sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	dhcpv6_pd_client_sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(dhcpv6_pd_client_sock >= 0);
 
 	VerifyOrExit(zsock_bind(dhcpv6_pd_client_sock, (struct sockaddr *)&addr,

@@ -114,7 +114,7 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 				    .sin6_addr = {{{0}}},
 				    .sin6_scope_id = 0};
 
-	mdns_sock_v6 = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	mdns_sock_v6 = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v6 >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_if_get_name(net_if_get_by_index(ail_iface_idx), name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
@@ -175,7 +175,7 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 				   .sin_port = htons(MULTICAST_PORT),
 				   .sin_addr = {{{0}}}};
 
-	mdns_sock_v4 = zsock_socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	mdns_sock_v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_if_get_name(net_if_get_by_index(ail_iface_idx), name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
