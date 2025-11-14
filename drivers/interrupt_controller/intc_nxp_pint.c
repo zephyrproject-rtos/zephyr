@@ -175,6 +175,22 @@ void nxp_pint_pin_unset_callback(uint8_t pin)
 	pint_irq_cfg[slot].callback = NULL;
 }
 
+int nxp_pint_pin_get_slot_index(uint8_t pin)
+{
+	int slot;
+
+	if (pin > ARRAY_SIZE(pin_pint_id)) {
+		return -EINVAL;
+	}
+
+	slot = pin_pint_id[pin];
+	if (slot == NO_PINT_ID) {
+		return -EINVAL;
+	}
+
+	return slot;
+}
+
 /* NXP PINT ISR handler- called with PINT slot ID */
 static void nxp_pint_isr(uint8_t *slot)
 {
