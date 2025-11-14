@@ -87,6 +87,54 @@ struct llext_symtable {
 	struct llext_symbol *syms;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Modified constant symbol export table entry
+ *
+ * All LLEXT symbols belong to a "symbol group". Some symbol groups are defined
+ * by Zephyr, while others are defined by the application writer. During build,
+ * each symbol group is *supposed to* have a corresponding Kconfig option which
+ * indicates if symbols in the group should be added to the LLEXT export table.
+ * Due to various implementation details, this can result in situations where
+ * one *wants* to use a symbol from LLEXTs but it ends up not being exported.
+ *
+ * To help diagnose such situations, when export of a symbol group is disabled,
+ * we don't simply exclude symbols of that group from the LLEXT export table,
+ * but also add an entry in a special section to indicate that the subsystem
+ * did see that the symbol is marked for export, but decided to not include it
+ * in the export table due to selected Kconfig options.
+ *
+ * The format of entries in the special section is described by this structure.
+ * Note that Zephyr never consumes this structure; it is placed in a special
+ * section present in the final ELF but discarded from binary images. Instead,
+ * post-build scripts are expected to parse this table directly from the ELF.
+ *
+ * @note Keep in sync with `scripts/build/llext_inspect_discarded_groups.py`.
+ * @note Symbol address is not retained to allow garbage collection by linker.
+ */
+struct z_llext_discarded_const_symbol {
+	/** Name of symbol */
+	const char *const name;
+
+	/** Name of symbol group in which symbol belongs */
+	const char *const group;
+};
+
+#define Z_LLEXT_DISCARD_STRTAB Z_GENERIC_SECTION(llext_discarded_exports_strtab)
+
+#define Z_MARKUP_NOT_EXPORTED_SYMBOL(grp, sym_ident, sym_name)		\
+	static const char Z_LLEXT_DISCARD_STRTAB __used				\
+		__llext_sym_name_ ## sym_name[] = STRINGIFY(sym_name);		\
+	static const char Z_LLEXT_DISCARD_STRTAB __used				\
+		__llext_sym_group_ ## sym_name[] = STRINGIFY(grp);		\
+	static const struct z_llext_discarded_const_symbol			\
+		Z_GENERIC_SECTION(llext_discarded_exports_table) __used		\
+		__llext_sym_discarded_ ## sym_name = {				\
+			.name = __llext_sym_name_ ## sym_name,			\
+			.group = __llext_sym_group_ ## sym_name,		\
+	};
+/** @endcond */
 
 /** @cond ignore */
 #ifdef LL_EXTENSION_BUILD
@@ -163,8 +211,9 @@ struct llext_symtable {
 #else
 /* LLEXT application: Export if relevant group is enabled */
 #define Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)		\
-	IF_ENABLED(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_ ## group,			\
-		(Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)))
+	COND_CODE_1(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_ ## group,			\
+		(Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)),			\
+		(Z_MARKUP_NOT_EXPORTED_SYMBOL(group, sym_ident, sym_name)))
 #endif /* defined(LL_EXTENSION_BUILD) */
 
 /**
