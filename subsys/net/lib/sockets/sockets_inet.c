@@ -358,6 +358,10 @@ static void zsock_connected_cb(struct net_context *ctx, int status, void *user_d
 	if (status < 0) {
 		ctx->user_data = INT_TO_POINTER(-status);
 		sock_set_error(ctx);
+
+		/* Wake pending threads, if any. */
+		k_fifo_cancel_wait(&ctx->recv_q);
+		(void)k_condvar_signal(&ctx->cond.recv);
 	}
 }
 
