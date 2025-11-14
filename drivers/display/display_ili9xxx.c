@@ -7,8 +7,7 @@
  */
 
 #include "display_ili9xxx.h"
-
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -324,7 +323,7 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	uint8_t tx_data = config->pixel_format == PIXEL_FORMAT_BGR_565
+	uint8_t tx_data = data->pixel_format == PIXEL_FORMAT_BGR_565
 			? ILI9XXX_MADCTL_BGR : 0;
 	if (config->quirks->cmd_set == CMD_SET_1) {
 		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
@@ -393,12 +392,15 @@ static int ili9xxx_configure(const struct device *dev)
 	enum display_orientation orientation;
 
 	/* pixel format */
-	if (config->pixel_format == ILI9XXX_PIXEL_FORMAT_RGB565) {
+	if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565) {
 		pixel_format = PIXEL_FORMAT_RGB_565;
-	} else if (config->pixel_format == ILI9XXX_PIXEL_FORMAT_BGR565) {
+	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_BGR_565) {
 		pixel_format = PIXEL_FORMAT_BGR_565;
-	} else {
+	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_888) {
 		pixel_format = PIXEL_FORMAT_RGB_888;
+	} else {
+		LOG_ERR("Unsupported pixel format in DT");
+		return -ENOTSUP;
 	}
 
 	r = ili9xxx_set_pixel_format(dev, pixel_format);
