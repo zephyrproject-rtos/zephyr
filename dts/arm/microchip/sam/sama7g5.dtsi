@@ -36,6 +36,12 @@
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
 		};
+
+		usb_clk: usb_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <48000000>;
+		};
 	};
 
 	soc {
@@ -710,6 +716,32 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+		};
+
+		udphsa: usbd@200000 {
+			compatible = "microchip,sam-udphs";
+			reg = <0x00200000 0x100000
+			       0xe0814000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 104>, <&usb_clk>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		udphsb: usbd@300000 {
+			compatible = "microchip,sam-udphs";
+			reg = <0x00300000 0x100000
+			       0xe0818000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 105>, <&usb_clk>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
 		};
 	};
 };
