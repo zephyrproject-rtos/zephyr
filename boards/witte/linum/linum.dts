@@ -249,16 +249,12 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
-		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
-		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
 	pinctrl-names = "default";
 	status = "okay";
