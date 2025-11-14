@@ -21,7 +21,6 @@ supported:
   - can
   - net
   - watchdog
-  - usbd
 testing:
   ignore_tags:
     - bluetooth
