@@ -1928,7 +1928,7 @@ void bsim_btp_uart_init(void)
 {
 	TEST_ASSERT(device_is_ready(dev));
 
-	k_timer_start(&timer, K_MSEC(10), K_MSEC(10));
+	k_timer_start(&timer, K_USEC(100), K_USEC(100));
 }
 
 static void wait_for_response(const struct btp_hdr *cmd_hdr)
