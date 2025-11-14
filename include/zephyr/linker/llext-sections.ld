@@ -39,5 +39,23 @@
 	}
 #endif
 
+	/*
+	 * Special sections for symbols marked for export but ultimately rejected
+	 * from the Zephyr export table. This corresponds to symbols which have
+	 * been placed in an export group whose corresponding Kconfig symbol has
+	 * value "n" or is missing (the latter is an error from application author).
+	 * The first section contains (modified) export table entries whereas the
+	 * second holds strings such that they don't go in the final binary.
+	 */
+	SECTION_PROLOGUE(llext_discarded_exports_table, 0 (INFO), )
+	{
+		KEEP(*(llext_discarded_exports_table))
+	}
+
+	SECTION_PROLOGUE(llext_discarded_exports_strtab, 0 (INFO), )
+	{
+		KEEP(*(llext_discarded_exports_strtab))
+	}
+
 	. = __llext_current_addr;
 #endif /* CONFIG_LLEXT */
