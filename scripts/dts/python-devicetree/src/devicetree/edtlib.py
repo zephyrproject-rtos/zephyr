@@ -438,7 +438,7 @@ class Binding:
 
             if key not in ok_top and not key.endswith("-cells"):
                 _err(f"unknown key '{key}' in {self.path}, "
-                     "expected one of {', '.join(ok_top)}, or *-cells")
+                     f"expected one of {', '.join(ok_top)}, or *-cells")
 
         if "bus" in raw:
             bus = raw["bus"]
