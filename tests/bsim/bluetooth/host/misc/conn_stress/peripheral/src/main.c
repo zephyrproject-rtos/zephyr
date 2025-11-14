@@ -474,6 +474,12 @@ void test_peripheral_main(void)
 		}
 	}
 
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		TEST_FAIL("Unregister GATT callbacks failed (%d)", err);
+		return;
+	}
+
 	TEST_PASS("Peripheral tests passed");
 }
 

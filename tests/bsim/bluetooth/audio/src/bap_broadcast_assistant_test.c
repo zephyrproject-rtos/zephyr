@@ -756,6 +756,27 @@ static int common_init(void)
 	return 0;
 }
 
+static int common_deinit(void)
+{
+	int err;
+
+	bt_le_scan_cb_unregister(&common_scan_cb);
+
+	err = bt_bap_broadcast_assistant_unregister_cb(&broadcast_assistant_cbs);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static void test_main_client_sync(void)
 {
 	int err;
@@ -780,6 +801,12 @@ static void test_main_client_sync(void)
 
 	test_bass_remove_source();
 
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
+
 	PASS("BAP Broadcast Assistant Client Sync Passed\n");
 }
 
@@ -803,6 +830,12 @@ static void test_main_client_sync_incorrect_code(void)
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);
 
 	test_bass_remove_source();
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Client Sync Passed\n");
 }
@@ -832,6 +865,12 @@ static void test_main_server_sync_client_rem(void)
 
 	test_bass_remove_source();
 
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
+
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
 
@@ -853,6 +892,12 @@ static void test_main_server_sync_server_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	WAIT_FOR_FLAG(flag_recv_state_removed);
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
 
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
