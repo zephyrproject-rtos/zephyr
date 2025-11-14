@@ -8,11 +8,14 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/sys/byteorder.h>
+
 #include <soc.h>
 
 #include <nrf_sys_event.h>
 #include <nrfx_gpiote.h>
 #include <gpiote_nrfx.h>
+
+#include <mram_latency.h>
 
 #include "util/mem.h"
 
@@ -192,6 +195,11 @@ void radio_setup(void)
 	hal_radio_ram_prio_setup();
 }
 
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+static struct onoff_client mram_cli;
+static atomic_val_t mram_refcnt;
+#endif /* CONFIG_SOC_SERIES_NRF54H */
+
 void radio_reset(void)
 {
 
@@ -231,6 +239,20 @@ void radio_reset(void)
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+
+
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+	atomic_val_t refcnt;
+
+	refcnt = atomic_inc(&mram_refcnt);
+	if (refcnt == 0) {
+		sys_notify_init_spinwait(&mram_cli.notify);
+
+		(void)mram_no_latency_request(&mram_cli);
+	} else {
+		/* Nothing to do, reference count increased. */
+	}
+#endif /* CONFIG_SOC_SERIES_NRF54H */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	hal_palna_ppi_setup();
@@ -286,6 +308,22 @@ void radio_stop(void)
 	 *       - PSEL.DFEGPIO[n]
 	 *       - DFEPACKET.PTR
 	 */
+
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+	atomic_val_t refcnt;
+
+	refcnt = atomic_get(&mram_refcnt);
+	if (refcnt > 0) {
+		refcnt = atomic_dec(&mram_refcnt);
+		if (refcnt == 1) {
+			(void)mram_no_latency_cancel_or_release(&mram_cli);
+		} else {
+			/* Nothing to do, reference count decremented. */
+		}
+	} else {
+		/* TODO: Development assertion on already cancel/release. */
+	}
+#endif /* CONFIG_SOC_SERIES_NRF54H */
 }
 
 void radio_phy_set(uint8_t phy, uint8_t flags)
