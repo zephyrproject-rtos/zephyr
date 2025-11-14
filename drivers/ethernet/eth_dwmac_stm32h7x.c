@@ -32,16 +32,9 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-/* Temporary helper macro to smooth moving clocks from mac node to controller (parent) node */
-#if DT_CLOCKS_HAS_NAME(DT_INST_PARENT(0), mac_clk_tx)
-#define MAC_CLOCKS_NODE		DT_INST_PARENT(0)
-#else
-#define MAC_CLOCKS_NODE		DT_DRV_INST(0)
-#endif
-
 static const struct stm32_pclken pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), stm_eth);
-static const struct stm32_pclken pclken_tx = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk_tx);
-static const struct stm32_pclken pclken_rx = STM32_CLOCK_INFO_BY_NAME(MAC_CLOCKS_NODE, mac_clk_rx);
+static const struct stm32_pclken pclken_tx = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), mac_clk_tx);
+static const struct stm32_pclken pclken_rx = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), mac_clk_rx);
 
 int dwmac_bus_init(struct dwmac_priv *p)
 {
