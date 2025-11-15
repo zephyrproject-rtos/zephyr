@@ -15,8 +15,8 @@ endif()
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(NOT DEFINED CONFIG_BOARD_MIMXRT685_EVK_MIMXRT685S_CM33 AND NOT DEFINED CONFIG_BOARD_MIMXRT685_EVK_MIMXRT685S_HIFI4)
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT685-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration block data")
+      "the MIMXRT685-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration block data")
   endif()
   # This flash configuration block may need modification if another
   # flash chip is used on your custom board. See NXP AN13386 for more
