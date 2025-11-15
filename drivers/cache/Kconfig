@@ -18,11 +18,13 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "Device Drivers"
 
-source "drivers/cache/Kconfig.aspeed"
-source "drivers/cache/Kconfig.nrf"
+# zephyr-keep-sorted-start
 source "drivers/cache/Kconfig.andes"
+source "drivers/cache/Kconfig.aspeed"
+source "drivers/cache/Kconfig.bflb"
+source "drivers/cache/Kconfig.nrf"
 source "drivers/cache/Kconfig.nxp_xcache"
 source "drivers/cache/Kconfig.stm32"
-source "drivers/cache/Kconfig.bflb"
+# zephyr-keep-sorted-stop
 
 endif # CACHE

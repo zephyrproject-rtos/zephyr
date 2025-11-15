@@ -8,21 +8,23 @@ menuconfig SDHC
 
 if SDHC
 
+# zephyr-keep-sorted-start
+source "drivers/sdhc/Kconfig.ambiq"
+source "drivers/sdhc/Kconfig.esp32"
 source "drivers/sdhc/Kconfig.ifx_cat1"
 source "drivers/sdhc/Kconfig.imx"
-source "drivers/sdhc/Kconfig.spi"
+source "drivers/sdhc/Kconfig.intel"
+source "drivers/sdhc/Kconfig.max32"
 source "drivers/sdhc/Kconfig.mcux_sdif"
 source "drivers/sdhc/Kconfig.rcar"
+source "drivers/sdhc/Kconfig.renesas_ra"
 source "drivers/sdhc/Kconfig.sam_hsmci"
 source "drivers/sdhc/Kconfig.sam_sdmmc"
-source "drivers/sdhc/Kconfig.intel"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
-source "drivers/sdhc/Kconfig.esp32"
-source "drivers/sdhc/Kconfig.renesas_ra"
-source "drivers/sdhc/Kconfig.max32"
-source "drivers/sdhc/Kconfig.ambiq"
-source "drivers/sdhc/Kconfig.xlnx"
+source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.stm32"
+source "drivers/sdhc/Kconfig.xlnx"
+# zephyr-keep-sorted-stop
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"

@@ -21,12 +21,14 @@ config MIPI_DBI_INIT_PRIORITY
 	help
 	  MIPI-DBI Host Controllers initialization priority.
 
-source "drivers/mipi_dbi/Kconfig.spi"
+# zephyr-keep-sorted-start
 source "drivers/mipi_dbi/Kconfig.bitbang"
-source "drivers/mipi_dbi/Kconfig.smartbond"
-source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
-source "drivers/mipi_dbi/Kconfig.nxp_flexio_lcdif"
-source "drivers/mipi_dbi/Kconfig.stm32_fmc"
 source "drivers/mipi_dbi/Kconfig.nxp_dcnano_lcdif"
+source "drivers/mipi_dbi/Kconfig.nxp_flexio_lcdif"
+source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
+source "drivers/mipi_dbi/Kconfig.smartbond"
+source "drivers/mipi_dbi/Kconfig.spi"
+source "drivers/mipi_dbi/Kconfig.stm32_fmc"
+# zephyr-keep-sorted-stop
 
 endif

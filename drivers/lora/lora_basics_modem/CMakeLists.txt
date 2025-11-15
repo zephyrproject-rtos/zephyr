@@ -10,6 +10,9 @@ else()
 endif()
 
 zephyr_library_sources(lbm_common.c)
+
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_LORA_RYLRXXX ../rylrxxx.c)
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X lbm_sx126x.c)
 zephyr_library_sources_ifdef(CONFIG_LORA_SX127X lbm_sx127x.c)
-zephyr_library_sources_ifdef(CONFIG_LORA_RYLRXXX ../rylrxxx.c)
+# zephyr-keep-sorted-stop

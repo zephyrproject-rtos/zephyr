@@ -72,116 +72,63 @@ module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/adc/Kconfig.b91"
-
-source "drivers/adc/Kconfig.it51xxx"
-
-source "drivers/adc/Kconfig.it8xxx2"
-
-source "drivers/adc/Kconfig.mcux"
-
-source "drivers/adc/Kconfig.nrfx"
-
-source "drivers/adc/Kconfig.sam_afec"
-
-source "drivers/adc/Kconfig.sam"
-
-source "drivers/adc/Kconfig.sam0"
-
-source "drivers/adc/Kconfig.stm32"
-
-source "drivers/adc/Kconfig.esp32"
-
-source "drivers/adc/Kconfig.xec"
-
-source "drivers/adc/Kconfig.lmp90xxx"
-
-source "drivers/adc/Kconfig.mcp320x"
-
-source "drivers/adc/Kconfig.mcp356xr"
-
-source "drivers/adc/Kconfig.npcx"
-
-source "drivers/adc/Kconfig.cc32xx"
-
-source "drivers/adc/Kconfig.cc13xx_cc26xx"
-
-source "drivers/adc/Kconfig.cc23x0"
-
-source "drivers/adc/Kconfig.adc_emul"
-
-source "drivers/adc/Kconfig.vf610"
-
-source "drivers/adc/Kconfig.test"
-
-source "drivers/adc/Kconfig.ads1x1x"
-
-source "drivers/adc/Kconfig.gd32"
-
-source "drivers/adc/Kconfig.ads1112"
-
-source "drivers/adc/Kconfig.ads1119"
-
-source "drivers/adc/Kconfig.ads7052"
-
-source "drivers/adc/Kconfig.ads1x4s0x"
-
-source "drivers/adc/Kconfig.ads131m02"
-
-source "drivers/adc/Kconfig.rpi_pico"
-
-source "drivers/adc/Kconfig.xmc4xxx"
-
-source "drivers/adc/Kconfig.silabs"
-
-source "drivers/adc/Kconfig.ifx_cat1"
-
-source "drivers/adc/Kconfig.ifx_hppass_sar"
-
-source "drivers/adc/Kconfig.ifx_autanalog_sar"
-
-source "drivers/adc/Kconfig.smartbond"
-
-source "drivers/adc/Kconfig.tla202x"
-
-source "drivers/adc/Kconfig.nxp_s32"
-
-source "drivers/adc/Kconfig.max1125x"
-
-source "drivers/adc/Kconfig.max11102_17"
-
-source "drivers/adc/Kconfig.ad559x"
-
-source "drivers/adc/Kconfig.ltc2451"
-
-source "drivers/adc/Kconfig.numaker"
-
-source "drivers/adc/Kconfig.ene"
-
-source "drivers/adc/Kconfig.ambiq"
-
-source "drivers/adc/Kconfig.renesas_ra"
-
-source "drivers/adc/Kconfig.renesas_rx"
-
-source "drivers/adc/Kconfig.renesas_rz"
-
-source "drivers/adc/Kconfig.max32"
-
-source "drivers/adc/Kconfig.ad4114"
-
-source "drivers/adc/Kconfig.ad7124"
-
+# zephyr-keep-sorted-start
 source "drivers/adc/Kconfig.ad405x"
-
+source "drivers/adc/Kconfig.ad4114"
 source "drivers/adc/Kconfig.ad4130"
-
 source "drivers/adc/Kconfig.ad4170"
-
-source "drivers/adc/Kconfig.rts5912"
-
-source "drivers/adc/Kconfig.ti_am335x"
-
+source "drivers/adc/Kconfig.ad559x"
+source "drivers/adc/Kconfig.ad7124"
+source "drivers/adc/Kconfig.adc_emul"
+source "drivers/adc/Kconfig.ads1112"
+source "drivers/adc/Kconfig.ads1119"
+source "drivers/adc/Kconfig.ads131m02"
+source "drivers/adc/Kconfig.ads1x1x"
+source "drivers/adc/Kconfig.ads1x4s0x"
+source "drivers/adc/Kconfig.ads7052"
+source "drivers/adc/Kconfig.ambiq"
+source "drivers/adc/Kconfig.b91"
+source "drivers/adc/Kconfig.cc13xx_cc26xx"
+source "drivers/adc/Kconfig.cc23x0"
+source "drivers/adc/Kconfig.cc32xx"
 source "drivers/adc/Kconfig.ch32v00x"
+source "drivers/adc/Kconfig.ene"
+source "drivers/adc/Kconfig.esp32"
+source "drivers/adc/Kconfig.gd32"
+source "drivers/adc/Kconfig.ifx_autanalog_sar"
+source "drivers/adc/Kconfig.ifx_cat1"
+source "drivers/adc/Kconfig.ifx_hppass_sar"
+source "drivers/adc/Kconfig.it51xxx"
+source "drivers/adc/Kconfig.it8xxx2"
+source "drivers/adc/Kconfig.lmp90xxx"
+source "drivers/adc/Kconfig.ltc2451"
+source "drivers/adc/Kconfig.max11102_17"
+source "drivers/adc/Kconfig.max1125x"
+source "drivers/adc/Kconfig.max32"
+source "drivers/adc/Kconfig.mcp320x"
+source "drivers/adc/Kconfig.mcp356xr"
+source "drivers/adc/Kconfig.mcux"
+source "drivers/adc/Kconfig.npcx"
+source "drivers/adc/Kconfig.nrfx"
+source "drivers/adc/Kconfig.numaker"
+source "drivers/adc/Kconfig.nxp_s32"
+source "drivers/adc/Kconfig.renesas_ra"
+source "drivers/adc/Kconfig.renesas_rx"
+source "drivers/adc/Kconfig.renesas_rz"
+source "drivers/adc/Kconfig.rpi_pico"
+source "drivers/adc/Kconfig.rts5912"
+source "drivers/adc/Kconfig.sam"
+source "drivers/adc/Kconfig.sam0"
+source "drivers/adc/Kconfig.sam_afec"
+source "drivers/adc/Kconfig.silabs"
+source "drivers/adc/Kconfig.smartbond"
+source "drivers/adc/Kconfig.stm32"
+source "drivers/adc/Kconfig.test"
+source "drivers/adc/Kconfig.ti_am335x"
+source "drivers/adc/Kconfig.tla202x"
+source "drivers/adc/Kconfig.vf610"
+source "drivers/adc/Kconfig.xec"
+source "drivers/adc/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # ADC

@@ -39,14 +39,16 @@ config W1_SHELL_BUFFER_SIZE
 	  To be able to write more than 8 bytes make
 	  sure to also increase SHELL_ARGC_MAX accordingly.
 
+# zephyr-keep-sorted-start
+rsource "Kconfig.ds2477_85"
 rsource "Kconfig.ds2482-800"
 rsource "Kconfig.ds2484"
-rsource "Kconfig.ds2477_85"
 rsource "Kconfig.ds2485"
 rsource "Kconfig.max32"
 rsource "Kconfig.test"
 rsource "Kconfig.zephyr_gpio"
 rsource "Kconfig.zephyr_serial"
+# zephyr-keep-sorted-stop
 
 config W1_NET
 	bool "1-Wire network layer"
