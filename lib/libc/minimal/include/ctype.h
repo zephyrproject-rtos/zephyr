@@ -26,6 +26,11 @@ static inline int isalpha(int c)
 	return (('a' <= c) && (c <= 'z'));
 }
 
+static inline int isblank(int c)
+{
+	return ((c == ' ') || (c == '\t'));
+}
+
 static inline int isspace(int c)
 {
 	return ((c == ' ') || (('\t' <= c) && (c <= '\r')));
@@ -44,6 +49,11 @@ static inline int isprint(int c)
 static inline int isdigit(int a)
 {
 	return (('0' <= a) && (a <= '9'));
+}
+
+static inline int islower(int c)
+{
+	return (('a' <= c) && (c <= 'z'));
 }
 
 static inline int isxdigit(int a)
@@ -71,6 +81,11 @@ static inline int toupper(int chr)
 static inline int isalnum(int chr)
 {
 	return (isalpha(chr) || isdigit(chr));
+}
+
+static inline int ispunct(int c)
+{
+	return (isgraph(c) && !isalnum(c));
 }
 
 static inline int iscntrl(int c)
