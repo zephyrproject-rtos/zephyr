@@ -95,6 +95,9 @@ Flashing
 A53 Core
 ========
 
+Using SD Card
+-------------
+
 The testing requires the binary to be copied to the BOOT partition in SD card.
 
 To test the A53 core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
@@ -117,6 +120,38 @@ We now copy this binary onto the SD card in the :file:`/boot/` directory and nam
 The SD card can now be used for booting.
 
 The binary will run and print Hello world to the debug port.
+
+DFU
+---
+
+While doing rapid development, the SD Card workflow can become cumbersome. Since AM62x platform
+supports DFU over USB, we can use it to boot Zephyr applications, without ever having an SD Card
+plugged in. For more in-depth instructions, check out the `blog post <https://www.beagleboard.org/blog/2025-11-14-pocketbeagle-2-zephyr-dfu>`_.
+
+1. Download the DFU u-boot binaries. Using `v2025.10-am62-pocketbeagle2-11.02.04 <https://github.com/beagleboard/u-boot-pocketbeagle2/releases/download/v2025.10-am62-pocketbeagle2-11.02.04/>`_ here.
+
+.. code-block:: console
+
+   wget https://github.com/beagleboard/u-boot-pocketbeagle2/releases/download/v2025.10-am62-pocketbeagle2-11.02.04/tiboot3-usbdfu.bin
+   wget https://github.com/beagleboard/u-boot-pocketbeagle2/releases/download/v2025.10-am62-pocketbeagle2-11.02.04/tispl.bin
+   wget https://github.com/beagleboard/u-boot-pocketbeagle2/releases/download/v2025.10-am62-pocketbeagle2-11.02.04/u-boot-zephyrdfu.img
+
+2. Install `dfu-util <https://dfu-util.sourceforge.net/>`_ CLI.
+
+3. Plug in PocketBeagle 2 and check if it is available.
+
+.. code-block:: console
+
+   dfu-util -l
+
+4. Flash. The application path is assumed to be :file:`build/zephyr/zephyr.bin` here.
+
+.. code-block:: console
+
+   dfu-util -R -a bootloader -D ./tiboot3-usbdfu.bin
+   dfu-util -R -a tispl.bin -D ./tispl.bin
+   dfu-util -R -a u-boot.img -D ./u-boot-zephyrdfu.img
+   dfu-util -R -a zephyr.bin -D ./build/zephyr/zephyr.bin
 
 M4F Core
 ========
