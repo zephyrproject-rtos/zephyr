@@ -4,7 +4,7 @@
 zephyr_include_directories(.)
 
 zephyr_sources(
-	soc.c
+  soc.c
 )
 
 zephyr_sources_ifdef(CONFIG_RPI_PICO_ROM_BOOTLOADER rom_bootloader.c)
