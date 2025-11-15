@@ -70,14 +70,6 @@ if("${PTY_INTERFACE}" STREQUAL "PTY_INTERFACE-NOTFOUND")
   set(PTY_INTERFACE "")
 endif()
 
-# Default to the host system's toolchain if we are targeting a host based target
-if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
-   OR ("${BOARD}" STREQUAL "unit_testing"))
-  if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
-    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
-  endif()
-endif()
-
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
