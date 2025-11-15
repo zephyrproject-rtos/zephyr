@@ -2,5 +2,6 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_ZVFS_EVENTFD zvfs_eventfd.c)
+zephyr_library_sources_ifdef(CONFIG_ZVFS_TIMERFD zvfs_timerfd.c)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_POLL zvfs_poll.c)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_SELECT zvfs_select.c)

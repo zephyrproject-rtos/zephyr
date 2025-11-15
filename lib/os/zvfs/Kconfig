@@ -34,6 +34,25 @@ config ZVFS_EVENTFD_MAX
 
 endif # ZVFS_EVENTFD
 
+config ZVFS_TIMERFD
+	bool "ZVFS timer file descriptor support"
+	imply ZVFS_POLL
+	help
+	  Enable support for ZVFS timer file descriptors. An timerfd can
+	  be used as an event wait/notify mechanism together with POSIX calls
+	  like read, write and poll.
+
+if ZVFS_TIMERFD
+
+config ZVFS_TIMERFD_MAX
+	int "Maximum number of ZVFS timerfd's"
+	default 1
+	range 1 4096
+	help
+	  The maximum number of supported timer file descriptors.
+
+endif # ZVFS_TIMERFD
+
 config ZVFS_POLL
 	bool "ZVFS poll"
 	select POLL
