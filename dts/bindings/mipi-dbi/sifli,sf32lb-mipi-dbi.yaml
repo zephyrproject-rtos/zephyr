@@ -1,0 +1,25 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SF32LB MIPI DBI controller
+
+compatible: "sifli,sf32lb-mipi-dbi"
+
+include: [mipi-dbi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: Reset GPIO specification, active low
