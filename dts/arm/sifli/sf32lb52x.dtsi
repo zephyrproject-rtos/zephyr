@@ -105,6 +105,15 @@
 			status = "disabled";
 		};
 
+		lcdc: lcdc@50008000 {
+			compatible = "sifli,sf32lb-mipi-dbi";
+			reg = <0x50008000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_LCDC1>;
+			status = "disabled";
+		};
+
 		mpi1: memory-controller@50041000 {
 			/*
 			 * configure compatible depending on memory type, choices:
