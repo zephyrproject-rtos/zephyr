@@ -39,9 +39,18 @@ set_property(TARGET native_simulator PROPERTY LOCALIZE_EXTRA_OPTIONS "")
 
 set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator CACHE PATH "Path to the native simulator")
 
-if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
+# Use ZEPHYR_POSIX_ARCH if specified (for cross-compilation), otherwise use detected host arch
+if(ZEPHYR_POSIX_ARCH)
+  set(POSIX_ARCH ${ZEPHYR_POSIX_ARCH})
+  message(STATUS "POSIX architecture overridden: ${POSIX_ARCH}")
+else()
+  set(POSIX_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
+  message(STATUS "POSIX architecture detected: ${POSIX_ARCH}")
+endif()
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${POSIX_ARCH}.cmake)
   # @Intent: Set necessary compiler & linker options for this specific host architecture & OS
-  include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
+  include(${CMAKE_HOST_SYSTEM_NAME}.${POSIX_ARCH}.cmake)
 else() # Linux.x86_64
   if(CONFIG_64BIT)
     # some gcc versions fail to build without -fPIC
