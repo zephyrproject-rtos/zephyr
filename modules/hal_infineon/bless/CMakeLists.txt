@@ -18,6 +18,6 @@ zephyr_library_sources(${bless_dir}/cy_ble_hal_int.c)
 zephyr_library_sources(${bless_dir}/cy_ble_hal_pvt.c)
 
 zephyr_link_libraries(
-	${bless_blobs_dir}/COMPONENT_BLESS_CONTROLLER/cy_ble_stack_controller.a
-	${bless_blobs_dir}/COMPONENT_BLESS_CONTROLLER/cy_ble_stack_manager.a
+  ${bless_blobs_dir}/COMPONENT_BLESS_CONTROLLER/cy_ble_stack_controller.a
+  ${bless_blobs_dir}/COMPONENT_BLESS_CONTROLLER/cy_ble_stack_manager.a
 )
