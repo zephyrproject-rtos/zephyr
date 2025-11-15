@@ -1,0 +1,21 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sifli SF32LB General Purpose Timer (GPT)
+
+compatible: "sifli,sf32lb-gptm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    default: 0
+    required: true
+    description: Counter prescaler from 0 to 65535.
