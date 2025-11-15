@@ -208,8 +208,7 @@ static int zvfs_eventfd_close_op(void *obj)
 unlock:
 	k_spin_unlock(&efd->lock, key);
 	/* when closing an zvfs_eventfd, broadcast to all waiters */
-	err = k_condvar_broadcast(cond);
-	__ASSERT(err == 0, "k_condvar_broadcast() failed: %d", err);
+	k_condvar_broadcast(cond);
 
 	return ret;
 }
