@@ -50,11 +50,11 @@ zephyr_library_sources_ifdef(CONFIG_LPM013M126 display_lpm013m126.c)
 zephyr_library_sources_ifdef(CONFIG_CO5300 display_co5300.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
-	mb_display.c
-	mb_font.c
+  mb_display.c
+  mb_font.c
 )
 
 if(CONFIG_SDL_DISPLAY)
-	zephyr_library_sources(display_sdl.c)
-	target_sources(native_simulator INTERFACE display_sdl_bottom.c)
+  zephyr_library_sources(display_sdl.c)
+  target_sources(native_simulator INTERFACE display_sdl_bottom.c)
 endif()

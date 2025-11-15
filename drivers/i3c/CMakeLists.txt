@@ -83,6 +83,6 @@ zephyr_library_sources_ifdef(
 
 zephyr_library_sources_ifdef(
   CONFIG_I3C_RTIO
-	i3c_rtio.c
-	i3c_rtio_default.c
+  i3c_rtio.c
+  i3c_rtio_default.c
 )

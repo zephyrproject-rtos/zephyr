@@ -3,4 +3,4 @@
 
 zephyr_library()
 
-	zephyr_library_sources(nxp_mediamix_blk_ctrl.c)
+zephyr_library_sources(nxp_mediamix_blk_ctrl.c)
