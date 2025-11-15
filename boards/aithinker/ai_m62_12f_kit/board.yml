@@ -1,5 +1,5 @@
 board:
-  name: ai_m62_12f
+  name: ai_m62_12f_kit
   full_name: Ai-Thinker M62-12F development board
   vendor: aithinker
   socs:
