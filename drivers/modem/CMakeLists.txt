@@ -16,15 +16,15 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/sockets)
 
 if(CONFIG_MODEM_UBLOX_SARA)
-	zephyr_library_sources(ublox-sara-r4.c)
+  zephyr_library_sources(ublox-sara-r4.c)
 endif()
 
 if(CONFIG_MODEM_QUECTEL_BG9X)
-	zephyr_library_sources(quectel-bg9x.c)
+  zephyr_library_sources(quectel-bg9x.c)
 endif()
 
 if(CONFIG_MODEM_WNCM14A2A)
-	zephyr_library_sources(wncm14a2a.c)
+  zephyr_library_sources(wncm14a2a.c)
 endif()
 
 if(CONFIG_MODEM_HL7800)
