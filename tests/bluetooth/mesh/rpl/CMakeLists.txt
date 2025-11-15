@@ -6,18 +6,21 @@ project(bluetooth_mesh_rpl)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app
-	PRIVATE
-	${app_sources}
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh/rpl.c)
+  PRIVATE
+  ${app_sources}
+  ${ZEPHYR_BASE}/subsys/bluetooth/mesh/rpl.c
+)
 
 target_include_directories(app
-	PRIVATE
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh
-	${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+  PRIVATE
+  ${ZEPHYR_BASE}/subsys/bluetooth/mesh
+  ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+)
 
 target_compile_options(app
-	PRIVATE
-	-DCONFIG_BT_MESH_CRPL=10
-	-DCONFIG_BT_MESH_RPL_STORE_TIMEOUT=1
-	-DCONFIG_BT_SETTINGS
-	-DCONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS)
+  PRIVATE
+  -DCONFIG_BT_MESH_CRPL=10
+  -DCONFIG_BT_MESH_RPL_STORE_TIMEOUT=1
+  -DCONFIG_BT_SETTINGS
+  -DCONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS
+)

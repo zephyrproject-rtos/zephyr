@@ -16,16 +16,16 @@ target_include_directories(app PRIVATE
 )
 
 set(ext_names
-	hello_world
-	logging
-	relative_jump
-	object
-	syscalls
-	inspect
-	threads_kernel_objects
-	export_dependent
-	export_dependency
-	align
+  hello_world
+  logging
+  relative_jump
+  object
+  syscalls
+  inspect
+  threads_kernel_objects
+  export_dependent
+  export_dependency
+  align
 )
 
 if(CONFIG_ARM)
