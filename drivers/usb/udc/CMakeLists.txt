@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_sources(udc_common.c)
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/usb/common/)
 
+zephyr_library_sources_ifdef(CONFIG_UDC_BFLB_BL61X udc_bflb_bl61x.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_DWC2 udc_dwc2.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_NRF udc_nrf.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_KINETIS udc_kinetis.c)

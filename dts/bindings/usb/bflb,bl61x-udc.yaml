@@ -1,0 +1,17 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalolab BL61x USB controller in device mode
+  It is similar to FOTG210
+
+compatible: "bflb,bl61x-udc"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
