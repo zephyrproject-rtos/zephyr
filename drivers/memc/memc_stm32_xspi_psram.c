@@ -217,6 +217,9 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	struct memc_stm32_xspi_psram_data *dev_data = dev->data;
 	XSPI_HandleTypeDef *hxspi = &dev_data->hxspi;
 	uint32_t ahb_clock_freq;
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
+	XSPIM_CfgTypeDef cfg = {0};
+#endif
 	XSPI_RegularCmdTypeDef cmd = {0};
 	XSPI_MemoryMappedTypeDef mem_mapped_cfg = {0};
 	uint32_t prescaler = STM32_XSPI_CLOCK_PRESCALER_MIN;
@@ -294,13 +297,12 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
 	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
 		/*
 		 * Do not configure the XSPIManager if running on the ext flash
 		 * since this includes stopping each XSPI instance during configuration
 		 */
-		XSPIM_CfgTypeDef cfg = {0};
-
 		if (hxspi->Instance == XSPI1) {
 			cfg.IOPort = HAL_XSPIM_IOPORT_1;
 		} else if (hxspi->Instance == XSPI2) {
@@ -309,10 +311,11 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
 
 		if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-			LOG_ERR("XSPIMgr Init failed");
+			LOG_ERR("XSPI Manager config failed");
 			return -EIO;
 		}
 	}
+#endif
 
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
@@ -334,8 +337,14 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
 	cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
 	cmd.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_ENABLE;
+#if defined(HAL_XSPI_DATA_16_LINES)
+	/* Use 16-line if DT requests and hardware supports it */
 	cmd.DataMode = DT_INST_PROP(0, io_x16_mode) ? HAL_XSPI_DATA_16_LINES
 						    : HAL_XSPI_DATA_8_LINES;
+#else
+	/* STM32H5 max is 8 lines */
+	cmd.DataMode = HAL_XSPI_DATA_8_LINES;
+#endif
 	cmd.DataDTRMode = HAL_XSPI_DATA_DTR_ENABLE;
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_WRITE;
 	cmd.DQSMode = HAL_XSPI_DQS_ENABLE;
@@ -412,9 +421,13 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.SampleShifting = HAL_XSPI_SAMPLE_SHIFT_NONE,
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
-			.MaxTran = 0U,
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
+			.MaxTran = 0U,  /* Communication regulation (STM32H7RS only) */
+#endif
 			.Refresh = 0x81U,
-			.MemorySelect = HAL_XSPI_CSSEL_NCS1,
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
+			.MemorySelect = HAL_XSPI_CSSEL_NCS1,  /* Chip select (STM32H7RS only) */
+#endif
 		},
 	},
 };
