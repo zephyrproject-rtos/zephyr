@@ -15,8 +15,8 @@ zephyr_sources_ifdef(CONFIG_SAMPLE_UNICAST ${cap_acceptor_path}/src/cap_acceptor
 zephyr_sources_ifdef(CONFIG_SAMPLE_BROADCAST ${cap_acceptor_path}/src/cap_acceptor_broadcast.c)
 
 target_sources(app PRIVATE
-	src/cap_acceptor_sample_test.c
-	src/test_main.c
+  src/cap_acceptor_sample_test.c
+  src/test_main.c
 )
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)

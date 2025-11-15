@@ -8,6 +8,8 @@ project(power_management_test)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-target_include_directories(app PRIVATE
-	${ZEPHYR_BASE}/kernel/include
-	${ZEPHYR_BASE}/arch/${ARCH}/include)
+target_include_directories(app
+  PRIVATE
+    ${ZEPHYR_BASE}/kernel/include
+    ${ZEPHYR_BASE}/arch/${ARCH}/include
+)

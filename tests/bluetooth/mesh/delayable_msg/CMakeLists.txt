@@ -6,19 +6,22 @@ project(bluetooth_mesh_delayable_msg)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app
-	PRIVATE
-	${app_sources}
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh/delayable_msg.c)
+  PRIVATE
+  ${app_sources}
+  ${ZEPHYR_BASE}/subsys/bluetooth/mesh/delayable_msg.c
+)
 
 target_include_directories(app
-	PRIVATE
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh
-	${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+  PRIVATE
+  ${ZEPHYR_BASE}/subsys/bluetooth/mesh
+  ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+)
 
 target_compile_options(app
-	PRIVATE
-	-DCONFIG_BT_MESH_TX_SEG_MAX=32
-	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_COUNT=4
-	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE=20
-	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT=20
-	-DCONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS)
+  PRIVATE
+  -DCONFIG_BT_MESH_TX_SEG_MAX=32
+  -DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_COUNT=4
+  -DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE=20
+  -DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT=20
+  -DCONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS
+)
