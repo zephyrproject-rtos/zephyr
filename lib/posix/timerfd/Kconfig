@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Atym, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMERFD
+	bool "Support for timerfd"
+	select ZVFS
+	select ZVFS_TIMERFD
+	help
+	  Enable support for timer file descriptors, timerfd. A timerfd can
+	  be used as an timer waiting mechanism together with POSIX calls
+	  like read, write and poll.
