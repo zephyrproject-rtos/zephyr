@@ -16,16 +16,16 @@ endif()
 
 set(qemu_alternate_path $ENV{QEMU_BIN_PATH})
 if(qemu_alternate_path)
-find_program(
-  QEMU
-  PATHS ${qemu_alternate_path}
-  NO_DEFAULT_PATH
-  NAMES qemu-system-${QEMU_binary_suffix}
+  find_program(
+    QEMU
+    PATHS ${qemu_alternate_path}
+    NO_DEFAULT_PATH
+    NAMES qemu-system-${QEMU_binary_suffix}
   )
 else()
-find_program(
-  QEMU
-  qemu-system-${QEMU_binary_suffix}
+  find_program(
+    QEMU
+    qemu-system-${QEMU_binary_suffix}
   )
 endif()
 
@@ -45,7 +45,7 @@ endif()
 set(qemu_targets
   run_qemu
   debugserver_qemu
-  )
+)
 
 set(QEMU_FLAGS -pidfile)
 if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
@@ -86,7 +86,7 @@ endif()
 if(CONFIG_SEMIHOST)
   list(APPEND QEMU_FLAGS
     -semihosting-config enable=on,target=auto,chardev=con
-    )
+  )
 endif()
 
 # Connect monitor to the console chardev.
@@ -99,12 +99,14 @@ endif()
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)
     list(APPEND QEMU_FLAGS
-	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
-	  -rtc clock=vm)
+      -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
+      -rtc clock=vm
+    )
   else()
     list(APPEND QEMU_FLAGS
-	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
-	  -rtc clock=vm)
+      -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
+      -rtc clock=vm
+    )
   endif()
 endif()
 
@@ -112,7 +114,7 @@ endif()
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
 if(CONFIG_BT)
   if(NOT CONFIG_BT_UART)
-      set(NO_QEMU_SERIAL_BT_SERVER 1)
+    set(NO_QEMU_SERIAL_BT_SERVER 1)
   endif()
   if(NOT NO_QEMU_SERIAL_BT_SERVER)
     list(APPEND QEMU_FLAGS -serial unix:/tmp/bt-server-bredr)
@@ -130,7 +132,7 @@ if(CONFIG_NETWORKING)
       set(QEMU_NET_STACK 1)
     endif()
   elseif((CONFIG_NET_QEMU_PPP) AND NOT (CONFIG_NET_TEST))
-      set(QEMU_NET_STACK 1)
+    set(QEMU_NET_STACK 1)
   endif()
 endif()
 
@@ -138,7 +140,7 @@ endif()
 if(QEMU_PIPE_STACK)
   list(APPEND qemu_targets
     node
-    )
+  )
 
   if(NOT QEMU_PIPE_ID)
     set(QEMU_PIPE_ID 1)
@@ -146,12 +148,12 @@ if(QEMU_PIPE_STACK)
 
   list(APPEND QEMU_FLAGS
     -serial none
-    )
+  )
 
   list(APPEND MORE_FLAGS_FOR_node
-        -serial pipe:/tmp/hub/ip-stack-node${QEMU_PIPE_ID}
-        -pidfile qemu-node${QEMU_PIPE_ID}.pid
-        )
+    -serial pipe:/tmp/hub/ip-stack-node${QEMU_PIPE_ID}
+    -pidfile qemu-node${QEMU_PIPE_ID}.pid
+  )
 
   set(PIPE_NODE_IN  /tmp/hub/ip-stack-node${QEMU_PIPE_ID}.in)
   set(PIPE_NODE_OUT /tmp/hub/ip-stack-node${QEMU_PIPE_ID}.out)
@@ -159,60 +161,60 @@ if(QEMU_PIPE_STACK)
   set(pipes
     ${PIPE_NODE_IN}
     ${PIPE_NODE_OUT}
-    )
+  )
 
   set(destroy_pipe_commands
     COMMAND ${CMAKE_COMMAND} -E remove -f ${pipes}
-    )
+  )
 
   set(create_pipe_commands
     COMMAND ${CMAKE_COMMAND} -E make_directory /tmp/hub
     COMMAND mkfifo ${PIPE_NODE_IN}
     COMMAND mkfifo ${PIPE_NODE_OUT}
-    )
+  )
 
   set(PRE_QEMU_COMMANDS_FOR_node
     ${destroy_pipe_commands}
     ${create_pipe_commands}
-    )
+  )
 
 elseif(QEMU_NET_STACK)
   list(APPEND qemu_targets
     client
     server
-    )
+  )
 
   foreach(target ${qemu_targets})
     if((${target} STREQUAL client) OR (${target} STREQUAL server))
       list(APPEND MORE_FLAGS_FOR_${target}
         -serial pipe:/tmp/ip-stack-${target}
         -pidfile qemu-${target}.pid
-        )
+      )
     else()
       # QEMU_INSTANCE is a command line argument to *make* (not cmake). By
       # appending the instance name to the pid file we can easily run more
       # instances of the same sample.
 
       if(CONFIG_NET_QEMU_PPP)
-	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-	  set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
-	else()
-	  set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
-	endif()
+        if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+          set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
+        else()
+          set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
+        endif()
 
-	list(APPEND MORE_FLAGS_FOR_${target}
+        list(APPEND MORE_FLAGS_FOR_${target}
           -serial ${ppp_path}
-          )
+        )
       else()
-	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+        if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
           set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
-	else()
+        else()
           set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
-	endif()
+        endif()
 
-	list(APPEND MORE_FLAGS_FOR_${target}
+        list(APPEND MORE_FLAGS_FOR_${target}
           -serial ${tmp_file}
-          )
+        )
       endif()
 
     endif()
@@ -229,34 +231,34 @@ elseif(QEMU_NET_STACK)
     ${PIPE_SERVER_OUT}
     ${PIPE_CLIENT_IN}
     ${PIPE_CLIENT_OUT}
-    )
+  )
 
   set(destroy_pipe_commands
     COMMAND ${CMAKE_COMMAND} -E remove -f ${pipes}
-    )
+  )
 
   # TODO: Port to Windows. Perhaps using python? Or removing the
   # need for mkfifo and create_symlink somehow.
   set(create_pipe_commands
     COMMAND mkfifo ${PIPE_SERVER_IN}
     COMMAND mkfifo ${PIPE_SERVER_OUT}
-    )
+  )
   if(PCAP)
     list(APPEND create_pipe_commands
       COMMAND mkfifo ${PIPE_CLIENT_IN}
       COMMAND mkfifo ${PIPE_CLIENT_OUT}
-      )
+    )
   else()
     list(APPEND create_pipe_commands
       COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_IN}  ${PIPE_CLIENT_OUT}
       COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN}
-      )
+    )
   endif()
 
   set(PRE_QEMU_COMMANDS_FOR_server
     ${destroy_pipe_commands}
     ${create_pipe_commands}
-    )
+  )
   if(PCAP)
     # Start a monitor application to capture traffic
     #
@@ -282,14 +284,14 @@ elseif(QEMU_NET_STACK)
         /tmp/ip-stack-client
         > /dev/null &
       }
-      )
+    )
     set(POST_QEMU_COMMANDS_FOR_server
       # Re-enable Ctrl-C.
       COMMAND stty intr ^c
 
       # Kill the monitor_15_4 sub-process
       COMMAND pkill -P $$$$
-      )
+    )
   endif()
 endif(QEMU_PIPE_STACK)
 
@@ -300,7 +302,8 @@ if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
   if(NOT "${CONFIG_CAN_QEMU_IFACE_NAME}" STREQUAL "")
     # Connect CAN bus 0 to host SocketCAN interface
     list(APPEND QEMU_FLAGS
-      -object can-host-socketcan,id=canhost0,if=${CONFIG_CAN_QEMU_IFACE_NAME},canbus=canbus0)
+      -object can-host-socketcan,id=canhost0,if=${CONFIG_CAN_QEMU_IFACE_NAME},canbus=canbus0
+    )
   endif()
 
   if(CONFIG_CAN_KVASER_PCI)
@@ -319,7 +322,7 @@ if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
     $<TARGET_FILE:${logical_target_for_zephyr_elf}>
     ${ZEPHYR_BINARY_DIR}/zephyr-qemu.elf
     DEPENDS ${logical_target_for_zephyr_elf}
-    )
+  )
 
   # Split the 'locore' and 'main' memory regions into separate executable
   # images and specify the 'locore' as the boot kernel, in order to prevent
@@ -334,7 +337,7 @@ if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
     ${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf
     2>&1 | grep -iv \"empty loadable segment detected\" || true
     DEPENDS qemu_image_target
-    )
+  )
 
   add_custom_target(qemu_main_image_target
     COMMAND
@@ -344,18 +347,18 @@ if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
     ${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf
     2>&1 | grep -iv \"empty loadable segment detected\" || true
     DEPENDS qemu_image_target
-    )
+  )
 
   add_custom_target(
     qemu_kernel_target
     DEPENDS qemu_locore_image_target qemu_main_image_target
-    )
+  )
 
   set(QEMU_KERNEL_FILE "${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf")
 
   list(APPEND QEMU_EXTRA_FLAGS
     "-device;loader,file=${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf"
-    )
+  )
 endif()
 
 if(CONFIG_IVSHMEM)
@@ -465,7 +468,7 @@ foreach(target ${qemu_targets})
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
     USES_TERMINAL
-    )
+  )
   if(DEFINED QEMU_KERNEL_FILE)
     add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
   endif()

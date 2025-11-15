@@ -24,14 +24,14 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   else()
     # TODO: How would the linker script dependencies work for non-linker
     # script generators.
-    message(STATUS "Warning; this generator is not well supported. The
-                    Linker script may not be regenerated when it should.")
+    message(STATUS "Warning: this generator is not well supported. The "
+      "Linker script may not be regenerated when it should.")
     set(linker_script_dep "")
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
 
-# the command to generate linker file from template
+  # the command to generate linker file from template
   add_custom_command(
     OUTPUT ${linker_script_gen}
     DEPENDS
@@ -57,7 +57,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND_EXPAND_LISTS
-)
+  )
 endmacro()
 
 # Force symbols to be entered in the output file as undefined symbols
@@ -119,20 +119,24 @@ endmacro()
 # generate linker script snippets from configure files
 macro(toolchain_ld_configure_files)
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/zephyr/arch/common/app_data_alignment.ld
-       ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
+    $ENV{ZEPHYR_BASE}/include/zephyr/arch/common/app_data_alignment.ld
+    ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld
+  )
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem.ld
-       ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
+    $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem.ld
+    ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld
+  )
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_aligned.ld
-       ${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld)
+    $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_aligned.ld
+    ${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld
+  )
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_unaligned.ld
-       ${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld)
+    $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_unaligned.ld
+    ${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld
+  )
 endmacro()
 
 # link C++ libraries
@@ -161,11 +165,12 @@ macro(toolchain_ld_relocation)
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
     -c ${MEM_RELOCATION_CODE}
     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
-    )
+  )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
   target_include_directories(code_relocation_source_lib PRIVATE
-	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
+    ${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include
+  )
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()
 
