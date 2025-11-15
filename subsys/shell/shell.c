@@ -54,7 +54,9 @@ static inline void receive_state_change(const struct shell *sh,
 
 static void cmd_buffer_clear(const struct shell *sh)
 {
+#if CONFIG_SHELL_CMD_BUFF_SIZE > 0
 	sh->ctx->cmd_buff[0] = '\0'; /* clear command buffer */
+#endif
 	sh->ctx->cmd_buff_pos = 0;
 	sh->ctx->cmd_buff_len = 0;
 }
