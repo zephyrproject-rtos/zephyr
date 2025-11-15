@@ -2,13 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_SPI mipi_dbi_spi.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_BITBANG mipi_dbi_bitbang.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_SMARTBOND mipi_dbi_smartbond.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_LCDIC mipi_dbi_nxp_lcdic.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF mipi_dbi_nxp_flexio_lcdif.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF mipi_dbi_nxp_dcnano_lcdif.c)
-zephyr_sources_ifdef(CONFIG_MIPI_DBI_STM32_FMC mipi_dbi_stm32_fmc.c)
 # Data bus width is used by the SDK driver and processes it as a compile time option
 if(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF)
   dt_chosen(flexio0_lcd PROPERTY "zephyr,display")
@@ -20,3 +13,13 @@ if(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF)
   endif()
   zephyr_compile_definitions(FLEXIO_MCULCD_LEGACY_GPIO_FUNC=0)
 endif()
+
+# zephyr-keep-sorted-start
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_BITBANG mipi_dbi_bitbang.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF mipi_dbi_nxp_dcnano_lcdif.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF mipi_dbi_nxp_flexio_lcdif.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_LCDIC mipi_dbi_nxp_lcdic.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_SMARTBOND mipi_dbi_smartbond.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_SPI mipi_dbi_spi.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_STM32_FMC mipi_dbi_stm32_fmc.c)
+# zephyr-keep-sorted-stop

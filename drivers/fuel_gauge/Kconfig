@@ -19,14 +19,16 @@ config FUEL_GAUGE_INIT_PRIORITY
 	help
 	  Battery fuel gauge initialization priority.
 
-source "drivers/fuel_gauge/max17048/Kconfig"
-source "drivers/fuel_gauge/sbs_gauge/Kconfig"
+# zephyr-keep-sorted-start
+source "drivers/fuel_gauge/axp2101/Kconfig"
 source "drivers/fuel_gauge/bq27z746/Kconfig"
 source "drivers/fuel_gauge/bq40z50/Kconfig"
 source "drivers/fuel_gauge/composite/Kconfig"
-source "drivers/fuel_gauge/axp2101/Kconfig"
 source "drivers/fuel_gauge/lc709203f/Kconfig"
-source "drivers/fuel_gauge/sy24561/Kconfig"
 source "drivers/fuel_gauge/ltc2959/Kconfig"
+source "drivers/fuel_gauge/max17048/Kconfig"
+source "drivers/fuel_gauge/sbs_gauge/Kconfig"
+source "drivers/fuel_gauge/sy24561/Kconfig"
+# zephyr-keep-sorted-stop
 
 endif # FUEL_GAUGE
