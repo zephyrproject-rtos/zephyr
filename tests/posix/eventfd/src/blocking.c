@@ -185,3 +185,23 @@ ZTEST_F(eventfd, test_read_while_pollout)
 
 	zassert_ok(k_thread_join(&thread, K_FOREVER));
 }
+
+static void thread_eventfd_close(void *arg1, void *arg2, void *arg3)
+{
+	struct eventfd_fixture *fixture = arg1;
+
+	zassert_ok(close(fixture->fd));
+}
+
+ZTEST_F(eventfd, test_read_then_close_block)
+{
+	eventfd_t value;
+
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_close, fixture, NULL, NULL, 0, 0, K_MSEC(100));
+
+	zassert_equal(read(fixture->fd, &value, sizeof(value)), -1);
+	printf("ERRNO: %d\n", errno);
+
+	k_thread_join(&thread, K_FOREVER);
+}
