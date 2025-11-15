@@ -30,8 +30,31 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("a*.c", "a/x.c", FNM_PATHNAME), FNM_NOMATCH);
 	zassert_ok(fnmatch("*/foo", "/foo", FNM_PATHNAME));
 	zassert_ok(fnmatch("-O[01]", "-O1", 0));
-	zassert_ok(fnmatch("[[?*\\]", "\\", 0));
-	zassert_ok(fnmatch("[]?*\\]", "]", 0));
+	/*
+	 * '\' in pattern escapes ']'. bracket expression is incomplete. pattern is interpreted as
+	 * literal sequence '[[?*\]'. which does not match input '\'
+	 */
+	zassert_equal(fnmatch("[[?*\\]", "\\", 0), FNM_NOMATCH);
+	/* '\' in pattern does not escape ']'. bracket expression complete. '\' matches input '\' */
+	zassert_ok(fnmatch("[[?*\\]", "\\", FNM_NOESCAPE));
+	/* '\' in pattern escapes '\', match '\' */
+	zassert_ok(fnmatch("[[?*\\\\]", "\\", 0));
+	/*
+	 * "[]" (empty bracket expression) is an invalid pattern.
+	 * > The ( ']' ) shall lose its special meaning and represent itself in a bracket expression
+	 * > if it occurs first in the list (after an initial ( '^' ), if any)
+	 * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_05
+	 *
+	 * So the next test is (again) and incomplete bracket expression and should return error.
+	 * The two tests that follow it also require the ']' to be treated as a literal character to
+	 * match within the bracket expression.
+	 */
+	zassert_equal(fnmatch("[]?*\\]", "]", 0), FNM_NOMATCH);
+	/* '\' in pattern does not escape. bracket expression complete. ']' matches input ']' */
+	zassert_ok(fnmatch("[]?*\\]", "]", FNM_NOESCAPE));
+	/* '\' in pattern escapes '\'. bracket expression complete. ']' matches input ']' */
+	zassert_ok(fnmatch("[]?*\\\\]", "]", 0));
+
 	zassert_ok(fnmatch("[!]a-]", "b", 0));
 	zassert_ok(fnmatch("[]-_]", "^", 0));
 	zassert_ok(fnmatch("[!]-_]", "X", 0));
