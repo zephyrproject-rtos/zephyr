@@ -11,6 +11,8 @@ archs:
   - name: mips
     path: mips
     full_name: MIPS
+  - name: openrisc
+    path: openrisc
   - name: posix
     path: posix
     full_name: POSIX

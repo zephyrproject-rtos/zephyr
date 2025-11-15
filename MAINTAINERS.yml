@@ -4083,6 +4083,21 @@ Open AMP:
   tests:
     - sample.ipc.openamp
 
+OpenRISC Arch:
+  status: maintained
+  maintainers:
+    - jhol
+  files:
+    - arch/openrisc/
+    - boards/qemu/or1k/
+    - drivers/timer/*openrisc*
+    - include/zephyr/arch/openrisc/
+    - soc/qemu/or1k/
+  labels:
+    - "area: OpenRISC"
+  tests:
+    - arch.openrisc
+
 OpenTitan Platforms:
   status: maintained
   maintainers:

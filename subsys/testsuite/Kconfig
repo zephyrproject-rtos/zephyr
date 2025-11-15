@@ -18,6 +18,7 @@ config TEST_EXTRA_STACK_SIZE
 	int "Test function extra thread stack size"
 	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA
+	default 128 if OPENRISC
 	default 0
 	depends on TEST
 	help
