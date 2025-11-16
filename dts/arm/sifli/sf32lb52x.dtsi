@@ -166,6 +166,14 @@
 			status = "disabled";
 		};
 
+		tsen: tsen@50089000 {
+			compatible = "sifli,sf32lb-tsen";
+			reg = <0x50089000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_TSEN>;
+			sifli,cfg = <&cfg>;
+			status = "disabled";
+		};
+
 		wdt: watchdog@50094000 {
 			compatible = "sifli,sf32lb-wdt";
 			reg = <0x50094000 0x1000>;
