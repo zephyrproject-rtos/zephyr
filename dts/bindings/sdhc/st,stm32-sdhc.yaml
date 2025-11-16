@@ -1,0 +1,20 @@
+# Copyright (c) 2025 EXALT Technologies.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: stm32 sdmmc disk access
+
+compatible: "st,stm32-sdhc"
+bus: sd
+
+include: ["st,stm32-sdmmc.yaml", "sdhc.yaml"]
+
+properties:  
+  hw-flow-control:
+    type: boolean
+    description: Set to enable RTS/CTS flow control at boot time
+
+  support-1-8-v:
+    type: boolean
+    description: |
+        When defined, it indicates that the external SDIO circuit supports 1.8V signaling.
