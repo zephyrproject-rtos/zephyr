@@ -3492,6 +3492,7 @@ NXP Platform Drivers:
     - manuargue
     - dbaluta
     - Raymond0225
+    - Holt-Sun
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
