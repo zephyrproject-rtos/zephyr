@@ -36,9 +36,7 @@
 #ifndef _FNMATCH_H_
 #define _FNMATCH_H_
 
-#define FNM_NOMATCH 1 /* Match failed. */
-#define FNM_NOSYS   2 /* Function not implemented. */
-#define FNM_NORES   3 /* Out of resources */
+#define FNM_NOMATCH 1 /**< Match failed */
 
 #define FNM_NOESCAPE	0x01 /* Disable backslash escaping. */
 #define FNM_PATHNAME	0x02 /* Slash must be matched by slash. */
@@ -50,7 +48,18 @@
 extern "C" {
 #endif
 
-int fnmatch(const char *, const char *, int);
+/**
+ * @brief Check if a filename or input string matches a shell-style matching pattern.
+ *
+ * @param pattern pattern that is matched against @param string
+ * @param string input string to match against @param pattern
+ * @param flags flags used to signal special matching conditions such as @ref FNM_NOESCAPE
+ *
+ *
+ * @retval 0 pattern found in string
+ * @retval FNM_NOMATCH pattern not found in string
+ */
+int fnmatch(const char *pattern, const char *string, int flags);
 
 #ifdef __cplusplus
 }

@@ -303,7 +303,7 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 	}
 
 	if (recursion-- == 0) {
-		return FNM_NORES;
+		return FNM_NOMATCH;
 	}
 
 	for (stringstart = string;;) {
