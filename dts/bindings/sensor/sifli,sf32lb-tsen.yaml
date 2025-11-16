@@ -1,0 +1,18 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SF32LB temperature sensor
+
+compatible: "sifli,sf32lb-tsen"
+
+include: [base.yaml, sifli-sf32lb-cfg.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  sifli,cfg:
+    required: true
