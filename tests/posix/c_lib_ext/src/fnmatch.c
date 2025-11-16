@@ -6,6 +6,22 @@
 
 #include <zephyr/posix/fnmatch.h>
 #include <zephyr/ztest.h>
+#include <ctype.h>
+
+/*
+ * Note: the \x00 control character is specifically excluded below, since testing for it is
+ * equivalent to reading past the end of a '\0'-terminated string (i.e. can fault).
+ */
+#define TEST_BLANK_CHARS " \t"
+#define TEST_CNTRL_CHARS                                                                           \
+	"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16" \
+	"\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f"
+#define TEST_DIGIT_CHARS  "0123456789"
+#define TEST_LOWER_CHARS  "abcdefghijklmnopqrstuvwxyz"
+#define TEST_PUNCT_CHARS  "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+#define TEST_SPACE_CHARS  " \f\n\r\t\v"
+#define TEST_UPPER_CHARS  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define TEST_XDIGIT_CHARS TEST_DIGIT_CHARS "ABCDEFabcdef"
 
 /*
  * Adapted from
@@ -78,4 +94,50 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_ok(fnmatch("a?b", "a.b", FNM_PATHNAME | FNM_PERIOD));
 	zassert_ok(fnmatch("a*b", "a.b", FNM_PATHNAME | FNM_PERIOD));
 	zassert_ok(fnmatch("a[.]b", "a.b", FNM_PATHNAME | FNM_PERIOD));
+
+	/* Additional test cases for POSIX character classes (C-locale only) */
+	static const struct test_data_s {
+		const char *pattern;
+		const char *match;
+		const char *nomatch;
+	} test_data[] = {
+		{"[[:alnum:]]", TEST_DIGIT_CHARS TEST_UPPER_CHARS TEST_LOWER_CHARS, " "},
+		{"[[:alpha:]]", TEST_UPPER_CHARS TEST_LOWER_CHARS, "0"},
+		{"[[:blank:]]", TEST_BLANK_CHARS, "x"},
+		{"[[:cntrl:]]", TEST_CNTRL_CHARS, "x"},
+		{"[[:digit:]]", TEST_DIGIT_CHARS, "a"},
+		{"[[:graph:]]", TEST_DIGIT_CHARS TEST_UPPER_CHARS TEST_LOWER_CHARS TEST_PUNCT_CHARS,
+		 " "},
+		{"[[:lower:]]", TEST_LOWER_CHARS, "X"},
+		{"[[:print:]]",
+		 TEST_DIGIT_CHARS TEST_UPPER_CHARS TEST_LOWER_CHARS TEST_PUNCT_CHARS " ", "\t"},
+		{"[[:punct:]]", TEST_PUNCT_CHARS, "x"},
+		{"[[:space:]]", TEST_SPACE_CHARS, "x"},
+		{"[[:upper:]]", TEST_UPPER_CHARS, "x"},
+		{"[[:xdigit:]]", TEST_XDIGIT_CHARS, "h"},
+	};
+
+	ARRAY_FOR_EACH_PTR(test_data, data) {
+		/* ensure that characters in "nomatch" do not match "pattern" */
+		for (size_t j = 0; j < strlen(data->nomatch); j++) {
+			char input[] = {data->nomatch[j], '\0'};
+
+			zexpect_equal(fnmatch(data->pattern, input, 0), FNM_NOMATCH,
+				      "pattern \"%s\" unexpectedly matched char 0x%02x (%c)",
+				      data->pattern, data->nomatch[j],
+				      isprint(data->nomatch[j]) ? data->nomatch[j] : '.');
+		}
+
+		/* ensure that characters in "match" do match "pattern" */
+		for (size_t j = 0; j < strlen(data->match); j++) {
+			char input[] = {data->match[j], '\0'};
+
+			zexpect_ok(fnmatch(data->pattern, input, 0),
+				   "pattern \"%s\" did not match char 0x%02x (%c)", data->pattern,
+				   data->match[j], isprint(data->match[j]) ? data->match[j] : '.');
+		}
+	}
+
+	/* ensure that an invalid character class generates an error */
+	zassert_equal(fnmatch("[[:foobarbaz:]]", "Z", 0), FNM_NOMATCH);
 }
