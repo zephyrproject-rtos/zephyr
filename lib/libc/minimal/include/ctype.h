@@ -15,42 +15,47 @@ extern "C" {
 
 static inline int isupper(int a)
 {
-	return (int)(((unsigned int)(a)-(unsigned int)'A') < 26U);
+	return (int)(((int)'A' <= a) && (a <= (int)'Z'));
 }
 
 static inline int isalpha(int c)
 {
-	return (int)((((unsigned int)c|32u)-(unsigned int)'a') < 26U);
+	/* force to lowercase */
+	c += 32U;
+
+	return (int)(((int)'a' <= c) && (c <= (int)'z'));
 }
 
 static inline int isspace(int c)
 {
-	return (int)(c == (int)' ' || ((unsigned int)c-(unsigned int)'\t') < 5U);
+	return (int)((c == (int)' ') || (((int)'\t' <= c) && (c <= (int)'\r')));
 }
 
 static inline int isgraph(int c)
 {
-	return (int)((((unsigned int)c) > ' ') &&
-			(((unsigned int)c) <= (unsigned int)'~'));
+	return (int)(((int)' ' < c) && (c <= (int)'~'));
 }
 
 static inline int isprint(int c)
 {
-	return (int)((((unsigned int)c) >= ' ') &&
-			(((unsigned int)c) <= (unsigned int)'~'));
+	return (int)(((int)' ' <= c) && (c <= (int)'~'));
 }
 
 static inline int isdigit(int a)
 {
-	return (int)(((unsigned int)(a)-(unsigned int)'0') < 10U);
+	return (int)(((int)'0' <= a) && (a <= (int)'9'));
 }
 
 static inline int isxdigit(int a)
 {
-	unsigned int ua = (unsigned int)a;
+	if (isdigit(a) != 0) {
+		return 1;
+	}
 
-	return (int)(((ua - (unsigned int)'0') < 10U) ||
-			((ua | 32U) - (unsigned int)'a' < 6U));
+	/* force to lowercase */
+	a += 32U;
+
+	return (int)(((int)'a' <= a) && (a <= (int)'f'));
 }
 
 static inline int tolower(int chr)
