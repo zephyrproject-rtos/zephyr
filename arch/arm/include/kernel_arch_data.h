@@ -38,6 +38,10 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/atomic.h>
 
+#ifdef CONFIG_ARM_MPU
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
