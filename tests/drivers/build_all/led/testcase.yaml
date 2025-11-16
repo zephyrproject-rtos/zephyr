@@ -7,3 +7,5 @@ tests:
       - led
     integration_platforms:
       - native_sim
+    platform_exclude:
+      - pico_plus2/rp2350b/m33/w
