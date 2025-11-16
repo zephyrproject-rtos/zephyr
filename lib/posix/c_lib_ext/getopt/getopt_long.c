@@ -1,5 +1,6 @@
 /*	$OpenBSD: getopt_long.c,v 1.22 2006/10/04 21:29:04 jmc Exp $	*/
 /*	$NetBSD: getopt_long.c,v 1.15 2002/01/31 22:43:40 tv Exp $	*/
+/* SPDX-License-Identifier: BSD-2-Clause */
 
 /*
  * Copyright (c) 2002 Todd C. Miller <Todd.Miller@courtesan.com>
