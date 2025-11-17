@@ -456,6 +456,11 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 	/* TODO: When supp_callbk_fns.mgmt_tx_status is implemented, add logic
 	 * here to use the cookie and host_cookie to map requests to responses.
 	 */
+	if (vif_ctx_zep->supp_drv_if_ctx &&
+		vif_ctx_zep->supp_callbk_fns.cookie_event) {
+		vif_ctx_zep->supp_callbk_fns.cookie_event(vif_ctx_zep->supp_drv_if_ctx,
+			cookie_rsp_event->host_cookie, cookie_rsp_event->cookie);
+		}
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
