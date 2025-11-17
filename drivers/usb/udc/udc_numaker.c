@@ -69,6 +69,89 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #if !defined(SYS_USBPHY_HSUSBROLE_STD_USBD)
 #define SYS_USBPHY_HSUSBROLE_STD_USBD (0x0 << SYS_USBPHY_HSUSBROLE_Pos)
 #endif
+#elif defined(CONFIG_SOC_SERIES_M333X)
+#define CEPBUFSTART CEPBUFST
+#define EPBUFSTART  EPBUFST
+#endif
+
+/* Dummy USBD device definition
+ *
+ * This is used to pass compile for targets not supporting this device.
+ * Related code should be unreachable.
+ */
+#if defined(CONFIG_SOC_SERIES_M333X)
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nuvoton_numaker_usbd) == 0,
+	     "The SoC series should have no USBD");
+
+typedef struct {
+	uint32_t BUFSEG;
+	uint32_t MXPLD;
+	uint32_t CFG;
+	uint32_t CFGP;
+} USBD_EP_T;
+
+#define USBD_CFGP_SSTALL_Msk 0
+#define USBD_CFGP_CLRRDY_Msk 0
+#define USBD_CFG_DSQSYNC_Msk 0
+#define USBD_CFG_EPNUM_Pos   0
+#define USBD_CFG_EPNUM_Msk   0
+#define USBD_CFG_STATE_Msk   0
+#define USBD_MXPLD_MXPLD_Pos 0
+#define USBD_MXPLD_MXPLD_Msk 0
+
+#define USBD_CFG_CSTALL         0
+#define USBD_CFG_EPMODE_DISABLE 0
+#define USBD_CFG_EPMODE_IN      0
+#define USBD_CFG_EPMODE_OUT     0
+#define USBD_CFG_TYPE_ISO       0
+
+typedef struct {
+	uint32_t INTEN;
+	uint32_t INTSTS;
+	uint32_t FADDR;
+	uint32_t EPSTS;
+	uint32_t ATTR;
+	uint32_t VBUSDET;
+	uint32_t STBUFSEG;
+	uint32_t EPSTS0;
+	uint32_t EPSTS1;
+	uint32_t EPSTS2;
+	uint32_t EPSTS3;
+	uint32_t EPINTSTS;
+	uint32_t SE0;
+	USBD_EP_T EP[1];
+} USBD_T;
+
+#define USBD_INTSTS_SOFIF_Msk      0
+#define USBD_ATTR_BYTEM_Msk        0
+#define USBD_ATTR_DPPUEN_Msk       0
+#define USBD_ATTR_PHYEN_Msk        0
+#define USBD_ATTR_PWRDN_Msk        0
+#define USBD_ATTR_RWAKEUP_Msk      0
+#define USBD_ATTR_USBEN_Msk        0
+#define USBD_VBUSDET_VBUSDET_Msk   0
+#define USBD_STBUFSEG_STBUFSEG_Msk 0
+
+#define USBD_INT_BUS       0
+#define USBD_INT_FLDET     0
+#define USBD_INT_USB       0
+#define USBD_INT_WAKEUP    0
+#define USBD_INTSTS_BUS    0
+#define USBD_INTSTS_FLDET  0
+#define USBD_INTSTS_SETUP  0
+#define USBD_INTSTS_USB    0
+#define USBD_INTSTS_WAKEUP 0
+#define USBD_PHY_EN        0
+#define USBD_STATE_RESUME  0
+#define USBD_STATE_SUSPEND 0
+#define USBD_STATE_USBRST  0
+#define USBD_USB_EN        0
+#define USBD_DRVSE0        0
+
+#define EP0 0
+#define EP1 1
+
 #endif
 
 /* Dummy HSUSBD device definition
@@ -627,6 +710,14 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSOTGPHYEN_Msk);
 		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
 		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#elif defined(CONFIG_SOC_SERIES_M333X)
+		/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
+		SYS->USBPHY = (SYS->USBPHY &
+			       ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
+			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSUSBEN_Msk |
+			       SYS_USBPHY_SBO_Msk);
+		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
+		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
 #endif
 	} else {
 #if defined(CONFIG_SOC_SERIES_M46X)
@@ -640,6 +731,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_M55M1X)
 		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
 			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
+#elif defined(CONFIG_SOC_SERIES_M333X)
+		CODE_UNREACHABLE;
 #endif
 	}
 
@@ -3241,7 +3334,7 @@ static const struct udc_api udc_numaker_api = {
 		.ep_cfg_out_size = ARRAY_SIZE(ep_cfg_out_##inst),                                  \
 		.ep_cfg_in_size = ARRAY_SIZE(ep_cfg_in_##inst),                                    \
 		.make_thread = udc_numaker_make_thread_##inst,                                     \
-		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                          \
+		.base = (void *)DT_INST_REG_ADDR(inst),                                            \
 		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
 		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
 		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
