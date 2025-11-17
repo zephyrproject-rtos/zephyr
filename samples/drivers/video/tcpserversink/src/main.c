@@ -471,6 +471,13 @@ int main(void)
 #if DT_HAS_CHOSEN(zephyr_videoenc)
 			encode_frame(vbuf, &vbuf_out);
 
+			vbuf->type = VIDEO_BUF_TYPE_INPUT;
+			ret = video_enqueue(video_dev, vbuf);
+			if (ret) {
+				LOG_ERR("Unable to enqueue video buf");
+				return 0;
+			}
+
 			LOG_INF("Sending compressed frame %d (size=%d bytes)", i++,
 				vbuf_out->bytesused);
 			/* Send compressed video buffer to TCP client */
@@ -489,12 +496,6 @@ int main(void)
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
 			disconnected = ret && ret != -EAGAIN;
-#endif
-			if (disconnected) {
-				/* client disconnected */
-				LOG_ERR("TCP: Client disconnected %d", ret);
-				close(client);
-			}
 
 			vbuf->type = VIDEO_BUF_TYPE_INPUT;
 			ret = video_enqueue(video_dev, vbuf);
@@ -502,6 +503,13 @@ int main(void)
 				LOG_ERR("Unable to enqueue video buf");
 				return 0;
 			}
+#endif
+			if (disconnected) {
+				/* client disconnected */
+				LOG_ERR("TCP: Client disconnected %d", ret);
+				close(client);
+			}
+
 		} while (!ret && !disconnected);
 
 		/* stop capture */
