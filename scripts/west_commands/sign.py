@@ -554,11 +554,14 @@ class RimageSigner(Signer):
         if not args.quiet:
             command.inf('Signing with tool {}'.format(tool_path))
 
-        try:
-            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
-            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
-        except ValueError: # sof is the manifest
-            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
+        if os.getenv("SOF_SRC_DIR"):
+            sof_src_dir = pathlib.Path(os.getenv("SOF_SRC_DIR"))
+        else:
+            try:
+                sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
+                sof_src_dir = pathlib.Path(sof_proj[0].abspath)
+            except ValueError: # sof is the manifest
+                sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
 
         self.sof_src_dir = sof_src_dir
 
