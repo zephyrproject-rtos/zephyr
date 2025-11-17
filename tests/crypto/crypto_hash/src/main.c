@@ -17,6 +17,8 @@
 #define CRYPTO_DEV_COMPAT st_stm32_hash
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_sha)
 #define CRYPTO_DEV_COMPAT espressif_esp32_sha
+#elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_sha256)
+#define CRYPTO_DEV_COMPAT raspberrypi_pico_sha256
 #else
 #error "You need to enable one crypto device"
 #endif
