@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 LACOMBE Quentin <quentlace2g@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_PCD8544_H_
+#define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_PCD8544_H_
+
+#define DISPLAY_WIDTH     84
+#define DISPLAY_HEIGHT    48
+#define DISPLAY_PAGES     6
+#define DISPLAY_PAGE_SIZE 8
+#define PXL_FMT           PIXEL_FORMAT_MONO10
+
+/* FUNCTION SET */
+
+#define CMD_OP_FUNCSET 0x20 /* 0b00100000 */
+
+#define CMD_VALUE_POWERDOWN BIT(2)
+#define CMD_VALUE_POWERON   0
+
+#define CMD_VALUE_VERTICAL_ADDR   BIT(1)
+#define CMD_VALUE_HORIZONTAL_ADDR 0
+
+#define CMD_VALUE_EXTD_INSTRUCTION_SET  BIT(0)
+#define CMD_VALUE_BASIC_INSTRUCTION_SET 0
+
+/* DISPLAY CONTROL */
+
+#define CMD_OP_DISP_CTRL 0x08 /* 0b00001000 */
+
+#define CMD_VALUE_DISPLAY_BLANK  0
+#define CMD_VALUE_DISPLAY_NORMAL BIT(2)
+
+/* SET Y ADDR */
+
+#define CMD_OP_SETY 0x40 /* 0b01000000 */
+
+/* SET X ADDR */
+
+#define CMD_OP_SETX 0x80 /* 0b10000000 */
+
+/* EXTENDED MODE */
+
+/* Set bias */
+
+#define CMD_EXOP_SET_BIAS 0x10 /* 0b00010000 */
+
+/* Set VOp */
+
+#define CMD_EXOP_SET_VOP 0x80 /* 0b10000000 */
+
+#endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_PCD8544_H_ */
