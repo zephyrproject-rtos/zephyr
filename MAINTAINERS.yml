@@ -3816,7 +3816,7 @@ Networking:
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
-    - samples/net/gptp/
+    - samples/net/ethernet/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
@@ -3939,7 +3939,7 @@ Networking:
     - doc/connectivity/networking/dsa*
     - include/zephyr/net/dsa*.h
     - include/zephyr/dt-bindings/ethernet/dsa*.h
-    - samples/net/dsa/
+    - samples/net/ethernet/dsa/
   labels:
     - "area: Networking"
     - "area: DSA"
@@ -4098,7 +4098,7 @@ Networking:
   files:
     - doc/connectivity/networking/api/gptp.rst
     - include/zephyr/net/gptp.h
-    - samples/net/gptp/
+    - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
   labels:
     - "area: Networking"
