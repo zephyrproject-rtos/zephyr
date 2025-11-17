@@ -35,6 +35,8 @@ struct pwm_it8xxx2_cfg {
 	uintptr_t reg_pwmpol;
 	/* PWM channel */
 	int channel;
+	/* Init PWM channel output high */
+	bool pwm_init_high;
 	/* PWM prescaler control register base */
 	struct pwm_it8xxx2_regs *base;
 	/* Select PWM prescaler that output to PWM channel */
@@ -232,7 +234,9 @@ static int pwm_it8xxx2_init(const struct device *dev)
 {
 	const struct pwm_it8xxx2_cfg *config = dev->config;
 	struct pwm_it8xxx2_regs *const inst = config->base;
+	volatile uint8_t *reg_dcr = (uint8_t *)config->reg_dcr;
 	volatile uint8_t *reg_pcssg = (uint8_t *)config->reg_pcssg;
+	volatile uint8_t *reg_pwmpol = (uint8_t *)config->reg_pwmpol;
 	int ch = config->channel;
 	int prs_sel = config->prs_sel;
 	int pcssg_shift;
@@ -262,6 +266,17 @@ static int pwm_it8xxx2_init(const struct device *dev)
 	 */
 	inst->CTR1M = 0;
 
+	/* Set PWM init output level */
+	*reg_dcr = 0;
+	if (config->pwm_init_high) {
+		*reg_pwmpol |= BIT(ch);
+	} else {
+		*reg_pwmpol &= ~BIT(ch);
+	}
+
+	/* PWM channel clock source not gating */
+	pwm_enable(dev, 1);
+
 	/* Enable PWMs clock counter */
 	inst->ZTIER |= IT8XXX2_PWM_PCCE;
 
@@ -290,6 +305,7 @@ static DEVICE_API(pwm, pwm_it8xxx2_api) = {
 		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),				\
 		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),				\
 		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),		\
+		.pwm_init_high = DT_INST_PROP(inst, pwm_init_high),			\
 		.base = (struct pwm_it8xxx2_regs *) DT_REG_ADDR(DT_NODELABEL(prs)),	\
 		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),	\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
