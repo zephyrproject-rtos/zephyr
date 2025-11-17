@@ -107,6 +107,8 @@ source "drivers/watchdog/Kconfig.rpi_pico"
 
 source "drivers/watchdog/Kconfig.gd32"
 
+source "drivers/watchdog/Kconfig.mspm0"
+
 source "drivers/watchdog/Kconfig.npm13xx"
 
 source "drivers/watchdog/Kconfig.npm2100"
