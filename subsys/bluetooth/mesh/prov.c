@@ -96,7 +96,7 @@ static int check_output_auth(bt_mesh_output_action_t output, uint8_t size)
 		return -EINVAL;
 	}
 
-	if (size > bt_mesh_prov->output_size) {
+	if (size > bt_mesh_prov->output_size || size == 0) {
 		return -EINVAL;
 	}
 
@@ -113,7 +113,7 @@ static int check_input_auth(bt_mesh_input_action_t input, uint8_t size)
 		return -EINVAL;
 	}
 
-	if (size > bt_mesh_prov->input_size) {
+	if (size > bt_mesh_prov->input_size || size == 0) {
 		return -EINVAL;
 	}
 
@@ -176,6 +176,8 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	int err;
 
+	size = MIN(size, PROV_IO_OOB_SIZE_MAX);
+
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:
 		if (action || size) {
@@ -195,6 +197,10 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 
 	case AUTH_METHOD_OUTPUT:
 		output = output_action(action);
+		err = check_output_auth(output, size);
+		if (err) {
+			return err;
+		}
 
 		if (is_provisioner) {
 			if (output == BT_MESH_DISPLAY_STRING) {
@@ -208,10 +214,6 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 			return bt_mesh_prov->input(input, size);
 		}
 
-		err = check_output_auth(output, size);
-		if (err) {
-			return err;
-		}
 
 		if (output == BT_MESH_DISPLAY_STRING) {
 			char str[9];
@@ -227,13 +229,12 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 
 	case AUTH_METHOD_INPUT:
 		input = input_action(action);
+		err = check_input_auth(input, size);
+		if (err) {
+			return err;
+		}
 
 		if (!is_provisioner) {
-			err = check_input_auth(input, size);
-			if (err) {
-				return err;
-			}
-
 			if (input == BT_MESH_ENTER_STRING) {
 				atomic_set_bit(bt_mesh_prov_link.flags, WAIT_STRING);
 			} else {
