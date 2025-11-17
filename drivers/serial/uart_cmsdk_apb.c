@@ -462,7 +462,6 @@ static void uart_cmsdk_apb_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-
 static DEVICE_API(uart, uart_cmsdk_apb_driver_api) = {
 	.poll_in = uart_cmsdk_apb_poll_in,
 	.poll_out = uart_cmsdk_apb_poll_out,
@@ -484,331 +483,64 @@ static DEVICE_API(uart, uart_cmsdk_apb_driver_api) = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
+#define CMSDK_UART_COMBINED_IRQ(n)                                                                 \
+	static void uart_cmsdk_apb_irq_config_func_##n(const struct device *dev)                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_cmsdk_apb_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev);
-#endif
-PINCTRL_DT_INST_DEFINE(0);
-static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_0 = {
-	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(0),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = uart_cmsdk_apb_irq_config_func_0,
-#endif
-};
+#define CMSDK_UART_SPLIT_IRQ(n)                                                                    \
+	static void uart_cmsdk_apb_irq_config_func_##n(const struct device *dev)                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, tx, irq), DT_INST_IRQ_BY_NAME(n, tx, priority), \
+			    uart_cmsdk_apb_isr, DEVICE_DT_INST_GET(n), 0);                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, tx, irq));                                       \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, rx, irq), DT_INST_IRQ_BY_NAME(n, rx, priority), \
+			    uart_cmsdk_apb_isr, DEVICE_DT_INST_GET(n), 0);                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, rx, irq));                                       \
+	}
 
-static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
-	.baud_rate = DT_INST_PROP(0, current_speed),
-	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-		       .device = DT_INST_REG_ADDR(0),},
-	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-		       .device = DT_INST_REG_ADDR(0),},
-	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			.device = DT_INST_REG_ADDR(0),},
-};
+#define CMSDK_UART_IRQ_HANDLER(n)                                                                  \
+	COND_CODE_1(DT_NUM_IRQS(DT_DRV_INST(n)),(CMSDK_UART_COMBINED_IRQ(n)),(CMSDK_UART_SPLIT_IRQ(n)))
 
-DEVICE_DT_INST_DEFINE(0,
-		    uart_cmsdk_apb_init,
-		    NULL,
-		    &uart_cmsdk_apb_dev_data_0,
-		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart_cmsdk_apb_driver_api);
+#define CMSDK_UART_INIT(n)                                                                         \
+	COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,(CMSDK_UART_IRQ_HANDLER(n)),())                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_##n = {                   \
+		.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(n),                     \
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                        \
+		COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,                                          \
+			    (.irq_config_func = uart_cmsdk_apb_irq_config_func_##n), ())           \
+	};                                                                                         \
+                                                                                                   \
+	static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_##n = {                      \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
+		.uart_cc_as =                                                                      \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_ACTIVE,                                               \
+				.device = DT_INST_REG_ADDR(n),                                     \
+			},                                                                         \
+		.uart_cc_ss =                                                                      \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_SLEEP,                                                \
+				.device = DT_INST_REG_ADDR(n),                                     \
+			},                                                                         \
+		.uart_cc_dss =                                                                     \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_DEEPSLEEP,                                            \
+				.device = DT_INST_REG_ADDR(n),                                     \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_cmsdk_apb_init, NULL, &uart_cmsdk_apb_dev_data_##n,          \
+			      &uart_cmsdk_apb_dev_cfg_##n, PRE_KERNEL_1,                           \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_cmsdk_apb_driver_api);
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_NUM_IRQS(DT_DRV_INST(0)) == 1
-static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQN(0));
-}
-#else
-static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
-		    DT_INST_IRQ_BY_NAME(0, tx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
-		    DT_INST_IRQ_BY_NAME(0, rx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
-}
-#endif
-#endif
-
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev);
-#endif
-PINCTRL_DT_INST_DEFINE(1);
-static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_1 = {
-	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(1),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(1),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = uart_cmsdk_apb_irq_config_func_1,
-#endif
-};
-
-static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
-	.baud_rate = DT_INST_PROP(1, current_speed),
-	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-		       .device = DT_INST_REG_ADDR(1),},
-	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-		       .device = DT_INST_REG_ADDR(1),},
-	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			.device = DT_INST_REG_ADDR(1),},
-};
-
-DEVICE_DT_INST_DEFINE(1,
-		    uart_cmsdk_apb_init,
-		    NULL,
-		    &uart_cmsdk_apb_dev_data_1,
-		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart_cmsdk_apb_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_NUM_IRQS(DT_DRV_INST(1)) == 1
-static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQN(1));
-}
-#else
-static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
-		    DT_INST_IRQ_BY_NAME(1, tx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
-		    DT_INST_IRQ_BY_NAME(1, rx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
-}
-#endif
-#endif
-
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(2))
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev);
-#endif
-PINCTRL_DT_INST_DEFINE(2);
-static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_2 = {
-	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(2),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(2, clocks, clock_frequency),
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(2),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = uart_cmsdk_apb_irq_config_func_2,
-#endif
-};
-
-static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
-	.baud_rate = DT_INST_PROP(2, current_speed),
-	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-		       .device = DT_INST_REG_ADDR(2),},
-	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-		       .device = DT_INST_REG_ADDR(2),},
-	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			.device = DT_INST_REG_ADDR(2),},
-};
-
-DEVICE_DT_INST_DEFINE(2,
-		    uart_cmsdk_apb_init,
-		    NULL,
-		    &uart_cmsdk_apb_dev_data_2,
-		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart_cmsdk_apb_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_NUM_IRQS(DT_DRV_INST(2)) == 1
-static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(2),
-		    DT_INST_IRQ_BY_NAME(2, priority, irq),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(2),
-		    0);
-	irq_enable(DT_INST_IRQN(2));
-}
-#else
-static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, tx, irq),
-		    DT_INST_IRQ_BY_NAME(2, tx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(2),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(2, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, rx, irq),
-		    DT_INST_IRQ_BY_NAME(2, rx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(2),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(2, rx, irq));
-}
-#endif
-#endif
-
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(2)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(3))
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev);
-#endif
-PINCTRL_DT_INST_DEFINE(3);
-static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_3 = {
-	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(3),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(3, clocks, clock_frequency),
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(3),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = uart_cmsdk_apb_irq_config_func_3,
-#endif
-};
-
-static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
-	.baud_rate = DT_INST_PROP(3, current_speed),
-	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-		       .device = DT_INST_REG_ADDR(3),},
-	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-		       .device = DT_INST_REG_ADDR(3),},
-	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			.device = DT_INST_REG_ADDR(3),},
-};
-
-DEVICE_DT_INST_DEFINE(3,
-		    uart_cmsdk_apb_init,
-		    NULL,
-		    &uart_cmsdk_apb_dev_data_3,
-		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart_cmsdk_apb_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_NUM_IRQS(DT_DRV_INST(3)) == 1
-static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(3),
-		    DT_INST_IRQ(3, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(3),
-		    0);
-	irq_enable(DT_INST_IRQN(3));
-}
-#else
-static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, tx, irq),
-		    DT_INST_IRQ_BY_NAME(3, tx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(3),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(3, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, rx, irq),
-		    DT_INST_IRQ_BY_NAME(3, rx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(3),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(3, rx, irq));
-}
-#endif
-#endif
-
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(3)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(4))
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev);
-#endif
-PINCTRL_DT_INST_DEFINE(4);
-static const struct uart_cmsdk_apb_config uart_cmsdk_apb_dev_cfg_4 = {
-	.uart = (volatile struct uart_cmsdk_apb *)DT_INST_REG_ADDR(4),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(4, clocks, clock_frequency),
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(4),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = uart_cmsdk_apb_irq_config_func_4,
-#endif
-};
-
-static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
-	.baud_rate = DT_INST_PROP(4, current_speed),
-	.uart_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-		       .device = DT_INST_REG_ADDR(4),},
-	.uart_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-		       .device = DT_INST_REG_ADDR(4),},
-	.uart_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			.device = DT_INST_REG_ADDR(4),},
-};
-
-DEVICE_DT_INST_DEFINE(4,
-		    uart_cmsdk_apb_init,
-		    NULL,
-		    &uart_cmsdk_apb_dev_data_4,
-		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart_cmsdk_apb_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_NUM_IRQS(DT_DRV_INST(4)) == 1
-static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(4),
-		    DT_INST_IRQ_BY_NAME(4, priority, irq),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(4),
-		    0);
-	irq_enable(DT_INST_IRQN(4));
-}
-#else
-static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(4, tx, irq),
-		    DT_INST_IRQ_BY_NAME(4, tx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(4),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(4, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(4, rx, irq),
-		    DT_INST_IRQ_BY_NAME(4, rx, priority),
-		    uart_cmsdk_apb_isr,
-		    DEVICE_DT_INST_GET(4),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(4, rx, irq));
-}
-#endif
-#endif
-
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(4)) */
+DT_INST_FOREACH_STATUS_OKAY(CMSDK_UART_INIT)
