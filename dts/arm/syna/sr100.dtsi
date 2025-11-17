@@ -192,6 +192,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
 			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
+			g-rx-fifo-size = <576>;
+			g-np-tx-fifo-size = <128>;
+			g-tx-fifo-size = <512 512 256 256 256 256 256 256>;
 			status = "disabled";
 		};
 	};
