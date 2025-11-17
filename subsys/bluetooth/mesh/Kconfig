@@ -361,6 +361,18 @@ config BT_MESH_OOB_AUTH_REQUIRED
 	bool "OOB authentication mandates to use HMAC SHA256"
 	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 
+config BT_MESH_PROV_OOB_API_LEGACY
+	bool "Reduced maximum OOB authentication size support [DEPRECATED]"
+	select DEPRECATED
+	depends on BT_MESH_PROV
+	help
+	  By default, the maximum OOB authentication size is 32 bytes.
+	  Enable this option to use the legacy API which is only compatible with
+	  specification v1.1 and earlier. This limits OOB authentication to 8
+	  bytes maximum.
+	  This option is intended for backward compatibility.
+	  Not recommended for new designs due to reduced security.
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_CDB
