@@ -12,5 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_CLK_HELPERS clk.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_PINCTRL_HELPERS pinctrl.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_POWER_DOMAIN_HELPERS power.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_SYSTEM system.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_REBOOT reboot.c)
 
 add_subdirectory_ifdef(CONFIG_ARM_SCMI nxp)
