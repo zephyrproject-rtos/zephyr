@@ -39,6 +39,17 @@
 				columns = <20>;
 				rows = <2>;
 			};
+
+			test_spi_max7219_7seg: max7219-7seg@1 {
+				compatible = "maxim,max7219-7seg";
+				reg = <1>;
+				status = "okay";
+				spi-max-frequency = <1000000>;
+				columns = <16>;
+				rows = <1>;
+				intensity = <7>;
+				scan-limit = <7>;
+			};
 		};
 	};
 };
