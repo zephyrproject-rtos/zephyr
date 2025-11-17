@@ -15,7 +15,7 @@
 #include <zephyr/net/net_ip.h>
 #include "sockets_internal.h"
 
-#define MAX_SERVICES   1
+#define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_TREL_SERVICES
 
 static struct zsock_pollfd sockfd_udp[MAX_SERVICES];
 static int trel_sock = -1;
