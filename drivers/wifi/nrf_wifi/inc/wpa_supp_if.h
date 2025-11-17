@@ -131,8 +131,9 @@ void nrf_wifi_supp_event_roc_cancel_complete(void *os_vif_ctx,
 					    unsigned int event_len);
 int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2);
 int nrf_wifi_supp_get_country(void *if_priv, char *alpha2);
-int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq, unsigned int duration);
-int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv);
+int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
+				     unsigned int duration, u64 host_cookie);
+int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv, u64 rpu_cookie);
 int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, int ctwindow);
 
 #endif /* CONFIG_NRF70_STA_MODE */
