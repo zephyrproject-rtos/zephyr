@@ -58,6 +58,7 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_REALTEK_RTS5912 pinctrl_realtek_rts5
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_20X_30X_AFIO pinctrl_wch_20x_30x_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_00X_AFIO pinctrl_wch_00x_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_SF32LB52X pinctrl_sf32lb52x.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_RTS5817 pinctrl_rts5817.c)
 
 add_subdirectory(renesas)
 
