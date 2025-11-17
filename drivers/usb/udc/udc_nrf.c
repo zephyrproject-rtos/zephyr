@@ -1160,12 +1160,11 @@ static void nrf_usbd_legacy_transfer_out_drop(nrf_usbd_common_ep_t ep)
 }
 
 struct udc_nrf_config {
-	clock_control_subsys_t clock;
+	const struct device *clk_dev;
 	nrfx_power_config_t pwr;
 	nrfx_power_usbevt_config_t evt;
 };
 
-static struct onoff_manager *hfxo_mgr;
 static struct onoff_client hfxo_cli;
 
 static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
@@ -1702,6 +1701,7 @@ static int udc_nrf_host_wakeup(const struct device *dev)
 
 static int udc_nrf_enable(const struct device *dev)
 {
+	const struct udc_nrf_config *cfg = dev->config;
 	unsigned int key;
 	int ret;
 
@@ -1718,7 +1718,7 @@ static int udc_nrf_enable(const struct device *dev)
 	}
 
 	sys_notify_init_spinwait(&hfxo_cli.notify);
-	ret = onoff_request(hfxo_mgr, &hfxo_cli);
+	ret = nrf_clock_control_request(cfg->clk_dev, NULL, &hfxo_cli);
 	if (ret < 0) {
 		LOG_ERR("Failed to start HFXO %d", ret);
 		return ret;
@@ -1734,6 +1734,7 @@ static int udc_nrf_enable(const struct device *dev)
 
 static int udc_nrf_disable(const struct device *dev)
 {
+	const struct udc_nrf_config *cfg = dev->config;
 	int ret;
 
 	nrf_usbd_legacy_disable();
@@ -1748,7 +1749,7 @@ static int udc_nrf_disable(const struct device *dev)
 		return -EIO;
 	}
 
-	ret = onoff_cancel_or_release(hfxo_mgr, &hfxo_cli);
+	ret = nrf_clock_control_cancel_or_release(cfg->clk_dev, NULL, &hfxo_cli);
 	if (ret < 0) {
 		LOG_ERR("Failed to stop HFXO %d", ret);
 		return ret;
@@ -1760,8 +1761,6 @@ static int udc_nrf_disable(const struct device *dev)
 static int udc_nrf_init(const struct device *dev)
 {
 	const struct udc_nrf_config *cfg = dev->config;
-
-	hfxo_mgr = z_nrf_clock_control_get_onoff(cfg->clock);
 
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
@@ -1873,9 +1872,11 @@ static void udc_nrf_unlock(const struct device *dev)
 }
 
 static const struct udc_nrf_config udc_nrf_cfg = {
-	.clock = COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
-			     (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
-			     (CLOCK_CONTROL_NRF_SUBSYS_HF)),
+	.clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK192M),
+						 (nordic_nrf_clock_hfclk192m),
+						 (COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+							      (nordic_nrf_clock_hfclk),
+							      (nordic_nrf_clock_xo)))));
 	.pwr = {
 		.dcdcen = (DT_PROP(DT_INST(0, nordic_nrf5x_regulator), regulator_initial_mode)
 			   == NRF5X_REG_MODE_DCDC),

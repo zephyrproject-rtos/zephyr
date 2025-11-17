@@ -74,13 +74,13 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 	}
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_AVAILABLE);
-	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
+	o = nrfx_clock_lfclk_running_check(&t);
 	zassert_false((t == NRF_CLOCK_LFCLK_XTAL) && o);
 	k_busy_wait(35);
 	zassert_true(k_cycle_get_32() > 0);
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_STABLE);
-	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
+	o = nrfx_clock_lfclk_running_check(&t);
 	zassert_true((t == NRF_CLOCK_LFCLK_XTAL) && o);
 }
 
@@ -118,7 +118,7 @@ static int get_lfclk_state(void)
 	 * not valid, in that case read system clock to check if it has
 	 * progressed.
 	 */
-	clk_on = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &clk_type);
+	clk_on = nrfx_clock_lfclk_running_check(&clk_type);
 	k_busy_wait(100);
 	rtc_cnt = k_cycle_get_32();
 

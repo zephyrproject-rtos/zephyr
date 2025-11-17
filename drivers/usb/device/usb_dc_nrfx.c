@@ -226,7 +226,7 @@ static uint8_t ep_isoout_bufs[CFG_EP_ISOOUT_CNT][ISO_EP_BUF_MAX_SZ]
  * @param status_cb	Status callback for USB DC notifications
  * @param setup		Setup packet for Control requests
  * @param hfxo_cli	Onoff client used to control HFXO
- * @param hfxo_mgr	Pointer to onoff manager associated with HFXO.
+ * @param hfxo_dev	Pointer to HFXO device.
  * @param clk_requested	Flag used to protect against double stop.
  * @param attached	USBD Attached flag
  * @param ready		USBD Ready flag set after pullup
@@ -239,7 +239,7 @@ struct nrf_usbd_ctx {
 	usb_dc_status_callback status_cb;
 	struct usb_setup_packet setup;
 	struct onoff_client hfxo_cli;
-	struct onoff_manager *hfxo_mgr;
+	struct device *hfxo_dev;
 	atomic_t clk_requested;
 
 	bool attached;
@@ -534,7 +534,7 @@ static void usb_dc_power_event_handler(nrfx_power_usb_evt_t event)
 static int hfxo_stop(struct nrf_usbd_ctx *ctx)
 {
 	if (atomic_cas(&ctx->clk_requested, 1, 0)) {
-		return onoff_cancel_or_release(ctx->hfxo_mgr, &ctx->hfxo_cli);
+		return nrf_clock_control_cancel_or_release(ctx->hfxo_dev, NULL, &ctx->hfxo_cli);
 	}
 
 	return 0;
@@ -545,7 +545,7 @@ static int hfxo_start(struct nrf_usbd_ctx *ctx)
 	if (atomic_cas(&ctx->clk_requested, 0, 1)) {
 		sys_notify_init_spinwait(&ctx->hfxo_cli.notify);
 
-		return onoff_request(ctx->hfxo_mgr, &ctx->hfxo_cli);
+		return nrf_clock_control_request(ctx->hfxo_dev, NULL, &ctx->hfxo_cli);
 	}
 
 	return 0;
@@ -1276,11 +1276,12 @@ int usb_dc_attach(void)
 	}
 
 	k_mutex_init(&ctx->drv_lock);
-	ctx->hfxo_mgr =
-		z_nrf_clock_control_get_onoff(
-			COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
-				    (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
-				    (CLOCK_CONTROL_NRF_SUBSYS_HF)));
+
+	ctx->hfxo_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK192M),
+						      (nordic_nrf_clock_hfclk192m),
+						      (COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+								   (nordic_nrf_clock_hfclk),
+								   (nordic_nrf_clock_xo)))));
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrf_usbd_common_irq_handler, 0);

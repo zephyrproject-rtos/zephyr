@@ -19,16 +19,14 @@ LOG_MODULE_REGISTER(test);
 
 extern void mock_temp_nrf5_value_set(struct sensor_value *val);
 
-static void turn_on_clock(const struct device *dev,
-			  clock_control_subsys_t subsys)
+static void turn_on_clock(const struct device *dev)
 {
 	int err;
 	int res;
 	struct onoff_client cli;
-	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);
 
 	sys_notify_init_spinwait(&cli.notify);
-	err = onoff_request(mgr, &cli);
+	err = nrf_clock_control_request(dev, NULL, &cli);
 	if (err < 0) {
 		zassert_false(true, "Failed to start clock");
 	}
@@ -36,14 +34,12 @@ static void turn_on_clock(const struct device *dev,
 	}
 }
 
-static void turn_off_clock(const struct device *dev,
-			   clock_control_subsys_t subsys)
+static void turn_off_clock(const struct device *dev)
 {
 	int err;
-	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);
 
 	do {
-		err = onoff_release(mgr);
+		err = nrf_clock_control_release(dev, NULL);
 	} while (err >= 0);
 
 	while (clock_control_get_status(dev, subsys) !=
@@ -63,9 +59,11 @@ static void test_calibration(uint32_t exp_cal, uint32_t exp_skip,
 	int cal_cnt;
 	int skip_cnt;
 
-	const struct device *const clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+									   (nordic_nrf_clock_hfclk),
+									   (nordic_nrf_clock_xo)));
 
-	turn_on_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
+	turn_on_clock(clk_dev);
 
 	cal_cnt = z_nrf_clock_calibration_count();
 	skip_cnt = z_nrf_clock_calibration_skips_count();
@@ -75,7 +73,7 @@ static void test_calibration(uint32_t exp_cal, uint32_t exp_skip,
 	cal_cnt = z_nrf_clock_calibration_count() - cal_cnt;
 	skip_cnt = z_nrf_clock_calibration_skips_count() - skip_cnt;
 
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
+	turn_off_clock(clk_dev);
 
 	zassert_equal(cal_cnt, exp_cal,
 			"%d: Unexpected number of calibrations (%d, exp:%d)",
@@ -126,18 +124,18 @@ ZTEST(nrf_clock_calibration, test_calibration_after_enabling_lfclk)
 		ztest_test_skip();
 	}
 
-	const struct device *const clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk);
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };
 
 	zassert_true(device_is_ready(clk_dev), "Device is not ready");
 
 	mock_temp_nrf5_value_set(&value);
 
-	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	turn_off_clock(clk_dev);
 
 	k_busy_wait(10000);
 
-	turn_on_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	turn_on_clock(clk_dev);
 
 	TEST_CALIBRATION(1, 0,
 			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD);

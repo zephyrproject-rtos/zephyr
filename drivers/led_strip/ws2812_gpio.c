@@ -78,14 +78,16 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 	const struct ws2812_gpio_cfg *config = dev->config;
 	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
 	const uint32_t val = BIT(config->gpio.pin);
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1((NRF_CLOCK_HAS_HFCLK),
+							       (nordic_nrf_clock_hfclk),
+							       (nordic_nrf_clock_xo)));
 	struct onoff_client cli;
 	unsigned int key;
 	int rc;
 
 	sys_notify_init_spinwait(&cli.notify);
-	rc = onoff_request(mgr, &cli);
+
+	rc = nrf_clock_control_request(clk_dev, NULL, &cli);
 	if (rc < 0) {
 		return rc;
 	}
@@ -122,7 +124,7 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 
 	irq_unlock(key);
 
-	rc = onoff_release(mgr);
+	rc = nrf_clock_control_release(drv_data->clk_dev, NULL);
 	/* Returns non-negative value on success. Cap to 0 as API states. */
 	rc = MIN(rc, 0);
 

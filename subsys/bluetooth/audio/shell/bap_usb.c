@@ -736,7 +736,7 @@ int bap_usb_init(void)
 		 * This may not be required, but reduces the risk of not decoding fast enough
 		 * to keep up with USB
 		 */
-		err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+		err = nrfx_clock_hfclk_divider_set(NRF_CLOCK_HFCLK_DIV_1);
 
 		err -= NRFX_ERROR_BASE_NUM;
 		if (err != 0) {

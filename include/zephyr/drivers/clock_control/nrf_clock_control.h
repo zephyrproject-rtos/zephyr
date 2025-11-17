@@ -128,14 +128,6 @@ int z_nrf_clock_calibration_skips_count(void);
  */
 bool z_nrf_clock_calibration_is_in_progress(void);
 
-/** @brief Get onoff service for given clock subsystem.
- *
- * @param sys Subsystem.
- *
- * @return Service handler or NULL.
- */
-struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
-
 /** @brief Permanently enable low frequency clock.
  *
  * Low frequency clock is usually enabled during application lifetime because
@@ -225,6 +217,9 @@ __subsystem struct nrf_clock_control_driver_api {
 		       struct onoff_client *cli);
 	int (*release)(const struct device *dev,
 		       const struct nrf_clock_spec *spec);
+	int (*cancel)(const struct device *dev,
+		      const struct nrf_clock_spec *spec,
+		      struct onoff_client *cli);
 	int (*cancel_or_release)(const struct device *dev,
 				 const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
@@ -319,6 +314,39 @@ int nrf_clock_control_release(const struct device *dev,
 		(const struct nrf_clock_control_driver_api *)dev->api;
 
 	return api->release(dev, spec);
+}
+
+/**
+ * @brief Safely cancel a reservation request.
+ *
+ * It may be that a client has issued a reservation request but needs to
+ * shut down before the request has completed. This function attempts to
+ * cancel the request and issues a release if cancellation fails because
+ * the request was completed. This synchronously ensures that ownership
+ * data reverts to the client so is available for a future request.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec the same specification of the clock attributes that was used
+ *             in the reservation request.
+ * @param cli a pointer to the same client state that was provided
+ *            when the operation to be cancelled was issued.
+ *
+ * @retval ONOFF_STATE_TO_ON if the cancellation occurred before the transition
+ *                           completed.
+ * @retval ONOFF_STATE_ON if the cancellation occurred after the transition
+ *                        completed.
+ * @retval -EINVAL if the parameters are invalid.
+ * @retval negative other errors produced by onoff_release().
+ */
+static inline
+int nrf_clock_control_cancel_or_release(const struct device *dev,
+					const struct nrf_clock_spec *spec,
+					struct onoff_client *cli)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->cancel_or_release(dev, spec, cli);
 }
 
 /**

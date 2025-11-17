@@ -17,7 +17,7 @@
 	};
 };
 
-&clock {
+&hfclkaudio {
 	hfclkaudio-frequency = <12288000>;
 };
 
