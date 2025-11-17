@@ -192,7 +192,9 @@ static ALWAYS_INLINE void arch_icache_disable(void)
 
 #endif /* CONFIG_ICACHE */
 
-#if defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_DOUBLEMAP) && \
+	defined(CONFIG_XTENSA_CACHED_REGION) && \
+	defined(CONFIG_XTENSA_UNCACHED_REGION)
 /**
  * @brief Test if a pointer is in cached region.
  *
@@ -335,7 +337,7 @@ static ALWAYS_INLINE void arch_cache_init(void)
 {
 }
 
-#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE)
+#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE) && defined(CONFIG_XTENSA_UNCACHED_REGION)
 static ALWAYS_INLINE bool arch_mem_coherent(void *ptr)
 {
 	size_t addr = (size_t) ptr;
