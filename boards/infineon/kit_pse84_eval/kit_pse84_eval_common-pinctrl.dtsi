@@ -13,3 +13,33 @@
 &p6_5_scb2_uart_rx {
 	input-enable;
 };
+
+&p21_0_sdhc0_card_cmd{
+	drive-push-pull;
+	input-enable;
+};
+
+&p12_0_sdhc0_clk_card{
+	drive-push-pull;
+	input-enable;
+};
+
+&p12_1_sdhc0_card_dat_3to0{
+	drive-push-pull;
+	input-enable;
+};
+
+&p12_2_sdhc0_card_dat_3to0{
+	drive-push-pull;
+	input-enable;
+};
+
+&p12_4_sdhc0_card_dat_3to0{
+	drive-push-pull;
+	input-enable;
+};
+
+&p12_5_sdhc0_card_dat_3to0{
+	drive-push-pull;
+	input-enable;
+};

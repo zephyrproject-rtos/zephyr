@@ -80,6 +80,13 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
 		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
 		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+	} else if (data->hw_resource.type == IFX_RSC_SDHC) {
+#define CYBSP_SDHC_0_CLK_DIV_GRP_NUM ((2U << PERI_PCLK_GR_NUM_Pos) | (1U << PERI_PCLK_INST_NUM_Pos))
+		en_clk_dst_t clk_idx = CYBSP_SDHC_0_CLK_DIV_GRP_NUM;
+
+		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
+		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
+		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
 	} else {
 		return -EINVAL;
 	}
