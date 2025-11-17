@@ -525,8 +525,10 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-	ret = lll_prepare_done(lll);
-	LL_ASSERT_ERR(!ret);
+	if (!is_resume) {
+		ret = lll_prepare_done(lll);
+		LL_ASSERT_ERR(!ret);
+	}
 
 	DEBUG_RADIO_START_O(1);
 
@@ -535,7 +537,14 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll = curr;
+	struct lll_scan *lll;
+
+	/* Prepare being cancelled (no resume for scan) */
+	if (next == NULL) {
+		return -ECANCELED;
+	}
+
+	lll = curr;
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different
@@ -761,10 +770,6 @@ static void isr_rx(void *param)
 	err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id, irkmatch_ok,
 			 irkmatch_id, rl_idx, rssi_ready, phy_flags_rx);
 	if (!err) {
-		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-			lll_prof_send();
-		}
-
 		return;
 	}
 
@@ -780,11 +785,14 @@ isr_rx_do_close:
 
 static void isr_tx(void *param)
 {
-#if defined(CONFIG_BT_CTLR_PRIVACY) && defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct lll_scan *lll = param;
-#endif
+	struct node_rx_pdu *node_rx_prof;
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+		node_rx_prof = lll_prof_reserve();
+	}
 
 	/* Clear radio status and events */
 	lll_isr_tx_status_reset();
@@ -804,11 +812,17 @@ static void isr_tx(void *param)
 		LL_ASSERT_ERR(!radio_is_ready());
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+		struct lll_scan *lll = param;
+
 		radio_ar_configure(count, irks, (lll->phy << 2));
 #else
 		radio_ar_configure(count, irks, 0);
@@ -836,6 +850,10 @@ static void isr_tx(void *param)
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	radio_isr_set(isr_rx, param);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_reserve_send(node_rx_prof);
+	}
 }
 
 static void isr_common_done(void *param)
@@ -1303,6 +1321,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		ull_rx_put_sched(rx->hdr.link, rx);
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
+
 		return 0;
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -1401,6 +1423,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		radio_isr_set(isr_tx, lll);
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
+
 		return 0;
 	}
 	/* Passive scanner or scan responses */
@@ -1446,10 +1472,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
 			    (err == -EBUSY)) {
-				if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-					lll_prof_cputime_capture();
-				}
-
 				return 0;
 			}
 
