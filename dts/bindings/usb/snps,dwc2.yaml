@@ -51,3 +51,22 @@ properties:
     description: |
       Value of the GHWCFG4 register. It is used to determine available endpoint
       types during driver pre-initialization.
+
+  g-rx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Rx Data FIFO Depth. Must not exceed GRXFSIZ.RxFDep power-on value.
+
+  g-np-tx-fifo-size:
+    type: int
+    required: true
+    description: |
+      IN Endpoint 0 FIFO Depth. Must not exceed GNPTXFSIZ.NPTXFDep power-on value.
+
+  g-tx-fifo-size:
+    type: array
+    required: true
+    description: |
+      IN Endpoint Transmit fifo depths. Values must not exceed their respective
+      DIEPTXFn.INEPnTxFDep power-on values.
