@@ -2035,7 +2035,7 @@ void nrf_wifi_supp_event_roc_complete(void *if_priv,
 	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_complete) {
 		vif_ctx_zep->supp_callbk_fns.roc_complete(vif_ctx_zep->supp_drv_if_ctx,
 				roc_complete->frequency,
-				roc_complete->dur);
+				roc_complete->dur, roc_complete->cookie);
 	}
 }
 
@@ -2064,7 +2064,7 @@ void nrf_wifi_supp_event_roc_cancel_complete(void *if_priv,
 
 	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_cancel_complete) {
 		vif_ctx_zep->supp_callbk_fns.roc_cancel_complete(vif_ctx_zep->supp_drv_if_ctx,
-				roc_cancel_complete->frequency);
+				roc_cancel_complete->frequency, roc_cancel_complete->cookie);
 	}
 }
 
