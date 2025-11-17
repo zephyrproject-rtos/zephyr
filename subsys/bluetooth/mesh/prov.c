@@ -293,6 +293,7 @@ int bt_mesh_input_string(const char *str)
 	}
 
 	memcpy(bt_mesh_prov_link.auth, str, strlen(str));
+	memset(bt_mesh_prov_link.auth + size, 0, sizeof(bt_mesh_prov_link.auth) - size);
 
 	bt_mesh_prov_link.role->input_complete();
 
