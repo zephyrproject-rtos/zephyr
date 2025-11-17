@@ -1,0 +1,56 @@
+#Copyright (c) 2025-2026 Macronix International Co., Ltd.
+#SPDX-License-Identifier: Apache-2.0
+
+description: Macronix MSPI controller
+
+bus: mspi
+
+compatible: "mxicy,mspi-controller"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      Clock frequency the SPI peripheral is being driven at, in Hz.
+  ce-ports:
+    required: true
+    type: uint8-array
+    description: |
+      Specifies the CE port number used for device communication.
+
+      Example:
+
+        mspi@... {
+                ce-gpios = [00, 01, 02, 03];
+
+                mspi-device@0 {
+                        reg = <0>;
+                        ...
+                };
+                mspi-device@1 {
+                        reg = <1>;
+                        ...
+                };
+                ...
+        };
+
+      The child node "mspi-device@0" specifies a mspi device with
+      chip select controller ce-port 0. Similarly, "mspi-device@1" has CE GPIO
+      controller ce-port 1. Additional devices can be configured in the same way.
+      This controller supports up to 256 devices.
+  rx-ss-a:
+    required: true
+    type: int
+    description: |
+      Ratio Of CLK_RX_A_I Frequency And CLK_SS_I Frequency.
+
+  rx-ss-b:
+    required: true
+    type: int
+    description: |
+      Ratio Of CLK_RX_B_I Frequency And CLK_SS_I Frequency.
