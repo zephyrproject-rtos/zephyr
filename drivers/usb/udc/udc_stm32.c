@@ -156,7 +156,6 @@ static const int syscfg_otg_hs_phy_clk[] = {
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
-	uint32_t irq;
 	uint32_t occupied_mem;
 	/* wLength of SETUP packet for s-out-status */
 	uint32_t ep0_out_wlength;
@@ -168,8 +167,12 @@ struct udc_stm32_data  {
 };
 
 struct udc_stm32_config {
+	/* # of bidirectional endpoints supported */
 	uint32_t num_endpoints;
+	/* USB SRAM size (in bytes) */
 	uint32_t dram_size;
+	/* Global USB interrupt IRQn */
+	uint32_t irqn;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
@@ -843,6 +846,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 	int ret;
 
@@ -872,7 +876,7 @@ static int udc_stm32_enable(const struct device *dev)
 		return ret;
 	}
 
-	irq_enable(priv->irq);
+	irq_enable(cfg->irqn);
 
 	return 0;
 }
@@ -880,9 +884,10 @@ static int udc_stm32_enable(const struct device *dev)
 static int udc_stm32_disable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
-	irq_disable(UDC_STM32_IRQ);
+	irq_disable(cfg->irqn);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
@@ -906,6 +911,7 @@ static int udc_stm32_disable(const struct device *dev)
 static int udc_stm32_shutdown(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
 	status = HAL_PCD_DeInit(&priv->pcd);
@@ -919,8 +925,8 @@ static int udc_stm32_shutdown(const struct device *dev)
 		/* continue anyway */
 	}
 
-	if (irq_is_enabled(priv->irq)) {
-		irq_disable(priv->irq);
+	if (irq_is_enabled(cfg->irqn)) {
+		irq_disable(cfg->irqn);
 	}
 
 	return 0;
@@ -1217,6 +1223,7 @@ static struct udc_data udc0_data = {
 static const struct udc_stm32_config udc0_cfg  = {
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
+	.irqn = UDC_STM32_IRQ,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
@@ -1541,7 +1548,6 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 
 	priv->dev = dev;
-	priv->irq = UDC_STM32_IRQ;
 	priv->clk_enable = priv_clock_enable;
 	priv->clk_disable = priv_clock_disable;
 	priv->pcd_prepare = priv_pcd_prepare;
