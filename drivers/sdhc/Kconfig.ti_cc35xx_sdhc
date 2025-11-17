@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+# TI SDHC Controller node
+
+config SDHC_TI_CC35XX_INTERRUPT_ENABLE
+	bool "Support interrupt driven operation"
+	default y
+	help
+		Selected between polling or interrupt based operation.
+
+config SDHC_TI_CC35XX
+	bool "TI CC35XX SDHC"
+	default y
+	depends on DT_HAS_TI_CC35XX_SDHC_ENABLED
+	select EVENTS
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+		Enable TI CC35XX SDMMC Host Controller.

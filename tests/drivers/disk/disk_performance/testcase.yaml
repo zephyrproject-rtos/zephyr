@@ -29,3 +29,7 @@ tests:
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+  drivers.disk.disk_performance.cc35xx_sdhc:
+    filter: dt_compat_enabled("ti,cc35xx-sdhc")
+    platform_allow:
+      - lp_em_cc35x1
