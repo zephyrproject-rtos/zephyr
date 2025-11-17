@@ -46,6 +46,14 @@ Bluetooth
 Networking
 **********
 
+Video
+*****
+
+* hm01b0
+
+  * CONFIG_VIDEO_HIMAX_HM01B0
+    renamed to CONFIG_VIDEO_HM01B0
+
 Other subsystems
 ****************
 
