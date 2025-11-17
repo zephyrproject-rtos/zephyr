@@ -68,6 +68,14 @@
 				      <12 1>, <13 1>, <14 1>, <15 1>;
 		};
 
+		mailbox: ipcc1@40490000 {
+			compatible = "st,stm32-ipcc-mailbox";
+			reg = <0x40490000 0x400>;
+			interrupts = <171 0>, <172 0>;
+			interrupt-names = "rxo", "txf";
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@44240000 {
 			compatible = "st,stm32-pinctrl";
 			#address-cells = <1>;
