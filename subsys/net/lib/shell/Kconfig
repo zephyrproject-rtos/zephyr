@@ -35,6 +35,11 @@ config NET_SHELL_CAPTURE_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_CAPTURE
 
+config NET_SHELL_CONFIG_SETTINGS_SUPPORTED
+	bool "Network stack configuration"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_CONFIG_SETTINGS
+
 config NET_SHELL_DHCPV4_SUPPORTED
 	bool "DHCPv4 start / stop"
 	default y
