@@ -28,6 +28,12 @@ properties:
       3 = PWM_CHANNEL_3, 4 = PWM_CHANNEL_4, 5 = PWM_CHANNEL_5,
       6 = PWM_CHANNEL_6, 7 = PWM_CHANNEL_7
 
+  pwm-init-high:
+    type: boolean
+    description: |
+      After setting PWM pin to alternate mode, initialize PWM pin to output high,
+      otherwise output low.
+
   pwmctrl:
     type: phandle
     required: true
