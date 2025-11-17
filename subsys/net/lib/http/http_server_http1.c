@@ -196,8 +196,147 @@ static int handle_http1_static_resource(
 	ret; })
 
 #define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
-	"HTTP/1.1 %d\r\n"                                                                          \
+	"HTTP/1.1 %d %s\r\n"                                                                       \
 	"Transfer-Encoding: chunked\r\n"
+
+static const char *http_status_reason_phrase(enum http_status status)
+{
+	switch (status) {
+	/* 1xx Informational */
+	case HTTP_100_CONTINUE:
+		return "Continue";
+	case HTTP_101_SWITCHING_PROTOCOLS:
+		return "Switching Protocols";
+	case HTTP_102_PROCESSING:
+		return "Processing";
+	case HTTP_103_EARLY_HINTS:
+		return "Early Hints";
+	/* 2xx Success */
+	case HTTP_200_OK:
+		return "OK";
+	case HTTP_201_CREATED:
+		return "Created";
+	case HTTP_202_ACCEPTED:
+		return "Accepted";
+	case HTTP_203_NON_AUTHORITATIVE_INFORMATION:
+		return "Non-Authoritative Information";
+	case HTTP_204_NO_CONTENT:
+		return "No Content";
+	case HTTP_205_RESET_CONTENT:
+		return "Reset Content";
+	case HTTP_206_PARTIAL_CONTENT:
+		return "Partial Content";
+	case HTTP_207_MULTI_STATUS:
+		return "Multi-Status";
+	case HTTP_208_ALREADY_REPORTED:
+		return "Already Reported";
+	case HTTP_226_IM_USED:
+		return "IM Used";
+	/* 3xx Redirection */
+	case HTTP_300_MULTIPLE_CHOICES:
+		return "Multiple Choices";
+	case HTTP_301_MOVED_PERMANENTLY:
+		return "Moved Permanently";
+	case HTTP_302_FOUND:
+		return "Found";
+	case HTTP_303_SEE_OTHER:
+		return "See Other";
+	case HTTP_304_NOT_MODIFIED:
+		return "Not Modified";
+	case HTTP_305_USE_PROXY:
+		return "Use Proxy";
+	case HTTP_306_UNUSED:
+		return "";
+	case HTTP_307_TEMPORARY_REDIRECT:
+		return "Temporary Redirect";
+	case HTTP_308_PERMANENT_REDIRECT:
+		return "Permanent Redirect";
+	/* 4xx Client Error */
+	case HTTP_400_BAD_REQUEST:
+		return "Bad Request";
+	case HTTP_401_UNAUTHORIZED:
+		return "Unauthorized";
+	case HTTP_402_PAYMENT_REQUIRED:
+		return "Payment Required";
+	case HTTP_403_FORBIDDEN:
+		return "Forbidden";
+	case HTTP_404_NOT_FOUND:
+		return "Not Found";
+	case HTTP_405_METHOD_NOT_ALLOWED:
+		return "Method Not Allowed";
+	case HTTP_406_NOT_ACCEPTABLE:
+		return "Not Acceptable";
+	case HTTP_407_PROXY_AUTHENTICATION_REQUIRED:
+		return "Proxy Authentication Required";
+	case HTTP_408_REQUEST_TIMEOUT:
+		return "Request Timeout";
+	case HTTP_409_CONFLICT:
+		return "Conflict";
+	case HTTP_410_GONE:
+		return "Gone";
+	case HTTP_411_LENGTH_REQUIRED:
+		return "Length Required";
+	case HTTP_412_PRECONDITION_FAILED:
+		return "Precondition Failed";
+	case HTTP_413_PAYLOAD_TOO_LARGE:
+		return "Payload Too Large";
+	case HTTP_414_URI_TOO_LONG:
+		return "URI Too Long";
+	case HTTP_415_UNSUPPORTED_MEDIA_TYPE:
+		return "Unsupported Media Type";
+	case HTTP_416_RANGE_NOT_SATISFIABLE:
+		return "Range Not Satisfiable";
+	case HTTP_417_EXPECTATION_FAILED:
+		return "Expectation Failed";
+	case HTTP_418_IM_A_TEAPOT:
+		return "I'm a teapot";
+	case HTTP_421_MISDIRECTED_REQUEST:
+		return "Misdirected Request";
+	case HTTP_422_UNPROCESSABLE_ENTITY:
+		return "Unprocessable Entity";
+	case HTTP_423_LOCKED:
+		return "Locked";
+	case HTTP_424_FAILED_DEPENDENCY:
+		return "Failed Dependency";
+	case HTTP_425_TOO_EARLY:
+		return "Too Early";
+	case HTTP_426_UPGRADE_REQUIRED:
+		return "Upgrade Required";
+	case HTTP_428_PRECONDITION_REQUIRED:
+		return "Precondition Required";
+	case HTTP_429_TOO_MANY_REQUESTS:
+		return "Too Many Requests";
+	case HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE:
+		return "Request Header Fields Too Large";
+	case HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS:
+		return "Unavailable For Legal Reasons";
+	/* 5xx Server Error */
+	case HTTP_500_INTERNAL_SERVER_ERROR:
+		return "Internal Server Error";
+	case HTTP_501_NOT_IMPLEMENTED:
+		return "Not Implemented";
+	case HTTP_502_BAD_GATEWAY:
+		return "Bad Gateway";
+	case HTTP_503_SERVICE_UNAVAILABLE:
+		return "Service Unavailable";
+	case HTTP_504_GATEWAY_TIMEOUT:
+		return "Gateway Timeout";
+	case HTTP_505_HTTP_VERSION_NOT_SUPPORTED:
+		return "HTTP Version Not Supported";
+	case HTTP_506_VARIANT_ALSO_NEGOTIATES:
+		return "Variant Also Negotiates";
+	case HTTP_507_INSUFFICIENT_STORAGE:
+		return "Insufficient Storage";
+	case HTTP_508_LOOP_DETECTED:
+		return "Loop Detected";
+	case HTTP_510_NOT_EXTENDED:
+		return "Not Extended";
+	case HTTP_511_NETWORK_AUTHENTICATION_REQUIRED:
+		return "Network Authentication Required";
+	default:
+		return "";
+	}
+}
 
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
 			      const struct http_header *headers, size_t header_count,
@@ -219,7 +358,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 	}
 
 	/* Send response code and transfer encoding */
-	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status);
+	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status,
+		 http_status_reason_phrase(status));
 
 	ret = http_server_sendall(client, http_response,
 				  strnlen(http_response, sizeof(http_response) - 1));
