@@ -25,7 +25,14 @@ LOG_MODULE_REGISTER(adc_cc13xx_cc26xx);
 #include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 #include <driverlib/aux_adc.h>
+
+#ifdef CONFIG_HAS_CC13X2_CC26X2_SDK
 #include <ti/devices/cc13x2_cc26x2/inc/hw_aux_evctl.h>
+#endif
+
+#ifdef CONFIG_HAS_CC13X2X7_CC26X2X7_SDK
+#include <ti/devices/cc13x2x7_cc26x2x7/inc/hw_aux_evctl.h>
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
