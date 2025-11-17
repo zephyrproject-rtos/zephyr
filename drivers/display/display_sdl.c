@@ -289,64 +289,31 @@ static void sdl_display_write_bgr565(uint8_t *disp_buf,
 	}
 }
 
-static void sdl_display_write_mono(uint8_t *disp_buf,
-		const struct display_buffer_descriptor *desc, const void *buf,
-		const bool one_is_black)
+static void sdl_display_write_mono(uint8_t *disp_buf, const struct display_buffer_descriptor *desc,
+				   const void *buf, const bool one_is_black)
 {
+	const uint32_t pixel_on = one_is_black ? 0U : 0x00FFFFFF;
 	uint32_t w_idx;
 	uint32_t h_idx;
-	uint32_t tile_idx;
-	uint32_t pixel;
+	bool pixel;
 	const uint8_t *byte_ptr;
-	uint32_t one_color;
-	uint8_t *disp_buf_start;
 
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U),
-			"Input buffer too small");
-	__ASSERT((desc->height % 8) == 0U,
-			"Input buffer height not aligned per 8 pixels");
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
 
-	if (one_is_black) {
-		one_color = 0U;
-	} else {
-		one_color = 0x00FFFFFF;
-	}
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			byte_ptr = buf;
 
-	if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
-		for (tile_idx = 0U; tile_idx < desc->height / 8U; ++tile_idx) {
-			for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-				byte_ptr =
-					(const uint8_t *)buf + ((tile_idx * desc->pitch) + w_idx);
-				disp_buf_start = disp_buf;
-				for (h_idx = 0U; h_idx < 8; ++h_idx) {
-					if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U) {
-						pixel = one_color;
-					} else {
-						pixel = ~one_color;
-					}
-					*((uint32_t *)disp_buf) = pixel | 0xFF000000;
-					disp_buf += (desc->width * 4U);
-				}
-				disp_buf = disp_buf_start;
-				disp_buf += 4;
+			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+				byte_ptr += ((h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U)) + w_idx;
+				pixel = !!(*byte_ptr & mono_pixel_order(h_idx % 8U));
+			} else {
+				byte_ptr += (h_idx * DIV_ROUND_UP(desc->pitch, 8U)) + (w_idx / 8U);
+				pixel = !!(*byte_ptr & mono_pixel_order(w_idx % 8U));
 			}
-			disp_buf += 7 * (desc->width * 4U);
-		}
-	} else {
-		for (h_idx = 0; h_idx < desc->height; h_idx++) {
-			for (tile_idx = 0; tile_idx < desc->width / 8; tile_idx++) {
-				byte_ptr = (const uint8_t *)buf +
-					   ((h_idx * desc->width / 8) + tile_idx);
-				for (w_idx = 0; w_idx < 8; w_idx++) {
-					if ((*byte_ptr & mono_pixel_order(w_idx)) != 0U) {
-						pixel = one_color;
-					} else {
-						pixel = ~one_color;
-					}
-					*((uint32_t *)disp_buf + w_idx) = pixel | 0xFF000000;
-				}
-				disp_buf += 8 * sizeof(uint32_t);
-			}
+
+			*((uint32_t *)disp_buf) = (pixel ? pixel_on : ~pixel_on) | 0xFF000000;
+			disp_buf += 4;
 		}
 	}
 }
@@ -524,31 +491,33 @@ static void sdl_display_read_mono(const uint8_t *read_buf,
 				  const struct display_buffer_descriptor *desc, void *buf,
 				  const bool one_is_black)
 {
+	const uint32_t pixel_on = one_is_black ? 0xFF000000 : 0xFFFFFFFF;
 	uint32_t w_idx;
 	uint32_t h_idx;
-	uint32_t tile_idx;
-	uint8_t tile;
+	uint8_t bits;
 	const uint32_t *pix_ptr;
 	uint8_t *buf8;
 
 	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Read buffer is too small");
-	__ASSERT((desc->height % 8U) == 0U, "Read buffer height not aligned per 8 pixels");
 
-	for (tile_idx = 0U; tile_idx < (desc->height / 8U); ++tile_idx) {
-		buf8 = (void *)(((uint8_t *)buf) + desc->pitch * tile_idx);
-
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			tile = 0;
+			pix_ptr = (const uint32_t *)read_buf + h_idx * desc->pitch + w_idx;
+			buf8 = buf;
 
-			for (h_idx = 0U; h_idx < 8; ++h_idx) {
-				pix_ptr = (const uint32_t *)read_buf +
-					  ((tile_idx * 8 + h_idx) * desc->pitch + w_idx);
-				if ((*pix_ptr)) {
-					tile |= mono_pixel_order(h_idx);
-				}
+			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+				buf8 += (h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U) + (w_idx);
+				bits = mono_pixel_order(h_idx % 8U);
+			} else {
+				buf8 += (h_idx)*DIV_ROUND_UP(desc->pitch, 8U) + (w_idx / 8U);
+				bits = mono_pixel_order(w_idx % 8U);
 			}
-			*buf8 = one_is_black ? ~tile : tile;
-			buf8 += 1;
+
+			if (*pix_ptr == pixel_on) {
+				*buf8 |= bits;
+			} else {
+				*buf8 &= ~bits;
+			}
 		}
 	}
 }
