@@ -6,6 +6,7 @@
 
 #include "openthread_border_router.h"
 #include <openthread.h>
+#include <openthread/border_agent.h>
 #include <openthread/backbone_router_ftd.h>
 #include <openthread/border_router.h>
 #include <openthread/border_routing.h>
@@ -60,7 +61,7 @@ K_MEM_SLAB_DEFINE_STATIC(border_router_messages_slab, sizeof(struct otbr_msg_ctx
 		  CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM, sizeof(void *));
 
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
-static void openthread_border_router_add_route_to_multicast_groups(void);
+static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool add);
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 static void openthread_border_router_start_nat64_service(void);
 static void openthread_border_router_stop_nat64_service(void);
@@ -83,7 +84,7 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	net_if_flag_set(ot_iface, NET_IF_FORWARD_MULTICASTS);
 	net_if_flag_set(ail_iface, NET_IF_FORWARD_MULTICASTS);
 
-	openthread_border_router_add_route_to_multicast_groups();
+	openthread_border_router_add_or_rm_route_to_multicast_groups(true);
 
 	openthread_mutex_lock();
 
@@ -136,6 +137,9 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 		error = -EIO;
 		goto exit;
 	}
+	if (!otBorderAgentIsEnabled(instance)) {
+		otBorderAgentSetEnabled(instance, true);
+	}
 	if (otPlatInfraIfStateChanged(instance, ail_iface_index, true) != OT_ERROR_NONE) {
 		error = -EIO;
 		goto exit;
@@ -187,11 +191,14 @@ static int openthread_stop_border_router_services(struct net_if *ot_iface,
 		}
 		otBackboneRouterSetEnabled(instance, false);
 		border_agent_deinit();
+		(void)infra_if_deinit();
 		infra_if_stop_icmp6_listener();
+		otBorderAgentSetEnabled(instance, false);
 		udp_plat_deinit();
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 		openthread_border_router_stop_nat64_service();
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+		openthread_border_router_add_or_rm_route_to_multicast_groups(false);
 
 	}
 exit:
@@ -604,7 +611,7 @@ bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
 	return true;
 }
 
-static void openthread_border_router_add_route_to_multicast_groups(void)
+static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool add)
 {
 	static uint8_t mcast_group_idx[] = {
 		0x04, /** Admin-Local scope multicast address */
@@ -619,12 +626,29 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 	ARRAY_FOR_EACH(mcast_group_idx, i) {
 
 		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 0);
-		entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
-		if (entry != NULL) {
-			mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
-							   (const struct net_in6_addr *)&addr);
+		if (add) {
+			entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
+			if (entry != NULL) {
+				mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
+								(const struct net_in6_addr *)&addr);
+				if (mcast_addr != NULL) {
+					net_if_ipv6_maddr_join(ail_iface_ptr, mcast_addr);
+				}
+			}
+		} else {
+			entry = net_route_mcast_lookup(&addr);
+			mcast_addr = net_if_ipv6_maddr_lookup(&addr, &(ail_iface_ptr));
+			if (entry != NULL) {
+				net_route_mcast_del(entry);
+			}
+			/* There is no need to check if address is joined,
+			 * as `clear_joined_ipv6_mcast_groups` was previously
+			 * called
+			 */
 			if (mcast_addr != NULL) {
-				net_if_ipv6_maddr_join(ail_iface_ptr, mcast_addr);
+				net_if_ipv6_maddr_leave(ail_iface_ptr, mcast_addr);
+				net_if_ipv6_maddr_rm(ail_iface_ptr,
+						(const struct net_in6_addr *)&addr);
 			}
 		}
 	}
@@ -647,8 +671,8 @@ void openthread_border_router_set_nat64_translator_enabled(bool enable)
 static void openthread_border_router_start_nat64_service(void)
 {
 	otInstance *instance = openthread_get_default_instance();
-	struct in_addr *ipv4_addr = NULL;
-	struct in_addr ipv4_def_route = {0};
+	struct net_in_addr *ipv4_addr = NULL;
+	struct net_in_addr ipv4_def_route = {0};
 	bool translator_state = false;
 	otIp4Cidr cidr;
 
