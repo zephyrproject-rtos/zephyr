@@ -11,7 +11,7 @@ The Link Layer Discovery Protocol sample application for Zephyr will enable
 LLDP support and setup VLANs if needed.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/lldp`.
+:zephyr_file:`samples/net/ethernet/lldp`.
 
 Requirements
 ************
@@ -29,7 +29,7 @@ port.
 Follow these steps to build the LLDP sample application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/lldp
+   :zephyr-app: samples/net/ethernet/lldp
    :board: <board to use>
    :conf: prj.conf
    :goals: build
@@ -39,6 +39,6 @@ Setting up Linux Host
 =====================
 
 If you need VLAN support in your network, then the
-:zephyr_file:`samples/net/vlan/vlan-setup-linux.sh` provides a script that can be
+:zephyr_file:`samples/net/ethernet/vlan/vlan-setup-linux.sh` provides a script that can be
 executed on the Linux host. It creates two VLANs on the Linux host and creates
 routes to Zephyr.

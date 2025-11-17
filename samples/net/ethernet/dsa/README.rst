@@ -10,7 +10,7 @@ Overview
 Example on testing/debugging Distributed Switch Architecture
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/dsa`.
+:zephyr_file:`samples/net/ethernet/dsa`.
 
 Requirements
 ************
@@ -25,7 +25,7 @@ Host machine with :zephyr:board:`ip_k66f` board from Segger.
 Follow these steps to build the DSA sample application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dsa
+   :zephyr-app: samples/net/ethernet/dsa
    :board: <board to use>
    :conf: prj.conf
    :goals: build
