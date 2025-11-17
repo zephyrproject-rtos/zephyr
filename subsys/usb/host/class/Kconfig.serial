@@ -1,0 +1,32 @@
+config USBH_SERIAL
+	bool "USB Host Vendor-Specific Serial Support"
+	depends on USB_HOST_STACK
+	help
+	  Support for vendor-specific USB serial devices (GSM modems, etc.)
+	  similar to Linux's option driver. Matches interfaces with
+	  bInterfaceClass=0xFF and provides bulk endpoint communication.
+
+if USBH_SERIAL
+
+config USBH_SERIAL_RX_BUF_SIZE
+	int "RX buffer size per port"
+	default 512
+	help
+	  Size of receive buffer for each serial port.
+
+config USBH_SERIAL_MAX_PORTS
+	int "Maximum number of serial ports"
+	default 4
+	help
+	  Maximum number of vendor serial interfaces supported simultaneously.
+
+config USBH_SERIAL_LOG_LEVEL
+	int
+	default 4
+
+module = USBH_SERIAL
+module-str = USB Host Serial
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_SERIAL
+
