@@ -150,10 +150,6 @@
 			compatible = "mmio-sram";
 		};
 
-		flash0: serial-flash@0 {
-			compatible = "serial-flash";
-		};
-
 		rtc: rtc@40094000 {
 			compatible = "ti,mspm0-rtc";
 			reg = <0x40094000 0x2000>;
@@ -184,6 +180,20 @@
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
+			};
+		};
+
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			interrupts = <0 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: nvm-flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <1024>;
+				write-block-size = <8>; /* 64-bit */
 			};
 		};
 
