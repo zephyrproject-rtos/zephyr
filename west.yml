@@ -210,7 +210,8 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6d6ab91d5cc71c872353af1957d19f3d930df0fd
+      url: https://github.com/nxp-upstream/hal_nxp
+      revision: mcux-sdk-ng-drivers-common-fix-build-issue-without-irqsteer-drivers
       path: modules/hal/nxp
       groups:
         - hal
