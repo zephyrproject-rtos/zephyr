@@ -158,7 +158,6 @@ struct udc_stm32_data  {
 	uint32_t occupied_mem;
 	/* wLength of SETUP packet for s-out-status */
 	uint32_t ep0_out_wlength;
-	void (*pcd_prepare)(const struct device *dev);
 	int (*clk_enable)(void);
 	int (*clk_disable)(void);
 	struct k_thread thread_data;
@@ -694,6 +693,7 @@ static void udc_stm32_irq(const struct device *dev)
 int udc_stm32_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
 	if (priv->clk_enable != NULL && priv->clk_enable() != 0) {
@@ -701,7 +701,14 @@ int udc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	priv->pcd_prepare(dev);
+	/* Wipe and (re)initialize HAL context */
+	memset(&priv->pcd, 0, sizeof(priv->pcd));
+
+	priv->pcd.Instance = cfg->base;
+	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
+	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+	priv->pcd.Init.phy_itface = cfg->selected_phy;
+	priv->pcd.Init.speed = cfg->selected_speed;
 
 	status = HAL_PCD_Init(&priv->pcd);
 	if (status != HAL_OK) {
@@ -1231,20 +1238,6 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
 };
 
-static void priv_pcd_prepare(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
-
-	memset(&priv->pcd, 0, sizeof(priv->pcd));
-
-	priv->pcd.Instance = cfg->base;
-	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
-	priv->pcd.Init.speed = cfg->selected_speed;
-	priv->pcd.Init.phy_itface = cfg->selected_phy;
-}
-
 static struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
 static int priv_clock_enable(void)
@@ -1543,7 +1536,6 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	priv->dev = dev;
 	priv->clk_enable = priv_clock_enable;
 	priv->clk_disable = priv_clock_disable;
-	priv->pcd_prepare = priv_pcd_prepare;
 
 	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
 		    CONFIG_UDC_STM32_MAX_QMESSAGES);
