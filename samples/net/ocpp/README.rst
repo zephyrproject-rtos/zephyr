@@ -26,6 +26,14 @@ Requirements
 - SteVe Demo Server (<https://github.com/steve-community/steve/blob/master/README.md>)
 - LAN for testing purposes (Ethernet)
 
+Generating keys and certificate for TLS (Optional):
+***************************************************
+
+- Generate a ECDSA Private key using OpenSSL:
+  openssl ecparam -genkey -noout -out ec-priv.key
+- Generate a self-signed certificate using OpenSSL:
+  openssl req -new -x509 -key ec-priv.key -days 3650 -subj "/CN=localhost" -outform DER -out ec.der
+
 Building and Running
 ********************
 

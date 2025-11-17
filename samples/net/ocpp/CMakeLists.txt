@@ -7,3 +7,11 @@ project(ocpp)
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 target_sources(app PRIVATE src/main.c)
+
+set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+
+generate_inc_file_for_target(
+	app
+	src/credentials/ec.der
+	${gen_dir}/ec.der.inc
+)
