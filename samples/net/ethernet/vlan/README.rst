@@ -11,7 +11,7 @@ The VLAN sample application for Zephyr will setup two virtual LAN networks.
 The application sample enables net-shell and allows users to view VLAN settings.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/vlan`.
+:zephyr_file:`samples/net/ethernet/vlan`.
 
 Requirements
 ************
@@ -35,13 +35,13 @@ that support USB networking.
 Follow these steps to build the VLAN sample application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/vlan
+   :zephyr-app: samples/net/ethernet/vlan
    :board: <board to use>
    :conf: prj.conf
    :goals: build
    :compact:
 
-The default configuration file :zephyr_file:`samples/net/vlan/prj.conf` creates
+The default configuration file :zephyr_file:`samples/net/ethernet/vlan/prj.conf` creates
 two virtual LAN networks with these settings:
 
 - VLAN tag 100: IPv4 198.51.100.1 and IPv6 2001:db8:100::1
@@ -50,7 +50,7 @@ two virtual LAN networks with these settings:
 Setting up Linux Host
 =====================
 
-The :zephyr_file:`samples/net/vlan/vlan-setup-linux.sh` provides a script that
+The :zephyr_file:`samples/net/ethernet/vlan/vlan-setup-linux.sh` provides a script that
 can be executed on the Linux host. It creates two VLAN interfaces ``vlan.100``
 and ``vlan.200`` on the Linux host and creates routes to Zephyr.
 
