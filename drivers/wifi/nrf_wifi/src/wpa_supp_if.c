@@ -2032,7 +2032,7 @@ void nrf_wifi_supp_event_remain_on_channel(void *if_priv,
 	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_complete) {
 		vif_ctx_zep->supp_callbk_fns.roc_complete(vif_ctx_zep->supp_drv_if_ctx,
 				roc_complete->frequency,
-				roc_complete->dur);
+				roc_complete->dur, roc_complete->cookie);
 	}
 }
 
@@ -2061,12 +2061,12 @@ void nrf_wifi_supp_event_roc_cancel_complete(void *if_priv,
 
 	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_cancel_complete) {
 		vif_ctx_zep->supp_callbk_fns.roc_cancel_complete(vif_ctx_zep->supp_drv_if_ctx,
-				roc_cancel_complete->frequency);
+				roc_cancel_complete->frequency, roc_cancel_complete->cookie);
 	}
 }
 
 int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
-									unsigned int duration)
+				    unsigned int duration, u64 host_cookie)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 #ifdef NRF70_P2P_MODE
@@ -2099,6 +2099,7 @@ int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
 	roc_info.nrf_wifi_freq_params.center_frequency2 = 0;
 	roc_info.nrf_wifi_freq_params.channel_type = NRF_WIFI_CHAN_HT20;
 	roc_info.dur = duration;
+	roc_info.host_cookie = host_cookie;
 
 	status = nrf_wifi_sys_fmac_p2p_roc_start(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
 						 &roc_info);
@@ -2112,7 +2113,7 @@ out:
 	return status;
 }
 
-int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv)
+int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv, u64 cookie)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 #ifdef NRF70_P2P_MODE
@@ -2137,7 +2138,7 @@ int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv)
 		goto out;
 	}
 
-	status = nrf_wifi_sys_fmac_p2p_roc_stop(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, 0);
+	status = nrf_wifi_sys_fmac_p2p_roc_stop(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, cookie);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_cancel_remain_on_channel failed", __func__);
 		goto out;
