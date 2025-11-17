@@ -14,3 +14,6 @@ config USE_MSPM0_DL_UART
 
 config USE_MSPM0_DL_TIMER
 	bool
+
+config USE_MSPM0_DL_MCAN
+	bool
