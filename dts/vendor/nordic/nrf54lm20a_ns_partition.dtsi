@@ -4,31 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	/*
-	 * Default SRAM planning when building for nRF54LM20A with ARM TrustZone-M support
-	 * - Lowest 256 kB SRAM allocated to Secure image (sram0_s).
-	 * - Upper 256 kB SRAM allocated to Non-Secure image (sram0_ns).
-	 *
-	 * nRF54LM20A has 512 kB of volatile memory (SRAM).
-	 * This static layout needs to be the same with the upstream TF-M layout in the
-	 * header flash_layout.h of the relevant platform. Any updates in the layout
-	 * needs to happen both in the flash_layout.h and in this file at the same time.
-	 */
-	reserved-memory {
+/*
+ * Default SRAM planning when building for nRF54LM20A with ARM TrustZone-M support
+ * - Lowest 256 kB SRAM allocated to Secure image (sram0_s).
+ * - Upper 256 kB SRAM allocated to Non-Secure image (sram0_ns).
+ *
+ * nRF54LM20A has 512 kB of volatile memory (SRAM).
+ * This static layout needs to be the same with the upstream TF-M layout in the
+ * header flash_layout.h of the relevant platform. Any updates in the layout
+ * needs to happen both in the flash_layout.h and in this file at the same time.
+ */
+&cpuapp_sram {
+	sram0_s: image_s@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(256)>;
+		ranges = <0x0 0x0 DT_SIZE_K(256)>;
+	};
 
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-			reg = <0x20000000 DT_SIZE_K(256)>;
-		};
-
-		sram0_ns: image_ns@20040000 {
-			/* Non-Secure image memory */
-			reg = <0x20040000 0x2007FE40>;
-		};
+	sram0_ns: image_ns@40000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure image memory */
+		reg = <0x40000 0x7FE40>;
+		ranges = <0x0 0x40000 0x7FE40>;
 	};
 };
 
