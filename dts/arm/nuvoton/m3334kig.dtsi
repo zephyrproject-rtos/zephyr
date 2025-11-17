@@ -19,5 +19,17 @@
 				reg = <0 DT_SIZE_K(512)>;
 			};
 		};
+
+		hsusbd: hsusbd@40019000 {
+			compatible = "nuvoton,numaker-hsusbd";
+			reg = <0x40019000 0x1000>;
+			interrupts = <65 0>;
+			resets = <&rst NUMAKER_HSUSBD_RST>;
+			clocks = <&pcc NUMAKER_HSUSBD_MODULE 0 0>;
+			dma-buffer-size = <4096>;
+			status = "disabled";
+			/* 2 more for Control OUT/IN */
+			num-bidir-endpoints = <14>;
+		};
 	};
 };
