@@ -2151,6 +2151,51 @@ out:
 	return status;
 }
 
+int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, int ctwindow)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	if (legacy_ps == -1) {
+		status = 0;
+		goto out;
+	}
+
+	if (legacy_ps != 0 && legacy_ps != 1) {
+		LOG_ERR("%s: Invalid legacy_ps value: %d", __func__, legacy_ps);
+		goto out;
+	}
+
+	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
+						  legacy_ps);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_set_p2p_powersave failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
+}
+
 #ifdef CONFIG_NRF70_AP_MODE
 static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	enum nrf_wifi_fmac_if_op_state state)
