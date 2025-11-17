@@ -55,6 +55,22 @@ Bluetooth Host
 Networking
 **********
 
+* Networking APIs found in
+
+  * :zephyr_file:`include/zephyr/net/net_ip.h`
+  * :zephyr_file:`include/zephyr/net/socket.h`
+
+  and relevant code in ``subsys/net`` etc. is namespaced. This means that either
+  ``net_``, ``NET_`` or ``ZSOCK_`` prefix is added to the network API name. This is done in order
+  to avoid circular dependency with POSIX or libc that might define the same symbol.
+  A compatibility header file :zephyr_file:`include/zephyr/net/net_compat.h`
+  is created that provides the old symbols allowing the user to continue use the old symbols.
+  External network applications can continue to use POSIX defined network symbols and
+  include relevant POSIX header files like ``sys/socket.h`` to get the POSIX symbols as Zephyr
+  networking header files will no longer include those. If the application or Zephyr internal
+  code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
+  code calling a network API.
+
 Other subsystems
 ****************
 
