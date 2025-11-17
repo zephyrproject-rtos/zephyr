@@ -1,0 +1,54 @@
+# ADS7066 ADC configuration options
+
+# Copyright (c) 2025 GE Healthcare Technologies, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS7066
+	bool "TI ADS7066 16-bit 8-channel SPI ADC"
+	default y
+	depends on DT_HAS_TI_ADS7066_ENABLED
+	select SPI
+	help
+	  Enable driver for TI ADS7066 16-bit 8-channel SPI ADC.
+
+	  The driver supports all three operating modes:
+	  - On-the-Fly Mode: Zero latency channel switching using SPI command bits
+	  - Manual Mode: Register-based channel selection with higher latency
+	  - Auto: Channels are switched automatically with the same throughput as OTF but higher latency
+
+if ADC_ADS7066
+
+config ADC_ADS7066_INIT_PRIORITY
+	int "ADS7066 init priority"
+	default 80
+	help
+	  ADS7066 device initialization priority must come
+	  after SPI initialization.
+
+config ADC_ADS7066_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC acquisition thread"
+	default 1024
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_ADS7066_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC acquisition thread.
+
+config ADC_ADS7066_CRC
+	bool "Use CRC to check data sent to and received from the ADC"
+	select CRC
+	help
+	  Enables the use of CRC on check integrity data to and from the ADC.
+
+config ADC_ADS7066_CONVERSION_BUSY_WAIT
+	int "Time to busy wait between SPI frames"
+	default 3
+	help
+	  Time in microseconds that the driver will busy wait between SPI frames in order to give the
+	  ADC enough time to finish the conversion.
+
+endif # ADC_ADS7066
