@@ -1568,6 +1568,8 @@ static bool valid_bt_bap_scan_delegator_add_src_param(
 			return false;
 		}
 
+		aggregated_bis_syncs |= subgroup->bis_sync;
+
 		if (subgroup->metadata_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
 			LOG_DBG("subgroup[%u]: Invalid metadata_len: %u",
 				i, subgroup->metadata_len);
@@ -1678,6 +1680,8 @@ static bool valid_bt_bap_scan_delegator_mod_src_param(
 
 			return false;
 		}
+
+		aggregated_bis_syncs |= subgroup->bis_sync;
 
 		if (subgroup->metadata_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
 			LOG_DBG("subgroup[%u]: Invalid metadata_len: %u",
