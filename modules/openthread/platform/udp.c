@@ -66,6 +66,9 @@ void udp_plat_deinit(void)
 			sockfd_udp[idx].fd = -1;
 		}
 	}
+
+	net_socket_service_register(&handle_udp_receive, sockfd_udp,
+				    ARRAY_SIZE(sockfd_udp), NULL);
 }
 
 otError otPlatUdpSocket(otUdpSocket *aUdpSocket)

@@ -63,9 +63,9 @@ void otPlatInfraIfDhcp6PdClientSend(otInstance *aInstance,
 	VerifyOrExit(dhcpv6_pd_client_sock != -1 && aInfraIfIndex == ail_iface_idx);
 	uint16_t length = otMessageGetLength(aMessage);
 	struct net_sockaddr_in6 dest_sock_addr = {.sin6_family = NET_AF_INET6,
-					      .sin6_port = net_htons(DHCPV6_SERVER_PORT),
-					      .sin6_addr = NET_IN6ADDR_ANY_INIT,
-					      .sin6_scope_id = 0};
+						  .sin6_port = net_htons(DHCPV6_SERVER_PORT),
+						  .sin6_addr = NET_IN6ADDR_ANY_INIT,
+						  .sin6_scope_id = 0};
 
 	memcpy(&dest_sock_addr.sin6_addr, aDestAddress, sizeof(otIp6Address));
 
@@ -116,9 +116,9 @@ static void dhcpv6_pd_client_socket_init(uint32_t infra_if_index)
 	int hop_limit = 255;
 	int on = 1;
 	struct net_sockaddr_in6 addr = {.sin6_family = NET_AF_INET6,
-				    .sin6_port = net_htons(DHCPV6_CLIENT_PORT),
-				    .sin6_addr = NET_IN6ADDR_ANY_INIT,
-				    .sin6_scope_id = 0};
+					.sin6_port = net_htons(DHCPV6_CLIENT_PORT),
+					.sin6_addr = NET_IN6ADDR_ANY_INIT,
+					.sin6_scope_id = 0};
 
 	dhcpv6_pd_client_sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(dhcpv6_pd_client_sock >= 0);
@@ -163,6 +163,9 @@ static void dhcpv6_pd_client_socket_deinit(uint32_t infra_if_index)
 
 	sockfd_udp[0].fd = -1;
 	dhcpv6_pd_client_sock = -1;
+
+	net_socket_service_register(&dhcpv6_pd_client_udp_receive, sockfd_udp,
+				    ARRAY_SIZE(sockfd_udp), NULL);
 exit:
 	return;
 }
