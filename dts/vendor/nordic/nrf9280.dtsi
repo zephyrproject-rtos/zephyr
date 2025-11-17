@@ -397,6 +397,16 @@
 				ghwcfg1 = <0xaa555000>;
 				ghwcfg2 = <0x22abfc72>;
 				ghwcfg4 = <0x1e10aa60>;
+				/* 3050 locations available, GRXFSIZ is 548,
+				 * GNPTXFSIZ and DIEPTXFn are 512. The default
+				 * values (upper bounds) sum up above the limit.
+				 * Allow High-Bandwidth only on TxFIFO 1 and 2.
+				 * Use maximum possible for RxFIFO and allocate
+				 * everything remaining for TxFIFO 0.
+				 */
+				g-rx-fifo-size = <548>;
+				g-np-tx-fifo-size = <198>;
+				g-tx-fifo-size = <512 512 256 256 256 256 256>;
 				status = "disabled";
 			};
 
