@@ -99,12 +99,12 @@ endif()
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)
     list(APPEND QEMU_FLAGS
-	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
-	  -rtc clock=vm)
+    -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
+    -rtc clock=vm)
   else()
     list(APPEND QEMU_FLAGS
-	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
-	  -rtc clock=vm)
+    -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
+    -rtc clock=vm)
   endif()
 endif()
 
@@ -194,23 +194,23 @@ elseif(QEMU_NET_STACK)
       # instances of the same sample.
 
       if(CONFIG_NET_QEMU_PPP)
-	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-	  set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
-	else()
-	  set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
-	endif()
+  if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+    set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
+  else()
+    set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
+  endif()
 
-	list(APPEND MORE_FLAGS_FOR_${target}
+  list(APPEND MORE_FLAGS_FOR_${target}
           -serial ${ppp_path}
           )
       else()
-	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+  if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
           set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
-	else()
+  else()
           set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
-	endif()
+  endif()
 
-	list(APPEND MORE_FLAGS_FOR_${target}
+  list(APPEND MORE_FLAGS_FOR_${target}
           -serial ${tmp_file}
           )
       endif()
@@ -470,3 +470,10 @@ foreach(target ${qemu_targets})
     add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
   endif()
 endforeach()
+
+# cmake/emu/qemu.cmake
+message(WARNING "qemu.cmake is deprecated. QEMU support is moving to a Python runner (scripts/west_commands/runners/qemu.py). "
+                "Please prefer 'west build -b <qemu_board> && west build -t run' or use the 'qemu' runner with 'west flash -r qemu'.")
+
+# Optionally, export a small compatibility variable or call the old implementation if still present.
+# If you want to preserve exact behavior, call the legacy implementation here, otherwise keep this as a shim.
