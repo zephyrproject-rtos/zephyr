@@ -276,17 +276,7 @@ config NRFX_TIMER
 	bool "TIMER driver"
 
 config NRFX_TWI
-	bool
-
-config NRFX_TWI0
-	bool "TWI0 driver instance"
-	depends on $(dt_nodelabel_exists,i2c0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_TWI
-
-config NRFX_TWI1
-	bool "TWI1 driver instance"
-	depends on $(dt_nodelabel_exists,i2c1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_TWI
+	bool "NRFX driver for TWI peripheral"
 
 config NRFX_TWIM
 	bool "NRFX driver for TWIM peripheral"
