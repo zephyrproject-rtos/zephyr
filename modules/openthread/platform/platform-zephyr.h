@@ -129,7 +129,7 @@ otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx);
 void mdns_plat_monitor_interface(struct net_if *ail_iface);
 otError border_agent_init(otInstance *instance);
 void border_agent_deinit(void);
-otError trel_plat_init(otInstance *instance, struct net_if *ail_iface_ptr);
+otError trel_plat_init(otInstance *instance, struct net_if *ail_iface);
 otError dhcpv6_pd_client_init(otInstance *ot_instance, uint32_t ail_iface_index);
 otError dns_upstream_resolver_init(otInstance *ot_instance);
 void openthread_border_router_set_nat64_translator_enabled(bool enable);

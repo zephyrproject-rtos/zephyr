@@ -14,12 +14,14 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include "sockets_internal.h"
+#include <platform-zephyr.h>
 
 #define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_TREL_SERVICES
 
 static struct zsock_pollfd sockfd_udp[MAX_SERVICES];
 static int trel_sock = -1;
 static struct otInstance *ot_instance_ptr;
+static struct net_if *ail_iface_ptr;
 static otPlatTrelCounters trel_counters;
 static bool trel_is_enabled;
 static void trel_receive_handler(struct net_socket_service_event *evt);
@@ -46,6 +48,11 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 	otPlatTrelResetCounters(aInstance);
 
 	trel_is_enabled = true;
+
+	if (ail_iface_ptr != NULL && net_if_is_up(ail_iface_ptr)) {
+		(void)trel_plat_init(ot_instance_ptr, ail_iface_ptr);
+	}
+
 
 exit:
 	return;
@@ -141,13 +148,14 @@ static void process_trel_message(struct otbr_msg_ctx *msg_ctx_ptr)
 				 &msg_ctx_ptr->sock_addr);
 }
 
-otError trel_plat_init(otInstance *instance, struct net_if *ail_iface_ptr)
+otError trel_plat_init(otInstance *instance, struct net_if *ail_iface)
 {
 	otError error = OT_ERROR_NONE;
 	struct net_ifreq if_req = {0};
 	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = {0};
 
 	ot_instance_ptr = instance;
+	ail_iface_ptr = ail_iface;
 
 	VerifyOrExit(net_if_get_name(ail_iface_ptr, name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
