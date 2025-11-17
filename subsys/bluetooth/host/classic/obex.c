@@ -2077,7 +2077,7 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	}
 
 	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if (active_client != client) {
+	if ((active_client != NULL) && (active_client != client)) {
 		LOG_WRN("One OBEX request is executing");
 		return -EBUSY;
 	}
