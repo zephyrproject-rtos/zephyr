@@ -17,6 +17,12 @@ config FLASH_HAS_EX_OP
 	  This option is selected by drivers that support flash extended
 	  operations.
 
+config FLASH_HAS_ASYNC_OPS
+	bool
+	help
+	  This option is selected by drivers that support asynchronous
+	  flash operations.
+
 config FLASH_HAS_EXPLICIT_ERASE
 	bool
 	help
