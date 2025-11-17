@@ -295,12 +295,6 @@ config HAS_HW_NRF_TIMER136
 config HAS_HW_NRF_TIMER137
 	def_bool $(dt_nodelabel_enabled_with_compat,timer137,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
-config HAS_HW_NRF_TWI0
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
-
-config HAS_HW_NRF_TWI1
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
-
 config HAS_HW_NRF_UART0
 	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
 
