@@ -362,6 +362,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x7e5ffaf0>;
 			ghwcfg4 = <0xdff09041>;
+			g-rx-fifo-size = <256>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <128 64 64 64 64 64 64>;
 		};
 
 		usb_otg_fs: usb_otg@50040000 {
@@ -376,6 +379,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x224dd930>;
 			ghwcfg4 = <0xd3f0a030>;
+			g-rx-fifo-size = <64>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <32 16 16 16>;
 			phy-dp-pin = <27>;
 			phy-dm-pin = <26>;
 		};

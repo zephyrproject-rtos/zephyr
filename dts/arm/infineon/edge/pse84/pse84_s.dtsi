@@ -1391,6 +1391,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x228fe052>;
 			ghwcfg4 = <0xe2103a20>;
+			g-rx-fifo-size = <543>;
+			g-np-tx-fifo-size = <64>;
+			g-tx-fifo-size = <768 768 768 768 768 768 768 752>;
 			status = "disabled";
 			mmio-peri-inst = <1>;
 			mmio-peri-group = <3>;
