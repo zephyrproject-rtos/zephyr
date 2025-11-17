@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ_NAME     usb
 #endif
 
-#define UDC_STM32_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
@@ -167,6 +166,8 @@ struct udc_stm32_data  {
 };
 
 struct udc_stm32_config {
+	/* Controller MMIO base address */
+	void *base;
 	/* # of bidirectional endpoints supported */
 	uint32_t num_endpoints;
 	/* USB SRAM size (in bytes) */
@@ -1221,6 +1222,7 @@ static struct udc_data udc0_data = {
 };
 
 static const struct udc_stm32_config udc0_cfg  = {
+	.base = (void *)DT_INST_REG_ADDR(0),
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
 	.irqn = UDC_STM32_IRQ,
@@ -1236,19 +1238,10 @@ static void priv_pcd_prepare(const struct device *dev)
 
 	memset(&priv->pcd, 0, sizeof(priv->pcd));
 
-	/* Default values */
+	priv->pcd.Instance = cfg->base;
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 	priv->pcd.Init.speed = cfg->selected_speed;
-
-	/* Per controller/Phy values */
-#if defined(USB)
-	priv->pcd.Instance = USB;
-#elif defined(USB_DRD_FS)
-	priv->pcd.Instance = USB_DRD_FS;
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
-#endif /* USB */
 	priv->pcd.Init.phy_itface = cfg->selected_phy;
 }
 
