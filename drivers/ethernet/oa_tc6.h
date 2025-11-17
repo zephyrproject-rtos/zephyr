@@ -25,6 +25,7 @@
 #define OA_CONFIG0_PROTE     BIT(5)
 #define OA_STATUS0           MMS_REG(0x0, 0x008)
 #define OA_STATUS0_RESETC    BIT(6)
+#define OA_STATUS0_RX_BUFFER_OVERFLOW BIT(3)
 #define OA_STATUS1           MMS_REG(0x0, 0x009)
 #define OA_BUFSTS            MMS_REG(0x0, 0x00B)
 #define OA_BUFSTS_TXC        GENMASK(15, 8)
@@ -92,12 +93,36 @@
 #define OA_TC6_PHY_C45_VS_PLCA_MMS4  4 /* MMD 31 */
 #define OA_TC6_PHY_C45_AUTO_NEG_MMS5 5 /* MMD 7 */
 
+#define OA_TC6_RESET_TIMEOUT 10
+
+#define OA_SPI_TX_RX_BUFFER_SIZE	(CONFIG_OA_TC6_TX_RX_BUFFER_SIZE * 68)
+
 /**
  * @brief OA TC6 data.
  */
 struct oa_tc6 {
 	/** Pointer to SPI device */
 	const struct spi_dt_spec *spi;
+
+	/** Pointer to interrupt source */
+	const struct gpio_dt_spec *interrupt;
+
+	/** Pointer to reset source */
+	const struct gpio_dt_spec *reset;
+
+	struct gpio_callback gpio_int_callback;
+
+	struct k_sem int_sem;
+
+	struct k_sem tx_rx_sem;
+
+	bool rst_flag;
+
+	bool int_flag;
+
+	const int32_t timeout;
+
+	struct net_if *iface;
 
 	/** OA data payload (chunk) size */
 	uint8_t cps;
@@ -122,6 +147,34 @@ struct oa_tc6 {
 
 	/** Pointer to network buffer concatenated from received chunk */
 	struct net_buf *concat_buf;
+
+	/** Pointer to store the net_pkt received from IP stack */
+	struct net_pkt *waiting_net_pkt;
+
+	/** Pointer to store the net_pkt while preparing the spi tx buffer */
+	struct net_pkt *ongoing_net_pkt;
+
+	/** Pointer to receive the net_pkt in IP stack */
+	struct net_pkt *rx_pkt;
+
+	/** net_buf pointer to store the received packet in IP stack */
+	struct net_buf *buf_rx;
+
+	/** Number of used rx buffers */
+	uint16_t buf_rx_used;
+	struct k_sem tx_enq_sem;
+	struct k_sem spi_sem;
+	uint16_t spi_length;
+	uint16_t tx_eth_len;
+	uint8_t chunk_size;
+	bool tx_eth_frame_end;
+	uint8_t spi_tx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
+	uint8_t spi_rx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
+	bool rx_buf_overflow;
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	k_tid_t tid_int;
 };
 
 /**
@@ -201,7 +254,7 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt);
  *
  * @return 0 if read was successful, <0 otherwise.
  */
-int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt);
+int oa_tc6_process_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt);
 
 /**
  * @brief Perform SPI transfer of single chunk from/to OA TC6 device
@@ -319,4 +372,46 @@ int oa_tc6_mdio_read_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint1
  */
 int oa_tc6_mdio_write_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
 			  uint16_t data);
+
+/**
+ * @brief	Enables synchronization bits in MAC-PHY
+ *
+ * This routine provides an interface to enable synchronization bits in the
+ * OA register
+ *
+ * @param[in] tc6	Pointer to the tc6 structure for the MAC-PHY
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_enable_sync(struct oa_tc6 *tc6);
+
+/**
+ * @brief	Enables Zero-Align Receive Frame Enable bit in MAC-PHY
+ *
+ * This routine provides an interface to enable Zero-Align Receive Frame Enable bit
+ * in the OA register
+ *
+ * @param[in] tc6	Pointer to the tc6 structure for the MAC-PHY
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_zero_align_receive_frame_enable(struct oa_tc6 *tc6);
+
+/**
+ * @brief	Initialize tc6 structure fields from device tree
+ *
+ * @param[in] tc6	Pointer to the tc6 structure for the MAC-PHY
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_init(struct oa_tc6 *tc6);
+
+/**
+ * @brief Thread for SPI transfer
+ *
+ * @param tc6 OA TC6 specific data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_spi_thread(struct oa_tc6 *tc6);
 #endif /* OA_TC6_CFG_H__ */
