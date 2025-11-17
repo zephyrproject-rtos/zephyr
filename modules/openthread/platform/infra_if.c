@@ -35,6 +35,7 @@ static uint32_t ail_iface_index;
 static struct net_icmp_ctx ra_ctx;
 static struct net_icmp_ctx rs_ctx;
 static struct net_icmp_ctx na_ctx;
+static struct net_in6_addr mcast_addr;
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
@@ -133,18 +134,37 @@ otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfInde
 otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 {
 	otError error = OT_ERROR_NONE;
-	struct net_in6_addr addr = {0};
+	int ret;
 
 	ot_instance = instance;
 	ail_iface_ptr = ail_iface;
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface_ptr);
-	net_ipv6_addr_create_ll_allrouters_mcast(&addr);
-	VerifyOrExit(net_ipv6_mld_join(ail_iface, &addr) == 0, error = OT_ERROR_FAILED);
+
+	net_ipv6_addr_create_ll_allrouters_mcast(&mcast_addr);
+	ret = net_ipv6_mld_join(ail_iface, &mcast_addr);
+
+	VerifyOrExit((ret == 0 || ret == -EALREADY), error = OT_ERROR_FAILED);
 
 	for (uint8_t i = 0; i < MAX_SERVICES; i++) {
 		sockfd_raw[i].fd = -1;
 	}
 exit:
+	return error;
+}
+
+otError infra_if_deinit(void)
+{
+	otError error = OT_ERROR_NONE;
+
+	ot_instance = NULL;
+	ail_iface_index = 0;
+
+	VerifyOrExit(net_ipv6_mld_leave(ail_iface_ptr, &mcast_addr) == 0,
+		     error = OT_ERROR_FAILED);
+
+exit:
+	ail_iface_ptr = NULL;
+
 	return error;
 }
 
@@ -280,14 +300,14 @@ void infra_if_stop_icmp6_listener(void)
 otError infra_if_nat64_init(void)
 {
 	otError error = OT_ERROR_NONE;
-	struct sockaddr_in anyaddr = {.sin_family = AF_INET,
-				      .sin_port = 0,
-				      .sin_addr = INADDR_ANY_INIT};
+	struct net_sockaddr_in anyaddr = {.sin_family = NET_AF_INET,
+					  .sin_port = 0,
+					  .sin_addr = NET_INADDR_ANY_INIT};
 
-	raw_infra_if_sock = zsock_socket(AF_INET, SOCK_RAW, IPPROTO_IP);
+	raw_infra_if_sock = zsock_socket(NET_AF_INET, NET_SOCK_RAW, NET_IPPROTO_IP);
 	VerifyOrExit(raw_infra_if_sock >= 0, error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct sockaddr *)&anyaddr,
-				sizeof(struct sockaddr_in)) == 0,
+	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct net_sockaddr *)&anyaddr,
+				sizeof(struct net_sockaddr_in)) == 0,
 		     error = OT_ERROR_FAILED);
 
 	sockfd_raw[0].fd = raw_infra_if_sock;
@@ -315,7 +335,7 @@ static void raw_receive_handler(struct net_socket_service_event *evt)
 	len = zsock_recv(raw_infra_if_sock, req->buffer, sizeof(req->buffer), 0);
 	VerifyOrExit(len >= 0, error = OT_ERROR_FAILED);
 
-	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, AF_INET, 0, K_NO_WAIT);
+	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, NET_AF_INET, 0, K_NO_WAIT);
 	VerifyOrExit(ot_pkt != NULL, error = OT_ERROR_FAILED);
 
 	VerifyOrExit(net_pkt_write(ot_pkt, req->buffer, len) == 0, error = OT_ERROR_FAILED);

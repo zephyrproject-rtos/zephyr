@@ -120,6 +120,7 @@ int notify_new_tx_frame(struct net_pkt *pkt);
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 otError infra_if_init(otInstance *instance, struct net_if *ail_iface);
+otError infra_if_deinit(void);
 otError infra_if_start_icmp6_listener(void);
 void infra_if_stop_icmp6_listener(void);
 void udp_plat_init_sockfd(void);
