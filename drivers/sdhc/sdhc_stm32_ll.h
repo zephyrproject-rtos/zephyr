@@ -95,7 +95,7 @@ typedef enum {
 
 #define SD_TIMEOUT               0x00100000U
 #define SDHC_CMD_TIMEOUT         K_MSEC(200)
-#define BLOCKSIZE                512U       /*!< Block size in bytes                   */
+/* Note: BLOCKSIZE is already defined in stm32h7xx_hal_sd.h as 512U */
 
 #define SDMMC_INIT_FREQ          400000U    /*!< Initialization phase: max 400 kHz     */
 #define SD_NORMAL_SPEED_FREQ     25000000U  /*!< Normal speed phase: max 25 MHz        */
@@ -160,10 +160,51 @@ typedef struct
   uint32_t                     CSD[4];           /*!< SD card specific data table         */
 
   uint32_t                     CID[4];           /*!< SD card identification number table */
+
+  uint32_t                     block_size;       /*!< Block size for SDIO data transfer   */
 } SDMMC_HandleTypeDef;
 
+/* ================================================================
+ * SDIO-SPECIFIC DEFINITIONS (for SDIO protocol support)
+ * ================================================================ */
 
-/* Functions' Prototypes*/
+/**
+ * @brief SDIO state definitions
+ * @note These states are specific to the LL wrapper layer for SDIO operations
+ */
+#define SDIO_LL_STATE_RESET                 0x00000000U  /*!< SDIO not yet initialized or disabled */
+#define SDIO_LL_STATE_READY                 0x00000001U  /*!< SDIO initialized and ready for use */
+#define SDIO_LL_STATE_BUSY                  0x00000002U  /*!< SDIO operation ongoing */
+#define SDIO_LL_STATE_ERROR                 0x00000004U  /*!< SDIO error state */
+
+/**
+ * @brief SDIO block mode definitions (for CMD53)
+ */
+#define SDIO_LL_MODE_BYTE                   SDMMC_SDIO_MODE_BYTE
+#define SDIO_LL_MODE_BLOCK                  SDMMC_SDIO_MODE_BLOCK
+
+/**
+ * @brief SDIO Direct Command argument structure (for CMD52)
+ */
+typedef struct {
+	uint32_t Reg_Addr;          /*!< Register address to read/write */
+	uint32_t ReadAfterWrite;    /*!< Read after write flag */
+	uint32_t IOFunctionNbr;     /*!< IO function number */
+} SDIO_LL_DirectCmd_TypeDef;
+
+/**
+ * @brief SDIO Extended Command argument structure (for CMD53)
+ */
+typedef struct {
+	uint32_t Reg_Addr;          /*!< Register address */
+	uint32_t IOFunctionNbr;     /*!< IO function number */
+	uint32_t Block_Mode;        /*!< Block or byte mode */
+	uint32_t OpCode;            /*!< Operation code (increment/fixed address) */
+} SDIO_LL_ExtendedCmd_TypeDef;
+
+/* ================================================================
+ * SD/MMC FUNCTIONS PROTOTYPES
+ * ================================================================ */
 SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd);
 SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_t *pData, uint32_t BlockAdd,
                                          uint32_t NumberOfBlocks);
@@ -179,3 +220,41 @@ uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR);
 SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd);
 SDMMC_StatusTypeDef SDMMC_Interface_Init(SDMMC_HandleTypeDef *hsd);
 void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd);
+
+/* ================================================================
+ * SDIO PROTOCOL FUNCTIONS PROTOTYPES
+ * ================================================================ */
+
+HAL_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t ClockSpeed);
+HAL_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd);
+HAL_StatusTypeDef SDMMC_LL_DeInit(SDMMC_HandleTypeDef *hsd);
+uint32_t SDMMC_LL_GetState(const SDMMC_HandleTypeDef *hsd);
+uint32_t SDMMC_LL_GetError(const SDMMC_HandleTypeDef *hsd);
+HAL_StatusTypeDef SDIO_LL_ReadDirect(SDMMC_HandleTypeDef *hsd,
+                                     SDIO_LL_DirectCmd_TypeDef *Argument,
+                                     uint8_t *pData);
+
+HAL_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
+                                      SDIO_LL_DirectCmd_TypeDef *Argument,
+                                      uint8_t Data);
+
+HAL_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
+                                       SDIO_LL_ExtendedCmd_TypeDef *Argument,
+                                       uint8_t *pData, uint32_t Size_byte,
+                                       uint32_t Timeout_Ms);
+
+HAL_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
+                                        SDIO_LL_ExtendedCmd_TypeDef *Argument,
+                                        uint8_t *pData, uint32_t Size_byte,
+                                        uint32_t Timeout_Ms);
+
+HAL_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
+                                           SDIO_LL_ExtendedCmd_TypeDef *Argument,
+                                           uint8_t *pData, uint32_t Size_byte);
+
+HAL_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
+                                            SDIO_LL_ExtendedCmd_TypeDef *Argument,
+                                            uint8_t *pData, uint32_t Size_byte);
+
+HAL_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd);
+void SDMMC_LL_IRQHandler(SDMMC_HandleTypeDef *hsd);
