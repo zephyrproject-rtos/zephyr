@@ -1816,10 +1816,11 @@ endfunction()
 # fatal error message is printed (depends on REQUIRED flag).
 #
 # Usage:
-#   zephyr_blobs_verify(<MODULE module|FILES file [files...]> [REQUIRED] [REGEX])
+#   zephyr_blobs_verify(<MODULE module|FILES file [files...]> [REQUIRED] [REGEX regex_pattern])
 #
 # Example:
 # zephyr_blobs_verify(MODULE my_module REQUIRED) # verify all blobs in my_module and fail on error
+# zephyr_blobs_verify(MODULE my_module REGEX ".*esp32c6.*" REQUIRED) # verify only esp32c6 blobs
 # zephyr_blobs_verify(FILES img/file.bin)        # verify a single file and print on error
 function(zephyr_blobs_verify)
   cmake_parse_arguments(BLOBS_VERIFY "REQUIRED" "MODULE;REGEX" "FILES" ${ARGN})
