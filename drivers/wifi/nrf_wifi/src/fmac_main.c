@@ -971,6 +971,7 @@ static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.get_country = nrf_wifi_supp_get_country,
 	.remain_on_channel = nrf_wifi_supp_remain_on_channel,
 	.cancel_remain_on_channel = nrf_wifi_supp_cancel_remain_on_channel,
+	.set_p2p_powersave = nrf_wifi_supp_set_p2p_powersave,
 #ifdef CONFIG_NRF70_AP_MODE
 	.init_ap = nrf_wifi_wpa_supp_init_ap,
 	.start_ap = nrf_wifi_wpa_supp_start_ap,

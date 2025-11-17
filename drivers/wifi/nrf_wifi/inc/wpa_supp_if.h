@@ -133,6 +133,7 @@ int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2);
 int nrf_wifi_supp_get_country(void *if_priv, char *alpha2);
 int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq, unsigned int duration);
 int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv);
+int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, int ctwindow);
 
 #endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_AP_MODE
