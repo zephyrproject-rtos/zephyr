@@ -238,6 +238,11 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x208ffc90>;
 			ghwcfg4 = <0xfe0f0020>;
+			/* 8064 locations with full flexibility */
+			g-rx-fifo-size = <608>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <512 512 512 512 512 512 512 512
+					  512 512 512 512 512 512 256>;
 			status = "disabled";
 		};
 
@@ -251,6 +256,11 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x208ffc90>;
 			ghwcfg4 = <0xfe0f0020>;
+			/* 8064 locations with full flexibility */
+			g-rx-fifo-size = <608>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <512 512 512 512 512 512 512 512
+					  512 512 512 512 512 512 256>;
 			status = "okay";
 		};
 
