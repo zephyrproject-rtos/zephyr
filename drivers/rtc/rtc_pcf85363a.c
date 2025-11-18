@@ -137,7 +137,7 @@ enum pcf85363a_rtc_bits {
 	// Bit 6 is unused
 	PCF85363A_TSR3_MASK = BIT_MASK(2) << 6,
 	PCF85363A_TSR3_SHIFT = 6,
-}
+};
 
 
 
@@ -371,7 +371,6 @@ static int pcf85363a_get_time(const struct device *dev, struct rtc_time *timeptr
 static int pcf85363a_init(const struct device *dev)
 {
 	const struct pcf85363a_config *config = dev->config;
-	uint8_t func_reg;
 	int err;
 
 	if (!device_is_ready(config->i2c.bus)) {
