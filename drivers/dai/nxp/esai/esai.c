@@ -376,7 +376,7 @@ static void esai_commit_config(ESAI_Type *base,
 
 static int esai_config_set(const struct device *dev,
 			   const struct dai_config *cfg,
-			   const void *bespoke_data)
+			   const void *bespoke_data, size_t size)
 {
 	const struct esai_bespoke_config *bespoke;
 	struct esai_data *data;

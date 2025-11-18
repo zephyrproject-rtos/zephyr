@@ -2508,7 +2508,7 @@ static int dai_ssp_config_get(const struct device *dev, struct dai_config *cfg, 
 }
 
 static int dai_ssp_config_set(const struct device *dev, const struct dai_config *cfg,
-			      const void *bespoke_cfg)
+			      const void *bespoke_cfg, size_t size)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
