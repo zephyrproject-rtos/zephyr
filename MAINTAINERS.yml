@@ -2057,6 +2057,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - rerickson1
+  collaborators:
+    - SeppoTakalo
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -3406,6 +3408,8 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - SeppoTakalo
   files:
     - subsys/modem/
     - include/zephyr/modem/
