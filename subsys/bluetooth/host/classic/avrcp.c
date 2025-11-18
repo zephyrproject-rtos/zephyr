@@ -94,6 +94,9 @@ NET_BUF_POOL_FIXED_DEFINE(avctp_ctrl_tx_pool, CONFIG_BT_MAX_CONN,
 			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+NET_BUF_POOL_DEFINE(avctp_browsing_rx_pool, BT_BUF_ACL_RX_COUNT,
+		    CONFIG_BT_AVRCP_BROWSING_L2CAP_MTU,
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 /*
  * This macros returns true if the CT/TG has been initialized, which
  * typically happens after the avrcp callack have been registered.
@@ -2591,7 +2594,7 @@ static void init_avctp_browsing_channel(struct bt_avctp *session)
 {
 	LOG_DBG("session %p", session);
 
-	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
+	session->br_chan.rx.mtu = CONFIG_BT_AVRCP_BROWSING_L2CAP_MTU;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
 	session->br_chan.rx.optional = false;
 	session->br_chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
@@ -2742,10 +2745,23 @@ static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt
 			  ARRAY_SIZE(cmd_brow_handlers));
 }
 
+static struct net_buf *browsing_avrcp_l2cap_alloc_buf(struct bt_avctp *session)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&avctp_browsing_rx_pool, K_FOREVER);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+	}
+
+	return buf;
+}
+
 static const struct bt_avctp_ops_cb browsing_avctp_ops = {
 	.connected = browsing_avrcp_connected,
 	.disconnected = browsing_avrcp_disconnected,
 	.recv = browsing_avrcp_recv,
+	.alloc_buf = browsing_avrcp_l2cap_alloc_buf,
 };
 
 static int avrcp_browsing_accept(struct bt_conn *conn, struct bt_avctp **session)

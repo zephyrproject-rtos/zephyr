@@ -525,6 +525,22 @@ config BT_AVRCP_BROWSING
 	  This option enables support for the AVRCP Browsing channel
 	  over Bluetooth BR/EDR.
 
+if BT_AVRCP_BROWSING
+
+config BT_AVRCP_BROWSING_L2CAP_MTU
+	int "L2CAP MTU for AVRCP Browsing Channel"
+	default 339
+	# For AVRCP Browsing Channel over L2CAP, including:
+	# 335 bytes - the minimum MTU for AVRCP Browsing Channel,
+	# 4 bytes - L2CAP Header,
+	range 339 4096
+	help
+	  Maximum size of L2CAP MTU for AVCTP Browsing Channel.
+	  RX MTU will be truncated to account for ACL data and type overhead, and
+	  the L2CAP PDUheader.
+
+endif # BT_AVRCP_BROWSING
+
 config BT_AVRCP_TG_COVER_ART
 	bool "Bluetooth AVRCP Target Cover Art support [EXPERIMENTAL]"
 	select EXPERIMENTAL
