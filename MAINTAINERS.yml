@@ -2642,8 +2642,6 @@ Documentation Infrastructure:
     - wm-eisos
   files:
     - drivers/sensor/wsen/
-  labels:
-    - "area: Sensors"
   tests:
     - drivers.sensors
   description: >-
@@ -4903,8 +4901,6 @@ TDK Sensors:
     - gjabouley-invn
   files:
     - drivers/sensor/tdk/
-  labels:
-    - "area: Sensors"
   tests:
     - drivers.sensors
 
