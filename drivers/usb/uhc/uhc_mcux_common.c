@@ -243,8 +243,7 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 		}
 	}
 
-	/* TODO: need to check endpoint type too */
-	if (mcux_ep != NULL &&
+	if (mcux_ep != NULL && mcux_ep->pipeType == xfer->type &&
 	    (mcux_ep->maxPacketSize != xfer->mps ||
 	     mcux_ep->interval != xfer->interval)) {
 		/* re-initialize the ep */
@@ -289,12 +288,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	 */
 	pipe_init.numberPerUframe = 0; /* TODO: need right way to implement it. */
 	pipe_init.interval = xfer->interval;
-	/* TODO: need right way to implement it. */
-	if (pipe_init.endpointAddress == 0) {
-		pipe_init.pipeType = USB_ENDPOINT_CONTROL;
-	} else {
-		pipe_init.pipeType = USB_ENDPOINT_BULK;
-	}
+	pipe_init.pipeType = xfer->type;
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
 						   (usb_host_pipe_handle *)&mcux_ep, &pipe_init);
