@@ -499,6 +499,22 @@ static void app_get_config_rsp(struct bt_a2dp_stream *stream, struct bt_a2dp_cod
 	}
 }
 
+static int app_abort_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	bt_shell_print("receive requesting abort and accept");
+	return 0;
+}
+
+static void app_abort_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		bt_shell_print("success to abort");
+	} else {
+		bt_shell_error("fail to abort");
+	}
+}
+
 static struct bt_a2dp_cb a2dp_cb = {
 	.connected = app_connected,
 	.disconnected = app_disconnected,
@@ -515,6 +531,8 @@ static struct bt_a2dp_cb a2dp_cb = {
 	.reconfig_req = app_reconfig_req,
 	.get_config_req = app_get_config_req,
 	.get_config_rsp = app_get_config_rsp,
+	.abort_req = app_abort_req,
+	.abort_rsp = app_abort_rsp,
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	.delay_report_req = app_delay_report_req,
 #endif
@@ -558,9 +576,22 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 	int err = -1;
 	const char *type;
 	const char *action;
+	bool delay_report;
+	bool set_delay_report = false;
 
 	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
+	}
+
+	/* configure delay report */
+	if (argc == 4) {
+		set_delay_report = true;
+		err = 0;
+		delay_report = shell_strtobool(argv[3], 10, &err);
+		if (err != 0) {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
 	}
 
 	type = argv[1];
@@ -571,6 +602,11 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 				a2dp_sink_sdp_registered = 1;
 				bt_sdp_register_service(&a2dp_sink_rec);
 			}
+
+			if (set_delay_report) {
+				sink_sbc_endpoint.delay_report = delay_report;
+			}
+
 			err = bt_a2dp_register_ep(&sink_sbc_endpoint,
 				BT_AVDTP_AUDIO, BT_AVDTP_SINK);
 			if (!err) {
@@ -582,6 +618,11 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 				a2dp_source_sdp_registered = 1;
 				bt_sdp_register_service(&a2dp_source_rec);
 			}
+
+			if (set_delay_report) {
+				source_sbc_endpoint.delay_report = delay_report;
+			}
+
 			err = bt_a2dp_register_ep(&source_sbc_endpoint,
 				BT_AVDTP_AUDIO, BT_AVDTP_SOURCE);
 			if (!err) {
@@ -813,6 +854,7 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	struct net_buf *buf;
 	int ret;
+	size_t data_len;
 
 	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
@@ -824,9 +866,13 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= sizeof(uint8_t));
 	/* num of frames is 1 */
 	net_buf_add_u8(buf, (uint8_t)BT_A2DP_SBC_MEDIA_HDR_ENCODE(1, 0, 0, 0));
-	net_buf_add_mem(buf, media_data, sizeof(media_data));
+
+	data_len = min(min(sizeof(media_data), bt_a2dp_get_mtu(&sbc_stream)),
+		       net_buf_tailroom(buf));
+	net_buf_add_mem(buf, media_data, data_len);
 	shell_print(sh, "num of frames: %d, data length: %d", 1U, sizeof(media_data));
 	shell_print(sh, "data: %d, %d, %d, %d, %d, %d ......", media_data[0],
 		media_data[1], media_data[2], media_data[3], media_data[4], media_data[5]);
@@ -870,13 +916,33 @@ static int cmd_get_config(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_get_conn(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_conn *conn;
+
+	if (check_cb_registration(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	conn = bt_a2dp_get_conn(default_a2dp);
+	if (conn != NULL) {
+		shell_print(sh, "a2dp conn is: %p", conn);
+		bt_conn_unref(conn);
+	} else {
+		shell_print(sh, "a2dp conn is: NULL");
+	}
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register a2dp connection callbacks",
 			cmd_register_cb, 1, 0),
-	SHELL_CMD_ARG(register_ep, NULL, "<type: sink or source> <value: sbc>",
-			cmd_register_ep, 3, 0),
+	SHELL_CMD_ARG(register_ep, NULL,
+		      "<type: sink or source> <value: sbc> [delay report: true or false]",
+		      cmd_register_ep, 3, 1),
 	SHELL_CMD_ARG(connect, NULL, HELP_NONE, cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(discover_peer_eps, NULL, "<avdtp version value>", cmd_get_peer_eps, 2, 0),
@@ -892,6 +958,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(send_delay_report, NULL, HELP_NONE, cmd_send_delay_report, 1, 0),
 #endif
 	SHELL_CMD_ARG(get_config, NULL, HELP_NONE, cmd_get_config, 1, 0),
+	SHELL_CMD_ARG(get_conn, NULL, HELP_NONE, cmd_get_conn, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
