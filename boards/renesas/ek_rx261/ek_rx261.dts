@@ -9,6 +9,7 @@
 #include <renesas/r5f52618bgfp.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include "ek_rx261-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas EK-RX261 KIT";
@@ -121,5 +122,11 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
