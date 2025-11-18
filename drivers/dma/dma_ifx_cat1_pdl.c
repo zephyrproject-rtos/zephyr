@@ -72,9 +72,17 @@ static cy_stc_dma_descriptor_t *ifx_cat1_dma_alloc_descriptor(const struct devic
 int ifx_cat1_dma_trig(const struct device *dev, uint32_t channel)
 {
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
 
-	/* Set SW trigger for the channel */
-	Cy_DMA_Channel_SetSWTrigger(cfg->regs, channel);
+	/* In general, we do SW trigger in the beginning if src comes from memory.
+	 * The reason is if src comes from peripheral, trigger signal from peripheral
+	 * will trigger DMA in the beginning.
+	 */
+	if ((data->channels[channel].channel_direction == MEMORY_TO_MEMORY) ||
+	    (data->channels[channel].channel_direction == MEMORY_TO_PERIPHERAL)) {
+		/* Set SW trigger for the channel */
+		Cy_DMA_Channel_SetSWTrigger(cfg->regs, channel);
+	}
 
 	return 0;
 }
@@ -192,7 +200,12 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 	}
 
 	descriptor_config.triggerOutType = CY_DMA_DESCR_CHAIN;
-	descriptor_config.triggerInType = CY_DMA_DESCR_CHAIN;
+
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
+		descriptor_config.triggerInType = CY_DMA_DESCR_CHAIN;
+	} else {
+		descriptor_config.triggerInType = CY_DMA_1ELEMENT;
+	}
 
 	/* Set data size byte / 2 bytes / word */
 	descriptor_config.dataSize = convert_dma_data_size_z_to_pdl(config);
@@ -366,6 +379,72 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 	return 0;
 }
 
+static uint32_t get_total_size(const struct device *dev, uint32_t channel)
+{
+	struct ifx_cat1_dma_data *data = dev->data;
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	uint32_t total_size = 0;
+	cy_stc_dma_descriptor_t *curr_descr;
+	uint32_t x_size = 0;
+	uint32_t y_size = 0;
+
+	if (channel >= cfg->num_channels) {
+		return 0;
+	}
+
+	/* start from the head descriptor for the channel */
+	curr_descr = &data->channels[channel].descr;
+
+	while (curr_descr != NULL) {
+		x_size = Cy_DMA_Descriptor_GetXloopDataCount(curr_descr);
+		if (Cy_DMA_Descriptor_GetDescriptorType(curr_descr) == CY_DMA_2D_TRANSFER) {
+			y_size = Cy_DMA_Descriptor_GetYloopDataCount(curr_descr);
+		} else {
+			y_size = 0;
+		}
+		total_size += (y_size != 0) ? (x_size * y_size) : x_size;
+		curr_descr = Cy_DMA_Descriptor_GetNextDescriptor(curr_descr);
+	}
+
+	return total_size;
+}
+
+static uint32_t get_transferred_size(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+	uint32_t transferred_data_size = 0;
+	uint32_t x_size = 0;
+	uint32_t y_size = 0;
+
+	/* head descriptor for the channel */
+	cy_stc_dma_descriptor_t *next_descr = &data->channels[channel].descr;
+	/* current descriptor from PDL */
+	cy_stc_dma_descriptor_t *curr_descr =
+		Cy_DMA_Channel_GetCurrentDescriptor(cfg->regs, channel);
+
+	/* Sanity */
+	if (next_descr == NULL || curr_descr == NULL) {
+		return 0;
+	}
+
+	/* Count fully processed descriptors */
+	while ((next_descr != NULL) && (next_descr != curr_descr)) {
+		x_size = Cy_DMA_Descriptor_GetXloopDataCount(next_descr);
+		y_size = Cy_DMA_Descriptor_GetYloopDataCount(next_descr);
+		transferred_data_size += (y_size != 0U) ? (x_size * y_size) : x_size;
+		next_descr = Cy_DMA_Descriptor_GetNextDescriptor(next_descr);
+	}
+
+	/* Add progress inside the current descriptor using DW INDEX registers */
+	transferred_data_size +=
+		_FLD2VAL(DW_CH_STRUCT_CH_IDX_X_IDX, DW_CH_IDX(cfg->regs, channel)) +
+		(_FLD2VAL(DW_CH_STRUCT_CH_IDX_Y_IDX, DW_CH_IDX(cfg->regs, channel)) *
+		 Cy_DMA_Descriptor_GetXloopDataCount(curr_descr));
+
+	return transferred_data_size;
+}
+
 static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 				   struct dma_status *stat)
 {
@@ -377,16 +456,33 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (stat != NULL) {
-		/* Check is current DMA channel busy or idle */
-		uint32_t active_ch = Cy_DMA_GetActiveChannel(cfg->regs);
-
-		/* busy status info */
-		stat->busy = (active_ch & (1ul << channel)) ? true : false;
-
-		/* direction info */
-		stat->dir = data->channels[channel].channel_direction;
+	if (stat == NULL) {
+		return -EINVAL;
 	}
+
+	/* Use PDL to determine whether channel is active: current descriptor is non-NULL when
+	 * channel is executing.
+	 */
+	stat->busy = DW_CH_STATUS(cfg->regs, channel) & (1UL << DW_CH_STRUCT_CH_STATUS_PENDING_Pos)
+			     ? true
+			     : false;
+
+	/* Check if the channel has a configured head descriptor by inspecting its src/dst */
+	cy_stc_dma_descriptor_t *head = &data->channels[channel].descr;
+
+	if (head != NULL && (head->src != 0 || head->dst != 0)) {
+		uint32_t total_transfer_size = get_total_size(dev, channel);
+		uint32_t transferred_size = get_transferred_size(dev, channel);
+
+		/* pending_length expressed in user units (items), same as get_total/get_transferred
+		 */
+		stat->pending_length = total_transfer_size - transferred_size;
+	} else {
+		stat->pending_length = 0;
+	}
+
+	/* direction info */
+	stat->dir = data->channels[channel].channel_direction;
 
 	return 0;
 }
