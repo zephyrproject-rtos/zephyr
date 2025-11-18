@@ -110,6 +110,27 @@ def get_files(filter=None, paths=None):
             files.remove(file)
     return files
 
+def get_modified_lines(path):
+    """
+    Get the set of modified line numbers for a specific file in the COMMIT_RANGE.
+    :param path: Path to the file to check for modifications
+    :return: Set of modified line numbers in the file
+    """
+    out = git('diff', '-U0', COMMIT_RANGE, '--', path)
+    lines = out.splitlines()
+    modified_lines = set()
+
+    for line in lines:
+        if not line.startswith('@@'):
+            continue
+        match = re.match(r'@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@', line)
+        if match:
+            start = int(match.group(1))
+            count = int(match.group(2)) if match.group(2) else 1
+            modified_lines.update(range(start, start + count))
+
+    return modified_lines
+
 def get_module_setting_root(root, settings_file):
     """
     Parse the Zephyr module generated settings file given by 'settings_file'
@@ -567,8 +588,10 @@ class DevicetreeLintingCheck(ComplianceTest):
                 "json", "--format",
                 "--patchFile", temp_patch,
             ]
+            file_modified_lines = {}
             for file in batch:
                 cmd.extend(["--file", file])
+                file_modified_lines[file] = get_modified_lines(file)
 
             try:
                 json_output = self._parse_json_output(cmd)
@@ -584,12 +607,19 @@ class DevicetreeLintingCheck(ComplianceTest):
                         if level == "info":
                             logging.info(message)
                         else:
+                            reduce_level = True
                             title = issue.get("title", "")
                             file = issue.get("file", "")
                             line = issue.get("startLine", None)
                             col = issue.get("startCol", None)
                             end_line = issue.get("endLine", None)
                             end_col = issue.get("endCol", None)
+                            if (file_posix := PurePath(file).as_posix()) in file_modified_lines and line:
+                                issue_lines = set(range(line, (end_line or line) + 1))
+                                if issue_lines & file_modified_lines[file_posix]:
+                                    reduce_level = False
+                            if reduce_level and level.lower() in ['error']:
+                                level = 'warning'
                             self.fmtd_failure(level, title, file, line, col, message, end_line, end_col)
 
             except subprocess.CalledProcessError as ex:
