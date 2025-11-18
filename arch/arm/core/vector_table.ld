@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +56,10 @@ KEEP(*(".exc_vector_table.*"))
 INCLUDE isr_tables_vt.ld
 #else
 KEEP(*(.vectors))
+#endif
+
+#ifdef CONFIG_CPU_AARCH32_CORTEX_R
+KEEP(*(._bindesc_entry.*))
 #endif
 
 _vector_end = .;
