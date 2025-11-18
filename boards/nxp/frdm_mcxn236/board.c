@@ -181,10 +181,6 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
-	CLOCK_EnableClock(kCLOCK_Gpio5);
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
