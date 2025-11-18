@@ -17,7 +17,7 @@
 #define COUNTER_SPAN BIT(24)
 #define CYC_PER_TICK k_ticks_to_cyc_ceil32(1)
 #define TICK_TO_CYC(tick) k_ticks_to_cyc_ceil32(tick)
-#define CYC_TO_TICK(cyc) k_cyc_to_ticks_ceil32(cyc)
+#define CYC_TO_TICK(cyc) k_cyc_to_ticks_floor32(cyc)
 #define MAX_TICKS (((COUNTER_SPAN / 2) - CYC_PER_TICK) / (CYC_PER_TICK))
 #define SMARTBOND_CLOCK_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(osc))
 /* Margin values are based on DA1469x characterization data */
