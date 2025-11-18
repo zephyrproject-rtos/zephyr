@@ -31,26 +31,7 @@ different chip.
 Supported Features
 ==================
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPIS      | on-chip    | SPI slave                           |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/96boards/carbon/96b_carbon_nrf51822_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

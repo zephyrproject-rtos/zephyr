@@ -43,23 +43,7 @@ specifications are used:
 Supported Features
 ==================
 
-The phyboard_lyra/am6234/m4 configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| Mailbox   | on-chip    | IPC Mailbox                         |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
