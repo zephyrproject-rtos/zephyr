@@ -207,7 +207,7 @@ static void sai_config_set_err_051421(I2S_Type *base,
 
 static int sai_config_set(const struct device *dev,
 			  const struct dai_config *cfg,
-			  const void *bespoke_data)
+			  const void *bespoke_data, size_t size)
 {
 	const struct sai_bespoke_config *bespoke;
 	sai_transceiver_t *rx_config, *tx_config;
