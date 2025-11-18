@@ -9,6 +9,8 @@
 #include <renesas/r5f52618bgfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "fpb_rx261-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Renesas FPB-RX261";
@@ -83,4 +85,10 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
