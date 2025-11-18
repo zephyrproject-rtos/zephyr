@@ -32,12 +32,6 @@
 		sw0 = &user_button;
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911>;
-		display = <&ltdc>;
-	};
-
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		/*
