@@ -5332,12 +5332,12 @@ void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const voi
 void model_recv_ev(uint16_t src, uint16_t dst, const void *payload,
 		   size_t payload_len)
 {
-	NET_BUF_SIMPLE_DEFINE(buf, UINT8_MAX);
+	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_RX_SDU_MAX + sizeof(struct btp_mesh_model_recv_ev));
 	struct btp_mesh_model_recv_ev *ev;
 
 	LOG_DBG("src 0x%04x dst 0x%04x payload_len %zu", src, dst, payload_len);
 
-	if (payload_len > net_buf_simple_tailroom(&buf)) {
+	if (payload_len + sizeof(*ev) > net_buf_simple_tailroom(&buf)) {
 		LOG_ERR("Payload size exceeds buffer size");
 		return;
 	}
