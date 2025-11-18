@@ -206,8 +206,6 @@ void openthread_set_bbr_multicast_listener_cb(openthread_bbr_multicast_listener_
 					      void *context)
 {
 	__ASSERT(cb != NULL, "Receive callback is not set");
-	__ASSERT(openthread_instance != NULL, "OpenThread instance is not "
-					      "initialized");
 
 	openthread_mutex_lock();
 	otBackboneRouterSetMulticastListenerCallback(openthread_get_default_instance(), cb,
