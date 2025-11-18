@@ -74,6 +74,7 @@
 };
 
 &flexcan2 {
+	compatible = "nxp,flexcan";
 	interrupts = <92 0>, <93 0>, <95 0>;
 	interrupt-names = "warning", "error", "mb-0-15";
 	clocks = <&clock NXP_S32_FLEXCAN2_CLK>;
