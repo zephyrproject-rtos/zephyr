@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(DT_HAS_ST_STM32WBA_IEEE802154_ENABLED)
+  zephyr_blobs_verify(MODULE hal_stm32 REQUIRED)
+endif()
+
 zephyr_library()
 
 # zephyr-keep-sorted-start
