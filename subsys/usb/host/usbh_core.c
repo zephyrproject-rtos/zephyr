@@ -48,29 +48,35 @@ static int usbh_event_carrier(const struct device *dev,
 static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
-	LOG_DBG("Device connected event");
-	if (ctx->root != NULL) {
-		LOG_ERR("Device already connected");
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
-	}
+	struct usb_device *udev;
 
-	ctx->root = usbh_device_alloc(ctx);
-	if (ctx->root == NULL) {
+	LOG_DBG("Device connected event");
+
+	udev = usbh_device_alloc(ctx);
+	if (udev == NULL) {
 		LOG_ERR("Failed allocate new device");
 		return;
 	}
 
-	ctx->root->state = USB_STATE_DEFAULT;
+	udev->state = USB_STATE_DEFAULT;
 
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
-		ctx->root->speed = USB_SPEED_SPEED_HS;
+		udev->speed = USB_SPEED_SPEED_HS;
 	} else {
-		ctx->root->speed = USB_SPEED_SPEED_FS;
+		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	if (usbh_device_init(ctx->root)) {
+	k_mutex_lock(&ctx->mutex, K_FOREVER);
+	sys_dlist_append(&ctx->udevs, &udev->node);
+
+	if (ctx->root == NULL) {
+		ctx->root = udev;
+	}
+	k_mutex_unlock(&ctx->mutex);
+
+	if (usbh_device_init(udev)) {
 		LOG_ERR("Failed to reset new USB device");
+		sys_dlist_remove(&udev->node);
 	}
 
 	usbh_class_probe_device(ctx->root);
