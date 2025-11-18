@@ -3082,6 +3082,20 @@ int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params
 		break;
 	}
 
+	case WIFI_P2P_POWER_SAVE:
+		snprintk(cmd_buf, sizeof(cmd_buf), "p2p_set ps %d", params->power_save ? 1 : 0);
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "p2p_set ps command failed: %d", ret);
+			return -EIO;
+		}
+		if (strncmp(resp_buf, "FAIL", 4) == 0) {
+			wpa_printf(MSG_ERROR, "p2p_set ps command returned FAIL");
+			return -EIO;
+		}
+		ret = 0;
+		break;
+
 	default:
 		wpa_printf(MSG_ERROR, "Unknown P2P operation: %d", params->oper);
 		ret = -EINVAL;
