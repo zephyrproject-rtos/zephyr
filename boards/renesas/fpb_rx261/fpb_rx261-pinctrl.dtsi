@@ -11,4 +11,12 @@
 				<RX_PSEL(RX_PSEL_SCI_5, 0xC, 0x2)>; /* RX */
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			/* input */
+			psels = <RX_PSEL(RX_PSEL_ADC, 4, 0)>;
+			renesas,analog-enable;
+		};
+	};
 };
