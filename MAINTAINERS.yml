@@ -167,6 +167,7 @@ ARC arch:
   collaborators:
     - abrodkin
     - tagunil
+    - nashif
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
@@ -187,6 +188,7 @@ ARM Platforms:
     - wearyzen
   collaborators:
     - ithinuel
+    - nashif
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
