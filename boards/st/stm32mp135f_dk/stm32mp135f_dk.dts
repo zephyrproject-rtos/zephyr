@@ -60,11 +60,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911>;
-	};
-
 	aliases {
 		led0 = &blue_led_1;
 		led1 = &red_led_2;

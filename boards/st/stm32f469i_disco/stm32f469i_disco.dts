@@ -55,12 +55,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-		invert-y;
-	};
-
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -141,6 +135,9 @@
 		reg = <0x2a>;
 		int-gpios = <&gpioj 5 0>;
 		status = "okay";
+		inverted-y;
+		screen-width = <800>;
+		screen-height = <480>;
 	};
 };
 
