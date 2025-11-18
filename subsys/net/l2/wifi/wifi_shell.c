@@ -4078,6 +4078,40 @@ static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[]
 	PR("P2P invite initiated\n");
 	return 0;
 }
+
+static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	bool power_save_enable = false;
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p power_save <on|off>\n");
+		return -EINVAL;
+	}
+
+	if (strcmp(argv[1], "on") == 0) {
+		power_save_enable = true;
+	} else if (strcmp(argv[1], "off") == 0) {
+		power_save_enable = false;
+	} else {
+		PR_ERROR("Invalid argument. Use 'on' or 'off'\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_POWER_SAVE;
+	params.power_save = power_save_enable;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P power save request failed\n");
+		return -ENOEXEC;
+	}
+
+	PR("P2P power save %s\n", power_save_enable ? "enabled" : "disabled");
+	return 0;
+}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
@@ -4856,6 +4890,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[-d, --go-dev-addr=<MAC>]: GO device address (for group type)\n"
 		      "[-i, --iface=<interface index>]: Interface index\n",
 		      cmd_wifi_p2p_invite, 2, 8),
+	SHELL_CMD_ARG(power_save, NULL,
+		      "Set P2P power save mode\n"
+		      "Usage: power_save <on|off>\n"
+		      "<on>: Enable P2P power save\n"
+		      "<off>: Disable P2P power save\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_power_save, 2, 3),
 	SHELL_SUBCMD_SET_END
 );
 
