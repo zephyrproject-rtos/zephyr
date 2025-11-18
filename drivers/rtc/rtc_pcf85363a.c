@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(pcf85363a, CONFIG_RTC_LOG_LEVEL);
 
 /* PCF85363A register addresses */
 enum pcf85363a_register {
-// Time and date
+	// Time and date
 	PCF85363A_CENTISECONDS = 0x00U,
 	PCF85363A_SECONDS = 0x01U,
 	PCF85363A_MINUTES = 0x02U,
@@ -71,7 +71,7 @@ enum pcf85363a_register {
 	// RTC Timestamp Control
 	PCF85363A_TSR_MODE = 0x23U,
 
-// CONTROL REGISTERS start here
+	// CONTROL REGISTERS start here
 	PCF85363A_OFFSET = 0x24U,
 
 	PCF85363A_OSCILLATOR = 0x25U,
@@ -138,8 +138,6 @@ enum pcf85363a_rtc_bits {
 	PCF85363A_TSR3_MASK = BIT_MASK(2) << 6,
 	PCF85363A_TSR3_SHIFT = 6,
 };
-
-
 
 enum pcf85363a_control_bits {
 	// PCF85363A_OSCILLATOR
@@ -213,9 +211,7 @@ struct pcf85363a_config {
 };
 
 struct pcf85363a_data {
-
 };
-
 
 /*
  * @brief Read one or more registers from the device
@@ -249,7 +245,8 @@ static int pcf85363a_read_regs(const struct device *dev, uint8_t addr, uint8_t *
 	return 0;
 }
 
-static int pcf85363a_write_regs(const struct device *dev, uint8_t addr, const uint8_t *data, size_t len)
+static int pcf85363a_write_regs(const struct device *dev, uint8_t addr, const uint8_t *data,
+				size_t len)
 {
 	const struct pcf85363a_config *config = dev->config;
 	uint8_t block[1 + len];
@@ -284,7 +281,6 @@ static bool pcf85363a_is_rtc_running(const struct device *dev)
 	return !(sec_reg & PCF85363A_OSCILLATOR_STOP);
 }
 
-
 /*
  * @brief Write time to the RTC
  *
@@ -300,14 +296,14 @@ static int pcf85363a_set_time(const struct device *dev, const struct rtc_time *t
 	int csec = timeptr->tm_nsec / 10000000; // Convert nanoseconds to centiseconds
 
 	// Prepare time data in BCD format
-	regs[0] = bin2bcd(csec) & 0x7FU; // Centiseconds
-	regs[1] = bin2bcd(timeptr->tm_sec) & 0x7FU; // Seconds
-	regs[2] = bin2bcd(timeptr->tm_min) & 0x7FU; // Minutes
-	regs[3] = bin2bcd(timeptr->tm_hour) & 0x3FU; // Hours (24-hour format)
-	regs[4] = bin2bcd(timeptr->tm_mday) & 0x3FU; // Days
-	regs[5] = (timeptr->tm_wday % 7) & 0x07U; // Weekdays (0=Sunday)
+	regs[0] = bin2bcd(csec) & 0x7FU;                  // Centiseconds
+	regs[1] = bin2bcd(timeptr->tm_sec) & 0x7FU;       // Seconds
+	regs[2] = bin2bcd(timeptr->tm_min) & 0x7FU;       // Minutes
+	regs[3] = bin2bcd(timeptr->tm_hour) & 0x3FU;      // Hours (24-hour format)
+	regs[4] = bin2bcd(timeptr->tm_mday) & 0x3FU;      // Days
+	regs[5] = (timeptr->tm_wday % 7) & 0x07U;         // Weekdays (0=Sunday)
 	regs[6] = bin2bcd((timeptr->tm_mon + 1)) & 0x1FU; // Months (1-12)
-	regs[7] = bin2bcd(timeptr->tm_year % 100); // Years (00-99)
+	regs[7] = bin2bcd(timeptr->tm_year % 100);        // Years (00-99)
 
 	// Write time registers
 	err = pcf85363a_write_regs(dev, PCF85363A_CENTISECONDS, regs, sizeof(regs));
@@ -316,7 +312,7 @@ static int pcf85363a_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	// Verify if the oscillator stop flag is cleared
-	if(!pcf85363a_is_rtc_running(dev)) {
+	if (!pcf85363a_is_rtc_running(dev)) {
 		LOG_ERR("Oscillator stop flag is still set after setting time");
 		return -EIO;
 	}
@@ -336,8 +332,7 @@ static int pcf85363a_get_time(const struct device *dev, struct rtc_time *timeptr
 	uint8_t regs[8];
 	int err;
 
-	if (!timeptr)
-	{
+	if (!timeptr) {
 		LOG_ERR("Invalid timeptr");
 		return -EINVAL;
 	}
@@ -358,12 +353,12 @@ static int pcf85363a_get_time(const struct device *dev, struct rtc_time *timeptr
 	timeptr->tm_hour = bcd2bin(regs[3] & 0x3FU);
 	timeptr->tm_mday = bcd2bin(regs[4] & 0x3FU);
 	timeptr->tm_wday = regs[5] & 0x07U;
-	timeptr->tm_mon = bcd2bin(regs[6] & 0x1FU) - 1; // tm_mon is 0-11
+	timeptr->tm_mon = bcd2bin(regs[6] & 0x1FU) - 1;    // tm_mon is 0-11
 	timeptr->tm_year = bcd2bin(regs[7]) + 2000 - 1900; // tm_year is years since 1900
 
 	timeptr->tm_isdst = -1; // Not supported
-	timeptr->tm_yday = -1; // Not supported
-	timeptr->tm_nsec = 0; // Not supported
+	timeptr->tm_yday = -1;  // Not supported
+	timeptr->tm_nsec = 0;   // Not supported
 
 	return 0;
 }
@@ -407,8 +402,8 @@ static int pcf85363a_init(const struct device *dev)
 	}
 
 	// Disable unnecessary IO features for basic RTC operation
-	uint8_t pinio_val = PCF85363A_PIN_IO_CLKPM	// CLKOUT disabled (fixed at 0v)
-						| PCF85363A_PIN_IO_INTAPM; // INTA = Hi-z
+	uint8_t pinio_val = PCF85363A_PIN_IO_CLKPM     // CLKOUT disabled (fixed at 0v)
+			    | PCF85363A_PIN_IO_INTAPM; // INTA = Hi-z
 	err = pcf85363a_write_regs(dev, PCF85363A_PIN_IO, &pinio_val, 1);
 	if (err != 0) {
 		LOG_ERR("Failed to configure pin I/O settings");
@@ -419,27 +414,21 @@ static int pcf85363a_init(const struct device *dev)
 }
 
 static const struct rtc_driver_api pcf85363a_api = {
-	.set_time = pcf85363a_set_time,
-	.get_time = pcf85363a_get_time,
+	.set_time = pcf85363a_set_time, .get_time = pcf85363a_get_time,
 	// Alarm and calibration functions can be added here
 };
 
-#define PCF85363A_INIT(inst)                                                \
-	static const struct pcf85363a_config pcf85363a_config_##inst = {        \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
-		.int_a = GPIO_DT_SPEC_INST_GET_OR(inst, int_a, {0}),               \
-		.int_b = GPIO_DT_SPEC_INST_GET_OR(inst, int_b, {0}),               \
-	};                                                                     \
-																		   \
-	static struct pcf85363a_data pcf85363a_data_##inst;                    \
-																		   \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
-						  pcf85363a_init,                                  \
-						  NULL,                                           \
-						  &pcf85363a_data_##inst,                         \
-						  &pcf85363a_config_##inst,                       \
-						  POST_KERNEL,                                    \
-						  CONFIG_RTC_INIT_PRIORITY,                       \
-						  &pcf85363a_api);
+#define PCF85363A_INIT(inst)                                                                       \
+	static const struct pcf85363a_config pcf85363a_config_##inst = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.int_a = GPIO_DT_SPEC_INST_GET_OR(inst, int_a, {0}),                               \
+		.int_b = GPIO_DT_SPEC_INST_GET_OR(inst, int_b, {0}),                               \
+	};                                                                                         \
+                                                                                                   \
+	static struct pcf85363a_data pcf85363a_data_##inst;                                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, pcf85363a_init, NULL, &pcf85363a_data_##inst,                  \
+			      &pcf85363a_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,     \
+			      &pcf85363a_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF85363A_INIT)
