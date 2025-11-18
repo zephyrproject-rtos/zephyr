@@ -1875,6 +1875,9 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 #else
 		return 0;
 #endif
+	case SSP_GTW_DMA_CONFIG_ID:
+		/* ignored */
+		return 0;
 	default:
 		LOG_ERR("undefined aux data type %u", aux_tlv->type);
 		return -EINVAL;
@@ -1999,6 +2002,9 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 #endif
 			LOG_INF("link clock_source %u", link->clock_source);
 #endif
+			break;
+		case SSP_GTW_DMA_CONFIG_ID:
+			/* ignored */
 			break;
 		default:
 			LOG_ERR("undefined aux data type %u", aux_tlv->type);
