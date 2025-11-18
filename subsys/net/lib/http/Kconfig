@@ -232,6 +232,15 @@ config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
 	  Please note that it is allocated on the stack of the HTTP server thread,
 	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
 
+config HTTP_SERVER_COMPLETE_STATUS_PHRASES
+	bool "Complete HTTP status reason phrases"
+	help
+	  Include reason phrases for HTTP status codes in server responses.
+	  When disabled, HTTP responses will not include reason phrases,
+	  reducing code size. Note that reason phrases are optional per
+	  HTTP specification and their absence does not affect protocol
+	  compliance or client behavior.
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together
