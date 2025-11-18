@@ -1152,6 +1152,24 @@ Power
 The ``power`` harness is used to measure and validate the current consumption.
 It integrates with 'pytest' to perform automated data collection and analysis using a hardware power monitor.
 
+There are two types of power monitor supported.
+
+Environment Variables
+---------------------
+
+* ``PROBE_CLASS``: Specifies the power monitor class to use
+
+    - ``stm_powershield`` (default): STM Power Shield
+    - ``general_powershield``: General ADC platform
+
+specific setting for general_adc_platform
+
+* ``PROBE_SETTING_PATH``: Directory containing ``probe_settings.yaml`` files (default: build-in)
+
+
+STM Power Shield
+----------------
+
 The harness executes the following steps:
 
 1. Initializes a power monitoring device (e.g., ``stm_powershield``) via the ``PowerMonitor`` abstract interface.
@@ -1184,6 +1202,86 @@ The harness executes the following steps:
 - **num_of_transitions** – Expected number of power state transitions in the DUT during test execution.
 - **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
 - **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
+
+
+General ADC Platform
+--------------------
+
+A flexible, extensible ADC-based power monitoring solution that works with various hardware platforms and development boards.
+
+**Key Features:**
+
+* **Multi-channel ADC support**: Up to as many configurable measurement channels
+* **YAML-based configuration**: Comprehensive configuration through power_shield.yaml
+* **Advanced calibration**: Built-in scaling, offset correction, and temperature compensation
+* **Flexible sampling**: Configurable sample rates from 1Hz to 100kHz
+* **Data buffering**: Circular buffer support for continuous measurements
+
+**Hardware Connection Examples:**
+
+For current sensing with shunt resistor::
+
+      VDD_SOURCE ──[Rsense]── VDD_TARGET
+                  │        │
+                  │        └── ADC_CH_NEG (or GND for single-ended)
+                  └─────────── ADC_CH_POS
+                                  │
+      Host PC ──[Serial/USB]── Target Device with ADC
+
+For voltage monitoring::
+
+      VDD_TARGET ──[Voltage Divider]── ADC_CH_INPUT
+                                  │
+      Host PC ──[Serial/USB]────── Target Device with ADC
+
+
+**Software Configuration:**
+
+hwmap.yaml Example::
+
+    ...
+    fixtures:
+      - pm_probe:/dev/serial/by-id/usb-NXP_Semiconductors_MCU-LINK_FRDM-MCXC444__r0E7__CMSIS-DAP_V3.128_0YTSNYM0PJEHJ-if02,115200
+
+**Outputs:**
+
+A "power_shield" folder will be created in the "build_dir" of DUT application
+
+including::
+
+      handler.log
+      <platform>_current_data_<timestamp>.csv
+      <platform>_voltage_data_<timestamp>.csv
+      <platform>_power_data_<timestamp>.csv
+
+If the csv can successful generated, we judge this as pass criteria. User can analyze
+the power number futher.
+
+**Basic Test Execution:**
+
+Using General ADC Platform::
+
+      build and flash the samples/drivers/adc/adc_power_measure to the harness board
+
+      PROBE_CLASS=general_powershield pytest test_power.py
+
+With Custom Configuration::
+
+      PROBE_SETTING_PATH=/path/to/config PROBE_CLASS=general_powershield pytest test_power.py
+
+if sheild application works as shell command::
+
+      POWER_SHIELD_SHELL=y PROBE_SETTING_PATH=/path/to/config PROBE_CLASS=general_powershield pytest test_power.py
+
+Twister Examples::
+
+      scripts/twister --device-testing --hardware-map /home/ubuntu/nxp/mimxrt595_evk_cm33/map.yaml
+        -T samples/boards/nxp/mimxrt595_evk/system_off
+
+or::
+
+      scripts/twister --device-testing --device-serial /dev/ttyACM1
+        -T samples/boards/nxp/mimxrt595_evk/system_off --fixture=pm_probe:/dev/ttyACM0,115200
 
 .. _twister_display_capture_harness:
 
