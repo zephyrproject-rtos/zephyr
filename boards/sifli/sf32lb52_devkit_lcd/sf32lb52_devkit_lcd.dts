@@ -77,6 +77,7 @@
 	sifli,hdiv = <1>;
 	sifli,pdiv1 = <1>;
 	sifli,pdiv2 = <6>;
+	sifli,sys-clk-src = "dll1";
 
 	dll1 {
 		status = "okay";
