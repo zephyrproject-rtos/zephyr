@@ -1041,6 +1041,10 @@ static bool is_valid_ascs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		return buf_simple->len == 0U;
 	case BTP_ASCS_EV_ASE_STATE_CHANGED:
 		return buf_simple->len == sizeof(struct btp_ascs_ase_state_changed_ev);
+	case BTP_ASCS_EV_CIS_CONNECTED:
+		return buf_simple->len == sizeof(struct btp_ascs_cis_connected_ev);
+	case BTP_ASCS_EV_CIS_DISCONNECTED:
+		return buf_simple->len == sizeof(struct btp_ascs_cis_disconnected_ev);
 	default:
 		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
