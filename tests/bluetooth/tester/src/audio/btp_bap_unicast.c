@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
@@ -17,6 +18,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -559,22 +561,41 @@ static void stream_qos_set_cb(struct bt_bap_stream *stream)
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	struct bt_bap_ep_info info;
-	struct bt_conn_info conn_info;
+	const bool iso_connected =
+		stream->iso == NULL ? false : stream->iso->state == BT_ISO_STATE_CONNECTED;
 	int err;
 
 	LOG_DBG("Enabled stream %p", stream);
 
-	(void)bt_bap_ep_get_info(stream->ep, &info);
-	(void)bt_conn_get_info(stream->conn, &conn_info);
-	if (conn_info.role == BT_HCI_ROLE_PERIPHERAL && info.dir == BT_AUDIO_DIR_SINK) {
-		/* Automatically do the receiver start ready operation */
-		/* TODO: This should ideally be done by the upper tester */
-		err = bt_bap_stream_start(stream);
-		if (err != 0) {
-			LOG_DBG("Failed to start stream %p", stream);
+	if (iso_connected) {
+		struct bt_bap_ep_info ep_info;
+		struct bt_conn_info conn_info;
 
-			return;
+		err = bt_bap_ep_get_info(stream->ep, &ep_info);
+		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+		err = bt_conn_get_info(stream->conn, &conn_info);
+		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+		/* If we are central and the endpoint is a source or if we are a peripheral and the
+		 * endpoint is a sink, then we can start it, else the remote device needs to start
+		 * the endpoint
+		 */
+		const bool start_stream =
+			(IS_ENABLED(CONFIG_BT_CENTRAL) && conn_info.role == BT_HCI_ROLE_CENTRAL &&
+			 ep_info.dir == BT_AUDIO_DIR_SOURCE) ||
+			(IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+			 conn_info.role == BT_HCI_ROLE_PERIPHERAL &&
+			 ep_info.dir == BT_AUDIO_DIR_SINK);
+
+		if (start_stream) {
+			/* Automatically do the receiver start ready operation */
+			/* TODO: This should ideally be done by the upper tester */
+			err = bt_bap_stream_start(stream);
+			if (err != 0) {
+				LOG_DBG("Failed to start stream %p", stream);
+
+				return;
+			}
 		}
 	}
 
@@ -689,12 +710,16 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 		}
 
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
-			/* Automatically do the receiver start ready operation for source ASEs as
-			 * the client
-			 */
-			err = bt_bap_stream_start(stream);
-			if (err != 0) {
-				LOG_ERR("Failed to start stream %p", stream);
+			if (ep_info.state == BT_BAP_EP_STATE_ENABLING) {
+				/* Automatically do the receiver start ready operation for source
+				 * ASEs as the client when in the enabling state.
+				 * The CIS may be connected in the QoS Configured state as well, in
+				 * which case we should wait until we enter the enabling state.
+				 */
+				err = bt_bap_stream_start(stream);
+				if (err != 0) {
+					LOG_ERR("Failed to start stream %p", stream);
+				}
 			}
 		} else {
 			struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
