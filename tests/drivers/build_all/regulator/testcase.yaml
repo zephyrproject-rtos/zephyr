@@ -10,3 +10,7 @@ tests:
   drivers.regulator.build:
     platform_allow:
       - native_sim
+  drivers.regulator.stm32_vrefbuf.build:
+    platform_allow:
+      - stm32h573i_dk
+      - stm32u5a9j_dk
