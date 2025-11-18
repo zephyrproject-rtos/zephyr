@@ -517,7 +517,7 @@ New Boards
 * WeAct Studio
 
    * :zephyr:board:`mini_stm32h7b0` (``mini_stm32h7b0``)
-   * :zephyr:board:`weact_stm32h5_core` (``weact_stm32h5_core``)
+   * :zephyr:board:`weact_stm32h562_core` (``weact_stm32h562_core``)
 
 * WinChipHead
 
