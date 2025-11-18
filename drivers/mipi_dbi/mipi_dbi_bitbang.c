@@ -100,7 +100,7 @@ static int mipi_dbi_bitbang_write_helper(const struct device *dev,
 	case MIPI_DBI_MODE_8080_BUS_8_BIT:
 	case MIPI_DBI_MODE_8080_BUS_9_BIT:
 	case MIPI_DBI_MODE_8080_BUS_16_BIT:
-		gpio_pin_set_dt(&config->cs, 1);
+		gpio_pin_set_dt(&config->cs, 0);
 		if (cmd_present) {
 			gpio_pin_set_dt(&config->wr, 0);
 			gpio_pin_set_dt(&config->cmd_data, 0);
@@ -117,14 +117,14 @@ static int mipi_dbi_bitbang_write_helper(const struct device *dev,
 				len--;
 			}
 		}
-		gpio_pin_set_dt(&config->cs, 0);
+		gpio_pin_set_dt(&config->cs, 1);
 		break;
 
 	/* Clocked E mode */
 	case MIPI_DBI_MODE_6800_BUS_8_BIT:
 	case MIPI_DBI_MODE_6800_BUS_9_BIT:
 	case MIPI_DBI_MODE_6800_BUS_16_BIT:
-		gpio_pin_set_dt(&config->cs, 1);
+		gpio_pin_set_dt(&config->cs, 0);
 		gpio_pin_set_dt(&config->wr, 0);
 		if (cmd_present) {
 			gpio_pin_set_dt(&config->e, 1);
@@ -142,7 +142,7 @@ static int mipi_dbi_bitbang_write_helper(const struct device *dev,
 				len--;
 			}
 		}
-		gpio_pin_set_dt(&config->cs, 0);
+		gpio_pin_set_dt(&config->cs, 1);
 		break;
 
 	default:
@@ -184,7 +184,12 @@ static int mipi_dbi_bitbang_reset(const struct device *dev, k_timeout_t delay)
 		return ret;
 	}
 	k_sleep(delay);
-	return gpio_pin_set_dt(&config->reset, 0);
+	ret = gpio_pin_set_dt(&config->reset, 0);
+	if (ret < 0) {
+		return ret;
+	}
+	k_sleep(delay);
+	return gpio_pin_set_dt(&config->reset, 1);
 }
 
 static int mipi_dbi_bitbang_init(const struct device *dev)
