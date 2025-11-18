@@ -12,6 +12,7 @@ struct uhc_mcux_data {
 	const usb_host_controller_interface_t *mcux_if;
 	/* TODO: Maybe make it to link with udev->ep_in and udev->ep_out */
 	usb_host_pipe_t *mcux_eps[USB_HOST_CONFIG_MAX_PIPES];
+	uint16_t mcux_eps_interval[USB_HOST_CONFIG_MAX_PIPES];
 	usb_host_instance_t mcux_host;
 	struct k_thread drv_stack_data;
 	uint8_t controller_id; /* MCUX hal controller id, 0xFF is invalid value */
