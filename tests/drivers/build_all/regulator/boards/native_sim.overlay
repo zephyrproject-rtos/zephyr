@@ -16,7 +16,7 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
-			#include "i2c.dtsi"
+			#include "native_sim_i2c.dtsi"
 		};
 
 		test_gpio: gpio@deadbeef {
@@ -27,6 +27,6 @@
 			status = "okay";
 		};
 
-		#include "misc.dtsi"
+		#include "native_sim_misc.dtsi"
 	};
 };
