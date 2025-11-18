@@ -1473,6 +1473,8 @@ enum wifi_p2p_op {
 	WIFI_P2P_GROUP_REMOVE,
 	/** P2P invite */
 	WIFI_P2P_INVITE,
+	/** P2P power save */
+	WIFI_P2P_POWER_SAVE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1514,6 +1516,8 @@ struct wifi_p2p_params {
 	struct wifi_p2p_device_info *peers;
 	/** Actual number of peers returned */
 	uint16_t peer_count;
+	/** Power save enabled (for power save operation) */
+	bool power_save;
 	/** Connect specific parameters */
 	struct {
 		/** Connection method */
