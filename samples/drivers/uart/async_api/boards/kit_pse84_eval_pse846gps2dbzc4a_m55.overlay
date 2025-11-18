@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
+
+&scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16bit_0>;
+
+	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
+	pinctrl-names = "default";
+
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "tx", "rx";
+};
