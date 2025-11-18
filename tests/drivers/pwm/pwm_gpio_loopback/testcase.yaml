@@ -34,3 +34,32 @@ tests:
       - cyw920829m2evk_02/cyw20829b1340
       - cyw920829m2evk_02/cyw20829b1010
       - cyw920829m2evk_02/cyw20829b0lkml
+  drivers.pwm.gpio_loopback_tc0.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc1.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc1.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc4.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc4.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc5.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc6.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc7.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
+    platform_allow:
+      - sam_e54_xpro
