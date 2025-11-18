@@ -26,6 +26,7 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan0;
+		zephyr,entropy = &trng;
 	};
 
 	reserved-memory {
@@ -274,4 +275,9 @@ zephyr_udc0: &usb1 {
 
 &fmu {
 	status = "okay";
+};
+
+&trng {
+	/* Disable TRNG in NS to avoid auto-enabling csprng_available option */
+	status = "disabled";
 };
