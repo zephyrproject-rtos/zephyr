@@ -8,12 +8,15 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -167,6 +170,37 @@ static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase
 	ev.state = (uint8_t)state;
 
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_ASE_STATE_CHANGED, &ev, sizeof(ev));
+}
+
+static void btp_send_ascs_cis_connected_ev(const struct bt_bap_stream *stream)
+{
+	struct btp_bap_unicast_stream *u_stream;
+	struct btp_ascs_cis_connected_ev ev;
+
+	u_stream = stream_bap_to_unicast(stream);
+	__ASSERT(u_stream != NULL, "Failed to get unicast_stream from %p", stream);
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(stream->conn));
+	ev.ase_id = u_stream->ase_id;
+	ev.cis_id = u_stream->cis_id;
+
+	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_CIS_CONNECTED, &ev, sizeof(ev));
+}
+
+static void btp_send_ascs_cis_disconnected_ev(const struct bt_bap_stream *stream, uint8_t reason)
+{
+	struct btp_bap_unicast_stream *u_stream;
+	struct btp_ascs_cis_disconnected_ev ev;
+
+	u_stream = stream_bap_to_unicast(stream);
+	__ASSERT(u_stream != NULL, "Failed to get unicast_stream from %p", stream);
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(stream->conn));
+	ev.ase_id = u_stream->ase_id;
+	ev.cis_id = u_stream->cis_id;
+	ev.reason = reason;
+
+	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_CIS_DISCONNECTED, &ev, sizeof(ev));
 }
 
 static void btp_send_ascs_operation_completed_ev(struct bt_conn *conn, uint8_t ase_id,
@@ -670,6 +704,15 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 							     BTP_ASCS_STATUS_SUCCESS);
 		}
 	}
+
+	btp_send_ascs_cis_connected_ev(stream);
+}
+
+static void stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	LOG_DBG("Disconnected stream %p: 0x%02X", stream, reason);
+
+	btp_send_ascs_cis_disconnected_ev(stream, reason);
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -750,6 +793,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv_cb,
 	.sent = btp_bap_audio_stream_sent_cb,
 	.connected = stream_connected_cb,
+	.disconnected = stream_disconnected_cb,
 };
 
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
