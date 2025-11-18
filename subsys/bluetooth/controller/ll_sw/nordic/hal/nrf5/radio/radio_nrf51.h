@@ -67,43 +67,77 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	return mode;
 }
 
-static inline uint32_t hal_radio_tx_power_min_get(void)
+static inline int8_t hal_radio_tx_power_min_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Neg30dBm;
+	return -30; /* -30 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_max_get(void)
+static inline int8_t hal_radio_tx_power_max_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+	return 4; /* +4 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
+static inline int8_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
+	if (tx_power_lvl >= 4) {
+		return 4;
+	}
+
+	if (tx_power_lvl >= 0) {
+		return 0;
+	}
+
+	if (tx_power_lvl >= -4) {
+		return -4;
+	}
+
+	if (tx_power_lvl >= -8) {
+		return -8;
+	}
+
+	if (tx_power_lvl >= -12) {
+		return -12;
+	}
+
+	if (tx_power_lvl >= -16) {
+		return -16;
+	}
+
+	if (tx_power_lvl >= -20) {
+		return -20;
+	}
+
+	/* Note: The -30 dBm power level is deprecated so ignore it! */
+	return -40;
+}
+
+static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
+{
+	if (tx_power_lvl >= 4) {
 		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
+	if (tx_power_lvl >= 0) {
 		return RADIO_TXPOWER_TXPOWER_0dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
+	if (tx_power_lvl >= -4) {
 		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
+	if (tx_power_lvl >= -8) {
 		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
+	if (tx_power_lvl >= -12) {
 		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
+	if (tx_power_lvl >= -16) {
 		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
+	if (tx_power_lvl >= -20) {
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 

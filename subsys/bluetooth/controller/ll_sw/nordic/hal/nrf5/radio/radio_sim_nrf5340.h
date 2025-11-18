@@ -355,13 +355,6 @@
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
-/* nRF5340 supports +3dBm Tx Power using high voltage request, define +3dBm
- * value for Controller use.
- */
-#ifndef RADIO_TXPOWER_TXPOWER_Pos3dBm
-#define RADIO_TXPOWER_TXPOWER_Pos3dBm (0x03UL)
-#endif
-
 /* HAL abstraction of Radio bitfields */
 #define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
 #define HAL_RADIO_EVENTS_END                      EVENTS_END
@@ -432,73 +425,130 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	return mode;
 }
 
-static inline uint32_t hal_radio_tx_power_max_get(void)
+static inline int8_t hal_radio_tx_power_max_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_0dBm;
+	return 3; /* 3 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_min_get(void)
+static inline int8_t hal_radio_tx_power_min_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
+	return -40; /* -40 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
+static inline int8_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
-		return RADIO_TXPOWER_TXPOWER_0dBm;
+	if (tx_power_lvl >= 3) {
+		return 3;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg1dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg1dBm;
+	if (tx_power_lvl >= 0) {
+		return 0;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg2dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg2dBm;
+	if (tx_power_lvl >= -1) {
+		return -1;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg3dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg3dBm;
+	if (tx_power_lvl >= -2) {
+		return -2;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
+	if (tx_power_lvl >= -3) {
+		return -3;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg5dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg5dBm;
+	if (tx_power_lvl >= -4) {
+		return -4;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg6dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg6dBm;
+	if (tx_power_lvl >= -5) {
+		return -5;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg7dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg7dBm;
+	if (tx_power_lvl >= -6) {
+		return -6;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
+	if (tx_power_lvl >= -7) {
+		return -7;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
+	if (tx_power_lvl >= -8) {
+		return -8;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
+	if (tx_power_lvl >= -12) {
+		return -12;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
+	if (tx_power_lvl >= -16) {
+		return -16;
+	}
+
+	if (tx_power_lvl >= -20) {
+		return -20;
 	}
 
 	/* Note: The -30 dBm power level is deprecated so ignore it! */
+	return -40;
+}
+
+static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
+{
+	if (tx_power_lvl >= 0) {
+		return RADIO_TXPOWER_TXPOWER_0dBm;
+	}
+
+	if (tx_power_lvl >= -1) {
+		return RADIO_TXPOWER_TXPOWER_Neg1dBm;
+	}
+
+	if (tx_power_lvl >= -2) {
+		return RADIO_TXPOWER_TXPOWER_Neg2dBm;
+	}
+
+	if (tx_power_lvl >= -3) {
+		return RADIO_TXPOWER_TXPOWER_Neg3dBm;
+	}
+
+	if (tx_power_lvl >= -4) {
+		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
+	}
+
+	if (tx_power_lvl >= -5) {
+		return RADIO_TXPOWER_TXPOWER_Neg5dBm;
+	}
+
+	if (tx_power_lvl >= -6) {
+		return RADIO_TXPOWER_TXPOWER_Neg6dBm;
+	}
+
+	if (tx_power_lvl >= -7) {
+		return RADIO_TXPOWER_TXPOWER_Neg7dBm;
+	}
+
+	if (tx_power_lvl >= -8) {
+		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
+	}
+
+	if (tx_power_lvl >= -12) {
+		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
+	}
+
+	if (tx_power_lvl >= -16) {
+		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
+	}
+
+	if (tx_power_lvl >= -20) {
+		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
+	}
+
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
 static inline void hal_radio_tx_power_high_voltage_set(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+	if (tx_power_lvl >= 3) {
 		nrf_vreqctrl_radio_high_voltage_set(NRF_VREQCTRL, true);
 	}
 }
