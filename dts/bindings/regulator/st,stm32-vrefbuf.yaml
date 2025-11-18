@@ -1,0 +1,56 @@
+# Copyright 2025 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 VREFBUF regulator
+
+compatible: "st,stm32-vrefbuf"
+
+include:
+  - name: base.yaml
+  - name: reset-device.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-boot-on
+      - regulator-always-on
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  ref-voltages:
+    type: array
+    required: true
+    description: |
+      Reference voltages supported by the VREFBUF regulator.
+
+      Each entry contains the VREFBUF output voltage when the corresponding
+      voltage scale is selected. For example, the first array entry (index 0)
+      corresponds to the output voltage when Scale 0 is selected.
+
+      Internally, "Scale <x>" is mapped to LL_VREFBUF_VOLTAGE_SCALE<x> which
+      should correspond to the voltage called VREFBUF<x> in Reference Manual.
+      Refer to your product's Reference Manual, Datasheet and LL headers for
+      more details and to obtain the corresponding voltage value.
+
+      For example:
+        ref-voltages = <2500000>, <2048000>, <1800000>;
+      indicates that 3 reference voltages are supported:
+        - SCALE0: 2.5V
+        - SCALE1: 2.048V
+        - SCALE2: 1.8V
+
+  vrefp-output-enable:
+    type: boolean
+    description: |
+      Enables the VREF+ output pin. VREF+ pin is in high-impedance state
+      otherwise.
