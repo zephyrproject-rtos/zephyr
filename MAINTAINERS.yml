@@ -361,6 +361,8 @@ Arduino Platforms:
     - pillo79
   collaborators:
     - facchinm
+    - iabdalkader
+    - pennam
   files:
     - boards/arduino/
     - boards/shields/arduino_*/
