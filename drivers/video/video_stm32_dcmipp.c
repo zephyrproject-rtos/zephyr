@@ -218,7 +218,7 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	pipe->active->timestamp = k_uptime_get_32();
 	pipe->active->line_offset = 0;
 
-	k_fifo_put(&pipe->fifo_out, pipe->active);
+	k_fifo_alloc_put(&pipe->fifo_out, pipe->active);
 	pipe->active = NULL;
 }
 
