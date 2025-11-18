@@ -2300,24 +2300,25 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		}
 	}
 
-	if (optind == argc) {
+	if (sys_getopt_optind == argc) {
 		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
-	} else if (optind == argc - 1) {
-		if (strlen(argv[optind]) != 2) {
+	} else if (sys_getopt_optind == argc - 1) {
+		if (strlen(argv[sys_getopt_optind]) != 2) {
 			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
 		/* Two letter country code with special case of 00 for WORLD */
-		if (((argv[optind][0] < 'A' || argv[optind][0] > 'Z') ||
-			(argv[optind][1] < 'A' || argv[optind][1] > 'Z')) &&
-			(argv[optind][0] != '0' || argv[optind][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[optind][0], argv[optind][1]);
+		if (((argv[sys_getopt_optind][0] < 'A' || argv[sys_getopt_optind][0] > 'Z') ||
+			(argv[sys_getopt_optind][1] < 'A' || argv[sys_getopt_optind][1] > 'Z')) &&
+			(argv[sys_getopt_optind][0] != '0' || argv[sys_getopt_optind][1] != '0')) {
+			PR_WARNING("Invalid reg domain %c%c\n", argv[sys_getopt_optind][0],
+				   argv[sys_getopt_optind][1]);
 			return -ENOEXEC;
 		}
-		regd.country_code[0] = argv[optind][0];
-		regd.country_code[1] = argv[optind][1];
+		regd.country_code[0] = argv[sys_getopt_optind][0];
+		regd.country_code[1] = argv[sys_getopt_optind][1];
 		regd.force = force;
 		regd.oper = WIFI_MGMT_SET;
 	} else {
