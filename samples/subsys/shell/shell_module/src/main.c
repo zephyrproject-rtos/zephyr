@@ -175,7 +175,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = optarg;
+			cvalue = sys_getopt_optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -185,17 +185,17 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
-			if (optopt == 'c') {
+			if (sys_getopt_optopt == 'c') {
 				shell_print(sh,
 					"Option -%c requires an argument.",
-					optopt);
-			} else if (isprint(optopt) != 0) {
+					sys_getopt_optopt);
+			} else if (isprint(sys_getopt_optopt) != 0) {
 				shell_print(sh, "Unknown option `-%c'.",
-					optopt);
+					    sys_getopt_optopt);
 			} else {
 				shell_print(sh,
 					"Unknown option character `\\x%x'.",
-					optopt);
+					sys_getopt_optopt);
 			}
 			return 1;
 		default:
