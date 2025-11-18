@@ -11,7 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/cache.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 #include "r_spi_flash_api.h"
 
 #if defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC)

@@ -47,7 +47,7 @@
 
 #include <stm32_ll_dma.h>
 
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 #include "jesd216.h"
 
 #include <zephyr/logging/log.h>

@@ -13,7 +13,7 @@
 #include <r_spi_flash_api.h>
 #include <r_ospi_b.h>
 #include "spi_nor_s28hx512t.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 
 /* Device node */
 #define RA_OSPI_B_NOR_NODE DT_INST(0, renesas_ra_ospi_b_nor)
