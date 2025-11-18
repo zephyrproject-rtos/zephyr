@@ -323,16 +323,16 @@ static int cmd_gpio_configure(const struct shell *sh, size_t argc, char **argv)
 			/* options setting a flag, do nothing */
 			break;
 		case 'p':
-			pin = atoi(optarg);
+			pin = atoi(sys_getopt_optarg);
 			break;
 		case 'd':
-			if (strcmp(optarg, "in") == 0) {
+			if (strcmp(sys_getopt_optarg, "in") == 0) {
 				flags |= GPIO_INPUT;
-			} else if (strcmp(optarg, "out") == 0) {
+			} else if (strcmp(sys_getopt_optarg, "out") == 0) {
 				flags |= GPIO_OUTPUT;
-			} else if (strcmp(optarg, "outh") == 0) {
+			} else if (strcmp(sys_getopt_optarg, "outh") == 0) {
 				flags |= GPIO_OUTPUT_HIGH;
-			} else if (strcmp(optarg, "outl") == 0) {
+			} else if (strcmp(sys_getopt_optarg, "outl") == 0) {
 				flags |= GPIO_OUTPUT_LOW;
 			}
 			break;
