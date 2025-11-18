@@ -452,6 +452,7 @@ int usbh_device_init(struct usb_device *const udev)
 	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
+	uint8_t device_count = 0;
 
 	if (udev->state != USB_STATE_DEFAULT) {
 		LOG_ERR("USB device is not in default state");
@@ -464,11 +465,17 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	/* FIXME: The port to which the device is connected should be reset. */
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		LOG_ERR("Failed to signal bus reset");
-		return err;
+	k_mutex_lock(&uhs_ctx->mutex, K_FOREVER);
+	device_count = sys_dlist_len(&uhs_ctx->udevs);
+	k_mutex_unlock(&uhs_ctx->mutex);
+
+	/* Only reset bus if this is the root device. */
+	if (device_count == 1U) {
+		err = uhc_bus_reset(uhs_ctx->dev);
+		if (err) {
+			LOG_ERR("Failed to signal bus reset");
+			return err;
+		}
 	}
 
 	/*
