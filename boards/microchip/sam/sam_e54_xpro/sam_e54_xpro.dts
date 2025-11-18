@@ -217,3 +217,17 @@
 &portc {
 	status = "okay";
 };
+
+&adc0 {
+	/* 48 MHz GCLK / 4 prescaler = 12 MHz ADC clock. */
+	prescaler = <4>;
+	/* Internal Bandgap reference voltage */
+	vref-mv = <2400>;
+};
+
+&adc1 {
+	/* 48 MHz GCLK / 4 prescaler = 12 MHz ADC clock. */
+	prescaler = <4>;
+	/* Internal Bandgap reference voltage */
+	vref-mv = <2400>;
+};
