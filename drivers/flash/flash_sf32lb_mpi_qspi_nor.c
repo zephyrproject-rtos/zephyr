@@ -6,7 +6,7 @@
 #define DT_DRV_COMPAT sifli_sf32lb_mpi_qspi_nor
 
 #include "jesd216.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 
 #include <stdint.h>
 

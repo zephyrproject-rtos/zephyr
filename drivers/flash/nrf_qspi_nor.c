@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 #include "jesd216.h"
 #include "flash_priv.h"
 #include <nrf_erratas.h>
@@ -657,7 +657,6 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 
 static int configure_chip(const struct device *dev)
 {
-	const struct qspi_nor_config *dev_config = dev->config;
 	int rc = 0;
 
 	/* Set QE to match transfer mode.  If not using quad
@@ -668,6 +667,7 @@ static int configure_chip(const struct device *dev)
 	 * S2B1v1/4/5/6. Other options require more logic.
 	 */
 #if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
+		const struct qspi_nor_config *dev_config = dev->config;
 		nrf_qspi_prot_conf_t const *prot_if =
 			&dev_config->nrfx_cfg.prot_if;
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||

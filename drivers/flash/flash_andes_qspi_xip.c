@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 
 #include "flash_andes_qspi.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 
 LOG_MODULE_REGISTER(flash_andes_xip, CONFIG_FLASH_LOG_LEVEL);
 
