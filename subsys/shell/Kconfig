@@ -192,9 +192,9 @@ config SHELL_GETOPT
 	bool "Threadsafe getopt support in shell"
 	select POSIX_C_LIB_EXT
 	help
-	  This config creates a separate getopt_state for the shell instance.
+	  This config creates a separate getopt_data for the shell instance.
 	  It ensures that using getopt with shell is thread safe.
-	  When more threads are using getopt please call getopt_state_get to
+	  When more threads are using getopt please call getopt_data_get to
 	  get getopt state of the shell thread.
 
 config SHELL_METAKEYS

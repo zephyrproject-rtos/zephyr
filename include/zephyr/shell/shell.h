@@ -20,6 +20,12 @@
 #include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
+/*
+ * All shell commands should use the re-entrant APIs provided by the
+ * newlib-compatible getopt APIs. This exposes those and hides the
+ * globals used by the non-reentrant APIs.
+ */
+#define __need_getopt_newlib
 #include <getopt.h>
 #endif
 
@@ -992,11 +998,6 @@ struct shell_ctx {
 
 	/*!< Logging level for a backend. */
 	uint32_t log_level;
-
-#if defined CONFIG_SHELL_GETOPT
-	/*!< getopt context for a shell backend. */
-	struct getopt_state getopt;
-#endif
 
 	uint16_t cmd_buff_len; /*!< Command length.*/
 	uint16_t cmd_buff_pos; /*!< Command buffer cursor position.*/

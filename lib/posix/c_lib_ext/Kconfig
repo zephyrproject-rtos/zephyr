@@ -23,7 +23,7 @@ config GETOPT_LONG
 	  not interfere with each other.
 	  All not shell threads share one global instance of getopt state, hence
 	  apart from shell this library is not thread safe. User can add support
-	  for other threads by extending function getopt_state_get in
+	  for other threads by extending function getopt_data_get in
 	  getopt_common.c file.
 
 endif # POSIX_C_LIB_EXT

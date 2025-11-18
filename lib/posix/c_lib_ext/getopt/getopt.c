@@ -35,7 +35,6 @@
 #else
 #include <zephyr/posix/unistd.h>
 #endif
-#include "getopt.h"
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
@@ -45,43 +44,27 @@ LOG_MODULE_REGISTER(getopt);
 #define BADARG ((int)':')
 #define EMSG   ""
 
-void getopt_init(void)
-{
-	struct getopt_state *state;
-
-	state = getopt_state_get();
-
-	state->opterr = 1;
-	state->optind = 1;
-	state->optopt = 0;
-	state->optreset = 0;
-	state->optarg = NULL;
-
-	state->place = ""; /* EMSG */
-
-#if CONFIG_GETOPT_LONG
-	state->nonopt_start = -1; /* first non option argument (for permute) */
-	state->nonopt_end = -1;   /* first option after non options (for permute) */
-#endif
-
-	opterr = 1;
-	optind = 1;
-	optopt = 0;
-	optreset = 0;
-	optarg = NULL;
-}
-
 /*
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int getopt(int nargc, char *const nargv[], const char *ostr)
+int __getopt_r(int nargc, char *const nargv[], const char *ostr, struct getopt_data *state)
 {
-	struct getopt_state *state;
 	char *oli; /* option letter list index */
 
-	/* get getopt state of the current thread */
-	state = getopt_state_get();
+	/* glibc/picolibc compatibility -- reset if optind is 0 */
+	if (state->optind == 0) {
+		state->opterr = 1;
+		state->optind = 1;
+		state->optopt = 0;
+		state->optreset = 0;
+		state->optarg = NULL;
+		state->place = "";
+#if CONFIG_GETOPT_LONG
+		state->nonopt_start = -1;
+		state->nonopt_end = -1;
+#endif
+	}
 
 	if (state->optreset || *state->place == 0) { /* update scanning pointer */
 		state->optreset = 0;
@@ -89,7 +72,6 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 		if (state->optind >= nargc || *state->place++ != '-') {
 			/* Argument is absent or is not an option */
 			state->place = EMSG;
-			z_getopt_global_state_update(state);
 			return -1;
 		}
 		state->optopt = *state->place++;
@@ -97,7 +79,6 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			/* "--" => end of options */
 			++state->optind;
 			state->place = EMSG;
-			z_getopt_global_state_update(state);
 			return -1;
 		}
 		if (state->optopt == 0) {
@@ -106,7 +87,6 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			 */
 			state->place = EMSG;
 			if (strchr(ostr, '-') == NULL) {
-				z_getopt_global_state_update(state);
 				return -1;
 			}
 			state->optopt = '-';
@@ -124,7 +104,6 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 		if (state->opterr && *ostr != ':') {
 			LOG_DBG("illegal option -- %c", state->optopt);
 		}
-		z_getopt_global_state_update(state);
 		return BADCH;
 	}
 
@@ -147,18 +126,30 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			/* option-argument absent */
 			state->place = EMSG;
 			if (*ostr == ':') {
-				z_getopt_global_state_update(state);
 				return BADARG;
 			}
 			if (state->opterr) {
 				LOG_DBG("option requires an argument -- %c", state->optopt);
 			}
-			z_getopt_global_state_update(state);
 			return BADCH;
 		}
 		state->place = EMSG;
 		++state->optind;
 	}
-	z_getopt_global_state_update(state);
 	return state->optopt; /* return option letter */
+}
+
+/*
+ * getopt --
+ *	Parse argc/argv argument vector.
+ */
+int getopt(int nargc, char *const nargv[], const char *ostr)
+{
+	struct getopt_data state;
+	int ret;
+
+	z_getopt_global_state_get(&state);
+	ret = __getopt_r(nargc, nargv, ostr, &state);
+	z_getopt_global_state_put(&state);
+	return ret;
 }
