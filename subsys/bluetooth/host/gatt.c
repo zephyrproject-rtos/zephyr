@@ -5168,7 +5168,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	return bt_att_send(conn, buf);
 }
 
-int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, const struct bt_gatt_attr *attr,
+int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, uint16_t handle,
 			      const void *data, uint16_t length)
 {
 	struct net_buf *buf;
@@ -5179,7 +5179,6 @@ int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, const struct bt_gatt_at
 		sizeof(uint8_t);    /* ATT error code    */
 
 	__ASSERT(conn, "invalid connection\n");
-	__ASSERT(attr, "invalid parameter\n");
 	__ASSERT(err <= 0, "invalid error code\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -5202,11 +5201,11 @@ int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, const struct bt_gatt_at
 		}
 
 		net_buf_add_u8(buf, BT_ATT_OP_READ_REQ);
-		net_buf_add_le16(buf, attr->handle);
+		net_buf_add_le16(buf, handle);
 		net_buf_add_u8(buf, att_err);
 
 		LOG_DBG("conn %p error 0x%02x, handle 0x%04x",
-				conn, att_err, attr->handle);
+				conn, att_err, handle);
 
 		return bt_att_send(conn, buf);
 	}
@@ -5220,12 +5219,12 @@ int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, const struct bt_gatt_at
 		net_buf_add_mem(buf, data, length);
 	}
 
-	LOG_DBG("conn %p len %u, handle 0x%04x", conn, length, attr->handle);
+	LOG_DBG("conn %p len %u, handle 0x%04x", conn, length, handle);
 
 	return bt_att_send(conn, buf);
 }
 
-int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, const struct bt_gatt_attr *attr)
+int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, uint16_t handle)
 {
 	struct net_buf *buf;
 	__maybe_unused uint8_t att_err;
@@ -5235,7 +5234,6 @@ int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, const struct bt_gatt_a
 		sizeof(uint8_t);    /* ATT error code    */
 
 	__ASSERT(conn, "invalid connection\n");
-	__ASSERT(attr, "invalid parameter\n");
 	__ASSERT(err <= 0, "invalid error code\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -5258,11 +5256,11 @@ int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, const struct bt_gatt_a
 		}
 
 		net_buf_add_u8(buf, BT_ATT_OP_WRITE_REQ);
-		net_buf_add_le16(buf, attr->handle);
+		net_buf_add_le16(buf, handle);
 		net_buf_add_u8(buf, att_err);
 
 		LOG_DBG("conn %p write err 0x%02x, handle 0x%04x",
-				conn, att_err, attr->handle);
+				conn, att_err, handle);
 
 		return bt_att_send(conn, buf);
 	}
@@ -5272,7 +5270,7 @@ int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, const struct bt_gatt_a
 		return -ENOMEM;
 	}
 
-	LOG_DBG("conn %p, handle 0x%04x", conn, attr->handle);
+	LOG_DBG("conn %p, handle 0x%04x", conn, handle);
 
 	return bt_att_send(conn, buf);
 }

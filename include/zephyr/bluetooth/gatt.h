@@ -2077,7 +2077,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
  *  @param conn   Connection object.
  *  @param err    Error value created with BT_GATT_ERR() using a specific
  *                BT_ATT_ERR_* code, or 0 for success.
- *  @param attr   The attribute that's being read.
+ *  @param handle The attribute handle that's being read.
  *  @param data   Pointer to the attribute value buffer.
  *  @param length Length of the attribute value.
  *
@@ -2088,7 +2088,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
  *  @retval -ENOMEM Out of memory.
  *  @retval -ENOTSUP EATT deferred responses not supported.
  */
-int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, const struct bt_gatt_attr *attr,
+int bt_gatt_send_read_rsp(struct bt_conn *conn, int err, uint16_t handle,
 			      const void *data, uint16_t length);
 
 struct bt_gatt_write_params;
@@ -2153,7 +2153,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  @param conn   Connection object.
  *  @param err    Error value created with BT_GATT_ERR() using a specific
  *                BT_ATT_ERR_* code, or 0 for success.
- *  @param attr  The attribute that's being written.
+ *  @param handle The attribute handle that's being written.
  *
  *  @retval 0 Successfully queued response.
  *
@@ -2162,7 +2162,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  @retval -ENOMEM Out of memory.
  *  @retval -ENOTSUP EATT deferred responses not supported.
  */
-int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, const struct bt_gatt_attr *attr);
+int bt_gatt_send_write_rsp(struct bt_conn *conn, int err, uint16_t handle);
 
 /** @brief Write Attribute Value by handle without response with callback.
  *
