@@ -245,7 +245,7 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 
 	if (mcux_ep != NULL && mcux_ep->pipeType == xfer->type &&
 	    (mcux_ep->maxPacketSize != xfer->mps ||
-	     mcux_ep->interval != xfer->interval)) {
+	    priv->mcux_eps_interval[i] != xfer->interval)) {
 		/* re-initialize the ep */
 		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
 							    mcux_ep);
@@ -255,6 +255,7 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 
 		uhc_mcux_lock(dev);
 		priv->mcux_eps[i] = NULL;
+		priv->mcux_eps_interval[i] = 0;
 		uhc_mcux_unlock(dev);
 		mcux_ep = NULL;
 	}
@@ -308,6 +309,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
 		if (priv->mcux_eps[i] == NULL) {
 			priv->mcux_eps[i] = mcux_ep;
+			priv->mcux_eps_interval[i] = xfer->interval;
 			break;
 		}
 	}
