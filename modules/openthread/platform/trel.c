@@ -30,9 +30,9 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(trel_udp_service, trel_receive_handler, MA
 void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 {
 	struct net_sockaddr_in6 addr = {.sin6_family = NET_AF_INET6,
-				    .sin6_port = 0,
-				    .sin6_addr = NET_IN6ADDR_ANY_INIT,
-				    .sin6_scope_id = 0};
+					.sin6_port = 0,
+					.sin6_addr = NET_IN6ADDR_ANY_INIT,
+					.sin6_scope_id = 0};
 	net_socklen_t len = sizeof(addr);
 
 	trel_sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
@@ -75,15 +75,15 @@ void otPlatTrelSend(otInstance *aInstance, const uint8_t *aUdpPayload, uint16_t 
 	VerifyOrExit(trel_is_enabled);
 
 	struct net_sockaddr_in6 dest_sock_addr = {.sin6_family = NET_AF_INET6,
-				.sin6_port = net_htons(aDestSockAddr->mPort),
-				.sin6_addr = {{{0}}},
-				.sin6_scope_id = 0};
+						  .sin6_port = net_htons(aDestSockAddr->mPort),
+						  .sin6_addr = {{{0}}},
+						  .sin6_scope_id = 0};
 
 	memcpy(&dest_sock_addr.sin6_addr, &aDestSockAddr->mAddress, sizeof(otIp6Address));
 
 	if (zsock_sendto(trel_sock, aUdpPayload, aUdpPayloadLen, 0,
-				(struct net_sockaddr *)&dest_sock_addr,
-				sizeof(dest_sock_addr)) == aUdpPayloadLen) {
+			 (struct net_sockaddr *)&dest_sock_addr,
+			 sizeof(dest_sock_addr)) == aUdpPayloadLen) {
 		trel_counters.mTxBytes += aUdpPayloadLen;
 		trel_counters.mTxPackets++;
 	} else {
@@ -119,7 +119,7 @@ static void trel_receive_handler(struct net_socket_service_event *evt)
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
 
 	len = zsock_recvfrom(trel_sock, req->buffer, sizeof(req->buffer), 0,
-		       (struct net_sockaddr *)&addr, &addrlen);
+			     (struct net_sockaddr *)&addr, &addrlen);
 	VerifyOrExit(len > 0);
 
 	trel_counters.mRxBytes += len;

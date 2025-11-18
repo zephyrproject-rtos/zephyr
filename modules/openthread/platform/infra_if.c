@@ -280,14 +280,14 @@ void infra_if_stop_icmp6_listener(void)
 otError infra_if_nat64_init(void)
 {
 	otError error = OT_ERROR_NONE;
-	struct sockaddr_in anyaddr = {.sin_family = AF_INET,
-				      .sin_port = 0,
-				      .sin_addr = INADDR_ANY_INIT};
+	struct net_sockaddr_in anyaddr = {.sin_family = NET_AF_INET,
+					  .sin_port = 0,
+					  .sin_addr = NET_INADDR_ANY_INIT};
 
-	raw_infra_if_sock = zsock_socket(AF_INET, SOCK_RAW, IPPROTO_IP);
+	raw_infra_if_sock = zsock_socket(NET_AF_INET, NET_SOCK_RAW, NET_IPPROTO_IP);
 	VerifyOrExit(raw_infra_if_sock >= 0, error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct sockaddr *)&anyaddr,
-				sizeof(struct sockaddr_in)) == 0,
+	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct net_sockaddr *)&anyaddr,
+				sizeof(struct net_sockaddr_in)) == 0,
 		     error = OT_ERROR_FAILED);
 
 	sockfd_raw[0].fd = raw_infra_if_sock;
@@ -315,7 +315,7 @@ static void raw_receive_handler(struct net_socket_service_event *evt)
 	len = zsock_recv(raw_infra_if_sock, req->buffer, sizeof(req->buffer), 0);
 	VerifyOrExit(len >= 0, error = OT_ERROR_FAILED);
 
-	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, AF_INET, 0, K_NO_WAIT);
+	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, NET_AF_INET, 0, K_NO_WAIT);
 	VerifyOrExit(ot_pkt != NULL, error = OT_ERROR_FAILED);
 
 	VerifyOrExit(net_pkt_write(ot_pkt, req->buffer, len) == 0, error = OT_ERROR_FAILED);
