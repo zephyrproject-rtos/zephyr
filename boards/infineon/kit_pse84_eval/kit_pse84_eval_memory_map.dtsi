@@ -97,8 +97,8 @@
 					reg = <0x60100000 0x400>;
 				};
 
-				m33s_xip: m33s_xip@70100400 {
-					reg = <0x70100400 DT_SIZE_M(2)>;
+				m33s_xip: m33s_xip@18100400 {
+					reg = <0x18100400 DT_SIZE_M(2)>;
 				};
 
 				m33_xip: m33_xip@8300000 {
