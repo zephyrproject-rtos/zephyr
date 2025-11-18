@@ -17,8 +17,8 @@
 
 	chosen {
 		zephyr,sram = &sramhp;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;
@@ -45,6 +45,10 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+};
+
+&usb_serial {
+	status = "okay";
 };
 
 &trng0 {
