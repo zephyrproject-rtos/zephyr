@@ -35,4 +35,6 @@
 	};
 };
 
+zephyr_i2c: &i2c0 {};
+
 grove_uart: &uart1 {};
