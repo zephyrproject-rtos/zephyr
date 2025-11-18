@@ -309,6 +309,15 @@ static inline uint16_t udc_data_stage_length(const struct net_buf *const buf)
 }
 
 /**
+ * @brief Checks whether the current control transfer stage is Setup Stage
+ *
+ * @param[in] dev   Pointer to device struct of the driver instance
+ *
+ * @return true if stage is Setup Stage
+ */
+bool udc_ctrl_stage_is_setup(const struct device *dev);
+
+/**
  * @brief Checks whether the current control transfer stage is Data Stage OUT
  *
  * @param[in] dev   Pointer to device struct of the driver instance
