@@ -57,12 +57,6 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5446>;
-		swap-xy;
-	};
 };
 
 &gpiod {
@@ -222,6 +216,9 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 9 0>;
+		swapped-x-y;
+		screen-width = <1024>;
+		screen-height = <600>;
 	};
 };
 

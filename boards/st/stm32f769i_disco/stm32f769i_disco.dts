@@ -68,11 +68,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft6202>;
-	};
-
 	dsi_lcd_qsh_030: connector_dsi_lcd {
 		compatible = "st,dsi-lcd-qsh-030";
 		#gpio-cells = <2>;

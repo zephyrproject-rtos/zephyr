@@ -13,14 +13,6 @@
 		zephyr,touch = &ft5336_adafruit_2_8_tft_touch_v2;
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336_adafruit_2_8_tft_touch_v2>;
-		swap-xy;
-		invert-x;
-		invert-y;
-	};
-
 	adafruit_2_8_tft_touch_v2_mipi_dbi: adafruit_2_8_tft_touch_v2_mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&arduino_spi>;
@@ -70,6 +62,11 @@
 	ft5336_adafruit_2_8_tft_touch_v2: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
+		swapped-x-y;
+		inverted-x;
+		inverted-y;
+		screen-width = <320>;
+		screen-height = <240>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>; */
 	};

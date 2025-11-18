@@ -45,11 +45,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&input_sdl_touch>;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
