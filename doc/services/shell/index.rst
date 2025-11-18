@@ -702,7 +702,7 @@ An example non-thread safe usage:
   while ((char c = sys_getopt(argc, argv, "abhc:")) != -1) {
         switch (c) {
         case 'c':
-                cvalue = optarg;
+                cvalue = sys_getopt_optarg;
                 break;
         default:
                 break;
