@@ -1051,7 +1051,6 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 {
 	struct bass_recv_state_internal *internal_state;
 	struct bt_bap_scan_delegator_recv_state *state;
-	bool bis_sync_was_requested = false;
 	uint8_t src_id;
 	int err;
 
@@ -1078,38 +1077,40 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	state = &internal_state->state;
 
-	/* If conn == NULL then it's a local operation and we do not need to ask the application */
-	if (conn != NULL) {
-
-		if (scan_delegator_cbs != NULL && scan_delegator_cbs->remove_source != NULL) {
-			err = scan_delegator_cbs->remove_source(conn, src_id);
-			if (err != 0) {
-				LOG_DBG("Remove Source rejected with reason 0x%02x", err);
-				err = k_mutex_unlock(&internal_state->mutex);
-				__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-				return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-			}
-		}
-
-		if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
-		    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
-			/* Terminate PA sync */
-			err = pa_sync_term_request(conn, &internal_state->state);
-			if (err != 0) {
-				LOG_DBG("PA sync term from %p was rejected with reason %d",
-					(void *)conn, err);
-				err = k_mutex_unlock(&internal_state->mutex);
-				__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-				return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-			}
-		}
+	if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+		LOG_DBG("Cannot remove source ID 0x%02x while PA is synced", state->src_id);
+		err = k_mutex_unlock(&internal_state->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+		/* We shouldn't return a success here, but the Test Spec requires it at the moment,
+		 * Errata to fix this: https://bluetooth.atlassian.net/browse/ES-28445
+		 */
+		return BT_GATT_ERR(BT_ATT_ERR_SUCCESS);
 	}
 
 	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 		if (internal_state->requested_bis_sync[i] != 0U &&
 		    internal_state->state.subgroups[i].bis_sync != 0U) {
-			bis_sync_was_requested = true;
-			break;
+			LOG_DBG("Cannot remove source ID 0x%02x while BIS is synced",
+				state->src_id);
+			err = k_mutex_unlock(&internal_state->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			/* We shouldn't return a success here, but the Test Spec requires it at the
+			 * moment, Errata to fix this:
+			 * https://bluetooth.atlassian.net/browse/ES-28445
+			 */
+			return BT_GATT_ERR(BT_ATT_ERR_SUCCESS);
+		}
+	}
+
+	/* If conn == NULL then it's a local operation and we do not need to ask the application */
+	if (conn != NULL && scan_delegator_cbs != NULL &&
+	    scan_delegator_cbs->remove_source != NULL) {
+		err = scan_delegator_cbs->remove_source(conn, src_id);
+		if (err != 0) {
+			LOG_DBG("Remove Source rejected with reason 0x%02x", err);
+			err = k_mutex_unlock(&internal_state->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	}
 
@@ -1127,10 +1128,6 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	err = k_mutex_unlock(&internal_state->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-
-	if (bis_sync_was_requested) {
-		bis_sync_request_updated(conn, internal_state);
-	}
 
 	/* app callback */
 	receive_state_updated(conn, internal_state);
