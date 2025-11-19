@@ -225,3 +225,12 @@ properties:
     description: |
       Do not initialize device automatically on boot. Device should be manually
       initialized using device_init().
+
+  zephyr,memory-attr:
+    type: int
+    description: |
+      Attribute or set of attributes (bitmask) for the memory region. See
+      'include/zephyr/dt-bindings/memory-attr/memory-attr.h' for a
+      comprehensive list with description of possible values.
+      Used by MMU/MPU systems to automatically configure memory regions
+      for peripheral registers without manual region list maintenance.
