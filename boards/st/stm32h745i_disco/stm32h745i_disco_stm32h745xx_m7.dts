@@ -37,7 +37,8 @@
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		/* 128Mbit, but only half is available by HW design */
+		reg = <0xd0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
