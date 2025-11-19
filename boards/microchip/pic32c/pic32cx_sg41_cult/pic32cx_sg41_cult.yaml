@@ -14,5 +14,6 @@ supported:
   - flash
   - gpio
   - pinctrl
+  - pwm
   - uart
 vendor: microchip
