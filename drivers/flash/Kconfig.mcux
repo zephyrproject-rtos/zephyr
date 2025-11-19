@@ -130,3 +130,31 @@ config FLASH_MCUX_XSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the mcux xspi flash driver.
+
+# MCUX C40 internal flash driver
+config SOC_FLASH_MCUX_C40
+	bool "MCUX C40 flash driver"
+	default y
+	depends on DT_HAS_NXP_C40_FLASH_CONTROLLER_ENABLED
+	depends on DT_HAS_NXP_C40_FLASH_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	# C40 uses controller commands, not CPU stores to flash
+	# so we are not relaxing MPU for ROM writes.
+	# Relocate driver/HAL when XIP so erase/program run from SRAM:
+	imply CODE_DATA_RELOCATION if XIP
+	imply CODE_DATA_RELOCATION_SRAM if XIP
+	help
+	  Enable the NXP MCUX C40 internal flash driver
+	  Provides Zephyr flash driver using MCUX C40 HAL.
+
+config SOC_FLASH_MCUX_C40_APPLY_PROTECTION
+	bool "Apply default protection windows (IVT/MCUboot) at init"
+	depends on SOC_FLASH_MCUX_C40
+	default y if XIP
+	help
+	  When enabled, the driver locks/unlocks protection for well-known
+	  regions derived from devicetree (e.g. ivt_header, ivt_pad, mcuboot)
+	  during driver init. Useful on XIP systems to keep IVT/bootloader
+	  areas read-only. Disable if your bootloader/policy manages this.
