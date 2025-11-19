@@ -213,6 +213,8 @@ static int pa_sync_term(struct sync_state *state)
 
 	printk("Deleting PA sync\n");
 
+	UNSET_FLAG(flag_pa_terminated);
+
 	err = bt_le_per_adv_sync_delete(state->pa_sync);
 	if (err != 0) {
 		FAIL("Could not delete per adv sync: %d\n", err);
@@ -220,6 +222,8 @@ static int pa_sync_term(struct sync_state *state)
 		state->pa_syncing = false;
 		state->pa_sync = NULL;
 	}
+
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	return err;
 }
@@ -708,13 +712,48 @@ static void remove_all_sources(void)
 
 			printk("[%zu]: Source removed with id %u\n",
 			       i, state->src_id);
+		}
+	}
+}
 
-			printk("Terminating PA sync\n");
-			err = pa_sync_term(state);
-			if (err) {
-				FAIL("[%zu]: PA sync term failed (err %d)\n", err);
-				return;
-			}
+static void terminate_all_pa(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		int err;
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync == NULL) {
+			continue;
+		}
+
+		err = pa_sync_term(state);
+		if (err != 0) {
+			FAIL("[%zu]: PA sync term failed (err %d)\n", i, err);
+			return;
+		}
+	}
+}
+
+static void set_bis_sync_state(struct sync_state *state,
+			       uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	int err;
+
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync_req);
+	if (err != 0) {
+		FAIL("Could not set BIS sync state: %d\n", err);
+		return;
+	}
+}
+
+static void set_all_bis_sync_states(uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->recv_state != NULL) {
+			printk("[%zu]: Setting BIS sync state\n", i);
+			set_bis_sync_state(state, bis_sync_req);
 		}
 	}
 }
@@ -914,7 +953,12 @@ static void test_main_server_sync_server_rem(void)
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
-	/* Remote all sources, causing PA sync term request to trigger */
+	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS] = {0};
+
+	set_all_bis_sync_states(bis_sync_req);
+	terminate_all_pa();
+
+	/* Remove all sources, causing PA sync term request to trigger */
 	remove_all_sources();
 
 	/* Wait for PA sync to be terminated */
