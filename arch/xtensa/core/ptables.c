@@ -213,6 +213,9 @@ static uint32_t l2_page_tables_max_usage;
  */
 static struct k_spinlock xtensa_mmu_lock;
 
+/** Spin lock to guard update to page table counters. */
+static struct k_spinlock xtensa_counter_lock;
+
 #ifdef CONFIG_USERSPACE
 
 /*
@@ -334,6 +337,9 @@ static inline uint32_t *alloc_l2_table(void)
 {
 	uint16_t idx;
 	uint32_t *ret = NULL;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&xtensa_counter_lock);
 
 	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
 		if (l2_page_tables_counter[idx] == 0) {
@@ -356,6 +362,8 @@ static inline uint32_t *alloc_l2_table(void)
 	/* Store the bigger number. */
 	l2_page_tables_max_usage = MAX(l2_page_tables_max_usage, cur_l2_usage);
 #endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+
+	k_spin_unlock(&xtensa_counter_lock, key);
 
 	return ret;
 }
@@ -700,7 +708,9 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 	}
 
-	l2_page_tables_counter_dec(l2_table);
+	K_SPINLOCK(&xtensa_counter_lock) {
+		l2_page_tables_counter_dec(l2_table);
+	}
 
 end:
 	/* Need to invalidate TLB associated with the unmapped address. */
@@ -1019,7 +1029,9 @@ static uint32_t *dup_l1_table(void)
 				l2_table = dup_l2_table(src_l2_table);
 			} else {
 				l2_table = src_l2_table;
-				l2_page_tables_counter_inc(src_l2_table);
+				K_SPINLOCK(&xtensa_counter_lock) {
+					l2_page_tables_counter_inc(src_l2_table);
+				}
 			}
 
 			/* The page table is using kernel ASID because we don't want
@@ -1040,11 +1052,14 @@ static uint32_t *dup_l1_table(void)
 static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
 {
 	uint32_t *l2_table, *src_l2_table;
+	k_spinlock_key_t key;
 
 	src_l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
 
+	key = k_spin_lock(&xtensa_counter_lock);
 	if (l2_page_tables_counter[l2_table_to_counter_pos(src_l2_table)] == 1) {
 		/* Only one user of L2 table, no need to duplicate. */
+		k_spin_unlock(&xtensa_counter_lock, key);
 		return;
 	}
 
@@ -1056,6 +1071,8 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
 	l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
 	l2_page_tables_counter_dec(src_l2_table);
+
+	k_spin_unlock(&xtensa_counter_lock, key);
 
 	sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
 }
