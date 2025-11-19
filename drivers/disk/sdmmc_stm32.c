@@ -940,19 +940,18 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
 		.dma_callback = stm32_sdmmc_dma_cb,			\
 		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
-	},								\
-
-
-#define SDMMC_DMA_CHANNEL(dir, DIR)					\
-.dma_##dir = {								\
-	COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
-		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
-		 (NULL))						\
 	},
 
-#else
+#define SDMMC_DMA_CHANNEL(dir, DIR)					\
+	.dma_##dir = {							\
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),		\
+			    (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),		\
+			    (NULL))					\
+	},
+
+#else /* STM32_SDMMC_USE_DMA */
 #define SDMMC_DMA_CHANNEL(dir, DIR)
-#endif
+#endif /* STM32_SDMMC_USE_DMA */
 
 PINCTRL_DT_INST_DEFINE(0);
 
