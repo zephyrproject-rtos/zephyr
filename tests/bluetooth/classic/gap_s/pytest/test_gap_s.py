@@ -246,6 +246,9 @@ async def tc_gap_s_2(hci_port, shell, dut, address) -> None:
             await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 5: DUT accepts connection request')
+            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            assert found, "DUT should accept connection request"
+
             # passive
 
             logger.info('Step 6: DUT initiates disconnection')
