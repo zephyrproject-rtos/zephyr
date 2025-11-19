@@ -23,6 +23,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
@@ -36,6 +37,15 @@
 		led2: led_2 {
 			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
 			label = "LED2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 5 PWM_MSEC(20) 0>;
+			status = "okay";
 		};
 	};
 
@@ -138,6 +148,16 @@
 		compatible = "microchip,sam-d5x-e5x-mclkperiph";
 		#clock-cells = <1>;
 	};
+};
+
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	status = "okay";
 };
 
 &porta {
