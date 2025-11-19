@@ -10,8 +10,13 @@
 
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/types.h>
+#include <zephyr/devicetree.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(arm_armv8_timer)
 #define ARM_TIMER_NODE DT_INST(0, arm_armv8_timer)
+#elif DT_HAS_COMPAT_STATUS_OKAY(arm_armv7_timer)
+#define ARM_TIMER_NODE DT_INST(0, arm_armv7_timer)
+#endif
 
 #define ARM_TIMER_SECURE_IRQ		DT_IRQ_BY_IDX(ARM_TIMER_NODE, 0, irq)
 #define ARM_TIMER_NON_SECURE_IRQ	DT_IRQ_BY_IDX(ARM_TIMER_NODE, 1, irq)
