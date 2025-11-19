@@ -37,9 +37,8 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 }
 
 
-static int test_cyclic(void)
+static int test_cyclic(const struct device *dma)
 {
-	const struct device *dma;
 	int chan_id;
 
 	TC_PRINT("Preparing DMA Controller\n");
@@ -48,7 +47,6 @@ static int test_cyclic(void)
 		tx_data[i] = i;
 	}
 
-	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -137,8 +135,14 @@ static int test_cyclic(void)
 	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_cyclic, test_dma_m2m_cyclic)
-{
-	zassert_true((test_cyclic() == TC_PASS));
-}
+#define DMA_NAME(i, _) test_dma##i
+#define DMA_LIST       LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
+
+#define TEST_CYCLIC(dma_name)                                                                      \
+	ZTEST(dma_m2m_cyclic, test_##dma_name##_m2m_cyclic)                                        \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_cyclic(dma) == TC_PASS));                                       \
+	}
+
+FOR_EACH(TEST_CYCLIC, (), DMA_LIST);

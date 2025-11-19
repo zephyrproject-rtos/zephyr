@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Alex Apostolu
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+	int "Number of DMAs to test"
+	default 1

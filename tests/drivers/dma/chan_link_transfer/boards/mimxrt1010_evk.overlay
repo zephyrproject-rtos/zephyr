@@ -5,4 +5,4 @@
  *
  */
 
-dma0: &edma0 {};
+test_dma0: &edma0 {};
