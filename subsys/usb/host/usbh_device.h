@@ -38,6 +38,22 @@ int usbh_device_interface_set(struct usb_device *const udev,
 /* Set USB device address */
 int usbh_device_set_address(struct usb_device *const udev, const uint8_t num);
 
+/* Get root USB device */
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx);
+
+/* Check if USB device is root */
+static inline bool usbh_device_is_root(struct usbh_context *const ctx,
+				       struct usb_device *const udev)
+{
+	return usbh_device_get_root(ctx) == udev;
+}
+
+/* Connect a new USB device */
+void usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev);
+
+/* Disconnect USB device */
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
+
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
