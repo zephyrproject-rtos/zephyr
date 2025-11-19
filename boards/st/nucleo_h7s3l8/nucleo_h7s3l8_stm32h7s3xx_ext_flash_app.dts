@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 JB-Lighting Lichtanlagentechnik
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_h7s3l8-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H7S3L8-NUCLEO board";
+	compatible = "st,stm32h7s3l8-nucleo";
+
+	chosen {
+		zephyr,flash = &ext_flash;
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&ext_flash {
+	partitions {
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_M(8)>;
+		};
+
+		slot1_partition: partition@800000 {
+			label = "image-1";
+			reg = <0x00800000 DT_SIZE_M(8)>;
+		};
+
+		storage_partition: partition@1000000 {
+			label = "storage";
+			reg = <0x01000000 DT_SIZE_M(16)>;
+		};
+	};
+};
