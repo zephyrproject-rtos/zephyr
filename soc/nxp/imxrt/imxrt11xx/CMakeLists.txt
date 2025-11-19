@@ -9,6 +9,10 @@ zephyr_sources_ifdef(CONFIG_PM power.c)
 
 zephyr_include_directories(.)
 
+if(CONFIG_NXP_IMXRT11xx_GPU)
+    zephyr_sources(gpu_bringup.c)
+endif()
+
 if(CONFIG_MEMC_MCUX_FLEXSPI)
   zephyr_sources(flexspi.c)
   if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)

@@ -13,13 +13,3 @@ properties:
 
   interrupts:
     required: true
-
-  variant:
-    type: string
-    required: true
-    description: GPU2D variant string.
-
-  revision:
-    type: string
-    required: true
-    description: GPU2D variant revision implementation.
