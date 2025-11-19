@@ -16,6 +16,10 @@
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
+	chosen {
+		zephyr,videotrans= &pxp;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
