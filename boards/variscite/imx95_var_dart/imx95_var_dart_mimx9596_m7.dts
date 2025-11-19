@@ -1,0 +1,62 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx95_m7.dtsi>
+#include "imx95_var_dart-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Variscite DART-MX95 M7";
+	compatible = "nxp,imx95_var_dart";
+
+	aliases {
+		led0 = &blinky0;
+		sw0 = &button0;
+	};
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		status = "disabled";
+
+		button0: btn_0 {
+			label = "BTN0";
+			gpios = <&gpio5 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "disabled";
+
+		blinky0: blinky_0 {
+			gpios = <&gpio5 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
+	};
+};
+
+&gpio5 {
+	status = "disabled";
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};
