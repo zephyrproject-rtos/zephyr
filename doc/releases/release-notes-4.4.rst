@@ -364,6 +364,11 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+
+* Nordic Semiconductor ASA
+
+  * :ref:`nrf7002eb2 <nrf7002eb2>` (nRF7002 EB II)
+
 New Drivers
 ***********
 

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * nRF7002 EB-II board overlay for nrf54l15dk/nrf54l15/cpuapp/ns.
+ * Includes common SoC overlay snippet.
+ */
+#include "../nrf54l15.overlay"
