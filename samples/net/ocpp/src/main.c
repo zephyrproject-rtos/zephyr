@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strdup() */
 #include <stdio.h>
 #include <time.h>
 
@@ -23,10 +25,6 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "net_sample_common.h"
-
-#if __POSIX_VISIBLE < 200809
-char    *strdup(const char *);
-#endif
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
