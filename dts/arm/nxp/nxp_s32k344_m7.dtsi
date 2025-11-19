@@ -20,6 +20,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(160)>;
 		};
 
 		cpu@1 {
