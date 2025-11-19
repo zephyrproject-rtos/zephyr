@@ -61,6 +61,8 @@ NET_BUF_POOL_DEFINE(a2dp_tx_pool, CONFIG_BT_MAX_CONN,
 		BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+#define A2DP_VERSION 0x0104U
+
 static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 	BT_SDP_NEW_SERVICE,
 	BT_SDP_LIST(
@@ -118,7 +120,7 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), /* 09 */
-				BT_SDP_ARRAY_16(0x0103U) /* 01 03 */
+				BT_SDP_ARRAY_16(A2DP_VERSION) /* 01 04 */
 			},
 			)
 		},
@@ -187,7 +189,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0103U)
+				BT_SDP_ARRAY_16(A2DP_VERSION)
 			},
 			)
 		},
