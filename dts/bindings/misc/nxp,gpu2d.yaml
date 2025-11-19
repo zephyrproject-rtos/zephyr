@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP GPU2D graphics accelerator
+
+compatible: "nxp,gpu2d"
+
+include: [reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  variant:
+    type: string
+    required: true
+    description: GPU2D variant string.
+
+  revision:
+    type: string
+    required: true
+    description: GPU2D variant revision implementation.
