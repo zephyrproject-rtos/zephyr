@@ -616,7 +616,7 @@ sync_aux_prepare_done:
 		static memq_link_t link;
 		static struct mayfly mfy_after_cen_offset_get = {
 			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
-		struct lll_prepare_param *prepare_param;
+		static struct lll_prepare_param *prepare_param;
 
 		/* Copy the required values to calculate the offsets
 		 *
