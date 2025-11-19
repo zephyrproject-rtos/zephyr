@@ -2919,6 +2919,8 @@ Infineon Platforms:
   collaborators:
     - mcatee-infineon
     - talih0
+    - billwatersiii
+    - jsbatch
   files:
     - boards/cypress/
     - boards/infineon/
@@ -5608,6 +5610,8 @@ West:
     - parthitce
     - talih0
     - mcatee-infineon
+    - billwatersiii
+    - jsbatch
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
