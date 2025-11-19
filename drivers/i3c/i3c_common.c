@@ -470,6 +470,7 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 	return ret;
 }
 
+#ifdef CONFIG_I3C_USE_IBI
 static void i3c_sec_bus_reset(const struct device *dev)
 {
 	struct i3c_device_desc *i3c_desc;
@@ -483,7 +484,7 @@ static void i3c_sec_bus_reset(const struct device *dev)
 		i3c_detach_i2c_device(i3c_i2c_desc);
 	}
 }
-#ifdef CONFIG_I3C_USE_IBI
+
 /* call this from a workq after the interrupt from a controller */
 void i3c_sec_handoffed(struct k_work *work)
 {
