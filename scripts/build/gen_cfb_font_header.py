@@ -6,6 +6,7 @@
 
 import argparse
 import sys
+import os
 
 from PIL import ImageFont
 from PIL import Image
@@ -125,9 +126,21 @@ def extract_image_glyphs():
     """Extract font glyphs from an image file"""
     image = Image.open(args.input)
 
+    if (image.width % args.width) != 0:
+        raise Exception("Incorrect image width")
+    if (image.height % args.height) != 0:
+        raise Exception("Incorrect image height")
+    if (image.width * image.height) < (args.width * args.height * (args.last - args.first + 1)):
+        raise Exception("Incorrect image size")
+
     x_offset = 0
+    y_offset = 0
     for i in range(args.first, args.last + 1):
-        glyph = image.crop((x_offset, 0, x_offset + args.width, args.height))
+        if x_offset >= image.width:
+            x_offset = 0
+            y_offset += args.height
+
+        glyph = image.crop((x_offset, y_offset, x_offset + args.width, y_offset + args.height))
         generate_element(glyph, i)
         x_offset += args.width
 
@@ -268,7 +281,12 @@ def parse_args():
 def main():
     """Parse arguments and generate CFB font header file"""
     parse_args()
-    generate_header()
+    try:
+        generate_header()
+    except:
+        args.output.close()
+        os.remove(args.output.name)
+        raise
 
 if __name__ == "__main__":
     main()
