@@ -101,7 +101,7 @@ static int nxp_gau_dac_init(const struct device *dev)
 	return 0;
 };
 
-#define _NXP_MAP_OUTPUT_RANGE(idx) \
+#define _NXP_MAP_OUTPUT_RANGE(idx)  \
 	((idx) == 0 ? kDAC_RangeSmall : \
 	(idx) == 1 ? kDAC_RangeMiddle : \
 	kDAC_RangeLarge)
@@ -116,9 +116,9 @@ static int nxp_gau_dac_init(const struct device *dev)
 			DT_INST_ENUM_IDX(inst, nxp_output_voltage_range)),            \
 	};                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &nxp_gau_dac_init, NULL,                  \
-		NULL,                                           \
-		&nxp_gau_dac_##inst##_config,                   \
-		POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,          \
+		NULL,                                           				  \
+		&nxp_gau_dac_##inst##_config,                   				  \
+		POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,          				  \
 		&nxp_gau_dac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_GAU_DAC_INIT)
