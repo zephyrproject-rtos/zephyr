@@ -273,11 +273,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/ci/coverage/coverage_analysis.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/ci/test_plan.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E401",     # https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line
@@ -1156,7 +1151,6 @@ exclude = [
     "./scripts/build/subfolder_list.py",
     "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
-    "./scripts/ci/coverage/coverage_analysis.py",
     "./scripts/ci/set_assignees.py",
     "./scripts/ci/test_plan.py",
     "./scripts/ci/twister_report_analyzer.py",
