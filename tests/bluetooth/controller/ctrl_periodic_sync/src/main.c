@@ -147,14 +147,14 @@ ZTEST(periodic_sync_transfer, test_periodic_sync_transfer_loc)
 
 	struct pdu_data_llctrl_periodic_sync_ind local_periodic_sync_ind = {
 		.id = 0x00,
-		.conn_event_count = 0x00,
+		.conn_event_count = 0xFFFFU,
 		.last_pa_event_counter = 0x00,
 		.sid = 0x00,
 		.addr_type = 0x00,
 		.sca = 0x00,
 		.phy = 0x00,
 		.adv_addr = { 0, 0, 0, 0, 0, 0},
-		.sync_conn_event_count = 0
+		.sync_conn_event_count = 0xFFFFU,
 	};
 
 	/* Reset and setup mayfly_enqueue_custom_fake */
@@ -346,26 +346,26 @@ ZTEST(periodic_sync_transfer, test_periodic_sync_transfer_rem_2)
 
 	struct pdu_data_llctrl_periodic_sync_ind local_periodic_sync_ind = {
 		.id = 0x00,
-		.conn_event_count = 0x01,
+		.conn_event_count = 0x0000U,
 		.last_pa_event_counter = 0x00,
 		.sid = 0x00,
 		.addr_type = 0x00,
 		.sca = 0x00,
 		.phy = 0x00,
 		.adv_addr = { 0, 0, 0, 0, 0, 0},
-		.sync_conn_event_count = 0x01
+		.sync_conn_event_count = 0x0000U,
 	};
 
 	struct pdu_data_llctrl_periodic_sync_ind remote_periodic_sync_ind = {
 		.id = 0x01,
-		.conn_event_count = 0x00,
+		.conn_event_count = 0x0000U,
 		.last_pa_event_counter = 0x00,
 		.sid = 0x00,
 		.addr_type = 0x01,
 		.sca = 0x00,
 		.phy = 0x01,
 		.adv_addr = { 0, 0, 0, 0, 0, 0},
-		.sync_conn_event_count = 0
+		.sync_conn_event_count = 0x0000U,
 	};
 
 	/* Reset and setup fake functions */
@@ -481,14 +481,14 @@ ZTEST(periodic_sync_transfer, test_periodic_sync_transfer_loc_twice)
 
 	struct pdu_data_llctrl_periodic_sync_ind local_periodic_sync_ind = {
 		.id = 0x00,
-		.conn_event_count = 0x00,
+		.conn_event_count = 0xFFFFU,
 		.last_pa_event_counter = 0x00,
 		.sid = 0x00,
 		.addr_type = 0x00,
 		.sca = 0x00,
 		.phy = 0x00,
 		.adv_addr = { 0, 0, 0, 0, 0, 0},
-		.sync_conn_event_count = 0
+		.sync_conn_event_count = 0xFFFFU,
 	};
 
 	/* Reset and setup mayfly_enqueue_custom_fake */
