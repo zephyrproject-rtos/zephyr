@@ -90,15 +90,24 @@ int start_udp(void);
 int process_udp(void);
 void stop_udp(void);
 #else
-static inline void init_udp(void) { }
-static inline int start_udp(void) { return 0; }
-static inline int process_udp(void) { return 0; }
-static inline void stop_udp(void) { }
+static inline void init_udp(void)
+{
+	/*nothing to do*/
+}
+static inline int start_udp(void)
+{
+	return 0;
+}
+static inl
+{
+	return 0;
+}
+static inline void stop_udp(void)
+{
+	/*nothing to do*/
+}
 #endif /* defined(CONFIG_NET_UDP) */
 
-int start_tcp(void);
-int process_tcp(void);
-void stop_tcp(void);
 
 #if defined(CONFIG_BT)
 extern int ble_init(void);

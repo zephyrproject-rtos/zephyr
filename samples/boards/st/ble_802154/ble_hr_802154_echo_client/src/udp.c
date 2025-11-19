@@ -20,7 +20,8 @@ LOG_MODULE_DECLARE(ble_hr_802154_echo_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/random/random.h>
 
 #include "common.h"
-#include "ca_certificate.h"
+
+#if defined(CONFIG_NET_UDP)
 
 #define RECV_BUF_SIZE 1280
 #define UDP_SLEEP K_MSEC(150)
@@ -200,43 +201,13 @@ static int start_udp_proto(struct sample_data *data, sa_family_t family,
 	int optval;
 	int ret;
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	data->udp.sock = socket(family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
-#else
 	data->udp.sock = socket(family, SOCK_DGRAM, IPPROTO_UDP);
-#endif
+
 	if (data->udp.sock < 0) {
 		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
-
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	sec_tag_t sec_tag_list[] = {
-		CA_CERTIFICATE_TAG,
-#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
-		PSK_TAG,
-#endif
-	};
-
-	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
-			 sec_tag_list, sizeof(sec_tag_list));
-	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
-			data->proto, errno);
-		ret = -errno;
-		return ret;
-	}
-
-	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_HOSTNAME,
-			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
-	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
-			data->proto, errno);
-		ret = -errno;
-		return ret;
-	}
-#endif
 
 	/* Prefer IPv6 temporary addresses */
 	if (family == AF_INET6) {
@@ -404,3 +375,4 @@ void stop_udp(void)
 
 	k_poll_signal_raise(&udp_kill, 0);
 }
+#endif

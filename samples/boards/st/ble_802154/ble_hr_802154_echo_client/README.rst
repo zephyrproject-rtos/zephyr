@@ -11,9 +11,9 @@ Overview
 
 The sample application for Zephyr implements a concurrent mode
 BLE - IEEE 802.15.4.
-The 802.15.4 part implements UDP/TCP client that will send IPv4
-or IPv6 packets, wait for the data to be sent back, and then verify
-it matches the data that was sent.
+The 802.15.4 part implements UDP client that will send IPv6 packets,
+wait for the data to be sent back, and then verify it matches
+the data that was sent.
 The BLE part exposes the HR (Heart Rate) GATT Service. Once a device
 connects it will generate dummy heart-rate values.
 
@@ -33,10 +33,7 @@ There are configuration files for different boards and setups in the
 samples directory:
 
 - :file:`prj.conf`
-  Generic config file, normally you should use this.
-
-- :file:`overlay-802154.conf`
-  This overlay config enables support for native IEEE 802.15.4 connectivity.
+  This config enables support for native IEEE 802.15.4 connectivity.
   Note that by default IEEE 802.15.4 L2 uses unacknowledged communication.
   To improve connection reliability, acknowledgments can be enabled with shell
   command: ``ieee802154 ack set``.
@@ -55,18 +52,17 @@ Example building for the IEEE 802.15.4 on nucleo_wba65ri:
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/st/ble_802154/ble_hr_802154_echo_client
    :board: nucleo_wba65ri
-   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build
    :compact:
 
 The LED 1 toggles while application is BLE advertising. Once a remote device
 connects, the LED 1 turns ON and application will generate dummy heart-rate values.
-Once remote device disconnects, the ammplication restarts BLE advertising and LED 1
+Once remote device disconnects, the application restarts BLE advertising and LED 1
 toggles.
 
 Simultaneously, IEEE 802.15.4 feature is enabled.
 In remote device, you can run a echo-server sample application with
 :file:`overlay-802154.conf`.
-Once both devices are connected, local device will send IPv4 or IPv6 packets,
-wait for the data to be sent back from the remote echo-server device, and then
-verify it matches the data that was sent.
+Once both devices are connected, local device will send IPv6 packets,wait for
+the data to be sent back from the remote echo-server device, and then verify it
+matches the data that was sent.

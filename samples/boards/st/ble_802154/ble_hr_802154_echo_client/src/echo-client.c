@@ -1,4 +1,4 @@
-/* ble-hr-802154-echo-client.c - BLE Heart Rate - Networking echo client */
+/* ble-hr-802154-echo-client.c - BLE Heart Rate - 802154 Networking echo client */
 
 /*
  * Copyright (c) 2017 Intel Corporation.
@@ -40,7 +40,6 @@ struct k_mem_domain app_domain;
 #endif
 
 #include "common.h"
-#include "ca_certificate.h"
 
 #define APP_BANNER "ble hr - net echo client"
 
@@ -141,17 +140,25 @@ static void wait(void)
 	}
 }
 
-static int start_udp_and_tcp(void)
+static void stop_net_udp(void)
+{
+	LOG_INF("Stopping...");
+
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		stop_udp();
+	}
+}
+
+static int start_net_udp(void)
 {
 	int ret;
 
 	LOG_INF("Starting...");
 
-	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		ret = start_tcp();
-		if (ret < 0) {
-			return ret;
-		}
+	if (need_restart) {
+		/* Close all sockets and get a fresh restart */
+		stop_net_udp();
+		need_restart = false;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
@@ -166,18 +173,11 @@ static int start_udp_and_tcp(void)
 	return 0;
 }
 
-static int run_udp_and_tcp(void)
+static int run_net_udp(void)
 {
 	int ret;
 
 	wait();
-
-	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		ret = process_tcp();
-		if (ret < 0) {
-			return ret;
-		}
-	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		ret = process_udp();
@@ -187,19 +187,6 @@ static int run_udp_and_tcp(void)
 	}
 
 	return 0;
-}
-
-static void stop_udp_and_tcp(void)
-{
-	LOG_INF("Stopping...");
-
-	if (IS_ENABLED(CONFIG_NET_UDP)) {
-		stop_udp();
-	}
-
-	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		stop_tcp();
-	}
 }
 
 static int check_our_ipv6_sockets(int sock,
@@ -344,33 +331,6 @@ static void init_app(void)
 	ARG_UNUSED(ret);
 #endif
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int err = tls_credential_add(CA_CERTIFICATE_TAG,
-				    TLS_CREDENTIAL_CA_CERTIFICATE,
-				    ca_certificate,
-				    sizeof(ca_certificate));
-	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
-	}
-
-#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
-	err = tls_credential_add(PSK_TAG,
-				TLS_CREDENTIAL_PSK,
-				psk,
-				sizeof(psk));
-	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
-	}
-	err = tls_credential_add(PSK_TAG,
-				TLS_CREDENTIAL_PSK_ID,
-				psk_id,
-				sizeof(psk_id) - 1);
-	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
-	}
-#endif /* defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) */
-#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
-
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
 		net_mgmt_init_event_callback(&mgmt_cb,
 					     event_handler, EVENT_MASK);
@@ -393,11 +353,16 @@ static void start_client(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	int iterations = CONFIG_NET_SAMPLE_SEND_ITERATIONS;
+#if (CONFIG_NET_SAMPLE_SEND_ITERATIONS != 0)
 	int i = 0;
+#endif
 	int ret;
 
-	while (iterations == 0 || i < iterations) {
+#if (CONFIG_NET_SAMPLE_SEND_ITERATIONS != 0)
+	while (i < CONFIG_NET_SAMPLE_SEND_ITERATIONS) {
+#else
+	while (1) {
+#endif
 		/* Wait for the connection. */
 		k_sem_take(&run_app, K_FOREVER);
 
@@ -407,31 +372,24 @@ static void start_client(void *p1, void *p2, void *p3)
 		}
 
 		do {
-			if (need_restart) {
-				/* Close all sockets and get a fresh restart */
-				stop_udp_and_tcp();
-				need_restart = false;
-			}
-
-			ret = start_udp_and_tcp();
+			ret = start_net_udp();
 
 			while (connected && (ret == 0)) {
-				ret = run_udp_and_tcp();
+				ret = run_net_udp();
 
-				if (iterations > 0) {
-					i++;
-					if (i >= iterations) {
-						break;
-					}
+#if (CONFIG_NET_SAMPLE_SEND_ITERATIONS != 0)
+				i++;
+				if (i >= CONFIG_NET_SAMPLE_SEND_ITERATIONS) {
+					break;
 				}
-
+#endif
 				if (need_restart) {
 					break;
 				}
 			}
 		} while (need_restart);
 
-		stop_udp_and_tcp();
+		stop_net_udp();
 	}
 }
 
