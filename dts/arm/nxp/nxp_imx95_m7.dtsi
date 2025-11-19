@@ -132,6 +132,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			status = "disabled";
 		};
 
 		gpio2: gpio@43810000 {
@@ -141,6 +142,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			status = "disabled";
 		};
 
 		gpio3: gpio@43820000 {
@@ -150,6 +152,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			status = "disabled";
 		};
 
 		gpio4: gpio@43840000 {
@@ -159,6 +162,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <30>;
+			status = "disabled";
 		};
 
 		gpio5: gpio@43850000 {
@@ -168,6 +172,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <18>;
+			status = "disabled";
 		};
 
 		edma2: dma@42000000 {
