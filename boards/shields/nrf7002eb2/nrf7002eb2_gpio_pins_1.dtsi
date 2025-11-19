@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	nrf_radio_coex: coex {
+		compatible = "nordic,nrf7002-coex";
+		status = "disabled";
+		status0-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		req-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&gpio1 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&nrf70 {
+	iovdd-ctrl-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	bucken-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+	host-irq-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+};
+
+&gpio1 {
+	status = "okay";
+};

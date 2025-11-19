@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../nrf7002eb2_gpio_pins_1.dtsi"
+
+/ {
+	chosen {
+		zephyr,wifi = &wlan0;
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,uart-mcumgr = &uart30;
+		zephyr,bt-mon-uart = &uart30;
+		zephyr,bt-c2h-uart = &uart30;
+	};
+};
+
+&pinctrl {
+	spi22_default: spi22_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK,  1, 11)>,
+				<NRF_PSEL(SPIM_MISO, 1, 7)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 6)>;
+			bias-pull-down;
+		};
+	};
+
+	spi22_sleep: spi22_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK,  1, 11)>,
+				<NRF_PSEL(SPIM_MISO, 1, 7)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 6)>;
+			bias-pull-down;
+			low-power-enable;
+		};
+	};
+};
+
+&spi22 {
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart20 {
+	status = "disabled";
+};
+
+&uart30 {
+	status = "okay";
+};

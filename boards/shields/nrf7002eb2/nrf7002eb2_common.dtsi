@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <freq.h>
+
+/* Common assignments for nRF70 EB-II shield */
+reg = <0>;
+spi-max-frequency = <DT_FREQ_M(8)>;
+
+/* Maximum TX power limits for 2.4 GHz */
+wifi-max-tx-pwr-2g-dsss = <21>;
+wifi-max-tx-pwr-2g-mcs0 = <16>;
+wifi-max-tx-pwr-2g-mcs7 = <16>;
+
+/* List of interfaces */
+wlan0: wlan0 {
+	compatible = "nordic,wlan";
+};
