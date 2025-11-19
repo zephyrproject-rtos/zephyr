@@ -35,6 +35,22 @@ int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry);
 
+/* Get the root USB */
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx);
+
+/* Check if a USB device is the root device */
+static inline bool usbh_device_is_root(struct usbh_context *const ctx,
+				       struct usb_device *const udev)
+{
+	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
+/* Connect a new USB device */
+void usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev);
+
+/* Disconnect a USB device */
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
+
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,

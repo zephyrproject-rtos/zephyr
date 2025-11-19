@@ -8,6 +8,8 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -457,6 +459,48 @@ error:
 	k_mutex_unlock(&udev->mutex);
 
 	return err;
+}
+
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	sys_dnode_t *node;
+
+	node = sys_dlist_peek_head(&ctx->udevs);
+	if (node == NULL) {
+		/* No devices in the list */
+		return NULL;
+	}
+
+	/* Get the usb_device structure from the node */
+	return CONTAINER_OF(node, struct usb_device, node);
+}
+
+void usbh_device_connect(struct usbh_context *const ctx,
+			 struct usb_device *const udev)
+{
+	int err;
+
+	LOG_DBG("Device connected event");
+
+	udev->state = USB_STATE_DEFAULT;
+
+	err = usbh_device_init(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to init new USB device");
+		usbh_device_free(udev);
+		return;
+	}
+
+	usbh_class_probe_device(udev);
+}
+
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
+{
+	usbh_class_remove_all(udev);
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
 }
 
 int usbh_device_init(struct usb_device *const udev)
