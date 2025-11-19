@@ -2889,6 +2889,8 @@ Infineon Platforms:
     - sreeramIfx
   collaborators:
     - mcatee-infineon
+    - jsbatch
+    - billwatersiii
     - talih0
   files:
     - boards/cypress/
