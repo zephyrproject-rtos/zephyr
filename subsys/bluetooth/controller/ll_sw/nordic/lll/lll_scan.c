@@ -133,7 +133,7 @@ void lll_scan_prepare(void *param)
 
 void lll_scan_isr_resume(void *param)
 {
-	static struct lll_prepare_param p;
+	struct lll_prepare_param p;
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
@@ -509,7 +509,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		static memq_link_t link;
 		static struct mayfly mfy_after_cen_offset_get = {
 			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
-		struct lll_prepare_param *prepare_param;
+		static struct lll_prepare_param *prepare_param;
 
 		/* Copy the required values to calculate the offsets */
 		prepare_param = &lll->prepare_param;
