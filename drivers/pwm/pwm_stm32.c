@@ -90,6 +90,7 @@ struct pwm_stm32_config {
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
 	uint32_t countermode;
+	uint32_t mastermode;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -699,6 +700,17 @@ static int pwm_stm32_init(const struct device *dev)
 	}
 #endif
 
+#ifdef IS_TIM_MASTER_INSTANCE
+	if (IS_TIM_MASTER_INSTANCE(timer)) {
+		LL_TIM_SetTriggerOutput(timer, cfg->mastermode);
+	} else {
+		if (cfg->mastermode != 0) {
+			LOG_ERR("%s: Timer does not support mastermode", dev->name);
+			return -ENOTSUP;
+		}
+	}
+#endif /* IS_TIM_MASTER_INSTANCE*/
+
 #if !defined(CONFIG_SOC_SERIES_STM32L0X) && !defined(CONFIG_SOC_SERIES_STM32L1X)
 	/* enable outputs and counter */
 	if (IS_TIM_BREAK_INSTANCE(timer)) {
@@ -766,6 +778,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),	       \
 		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
 		.countermode = DT_PROP(PWM(index), st_countermode),	       \
+		.mastermode = CONCAT(LL_TIM_TRGO_, DT_STRING_TOKEN(PWM(index), st_mastermode)),	\
 		.pclken = pclken_##index,				       \
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \

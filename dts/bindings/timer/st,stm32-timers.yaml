@@ -46,3 +46,32 @@ properties:
                                                down.
 
       If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  st,mastermode:
+    type: string
+    default: RESET
+    enum:
+      - RESET
+      - ENABLE
+      - UPDATE
+      - CC1IF
+      - OC1REFC
+      - OC2REFC
+      - OC3REFC
+      - OC4REFC
+    description: |
+      Master Mode Select: selects the trigger output source
+      of the timer instance.
+      Only available for timer instances with master function.
+
+      For details, refer to your device's Reference Manual.
+
+      * RESET   - The UG bit from the TIMx_EGR register is used
+                  as trigger output (TRGO).
+      * ENABLE  - The Counter enable signal, CNT_EN, is used as TRGO.
+      * UPDATE  - The update event is used as TRGO.
+      * CC1IF   - The CC1IF set event is used as TRGO.
+      * OC1REFC - OC1REFC signal is used as TRGO.
+      * OC2REFC - OC2REFC signal is used as TRGO.
+      * OC3REFC - OC3REFC signal is used as TRGO.
+      * OC4REFC - OC4REFC signal is used as TRGO.
