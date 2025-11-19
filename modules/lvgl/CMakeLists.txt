@@ -470,6 +470,8 @@ zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_INPUT input/lvgl_pointer_input.
 zephyr_library_sources_ifdef(CONFIG_LV_Z_BUTTON_INPUT input/lvgl_button_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_ENCODER_INPUT input/lvgl_encoder_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_KEYPAD_INPUT input/lvgl_keypad_input.c)
+zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE lvgl_vg_lite_zephyr.c)
+
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)

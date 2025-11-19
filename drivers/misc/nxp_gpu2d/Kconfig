@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Felipe Neves <ryukokki.felipe@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_GPU2D_BRINGUP
+	bool "GPU2D graphics accelerator bring-up driver"
+	default y
+	depends on DT_HAS_NXP_GPU2D_ENABLED
+    help
+        This option enables the GPU2D graphics accelerator bring-up
+        code, it makes the GPU ready to be consumed by compatible
+        specifications drivers like VGLite.

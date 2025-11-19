@@ -743,6 +743,7 @@ vamrs	Vamrs Ltd.
 variscite	Variscite Ltd.
 vcc-gnd	VCC-GND Studio
 vdl	Van der Laan b.v.
+verisilicon Verisilicon Technology.
 via	VIA Technologies, Inc.
 vicharak	Vicharak
 videostrong	Videostrong Technology Co., Ltd.
