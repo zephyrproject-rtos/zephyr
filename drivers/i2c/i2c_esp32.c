@@ -68,6 +68,8 @@ struct i2c_esp32_data {
 	uint32_t dev_config;
 	int cmd_idx;
 	int irq_line;
+	struct i2c_target_config* i2c_target;
+	struct k_mutex target_mutex;
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -314,11 +316,6 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint32_t bitrate;
-
-	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
-		return -ENOTSUP;
-	}
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -612,6 +609,12 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
+	// ensure that master mode is initialized
+	if(data->i2c_target) {
+		LOG_ERR("I2C not in controller mode.");
+		return -EINVAL;
+	}
+
 	if (!num_msgs) {
 		return 0;
 	}
@@ -691,17 +694,101 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	return ret;
 }
 
+// this handler is called in i2c target mode
+// when the TX FIFO is empty, need to call read callbacks
+static void IRAM_ATTR i2c_target_handle_tx_event(struct i2c_esp32_data *data)
+{
+	struct i2c_target_config *target = data->i2c_target;
+	uint32_t tx_fifo_len; // used as upper bound in loop
+	int ret; // return from callbacks
+
+	// get length of txfifo, then initialize buffer to send to txfifo
+	// will check later if tx_fifo_len is for some reason smaller than SOC_I2C_FIFO_LEN
+	i2c_ll_get_txfifo_len(data->hal.dev, &tx_fifo_len);
+	uint8_t tx_buffer[SOC_I2C_FIFO_LEN];
+	uint8_t val;
+
+	int filled = 0;
+
+    // signal that a read has been requested
+	if(data->status != I2C_STATUS_WRITE) {
+		data->status = I2C_STATUS_WRITE;
+    	ret = target->callbacks->read_requested(target, &val);
+		if(ret == 0) {
+        	tx_buffer[filled++] = val;
+    	} else {
+			return; // no data to read
+    	}
+	}
+
+	// get all bites to fill tx fifo
+	for(; filled < tx_fifo_len; filled++) {
+        ret = target->callbacks->read_processed(target, &val);
+    	if(ret == 0) {
+            tx_buffer[filled] = val;
+        } else {
+            break; // no more data to read
+        }
+    }
+
+	// write the bytes to tx fifo
+	if(filled) {
+        i2c_ll_write_txfifo(data->hal.dev, tx_buffer, filled);
+    }
+}
+
+// this handler is called in i2c target mode
+// when the RX FIFO is full, need to call write callbacks
+static void IRAM_ATTR i2c_target_handle_rx_event(struct i2c_esp32_data *data)
+{
+	struct i2c_target_config *target = data->i2c_target;
+	uint32_t rx_fifo_len;
+
+	i2c_ll_get_rxfifo_cnt(data->hal.dev, &rx_fifo_len);
+	uint8_t rx_buffer[SOC_I2C_FIFO_LEN];
+
+	// signal that a write has been requested
+	if(data->status != I2C_STATUS_READ) {
+		target->callbacks->write_requested(target);
+		data->status = I2C_STATUS_READ;
+	}
+
+	// read rxfifo into buffer
+	i2c_ll_read_rxfifo(data->hal.dev, rx_buffer, rx_fifo_len);
+
+    // process each byte received
+	for(int i = 0; i < rx_fifo_len; i++) {
+        // call write_processed callback for each byte
+        target->callbacks->write_received(target, rx_buffer[i]);
+    }
+}
+
 static void IRAM_ATTR i2c_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
 
-	if (data->status == I2C_STATUS_WRITE) {
-		i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
-	} else if (data->status == I2C_STATUS_READ) {
-		i2c_hal_master_handle_rx_event(&data->hal, &evt_type);
-	}
+	if(!data->i2c_target) {
+        // master mode
+        if (data->status == I2C_STATUS_WRITE) {
+            i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
+        } else if (data->status == I2C_STATUS_READ) {
+            i2c_hal_master_handle_rx_event(&data->hal, &evt_type);
+        }
+    } else {
+        // target mode
+    	uint32_t intr_status = 0;
+    	i2c_ll_get_intr_mask(data->hal.dev, &intr_status);
+    	if (intr_status != 0) {
+    		// If intr status is 0, no need to handle it.
+    		i2c_ll_slave_get_event(data->hal.dev, &evt_type);
+    		if ((evt_type < I2C_INTR_EVENT_END_DET) ||
+				(evt_type == I2C_INTR_EVENT_TRANS_DONE)) {
+    			i2c_ll_clear_intr_mask(data->hal.dev, intr_status);
+			}
+    	}
+    }
 
 	if (evt_type == I2C_INTR_EVENT_NACK) {
 		data->status = I2C_STATUS_ACK_ERROR;
@@ -710,10 +797,56 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	} else if (evt_type == I2C_INTR_EVENT_ARBIT_LOST) {
 		data->status = I2C_STATUS_TIMEOUT;
 	} else if (evt_type == I2C_INTR_EVENT_TRANS_DONE) {
+		if(data->i2c_target) {
+			// if target configuration exists, call stop callback
+			data->i2c_target->callbacks->stop(data->i2c_target);
+        }
 		data->status = I2C_STATUS_DONE;
-	}
+	} else if (evt_type == I2C_INTR_EVENT_TXFIFO_EMPTY) {
+        i2c_target_handle_tx_event(data);
+    } else if (evt_type == I2C_INTR_EVENT_RXFIFO_FULL) {
+        i2c_target_handle_rx_event(data);
+    }
 
 	k_sem_give(&data->cmd_sem);
+}
+
+static int i2c_esp32_target_register(const struct device *dev, struct i2c_target_config *cf) {
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	// switch the i2c mode to target
+	k_mutex_lock(&data->target_mutex, K_FOREVER);
+
+	data->i2c_target = cf;
+
+	k_mutex_unlock(&data->target_mutex);
+
+	// re-initialize the i2c hardware in target mode
+	i2c_hal_slave_init(&data->hal);
+
+	i2c_esp32_configure_data_mode(dev);
+
+	return i2c_esp32_configure(dev, i2c_map_dt_bitrate(config->bitrate));
+}
+
+static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_target_config *cf) {
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	// switch the i2c mode to master
+	k_mutex_lock(&data->target_mutex, K_FOREVER);
+
+	data->i2c_target = NULL;
+
+	k_mutex_unlock(&data->target_mutex);
+
+	// re-initialize the i2c hardware in target mode
+	i2c_hal_master_init(&data->hal);
+
+	i2c_esp32_configure_data_mode(dev);
+
+	return i2c_esp32_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 }
 
 static DEVICE_API(i2c, i2c_esp32_driver_api) = {
@@ -724,6 +857,8 @@ static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
+    .target_register = i2c_esp32_target_register,
+    .target_unregister = i2c_esp32_target_unregister,
 };
 
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
@@ -815,6 +950,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		},										   \
 		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),		   \
 		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),	   \
+		.i2c_target = NULL,							   \
+		.target_mutex = Z_MUTEX_INITIALIZER(i2c_esp32_data_##idx.target_mutex),		   \
+		.status = I2C_STATUS_IDLE,							   \
 	};											   \
 												   \
 	static const struct i2c_esp32_config i2c_esp32_config_##idx = {				   \
