@@ -22,7 +22,7 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h753zi
-      - nucleo_h7s3l8
+      - nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
       - nucleo_l152re
       - nucleo_u385rg_q
       - nucleo_wb55rg
