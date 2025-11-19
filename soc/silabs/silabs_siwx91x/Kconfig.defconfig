@@ -13,6 +13,16 @@ configdefault SYS_CLOCK_TICKS_PER_SEC
 configdefault UART_NS16550_DW8250_DW_APB
 	default y
 
+if PM_DEVICE
+
+configdefault PM_DEVICE_RUNTIME
+	default y
+
+configdefault POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
 if SILABS_SIWX91X_NWP
 
 # WiseConnect create threads with realtime priority. Default (10kHz) clock tick
