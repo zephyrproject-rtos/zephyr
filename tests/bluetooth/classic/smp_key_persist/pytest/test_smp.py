@@ -407,9 +407,18 @@ async def sm_key_persist_004(hci_port, shell, dut, address) -> None:
                 device, shell, dut, bumble_address, iut_address
             )
 
-            await send_cmd_to_iut(shell, dut, "br clear all", "Pairings successfully cleared")
+            lines = await send_cmd_to_iut(
+                shell, dut, "br clear all", "Pairings successfully cleared"
+            )
 
-            await sm_test_initial_disconnect(dut, connection)
+            disconnected = False
+            for line in lines:
+                if "Disconnected:" in line:
+                    disconnected = True
+                    break
+
+            if not disconnected:
+                await sm_test_initial_disconnect(dut, connection)
 
             await sm_test_reboot(shell, dut)
 
