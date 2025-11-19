@@ -446,6 +446,34 @@ error:
 	return err;
 }
 
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	sys_dnode_t *node;
+
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	node = sys_dlist_peek_head(&ctx->udevs);
+	if (node == NULL) {
+		/* No devices in the list */
+		return NULL;
+	}
+
+	/* Get the usb_device structure from the node */
+	return CONTAINER_OF(node, struct usb_device, node);
+}
+
+bool usbh_device_is_root(struct usbh_context *const ctx,
+			struct usb_device *const udev)
+{
+	if (ctx == NULL || udev == NULL) {
+		return false;
+	}
+
+	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
