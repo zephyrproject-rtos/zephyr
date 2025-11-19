@@ -34,7 +34,7 @@ jobs:
         persist-credentials: false
 
     - name: Set up Python
-      uses: zephyrproject-rtos/action-python-env@ace91a63fd503cd618ff1eb83fbcf302dabd7d44 # main
+      uses: zephyrproject-rtos/action-python-env@32e53bef090c33d53aa94f1d9a9d29c93cfdc5f7 # main
       with:
         python-version: 3.12
 
