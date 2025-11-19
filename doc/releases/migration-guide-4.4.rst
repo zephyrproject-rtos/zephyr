@@ -23,6 +23,11 @@ the :ref:`release notes<zephyr_4.4>`.
 Build System
 ************
 
+* Zephyr now officially defaults to C17 (ISO/IEC 9899:2018) as its minimum required
+  C standard version.  If your toolchain does not support this standard you will
+  need to use one of the existing and now deprecated options:
+  :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
+
 Kernel
 ******
 
