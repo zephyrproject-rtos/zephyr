@@ -290,11 +290,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
-"./scripts/ci/guideline_check.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/ci/stats/merged_prs.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1185,7 +1180,6 @@ exclude = [
     "./scripts/ci/check_compliance.py",
     "./scripts/ci/coverage/coverage_analysis.py",
     "./scripts/ci/errno.py",
-    "./scripts/ci/guideline_check.py",
     "./scripts/ci/set_assignees.py",
     "./scripts/ci/stats/merged_prs.py",
     "./scripts/ci/test_plan.py",
