@@ -8,6 +8,8 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -480,6 +482,39 @@ int usbh_device_set_address(struct usb_device *const udev, const uint8_t new_add
 	return 0;
 }
 
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	return ctx->root;
+}
+
+void usbh_device_connect(struct usbh_context *const ctx,
+			 struct usb_device *const udev)
+{
+	int err;
+
+	LOG_DBG("Device connected event");
+
+	udev->state = USB_STATE_DEFAULT;
+
+	err = usbh_device_init(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to init new USB device");
+		usbh_device_free(udev);
+		return;
+	}
+
+	usbh_class_probe_device(udev);
+}
+
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
+{
+	usbh_class_remove_all(udev);
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
@@ -497,11 +532,12 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	/* FIXME: The port to which the device is connected should be reset. */
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		LOG_ERR("Failed to signal bus reset");
-		return err;
+	if (usbh_device_is_root(uhs_ctx, udev)) {
+		err = uhc_bus_reset(uhs_ctx->dev);
+		if (err) {
+			LOG_ERR("Failed to signal bus reset");
+			return err;
+		}
 	}
 
 	/*
