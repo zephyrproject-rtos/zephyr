@@ -273,17 +273,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/ci/test_plan.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E401",     # https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/ci/upload_test_results_es.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
@@ -1152,7 +1141,6 @@ exclude = [
     "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
     "./scripts/ci/set_assignees.py",
-    "./scripts/ci/test_plan.py",
     "./scripts/ci/twister_report_analyzer.py",
     "./scripts/ci/upload_test_results_es.py",
     "./scripts/coredump/coredump_gdbserver.py",
