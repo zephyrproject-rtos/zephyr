@@ -871,7 +871,7 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv4)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
 
-	struct net_in_addr addr = INADDR_LOOPBACK_INIT;
+	struct net_in_addr addr = NET_INADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";
@@ -892,7 +892,7 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
 
-	struct net_in6_addr addr = IN6ADDR_LOOPBACK_INIT;
+	struct net_in6_addr addr = NET_IN6ADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";

@@ -129,7 +129,7 @@ static void broker_init(void)
 		printk("Failed to create server socket\n");
 	}
 
-	ret = zsock_setsockopt(s_sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr,
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &reuseaddr,
 			       sizeof(reuseaddr));
 	if (ret < 0) {
 		printk("Failed to set SO_REUSEADDR on server socket, %d\n", errno);
