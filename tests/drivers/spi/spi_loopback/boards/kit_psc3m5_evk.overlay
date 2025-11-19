@@ -8,7 +8,7 @@
 spi1: &scb4 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,cat1-spi-pdl";
+	compatible = "infineon,cat1-spi";
 	status = "okay";
 
 	pinctrl-0 = <&p4_0_scb4_spi_m_mosi &p4_1_scb4_spi_m_miso &p4_2_scb4_spi_m_clk>;
