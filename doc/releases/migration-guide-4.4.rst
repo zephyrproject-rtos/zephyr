@@ -37,6 +37,13 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+MDIO
+====
+
+* The ``mdio_bus_enable()`` and ``mdio_bus_disable()`` functions have been removed.
+  MDIO bus enabling/disabling is now handled internally by the MDIO drivers.
+  (:github:`99690`).
+
 QSPI
 ===
 
