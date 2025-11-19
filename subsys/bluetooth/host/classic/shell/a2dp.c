@@ -118,7 +118,7 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), /* 09 */
-				BT_SDP_ARRAY_16(0x0103U) /* 01 03 */
+				BT_SDP_ARRAY_16(0x0104U) /* 01 04 */
 			},
 			)
 		},
@@ -187,7 +187,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0103U)
+				BT_SDP_ARRAY_16(0x0104U)
 			},
 			)
 		},
