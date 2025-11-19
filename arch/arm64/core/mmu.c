@@ -54,7 +54,15 @@ static uint64_t *new_table(void)
 		}
 	}
 
-	LOG_ERR("CONFIG_MAX_XLAT_TABLES, too small");
+#if defined(CONFIG_LOG)
+	LOG_ERR("CONFIG_MAX_XLAT_TABLES is too small");
+#else
+	printk("ERROR: CONFIG_MAX_XLAT_TABLES is too small\n");
+#endif
+
+	/* Unfortunately many code paths are not ready for failure */
+	k_panic();
+
 	return NULL;
 }
 
