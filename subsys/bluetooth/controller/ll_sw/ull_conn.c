@@ -2860,7 +2860,7 @@ static void ticker_get_offset_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 
-static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
+static uint32_t get_ticker_offset(const struct ll_conn *conn, uint8_t ticker_id, uint16_t *lazy)
 {
 	uint32_t volatile ret_cb;
 	uint32_t ticks_to_expire;
@@ -2899,6 +2899,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 	/* Add a tick for negative remainder and return positive remainder
 	 * value.
 	 */
+	remainder = conn->llcp.prep.remainder;
 	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
 	start_us = remainder;
 
@@ -2932,7 +2933,8 @@ static void mfy_past_sender_offset_get(void *param)
 
 		LL_ASSERT(adv_sync);
 
-		ticker_offset_us = get_ticker_offset(TICKER_ID_ADV_SYNC_BASE + adv_sync_handle,
+		ticker_offset_us = get_ticker_offset(conn,
+						     (TICKER_ID_ADV_SYNC_BASE + adv_sync_handle),
 						     &lazy);
 
 		pa_event_counter = adv_sync->lll.event_counter;
@@ -2944,7 +2946,8 @@ static void mfy_past_sender_offset_get(void *param)
 
 		LL_ASSERT(sync);
 
-		ticker_offset_us = get_ticker_offset(TICKER_ID_SCAN_SYNC_BASE + sync_handle,
+		ticker_offset_us = get_ticker_offset(conn,
+						     (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
 						     &lazy);
 
 		if (lazy && ticker_offset_us > interval_us) {

@@ -1552,20 +1552,19 @@ void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
 
 			/* Update offset_us */
 			offset_us = offset_us - (conn_event_offset * conn_interval_us);
-
-			ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-								   conn_event_offset;
 		}
 
 		llcp_pdu_fill_sync_info_offset(&ctx->data.periodic_sync.sync_info, offset_us);
+
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* Save the result for later use */
 		ctx->data.periodic_sync.offset_us = offset_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
-		ctx->data.periodic_sync.sync_conn_event_count = ull_conn_event_counter(conn);
-		ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-							   conn_event_offset;
+		ctx->data.periodic_sync.sync_conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) - 1U;
+		ctx->data.periodic_sync.conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) + conn_event_offset - 1U;
 
 		ctx->data.periodic_sync.sync_info.evt_cntr = pa_event_counter;
 
