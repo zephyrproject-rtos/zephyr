@@ -1140,8 +1140,6 @@ exclude = [
     "./scripts/build/subfolder_list.py",
     "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
-    "./scripts/ci/set_assignees.py",
-    "./scripts/ci/twister_report_analyzer.py",
     "./scripts/ci/upload_test_results_es.py",
     "./scripts/coredump/coredump_gdbserver.py",
     "./scripts/coredump/coredump_parser/elf_parser.py",
