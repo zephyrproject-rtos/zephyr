@@ -46,6 +46,7 @@ static int usbh_event_carrier(const struct device *dev,
 static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
+	int err;
 	struct usb_device *udev;
 
 	LOG_DBG("Device connected event");
@@ -66,13 +67,10 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 
 	k_mutex_lock(&ctx->mutex, K_FOREVER);
 	sys_dlist_append(&ctx->udevs, &udev->node);
-
-	if (ctx->root == NULL) {
-		ctx->root = udev;
-	}
 	k_mutex_unlock(&ctx->mutex);
 
-	if (usbh_device_init(udev)) {
+	err = usbh_device_init(udev);
+	if (ret != 0) {
 		LOG_ERR("Failed to reset new USB device");
 		sys_dlist_remove(&udev->node);
 	}
@@ -80,13 +78,17 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
-	if (ctx->root != NULL) {
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
+	struct usb_device *udev = NULL;
+
+	udev = usbh_device_get_root(ctx);
+
+	if (NULL != udev) {
+		usbh_device_free(udev);
 		LOG_DBG("Device removed");
 	} else {
 		LOG_DBG("Spurious device removed event");
 	}
+	/* TODO: handle remove for all of classes for the unattached device */
 }
 
 static int discard_ep_request(struct usbh_context *const ctx,
