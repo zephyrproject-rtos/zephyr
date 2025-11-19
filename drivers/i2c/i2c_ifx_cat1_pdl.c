@@ -9,7 +9,7 @@
  * @brief I2C driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_i2c_pdl
+#define DT_DRV_COMPAT infineon_cat1_i2c
 
 #include <infineon_kconfig.h>
 
