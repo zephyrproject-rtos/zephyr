@@ -827,9 +827,9 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	 */
 	if (!net_pkt_is_ppp(pkt)) {
 		if (net_pkt_family(pkt) == NET_AF_INET) {
-			protocol = htons(PPP_IP);
+			protocol = net_htons(PPP_IP);
 		} else if (net_pkt_family(pkt) == NET_AF_INET6) {
-			protocol = htons(PPP_IPV6);
+			protocol = net_htons(PPP_IPV6);
 		}  else {
 			return -EPROTONOSUPPORT;
 		}
@@ -846,12 +846,12 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 				  sizeof(sync_addr_ctrl), send_off);
 
 	if (protocol > 0) {
-		escaped = htons(ppp_escape_byte(protocol, &offset));
+		escaped = net_htons(ppp_escape_byte(protocol, &offset));
 		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 					  offset ? 1 : 2,
 					  send_off);
 
-		escaped = htons(ppp_escape_byte(protocol >> 8, &offset));
+		escaped = net_htons(ppp_escape_byte(protocol >> 8, &offset));
 		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 					  offset ? 1 : 2,
 					  send_off);
@@ -868,7 +868,7 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	while (buf) {
 		for (i = 0; i < buf->len; i++) {
 			/* Escape illegal bytes */
-			escaped = htons(ppp_escape_byte(buf->data[i], &offset));
+			escaped = net_htons(ppp_escape_byte(buf->data[i], &offset));
 			send_off = ppp_send_bytes(ppp,
 						  (uint8_t *)&escaped + offset,
 						  offset ? 1 : 2,
@@ -878,12 +878,12 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 		buf = buf->frags;
 	}
 
-	escaped = htons(ppp_escape_byte(fcs, &offset));
+	escaped = net_htons(ppp_escape_byte(fcs, &offset));
 	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 				  offset ? 1 : 2,
 				  send_off);
 
-	escaped = htons(ppp_escape_byte(fcs >> 8, &offset));
+	escaped = net_htons(ppp_escape_byte(fcs >> 8, &offset));
 	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 				  offset ? 1 : 2,
 				  send_off);

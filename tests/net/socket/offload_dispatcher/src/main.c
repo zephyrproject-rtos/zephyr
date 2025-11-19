@@ -606,7 +606,7 @@ ZTEST(net_socket_offload_udp, test_getsockopt_not_bound)
 	struct timeval optval = { 0 };
 	net_socklen_t optlen = sizeof(optval);
 
-	ret = zsock_getsockopt(test_sock, SOL_SOCKET, SO_RCVTIMEO,
+	ret = zsock_getsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO,
 			       &optval, &optlen);
 	zassert_equal(0, ret, "getsockopt() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -623,7 +623,7 @@ ZTEST(net_socket_offload_udp, test_setsockopt_not_bound)
 	int ret;
 	struct timeval optval = { 0 };
 
-	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_RCVTIMEO,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO,
 			       &optval, sizeof(optval));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -689,7 +689,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 {
 	int ret;
 	uint8_t dummy_data = 0;
-	struct ifreq ifreq = {
+	struct net_ifreq ifreq = {
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		.ifr_name = "net1"
 #else
@@ -700,7 +700,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 		.sin_family = NET_AF_INET
 	};
 
-	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
 			       &ifreq, sizeof(ifreq));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -724,7 +724,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 {
 	int ret;
 	uint8_t dummy_data = 0;
-	struct ifreq ifreq = {
+	struct net_ifreq ifreq = {
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		.ifr_name = "dummy0"
 #else
@@ -733,7 +733,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 	};
 	struct net_sockaddr_in addr = test_peer_addr;
 
-	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
 			       &ifreq, sizeof(ifreq));
 
 	zassert_equal(0, ret, "setsockopt() failed");
@@ -759,7 +759,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	int ret;
 	const struct fd_op_vtable *vtable;
 	void *obj;
-	struct ifreq ifreq = {
+	struct net_ifreq ifreq = {
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		.ifr_name = "net1"
 #else
@@ -769,7 +769,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	int tls_native = 1;
 	struct net_sockaddr_in addr = test_peer_addr;
 
-	ret = zsock_setsockopt(test_sock, SOL_TLS, TLS_NATIVE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_NATIVE,
 			       &tls_native, sizeof(tls_native));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -781,7 +781,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 
-	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
 			       &ifreq, sizeof(ifreq));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -806,7 +806,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	int ret;
 	const struct fd_op_vtable *vtable;
 	void *obj;
-	struct ifreq ifreq = {
+	struct net_ifreq ifreq = {
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		.ifr_name = "dummy0"
 #else
@@ -816,7 +816,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	int tls_native = 1;
 	struct net_sockaddr_in addr = test_peer_addr;
 
-	ret = zsock_setsockopt(test_sock, SOL_TLS, TLS_NATIVE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_NATIVE,
 			       &tls_native, sizeof(tls_native));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -828,7 +828,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 
-	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
+	ret = zsock_setsockopt(test_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
 			       &ifreq, sizeof(ifreq));
 	zassert_equal(0, ret, "setsockopt() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,

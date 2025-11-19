@@ -2942,25 +2942,25 @@ static void check_port_range(struct net_sockaddr *my_addr,
 	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
 
 	optval = PORT_RANGE(1024, 1500);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	err = -errno;
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
 	optval = 0; optlen = 0U;
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, optlen);
 	err = -errno;
 	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
 
 	optval = 0; optlen = sizeof(uint64_t);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, optlen);
 	err = -errno;
 	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
 
 	optval = PORT_RANGE(0, 0);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
@@ -2968,23 +2968,23 @@ static void check_port_range(struct net_sockaddr *my_addr,
 	 * then taken into use when we bind the socket.
 	 */
 	optval = PORT_RANGE(1024, 0);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
 	optval = PORT_RANGE(0, 1024);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
 	/* Then set a valid range and verify that bound socket is using it */
 	optval = PORT_RANGE(10000, 10010);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
 	optval = 0; optlen = sizeof(optval);
-	ret = zsock_getsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_getsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, &optlen);
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 	zexpect_equal(optval, PORT_RANGE(10000, 10010), "Invalid port range");
@@ -3011,7 +3011,7 @@ static void check_port_range(struct net_sockaddr *my_addr,
 	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
 
 	optval = PORT_RANGE(1001, 1000);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	err = -errno;
 	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
@@ -3019,14 +3019,14 @@ static void check_port_range(struct net_sockaddr *my_addr,
 
 	/* Port range cannot be just one port */
 	optval = PORT_RANGE(1001, 1001);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	err = -errno;
 	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
 	zexpect_equal(err, -EINVAL, "Invalid errno (%d)", -err);
 
 	optval = PORT_RANGE(0, 1000);
-	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_LOCAL_PORT_RANGE,
 			       &optval, sizeof(optval));
 	err = -errno;
 	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
@@ -3060,7 +3060,7 @@ ZTEST(net_socket_udp, test_clamp_udp_tcp_port_range)
 	struct net_sockaddr_in6 my_addr6 = {
 		.sin6_family = NET_AF_INET6,
 		.sin6_port = 0,
-		.sin6_addr = in6addr_loopback,
+		.sin6_addr = net_in6addr_loopback,
 	};
 	struct net_sockaddr_in local_addr4;
 	struct net_sockaddr_in6 local_addr6;
@@ -3675,27 +3675,27 @@ ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_sendmsg)
 	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDMSG);
 }
 
-static void test_rebinding_common(sa_family_t family)
+static void test_rebinding_common(net_sa_family_t family)
 {
 	int rv;
 	int client_sock;
 	int server_sock;
-	struct sockaddr client_addr;
-	struct sockaddr server_addr;
-	socklen_t addrlen;
+	struct net_sockaddr client_addr;
+	struct net_sockaddr server_addr;
+	net_socklen_t addrlen;
 
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock,
-				    (struct sockaddr_in *)&client_addr);
+				    (struct net_sockaddr_in *)&client_addr);
 		prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock,
-				    (struct sockaddr_in *)&server_addr);
-		addrlen = sizeof(struct sockaddr_in);
+				    (struct net_sockaddr_in *)&server_addr);
+		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
 		prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock,
-				    (struct sockaddr_in6 *)&client_addr);
+				    (struct net_sockaddr_in6 *)&client_addr);
 		prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock,
-				    (struct sockaddr_in6 *)&server_addr);
-		addrlen = sizeof(struct sockaddr_in6);
+				    (struct net_sockaddr_in6 *)&server_addr);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
 	rv = zsock_bind(client_sock, &client_addr, addrlen);
@@ -3709,10 +3709,10 @@ static void test_rebinding_common(sa_family_t family)
 			     server_sock, &server_addr, addrlen);
 
 	/* Rebind client socket */
-	if (family == AF_INET) {
-		net_sin(&client_addr)->sin_port = htons(CLIENT_PORT + 1);
+	if (family == NET_AF_INET) {
+		net_sin(&client_addr)->sin_port = net_htons(CLIENT_PORT + 1);
 	} else {
-		net_sin6(&client_addr)->sin6_port = htons(CLIENT_PORT + 1);
+		net_sin6(&client_addr)->sin6_port = net_htons(CLIENT_PORT + 1);
 	}
 	rv = zsock_bind(client_sock, &client_addr, addrlen);
 	zassert_equal(rv, 0, "rebinding failed");
@@ -3722,10 +3722,10 @@ static void test_rebinding_common(sa_family_t family)
 			     server_sock, &server_addr, addrlen);
 
 	/* Rebind server socket */
-	if (family == AF_INET) {
-		net_sin(&server_addr)->sin_port = htons(SERVER_PORT + 1);
+	if (family == NET_AF_INET) {
+		net_sin(&server_addr)->sin_port = net_htons(SERVER_PORT + 1);
 	} else {
-		net_sin6(&server_addr)->sin6_port = htons(SERVER_PORT + 1);
+		net_sin6(&server_addr)->sin6_port = net_htons(SERVER_PORT + 1);
 	}
 	rv = zsock_bind(server_sock, &server_addr, addrlen);
 	zassert_equal(rv, 0, "rebinding failed");
@@ -3742,12 +3742,12 @@ static void test_rebinding_common(sa_family_t family)
 
 ZTEST(net_socket_udp, test_v4_rebinding)
 {
-	test_rebinding_common(AF_INET);
+	test_rebinding_common(NET_AF_INET);
 }
 
 ZTEST(net_socket_udp, test_v6_rebinding)
 {
-	test_rebinding_common(AF_INET6);
+	test_rebinding_common(NET_AF_INET6);
 }
 
 static void after(void *arg)

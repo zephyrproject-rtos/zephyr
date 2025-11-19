@@ -107,7 +107,7 @@ static void test_getsocketopt_reuseaddr(int sock, void *optval, net_socklen_t *o
 {
 	int ret;
 
-	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, optval, optlen);
 	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
@@ -115,7 +115,7 @@ static void test_setsocketopt_reuseaddr(int sock, void *optval, net_socklen_t op
 {
 	int ret;
 
-	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, optval, optlen);
 	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
@@ -130,7 +130,7 @@ static void test_getsocketopt_reuseport(int sock, void *optval, net_socklen_t *o
 {
 	int ret;
 
-	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT, optval, optlen);
 	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
@@ -138,7 +138,7 @@ static void test_setsocketopt_reuseport(int sock, void *optval, net_socklen_t op
 {
 	int ret;
 
-	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT, optval, optlen);
 	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
