@@ -505,7 +505,7 @@ static int rtc_stm32_init(const struct device *dev)
  * by the STM32Cube package, but it's fine to skip calling it since
  * the RTC is already accessible thanks to clock_control_on() above.
  */
-#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 #ifdef CONFIG_SOC_SERIES_STM32U3X
@@ -516,7 +516,7 @@ static int rtc_stm32_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32U3X */
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif /* !STM32WBAX && !STM32WB0X */
+#endif /* !CONFIG_SOC_SERIES_STM32WBAX */
 
 	err = rtc_stm32_configure(dev);
 
