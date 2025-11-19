@@ -255,7 +255,7 @@ Blinky example can also be used:
    :goals: build flash
 
 Debugging
-=========
+---------
 
 You can debug an application in the usual way.  Here is an example for the
 :zephyr:code-sample:`hello_world` application.
@@ -265,6 +265,112 @@ You can debug an application in the usual way.  Here is an example for the
    :board: nucleo_h7s3l8
    :maybe-skip-config:
    :goals: debug
+
+Application in External Flash
+=============================
+
+Because of the limited amount of SoC Flash (64KB), you may want to store the application
+in external OSPI Flash instead, and run it from there. In that case, the MCUboot bootloader
+is needed to chainload the application. A dedicate board variant, ``ext_flash_app``, was created
+for this usecase.
+
+:ref:`sysbuild` makes it possible to build and flash all necessary images needed to run a user application
+from external Flash.
+
+The following example shows how to build :zephyr:code-sample:`hello_world` with Sysbuild enabled:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
+   :goals: build
+   :west-args: --sysbuild
+
+By default, Sysbuild creates MCUboot and user application images.
+
+Build directory structure created by Sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  |    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       ├── zephyr.bin
+  │       ├── zephyr.signed.bin
+  │       └── zephyr.signed.hex
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option, MCUboot will be re-built every time the pristine build is used,
+   but only needs to be flashed once if none of the MCUboot configs are changed.
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+Both MCUboot and user application images can be flashed by running:
+
+.. code-block:: console
+
+   $ west flash
+
+You should see the following message in the serial host program:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-224-g0a52195c8181 ***
+   *** Using Zephyr OS build v4.3.0-937-ge0490cf53e03 ***
+   I: Starting bootloader
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Boot source: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Bootloader chainload address offset: 0x0
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.3.0-937-ge0490cf53e03 ***
+   Hello World! nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   $ west flash --domain hello_world
+
+With the default configuration, the board uses MCUboot's Swap-using-offset mode.
+To get more information about the different MCUboot operating modes and how to
+perform application upgrade, refer to `MCUboot design`_.
+To learn more about how to secure the application images stored in external Flash,
+refer to `MCUboot Encryption`_.
+
+Debugging
+---------
+
+You can debug the application in external flash using ``west`` and ``GDB``.
+
+After flashing MCUboot and the app, execute the following command:
+
+.. code-block:: console
+
+   $ west debugserver
+
+Then, open another terminal (don't forget to activate Zephyr's environment) and execute:
+
+.. code-block:: console
+
+   $ west attach
 
 .. _Nucleo H7S3L8 website:
    https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html
@@ -289,3 +395,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCUboot design:
+   https://docs.mcuboot.com/design.html
+
+.. _MCUboot Encryption:
+   https://docs.mcuboot.com/encrypted_images.html
