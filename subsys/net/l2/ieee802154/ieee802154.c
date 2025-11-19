@@ -509,16 +509,25 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			   socket_type == NET_SOCK_DGRAM) {
 			struct net_sockaddr_ll *dst_addr =
 				(struct net_sockaddr_ll *)&context->remote;
-			struct net_sockaddr_ll_ptr *src_addr =
-				(struct net_sockaddr_ll_ptr *)&context->local;
 
 			(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
 					       dst_addr->sll_addr,
 					       dst_addr->sll_halen);
 
+			/* context->local sockaddr_ll_ptr is not supported for
+			 * NET_AF_PACKET sockets (raw packets from l2).
+			 *
+			 * Although the sll_addr pointer correctly links to the iface
+			 * net_linkaddr, the sll_halen is a copy and doesn't track properly
+			 * the iface linkaddr len. For example, the linkaddr len can change
+			 * depending on the link address format with 802.15.4, between
+			 * extended (8 bytes) or short (2 bytes).
+			 *
+			 * Instead, use the iface link_addr directly.
+			 */
 			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
-					       src_addr->sll_addr,
-					       src_addr->sll_halen);
+					       iface->if_dev->link_addr.addr,
+					       iface->if_dev->link_addr.len);
 		} else {
 			return -EINVAL;
 		}
