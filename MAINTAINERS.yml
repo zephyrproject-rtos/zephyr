@@ -2009,6 +2009,7 @@ Documentation Infrastructure:
     - danieldegrasse
   files:
     - drivers/mipi_dbi/
+    - include/zephyr/drivers/mipi_dbi.h
     - dts/bindings/mipi-dbi/
     - include/zephyr/dt-bindings/mipi_dbi/
   labels:
