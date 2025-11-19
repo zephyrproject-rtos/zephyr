@@ -15,35 +15,35 @@ extern "C" {
 
 static inline int isupper(int a)
 {
-	return (int)(((int)'A' <= a) && (a <= (int)'Z'));
+	return (('A' <= a) && (a <= 'Z'));
 }
 
 static inline int isalpha(int c)
 {
 	/* force to lowercase */
-	c += 32U;
+	c |= 32;
 
-	return (int)(((int)'a' <= c) && (c <= (int)'z'));
+	return (('a' <= c) && (c <= 'z'));
 }
 
 static inline int isspace(int c)
 {
-	return (int)((c == (int)' ') || (((int)'\t' <= c) && (c <= (int)'\r')));
+	return ((c == ' ') || (('\t' <= c) && (c <= '\r')));
 }
 
 static inline int isgraph(int c)
 {
-	return (int)(((int)' ' < c) && (c <= (int)'~'));
+	return ((' ' < c) && (c <= '~'));
 }
 
 static inline int isprint(int c)
 {
-	return (int)(((int)' ' <= c) && (c <= (int)'~'));
+	return ((' ' <= c) && (c <= '~'));
 }
 
 static inline int isdigit(int a)
 {
-	return (int)(((int)'0' <= a) && (a <= (int)'9'));
+	return (('0' <= a) && (a <= '9'));
 }
 
 static inline int isxdigit(int a)
@@ -53,30 +53,29 @@ static inline int isxdigit(int a)
 	}
 
 	/* force to lowercase */
-	a += 32U;
+	a |= 32;
 
-	return (int)(((int)'a' <= a) && (a <= (int)'f'));
+	return (('a' <= a) && (a <= 'f'));
 }
 
 static inline int tolower(int chr)
 {
-	return (chr >= (int)'A' && chr <= (int)'Z') ? (chr + 32) : (chr);
+	return (chr >= 'A' && chr <= 'Z') ? (chr + 32) : (chr);
 }
 
 static inline int toupper(int chr)
 {
-	return (int)((chr >= (int)'a' && chr <=
-				(int)'z') ? (chr - 32) : (chr));
+	return ((chr >= 'a' && chr <= 'z') ? (chr - 32) : (chr));
 }
 
 static inline int isalnum(int chr)
 {
-	return (int)(isalpha(chr) || isdigit(chr));
+	return (isalpha(chr) || isdigit(chr));
 }
 
 static inline int iscntrl(int c)
 {
-	return (int)((((unsigned int)c) <= 31U) || (((unsigned int)c) == 127U));
+	return ((((unsigned int)c) <= 31U) || (((unsigned int)c) == 127U));
 }
 
 #ifdef __cplusplus
