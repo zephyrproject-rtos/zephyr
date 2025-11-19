@@ -12,6 +12,7 @@ supported:
   - eeprom
   - i2c
   - pinctrl
+  - rtc
   - shell
   - uart
 vendor: microchip
