@@ -10,6 +10,8 @@ common:
     - CONFIG_TEST_RANDOM_GENERATOR=y
   platform_exclude:
     - max32657evkit/max32657/ns
+    - imx95_var_dart/mimx9596/m7
+    - imx95_var_dart/mimx9596/a55
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:
