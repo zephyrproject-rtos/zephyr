@@ -14,6 +14,9 @@ tests:
       - CONFIG_BASE64=y
       # UUID utilities need some heap, but MINIMAL_LIBC has none by default.
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
+    platform_exclude:
+      - imx95_var_dart/mimx9596/m7
+      - imx95_var_dart/mimx9596/a55
   libraries.uuid.v4:
     extra_configs:
       - CONFIG_UUID_V4=y

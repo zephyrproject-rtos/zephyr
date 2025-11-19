@@ -37,6 +37,9 @@ tests:
     # not "automatically selected" when there is no CSPRNG available.
     integration_platforms:
       - qemu_x86
+    platform_exclude:
+      - imx95_var_dart/mimx9596/m7
+      - imx95_var_dart/mimx9596/a55
     extra_configs:
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y

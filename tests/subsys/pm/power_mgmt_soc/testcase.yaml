@@ -22,6 +22,7 @@ tests:
       - max32657evkit/max32657/ns
       - max78002evkit/max78002/m4
       - imx95_evk/mimx9596/m7
+      - imx95_var_dart/mimx9596/m7
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1

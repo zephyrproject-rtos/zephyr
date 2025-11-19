@@ -60,6 +60,9 @@ tests:
 
   secure_storage.psa.its.secure_storage.custom.store:
     filter: CONFIG_SECURE_STORAGE
+    platform_exclude:
+      - imx95_var_dart/mimx9596/m7
+      - imx95_var_dart/mimx9596/a55
     extra_args: "EXTRA_CONF_FILE=\
       overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_custom.conf"
 
