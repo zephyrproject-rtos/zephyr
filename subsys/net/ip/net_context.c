@@ -3251,6 +3251,23 @@ int net_context_recv(struct net_context *context,
 				net_sll_ptr(&context->local)->sll_halen;
 
 			if (net_sll_ptr(&context->local)->sll_addr != NULL) {
+				/* NET_AF_PACKET socket is bound to an iface as
+				 * context->local->sll_addr is valid.  Although the sll_addr
+				 * pointer correctly links to the iface net_linkaddr, the
+				 * sll_halen is a copy and doesn't track properly the iface
+				 * linkaddr len. For example, the linkaddr len can change
+				 * depending on the link address format with 802.15.4, between
+				 * extended (8 bytes) or short (2 bytes).
+				 *
+				 * Instead, use the iface link_addr directly. The socket is
+				 * bound to an interface as context->local->sll_addr is valid.
+				 */
+				struct net_linkaddr *link_addr = CONTAINER_OF(
+						(uint8_t(*)[NET_LINK_ADDR_MAX_LENGTH])
+						net_sll_ptr(&context->local)->sll_addr,
+						struct net_linkaddr, addr);
+
+				addr.sll_halen = link_addr->len;
 				memcpy(addr.sll_addr,
 				       net_sll_ptr(&context->local)->sll_addr,
 				       MIN(addr.sll_halen, sizeof(addr.sll_addr)));
