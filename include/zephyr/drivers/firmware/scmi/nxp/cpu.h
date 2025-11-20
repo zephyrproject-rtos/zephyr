@@ -34,6 +34,8 @@
 /** CPU vector flag: Resume address (exit from suspend) */
 #define SCMI_NXP_CPU_VEC_FLAGS_RESUME  BIT(31)
 
+#define SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION	0x10000
+
 /**
  * @struct scmi_nxp_cpu_sleep_mode_config
  *

@@ -16,6 +16,8 @@
 
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
 
+#define SCMI_POWER_DOMAIN_PROTOCOL_SUPPORTED_VERSION	0x30001
+
 /**
  * @name SCMI power domain state parameters
  * @{

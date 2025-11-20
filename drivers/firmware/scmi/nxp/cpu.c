@@ -8,7 +8,8 @@
 #include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
 #include <zephyr/kernel.h>
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL);
+DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL,
+		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION);
 
 struct scmi_nxp_cpu_info_get_reply {
 	int32_t status;
