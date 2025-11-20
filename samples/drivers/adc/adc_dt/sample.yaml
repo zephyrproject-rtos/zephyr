@@ -55,6 +55,7 @@ tests:
       - s32k148_evb
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - mck_ra4t1
+      - raytac_an54lv_db_15/nrf54l15/cpuapp
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
