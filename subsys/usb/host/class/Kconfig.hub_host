@@ -1,0 +1,38 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USBH_HUB_CLASS
+	bool "USB Host Hub Class Driver"
+	default n
+	help
+	  Enable USB Host Hub Class driver support.
+	  This allows connecting USB hubs and managing downstream devices.
+
+if USBH_HUB_CLASS
+
+config USBH_HUB_MAX_LEVELS
+	int "Maximum Hub chain depth"
+	default 5
+	range 2 7
+	help
+	  Maximum number of Hub levels allowed in the USB topology.
+	  USB specification allows up to 7 levels, but practical
+	  implementations usually limit to 5 levels for performance
+	  and power management reasons.
+
+config USBH_HUB_INIT_PRIORITY
+	int "Hub manager initialization priority"
+	default 85
+	help
+	  Initialization priority for the Hub manager. Should be
+	  higher than the USB host stack but lower than device drivers
+
+module = USBH_HUB
+module-str = usbh hub
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_HUB_CLASS
