@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <ti/mspm0/g/mspm0g.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/delete-node/ &uart0;
+/delete-node/ &uart1;
+/delete-node/ &uart2;
+/delete-node/ &uart3;
+/delete-node/ &tima1;
+/delete-node/ &timg12;
+
+/ {
+	soc {
+		unicomm0: unicomm0@40a80000 {
+			reg = <0x40a80000 0x00002000>;
+			interrupts = <9 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			unicomm0_uart: unicomm0_uart@40a80000 {
+				compatible = "ti,mspm0-uart";
+				interrupts = <9 0>;
+				reg = <0x40a80000 0x00002000>;
+				clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+				status = "disabled";
+			};
+		};
+
+		unicomm1: unicomm1@40a82000 {
+			reg = <0x40a82000 0x00002000>;
+			interrupts = <10 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			unicomm1_uart: unicomm1_uart@40a82000 {
+				compatible = "ti,mspm0-uart";
+				interrupts = <10 0>;
+				reg = <0x40a82000 0x00002000>;
+				clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+				status = "disabled";
+			};
+		};
+
+		unicomm3: unicomm3@40b82000 {
+			reg = <0x40b82000 0x00002000>;
+			interrupts = <14 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			unicomm3_uart: unicomm3_uart@40b82000 {
+				compatible = "ti,mspm0-uart";
+				interrupts = <14 0>;
+				reg = <0x40b82000 0x00002000>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				status = "disabled";
+			};
+		};
+	};
+};

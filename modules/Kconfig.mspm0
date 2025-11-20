@@ -12,5 +12,8 @@ config USE_MSPM0_DL_GPIO
 config USE_MSPM0_DL_UART
 	bool
 
+config USE_MSPM0_DL_UNICOMM_UART
+	bool
+
 config USE_MSPM0_DL_TIMER
 	bool

@@ -1,0 +1,133 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <ti/mspm0/g/mspm0g5187.dtsi>
+#include <ti/mspm0/g/mspm0g51xx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "TI LP_MSPM0G5117";
+	compatible = "ti,mspm0g5117";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		uart0 = &unicomm0_uart;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &unicomm0_uart;
+		zephyr,shell-uart = &unicomm0_uart;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+		led1: led_1 {
+			gpios = <&gpioa 17 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpioa 24 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpiob 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 3";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpioa 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&ulpclk {
+	clock-frequency = <DT_FREQ_M(40)>;
+	clk-div = <2>;
+};
+
+&mclk {
+	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk 0>;
+};
+
+&hsclk {
+	clocks = <&syspll2x 0>;
+	status = "okay";
+};
+
+&syspll2x {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x8000>;
+		};
+
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x8000>;
+		};
+
+		slot1_partition: partition@10000 {
+			label = "image-1";
+			reg = <0x00010000 0x8000>;
+		};
+
+		storage_partition: partition@18000 {
+			label = "storage";
+			reg = <0x00018000 0x8000>;
+		};
+	};
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&unicomm0_uart {
+	compatible = "ti,mspm0-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uc0_tx_pa10 &uc0_rx_pa11>;
+	pinctrl-names = "default";
+};

@@ -17,10 +17,18 @@
 #include <zephyr/irq.h>
 
 /* Driverlib includes */
+#ifdef CONFIG_HAS_MSP_UNICOMM
+#include <ti/driverlib/dl_unicommuart.h>
+#else
 #include <ti/driverlib/dl_uart_main.h>
+#endif
 
 struct uart_mspm0_config {
+#ifdef CONFIG_HAS_MSP_UNICOMM
+	UNICOMM_Inst_Regs *regs;
+#else
 	UART_Regs *regs;
+#endif
 	uint32_t current_speed;
 	const struct mspm0_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
@@ -313,8 +321,17 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 												\
 	MSP_UART_IRQ_DEFINE(index);								\
 												\
-	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			\
-		.regs = (UART_Regs *)DT_INST_REG_ADDR(index),					\
+	IF_ENABLED(CONFIG_HAS_MSP_UNICOMM,                                     \
+	(static UNICOMM_Inst_Regs uart_mspm0_uc_regs_##index = {               \
+		.inst =  (UNICOMM_Regs *)DT_INST_REG_ADDR(index),                  \
+		.uart = (UNICOMMUART_Regs *)UC_UART_BASE(DT_INST_REG_ADDR(index)), \
+		.fixedMode = DT_CHILD_NUM(DT_PARENT(DT_DRV_INST(index))) == 1,     \
+	};)                                                                    \
+	)											\
+												\
+	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {	\
+		.regs = COND_CODE_1(CONFIG_HAS_MSP_UNICOMM,					\
+			(&uart_mspm0_uc_regs_##index), ((UART_Regs *)DT_INST_REG_ADDR(index))),	\
 		.current_speed = DT_INST_PROP(index, current_speed),				\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				\
 		.clock_subsys = &mspm0_uart_sys_clock##index,					\
