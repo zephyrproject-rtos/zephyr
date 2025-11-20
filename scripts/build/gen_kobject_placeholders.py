@@ -14,14 +14,13 @@ that the addresses of these kobjects would remain
 the same during later stages of linking.
 """
 
-import sys
 import argparse
 import os
-from packaging import version
+import sys
 
 import elftools
 from elftools.elf.elffile import ELFFile
-
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -39,17 +38,14 @@ def output_simple_header(one_sect):
     """Write the header for kobject section"""
 
     out_fn = os.path.join(args.outdir, f"linker-kobject-prebuilt-{one_sect['name']}.h")
-    out_fp = open(out_fn, "w")
+    with open(out_fn, "w") as out_fp:
+        if one_sect['exists']:
+            align = one_sect['align']
+            size = one_sect['size']
+            prefix = one_sect['define_prefix']
 
-    if one_sect['exists']:
-        align = one_sect['align']
-        size = one_sect['size']
-        prefix = one_sect['define_prefix']
-
-        write_define(out_fp, prefix, 'ALIGN', align)
-        write_define(out_fp, prefix, 'SZ', size)
-
-    out_fp.close()
+            write_define(out_fp, prefix, 'ALIGN', align)
+            write_define(out_fp, prefix, 'SZ', size)
 
 
 def generate_linker_headers(obj):

@@ -6,11 +6,11 @@
 
 import struct
 import sys
-from packaging import version
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -62,7 +62,7 @@ class DeviceOrdinals(_Symbol):
     def __init__(self, elf, sym):
         super().__init__(elf, sym)
         format = "<" if self.elf.little_endian else ">"
-        format += "{:d}h".format(len(self.data) // 2)
+        format += f"{len(self.data) // 2:d}h"
         self._ordinals = struct.unpack(format, self.data)
         self._ordinals_split = []
 
@@ -126,7 +126,7 @@ class ZephyrElf:
     """
 
     def __init__(self, kernel, edt, device_start_symbol):
-        self.elf = ELFFile(open(kernel, "rb"))
+        self.elf = ELFFile(open(kernel, "rb"))  # noqa : SIM115
         self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
@@ -287,11 +287,11 @@ class ZephyrElf:
         # Split iteration so nodes and edges are grouped in source
         for dev in self.devices:
             if dev.ordinal == DeviceOrdinals.DEVICE_HANDLE_NULL:
-                text = '{:s}\\nHandle: {:d}'.format(dev.sym.name, dev.handle)
+                text = f'{dev.sym.name:s}\\nHandle: {dev.handle:d}'
             else:
                 n = self.edt.dep_ord2node[dev.ordinal]
-                text = '{:s}\\nOrdinal: {:d} | Handle: {:d}\\n{:s}'.format(
-                    n.name, dev.ordinal, dev.handle, n.path
+                text = (
+                    f'{n.name:s}\\nOrdinal: {dev.ordinal:d} | Handle: {dev.handle:d}\\n{n.path:s}'
                 )
             dot.node(str(dev.ordinal), text)
         for dev in self.devices:

@@ -20,7 +20,7 @@ def front_matter():
 
 
 def gen_strsignal_table(input, output):
-    with open(input, 'r') as inf:
+    with open(input) as inf:
         highest_signo = 0
         symbols = []
         msgs = {}
@@ -43,11 +43,7 @@ def gen_strsignal_table(input, output):
 
             highest_signo = max(int(signo), highest_signo)
 
-        try:
-            os.makedirs(os.path.dirname(output))
-        except BaseException:
-            # directory already present
-            pass
+        os.makedirs(os.path.dirname(output), exist_ok=True)
 
         with open(output, 'w') as outf:
             print(front_matter(), file=outf)
