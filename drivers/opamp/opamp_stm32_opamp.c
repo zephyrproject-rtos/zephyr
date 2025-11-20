@@ -409,6 +409,31 @@ static uint32_t stm32_opamp_get_calout(const struct device *dev, struct adc_sequ
 	return (uint32_t)sys_read16((mem_addr_t)adc_seq->buffer);
 }
 
+static int stm32_opamp_write_trimming_value(const struct device *dev, const uint8_t trimming_value,
+					    const uint32_t trimming_type)
+{
+	const struct stm32_opamp_config *cfg = dev->config;
+	OPAMP_TypeDef *opamp = cfg->opamp;
+
+	if (trimming_value != STM32_OPAMP_TRIM_VAL_UNDEFINED) {
+		/* Write the trimming value until it is set but no more then 10 times */
+		size_t attempt = 10;
+
+		while (LL_OPAMP_GetTrimmingValue(opamp, trimming_type) != trimming_value) {
+			LL_OPAMP_SetTrimmingValue(opamp, trimming_type, trimming_value);
+			LL_OPAMP_SetTrimmingMode(opamp, LL_OPAMP_TRIMMING_USER);
+			attempt--;
+			if (attempt == 0) {
+				LOG_DBG("%s: can not set trimming type 0x%x value to 0x%02x",
+					dev->name, trimming_type, trimming_value);
+				return -EINVAL;
+			}
+		}
+	}
+
+	return 0;
+}
+
 /**
  * @brief Self-calibrate the OPAMP
  *
@@ -575,16 +600,18 @@ static int stm32_opamp_init(const struct device *dev)
 	}
 
 	/* Apply trimming values defined explicitly in DTS */
-	if (cfg->pmos_trimming_value != STM32_OPAMP_TRIM_VAL_UNDEFINED) {
-		LL_OPAMP_SetTrimmingValue(opamp, LL_OPAMP_TRIMMING_PMOS,
-						cfg->pmos_trimming_value);
-		LL_OPAMP_SetTrimmingMode(opamp, LL_OPAMP_TRIMMING_USER);
+	ret = stm32_opamp_write_trimming_value(dev, cfg->pmos_trimming_value,
+					       LL_OPAMP_TRIMMING_PMOS);
+	if (ret != 0) {
+		k_mutex_unlock(&data->dev_mtx);
+		return ret;
 	}
 
-	if (cfg->nmos_trimming_value != STM32_OPAMP_TRIM_VAL_UNDEFINED) {
-		LL_OPAMP_SetTrimmingValue(opamp, LL_OPAMP_TRIMMING_NMOS,
-						cfg->nmos_trimming_value);
-		LL_OPAMP_SetTrimmingMode(opamp, LL_OPAMP_TRIMMING_USER);
+	ret = stm32_opamp_write_trimming_value(dev, cfg->nmos_trimming_value,
+					       LL_OPAMP_TRIMMING_NMOS);
+	if (ret != 0) {
+		k_mutex_unlock(&data->dev_mtx);
+		return ret;
 	}
 
 	ret = stm32_opamp_set_functional_mode(dev);
