@@ -231,7 +231,15 @@ static uint8_t asid_count = 3;
  */
 static sys_slist_t xtensa_domain_list;
 
-static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos);
+enum dup_action {
+	/* Restore all entries when duplicating. */
+	RESTORE,
+
+	/* Copy all entries over. */
+	COPY,
+};
+
+static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action);
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS
@@ -533,7 +541,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	}
 #ifdef CONFIG_USERSPACE
 	else {
-		dup_l2_table_if_needed(l1_table, l1_pos);
+		dup_l2_table_if_needed(l1_table, l1_pos, COPY);
 	}
 #endif
 
@@ -672,7 +680,7 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	}
 
 #ifdef CONFIG_USERSPACE
-	dup_l2_table_if_needed(l1_table, l1_pos);
+	dup_l2_table_if_needed(l1_table, l1_pos, COPY);
 #endif
 
 	l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
@@ -957,7 +965,7 @@ static ALWAYS_INLINE uint32_t vaddr_from_pt_pos(uint32_t l1_pos, uint32_t l2_pos
 	return (l1_pos << 22U) | (l2_pos << 12U);
 }
 
-static uint32_t *dup_l2_table(uint32_t *src_l2_table)
+static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 {
 	uint32_t *l2_table;
 
@@ -966,14 +974,21 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table)
 		return NULL;
 	}
 
-	for (int j = 0; j < L2_PAGE_TABLE_NUM_ENTRIES; j++) {
-		uint32_t bckup_attr = PTE_BCKUP_ATTR_GET(src_l2_table[j]);
+	switch (action) {
+	case RESTORE:
+		for (int j = 0; j < L2_PAGE_TABLE_NUM_ENTRIES; j++) {
+			uint32_t bckup_attr = PTE_BCKUP_ATTR_GET(src_l2_table[j]);
 
-		if (bckup_attr != PTE_ATTR_ILLEGAL) {
-			l2_table[j] = restore_pte(src_l2_table[j]);
-		} else {
-			l2_table[j] = PTE_L2_ILLEGAL;
+			if (bckup_attr != PTE_ATTR_ILLEGAL) {
+				l2_table[j] = restore_pte(src_l2_table[j]);
+			} else {
+				l2_table[j] = PTE_L2_ILLEGAL;
+			}
 		}
+		break;
+	case COPY:
+		memcpy(l2_table, src_l2_table, sizeof(l2_page_tables[0]));
+		break;
 	}
 
 	return l2_table;
@@ -1026,7 +1041,7 @@ static uint32_t *dup_l1_table(void)
 			}
 
 			if (l2_need_dup) {
-				l2_table = dup_l2_table(src_l2_table);
+				l2_table = dup_l2_table(src_l2_table, RESTORE);
 			} else {
 				l2_table = src_l2_table;
 				K_SPINLOCK(&xtensa_counter_lock) {
@@ -1049,7 +1064,7 @@ static uint32_t *dup_l1_table(void)
 	return l1_table;
 }
 
-static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
+static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action)
 {
 	uint32_t *l2_table, *src_l2_table;
 	k_spinlock_key_t key;
@@ -1063,7 +1078,7 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
 		return;
 	}
 
-	l2_table = dup_l2_table(src_l2_table);
+	l2_table = dup_l2_table(src_l2_table, action);
 
 	/* The page table is using kernel ASID because we don't
 	 * user thread manipulate it.
@@ -1140,7 +1155,7 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 #ifdef CONFIG_USERSPACE
-		dup_l2_table_if_needed(l1_table, l1_pos);
+		dup_l2_table_if_needed(l1_table, l1_pos, RESTORE);
 #endif
 
 		l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
