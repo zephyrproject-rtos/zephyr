@@ -1102,13 +1102,8 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
 
-	/* Minimum prepare tick offset + minimum preempt tick offset are the
-	 * overheads before ULL scheduling can setup radio for reception
-	 */
-	overhead_us = HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
-
 	/* CPU execution overhead to setup the radio for reception */
-	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
+	overhead_us = EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 	/* If not sufficient CPU processing time, skip to receiving next
 	 * event.

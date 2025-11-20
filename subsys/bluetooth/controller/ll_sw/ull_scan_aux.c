@@ -660,13 +660,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		uint32_t ticks_now;
 		uint32_t diff;
 
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
-		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		/* CPU execution overhead to setup the radio for reception */
+		overhead_us = EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 		ticks_now = ticker_ticks_now_get();
 		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset -
@@ -2076,13 +2071,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		/* CPU execution overhead to setup the radio for reception */
 		overhead_us = EVENT_OVERHEAD_START_US;
 #else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
-		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		/* CPU execution overhead to setup the radio for reception */
+		overhead_us = EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 		ticks_now = ticker_ticks_now_get();

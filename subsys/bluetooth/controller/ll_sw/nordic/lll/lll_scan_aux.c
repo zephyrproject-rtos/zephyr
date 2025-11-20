@@ -217,13 +217,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	overhead_us += EVENT_TICKER_RES_MARGIN_US;
 	overhead_us += EVENT_JITTER_US;
 
-	/* CPU execution overhead to setup the radio for reception plus the
-	 * minimum prepare tick offset. And allow one additional event in
-	 * between as overhead (say, an advertising event in between got closed
-	 * when reception for auxiliary PDU is being setup).
-	 */
-	overhead_us += (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 	/* Sufficient offset to ULL schedule the auxiliary PDU scan? */
 	if (aux_offset_us > overhead_us) {
