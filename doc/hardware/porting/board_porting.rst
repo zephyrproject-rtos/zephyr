@@ -625,50 +625,51 @@ also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 General recommendations
 ***********************
 
-For consistency and to make it easier for users to build generic applications
-that are not board specific for your board, please follow these guidelines
-while porting.
+For consistency and to make it easier for users to build applications which remain board agnostic,
+please follow these guidelines when porting a board you intend to contribute to Zephyr:
 
-- Unless explicitly recommended otherwise by this section, leave peripherals
-  and their drivers disabled by default.
+Enable valuable components in Devicetree
+  Devicetree nodes for valuable onboard components (LEDs, buttons, sensors, onboard
+  USB/Ethernet/BLE/Wi-Fi, etc.) must be **enabled by default** and have correct pin control and
+  driver configuration so that they work out of the box.
 
-- Configure and enable a system clock, along with a tick source.
+Keep subsystems disabled by default (Kconfig)
+  Do not enable subsystems in the board defconfig unless they are strictly required for basic board
+  operation, or are explicitly listed as exceptions in these recommendations.
 
-- Provide pin and driver configuration that matches the board's valuable
-  components such as sensors, buttons or LEDs, and communication interfaces
-  such as USB, Ethernet connector, or Bluetooth/Wi-Fi chip.
+Configure system clock and tick source
+  Set up a functioning system clock and tick source.
 
-- If your board uses a well-known connector standard (like Arduino, Mikrobus,
-  Grove, or 96Boards connectors), add connector nodes to your DTS and configure
-  pin muxes accordingly.
+Provide a default console
+  Use the ``zephyr,console`` chosen node to point to the UART controller used for console output.
 
-- Configure components that enable the use of these pins, such as
-  configuring an SPI instance to use the usual Arduino SPI pins.
+  Boards with built-in debug or a USB-to-UART adapter should set the console to the UART controller
+  connected to that adapter.
 
-- If available, configure and enable a serial output for the console
-  using the ``zephyr,console`` chosen node in the devicetree.
-  Development boards with a built-in debug adapter or USB-to-UART adapter should
-  by default configure and use the UART controller connected to that adapter.
-  For boards like :zephyr:board:`nrf52840dongle`, that do not
-  have a debug adapter, but a USB device controller, there is a common
-  :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
-  that must be included in the board's Kconfig.defconfig file and
-  :zephyr_file:`devicetree file <boards/common/usb/cdc_acm_serial.dtsi>`
-  that must be included if the board's devicetree, if the board want to use the
-  CDC ACM UART as the default backend for logging and shell.
+  USB-only boards without any debug adapter must include the common USB CDC-ACM
+  :zephyr_file:`Kconfig <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>` and :zephyr_file:`DTS
+  <boards/common/usb/cdc_acm_serial.dtsi>` fragments to enable CDC-ACM UART as a default backend
+  for logging and shell.
 
-- If your board supports networking, configure a default interface.
+Add :ref:`shield interface <shield-interfaces>` definitions
+  For boards exposing standard expansion headers, add connector nodes and pin-muxing. Enable only
+  the peripherals needed for the expected/standard connector functionality.
 
-- Enable all GPIO ports connected to peripherals or expansion connectors.
+Configure pins and peripheral instances
+  Map peripherals to the correct pins (e.g., SPI on Arduino SPI pins) and provide default pinmux
+  entries supporting the board's features.
 
-- If available, enable pinmux and interrupt controller drivers.
+Enable networking interfaces
+  If networking hardware is present, configure default interfaces for each supported technology so
+  that networking samples work out of the box.
 
-- It is recommended to enable the MPU by default, if there is support for it
-  in hardware. For boards with limited memory resources it is acceptable to
-  disable it. When the MPU is enabled, it is recommended to also enable
-  hardware stack protection (CONFIG_HW_STACK_PROTECTION=y) and, thus, allow the
-  kernel to detect stack overflows when the system is running in privileged
-  mode.
+Enable GPIO controllers
+  All GPIO ports connected to onboard components or expansion headers should be enabled.
+
+Enable MPU and stack protection
+  It is recommended to enable the MPU when available (unless memory resources are too limited).
+  When the MPU is enabled, it is recommended to also enable hardware stack protection
+  (:kconfig:option:`CONFIG_HW_STACK_PROTECTION`) to ease debugging by allowing the kernel to detect stack overflows.
 
 .. _flash-and-debug-support:
 
