@@ -90,6 +90,8 @@ struct scmi_protocol {
 	const struct device *transport;
 	/** protocol private data */
 	void *data;
+	/** protocol supported version */
+	uint32_t version;
 };
 
 /**
