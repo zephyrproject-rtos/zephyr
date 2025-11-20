@@ -40,24 +40,6 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define BLE_CTRLR_STACK_BUFFER_SIZE 300
 
-#define MBLOCK_COUNT	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, \
-					  CFG_BLE_ATT_MTU_MAX, \
-					  CFG_BLE_NUM_LINK) \
-			 + CFG_BLE_MBLOCK_COUNT_MARGIN)
-
-#define BLE_DYN_ALLOC_SIZE \
-	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, \
-			       MBLOCK_COUNT, \
-			       (CFG_BLE_EATT_BEARER_PER_LINK * CFG_BLE_NUM_LINK)))
-
-/* GATT buffer size (in bytes)*/
-#define BLE_GATT_BUF_SIZE \
-	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
-				   CFG_BLE_NUM_GATT_SERVICES, \
-				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
-
-#define DIVC(x, y)         (((x)+(y)-1)/(y))
-
 #if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
@@ -108,9 +90,6 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
-
-static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
-static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
 
 extern uint8_t ll_state_busy;
 
@@ -436,22 +415,7 @@ static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.numAttrRecord           = CFG_BLE_NUM_GATT_ATTRIBUTES;
-	init_params_p.numAttrServ             = CFG_BLE_NUM_GATT_SERVICES;
-	init_params_p.attrValueArrSize        = CFG_BLE_ATT_VALUE_ARRAY_SIZE;
-	init_params_p.prWriteListSize         = CFG_BLE_ATTR_PREPARE_WRITE_VALUE_SIZE;
-	init_params_p.attMtu                  = CFG_BLE_ATT_MTU_MAX;
-	init_params_p.max_coc_nbr             = CFG_BLE_COC_NBR_MAX;
-	init_params_p.max_coc_mps             = CFG_BLE_COC_MPS_MAX;
-	init_params_p.max_coc_initiator_nbr   = CFG_BLE_COC_INITIATOR_NBR_MAX;
-	init_params_p.numOfLinks              = CFG_BLE_NUM_LINK;
-	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
-	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
-	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
-	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
-	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
-	init_params_p.options                 = CFG_BLE_OPTIONS;
-	init_params_p.debug                   = 0U;
+	init_params_p.options = BLE_OPTIONS_LL_ONLY | BLE_OPTIONS_EXTENDED_ADV;
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
