@@ -4,5 +4,4 @@
 
 source $(dirname "$0")/_ac_common.sh
 
-# BT_ISO_FLAGS_ERROR
-# ac_config=14 ac_tx_preset=48_5_2 ac_acc_cnt=1 Execute_cap_broadcast_ac $@
+ac_config=14 ac_tx_preset=48_5_2 ac_acc_cnt=1 Execute_cap_broadcast_ac $@

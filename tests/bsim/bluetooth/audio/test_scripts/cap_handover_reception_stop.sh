@@ -4,12 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Temporarily been disabled due to assert in the controller
-# ASSERTION FAIL [instant_latency == 0U] @
-# WEST_TOPDIR/zephyr/subsys/bluetooth/controller/ll_sw/ull_conn_iso.c:1025
-# See https://github.com/zephyrproject-rtos/zephyr/issues/82399
+SIMULATION_ID="cap_handover_central_reception_stop"
 
-SIMULATION_ID="cap_handover_central"
 VERBOSITY_LEVEL=2
 NR_OF_DEVICES=3
 EXECUTE_TIMEOUT=240
