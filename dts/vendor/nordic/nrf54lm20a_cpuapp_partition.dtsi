@@ -4,34 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&cpuapp_rram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* nRF54LM20A has 2036 kB of non-volatile memory (RRAM) but the last
-		 * 96 kB are reserved for the FLPR MCU, so we have ~1940 kB available.
-		 */
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
-		};
-
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(920)>;
-		};
-
-		slot1_partition: partition@f6000 {
-			label = "image-1";
-			reg = <0xf6000 DT_SIZE_K(920)>;
-		};
-
-		storage_partition: partition@1dc000 {
-			label = "storage";
-			reg = <0x1dc000 DT_SIZE_K(36)>;
-		};
-	};
-};
+#include "nrf54lm20_a_b_cpuapp_partition.dtsi"
