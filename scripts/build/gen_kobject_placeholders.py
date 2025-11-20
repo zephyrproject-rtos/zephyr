@@ -38,8 +38,7 @@ def write_define(out_fp, prefix, name, value):
 def output_simple_header(one_sect):
     """Write the header for kobject section"""
 
-    out_fn = os.path.join(args.outdir,
-                          f"linker-kobject-prebuilt-{one_sect['name']}.h")
+    out_fn = os.path.join(args.outdir, f"linker-kobject-prebuilt-{one_sect['name']}.h")
     out_fp = open(out_fn, "w")
 
     if one_sect['exists']:
@@ -63,25 +62,25 @@ def generate_linker_headers(obj):
             "define_prefix": "DATA",
             "exists": False,
             "multiplier": int(args.datapct) + 100,
-            },
+        },
         ".rodata": {
             "name": "rodata",
             "define_prefix": "RODATA",
             "exists": False,
             "extra_bytes": args.rodata,
-            },
+        },
         ".priv_stacks.noinit": {
             "name": "priv-stacks",
             "define_prefix": "PRIV_STACKS",
             "exists": False,
-            },
+        },
     }
 
     for one_sect in obj.iter_sections():
         # REALLY NEED to match exact type as all other sections
         # (symbol, debug, etc.) are descendants where
         # isinstance() would match.
-        if type(one_sect) is not elftools.elf.sections.Section: # pylint: disable=unidiomatic-typecheck
+        if type(one_sect) is not elftools.elf.sections.Section:  # pylint: disable=unidiomatic-typecheck
             continue
 
         name = one_sect.name
@@ -108,18 +107,19 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("--object", required=True,
-                        help="Points to kobject_prebuilt_hash.c.obj")
-    parser.add_argument("--outdir", required=True,
-                        help="Output directory (<build_dir>/include/generated)")
-    parser.add_argument("--datapct", required=True,
-                        help="Multiplier to the size of reserved space for DATA region")
-    parser.add_argument("--rodata", required=True,
-                        help="Extra bytes to reserve for RODATA region")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Verbose messages")
+    parser.add_argument("--object", required=True, help="Points to kobject_prebuilt_hash.c.obj")
+    parser.add_argument(
+        "--outdir", required=True, help="Output directory (<build_dir>/include/generated)"
+    )
+    parser.add_argument(
+        "--datapct", required=True, help="Multiplier to the size of reserved space for DATA region"
+    )
+    parser.add_argument("--rodata", required=True, help="Extra bytes to reserve for RODATA region")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose messages")
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1

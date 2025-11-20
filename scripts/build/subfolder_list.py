@@ -19,18 +19,29 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        allow_abbrev=False)
+        allow_abbrev=False,
+    )
 
-    parser.add_argument('-d', '--directory', required=True,
-                        help='Directory to walk for sub-directory discovery')
-    parser.add_argument('-c', '--create-links', required=False,
-                        help='Create links for each directory found in \
-                              directory given')
-    parser.add_argument('-o', '--out-file', required=True,
-                        help='File to write containing a list of all \
-                              directories found')
-    parser.add_argument('-t', '--trigger-file', required=False,
-                        help='Trigger file to be touched to re-run CMake')
+    parser.add_argument(
+        '-d', '--directory', required=True, help='Directory to walk for sub-directory discovery'
+    )
+    parser.add_argument(
+        '-c',
+        '--create-links',
+        required=False,
+        help='Create links for each directory found in \
+                              directory given',
+    )
+    parser.add_argument(
+        '-o',
+        '--out-file',
+        required=True,
+        help='File to write containing a list of all \
+                              directories found',
+    )
+    parser.add_argument(
+        '-t', '--trigger-file', required=False, help='Trigger file to be touched to re-run CMake'
+    )
 
     args = parser.parse_args()
 

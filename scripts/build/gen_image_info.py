@@ -28,7 +28,7 @@ from elftools.elf.elffile import ELFFile
 def write_header(filename, segments, adjusted_lma):
     content = []
 
-    filename_we = re.sub(r'[\W]','_', filename).upper()
+    filename_we = re.sub(r'[\W]', '_', filename).upper()
     content.append(f'#ifndef {filename_we}_H')
     content.append(f'#define {filename_we}_H')
     content.append(f'')
@@ -63,17 +63,21 @@ def read_segments(filename):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='''
+    parser = argparse.ArgumentParser(
+        description='''
     Process ELF file and extract image information.
     Create header file with extracted image information which can be included
-    in other build systems.''', allow_abbrev=False)
+    in other build systems.''',
+        allow_abbrev=False,
+    )
 
-    parser.add_argument('--header-file', required=True,
-                        help="""Header file to write with image data.""")
-    parser.add_argument('--elf-file', required=True,
-                        help="""ELF File to process.""")
-    parser.add_argument('--adjusted-lma', required=False, default=0,
-                        help="""Adjusted LMA address value.""")
+    parser.add_argument(
+        '--header-file', required=True, help="""Header file to write with image data."""
+    )
+    parser.add_argument('--elf-file', required=True, help="""ELF File to process.""")
+    parser.add_argument(
+        '--adjusted-lma', required=False, default=0, help="""Adjusted LMA address value."""
+    )
     args = parser.parse_args()
 
     segments = read_segments(args.elf_file)

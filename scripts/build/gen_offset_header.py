@@ -28,7 +28,8 @@ def get_symbol_table(obj):
 
 def gen_offset_header(input_name, input_file, output_file):
     include_guard = "__GEN_OFFSETS_H__"
-    output_file.write("""/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
+    output_file.write(
+        """/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
  *
  * This header file provides macros for the offsets of various structure
  * members.  These offset macros are primarily intended to be used in
@@ -36,7 +37,9 @@ def gen_offset_header(input_name, input_file, output_file):
  */
 
 #ifndef %s
-#define %s\n\n""" % (include_guard, include_guard))
+#define %s\n\n"""
+        % (include_guard, include_guard)
+    )
 
     obj = ELFFile(input_file)
     for sym in get_symbol_table(obj).iter_symbols():
@@ -50,9 +53,7 @@ def gen_offset_header(input_name, input_file, output_file):
         if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
             continue
 
-        output_file.write(
-            "#define %s 0x%x\n" %
-            (sym.name, sym.entry['st_value']))
+        output_file.write("#define %s 0x%x\n" % (sym.name, sym.entry['st_value']))
 
     output_file.write("\n#endif /* %s */\n" % include_guard)
 
@@ -62,18 +63,12 @@ def gen_offset_header(input_name, input_file, output_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument(
-        "-i",
-        "--input",
-        required=True,
-        help="Input object file")
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output header file")
+    parser.add_argument("-i", "--input", required=True, help="Input object file")
+    parser.add_argument("-o", "--output", required=True, help="Output header file")
 
     args = parser.parse_args()
 
