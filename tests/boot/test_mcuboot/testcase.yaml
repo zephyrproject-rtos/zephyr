@@ -58,6 +58,7 @@ tests:
       - stm32h573i_dk
       - stm32h573i_dk/stm32h573xx/ext_flash_app
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
