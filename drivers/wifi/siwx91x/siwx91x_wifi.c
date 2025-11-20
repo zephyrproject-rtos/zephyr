@@ -122,7 +122,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
-		status->channel = sl_ap_cfg.channel.channel;
+		status->channel = wlan_info.channel_number;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
