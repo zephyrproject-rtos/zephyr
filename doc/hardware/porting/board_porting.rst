@@ -625,12 +625,13 @@ also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 General recommendations
 ***********************
 
-For consistency and to make it easier for users to build generic applications
-that are not board specific for your board, please follow these guidelines
-while porting.
+For consistency and to make it easier for users to build applications which
+remain board agnostic, please follow these guidelines while porting your board.
+The general idea is to enable board hardware using device tree while keeping
+the associated software, gated by Kconfig, disabled.
 
-- Unless explicitly recommended otherwise by this section, leave peripherals
-  and their drivers disabled by default.
+- Unless explicitly recommended otherwise by this section, leave subsytems
+  disabled by default.
 
 - Configure and enable a system clock, along with a tick source.
 
