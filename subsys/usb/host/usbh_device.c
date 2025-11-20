@@ -447,10 +447,39 @@ error:
 	return err;
 }
 
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	sys_dnode_t *node;
+
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	node = sys_dlist_peek_head(&ctx->udevs);
+	if (node == NULL) {
+		/* No devices in the list */
+		return NULL;
+	}
+
+	/* Get the usb_device structure from the node */
+	return CONTAINER_OF(node, struct usb_device, node);
+}
+
+bool usbh_device_is_root(struct usbh_context *const ctx,
+			struct usb_device *const udev)
+{
+	if (ctx == NULL || udev == NULL) {
+		return false;
+	}
+
+	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
+	uint8_t device_count = 0;
 	int err;
 
 	if (udev->state != USB_STATE_DEFAULT) {
@@ -464,11 +493,15 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	/* FIXME: The port to which the device is connected should be reset. */
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		LOG_ERR("Failed to signal bus reset");
-		return err;
+	device_count = sys_dlist_len(&uhs_ctx->udevs);
+
+	/* Only reset bus if this is the root device. */
+	if (device_count == 1U) {
+		err = uhc_bus_reset(uhs_ctx->dev);
+		if (err) {
+			LOG_ERR("Failed to signal bus reset");
+			return err;
+		}
 	}
 
 	/*

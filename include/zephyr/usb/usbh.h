@@ -58,8 +58,6 @@ struct usbh_context {
 	struct usbh_status status;
 	/** USB device list */
 	sys_dlist_t udevs;
-	/** USB root device */
-	struct usb_device *root;
 	/** Allocated device addresses bit array */
 	struct sys_bitarray *addr_ba;
 };

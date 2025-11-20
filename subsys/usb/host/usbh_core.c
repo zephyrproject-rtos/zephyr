@@ -50,33 +50,34 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 	int ret;
+	struct usb_device *udev;
 
 	LOG_DBG("Device connected event");
-	if (ctx->root != NULL) {
-		LOG_ERR("Device already connected");
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
-	}
 
-	ctx->root = usbh_device_alloc(ctx);
-	if (ctx->root == NULL) {
+	udev = usbh_device_alloc(ctx);
+	if (udev == NULL) {
 		LOG_ERR("Failed allocate new device");
 		return;
 	}
 
-	ctx->root->state = USB_STATE_DEFAULT;
+	udev->state = USB_STATE_DEFAULT;
 
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
-		ctx->root->speed = USB_SPEED_SPEED_HS;
+		udev->speed = USB_SPEED_SPEED_HS;
 	} else {
-		ctx->root->speed = USB_SPEED_SPEED_FS;
+		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	if (usbh_device_init(ctx->root)) {
+	k_mutex_lock(&ctx->mutex, K_FOREVER);
+	sys_dlist_append(&ctx->udevs, &udev->node);
+	k_mutex_unlock(&ctx->mutex);
+
+	if (usbh_device_init(udev)) {
 		LOG_ERR("Failed to reset new USB device");
+		sys_dlist_remove(&udev->node);
 	}
 
-	ret = usbh_class_probe_all(ctx->root);
+	ret = usbh_class_probe_all(udev);
 	if (ret != 0) {
 		LOG_ERR("Failed to probe classes for this new USB device, %d", ret);
 	}
@@ -84,10 +85,17 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
-	if (ctx->root != NULL) {
-		usbh_class_remove_all(ctx->root);
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
+	struct usb_device *udev = NULL;
+	
+	udev = usbh_device_get_root(ctx);
+	if (udev != NULL) {
+		usbh_class_remove_all(udev);
+
+		k_mutex_lock(&ctx->mutex, K_FOREVER);
+		sys_dlist_remove(&udev->node);
+		k_mutex_unlock(&ctx->mutex);
+
+		usbh_device_free(udev);
 		LOG_DBG("Device removed");
 	} else {
 		LOG_DBG("Spurious device removed event");
