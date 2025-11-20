@@ -760,6 +760,20 @@ struct adc_sequence {
 	 */
 	size_t buffer_size;
 
+#if defined(CONFIG_ADC_SEQUENCE_PRIORITY) || defined(__DOXYGEN__)
+	/**
+	 * Channel priority for arbitration.
+	 * 0 represents the default/lowest priority; higher numerical values
+	 * indicate higher priority; equal values indicate no preference.
+	 * No guarantee of kernel-style semantics like preemption/complete
+	 * blocking, it serves only as a hint for hardware/driver arbitration.
+	 * Number of possible priorities is HW specific.
+	 *
+	 * @kconfig_dep{CONFIG_ADC_SEQUENCE_PRIORITY}
+	 */
+	uint32_t priority;
+#endif
+
 	/**
 	 * ADC resolution.
 	 * For single-ended channels the sample values are from range:
