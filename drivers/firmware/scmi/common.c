@@ -110,6 +110,7 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 	struct scmi_protocol_message_attributes_reply reply_buffer;
 	struct scmi_message msg, reply;
 	int ret;
+	bool use_polling;
 
 	if (!proto || !attributes) {
 		return -EINVAL;
@@ -124,7 +125,9 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, k_is_pre_kernel());
+	use_polling = true;
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
