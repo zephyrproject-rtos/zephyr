@@ -352,10 +352,11 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
+/* This routine only used for testing purposes */
+void z_yield_testing_only(void)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		move_thread_to_end_of_prio_q(thread);
+		move_thread_to_end_of_prio_q(_current);
 	}
 }
 
