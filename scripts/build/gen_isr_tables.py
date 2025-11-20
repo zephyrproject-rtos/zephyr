@@ -8,9 +8,10 @@
 #
 
 import argparse
-import sys
-import os
 import importlib
+import os
+import sys
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -114,21 +115,21 @@ class gen_isr_config:
                 num_aggregators = self.get_sym("CONFIG_NUM_2ND_LEVEL_AGGREGATORS")
                 self.__irq2_baseoffset = self.get_sym("CONFIG_2ND_LVL_ISR_TBL_OFFSET")
                 self.__irq2_offsets = [
-                    self.get_sym('CONFIG_2ND_LVL_INTR_{}_OFFSET'.format(str(i).zfill(2)))
+                    self.get_sym(f'CONFIG_2ND_LVL_INTR_{str(i).zfill(2)}_OFFSET')
                     for i in range(num_aggregators)
                 ]
 
-                self.__log.debug('2nd level offsets: {}'.format(self.__irq2_offsets))
+                self.__log.debug(f'2nd level offsets: {self.__irq2_offsets}')
 
                 if self.check_sym("CONFIG_3RD_LEVEL_INTERRUPTS"):
                     num_aggregators = self.get_sym("CONFIG_NUM_3RD_LEVEL_AGGREGATORS")
                     self.__irq3_baseoffset = self.get_sym("CONFIG_3RD_LVL_ISR_TBL_OFFSET")
                     self.__irq3_offsets = [
-                        self.get_sym('CONFIG_3RD_LVL_INTR_{}_OFFSET'.format(str(i).zfill(2)))
+                        self.get_sym(f'CONFIG_3RD_LVL_INTR_{str(i).zfill(2)}_OFFSET')
                         for i in range(num_aggregators)
                     ]
 
-                    self.__log.debug('3rd level offsets: {}'.format(self.__irq3_offsets))
+                    self.__log.debug(f'3rd level offsets: {self.__irq3_offsets}')
 
     @property
     def args(self):
@@ -177,7 +178,7 @@ class gen_isr_config:
             return self.__irq2_baseoffset
         if lvl == 3:
             return self.__irq3_baseoffset
-        self.__log.error("Unsupported irq level: {}".format(lvl))
+        self.__log.error(f"Unsupported irq level: {lvl}")
 
     def get_irq_index(self, irq, lvl):
         if lvl == 2:
@@ -185,12 +186,12 @@ class gen_isr_config:
         elif lvl == 3:
             offsets = self.__irq3_offsets
         else:
-            self.__log.error("Unsupported irq level: {}".format(lvl))
+            self.__log.error(f"Unsupported irq level: {lvl}")
         try:
             return offsets.index(irq)
         except ValueError:
             self.__log.error(
-                "IRQ {} not present in parent offsets ({}). ".format(irq, offsets)
+                f"IRQ {irq} not present in parent offsets ({offsets}). "
                 + " Recheck interrupt configuration."
             )
 
@@ -269,7 +270,7 @@ def read_intList_sect(elfobj, snames):
     for sname in snames:
         intList_sect = elfobj.get_section_by_name(sname)
         if intList_sect is not None:
-            log.debug("Found intlist section: \"{}\"".format(sname))
+            log.debug(f"Found intlist section: \"{sname}\"")
             break
 
     if intList_sect is None:

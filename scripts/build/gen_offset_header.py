@@ -12,10 +12,11 @@ that defined macros for the offsets of various found structure members
 intended for use in assembly code.
 """
 
-from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import SymbolTableSection
 import argparse
 import sys
+
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 
 def get_symbol_table(obj):
@@ -29,16 +30,15 @@ def get_symbol_table(obj):
 def gen_offset_header(input_name, input_file, output_file):
     include_guard = "__GEN_OFFSETS_H__"
     output_file.write(
-        """/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
+        f"""/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
  *
  * This header file provides macros for the offsets of various structure
  * members.  These offset macros are primarily intended to be used in
  * assembly code.
  */
 
-#ifndef %s
-#define %s\n\n"""
-        % (include_guard, include_guard)
+#ifndef {include_guard}
+#define {include_guard}\n\n"""
     )
 
     obj = ELFFile(input_file)
@@ -53,9 +53,9 @@ def gen_offset_header(input_name, input_file, output_file):
         if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
             continue
 
-        output_file.write("#define %s 0x%x\n" % (sym.name, sym.entry['st_value']))
+        output_file.write(f"#define {sym.name} 0x{sym.entry['st_value']:x}\n")
 
-    output_file.write("\n#endif /* %s */\n" % include_guard)
+    output_file.write(f"\n#endif /* {include_guard} */\n")
 
     return 0
 

@@ -23,11 +23,11 @@ parse_syscalls.py to create several files:
   call in that header.
 """
 
-import sys
-import re
 import argparse
-import os
 import json
+import os
+import re
+import sys
 
 # Some kernel headers cannot include automated tracing without causing unintended recursion or
 # other serious issues.
@@ -201,7 +201,7 @@ def typename_split(item):
     item = item.strip().replace("\n", " ")
     if "[" in item:
         raise SyscallParseException(
-            "Please pass arrays to syscalls as pointers, unable to process '%s'" % item
+            f"Please pass arrays to syscalls as pointers, unable to process '{item}'"
         )
 
     if "(" in item:
@@ -222,9 +222,9 @@ def need_split(argtype):
 # Note: "lo" and "hi" are named in little endian conventions,
 # but it doesn't matter as long as they are consistently
 # generated.
-def union_decl(type, split):
+def union_decl(ctype, split):
     middle = "struct { uintptr_t lo, hi; } split" if split else "uintptr_t x"
-    return "union { %s; %s val; }" % (middle, type)
+    return f"union {{ {middle}; {ctype} val; }}"
 
 
 def wrapper_defs(func_name, func_type, args, fn, userspace_only):
@@ -236,11 +236,11 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
 
     wrap = ''
     if not userspace_only:
-        wrap += "extern %s z_impl_%s(%s);\n" % (func_type, func_name, decl_arglist)
+        wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist});\n"
         wrap += "\n"
 
     wrap += "__pinned_func\n"
-    wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
+    wrap += f"static inline {func_type} {func_name}({decl_arglist})\n"
     wrap += "{\n"
     if not userspace_only:
         wrap += "#ifdef CONFIG_USERSPACE\n"
@@ -252,18 +252,19 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
     valist_args = []
     for argnum, (argtype, argname) in enumerate(args):
         split = need_split(argtype)
-        wrap += "\t\t%s parm%d" % (union_decl(argtype, split), argnum)
+        decl = union_decl(argtype, split)
+        wrap += f"\t\t{decl} parm{argnum}"
         if argtype != "va_list":
-            wrap += " = { .val = %s };\n" % argname
+            wrap += f" = {{ .val = {argname} }};\n"
         else:
             # va_list objects are ... peculiar.
-            wrap += ";\n" + "\t\t" + "va_copy(parm%d.val, %s);\n" % (argnum, argname)
-            valist_args.append("parm%d.val" % argnum)
+            wrap += ";\n" + "\t\t" + f"va_copy(parm{argnum}.val, {argname});\n"
+            valist_args.append(f"parm{argnum}.val")
         if split:
-            mrsh_args.append("parm%d.split.lo" % argnum)
-            mrsh_args.append("parm%d.split.hi" % argnum)
+            mrsh_args.append(f"parm{argnum}.split.lo")
+            mrsh_args.append(f"parm{argnum}.split.hi")
         else:
-            mrsh_args.append("parm%d.x" % argnum)
+            mrsh_args.append(f"parm{argnum}.x")
 
     if ret64:
         mrsh_args.append("(uintptr_t)&ret64")
@@ -274,24 +275,25 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         wrap += "\t\t" + "};\n"
         mrsh_args[5:] = ["(uintptr_t) &more"]
 
-    invoke = "arch_syscall_invoke%d(%s)" % (len(mrsh_args), ", ".join(mrsh_args + [syscall_id]))
+    invoke_args = ", ".join(mrsh_args + [syscall_id])
+    invoke = f"arch_syscall_invoke{len(mrsh_args)}({invoke_args})"
 
     if ret64:
-        invoke = "\t\t" + "(void) %s;\n" % invoke
-        retcode = "\t\t" + "return (%s) ret64;\n" % func_type
+        invoke = "\t\t" + f"(void) {invoke};\n"
+        retcode = "\t\t" + f"return ({func_type}) ret64;\n"
     elif func_type == "void":
-        invoke = "\t\t" + "(void) %s;\n" % invoke
+        invoke = "\t\t" + f"(void) {invoke};\n"
         retcode = "\t\t" + "return;\n"
     elif valist_args:
-        invoke = "\t\t" + "%s invoke__retval = %s;\n" % (func_type, invoke)
+        invoke = "\t\t" + f"{func_type} invoke__retval = {invoke};\n"
         retcode = "\t\t" + "return invoke__retval;\n"
     else:
-        invoke = "\t\t" + "return (%s) %s;\n" % (func_type, invoke)
+        invoke = "\t\t" + f"return ({func_type}) {invoke};\n"
         retcode = ""
 
     wrap += invoke
     for argname in valist_args:
-        wrap += "\t\t" + "va_end(%s);\n" % argname
+        wrap += "\t\t" + f"va_end({argname});\n"
     wrap += retcode
     if not userspace_only:
         wrap += "\t" + "}\n"
@@ -302,9 +304,10 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         # the impl call from being hoisted above the check for user
         # context.
         impl_arglist = ", ".join([argrec[1] for argrec in args])
-        impl_call = "z_impl_%s(%s)" % (func_name, impl_arglist)
+        impl_call = f"z_impl_{func_name}({impl_arglist})"
         wrap += "\t" + "compiler_barrier();\n"
-        wrap += "\t" + "%s%s;\n" % ("return " if func_type != "void" else "", impl_call)
+        ret = "return " if func_type != "void" else ""
+        wrap += "\t" + f"{ret}{impl_call};\n"
 
     wrap += "}\n"
 
@@ -342,9 +345,9 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
 # parameter to a syscall, with handling for a final "more" parameter.
 def mrsh_rval(mrsh_num, total):
     if mrsh_num < 5 or total <= 6:
-        return "arg%d" % mrsh_num
+        return f"arg{mrsh_num}"
     else:
-        return "(((uintptr_t *)more)[%d])" % (mrsh_num - 5)
+        return f"(((uintptr_t *)more)[{mrsh_num - 5}])"
 
 
 def marshall_defs(func_name, func_type, args):
@@ -362,9 +365,9 @@ def marshall_defs(func_name, func_type, args):
         nmrsh += 1
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
-    mrsh = "extern %s z_vrfy_%s(%s);\n" % (func_type, func_name, decl_arglist)
+    mrsh = f"extern {func_type} z_vrfy_{func_name}({decl_arglist});\n"
 
-    mrsh += "uintptr_t %s(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n" % mrsh_name
+    mrsh += f"uintptr_t {mrsh_name}(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n"
     if nmrsh <= 6:
         mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
     else:
@@ -373,7 +376,7 @@ def marshall_defs(func_name, func_type, args):
     mrsh += "\t" + "_current->syscall_frame = ssf;\n"
 
     for unused_arg in range(nmrsh, 6):
-        mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
+        mrsh += f"\t(void) arg{unused_arg};\t/* unused */\n"
 
     if nmrsh > 6:
         mrsh += (
@@ -382,30 +385,34 @@ def marshall_defs(func_name, func_type, args):
 
     argnum = 0
     for i, (argtype, split) in enumerate(vrfy_parms):
-        mrsh += "\t%s parm%d;\n" % (union_decl(argtype, split), i)
+        decl = union_decl(argtype, split)
+        mrsh += f"\t{decl} parm{i};\n"
+        rval = mrsh_rval(argnum, nmrsh)
         if split:
-            mrsh += "\t" + "parm%d.split.lo = %s;\n" % (i, mrsh_rval(argnum, nmrsh))
+            mrsh += "\t" + f"parm{i}.split.lo = {rval};\n"
             argnum += 1
-            mrsh += "\t" + "parm%d.split.hi = %s;\n" % (i, mrsh_rval(argnum, nmrsh))
+            rval = mrsh_rval(argnum, nmrsh)
+            mrsh += "\t" + f"parm{i}.split.hi = {rval};\n"
         else:
-            mrsh += "\t" + "parm%d.x = %s;\n" % (i, mrsh_rval(argnum, nmrsh))
+            mrsh += "\t" + f"parm{i}.x = {rval};\n"
         argnum += 1
 
     # Finally, invoke the verify function
-    out_args = ", ".join(["parm%d.val" % i for i in range(len(args))])
-    vrfy_call = "z_vrfy_%s(%s)" % (func_name, out_args)
+    out_args = ", ".join([f"parm{i}.val" for i in range(len(args))])
+    vrfy_call = f"z_vrfy_{func_name}({out_args})"
 
     if func_type == "void":
-        mrsh += "\t" + "%s;\n" % vrfy_call
+        mrsh += "\t" + f"{vrfy_call};\n"
         mrsh += "\t" + "_current->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
-        mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
+        mrsh += "\t" + f"{func_type} ret = {vrfy_call};\n"
 
         if need_split(func_type):
-            ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
-            mrsh += "\t" + "K_OOPS(K_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
-            mrsh += "\t" + "*%s = ret;\n" % ptr
+            rval = mrsh_rval(nmrsh - 1, nmrsh)
+            ptr = f"((uint64_t *){rval})"
+            mrsh += "\t" + f"K_OOPS(K_SYSCALL_MEMORY_WRITE({ptr}, 8));\n"
+            mrsh += "\t" + f"*{ptr} = ret;\n"
             mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"
         else:
@@ -428,7 +435,7 @@ def analyze_fn(match_group, fn, userspace_only):
 
         func_type, func_name = typename_split(func)
     except SyscallParseException:
-        sys.stderr.write("In declaration of %s\n" % func)
+        sys.stderr.write(f"In declaration of {func}\n")
         raise
 
     sys_id = "K_SYSCALL_" + func_name.upper()
@@ -438,7 +445,7 @@ def analyze_fn(match_group, fn, userspace_only):
     invocation = wrapper_defs(func_name, func_type, args, fn, userspace_only)
 
     # Entry in _k_syscall_table
-    table_entry = "[%s] = %s" % (sys_id, handler)
+    table_entry = f"[{sys_id}] = {handler}"
 
     return (handler, invocation, marshaller, sys_id, table_entry)
 
@@ -500,7 +507,7 @@ def main():
         for t in args.split_type:
             types64.append(t)
 
-    with open(args.json_file, 'r') as fd:
+    with open(args.json_file) as fd:
         syscalls = json.load(fd)
 
     invocations = {}
@@ -533,23 +540,18 @@ def main():
         if mrsh and to_emit:
             syscall = typename_split(match_group[0])[1]
             mrsh_defs[syscall] = mrsh
-            mrsh_includes[syscall] = "#include <zephyr/syscalls/%s>" % fn
+            mrsh_includes[syscall] = f"#include <zephyr/syscalls/{fn}>"
 
     with open(args.syscall_dispatch, "w") as fp:
         table_entries.append("[K_SYSCALL_BAD] = handler_bad_syscall")
 
         weak_defines = "".join(
-            [weak_template % name for name in handlers if not name in noweak and name in emit_list]
+            [weak_template % name for name in handlers if name not in noweak and name in emit_list]
         )
 
         # The "noweak" ones just get a regular declaration
-        weak_defines += "\n".join(
-            [
-                "extern uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);"
-                % s
-                for s in noweak
-            ]
-        )
+        noweak_args = ", ".join([f"uintptr_t arg{i + 1}" for i in range(6)]) + ", void *ssf"
+        weak_defines += "\n".join([f"extern uintptr_t {s}({noweak_args});" for s in noweak])
 
         fp.write(table_template % (weak_defines, ",\n\t".join(table_entries)))
 
@@ -559,15 +561,15 @@ def main():
         with open(args.syscall_weakdefs_llext, "w") as fp:
             # Provide weak definitions for all emitted syscalls
             weak_refs = "\n".join(
-                "extern __weak ALIAS_OF(no_syscall_impl) void * const %s;" % e for e in exported
+                f"extern __weak ALIAS_OF(no_syscall_impl) void * const {e};" for e in exported
             )
             fp.write(llext_weakdefs_template % weak_refs)
 
     if args.syscall_exports_llext:
         with open(args.syscall_exports_llext, "w") as fp:
             # Export symbols for emitted syscalls
-            extern_refs = "\n".join("extern void * const %s;" % e for e in exported)
-            exported_symbols = "\n".join("EXPORT_GROUP_SYMBOL(SYSCALL, %s);" % e for e in exported)
+            extern_refs = "\n".join(f"extern void * const {e};" for e in exported)
+            exported_symbols = "\n".join(f"EXPORT_GROUP_SYMBOL(SYSCALL, {e});" for e in exported)
             fp.write(llext_exports_template % (extern_refs, exported_symbols))
 
     # Listing header emitted to stdout
@@ -576,7 +578,7 @@ def main():
 
     ids_as_defines = ""
     for i, item in enumerate(ids_emit):
-        ids_as_defines += "#define {} {}\n".format(item, i)
+        ids_as_defines += f"#define {item} {i}\n"
 
     if ids_not_emit:
         # There are syscalls that are not used in the image but
@@ -586,7 +588,7 @@ def main():
         ids_not_emit.sort()
         num_emitted_ids = len(ids_emit)
         for i, item in enumerate(ids_not_emit):
-            ids_as_defines += "#define {} {}\n".format(item, i + num_emitted_ids)
+            ids_as_defines += f"#define {item} {i + num_emitted_ids}\n"
 
     with open(args.syscall_list, "w") as fp:
         fp.write(list_template % ids_as_defines)
@@ -596,7 +598,7 @@ def main():
         out_fn = os.path.join(args.base_output, fn)
 
         ig = re.sub("[^a-zA-Z0-9]", "_", "Z_INCLUDE_SYSCALLS_" + fn).upper()
-        include_guard = "#ifndef %s\n#define %s\n" % (ig, ig)
+        include_guard = f"#ifndef {ig}\n#define {ig}\n"
         tracing_include = ""
         if fn not in notracing:
             tracing_include = "#include <zephyr/tracing/tracing_syscall.h>"

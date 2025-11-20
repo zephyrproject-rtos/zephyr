@@ -92,9 +92,7 @@ typedef void (* ISR)(const void *);
         self.__log.debug("--------------------------")
 
         for irq in intlist["interrupts"]:
-            self.__log.debug(
-                "{0:<10} {1:<3} {2:<3}   {3}".format(hex(irq[2]), irq[0], irq[1], hex(irq[3]))
-            )
+            self.__log.debug(f"{hex(irq[2]):<10} {irq[0]:<3} {irq[1]:<3}   {hex(irq[3])}")
 
         return intlist
 
@@ -105,10 +103,10 @@ typedef void (* ISR)(const void *);
         Every entry in the selected position would contain None or the name of the function pointer
         (address or string).
 
-        The swt is a little more complex. At every position it would contain an array of parameter and
-        function pointer pairs. If CONFIG_SHARED_INTERRUPTS is enabled there may be more than 1 entry.
-        If empty array is placed on selected position - it means that the application does not implement
-        this interrupt.
+        The swt is a little more complex. At every position it would contain an array of parameter
+        and function pointer pairs. If CONFIG_SHARED_INTERRUPTS is enabled there may be more than 1
+        entry. If empty array is placed on selected position - it means that the application does
+        not implement this interrupt.
 
         Parameters:
         - intlist: The preprocessed list of intlist section content (see read_intlist)
@@ -142,31 +140,29 @@ typedef void (* ISR)(const void *);
             if self.__config.test_isr_direct(flags):
                 if not vt:
                     self.__log.error(
-                        "Direct Interrupt %d declared with parameter 0x%x "
-                        "but no vector table in use" % (irq, param)
+                        f"Direct Interrupt {irq} declared with parameter 0x{param:x} "
+                        "but no vector table in use"
                     )
                 if param != 0:
-                    self.__log.error("Direct irq %d declared, but has non-NULL parameter" % irq)
+                    self.__log.error(f"Direct irq {irq} declared, but has non-NULL parameter")
                 if not 0 <= irq - offset < len(vt):
                     self.__log.error(
-                        "IRQ %d (offset=%d) exceeds the maximum of %d"
-                        % (irq - offset, offset, len(vt) - 1)
+                        f"IRQ {irq - offset} (offset={offset}) exceeds the maximum of {len(vt) - 1}"
                     )
                 vt[irq - offset] = func
             else:
                 # Regular interrupt
                 if not swt:
                     self.__log.error(
-                        "Regular Interrupt %d declared with parameter 0x%x "
-                        "but no SW ISR_TABLE in use" % (irq, param)
+                        f"Regular Interrupt {irq} declared with parameter 0x{param:x} "
+                        "but no SW ISR_TABLE in use"
                     )
 
                 table_index = self.__config.get_swt_table_index(offset, irq)
 
                 if not 0 <= table_index < len(swt):
                     self.__log.error(
-                        "IRQ %d (offset=%d) exceeds the maximum of %d"
-                        % (table_index, offset, len(swt) - 1)
+                        f"IRQ {table_index} (offset={offset}) exceeds the maximum of {len(swt) - 1}"
                     )
                 if self.__config.check_shared_interrupts():
                     lst = swt[table_index]
@@ -174,15 +170,18 @@ typedef void (* ISR)(const void *);
                         self.__log.error("Attempting to register the same ISR/arg pair twice.")
                     if len(lst) >= self.__config.get_sym("CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS"):
                         self.__log.error(
-                            f"Reached shared interrupt client limit. Maybe increase"
-                            + f" CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS?"
+                            "Reached shared interrupt client limit. Maybe increase"
+                            + " CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS?"
                         )
                 else:
                     if len(swt[table_index]) > 0:
                         self.__log.error(
-                            f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
-                            + f"\nExisting handler 0x{swt[table_index][0][1]:x}, new handler 0x{func:x}"
-                            + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                            f"multiple registrations at table_index {table_index} for irq {irq} "
+                            + f" (0x{irq:x})"
+                            + f"\nExisting handler 0x{swt[table_index][0][1]:x}, "
+                            + f"new handler 0x{func:x}"
+                            + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked "
+                            + "on the same irq multiple times?"
                         )
                 swt[table_index].append((param, func))
 
@@ -203,11 +202,11 @@ typedef void (* ISR)(const void *);
             else:
                 func_as_string = func
 
-            fp.write("\t__asm(ARCH_IRQ_VECTOR_JUMP_CODE({}));\n".format(func_as_string))
+            fp.write(f"\t__asm(ARCH_IRQ_VECTOR_JUMP_CODE({func_as_string}));\n")
         fp.write("}\n")
 
     def __write_address_irq_vector_table(self, fp):
-        fp.write("const uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % self.__nv)
+        fp.write(f"const uintptr_t __irq_vector_table _irq_vector_table[{self.__nv}] = {{\n")
         for i in range(self.__nv):
             func = self.__vt[i]
 
@@ -215,9 +214,9 @@ typedef void (* ISR)(const void *);
                 func = self.__config.vt_default_handler
 
             if isinstance(func, int):
-                fp.write("\t{},\n".format(func))
+                fp.write(f"\t{func},\n")
             else:
-                fp.write("\t((uintptr_t)&{}),\n".format(func))
+                fp.write(f"\t((uintptr_t)&{func}),\n")
 
         fp.write("};\n")
 
@@ -226,7 +225,7 @@ typedef void (* ISR)(const void *);
             fp.write("const ")
         fp.write(
             "struct z_shared_isr_table_entry __shared_sw_isr_table"
-            " z_shared_sw_isr_table[%d] = {\n" % self.__nv
+            f" z_shared_sw_isr_table[{self.__nv}] = {{\n"
         )
 
         for i in range(self.__nv):
@@ -273,7 +272,7 @@ typedef void (* ISR)(const void *);
 
         if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
             fp.write("const ")
-        fp.write("struct _isr_table_entry __sw_isr_table _sw_isr_table[%d] = {\n" % self.__nv)
+        fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
 
         level2_offset = self.__config.get_irq_baseoffset(2)
         level3_offset = self.__config.get_irq_baseoffset(3)
@@ -285,28 +284,22 @@ typedef void (* ISR)(const void *);
                 func = self.__config.swt_spurious_handler
             elif len(self.__swt[i]) == 1:
                 # Single interrupt
-                param = "{0:#x}".format(self.__swt[i][0][0])
+                param = f"{self.__swt[i][0][0]:#x}"
                 func = self.__swt[i][0][1]
             else:
                 # Shared interrupt
-                param = "&z_shared_sw_isr_table[{0}]".format(i)
+                param = f"&z_shared_sw_isr_table[{i}]"
                 func = self.__config.swt_shared_handler
 
             if isinstance(func, int):
-                func_as_string = "{0:#x}".format(func)
+                func_as_string = f"{func:#x}"
             else:
                 func_as_string = func
 
             if level2_offset is not None and i == level2_offset:
-                fp.write(
-                    "\t/* Level 2 interrupts start here (offset: {}) */\n".format(level2_offset)
-                )
+                fp.write(f"\t/* Level 2 interrupts start here (offset: {level2_offset}) */\n")
             if level3_offset is not None and i == level3_offset:
-                fp.write(
-                    "\t/* Level 3 interrupts start here (offset: {}) */\n".format(level3_offset)
-                )
+                fp.write(f"\t/* Level 3 interrupts start here (offset: {level3_offset}) */\n")
 
-            fp.write(
-                "\t{{(const void *){0}, (ISR){1}}}, /* {2} */\n".format(param, func_as_string, i)
-            )
+            fp.write(f"\t{{(const void *){param}, (ISR){func_as_string}}}, /* {i} */\n")
         fp.write("};\n")

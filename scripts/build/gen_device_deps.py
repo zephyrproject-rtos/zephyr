@@ -26,10 +26,10 @@ In the final link these definitions supersede the ones in the
 driver-specific object file.
 """
 
-import sys
 import argparse
 import os
 import pickle
+import sys
 
 from elf_parser import ZephyrElf
 
@@ -95,20 +95,20 @@ def c_handle_comment(dev, handles):
 
     lines = [
         '',
-        '/* {:d} : {:s}:'.format(dev.handle, (dev_path_str(dev))),
+        f'/* {dev.handle:d} : {dev_path_str(dev):s}:',
     ]
     if len(handles["depends"]) > 0:
         lines.append(' * Direct Dependencies:')
         for dep in handles["depends"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(dep)))
+            lines.append(f' *    - {dev_path_str(dep):s}')
     if len(handles["injected"]) > 0:
         lines.append(' * Injected Dependencies:')
         for dep in handles["injected"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(dep)))
+            lines.append(f' *    - {dev_path_str(dep):s}')
     if len(handles["supports"]) > 0:
         lines.append(' * Supported:')
         for sup in handles["supports"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(sup)))
+            lines.append(f' *    - {dev_path_str(sup):s}')
     lines.append(' */')
     return lines
 
@@ -130,7 +130,7 @@ def c_handle_array(dev, handles, dynamic_deps, extra_support_handles=0):
         # The `extern` line pretends this was first declared in some .h
         # file to silence "should it be static?" warnings in some
         # compilers and static analyzers.
-        'extern {:s} {:s}[{:d}];'.format(ctype, dev.ordinals.sym.name, len(handles)),
+        f'extern {ctype:s} {dev.ordinals.sym.name:s}[{len(handles):d}];',
         ctype,
         '{:s}[] = {{ {:s} }};'.format(dev.ordinals.sym.name, ', '.join(handles)),
     ]

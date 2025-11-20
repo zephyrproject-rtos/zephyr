@@ -6,14 +6,13 @@
 Tests for check_init_priorities
 """
 
-from unittest import mock
 import pathlib
 import unittest
-
-from elftools.elf.relocation import Section
-from elftools.elf.sections import SymbolTableSection
+from unittest import mock
 
 import check_init_priorities
+from elftools.elf.relocation import Section
+from elftools.elf.sections import SymbolTableSection
 
 
 class TestPriority(unittest.TestCase):

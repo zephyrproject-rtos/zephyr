@@ -17,10 +17,11 @@ the generated code so that we work with pointers directly and not strings.
 This saves a considerable amount of space.
 """
 
-import sys
 import argparse
 import os
 import re
+import sys
+
 from packaging import version
 
 # --- debug stuff ---
@@ -70,7 +71,7 @@ def reformat_str(match_obj):
 
         ctr -= 1
 
-    return "(char *)0x%02x%02x%02x%02x%02x%02x%02x%02x" % tuple(addr_vals)
+    return f"(char *)0x{bytes(addr_vals).hex()}"
 
 
 def process_line(line, fp):
@@ -90,7 +91,7 @@ def process_line(line, fp):
         v_lo = version.parse("3.0")
         v_hi = version.parse("3.1")
         if v < v_lo or v > v_hi:
-            warn("gperf %s is not tested, versions %s through %s supported" % (v, v_lo, v_hi))
+            warn(f"gperf {v} is not tested, versions {v_lo} through {v_hi} supported")
 
     # Replace length lookups with constant len since we're always
     # looking at pointers
@@ -150,7 +151,7 @@ def parse_args():
 def main():
     parse_args()
 
-    with open(args.input, "r") as in_fp, open(args.output, "w") as out_fp:
+    with open(args.input) as in_fp, open(args.output, "w") as out_fp:
         for line in in_fp.readlines():
             process_line(line, out_fp)
 

@@ -23,17 +23,16 @@ import logging
 import shutil
 import sys
 
+import llext_slidlib
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-
-import llext_slidlib
 
 
 class LLEXTSymtabPreparator:
     def __init__(self, elf_path, log):
         self.log = log
         self.elf_path = elf_path
-        self.elf_fd = open(elf_path, "rb+")
+        self.elf_fd = open(elf_path, "rb+")  # noqa: SIM115
         self.elf = ELFFile(self.elf_fd)
 
     def _find_symtab(self):
@@ -56,9 +55,8 @@ class LLEXTSymtabPreparator:
         return symtab
 
     def _find_imports_in_symtab(self, symtab):
-        i = 0
         imports = []
-        for sym in symtab.iter_symbols():
+        for i, sym in enumerate(symtab.iter_symbols()):
             # Check if symbol is an import
             if (
                 sym.entry['st_info']['type'] == 'STT_NOTYPE'
@@ -67,8 +65,6 @@ class LLEXTSymtabPreparator:
             ):
                 self.log.debug(f"found imported symbol '{sym.name}' at index {i}")
                 imports.append((i, sym))
-
-            i += 1
         return imports
 
     def _prepare_inner(self):

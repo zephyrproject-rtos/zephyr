@@ -30,7 +30,7 @@ from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dts", "python-devicetree", "src"))
-from devicetree import edtlib  # pylint: disable=unused-import
+from devicetree import edtlib  # noqa: F401
 
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
@@ -62,7 +62,7 @@ class Priority:
         name: the section name
     """
 
-    def __init__(self, level, priority):
+    def __init__(self, level: str, priority: int):
         for idx, level_name in enumerate(_DEVICE_INIT_LEVELS):
             if level_name == level:
                 self._level = idx
@@ -71,17 +71,15 @@ class Priority:
                 self._level_priority = (self._level, self._priority)
                 return
 
-        raise ValueError("Unknown level in %s" % level)
+        raise ValueError(f"Unknown level in {level}")
 
     def __repr__(self):
-        return "<%s %s %d>" % (
-            self.__class__.__name__,
-            _DEVICE_INIT_LEVELS[self._level],
-            self._priority,
-        )
+        level = _DEVICE_INIT_LEVELS[self._level]
+        return f"<{self.__class__.__name__} {level} {self._priority}>"
 
     def __str__(self):
-        return "%s+%d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
+        level = _DEVICE_INIT_LEVELS[self._level]
+        return f"{level}+{self._priority}"
 
     def __lt__(self, other):
         return self._level_priority < other._level_priority
@@ -156,7 +154,7 @@ class ZephyrInitLevels:
             raise ValueError(f"Missing init symbols, found: {self._init_level_addr}")
 
         if not self._init_level_end:
-            raise ValueError(f"Missing init section end symbol")
+            raise ValueError("Missing init section end symbol")
 
     def _device_ord_from_name(self, sym_name):
         """Find a device ordinal from a symbol name."""
