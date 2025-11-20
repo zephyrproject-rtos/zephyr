@@ -241,13 +241,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif /* CONFIG_SMP */
 }
 
-void move_thread_to_end_of_prio_q(struct k_thread *thread)
+void move_current_to_end_of_prio_q(void)
 {
-	if (z_is_thread_queued(thread)) {
-		dequeue_thread(thread);
+	if (z_is_thread_queued(_current)) {
+		dequeue_thread(_current);
 	}
-	queue_thread(thread);
-	update_cache(thread == _current);
+	queue_thread(_current);
+	update_cache(1);
 }
 
 /* Track cooperative threads preempted by metairqs so we can return to
@@ -356,7 +356,7 @@ void z_ready_thread(struct k_thread *thread)
 void z_yield_testing_only(void)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		move_thread_to_end_of_prio_q(_current);
+		move_current_to_end_of_prio_q();
 	}
 }
 
