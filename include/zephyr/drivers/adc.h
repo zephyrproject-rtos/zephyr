@@ -690,6 +690,15 @@ struct adc_sequence {
 	 * ignore this flag.
 	 */
 	bool calibrate;
+
+#ifdef CONFIG_ADC_INJECTED_CHANNELS
+	/**
+	 * Sample the sequence in injected mode
+	 *
+	 * If true, the sequence will be sampled using the injected mode
+	 */
+	bool injected_mode;
+#endif
 };
 
 struct adc_data_header {
