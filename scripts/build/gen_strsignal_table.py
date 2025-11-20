@@ -21,7 +21,6 @@ def front_matter():
 
 def gen_strsignal_table(input, output):
     with open(input, 'r') as inf:
-
         highest_signo = 0
         symbols = []
         msgs = {}
@@ -51,12 +50,10 @@ def gen_strsignal_table(input, output):
             pass
 
         with open(output, 'w') as outf:
-
             print(front_matter(), file=outf)
 
             # Generate string table
-            print(
-                f'static const char *const strsignal_list[{highest_signo + 1}] = {{', file=outf)
+            print(f'static const char *const strsignal_list[{highest_signo + 1}] = {{', file=outf)
             for symbol in symbols:
                 print(f'\t[{symbol}] = "{msgs[symbol]}",', file=outf)
 
@@ -70,13 +67,15 @@ def parse_args():
         '--input',
         dest='input',
         required=True,
-        help='input file (e.g. include/zephyr/posix/posix_signal.h)')
+        help='input file (e.g. include/zephyr/posix/posix_signal.h)',
+    )
     parser.add_argument(
         '-o',
         '--output',
         dest='output',
         required=True,
-        help='output file (e.g. build/zephyr/misc/generated/lib/posix/strsignal_table.h)')
+        help='output file (e.g. build/zephyr/misc/generated/lib/posix/strsignal_table.h)',
+    )
 
     args = parser.parse_args()
 

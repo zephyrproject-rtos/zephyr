@@ -36,14 +36,21 @@ def merge_hex_files(output, input_hex_files, overlap, output_bin):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Merge hex files.",
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
-    parser.add_argument("-o", "--output", required=False, default="merged.hex",
-                        help="Output file name.")
-    parser.add_argument("--overlap", default="error",
-                        help="What to do when files overlap (error, ignore, replace). "
-                             "See IntelHex.merge() for more info.")
-    parser.add_argument("--output-bin", action='store_true',
-                        help="Save the merged content as binary file.")
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+    parser.add_argument(
+        "-o", "--output", required=False, default="merged.hex", help="Output file name."
+    )
+    parser.add_argument(
+        "--overlap",
+        default="error",
+        help="What to do when files overlap (error, ignore, replace). "
+        "See IntelHex.merge() for more info.",
+    )
+    parser.add_argument(
+        "--output-bin", action='store_true', help="Save the merged content as binary file."
+    )
     parser.add_argument("input_files", nargs='*')
     return parser.parse_args()
 
