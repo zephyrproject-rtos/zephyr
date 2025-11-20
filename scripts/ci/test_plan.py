@@ -102,7 +102,8 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=False, quarantine_list=None, tc_roots_th=20):
+                 pull_request=False, platforms=[], detailed_test_id=False, quarantine_list=None,
+                 tc_roots_th=20, test_config=None, level=None):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
@@ -117,6 +118,8 @@ class Filters:
         self.tag_cfg_file = alt_tags
         self.quarantine_list = quarantine_list
         self.tc_roots_th = tc_roots_th
+        self.test_config = test_config
+        self.level = level
 
     def process(self):
         self.find_modules()
@@ -147,6 +150,10 @@ class Filters:
         if self.quarantine_list:
             for q in self.quarantine_list:
                 cmd += ["--quarantine-list", q]
+        if self.test_config:
+            cmd += ["--test-config", self.test_config]
+        if self.level:
+            cmd += ["--level", self.level]
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
@@ -443,6 +450,10 @@ def parse_args():
                 "the file need to correspond to the test scenarios names as in "
                 "corresponding tests .yaml files. These scenarios "
                 "will be skipped with quarantine as the reason.")
+    parser.add_argument('--test-config', default=None,
+            help="Path to file with plans and test configurations.")
+    parser.add_argument('--level', default=None,
+            help="Test level to be used.")
 
     # Do not include paths in names by default.
     parser.set_defaults(detailed_test_id=False)
@@ -472,7 +483,7 @@ if __name__ == "__main__":
 
     f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
                 args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list,
-                args.testcase_roots_threshold)
+                args.testcase_roots_threshold, args.test_config, args.level)
     f.process()
 
     # remove dupes and filtered cases
