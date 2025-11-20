@@ -13,6 +13,7 @@ config SOC_SERIES_S32K5
 	select CPU_HAS_DCACHE
 	select SOC_EARLY_INIT_HOOK
 	select HAS_MCUX_FTM
+	select HAS_MCUX_LPI2C
 
 config SOC_S32K566_M7
 	select CPU_CORTEX_M7

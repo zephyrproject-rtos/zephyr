@@ -15,4 +15,5 @@ supported:
   - watchdog
   - adc
   - pwm
+  - i2c
 vendor: nxp
