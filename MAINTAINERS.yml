@@ -3405,7 +3405,6 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - ArunMCHP
-    - pdgendt
     - stephanosio
   files:
     - boards/atmel/
@@ -5536,8 +5535,6 @@ West:
   status: maintained
   maintainers:
     - nandojve
-  collaborators:
-    - pdgendt
   files:
     - modules/Kconfig.atmel
   labels:
