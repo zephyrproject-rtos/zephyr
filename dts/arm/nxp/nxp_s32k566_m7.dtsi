@@ -383,3 +383,23 @@
 &lpe_ftm {
 	interrupts = <223 0>;
 };
+
+&lpe_lpi2c {
+	interrupts = <230 0>;
+};
+
+&lpi2c0 {
+	interrupts = <143 0>;
+};
+
+&lpi2c1 {
+	interrupts = <144 0>;
+};
+
+&lpi2c2 {
+	interrupts = <145 0>;
+};
+
+&lpi2c3 {
+	interrupts = <146 0>;
+};

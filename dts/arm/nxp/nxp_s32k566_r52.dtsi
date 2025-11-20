@@ -284,3 +284,23 @@
 &lpe_ftm {
 	interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&lpe_lpi2c {
+	interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpi2c0 {
+	interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpi2c1 {
+	interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpi2c2 {
+	interrupts = <GIC_SPI 134 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpi2c3 {
+	interrupts = <GIC_SPI 135 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
