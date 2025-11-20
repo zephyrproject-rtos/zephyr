@@ -1409,7 +1409,7 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 {
 	conn->handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_copy(&conn->le.dst, id_addr);
-	conn->le.interval = sys_le16_to_cpu(evt->interval);
+	conn->le.interval_us = sys_le16_to_cpu(evt->interval) * BT_HCI_LE_INTERVAL_UNIT_US;
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
@@ -2061,15 +2061,16 @@ static void le_conn_update_complete(struct net_buf *buf)
 		bt_l2cap_update_conn_param(conn, &param);
 	} else {
 		if (!evt->status) {
-			conn->le.interval = sys_le16_to_cpu(evt->interval);
+			conn->le.interval_us =
+				sys_le16_to_cpu(evt->interval) * BT_HCI_LE_INTERVAL_UNIT_US;
 			conn->le.latency = sys_le16_to_cpu(evt->latency);
 			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 
 			if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
-				if (!IN_RANGE(conn->le.interval, BT_HCI_LE_INTERVAL_MIN,
-					      BT_HCI_LE_INTERVAL_MAX)) {
-					LOG_WRN("interval exceeds the valid range 0x%04x",
-						conn->le.interval);
+				if (!IN_RANGE(conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US,
+					      BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
+					LOG_WRN("interval exceeds the valid range %u us",
+						conn->le.interval_us);
 				}
 				if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
 					LOG_WRN("latency exceeds the valid range 0x%04x",
@@ -2808,6 +2809,72 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SUBRATING */
 
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+void bt_hci_le_conn_rate_change_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_conn_rate_change *evt;
+	struct bt_conn_le_conn_rate_changed params;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
+	if (conn == NULL) {
+		LOG_ERR("Unknown conn handle 0x%04X for connection rate event",
+			sys_le16_to_cpu(evt->handle));
+		return;
+	}
+
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		conn->le.interval_us =
+			BT_CONN_SCI_INTERVAL_TO_US(sys_le16_to_cpu(evt->conn_interval));
+		conn->le.subrate.factor = sys_le16_to_cpu(evt->subrate_factor);
+		conn->le.subrate.continuation_number = sys_le16_to_cpu(evt->continuation_number);
+		conn->le.latency = sys_le16_to_cpu(evt->peripheral_latency);
+		conn->le.timeout = sys_le16_to_cpu(evt->supervision_timeout);
+
+		if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
+			if (!IN_RANGE(conn->le.interval_us / BT_HCI_LE_SCI_INTERVAL_UNIT_US,
+				      BT_HCI_LE_SCI_INTERVAL_MIN_125US,
+				      BT_HCI_LE_SCI_INTERVAL_MAX_125US)) {
+				LOG_WRN("interval_us exceeds the valid range %u us",
+					conn->le.interval_us);
+			}
+			if (!IN_RANGE(conn->le.subrate.factor, BT_HCI_LE_SUBRATE_FACTOR_MIN,
+				      BT_HCI_LE_SUBRATE_FACTOR_MAX)) {
+				LOG_WRN("subrate_factor exceeds the valid range %d",
+					conn->le.subrate.factor);
+			}
+			if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
+				LOG_WRN("peripheral_latency exceeds the valid range 0x%04x",
+					conn->le.latency);
+			}
+			if (conn->le.subrate.continuation_number > BT_HCI_LE_CONTINUATION_NUM_MAX) {
+				LOG_WRN("continuation_number exceeds the valid range %d",
+					conn->le.subrate.continuation_number);
+			}
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
+					conn->le.timeout);
+			}
+		}
+
+		params.interval_us = conn->le.interval_us;
+		params.subrate_factor = conn->le.subrate.factor;
+		params.continuation_number = conn->le.subrate.continuation_number;
+		params.peripheral_latency = conn->le.latency;
+		params.supervision_timeout_10ms = conn->le.timeout;
+
+		bt_conn_notify_conn_rate_change(conn, evt->status, &params);
+	} else {
+		bt_conn_notify_conn_rate_change(conn, evt->status, NULL);
+	}
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+
 static const struct event_handler vs_events[] = {
 #if defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
@@ -2958,7 +3025,11 @@ static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_SUBRATING)
 	EVENT_HANDLER(BT_HCI_EVT_LE_SUBRATE_CHANGE, bt_hci_le_subrate_change_event,
 		      sizeof(struct bt_hci_evt_le_subrate_change)),
-#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+#endif /* CONFIG_BT_SUBRATING */
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CONN_RATE_CHANGE, bt_hci_le_conn_rate_change_event,
+		      sizeof(struct bt_hci_evt_le_conn_rate_change)),
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2, bt_hci_le_per_adv_report_v2,
 		      sizeof(struct bt_hci_evt_le_per_advertising_report_v2)),
@@ -3571,6 +3642,11 @@ static int le_set_event_mask(void)
 			mask |= BT_EVT_MASK_LE_SUBRATE_CHANGE;
 		}
 
+		if (IS_ENABLED(CONFIG_BT_SHORTER_CONNECTION_INTERVALS) &&
+		    BT_FEAT_LE_SHORTER_CONN_INTERVALS(bt_dev.le.features)) {
+			mask |= BT_EVT_MASK_LE_CONN_RATE_CHANGE;
+		}
+
 		if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
 		    BT_FEAT_LE_EXTENDED_FEAT_SET(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_READ_ALL_REMOTE_FEAT_COMPLETE;
@@ -3881,6 +3957,14 @@ static int le_init(void)
 	    BT_FEAT_LE_ADV_CODING_SEL(bt_dev.le.features)) {
 		err = le_set_host_feature(BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST, 1);
 		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SHORTER_CONNECTION_INTERVALS) &&
+	    BT_FEAT_LE_SHORTER_CONN_INTERVALS(bt_dev.le.features)) {
+		err = le_set_host_feature(BT_LE_FEAT_BIT_SHORTER_CONN_INTERVALS_HOST_SUPP, 1);
+		if (err != 0) {
 			return err;
 		}
 	}

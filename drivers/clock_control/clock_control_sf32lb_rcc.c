@@ -144,12 +144,10 @@ static int clock_control_sf32lb_rcc_init(const struct device *dev)
 		(void)clock_control_on(config->hxt48, NULL);
 
 		/* TODO: make this configurable */
-		val = sys_read32(config->base + HPSYS_RCC_CFGR);
-		val &= HPSYS_RCC_CSR_SEL_SYS_Msk;
-		val |= HPSYS_RCC_CSR_SEL_SYS_CLK_HXT48;
-		sys_write32(val, config->base + HPSYS_RCC_CSR);
-
 		val = sys_read32(config->base + HPSYS_RCC_CSR);
+		val &= ~HPSYS_RCC_CSR_SEL_SYS_Msk;
+		val |= HPSYS_RCC_CSR_SEL_SYS_CLK_HXT48;
+
 		val &= ~HPSYS_RCC_CSR_SEL_PERI_Msk;
 		val |= HPSYS_RCC_CSR_SEL_PERI_CLK_HXT48;
 		sys_write32(val, config->base + HPSYS_RCC_CSR);

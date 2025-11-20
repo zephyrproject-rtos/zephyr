@@ -129,7 +129,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
 		.start = (uint32_t)__cold_start,
 		.end   = (uint32_t)__cold_end,
-		.attrs = XTENSA_MMU_PERM_X,
+		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
 		.name = "imr cold",
 	},
 	{

@@ -240,14 +240,6 @@ struct btp_gatt_write_without_rsp_cmd {
 	uint8_t data[];
 } __packed;
 
-#define BTP_GATT_SIGNED_WRITE_WITHOUT_RSP	0x16
-struct btp_gatt_signed_write_without_rsp_cmd {
-	bt_addr_le_t address;
-	uint16_t handle;
-	uint16_t data_length;
-	uint8_t data[];
-} __packed;
-
 #define BTP_GATT_WRITE				0x17
 struct btp_gatt_write_cmd {
 	bt_addr_le_t address;

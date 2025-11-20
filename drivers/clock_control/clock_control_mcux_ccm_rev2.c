@@ -28,7 +28,7 @@ static int mcux_ccm_on(const struct device *dev,
 	switch (peripheral) {
 #ifdef CONFIG_ETH_NXP_ENET
 
-#ifdef CONFIG_SOC_MIMX9352
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 #define ENET1G_CLOCK	kCLOCK_Enet1
 #else
 #define ENET_CLOCK	kCLOCK_Enet
@@ -192,7 +192,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
 	case IMX_CCM_ENET1G_CLK:
-#ifdef CONFIG_SOC_MIMX9352
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 		clock_root = kCLOCK_Root_WakeupAxi;
 #else
 		clock_root = kCLOCK_Root_Bus;

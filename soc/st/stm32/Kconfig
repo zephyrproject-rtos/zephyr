@@ -3,7 +3,7 @@
 
 config SOC_FAMILY_STM32
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
-	select STM32_ENABLE_DEBUG_SLEEP_STOP if DEBUG || ZTEST
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if ZTEST
 	select BUILD_OUTPUT_HEX
 
 if SOC_FAMILY_STM32
@@ -40,6 +40,7 @@ config STM32_BACKUP_SRAM_INIT_PRIORITY
 
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"
+	default y if DEBUG
 	help
 	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
 	  of power consumption. As a side-effects this prevents

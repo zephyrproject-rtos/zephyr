@@ -1,0 +1,15 @@
+tests:
+  arch.arm64.sve_stress:
+    arch_allow: arm64
+    filter: CONFIG_FPU and CONFIG_FPU_SHARING
+    integration_platforms:
+      - fvp_base_revc_2xaem/v8a
+      - fvp_base_revc_2xaem/v9a
+    tags:
+      - sve
+      - neon
+      - arm64
+      - context_switch
+      - stress
+    timeout: 120
+    slow: true

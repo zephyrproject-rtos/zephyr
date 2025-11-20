@@ -85,7 +85,8 @@ config NET_SOCKET_MAX_SEND_WAIT
 
 config NET_SOCKETS_SERVICE
 	bool "Socket service support"
-	select EVENTFD
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
@@ -99,7 +100,7 @@ config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
 	int "Socket service file descriptor requirements"
 	default 1
 	help
-	  The socket service opens a permanent eventfd, which consumes a file
+	  The socket service opens a permanent zvfs_eventfd, which consumes a file
 	  descriptor.
 
 config NET_SOCKETS_SERVICE_THREAD_PRIO

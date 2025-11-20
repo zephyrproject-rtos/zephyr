@@ -93,14 +93,11 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER   ${hal_dir}/source/cyhal
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_dir}/source/cyhal_trng.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_dir}/source/cyhal_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT     ${hal_dir}/source/cyhal_wdt.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dw.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dmac.c)
 
-if(CONFIG_USE_INFINEON_ADC OR CONFIG_USE_INFINEON_SMIF)
-  zephyr_library_sources(${hal_dir}/source/cyhal_dma.c)
-  zephyr_library_sources(${hal_dir}/source/cyhal_dma_dmac.c)
-  zephyr_library_sources(${hal_dir}/source/cyhal_dma_dw.c)
+if(CONFIG_USE_INFINEON_LEGACY_HAL)
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dw.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dmac.c)
 endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)

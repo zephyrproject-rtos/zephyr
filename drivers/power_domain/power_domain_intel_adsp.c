@@ -83,12 +83,30 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 
 	return ret;
 }
+
+#else /* !CONFIG_PM_DEVICE */
+
+static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	/* When PM is disabled, accept TURN_ON and RESUME but do nothing.
+	 * Power domains remain in their hardware default state.
+	 */
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 #endif /* CONFIG_PM_DEVICE */
 
 static int pd_intel_adsp_init(const struct device *dev)
 {
-	pm_device_init_suspended(dev);
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, pd_intel_adsp_pm_action);
 }
 
 #define DT_DRV_COMPAT intel_adsp_power_domain

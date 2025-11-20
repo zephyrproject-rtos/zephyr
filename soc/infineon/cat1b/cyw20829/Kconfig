@@ -16,6 +16,7 @@ config SOC_SERIES_CYW20829
 	select BUILD_OUTPUT_HEX
 	select BUILD_OUTPUT_BIN
 	select SOC_EARLY_INIT_HOOK
+	select USE_INFINEON_LEGACY_HAL
 
 config INFINEON_SECURE_LCS
 	bool "Secure LCS stage support"

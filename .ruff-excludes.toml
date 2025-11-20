@@ -5,21 +5,6 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
-"./arch/x86/gen_gdt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_idt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_mmu.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP034",    # https://docs.astral.sh/ruff/rules/extraneous-parentheses
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./arch/x86/zefi/zefi.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1142,9 +1127,6 @@
 
 [format]
 exclude = [
-    "./arch/x86/gen_gdt.py",
-    "./arch/x86/gen_idt.py",
-    "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
     "./doc/_scripts/gen_devicetree_rest.py",
@@ -1204,6 +1186,7 @@ exclude = [
     "./scripts/ci/coverage/coverage_analysis.py",
     "./scripts/ci/errno.py",
     "./scripts/ci/guideline_check.py",
+    "./scripts/ci/set_assignees.py",
     "./scripts/ci/stats/merged_prs.py",
     "./scripts/ci/test_plan.py",
     "./scripts/ci/twister_report_analyzer.py",

@@ -481,7 +481,6 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
 	return qspi_get_zephyr_ret_code(res);
 }
 
-#if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
 /* RDSR.  Negative value is error. */
 static int qspi_rdsr(const struct device *dev, uint8_t sr_num)
 {
@@ -525,6 +524,7 @@ static int qspi_wait_while_writing(const struct device *dev, k_timeout_t poll_pe
 	return (rc < 0) ? rc : 0;
 }
 
+#if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
 static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 {
 	int rc = 0;
@@ -657,7 +657,6 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 
 static int configure_chip(const struct device *dev)
 {
-	const struct qspi_nor_config *dev_config = dev->config;
 	int rc = 0;
 
 	/* Set QE to match transfer mode.  If not using quad
@@ -668,6 +667,7 @@ static int configure_chip(const struct device *dev)
 	 * S2B1v1/4/5/6. Other options require more logic.
 	 */
 #if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
+		const struct qspi_nor_config *dev_config = dev->config;
 		nrf_qspi_prot_conf_t const *prot_if =
 			&dev_config->nrfx_cfg.prot_if;
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||

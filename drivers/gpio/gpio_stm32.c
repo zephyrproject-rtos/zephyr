@@ -53,62 +53,65 @@ static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
  */
 static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 {
+	uint32_t cfg;
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
 
-		*pincfg = STM32_PINCFG_MODE_OUTPUT;
+		cfg = STM32_PINCFG_MODE_OUTPUT;
 
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				*pincfg |= STM32_PINCFG_OPEN_DRAIN;
+				cfg |= STM32_PINCFG_OPEN_DRAIN;
 			} else  {
 				/* Output can't be open source */
 				return -ENOTSUP;
 			}
 		} else {
-			*pincfg |= STM32_PINCFG_PUSH_PULL;
+			cfg |= STM32_PINCFG_PUSH_PULL;
 		}
 
 		if ((flags & GPIO_PULL_UP) != 0) {
-			*pincfg |= STM32_PINCFG_PULL_UP;
+			cfg |= STM32_PINCFG_PULL_UP;
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			*pincfg |= STM32_PINCFG_PULL_DOWN;
+			cfg |= STM32_PINCFG_PULL_DOWN;
 		}
 
 	} else if  ((flags & GPIO_INPUT) != 0) {
 		/* Input */
 
-		*pincfg = STM32_PINCFG_MODE_INPUT;
+		cfg = STM32_PINCFG_MODE_INPUT;
 
 		if ((flags & GPIO_PULL_UP) != 0) {
-			*pincfg |= STM32_PINCFG_PULL_UP;
+			cfg |= STM32_PINCFG_PULL_UP;
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			*pincfg |= STM32_PINCFG_PULL_DOWN;
+			cfg |= STM32_PINCFG_PULL_DOWN;
 		} else {
-			*pincfg |= STM32_PINCFG_FLOATING;
+			cfg |= STM32_PINCFG_FLOATING;
 		}
 	} else {
 		/* Deactivated: Analog */
-		*pincfg = STM32_PINCFG_MODE_ANALOG;
+		cfg = STM32_PINCFG_MODE_ANALOG;
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 	switch (flags & (STM32_GPIO_SPEED_MASK << STM32_GPIO_SPEED_SHIFT)) {
 	case STM32_GPIO_VERY_HIGH_SPEED:
-		*pincfg |= STM32_OSPEEDR_VERY_HIGH_SPEED;
+		cfg |= STM32_OSPEEDR_VERY_HIGH_SPEED;
 		break;
 	case STM32_GPIO_HIGH_SPEED:
-		*pincfg |= STM32_OSPEEDR_HIGH_SPEED;
+		cfg |= STM32_OSPEEDR_HIGH_SPEED;
 		break;
 	case STM32_GPIO_MEDIUM_SPEED:
-		*pincfg |= STM32_OSPEEDR_MEDIUM_SPEED;
+		cfg |= STM32_OSPEEDR_MEDIUM_SPEED;
 		break;
 	default:
-		*pincfg |= STM32_OSPEEDR_LOW_SPEED;
+		cfg |= STM32_OSPEEDR_LOW_SPEED;
 		break;
 	}
 #endif /* !CONFIG_SOC_SERIES_STM32F1X */
+
+	*pincfg = cfg;
 
 	return 0;
 }

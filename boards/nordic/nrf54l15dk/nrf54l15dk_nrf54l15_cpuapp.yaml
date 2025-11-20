@@ -17,8 +17,8 @@ supported:
   - dmic
   - gpio
   - i2c
+  - i2s
   - pwm
   - retained_mem
   - spi
   - watchdog
-  - i2s

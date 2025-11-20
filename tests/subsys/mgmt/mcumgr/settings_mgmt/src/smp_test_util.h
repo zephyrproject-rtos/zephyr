@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,29 +12,34 @@
 #include <zcbor_common.h>
 #include <smp_internal.h>
 
-/* Function for creating an settings_mgmt read command */
+/* Function for creating a settings_mgmt read command */
 bool create_settings_mgmt_read_packet(zcbor_state_t *zse, uint8_t *buffer, uint8_t *output_buffer,
 				      uint16_t *buffer_size, char *name, uint32_t max_size);
 
-/* Function for creating an settings_mgmt write command */
+/* Function for creating a settings_mgmt write command */
 bool create_settings_mgmt_write_packet(zcbor_state_t *zse, uint8_t *buffer, uint8_t *output_buffer,
 				       uint16_t *buffer_size, char *name, const uint8_t *val,
 				       size_t val_size);
 
-/* Function for creating an settings_mgmt delete command */
+/* Function for creating a settings_mgmt delete command */
 bool create_settings_mgmt_delete_packet(zcbor_state_t *zse, uint8_t *buffer,
 					uint8_t *output_buffer, uint16_t *buffer_size, char *name);
 
-/* Function for creating an settings_mgmt commit command */
+/* Function for creating a settings_mgmt commit command */
 bool create_settings_mgmt_commit_packet(zcbor_state_t *zse, uint8_t *buffer,
 					uint8_t *output_buffer, uint16_t *buffer_size);
 
-/* Function for creating an settings_mgmt load command */
+/* Function for creating a settings_mgmt load command */
 bool create_settings_mgmt_load_packet(zcbor_state_t *zse, uint8_t *buffer, uint8_t *output_buffer,
 				      uint16_t *buffer_size);
 
-/* Function for creating an settings_mgmt save command */
+/* Function for creating a settings_mgmt save command */
 bool create_settings_mgmt_save_packet(zcbor_state_t *zse, uint8_t *buffer, uint8_t *output_buffer,
 				      uint16_t *buffer_size);
+
+/* Function for creating a settings_mgmt save (with key name) command */
+bool create_settings_mgmt_save_key_packet(zcbor_state_t *zse, uint8_t *buffer,
+					  uint8_t *output_buffer, uint16_t *buffer_size,
+					  char *name);
 
 #endif

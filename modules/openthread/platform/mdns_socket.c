@@ -22,11 +22,7 @@
 #include "sockets_internal.h"
 
 #define MULTICAST_PORT 5353
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
-#define MAX_SERVICES   2
-#else
-#define MAX_SERVICES 1
-#endif
+#define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_MDNS_SERVICES
 
 static struct zsock_pollfd sockfd_udp[MAX_SERVICES];
 static int mdns_sock_v6 = -1;

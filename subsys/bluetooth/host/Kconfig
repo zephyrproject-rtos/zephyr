@@ -605,6 +605,7 @@ config BT_RPA_SHARING
 
 config BT_SIGNING
 	bool "Data signing support"
+	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.

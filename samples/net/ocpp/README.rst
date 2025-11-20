@@ -26,6 +26,21 @@ Requirements
 - SteVe Demo Server (<https://github.com/steve-community/steve/blob/master/README.md>)
 - LAN for testing purposes (Ethernet)
 
+Configuration
+*************
+
+The sample application supports several configuration options that can be set
+via Kconfig:
+
+- ``CONFIG_NET_SAMPLE_OCPP_SERVER``: OCPP central system server IP address
+
+- ``CONFIG_NET_SAMPLE_OCPP_PORT``: OCPP central system server port number
+
+- ``CONFIG_NET_SAMPLE_OCPP_WS_PATH``: WebSocket URL path.
+
+- ``CONFIG_NET_SAMPLE_SNTP_SERVER``: SNTP server IP address to get the time
+  from network
+
 Building and Running
 ********************
 

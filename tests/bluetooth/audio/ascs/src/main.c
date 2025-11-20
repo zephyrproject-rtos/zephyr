@@ -667,7 +667,7 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	zassert_equal(err, 0);
 
 	/* Wait for ASE state notification retry */
-	k_sleep(K_MSEC(BT_CONN_INTERVAL_TO_MS(info.le.interval)));
+	k_sleep(K_USEC(info.le.interval_us));
 
 	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
 }

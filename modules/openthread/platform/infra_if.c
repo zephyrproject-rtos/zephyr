@@ -39,7 +39,7 @@ static struct net_icmp_ctx na_ctx;
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
-#define MAX_SERVICES 1
+#define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_SERVICES
 
 static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
 static void raw_receive_handler(struct net_socket_service_event *evt);

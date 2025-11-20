@@ -376,6 +376,7 @@
 			reg = <0x400b7000 0x1000>;
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP0_CLK>;
+			functional-mode = "follower";
 		};
 
 		opamp1: opamp@400b8000 {
@@ -383,6 +384,7 @@
 			reg = <0x400b8000 0x1000>;
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP1_CLK>;
+			functional-mode = "follower";
 		};
 
 		opamp2: opamp@400b9000 {
@@ -390,6 +392,7 @@
 			reg = <0x400b9000 0x1000>;
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP2_CLK>;
+			functional-mode = "follower";
 		};
 
 		opamp3: opamp@400ba000 {
@@ -397,6 +400,7 @@
 			reg = <0x400ba000 0x1000>;
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP3_CLK>;
+			functional-mode = "follower";
 		};
 
 		lpi2c0: i2c@4009a000 {

@@ -252,6 +252,169 @@ struct bt_conn_le_subrate_changed {
 	uint16_t supervision_timeout;
 };
 
+/** @brief Maximum Connection Interval Groups possible
+ *
+ * The practical maximum is 41 groups based on HCI event size constraints:
+ *     (HCI event max size - cmd_complete overhead - response fields) / sizeof(group)
+ *     (255 - 4 - 3) / 6 = 41 groups max
+ */
+#define BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS 41
+
+/** @brief Minimum supported connection interval group
+ *
+ * Each group represents an arithmetic sequence of supported connection intervals:
+ *   min, min + stride, min + 2 * stride, ..., min + n * stride (where min + n * stride <= max)
+ *
+ * Example: min = 10 (1250 us), max = 60 (7500 us), stride = 5 (625 us)
+ *   -> Supported: 1250 us, 1875 us, 2500 us, ..., 6875 us, 7500 us
+ */
+struct bt_conn_le_min_conn_interval_group {
+	/** @brief Lower bound of group interval range
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_INTERVAL_MIN_125US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_125US
+	 */
+	uint16_t min_125us;
+	/** @brief Upper bound of group interval range
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_INTERVAL_MIN_125US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_125US
+	 */
+	uint16_t max_125us;
+	/** @brief Increment between consecutive supported intervals
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_STRIDE_MIN_125US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_125US
+	 */
+	uint16_t stride_125us;
+};
+
+/** Minimum supported connection interval information */
+struct bt_conn_le_min_conn_interval_info {
+	/** @brief Minimum supported connection interval
+	 *
+	 * Unit: microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_MIN_SUPP_CONN_INT_MIN_US - @ref BT_HCI_LE_MIN_SUPP_CONN_INT_MAX_US
+	 */
+	uint16_t min_supported_conn_interval_us;
+	/** @brief Number of interval groups.
+	 *
+	 * Range: 0 - @ref BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS
+	 *
+	 * If zero, the controller only supports Rounded ConnInterval Values (RCV).
+	 */
+	uint8_t num_groups;
+	/** @brief Array of supported connection interval groups.
+	 *
+	 * Multiple groups allow representing non-contiguous or differently-strided ranges.
+	 */
+	struct bt_conn_le_min_conn_interval_group groups[BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS];
+};
+
+/** Connection rate parameters for LE connections */
+struct bt_conn_le_conn_rate_param {
+	/** @brief Minimum connection interval
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_INTERVAL_MIN_125US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_125US
+	 */
+	uint16_t interval_min_125us;
+	/** @brief Maximum connection interval
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_INTERVAL_MIN_125US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_125US
+	 */
+	uint16_t interval_max_125us;
+	/** @brief Minimum subrate factor
+	 *
+	 * Range: @ref BT_HCI_LE_SUBRATE_FACTOR_MIN - @ref BT_HCI_LE_SUBRATE_FACTOR_MAX
+	 */
+	uint16_t subrate_min;
+	/** @brief Maximum subrate factor
+	 *
+	 * Range: @ref BT_HCI_LE_SUBRATE_FACTOR_MIN - @ref BT_HCI_LE_SUBRATE_FACTOR_MAX
+	 */
+	uint16_t subrate_max;
+	/** @brief Maximum Peripheral latency
+	 *
+	 * Unit: subrated connection intervals @ref bt_conn_le_conn_rate_changed.subrate_factor
+	 *
+	 * Range: @ref BT_HCI_LE_PERIPHERAL_LATENCY_MIN - @ref BT_HCI_LE_PERIPHERAL_LATENCY_MAX
+	 */
+	uint16_t max_latency;
+	/** @brief Minimum number of underlying connection events to remain active
+	 *  after a packet containing a Link Layer PDU with a non-zero Length
+	 *  field is sent or received.
+	 *
+	 * Range: @ref BT_HCI_LE_CONTINUATION_NUM_MIN - @ref BT_HCI_LE_CONTINUATION_NUM_MAX
+	 */
+	uint16_t continuation_number;
+	/** @brief Connection Supervision timeout
+	 *
+	 * Unit: 10 milliseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MAX
+	 */
+	uint16_t supervision_timeout_10ms;
+	/** @brief Minimum length of connection event
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_CE_LEN_MIN_125US - @ref BT_HCI_LE_SCI_CE_LEN_MAX_125US
+	 */
+	uint16_t min_ce_len_125us;
+	/** @brief Maximum length of connection event
+	 *
+	 * Unit: 125 microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_CE_LEN_MIN_125US - @ref BT_HCI_LE_SCI_CE_LEN_MAX_125US
+	 */
+	uint16_t max_ce_len_125us;
+};
+
+/** Updated connection rate parameters */
+struct bt_conn_le_conn_rate_changed {
+	/** Connection interval
+	 *
+	 * Unit: microseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SCI_INTERVAL_MIN_US - @ref BT_HCI_LE_SCI_INTERVAL_MAX_US
+	 */
+	uint32_t interval_us;
+	/** Connection subrate factor
+	 *
+	 * Range: @ref BT_HCI_LE_SUBRATE_FACTOR_MIN - @ref BT_HCI_LE_SUBRATE_FACTOR_MAX
+	 */
+	uint16_t subrate_factor;
+	/** Peripheral latency
+	 *
+	 * Unit: subrated connection intervals @ref bt_conn_le_conn_rate_changed.subrate_factor
+	 *
+	 * Range: @ref BT_HCI_LE_PERIPHERAL_LATENCY_MIN - @ref BT_HCI_LE_PERIPHERAL_LATENCY_MAX
+	 */
+	uint16_t peripheral_latency;
+	/** Number of underlying connection events to remain active after
+	 *  a packet containing a Link Layer PDU with a non-zero Length
+	 *  field is sent or received.
+	 *
+	 * Range: @ref BT_HCI_LE_CONTINUATION_NUM_MIN - @ref BT_HCI_LE_CONTINUATION_NUM_MAX
+	 */
+	uint16_t continuation_number;
+	/** Connection Supervision timeout
+	 *
+	 * Unit: 10 milliseconds
+	 *
+	 * Range: @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MAX
+	 */
+	uint16_t supervision_timeout_10ms;
+};
+
 /** Read all remote features complete callback params */
 struct bt_conn_le_read_all_remote_feat_complete {
 	/** @brief  HCI Status from LE Read All Remote Features Complete event.
@@ -890,7 +1053,22 @@ struct bt_conn_le_info {
 	const bt_addr_le_t *local;
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
-	uint16_t interval; /**< Connection interval */
+	/** Connection interval in microseconds */
+	uint32_t interval_us;
+#if !defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS) || defined(__DOXYGEN__)
+	union {
+		/** @brief Connection interval in units of 1.25 ms
+		 *
+		 * @deprecated Use @ref bt_conn_le_info.interval_us instead
+		 */
+		__deprecated uint16_t interval;
+		/** @cond INTERNAL_HIDDEN */
+		/** Workaround for setting deprecated @ref bt_conn_le_info.interval */
+		uint16_t _interval;
+		/** @endcond */
+	};
+#endif /* !CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+
 	uint16_t latency; /**< Connection peripheral latency */
 	uint16_t timeout; /**< Connection supervision timeout */
 
@@ -923,6 +1101,12 @@ struct bt_conn_le_info {
  *  Multiply by 1250 to get microseconds.
  */
 #define BT_CONN_INTERVAL_TO_US(interval) ((interval) * 1250U)
+
+/** @brief Convert shorter connection interval to microseconds
+ *
+ *  Multiply by 125 to get microseconds.
+ */
+#define BT_CONN_SCI_INTERVAL_TO_US(_interval) ((_interval) * BT_HCI_LE_SCI_INTERVAL_UNIT_US)
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
@@ -1328,6 +1512,74 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
  */
 int bt_conn_le_subrate_request(struct bt_conn *conn,
 			       const struct bt_conn_le_subrate_param *params);
+
+/** @brief Read Minimum Supported Connection Interval Groups.
+ *
+ *  Read the minimum supported connection interval and supported interval
+ *  groups from the local controller. This information describes what the
+ *  local controller supports.
+ *
+ *  @sa bt_conn_le_read_min_conn_interval if only
+ *      @ref bt_conn_le_min_conn_interval_info.min_supported_conn_interval_us
+ *      is needed.
+ *
+ *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS}
+ *
+ *  @param info Pointer to structure to receive the minimum connection interval
+ *              information.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_read_min_conn_interval_groups(struct bt_conn_le_min_conn_interval_info *info);
+
+/** @brief Read Minimum Supported Connection Interval.
+ *
+ *  Read the minimum supported connection interval from the local controller.
+ *
+ *  @sa bt_conn_le_read_min_conn_interval_groups if groups are needed.
+ *
+ *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS}
+ *
+ *  @param min_interval_us Pointer to variable to receive the minimum connection interval
+ *                         in microseconds.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_read_min_conn_interval(uint16_t *min_interval_us);
+
+/** @brief Set Default Connection Rate Parameters.
+ *
+ *  Set default connection rate parameters to be used for future connections.
+ *  This command does not affect any existing connection.
+ *  Parameters set for specific connection will always have precedence.
+ *
+ *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS}
+ *
+ *  @param params Connection rate parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_conn_rate_set_defaults(const struct bt_conn_le_conn_rate_param *params);
+
+/** @brief Request New Connection Rate Parameters.
+ *
+ *  Request a change to the connection parameters of a connection. This includes
+ *  Subrate parameters. This allows changing the connection interval to below the
+ *  Baseline ConnInterval Values (BCV) and with finer granularity, if supported.
+ *
+ *  Valid intervals of the local and peer controller should be known.
+ *  See @ref bt_conn_le_read_min_conn_interval_groups
+ *
+ *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS}
+ *
+ *  @param conn   @ref BT_CONN_TYPE_LE connection object.
+ *  @param params Connection rate parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ */
+int bt_conn_le_conn_rate_request(struct bt_conn *conn,
+				 const struct bt_conn_le_conn_rate_param *params);
 
 /** @brief Read remote feature pages.
  *
@@ -2063,6 +2315,31 @@ struct bt_conn_cb {
 	void (*subrate_changed)(struct bt_conn *conn,
 				const struct bt_conn_le_subrate_changed *params);
 #endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS) || defined(__DOXYGEN__)
+	/** @brief LE Connection Rate Changed event.
+	 *
+	 *  This callback notifies the application that the connection rate
+	 *  parameters (including both connection interval and subrating)
+	 *  of the connection may have changed.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param status HCI Status from LE Connection Rate Change event.
+	 *                Possible Status codes:
+	 *                - Success (0x00)
+	 *                - Unknown Connection Identifier (0x02)
+	 *                - Command Disallowed (0x0C)
+	 *                - Unsupported Feature or Parameter Value (0x11)
+	 *                - Invalid HCI Command Parameters (0x12)
+	 *                - Unsupported Remote Feature (0x1A)
+	 *                - Unsupported LL Parameter Value (0x20)
+	 *  @param params New connection rate parameters.
+	 *                The connection rate parameters will be NULL
+	 *                if @p status is not @ref BT_HCI_ERR_SUCCESS.
+	 */
+	void (*conn_rate_changed)(struct bt_conn *conn, uint8_t status,
+				  const struct bt_conn_le_conn_rate_changed *params);
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
 
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 	/** @brief Read all remote features complete event.

@@ -148,7 +148,7 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 		return true;
 	}
 
-	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
+	return (requested_bis_syncs & aggregated_bis_syncs) == 0U;
 }
 
 static bool valid_bis_sync_request(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
@@ -239,7 +239,7 @@ static void receive_state_notify_cb(struct bt_conn *conn, void *data)
 
 		LOG_DBG("Could not notify receive state: %d", err);
 		err = k_work_reschedule(&internal_state->notify_work,
-					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+					K_USEC(conn_info.le.interval_us));
 		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
 	}
 }
@@ -850,8 +850,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			bis_sync_change_requested = true;
 		}
 
-		if (!valid_bis_sync_request(internal_state->requested_bis_sync[i],
-					    aggregated_bis_syncs)) {
+		if (!valid_bis_sync_request(requested_bis_sync[i], aggregated_bis_syncs)) {
 			LOG_DBG("Invalid BIS Sync request[%d]", i);
 			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 			goto unlock_return;

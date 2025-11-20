@@ -14,6 +14,13 @@ config NET_SAMPLE_OCPP_PORT
 	help
 	  OCPP central system server port
 
+config NET_SAMPLE_OCPP_WS_PATH
+	string "OCPP websocket path"
+	default "/steve/websocket/CentralSystemService/zephyr"
+	help
+	  WebSocket URL path (excluding IP address and port) for OCPP connection to the central
+	  system server.
+
 config NET_SAMPLE_SNTP_SERVER
 	string "SNTP server ip"
 	help

@@ -131,6 +131,10 @@
 	clock-div = <1>;
 };
 
+&sircdiv2_clk {
+	clock-div = <1>;
+};
+
 &gpioa {
 	status = "okay";
 };
@@ -163,6 +167,26 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+};
+
+&lpit0 {
+	status = "okay";
+};
+
+&lpit0_channel0 {
+	status = "okay";
+};
+
+&lpit0_channel1 {
+	status = "okay";
+};
+
+&lpit0_channel2 {
+	status = "okay";
+};
+
+&lpit0_channel3 {
+	status = "okay";
 };
 
 &edma {

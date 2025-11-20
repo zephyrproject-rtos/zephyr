@@ -1,0 +1,10 @@
+tests:
+  arch.arm64.sve_ctx:
+    arch_allow: arm64
+    filter: CONFIG_ARM64_SVE
+    integration_platforms:
+      - fvp_base_revc_2xaem/v9a
+    tags:
+      - sve
+      - arm64
+      - context_switch

@@ -43,11 +43,6 @@ endif()
 
 zephyr_compile_definitions(ZVFS_OPEN_SIZE=${final_fd_size})
 
-zephyr_sources_ifdef(CONFIG_FDTABLE fdtable.c)
-zephyr_syscall_header_ifdef(CONFIG_FDTABLE
-  ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
-)
-
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
 add_subdirectory_ifdef(CONFIG_CPU_LOAD_METRIC cpu_load)
@@ -78,3 +73,7 @@ zephyr_library_include_directories(
 )
 
 add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
+
+zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
+  ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
+)

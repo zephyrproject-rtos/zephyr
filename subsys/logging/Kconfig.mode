@@ -61,7 +61,8 @@ config LOG_FRONTEND_OPT_API
 	  used for the most common log messages.
 
 config LOG_CUSTOM_HEADER
-	bool "Include Custom Log Header"
+	bool "Include Custom Log Header [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  When enabled, a custom application provided header, named
 	  "zephyr_custom_log.h", is included at the end of log.h. This enables
