@@ -4,6 +4,7 @@
 
 source $(dirname "$0")/_ac_common.sh
 
-# bap_stream_rx.c:66): ISO receive lost
-# https://github.com/zephyrproject-rtos/zephyr/issues/84303
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# WEST_TOPDIR/zephyr/subsys/bluetooth/controller/hci/hci_driver.c:580
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
 # ac_config=2 ac_rx_preset=441_1_1 ac_acc_cnt=1 Execute_cap_unicast_ac $@
