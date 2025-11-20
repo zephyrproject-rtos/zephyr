@@ -712,6 +712,7 @@ static int spi_nrfx_init(const struct device *dev)
 	return pm_device_driver_init(dev, spim_nrfx_pm_action);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int spi_nrfx_deinit(const struct device *dev)
 {
 #if defined(CONFIG_PM_DEVICE)
@@ -732,6 +733,7 @@ static int spi_nrfx_deinit(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
