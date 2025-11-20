@@ -66,7 +66,7 @@ struct stm32_temp_config {
 	bool is_ntc;
 };
 
-static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
+static void stm32_temp_enable_tempsensor_channel(ADC_TypeDef *adc)
 {
 	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
 
@@ -76,7 +76,7 @@ static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
 	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 }
 
-static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
+static void stm32_temp_disable_tempsensor_channel(ADC_TypeDef *adc)
 {
 	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
 
@@ -220,22 +220,26 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(data->adc);
 
+#ifndef CONFIG_STM32_TEMP_INJECTED
 	rc = adc_channel_setup(data->adc, &data->adc_cfg);
-	if (rc) {
+	if (rc != 0) {
 		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
 		goto unlock;
 	}
 
-	adc_enable_tempsensor_channel(data->adc_base);
+	stm32_temp_enable_tempsensor_channel(data->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	adc_disable_tempsensor_channel(data->adc_base);
+#ifndef CONFIG_STM32_TEMP_INJECTED
+	stm32_temp_disable_tempsensor_channel(data->adc_base);
 
 unlock:
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -276,7 +280,21 @@ static int stm32_temp_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = 12U,
+#ifdef CONFIG_STM32_TEMP_INJECTED
+		.injected_mode = true,
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 	};
+
+#ifdef CONFIG_STM32_TEMP_INJECTED
+	int rc = adc_channel_setup(data->adc, &data->adc_cfg);
+
+	if (rc != 0) {
+		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
+		return rc;
+	}
+
+	stm32_temp_enable_tempsensor_channel(data->adc_base);
+#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	return 0;
 }
