@@ -124,7 +124,7 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, k_is_pre_kernel());
+	ret = scmi_send_message(proto, &msg, &reply, true);
 	if (ret < 0) {
 		return ret;
 	}
