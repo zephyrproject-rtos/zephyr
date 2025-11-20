@@ -12,9 +12,15 @@ sysbuild: true
 toolchain:
   - zephyr
 supported:
+  - adc
   - clock_control
+  - counter
   - dma
   - gpio
-  - pin_ctrl
-  - uart
+  - i2c
+  - mbox
+  - pwm
   - spi
+  - timer
+  - uart
+  - watchdog
