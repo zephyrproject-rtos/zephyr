@@ -200,6 +200,62 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+struct usb_device *host_connect_device(struct usbh_context *const ctx,
+				       uint8_t device_speed)
+{
+	int ret;
+	struct usb_device *udev;
+
+	LOG_DBG("Device connected event");
+	
+	/* Allocate new device for each connection */
+	udev = usbh_device_alloc(ctx);
+	if (udev == NULL) {
+		LOG_ERR("Failed allocate new device");
+		return NULL;
+	}
+
+	udev->state = USB_STATE_DEFAULT;
+	udev->speed = device_speed;
+
+	/* Add device to the udevs list */
+	sys_dlist_append(&ctx->udevs, &udev->node);
+
+	if (usbh_device_init(udev)) {
+		LOG_ERR("Failed to reset new USB device");
+		/* Remove from list if initialization failed */
+		sys_dlist_remove(&udev->node);
+		usbh_device_free(udev);
+		return NULL;
+	}
+
+	ret = usbh_class_probe_all(udev);
+	if (ret != 0) {
+		LOG_ERR("Failed to probe all classes for this new USB device");
+	}
+
+	LOG_INF("Device connected: addr=%d, speed=%d, total devices=%zu", 
+		udev->addr, udev->speed, sys_dlist_len(&ctx->udevs));
+	
+	return udev;
+}
+
+void usbh_device_disconnected(struct usbh_context *ctx, struct usb_device *udev)
+{
+	if (!ctx || !udev) {
+		return;
+	}
+
+	usbh_class_remove_all(udev);
+
+	k_mutex_lock(&ctx->mutex, K_FOREVER);
+	sys_dlist_remove(&udev->node);
+	k_mutex_unlock(&ctx->mutex);
+
+	usbh_device_free(udev);
+	LOG_DBG("Device removed");
+}
+
 int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 {
 	int ret;
