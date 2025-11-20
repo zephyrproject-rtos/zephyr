@@ -7,9 +7,7 @@
 import argparse
 import sys
 
-from PIL import ImageFont
-from PIL import Image
-from PIL import ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 PRINTABLE_MIN = 32
 PRINTABLE_MAX = 126
@@ -22,14 +20,14 @@ def generate_element(image, charcode):
 
     width, height = image.size
     if args.dump:
-        blackwhite.save("{}_{}.png".format(args.name, charcode))
+        blackwhite.save(f"{args.name}_{charcode}.png")
 
     if PRINTABLE_MIN <= charcode <= PRINTABLE_MAX:
-        char = " ({:c})".format(charcode)
+        char = f" ({charcode:c})"
     else:
         char = ""
 
-    args.output.write("""\t/* {:d}{} */\n\t{{\n""".format(charcode, char))
+    args.output.write(f"""\t/* {charcode:d}{char} */\n\t{{\n""")
 
     glyph = []
     if args.hpack:
@@ -65,7 +63,7 @@ def generate_element(image, charcode):
             bits.append(value)
             if not args.msb_first:
                 value = value[::-1]
-            args.output.write("0x{:02x},".format(int(value, 2)))
+            args.output.write(f"0x{int(value, 2):02x},")
         args.output.write("   /* {} */\n".format(''.join(bits).replace('0', ' ').replace('1', '#')))
     args.output.write("\t},\n")
 
@@ -100,9 +98,9 @@ def extract_font_glyphs():
 
     # Diagnose inconsistencies with arguments
     if width != args.width:
-        raise Exception('text width {} mismatch with -x {}'.format(width, args.width))
+        raise Exception(f'text width {width} mismatch with -x {args.width}')
     if height != args.height:
-        raise Exception('text height {} mismatch with -y {}'.format(height, args.height))
+        raise Exception(f'text height {height} mismatch with -y {args.height}')
 
     for i in range(args.first, args.last + 1):
         image = Image.new('1', (width, height), 'white')
@@ -193,25 +191,18 @@ static const uint8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = 
         extract_image_glyphs()
 
     args.output.write(
-        """
+        f"""
 }};
 
-FONT_ENTRY_DEFINE({name}_{width}{height},
-		  {width},
-		  {height},
+FONT_ENTRY_DEFINE({args.name}_{args.width}{args.height},
+		  {args.width},
+		  {args.height},
 		  {caps},
-		  cfb_font_{name}_{width}{height},
-		  {first},
-		  {last}
+		  cfb_font_{args.name}_{args.width}{args.height},
+		  {args.first},
+		  {args.last}
 );
-""".format(
-            name=args.name,
-            width=args.width,
-            height=args.height,
-            caps=caps,
-            first=args.first,
-            last=args.last,
-        )
+"""  # noqa: E101
     )
 
 

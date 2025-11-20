@@ -3,16 +3,15 @@
 # SPDX-License-Identifier: MIT
 # Copied from 27e322f of https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py
 # pylint: skip-file
-import sys
-import struct
-import subprocess
-import re
-import os
-import os.path
 import argparse
 import json
+import os
+import os.path
+import re
+import struct
+import subprocess
+import sys
 from time import sleep
-
 
 UF2_MAGIC_START0 = 0x0A324655  # "UF2\n"
 UF2_MAGIC_START1 = 0x9E5D5157  # Randomly selected
@@ -34,9 +33,7 @@ def is_hex(buf):
         w = buf[0:30].decode("utf-8")
     except UnicodeDecodeError:
         return False
-    if w[0] == ':' and re.match(rb"^[:0-9a-fA-F\r\n]+$", buf):
-        return True
-    return False
+    return w[0] == ':' and re.match(rb"^[:0-9a-fA-F\r\n]+$", buf)
 
 
 def convert_from_uf2(buf):
@@ -61,22 +58,22 @@ def convert_from_uf2(buf):
             continue
         datalen = hd[4]
         if datalen > 476:
-            assert False, "Invalid UF2 data size at " + ptr
+            raise AssertionError("Invalid UF2 data size at " + ptr)
         newaddr = hd[3]
-        if (hd[2] & 0x2000) and (currfamilyid == None):
+        if (hd[2] & 0x2000) and (currfamilyid is None):
             currfamilyid = hd[7]
-        if curraddr == None or ((hd[2] & 0x2000) and hd[7] != currfamilyid):
+        if curraddr is None or ((hd[2] & 0x2000) and hd[7] != currfamilyid):
             currfamilyid = hd[7]
             curraddr = newaddr
             if familyid == 0x0 or familyid == hd[7]:
                 appstartaddr = newaddr
         padding = newaddr - curraddr
         if padding < 0:
-            assert False, "Block out of order at " + ptr
+            raise AssertionError("Block out of order at " + ptr)
         if padding > 10 * 1024 * 1024:
-            assert False, "More than 10M of padding needed at " + ptr
+            raise AssertionError("More than 10M of padding needed at " + ptr)
         if padding % 4 != 0:
-            assert False, "Non-word padding size at " + ptr
+            raise AssertionError("Non-word padding size at " + ptr)
         while padding > 0:
             padding -= 4
             outp.append(b"\x00\x00\x00\x00")
@@ -84,29 +81,27 @@ def convert_from_uf2(buf):
             outp.append(block[32 : 32 + datalen])
         curraddr = newaddr + datalen
         if hd[2] & 0x2000:
-            if hd[7] in families_found.keys():
+            if hd[7] in families_found:
                 if families_found[hd[7]] > newaddr:
                     families_found[hd[7]] = newaddr
             else:
                 families_found[hd[7]] = newaddr
-        if prev_flag == None:
+        if prev_flag is None:
             prev_flag = hd[2]
         if prev_flag != hd[2]:
             all_flags_same = False
         if blockno == (numblocks - 1):
             print("--- UF2 File Header Info ---")
             families = load_families()
-            for family_hex in families_found.keys():
+            for family_hex in families_found:
                 family_short_name = ""
                 for name, value in families.items():
                     if value == family_hex:
                         family_short_name = name
-                print(
-                    "Family ID is {:s}, hex value is 0x{:08x}".format(family_short_name, family_hex)
-                )
-                print("Target Address is 0x{:08x}".format(families_found[family_hex]))
+                print(f"Family ID is {family_short_name:s}, hex value is 0x{family_hex:08x}")
+                print(f"Target Address is 0x{families_found[family_hex]:08x}")
             if all_flags_same:
-                print("All block flag values consistent, 0x{:04x}".format(hd[2]))
+                print(f"All block flag values consistent, 0x{hd[2]:04x}")
             else:
                 print("Flags were not all the same")
             print("----------------------------")
@@ -117,12 +112,12 @@ def convert_from_uf2(buf):
 
 
 def convert_to_carray(file_content):
-    outp = "const unsigned long bindata_len = %d;\n" % len(file_content)
+    outp = f"const unsigned long bindata_len = {len(file_content)};\n"
     outp += "const unsigned char bindata[] __attribute__((aligned(16))) = {"
     for i in range(len(file_content)):
         if i % 16 == 0:
             outp += "\n"
-        outp += "0x%02x, " % file_content[i]
+        outp += f"0x{file_content[i]:02x}, "
     outp += "\n};\n"
     return bytes(outp, "utf-8")
 
@@ -210,7 +205,7 @@ def convert_from_hex_to_uf2(buf):
             break
         elif tp == 0:
             addr = upper + ((rec[1] << 8) | rec[2])
-            if appstartaddr == None:
+            if appstartaddr is None:
                 appstartaddr = addr
             i = 4
             while i < len(rec) - 1:
@@ -266,14 +261,14 @@ def get_drives():
     def has_info(d):
         try:
             return os.path.isfile(d + INFO_FILE)
-        except:
+        except Exception:
             return False
 
     return list(filter(has_info, drives))
 
 
 def board_id(path):
-    with open(path + INFO_FILE, mode='r') as file:
+    with open(path + INFO_FILE) as file:
         file_content = file.read()
     return re.search(r"Board-ID: ([^\r\n]*)", file_content).group(1)
 
@@ -286,7 +281,7 @@ def list_drives():
 def write_file(name, buf):
     with open(name, "wb") as f:
         f.write(buf)
-    print("Wrote %d bytes to %s" % (len(buf), name))
+    print(f"Wrote {len(buf)} bytes to {name}")
 
 
 def load_families():
@@ -393,12 +388,10 @@ def main():
             outbuf = convert_to_uf2(inpbuf)
         if not args.deploy and not args.info:
             print(
-                "Converted to %s, output size: %d, start address: 0x%x"
-                % (ext, len(outbuf), appstartaddr)
+                f"Converted to {ext}, output size: {len(outbuf)}, start address: 0x{appstartaddr:x}"
             )
-        if args.convert or ext != "uf2":
-            if args.output == None:
-                args.output = "flash." + ext
+        if (args.convert or ext != "uf2") and args.output is None:
+            args.output = "flash." + ext
         if args.output:
             write_file(args.output, outbuf)
         if ext == "uf2" and not args.convert and not args.info:
@@ -412,7 +405,7 @@ def main():
                 elif not args.output:
                     error("No drive to deploy.")
             for d in drives:
-                print("Flashing %s (%s)" % (d, board_id(d)))
+                print(f"Flashing {d:s} ({board_id(d):s})")
                 write_file(d + "/NEW.UF2", outbuf)
 
 

@@ -38,7 +38,7 @@ def parse_args():
         type=lambda x: int(x, 0),
         default=-1,
         help="""Length in bytes to read from the input file.
-                        Defaults to reading till the end of the input file.""",
+                Defaults to reading till the end of the input file.""",
     )
     parser.add_argument(
         "-m",
@@ -57,9 +57,9 @@ def parse_args():
         nargs='?',
         const=None,
         help="""mtime seconds in the gzip header.
-                        Defaults to zero to keep builds deterministic. For
-                        current date and time (= "now") use this option
-                        without any value.""",
+                Defaults to zero to keep builds deterministic. For
+                current date and time (= "now") use this option
+                without any value.""",
     )
     args = parser.parse_args()
 
@@ -74,13 +74,13 @@ def get_nice_string(list_or_iterator):
 
 def make_hex(chunk):
     hexdata = codecs.encode(chunk, 'hex').decode("utf-8")
-    hexlist = map(''.join, zip(*[iter(hexdata)] * 2))
+    hexlist = map(''.join, zip(*[iter(hexdata)] * 2, strict=False))
     print(get_nice_string(hexlist) + ',')
 
 
 def make_string_literal(chunk):
     hexdata = codecs.encode(chunk, 'hex').decode("utf-8")
-    hexlist = map(''.join, zip(*[iter(hexdata)] * 2))
+    hexlist = map(''.join, zip(*[iter(hexdata)] * 2, strict=False))
     print(''.join("\\x" + str(x) for x in hexlist), end='')
 
 
@@ -118,7 +118,7 @@ def main():
                 else:
                     print('"', end='')
                     remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
+                    for chunk in iter(lambda rem=remainder: fp.read(min(1024, rem)), b''):
                         make_string_literal(chunk)
                         remainder = remainder - len(chunk)
                     print('"', end='')
@@ -129,7 +129,7 @@ def main():
                         make_hex(chunk)
                 else:
                     remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
+                    for chunk in iter(lambda rem=remainder: fp.read(min(1024, rem)), b''):
                         make_hex(chunk)
                         remainder = remainder - len(chunk)
 

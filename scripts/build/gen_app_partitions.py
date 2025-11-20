@@ -168,15 +168,16 @@ partition.
 #     "(@z_data_smem_z_libc_partition_bss_end@ - @z_data_smem_z_libc_partition_bss_start@)"
 #     )
 
-import sys
 import argparse
 import json
 import os
 import re
+import sys
 from collections import OrderedDict
+
+import elftools.common.exceptions
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-import elftools.common.exceptions
 
 SZ = 'size'
 SRC = 'sources'
@@ -518,7 +519,7 @@ def parse_args():
         action="append",
         default=[],
         metavar=("LIBRARY", "PARTITION"),
-        help="Include globals for a particular library or object filename into a designated partition",
+        help="Include globals for a library or object filename into a designated partition",
     )
     parser.add_argument("--pinoutput", required=False, help="Output ld file for pinned sections")
     parser.add_argument(
@@ -580,7 +581,7 @@ def main():
     if args.verbose:
         print("Partitions retrieved:")
         for key in partsorted:
-            print("    {0}: size {1}: {2}".format(key, partsorted[key][SZ], partsorted[key][SRC]))
+            print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
 
     if args.pinoutput:
         decreasing_tuples = sorted(
@@ -593,9 +594,7 @@ def main():
         if args.verbose:
             print("Pinned partitions retrieved:")
             for key in partsorted:
-                print(
-                    "    {0}: size {1}: {2}".format(key, partsorted[key][SZ], partsorted[key][SRC])
-                )
+                print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
 
 
 if __name__ == '__main__':

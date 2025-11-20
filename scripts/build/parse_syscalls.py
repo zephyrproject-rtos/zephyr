@@ -24,11 +24,11 @@ file would be unchanged, it is not modified to prevent unnecessary
 incremental builds.
 """
 
-import sys
-import re
 import argparse
-import os
 import json
+import os
+import re
+import sys
 from pathlib import PurePath
 
 regex_flags = re.MULTILINE | re.VERBOSE
@@ -72,7 +72,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
     # Get the list of header files which contains syscalls to be emitted.
     # If file_list does not exist, we emit all syscalls.
     if file_list:
-        with open(file_list, "r", encoding="utf-8") as fp:
+        with open(file_list, encoding="utf-8") as fp:
             contents = fp.read()
 
             for one_file in contents.split(";"):
@@ -118,11 +118,11 @@ def analyze_headers(include_dir, scan_dir, file_list):
 
     # Parse files to extract syscall functions
     for one_file in syscall_files:
-        with open(one_file, "r", encoding="utf-8") as fp:
+        with open(one_file, encoding="utf-8") as fp:
             try:
                 contents = fp.read()
             except Exception:
-                sys.stderr.write("Error decoding %s (included in %s)\n" % (one_file, path))
+                sys.stderr.write(f"Error decoding {one_file} (included in {path})\n")
                 raise
 
         fn = os.path.basename(one_file)
@@ -133,9 +133,9 @@ def analyze_headers(include_dir, scan_dir, file_list):
             syscall_result = [(mo.groups(), fn, to_emit) for mo in syscall_regex.finditer(contents)]
             for tag in struct_tags:
                 tagged_struct_update(tagged_ret[tag], tag, contents)
-        except Exception:
-            sys.stderr.write("While parsing %s\n" % fn)
-            raise
+        except Exception as e:
+            sys.stderr.write(f"While parsing {fn}\n")
+            raise e
 
         syscall_ret.extend(syscall_result)
 
@@ -144,7 +144,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
 
 def update_file_if_changed(path, new):
     if os.path.exists(path):
-        with open(path, 'r') as fp:
+        with open(path) as fp:
             old = fp.read()
 
         if new != old:

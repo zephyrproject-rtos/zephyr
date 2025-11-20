@@ -7,10 +7,9 @@
 # This merges a set of input hex files into a single output hex file.
 # Any conflicts will result in an error being reported.
 
-from intelhex import IntelHex
-from intelhex import AddressOverlapError
-
 import argparse
+
+from intelhex import AddressOverlapError, IntelHex
 
 
 def merge_hex_files(output, input_hex_files, overlap, output_bin):
@@ -26,8 +25,8 @@ def merge_hex_files(output, input_hex_files, overlap, output_bin):
 
         try:
             ih.merge(to_merge, overlap=overlap)
-        except AddressOverlapError:
-            raise AddressOverlapError("{} has merge issues".format(hex_file_path))
+        except AddressOverlapError as e:
+            raise AddressOverlapError(f"{hex_file_path} has merge issues") from e
 
     output_format = "bin" if output_bin else "hex"
     ih.tofile(output, format=output_format)
