@@ -533,6 +533,13 @@
 			status = "disabled";
 		};
 
+		v2t0: adc-v2t0 {
+			compatible = "nuvoton,npcx-adc-v2t";
+			adc-dev = <&adc0>;
+			support-npckn-v1;
+			status = "disabled";
+		};
+
 		ps2_ctrl0: ps2@400b1000 {
 			compatible = "nuvoton,npcx-ps2-ctrl";
 			reg = <0x400b1000 0x1000>;
