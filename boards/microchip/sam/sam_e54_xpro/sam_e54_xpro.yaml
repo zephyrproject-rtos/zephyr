@@ -16,6 +16,7 @@ supported:
   - entropy
   - flash
   - gpio
+  - hwinfo
   - i2c
   - mcuboot
   - pinctrl
