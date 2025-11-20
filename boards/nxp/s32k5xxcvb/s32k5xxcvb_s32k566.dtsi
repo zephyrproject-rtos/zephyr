@@ -9,6 +9,10 @@
 #include "s32k5xxcvb_s32k566-pinctrl.dtsi"
 
 / {
+	chosen {
+		zephyr,canbus = &flexcan0;
+	};
+
 	aliases {
 		led0 = &user_led_red;
 		led1 = &user_led_green;
@@ -77,5 +81,11 @@
 };
 
 &swt0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
