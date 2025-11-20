@@ -163,6 +163,34 @@ extern "C" {
 	((_bis_bitfield) == 0U || (_bis_bitfield) == BT_BAP_BIS_SYNC_NO_PREF ||                    \
 	 BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield))
 
+
+/** @brief flags for Periodic Advertising Sync Transfer (PAST) */
+enum bt_bap_past_flag {
+	/** No flag set for PAST Address matching source or ADV_EXT_IND */
+	BT_BAP_PAST_FLAG_NONE = 0,
+
+	/** Advertising Address does not match ADV_EXT_IND */
+	BT_BAP_PAST_FLAG_NO_MATCH_ADV_EXT_IND = BIT(0),
+
+	/** Advertising Address does not match the source */
+	BT_BAP_PAST_FLAG_NO_MATCH_SRC_ADDR = BIT(1),
+};
+
+/**
+ * @brief Helper to pack addr_type and src_id
+ *
+ * @param _past_flags past_addr_types bits0..7
+ * @param _src_id past_addr_types bits8..15
+ */
+#define BT_BAP_PAST_SERVICE_DATA(_past_flags, _src_id) \
+	((uint16_t)(_src_id) & 0xFFU) << 8U | ((uint16_t)(_past_flags) & 0xFFU)
+
+/** Extract BAP addr_type from 16-bit Service Data */
+#define BT_BAP_PAST_GET_SRC_ID(_data) (uint8_t)(((_data) & 0xFFU) >> 8U)
+
+/** Extract the BAP flags from 16-bit Service Data */
+#define BT_BAP_PAST_GET_FLAGS(_data) (uint8_t)(((_data) & 0xFFU))
+
 /**
  * @brief Helper to declare elements of bt_bap_qos_cfg
  *
