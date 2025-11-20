@@ -72,6 +72,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp

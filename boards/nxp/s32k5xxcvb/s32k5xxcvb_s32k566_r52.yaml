@@ -14,4 +14,5 @@ supported:
   - can
   - gpio
   - counter
+  - i2c
 vendor: nxp
