@@ -509,6 +509,17 @@ struct bt_hfp_hf_cb {
 	 *  @param call Current call information.
 	 */
 	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
+
+	/** @brief Vendor specific command callback
+	 * 
+	 * If this callback is provided it will be called whenever the
+	 * vendor specific result is received from AG.
+	 * If the request is finished, the callback will be called with a NULL rsp.
+	 * 
+	 * @param hf HFP HF object.
+	 * @param rsp Vendor specific response string.
+	 */
+	void (*vendor_specific)(struct bt_hfp_hf *hf, const char *rsp);
 };
 
 /** @brief Register HFP HF profile
@@ -1055,6 +1066,20 @@ int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF send vendor specific command
+ * 
+ * It allows HF to send vendor specific command to AG.
+ * The command shall include the leading `AT`/`AT+` prefix and shall not
+ * include the terminating carriage return (`\r`). Trailing `\r`/`\n`
+ * characters are ignored.
+ * 
+ * @param hf HFP HF object.
+ * @param cmd Vendor specific AT command string.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_send_vendor(struct bt_hfp_hf *hf, const char *cmd);
 
 #ifdef __cplusplus
 }

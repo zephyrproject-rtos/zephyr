@@ -287,6 +287,89 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	return 0;
 }
 
+static int vendor_handle(struct at_client *hf_at)
+{
+	char *val;
+
+	val = at_get_string(hf_at);
+	if (!val) {
+		LOG_ERR("Error getting value");
+		return 0;
+	}
+
+	return 0;
+}
+
+static int vendor_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	LOG_DBG("Vendor specific response received");
+
+	int err = at_parse_cmd_input(hf_at, buf, "VENDOR", vendor_handle,
+		AT_CMD_TYPE_NORMAL);
+
+	return err;
+}
+
+static int vendor_finish(struct at_client *hf_at, enum bt_at_result result,
+		          enum bt_at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	LOG_DBG("Vendor specific response received");
+
+	bt_hf->vendor_specific(hf, NULL);
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING);
+
+	return 0;
+}
+
+int bt_hfp_hf_send_vendor(struct bt_hfp_hf *hf, const char *cmd)
+{
+	int err;
+	size_t cmd_len;
+	size_t i;
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!cmd) {
+		return -EINVAL;
+	}
+
+	cmd_len = strlen(cmd);
+	while ((cmd_len > 0U) &&
+	       ((cmd[cmd_len - 1U] == '\r') || (cmd[cmd_len - 1U] == '\n'))) {
+		cmd_len--;
+	}
+
+	if (cmd_len < 2U) {
+		return -EINVAL;
+	}
+
+	if (cmd[0] != 'A' || cmd[1] != 'T') {
+		return -EINVAL;
+	}
+
+	for (i = 0U; i < cmd_len; i++) {
+		if ((cmd[i] == '\r') || (cmd[i] == '\n')) {
+			return -EINVAL;
+		}
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING)) {
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, vendor_resp, vendor_finish, "%.*s", (int)cmd_len, cmd);
+	if (err < 0) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING);
+	}
+
+	return err;
+}
+
 int brsf_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
