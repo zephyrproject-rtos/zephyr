@@ -120,3 +120,5 @@ uint8_t btp_bap_broadcast_assistant_set_broadcast_code(const void *cmd, uint16_t
 						       void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 					      void *rsp, uint16_t *rsp_len);
+uint8_t btp_bap_broadcast_add_receive_state(const void *cmd, uint16_t cmd_len,
+					    void *rsp, uint16_t *rsp_len);

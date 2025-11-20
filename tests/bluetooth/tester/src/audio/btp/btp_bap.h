@@ -202,6 +202,19 @@ struct btp_bap_broadcast_source_setup_v2_rp {
 	uint32_t gap_settings;
 } __packed;
 
+#define BTP_BAP_ADD_BROADCAST_RECEIVE_STATE	0x1a
+struct btp_bap_add_broadcast_receive_state_cmd {
+	bt_addr_le_t broadcaster_address;
+	uint8_t advertiser_sid;
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
+	uint8_t big_encryption;
+	uint8_t num_subgroups;
+	uint8_t subgroups[];
+} __packed;
+struct btp_bap_add_broadcast_receive_state_rp {
+	uint8_t src_id;
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED		0x80
 struct btp_bap_discovery_completed_ev {
