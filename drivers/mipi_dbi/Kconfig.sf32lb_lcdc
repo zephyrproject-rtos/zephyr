@@ -1,0 +1,21 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_SF32LB
+	bool "SF32LB MIPI DBI driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_MIPI_DBI_ENABLED
+	help
+	  Enable driver for SF32LB MIPI DBI controller.
+
+if MIPI_DBI_SF32LB
+
+config MIPI_DBI_SF32LB_RESET_DELAY_MS
+	int "Reset pulse delay in milliseconds"
+	default 10
+	help
+	  Delay in milliseconds to hold the reset GPIO pin active during
+	  display initialization. This ensures the display has enough time
+	  to properly reset before continuing with initialization.
+
+endif # MIPI_DBI_SF32LB
