@@ -7,7 +7,7 @@ config ZEPHYR_HAL_INFINEON_MODULE
 config ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	bool
 
-if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
+if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY || SOC_FAMILY_INFINEON_CAT2
 
 config USE_INFINEON_LEGACY_HAL
 	bool
@@ -115,8 +115,28 @@ config USE_INFINEON_SMIF
 	bool
 	help
 	  Enable SMIF HAL driver for Infineon devices
+config USE_INFINEON_LP_COMP
+	bool
+	help
+	Enable LP-Comp (Low-Power Comparator) HAL module driver for Infineon devices
 
-endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
+config USE_INFINEON_MSCLP
+	bool
+	help
+	Enable MSCLP (Multi-Speed Clock Low-Power) HAL module driver for Infineon devices
+
+config USE_INFINEON_TCPWM_QUADDEC
+	bool
+	help
+	Enable Timer (Timer/Counter/PWM Quadrature Decoder) HAL module driver for
+	Infineon devices
+
+config USE_INFINEON_SMARTIO
+	bool
+	help
+	Enable Smart-IO module driver for Infineon devices
+
+endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY || SOC_FAMILY_INFINEON_CAT2
 
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"

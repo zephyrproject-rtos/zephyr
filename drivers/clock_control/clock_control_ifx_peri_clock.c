@@ -22,7 +22,7 @@
 #include <cy_sysclk.h>
 #include <cy_systick.h>
 
-struct ifx_cat1_peri_clock_data {
+struct ifx_peri_clock_data {
 	struct ifx_cat1_resource_inst hw_resource;
 	struct ifx_cat1_clock clock;
 	uint16_t divider;
@@ -67,12 +67,13 @@ en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num)
 #else
 	clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK + block_num);
 #endif
+
 	return clk;
 }
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
-	struct ifx_cat1_peri_clock_data *const data = dev->data;
+	struct ifx_peri_clock_data *const data = dev->data;
 
 	if (data->hw_resource.type == IFX_RSC_SCB) {
 		en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
@@ -105,7 +106,7 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 #endif
 
 #define INFINEON_CAT1_PERI_CLOCK_INIT(n)                                                           \
-	static struct ifx_cat1_peri_clock_data ifx_cat1_peri_clock##n##_data = {                   \
+	static struct ifx_peri_clock_data ifx_cat1_peri_clock##n##_data = {                   \
 		PERI_CLOCK_INIT(n).divider = DT_INST_PROP(n, clock_div),                           \
 		.hw_resource = {.type = DT_INST_PROP(n, resource_type),                            \
 				.block_num = DT_INST_PROP(n, resource_instance)},                  \

@@ -1,0 +1,50 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: cat2
+  series:
+  - name: psoc4100tp
+    socs:
+    - name: cy8c4146lqi_t403
+    - name: cy8c4146axi_t403
+    - name: cy8c4146azi_t403
+    - name: cy8c4146azi_t405
+    - name: cy8c4146lqi_t413
+    - name: cy8c4146axi_t413
+    - name: cy8c4146azi_t413
+    - name: cy8c4146azi_t415
+    - name: cy8c4146lqi_t453
+    - name: cy8c4146axi_t453
+    - name: cy8c4146azi_t453
+    - name: cy8c4146azi_t455
+    - name: cy8c4147lqi_t403
+    - name: cy8c4147axi_t403
+    - name: cy8c4147azi_t403
+    - name: cy8c4147azi_t405
+    - name: cy8c4147lqi_t413
+    - name: cy8c4147axi_t413
+    - name: cy8c4147azi_t413
+    - name: cy8c4147azi_t415
+    - name: cy8c4147lqi_t453
+    - name: cy8c4147axi_t453
+    - name: cy8c4147azi_t453
+    - name: cy8c4147azi_t455
+    - name: cy8c4147lqi_t463
+    - name: cy8c4147axi_t463
+    - name: cy8c4147azi_t463
+    - name: cy8c4147azi_t465
+    - name: cy8c4147lqi_t473
+    - name: cy8c4147axi_t473
+    - name: cy8c4147azi_t473
+    - name: cy8c4147azi_t475
+    - name: cy8c4147lqq_t493
+    - name: cy8c4147axq_t493
+    - name: cy8c4147azq_t493
+    - name: cy8c4147azq_t495
+    - name: cy8c4146azq_t413
+    - name: cy8c4146azq_t453
+    - name: cy8c4147azq_t415
+    - name: cy8c4147azq_t455

@@ -86,18 +86,31 @@ static int fixed_rate_clk_init(const struct device *dev)
 	switch (config->system_clock) {
 
 	case IFX_IMO:
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT2)
+		Cy_SysClk_ImoEnable();
+		int err = Cy_SysClk_ImoSetFrequency(config->rate);
+
+		if (err != CY_SYSCLK_SUCCESS) {
+			printk("Failed to set IMO frequency with (error: %d)\n", err);
+			return -EIO;
+		}
+#endif
 		break;
 
 	case IFX_FLL:
 		break;
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_CAT2)
 	case IFX_IHO:
 		Cy_SysClk_IhoEnable();
 		break;
+#endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
 	case IFX_PILO:
 		Cy_SysClk_PiloEnable();
 		break;
+#endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
 	case IFX_DPLL500:
@@ -105,6 +118,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 		SystemCoreClockUpdate();
 		break;
 #endif
+
 	default:
 		break;
 	}

@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_IFX_FIXED_CLOCK
+	bool "Infineon Fixed clock driver"
+	default y
+	depends on SOC_FAMILY_INFINEON_CAT2
+	depends on DT_HAS_INFINEON_FIXED_CLOCK_ENABLED
+	help
+	  This option enables the Fixed clock driver for Infineon CAT2 family.
+
+config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
+	bool "Infineon CAT2 Fixed factor clock driver"
+	default y
+	depends on SOC_FAMILY_INFINEON_CAT2
+	depends on DT_HAS_INFINEON_FIXED_FACTOR_CLOCK_ENABLED
+	help
+	  This option enables the Fixed clock driver for Infineon CAT2 family.
+
+config CLOCK_CONTROL_IFX_PERI_CLOCK
+	bool "Infineon CAT2 Fixed clock driver"
+	default y
+	depends on SOC_FAMILY_INFINEON_CAT2
+	depends on DT_HAS_INFINEON_PERI_DIV_ENABLED
+	help
+	  This option enables the Peripheral clock driver for Infineon CAT2 family.
