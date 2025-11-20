@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include "nrf54lm20a_cpuapp_common.dtsi"
+#include <nordic/nrf54lm20a_cpuapp.dtsi>
+#include "nrf54lm20_a_b_cpuapp_common.dtsi"
 #include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
@@ -18,6 +19,3 @@
 		zephyr,sram = &cpuapp_sram;
 	};
 };
-
-/* Get a node label for wi-fi spi to use in shield files */
-wifi_spi: &spi22 {};
