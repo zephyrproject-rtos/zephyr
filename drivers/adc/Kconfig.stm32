@@ -13,6 +13,14 @@ config ADC_STM32
 	default y
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	select PINCTRL
+	select ADC_HAS_SEQUENCE_PRIORITY if \
+		!SOC_SERIES_STM32C0X && \
+		!SOC_SERIES_STM32F0X && \
+		!SOC_SERIES_STM32G0X && \
+		!SOC_SERIES_STM32L0X && \
+		!SOC_SERIES_STM32U0X && \
+		!SOC_SERIES_STM32WBAX && \
+		!SOC_SERIES_STM32WLX
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
@@ -32,5 +40,19 @@ config ADC_STM32_DMA
 	help
 	  Enable the ADC DMA mode for ADC instances
 	  that enable dma channels in their device tree node.
+
+config ADC_STM32_INJECTED_CHANNELS
+	def_bool y
+	depends on ADC_SEQUENCE_PRIORITY
+	help
+	  Enable the support for injected channels.
+	  To define a sequence as injected, set the `priority` field of the
+	  `struct adc_sequence` to 1. A regular sequence should have a value
+	  of 0. Any other values will return an error.
+	  When using injected channels, it is recommended to setup all channels
+	  that will be used (both regular and injected) before any measurement
+	  is started, because it is not possible to setup a new channel while
+	  conversions are running (typically, one can't configure an injected
+	  channel if a regular conversion is on-going).
 
 endif
