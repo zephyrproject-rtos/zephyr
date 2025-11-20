@@ -49,6 +49,9 @@ CSTALL = 8
 SPA    = 16
 CPA    = 24
 
+# LCTL bits
+OFLEN  = 4
+
 class HDAStream:
     # creates an hda stream with at 2 buffers of buf_len
     def __init__(self, stream_id: int):
@@ -257,12 +260,14 @@ def map_regs(log_only):
     hda.SPBFCTL = 0x0704
     hda.PPCTL   = 0x0804
 
+    if ace20 or ace30:
+        hda.HDAML_I2S_LCTL = 0x0C40 + 0x40 * 3 + 4
+
     # Find the ID of the first output stream
     hda_ostream_id = (hda.GCAP >> 8) & 0x0f # number of input streams
     log.info(f"Selected output stream {hda_ostream_id} (GCAP = 0x{hda.GCAP:x})")
     hda.SD_SPIB = 0x0708 + (8 * hda_ostream_id)
     hda.freeze()
-
 
     # Standard HD Audio Stream Descriptor
     sd = Regs(hdamem + 0x0080 + (hda_ostream_id * 0x20))
@@ -395,8 +400,7 @@ def runx(cmd):
     return subprocess.check_output(cmd, shell=True).decode().rstrip()
 
 def mask(bit):
-    if cavs25:
-        return 0b1 << bit
+    return 0b1 << bit
 
 def load_firmware(fw_file):
     try:
@@ -538,6 +542,12 @@ def load_firmware_ace(fw_file):
     while not dsp.HFDSSCS & (1 << 24):
         log.info("Waiting for DSP subsystem power on")
         time.sleep(0.1)
+
+    if ace20 or ace30:
+        log.info(f"Enabling offload for I2S link")
+        # needed to allow DSP to access SSP DAI
+        hda.HDAML_I2S_LCTL |= mask(OFLEN)
+        log.debug(f"HDAML.I2S_LCTL 0x{hda.HDAML_I2S_LCTL:x}")
 
     log.info("Turning on Domain0")
     dsp.HFPWRCTL |= 0x1 # set SPA bit
