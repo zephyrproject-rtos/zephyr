@@ -93,7 +93,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 static void log_backend_swo_init(struct log_backend const *const backend)
 {
 	/* Enable DWT and ITM units */
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
 #if (__CORTEX_M <= 7U)
 	/* Enable access to ITM registers */
 	ITM->LAR  = 0xC5ACCE55;
