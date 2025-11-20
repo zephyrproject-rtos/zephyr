@@ -4,5 +4,5 @@
 
 source $(dirname "$0")/_ac_common.sh
 
-# BT_ISO_FLAGS_LOST
+# <err> bap_stream_rx.bap_stream_rx_recv_cb: ISO receive lost.
 # ac_config=12 ac_tx_preset=441_1_2 ac_acc_cnt=1 Execute_cap_broadcast_ac $@
