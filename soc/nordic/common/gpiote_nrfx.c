@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Keep peripheral addresses as in real HW so we can compare them with DT values */
+#define NRF_H_NO_BSIM_REDEFS
+
 #include <zephyr/kernel.h>
 #include <nrfx_gpiote.h>
 #include "gpiote_nrfx.h"
