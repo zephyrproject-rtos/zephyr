@@ -243,10 +243,8 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 void move_current_to_end_of_prio_q(void)
 {
-	if (z_is_thread_queued(_current)) {
-		dequeue_thread(_current);
-	}
-	queue_thread(_current);
+	runq_yield();
+
 	update_cache(1);
 }
 
