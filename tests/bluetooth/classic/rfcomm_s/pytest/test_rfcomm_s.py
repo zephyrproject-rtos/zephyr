@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import os
 import sys
 
 import bumble
@@ -18,86 +19,16 @@ from bumble.transport import open_transport_or_link
 from rfcomm_utility import send_value, setup_logger_capture, wait_mux_response
 from twister_harness import DeviceAdapter, Shell
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.common import (
+    device_power_on,
+    send_cmd_to_iut,
+    wait_for_shell_response,
+)
+
 logger = logging.getLogger(__name__)
 logger_capture = setup_logger_capture(logger)
-
-
-# power on dongle
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
-
-
-# wait for shell response
-async def _wait_for_shell_response(dut, response, max_wait_sec=10):
-    """
-    _wait_for_shell_response() is used to wait for shell response.
-    It will return after finding a specific 'response' or waiting long enough.
-    :param dut:
-    :param response: shell response that you want to monitor.
-    :param max_wait_sec: maximum waiting time
-    :return: found: whether the 'response' is found; lines: DUT shell response
-    """
-    found = False
-    lines = []
-    try:
-        for _ in range(0, max_wait_sec):
-            read_lines = dut.readlines()
-            for line in read_lines:
-                if response in line:
-                    found = True
-                    break
-            lines = lines + read_lines
-            await asyncio.sleep(1)
-        logger.info(f'{str(lines)}')
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-    return found, lines
-
-
-# interact between script and DUT
-async def send_cmd_to_iut(
-    shell, dut, cmd, response=None, expect_to_find_resp=True, max_wait_sec=20, shell_ret=False
-):
-    """
-    send_cmd_to_iut() is used to send shell cmd to DUT and monitor the response.
-    It can choose whether to monitor the shell response of DUT.
-    Use 'expect_to_find_resp' to set whether to expect the response to contain certain 'response'.
-    'max_wait_sec' indicates the maximum waiting time.
-    For 'expect_to_find_resp=False', this is useful
-    because we need to wait long enough to get enough response
-    to more accurately judge that the response does not contain specific characters.
-
-    :param shell:
-    :param dut:
-    :param cmd: shell cmd sent to DUT
-    :param response: shell response that you want to monitor.
-                     'None' means not to monitor any response.
-    :param expect_to_find_resp: set whether to expect the response to contain certain 'response'
-    :param max_wait_sec: maximum monitoring time
-    :param shell_ret: flag to indicate whether to check shell command return directly
-    :return: DUT shell response
-    """
-    found = False
-    lines = ''
-    shell_cmd_ret = shell.exec_command(cmd)
-    if response is not None:
-        if shell_ret:
-            shell_cmd_ret_str = str(shell_cmd_ret)
-            if response in shell_cmd_ret_str:
-                found = True
-                lines = shell_cmd_ret_str
-        else:
-            found, lines = await _wait_for_shell_response(dut, response, max_wait_sec)
-    else:
-        found = True
-    assert found is expect_to_find_resp
-    return lines
 
 
 # set limited discoverab mode of dongle
@@ -234,7 +165,7 @@ async def tc_rfcomm_s_1(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -257,7 +188,7 @@ async def tc_rfcomm_s_1(hci_port, shell, dut, address, snoop_file) -> None:
 
         logger.info('Step 2: Disconnect BR connection')
         await connection.disconnect()
-        found, _ = await _wait_for_shell_response(dut, "Disconnected")
+        found, _ = await wait_for_shell_response(dut, "Disconnected")
         assert found is True, "DUT did not report disconnection"
 
         logger.info('Step 3: Attempt to establish RFCOMM session')
@@ -304,7 +235,7 @@ async def tc_rfcomm_s_2(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -387,7 +318,7 @@ async def tc_rfcomm_s_3(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -438,7 +369,7 @@ async def tc_rfcomm_s_3(hci_port, shell, dut, address, snoop_file) -> None:
 
         logger.info('Step 7: Disconnect DLC')
         await dlc_9.disconnect()
-        found, _ = await _wait_for_shell_response(dut, "disconnected")
+        found, _ = await wait_for_shell_response(dut, "disconnected")
         assert found, "DUT did not report DLC disconnection"
 
 
@@ -475,7 +406,7 @@ async def tc_rfcomm_s_4(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -567,7 +498,7 @@ async def tc_rfcomm_s_5(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -646,7 +577,7 @@ async def tc_rfcomm_s_6(hci_port, shell, dut, address, snoop_file) -> None:
         # Connecting
         logger.info(f'Initial Condition: establish be connection to {dut_address}...')
         connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
-        found, _ = await _wait_for_shell_response(dut, "Connected")
+        found, _ = await wait_for_shell_response(dut, "Connected")
         assert found is True, "DUT did not report connection established"
 
         # Request authentication
@@ -685,7 +616,7 @@ async def tc_rfcomm_s_6(hci_port, shell, dut, address, snoop_file) -> None:
 
         logger.info('Step 4: Tester initiates DLC disconnection')
         await dlc_9.disconnect()
-        found, _ = await _wait_for_shell_response(dut, "disconnected")
+        found, _ = await wait_for_shell_response(dut, "disconnected")
         assert found, "DUT did not respond to DLC disconnection"
         await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1", "Unable to send", shell_ret=True)
 

@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import os
 import sys
 
 from bumble.core import (
@@ -38,6 +39,13 @@ from bumble.sdp import (
 from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.common import (
+    device_power_on,
+    wait_for_shell_response,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -320,34 +328,6 @@ SDP_SERVICE_RECORDS_A2DP_SINK = {
 }
 
 
-async def wait_for_shell_response(dut, message):
-    found = False
-    lines = []
-    try:
-        while found is False:
-            read_lines = dut.readlines()
-            for line in read_lines:
-                logger.info(f'{str(line)}')
-                if message in line:
-                    found = True
-                    break
-            lines = lines + read_lines
-            await asyncio.sleep(1)
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-    return found, lines
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
-
-
 async def sdp_ssa_discover_no_record(hci_port, shell, dut, address) -> None:
     logger.info('<<< SDP Discovery ...')
     async with await open_transport_or_link(hci_port) as hci_transport:
@@ -375,12 +355,12 @@ async def sdp_ssa_discover_no_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
-            found, lines = await wait_for_shell_response(dut, "No SDP Record")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "No SDP Record")
             assert found is True
 
 
@@ -410,7 +390,8 @@ async def sdp_ssa_discover_one_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
@@ -469,7 +450,8 @@ async def sdp_ssa_discover_two_records(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
@@ -541,12 +523,12 @@ async def sdp_ssa_discover_multiple_records(hci_port, shell, dut, address) -> No
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
 
@@ -576,7 +558,8 @@ async def sdp_ssa_discover_multiple_records_with_range(hci_port, shell, dut, add
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record with range SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID ~
             # SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID
@@ -585,8 +568,7 @@ async def sdp_ssa_discover_multiple_records_with_range(hci_port, shell, dut, add
                 f"{SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID} "
                 f"{SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID}"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID ~
@@ -596,8 +578,7 @@ async def sdp_ssa_discover_multiple_records_with_range(hci_port, shell, dut, add
                 f"{SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID} "
                 f"{SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID}"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID ~
@@ -606,16 +587,14 @@ async def sdp_ssa_discover_multiple_records_with_range(hci_port, shell, dut, add
                 f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()} "
                 f"{SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID} 0xffff"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range 0xff00 ~ 0xffff
             shell.exec_command(
                 f"sdp_client ssa_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()} 0xff00 0xffff"
             )
-            found, lines = await wait_for_shell_response(dut, "No SDP Record")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "No SDP Record")
             assert found is True
 
 
@@ -646,12 +625,12 @@ async def sdp_ss_discover_no_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ss_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
-            found, lines = await wait_for_shell_response(dut, "No SDP Record")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "No SDP Record")
             assert found is True
 
 
@@ -681,12 +660,12 @@ async def sdp_ss_discover_one_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ss_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
             found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
             assert found is True
 
             count = 0
@@ -726,12 +705,12 @@ async def sdp_ss_discover_two_records(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ss_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
             found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
             assert found is True
 
             count = 0
@@ -771,12 +750,12 @@ async def sdp_ss_discover_multiple_records(hci_port, shell, dut, address) -> Non
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command(f"sdp_client ss_discovery {BT_L2CAP_PROTOCOL_ID.to_hex_str()}")
             found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
             assert found is True
 
             count = 0
@@ -817,12 +796,12 @@ async def sdp_sa_discover_no_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command("sdp_client sa_discovery 00010001")
-            found, lines = await wait_for_shell_response(dut, "No SDP Record")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "No SDP Record")
             assert found is True
 
 
@@ -852,7 +831,8 @@ async def sdp_sa_discover_one_record(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command("sdp_client sa_discovery 00010001")
@@ -908,7 +888,8 @@ async def sdp_sa_discover_two_records(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command("sdp_client sa_discovery 00010002")
@@ -973,12 +954,12 @@ async def sdp_sa_discover_multiple_records(hci_port, shell, dut, address) -> Non
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command("sdp_client sa_discovery 00010003")
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
 
@@ -1008,7 +989,8 @@ async def sdp_sa_discover_multiple_records_with_range(hci_port, shell, dut, addr
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record with range SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID ~
             # SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID
@@ -1016,8 +998,7 @@ async def sdp_sa_discover_multiple_records_with_range(hci_port, shell, dut, addr
                 f"sdp_client sa_discovery 00010003 {SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID} "
                 f"{SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID}"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID ~
@@ -1026,8 +1007,7 @@ async def sdp_sa_discover_multiple_records_with_range(hci_port, shell, dut, addr
                 f"sdp_client sa_discovery 00010003 {SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID} "
                 f"{SDP_SUPPORTED_FEATURES_ATTRIBUTE_ID}"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID ~
@@ -1036,14 +1016,12 @@ async def sdp_sa_discover_multiple_records_with_range(hci_port, shell, dut, addr
                 "sdp_client sa_discovery 00010003 "
                 f"{SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID} 0xffff"
             )
-            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "SDP Discovery Done")
             assert found is True
 
             # Discover SDP Record with range 0xff00 ~ 0xffff
             shell.exec_command("sdp_client sa_discovery 00010003 0xff00 0xffff")
-            found, lines = await wait_for_shell_response(dut, "No SDP Record")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "No SDP Record")
             assert found is True
 
 
@@ -1090,12 +1068,12 @@ async def sdp_ssa_discover_fail(hci_port, shell, dut, address) -> None:
                 logger.error(f'Fail to connect to {target_address}!')
                 raise e
 
-            await wait_for_shell_response(dut, "Connected:")
+            found, _ = await wait_for_shell_response(dut, "Connected:")
+            assert found is True
 
             # Discover SDP Record
             shell.exec_command("sdp_client ssa_discovery_fail")
-            found, lines = await wait_for_shell_response(dut, "test pass")
-            logger.info(f'{lines}')
+            found, _ = await wait_for_shell_response(dut, "test pass")
             assert found is True
 
     # Restore the origin method

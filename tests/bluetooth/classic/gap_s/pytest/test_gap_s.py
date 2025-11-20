@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import logging
+import os
 import sys
 
 from bumble import hci
@@ -13,76 +14,15 @@ from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.common import (
+    device_power_on,
+    send_cmd_to_iut,
+    wait_for_shell_response,
+)
+
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
-
-
-# wait for shell response
-async def _wait_for_shell_response(dut, response, max_wait_sec=20):
-    """
-    _wait_for_shell_response() is used to wait for shell response.
-    It will return after finding a specific 'response' or waiting long enough.
-    :param dut:
-    :param response: shell response that you want to monitor.
-    :param max_wait_sec: maximum waiting time
-    :return: found: whether the 'response' is found; lines: DUT shell response
-    """
-    found = False
-    lines = []
-    try:
-        for _ in range(0, max_wait_sec):
-            read_lines = dut.readlines()
-            for line in read_lines:
-                if response in line:
-                    found = True
-                    break
-            lines = lines + read_lines
-            await asyncio.sleep(1)
-        logger.info(f'{str(lines)}')
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-    return found, lines
-
-
-# interact between script and DUT
-async def send_cmd_to_iut(
-    shell, dut, cmd, response=None, expect_to_find_resp=True, max_wait_sec=20
-):
-    """
-    send_cmd_to_iut() is used to send shell cmd to DUT and monitor the response.
-    It can choose whether to monitor the shell response of DUT.
-    Use 'expect_to_find_resp' to set whether to expect the response to contain certain 'response'.
-    'max_wait_sec' indicates the maximum waiting time.
-    For 'expect_to_find_resp=False', this is useful
-    because we need to wait long enough to get enough response
-    to more accurately judge that the response does not contain specific characters.
-
-    :param shell:
-    :param dut:
-    :param cmd: shell cmd sent to DUT
-    :param response: shell response that you want to monitor.
-                     'None' means not to monitor any response.
-    :param expect_to_find_resp: set whether to expect the response to contain certain 'response'
-    :param max_wait_sec: maximum monitoring time
-    :return: DUT shell response
-    """
-    shell.exec_command(cmd)
-    if response is not None:
-        found, lines = await _wait_for_shell_response(dut, response, max_wait_sec)
-    else:
-        found = True
-        lines = ''
-    assert found is expect_to_find_resp
-    return lines
 
 
 # dongle limited discovery
@@ -188,7 +128,7 @@ async def tc_gap_s_1(hci_port, shell, dut, address) -> None:
 
             # Verify there was no connection established
             await asyncio.sleep(2)
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert not found, "DUT should not have established connection"
 
 
@@ -301,14 +241,14 @@ async def tc_gap_s_3(hci_port, shell, dut, address) -> None:
             connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 5: DUT accepts connection request')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert found, "DUT should accept connection request"
 
             logger.info('Step 6: Tester initiates disconnection')
             await connection.disconnect()
 
             logger.info('Step 7: Verify disconnection is complete')
-            found, _ = await _wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
             assert found, "DUT should properly handle disconnection initiated by Tester"
 
 
@@ -369,7 +309,7 @@ async def tc_gap_s_4(hci_port, shell, dut, address) -> None:
                 logger.info('Expected connection failure when connection is rejected')
 
             logger.info('Step 6: Verify connection was rejected')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert not found, "DUT should reject connection request"
 
 
@@ -423,7 +363,7 @@ async def tc_gap_s_5(hci_port, shell, dut, address) -> None:
             await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 6: DUT accepts connection request')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert found, "DUT should accept connection request"
 
             logger.info('Step 7: DUT initiates disconnection')
@@ -483,14 +423,14 @@ async def tc_gap_s_6(hci_port, shell, dut, address) -> None:
             connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 6: DUT accepts connection request')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert found, "DUT should accept connection request"
 
             logger.info('Step 7: Tester initiates disconnection')
             await connection.disconnect()
 
             logger.info('Step 8: Verify disconnection is complete')
-            found, _ = await _wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
             assert found, "DUT should properly handle disconnection initiated by Tester"
 
 
@@ -552,7 +492,7 @@ async def tc_gap_s_7(hci_port, shell, dut, address) -> None:
                 logger.info('Expected connection failure when connection is rejected')
 
             logger.info('Step 7: Verify connection was rejected')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert not found, "DUT should reject connection request"
 
 
@@ -605,7 +545,7 @@ async def tc_gap_s_8(hci_port, shell, dut, address) -> None:
             await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 6: DUT accepts connection request')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert found, "DUT should accept connection request"
 
             logger.info('Step 7: DUT initiates disconnection')
@@ -664,14 +604,14 @@ async def tc_gap_s_9(hci_port, shell, dut, address) -> None:
             connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
 
             logger.info('Step 6: DUT accepts connection request')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert found, "DUT should accept connection request"
 
             logger.info('Step 7: Tester initiates disconnection')
             await connection.disconnect()
 
             logger.info('Step 8: Verify disconnection is complete')
-            found, _ = await _wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Disconnected", max_wait_sec=5)
             assert found, "DUT should properly handle disconnection initiated by Tester"
 
 
@@ -732,7 +672,7 @@ async def tc_gap_s_10(hci_port, shell, dut, address) -> None:
                 logger.info('Expected connection failure when connection is rejected')
 
             logger.info('Step 7: Verify connection was rejected')
-            found, _ = await _wait_for_shell_response(dut, "Connected", max_wait_sec=5)
+            found, _ = await wait_for_shell_response(dut, "Connected", max_wait_sec=5)
             assert not found, "DUT should reject connection request"
 
 
