@@ -242,6 +242,10 @@ static int pwm_mcux_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Enable WAITEN bit to not disable FlexPWM when CPU is inactive */
+	/* see: https://github.com/zephyrproject-rtos/zephyr/issues/95096 */
+	config->base->SM[config->index].CTRL2 |= 1 << 14;
+
 	/* Disable fault sources */
 	for (i = 0; i < FSL_FEATURE_PWM_FAULT_CH_COUNT; i++) {
 		config->base->SM[config->index].DISMAP[i] = 0x0000;
