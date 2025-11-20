@@ -8,5 +8,5 @@
 };
 
 &opamp2 {
-	io-channels = <&adc2 3>;
+	io-channels = <&adc2 16>;
 };
