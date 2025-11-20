@@ -13,6 +13,7 @@ supported:
   - adc
   - clock_control
   - comparator
+  - counter
   - dma
   - entropy
   - flash
