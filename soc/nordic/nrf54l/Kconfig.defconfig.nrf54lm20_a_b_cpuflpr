@@ -1,11 +1,11 @@
-# Nordic Semiconductor nRF54LM20A MCU
+# Nordic Semiconductor nRF54LM20A and nRF54LM20B MCUs
 
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF54LM20A_ENGA_CPUFLPR
+if SOC_NRF54LM20A_CPUFLPR
 
 config NUM_IRQS
 	default 287
 
-endif # SOC_NRF54LM20A_ENGA_CPUFLPR
+endif # SOC_NRF54LM20A_CPUFLPR
