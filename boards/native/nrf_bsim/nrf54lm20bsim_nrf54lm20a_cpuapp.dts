@@ -7,8 +7,8 @@
 /dts-v1/;
 
 #include <mem.h>
-#include <arm/nordic/nrf54lm20a_enga_cpuapp.dtsi>
-#include <../boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi>
+#include <arm/nordic/nrf54lm20a_cpuapp.dtsi>
+#include <../boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20_a_b-pinctrl.dtsi>
 
 / {
 	model = "Nordic NRF54LM20 BSIM NRF54LM20A Application MCU";

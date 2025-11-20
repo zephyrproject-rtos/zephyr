@@ -6,8 +6,8 @@
 
 /* This file is common to the secure and non-secure domain */
 
-#include <nordic/nrf54lm20a_enga_cpuapp.dtsi>
-#include "nrf54lm20dk_nrf54lm20a-common.dtsi"
+#include <nordic/nrf54lm20_a_b_cpuapp.dtsi>
+#include "nrf54lm20dk_common.dtsi"
 
 / {
 	chosen {
@@ -129,3 +129,6 @@ zephyr_udc0: &usbhs {
 		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 	};
 };
+
+/* Get a node label for wi-fi spi to use in shield files */
+wifi_spi: &spi22 {};
