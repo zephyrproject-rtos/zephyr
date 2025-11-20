@@ -38,6 +38,21 @@ config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 config ADC_CONFIGURABLE_VBIAS_PIN
 	bool
 
+# By selecting or not this option particular ADC drivers indicate if they
+# support the sequence priority feature.
+config ADC_HAS_SEQUENCE_PRIORITY
+	bool
+
+config ADC_SEQUENCE_PRIORITY
+	bool "Sequence priority support"
+	depends on ADC_HAS_SEQUENCE_PRIORITY
+	help
+	  This option enables the possibility to define a priority for the
+	  sequence. If hardware supports it, a sequence with a higher priority
+	  will be executed immediately even if another sequence of lesser
+	  priority is already running. The lower priority sequence will be
+	  resumed once the higher one is finished.
+
 config ADC_ASYNC
 	bool "Asynchronous call support"
 	select POLL
