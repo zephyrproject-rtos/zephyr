@@ -5,8 +5,9 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf54lm20a_enga_cpuflpr.dtsi>
-#include "nrf54lm20dk_nrf54lm20a-common.dtsi"
+
+#include <nordic/nrf54lm20a_cpuflpr.dtsi>
+#include "nrf54lm20_a_b_cpuflpr_common.dtsi"
 
 / {
 	model = "Nordic nRF54LM20 DK nRF54LM20A FLPR MCU";
@@ -19,51 +20,4 @@
 		zephyr,flash = &cpuflpr_rram;
 		zephyr,sram = &cpuflpr_sram;
 	};
-};
-
-&cpuflpr_sram {
-	status = "okay";
-};
-
-&cpuflpr_rram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
-			reg = <0x0 DT_SIZE_K(96)>;
-		};
-	};
-};
-
-&grtc {
-	owned-channels = <3 4>;
-	status = "okay";
-};
-
-&uart30 {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpiote20 {
-	status = "okay";
-};
-
-&gpiote30 {
-	status = "okay";
 };

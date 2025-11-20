@@ -1,9 +1,9 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP)
+if(CONFIG_SOC_NRF54LM20A_CPUAPP)
   board_runner_args(jlink "--device=nRF54LM20A_M33" "--speed=4000")
-elseif(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR)
+elseif(CONFIG_SOC_NRF54LM20A_CPUFLPR)
   board_runner_args(jlink "--device=nRF54LM20A_RV32" "--speed=4000")
 endif()
 

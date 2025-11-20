@@ -8,7 +8,8 @@
 
 #define USE_NON_SECURE_ADDRESS_MAP 1
 
-#include "nrf54lm20a_cpuapp_common.dtsi"
+#include <nordic/nrf54lm20a_cpuapp.dtsi>
+#include "nrf54lm20_a_b_cpuapp_common.dtsi"
 
 / {
 	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp-ns";
