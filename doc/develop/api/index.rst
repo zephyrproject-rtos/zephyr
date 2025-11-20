@@ -8,5 +8,6 @@ API Status and Guidelines
 
    overview.rst
    api_lifecycle.rst
+   vendor_specific_api_policy.rst
    design_guidelines.rst
    terminology.rst
