@@ -196,6 +196,8 @@ struct udc_stm32_config {
 	const struct pinctrl_dev_config *pinctrl;
 	/* Disconnect GPIO information (if applicable) */
 	const struct gpio_dt_spec disconnect_gpio;
+	/* ULPI reset GPIO information (if applicable) */
+	const struct gpio_dt_spec ulpi_reset_gpio;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
@@ -1281,6 +1283,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.thread_stack = udc0_thr_stk,
 	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
 	.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),
+	.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(UDC_STM32_PHY(DT_DRV_INST(0)), reset_gpios, {0}),
 };
 
 static int udc_stm32_clock_enable(const struct device *dev)
@@ -1510,11 +1513,6 @@ static int udc_stm32_clock_disable(const struct device *dev)
 	return 0;
 }
 
-#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
-static const struct gpio_dt_spec ulpi_reset =
-	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
-#endif
-
 static int udc_stm32_driver_init0(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1609,18 +1607,16 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 #endif
 
-#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
-	if (ulpi_reset.port != NULL) {
-		if (!gpio_is_ready_dt(&ulpi_reset)) {
+	if (cfg->ulpi_reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->ulpi_reset_gpio)) {
 			LOG_ERR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
-		if (gpio_pin_configure_dt(&ulpi_reset, GPIO_OUTPUT_INACTIVE) != 0) {
+		if (gpio_pin_configure_dt(&cfg->ulpi_reset_gpio, GPIO_OUTPUT_INACTIVE) != 0) {
 			LOG_ERR("Couldn't configure reset pin");
 			return -EIO;
 		}
 	}
-#endif
 
 	/*cd
 	 * Required for at least STM32L4 devices as they electrically
