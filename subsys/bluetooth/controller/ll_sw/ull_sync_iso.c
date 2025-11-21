@@ -677,7 +677,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	slot_us += ready_delay_us;
 	slot_us += lll->window_widening_periodic_us << 1U;
 	slot_us += EVENT_JITTER_US << 1U;
-	slot_us += EVENT_TICKER_RES_MARGIN_US << 2U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
