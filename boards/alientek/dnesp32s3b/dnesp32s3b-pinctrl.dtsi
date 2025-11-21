@@ -28,6 +28,15 @@
 		};
 	};
 
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_BCK_GPIO21>,
+				 <I2S0_O_SD_GPIO14>,
+				 <I2S0_O_WS_GPIO13>,
+				 <I2S0_I_SD_GPIO47>;
+		};
+	};
+
 	lcd_cam_default: lcd_cam_default {
 		group1 {
 			pinmux = <LCD_CAM_DATA_OUT0_GPIO40>, /* LCD_D0 */
