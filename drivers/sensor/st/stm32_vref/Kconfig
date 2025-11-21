@@ -12,3 +12,14 @@ config STM32_VREF
 	select ADC
 	help
 	  Enable driver for STM32 Vref sensor.
+
+if STM32_VREF
+
+config STM32_VREF_INJECTED
+	bool "STM32 Vref Sensor through injected channel"
+	depends on ADC_STM32_INJECTED_CHANNELS
+	help
+	  Vref measurement is done using the injected channel feature.
+	  This will permanently enable the ADC Vref sensor (VREFEN bit set to 1).
+
+endif
