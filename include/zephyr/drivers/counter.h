@@ -345,6 +345,23 @@ static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
 }
 
 /**
+ * @brief Function to convert nanoseconds to ticks.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ * @param[in]  ns     Nanoseconds.
+ *
+ * @return Converted ticks. Ticks will be saturated if exceed 32 bits.
+ */
+__syscall uint32_t counter_ns_to_ticks(const struct device *dev, uint64_t ns);
+
+static inline uint32_t z_impl_counter_ns_to_ticks(const struct device *dev, uint64_t ns)
+{
+	uint64_t ticks = (ns * get_frequency(dev)) / NSEC_PER_SEC;
+
+	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
+}
+
+/**
  * @brief Function to convert ticks to nanoseconds.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
