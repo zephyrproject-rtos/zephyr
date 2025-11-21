@@ -13,6 +13,10 @@
 
 #include <zephyr/arch/arch_interface.h>
 
+#if defined(__GNUC__) || defined(__clang__)
+/* DWARF Control Flow Integrity (CFI) support for architectures is only
+ * supported by LLVM and GCC toolchains.
+ */
 #if defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/intel64/cfi.h>
 #elif defined(CONFIG_X86)
@@ -23,6 +27,7 @@
 #include <zephyr/arch/arm/cfi.h>
 #elif defined(CONFIG_RISCV)
 #include <zephyr/arch/riscv/cfi.h>
+#endif
 #endif
 
 /*
