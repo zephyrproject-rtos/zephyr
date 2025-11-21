@@ -235,22 +235,7 @@ config NRFX_SAADC
 	depends on $(dt_nodelabel_exists,adc) && !SOC_SERIES_NRF51
 
 config NRFX_SPI
-	bool
-
-config NRFX_SPI0
-	bool "SPI0 driver instance"
-	depends on $(dt_nodelabel_exists,spi0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_SPI
-
-config NRFX_SPI1
-	bool "SPI1 driver instance"
-	depends on $(dt_nodelabel_exists,spi1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_SPI
-
-config NRFX_SPI2
-	bool "SPI2 driver instance"
-	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52
-	select NRFX_SPI
+	bool "SPI driver"
 
 config NRFX_SPIM
 	bool "SPIM driver"
