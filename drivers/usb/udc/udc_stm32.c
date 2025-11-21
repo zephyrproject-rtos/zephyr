@@ -149,6 +149,18 @@ static const int syscfg_otg_hs_phy_clk[] = {
  */
 #define UDC_STM32_EP0_MAX_PACKET_SIZE	64U
 
+enum udc_stm32_msg_type {
+	UDC_STM32_MSG_SETUP,
+	UDC_STM32_MSG_DATA_OUT,
+	UDC_STM32_MSG_DATA_IN,
+};
+
+struct udc_stm32_msg {
+	uint8_t type;
+	uint8_t ep;
+	uint16_t rx_count;
+};
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -157,6 +169,7 @@ struct udc_stm32_data  {
 	uint32_t ep0_out_wlength;
 	struct k_thread thread_data;
 	struct k_msgq msgq_data;
+	char msgq_buf[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
 };
 
 struct udc_stm32_config {
@@ -195,18 +208,6 @@ struct udc_stm32_config {
 	uint16_t ep_mps;
 	/* Number of entries in `pclken` */
 	uint8_t num_clocks;
-};
-
-enum udc_stm32_msg_type {
-	UDC_STM32_MSG_SETUP,
-	UDC_STM32_MSG_DATA_OUT,
-	UDC_STM32_MSG_DATA_IN,
-};
-
-struct udc_stm32_msg {
-	uint8_t type;
-	uint8_t ep;
-	uint16_t rx_count;
 };
 
 static int udc_stm32_clock_enable(const struct device *);
@@ -1510,8 +1511,6 @@ static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
 #endif
 
-static char udc_msgq_buf_0[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
-
 static int udc_stm32_driver_init0(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1569,7 +1568,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 
 	priv->dev = dev;
 
-	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
+	k_msgq_init(&priv->msgq_data, priv->msgq_buf, sizeof(struct udc_stm32_msg),
 		    CONFIG_UDC_STM32_MAX_QMESSAGES);
 
 	k_thread_create(&priv->thread_data, cfg->thread_stack,
