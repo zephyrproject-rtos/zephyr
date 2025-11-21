@@ -417,10 +417,17 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 		MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_RD_CONFIG, RD_OPCODE_NON_XIP,
 				       base_address);
 	}
-	MSPI_CADENCE_REG_WRITE(packet->address, INDIRECT_READ_XFER_START, ADDR, base_address);
+
+	if (req->addr_length) {
+		MSPI_CADENCE_REG_WRITE(req->addr_length - 1, DEV_SIZE_CONFIG, NUM_ADDR_BYTES,
+				       base_address);
+		MSPI_CADENCE_REG_WRITE(packet->address, INDIRECT_READ_XFER_START, ADDR,
+				       base_address);
+	} else {
+		MSPI_CADENCE_REG_WRITE(0, DEV_SIZE_CONFIG, NUM_ADDR_BYTES, base_address);
+	}
 	MSPI_CADENCE_REG_WRITE(packet->num_bytes, INDIRECT_READ_XFER_NUM_BYTES, VALUE,
 			       base_address);
-	MSPI_CADENCE_REG_WRITE(req->addr_length - 1, DEV_SIZE_CONFIG, NUM_ADDR_BYTES, base_address);
 	MSPI_CADENCE_REG_WRITE(req->rx_dummy, DEV_INSTR_RD_CONFIG, DUMMY_RD_CLK_CYCLES,
 			       base_address);
 
@@ -486,10 +493,17 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 		MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_WR_CONFIG, WR_OPCODE_NON_XIP,
 				       base_address);
 	}
+	if (req->addr_length) {
+		MSPI_CADENCE_REG_WRITE(req->addr_length - 1, DEV_SIZE_CONFIG, NUM_ADDR_BYTES,
+				       base_address);
+		MSPI_CADENCE_REG_WRITE(packet->address, INDIRECT_WRITE_XFER_START, ADDR,
+				       base_address);
+	} else {
+		MSPI_CADENCE_REG_WRITE(0, DEV_SIZE_CONFIG, NUM_ADDR_BYTES, base_address);
+	}
+
 	MSPI_CADENCE_REG_WRITE(req->tx_dummy, DEV_INSTR_WR_CONFIG, DUMMY_WR_CLK_CYCLES,
 			       base_address);
-	MSPI_CADENCE_REG_WRITE(req->addr_length - 1, DEV_SIZE_CONFIG, NUM_ADDR_BYTES, base_address);
-	MSPI_CADENCE_REG_WRITE(packet->address, INDIRECT_WRITE_XFER_START, ADDR, base_address);
 	MSPI_CADENCE_REG_WRITE(packet->num_bytes, INDIRECT_WRITE_XFER_NUM_BYTES, VALUE,
 			       base_address);
 
