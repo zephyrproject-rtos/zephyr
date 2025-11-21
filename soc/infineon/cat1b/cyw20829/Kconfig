@@ -1,10 +1,8 @@
-# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon CAT1B devices
-
-# Series definitions
 config SOC_SERIES_CYW20829
 	select ARM
 	select CPU_HAS_ARM_MPU

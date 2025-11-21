@@ -89,12 +89,14 @@ def parse_args():
 
     args = parser.parse_args()
 
+
 def load_areas(filename: str):
     with open(filename) as f:
         doc = yaml.safe_load(f)
     return {
         k: v for k, v in doc.items() if isinstance(v, dict) and ("files" in v or "files-regex" in v)
     }
+
 
 def process_manifest(old_manifest_file):
     log("Processing manifest changes")
@@ -124,8 +126,10 @@ def process_manifest(old_manifest_file):
     log(f'manifest areas: {areas}')
     return areas
 
+
 def set_or_empty(d, key):
     return set(d.get(key, []) or [])
+
 
 def compare_areas(old, new, repo_fullname=None, token=None):
     old_areas = set(old.keys())
@@ -212,6 +216,7 @@ def compare_areas(old, new, repo_fullname=None, token=None):
 
     return added_areas | removed_areas | changed_areas
 
+
 def process_pr(gh, maintainer_file, number):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -248,16 +253,16 @@ def process_pr(gh, maintainer_file, number):
                 continue
             parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
             for _area in parsed_areas:
-                collab_per_path.update(_area.get_collaborators_for_path(changed_file.filename))
                 area_match = maintainer_file.name2areas(_area)
                 if area_match:
+                    _area_obj = area_match[0]
+                    collabs_for_area = _area_obj.get_collaborators_for_path(changed_file.filename)
+                    collab_per_path.update(collabs_for_area)
                     areas.extend(area_match)
         elif changed_file.filename in ['MAINTAINERS.yml']:
             areas = maintainer_file.path2areas(changed_file.filename)
             if args.updated_maintainer_file:
-                log(
-                    "cannot process MAINTAINERS.yml changes, skipping..."
-                )
+                log("cannot process MAINTAINERS.yml changes, skipping...")
 
                 old_areas = load_areas(args.updated_maintainer_file)
                 new_areas = load_areas('MAINTAINERS.yml')

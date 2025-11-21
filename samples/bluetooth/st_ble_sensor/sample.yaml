@@ -5,5 +5,7 @@ sample:
 tests:
   sample.bluetooth.st_ble_sensor:
     harness: bluetooth
-    platform_allow: nucleo_wb55rg
+    platform_allow:
+      - nucleo_wb55rg
+      - cyw920829m2evk_02/cyw20829b0lkml
     tags: bluetooth

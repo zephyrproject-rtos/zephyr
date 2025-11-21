@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,18 @@
 LOG_MODULE_REGISTER(swt_nxp_s32);
 
 /* Software Watchdog Timer (SWT) register definitions */
+#ifdef PERI_SWT_H_
+#define SWT_CR          0x0
+#define SWT_CR_MAP_MASK GENMASK(31, 24)
+#define SWT_CR_MAP(v)   FIELD_PREP(SWT_CR_MAP_MASK, (v))
+#define SWT_IR          0x4
+#define SWT_TO          0x8
+#define SWT_WN          0xc
+#define SWT_SR          0x10
+#define SWT_CO          0x14
+#define SWT_SK          0x18
+#define SWT_RRR         0x1c
+#else
 /* Control */
 #define SWT_CR           0x0
 #define SWT_CR_WEN_MASK  BIT(0)
@@ -66,6 +78,7 @@ LOG_MODULE_REGISTER(swt_nxp_s32);
 #define SWT_RRR          0x1c
 #define SWT_RRR_RRF_MASK BIT(0)
 #define SWT_RRR_RRF(v)   FIELD_PREP(SWT_RRR_RRF_MASK, (v))
+#endif
 
 #define SWT_TO_WTO_MIN 0x100
 
@@ -208,8 +221,8 @@ static int swt_nxp_s32_disable(const struct device *dev)
 	int err;
 
 	if (!FIELD_GET(SWT_CR_WEN_MASK, REG_READ(SWT_CR))) {
-		LOG_ERR("Watchdog is not enabled");
-		return -EFAULT;
+		LOG_DBG("watchdog already disabled");
+		return 0;
 	}
 
 	err = swt_unlock(config);

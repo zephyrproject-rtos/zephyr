@@ -60,7 +60,7 @@
 		};
 
 		red_led_1: led_2 {
-			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 	};

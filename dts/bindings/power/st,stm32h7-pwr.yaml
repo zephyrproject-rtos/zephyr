@@ -1,0 +1,66 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32H7 power controller
+
+compatible: "st,stm32h7-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      WARNING: If this property's value does not match the target board's
+      hardware configuration, the product will deadlock during boot which
+      prevents debugging or re-programming. If such a situation occurs,
+      configure the product to start execution in System memory instead
+      then erase the firmware with incorrect configuration.
+
+      ldo: LDO supply
+        The LDO is enabled and generates Vcore; the SMPS is disabled.
+
+      external-source: Bypass
+        An external supply provides Vcore; SMPS and LDO are disabled.
+
+      smps-direct: Direct SMPS supply
+        The SMPS is enabled and generates Vcore; the LDO is disabled.
+
+      smps-ldo: SMPS supplies LDO (no external supply)
+        The SMPS is enabled; the LDO generates Vcore from the SMPS output.
+
+      smps-ext-ldo: External SMPS supply, supplies LDO
+        The SMPS is enabled and generates a fixed supply for the LDO and
+        external devices. The LDO generates Vcore from the SMPS output.
+
+      smps-ext-bypass: External SMPS supply and bypass
+        The SMPS is enabled and its output powers external devices.
+        Vcore is provided directly by an external supply; LDO is disabled.
+    enum:
+      - "ldo"
+      - "external-source"
+      - "smps-direct"
+      - "smps-ldo"
+      - "smps-ext-ldo"
+      - "smps-ext-bypass"
+
+  smps-output-voltage:
+    type: string
+    description: |
+      SMPS output voltage level selection
+
+      This property is required when the "power-supply" property
+      is either "smps-ldo", "smps-ext-ldo" or "smps-ext-bypass".
+
+      1V8: SMPS output is at 1.8 Volts
+      2V5: SMPS output is at 2.5 Volts
+    enum:
+      - "1V8"
+      - "2V5"

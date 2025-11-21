@@ -120,7 +120,8 @@
 			/* Index 0: UART2 register, Index 1: MDMA2 register */
 			reg = <0x400E2000 0x2000 0x40011200 0x100>;
 			interrupts = <32 4>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 1>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 		};
