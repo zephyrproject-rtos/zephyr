@@ -171,12 +171,23 @@ struct udc_stm32_config {
 	uint32_t dram_size;
 	/* Global USB interrupt IRQn */
 	uint32_t irqn;
+	/*
+	 * Clock configuration from DTS
+	 *
+	 * Note that this actually points to a const
+	 * struct stm32_pclken but dropping the const
+	 * qualifier here allows calling Clock Control
+	 * without cast to clock_control_subsys_t.
+	 */
+	struct stm32_pclken *pclken;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
 	uint32_t selected_speed;
 	/* Maximal packet size allowed for endpoints */
 	uint16_t ep_mps;
+	/* Number of entries in `pclken` */
+	uint8_t num_clocks;
 };
 
 enum udc_stm32_msg_type {
@@ -191,8 +202,8 @@ struct udc_stm32_msg {
 	uint16_t rx_count;
 };
 
-static int udc_stm32_clock_enable(void);
-static int udc_stm32_clock_disable(void);
+static int udc_stm32_clock_enable(const struct device *);
+static int udc_stm32_clock_disable(const struct device *);
 
 static void udc_stm32_lock(const struct device *dev)
 {
@@ -697,7 +708,7 @@ int udc_stm32_init(const struct device *dev)
 	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
-	if (udc_stm32_clock_enable() < 0) {
+	if (udc_stm32_clock_enable(dev) < 0) {
 		LOG_ERR("Error enabling clock(s)");
 		return -EIO;
 	}
@@ -929,7 +940,7 @@ static int udc_stm32_shutdown(const struct device *dev)
 		/* continue anyway */
 	}
 
-	if (udc_stm32_clock_disable() < 0) {
+	if (udc_stm32_clock_disable(dev) < 0) {
 		LOG_ERR("Error disabling clock(s)");
 		/* continue anyway */
 	}
@@ -1228,21 +1239,24 @@ static struct udc_data udc0_data = {
 	.priv = &udc0_priv,
 };
 
+static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
+
 static const struct udc_stm32_config udc0_cfg  = {
 	.base = (void *)DT_INST_REG_ADDR(0),
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = DT_INST_PROP(0, ram_size),
 	.irqn = UDC_STM32_IRQ,
+	.pclken = (struct stm32_pclken *)udc0_pclken,
+	.num_clocks = DT_INST_NUM_CLOCKS(0),
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
 };
 
-static struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
-
-static int udc_stm32_clock_enable(void)
+static int udc_stm32_clock_enable(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
@@ -1319,22 +1333,22 @@ static int udc_stm32_clock_enable(void)
 	LL_PWR_EnableVDDUSB();
 #endif
 
-	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		if (clock_control_configure(clk, &pclken[1], NULL) != 0) {
+	if (cfg->num_clocks > 1) {
+		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
 			LOG_ERR("Could not select USB domain clock");
 			return -EIO;
 		}
 	}
 
-	if (clock_control_on(clk, &pclken[0]) != 0) {
+	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK)) {
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
 		uint32_t usb_clock_rate;
 
-		if (clock_control_get_rate(clk, &pclken[1], &usb_clock_rate) != 0) {
+		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
 			LOG_ERR("Failed to get USB domain clock rate");
 			return -EIO;
 		}
@@ -1450,11 +1464,12 @@ static int udc_stm32_clock_enable(void)
 	return 0;
 }
 
-static int udc_stm32_clock_disable(void)
+static int udc_stm32_clock_disable(const struct device *dev)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
 
-	if (clock_control_off(clk, &pclken[0]) != 0) {
+	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
