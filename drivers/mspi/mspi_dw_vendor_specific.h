@@ -138,6 +138,7 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 	preg->EVENTS_DMA.DONE = 0;
 }
 
+#if defined(CONFIG_MSPI_DMA)
 /* DMA support */
 
 #define EVDMA_ATTR_LEN_Pos (0UL)
@@ -308,6 +309,7 @@ static inline bool vendor_specific_read_dma_irq(const struct device *dev)
 
 	return (bool) preg->EVENTS_DMA.DONE;
 }
+#endif /*defined(CONFIG_MSPI_DMA)*/
 
 #else /* Supply empty vendor specific macros for generic case */
 
