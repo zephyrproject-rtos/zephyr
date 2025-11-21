@@ -21,6 +21,8 @@
 		sw2 = &k2;
 		watchdog0 = &wdt0;
 		eeprom-0 = &eeprom;
+		i2s-tx = &i2s0;
+		i2s-rx = &i2s0;
 	};
 
 	chosen {
@@ -67,6 +69,12 @@
 			label = "KEY2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+	};
+
+	spk_ctrl_reg: spk-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "SPK_CTRL";
+		enable-gpios = <&io_expander 5 GPIO_ACTIVE_HIGH>;
 	};
 
 	lcd_bl: LCD_BL {
@@ -123,11 +131,21 @@
 	};
 };
 
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
 &trng0 {
 	status = "okay";
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&dma {
 	status = "okay";
 };
 
