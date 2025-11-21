@@ -183,6 +183,9 @@ struct udc_stm32_config {
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
 	uint32_t selected_speed;
+	/* EP configurations */
+	struct udc_ep_config *in_eps;
+	struct udc_ep_config *out_eps;
 	/* Maximal packet size allowed for endpoints */
 	uint16_t ep_mps;
 	/* Number of entries in `pclken` */
@@ -1229,7 +1232,8 @@ static const struct udc_api udc_stm32_api = {
  * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
  * Kconfig system.
  */
-#define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
+static struct udc_ep_config udc0_in_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
+static struct udc_ep_config udc0_out_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
 
 static struct udc_stm32_data udc0_priv;
 
@@ -1249,12 +1253,14 @@ static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct udc_stm32_config udc0_cfg  = {
 	.base = (void *)DT_INST_REG_ADDR(0),
-	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
+	.num_endpoints = DT_INST_PROP(0, num_bidir_endpoints),
 	.dram_size = DT_INST_PROP(0, ram_size),
 	.irq_connect = udc0_irq_connect,
 	.irqn = DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
 	.pclken = (struct stm32_pclken *)udc0_pclken,
 	.num_clocks = DT_INST_NUM_CLOCKS(0),
+	.in_eps = udc0_in_ep_cfg,
+	.out_eps = udc0_out_ep_cfg,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
@@ -1487,9 +1493,6 @@ static int udc_stm32_clock_disable(const struct device *dev)
 	return 0;
 }
 
-static struct udc_ep_config ep_cfg_in[DT_INST_PROP(0, num_bidir_endpoints)];
-static struct udc_ep_config ep_cfg_out[DT_INST_PROP(0, num_bidir_endpoints)];
-
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
@@ -1512,40 +1515,40 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	struct udc_data *data = dev->data;
 	int err;
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(ep_cfg_out); i++) {
-		ep_cfg_out[i].caps.out = 1;
+	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
+		cfg->out_eps[i].caps.out = 1;
 		if (i == 0) {
-			ep_cfg_out[i].caps.control = 1;
-			ep_cfg_out[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+			cfg->out_eps[i].caps.control = 1;
+			cfg->out_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			ep_cfg_out[i].caps.bulk = 1;
-			ep_cfg_out[i].caps.interrupt = 1;
-			ep_cfg_out[i].caps.iso = 1;
-			ep_cfg_out[i].caps.mps = cfg->ep_mps;
+			cfg->out_eps[i].caps.bulk = 1;
+			cfg->out_eps[i].caps.interrupt = 1;
+			cfg->out_eps[i].caps.iso = 1;
+			cfg->out_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
-		err = udc_register_ep(dev, &ep_cfg_out[i]);
+		cfg->out_eps[i].addr = USB_EP_DIR_OUT | i;
+		err = udc_register_ep(dev, cfg->out_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
 		}
 	}
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(ep_cfg_in); i++) {
-		ep_cfg_in[i].caps.in = 1;
+	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
+		cfg->in_eps[i].caps.in = 1;
 		if (i == 0) {
-			ep_cfg_in[i].caps.control = 1;
-			ep_cfg_in[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+			cfg->in_eps[i].caps.control = 1;
+			cfg->in_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			ep_cfg_in[i].caps.bulk = 1;
-			ep_cfg_in[i].caps.interrupt = 1;
-			ep_cfg_in[i].caps.iso = 1;
-			ep_cfg_in[i].caps.mps = cfg->ep_mps;
+			cfg->in_eps[i].caps.bulk = 1;
+			cfg->in_eps[i].caps.interrupt = 1;
+			cfg->in_eps[i].caps.iso = 1;
+			cfg->in_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
-		err = udc_register_ep(dev, &ep_cfg_in[i]);
+		cfg->in_eps[i].addr = USB_EP_DIR_IN | i;
+		err = udc_register_ep(dev, cfg->in_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
