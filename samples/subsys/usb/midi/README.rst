@@ -2,22 +2,24 @@
    :name: USB MIDI2 device
    :relevant-api: usbd_api usbd_midi2 input_events
 
-   Implements a simple USB MIDI loopback and keyboard device.
+   Implements a USB MIDI loopback and keyboard device with MIDI 1.0 fallback.
 
 Overview
 ********
 
-This sample demonstrates how to implement a USB MIDI device. It can run on
-any board with a USB device controller. This sample sends all MIDI1 messages
-sent to the device back to the host. In addition, presses and release on
-input keys (such as the board user buttons) are sent as MIDI1 note on and
-note off events.
+This sample demonstrates how to implement a USB MIDI device using the
+``USB device_next`` MIDI 2.0 class driver. It can run on any board with a USB
+device controller and exposes both the legacy USB-MIDI 1.0 alternate
+setting and the MIDI 2.0 streaming alternate. Regardless of which alternate the
+host selects, all channel voice messages are looped back to the host and button
+presses generate MIDI note on/off events.
 
 The application exposes a single USB-MIDI interface with a single bidirectional
 group terminal. This allows exchanging data with the host on a "virtual wire"
-that carries MIDI1 messages, pretty much like a standard USB-MIDI in/out adapter
-would provide. The loopback acts as if a real MIDI cable was connected between
-the output and the input, and the input keys act as a MIDI keyboard.
+that carries MIDI 1.0 messages or Universal MIDI Packets, like a
+standard USB-MIDI in/out adapter would provide. The loopback acts as if a real
+MIDI cable was connected between the output and the input, and the input keys
+act as a MIDI keyboard.
 
 Building and Running
 ********************
@@ -51,6 +53,23 @@ The "USBD MIDI Sample" interface should also appear in any program with MIDI
 support; like your favorite Digital Audio Workstation or synthetizer. If you
 don't have any such program at hand, there are some webmidi programs online,
 for example: https://muted.io/piano/.
+
+MIDI 1.0 compatibility
+**********************
+
+During enumeration the interface advertises both the USB-MIDI 1.0 (alternate
+setting 0) and MIDI 2.0 (alternate setting 1) streaming descriptors. Legacy
+hosts remain on the MIDI 1.0 alternate, where the sample handles traffic via
+the new ``usbd_midi_ops.rx_midi1_cb`` callback and echoes events with
+``usbd_midi_send_midi1``. MIDI 2.0 aware hosts switch to the second alternate,
+in which case Universal MIDI Packets are delivered through ``rx_packet_cb`` and
+replied to with ``usbd_midi_send`` plus the MIDI-CI stream responder.
+
+Because button presses are emitted with ``usbd_midi_send_midi1``, the driver
+automatically converts them to either raw USB-MIDI 1.0 packets or Universal
+MIDI Packets depending on the active alternate. As a result the sample behaves
+identically from the point of view of the host regardless of its MIDI
+capabilities.
 
 Testing loopback
 ****************
