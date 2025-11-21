@@ -251,9 +251,8 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 		transfer_list->rx_job = &joblist[job_idx];
 		tmod = QSPI_TMOD_TX_ONLY;
 	} else {
-		preg->CONFIG.RXTRANSFERLENGTH = ((packet->num_bytes + dev_data->xfer.addr_length +
-						dev_data->xfer.cmd_length) >>
-						dev_data->bytes_per_frame_exp) - 1;
+		preg->CONFIG.RXTRANSFERLENGTH = ((packet->num_bytes) >>
+						dev_data->bytes_per_frame_exp);
 
 		/* If sending address or command while being configured as controller */
 		if (job_idx > 0 && config->op_mode == MSPI_OP_MODE_CONTROLLER) {
