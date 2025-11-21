@@ -124,6 +124,30 @@ struct btp_l2cap_connect_v2_rp {
 	uint8_t chan_id[];
 } __packed;
 
+#define BTP_L2CAP_LISTEN_V2_MODE_NONE			0x00
+#define BTP_L2CAP_LISTEN_V2_MODE_BASIC			BTP_L2CAP_LISTEN_V2_MODE_NONE
+#define BTP_L2CAP_LISTEN_V2_MODE_RET			0x01
+#define BTP_L2CAP_LISTEN_V2_MODE_FC			0x02
+#define BTP_L2CAP_LISTEN_V2_MODE_ERET			0x03
+#define BTP_L2CAP_LISTEN_V2_MODE_STREAM			0x04
+#define BTP_L2CAP_LISTEN_V2_MODE_VALID			BTP_L2CAP_LISTEN_V2_MODE_STREAM
+
+#define BTP_L2CAP_LISTEN_V2_OPT_ECFC			BIT(0)
+#define BTP_L2CAP_LISTEN_V2_OPT_HOLD_CREDIT		BIT(1)
+#define BTP_L2CAP_LISTEN_V2_OPT_MODE_OPTIONAL		BIT(2)
+#define BTP_L2CAP_LISTEN_V2_OPT_EXT_WIN_SIZE		BIT(3)
+#define BTP_L2CAP_LISTEN_V2_OPT_NO_FCS			BIT(4)
+
+#define BTP_L2CAP_LISTEN_V2				0x0c
+struct btp_l2cap_listen_v2_cmd {
+	uint16_t psm;
+	uint8_t transport;
+	uint16_t mtu;
+	uint16_t response;
+	uint8_t mode;
+	uint32_t options;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
