@@ -63,6 +63,12 @@ static int mspi_cadence_wait_for_idle(const struct device *controller)
 	return 0;
 }
 
+static ALWAYS_INLINE bool mspi_cadence_is_dual_byte_cmd(uint32_t base_addr)
+{
+	return !!(sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET) &
+		  CADENCE_MSPI_CONFIG_REG_DUAL_BYTE_OPCODE_EN_BIT);
+}
+
 /**
  * Check whether a single request package is requesting something that the driver
  * doesn't implement / the hardware doesn't support
@@ -83,10 +89,6 @@ static int mspi_cadence_check_transfer_package(const struct mspi_xfer *request, 
 		LOG_ERR("Commands over 2 byte long aren't supported");
 		return -ENOTSUP;
 	}
-	if (packet->cmd >> 8) {
-		LOG_ERR("Support for dual byte opcodes hasn't been implemented");
-		return -ENOSYS;
-	}
 	if (packet->num_bytes) {
 		__ASSERT(packet->data_buf != NULL,
 			 "Request gave a NULL buffer when bytes should be transferred");
@@ -104,13 +106,10 @@ static int mspi_cadence_check_transfer_request(const struct mspi_xfer *request)
 		return -ENOSYS;
 	}
 
-	if (request->cmd_length == 2) {
-		LOG_ERR("Dual byte opcode is not implemented");
-		return -ENOSYS;
-	} else if (request->cmd_length > 2) {
+	if (request->cmd_length > 2) {
 		LOG_ERR("Cmds over 2 bytes long aren't supported");
 		return -ENOTSUP;
-	} else if (request->cmd_length != 1) {
+	} else if (request->cmd_length == 0) {
 		LOG_ERR("Can't handle transfer without cmd");
 		return -ENOSYS;
 	}
@@ -369,7 +368,22 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 		dummy_cycles = req->tx_dummy;
 	}
 
-	flash_cmd_ctrl |= FIELD_PREP(CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_OPCODE_MASK, packet->cmd);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		uint32_t opcode_ext_lower =
+			sys_read32(base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+
+		flash_cmd_ctrl |= FIELD_PREP(CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_OPCODE_MASK,
+					     packet->cmd >> 8);
+		opcode_ext_lower &= ~CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_STIG_OPCODE_MASK;
+		opcode_ext_lower |= FIELD_PREP(
+			CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_STIG_OPCODE_MASK, packet->cmd & 0xFF);
+
+		sys_write32(opcode_ext_lower, base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+	} else {
+		flash_cmd_ctrl |=
+			FIELD_PREP(CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_OPCODE_MASK, packet->cmd);
+	}
+
 	flash_cmd_ctrl |=
 		FIELD_PREP(CADENCE_MSPI_FLASH_CMD_CTRL_REG_NUM_DUMMY_CYCLES_MASK, dummy_cycles);
 
@@ -428,8 +442,23 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 		sys_read32(base_address + CADENCE_MSPI_DEV_INSTR_RD_CONFIG_OFFSET);
 
 	dev_instr_rd_cfg &= ~CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_RD_OPCODE_NON_XIP_MASK;
-	dev_instr_rd_cfg |= FIELD_PREP(CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_RD_OPCODE_NON_XIP_MASK,
-				       packet->cmd);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		uint32_t opcode_ext_lower =
+			sys_read32(base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+
+		dev_instr_rd_cfg |=
+			FIELD_PREP(CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_RD_OPCODE_NON_XIP_MASK,
+				   packet->cmd >> 8);
+		opcode_ext_lower &= ~CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_READ_OPCODE_MASK;
+		opcode_ext_lower |= FIELD_PREP(
+			CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_READ_OPCODE_MASK, packet->cmd & 0xFF);
+
+		sys_write32(opcode_ext_lower, base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+	} else {
+		dev_instr_rd_cfg |= FIELD_PREP(
+			CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_RD_OPCODE_NON_XIP_MASK, packet->cmd);
+	}
+
 	dev_instr_rd_cfg &= ~CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_DUMMY_RD_CLK_CYCLES_MASK;
 	dev_instr_rd_cfg |= FIELD_PREP(
 		CADENCE_MSPI_DEV_INSTR_RD_CONFIG_REG_DUMMY_RD_CLK_CYCLES_MASK, req->rx_dummy);
@@ -518,8 +547,24 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 		sys_read32(base_address + CADENCE_MSPI_DEV_INSTR_WR_CONFIG_OFFSET);
 
 	dev_instr_wr_cfg &= ~CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_WR_OPCODE_NON_XIP_MASK;
-	dev_instr_wr_cfg |= FIELD_PREP(CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_WR_OPCODE_NON_XIP_MASK,
-				       packet->cmd);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		uint32_t opcode_ext_lower =
+			sys_read32(base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+
+		dev_instr_wr_cfg |=
+			FIELD_PREP(CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_WR_OPCODE_NON_XIP_MASK,
+				   packet->cmd >> 8);
+		opcode_ext_lower &= ~CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_WRITE_OPCODE_MASK;
+		opcode_ext_lower |=
+			FIELD_PREP(CADENCE_MSPI_OPCODE_EXT_LOWER_REG_EXT_WRITE_OPCODE_MASK,
+				   packet->cmd & 0xFF);
+
+		sys_write32(opcode_ext_lower, base_address + CADENCE_MSPI_OPCODE_EXT_LOWER_OFFSET);
+	} else {
+		dev_instr_wr_cfg |= FIELD_PREP(
+			CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_WR_OPCODE_NON_XIP_MASK, packet->cmd);
+	}
+
 	dev_instr_wr_cfg &= ~CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_DUMMY_WR_CLK_CYCLES_MASK;
 	dev_instr_wr_cfg |= FIELD_PREP(
 		CADENCE_MSPI_DEV_INSTR_WR_CONFIG_REG_DUMMY_WR_CLK_CYCLES_MASK, req->tx_dummy);
@@ -959,6 +1004,21 @@ static int mspi_cadence_dev_config(const struct device *controller,
 			break;
 		default:
 			LOG_ERR("Invalid clock polarity/phase configuration");
+			ret = -ENOTSUP;
+			goto exit;
+		}
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_CMD_LEN) {
+		switch (dev_cfg->cmd_length) {
+		case 1:
+			config_reg &= ~CADENCE_MSPI_CONFIG_REG_DUAL_BYTE_OPCODE_EN_BIT;
+			break;
+		case 2:
+			config_reg |= CADENCE_MSPI_CONFIG_REG_DUAL_BYTE_OPCODE_EN_BIT;
+			break;
+		default:
+			LOG_ERR("Invalid command length: %u", dev_cfg->cmd_length);
 			ret = -ENOTSUP;
 			goto exit;
 		}
