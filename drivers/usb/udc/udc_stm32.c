@@ -1219,7 +1219,6 @@ static const struct udc_api udc_stm32_api = {
  * Kconfig system.
  */
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
 
 static struct udc_stm32_data udc0_priv;
 
@@ -1231,7 +1230,7 @@ static struct udc_data udc0_data = {
 static const struct udc_stm32_config udc0_cfg  = {
 	.base = (void *)DT_INST_REG_ADDR(0),
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
-	.dram_size = USB_RAM_SIZE,
+	.dram_size = DT_INST_PROP(0, ram_size),
 	.irqn = UDC_STM32_IRQ,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
