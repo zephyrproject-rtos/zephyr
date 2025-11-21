@@ -33,14 +33,16 @@ typedef int16_t adc_data_size_t;
 #define __NOCACHE
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-#define BUFFER_SIZE  6
+#define BUFFER_SIZE  12
 #ifdef CONFIG_TEST_USERSPACE
 static ZTEST_BMEM adc_data_size_t m_sample_buffer[BUFFER_SIZE];
 #else
 static __aligned(32) adc_data_size_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
 #endif
 
-#define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define DT_SPEC_AND_COMMA(node_id, prop, idx)					\
+		ADC_DT_SPEC_STRUCT(DT_PHANDLE_BY_IDX(node_id, prop, idx),	\
+				   DT_PHA_BY_IDX(node_id, prop, idx, input)),
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 /* Data of ADC io-channels specified in devicetree. */
@@ -51,6 +53,28 @@ static const int adc_channels_count = ARRAY_SIZE(adc_channels);
 #else
 #error "Unsupported board."
 #endif
+
+#ifdef CONFIG_ADC_INJECTED_CHANNELS
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_injected_channels)
+/* Data of ADC io-channels specified in devicetree. */
+static const struct adc_dt_spec adc_injected_channels[] = {
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_injected_channels, DT_SPEC_AND_COMMA)
+};
+static const int adc_injected_channels_count = ARRAY_SIZE(adc_injected_channels);
+
+#define LARGE_BUFFER_SIZE  60
+
+#ifdef CONFIG_TEST_USERSPACE
+static ZTEST_BMEM adc_data_size_t m_injected_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM adc_data_size_t m_large_sample_buffer[LARGE_BUFFER_SIZE];
+#else
+static __aligned(32) adc_data_size_t m_injected_sample_buffer[BUFFER_SIZE] __NOCACHE;
+static __aligned(32) adc_data_size_t m_large_sample_buffer[LARGE_BUFFER_SIZE] __NOCACHE;
+#endif
+#else
+#error "No injected channels defined."
+#endif
+#endif /* CONFIG_ADC_INJECTED_CHANNELS */
 
 const struct device *get_adc_device(void)
 {
@@ -97,19 +121,30 @@ static void init_adc(void)
 		m_sample_buffer[i] = INVALID_ADC_VALUE;
 	}
 
+#ifdef CONFIG_ADC_INJECTED_CHANNELS
+	for (i = 0; i < adc_injected_channels_count; i++) {
+		ret = adc_channel_setup_dt(&adc_injected_channels[i]);
+		zassert_equal(ret, 0, "Setting up of channel %d failed with code %d", i, ret);
+	}
+
+	for (i = 0; i < BUFFER_SIZE; ++i) {
+		m_injected_sample_buffer[i] = INVALID_ADC_VALUE;
+	}
+#endif /* CONFIG_ADC_INJECTED_CHANNELS */
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 	init_counter();
 #endif
 }
 
-static void check_samples(int expected_count)
+static void check_samples(int expected_count, adc_data_size_t *sample_buffer)
 {
 	int i;
 
 	TC_PRINT("Samples read: ");
-	for (i = 0; i < BUFFER_SIZE; i++) {
-		adc_data_size_t sample_value = m_sample_buffer[i];
+	for (i = 0; i < MAX(BUFFER_SIZE, expected_count); i++) {
+		adc_data_size_t sample_value = sample_buffer[i];
 
 #if CONFIG_ADC_32_BITS_DATA
 		TC_PRINT("0x%08x ", sample_value);
@@ -144,7 +179,7 @@ static int test_task_one_channel(void)
 	ret = adc_read_dt(&adc_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
-	check_samples(1);
+	check_samples(1, m_sample_buffer);
 
 	return TC_PASS;
 }
@@ -178,7 +213,7 @@ static int test_task_multiple_channels(void)
 	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
-	check_samples(adc_channels_count);
+	check_samples(adc_channels_count, m_sample_buffer);
 
 	return TC_PASS;
 }
@@ -225,10 +260,65 @@ static int test_task_asynchronous_call(void)
 	ret = k_poll(&async_evt, 1, K_MSEC(1000));
 	zassert_equal(ret, 0, "k_poll failed with error %d", ret);
 
-	check_samples(1 + options.extra_samplings);
+	check_samples(1 + options.extra_samplings, m_sample_buffer);
 
 	return TC_PASS;
 }
+
+#if defined(CONFIG_ADC_INJECTED_CHANNELS)
+static int test_task_asynchronous_call_with_injected(void)
+{
+	int ret;
+	const struct adc_sequence_options options = {
+		.extra_samplings = 4,
+		/* Start consecutive samplings as fast as possible. */
+		.interval_us     = CONFIG_ADC_API_SAMPLE_INTERVAL_US,
+	};
+	struct adc_sequence sequence = {
+		.options     = &options,
+		.buffer      = m_large_sample_buffer,
+		.buffer_size = sizeof(m_large_sample_buffer),
+	};
+	struct k_poll_event  async_evt =
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+					 K_POLL_MODE_NOTIFY_ONLY,
+					 &async_sig);
+	init_adc();
+
+	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+
+	for (int i = 1; i < adc_channels_count; i++) {
+		sequence.channels |= BIT(adc_channels[i].channel_id);
+	}
+
+	ret = adc_read_async(adc_channels[0].dev, &sequence, &async_sig);
+	zassert_equal(ret, 0, "adc_read_async() failed with code %d", ret);
+
+	struct adc_sequence injected_sequence = {
+		.buffer      = m_injected_sample_buffer,
+		.buffer_size = sizeof(m_injected_sample_buffer),
+		.injected_mode = true,
+	};
+
+	(void)adc_sequence_init_dt(&adc_injected_channels[0], &injected_sequence);
+
+	for (int i = 1; i < adc_injected_channels_count; i++) {
+		injected_sequence.channels |= BIT(adc_injected_channels[i].channel_id);
+	}
+
+	ret = adc_read_dt(&adc_injected_channels[0], &injected_sequence);
+	zassert_equal(ret, 0, "adc_read_dt() failed with code %d", ret);
+
+	check_samples(adc_injected_channels_count, m_injected_sample_buffer);
+
+	ret = k_poll(&async_evt, 1, K_MSEC(1000));
+	zassert_equal(ret, 0, "k_poll failed with error %d", ret);
+
+	check_samples(adc_channels_count * (options.extra_samplings + 1), m_large_sample_buffer);
+
+	return TC_PASS;
+}
+#endif /* defined(CONFIG_ADC_INJECTED_CHANNELS) */
 #endif /* defined(CONFIG_ADC_ASYNC) */
 
 ZTEST_USER(adc_basic, test_adc_asynchronous_call)
@@ -238,6 +328,15 @@ ZTEST_USER(adc_basic, test_adc_asynchronous_call)
 #else
 	ztest_test_skip();
 #endif /* defined(CONFIG_ADC_ASYNC) */
+}
+
+ZTEST_USER(adc_basic, test_adc_asynchronous_call_with_injected)
+{
+#if defined(CONFIG_ADC_ASYNC) && defined(CONFIG_ADC_INJECTED_CHANNELS)
+	zassert_true(test_task_asynchronous_call_with_injected() == TC_PASS);
+#else
+	ztest_test_skip();
+#endif /* defined(CONFIG_ADC_ASYNC) && defined(CONFIG_ADC_INJECTED_CHANNELS) */
 }
 
 /*
@@ -288,7 +387,7 @@ static int test_task_with_interval(void)
 		"Invalid user data: %p, expected: %p",
 		user_data, sequence.options->user_data);
 
-	check_samples(1 + options.extra_samplings);
+	check_samples(1 + options.extra_samplings, m_sample_buffer);
 
 	return TC_PASS;
 }
@@ -309,12 +408,12 @@ static enum adc_action repeated_samplings_callback(const struct device *dev,
 	++m_samplings_done;
 	TC_PRINT("%s: done %d\n", __func__, m_samplings_done);
 	if (m_samplings_done == 1U) {
-		check_samples(MIN(adc_channels_count, 2));
+		check_samples(MIN(adc_channels_count, 2), m_sample_buffer);
 
 		/* After first sampling continue normally. */
 		return ADC_ACTION_CONTINUE;
 	} else {
-		check_samples(2 * MIN(adc_channels_count, 2));
+		check_samples(2 * MIN(adc_channels_count, 2), m_sample_buffer);
 
 		/*
 		 * The second sampling is repeated 9 times (the samples are
@@ -403,7 +502,7 @@ static int test_task_invalid_request(void)
 	ret = adc_read_dt(&adc_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
-	check_samples(1);
+	check_samples(1, m_sample_buffer);
 
 	return TC_PASS;
 }
