@@ -465,15 +465,18 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 
 	sys_write32(dev_instr_rd_cfg, base_address + CADENCE_MSPI_DEV_INSTR_RD_CONFIG_OFFSET);
 
-	sys_write32(packet->address, base_address + CADENCE_MSPI_INDIRECT_READ_XFER_START_OFFSET);
 	sys_write32(packet->num_bytes,
 		    base_address + CADENCE_MSPI_INDIRECT_READ_XFER_NUM_BYTES_OFFSET);
 
 	uint32_t dev_size_config = sys_read32(base_address + CADENCE_MSPI_DEV_SIZE_CONFIG_OFFSET);
 
 	dev_size_config &= ~CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK;
-	dev_size_config |= FIELD_PREP(CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK,
-				      req->addr_length - 1);
+	if (req->addr_length) {
+		dev_size_config |= FIELD_PREP(CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK,
+					      req->addr_length - 1);
+		sys_write32(packet->address,
+			    base_address + CADENCE_MSPI_INDIRECT_READ_XFER_START_OFFSET);
+	}
 
 	sys_write32(dev_size_config, base_address + CADENCE_MSPI_DEV_SIZE_CONFIG_OFFSET);
 
@@ -571,16 +574,18 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 
 	sys_write32(dev_instr_wr_cfg, base_address + CADENCE_MSPI_DEV_INSTR_WR_CONFIG_OFFSET);
 
-	sys_write32(packet->address, base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_START_OFFSET);
 	sys_write32(packet->num_bytes,
 		    base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_NUM_BYTES_OFFSET);
 
 	uint32_t dev_size_config = sys_read32(base_address + CADENCE_MSPI_DEV_SIZE_CONFIG_OFFSET);
 
 	dev_size_config &= ~CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK;
-	dev_size_config |= FIELD_PREP(CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK,
-				      req->addr_length - 1);
-
+	if (req->addr_length) {
+		dev_size_config |= FIELD_PREP(CADENCE_MSPI_DEV_SIZE_CONFIG_REG_NUM_ADDR_BYTES_MASK,
+					      req->addr_length - 1);
+		sys_write32(packet->address,
+			    base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_START_OFFSET);
+	}
 	sys_write32(dev_size_config, base_address + CADENCE_MSPI_DEV_SIZE_CONFIG_OFFSET);
 
 	uint32_t indirect_write_ctrl =
