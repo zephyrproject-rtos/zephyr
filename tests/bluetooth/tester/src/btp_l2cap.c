@@ -66,6 +66,11 @@ static struct br_channel {
 
 /* TODO Extend to support multiple servers */
 static struct bt_l2cap_server servers[SERVERS];
+struct server_settings {
+	uint8_t mode;
+	uint32_t options;
+};
+static struct server_settings server_settings[SERVERS];
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 static void seg_recv_cb(struct bt_l2cap_chan *l2cap_chan, size_t sdu_len, off_t seg_offset,
@@ -862,6 +867,15 @@ static struct bt_l2cap_server *get_free_server(void)
 	return NULL;
 }
 
+static uint8_t get_server_index(struct bt_l2cap_server *server)
+{
+	ptrdiff_t index = 0;
+
+	index = server - servers;
+
+	return (uint8_t)index;
+}
+
 static bool is_free_psm(uint16_t psm)
 {
 	uint8_t i;
@@ -911,6 +925,9 @@ static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		     struct bt_l2cap_chan **l2cap_chan)
 {
 	struct br_channel *chan;
+	__maybe_unused uint16_t options = 0;
+	__maybe_unused uint8_t mode = BTP_L2CAP_LISTEN_V2_MODE_NONE;
+	__maybe_unused uint8_t index;
 
 	if (bt_conn_enc_key_size(conn) < req_keysize) {
 		return -EPERM;
@@ -928,6 +945,56 @@ static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	chan->br.chan.ops = &br_l2cap_ops;
 	chan->br.rx.mtu = DATA_MTU_INITIAL;
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	index = get_server_index(server);
+	if (index < ARRAY_SIZE(server_settings)) {
+		options = server_settings[index].options;
+		mode = server_settings[index].mode;
+	}
+
+	switch (mode) {
+	case BTP_L2CAP_LISTEN_V2_MODE_RET:
+		chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+		chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_LISTEN_V2_MODE_FC:
+		chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+		chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_LISTEN_V2_MODE_ERET:
+		chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+		chan->br.rx.max_transmit = 3;
+		break;
+	case BTP_L2CAP_LISTEN_V2_MODE_STREAM:
+		chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+		chan->br.rx.max_transmit = 0;
+		break;
+	default:
+		chan->br.rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+		chan->br.rx.max_transmit = 0;
+		break;
+	}
+
+	if (options & BTP_L2CAP_LISTEN_V2_OPT_EXT_WIN_SIZE) {
+		chan->br.rx.extended_control = true;
+	} else {
+		chan->br.rx.extended_control = false;
+	}
+
+	if (options & BTP_L2CAP_LISTEN_V2_OPT_MODE_OPTIONAL) {
+		chan->br.rx.optional = true;
+	} else {
+		chan->br.rx.optional = false;
+	}
+
+	chan->br.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+	if (options & BTP_L2CAP_LISTEN_V2_OPT_NO_FCS) {
+		chan->br.rx.fcs = BT_L2CAP_BR_FCS_NO;
+	} else {
+		chan->br.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
 	*l2cap_chan = &chan->br.chan;
 
 	return 0;
@@ -940,14 +1007,16 @@ static int br_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 }
 #endif /* CONFIG_BT_CLASSIC */
 
-static uint8_t listen(const void *cmd, uint16_t cmd_len,
-		      void *rsp, uint16_t *rsp_len)
+static uint8_t _listen(uint16_t psm, uint8_t transport, uint16_t response, uint8_t mode,
+		       uint32_t options)
 {
-	const struct btp_l2cap_listen_cmd *cp = cmd;
 	struct bt_l2cap_server *server;
-	uint16_t psm = sys_le16_to_cpu(cp->psm);
 
 	if (psm == 0 || !is_free_psm(psm)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (mode > BTP_L2CAP_LISTEN_V2_MODE_VALID) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -957,8 +1026,10 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	}
 
 	server->psm = psm;
+	server_settings[get_server_index(server)].mode = mode;
+	server_settings[get_server_index(server)].options = options;
 
-	switch (cp->response) {
+	switch (response) {
 	case BTP_L2CAP_CONNECTION_RESPONSE_SUCCESS:
 		break;
 	case BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY:
@@ -978,26 +1049,53 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 		server->sec_level = BT_SECURITY_L4;
 		break;
 	default:
-		return BTP_STATUS_FAILED;
+		goto failed;
 	}
 
-	if (cp->transport == BTP_L2CAP_TRANSPORT_LE) {
+	if (transport == BTP_L2CAP_TRANSPORT_LE) {
+		if (mode != BTP_L2CAP_LISTEN_V2_MODE_NONE) {
+			goto failed;
+		}
+
 		server->accept = accept;
 		if (bt_l2cap_server_register(server) < 0) {
-			server->psm = 0U;
-			return BTP_STATUS_FAILED;
+			goto failed;
 		}
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && (cp->transport == BTP_L2CAP_TRANSPORT_BREDR)) {
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && (transport == BTP_L2CAP_TRANSPORT_BREDR)) {
 		server->accept = br_accept;
 		if (bt_l2cap_br_server_register(server) < 0) {
-			server->psm = 0U;
-			return BTP_STATUS_FAILED;
+			goto failed;
 		}
 	} else {
-		return BTP_STATUS_FAILED;
+		goto failed;
 	}
 
 	return BTP_STATUS_SUCCESS;
+
+failed:
+	server_settings[get_server_index(server)].mode = 0;
+	server_settings[get_server_index(server)].options = 0;
+	server->psm = 0U;
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t listen(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_listen_cmd *cp = cmd;
+	uint16_t psm = sys_le16_to_cpu(cp->psm);
+	uint16_t response = sys_le16_to_cpu(cp->response);
+
+	return _listen(psm, cp->transport, response, BTP_L2CAP_LISTEN_V2_MODE_NONE, 0);
+}
+
+static uint8_t listen_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_listen_v2_cmd *cp = cmd;
+	uint16_t psm = sys_le16_to_cpu(cp->psm);
+	uint16_t response = sys_le16_to_cpu(cp->response);
+	uint32_t options = sys_le32_to_cpu(cp->options);
+
+	return _listen(psm, cp->transport, response, cp->mode, options);
 }
 
 static uint8_t credits(const void *cmd, uint16_t cmd_len,
@@ -1121,6 +1219,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_L2CAP_LISTEN,
 		.expect_len = sizeof(struct btp_l2cap_listen_cmd),
 		.func = listen,
+	},
+	{
+		.opcode = BTP_L2CAP_LISTEN_V2,
+		.expect_len = sizeof(struct btp_l2cap_listen_v2_cmd),
+		.func = listen_v2,
 	},
 	{
 		.opcode = BTP_L2CAP_RECONFIGURE,
