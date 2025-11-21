@@ -49,7 +49,7 @@ enum mspi_cadence_timing_param {
  */
 #define CADENCE_MSPI_IGNORED_DEV_CONFIG_PARAMS                                                     \
 	(MSPI_DEVICE_CONFIG_RX_DUMMY | MSPI_DEVICE_CONFIG_TX_DUMMY | MSPI_DEVICE_CONFIG_READ_CMD | \
-	 MSPI_DEVICE_CONFIG_WRITE_CMD | MSPI_DEVICE_CONFIG_CMD_LEN | MSPI_DEVICE_CONFIG_ADDR_LEN | \
+	 MSPI_DEVICE_CONFIG_WRITE_CMD | MSPI_DEVICE_CONFIG_ADDR_LEN |                              \
 	 MSPI_DEVICE_CONFIG_FREQUENCY)
 
 /* Default delay for time between clock enablement and chip select and other */

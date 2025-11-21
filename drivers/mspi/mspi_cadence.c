@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Siemens Mobility GmbH
+ * Copyright (c) 2025 Texas Instruments
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +105,11 @@ int mspi_cadence_wait_for_idle(const struct device *controller)
 	return 0;
 }
 
+static ALWAYS_INLINE bool mspi_cadence_is_dual_byte_cmd(uint32_t base_addr)
+{
+	return MSPI_CADENCE_REG_READ_MASKED(CONFIG, DUAL_BYTE_OPCODE_EN, base_addr);
+}
+
 /**
  * Check whether a single request package is requesting something that the driver
  * doesn't implement / the hardware doesn't support
@@ -124,10 +130,6 @@ static int mspi_cadence_check_transfer_package(const struct mspi_xfer *request, 
 		LOG_ERR("Commands over 2 byte long aren't supported");
 		return -ENOTSUP;
 	}
-	if (packet->cmd >> 8) {
-		LOG_ERR("Support for dual byte opcodes hasn't been implemented");
-		return -ENOSYS;
-	}
 	if (packet->num_bytes) {
 		__ASSERT(packet->data_buf != NULL,
 			 "Request gave a NULL buffer when bytes should be transfererd");
@@ -145,13 +147,10 @@ static int mspi_cadence_check_transfer_request(const struct mspi_xfer *request)
 		return -ENOSYS;
 	}
 
-	if (request->cmd_length == 2) {
-		LOG_ERR("Dual byte opcode is not implemented");
-		return -ENOSYS;
-	} else if (request->cmd_length > 2) {
+	if (request->cmd_length > 2) {
 		LOG_ERR("Cmds over 2 bytes long aren't supported");
 		return -ENOTSUP;
-	} else if (request->cmd_length != 1) {
+	} else if (request->cmd_length == 0) {
 		LOG_ERR("Can't handle transfer without cmd");
 		return -ENOSYS;
 	}
@@ -349,7 +348,14 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 		dummy_cycles = req->tx_dummy;
 	}
 
-	MSPI_CADENCE_REG_WRITE(packet->cmd, FLASH_CMD_CTRL, CMD_OPCODE, base_address);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		MSPI_CADENCE_REG_WRITE(packet->cmd >> 8, FLASH_CMD_CTRL, CMD_OPCODE, base_address);
+		MSPI_CADENCE_REG_WRITE(packet->cmd & 0xFF, OPCODE_EXT_LOWER, EXT_STIG_OPCODE,
+				       base_address);
+	} else {
+		MSPI_CADENCE_REG_WRITE(packet->cmd, FLASH_CMD_CTRL, CMD_OPCODE, base_address);
+	}
+
 	MSPI_CADENCE_REG_WRITE(dummy_cycles, FLASH_CMD_CTRL, NUM_DUMMY_CYCLES, base_address);
 
 	if (req->addr_length) {
@@ -402,7 +408,15 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 	const struct mspi_cadence_config *config = controller->config;
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 
-	MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_RD_CONFIG, RD_OPCODE_NON_XIP, base_address);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		MSPI_CADENCE_REG_WRITE(packet->cmd >> 8, DEV_INSTR_RD_CONFIG, RD_OPCODE_NON_XIP,
+				       base_address);
+		MSPI_CADENCE_REG_WRITE(packet->cmd & 0xFF, OPCODE_EXT_LOWER, EXT_READ_OPCODE,
+				       base_address);
+	} else {
+		MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_RD_CONFIG, RD_OPCODE_NON_XIP,
+				       base_address);
+	}
 	MSPI_CADENCE_REG_WRITE(packet->address, INDIRECT_READ_XFER_START, ADDR, base_address);
 	MSPI_CADENCE_REG_WRITE(packet->num_bytes, INDIRECT_READ_XFER_NUM_BYTES, VALUE,
 			       base_address);
@@ -463,7 +477,15 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	const struct mspi_cadence_config *config = controller->config;
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 
-	MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_WR_CONFIG, WR_OPCODE_NON_XIP, base_address);
+	if (mspi_cadence_is_dual_byte_cmd(base_address)) {
+		MSPI_CADENCE_REG_WRITE(packet->cmd >> 8, DEV_INSTR_WR_CONFIG, WR_OPCODE_NON_XIP,
+				       base_address);
+		MSPI_CADENCE_REG_WRITE(packet->cmd & 0xFF, OPCODE_EXT_LOWER, EXT_WRITE_OPCODE,
+				       base_address);
+	} else {
+		MSPI_CADENCE_REG_WRITE(packet->cmd, DEV_INSTR_WR_CONFIG, WR_OPCODE_NON_XIP,
+				       base_address);
+	}
 	MSPI_CADENCE_REG_WRITE(req->tx_dummy, DEV_INSTR_WR_CONFIG, DUMMY_WR_CLK_CYCLES,
 			       base_address);
 	MSPI_CADENCE_REG_WRITE(req->addr_length - 1, DEV_SIZE_CONFIG, NUM_ADDR_BYTES, base_address);
@@ -773,6 +795,19 @@ int mspi_cadence_dev_config(const struct device *controller, const struct mspi_d
 			break;
 		default:
 			LOG_ERR("Invalid clock polarity/phase configuration");
+			ret = -ENOTSUP;
+			goto exit;
+		}
+	}
+
+	/* configure dual byte opcode bit */
+	if (param_mask & MSPI_DEVICE_CONFIG_CMD_LEN) {
+		if (cfg->cmd_length <= 1) {
+			MSPI_CADENCE_REG_WRITE(0, CONFIG, DUAL_BYTE_OPCODE_EN, base_addr);
+		} else if (cfg->cmd_length == 2) {
+			MSPI_CADENCE_REG_WRITE(1, CONFIG, DUAL_BYTE_OPCODE_EN, base_addr);
+		} else {
+			LOG_ERR("Invalid command length: %u", cfg->cmd_length);
 			ret = -ENOTSUP;
 			goto exit;
 		}
