@@ -26,3 +26,15 @@ properties:
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin.
+      Optional GPIO used to reset the PHY
+  reset-assert-duration-us:
+    type: int
+    description:
+      Minimum duration in microseconds to assert the reset-gpios pin.
+  reset-deassertion-timeout-ms:
+    type: int
+    description:
+      Timeout in milliseconds after the reset-gpios pin is deasserted.
