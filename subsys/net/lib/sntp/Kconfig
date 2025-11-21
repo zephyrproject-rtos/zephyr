@@ -1,11 +1,15 @@
-# Copyright (c) 2017 Linaro Limited
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2017 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig SNTP
-	bool "SNTP (Simple Network Time Protocol)"
+menu "SNTP (Simple Network Time Protocol) support"
 	depends on NET_SOCKETS
+
+config SNTP
+	bool "SNTP client"
+	select SNTP_LIB
 	help
-	  Enable SNTP client library
+	  Enable SNTP client support
 
 if SNTP
 
@@ -19,10 +23,23 @@ config SNTP_UNCERTAINTY
 	  Enabling this option uses more resources (memory) and is not normally
 	  needed.
 
+endif # SNTP
+
+config SNTP_SERVER
+	bool "SNTP server"
+	select SNTP_LIB
+	help
+	  Enable SNTP server support
+
+config SNTP_LIB
+	bool
+	help
+	  SNTP support library
+
 module = SNTP
 module-dep = NET_LOG
 module-str = Log level for SNTP
-module-help = Enable debug message of SNTP client library.
+module-help = Enable debug message of SNTP library.
 source "subsys/net/Kconfig.template.log_config.net"
 
-endif # SNTP
+endmenu
