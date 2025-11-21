@@ -179,6 +179,8 @@ struct udc_stm32_config {
 	 * without cast to clock_control_subsys_t.
 	 */
 	struct stm32_pclken *pclken;
+	/* Pinctrl configuration from DTS */
+	const struct pinctrl_dev_config *pinctrl;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
@@ -1249,6 +1251,8 @@ static void udc0_irq_connect(void)
 		    HAL_PCD_IRQHandler, &udc0_priv.pcd, 0);
 }
 
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct udc_stm32_config udc0_cfg  = {
@@ -1259,6 +1263,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.irqn = DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
 	.pclken = (struct stm32_pclken *)udc0_pclken,
 	.num_clocks = DT_INST_NUM_CLOCKS(0),
+	.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.in_eps = udc0_in_ep_cfg,
 	.out_eps = udc0_out_ep_cfg,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
@@ -1493,12 +1498,6 @@ static int udc_stm32_clock_disable(const struct device *dev)
 	return 0;
 }
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-PINCTRL_DT_INST_DEFINE(0);
-static const struct pinctrl_dev_config *usb_pcfg =
-					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
-#endif
-
 #if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
 static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
@@ -1579,13 +1578,14 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	 * IRQn-to-ISR mapping is done at build time by IRQ_CONNECT().
 	 */
 	cfg->irq_connect();
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
+
+	err = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
+
+	/* Ignore -ENOENT returned on series without pinctrl */
+	if (err < 0 && err != -ENOENT) {
 		LOG_ERR("USB pinctrl setup failed (%d)", err);
 		return err;
 	}
-#endif
 
 #ifdef SYSCFG_CFGR1_USB_IT_RMP
 	/*
