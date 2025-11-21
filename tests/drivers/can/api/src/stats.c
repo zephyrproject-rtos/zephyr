@@ -9,6 +9,9 @@
 
 #include "common.h"
 
+/* Stats are cleared on every can_start/stop. */
+#define EXPECTED  0
+
 /**
  * @addtogroup t_driver_can
  * @{
@@ -24,13 +27,21 @@ ZTEST_USER(can_stats, test_can_stats_accessors)
 	uint32_t val;
 
 	val = can_stats_get_bit_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN bit errors are too high");
 	val = can_stats_get_bit0_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN bit0 errors are too high");
 	val = can_stats_get_bit1_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN bit1 errors are too high");
 	val = can_stats_get_stuff_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN stuff errors are too high");
 	val = can_stats_get_crc_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN crc errors are too high");
 	val = can_stats_get_form_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN form errors are too high");
 	val = can_stats_get_ack_errors(can_dev);
+	zassert_true(val == EXPECTED, "CAN ack errors are too high");
 	val = can_stats_get_rx_overruns(can_dev);
+	zassert_true(val == EXPECTED, "CAN rx overruns are too high");
 }
 
 void *can_stats_setup(void)
