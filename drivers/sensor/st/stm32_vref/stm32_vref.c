@@ -44,13 +44,32 @@ struct stm32_vref_config {
 	uint8_t cal_shift;
 };
 
+static void stm32_vref_enable_vrefsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_VREFINT);
+
+#ifdef LL_ADC_DELAY_VREFINT_STAB_US
+	k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
+#endif
+}
+
+static void stm32_vref_disable_vrefsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path & ~LL_ADC_PATH_INTERNAL_VREFINT);
+}
+
 static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct stm32_vref_config *cfg = dev->config;
 	struct stm32_vref_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
-	uint32_t path;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
@@ -59,31 +78,27 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(cfg->adc);
 
+#ifndef CONFIG_STM32_VREF_INJECTED
 	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
 	if (rc) {
 		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
 		goto unlock;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(cfg->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(cfg->adc_base),
-				       LL_ADC_PATH_INTERNAL_VREFINT | path);
-
-#ifdef LL_ADC_DELAY_VREFINT_STAB_US
-	k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
-#endif
+	stm32_vref_enable_vrefsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_VREF_INJECTED */
 
 	rc = adc_read(cfg->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(cfg->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(cfg->adc_base),
-				       path &= ~LL_ADC_PATH_INTERNAL_VREFINT);
+#ifndef CONFIG_STM32_VREF_INJECTED
+	stm32_vref_disable_vrefsensor_channel(cfg->adc_base);
 
 
 unlock:
+#endif /* CONFIG_STM32_VREF_INJECTED */
 	pm_device_runtime_put(cfg->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -134,6 +149,9 @@ static int stm32_vref_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = MEAS_RES,
+#ifdef CONFIG_STM32_VREF_INJECTED
+		.priority = 1,
+#endif /* CONFIG_STM32_VREF_INJECTED */
 	};
 
 /*
@@ -149,6 +167,17 @@ static int stm32_vref_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+#ifdef CONFIG_STM32_VREF_INJECTED
+	int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+
+	if (rc != 0) {
+		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+		return rc;
+	}
+
+	stm32_vref_enable_vrefsensor_channel(cfg->adc_base);
+#endif /* CONFIG_STM32_VREF_INJECTED */
 
 	return 0;
 }
