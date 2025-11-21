@@ -812,7 +812,7 @@ struct bt_avrcp_ct_cb {
 
 	/** @brief Callback for PDU ID LIST_PLAYER_APP_SETTING_VALS.
 	 *
-	 *  Called when the response for LIST_PLAYER_APP_SETTING_VALS is received.`
+	 *  Called when the response for LIST_PLAYER_APP_SETTING_VALS is received.
 	 *
 	 *  @param ct AVRCP CT connection object.
 	 *  @param tid The transaction label of the request.
