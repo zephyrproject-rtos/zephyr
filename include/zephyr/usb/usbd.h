@@ -287,6 +287,12 @@ struct usbd_context {
 	const struct device *dev;
 	/** Notification message recipient callback */
 	usbd_msg_cb_t msg_cb;
+	/** UDC driver events */
+	struct k_event events;
+	/** slist to keep endpoint events */
+	sys_slist_t ep_events;
+	/** Endpoint event list spinlock */
+	struct k_spinlock ep_event_lock;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, BOS */
@@ -303,6 +309,12 @@ struct usbd_context {
 	void *fs_desc;
 	/** Pointer to High-Speed device descriptor */
 	void *hs_desc;
+	/** Thread structure */
+	struct k_thread *const thread_data;
+	/** Thread stack */
+	k_thread_stack_t *const thread_stack;
+	/** Thread stack size */
+	const size_t stack_size;
 };
 
 /**
@@ -504,6 +516,11 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bNumConfigurations = 0,				\
 	};								\
 	))								\
+									\
+	static K_KERNEL_STACK_DEFINE(thread_stack_##device_name,	\
+				     CONFIG_USBD_THREAD_STACK_SIZE);	\
+	static struct k_thread thread_data_##device_name;		\
+									\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.dev = udc_dev,						\
@@ -511,6 +528,10 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (			\
 		.hs_desc = &hs_desc_##device_name,			\
 		))							\
+		.thread_data = &thread_data_##device_name,		\
+		.thread_stack = thread_stack_##device_name,		\
+		.stack_size = K_KERNEL_STACK_SIZEOF(			\
+				thread_stack_##device_name),		\
 	}
 
 /**
