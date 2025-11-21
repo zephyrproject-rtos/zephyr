@@ -62,6 +62,13 @@ implemented and controlled.
     driver that supports the external cache controller. In this case the driver
     must be located as usual in the :file:`drivers/cache/` directory
 
+* :kconfig:option:`CONFIG_ICACHE_RANGE_OPS`: optional capability flag indicating
+  the instruction cache implements address+size (range) maintenance operations
+  beyond whole-cache maintenance. When disabled all instruction cache range
+  APIs return ``-ENOTSUP`` immediately and callers should fall back to
+  whole-cache operations. Platforms may implement only invalidate for ranges;
+  flush or combined operations are used when available.
+
 .. _cache_api:
 
 Cache API
