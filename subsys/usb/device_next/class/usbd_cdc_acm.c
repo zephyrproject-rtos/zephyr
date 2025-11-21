@@ -709,6 +709,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 
 	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data));
 	if (buf == NULL) {
+	        atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		return;
 	}
 
@@ -720,6 +721,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x",
 			cdc_acm_get_bulk_out(c_data));
 		net_buf_unref(buf);
+	        atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 	}
 }
 
