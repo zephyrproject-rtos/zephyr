@@ -140,6 +140,8 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	clock-frequency = <100000>;
 };
 
 &adc0 {
