@@ -136,6 +136,7 @@
 	pinctrl-names = "default";
 	scl-src = "DX1B";
 	sda-src = "DX0A";
+	clock-frequency = <100000>;
 	interrupts = <94 1>;
 
 	#address-cells = <1>;
