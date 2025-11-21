@@ -312,9 +312,10 @@
 		};
 
 		adc0: adc@40170000 {
-			compatible = "renesas,ra-adc";
+			compatible = "renesas,ra-adc12";
 			interrupts = <38 1>;
 			interrupt-names = "scanend";
+			unit = <0>;
 			reg = <0x40170000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;

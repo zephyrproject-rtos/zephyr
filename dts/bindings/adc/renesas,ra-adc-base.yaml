@@ -1,9 +1,5 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
-
-description: Renesas RA ADC node
-
-compatible: "renesas,ra-adc"
 
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
@@ -31,6 +27,30 @@ properties:
     description: The conversion count of the average mode
       The ADC module will take multiple samples of an analog signal
       and averages them to reduce noise and enhance accuracy
+
+  reference:
+    type: string
+    enum:
+      - vdd
+      - internal
+      - external
+    default: vdd
+    description: |
+      ADC reference voltage source:
+        - vdd: use VDD as reference
+        - internal: use internal reference
+        - external: use external reference
+
+  sampling-time-ns:
+    type: int
+    description: |
+      Sampling time in nanoseconds, i.e. the duration the ADC input
+      signal is sampled before conversion starts.
+
+  unit:
+    type: int
+    required: true
+    description: Indicates the unit number of the ADC device.
 
 io-channel-cells:
   - input
