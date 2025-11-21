@@ -5,6 +5,7 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
+  - audio
   - eeprom
   - gpio
   - uart
