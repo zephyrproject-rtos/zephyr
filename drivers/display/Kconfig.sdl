@@ -100,6 +100,19 @@ config SDL_DISPLAY_COLOR_TINT
 	  Can be used to simulate colored monochrome displays, like R8 (L8 + tint 0xff0000).
 	  Byte order: RGB_888
 
+config SDL_DISPLAY_ROUNDED_MASK
+	bool "Use rounded mask"
+	help
+	  If enabled, a rounded mask will be applied to the display output.
+	  This is useful to simulate rounded displays.
+
+config SDL_DISPLAY_ROUNDED_MASK_COLOR
+	hex "Rounded mask color"
+	default 0x000000
+	help
+	  The color of the rounded mask.
+	  Byte order: RGB_888
+
 config SDL_DISPLAY_THREAD_PRIORITY
 	int "SDL display thread priority"
 	default MAIN_THREAD_PRIORITY
