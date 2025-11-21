@@ -41,9 +41,14 @@ ZTEST_SUITE(icm42688, NULL, icm42688_setup, NULL, NULL, NULL);
 ZTEST_F(icm42688, test_fetch_fail_no_ready_data)
 {
 	uint8_t status = 0;
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ACCEL_X, .chan_idx = 0},
+	};
 
 	icm4268x_emul_set_reg(fixture->target, REG_INT_STATUS, &status, 1);
-	zassert_equal(-EBUSY, sensor_sample_fetch(fixture->dev));
+	zassert_equal(-EBUSY, sensor_read_and_decode(fixture->dev, channels, 1, &shift, &value, 1));
 }
 
 static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t temperature_mc)
@@ -53,6 +58,11 @@ static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t t
 	int64_t actual_uc;
 	int16_t temperature_reg;
 	uint8_t buffer[2];
+	int8_t shift;
+	q31_t q_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_DIE_TEMP, .chan_idx = 0},
+	};
 
 	/* Set the INT_STATUS register to show we have data */
 	buffer[0] = BIT_DATA_RDY_INT;
@@ -68,8 +78,8 @@ static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t t
 	icm4268x_emul_set_reg(fixture->target, REG_TEMP_DATA1, buffer, 2);
 
 	/* Fetch the data */
-	zassert_ok(sensor_sample_fetch(fixture->dev));
-	zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_DIE_TEMP, &value));
+	zassert_ok(sensor_read_and_decode(fixture->dev, channels, 1, &shift, &q_value, 1));
+	q31_to_sensor_value(q_value, shift, &value);
 
 	/* Assert data is within 5 milli-C of the tested temperature */
 	expected_uc = temperature_mc * INT64_C(1000);
@@ -93,6 +103,11 @@ static void test_fetch_accel_with_range(const struct icm42688_fixture *fixture,
 	int32_t expect_ug;
 	int32_t actual_ug;
 	uint8_t register_buffer[6];
+	int8_t shift;
+	q31_t q_values[3];
+	struct sensor_chan_spec channels[] = {
+		{.chan_type = SENSOR_CHAN_ACCEL_XYZ, .chan_idx = 0},
+	};
 
 	/* Se the INT_STATUS register to show we have data */
 	register_buffer[0] = BIT_DATA_RDY_INT;
@@ -111,8 +126,10 @@ static void test_fetch_accel_with_range(const struct icm42688_fixture *fixture,
 	icm4268x_emul_set_reg(fixture->target, REG_ACCEL_DATA_X1, register_buffer, 6);
 
 	/* Fetch the data */
-	zassert_ok(sensor_sample_fetch(fixture->dev));
-	zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_ACCEL_XYZ, values));
+	zassert_ok(sensor_read_and_decode(fixture->dev, channels, 1, &shift, q_values, 3));
+	q31_to_sensor_value(q_values[0], shift, &values[0]);
+	q31_to_sensor_value(q_values[1], shift, &values[1]);
+	q31_to_sensor_value(q_values[2], shift, &values[2]);
 
 	/* Assert the data is within 0.005g (0.05m/s2) */
 	actual_ug = sensor_ms2_to_ug(&values[0]);
@@ -155,6 +172,11 @@ static void test_fetch_gyro_with_range(const struct icm42688_fixture *fixture, i
 	int32_t expect_10udps;
 	int32_t actual_10udps;
 	uint8_t register_buffer[6];
+	int8_t shift;
+	q31_t q_values[3];
+	struct sensor_chan_spec channels[] = {
+		{.chan_type = SENSOR_CHAN_GYRO_XYZ, .chan_idx = 0},
+	};
 
 	/* Se the INT_STATUS register to show we have data */
 	register_buffer[0] = BIT_DATA_RDY_INT;
@@ -173,8 +195,10 @@ static void test_fetch_gyro_with_range(const struct icm42688_fixture *fixture, i
 	icm4268x_emul_set_reg(fixture->target, REG_GYRO_DATA_X1, register_buffer, 6);
 
 	/* Fetch the data */
-	zassert_ok(sensor_sample_fetch(fixture->dev));
-	zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_GYRO_XYZ, values));
+	zassert_ok(sensor_read_and_decode(fixture->dev, channels, 1, &shift, q_values, 3));
+	q31_to_sensor_value(q_values[0], shift, &values[0]);
+	q31_to_sensor_value(q_values[1], shift, &values[1]);
+	q31_to_sensor_value(q_values[2], shift, &values[2]);
 
 	/* Assert the data is within 0.5 d/s (0.001 rad/s) */
 	actual_10udps = sensor_rad_to_10udegrees(&values[0]);
