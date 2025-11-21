@@ -112,7 +112,7 @@ static int slip_process_byte(unsigned char c)
 
 	if (!pkt_curr) {
 		pkt_curr = net_pkt_rx_alloc_with_buffer(NULL, 256,
-							AF_UNSPEC, 0,
+							NET_AF_UNSPEC, 0,
 							K_NO_WAIT);
 		if (!pkt_curr) {
 			LOG_ERR("No more buffers");
@@ -173,7 +173,7 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, len + 5,
-					AF_UNSPEC, 0, K_NO_WAIT);
+					NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_DBG("No pkt available");
 		return;
