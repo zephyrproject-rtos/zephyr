@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
 static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
+#define RESYNC_FAILED_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
+#define RESYNC_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL)
 #endif
 
 BUILD_ASSERT(
@@ -115,10 +117,8 @@ int net_init_clock_via_sntp(void)
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	k_work_reschedule(
-		&sntp_resync_work_handle,
-		(res < 0) ? K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
-			  : K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
+	k_work_reschedule(&sntp_resync_work_handle,
+			  (res < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
 #endif
 	return res;
 }
