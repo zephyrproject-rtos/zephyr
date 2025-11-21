@@ -1370,9 +1370,16 @@ void ull_conn_done(struct node_rx_event_done *done)
 		slot_us = tx_time + rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
-		    !conn->lll.role) {
+		    (lll->role == BT_HCI_ROLE_CENTRAL)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		}
 
@@ -2403,6 +2410,13 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		slot_us = max_tx_time + max_rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay_us;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
 		    (lll->role == BT_HCI_ROLE_CENTRAL)) {

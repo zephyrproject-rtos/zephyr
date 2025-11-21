@@ -364,6 +364,20 @@ conn_is_valid:
 	slot_us = max_tx_time + max_rx_time;
 	slot_us += conn_lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
+
+#if !defined(CONFIG_BT_CTLR_CENTRAL_SPACING) || (CONFIG_BT_CTLR_CENTRAL_SPACING == 0U)
+	/* Lets be considerate of peripheral window widening and space multiple centrals
+	 * accordingly by including it in the time reservation.
+	 */
+	uint32_t periph_window_widening_periodic_max_us =
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() + lll_clock_ppm_get(0U)) *
+			      ((uint32_t)interval * CONN_INT_UNIT_US)), USEC_PER_SEC);
+
+	slot_us += periph_window_widening_periodic_max_us << 1U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_SPACING || (CONFIG_BT_CTLR_CENTRAL_SPACING == 0U) */
+
+	/* Add sleep clock jitter and event overheads */
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
