@@ -194,6 +194,8 @@ struct udc_stm32_config {
 	struct stm32_pclken *pclken;
 	/* Pinctrl configuration from DTS */
 	const struct pinctrl_dev_config *pinctrl;
+	/* Disconnect GPIO information (if applicable) */
+	const struct gpio_dt_spec disconnect_gpio;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
@@ -692,15 +694,16 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-#if DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	struct gpio_dt_spec usb_disconnect = GPIO_DT_SPEC_INST_GET(0, disconnect_gpios);
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	const struct udc_stm32_config *cfg = priv->dev->config;
 
-	gpio_pin_configure_dt(&usb_disconnect,
-			      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	if (cfg->disconnect_gpio.port != NULL) {
+		gpio_pin_configure_dt(&cfg->disconnect_gpio,
+				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	}
 }
-#endif
 
 /*
  * The callbacks above are invoked by HAL_PCD_IRQHandler() when appropriate.
@@ -1277,6 +1280,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
 	.thread_stack = udc0_thr_stk,
 	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
+	.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),
 };
 
 static int udc_stm32_clock_enable(const struct device *dev)
