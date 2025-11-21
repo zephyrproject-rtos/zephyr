@@ -288,8 +288,8 @@ class Filters:
         # be removed from further consideration
         for _, board in matched_boards.items():
             relative_board_dir = str(board.dir.relative_to(zephyr_base))
-            resolved_filter = lambda f, rel_dir=relative_board_dir: rel_dir in f, resolved_files
-            self.resolved_files.extend(list(filter(resolved_filter)))
+            rel_resolved_files = [f for f in resolved_files if relative_board_dir in f]
+            self.resolved_files.extend(rel_resolved_files)
 
         _options = []
         if len(matched_boards) > 20:
