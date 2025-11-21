@@ -37,6 +37,22 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+Ethernet
+========
+
+* Driver MAC address configuration support using :c:struct:`net_eth_mac_config` has been introduced
+  for the following drivers:
+
+  * :zephyr_file:`drivers/ethernet/eth_test.c` (:github:`96598`)
+
+  * :zephyr_file:`drivers/ethernet/eth_sam_gmac.c` (:github:`96598`)
+
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM``
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS``
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE``
+    * Removed ``mac-eeprom`` property from :dtcompatible:`atmel,sam-gmac` and
+      :dtcompatible:`atmel,sam0-gmac`
+
 MDIO
 ====
 
