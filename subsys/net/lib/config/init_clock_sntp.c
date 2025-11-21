@@ -82,10 +82,28 @@ static void sntp_set_rtc(__maybe_unused const struct timespec *tspec)
 #endif
 }
 
+static int sntp_set_clocks(struct sntp_time *ts)
+{
+	struct timespec tspec;
+	int ret;
+
+	tspec.tv_sec = ts->seconds;
+	tspec.tv_nsec = ((uint64_t)ts->fraction * NSEC_PER_SEC) >> 32;
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
+	if (ret < 0) {
+		LOG_ERR("Setting sys clock failed (%d)", ret);
+	}
+
+	sntp_set_rtc(&tspec);
+
+	LOG_DBG("Time synced using SNTP, SNTP Time: %" PRIu64, ts->seconds);
+
+	return ret;
+}
+
 int net_init_clock_via_sntp(void)
 {
 	struct sntp_time ts;
-	struct timespec tspec;
 	int res = sntp_init_helper(&ts);
 
 	if (res < 0) {
@@ -93,13 +111,7 @@ int net_init_clock_via_sntp(void)
 		goto end;
 	}
 
-	tspec.tv_sec = ts.seconds;
-	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
-	res = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
-
-	sntp_set_rtc(&tspec);
-
-	LOG_DBG("Time synced using SNTP");
+	res = sntp_set_clocks(&ts);
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
