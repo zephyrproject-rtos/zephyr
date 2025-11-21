@@ -60,6 +60,16 @@ void soc_early_init_hook(void)
 	}
 #endif
 
+#ifdef CONFIG_STM32_BACKUP_SRAM
+	/*
+	 * Enabling the Backup RAM retention is possible only when the regulator is LDO.
+	 * Force the backup sram regulator ON, before the SELECTED_POWER_SUPPLY.
+	 */
+	LL_PWR_EnableBkUpRegulator();
+	while (!LL_PWR_IsEnabledBkUpRegulator()) {
+	}
+#endif /* CONFIG_STM32_BACKUP_SRAM */
+
 	/* Power Configuration */
 	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);
 
