@@ -733,19 +733,34 @@ int mspi_cadence_dev_config(const struct device *controller, const struct mspi_d
 		}
 	}
 
-	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
-		if (cfg->data_rate != MSPI_DATA_RATE_SINGLE) {
-			LOG_ERR("Only single data rate is supported for now");
-			return -ENOSYS;
-		}
-	}
-
 	/* Disable MSPI during configuration */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENABLE_SPI, base_addr);
 
 	ret = mspi_cadence_wait_for_idle(controller);
 	if (ret < 0) {
 		goto exit;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
+		switch (cfg->data_rate) {
+		case MSPI_DATA_RATE_SINGLE:
+			/* disable DTR protocol */
+			MSPI_CADENCE_REG_WRITE(0, CONFIG, ENABLE_DTR_PROTOCOL, base_addr);
+			MSPI_CADENCE_REG_WRITE(0, DEV_INSTR_RD_CONFIG, DDR_EN, base_addr);
+			break;
+		case MSPI_DATA_RATE_DUAL:
+			/* enable DTR protocol */
+			MSPI_CADENCE_REG_WRITE(1, CONFIG, ENABLE_DTR_PROTOCOL, base_addr);
+			break;
+		case MSPI_DATA_RATE_S_D_D:
+			/* enable DDR */
+			MSPI_CADENCE_REG_WRITE(0, CONFIG, ENABLE_DTR_PROTOCOL, base_addr);
+			MSPI_CADENCE_REG_WRITE(1, DEV_INSTR_RD_CONFIG, DDR_EN, base_addr);
+			break;
+		default:
+			LOG_ERR("Configured data rate is not supported");
+			return -ENOSYS;
+		}
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) {
