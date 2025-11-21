@@ -20,6 +20,7 @@
 		sw1 = &k1;
 		sw2 = &k2;
 		watchdog0 = &wdt0;
+		eeprom-0 = &eeprom;
 	};
 
 	chosen {
@@ -110,6 +111,15 @@
 		#gpio-cells = <2>;
 		ngpios = <16>;
 		int-gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+
+	eeprom: 24c02@50 {
+		compatible = "atmel,at24c02b", "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(2)>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
 	};
 };
 
