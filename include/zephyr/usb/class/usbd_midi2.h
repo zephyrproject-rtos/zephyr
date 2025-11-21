@@ -37,8 +37,11 @@ struct usbd_midi_ops {
 	 */
 	void (*rx_packet_cb)(const struct device *dev, const struct midi_ump ump);
 
+#if IS_ENABLED(CONFIG_USBD_MIDI2_ALTSETTING_MIDI1)
 	/**
 	 * @brief Callback type for incoming raw MIDI 1.0 messages from host
+	 * @note Only available when :kconfig:option:`CONFIG_USBD_MIDI2_ALTSETTING_MIDI1` is
+	 * enabled.
 	 * @param[in] dev        The MIDI device receiving the packet
 	 * @param[in] cable_num  Virtual cable/group number
 	 * @param[in] bytes      Pointer to the MIDI status byte followed by data bytes
@@ -49,6 +52,7 @@ struct usbd_midi_ops {
 	 */
 	void (*rx_midi1_cb)(const struct device *dev, uint8_t cable_num, const uint8_t *bytes,
 			    uint8_t len);
+#endif
 
 	/**
 	 * @brief Callback type for MIDI2 interface runtime status change
@@ -91,12 +95,15 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
  */
 int usbd_midi_set_mode(const struct device *dev, bool enable_midi1, bool enable_midi2);
 
+#if IS_ENABLED(CONFIG_USBD_MIDI2_ALTSETTING_MIDI1)
 /**
  * @brief Send a raw MIDI 1.0 message to the host
  *
  * Converts the supplied MIDI 1.0 status/data bytes into a USB-MIDI 1.0 event
  * when the host selected the legacy alternate setting, or into an equivalent
  * Universal MIDI Packet when the host selected the MIDI 2.0 alternate setting.
+ * This helper is only available when
+ * :kconfig:option:`CONFIG_USBD_MIDI2_ALTSETTING_MIDI1` is enabled.
  *
  * @param dev           MIDI device instance
  * @param cable_number  Virtual cable (group) to send the event on (0-15)
@@ -110,6 +117,7 @@ int usbd_midi_set_mode(const struct device *dev, bool enable_midi1, bool enable_
  */
 int usbd_midi_send_midi1(const struct device *dev, uint8_t cable_number, const uint8_t *midi_bytes,
 			 size_t len);
+#endif
 
 /**
  * @}
