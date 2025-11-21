@@ -26,6 +26,9 @@ if(CONFIG_CMAKE_LINKER_GENERATOR)
     zephyr_linker_section_configure(SECTION .fsp_dtc_vector_table KEEP INPUT ".fsp_dtc_vector_table*")
   endif()
 
+  zephyr_linker_section(NAME .rom_padding GROUP ROM_REGION ADDRESS 0x000000C0)
+  zephyr_linker_section_configure(SECTION .rom_padding KEEP INPUT ".rom_padding*")
+
   zephyr_linker_section(NAME .option_setting_ofs0 GROUP ROM_REGION ADDRESS ${ofs0_addr})
   zephyr_linker_section_configure(SECTION .option_setting_ofs0 KEEP INPUT ".option_setting_ofs0*")
 
