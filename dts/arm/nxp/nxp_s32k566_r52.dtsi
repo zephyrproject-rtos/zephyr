@@ -280,3 +280,7 @@
 &swt_startup {
 	interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&lpe_ftm {
+	interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};

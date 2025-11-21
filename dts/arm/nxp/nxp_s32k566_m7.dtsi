@@ -379,3 +379,7 @@
 &swt_startup {
 	interrupts = <27 0>;
 };
+
+&lpe_ftm {
+	interrupts = <223 0>;
+};

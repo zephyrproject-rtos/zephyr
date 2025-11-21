@@ -13,4 +13,5 @@ supported:
   - gpio
   - counter
   - watchdog
+  - pwm
 vendor: nxp

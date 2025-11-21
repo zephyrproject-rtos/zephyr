@@ -554,5 +554,14 @@
 			service-mode = "fixed";
 			status = "disabled";
 		};
+
+		lpe_ftm: ftm@42158000 {
+			compatible = "nxp,ftm-pwm";
+			reg = <0x42158000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_FTM_IPG_CLK>;
+			prescaler = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
