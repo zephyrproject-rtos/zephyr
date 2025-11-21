@@ -14,14 +14,7 @@ LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 #include "sntp_pkt.h"
 #include <limits.h>
 
-#define SNTP_LI_MAX 3
-#define SNTP_VERSION_NUMBER 3
-#define SNTP_MODE_CLIENT 3
-#define SNTP_MODE_SERVER 4
-#define SNTP_STRATUM_KOD 0 /* kiss-o'-death */
-#define OFFSET_1970_JAN_1 2208988800
-
-static void sntp_pkt_dump(struct sntp_pkt *pkt)
+void sntp_pkt_dump(struct sntp_pkt *pkt)
 {
 	if (!pkt) {
 		return;
