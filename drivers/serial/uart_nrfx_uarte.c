@@ -855,8 +855,15 @@ static void rx_disable_finalize(const struct device *dev)
 	struct uart_event evt = {
 		.type = UART_RX_DISABLED,
 	};
+	static const uint32_t rx_int_mask =
+		NRF_UARTE_INT_ENDRX_MASK |
+		NRF_UARTE_INT_RXSTARTED_MASK |
+		NRF_UARTE_INT_ERROR_MASK |
+		NRF_UARTE_INT_RXTO_MASK |
+		NRF_UARTE_INT_RXDRDY_MASK;
 
 	async_rx->enabled = false;
+	nrf_uarte_int_disable(get_uarte_instance(dev), rx_int_mask);
 
 	if (LOW_POWER_ENABLED(cfg)) {
 		uint32_t key = irq_lock();
@@ -1616,12 +1623,6 @@ static int cbwt_uarte_async_init(const struct device *dev)
 static int uarte_async_init(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	static const uint32_t rx_int_mask =
-		NRF_UARTE_INT_ENDRX_MASK |
-		NRF_UARTE_INT_RXSTARTED_MASK |
-		NRF_UARTE_INT_ERROR_MASK |
-		NRF_UARTE_INT_RXTO_MASK;
 
 	k_timer_init(&data->async->rx.timer, rx_timeout, NULL);
 	k_timer_user_data_set(&data->async->rx.timer, (void *)dev);
@@ -1645,8 +1646,6 @@ static int uarte_async_init(const struct device *dev)
 		}
 	}
 #endif
-
-	nrf_uarte_int_enable(uarte, rx_int_mask);
 
 	return 0;
 }
@@ -1914,14 +1913,16 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		 * RXTO interrupt is kept enabled only when RX is active.
 		 */
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXTO_MASK);
 	}
 
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	static const uint32_t rx_int_mask =
+		NRF_UARTE_INT_ENDRX_MASK |
+		NRF_UARTE_INT_RXSTARTED_MASK |
+		NRF_UARTE_INT_ERROR_MASK |
+		NRF_UARTE_INT_RXTO_MASK;
 
+	nrf_uarte_int_enable(uarte, rx_int_mask);
 	async_rx->enabled = true;
-
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 
 	return 0;
@@ -2130,7 +2131,7 @@ static void rxstarted_isr(const struct device *dev)
 		.type = UART_RX_BUF_REQUEST,
 	};
 
-#if !defined(UARTE_HAS_FRAME_TIMEOUT)
+#if defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) && !defined(UARTE_HAS_FRAME_TIMEOUT)
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -2138,11 +2139,11 @@ static void rxstarted_isr(const struct device *dev)
 	if (!K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXDRDY_MASK);
 	}
-#endif /* !UARTE_HAS_FRAME_TIMEOUT */
+#endif
 	user_callback(dev, &evt);
 }
 
-static void endrx_isr(const struct device *dev)
+static void endrx_isr(const struct device *dev, bool rxstarted, bool rxto)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
@@ -2151,11 +2152,6 @@ static void endrx_isr(const struct device *dev)
 #if defined(UARTE_ANY_HW_ASYNC)
 	async_rx->is_in_irq = true;
 #endif
-
-	/* ensure rx timer is stopped - it will be restarted in RXSTARTED
-	 * handler if needed
-	 */
-	k_timer_stop(&async_rx->timer);
 
 	/* this is the amount that the EasyDMA controller has copied into the
 	 * buffer
@@ -2226,11 +2222,13 @@ static void endrx_isr(const struct device *dev)
 			}
 #endif
 
-			/* Check is based on assumption that ISR handler handles
-			 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
-			 * event will be set.
+			/* Remove the short until the subsequent next buffer is setup */
+			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+
+			/* If RXSTARTED is not set then it means that second buffer was
+			 * provided not on time.
 			 */
-			if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+			if (!rxstarted && !rxto) {
 				nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 				if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND)) {
@@ -2238,9 +2236,10 @@ static void endrx_isr(const struct device *dev)
 					start_timeout = true;
 				}
 			}
-			/* Remove the short until the subsequent next buffer is setup */
-			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 		} else {
+			if (!K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+				k_timer_stop(&async_rx->timer);
+			}
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 		}
 
@@ -2456,7 +2455,7 @@ static void rxdrdy_isr(const struct device *dev)
 static bool event_check_clear(NRF_UARTE_Type *uarte, nrf_uarte_event_t event,
 				uint32_t int_mask, uint32_t int_en_mask)
 {
-	if (nrf_uarte_event_check(uarte, event) && (int_mask & int_en_mask)) {
+	if ((int_mask & int_en_mask) && nrf_uarte_event_check(uarte, event)) {
 		nrf_uarte_event_clear(uarte, event);
 		return true;
 	}
@@ -2471,52 +2470,54 @@ static void uarte_nrfx_isr_async(const void *arg)
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	uint32_t imask = nrf_uarte_int_enable_check(uarte, UINT32_MAX);
+	bool rxto, endrx, rxstarted, rxdrdy, error;
 
-	if ((!IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT) || IS_CBWT(dev)) &&
-	    event_check_clear(uarte, NRF_UARTE_EVENT_RXDRDY, NRF_UARTE_INT_RXDRDY_MASK, imask)) {
-		rxdrdy_isr(dev);
-	}
+	/* Order of reading those events is important as it must be ensured that processing
+	 * order is maintained.
+	 */
+	rxto = event_check_clear(uarte, NRF_UARTE_EVENT_RXTO, NRF_UARTE_INT_RXTO_MASK, imask);
+	endrx = event_check_clear(uarte, NRF_UARTE_EVENT_ENDRX, NRF_UARTE_INT_ENDRX_MASK, imask);
+	rxdrdy = event_check_clear(uarte, NRF_UARTE_EVENT_RXDRDY, NRF_UARTE_INT_RXDRDY_MASK, imask);
+	rxstarted = event_check_clear(uarte, NRF_UARTE_EVENT_RXSTARTED,
+				 NRF_UARTE_INT_RXSTARTED_MASK, imask);
+	error = event_check_clear(uarte, NRF_UARTE_EVENT_ERROR, NRF_UARTE_INT_ERROR_MASK, imask);
 
-	if (event_check_clear(uarte, NRF_UARTE_EVENT_ERROR, NRF_UARTE_INT_ERROR_MASK, imask)) {
+	if (error) {
 		error_isr(dev);
 	}
 
-	if (event_check_clear(uarte, NRF_UARTE_EVENT_ENDRX, NRF_UARTE_INT_ENDRX_MASK, imask)) {
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-		endrx_isr(dev);
+	if (rxdrdy) {
+		rxdrdy_isr(dev);
 	}
 
-	/* RXSTARTED must be handled after ENDRX because it starts the RX timeout
-	 * and if order is swapped then ENDRX will stop this timeout.
-	 * Skip if ENDRX is set when RXSTARTED is set. It means that
-	 * ENDRX occurred after check for ENDRX in isr which may happen when
-	 * UARTE interrupt got preempted. Events are not cleared
-	 * and isr will be called again. ENDRX will be handled first.
-	 */
-	if ((imask & NRF_UARTE_INT_RXSTARTED_MASK) &&
-	    nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED) &&
-	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	/* If next buffer is already provided then handle ENDRX before RXSTARTED. */
+	if ((endrx || rxstarted) && (async_rx->next_buf != NULL)) {
+		if (!endrx) {
+			__ASSERT_NO_MSG(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX));
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+		}
+		endrx_isr(dev, rxstarted, rxto);
+		endrx = false;
+	}
+
+	if (rxstarted) {
 		rxstarted_isr(dev);
 	}
 
+	if (endrx) {
+		endrx_isr(dev, false, false);
+	}
+
+	if (rxto) {
 #ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
-	if (IS_CBWT(dev) &&
-	    event_check_clear(uarte, NRF_UARTE_EVENT_RXTO, NRF_UARTE_INT_RXTO_MASK, imask)) {
-		cbwt_rxto_isr(dev, true);
-	} else
-#endif
-	/* RXTO must be handled after ENDRX which should notify the buffer.
-	 * Skip if ENDRX is set when RXTO is set. It means that
-	 * ENDRX occurred after check for ENDRX in isr which may happen when
-	 * UARTE interrupt got preempted. Events are not cleared
-	 * and isr will be called again. ENDRX will be handled first.
-	 */
-	if ((imask & NRF_UARTE_INT_RXTO_MASK) &&
-	    nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO) &&
-	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+		if (IS_CBWT(dev)) {
+			cbwt_rxto_isr(dev, true);
+		} else {
+			rxto_isr(dev);
+		}
+#else
 		rxto_isr(dev);
+#endif
 	}
 
 	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
@@ -2533,6 +2534,7 @@ static void uarte_nrfx_isr_async(const void *arg)
 	if (!IS_CBWT(dev) &&
 	    (atomic_and(&data->flags, ~UARTE_FLAG_TRIG_RXTO) & UARTE_FLAG_TRIG_RXTO)) {
 #ifdef CONFIG_HAS_NORDIC_DMM
+		const struct uarte_nrfx_config *config = dev->config;
 		int ret;
 
 		ret = dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, async_rx->buf_len,
