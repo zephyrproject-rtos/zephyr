@@ -360,6 +360,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	static int chan_id;
 	enum pm_device_state init_state = pm_device_on_power_domain(dma) ?
 					  PM_DEVICE_STATE_OFF : PM_DEVICE_STATE_SUSPENDED;
+	int res;
 
 	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started\n");
@@ -418,7 +419,13 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
-	if (dma_stop(dma, chan_id)) {
+	res = dma_stop(dma, chan_id);
+	if (res == -ENOSYS) {
+		TC_PRINT("Stop not supported.");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+	if (res) {
 		TC_PRINT("ERROR: transfer stop on stopped channel (%d)\n", chan_id);
 		return TC_FAIL;
 	}
