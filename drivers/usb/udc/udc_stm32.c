@@ -188,6 +188,9 @@ struct udc_stm32_config {
 	/* EP configurations */
 	struct udc_ep_config *in_eps;
 	struct udc_ep_config *out_eps;
+	/* Worker thread stack info */
+	k_thread_stack_t *thread_stack;
+	size_t thread_stack_size;
 	/* Maximal packet size allowed for endpoints */
 	uint16_t ep_mps;
 	/* Number of entries in `pclken` */
@@ -1234,6 +1237,8 @@ static const struct udc_api udc_stm32_api = {
  * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
  * Kconfig system.
  */
+K_THREAD_STACK_DEFINE(udc0_thr_stk, CONFIG_UDC_STM32_STACK_SIZE);
+
 static struct udc_ep_config udc0_in_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
 static struct udc_ep_config udc0_out_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
 
@@ -1269,6 +1274,8 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
+	.thread_stack = udc0_thr_stk,
+	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
 };
 
 static int udc_stm32_clock_enable(const struct device *dev)
@@ -1505,8 +1512,6 @@ static const struct gpio_dt_spec ulpi_reset =
 
 static char udc_msgq_buf_0[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
 
-K_THREAD_STACK_DEFINE(udc_stm32_stack_0, CONFIG_UDC_STM32_STACK_SIZE);
-
 static int udc_stm32_driver_init0(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1567,8 +1572,8 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
 		    CONFIG_UDC_STM32_MAX_QMESSAGES);
 
-	k_thread_create(&priv->thread_data, udc_stm32_stack_0,
-			K_THREAD_STACK_SIZEOF(udc_stm32_stack_0), udc_stm32_thread_handler,
+	k_thread_create(&priv->thread_data, cfg->thread_stack,
+			cfg->thread_stack_size, udc_stm32_thread_handler,
 			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_UDC_STM32_THREAD_PRIORITY),
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&priv->thread_data, dev->name);
