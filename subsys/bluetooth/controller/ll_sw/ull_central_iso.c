@@ -925,10 +925,12 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	} else if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0) {
 		uint32_t cis_offset;
 
-		cis_offset = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			     (EVENT_TICKER_RES_MARGIN_US << 1U);
-
+		/* Calculate the offset for the select CIS in the CIG */
+		cis_offset = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot);
 		cis_offset += cig->sync_delay - cis->sync_delay;
+
+		/* Add the event resolution margin jitter of both ACL and CIG */
+		cis_offset += (EVENT_TICKER_RES_MARGIN_US << 2U);
 
 		if (cis_offset < *cis_offset_min) {
 			cis_offset = *cis_offset_min;
@@ -1023,10 +1025,12 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	return -EBUSY;
 #else /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
 
-	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			  (EVENT_TICKER_RES_MARGIN_US << 1U);
-
+	/* Calculate the offset for the select CIS in the CIG */
+	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot);
 	*cis_offset_min += cig->sync_delay - cis->sync_delay;
+
+	/* Add the event resolution margin jitter of both ACL and CIG */
+	*cis_offset_min += (EVENT_TICKER_RES_MARGIN_US << 2U);
 
 	return 0;
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
@@ -1092,9 +1096,11 @@ static void mfy_cig_offset_get(void *param)
 	LL_ASSERT_DBG(!err);
 
 	/* Calculate the offset for the select CIS in the CIG */
-	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
-			(EVENT_TICKER_RES_MARGIN_US << 2U);
+	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire);
 	offset_min_us += cig->sync_delay - cis->sync_delay;
+
+	/* Add the event resolution margin jitter of both ACL and CIG */
+	offset_min_us += (EVENT_TICKER_RES_MARGIN_US << 2U);
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 	LL_ASSERT_DBG(conn != NULL);
