@@ -395,6 +395,9 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	slot_us = max_rx_time + max_tx_time;
 	slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
+	slot_us += lll->periph.window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
