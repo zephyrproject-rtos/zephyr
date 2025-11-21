@@ -162,6 +162,9 @@ DEFINE_MM_REG_WR(xip_write_wrap_inst,	0x144)
 DEFINE_MM_REG_WR(xip_write_ctrl,	0x148)
 #endif
 
+/* Ceiling division by 32 */
+#define CEIL_DIV_32(x) (((x) + 31U) >> 5)
+
 #include "mspi_dw_vendor_specific.h"
 
 static int start_next_packet(const struct device *dev);
@@ -1289,9 +1292,9 @@ static int start_next_packet(const struct device *dev)
 #if defined(CONFIG_MSPI_DMA)
 	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
 		/* For DMA mode, set start level based on transfer length to prevent underflow */
-		uint32_t total_transfer_bytes = packet->num_bytes + dev_data->xfer.addr_length +
-						dev_data->xfer.cmd_length;
-		uint32_t transfer_frames = total_transfer_bytes >> dev_data->bytes_per_frame_exp;
+		uint32_t transfer_frames = (packet->num_bytes >> dev_data->bytes_per_frame_exp) +
+					   CEIL_DIV_32(dev_data->xfer.addr_length)
+					 + CEIL_DIV_32(dev_data->xfer.cmd_length);
 
 		/* Use minimum of transfer length or FIFO depth, but at least 1 */
 		uint8_t dma_start_level = MIN(transfer_frames - 1,
