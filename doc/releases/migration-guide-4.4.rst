@@ -150,6 +150,13 @@ Networking
 Other subsystems
 ****************
 
+JWT
+===
+
+* Previously deprecated ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed. This removal happens before
+  the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
+  that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
+
 Modules
 *******
 
