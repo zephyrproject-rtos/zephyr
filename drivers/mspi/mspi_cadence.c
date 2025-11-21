@@ -29,7 +29,8 @@ struct mspi_cadence_config {
 	DEVICE_MMIO_ROM;
 	struct mspi_cfg mspi_config;
 	const struct pinctrl_dev_config *pinctrl;
-	const uint32_t fifo_addr;
+	const uint32_t data_reg;
+	const uint32_t ahb_offset;
 	const uint32_t sram_allocated_for_read;
 
 	const struct mspi_cadence_timing_cfg initial_timing_cfg;
@@ -274,9 +275,9 @@ static int mspi_cadence_init(const struct device *dev)
 	MSPI_CADENCE_REG_WRITE(timing_config->after, DEV_DELAY, D_AFTER, base_addr);
 	MSPI_CADENCE_REG_WRITE(timing_config->init, DEV_DELAY, D_INIT, base_addr);
 
-	/* Set trigger reg address and range to 0 */
-	MSPI_CADENCE_REG_WRITE(0, IND_AHB_ADDR_TRIGGER, ADDR, base_addr);
-	MSPI_CADENCE_REG_WRITE(0, INDIRECT_TRIGGER_ADDR_RANGE, IND_RANGE_WIDTH, base_addr);
+	/* set trigger reg address to fifo offset and range to 4 (2 ^ 4 = 16) */
+	MSPI_CADENCE_REG_WRITE(config->ahb_offset, IND_AHB_ADDR_TRIGGER, ADDR, base_addr);
+	MSPI_CADENCE_REG_WRITE(4, INDIRECT_TRIGGER_ADDR_RANGE, IND_RANGE_WIDTH, base_addr);
 
 	/* Disable loop-back via DQS */
 	MSPI_CADENCE_REG_WRITE(1, RD_DATA_CAPTURE, BYPASS, base_addr);
@@ -447,7 +448,7 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 		}
 		num_new_words = MSPI_CADENCE_REG_READ_MASKED(SRAM_FILL, INDAC_READ, base_address);
 		while (remaining_bytes > 0 && num_new_words > 0) {
-			current_new_word = sys_read32(config->fifo_addr);
+			current_new_word = sys_read32(config->data_reg + config->ahb_offset);
 			bytes_to_copy_from_current_word = MIN(remaining_bytes, 4);
 			memcpy(write_ptr, &current_new_word, bytes_to_copy_from_current_word);
 			write_ptr += bytes_to_copy_from_current_word;
@@ -525,7 +526,7 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 			current_word_to_write = 0;
 			memcpy(&current_word_to_write, &packet->data_buf[read_offset],
 			       MIN(remaining_bytes, 4));
-			sys_write32(current_word_to_write, config->fifo_addr);
+			sys_write32(current_word_to_write, config->data_reg + config->ahb_offset);
 			remaining_bytes = (remaining_bytes > 4 ? remaining_bytes - 4 : 0);
 			read_offset += 4;
 			--free_words;
@@ -921,7 +922,8 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.mspi_config = MSPI_CONFIG(n),                                                     \
-		.fifo_addr = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                \
+		.data_reg = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                 \
+		.ahb_offset = DT_INST_PROP_OR(n, indirect_trigger_offset, 0),                      \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), sram_allocated_for_read),       \
 		.initial_timing_cfg = {                                                            \
 			.nss = DT_PROP_OR(DT_DRV_INST(n), init_nss_delay,                          \

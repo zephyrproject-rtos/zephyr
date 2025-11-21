@@ -11,8 +11,14 @@ properties:
   reg:
     required: true
     description: |
-      Address and length of the MSPI configuration register and the indirect
-      write FIFO location.
+      Address and length of the MSPI configuration register and the base address
+      for the flash region where the indirect read/write FIFO is located.
+
+  indirect-trigger-offset:
+    required: true
+    type: int
+    description: |
+      Offset to the FIFO for indirect access relative to flash's base address.
 
   sram-allocated-for-read:
     required: true
