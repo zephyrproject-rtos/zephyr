@@ -15,9 +15,7 @@ if SPI_NRFX
 config SPI_NRFX_SPI
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPI_ENABLED
-	select NRFX_SPI0 if HAS_HW_NRF_SPI0
-	select NRFX_SPI1 if HAS_HW_NRF_SPI1
-	select NRFX_SPI2 if HAS_HW_NRF_SPI2
+	select NRFX_SPI
 
 config SPI_NRFX_SPIM
 	def_bool y
