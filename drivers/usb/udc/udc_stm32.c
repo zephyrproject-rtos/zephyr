@@ -49,9 +49,6 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ_NAME     usb
 #endif
 
-#define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
-#define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
-
 /* Shorthand to obtain PHY node for an instance */
 #define UDC_STM32_PHY(usb_node)			DT_PROP_BY_IDX(usb_node, phys, 0)
 
@@ -169,6 +166,8 @@ struct udc_stm32_config {
 	uint32_t num_endpoints;
 	/* USB SRAM size (in bytes) */
 	uint32_t dram_size;
+	/* IRQ_CONNECT() per-instance wrapper */
+	void (*irq_connect)(void);
 	/* Global USB interrupt IRQn */
 	uint32_t irqn;
 	/*
@@ -694,13 +693,13 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 }
 #endif
 
-static void udc_stm32_irq(const struct device *dev)
-{
-	const struct udc_stm32_data *priv =  udc_get_private(dev);
-
-	/* HAL irq handler will call the related above callback */
-	HAL_PCD_IRQHandler((PCD_HandleTypeDef *)&priv->pcd);
-}
+/*
+ * The callbacks above are invoked by HAL_PCD_IRQHandler() when appropriate.
+ * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
+ * so happens to match the Zephyr ISR calling convention, and we don't need
+ * to do any additional processing upon interrupt: this saves a few cycles
+ * when taking an interrupt and ought to consume less ROM too.
+ */
 
 int udc_stm32_init(const struct device *dev)
 {
@@ -1239,13 +1238,21 @@ static struct udc_data udc0_data = {
 	.priv = &udc0_priv,
 };
 
+static void udc0_irq_connect(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
+		    DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority),
+		    HAL_PCD_IRQHandler, &udc0_priv.pcd, 0);
+}
+
 static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct udc_stm32_config udc0_cfg  = {
 	.base = (void *)DT_INST_REG_ADDR(0),
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = DT_INST_PROP(0, ram_size),
-	.irqn = UDC_STM32_IRQ,
+	.irq_connect = udc0_irq_connect,
+	.irqn = DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
 	.pclken = (struct stm32_pclken *)udc0_pclken,
 	.num_clocks = DT_INST_NUM_CLOCKS(0),
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
@@ -1564,9 +1571,11 @@ static int udc_stm32_driver_init0(const struct device *dev)
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&priv->thread_data, dev->name);
 
-	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
-		    DEVICE_DT_INST_GET(0), 0);
-
+	/*
+	 * Note that this really only configures the interrupt priority;
+	 * IRQn-to-ISR mapping is done at build time by IRQ_CONNECT().
+	 */
+	cfg->irq_connect();
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
