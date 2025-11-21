@@ -51,6 +51,11 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "smps-ldo";
+	smps-output-voltage = "1V8";
+};
+
 /* UART0 in datasheet */
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pi9>;

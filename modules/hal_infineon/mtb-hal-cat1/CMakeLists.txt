@@ -1,5 +1,5 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -60,8 +60,14 @@ zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_04_68_QFN
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_04_80_TQFP
   ${hal_cat1a_dir}/source/pin_packages/cyhal_psoc6_04_80_tqfp.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_CYW20829_56_QFN
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYW20829
+  ${hal_cat1b_dir}/source/pin_packages/cyhal_cyw20829_48_qfn.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYW20829
   ${hal_cat1b_dir}/source/pin_packages/cyhal_cyw20829_56_qfn.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYW20829
+  ${hal_cat1b_dir}/source/pin_packages/cyhal_cyw20829_64_bga.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYW20829
+  ${hal_cat1b_dir}/source/pin_packages/cyhal_cyw20829_77_bga.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_XMC7200_176_TEQFP
   ${hal_cat1c_dir}/source/pin_packages/cyhal_xmc7200_176_teqfp.c)
@@ -70,7 +76,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_XMC7200_272_BGA
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_XMC7200_320_BGA
   ${hal_cat1c_dir}/source/pin_packages/cyhal_xmc7200_320_bga.c.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_DIE_CYW20829
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYW20829
   ${hal_cat1b_dir}/source/triggers/cyhal_triggers_cyw20829.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_01

@@ -576,7 +576,7 @@ class Pytest(Harness):
     def _output_reader(self, proc):
         self._output = []
         while proc.stdout.readable() and proc.poll() is None:
-            line = proc.stdout.readline().decode().strip()
+            line = proc.stdout.readline().decode().rstrip()
             if not line:
                 continue
             self._output.append(line)

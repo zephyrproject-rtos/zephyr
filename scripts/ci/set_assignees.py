@@ -248,9 +248,11 @@ def process_pr(gh, maintainer_file, number):
                 continue
             parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
             for _area in parsed_areas:
-                collab_per_path.update(_area.get_collaborators_for_path(changed_file.filename))
                 area_match = maintainer_file.name2areas(_area)
                 if area_match:
+                    _area_obj = area_match[0]
+                    collabs_for_area = _area_obj.get_collaborators_for_path(changed_file.filename)
+                    collab_per_path.update(collabs_for_area)
                     areas.extend(area_match)
         elif changed_file.filename in ['MAINTAINERS.yml']:
             areas = maintainer_file.path2areas(changed_file.filename)

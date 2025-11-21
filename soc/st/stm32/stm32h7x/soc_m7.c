@@ -23,6 +23,8 @@
 
 #include <cmsis_core.h>
 
+#define PWR_NODE DT_INST(0, st_stm32h7_pwr)
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)) &&                                             \
 	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
 #define ITCM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
@@ -97,6 +99,49 @@ void soc_reset_hook(void)
 #endif
 }
 
+/* Helpers to simplify following #if chain */
+#define SELECTED_PSU(_x) DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, _x)
+#define SMPS_CONFIGURABLE_SUPPLY(_target)			\
+	CONCAT(LL_PWR_SMPS_,					\
+	       DT_STRING_TOKEN(PWR_NODE, smps_output_voltage),	\
+	       _SUPPLIES_, _target)
+
+#if SELECTED_PSU(ldo)
+#define SELECTED_POWER_SUPPLY LL_PWR_LDO_SUPPLY
+#elif SELECTED_PSU(external_source)
+#define SELECTED_POWER_SUPPLY LL_PWR_EXTERNAL_SOURCE_SUPPLY
+#elif SELECTED_PSU(smps_direct)
+#define SELECTED_POWER_SUPPLY LL_PWR_DIRECT_SMPS_SUPPLY
+#elif !DT_NODE_HAS_PROP(PWR_NODE, smps_output_voltage)
+/**
+ * All property values that follow require "smps-output-voltage".
+ * Assert it once as part of the #if chain, and provide a dummy
+ * value for SELECTED_POWER_SUPPLY, to reduce noise in compiler
+ * error log.
+ */
+#error Invalid power supply configuration: \
+'smps-output-voltage' property is required but missing
+#define SELECTED_POWER_SUPPLY 0
+#elif SELECTED_PSU(smps_ldo)
+#define SELECTED_POWER_SUPPLY SMPS_CONFIGURABLE_SUPPLY(LDO)
+#elif SELECTED_PSU(smps_ext_ldo)
+#define SELECTED_POWER_SUPPLY SMPS_CONFIGURABLE_SUPPLY(EXT_AND_LDO)
+#elif SELECTED_PSU(smps_ext_bypass)
+#define SELECTED_POWER_SUPPLY SMPS_CONFIGURABLE_SUPPLY(EXT)
+#endif
+
+#if !defined(SMPS)
+/*
+ * The SoC header file defines SMPS if the feature is available.
+ * If the product has no SMPS, only the LDO supply configuration
+ * (and *possibly* Bypass, depending on product!) is valid: make
+ * sure nothing blatantly invalid has been selected.
+ */
+BUILD_ASSERT(SELECTED_PSU(ldo) || SELECTED_PSU(external_source),
+	     "Invalid power supply configuration: "
+	     "SoC does not have SMPS step-down converter");
+#endif /* SMPS */
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -112,35 +157,7 @@ void soc_early_init_hook(void)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#if !defined(SMPS) && \
-		(defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT))
-#error Unsupported configuration: Selected SoC do not support SMPS
-#endif
-#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
-	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
-#else
-	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
-#endif
+	LL_PWR_ConfigSupply(SELECTED_POWER_SUPPLY);
 
 	/* Errata ES0392 Rev 8:
 	 * 2.2.9: Reading from AXI SRAM may lead to data read corruption

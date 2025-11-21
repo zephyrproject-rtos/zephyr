@@ -119,6 +119,10 @@
 	d3ppre = <1>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &sdmmc1 {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11

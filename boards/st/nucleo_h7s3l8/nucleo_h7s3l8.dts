@@ -115,6 +115,10 @@
 	ppre5 = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb14 &usart1_rx_pa10>;
 	pinctrl-names = "default";

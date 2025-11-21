@@ -39,4 +39,17 @@ struct xen_hvm_param {
 typedef struct xen_hvm_param xen_hvm_param_t;
 DEFINE_XEN_GUEST_HANDLE(xen_hvm_param_t);
 
+/*
+ * Definitions relating to DMOP_create_ioreq_server. (Defined here for
+ * backwards compatibility).
+ */
+
+#define HVM_IOREQSRV_BUFIOREQ_OFF    0
+#define HVM_IOREQSRV_BUFIOREQ_LEGACY 1
+/*
+ * Use this when read_pointer gets updated atomically and
+ * the pointer pair gets read atomically:
+ */
+#define HVM_IOREQSRV_BUFIOREQ_ATOMIC 2
+
 #endif /* __XEN_PUBLIC_HVM_HVM_OP_H__ */

@@ -2919,6 +2919,8 @@ Infineon Platforms:
   collaborators:
     - mcatee-infineon
     - talih0
+    - billwatersiii
+    - jsbatch
   files:
     - boards/cypress/
     - boards/infineon/
@@ -3405,7 +3407,6 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - ArunMCHP
-    - pdgendt
     - stephanosio
   files:
     - boards/atmel/
@@ -5536,8 +5537,6 @@ West:
   status: maintained
   maintainers:
     - nandojve
-  collaborators:
-    - pdgendt
   files:
     - modules/Kconfig.atmel
   labels:
@@ -5611,6 +5610,8 @@ West:
     - parthitce
     - talih0
     - mcatee-infineon
+    - billwatersiii
+    - jsbatch
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
