@@ -97,6 +97,20 @@ New APIs and options
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
 
+* Ethernet
+
+  * Driver MAC address configuration with support for NVMEM cell.
+
+    * :c:func:`net_eth_mac_load`
+    * :c:enum:`net_eth_mac_type`
+    * :c:enumerator:`NET_ETH_MAC_DEFAULT`
+    * :c:enumerator:`NET_ETH_MAC_RANDOM`
+    * :c:enumerator:`NET_ETH_MAC_NVMEM`
+    * :c:enumerator:`NET_ETH_MAC_STATIC`
+    * :c:struct:`net_eth_mac_config`
+    * :c:macro:`NET_ETH_MAC_DT_DEFINE` and :c:macro:`NET_ETH_MAC_DT_INST_DEFINE`
+    * :c:macro:`NET_ETH_MAC_DT_DEV_CONFIG_GET` and :c:macro:`NET_ETH_MAC_DT_INST_DEV_CONFIG_GET`
+
 * Flash
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
