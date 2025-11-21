@@ -15,8 +15,20 @@ test_timer: &timer131 {
 	prescaler = <0>;
 };
 
+&timer132 {
+	status = "okay";
+	interrupts = <434 0>;
+};
+
+
 / {
 	chosen {
 		zephyr,cpu-load-counter = &timer130;
+	};
+
+	busy-sim {
+		compatible = "vnd,busy-sim";
+		status = "okay";
+		counter = <&timer132>;
 	};
 };
