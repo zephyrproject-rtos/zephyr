@@ -31,7 +31,7 @@
 Zephyr 4.1.1
 ############
 
-This is an LTS maintenance release with fixes.
+This is a bugfix release for Zephyr 4.1.0.
 
 Security Vulnerability Related
 ******************************
@@ -64,7 +64,64 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 Issues fixed
 ************
 
-These GitHub issues were addressed since the previous 4.1.0 tagged release:
+The following issues are addressed by this release:
+
+* :github:`70344` - Current Atmel SAM flash driver will not erase last page
+* :github:`84842` - STM32WBA: zephyr/drivers/flash/flash_stm32wba_fm.c: flash_stm32_erase: unexpected erase size
+* :github:`85025` - ``tests/drivers/udc/drivers.usb.udc`` fails on rpi_pico
+* :github:`86062` - ``samples/hello_world`` not working on ``intel_socfpga_agilex_socdk/agilex``
+* :github:`86609` - net: dhcpv4: deadlock during client stop
+* :github:`86735` - frdm_mcxw71 Button is not working.
+* :github:`86776` - drivers: retained_mem: Compilation error when using multiple nRF retained memory regions
+* :github:`86930` - NXP LPSPI Multi byte word formation incorrect
+* :github:`86954` - sample.smf.hsm_psicc2 is flaky on SMP platforms
+* :github:`87108` - tests: tests/drivers/spi/spi_loopback: mimxrt1170_evk@A/mimxrt1176/cm7: failed: Failed harness:'Testsuite failed'
+* :github:`87223` - net: if: NET_EVENT_L4_CONNECTED is no longer sent when !IPV4_ACD and/or !IPV6_DAD
+* :github:`87224` - drivers: counter: nrfx_timer: High current consumption after stopping
+* :github:`87323` - Network buffer leak if sending IPv4 TTL 0 or IPv6 hop limit 0 packets
+* :github:`87739` - Build of ICE40 bitbang driver fails with PINCTRL
+* :github:`87947` - Check possible recursion when parsing DNS response
+* :github:`88109` - drivers: nrfx_uarte: pm_device_runtime_put() locks irqs for >500us
+* :github:`88233` - net: coap_client library asserts on boot
+* :github:`88319` - i2c_mcux_lpi2c_rtio does not build for MCXN947
+* :github:`88434` - mbedtls: update to 3.6.3 in 4.1 branch
+* :github:`88558` - disco_l475_iot1/arduino_r3_connector.dtsi arduino_i2c should be i2c1
+* :github:`89295` - drivers: gpio: adp5585: fix wrong output register during pin configure
+* :github:`89331` - Many threads locking two mutexes can cause a crash
+* :github:`89342` - mgmt: hawkbit: hawkbit_autohandler_wait() returns to early
+* :github:`89349` - Flash Map: Bounds checking not immune to integer overflow
+* :github:`89413` - Zephyr SPDX does not pass validation
+* :github:`89530` - mgmt: hawkbit: cancellation of action failed
+* :github:`89641` - net: dhcp: current DHCP client implementation does not follow RFC2131 and RFC2132
+* :github:`89645` - ASSERTION FAIL: prepare_cb: Actual EVENT_OVERHEAD_START_US
+* :github:`89990` - STM32: USB: USB CDC IN Endpoint stuck forever after receiving Clear feature - endpoint halt request
+* :github:`90005` - net: dns: OOB memory write
+* :github:`90103` - http_server: Wildcard resource matching reports incorrect path length
+* :github:`90688` - coap_resource_parse_observe returns 0 (register) instead of 1 (deregister) upon a deregister of an unknown observer
+* :github:`90738` - wrong lvgl initialization sequence
+* :github:`90777` - arch.shared_interrupt.lto.speed compile fail on apollo5 platform
+* :github:`90989` - gpio: gpio_adp5585_gpio incorrect gpio gaps handling
+* :github:`91118` - Zephyr 4.1 Socket zsock_connect() Fails Immediately with errno 116 (ETIMEDOUT)
+* :github:`91428` - soc_flash_nrf: flash_write timeout after bt_disable
+* :github:`91799` - Docs version switcher always displays "v: latest"
+* :github:`92397` - Missing fallback to a base board.dts when using a board variant without specific dts file
+* :github:`93011` - stm32u0: interrupt vectors for lpuart1 and lpuart2 are wrong in device tree
+* :github:`93424` - Missing break after IPV6_MULTICAST_IF option processing
+* :github:`93594` - Nicla Vision has bad I2C address for VL53L1X sensor
+* :github:`93943` - Unable to build LVGL samples on Ubuntu 22.04 for ``native_sim``
+* :github:`93986` - Unable to build LVGL with picolibc from source/module
+* :github:`94047` - Shell device name tab completion for regulator parents show incorrect names
+* :github:`94924` - mbedtls: update to 3.6.4 in 4.1 branch
+* :github:`95297` - Links to the pyOCD repository are outdated
+* :github:`95768` - Possible TCP connection leak when creating a socket
+* :github:`95850` - Applications do not watch MCUboot key file for changes
+* :github:`96172` - arch: arm: switch to privilege stack in SVC handler
+* :github:`96841` - FRDM_K64F: ``arch.arm.user.stack.float`` test fail
+* :github:`97304` - arch: arm: start threads on privileged stack
+* :github:`98231` - Build System: defconfig: Base defconfig not used on fully qualified oot board
+* :github:`98469` - drivers: bluetooth: h4: insufficient buffer for header + payload
+* :github:`98668` - drivers: entropy: non-stop RNG ISR firing on STM32WB09
+* :github:`98936` - net: ICMPv4 packets can be reported to ICMPv6 handlers (and vice versa)
 
 Mbed TLS
 ********
