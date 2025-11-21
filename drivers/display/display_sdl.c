@@ -43,7 +43,6 @@ struct sdl_display_task {
 	};
 };
 
-
 struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
@@ -57,6 +56,7 @@ struct sdl_display_data {
 	void *texture;
 	void *read_texture;
 	void *background_texture;
+	void *round_disp_mask;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
@@ -88,14 +88,13 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 					 task->write.x, task->write.y, disp_data->renderer,
 					 disp_data->mutex, disp_data->texture,
 					 disp_data->background_texture, disp_data->buf,
-					 disp_data->display_on,
-					 task->write.desc->frame_incomplete,
-					 CONFIG_SDL_DISPLAY_COLOR_TINT);
+					 disp_data->display_on, task->write.desc->frame_incomplete,
+					 CONFIG_SDL_DISPLAY_COLOR_TINT, disp_data->round_disp_mask);
 		break;
 	case SDL_BLANKING_OFF:
-		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-						disp_data->background_texture,
-						CONFIG_SDL_DISPLAY_COLOR_TINT);
+		sdl_display_blanking_off_bottom(
+			disp_data->renderer, disp_data->texture, disp_data->background_texture,
+			CONFIG_SDL_DISPLAY_COLOR_TINT, disp_data->round_disp_mask);
 		break;
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
@@ -125,7 +124,9 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		&disp_data->texture, &disp_data->read_texture, &disp_data->background_texture,
 		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
 		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE,
+		COND_CODE_1(CONFIG_SDL_DISPLAY_ROUNDED_MASK, (&disp_data->round_disp_mask), (NULL)),
+							     CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR);
 
 	k_sem_give(&disp_data->task_sem);
 
@@ -781,7 +782,7 @@ static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 {
 	sdl_display_cleanup_bottom(&disp_data->window, &disp_data->renderer, &disp_data->mutex,
 				   &disp_data->texture, &disp_data->read_texture,
-				   &disp_data->background_texture);
+				   &disp_data->background_texture, &disp_data->round_disp_mask);
 }
 
 static DEVICE_API(display, sdl_display_api) = {
