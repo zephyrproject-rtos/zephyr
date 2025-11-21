@@ -38,6 +38,10 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  "#io-injected-channel-cells":
+    type: int
+    const: 1
+
   st,adc-clock-source:
     type: string
     required: true
@@ -164,4 +168,7 @@ properties:
       If present, it indicates that the ADC instance supports differential channel inputs.
 
 io-channel-cells:
+  - input
+
+io-injected-channel-cells:
   - input
