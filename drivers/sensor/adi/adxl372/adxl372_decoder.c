@@ -266,8 +266,10 @@ static int adxl372_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec
 	return adxl372_decode_sample(data, chan_spec, fit, max_count, data_out);
 }
 
-static bool adxl372_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool adxl372_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	const struct adxl372_fifo_data *data = (const struct adxl372_fifo_data *)buffer;
 
 	if (!data->is_fifo) {
