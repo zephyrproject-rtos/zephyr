@@ -1,0 +1,74 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-range, accel-odr, gyro-range, gyro-odr properties in
+    a .dts or .dtsi file you may include lsm6dsv80x.h and use the macros
+    defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
+
+    lsm6dsv80x: lsm6dsv80x@0 {
+      ...
+
+      accel-range = <LSM6DSV80X_DT_FS_8G>;
+      accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+      gyro-range = <LSM6DSV80X_DT_FS_4000DPS>;
+      gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+    };
+
+include: st,lsm6dsvxxx-common.yaml
+
+properties:
+  accel-hg-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer High-g output data rate expressed in samples per
+      second (Hz).
+      The values are taken in accordance to lsm6dsv80x_hg_xl_data_rate_t enumerative in hal/st
+      module. Please note that this values will not change the operating mode, which will remain
+      High Performance (device default)
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV80X_HG_XL_ODR_OFF
+      - 0x3 # LSM6DSV80X_HG_XL_ODR_AT_480Hz
+      - 0x4 # LSM6DSV80X_HG_XL_ODR_AT_960Hz
+      - 0x5 # LSM6DSV80X_HG_XL_ODR_AT_1920Hz
+      - 0x6 # LSM6DSV80X_HG_XL_ODR_AT_3840Hz
+      - 0x7 # LSM6DSV80X_HG_XL_ODR_AT_7680Hz
+
+    enum: [0x0, 0x3, 0x4, 0x5, 0x6, 0x7]
+
+  accel-range:
+    type: int
+    default: 2
+    description: |
+      Range in g. Default is power-up configuration.
+      Ranges from 32g and above requires the High-g sensor to be turned on (see accel-hg-odr).
+
+      - 2   # LSM6DSV80X_DT_FS_2G  (0.061 mg/LSB)
+      - 4   # LSM6DSV80X_DT_FS_4G  (0.122 mg/LSB)
+      - 8   # LSM6DSV80X_DT_FS_8G  (0.244 mg/LSB)
+      - 16  # LSM6DSV80X_DT_FS_16G (0.488 mg/LSB)
+      - 32  # LSM6DSV80X_DT_FS_32G (0.976 mg/LSB)
+      - 64  # LSM6DSV80X_DT_FS_64G (1.952 mg/LSB)
+      - 80  # LSM6DSV80X_DT_FS_80G (3.904 mg/LSB)
+
+    enum: [2, 4, 8, 16, 32, 64, 80]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0x0 # power-up configuration
+      - 0x1 # LSM6DSV80X_DT_FS_250DPS  (8.75 mdps/LSB)
+      - 0x2 # LSM6DSV80X_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 0x3 # LSM6DSV80X_DT_FS_1000DPS (35 mdps/LSB)
+      - 0x4 # LSM6DSV80X_DT_FS_2000DPS (70 mdps/LSB)
+      - 0x5 # LSM6DSV80X_DT_FS_4000DPS (140 mdps/LSB)
+
+    enum: [0x0, 0x1, 0x2, 0x3, 0x4, 0x5]
