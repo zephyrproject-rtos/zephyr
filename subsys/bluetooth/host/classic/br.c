@@ -1193,6 +1193,10 @@ static int bt_br_read_cod(uint32_t *cod)
 
 	LOG_DBG("Read COD");
 
+	if (cod == NULL) {
+		return -EINVAL;
+	}
+
 	/* Read Class of device */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CLASS_OF_DEVICE, NULL, &rsp);
 	if (err) {
@@ -1325,6 +1329,176 @@ int bt_br_set_discoverable(bool enable, bool limited)
 
 		atomic_clear_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
 		k_work_cancel_delayable(&bt_br_limited_discoverable_timeout);
+	}
+
+	return 0;
+}
+
+static int bt_br_write_scan_activity(uint16_t opcode, uint16_t interval, uint16_t window)
+{
+	struct bt_hci_cp_write_scan_activity *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->interval = sys_cpu_to_le16(interval);
+	cp->window = sys_cpu_to_le16(window);
+
+	return bt_hci_cmd_send_sync(opcode, buf, NULL);
+}
+
+static int bt_br_write_scan_type(uint16_t opcode, uint8_t type)
+{
+	struct bt_hci_cp_write_scan_type *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+
+	err = bt_hci_cmd_send_sync(opcode, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	if (param->interval < BT_BR_SCAN_INTERVAL_MIN ||
+	    param->interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->window < BT_BR_SCAN_WINDOW_MIN || param->window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->interval < param->window) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_scan_activity(BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY, param->interval,
+					param->window);
+	if (err) {
+		LOG_ERR("write page scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_scan_type(BT_HCI_OP_WRITE_PAGE_SCAN_TYPE, param->type);
+	if (err) {
+		LOG_ERR("write page scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	if (param->interval < BT_BR_SCAN_INTERVAL_MIN ||
+	    param->interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->window < BT_BR_SCAN_WINDOW_MIN || param->window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->interval < param->window) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_scan_activity(BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, param->interval,
+					param->window);
+	if (err) {
+		LOG_ERR("write inquiry scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_scan_type(BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, param->type);
+	if (err) {
+		LOG_ERR("write inquiry scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_set_class_of_device(uint32_t cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	/* Limited discoverable mode could be set with bt_br_set_discoverable */
+	if (cod & BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER) {
+		LOG_ERR("Cannot set limited discoverable bit directly in COD");
+		return -EINVAL;
+	}
+
+	/* If limited discoverable mode is set, then it should be set in COD.
+	 * If it is not set, then clear the bit from COD.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	} else {
+		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	}
+
+	err = bt_br_write_cod(cod);
+	if (err) {
+		LOG_ERR("write cod:0x%08x failed (err %d)", cod, err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_get_class_of_device(uint32_t *cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_br_read_cod(cod);
+	if (err) {
+		LOG_ERR("read cod failed (err %d)", err);
+		return err;
 	}
 
 	return 0;
