@@ -580,6 +580,15 @@ static int esp32_wifi_connect(const struct device *dev,
 	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 #endif
 
+#if defined(CONFIG_ESP32_WIFI_STA_CONNECT_TO_BSSID)
+	if (params->bssid[0] != 0 || params->bssid[1] != 0 || params->bssid[2] != 0 ||
+	    params->bssid[3] != 0 || params->bssid[4] != 0 || params->bssid[5] != 0) {
+
+		memcpy(wifi_config.sta.bssid, params->bssid, sizeof(params->bssid));
+		wifi_config.sta.bssid_set = true;
+	}
+#endif
+
 	if (params->channel == WIFI_CHANNEL_ANY) {
 		wifi_config.sta.channel = 0U;
 		data->status.channel = 0U;

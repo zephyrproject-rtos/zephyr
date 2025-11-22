@@ -77,6 +77,13 @@ config ESP32_WIFI_STA_SCAN_ALL
 	  highest RSSI. Without this, a fast scan is performed which connects to the first AP
 	  found.
 
+config ESP32_WIFI_STA_CONNECT_TO_BSSID
+	bool "Use a MAC address to specify which AP to connect to."
+	help
+	  When enabled, the MAC address of the desired AP can be specified for connecting to a
+	  specific access point. Should one wish to connect to not use this feature while enabled,
+	  they should set the BSSID array in the connection parameters to 0.
+
 config ESP32_WIFI_NET_ALLOC_SPIRAM
 	bool "Allocate memory of WiFi and NET in SPIRAM"
 	depends on ESP_SPIRAM
