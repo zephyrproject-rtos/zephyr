@@ -2,6 +2,7 @@ common:
   arch_allow: arm64
   platform_exclude:
     - rza3ul_smarc
+    - rza3m_ek
   tags:
     - arm
     - userspace
