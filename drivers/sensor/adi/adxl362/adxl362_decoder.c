@@ -89,8 +89,8 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
 
 	/* Calculate which sample is decoded. */
-	if ((uint8_t *)*fit >= buffer) {
-		sample_num = ((uint8_t *)*fit - buffer) / sample_set_size;
+	if (*fit >= (uintptr_t)buffer) {
+		sample_num = (*fit - (uintptr_t)buffer) / sample_set_size;
 	}
 
 	while (count < max_count && buffer < buffer_end) {
