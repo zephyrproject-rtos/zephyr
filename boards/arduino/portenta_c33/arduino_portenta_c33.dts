@@ -37,12 +37,12 @@
 		};
 
 		led2: led2 {
-			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&ioport4 0 GPIO_ACTIVE_LOW>;
 			label = "LEDG";
 		};
 
 		led3: led3 {
-			gpios = <&ioport8 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&ioport8 0 GPIO_ACTIVE_LOW>;
 			label = "LEDB";
 		};
 	};
