@@ -10,11 +10,12 @@
 #         One of the following:
 #
 #         * maintained:
-#             The area has a Maintainer (approved by the TSC) who
-#             looks after the area.
+#             The area maintainers and collaborators keep the area actively maintained.
 #
 #         * odd fixes:
-#            The area gets odd fixes and may have collaborators.
+#             The current area maintainers and collaborators do not have sufficient time to take
+#             care of it. You should expect longer time for reviews and bug handling.
+#             Consider volunteering to help in the area.
 #
 #         * obsolete:
 #             Old code. Something being marked obsolete generally means it has
