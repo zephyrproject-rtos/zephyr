@@ -5,7 +5,13 @@
  */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
 #define sram_eth_node	DT_NODELABEL(sram2)
+#else
+#define sram_eth_node	DT_NODELABEL(sram1)
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 SECTION_DATA_PROLOGUE(eth_stm32,(NOLOAD),)
 {
