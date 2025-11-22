@@ -342,7 +342,7 @@ static const struct ov2640_reg default_regs[] = {
 	{ 0xe1,     0x77 },
 	{ 0xdd,     0x7f },
 	{ CTRL0,    CTRL0_YUV422 | CTRL0_YUV_EN | CTRL0_RGB_EN },
-	{ 0x00,     0x00 }
+	{ 0x00,     0x00 },
 };
 
 static const struct ov2640_reg uxga_regs[] = {
@@ -406,7 +406,7 @@ static const struct ov2640_reg uxga_regs[] = {
 
 #define NUM_BRIGHTNESS_LEVELS (5)
 static const uint8_t brightness_regs[NUM_BRIGHTNESS_LEVELS + 1][5] = {
-	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA },
+	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA }, /* reg addr */
 	{ 0x00, 0x04, 0x09, 0x00, 0x00 }, /* -2 */
 	{ 0x00, 0x04, 0x09, 0x10, 0x00 }, /* -1 */
 	{ 0x00, 0x04, 0x09, 0x20, 0x00 }, /*  0 */
@@ -416,7 +416,7 @@ static const uint8_t brightness_regs[NUM_BRIGHTNESS_LEVELS + 1][5] = {
 
 #define NUM_CONTRAST_LEVELS (5)
 static const uint8_t contrast_regs[NUM_CONTRAST_LEVELS + 1][7] = {
-	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA, BPDATA, BPDATA },
+	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA, BPDATA, BPDATA }, /* reg addr */
 	{ 0x00, 0x04, 0x07, 0x20, 0x18, 0x34, 0x06 }, /* -2 */
 	{ 0x00, 0x04, 0x07, 0x20, 0x1c, 0x2a, 0x06 }, /* -1 */
 	{ 0x00, 0x04, 0x07, 0x20, 0x20, 0x20, 0x06 }, /*  0 */
@@ -426,7 +426,7 @@ static const uint8_t contrast_regs[NUM_CONTRAST_LEVELS + 1][7] = {
 
 #define NUM_SATURATION_LEVELS (5)
 static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
-	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA },
+	{ BPADDR, BPDATA, BPADDR, BPDATA, BPDATA }, /* reg addr */
 	{ 0x00, 0x02, 0x03, 0x28, 0x28 }, /* -2 */
 	{ 0x00, 0x02, 0x03, 0x38, 0x38 }, /* -1 */
 	{ 0x00, 0x02, 0x03, 0x48, 0x48 }, /*  0 */
@@ -438,6 +438,9 @@ struct ov2640_config {
 	struct i2c_dt_spec i2c;
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	struct gpio_dt_spec pwdn_gpio;
 #endif
 	uint8_t clock_rate_control;
 };
@@ -468,7 +471,7 @@ struct ov2640_data {
 		.height_min = (height), \
 		.height_max = (height), \
 		.width_step = 0, \
-		.height_step = 0 \
+		.height_step = 0, \
 	}
 
 static const struct video_format_cap fmts[] = {
@@ -493,7 +496,7 @@ static const struct video_format_cap fmts[] = {
 	OV2640_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_JPEG),    /* XVGA  */
 	OV2640_VIDEO_FORMAT_CAP(1280, 1024, VIDEO_PIX_FMT_JPEG),   /* SXGA  */
 	OV2640_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_JPEG),   /* UXGA  */
-	{ 0 }
+	{ 0 },
 };
 
 static int ov2640_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
@@ -1000,6 +1003,11 @@ static int ov2640_init_controls(const struct device *dev)
 
 static int ov2640_init(const struct device *dev)
 {
+
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct ov2640_config *cfg = dev->config;
+#endif
+
 	int ret = 0;
 	/* set default/init format SVGA RGB565 */
 	struct video_format fmt = {
@@ -1008,9 +1016,16 @@ static int ov2640_init(const struct device *dev)
 		.height = SVGA_VSIZE,
 	};
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	const struct ov2640_config *cfg = dev->config;
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
+	k_sleep(K_MSEC(1));
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
@@ -1056,6 +1071,9 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#endif
 	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
 static struct ov2640_data ov2640_data_0;
@@ -1077,8 +1095,14 @@ static int ov2640_init_0(const struct device *dev)
 	}
 #endif
 
-	uint32_t i2c_cfg = I2C_MODE_CONTROLLER |
-					I2C_SPEED_SET(I2C_SPEED_STANDARD);
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+		return -ENODEV;
+	}
+#endif
+
+	uint32_t i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	if (i2c_configure(cfg->i2c.bus, i2c_cfg)) {
 		LOG_ERR("Failed to configure ov2640 i2c interface.");
