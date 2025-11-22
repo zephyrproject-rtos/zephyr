@@ -447,11 +447,40 @@ error:
 	return err;
 }
 
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	sys_dnode_t *node;
+
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	node = sys_dlist_peek_head(&ctx->udevs);
+	if (node == NULL) {
+		/* No devices in the list */
+		return NULL;
+	}
+
+	/* Get the usb_device structure from the node */
+	return CONTAINER_OF(node, struct usb_device, node);
+}
+
+bool usbh_device_is_root(struct usbh_context *const ctx,
+			struct usb_device *const udev)
+{
+	if (ctx == NULL || udev == NULL) {
+		return false;
+	}
+
+	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
+	uint8_t device_count = 0;
 
 	if (udev->state != USB_STATE_DEFAULT) {
 		LOG_ERR("USB device is not in default state");
@@ -464,11 +493,17 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	/* FIXME: The port to which the device is connected should be reset. */
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		LOG_ERR("Failed to signal bus reset");
-		return err;
+	k_mutex_lock(&uhs_ctx->mutex, K_FOREVER);
+	device_count = sys_dlist_len(&uhs_ctx->udevs);
+	k_mutex_unlock(&uhs_ctx->mutex);
+
+	/* Only reset bus if this is the root device. */
+	if (device_count == 1U) {
+		err = uhc_bus_reset(uhs_ctx->dev);
+		if (err) {
+			LOG_ERR("Failed to signal bus reset");
+			return err;
+		}
 	}
 
 	/*
@@ -484,18 +519,6 @@ int usbh_device_init(struct usb_device *const udev)
 
 	err = validate_device_mps0(udev);
 	if (err) {
-		goto error;
-	}
-
-	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-	if (err) {
-		LOG_ERR("Failed to read device descriptor");
-		goto error;
-	}
-
-	if (!udev->dev_desc.bNumConfigurations) {
-		LOG_ERR("Device has no configurations, bNumConfigurations %d",
-			udev->dev_desc.bNumConfigurations);
 		goto error;
 	}
 
@@ -517,6 +540,18 @@ int usbh_device_init(struct usb_device *const udev)
 	udev->state = USB_STATE_ADDRESSED;
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
+
+	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+	if (err) {
+		LOG_ERR("Failed to read device descriptor");
+		goto error;
+	}
+
+	if (!udev->dev_desc.bNumConfigurations) {
+		LOG_ERR("Device has no configurations, bNumConfigurations %d",
+			udev->dev_desc.bNumConfigurations);
+		goto error;
+	}
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {

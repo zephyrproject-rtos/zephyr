@@ -120,6 +120,8 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
+	/** Endpoint type */
+	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
 	/** Interval, used for periodic transfers only */
