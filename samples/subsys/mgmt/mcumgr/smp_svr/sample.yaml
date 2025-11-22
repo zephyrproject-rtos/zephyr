@@ -30,6 +30,8 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.udp:
+    tags:
+      - fdtable
     extra_args: EXTRA_CONF_FILE="udp.conf"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
@@ -38,6 +40,8 @@ tests:
     integration_platforms:
       - frdm_k64f
   sample.mcumgr.smp_svr.udp_dtls:
+    tags:
+      - fdtable
     extra_args:
       - EXTRA_CONF_FILE="udp_dtls.conf"
       - CONFIG_IMG_MANAGER=n

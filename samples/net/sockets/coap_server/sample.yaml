@@ -1,6 +1,7 @@
 common:
   harness: net
   tags:
+    - fdtable
     - net
     - socket
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC

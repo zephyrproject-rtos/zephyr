@@ -4,6 +4,7 @@ common:
   tags:
     - net
     - midi2
+    - fdtable
 sample:
   name: Network MIDI2.0 sample application
   description: Demonstrates usage of the Network MIDI2.0 (udp) host endpoint

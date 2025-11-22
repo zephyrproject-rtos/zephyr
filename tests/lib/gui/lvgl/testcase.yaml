@@ -1,6 +1,7 @@
 common:
   tags:
     - display
+    - fdtable
     - gui
 tests:
   libraries.gui.lvgl:

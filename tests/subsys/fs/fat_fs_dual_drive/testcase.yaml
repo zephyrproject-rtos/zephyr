@@ -6,6 +6,8 @@ tests:
       - qemu_leon3
       - qemu_riscv32
       - qemu_riscv64
-    tags: filesystem
+    tags:
+      - fdtable
+      - filesystem
     integration_platforms:
       - native_sim

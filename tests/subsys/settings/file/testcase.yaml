@@ -18,3 +18,4 @@ tests:
       - settings
       - file
       - littlefs
+      - fdtable

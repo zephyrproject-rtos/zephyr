@@ -1,6 +1,9 @@
 sample:
   description: TBD
   name: TBD
+common:
+  tags:
+    - fdtable
 tests:
   sample.net.lwm2m_client:
     harness: net

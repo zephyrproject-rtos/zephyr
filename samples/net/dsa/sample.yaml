@@ -6,6 +6,7 @@ common:
   tags:
     - net
     - dsa
+    - fdtable
 tests:
   sample.net.dsa:
     build_only: true

@@ -3,6 +3,7 @@ common:
   min_ram: 32
   min_flash: 260
   tags:
+    - fdtable
     - net
     - socket
     - tls

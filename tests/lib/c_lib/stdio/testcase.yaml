@@ -1,6 +1,7 @@
 common:
   tags:
     - clib
+    - fdtable
   min_ram: 128
   filter: not CONFIG_NATIVE_LIBC
 tests:

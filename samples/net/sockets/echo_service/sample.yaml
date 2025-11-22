@@ -8,5 +8,6 @@ common:
 tests:
   sample.net.sockets.service.echo:
     tags:
+      - fdtable
       - net
       - socket

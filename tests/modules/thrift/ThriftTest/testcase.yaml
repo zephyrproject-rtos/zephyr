@@ -3,6 +3,7 @@ common:
   tags:
     - thrift
     - cpp
+    - fdtable
   modules:
     - thrift
   filter: CONFIG_FULL_LIBC_SUPPORTED
