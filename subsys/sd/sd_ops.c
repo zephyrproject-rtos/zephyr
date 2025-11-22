@@ -1,5 +1,5 @@
 /*
- * Copyright 2022,2024 NXP
+ * Copyright 2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -205,7 +205,7 @@ static inline void sdmmc_decode_cid(struct sd_cid *cid, uint32_t *raw_cid)
 static int sdmmc_spi_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t *cxd)
 {
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 	int ret, i;
 	/* Use internal card buffer for data transfer */
 	uint32_t *cxd_be = (uint32_t *)card->card_buffer;
@@ -492,7 +492,7 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 {
 	int ret;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 
 	/*
 	 * Note: The SD specification allows for CMD23 to be sent before a
@@ -613,7 +613,7 @@ static int card_query_written(struct sd_card *card, uint32_t *num_written)
 {
 	int ret;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 	uint32_t *blocks = (uint32_t *)card->card_buffer;
 
 	ret = card_app_command(card, card->relative_addr);
@@ -656,7 +656,7 @@ static int card_write(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 	int ret;
 	uint32_t blocks;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 
 	/*
 	 * See the note in card_read() above. We will not issue CMD23

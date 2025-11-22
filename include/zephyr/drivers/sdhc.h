@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sd/sd_spec.h>
 
 /**
@@ -67,6 +68,9 @@ struct sdhc_data {
 	unsigned int block_size; /*!< Block size */
 	unsigned int blocks; /*!< Number of blocks */
 	unsigned int bytes_xfered; /*!< populated with number of bytes sent by SDHC */
+#if defined(CONFIG_SDHC_SCATTER_GATHER_TRANSFER) || defined(__DOXYGEN__)
+	bool is_sg_data; /*!< Is scatter gather data using net_buf data structure */
+#endif
 	void *data; /*!< Data to transfer or receive */
 	int timeout_ms; /*!< data timeout in milliseconds */
 };
