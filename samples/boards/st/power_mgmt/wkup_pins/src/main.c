@@ -32,7 +32,7 @@ int main(void)
 	gpio_pin_set(led.port, led.pin, 1);
 
 	/* Setup button GPIO pin as a source for exiting Poweroff */
-	gpio_pin_configure_dt(&button, STM32_GPIO_WKUP);
+	gpio_pin_configure_dt(&button, GPIO_INPUT | STM32_GPIO_WKUP);
 
 	printk("Will wait %ds before powering the system off\n", (WAIT_TIME_US / 1000000));
 	k_busy_wait(WAIT_TIME_US);
