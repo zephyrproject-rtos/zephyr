@@ -43,6 +43,7 @@ struct siwx91x_nwp_config {
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t power_profile;
+	bool soc_120mhz_clk;
 };
 
 typedef struct {
@@ -311,6 +312,7 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 				  sl_wifi_device_configuration_t *get_config,
 				  uint8_t wifi_oper_mode, bool hidden_ssid, uint8_t max_num_sta)
 {
+	const struct siwx91x_nwp_config *config = dev->config;
 	sl_wifi_device_configuration_t default_config = {
 		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
@@ -330,6 +332,11 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
 				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
 				SL_SI91X_EXT_FEAT_XTAL_CLK,
+		},
+		.ta_pool = {
+			.tx_ratio_in_buffer_pool     = 1,
+			.rx_ratio_in_buffer_pool     = 1,
+			.global_ratio_in_buffer_pool = 1
 		}
 	};
 
@@ -347,6 +354,10 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 	siwx91x_store_country_code(dev, DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
 
+	/* Apply SOC clock configuration based on DT property */
+	if (config->soc_120mhz_clk) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_120MHZ;
+	}
 	switch (wifi_oper_mode) {
 	case WIFI_STA_MODE:
 		siwx91x_configure_sta_mode(boot_config);
@@ -467,7 +478,8 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
 		.power_profile = DT_ENUM_IDX(DT_DRV_INST(inst), power_profile),                    \
-		.stack_size = DT_INST_PROP(inst, stack_size)                                       \
+		.stack_size = DT_INST_PROP(inst, stack_size),                                      \
+		.soc_120mhz_clk = DT_INST_PROP(inst, soc_120mhz_clk)                               \
 	};                                                                                         \
                                                                                                    \
 	/* Coprocessor uses value stored in IVT to store its stack. We can't use Z_ISR_DECLARE() */\

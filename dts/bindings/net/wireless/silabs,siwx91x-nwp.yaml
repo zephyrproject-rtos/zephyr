@@ -31,3 +31,11 @@ properties:
       - deep-sleep-without-ram-retention
       - deep-sleep-with-ram-retention
     required: true
+
+  soc-120mhz-clk:
+    type: boolean
+    description: |
+      Enable the 120 MHz SoC clock configuration for SiWx91x devices.
+      Running the clock at 120 MHz can enhance throughput and support
+      demanding performance requirements. While recommended for high-
+      throughput use cases, it is not required for standard operation.
