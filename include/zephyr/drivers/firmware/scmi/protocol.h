@@ -67,6 +67,16 @@ enum scmi_status_code {
 };
 
 /**
+ * @brief SCMI common command
+ */
+enum scmi_common_cmd {
+	SCMI_MSG_PROTOCOL_VERSION = 0x0,
+	SCMI_MSG_PROTOCOL_ATTRIBUTES = 0x1,
+	SCMI_MSG_MESSAGE_ATTRIBUTES = 0x2,
+	SCMI_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
+};
+
+/**
  * @struct scmi_protocol
  *
  * @brief SCMI protocol structure
@@ -80,6 +90,8 @@ struct scmi_protocol {
 	const struct device *transport;
 	/** protocol private data */
 	void *data;
+	/** protocol supported version */
+	uint32_t version;
 };
 
 /**
@@ -125,5 +137,51 @@ int scmi_status_to_errno(int scmi_status);
 int scmi_send_message(struct scmi_protocol *proto,
 		      struct scmi_message *msg, struct scmi_message *reply,
 		      bool use_polling);
+
+/**
+ * @brief Get protocol version
+ *
+ * @param proto Protocol instance
+ * @param version Pointer to store protocol version
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version);
+
+/**
+ * @brief Get protocol attributes
+ *
+ * @param proto Protocol instance
+ * @param attributes Pointer to store protocol attributes
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attributes);
+
+/**
+ * @brief Get protocol message attributes
+ *
+ * @param proto Protocol instance
+ * @param message_id Message ID to query
+ * @param attributes Pointer to store message attributes
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
+					uint32_t message_id, uint32_t *attributes);
+
+/**
+ * @brief Negotiate protocol version
+ *
+ * @param proto Protocol instance
+ * @param version Desired protocol version
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version);
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */

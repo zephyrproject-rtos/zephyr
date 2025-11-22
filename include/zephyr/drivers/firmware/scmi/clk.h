@@ -25,6 +25,8 @@
 #define SCMI_CLK_RATE_SET_FLAGS_ROUNDS_UP_DOWN       BIT(2)
 #define SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO          BIT(3)
 
+#define SCMI_CLK_PROTOCOL_SUPPORTED_VERSION	0x30000
+
 /**
  * @struct scmi_clock_config
  *
