@@ -1,4 +1,4 @@
-# Copyright 2019,2024 NXP
+# Copyright 2019, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_LPC55XXX
@@ -45,6 +45,8 @@ config SOC_LPC55S36
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
+	select CPU_HAS_ICACHE
+	select HAS_MCUX_SYSCON_LPCAC
 
 config SOC_LPC55S69
 	select CPU_CORTEX_M33

@@ -242,7 +242,7 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_range(void *addr, size_t si
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE) && defined(CONFIG_ICACHE_RANGE_OPS)
 	return cache_instr_flush_range(addr, size);
 #endif
 	ARG_UNUSED(addr);
@@ -306,7 +306,7 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t siz
  */
 static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE) && defined(CONFIG_ICACHE_RANGE_OPS)
 	return cache_instr_invd_range(addr, size);
 #endif
 	ARG_UNUSED(addr);
@@ -370,7 +370,7 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_and_invd_range(void *addr, 
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE) && defined(CONFIG_ICACHE_RANGE_OPS)
 	return cache_instr_flush_and_invd_range(addr, size);
 #endif
 	ARG_UNUSED(addr);

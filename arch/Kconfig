@@ -1155,6 +1155,18 @@ config ICACHE_LINE_SIZE
 
 endif # ICACHE
 
+config ICACHE_RANGE_OPS
+	bool "Instruction cache range maintenance operations"
+	depends on ICACHE && CACHE_MANAGEMENT
+	default y
+	help
+	  Enable support for address+size range maintenance operations on the
+	  instruction cache (i-cache). When enabled, the instruction cache range
+	  APIs may perform supported per-range maintenance (typically invalidate;
+	  some controllers may also support flush or flush+invalidate). When
+	  disabled, all instruction cache range APIs will return -ENOTSUP
+	  immediately and callers should fall back to whole-cache maintenance.
+
 choice CACHE_TYPE
 	prompt "Cache type"
 	default ARCH_CACHE
