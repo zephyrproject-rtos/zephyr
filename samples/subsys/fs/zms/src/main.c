@@ -22,11 +22,11 @@ static struct zms_fs fs;
 #define ZMS_PARTITION_OFFSET FIXED_PARTITION_OFFSET(ZMS_PARTITION)
 
 #define IP_ADDRESS_ID 1
-#define KEY_VALUE_ID  0xbeefdead
+#define KEY_VALUE_ID  COND_CODE_1(CONFIG_ZMS_ID_64BIT, (0xbeefdead00000002ULL), (0xbeefdeadULL))
 #define CNT_ID        2
 #define LONG_DATA_ID  3
 
-static int delete_and_verify_items(struct zms_fs *fs, uint32_t id)
+static int delete_and_verify_items(struct zms_fs *fs, zms_id_t id)
 {
 	int rc = 0;
 
@@ -59,7 +59,7 @@ static int delete_basic_items(struct zms_fs *fs)
 	}
 	rc = delete_and_verify_items(fs, KEY_VALUE_ID);
 	if (rc) {
-		printk("Error while deleting item %x rc=%d\n", KEY_VALUE_ID, rc);
+		printk("Error while deleting item %llx rc=%d\n", KEY_VALUE_ID, rc);
 		return rc;
 	}
 	rc = delete_and_verify_items(fs, CNT_ID);
@@ -82,7 +82,7 @@ int main(void)
 	uint8_t key[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}, longarray[128];
 	uint32_t i_cnt = 0U;
 	uint32_t i;
-	uint32_t id = 0;
+	zms_id_t id = 0;
 	ssize_t free_space = 0;
 	struct flash_pages_info info;
 
@@ -141,14 +141,14 @@ int main(void)
 		 */
 		rc = zms_read(&fs, KEY_VALUE_ID, &key, sizeof(key));
 		if (rc > 0) { /* item was found, show it */
-			printk("Id: %x, Key: ", KEY_VALUE_ID);
+			printk("Id: %llx, Key: ", KEY_VALUE_ID);
 			for (uint8_t n = 0; n < 8; n++) {
 				printk("%x ", key[n]);
 			}
 			printk("\n");
 		}
 		/* Rewriting KEY_VALUE even if we found it */
-		printk("Adding key/value at id %x\n", KEY_VALUE_ID);
+		printk("Adding key/value at id %llx\n", KEY_VALUE_ID);
 		rc = zms_write(&fs, KEY_VALUE_ID, &key, sizeof(key));
 		if (rc < 0) {
 			printk("Error while writing Entry rc=%d\n", rc);
@@ -230,10 +230,10 @@ int main(void)
 		printk("Memory is full let's delete all items\n");
 
 		/* Now delete all previously written items */
-		for (uint32_t n = 0; n < id; n++) {
+		for (uint64_t n = 0; n < id; n++) {
 			rc = delete_and_verify_items(&fs, n);
 			if (rc) {
-				printk("Error deleting at id %u\n", n);
+				printk("Error deleting at id %llu\n", n);
 				return 0;
 			}
 		}
