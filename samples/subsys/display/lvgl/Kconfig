@@ -10,3 +10,8 @@ config RESET_COUNTER_SW0
 	depends on $(dt_alias_enabled,sw0)
 	select GPIO
 	default y
+
+config ROTATE_DISPLAY_ON_RESET_COUNTER
+	bool "Rotate LVGL display 90 degrees when counter is reset"
+	depends on RESET_COUNTER_SW0
+	default n
