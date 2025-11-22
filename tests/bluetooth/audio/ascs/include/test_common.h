@@ -40,6 +40,7 @@ struct test_ase_cp_chrc_value_hdr {
 void test_mocks_init(void);
 void test_mocks_cleanup(void);
 void test_mocks_reset(void);
+void test_drain_syswq(void);
 
 /* Initialize connection object for test */
 void test_conn_init(struct bt_conn *conn);
