@@ -10,10 +10,10 @@
 
 / {
 	zephyr,user {
-		pwms = <&pwm0_1 0 PWM_MSEC(2) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>,
-		       <&pwm1_0 1 PWM_MSEC(2) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
-		gpios = <&gpio_prt3 7 GPIO_ACTIVE_HIGH>,
-			<&gpio_prt0 0 GPIO_ACTIVE_HIGH>;
+		pwms = <&pwm0_1 0 PWM_MSEC(20) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>,
+		       <&pwm1_19 1 PWM_MSEC(20) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
+		gpios = <&gpio_prt16 2 GPIO_ACTIVE_HIGH>,
+			<&gpio_prt15 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -22,27 +22,8 @@
 
 	pwm0_1: pwm0_1 {
 		status = "okay";
-		clocks = <&peri0_group1_16bit_0>;
-		pinctrl-0 = <&p3_6_pwm0_1>;
-		pinctrl-names = "default";
-	};
-};
-
-&peri0_group1_16bit_0 {
-	status = "okay";
-	resource-type = <IFX_RSC_TCPWM>;
-	resource-instance = <0>;
-	resource-channel = <1>;
-	clock-div = <9600>;
-};
-
-&tcpwm1_0 {
-	status = "okay";
-
-	pwm1_0: pwm1_0 {
-		status = "okay";
 		clocks = <&peri0_group1_16bit_1>;
-		pinctrl-0 = <&p0_1_pwm1_0>;
+		pinctrl-0 = <&p16_1_pwm0_1>;
 		pinctrl-names = "default";
 	};
 };
@@ -50,17 +31,41 @@
 &peri0_group1_16bit_1 {
 	status = "okay";
 	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <0>;
+	resource-channel = <1>;
+	clock-div = <9600>;
+};
+
+&tcpwm1_19 {
+	status = "okay";
+
+	pwm1_19: pwm1_19 {
+		status = "okay";
+		clocks = <&peri0_group1_16bit_2>;
+		pinctrl-0 = <&p15_2_pwm1_19>;
+		pinctrl-names = "default";
+	};
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
 	resource-instance = <1>;
-	resource-channel = <0>;
+	resource-channel = <19>;
 	clock-div = <9600>;
 };
 
 &pinctrl {
-	p3_6_pwm0_1: p3_6_pwm0_1 {
+	p15_2_pwm1_19: p15_2_pwm1_19 {
 		drive-push-pull;
 	};
 
-	p0_1_pwm1_0: p0_1_pwm1_0 {
+	p16_1_pwm0_1: p16_1_pwm0_1 {
 		drive-push-pull;
 	};
+};
+
+/* gpio_prt16 is already enabled in boards\infineon\kit_pse84_eval\kit_pse84_eval_common.dtsi */
+&gpio_prt15 {
+	status = "okay";
 };

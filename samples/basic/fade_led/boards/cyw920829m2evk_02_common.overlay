@@ -31,28 +31,40 @@
 
 &tcpwm0_0 {
 	status = "okay";
-	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
-	divider-sel = <1>;
-	divider-val = <9599>;
 
 	pwm0_0: pwm0_0 {
 		status = "okay";
+		clocks = <&peri0_group1_16bit_0>;
 		pinctrl-0 = <&p1_1_pwm0_0>;
 		pinctrl-names = "default";
 	};
 };
 
+&peri0_group1_16bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <0>;
+	resource-channel = <0>;
+	clock-div = <9600>;
+};
+
 &tcpwm1_5 {
 	status = "okay";
-	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
-	divider-sel = <1>;
-	divider-val = <9599>;
 
 	pwm1_5: pwm1_5 {
 		status = "okay";
+		clocks = <&peri0_group1_16bit_1>;
 		pinctrl-0 = <&p5_2_pwm1_5>;
 		pinctrl-names = "default";
 	};
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <1>;
+	resource-channel = <5>;
+	clock-div = <9600>;
 };
 
 &pinctrl {
