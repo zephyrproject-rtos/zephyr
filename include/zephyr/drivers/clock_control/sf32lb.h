@@ -57,6 +57,17 @@ struct sf32lb_clock_dt_spec {
 #define SF32LB_CLOCK_DT_INST_SPEC_GET(index) SF32LB_CLOCK_DT_SPEC_GET(DT_DRV_INST(index))
 
 /**
+ * @brief Initialize a `sf32lb_clock_dt_spec` structure from a parent DT instance.
+ *
+ * @param index DT instance index
+ */
+#define SF32LB_CLOCK_DT_INST_PARENT_SPEC_GET(index)                                                \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(index))),                       \
+		.id = DT_CLOCKS_CELL(DT_INST_PARENT(index), id),                                   \
+	}
+
+/**
  * @brief Same as SF32LB_CLOCK_DT_INST_SPEC_GET but with a default value.
  *
  * @param index DT instance index

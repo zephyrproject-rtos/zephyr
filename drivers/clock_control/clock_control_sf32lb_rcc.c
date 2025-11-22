@@ -109,6 +109,9 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 	    (id == SF32LB52X_CLOCK_USART3)) {
 		*rate = 48000000U; /* clk_peri_hpsys always 48MHZ */
 		return 0;
+	} else if (id == SF32LB52X_CLOCK_GPTIM2) {
+		*rate = 24000000U; /* always 24MHZ */
+		return 0;
 	}
 
 	return -ENOTSUP;
