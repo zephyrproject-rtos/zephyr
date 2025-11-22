@@ -1,0 +1,10 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - actuator
+tests:
+  drivers.build_all.actuator:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

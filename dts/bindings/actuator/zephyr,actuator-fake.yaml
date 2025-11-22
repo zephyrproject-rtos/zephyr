@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake actuator device
+
+compatible: zephyr,actuator-fake
+
+include: actuator-device.yaml

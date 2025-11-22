@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ACTUATOR_SERVO_PWM
+	bool "PWM driven servo device driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SERVO_PWM_ENABLED
+	select PWM

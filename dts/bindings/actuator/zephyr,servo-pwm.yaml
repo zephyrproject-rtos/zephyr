@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: PWM driven servo device
+
+include: actuator-device.yaml
+
+compatible: zephyr,servo-pwm
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+
+  pulse-min-ns:
+    type: int
+    required: true
+
+  pulse-max-ns:
+    type: int
+    required: true

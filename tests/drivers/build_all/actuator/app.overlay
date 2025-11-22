@@ -1,0 +1,33 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x0 0x1>;
+			#gpio-cells = <0x2>;
+		};
+
+		test_pwm: pwm@1 {
+			compatible = "vnd,pwm";
+			reg = <0x0 0x1>;
+			#pwm-cells = <3>;
+		};
+
+		test-servo {
+			compatible = "zephyr,servo-pwm";
+			pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
+			pulse-min-ns = <800000>;
+			pulse-max-ns = <1900000>;
+		};
+	};
+};
