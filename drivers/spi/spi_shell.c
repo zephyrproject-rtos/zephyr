@@ -29,11 +29,16 @@
 /* Maximum bytes we can write and read at once */
 #define MAX_SPI_BYTES MIN((CONFIG_SHELL_ARGC_MAX - TXRX_ARGV_BYTES), 32)
 
-/* Runs the given fn only if the node_id belongs to a spi device, which is on an okay spi bus. */
-#define RUN_FN_ON_SPI_DEVICE(node_id, fn)                                                          \
-	COND_CODE_1(DT_ON_BUS(node_id, spi), \
-	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_BUS(node_id)), \
-	(fn), ())), ())
+/* Runs the given fn only if the node_id is a direct child of the SPI
+ * controller (i.e. DT_PARENT(node_id) == DT_BUS(node_id)), and the node
+ * itself has status okay. This prevents enumerating sub-nodes of SPI
+ * devices (for example GPIO sub-devices) which are on the same SPI bus
+ * but are not direct children of the controller.
+ */
+#define RUN_FN_ON_SPI_DEVICE(node_id, fn)                                                         \
+	COND_CODE_1(DT_ON_BUS(node_id, spi),                                                      \
+	(COND_CODE_1(DT_SAME_NODE(DT_PARENT(node_id), DT_BUS(node_id)),                           \
+	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn), ())), ())), ())
 
 /* Create specified number of empty structs, separated by ',' */
 #define _EMPTY_STRUCT_INST(idx, list) {0}
