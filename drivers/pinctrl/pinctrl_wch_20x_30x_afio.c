@@ -68,20 +68,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		if (remap != 0) {
-			RCC->APB2PCENR |= RCC_AFIOEN;
-
-			if (pcfr_id == 0 && bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
-				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
-					<< (CH32V20X_V30X_PINMUX_USART1_RM & 0x1F));
-				AFIO->PCFR2 |= ((uint32_t)((remap >> 1) & 1)
-					<< (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
+		if (pcfr_id == 0 && bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
+			AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+				<< (CH32V20X_V30X_PINMUX_USART1_RM & 0x1F));
+			AFIO->PCFR2 |= ((uint32_t)((remap >> 1) & 1)
+				<< (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
+		} else {
+			if (pcfr_id == 0) {
+				AFIO->PCFR1 |= (uint32_t)remap << bit0;
 			} else {
-				if (pcfr_id == 0) {
-					AFIO->PCFR1 |= (uint32_t)remap << bit0;
-				} else {
-					AFIO->PCFR2 |= (uint32_t)remap << bit0;
-				}
+				AFIO->PCFR2 |= (uint32_t)remap << bit0;
 			}
 		}
 	}
