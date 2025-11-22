@@ -12,7 +12,7 @@
 #define RP2_PINCTRL_GPIO_FUNC_PIO2     8
 #define RP2_PINCTRL_GPIO_FUNC_GPCK     9
 #define RP2_PINCTRL_GPIO_FUNC_USB      10
-#define RP2_PINCTRL_GPIO_FUNC_UART_AUX 11
+#define RP2_PINCTRL_GPIO_FUNC_UART_ALT 11
 #define RP2_PINCTRL_GPIO_FUNC_NULL     0x1f
 
 #include "rpi-pico-pinctrl-common.h"
