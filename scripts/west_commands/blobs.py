@@ -5,6 +5,7 @@
 import argparse
 import os
 import re
+import shutil
 import sys
 import textwrap
 from pathlib import Path
@@ -100,6 +101,18 @@ class Blobs(WestCommand):
             action='store_true',
             help='''auto accept license if the fetching needs click-through''',
         )
+        group.add_argument(
+            '--cache-dirs',
+            help='''Semicolon-separated list of directories to search for cached
+                    blobs before downloading. Cache files may use the original
+                    filename or be suffixed with `.<sha256>`.''',
+        )
+        group.add_argument(
+            '--auto-cache',
+            help='''Path to a directory that is automatically populated when a blob
+                    is downloaded. Cached blobs are stored using the original
+                    filename suffixed with `.<sha256>`.''',
+        )
 
         return parser
 
@@ -133,17 +146,101 @@ class Blobs(WestCommand):
     def ensure_folder(self, path):
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    def fetch_blob(self, url, path):
+    def handle_auto_cache(self, blob, auto_cache_dir) -> Path:
+        """
+        This function guarantees that a given blob exists in the auto-cache.
+        It first checks whether the blob is already present. If so, it
+        returns the path of this cached blob. If the blob is not yet cached,
+        the blob is downloaded into the auto-cache directory and the path of
+        the freshly cached blob is returned.
+        """
+        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
+        if cached_blob:
+            return cached_blob
+        name = Path(blob['path']).name
+        sha256 = blob['sha256']
+        self.download_blob(blob, auto_cache_dir / f'{name}.{sha256}')
+        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
+        assert cached_blob, f'Blob {name} still not cached in auto-cache.'
+        return cached_blob
+
+    def get_cached_blob(self, blob, cache_dirs: list) -> Path | None:
+        """
+        Look for a cached blob in the provided cache directories.
+        A blob may be stored using either its original name or suffixed with
+        its SHA256 hash (e.g. "<name>.<sha256>").
+        Return the first matching path, or None if not found.
+        """
+        name = Path(blob['path']).name
+        sha256 = blob["sha256"]
+        candidate_names = [
+            f"{name}.{sha256}",  # suffixed version
+            name,  # original blob name
+        ]
+
+        for cache_dir in cache_dirs:
+            if not cache_dir.exists():
+                continue
+            for name in candidate_names:
+                candidate_path = cache_dir / name
+                if (
+                    zephyr_module.get_blob_status(candidate_path, sha256)
+                    == zephyr_module.BLOB_PRESENT
+                ):
+                    return candidate_path
+        return None
+
+    def download_blob(self, blob, path):
+        '''Download a blob from its url to a given path.'''
+        url = blob['url']
         scheme = urlparse(url).scheme
-        self.dbg(f'Fetching {path} with {scheme}')
+        self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
         import fetchers
 
         fetcher = fetchers.get_fetcher_cls(scheme)
-
         self.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
         self.ensure_folder(path)
         inst.fetch(url, path)
+
+    def fetch_blob(self, args, blob):
+        """
+        Ensures that the specified blob is available at its path.
+        If caching is enabled and the blob exists in the cache, it is copied
+        from there. Otherwise, the blob is downloaded from its URL and placed
+        at the target path.
+        """
+        path = Path(blob['abspath'])
+
+        # collect existing cache dirs specified as args, otherwise from west config
+        cache_dirs = args.cache_dirs
+        auto_cache_dir = args.auto_cache
+        if self.has_config:
+            if cache_dirs is None:
+                cache_dirs = self.config.get('blobs.cache-dirs')
+            if auto_cache_dir is None:
+                auto_cache_dir = self.config.get('blobs.auto-cache')
+
+        # expand user home for each cache directory
+        if auto_cache_dir is not None:
+            auto_cache_dir = Path(auto_cache_dir).expanduser()
+        if cache_dirs is not None:
+            cache_dirs = [Path(p).expanduser() for p in cache_dirs.split(';') if p]
+
+        # search for cached blob in the cache directories
+        cached_blob = self.get_cached_blob(blob, cache_dirs or [])
+
+        # If blob is not found in cache directories: Use auto-cache if enabled
+        if not cached_blob and auto_cache_dir:
+            cached_blob = self.handle_auto_cache(blob, auto_cache_dir)
+
+        # Copy blob if it is cached, otherwise download it
+        if cached_blob:
+            self.dbg(f'Copy cached blob: {cached_blob}')
+            self.ensure_folder(path)
+            shutil.copy(cached_blob, path)
+        else:
+            self.download_blob(blob, path)
 
     # Compare the checksum of a file we've just downloaded
     # to the digest in blob metadata, warn user if they differ.
@@ -220,7 +317,7 @@ class Blobs(WestCommand):
                     self.wrn('Skip fetching this blob.')
                     continue
 
-            self.fetch_blob(blob['url'], blob['abspath'])
+            self.fetch_blob(args, blob)
             if not self.verify_blob(blob):
                 bad_checksum_count += 1
 
