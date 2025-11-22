@@ -34,4 +34,5 @@ zephyr_library_sources_ifdef(CONFIG_DAC_SAMD5X dac_samd5x.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_SILABS_VDAC dac_silabs_vdac.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_STM32 dac_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_TEST dac_test.c)
+zephyr_library_sources_ifdef(CONFIG_DAC_TX311 dac_tx311.c)
 # zephyr-keep-sorted-stop
