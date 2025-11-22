@@ -430,6 +430,26 @@
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
 
+#if defined(USE_EVENT_TRACING)
+/*
+ * Search result for 'sys_trace_k_event_' in the code base:
+ *
+ * - subsys/tracing/ctf/tracing_ctf.h:
+ * - subsys/tracing/test/tracing_test.h:
+ *
+ * Search result for 'sys_trace_k_timer_' in the code base:
+ * - subsys/tracing/ctf/ctf_top.c:
+ * - subsys/tracing/ctf/tracing_ctf.h:
+ * - subsys/tracing/test/tracing_string_format_test.c:
+ * - subsys/tracing/test/tracing_test.h:
+ * - tests/subsys/tracing/tracing_api/src/main.c:
+ *
+ * ==============================================================
+ * Conclusion: for k_event there is no implementation!
+ * Hence make the macros void to at least get the code compiled.
+ * ==============================================================
+ */
+
 #define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)   \
 	sys_trace_k_event_post_enter(event, events, events_mask)
@@ -441,6 +461,14 @@
 	sys_trace_k_event_wait_blocking(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_exit(event, events, ret)   \
 	sys_trace_k_event_wait_exit(event, events, ret)
+#else
+#define sys_port_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret)
+#endif
 
 #define sys_port_trace_k_thread_abort_exit(thread) sys_trace_k_thread_abort_exit(thread)
 

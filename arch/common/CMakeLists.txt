@@ -95,6 +95,7 @@ if(DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   # note that the pattern will affect empty spaces created after FILL(0x00).
   zephyr_linker_sources(ROM_START SORT_KEY $ fill_with_zeros.ld)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
+  zephyr_linker_sources(ROM_START SORT_KEY $ k_entry.ld)
   # Handled in ld.cmake
 endif()
 
