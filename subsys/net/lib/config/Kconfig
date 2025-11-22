@@ -249,6 +249,7 @@ config NET_CONFIG_SNTP_INIT_TIMEOUT
 
 config NET_CONFIG_SNTP_INIT_RESYNC
 	bool "Resync system clock using SNTP periodically"
+	depends on NET_SOCKETS_SERVICE
 	help
 	  Perform an SNTP request over networking periodically to get and
 	  absolute wall clock time, and resync system time from it.
