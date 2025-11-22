@@ -52,12 +52,13 @@ struct mcumgr_serial_rx_ctxt {
 /** @typedef mcumgr_serial_tx_cb
  * @brief Transmits a chunk of raw response data.
  *
+ * @param dev                   Device instance
  * @param data                  The data to transmit.
  * @param len                   The number of bytes to transmit.
  *
  * @return                      0 on success; negative error code on failure.
  */
-typedef int (*mcumgr_serial_tx_cb)(const void *data, int len);
+typedef int (*mcumgr_serial_tx_cb)(const struct device *const dev, const void *data, int len);
 
 /**
  * @brief Processes an mcumgr request fragment received over a serial
@@ -85,13 +86,15 @@ struct net_buf *mcumgr_serial_process_frag(
 /**
  * @brief Encodes and transmits an mcumgr packet over serial.
  *
+ * @param dev                   Device instance
  * @param data                  The mcumgr packet data to send.
  * @param len                   The length of the unencoded mcumgr packet.
  * @param cb                    A callback used to transmit raw bytes.
  *
  * @return                      0 on success; negative error code on failure.
  */
-int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb);
+int mcumgr_serial_tx_pkt(const struct device *const dev, const uint8_t *data,
+			 int len, mcumgr_serial_tx_cb cb);
 
 #ifdef __cplusplus
 }
