@@ -66,6 +66,7 @@ struct ssd1306_config {
 
 struct ssd1306_data {
 	enum display_pixel_format pf;
+	enum display_orientation orientation;
 };
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
@@ -154,13 +155,21 @@ static inline int ssd1306_write_bus(const struct device *dev, uint8_t *buf, size
 	return config->write_bus(dev, buf, len, command);
 }
 
-static inline int ssd1306_set_panel_orientation(const struct device *dev)
+static inline int ssd1306_set_panel_orientation(const struct device *dev, bool rotate_180_degrees)
 {
 	const struct ssd1306_config *config = dev->config;
-	uint8_t cmd_buf[] = {(config->segment_remap ? SSD1306_SET_SEGMENT_MAP_REMAPED
-						    : SSD1306_SET_SEGMENT_MAP_NORMAL),
-			     (config->com_invdir ? SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED
-						 : SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)};
+	bool segment_remap = config->segment_remap;
+	bool com_invdir = config->com_invdir;
+
+	if (rotate_180_degrees) {
+		com_invdir = !com_invdir;
+		segment_remap = !segment_remap;
+	}
+
+	uint8_t cmd_buf[] = {(segment_remap ? SSD1306_SET_SEGMENT_MAP_REMAPED
+					    : SSD1306_SET_SEGMENT_MAP_NORMAL),
+			     (com_invdir ? SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED
+					 : SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
@@ -378,7 +387,35 @@ static void ssd1306_get_capabilities(const struct device *dev,
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
 	caps->current_pixel_format = data->pf;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
-	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	caps->current_orientation = data->orientation;
+}
+
+static int ssd1306_set_orientation(const struct device *dev,
+				   const enum display_orientation orientation)
+{
+	struct ssd1306_data *data = dev->data;
+	int ret;
+
+	if (orientation == data->orientation) {
+		return 0;
+	}
+
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		ret = ssd1306_set_panel_orientation(dev, false);
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		ret = ssd1306_set_panel_orientation(dev, true);
+	} else {
+		LOG_WRN("Unsupported orientation");
+		return -ENOTSUP;
+	}
+
+	if (ret) {
+		return ret;
+	}
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
@@ -450,9 +487,10 @@ static int ssd1306_init_device(const struct device *dev)
 		return -EIO;
 	}
 
-	if (ssd1306_set_panel_orientation(dev)) {
+	if (ssd1306_set_panel_orientation(dev, false)) {
 		return -EIO;
 	}
+	data->orientation = DISPLAY_ORIENTATION_NORMAL;
 
 	if (!config->ssd1309_compatible) {
 		if (ssd1306_set_charge_pump(dev)) {
@@ -528,6 +566,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	.set_contrast = ssd1306_set_contrast,
 	.get_capabilities = ssd1306_get_capabilities,
 	.set_pixel_format = ssd1306_set_pixel_format,
+	.set_orientation = ssd1306_set_orientation,
 };
 
 #define SSD1306_CONFIG_SPI(node_id)                                                                \
