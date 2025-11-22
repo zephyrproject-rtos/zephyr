@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(modem_backend_uart_async_hwfc, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/gpio.h>
 #include <string.h>
 
@@ -222,6 +223,11 @@ static int modem_backend_uart_async_hwfc_open(void *data)
 		return -ENOMEM;
 	}
 
+	ret = pm_device_runtime_get(backend->uart);
+	if (ret < 0) {
+		LOG_ERR("Failed to power on UART: %d", ret);
+		return ret;
+	}
 	if (backend->dtr_gpio) {
 		gpio_pin_set_dt(backend->dtr_gpio, 1);
 	}
@@ -352,6 +358,7 @@ static int modem_backend_uart_async_hwfc_receive(void *data, uint8_t *buf, size_
 static int modem_backend_uart_async_hwfc_close(void *data)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
+	int ret;
 
 	atomic_clear_bit(&backend->async.common.state, MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 	uart_tx_abort(backend->uart);
@@ -365,6 +372,13 @@ static int modem_backend_uart_async_hwfc_close(void *data)
 	if (backend->dtr_gpio) {
 		gpio_pin_set_dt(backend->dtr_gpio, 0);
 	}
+	ret = pm_device_runtime_put_async(backend->uart, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to power off UART: %d", ret);
+		return ret;
+	}
+	modem_pipe_notify_closed(&backend->pipe);
+
 	return 0;
 }
 

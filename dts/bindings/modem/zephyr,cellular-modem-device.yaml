@@ -18,6 +18,10 @@ properties:
     type: phandle-array
     description: GPIO for modem wake
 
+  mdm-ring-gpios:
+    type: phandle-array
+    description: GPIO for modem ring indicator
+
   mdm-dtr-gpios:
     type: phandle-array
     description: |
@@ -25,3 +29,22 @@ properties:
 
       Asserted (logical high) when UART is active and
       deasserted (logical low) when UART is inactive, powered down or in low power mode.
+
+  cmux-enable-runtime-power-save:
+    type: boolean
+    description: |
+      Enable runtime power saving using CMUX PSC commands.
+      This requires modem to support CMUX and PSC commands while keeping the data
+      connection active.
+
+  cmux-close-pipe-on-power-save:
+    type: boolean
+    description: |
+      Close the modem pipe when entering power save mode.
+      When runtime power management is enabled, this closes the UART.
+      This requires modem to support waking up the UART using RING signal.
+
+  cmux-idle-timeout-ms:
+    type: int
+    description: Time in milliseconds after which CMUX will enter power save mode.
+    default: 10000
