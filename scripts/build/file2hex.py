@@ -24,24 +24,43 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
     parser.add_argument("-f", "--file", required=True, help="Input file")
-    parser.add_argument("-o", "--offset", type=lambda x: int(x, 0), default=0,
-                        help="Byte offset in the input file")
-    parser.add_argument("-l", "--length", type=lambda x: int(x, 0), default=-1,
-                        help="""Length in bytes to read from the input file.
-                        Defaults to reading till the end of the input file.""")
-    parser.add_argument("-m", "--format", default="list",
-                        help="Output format: 'list' (default) or 'literal' (string literal)")
-    parser.add_argument("-g", "--gzip", action="store_true",
-                        help="Compress the file using gzip before output")
-    parser.add_argument("-t", "--gzip-mtime", type=int, default=0,
-                        nargs='?', const=None,
-                        help="""mtime seconds in the gzip header.
-                        Defaults to zero to keep builds deterministic. For
-                        current date and time (= "now") use this option
-                        without any value.""")
+    parser.add_argument(
+        "-o", "--offset", type=lambda x: int(x, 0), default=0, help="Byte offset in the input file"
+    )
+    parser.add_argument(
+        "-l",
+        "--length",
+        type=lambda x: int(x, 0),
+        default=-1,
+        help="""Length in bytes to read from the input file.
+                Defaults to reading till the end of the input file.""",
+    )
+    parser.add_argument(
+        "-m",
+        "--format",
+        default="list",
+        help="Output format: 'list' (default) or 'literal' (string literal)",
+    )
+    parser.add_argument(
+        "-g", "--gzip", action="store_true", help="Compress the file using gzip before output"
+    )
+    parser.add_argument(
+        "-t",
+        "--gzip-mtime",
+        type=int,
+        default=0,
+        nargs='?',
+        const=None,
+        help="""mtime seconds in the gzip header.
+                Defaults to zero to keep builds deterministic. For
+                current date and time (= "now") use this option
+                without any value.""",
+    )
     args = parser.parse_args()
 
 
@@ -50,18 +69,18 @@ def get_nice_string(list_or_iterator):
     s = ", ".join("0x" + str(x) for x in list_or_iterator)
 
     # Format the list to eight values per line.
-    return "\n".join(s[i:i+47] for i in range(0, len(s), 48))
+    return "\n".join(s[i : i + 47] for i in range(0, len(s), 48))
 
 
 def make_hex(chunk):
     hexdata = codecs.encode(chunk, 'hex').decode("utf-8")
-    hexlist = map(''.join, zip(*[iter(hexdata)] * 2))
+    hexlist = map(''.join, zip(*[iter(hexdata)] * 2, strict=False))
     print(get_nice_string(hexlist) + ',')
 
 
 def make_string_literal(chunk):
     hexdata = codecs.encode(chunk, 'hex').decode("utf-8")
-    hexlist = map(''.join, zip(*[iter(hexdata)] * 2))
+    hexlist = map(''.join, zip(*[iter(hexdata)] * 2, strict=False))
     print(''.join("\\x" + str(x) for x in hexlist), end='')
 
 
@@ -72,9 +91,9 @@ def main():
         with io.BytesIO() as content:
             with open(args.file, 'rb') as fg:
                 fg.seek(args.offset)
-                with gzip.GzipFile(fileobj=content, mode='w',
-                                   mtime=args.gzip_mtime,
-                                   compresslevel=9) as gz_obj:
+                with gzip.GzipFile(
+                    fileobj=content, mode='w', mtime=args.gzip_mtime, compresslevel=9
+                ) as gz_obj:
                     gz_obj.write(fg.read(args.length))
 
             content.seek(0)
@@ -99,7 +118,7 @@ def main():
                 else:
                     print('"', end='')
                     remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
+                    for chunk in iter(lambda rem=remainder: fp.read(min(1024, rem)), b''):
                         make_string_literal(chunk)
                         remainder = remainder - len(chunk)
                     print('"', end='')
@@ -110,7 +129,7 @@ def main():
                         make_hex(chunk)
                 else:
                     remainder = args.length
-                    for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
+                    for chunk in iter(lambda rem=remainder: fp.read(min(1024, rem)), b''):
                         make_hex(chunk)
                         remainder = remainder - len(chunk)
 

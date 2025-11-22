@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2017 Nordic Semiconductor
+#
 # SPDX-License-Identifier: Apache-2.0
 
 """Write subfolder list to a file
@@ -10,8 +13,8 @@ since the previous invocation.
 
 """
 
-import os
 import argparse
+import os
 
 
 def parse_args():
@@ -19,18 +22,27 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        allow_abbrev=False)
+        allow_abbrev=False,
+    )
 
-    parser.add_argument('-d', '--directory', required=True,
-                        help='Directory to walk for sub-directory discovery')
-    parser.add_argument('-c', '--create-links', required=False,
-                        help='Create links for each directory found in \
-                              directory given')
-    parser.add_argument('-o', '--out-file', required=True,
-                        help='File to write containing a list of all \
-                              directories found')
-    parser.add_argument('-t', '--trigger-file', required=False,
-                        help='Trigger file to be touched to re-run CMake')
+    parser.add_argument(
+        '-d', '--directory', required=True, help='Directory to walk for sub-directory discovery'
+    )
+    parser.add_argument(
+        '-c',
+        '--create-links',
+        required=False,
+        help='Create links for each directory found in directory given',
+    )
+    parser.add_argument(
+        '-o',
+        '--out-file',
+        required=True,
+        help='File to write containing a list of all directories found',
+    )
+    parser.add_argument(
+        '-t', '--trigger-file', required=False, help='Trigger file to be touched to re-run CMake'
+    )
 
     args = parser.parse_args()
 
@@ -78,7 +90,7 @@ def gen_out_file(out_file, dirs):
     dirs_nl = "\n".join(dirs) + "\n"
 
     if os.path.exists(out_file):
-        with open(out_file, 'r', encoding="utf-8") as out_file_fo:
+        with open(out_file, encoding="utf-8") as out_file_fo:
             out_file_dirs = out_file_fo.read()
 
         if out_file_dirs == dirs_nl:
