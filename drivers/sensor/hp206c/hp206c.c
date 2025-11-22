@@ -48,31 +48,23 @@ static int hp206c_read(const struct device *dev, uint8_t cmd, uint8_t *data,
 static int hp206c_read_reg(const struct device *dev, uint8_t reg_addr,
 			   uint8_t *reg_val)
 {
-	uint8_t cmd = HP206C_CMD_READ_REG | (reg_addr & HP206C_REG_ADDR_MASK);
-
-	return hp206c_read(dev, cmd, reg_val, 1);
-}
-
-static int hp206c_write(const struct device *dev, uint8_t cmd, uint8_t *data,
-			uint8_t len)
-{
 	const struct hp206c_device_config *cfg = dev->config;
+	uint8_t cmd = HP206C_CMD_READ_REG | (reg_addr & HP206C_REG_ADDR_MASK);
 
 	hp206c_bus_config(dev);
 
-	if (i2c_burst_write_dt(&cfg->i2c, cmd, data, len) < 0) {
-		return -EIO;
-	}
-
-	return 0;
+	return i2c_reg_read_byte_dt(&cfg->i2c, cmd, reg_val);
 }
 
 static int hp206c_write_reg(const struct device *dev, uint8_t reg_addr,
 			    uint8_t reg_val)
 {
+	const struct hp206c_device_config *cfg = dev->config;
 	uint8_t cmd = HP206C_CMD_WRITE_REG | (reg_addr & HP206C_REG_ADDR_MASK);
 
-	return hp206c_write(dev, cmd, &reg_val, 1);
+	hp206c_bus_config(dev);
+
+	return i2c_reg_write_byte_dt(&cfg->i2c, cmd, reg_val);
 }
 
 static int hp206c_cmd_send(const struct device *dev, uint8_t cmd)

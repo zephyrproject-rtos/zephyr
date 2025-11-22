@@ -226,6 +226,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 	/* Largely copied from emul_bmi160.c */
 	struct sbs_gauge_emul_data *data;
 	unsigned int val;
+	uint16_t value;
 	int reg;
 	int rc;
 
@@ -235,6 +236,21 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 	switch (num_msgs) {
+	case 1:
+		if (msgs->flags & I2C_MSG_READ) {
+			LOG_ERR("Unexpected single-message read");
+			return -EIO;
+		}
+		if (msgs->len != 3) {
+			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			return -EIO;
+		}
+		reg = msgs->buf[0];
+
+		value = sys_get_le16(&(msgs->buf[1]));
+
+		rc = emul_sbs_gauge_reg_write(target, reg, value);
+		break;
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
 			LOG_ERR("Unexpected read");
@@ -274,7 +290,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			if (msgs->len != 2) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			uint16_t value = sys_get_le16(msgs->buf);
+			value = sys_get_le16(msgs->buf);
 
 			rc = emul_sbs_gauge_reg_write(target, reg, value);
 		}

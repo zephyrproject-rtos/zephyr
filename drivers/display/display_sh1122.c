@@ -113,16 +113,17 @@ static inline int sh1122_write_bus_cmd_i2c(const struct device *dev, const uint8
 					   const uint8_t *data, size_t len)
 {
 	const struct sh1122_config *config = dev->config;
-	static uint8_t buf[SH1122_MAXIMUM_CMD_LENGTH];
+	static uint8_t buf[SH1122_MAXIMUM_CMD_LENGTH + 1];
 
 	if (len > SH1122_MAXIMUM_CMD_LENGTH - 1) {
 		return -EINVAL;
 	}
 
-	buf[0] = cmd;
-	memcpy(&(buf[1]), data, len);
+	buf[0] = SH1122_CONTROL_ALL_BYTES_CMD;
+	buf[1] = cmd;
+	memcpy(&(buf[2]), data, len);
 
-	return i2c_burst_write_dt(&config->i2c, SH1122_CONTROL_ALL_BYTES_CMD, buf, len + 1);
+	return i2c_write_dt(&config->i2c, buf, len + 2);
 }
 
 static inline int sh1122_set_hardware_config(const struct device *dev)

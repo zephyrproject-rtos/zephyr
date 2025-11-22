@@ -90,7 +90,7 @@ int hmc5883l_init(const struct device *dev)
 {
 	struct hmc5883l_data *drv_data = dev->data;
 	const struct hmc5883l_config *config = dev->config;
-	uint8_t chip_cfg[3], id[3], idx;
+	uint8_t chip_cfg[4], id[3], idx;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
@@ -136,12 +136,12 @@ int hmc5883l_init(const struct device *dev)
 	}
 
 	/* configure device */
-	chip_cfg[0] = idx << HMC5883L_ODR_SHIFT;
-	chip_cfg[1] = drv_data->gain_idx << HMC5883L_GAIN_SHIFT;
-	chip_cfg[2] = HMC5883L_MODE_CONTINUOUS;
+	chip_cfg[0] = HMC5883L_REG_CONFIG_A;
+	chip_cfg[1] = idx << HMC5883L_ODR_SHIFT;
+	chip_cfg[2] = drv_data->gain_idx << HMC5883L_GAIN_SHIFT;
+	chip_cfg[3] = HMC5883L_MODE_CONTINUOUS;
 
-	if (i2c_burst_write_dt(&config->i2c, HMC5883L_REG_CONFIG_A,
-			       chip_cfg, 3) < 0) {
+	if (i2c_write_dt(&config->i2c, chip_cfg, sizeof(chip_cfg)) < 0) {
 		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}

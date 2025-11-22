@@ -209,10 +209,11 @@ static int ltc2959_read_acr(const struct device *dev, uint32_t *value)
 static int ltc2959_write_acr(const struct device *dev, uint32_t value)
 {
 	const struct ltc2959_config *cfg = dev->config;
-	uint8_t buf[4];
+	uint8_t buf[5];
 
-	sys_put_be32(value, buf);
-	return i2c_burst_write_dt(&cfg->i2c, LTC2959_REG_ACC_CHARGE_3, buf, sizeof(buf));
+	buf[0] = LTC2959_REG_ACC_CHARGE_3;
+	sys_put_be32(value, &buf[1]);
+	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
 static int ltc2959_get_gpio_voltage_uv(const struct device *dev, int32_t *value_uv)
@@ -318,10 +319,11 @@ static int ltc2959_set_gpio_threshold_uv(const struct device *dev, bool high, in
 		}
 
 		uint16_t raw_bp = (uint16_t)((int16_t)raw_bp64);
-		uint8_t buf[2];
+		uint8_t buf[3];
 
-		sys_put_be16(raw_bp, buf);
-		return i2c_burst_write_dt(&cfg->i2c, reg, buf, sizeof(buf));
+		buf[0] = reg;
+		sys_put_be16(raw_bp, &buf[1]);
+		return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 	}
 	case LTC2959_GPIO_MODE_UNIPOLAR: {
 
@@ -336,10 +338,11 @@ static int ltc2959_set_gpio_threshold_uv(const struct device *dev, bool high, in
 		}
 
 		uint16_t raw_up = (uint16_t)raw_up64;
-		uint8_t buf[2];
+		uint8_t buf[3];
 
-		sys_put_be16(raw_up, buf);
-		return i2c_burst_write_dt(&cfg->i2c, reg, buf, sizeof(buf));
+		buf[0] = reg;
+		sys_put_be16(raw_up, &buf[1]);
+		return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 	}
 	default:
 		break;
@@ -367,7 +370,7 @@ static int ltc2959_get_voltage_threshold_uv(const struct device *dev, bool high,
 
 static int ltc2959_set_voltage_threshold_uv(const struct device *dev, bool high, uint32_t value)
 {
-	uint8_t reg = high ? LTC2959_REG_VOLT_THRESH_HIGH_MSB : LTC2959_REG_VOLT_THRESH_LOW_MSB;
+	uint8_t buf[3];
 	uint64_t raw64 = ((uint64_t)value << 15) / LTC2959_VOLT_THRESH_UV_SCALAR;
 
 	if (raw64 > UINT16_MAX) {
@@ -376,12 +379,12 @@ static int ltc2959_set_voltage_threshold_uv(const struct device *dev, bool high,
 
 	uint16_t raw = (uint16_t)raw64;
 
-	uint8_t buf[2];
+	buf[0] = high ? LTC2959_REG_VOLT_THRESH_HIGH_MSB : LTC2959_REG_VOLT_THRESH_LOW_MSB;
 
-	sys_put_be16(raw, buf);
+	sys_put_be16(raw, &buf[1]);
 	const struct ltc2959_config *cfg = dev->config;
 
-	return i2c_burst_write_dt(&cfg->i2c, reg, buf, sizeof(buf));
+	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
 static int ltc2959_get_current_threshold_ua(const struct device *dev, bool high, int32_t *value_ua)
@@ -404,7 +407,7 @@ static int ltc2959_get_current_threshold_ua(const struct device *dev, bool high,
 
 static int ltc2959_set_current_threshold_ua(const struct device *dev, bool high, int32_t value_ua)
 {
-	uint8_t reg = high ? LTC2959_REG_CURR_THRESH_HIGH_MSB : LTC2959_REG_CURR_THRESH_LOW_MSB;
+	uint8_t buf[3];
 	const struct ltc2959_config *cfg = dev->config;
 
 	if (!cfg->current_lsb_ua) {
@@ -415,10 +418,10 @@ static int ltc2959_set_current_threshold_ua(const struct device *dev, bool high,
 
 	/* To account for cases where current thresholds are +-2A */
 	int16_t raw16 = CLAMP(raw32, INT16_MIN, INT16_MAX);
-	uint8_t buf[2];
 
-	sys_put_be16(raw16, buf);
-	return i2c_burst_write_dt(&cfg->i2c, reg, buf, sizeof(buf));
+	buf[0] = high ? LTC2959_REG_CURR_THRESH_HIGH_MSB : LTC2959_REG_CURR_THRESH_LOW_MSB;
+	sys_put_be16(raw16, &buf[1]);
+	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
 static int ltc2959_get_temp_threshold_dK(const struct device *dev, bool high, uint16_t *value_dK)
@@ -438,7 +441,7 @@ static int ltc2959_get_temp_threshold_dK(const struct device *dev, bool high, ui
 
 static int ltc2959_set_temp_threshold_dK(const struct device *dev, bool high, uint16_t value_dK)
 {
-	uint8_t reg = high ? LTC2959_REG_TEMP_THRESH_HIGH_MSB : LTC2959_REG_TEMP_THRESH_LOW_MSB;
+	uint8_t buf[3];
 	uint64_t raw64 = ((uint64_t)value_dK << 16) / LTC2959_TEMP_K_SF;
 
 	if (raw64 > UINT16_MAX) {
@@ -446,12 +449,13 @@ static int ltc2959_set_temp_threshold_dK(const struct device *dev, bool high, ui
 	}
 
 	uint16_t raw = (uint16_t)raw64;
-	uint8_t buf[2];
 
-	sys_put_be16(raw, buf);
+	buf[0] = high ? LTC2959_REG_TEMP_THRESH_HIGH_MSB : LTC2959_REG_TEMP_THRESH_LOW_MSB;
+
+	sys_put_be16(raw, &buf[1]);
 	const struct ltc2959_config *cfg = dev->config;
 
-	return i2c_burst_write_dt(&cfg->i2c, reg, buf, sizeof(buf));
+	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
 static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
