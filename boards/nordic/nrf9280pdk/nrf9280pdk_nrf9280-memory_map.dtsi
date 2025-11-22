@@ -7,6 +7,7 @@
 
 / {
 	reserved-memory {
+		ranges;
 		/* The first 64kb are reserved for SecDom.
 		 * The next 4kb are reserved for IPC between SecDom and Cellcore.
 		 */
