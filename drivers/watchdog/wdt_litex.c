@@ -196,10 +196,6 @@ static int wdt_litex_init(const struct device *dev)
 
 	config->irq_cfg_func();
 
-#ifndef CONFIG_WDT_DISABLE_AT_BOOT
-	wdt_litex_enable(dev);
-#endif
-
 	return 0;
 }
 

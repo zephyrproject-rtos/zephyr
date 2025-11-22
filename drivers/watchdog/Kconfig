@@ -13,12 +13,27 @@ if WATCHDOG
 
 config HAS_WDT_DISABLE_AT_BOOT
 	bool
+	help
+	  This hidden symbol must be selected by drivers which
+	  implement support for a watchdog timer that is enabled
+	  by default after system reset.
 
 config WDT_DISABLE_AT_BOOT
-	bool "Disable at boot"
+	bool "Disable watchdog timers at boot"
 	depends on HAS_WDT_DISABLE_AT_BOOT
 	help
-	  Disable watchdog at Zephyr system startup.
+	  Disable watchdog timers during Zephyr system startup.
+
+	  This option has no effect when disabled and only applies to drivers
+	  that select HAS_WDT_DISABLE_AT_BOOT. Drivers that do not select
+	  HAS_WDT_DISABLE_AT_BOOT must ignore this option.
+
+	  When enabled, all watchdog timer instances enabled in Devicetree must
+	  be disabled by their respective drivers during instance initialization.
+
+	  Note that enabling this option may render certain watchdog timers
+	  unusable by the application, depending on the hardware implementation
+	  (e.g., if the timer cannot be re-enabled after being disabled).
 
 config HAS_WDT_NO_CALLBACKS
 	bool

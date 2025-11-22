@@ -95,13 +95,6 @@ static int wdt_cc23x0_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static int wdt_cc23x0_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static DEVICE_API(wdt, wdt_cc23x0_api) = {
 	.setup = wdt_cc23x0_setup,
 	.disable = wdt_cc23x0_disable,
@@ -111,12 +104,11 @@ static DEVICE_API(wdt, wdt_cc23x0_api) = {
 
 #define CC23X0_WDT_INIT(index)                                                                     \
 	static struct wdt_cc23x0_data wdt_cc23x0_data_##index = {                                  \
-		.reload = WDT_MS_TO_TICKS(CONFIG_WDT_CC23X0_INITIAL_TIMEOUT),                      \
 	};                                                                                         \
 	static struct wdt_cc23x0_config wdt_cc23x0_config_##index = {                              \
 		.base = DT_INST_REG_ADDR(index),                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, wdt_cc23x0_init, NULL, &wdt_cc23x0_data_##index,              \
+	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &wdt_cc23x0_data_##index,              \
 			      &wdt_cc23x0_config_##index, POST_KERNEL,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_cc23x0_api);
 

@@ -163,15 +163,6 @@ static int wdt_rpi_pico_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static int wdt_rpi_pico_init(const struct device *dev)
-{
-#ifndef CONFIG_WDT_DISABLE_AT_BOOT
-	return wdt_rpi_pico_setup(dev, WDT_OPT_PAUSE_HALTED_BY_DBG);
-#endif
-
-	return 0;
-}
-
 static DEVICE_API(wdt, wdt_rpi_pico_driver_api) = {
 	.setup = wdt_rpi_pico_setup,
 	.disable = wdt_rpi_pico_disable,
@@ -186,11 +177,10 @@ static DEVICE_API(wdt, wdt_rpi_pico_driver_api) = {
 	};                                                                                         \
 	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                       \
 		.reset_type = WDT_FLAG_RESET_SOC,                                                  \
-		.load = (CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT *                                     \
-			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                                 \
+		.load = 0,                                                                         \
 		.enabled = false                                                                   \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,       \
+	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), NULL, NULL, &wdt_##idx##_data,       \
 			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,    \
 			 &wdt_rpi_pico_driver_api)
 
