@@ -660,6 +660,8 @@ static int i2s_nrfx_write(const struct device *dev,
 	 * opens the possibility for a race condition between this function and
 	 * data_handler() that is called in interrupt context.
 	 */
+
+	unsigned int key = irq_lock();
 	if (drv_data->state == I2S_STATE_RUNNING &&
 	    drv_data->next_tx_buffer_needed) {
 		nrfx_i2s_buffers_t next = { 0 };
@@ -670,6 +672,7 @@ static int i2s_nrfx_write(const struct device *dev,
 			 * responsible for releasing the buffer.
 			 */
 			LOG_ERR("Cannot reacquire queued buffer");
+			irq_unlock(key);
 			return 0;
 		}
 
@@ -678,10 +681,12 @@ static int i2s_nrfx_write(const struct device *dev,
 		LOG_DBG("Next TX %p", next.p_tx_buffer);
 
 		if (!supply_next_buffers(drv_data, &next)) {
+		        irq_unlock(key);
 			return -EIO;
 		}
 
 	}
+	irq_unlock(key);
 
 	return 0;
 }
