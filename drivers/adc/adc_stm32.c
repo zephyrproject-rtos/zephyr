@@ -175,8 +175,33 @@ static const uint32_t table_seq_len[] = {
 
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+
+/* Max number of injected channels  */
+#define STM32_NB_INJECTED_CHANNELS	4
+
+/* This macro, coupled with listify, creates an array containing values LL_ADC_INJ_RANK_x,
+ * where x ranges from 1 to STM32_NB_INJECTED_CHANNELS
+ */
+#define RANK_INJ(i, _)	_CONCAT_1(LL_ADC_INJ_RANK_, UTIL_INC(i))
+static const uint32_t table_rank_injected[] = {
+	LISTIFY(STM32_NB_INJECTED_CHANNELS, RANK_INJ, (,))};
+
+/* This macro, coupled with listify, creates an array containing values
+ * LL_ADC_INJ_SEQ_SCAN_ENABLE_x_RANKS, where x ranges from 2 to STM32_NB_INJECTED_CHANNELS
+ */
+#define SEQ_LEN(i, _)	_CONCAT_2(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
+/* Length of this array signifies the maximum sequence length */
+static const uint32_t table_seq_injected_len[] = {
+	LL_ADC_INJ_SEQ_SCAN_DISABLE,
+	LISTIFY(UTIL_DEC(STM32_NB_INJECTED_CHANNELS), SEQ_LEN, (,))
+};
+
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
 /* Number of different sampling time values */
 #define STM32_NB_SAMPLING_TIME	8
+
 
 #ifdef CONFIG_ADC_STM32_DMA
 struct stream {
@@ -207,6 +232,14 @@ struct adc_stm32_data {
 	uint8_t channel_count;
 	uint8_t samples_count;
 	int8_t acq_time_index[2];
+
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	struct adc_context ctx_injected;
+	adc_data_size_t *buffer_injected;
+	uint32_t channels_injected;
+	uint8_t channel_count_injected;
+	uint8_t samples_count_injected;
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #ifdef CONFIG_ADC_STM32_DMA
 	volatile int dma_error;
@@ -387,6 +420,23 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+static void adc_stm32_start_conversion_injected(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
+
+	LOG_DBG("Starting injected conversion");
+
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_INJ_StartConversion(adc);
+#else
+	LL_ADC_INJ_StartConversionSWStart(adc);
+#endif
+}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
 static void adc_stm32_start_conversion(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
@@ -425,21 +475,15 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	}
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
-	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32U0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32WBAX) && \
-	!defined(CONFIG_SOC_SERIES_STM32WLX)
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	if (LL_ADC_INJ_IsConversionOngoing(adc)) {
 		LL_ADC_INJ_StopConversion(adc);
 		while (LL_ADC_INJ_IsConversionOngoing(adc)) {
 		}
 	}
 #endif
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 	LL_ADC_Disable(adc);
 
@@ -951,16 +995,6 @@ static int set_sequencer(const struct device *dev)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
 		if (config->sequencer_type == SEQUENCER_PROGRAMMABLE) {
-#if ANY_ADC_HAS_CHANNEL_PRESELECTION
-			if (config->has_channel_preselection) {
-				/*
-				 * Each channel in the sequence must be previously enabled in PCSEL.
-				 * This register controls the analog switch integrated in the IO
-				 * level.
-				 */
-				LL_ADC_SetChannelPreselection(adc, channel);
-			}
-#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
 			LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
 		}
@@ -990,6 +1024,91 @@ static int set_sequencer(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+static int set_sequencer_injected(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+
+	uint8_t channel_id;
+	uint8_t channel_index = 0;
+
+	/* For F1 and F4 compatibles, it is essential to configure the injected sequencer length
+	 * first because the function LL_ADC_INJ_SetSequencerRanks uses this length to properly
+	 * configure the ranks.
+	 */
+	LL_ADC_INJ_SetSequencerLength(adc,
+				      table_seq_injected_len[data->channel_count_injected - 1]);
+
+	/* Iterate over selected channels in bitmask keeping track of:
+	 * - channel_index: ranging from 0 -> ( data->channel_count - 1 )
+	 * - channel_id: ordinal position of channel in data->channels bitmask
+	 */
+	for (uint32_t channels = data->channels_injected; channels;
+		      channels &= ~BIT(channel_id), channel_index++) {
+		channel_id = find_lsb_set(channels) - 1;
+
+		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+		LL_ADC_INJ_SetSequencerRanks(adc, table_rank_injected[channel_index], channel);
+	}
+
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	if (LL_ADC_GetSequencersScanMode(adc) != LL_ADC_SEQ_SCAN_ENABLE) {
+		LL_ADC_SetSequencersScanMode(adc, LL_ADC_SEQ_SCAN_ENABLE);
+	}
+#endif /* st_stm32f1_adc || st_stm32f4_adc */
+
+	return 0;
+}
+
+static int start_read_injected(const struct device *dev, const struct adc_sequence *sequence)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	int err;
+
+	data->buffer_injected = sequence->buffer;
+	data->channels_injected = sequence->channels;
+	data->channel_count_injected = POPCOUNT(data->channels_injected);
+	data->samples_count_injected = 0;
+
+	if (data->channel_count_injected == 0) {
+		LOG_ERR("No channels selected");
+		return -EINVAL;
+	}
+
+	if (data->channel_count_injected > STM32_NB_INJECTED_CHANNELS) {
+		LOG_ERR("Too many channels for injected sequencer. Max: %d",
+			STM32_NB_INJECTED_CHANNELS);
+		return -EINVAL;
+	}
+
+	err = set_resolution(dev, sequence);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Configure the sequencer */
+	err = set_sequencer_injected(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	adc_stm32_enable(adc);
+
+	LL_ADC_EnableIT_JEOS(adc);
+
+	adc_context_start_read(&data->ctx_injected, sequence);
+
+	return adc_context_wait_for_completion(&data->ctx_injected);
+}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
@@ -1100,6 +1219,17 @@ static int start_read(const struct device *dev,
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	if (ctx->sequence.injected_mode) {
+		struct adc_stm32_data *data_injected =
+			CONTAINER_OF(ctx, struct adc_stm32_data, ctx_injected);
+		const struct device *dev_injected = data_injected->dev;
+
+		adc_stm32_start_conversion_injected(dev_injected);
+		return;
+	}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct device *dev = data->dev;
@@ -1129,7 +1259,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-#ifndef CONFIG_ADC_STM32_DMA
+#if !defined(CONFIG_ADC_STM32_DMA) || defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
 static void adc_stm32_isr(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
@@ -1144,6 +1274,23 @@ static void adc_stm32_isr(const struct device *dev)
 			"increase prescaler value or increase sampling times.");
 	}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	if (LL_ADC_IsActiveFlag_JEOS(adc) == 1) {
+		LL_ADC_ClearFlag_JEOS(adc);
+		for (uint8_t i = 0; i < data->channel_count_injected; i++) {
+			*data->buffer_injected++ = LL_ADC_INJ_ReadConversionData32(adc,
+						   table_rank_injected[i]);
+		}
+
+		adc_context_on_sampling_done(&data->ctx_injected, dev);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	if (LL_ADC_IsActiveFlag_EOS(adc) == 1) {
@@ -1179,6 +1326,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 
 	ARG_UNUSED(status);
 
+#ifndef CONFIG_ADC_STM32_INJECTED_CHANNELS
 	/* Reset acquisition time used for the sequence */
 	data->acq_time_index[0] = -1;
 	data->acq_time_index[1] = -1;
@@ -1189,6 +1337,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 		LL_ADC_SetChannelPreselection(adc, 0);
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 }
 
 static int adc_stm32_read(const struct device *dev,
@@ -1196,6 +1345,20 @@ static int adc_stm32_read(const struct device *dev,
 {
 	struct adc_stm32_data *data = dev->data;
 	int error;
+
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	if (sequence->injected_mode) {
+		adc_context_lock(&data->ctx_injected, false, NULL);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+		error = start_read_injected(dev, sequence);
+		adc_context_release(&data->ctx_injected, error);
+
+		return error;
+	}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 	adc_context_lock(&data->ctx, false, NULL);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1215,6 +1378,20 @@ static int adc_stm32_read_async(const struct device *dev,
 {
 	struct adc_stm32_data *data = dev->data;
 	int error;
+
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	if (sequence->injected_mode) {
+		adc_context_lock(&data->ctx_injected, true, async);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+		error = start_read_injected(dev, sequence);
+		adc_context_release(&data->ctx_injected, error);
+
+		return error;
+	}
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 	adc_context_lock(&data->ctx, true, async);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1367,7 +1544,8 @@ static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
-#if defined(CONFIG_SOC_SERIES_STM32H5X) || ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || ANY_ADC_HAS_DIFFERENTIAL_SUPPORT || \
+	ANY_ADC_HAS_CHANNEL_PRESELECTION
 	ADC_TypeDef *adc = config->base;
 #endif
 
@@ -1404,6 +1582,19 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid sampling time");
 		return -EINVAL;
 	}
+
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
+	if (config->has_channel_preselection) {
+		/*
+		 * Each channel in the sequence must be previously enabled in PCSEL.
+		 * This register controls the analog switch integrated in the IO
+		 * level.
+		 */
+		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_cfg->channel_id);
+
+		LL_ADC_SetChannelPreselection(adc, channel);
+	}
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
 	if (adc == ADC1) {
@@ -1702,6 +1893,11 @@ static int adc_stm32_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	LL_ADC_INJ_SetTriggerSource(adc, LL_ADC_INJ_TRIG_SOFTWARE);
+	adc_context_unlock_unconditionally(&data->ctx_injected);
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
 	return 0;
 }
 
@@ -1841,10 +2037,13 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 	}
 
-#define ADC_STM32_IRQ_FUNC(index)					\
-	.irq_cfg_func = NULL,
-
 #else /* CONFIG_ADC_STM32_DMA */
+
+#define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)
+
+#endif /* CONFIG_ADC_STM32_DMA */
+
+#if !defined(CONFIG_ADC_STM32_DMA) || defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
 
 /*
  * For series that share interrupt lines for multiple ADC instances
@@ -1945,9 +2144,11 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 	.irq_cfg_func = COND_CODE_1(IS_EQ(index, FIRST_WITH_IRQN(index)),                          \
 				    (UTIL_CAT(ISR_FUNC(index), _init)), (NULL)),
 
-#define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)
+#else /* !CONFIG_ADC_STM32_DMA || CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
-#endif /* CONFIG_ADC_STM32_DMA */
+#define ADC_STM32_IRQ_FUNC(index)	.irq_cfg_func = NULL,
+
+#endif /* !CONFIG_ADC_STM32_DMA || CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #define ADC_DMA_CHANNEL(id, src, dest)							\
 	COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),					\
@@ -1995,6 +2196,12 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 		ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),				\
 		ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),				\
 		ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),				\
+		IF_ENABLED(CONFIG_ADC_STM32_INJECTED_CHANNELS,					\
+			(ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx_injected),))	\
+		IF_ENABLED(CONFIG_ADC_STM32_INJECTED_CHANNELS,					\
+			(ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx_injected),))		\
+		IF_ENABLED(CONFIG_ADC_STM32_INJECTED_CHANNELS,					\
+			(ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx_injected),))		\
 		ADC_DMA_CHANNEL(index, PERIPHERAL, MEMORY)					\
 	};											\
 												\

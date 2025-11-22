@@ -33,4 +33,22 @@ config ADC_STM32_DMA
 	  Enable the ADC DMA mode for ADC instances
 	  that enable dma channels in their device tree node.
 
+config ADC_STM32_INJECTED_CHANNELS
+	bool "STM32 ADC Injected channels support"
+	select ADC_INJECTED_CHANNELS
+	depends on !SOC_SERIES_STM32C0X && \
+		   !SOC_SERIES_STM32F0X && \
+		   !SOC_SERIES_STM32G0X && \
+		   !SOC_SERIES_STM32L0X && \
+		   !SOC_SERIES_STM32U0X && \
+		   !SOC_SERIES_STM32WBAX && \
+		   !SOC_SERIES_STM32WLX
+	help
+	  Enable the support for injected channels.
+	  When using injected channels, it is recommended to setup all channels
+	  that will be used (both regular and injected) before any measurement
+	  is started, because it is not possible to setup a new channel while
+	  conversions are running (typically, one can't configure an injected
+	  channel if a regular conversion is on-going).
+
 endif

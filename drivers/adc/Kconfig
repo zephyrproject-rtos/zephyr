@@ -38,6 +38,12 @@ config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 config ADC_CONFIGURABLE_VBIAS_PIN
 	bool
 
+# By selecting or not this option particular ADC drivers indicate if they
+# support injected channels, i.e. reading a sequence of channels outside of the
+# main sequence.
+config ADC_INJECTED_CHANNELS
+	bool
+
 config ADC_ASYNC
 	bool "Asynchronous call support"
 	select POLL

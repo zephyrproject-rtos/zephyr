@@ -34,12 +34,27 @@ struct stm32_vbat_config {
 	int ratio;
 };
 
+static inline void adc_enable_vbatsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_VBAT);
+}
+
+static inline void adc_disable_vbatsensor_channel(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+					path & ~LL_ADC_PATH_INTERNAL_VBAT);
+}
+
 static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_vbat_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
-	uint32_t path;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
@@ -48,6 +63,7 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(data->adc);
 
+#ifndef CONFIG_STM32_VBAT_INJECTED
 	rc = adc_channel_setup(data->adc, &data->adc_cfg);
 
 	if (rc) {
@@ -55,20 +71,19 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 		goto unlock;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
-				       LL_ADC_PATH_INTERNAL_VBAT | path);
+	adc_enable_vbatsensor_channel(data->adc_base);
+#endif /* CONFIG_STM32_VBAT_INJECTED */
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
-				       path &= ~LL_ADC_PATH_INTERNAL_VBAT);
+#ifndef CONFIG_STM32_VBAT_INJECTED
+	adc_disable_vbatsensor_channel(data->adc_base);
 
 unlock:
+#endif /* CONFIG_STM32_VBAT_INJECTED */
 	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -119,7 +134,21 @@ static int stm32_vbat_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = 12U,
+#ifdef CONFIG_STM32_VBAT_INJECTED
+		.injected_mode = true,
+#endif /* CONFIG_STM32_VBAT_INJECTED */
 	};
+
+#ifdef CONFIG_STM32_VBAT_INJECTED
+	int rc = adc_channel_setup(data->adc, &data->adc_cfg);
+
+	if (rc) {
+		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
+		return rc;
+	}
+
+	adc_enable_vbatsensor_channel(data->adc_base);
+#endif /* CONFIG_STM32_VBAT_INJECTED */
 
 	return 0;
 }
