@@ -167,6 +167,38 @@ if(${CONFIG_KERNEL_MEM_POOL})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 
+if(CONFIG_SYSTEM_WORKQUEUE_STACK_IGNORE_MIN)
+  set(final_systemwq_stack_size ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE})
+else()
+  # Import all custom SYSTEM_WORKQUEUE_STACK_MIN_SIZE_ size requirements
+  import_kconfig(CONFIG_SYSTEM_WORKQUEUE_STACK_MIN_SIZE_ ${DOTCONFIG} min_stack_size_keys)
+
+  # Get the largest value of all "MIN_SIZE" requirements
+  set(min_stack_size 0)
+  foreach(min_size ${min_stack_size_keys})
+    if("${min_stack_size}" LESS "${${min_size}}")
+      set(min_stack_size ${${min_size}})
+    endif()
+  endforeach()
+
+  if(CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE LESS "${min_stack_size}")
+    # Only warn if default value 0 has been modified
+    if(NOT CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE EQUAL 0)
+      message(WARNING "
+        CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE is less than requested minimum:
+          ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE} < ${min_stack_size}
+        Setting the system workqueue size to ${min_stack_size}")
+    endif()
+
+    set(final_systemwq_stack_size ${min_stack_size})
+  else()
+    # CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE was greater than the minimum of the requirements
+    set(final_systemwq_stack_size ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE})
+  endif()
+endif()
+
+zephyr_compile_definitions(SYSTEM_WORKQUEUE_STACK_SIZE=${final_systemwq_stack_size})
+
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
 # This order has to be maintained. Any new file should be placed
