@@ -8,10 +8,6 @@ rsource "Kconfig.defconfig.ae*"
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 60000000
 
-config RISCV_GENERIC_TOOLCHAIN
-	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
-	default n
-
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 

@@ -10,6 +10,7 @@ Guides on how to set up toolchains for Zephyr development.
 
    zephyr_sdk.rst
 
+   andes_toolchain.rst
    arm_compiler_6.rst
    arm_toolchain_for_embedded.rst
    cadence_xcc.rst
