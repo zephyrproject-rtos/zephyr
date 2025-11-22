@@ -180,6 +180,50 @@ static inline void udc_submit_sof_event(const struct device *dev)
 #endif
 
 /**
+ * @brief Estimate required FIFO sizes.
+ *
+ * This function estimates the required FIFO sizes for the IN and OUT
+ * endpoints, as well as determining the largest IN and OUT endpoint sizes
+ * based on the maximum packet size value provided by the higher layer during
+ * initialization.
+ *
+ * All numbers are without control endpoints. Drivers must take this into
+ * account.
+ *
+ * This function provides the correct numbers if the configurations have
+ * identical endpoint mapping. Otherwise, it provides worst-case RX and TX FIFO
+ * sizes.
+ *
+ * @param[in] dev     Pointer to device struct of the driver instance
+ * @param[in] rx_size Required RX FIFO size
+ * @param[in] tx_size Required TX FIFO size
+ * @param[in] out_mps Largest OUT MPS
+ * @param[in] in_mps  Largest IN MPS
+ */
+void udc_get_eps_fifo_size(const struct device *dev,
+			   size_t *const rx_size,
+			   size_t *const tx_size,
+			   uint16_t *const out_mps,
+			   uint16_t *const in_mps);
+
+/**
+ * @brief Get number of claimed endpoints.
+ *
+ * This function provides the correct numbers if the configurations have
+ * identical endpoint mapping. Otherwise, it provides worst-case numbers.
+ *
+ * All numbers are without control endpoints. Drivers must take this into
+ * account.
+ *
+ * @param[in] dev     Pointer to device struct of the driver instance
+ * @param[in] out_eps Number of claimed OUT endpoints
+ * @param[in] in_eps  Number of claimed IN endpoints
+ */
+void udc_get_claimed_eps(const struct device *dev,
+			 uint8_t *const out_eps,
+			 uint8_t *const in_eps);
+
+/**
  * @brief Helper function to enable endpoint.
  *
  * This function can be used by the driver to enable control IN/OUT endpoint.
