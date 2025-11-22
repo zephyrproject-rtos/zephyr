@@ -439,6 +439,9 @@ struct ov2640_config {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	struct gpio_dt_spec pwdn_gpio;
+#endif
 	uint8_t clock_rate_control;
 };
 
@@ -1000,6 +1003,11 @@ static int ov2640_init_controls(const struct device *dev)
 
 static int ov2640_init(const struct device *dev)
 {
+
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct ov2640_config *cfg = dev->config;
+#endif
+
 	int ret = 0;
 	/* set default/init format SVGA RGB565 */
 	struct video_format fmt = {
@@ -1008,9 +1016,17 @@ static int ov2640_init(const struct device *dev)
 		.height = SVGA_VSIZE,
 	};
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	const struct ov2640_config *cfg = dev->config;
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
+	}
 
+	gpio_pin_set_dt(&cfg->pwdn_gpio, 0);
+	k_sleep(K_MSEC(1));
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
@@ -1056,6 +1072,9 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#endif
 	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
 static struct ov2640_data ov2640_data_0;
@@ -1077,8 +1096,14 @@ static int ov2640_init_0(const struct device *dev)
 	}
 #endif
 
-	uint32_t i2c_cfg = I2C_MODE_CONTROLLER |
-					I2C_SPEED_SET(I2C_SPEED_STANDARD);
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+		return -ENODEV;
+	}
+#endif
+
+	uint32_t i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	if (i2c_configure(cfg->i2c.bus, i2c_cfg)) {
 		LOG_ERR("Failed to configure ov2640 i2c interface.");
