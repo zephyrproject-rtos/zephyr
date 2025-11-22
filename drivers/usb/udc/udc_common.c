@@ -924,6 +924,13 @@ int udc_ctrl_submit_status(const struct device *dev,
 	return udc_submit_ep_event(dev, buf, 0);
 }
 
+bool udc_ctrl_stage_is_setup(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+
+	return data->stage == CTRL_PIPE_STAGE_SETUP ? true : false;
+}
+
 bool udc_ctrl_stage_is_data_out(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
