@@ -41,9 +41,30 @@ extern "C" {
  * big endian.
  */
 enum display_pixel_format {
+	/**
+	 * 24-bit RGB format with 8 bits per component.  For example, in little-endian
+	 * machine: blue bits [7:0], green bits [7:0], red bits [7:0].
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr | ...
+	 * @endcode
+	 *
+	 */
 	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
 	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
 	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
+	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 * For example, in little-endian machine: blue bits [7:0], green bits [7:0],
+	 * red bits [7:0], alpha bits [7:0]
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
+	 * @endcode
+	 *
+	 */
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
 	/**
 	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
