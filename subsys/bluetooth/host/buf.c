@@ -83,9 +83,13 @@ static void evt_pool_destroy(struct net_buf *buf)
 	buf_rx_freed_notify(BT_BUF_EVT);
 }
 
-NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT),
-		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct bt_conn_rx),
-		    acl_in_pool_destroy);
+/* Allocate Rx buffer count sufficient to block unreferencing one Rx buffer per active ACL
+ * connection, and additional HCI ACL data packets that the Controller can generate for the
+ * Host Number of Completed data packets count that the Host has given back to the Controller.
+ */
+NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT_EXTRA),
+		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE),
+		    sizeof(struct bt_conn_rx), acl_in_pool_destroy);
 
 NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE, 0,
 			  evt_pool_destroy);
