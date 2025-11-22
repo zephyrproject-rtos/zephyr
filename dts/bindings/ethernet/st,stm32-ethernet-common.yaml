@@ -8,10 +8,6 @@ include: [ethernet-controller.yaml, pinctrl-device.yaml]
 properties:
   interrupts:
     required: true
-  clocks:
-    required: true
-  clock-names:
-    required: true
   pinctrl-0:
     required: true
   pinctrl-names:
