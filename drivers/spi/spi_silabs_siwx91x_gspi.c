@@ -76,6 +76,29 @@ static bool spi_siwx91x_is_dma_enabled_instance(const struct device *dev)
 #endif
 }
 
+void gspi_siwx91x_pick_lower_freq(uint32_t clock_hz, uint32_t requested_hz, uint32_t *actual_hz_out,
+				  uint32_t *div_out)
+{
+	/* Calculate divider that ensures freq <= requested */
+	uint32_t divider = DIV_ROUND_UP(clock_hz, 2 * requested_hz);
+	uint32_t actual_hz;
+
+	if (divider == 0U) {
+		divider = 1U;
+	}
+
+	/* Compute the actual achievable frequency */
+	actual_hz = clock_hz / (2U * divider);
+
+	if (actual_hz_out) {
+		*actual_hz_out = actual_hz;
+	}
+
+	if (div_out) {
+		*div_out = divider;
+	}
+}
+
 static int gspi_siwx91x_config(const struct device *dev, const struct spi_config *spi_cfg,
 			       spi_callback_t cb, void *userdata)
 {
@@ -83,6 +106,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	const struct gspi_siwx91x_config *cfg = dev->config;
 	uint32_t bit_rate = spi_cfg->frequency;
 	uint32_t clk_div_factor;
+	uint32_t actual_freq;
 	uint32_t clock_rate;
 	int ret;
 	__maybe_unused int channel_filter;
@@ -119,7 +143,13 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 		if (ret) {
 			return ret;
 		}
-		clk_div_factor = ((clock_rate / spi_cfg->frequency) / 2);
+
+		gspi_siwx91x_pick_lower_freq(clock_rate, spi_cfg->frequency, &actual_freq,
+					     &clk_div_factor);
+		if (spi_cfg->frequency != actual_freq) {
+			LOG_INF("Requested %u Hz, programmed %u Hz (divider=%u)",
+				spi_cfg->frequency, actual_freq, clk_div_factor);
+		}
 	}
 
 	if (clk_div_factor < 1) {
