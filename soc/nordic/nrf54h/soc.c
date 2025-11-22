@@ -40,14 +40,20 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	 DT_REG_ADDR(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),                \
 			(DT_GPARENT(DT_PARENT(DT_NODELABEL(label)))),                              \
 			(DT_GPARENT(DT_NODELABEL(label))))))
+#define FIXED_PARTITION_NODE_MTD(node) \
+	COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(node), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
+			(DT_MTD_FROM_FIXED_PARTITION(node)))
 
 #ifdef CONFIG_USE_DT_CODE_PARTITION
 #define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #elif defined(CONFIG_FLASH_LOAD_OFFSET)
 #define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
 #endif
-
-#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                                  \
+#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
+		FIXED_PARTITION_NODE_MTD(DT_NODELABEL(label))) &&                                  \
 	(DT_REG_ADDR(DT_NODELABEL(label)) <= FLASH_LOAD_OFFSET &&                                  \
 	 DT_REG_ADDR(DT_NODELABEL(label)) + DT_REG_SIZE(DT_NODELABEL(label)) > FLASH_LOAD_OFFSET)
 
@@ -198,7 +204,7 @@ void soc_late_init_hook(void)
 	void *radiocore_address = NULL;
 
 #if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
-	if (PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
+	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
 		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
 					     CONFIG_ROM_START_OFFSET);
 	} else {
