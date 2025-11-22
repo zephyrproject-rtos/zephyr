@@ -10,6 +10,18 @@
 
 / {
 	soc {
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x0 DT_SIZE_K(64)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM";
+		};
+
 		lcdif: display-controller@40342000 {
 			compatible = "renesas,ra-glcdc";
 			reg = <0x40342000 0x1454>;
