@@ -35,6 +35,7 @@ struct bt_sco_server *sco_server;
 #define SCO_CHAN(_sco) ((_sco)->sco.chan);
 
 static sys_slist_t sco_conn_cbs = SYS_SLIST_STATIC_INIT(&sco_conn_cbs);
+static sys_slist_t sco_hci_cbs = SYS_SLIST_STATIC_INIT(&sco_hci_cbs);
 
 int bt_sco_server_register(struct bt_sco_server *server)
 {
@@ -108,6 +109,40 @@ static void notify_disconnected(struct bt_conn *conn)
 	STRUCT_SECTION_FOREACH(bt_sco_conn_cb, cb) {
 		if (cb->disconnected) {
 			cb->disconnected(conn, conn->err);
+		}
+	}
+}
+
+static void notify_setup_sco_cmd(struct bt_conn *conn, struct bt_hci_cp_setup_sync_conn *cp)
+{
+	struct bt_sco_hci_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sco_hci_cbs, callback, _node) {
+		if (callback->setup_sco_cmd != NULL) {
+			callback->setup_sco_cmd(conn, cp);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_sco_hci_cb, cb) {
+		if (cb->setup_sco_cmd != NULL) {
+			cb->setup_sco_cmd(conn, cp);
+		}
+	}
+}
+
+static void notify_accept_sco_req_cmd(struct bt_hci_cp_accept_sync_conn_req *cp)
+{
+	struct bt_sco_hci_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sco_hci_cbs, callback, _node) {
+		if (callback->accept_sco_req_cmd != NULL) {
+			callback->accept_sco_req_cmd(cp);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_sco_hci_cb, cb) {
+		if (cb->accept_sco_req_cmd != NULL) {
+			cb->accept_sco_req_cmd(cp);
 		}
 	}
 }
@@ -312,6 +347,8 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
 	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
+	notify_accept_sco_req_cmd(cp);
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, buf, NULL);
 	if (err) {
 		return err;
@@ -393,6 +430,8 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
 	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
+	notify_setup_sco_cmd(sco_conn->sco.acl, cp);
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf, NULL);
 	if (err < 0) {
 		return err;
@@ -466,6 +505,34 @@ int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb)
 	}
 
 	if (!sys_slist_find_and_remove(&sco_conn_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&sco_hci_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&sco_hci_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&sco_hci_cbs, &cb->_node)) {
 		return -ENOENT;
 	}
 

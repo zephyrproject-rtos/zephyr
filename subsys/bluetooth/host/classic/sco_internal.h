@@ -224,3 +224,44 @@ int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb);
  */
 #define BT_SCO_CONN_CB_DEFINE(_name)								\
 	static const STRUCT_SECTION_ITERABLE(bt_sco_conn_cb, _CONCAT(bt_sco_conn_cb_, _name))
+
+struct bt_sco_hci_cb {
+	void (*setup_sco_cmd)(struct bt_conn *acl_conn, struct bt_hci_cp_setup_sync_conn *cp);
+	void (*accept_sco_req_cmd)(struct bt_hci_cp_accept_sync_conn_req *cp);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/** @brief Register SCO HCI activity callbacks.
+ *
+ *  Register callbacks to monitor the HCI activity of SCO.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb);
+
+/**
+ * @brief Unregister SCO HCI activity callbacks.
+ *
+ * Unregister the HCI activity monitor of SCO callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb);
+
+/**
+ *  @brief Register a callback structure for SCO HCI activity.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_SCO_HCI_CB_DEFINE(_name) \
+	static const STRUCT_SECTION_ITERABLE(bt_sco_hci_cb, _CONCAT(bt_sco_hci_cb_, _name))
