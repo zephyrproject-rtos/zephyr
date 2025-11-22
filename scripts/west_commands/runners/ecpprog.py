@@ -11,9 +11,10 @@ from runners.core import BuildConfiguration, RunnerCaps, ZephyrBinaryRunner
 class EcpprogBinaryRunner(ZephyrBinaryRunner):
     """Runner front-end for programming the FPGA flash at some offset."""
 
-    def __init__(self, cfg, device=None):
+    def __init__(self, cfg, device=None, divider=None):
         super().__init__(cfg)
         self.device = device
+        self.divider = divider
 
     @classmethod
     def name(cls):
@@ -28,14 +29,17 @@ class EcpprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument(
             "--device", dest="device", help="Device identifier such as i:<vid>:<pid>"
         )
+        parser.add_argument(
+            "-k", "--divider", dest="divider", help="Divider for the 6 MHz clock", default="1"
+        )
 
     @classmethod
     def do_create(cls, cfg, args):
-        return EcpprogBinaryRunner(cfg, device=args.device)
+        return EcpprogBinaryRunner(cfg, device=args.device, divider=args.divider)
 
     def do_run(self, command, **kwargs):
         build_conf = BuildConfiguration(self.cfg.build_dir)
         load_offset = build_conf.get("CONFIG_FLASH_LOAD_OFFSET", 0)
-        command = ("ecpprog", "-o", hex(load_offset), self.cfg.bin_file)
+        command = ("ecpprog", "-o", hex(load_offset), "-k", self.divider, self.cfg.bin_file)
         self.logger.debug(" ".join(command))
         self.check_call(command)
