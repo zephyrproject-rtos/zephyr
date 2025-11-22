@@ -1,6 +1,6 @@
 board:
   name: mps4
-  full_name: MPS4
+  full_name: MPS4 Corstone FVP
   vendor: arm
   socs:
   - name: 'corstone315'

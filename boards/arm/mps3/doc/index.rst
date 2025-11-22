@@ -1,7 +1,4 @@
-.. _mps3_board:
-
-ARM MPS3
-###############
+.. zephyr:board:: mps3
 
 Overview
 ********
