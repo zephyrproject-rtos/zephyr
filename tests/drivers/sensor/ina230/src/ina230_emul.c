@@ -168,6 +168,10 @@ static const struct i2c_emul_api ina230_emul_api_i2c = {
 	{INA230_REG_MASK, 2, 0},                                                                   \
 	{INA230_REG_ALERT, 2, 0}
 
+#define CREATE_INA232_REGS                                                                         \
+	CREATE_INA230_REGS,                                                                        \
+	{INA232_REG_MANUFACTURER_ID, 2, 0x5449}
+
 #define CREATE_INA236_REGS                                                                         \
 	CREATE_INA230_REGS,                                                                        \
 	{INA236_REG_MANUFACTURER_ID, 2, 0x449},                                                    \
@@ -189,6 +193,10 @@ static const struct i2c_emul_api ina230_emul_api_i2c = {
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ina230
 DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_EMUL, 0)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina232
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_EMUL, 2)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ina236

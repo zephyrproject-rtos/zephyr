@@ -7,7 +7,7 @@
 config INA2XX
 	bool "INA2XX Current and Power Monitor"
 	default y
-	depends on DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA228_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
+	depends on DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA228_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA232_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
 	select I2C
 	help
 	  Enable driver for INA2XX Current and Power Monitor.
@@ -48,21 +48,29 @@ config INA226
 config INA230
 	bool "INA230"
 	default y
-	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED
+	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA232_ENABLED || DT_HAS_TI_INA236_ENABLED
 	select INA2XX_HAS_CHANNEL_BUS_VOLTAGE
 	select INA2XX_HAS_CHANNEL_CURRENT
 	select INA2XX_HAS_CHANNEL_POWER
 	help
-	  Enable driver for INA230/INA231/INA236.
+	  Enable driver for INA230/INA231/INA232/INA236.
 
 config INA230_TRIGGER
 	bool "INA230 trigger mode"
 	depends on INA230
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA230),alert-gpios) || $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA236),alert-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA230),alert-gpios) || $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA232),alert-gpios) || $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA236),alert-gpios)
 	help
 	  Set to enable trigger mode using gpio interrupt, where
 	  interrupts are configured to line ALERT PIN.
+
+config INA232
+	bool "INA232"
+	default y
+	depends on DT_HAS_TI_INA232_ENABLED
+	select INA230
+	help
+	  Enable driver for INA232.
 
 config INA236
 	bool "INA236"

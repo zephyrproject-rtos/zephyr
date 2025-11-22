@@ -27,6 +27,7 @@
 #define INA230_REG_CALIB           0x05
 #define INA230_REG_MASK            0x06
 #define INA230_REG_ALERT           0x07
+#define INA232_REG_MANUFACTURER_ID 0x3E
 #define INA236_REG_MANUFACTURER_ID 0x3E
 #define INA236_REG_DEVICE_ID       0x3F
 
