@@ -13,7 +13,8 @@ if(CONFIG_BUILD_ONLY_NO_BLOBS)
 else()
 
 if(CONFIG_DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED)
-  zephyr_blobs_verify(MODULE hal_espressif REQUIRED)
+message(WARNING "Verifying presence of Espressif ESP32 Wi-Fi binary blobs.")
+  zephyr_blobs_verify(MODULE hal_espressif REGEX ".*${CONFIG_SOC}.*" REQUIRED)
 endif()
 
 endif() # CONFIG_BUILD_ONLY_NO_BLOBS
