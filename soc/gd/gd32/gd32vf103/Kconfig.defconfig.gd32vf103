@@ -11,9 +11,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	# The CPU frequency is set to the maximum value of 108MHz by default.
 	default 27000000
 
-config RISCV_MCAUSE_EXCEPTION_MASK
-	default 0xFFF
-
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 

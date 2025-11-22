@@ -85,7 +85,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
-	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+	mcause &= RISCV_MCAUSE_EXC_MASK;
 	EXCEPTION_DUMP("");
 	EXCEPTION_DUMP(" mcause: %ld, %s", mcause, z_riscv_mcause_str(mcause));
 
