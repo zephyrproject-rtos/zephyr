@@ -36,6 +36,8 @@ tests:
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
       - frdm_mcxw23
       - mcxw23_evk
+      - siwx917_rb4338a
+      - siwx917_rb4342a
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -162,3 +164,11 @@ tests:
     platform_allow:
       - frdm_mcxw23
       - mcxw23_evk
+  drivers.watchdog.wdt_basic_test_suite.pm_enabled:
+    platform_allow:
+      - siwx917_rb4338a
+      - siwx917_rb4342a
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+    extra_args: DTC_OVERLAY_FILE="boards/siwx917_rb4338a.overlay"
