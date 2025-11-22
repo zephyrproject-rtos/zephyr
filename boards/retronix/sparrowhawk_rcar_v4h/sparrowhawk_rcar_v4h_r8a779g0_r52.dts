@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/renesas/rcar/gen4/r8a779g0.dtsi>
+#include "sparrowhawk_rcar_v4h_r8a779g0_r52-pinctrl.dtsi"
+
+/ {
+	model = "Retronix Sparrow Hawk on R-Car V4H";
+	compatible = "retronix,sparrowhawk-v4h-cr52";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &hscif1;
+		zephyr,shell-uart = &hscif1;
+	};
+};
+
+/* USB serial */
+&hscif0 {
+	pinctrl-0 = <&hscif0_data_tx_default &hscif0_data_rx_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&hscif1 {
+	pinctrl-0 = <&hscif1_data_tx_default &hscif1_data_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

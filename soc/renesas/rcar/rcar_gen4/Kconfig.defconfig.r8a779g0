@@ -1,0 +1,18 @@
+# Copyright (c) 2023 IoT.bzh
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_R8A779G0_R52
+
+config NUM_IRQS
+	default 991
+
+# Arm Generic Timer frequency (Hz)
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/timer,clock-frequency)
+
+# Clock Pulse Generator
+config CLOCK_CONTROL
+	default y
+
+endif # SOC_R8A779G0_R52
