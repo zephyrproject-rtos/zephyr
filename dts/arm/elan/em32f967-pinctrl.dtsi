@@ -1,0 +1,293 @@
+/*
+ * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/em32f967-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40030200 {
+			compatible = "elan,em32-pinctrl";
+			reg = <0x40030200 0x100>;
+			reg-names = "iomux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#pinctrl-cells = <1>;
+
+			/*
+			 * EM32F967 Pin Control Configurations
+			 * Based on EM32F967_Complete_Specification_v1.0.md
+			 *
+			 * Pin Functions per specification:
+			 * - PA0-PA6: 5V tolerant pins
+			 * - PA11-PA15: 3V pins (SWCLK/SWDIO, GPIO, Debug)
+			 * - PB0-PB15: 3V pins
+			 */
+
+			/* UART1 Pin Configurations - PA1/PA2 */
+			/*  MUX 010 = AF2, IP_Share[6] =1*/
+			/omit-if-no-ref/ uart1_rx_pa1: uart1_rx_pa1 {
+				pinmux = <EM32F967_PINMUX('A', 1, AF2)>;
+				bias-pull-up;
+			};
+
+			/omit-if-no-ref/ uart1_tx_pa2: uart1_tx_pa2 {
+				pinmux = <EM32F967_PINMUX('A', 2, AF2)>;
+				bias-pull-up;
+			};
+
+			/* UART2 Pin Configurations - PA4/PA5 */
+			/*  MUX 010 = AF2, IP_Share[7] =1*/
+			uart2_rx_pa4: uart2_rx_pa4 {
+				pinmux = <EM32F967_PINMUX('A', 4, AF2)>;
+				bias-pull-up;
+			};
+
+			uart2_tx_pa5: uart2_tx_pa5 {
+				pinmux = <EM32F967_PINMUX('A', 5, AF2)>;
+				bias-pull-up;
+			};
+
+			/* UART3 Pin Configurations - PB0/PB1 */
+			/* Default Disable, IOMUX 110 = AF6,  */
+			uart3_rx_pb0: uart3_rx_pb0 {
+				pinmux = <EM32F967_PINMUX('B', 0, AF6)>;
+				bias-pull-up;
+			};
+
+			uart3_tx_pb1: uart3_tx_pb1 {
+				pinmux = <EM32F967_PINMUX('B', 1, AF6)>;
+				bias-pull-up;
+			};
+
+			/* SPI1 (Elan SPI, Slave) Pin Configurations - PB0/PB1/PB2/PB3 (Default) */
+			/* SPI1 functions on PB0-PB3: MUX 010 = AF2, IP_Share[1:0]=00 */
+			spi1_cs_pb0: spi1_cs_pb0 {
+				pinmux = <EM32F967_PINMUX('B', 0, AF1)>;
+				drive-strength = <4>;
+			};
+
+			spi1_sck_pb1: spi1_sck_pb1 {
+				pinmux = <EM32F967_PINMUX('B', 1, AF1)>;
+				drive-strength = <4>;
+			};
+
+			spi1_miso_pb2: spi1_miso_pb2 {
+				pinmux = <EM32F967_PINMUX('B', 2, AF1)>;
+				bias-pull-up;
+			};
+
+			spi1_mosi_pb3: spi1_mosi_pb3 {
+				pinmux = <EM32F967_PINMUX('B', 3, AF1)>;
+				drive-strength = <4>;
+			};
+
+			/* SPI2 Pin Configurations - PB4/PB5/PB6/PB7 (Default) */
+			/* ARM SSP2 master functions on PB4-PB7: MUX 010 = AF2, IP_Share[3:2]=00 */
+			spi2_cs_pb4: spi2_cs_pb4 {
+				pinmux = <EM32F967_PINMUX('B', 4, AF2)>;  /* SSP_SS2 - MUX 010 */
+				drive-strength = <4>;
+			};
+
+			spi2_sck_pb5: spi2_sck_pb5 {
+				pinmux = <EM32F967_PINMUX('B', 5, AF2)>;  /* SSP_SCK2 - MUX 010 */
+				drive-strength = <4>;
+			};
+
+			spi2_miso_pb6: spi2_miso_pb6 {
+				pinmux = <EM32F967_PINMUX('B', 6, AF2)>;  /* SSP_SPIRX2 - MUX 010 */
+			};
+
+			spi2_mosi_pb7: spi2_mosi_pb7 {
+				pinmux = <EM32F967_PINMUX('B', 7, AF2)>;  /* SSP_SPITX2 - MUX 010 */
+				drive-strength = <4>;
+			};
+
+			/* I2C1 Pin Configurations - PB0/PB1 */
+			/* IOMUX 101 = AF5, IP_Share[8]=1 */
+			i2c1_scl_pb0: i2c1_scl_pb0 {
+				pinmux = <EM32F967_PINMUX('B', 0, AF5)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			i2c1_sda_pb1: i2c1_sda_pb1 {
+				pinmux = <EM32F967_PINMUX('B', 1, AF5)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C2 Pin Configurations - PA4/PA5 */
+			/* IOMUX 100 = AF4, IP_Share[9]=0 */
+			i2c2_scl_pb6: i2c2_scl_pb6 {
+				pinmux = <EM32F967_PINMUX('A', 4, AF4)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			i2c2_sda_pb7: i2c2_sda_pb7 {
+				pinmux = <EM32F967_PINMUX('A', 5, AF4)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* PWM Pin Configurations - PA0-PA6 */
+			/* IOMUX 001 = AF1, IP_Share[18]=1 */
+			pwm_pa0: pwm_pa0 {
+				pinmux = <EM32F967_PINMUX('B', 10, AF1)>;  /* PWMA */
+				drive-strength = <4>;
+			};
+
+			pwm_pa1: pwm_pa1 {
+				pinmux = <EM32F967_PINMUX('B', 11, AF1)>;  /* PWMD/PWMA1 */
+				drive-strength = <4>;
+			};
+
+			pwm_pa2: pwm_pa2 {
+				pinmux = <EM32F967_PINMUX('B', 12, AF1)>;  /* PWMB */
+				drive-strength = <4>;
+			};
+
+			pwm_pa3: pwm_pa3 {
+				pinmux = <EM32F967_PINMUX('B', 13, AF1)>;  /* PWME/PWMB1 */
+				drive-strength = <4>;
+			};
+
+			pwm_pa4: pwm_pa4 {
+				pinmux = <EM32F967_PINMUX('B', 14, AF1)>;  /* PWMC */
+				drive-strength = <4>;
+			};
+
+			pwm_pa5: pwm_pa5 {
+				pinmux = <EM32F967_PINMUX('B', 15, AF1)>;  /* PWMF/PWMC1 */
+				drive-strength = <4>;
+			};
+
+			/* GPIO Pin Configurations - Default GPIO mode */
+			gpio_pa0: gpio_pa0 {
+				pinmux = <EM32F967_PINMUX('A', 0, GPIO)>;
+			};
+
+			gpio_pa1: gpio_pa1 {
+				pinmux = <EM32F967_PINMUX('A', 1, GPIO)>;
+			};
+
+			gpio_pa2: gpio_pa2 {
+				pinmux = <EM32F967_PINMUX('A', 2, GPIO)>;
+			};
+
+			gpio_pa3: gpio_pa3 {
+				pinmux = <EM32F967_PINMUX('A', 3, GPIO)>;
+			};
+
+			gpio_pa4: gpio_pa4 {
+				pinmux = <EM32F967_PINMUX('A', 4, GPIO)>;
+			};
+
+			gpio_pa5: gpio_pa5 {
+				pinmux = <EM32F967_PINMUX('A', 5, GPIO)>;
+			};
+
+			gpio_pa6: gpio_pa6 {
+				pinmux = <EM32F967_PINMUX('A', 6, GPIO)>;
+			};
+
+			gpio_pa11: gpio_pa11 {
+				pinmux = <EM32F967_PINMUX('A', 11, GPIO)>;
+			};
+
+			gpio_pa12: gpio_pa12 {
+				pinmux = <EM32F967_PINMUX('A', 12, GPIO)>;
+			};
+
+			gpio_pa13: gpio_pa13 {
+				pinmux = <EM32F967_PINMUX('A', 13, GPIO)>;
+			};
+
+			gpio_pa14: gpio_pa14 {
+				pinmux = <EM32F967_PINMUX('A', 14, GPIO)>;
+			};
+
+			gpio_pa15: gpio_pa15 {
+				pinmux = <EM32F967_PINMUX('A', 15, GPIO)>;
+			};
+
+			gpio_pb0: gpio_pb0 {
+				pinmux = <EM32F967_PINMUX('B', 0, GPIO)>;
+			};
+
+			gpio_pb1: gpio_pb1 {
+				pinmux = <EM32F967_PINMUX('B', 1, GPIO)>;
+			};
+
+			gpio_pb2: gpio_pb2 {
+				pinmux = <EM32F967_PINMUX('B', 2, GPIO)>;
+			};
+
+			gpio_pb3: gpio_pb3 {
+				pinmux = <EM32F967_PINMUX('B', 3, GPIO)>;
+			};
+
+			gpio_pb4: gpio_pb4 {
+				pinmux = <EM32F967_PINMUX('B', 4, GPIO)>;
+			};
+
+			gpio_pb5: gpio_pb5 {
+				pinmux = <EM32F967_PINMUX('B', 5, GPIO)>;
+			};
+
+			gpio_pb6: gpio_pb6 {
+				pinmux = <EM32F967_PINMUX('B', 6, GPIO)>;
+			};
+
+			gpio_pb7: gpio_pb7 {
+				pinmux = <EM32F967_PINMUX('B', 7, GPIO)>;
+			};
+
+			gpio_pb8: gpio_pb8 {
+				pinmux = <EM32F967_PINMUX('B', 8, GPIO)>;
+			};
+
+			gpio_pb9: gpio_pb9 {
+				pinmux = <EM32F967_PINMUX('B', 9, GPIO)>;
+			};
+
+			/* UART1 Alternate Pin Configurations - PB8/PB9 */
+			/*  MUX 010 = AF2, IP_Share[6] = 0 (alternate route) */
+			/omit-if-no-ref/ uart1_rx_pb8: uart1_rx_pb8 {
+				pinmux = <EM32F967_PINMUX('B', 8, AF2)>;
+				bias-pull-up;
+			};
+
+			/omit-if-no-ref/ uart1_tx_pb9: uart1_tx_pb9 {
+				pinmux = <EM32F967_PINMUX('B', 9, AF2)>;
+				bias-pull-up;
+			};
+
+			gpio_pb10: gpio_pb10 {
+				pinmux = <EM32F967_PINMUX('B', 10, GPIO)>;
+			};
+
+			gpio_pb11: gpio_pb11 {
+				pinmux = <EM32F967_PINMUX('B', 11, GPIO)>;
+			};
+
+			gpio_pb12: gpio_pb12 {
+				pinmux = <EM32F967_PINMUX('B', 12, GPIO)>;
+			};
+
+			gpio_pb13: gpio_pb13 {
+				pinmux = <EM32F967_PINMUX('B', 13, GPIO)>;
+			};
+
+			gpio_pb14: gpio_pb14 {
+				pinmux = <EM32F967_PINMUX('B', 14, GPIO)>;
+			};
+
+			gpio_pb15: gpio_pb15 {
+				pinmux = <EM32F967_PINMUX('B', 15, GPIO)>;
+			};
+		};
+	};
+};

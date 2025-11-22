@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv7-m.dtsi>
+#include <elan/em32fxxx.dtsi>
+#include <elan/em32f967-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "ELAN EM32F967 Development Board";
+	compatible = "elan,em32f967_dv";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &em32_flash_controller;
+		zephyr,flash = &flash0;
+		zephyr,spi2 = &spi2;
+		zephyr,udc0 = &usbd;
+		zephyr,entropy = &trng0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "User LED 0 (PB14)";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+			label = "User LED 1 (PB15)";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button 0 (PA6)";
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button 1 (PB11)";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		spi2 = &spi2;
+		watchdog0 = &wdt0;
+	};
+};
+
+&clk_ahb {
+	status = "okay";
+};
+
+&clk_apb {
+	clocks = <&clk_ahb>;
+	status = "okay";
+};
+
+&sram0 {
+	reg = <0x20000000 0x28000>;
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pb5 &spi2_miso_pb6 &spi2_mosi_pb7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_pa1 &uart1_tx_pa2>;
+	pinctrl-names = "default";
+};
+
+&em32_flash_controller {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&uid {
+	status = "okay";
+};
+
+&bbram0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&crypto0 {
+	status = "okay";
+};

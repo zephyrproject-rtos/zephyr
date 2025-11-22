@@ -1,0 +1,49 @@
+# Copyright (c) 2025, Elan Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: EM32 GPIO Controller
+
+compatible: "elan,em32-gpio"
+
+include:
+  - name: gpio-controller.yaml
+    property-blocklist:
+      - ngpios
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    type: phandle-array
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    default: 16
+    description: |
+        This property indicates the number of in-use slots of available slots
+        for GPIOs. The EM32 GPIO controller typically has all 16 possible port
+        IO with few exceptions.
+
+  port-id:
+    type: int
+    required: true
+    description: |
+        Port identifier (0 for PORTA, 1 for PORTB).
+        Used for IOMUX register selection and UART1 PA1/PA2 coordination.
+
+  port-name:
+    type: string
+    required: false
+    description: |
+        Human-readable port name for debugging and logging.
+        Should be "PORTA" or "PORTB".
+
+gpio-cells:
+  - pin
+  - flags
