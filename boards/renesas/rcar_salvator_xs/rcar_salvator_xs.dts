@@ -45,13 +45,14 @@
 		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
 	pinctrl-names = "default", "uhs";
 
+	bus-width = <8>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	non-removable;
+
 	disk {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
 		status = "disabled";
 	};
-	bus-width = <8>;
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
-	non-removable;
 };
