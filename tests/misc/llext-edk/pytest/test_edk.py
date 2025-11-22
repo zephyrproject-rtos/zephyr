@@ -115,6 +115,7 @@ def test_edk(unlaunched_dut: DeviceAdapter):
                 assert "Calling extension from user" in lines
                 assert "foo(42) is 1764" in lines
                 assert "foo(43) is 1849" in lines
+                assert "GLOBAL_OPT is set" in lines
 
             finally:
                 unlaunched_dut.close()

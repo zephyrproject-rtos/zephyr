@@ -85,13 +85,13 @@ mapping:
       llext-edk:
         type: map
         mapping:
-          cflags:
+          file:
+            type: str
+          remove-cflags:
             type: seq
             sequence:
               - type: str
-          file:
-            type: str
-          include-dirs:
+          append-cflags:
             type: seq
             sequence:
               - type: str
