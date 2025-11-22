@@ -132,7 +132,8 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE, sizeof(struct udc_buf_info),
+		    NULL);
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data, const uint8_t ep,
 					 const size_t bytes_pending)
