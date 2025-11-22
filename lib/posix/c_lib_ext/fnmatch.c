@@ -90,9 +90,7 @@ static const char *rangematch(const char *pattern, int test, int flags)
 		}
 
 		if (c == '\\' && !(flags & FNM_NOESCAPE)) {
-			if (*pattern != ']' && *pattern != EOS) {
-				c = FOLDCASE(*pattern++, flags);
-			}
+			c = FOLDCASE(*pattern++, flags);
 		}
 
 		if (c == EOS) {
