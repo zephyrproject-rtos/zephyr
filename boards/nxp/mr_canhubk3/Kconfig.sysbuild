@@ -1,0 +1,20 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+if BOARD_MR_CANHUBK3_S32K344_MCUBOOT
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+# Use direct-XIP mode (dual-slot) on S32K3
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_DIRECT_XIP
+endchoice
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_RSA
+endchoice
+
+endif # BOARD_MR_CANHUBK3_S32K344_MCUBOOT

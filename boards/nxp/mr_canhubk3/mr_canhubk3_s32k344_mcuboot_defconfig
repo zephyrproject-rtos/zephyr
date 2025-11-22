@@ -3,9 +3,6 @@
 
 CONFIG_BUILD_OUTPUT_HEX=y
 
-# Run from internal Flash
-CONFIG_XIP=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
