@@ -1,11 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Copyright (c) 2024, The MathWorks, Inc.
-
-include(boards)
+# Copyright (c) 2024-2025, The MathWorks, Inc.
 include(git)
-include(extensions)
-include(west)
 
 # find Polyspace, stop if missing
 find_program(POLYSPACE_CONFIGURE_EXE NAMES polyspace-configure)
@@ -30,26 +26,25 @@ message(TRACE "POLYSPACE_OPTIONS is ${POLYSPACE_OPTIONS}")
 
 
 # Get path and name of user application
-zephyr_get(APPLICATION_SOURCE_DIR)
-cmake_path(GET APPLICATION_SOURCE_DIR FILENAME APPLICATION_NAME)
-message(TRACE "APPLICATION_SOURCE_DIR is ${APPLICATION_SOURCE_DIR}")
-message(TRACE "APPLICATION_NAME is ${APPLICATION_NAME}")
+cmake_path(GET APPLICATION_SOURCE_DIR FILENAME APP_NAME)
+message(TRACE "APP_NAME is ${APP_NAME}")
 
 
 # process options
 if(POLYSPACE_ONLY_APP)
   set(POLYSPACE_CONFIGURE_OPTIONS ${POLYSPACE_CONFIGURE_OPTIONS} -include-sources ${APPLICATION_SOURCE_DIR}/**)
+  set(POLYSPACE_OPTIONS_ZEPHYR_ONLYAPP -options-file ${CMAKE_CURRENT_LIST_DIR}/zephyr_onlyapp.psopts)
   message(WARNING "SCA only analyzes application code")
 endif()
 if(POLYSPACE_MODE STREQUAL "prove")
-  message(NOTICE "POLYSPACE in proof mode")
+  message(TRACE "POLYSPACE in proof mode")
   find_program(POLYSPACE_EXE NAMES polyspace-code-prover-server polyspace-code-prover)
 else()
-  message(NOTICE "POLYSPACE in bugfinding mode")
+  message(TRACE "POLYSPACE in bugfinding mode")
   find_program(POLYSPACE_EXE NAMES polyspace-bug-finder-server polyspace-bug-finder)
 endif()
 if(NOT POLYSPACE_PROG_NAME)
-  set(POLYSPACE_PROG_NAME "zephyr-${BOARD}-${APPLICATION_NAME}")
+  set(POLYSPACE_PROG_NAME "zephyr-${BOARD}-${APP_NAME}")
 endif()
 message(TRACE "POLYSPACE_PROG_NAME is ${POLYSPACE_PROG_NAME}")
 if(POLYSPACE_OPTIONS_FILE)
@@ -67,7 +62,7 @@ endif()
 message(TRACE "POLYSPACE_PROG_VERSION is ${POLYSPACE_PROG_VERSION}")
 
 # tell Polyspace about Zephyr specials
-set(POLYSPACE_OPTIONS_ZEPHYR -options-file ${CMAKE_CURRENT_LIST_DIR}/zephyr.psopts)
+set(POLYSPACE_OPTIONS_ZEPHYR -options-file ${CMAKE_CURRENT_LIST_DIR}/zephyr.psopts -include ${CMAKE_CURRENT_LIST_DIR}/_polyspace.inc)
 
 # Polyspace requires the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -76,7 +71,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(POLYSPACE_RESULTS_DIR ${CMAKE_BINARY_DIR}/sca/polyspace)
 set(POLYSPACE_RESULTS_FILE ${POLYSPACE_RESULTS_DIR}/results.csv)
 file(MAKE_DIRECTORY ${POLYSPACE_RESULTS_DIR})
-message(TRACE "POLYSPACE_RESULTS_DIR is ${POLYSPACE_RESULTS_DIR}")
+message(NOTICE "POLYSPACE_RESULTS_DIR is ${POLYSPACE_RESULTS_DIR}")
 set(POLYSPACE_OPTIONS_FILE_BASE ${POLYSPACE_RESULTS_DIR}/polyspace.psopts)
 
 
@@ -87,11 +82,14 @@ set(POLYSPACE_OPTIONS_FILE_BASE ${POLYSPACE_RESULTS_DIR}/polyspace.psopts)
 add_custom_target(polyspace_configure ALL
   COMMAND ${POLYSPACE_CONFIGURE_EXE}
     -allow-overwrite
+    -allow-build-error
     -silent
     -prog ${POLYSPACE_PROG_NAME}
     -compilation-database ${CMAKE_BINARY_DIR}/compile_commands.json
     -output-options-file ${POLYSPACE_OPTIONS_FILE_BASE}
     ${POLYSPACE_CONFIGURE_OPTIONS}
+    || ${CMAKE_COMMAND} -E true # some targets don't have C/C++ sources, in which case this fails but it's fine
+  COMMAND touch ${POLYSPACE_OPTIONS_FILE_BASE}
   VERBATIM
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
   BYPRODUCTS ${POLYSPACE_OPTIONS_FILE_BASE}
@@ -105,10 +103,12 @@ add_custom_target(polyspace-analyze ALL
     -options-file ${POLYSPACE_OPTIONS_FILE_BASE}
     ${POLYSPACE_PROG_VERSION}
     ${POLYSPACE_OPTIONS_ZEPHYR}
+    ${POLYSPACE_OPTIONS_ZEPHYR_ONLYAPP}
     ${POLYSPACE_OPTIONS_FILE}
     ${POLYSPACE_OPTIONS}
-      || ${CMAKE_COMMAND} -E true # allow to continue processing results
+    || ${CMAKE_COMMAND} -E true # when there are no sources...no easy way to skip this target with cmake syntax
   DEPENDS ${POLYSPACE_OPTIONS_FILE_BASE}
+  BYPRODUCTS ${POLYSPACE_RESULTS_DIR}
   USES_TERMINAL
   COMMAND_EXPAND_LISTS
 )
@@ -118,8 +118,10 @@ add_custom_target(polyspace-results ALL
     -results-dir ${POLYSPACE_RESULTS_DIR}
     -output-name ${POLYSPACE_RESULTS_FILE}
     -format csv
-      || ${CMAKE_COMMAND} -E true # allow to continue processing results
+      || ${CMAKE_COMMAND} -E true # this just exports the results, skip if no results to continue with next target
   VERBATIM
+  DEPENDS ${POLYSPACE_RESULTS_DIR}
+  BYPRODUCTS ${POLYSPACE_RESULTS_FILE}
   USES_TERMINAL
   COMMAND_EXPAND_LISTS
 )
@@ -133,10 +135,11 @@ add_dependencies(polyspace-results polyspace-analyze)
 
 add_custom_command(TARGET polyspace-results POST_BUILD
   COMMAND ${CMAKE_CURRENT_LIST_DIR}/polyspace-print-console.py
-  ${POLYSPACE_RESULTS_FILE}
+    ${POLYSPACE_RESULTS_FILE}
   COMMAND
     ${CMAKE_COMMAND} -E cmake_echo_color --cyan --bold
     "SCA results are here: ${POLYSPACE_RESULTS_DIR}"
   VERBATIM
+  DEPENDS ${POLYSPACE_RESULTS_FILE}
   USES_TERMINAL
 )
