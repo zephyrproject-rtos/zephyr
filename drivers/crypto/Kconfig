@@ -22,17 +22,21 @@ module-str = CRYPTO
 source "subsys/logging/Kconfig.template.log_config"
 
 config CRYPTO_MBEDTLS_SHIM
-	bool "MbedTLS shim driver [EXPERIMENTAL]"
-	select MBEDTLS
+	bool "Mbed TLS shim driver [EXPERIMENTAL]"
+	select PSA_CRYPTO
 	select MBEDTLS_ENABLE_HEAP
-	select MBEDTLS_SHA224
-	select MBEDTLS_SHA256
-	select MBEDTLS_SHA384
-	select MBEDTLS_SHA512
-	select MBEDTLS_CIPHER_AES_ENABLED
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_SHA_384
+	imply PSA_WANT_ALG_SHA_512
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_ALG_ECB_NO_PADDING
+	imply PSA_WANT_ALG_CBC_NO_PADDING
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_GCM
 	select EXPERIMENTAL
 	help
-	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
+	  Enable Mbed TLS shim layer compliant with crypto APIs. You will need
 	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
 
 config CRYPTO_MBEDTLS_SHIM_DRV_NAME

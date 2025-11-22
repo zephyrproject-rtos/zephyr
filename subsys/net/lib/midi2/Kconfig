@@ -24,8 +24,6 @@ config NETMIDI2_HOST_MAX_CLIENTS
 
 config NETMIDI2_HOST_AUTH
 	bool "Support for authentication (shared key or user/password)"
-	select MBEDTLS
-	select MBEDTLS_CIPHER_CCM_ENABLED
 	select CRYPTO
 	select CRYPTO_MBEDTLS_SHIM
 
