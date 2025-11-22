@@ -18,7 +18,7 @@ import shutil
 import sys
 
 import packaging.version
-from west import log
+from west.commands import Verbosity
 from west.util import quote_sh_list
 
 DEFAULT_CACHE = 'CMakeCache.txt'
@@ -27,7 +27,7 @@ DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
 
-def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
+def run_cmake(west_command, args, cwd=None, capture_output=False, dry_run=False, env=None):
     '''Run cmake to (re)generate a build system, a script, etc.
 
     :param args: arguments to pass to CMake
@@ -43,8 +43,8 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     of displaying it on stdout/stderr..'''
     cmake = shutil.which('cmake')
     if cmake is None and not dry_run:
-        log.die('CMake is not installed or cannot be found; cannot build.')
-    _ensure_min_version(cmake, dry_run)
+        west_command.die('CMake is not installed or cannot be found; cannot build.')
+    _ensure_min_version(west_command, cmake, dry_run)
 
     cmd = [cmake] + args
 
@@ -58,10 +58,10 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
 
     if dry_run:
         in_cwd = ' (in {})'.format(cwd) if cwd else ''
-        log.inf('Dry run{}:'.format(in_cwd), quote_sh_list(cmd))
+        west_command.inf('Dry run{}:'.format(in_cwd), quote_sh_list(cmd))
         return None
 
-    log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
+    west_command.dbg('Running CMake:', quote_sh_list(cmd), level=Verbosity.DBG)
     p = subprocess.Popen(cmd, env=env, **kwargs)
     out, _ = p.communicate()
     if p.returncode == 0:
@@ -74,7 +74,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
-def run_build(build_directory, **kwargs):
+def run_build(west_command, build_directory, **kwargs):
     '''Run cmake in build tool mode.
 
     :param build_directory: runs "cmake --build build_directory"
@@ -106,7 +106,10 @@ def run_build(build_directory, **kwargs):
     except ValueError:
         pass # Ignore, no presence of '--' so nothing to do.
 
-    return run_cmake(['--build', build_directory] + extra_args, env=cmake_env, **kwargs)
+    return run_cmake(west_command,
+                     ['--build', build_directory] + extra_args,
+                     env=cmake_env,
+                     **kwargs)
 
 
 def make_c_identifier(string):
@@ -290,20 +293,20 @@ class CMakeCache:
     def __iter__(self):
         return iter(self._entries.values())
 
-def _ensure_min_version(cmake, dry_run):
+def _ensure_min_version(west_command, cmake, dry_run):
     cmd = [cmake, '--version']
     if dry_run:
-        log.inf('Dry run:', quote_sh_list(cmd))
+        west_command.inf('Dry run:', quote_sh_list(cmd))
         return
 
     try:
         version_out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as cpe:
-        log.die('cannot get cmake version:', str(cpe))
+        west_command.die('cannot get cmake version:', str(cpe))
     decoded = version_out.decode('utf-8')
     lines = decoded.splitlines()
     if not lines:
-        log.die('can\'t get cmake version: ' +
+        west_command.die('can\'t get cmake version: ' +
                 'unexpected "cmake --version" output:\n{}\n'.
                 format(decoded) +
                 'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
@@ -314,12 +317,12 @@ def _ensure_min_version(cmake, dry_run):
         # which Kitware uses for prerelease versions.
         version = version.split('-', 1)[0]
     if packaging.version.parse(version) < _MIN_CMAKE_VERSION:
-        log.die('cmake version', version,
+        west_command.die('cmake version', version,
                 'is less than minimum version {};'.
                 format(_MIN_CMAKE_VERSION_STR),
                 'please update your CMake (https://cmake.org/download/).')
     else:
-        log.dbg('cmake version', version, 'is OK; minimum version is',
+        west_command.dbg('cmake version', version, 'is OK; minimum version is',
                 _MIN_CMAKE_VERSION_STR)
 
 _MIN_CMAKE_VERSION_STR = '3.13.1'

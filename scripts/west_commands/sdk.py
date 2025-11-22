@@ -511,7 +511,7 @@ class Sdk(WestCommand):
                 str(Path(__file__).parent / "sdk" / "listsdk.cmake"),
             ]
 
-            output = zcmake.run_cmake(cmds, capture_output=True)
+            output = zcmake.run_cmake(self, cmds, capture_output=True)
             if output:
                 # remove '-- Zephyr-sdk,' leader
                 sdk_lines = [l[15:] for l in output if l.startswith("-- Zephyr-sdk,")]

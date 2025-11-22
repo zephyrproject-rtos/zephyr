@@ -104,7 +104,7 @@ def build_instance(monkeypatch):
     # mock os.makedirs to avoid filesystem operations during test
     monkeypatch.setattr("os.makedirs", lambda *a, **kw: None)
     # mock is_zephyr_build to always return False
-    monkeypatch.setattr("build_helpers.is_zephyr_build", lambda path: False)
+    monkeypatch.setattr("build_helpers.is_zephyr_build", lambda cmd, path: False)
     # mock os.environ to make tests independent from environment variables
     monkeypatch.setattr("os.environ", {})
 
@@ -151,7 +151,7 @@ def test_dir_fmt_preferred_over_others(monkeypatch, build_instance):
     # mock the config and is_zephyr_build
     mock_dir_fmt_config(monkeypatch, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
-        lambda path: path in [dir_fmt, cwd, DEFAULT_BUILD_DIR])
+        lambda cmd, path: path in [dir_fmt, cwd, DEFAULT_BUILD_DIR])
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd / dir_fmt
@@ -164,7 +164,7 @@ def test_non_existent_dir_fmt_preferred_over_others(monkeypatch, build_instance)
     # mock the config and is_zephyr_build
     mock_dir_fmt_config(monkeypatch, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
-        lambda path: path in [cwd, DEFAULT_BUILD_DIR])
+        lambda cmd, path: path in [cwd, DEFAULT_BUILD_DIR])
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd / dir_fmt
@@ -176,7 +176,7 @@ def test_cwd_preferred_over_default_build_dir(monkeypatch, build_instance):
 
     # mock is_zephyr_build
     mock_is_zephyr_build(monkeypatch,
-        lambda path: path in [str(cwd), DEFAULT_BUILD_DIR])
+        lambda cmd, path: path in [str(cwd), DEFAULT_BUILD_DIR])
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd
@@ -189,7 +189,7 @@ def test_cwd_preferred_over_non_resolvable_dir_fmt(monkeypatch, build_instance, 
     # mock the config and is_zephyr_build
     mock_dir_fmt_config(monkeypatch, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
-        lambda path: path in [str(cwd)])
+        lambda cmd, path: path in [str(cwd)])
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd
@@ -203,7 +203,7 @@ def test_cwd_preferred_over_non_existent_dir_fmt(monkeypatch, build_instance, te
     # mock the config and is_zephyr_build
     mock_dir_fmt_config(monkeypatch, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
-        lambda path: path in [str(cwd)])
+        lambda cmd, path: path in [str(cwd)])
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd
