@@ -5,6 +5,7 @@
 import argparse
 import os
 import re
+import shutil
 import sys
 import textwrap
 from pathlib import Path
@@ -100,6 +101,18 @@ class Blobs(WestCommand):
             action='store_true',
             help='''auto accept license if the fetching needs click-through''',
         )
+        group.add_argument(
+            '--cache-dirs',
+            help='''Semicolon-separated list of directories to search for cached
+                                    blobs before downloading. Cache files may use the original
+                                    filename or be suffixed with `.<sha256>`.''',
+        )
+        group.add_argument(
+            '--auto-cache',
+            help='''Path to a directory that is automatically populated when a blob
+                                    is downloaded. Cached blobs are stored using the original
+                                    filename suffixed with `.<sha256>`.''',
+        )
 
         return parser
 
@@ -133,17 +146,76 @@ class Blobs(WestCommand):
     def ensure_folder(self, path):
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    def fetch_blob(self, url, path):
+    def get_cached_blob(self, blob, cache_dirs) -> Path | None:
+        """
+        Look for a cached blob in the provided cache directories.
+        A blob may be stored using either its original name or suffixed with
+        its SHA256 hash (i.e., "<name>.<sha256>").
+        Return the first matching path, or None if not found.
+        """
+        blob_name = Path(blob["path"]).name
+        sha256 = blob["sha256"]
+        candidate_names = [
+            f"{blob_name}.{sha256}",  # suffixed version
+            blob_name,  # plain version
+        ]
+
+        for cache_dir in cache_dirs:
+            if not cache_dir.exists():
+                continue
+            for name in candidate_names:
+                candidate_path = cache_dir / name
+                if (
+                    zephyr_module.get_blob_status(candidate_path, sha256)
+                    == zephyr_module.BLOB_PRESENT
+                ):
+                    return candidate_path
+        return None
+
+    def download_blob(self, url, path):
         scheme = urlparse(url).scheme
-        self.dbg(f'Fetching {path} with {scheme}')
+        self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
         import fetchers
 
         fetcher = fetchers.get_fetcher_cls(scheme)
-
         self.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
         self.ensure_folder(path)
         inst.fetch(url, path)
+
+    def fetch_blob(self, args, blob):
+        url = blob['url']
+        path = Path(blob['path'])
+
+        # collect existing cache dirs specified as args, otherwise from west config
+        cache_dirs = args.cache_dirs
+        auto_cache_dir = args.auto_cache
+        if self.has_config:
+            if not cache_dirs:
+                cache_dirs = self.config.get('blobs.cache-dirs', default='')
+            if not auto_cache_dir:
+                auto_cache_dir = self.config.get('blobs.auto-cache')
+        cache_dirs = [Path(p) for p in (cache_dirs or '').split(';') if p]
+        auto_cache_dir = Path(auto_cache_dir)
+
+        # search for cached blob in the cache-dirs
+        cached_blob = self.get_cached_blob(blob, cache_dirs)
+
+        # If not cached: Search in the auto-cache and download blob to auto-cache
+        if not cached_blob and auto_cache_dir:
+            cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
+            if not cached_blob:
+                name = path.name
+                sha256 = blob['sha256']
+                self.download_blob(url, auto_cache_dir / f'{name}.{sha256}')
+                cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
+
+        # copy the cached blob or download it
+        if cached_blob:
+            self.dbg(f'Copy cached blob: {cached_blob}')
+            shutil.copy(cached_blob, path)
+        else:
+            self.download_blob(url, path)
 
     # Compare the checksum of a file we've just downloaded
     # to the digest in blob metadata, warn user if they differ.
@@ -220,7 +292,7 @@ class Blobs(WestCommand):
                     self.wrn('Skip fetching this blob.')
                     continue
 
-            self.fetch_blob(blob['url'], blob['abspath'])
+            self.fetch_blob(args, blob)
             if not self.verify_blob(blob):
                 bad_checksum_count += 1
 
