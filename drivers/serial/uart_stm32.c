@@ -2,7 +2,6 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 Linaro Limited.
  * Copyright (c) 2024 STMicroelectronics
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,6 +67,21 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_DRIVER_ENABLE 0
 #endif
 
+/* On platforms without HW DE support, SW DE is the only option.
+ * On platforms with HW DE support, SW DE is still available as fallback.
+ * To minimize SW footprint, only compile SW DE on platforms that need it.
+ */
+#if !HAS_DRIVER_ENABLE
+#define UART_STM32_NEEDS_SW_DE 1
+#else
+#define UART_STM32_NEEDS_SW_DE 0
+#endif
+
+
+
+/* Helper macro to check if SW DE might be needed */
+#define UART_STM32_SW_DE_NEEDED(config) ((config)->de_enable && (config)->de_pin.port != NULL)
+
 /* Helper for checking if we can use hardware receive timeouts
  * instead of the work queue on a given UART
  */
@@ -112,6 +126,23 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 
 #ifdef CONFIG_UART_ASYNC_API
 #define STM32_ASYNC_STATUS_TIMEOUT (DMA_STATUS_BLOCK + 1)
+#endif
+
+/* The RS485 DE management is now handled based on de_enable and de_pin fields:
+ * - If de_enable is false, no DE control is performed.
+ * - If de_enable is true and de_pin is not specified (port is NULL), the hardware
+ *   method is assumed (HW control via driver enable functions).
+ * - If de_enable is true and de_pin is defined, a software (SW) method is used.
+ */
+
+#if UART_STM32_NEEDS_SW_DE || HAS_DRIVER_ENABLE
+static void rs485_de_time_expire_callback(struct k_timer *timer)
+{
+	const struct uart_stm32_config *config = k_timer_user_data_get(timer);
+
+	/* SW method: deassert DE signal */
+	gpio_pin_set(config->de_pin.port, config->de_pin.pin, !config->de_invert);
+}
 #endif
 
 #ifdef CONFIG_PM
@@ -642,14 +673,13 @@ static int uart_stm32_configure(const struct device *dev,
 	}
 
 	/* Driver supports only RTS/CTS and RS485 flow control */
-	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
-		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
-			IS_UART_HWFLOW_INSTANCE(usart))
+	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE ||
+	      (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS && IS_UART_HWFLOW_INSTANCE(usart))
 #if HAS_DRIVER_ENABLE
-		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
-			IS_UART_DRIVER_ENABLE_INSTANCE(usart))
+	      ||
+	      (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 && IS_UART_DRIVER_ENABLE_INSTANCE(usart))
 #endif
-		)) {
+		      )) {
 		return -ENOTSUP;
 	}
 
@@ -1026,6 +1056,14 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	unsigned int key;
 #endif
 
+	/* RS485 DE management: SW method when de_pin is specified */
+#if UART_STM32_NEEDS_SW_DE || HAS_DRIVER_ENABLE
+	if (config->de_enable && config->de_pin.port != NULL) {
+		/* SW method: set DE active */
+		gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+	}
+#endif
+
 #ifdef CONFIG_PM
 	key = irq_lock();
 	data->tx_poll_stream_on = false;
@@ -1042,8 +1080,24 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
-#ifdef CONFIG_PM
 	struct uart_stm32_data *data = dev->data;
+
+	/* RS485 DE management: SW deassertion when de_pin is specified */
+#if UART_STM32_NEEDS_SW_DE || HAS_DRIVER_ENABLE
+	if (config->de_enable && config->de_pin.port != NULL) {
+		/* SW method: handle DE deassertion */
+		if (config->de_deassert_time_us) {
+			k_timer_start(&data->rs485_timer,
+				      K_USEC(config->de_deassert_time_us),
+				      K_NO_WAIT);
+		} else {
+			gpio_pin_set(config->de_pin.port, config->de_pin.pin,
+				     !config->de_invert);
+		}
+	}
+#endif
+
+#ifdef CONFIG_PM
 	unsigned int key;
 
 	key = irq_lock();
@@ -1054,9 +1108,6 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
 	uart_stm32_pm_policy_state_lock_put(dev);
-#endif
-
-#ifdef CONFIG_PM
 	irq_unlock(key);
 #endif
 }
@@ -2149,7 +2200,7 @@ static int uart_stm32_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *b
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static DEVICE_API(uart, uart_stm32_driver_api) = {
+static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
 #ifdef CONFIG_UART_WIDE_DATA
@@ -2284,7 +2335,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 			return -EINVAL;
 		}
 
-		uart_stm32_set_driver_enable(dev, true);
+		/* If hardware DE control is desired, de_pin is not set.
+		 * Otherwise, SW method will be used.
+		 */
+		if (config->de_pin.port == NULL) {
+			uart_stm32_set_driver_enable(dev, true);
+		}
 		LL_USART_SetDEAssertionTime(usart, config->de_assert_time);
 		LL_USART_SetDEDeassertionTime(usart, config->de_deassert_time);
 
@@ -2360,6 +2416,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 static int uart_stm32_init(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
 	int err;
 
 	err = uart_stm32_clocks_enable(dev);
@@ -2378,9 +2435,18 @@ static int uart_stm32_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_PM) || \
-	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
-	defined(CONFIG_UART_ASYNC_API)
+	/* Init SW DE timer and pin for RS485 mode when needed */
+#if UART_STM32_NEEDS_SW_DE || HAS_DRIVER_ENABLE
+	if (config->de_enable && config->de_pin.port != NULL) {
+		/* SW method: configure DE pin and initialize timer */
+		gpio_pin_set(config->de_pin.port, config->de_pin.pin,
+					config->de_invert);
+		k_timer_init(&data->rs485_timer, rs485_de_time_expire_callback, NULL);
+		k_timer_user_data_set(&data->rs485_timer, (void *)config);
+	}
+#endif
+
+#if defined(CONFIG_PM) || defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	config->irq_config_func(dev);
 #endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
@@ -2674,11 +2740,12 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.tx_rx_swap = DT_INST_PROP(index, tx_rx_swap),			\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
-	.de_enable = DT_INST_PROP(index, de_enable),			\
-	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
-	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
-	.de_invert = DT_INST_PROP(index, de_invert),			\
-	.fifo_enable = DT_INST_PROP(index, fifo_enable),		\
+	.de_enable = DT_INST_PROP(index, rs485_enabled),                                   \
+	.de_assert_time_us = DT_INST_PROP(index, rs485_assertion_time_de_us),              \
+	.de_deassert_time_us = DT_INST_PROP(index, rs485_deassertion_time_de_us),          \
+	.de_invert = DT_INST_PROP(index, rs485_de_active_low),                             \
+	.de_pin = GPIO_DT_SPEC_INST_GET_OR(index, rs485_de_gpios, {0}),                    \
+	.fifo_enable = DT_INST_PROP(index, fifo_enable),                                   \
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\
