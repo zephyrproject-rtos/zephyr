@@ -18,7 +18,8 @@ LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/logging/log_backend_net.h>
 
-static char hostname[NET_HOSTNAME_SIZE];
+BUILD_ASSERT(CONFIG_NET_HOSTNAME_MAX_LEN > 0, "NET_HOSTNAME_MAX_LEN must be a positive value");
+static char hostname[NET_HOSTNAME_SIZE] = CONFIG_NET_HOSTNAME;
 
 static void trigger_net_event(void)
 {
