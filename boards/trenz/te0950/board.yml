@@ -1,0 +1,6 @@
+board:
+  name: te0950
+  full_name: Trenz Electronic TE0950
+  vendor: trenz
+  socs:
+  - name: versal_rpu

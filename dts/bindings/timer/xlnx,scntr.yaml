@@ -1,0 +1,5 @@
+description: Xilinx System Timestamp Counter for Versal
+
+compatible: "xlnx,scntr"
+
+include: base.yaml
