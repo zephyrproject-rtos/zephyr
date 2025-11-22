@@ -9,7 +9,7 @@ config UDC_NXP_EHCI
 	select PINCTRL
 	select NOCACHE_MEMORY if CPU_HAS_DCACHE
 	select DYNAMIC_INTERRUPTS if UHC_NXP_EHCI
-	imply UDC_BUF_FORCE_NOCACHE
+	imply USB_BUF_FORCE_NOCACHE
 	imply UDC_WORKQUEUE
 	help
 	  NXP MCUX USB Device Controller Driver for EHCI.
