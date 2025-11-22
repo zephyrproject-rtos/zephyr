@@ -127,7 +127,7 @@ The current minimum required version for the main dependencies are:
             brew install cmake ninja gperf python3 python-tk ccache qemu dtc libmagic wget openocd
 
       #. Add the Homebrew Python folder to the path, in order to be able to
-         execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
+         execute ``python`` and ``pip``.
 
            .. code-block:: bash
 
@@ -272,7 +272,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
          .. code-block:: bash
 
-            python3 -m venv ~/zephyrproject/.venv
+            python -m venv ~/zephyrproject/.venv
 
       #. Activate the virtual environment:
 
