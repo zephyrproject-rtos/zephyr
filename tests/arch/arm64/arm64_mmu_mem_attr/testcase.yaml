@@ -1,0 +1,18 @@
+common:
+  tags:
+    - arm64
+    - mmu
+    - mem_attr
+  platform_allow:
+    - qemu_cortex_a53
+    - fvp_base_revc_2xaemv8a
+    - versalnet_apu
+  integration_platforms:
+    - qemu_cortex_a53
+  min_ram: 16
+
+tests:
+  arch.arm64.mmu.mem_attr:
+    extra_configs:
+      - CONFIG_MEM_ATTR=y
+      - CONFIG_CACHE_MANAGEMENT=y
