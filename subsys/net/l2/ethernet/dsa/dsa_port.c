@@ -78,7 +78,7 @@ static void dsa_port_iface_init(struct net_if *iface)
 	char name[INTERFACE_NAME_LEN];
 
 	/* Set interface name */
-	snprintf(name, sizeof(name), "swp%d", cfg->port_idx);
+	snprintk(name, sizeof(name), "swp%d", cfg->port_idx);
 	net_if_set_name(iface, name);
 
 	/* Use random mac address if could */

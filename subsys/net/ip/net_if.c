@@ -301,7 +301,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	} else {
 		/* Drop packet if interface is not up */
-		NET_WARN("iface %d is down", net_if_get_by_iface(iface));
+		NET_DBG("iface %d is down", net_if_get_by_iface(iface));
 		status = -ENETDOWN;
 	}
 
@@ -463,7 +463,7 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
 	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
 		/* Drop packet if interface is not up */
-		NET_WARN("iface %d is down", net_if_get_by_iface(iface));
+		NET_DBG("iface %d is down", net_if_get_by_iface(iface));
 		verdict = NET_DROP;
 		status = -ENETDOWN;
 		goto done;

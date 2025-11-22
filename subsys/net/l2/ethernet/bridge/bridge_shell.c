@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/sys/slist.h>
 
