@@ -14,3 +14,4 @@ Debugging
    mipi_stp_decoder.rst
    symtab.rst
    cs_trace_defmt.rst
+   zyclictest.rst
