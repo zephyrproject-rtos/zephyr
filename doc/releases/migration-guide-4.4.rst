@@ -64,6 +64,13 @@ Controller Area Network (CAN)
   * :kconfig:option:`CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS` for :dtcompatible:`st,stm32-fdcan`
   * :kconfig:option:`CONFIG_CAN_XMC4XXX_MAX_FILTERS` for :dtcompatible:`infineon,xmc4xxx-can-node`
 
+Counter
+=======
+
+* Drivers that implement ``get_value_64`` API will now need to select
+  :kconfig:option:`CONFIG_COUNTER_64BITS_TICKS` to enable the API.
+  (:github:`94189`).
+
 Ethernet
 ========
 
