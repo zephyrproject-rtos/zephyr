@@ -247,22 +247,22 @@ uint32_t restore_flags(unsigned int irq)
 	uint32_t flags = 0U;
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
-		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO)) != 0) {
 		flags |= IOAPIC_LOW;
 	}
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
-		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE))) {
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE)) != 0) {
 		flags |= IOAPIC_LEVEL;
 	}
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
-		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL))) {
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL)) != 0) {
 		flags |= IOAPIC_INT_MASK;
 	}
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
-		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_DELIV_MODE))) {
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_DELIV_MODE)) != 0) {
 		flags |= IOAPIC_LOWEST;
 	}
 

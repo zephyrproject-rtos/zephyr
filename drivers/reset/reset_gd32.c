@@ -25,8 +25,8 @@ static int reset_gd32_status(const struct device *dev, uint32_t id,
 {
 	const struct reset_gd32_config *config = dev->config;
 
-	*status = !!sys_test_bit(config->base + GD32_RESET_ID_OFFSET(id),
-				 GD32_RESET_ID_BIT(id));
+	*status = sys_io_test_bit(config->base + GD32_RESET_ID_OFFSET(id),
+				  GD32_RESET_ID_BIT(id));
 
 	return 0;
 }

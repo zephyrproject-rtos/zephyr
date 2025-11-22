@@ -159,7 +159,7 @@ static inline uint32_t timer_count(void)
 {
 	uint32_t ccr = sys_read32(TIMER_BASE + TIMER_CNT_OFS);
 
-	if ((ccr == 0) && sys_test_bit(TIMER_BASE + TIMER_CR_OFS, TIMER_CR_START_POS)) {
+	if ((ccr == 0) && sys_io_test_bit(TIMER_BASE + TIMER_CR_OFS, TIMER_CR_START_POS)) {
 		ccr = cached_icr;
 	}
 

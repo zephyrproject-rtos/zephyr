@@ -79,7 +79,7 @@ static int gpio_stellaris_configure(const struct device *dev,
 	}
 
 	/* Check for pin availability */
-	if (!sys_test_bit((uint32_t)&port_map, pin)) {
+	if (!sys_io_test_bit((uint32_t)&port_map, pin)) {
 		return -EINVAL;
 	}
 
@@ -117,12 +117,12 @@ static int gpio_stellaris_get_config(const struct device *dev,
 	gpio_flags_t flags = 0;
 	mm_reg_t mask_addr;
 
-	if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin) == 0) {
+	if (!sys_io_test_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin)) {
 		flags = GPIO_DISCONNECTED;
-	} else if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin)) {
+	} else if (sys_io_test_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin)) {
 		mask_addr = GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, BIT(pin));
 
-		if (sys_test_bit(mask_addr, pin)) {
+		if (sys_io_test_bit(mask_addr, pin)) {
 			flags |= GPIO_OUTPUT_HIGH;
 		} else {
 			flags |= GPIO_OUTPUT_LOW;

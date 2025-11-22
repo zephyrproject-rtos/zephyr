@@ -573,7 +573,7 @@ static void gicv3_dist_init(void)
 	 * Make sure GICD_CTRL_NS is 1.
 	 */
 	sys_set_bit(GICD_CTLR, GICD_CTRL_NS);
-	__ASSERT(sys_test_bit(GICD_CTLR, GICD_CTRL_NS),
+	__ASSERT(sys_io_test_bit(GICD_CTLR, GICD_CTRL_NS),
 		 "Current GIC does not support single security state");
 #endif
 
