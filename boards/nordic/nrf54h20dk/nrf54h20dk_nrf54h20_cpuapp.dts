@@ -334,6 +334,16 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 };
 
+&wdt010 {
+	/*
+	 * Sets the UICR up to have this watchdog running by default without needing the
+	 * application to set it up and start it.
+	 * Note: This is for demo purposes only and should be set by applications (i.e. in the
+	 * watchdog sample as a board overlay).
+	 */
+	enable-at-boot;
+};
+
 /* Trim this RAM block for power management related features. */
 &cpuapp_ram0 {
 	reg = <0x22000000 (DT_SIZE_K(32) - 256)>;
