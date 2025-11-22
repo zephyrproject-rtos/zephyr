@@ -13,6 +13,12 @@ configdefault SYS_CLOCK_TICKS_PER_SEC
 configdefault UART_NS16550_DW8250_DW_APB
 	default y
 
+configdefault ZERO_LATENCY_IRQS
+	default y
+
+configdefault ZERO_LATENCY_LEVELS
+	default 2
+
 if PM_DEVICE
 
 configdefault PM_DEVICE_RUNTIME
