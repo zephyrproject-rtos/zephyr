@@ -22,6 +22,13 @@
 #if defined(NRF54L_SERIES)
 #define NRF_ECB                   NRF_ECB00
 #define ECB_IRQn                  ECB00_IRQn
+
+#elif defined(NRF54H_SERIES)
+#define NRF_ECB                   NRF_ECB030
+#define ECB_IRQn                  ECB030_IRQn
+#endif
+
+#if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 #define ECB_INTENSET_ERRORECB_Msk ECB_INTENSET_ERROR_Msk
 #define ECB_INTENSET_ENDECB_Msk   ECB_INTENSET_END_Msk
 #define TASKS_STARTECB            TASKS_START
@@ -49,7 +56,7 @@ struct ecb_param {
 	uint8_t clear_text[16];
 	uint8_t cipher_text[16];
 
-#if defined(NRF54L_SERIES)
+#if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 	struct ecb_job_ptr in[2];
 	struct ecb_job_ptr out[2];
 #endif /* NRF54L_SERIES */
@@ -60,7 +67,7 @@ static void do_ecb(struct ecb_param *ep)
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
-#if defined(NRF54L_SERIES)
+#if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 		NRF_ECB->KEY.VALUE[3] = sys_get_be32(&ep->key[0]);
 		NRF_ECB->KEY.VALUE[2] = sys_get_be32(&ep->key[4]);
 		NRF_ECB->KEY.VALUE[1] = sys_get_be32(&ep->key[8]);
@@ -153,7 +160,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 	}
 
 	/* setup the encryption h/w */
-#if defined(NRF54L_SERIES)
+#if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 	NRF_ECB->KEY.VALUE[3] = sys_get_be32(&e->in_key_be[0]);
 	NRF_ECB->KEY.VALUE[2] = sys_get_be32(&e->in_key_be[4]);
 	NRF_ECB->KEY.VALUE[1] = sys_get_be32(&e->in_key_be[8]);
@@ -196,7 +203,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 
 static void isr_ecb(const void *arg)
 {
-#if defined(NRF54L_SERIES)
+#if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
 				 sizeof(struct ecb));
 #else /* !NRF54L_SERIES */
