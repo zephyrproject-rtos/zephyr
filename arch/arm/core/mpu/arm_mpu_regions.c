@@ -22,7 +22,19 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 #endif
 
+#if DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) > 0 &&                                                     \
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
 	/* Region 1 */
+	MPU_REGION_ENTRY("ITCM", DT_REG_ADDR(DT_CHOSEN(zephyr_itcm)),
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+			 REGION_FLASH_ATTR(DT_REG_ADDR(DT_CHOSEN(zephyr_itcm)),
+					   DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)))),
+#else
+			 REGION_FLASH_ATTR(REGION_ITCM_SIZE)),
+#endif
+#endif
+
+	/* Region 2 */
 	MPU_REGION_ENTRY("SRAM_0",
 			 CONFIG_SRAM_BASE_ADDRESS,
 #if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)

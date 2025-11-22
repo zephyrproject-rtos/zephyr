@@ -48,6 +48,32 @@
 #error "Unsupported flash size configuration"
 #endif
 
+#if DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) > 0 &&                                                     \
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
+/* ITCM Region Definitions */
+#if DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (64 * 1024)
+#define REGION_ITCM_SIZE REGION_64K
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (128 * 1024)
+#define REGION_ITCM_SIZE REGION_128K
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (256 * 1024)
+#define REGION_ITCM_SIZE REGION_256K
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (512 * 1024)
+#define REGION_ITCM_SIZE REGION_512K
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (1024 * 1024)
+#define REGION_ITCM_SIZE REGION_1M
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (2048 * 1024)
+#define REGION_ITCM_SIZE REGION_2M
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (4096 * 1024)
+#define REGION_ITCM_SIZE REGION_4M
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (8192 * 1024)
+#define REGION_ITCM_SIZE REGION_8M
+#elif DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)) <= (16384 * 1024)
+#define REGION_ITCM_SIZE REGION_16M
+#else
+#error "Unsupported ITCM size configuration"
+#endif
+#endif
+
 /* SRAM Region Definitions */
 #if CONFIG_SRAM_SIZE <= 16
 #define REGION_SRAM_SIZE REGION_16K
