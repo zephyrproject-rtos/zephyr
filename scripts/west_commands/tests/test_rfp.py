@@ -7,6 +7,7 @@ import os
 from unittest.mock import call, patch
 
 from conftest import RC_KERNEL_HEX
+
 from runners.rfp import RfpBinaryRunner
 
 TEST_RFP_PORT = 'test-rfp-serial'
