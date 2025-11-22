@@ -24,7 +24,6 @@
 
 	aliases {
 		led0 = &ld26;
-		adc0 = &main_adc0;
 	};
 
 	leds: leds {
@@ -97,90 +96,9 @@
 };
 
 &main_adc0 {
-	ti,vrefp = <1800>;
 	ti,fifo = <0>;
 	status = "okay";
 	power-domains = <&adc0_pd>;
-
-	channel@0 {
-		reg = <0>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@1 {
-		reg = <1>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@2 {
-		reg = <2>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@3 {
-		reg = <3>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@4 {
-		reg = <4>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@5 {
-		reg = <5>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@6 {
-		reg = <6>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
-
-	channel@7 {
-		reg = <7>;
-		ti,open-delay = <0>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <0>;
-		zephyr,resolution = <12>;
-		zephyr,oversampling = <4>;
-	};
 };
 
 &main_mbox6 {
