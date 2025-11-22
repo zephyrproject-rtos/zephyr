@@ -169,6 +169,13 @@ class Build(Forceable):
                            Do not use this option with manually specified
                            -DEXTRA_DTC_OVERLAY_FILE... cmake arguments: the results are
                            undefined''')
+        group.add_argument('--pre-conf', dest='pre_conf_files', metavar='PRE_CONF_FILE',
+                           action='append', default=[],
+                           help='''add the argument to PRE_CONF_FILE; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DPRE_CONF_FILE... cmake arguments: the results are
+                           undefined''')
 
         group.add_argument('--sysbuild', action=argparse.BooleanOptionalAction,
                            help='''create multi domain build system or disable it (default)''')
@@ -222,7 +229,7 @@ class Build(Forceable):
                 if (self.args.cmake or self.args.cmake_opts or
                         self.args.cmake_only or self.args.snippets or
                         self.args.shields or self.args.extra_conf_files or
-                        self.args.extra_dtc_overlay_files):
+                        self.args.extra_dtc_overlay_files or self.args.pre_conf_files):
                     self.run_cmake = True
         else:
             self.run_cmake = True
@@ -350,6 +357,7 @@ class Build(Forceable):
             extra_dtc_overlay_files = []
             extra_overlay_confs = []
             extra_conf_files = []
+            pre_conf_files = []
             required_snippets = []
             for section in [common, item]:
                 if not section:
@@ -359,6 +367,7 @@ class Build(Forceable):
                         'extra_args',
                         'extra_configs',
                         'extra_conf_files',
+                        'pre_conf_files',
                         'extra_overlay_confs',
                         'extra_dtc_overlay_files',
                         'required_snippets'
@@ -397,6 +406,9 @@ class Build(Forceable):
                     elif data == 'extra_conf_files':
                         extra_conf_files.extend(arg_list)
                         continue
+                    elif data == 'pre_conf_files':
+                        pre_conf_files.extend(arg_list)
+                        continue
                     elif data == 'extra_overlay_confs':
                         extra_overlay_confs.extend(arg_list)
                         continue
@@ -418,6 +430,9 @@ class Build(Forceable):
             args = []
             if extra_conf_files:
                 args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+
+            if pre_conf_files:
+                args.append(f"PRE_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
             if extra_dtc_overlay_files:
                 args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
@@ -651,6 +666,8 @@ class Build(Forceable):
             cmake_opts.append(f'-DSHIELD={";".join(self.args.shields)}')
         if self.args.extra_conf_files:
             cmake_opts.append(f'-DEXTRA_CONF_FILE={";".join(self.args.extra_conf_files)}')
+        if self.args.pre_conf_files:
+            cmake_opts.append(f'-DPRE_CONF_FILE={";".join(self.args.pre_conf_files)}')
         if self.args.extra_dtc_overlay_files:
             cmake_opts.append(
                 f'-DEXTRA_DTC_OVERLAY_FILE='
