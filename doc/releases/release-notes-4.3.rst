@@ -229,6 +229,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
+* Devicetree
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 * Ethernet
 
    * The devicetree property ``default-speeds`` was added to most of the ethernet phys to configure

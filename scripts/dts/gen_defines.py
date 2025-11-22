@@ -245,6 +245,10 @@ def write_idents_and_existence(node: edtlib.Node) -> None:
     # Node labels
     idents.extend(f"N_NODELABEL_{str2ident(label)}" for label in node.labels)
 
+    # Node label tokens
+    for i, label in enumerate(node.labels[::]):
+        out_dt_define(f"N_NODELABEL_DT_{node.z_path_id}_IDX_{i}_C_TOKEN", label)
+
     out_comment("Existence and alternate IDs:")
     out_dt_define(f"{node.z_path_id}_EXISTS", 1)
 
