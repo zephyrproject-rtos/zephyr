@@ -301,6 +301,126 @@ Only 3 sectors are available for writes with a capacity of 944 bytes each,
 which makes it possible to store 11 key-value pairs in each sector (:math:`\frac{944}{64 + 16}`).
 Total data that could be stored in this partition for this case is :math:`11 \times 3 \times 64 = 2112 \text{ bytes}`.
 
+.. only:: html
+
+    .. raw:: html
+
+        <div class="available-space-calculator" style="margin: 2rem 0; padding: 1.5rem; background-color: var(--admonition-note-background-color); border: 1px solid var(--admonition-note-title-background-color); border-radius: 0.5rem;">
+            <h3 style="margin-top: 0; color: var(--admonition-note-title-color);">Available Space Calculator</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--admonition-note-color);">Calculate the available storage space for your ZMS configuration.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label for="space-sector-size" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Sector Size (bytes):</label>
+                    <input type="number" id="space-sector-size" value="1024" min="256" step="256" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="space-sector-count" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Number of Sectors:</label>
+                    <input type="number" id="space-sector-count" value="4" min="2" max="100" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="space-data-size" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Data Size (bytes):</label>
+                    <input type="number" id="space-data-size" value="8" min="1" max="65536" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="space-data-count" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Number of Data Items:</label>
+                    <input type="number" id="space-data-count" value="1" min="1" max="10000" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+            </div>
+
+            <button onclick="calculateAvailableSpace()" style="background-color: var(--admonition-note-title-background-color); color: var(--admonition-note-title-color); border: none; padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: 600; cursor: pointer; font-family: var(--system-font-family);">Calculate Available Space</button>
+
+            <div id="space-results" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--code-background-color); border: 1px solid var(--code-border-color); border-radius: 0.25rem; display: none;">
+                <h4 style="margin-top: 0; color: var(--admonition-note-color);">Results:</h4>
+                <div id="space-results-content" style="font-family: var(--monospace-font-family); color: var(--body-color);"></div>
+            </div>
+        </div>
+
+        <script>
+        function calculateAvailableSpace() {
+            // Get input values
+            const sectorSize = parseInt(document.getElementById('space-sector-size').value);
+            const sectorCount = parseInt(document.getElementById('space-sector-count').value);
+            const dataSize = parseInt(document.getElementById('space-data-size').value);
+            const dataCount = parseInt(document.getElementById('space-data-count').value);
+
+            // Constants
+            const ATE_SIZE = 16;
+            const HEADER_SIZE = 80; // 5 * ATE_SIZE
+
+            // Calculate effective sector size (sector size - header size)
+            const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+
+            // Calculate effective data size
+            const effectiveDataSize = dataSize <= 8 ? ATE_SIZE : ATE_SIZE + dataSize;
+
+            // Calculate available sectors for data (excluding one for GC)
+            const availableSectors = sectorCount - 1;
+
+            // Calculate total available space across all sectors
+            const totalAvailableSpace = sectorEffectiveSize * availableSectors;
+
+            // Calculate how many data items can fit in one sector
+            const itemsPerSector = Math.floor(sectorEffectiveSize / effectiveDataSize);
+
+            // Calculate total items that can fit across all sectors
+            const totalItemsThatCanFit = itemsPerSector * availableSectors;
+
+            // Calculate total data storage capacity
+            const totalDataCapacity = totalItemsThatCanFit * dataSize;
+
+            // Calculate total storage used (including ATEs)
+            const totalStorageUsed = totalItemsThatCanFit * effectiveDataSize;
+
+            // Calculate storage efficiency
+            const storageEfficiency = (totalDataCapacity / totalStorageUsed) * 100;
+
+            // Calculate how many of the requested data items can fit
+            const itemsThatCanFit = Math.min(dataCount, totalItemsThatCanFit);
+            const actualDataCapacity = itemsThatCanFit * dataSize;
+            const actualStorageUsed = itemsThatCanFit * effectiveDataSize;
+
+            // Display results
+            const resultsDiv = document.getElementById('space-results');
+            const resultsContent = document.getElementById('space-results-content');
+
+            resultsContent.innerHTML = `
+                <div style="margin-bottom: 0.5rem;"><strong>Sector Effective Size:</strong> ${sectorEffectiveSize} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Effective Data Size:</strong> ${effectiveDataSize} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Available Sectors for Data:</strong> ${availableSectors} (${sectorCount} total - 1 for GC)</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Total Available Space:</strong> ${totalAvailableSpace.toLocaleString()} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Items per Sector:</strong> ${itemsPerSector}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Total Items That Can Fit:</strong> ${totalItemsThatCanFit.toLocaleString()}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Total Data Storage Capacity:</strong> ${totalDataCapacity.toLocaleString()} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Total Storage Used (with ATEs):</strong> ${totalStorageUsed.toLocaleString()} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Storage Efficiency:</strong> ${storageEfficiency.toFixed(1)}%</div>
+                <hr style="margin: 1rem 0; border-color: var(--code-border-color);">
+                <div style="margin-bottom: 0.5rem;"><strong>For Your Requested ${dataCount} Items:</strong></div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• Items that can fit: ${itemsThatCanFit.toLocaleString()}</div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• Actual data capacity: ${actualDataCapacity.toLocaleString()} bytes</div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• Actual storage used: ${actualStorageUsed.toLocaleString()} bytes</div>
+                ${dataCount > totalItemsThatCanFit ? `<div style="margin-left: 1rem; margin-bottom: 0.5rem; color: var(--admonition-attention-color);">⚠️ Warning: Only ${totalItemsThatCanFit.toLocaleString()} of ${dataCount.toLocaleString()} requested items can fit in the available space.</div>` : ''}
+            `;
+
+            resultsDiv.style.display = 'block';
+        }
+
+        // Add event listeners for Enter key
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('#space-sector-size, #space-sector-count, #space-data-size, #space-data-count');
+            inputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        calculateAvailableSpace();
+                    }
+                });
+            });
+        });
+        </script>
+
 Wear leveling
 *************
 
@@ -373,6 +493,133 @@ Where:
 ``TOTAL_EFFECTIVE_SIZE``: Total effective size of the set of written data
 
 ``WR_MIN``: Number of writes of the set of data per minute
+
+.. only:: html
+
+    .. raw:: html
+
+        <div class="device-lifetime-calculator" style="margin: 2rem 0; padding: 1.5rem; background-color: var(--admonition-note-background-color); border: 1px solid var(--admonition-note-title-background-color); border-radius: 0.5rem;">
+            <h3 style="margin-top: 0; color: var(--admonition-note-title-color);">Device Lifetime Calculator</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--admonition-note-color);">Calculate the expected lifetime of your ZMS storage device based on your configuration.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label for="sector-size" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Sector Size (bytes):</label>
+                    <input type="number" id="sector-size" value="1024" min="256" step="256" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="sector-count" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Number of Sectors:</label>
+                    <input type="number" id="sector-count" value="4" min="2" max="100" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="data-size" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Data Size (bytes):</label>
+                    <input type="number" id="data-size" value="8" min="1" max="65536" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="writes-per-minute" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Writes per Minute:</label>
+                    <input type="number" id="writes-per-minute" value="1" min="0.01" step="0.01" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="max-writes" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Max Writes per Cell:</label>
+                    <input type="number" id="max-writes" value="20000" min="1000" step="1000" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+
+                <div>
+                    <label for="data-count" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--admonition-note-color);">Number of Data Items:</label>
+                    <input type="number" id="data-count" value="1" min="1" max="1000" style="width: 100%; padding: 0.5rem; border: 1px solid var(--code-border-color); border-radius: 0.25rem; background-color: var(--input-background-color); color: var(--body-color); font-family: var(--monospace-font-family);">
+                </div>
+            </div>
+
+            <button onclick="calculateLifetime()" style="background-color: var(--admonition-note-title-background-color); color: var(--admonition-note-title-color); border: none; padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: 600; cursor: pointer; font-family: var(--system-font-family);">Calculate Lifetime</button>
+
+            <div id="results" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--code-background-color); border: 1px solid var(--code-border-color); border-radius: 0.25rem; display: none;">
+                <h4 style="margin-top: 0; color: var(--admonition-note-color);">Results:</h4>
+                <div id="results-content" style="font-family: var(--monospace-font-family); color: var(--body-color);"></div>
+            </div>
+        </div>
+
+        <script>
+        function calculateLifetime() {
+            // Get input values
+            const sectorSize = parseInt(document.getElementById('sector-size').value);
+            const sectorCount = parseInt(document.getElementById('sector-count').value);
+            const dataSize = parseInt(document.getElementById('data-size').value);
+            const writesPerMinute = parseFloat(document.getElementById('writes-per-minute').value);
+            const maxWrites = parseInt(document.getElementById('max-writes').value);
+            const dataCount = parseInt(document.getElementById('data-count').value);
+
+            // Constants
+            const ATE_SIZE = 16;
+            const HEADER_SIZE = 80; // 5 * ATE_SIZE
+
+            // Calculate effective sector size (sector size - header size)
+            const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+
+            // Calculate effective data size
+            const effectiveDataSize = dataSize <= 8 ? ATE_SIZE : ATE_SIZE + dataSize;
+
+            // Calculate total effective size for all data items
+            const totalEffectiveSize = effectiveDataSize * dataCount;
+
+            // Calculate available space per sector for ATEs
+            const availableSpacePerSector = sectorEffectiveSize;
+
+            // Calculate how many data items can fit in one sector
+            const itemsPerSector = Math.floor(availableSpacePerSector / effectiveDataSize);
+
+            // Calculate total available space across all sectors (excluding one empty sector for GC)
+            const totalAvailableSpace = availableSpacePerSector * (sectorCount - 1);
+
+            // Calculate how many complete cycles through the storage
+            const cyclesThroughStorage = Math.floor(totalAvailableSpace / totalEffectiveSize);
+
+            // Calculate time to complete one cycle (minutes)
+            const timePerCycle = totalEffectiveSize * writesPerMinute;
+
+            // Calculate total lifetime in minutes
+            const totalLifetimeMinutes = cyclesThroughStorage * maxWrites;
+
+            // Convert to more readable units
+            const lifetimeInHours = totalLifetimeMinutes / 60;
+            const lifetimeInDays = lifetimeInHours / 24;
+            const lifetimeInYears = lifetimeInDays / 365.25;
+
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+
+            resultsContent.innerHTML = `
+                <div style="margin-bottom: 0.5rem;"><strong>Sector Effective Size:</strong> ${sectorEffectiveSize} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Effective Data Size:</strong> ${effectiveDataSize} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Items per Sector:</strong> ${itemsPerSector}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Total Available Space:</strong> ${totalAvailableSpace} bytes</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Cycles through Storage:</strong> ${cyclesThroughStorage}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Expected Lifetime:</strong></div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• ${totalLifetimeMinutes.toLocaleString()} minutes</div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• ${lifetimeInHours.toLocaleString(undefined, {maximumFractionDigits: 1})} hours</div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• ${lifetimeInDays.toLocaleString(undefined, {maximumFractionDigits: 1})} days</div>
+                <div style="margin-left: 1rem; margin-bottom: 0.5rem;">• ${lifetimeInYears.toLocaleString(undefined, {maximumFractionDigits: 2})} years</div>
+            `;
+
+            resultsDiv.style.display = 'block';
+        }
+
+        // Add event listeners for Enter key
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        calculateLifetime();
+                    }
+                });
+            });
+        });
+        </script>
 
 Features
 ********
