@@ -58,6 +58,8 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
+#define PMP_PERM_MASK (PMP_R | PMP_W | PMP_X)
+
 /**
  * @brief Decodes PMP configuration and address registers into a memory region's
  * start/end addresses.
@@ -503,6 +505,82 @@ static unsigned int global_pmp_end_index[MODE_TOTAL];
 /* Stores the initial pmpaddr values for the memory attribute region. */
 static unsigned long mem_attr_pmp_addr[CONFIG_PMP_SLOTS];
 #endif
+
+#ifdef CONFIG_MEM_ATTR
+int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
+{
+	if (perm & ~PMP_PERM_MASK) {
+		LOG_ERR("Invalid PMP permission 0x%x. Only R, W, X (0x%x) are allowed.", perm,
+			PMP_PERM_MASK);
+		return -EINVAL;
+	}
+
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	if (region_idx >= num_regions) {
+		LOG_ERR("region_idx %zu is out of bounds (num_regions: %zu)", region_idx,
+			num_regions);
+		return -EINVAL;
+	}
+
+	uintptr_t region_start_address = region[region_idx].dt_addr;
+	size_t region_size = region[region_idx].dt_size;
+	int entry_index = -1;
+
+	size_t pmp_cfg_size = CONFIG_PMP_SLOTS / PMPCFG_STRIDE;
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_cfg[pmp_cfg_size];
+
+	z_riscv_pmp_read_addr(pmp_addr, (size_t)(CONFIG_PMP_SLOTS));
+	z_riscv_pmp_read_config(pmp_cfg, pmp_cfg_size);
+
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+
+	for (unsigned int index = 0; index < CONFIG_PMP_SLOTS; ++index) {
+		unsigned long start, end;
+
+		pmp_decode_region(pmp_n_cfg[index], pmp_addr, index, &start, &end);
+		if (start == region_start_address &&
+		    end == (region_start_address + region_size - 1)) {
+			entry_index = index;
+			break;
+		}
+	}
+
+	if (entry_index == -1) {
+		LOG_ERR("PMP entry for address 0x%lx not found", region_start_address);
+		return -ENOENT;
+	}
+
+	/*
+	 * Clear the old R/W/X bits while preserving all other bits and tet the new R/W/X bits from
+	 * the 'perm' variable.
+	 */
+	pmp_n_cfg[entry_index] &= ~PMP_PERM_MASK;
+	pmp_n_cfg[entry_index] |= perm;
+
+#ifdef CONFIG_64BIT
+	/* RV64: pmpcfg0 holds entries 0-7; pmpcfg2 holds entries 8-15. */
+	csr_write(pmpcfg0, pmp_cfg[0]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[1]);
+#endif
+#else
+	/* RV32: Each pmpcfg register holds 4 entries. */
+	csr_write(pmpcfg0, pmp_cfg[0]);
+	csr_write(pmpcfg1, pmp_cfg[1]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[2]);
+	csr_write(pmpcfg3, pmp_cfg[3]);
+#endif
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_MEM_ATTR */
 
 /**
  * @Brief Initialize the PMP with global entries on each CPU
