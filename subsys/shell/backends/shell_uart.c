@@ -266,11 +266,9 @@ static void polling_rx_timeout_handler(struct k_timer *timer)
 	uint8_t c;
 	struct shell_uart_polling *sh_uart = k_timer_user_data_get(timer);
 
-	while (uart_poll_in(sh_uart->common.dev, &c) == 0) {
-		if (ring_buf_put(&sh_uart->rx_ringbuf, &c, 1) == 0U) {
-			/* ring buffer full. */
-			LOG_WRN("RX ring buffer full.");
-		}
+	while ((ring_buf_space_get(&sh_uart->rx_ringbuf) > 0) &&
+	       (uart_poll_in(sh_uart->common.dev, &c) == 0)) {
+		ring_buf_put(&sh_uart->rx_ringbuf, &c, 1);
 		sh_uart->common.handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_uart->common.context);
 	}
 }
