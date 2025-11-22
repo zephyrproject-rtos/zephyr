@@ -27,7 +27,8 @@ void handle_cmd(char *cmd, uint32_t length)
 	if (strncmp("reboot", cmd, length) == 0) {
 		sys_reboot(SYS_REBOOT_COLD);
 	} else if (strncmp("status", cmd, length) == 0) {
-		printk("%d %d\n", instr_tracing_supported(), instr_profiling_supported());
+		printk("%d %d %d\n", instr_tracing_supported(), instr_profiling_supported(),
+		       instr_dynamic_trigger_supported());
 	} else if (strncmp("ping", cmd, length) == 0) {
 		printk("pong\n");
 	} else if (strncmp("dump_trace", cmd, length) == 0) {
