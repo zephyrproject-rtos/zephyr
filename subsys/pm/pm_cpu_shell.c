@@ -8,6 +8,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pm_cpu_shell, CONFIG_PM_LOG_LEVEL);
@@ -146,6 +147,34 @@ static int cmd_cpu_idle(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_cpu_reboot_warm(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "System will warm reboot");
+
+	sys_reboot(SYS_REBOOT_WARM);
+
+	shell_error(sh, "System warm reboot fail");
+
+	return -EINVAL;
+}
+
+static int cmd_cpu_reboot_cold(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "System will cold reboot");
+
+	sys_reboot(SYS_REBOOT_COLD);
+
+	shell_error(sh, "System cold reboot fail");
+
+	return -EINVAL;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cpu_cmds,
 	SHELL_CMD_ARG(states,    NULL,
@@ -158,6 +187,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		SHELL_HELP("Unlock a state", "<state> <substate>"), cmd_cpu_unlock, 2, 1),
 	SHELL_CMD_ARG(idle,      NULL,
 		SHELL_HELP("Sleep current thread to let PM work", "<ms>"), cmd_cpu_idle, 2, 0),
+	SHELL_CMD_ARG(warm,    NULL,
+		SHELL_HELP("System warm reboot", ""), cmd_cpu_reboot_warm, 1, 0),
+	SHELL_CMD_ARG(cold,    NULL,
+		SHELL_HELP("System cold reboot", ""), cmd_cpu_reboot_cold, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
