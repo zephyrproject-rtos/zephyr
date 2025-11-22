@@ -88,7 +88,7 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 ZTEST(mutex, test_mutex_prioceiling_stubs)
 {
-#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+#ifdef CONFIG_XSI_REALTIME_THREADS
 	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
 	zassert_equal(pthread_mutex_setprioceiling(NULL, 0, NULL), ENOSYS);
 	zassert_equal(pthread_mutexattr_getprioceiling(NULL, NULL), ENOSYS);
