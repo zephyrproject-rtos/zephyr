@@ -13,4 +13,14 @@
 #define NRF_AUXPLL_FREQ_DIV_AUDIO_48K  39845
 #define NRF_AUXPLL_FREQ_DIV_MAX        65535
 
+#define NRFX_AUXPLL_OUT_DIV_DISABLED 0
+#define NRFX_AUXPLL_OUT_DIV_1        1
+#define NRFX_AUXPLL_OUT_DIV_2        2
+#define NRFX_AUXPLL_OUT_DIV_3        3
+#define NRFX_AUXPLL_OUT_DIV_4        4
+#define NRFX_AUXPLL_OUT_DIV_6        5
+#define NRFX_AUXPLL_OUT_DIV_8        6
+#define NRFX_AUXPLL_OUT_DIV_12       7
+#define NRFX_AUXPLL_OUT_DIV_16       8
+
 #endif /* #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NRF_AUXPLL_H_ */
