@@ -17,6 +17,7 @@
 #include "common/fmac_util.h"
 #include "wifi_mgmt.h"
 #include "wpa_supp_if.h"
+#include <system/fmac_peer.h>
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
@@ -545,16 +546,16 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		scan_info->scan_params.num_scan_channels = indx;
 	}
 
-	if (params->filter_ssids) {
-		scan_info->scan_params.num_scan_ssids = params->num_filter_ssids;
+	if (params->num_ssids) {
+		scan_info->scan_params.num_scan_ssids = params->num_ssids;
 
-		for (indx = 0; indx < params->num_filter_ssids; indx++) {
+		for (indx = 0; indx < params->num_ssids; indx++) {
 			memcpy(scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid,
-			       params->filter_ssids[indx].ssid,
-			       params->filter_ssids[indx].ssid_len);
+			       params->ssids[indx].ssid,
+			       params->ssids[indx].ssid_len);
 
 			scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid_len =
-				params->filter_ssids[indx].ssid_len;
+				params->ssids[indx].ssid_len;
 		}
 	}
 
@@ -1103,7 +1104,9 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_umac_chg_sta_info chg_sta_info;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	int peer_id = -1;
 	int ret = -1;
 
 	if (!if_priv || !bssid) {
@@ -1134,8 +1137,6 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 
 	memcpy(chg_sta_info.mac_addr, bssid, ETH_ALEN);
 
-	vif_ctx_zep->authorized = authorized;
-
 	if (authorized) {
 		/* BIT(NL80211_STA_FLAG_AUTHORIZED) */
 		chg_sta_info.sta_flags2.nrf_wifi_mask = 1 << 1;
@@ -1151,6 +1152,19 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		ret = -1;
 		goto out;
+	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+
+	peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, chg_sta_info.mac_addr);
+	if (peer_id == -1) {
+		nrf_wifi_osal_log_err("%s: Invalid peer",
+				      __func__);
+		goto out;
+	}
+
+	if (chg_sta_info.sta_flags2.nrf_wifi_set & NRF_WIFI_STA_FLAG_AUTHORIZED) {
+		sys_dev_ctx->tx_config.peers[peer_id].authorized = true;
 	}
 
 	ret = 0;
@@ -1435,6 +1449,10 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 		goto out;
 	}
 
+	if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_STATION) {
+		offchanok = 1;
+	}
+
 	if (offchanok) {
 		mgmt_tx_info->nrf_wifi_flags |= NRF_WIFI_CMD_FRAME_OFFCHANNEL_TX_OK;
 	}
@@ -1698,7 +1716,7 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_umac_mgmt_frame_info frame_info;
 
-	if (!if_priv || !match || !match_len) {
+	if (!if_priv) {
 		LOG_ERR("%s: Invalid parameters", __func__);
 		return -1;
 	}
@@ -1719,8 +1737,14 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	memset(&frame_info, 0, sizeof(frame_info));
 
 	frame_info.frame_type = type;
-	frame_info.frame_match.frame_match_len = match_len;
-	memcpy(frame_info.frame_match.frame_match, match, match_len);
+	if (match_len > 0) {
+		if (!match) {
+			LOG_ERR("%s: Invalid match parameters", __func__);
+			goto out;
+		}
+		frame_info.frame_match.frame_match_len = match_len;
+		memcpy(frame_info.frame_match.frame_match, match, match_len);
+	}
 
 	status = nrf_wifi_sys_fmac_register_frame(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
 			&frame_info);
@@ -1797,6 +1821,9 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	capa->rrm_flags |= WPA_DRIVER_FLAGS_SUPPORT_BEACON_REPORT;
 	if (IS_ENABLED(CONFIG_NRF70_AP_MODE)) {
 		capa->flags |= WPA_DRIVER_FLAGS_AP;
+	}
+	if (IS_ENABLED(CONFIG_NRF70_P2P_MODE)) {
+		capa->flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
 	}
 
 	capa->enc |= WPA_DRIVER_CAPA_ENC_WEP40 |
@@ -1981,6 +2008,192 @@ void nrf_wifi_supp_event_proc_get_conn_info(void *if_priv,
 	conn_info->dtim_period = info->dtim_interval;
 	conn_info->twt_capable = info->twt_capable;
 	k_sem_give(&wait_for_event_sem);
+}
+
+void nrf_wifi_supp_event_roc_complete(void *if_priv,
+				      struct nrf_wifi_event_remain_on_channel *roc_complete,
+				      unsigned int event_len)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Missing interface context", __func__);
+		return;
+	}
+
+	vif_ctx_zep = if_priv;
+
+	if (!roc_complete) {
+		LOG_ERR("%s: Missing ROC complete event data", __func__);
+		return;
+	}
+
+	LOG_DBG("%s: ROC complete on freq %d, dur %d, vif_idx %d",
+		    __func__, roc_complete->frequency,
+		    roc_complete->dur, vif_ctx_zep->vif_idx);
+
+	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_complete) {
+		vif_ctx_zep->supp_callbk_fns.roc_complete(vif_ctx_zep->supp_drv_if_ctx,
+				roc_complete->frequency,
+				roc_complete->dur, roc_complete->cookie);
+	}
+}
+
+void nrf_wifi_supp_event_roc_cancel_complete(void *if_priv,
+					     struct nrf_wifi_event_remain_on_channel
+					     *roc_cancel_complete,
+					     unsigned int event_len)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Missing interface context", __func__);
+		return;
+	}
+
+	vif_ctx_zep = if_priv;
+
+	if (!roc_cancel_complete) {
+		LOG_ERR("%s: Missing ROC cancel complete event data", __func__);
+		return;
+	}
+
+	LOG_DBG("%s: ROC cancel complete on freq %d, vif_idx %d",
+		    __func__, roc_cancel_complete->frequency,
+		    vif_ctx_zep->vif_idx);
+
+	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_cancel_complete) {
+		vif_ctx_zep->supp_callbk_fns.roc_cancel_complete(vif_ctx_zep->supp_drv_if_ctx,
+				roc_cancel_complete->frequency, roc_cancel_complete->cookie);
+	}
+}
+
+int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
+									unsigned int duration)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct remain_on_channel_info roc_info;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	memset(&roc_info, 0, sizeof(roc_info));
+	roc_info.nrf_wifi_freq_params.frequency = freq;
+	roc_info.nrf_wifi_freq_params.channel_width = NRF_WIFI_CHAN_WIDTH_20;
+	roc_info.nrf_wifi_freq_params.center_frequency1 = freq;
+	roc_info.nrf_wifi_freq_params.center_frequency2 = 0;
+	roc_info.nrf_wifi_freq_params.channel_type = NRF_WIFI_CHAN_HT20;
+	roc_info.dur = duration;
+
+	status = nrf_wifi_sys_fmac_p2p_roc_start(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
+						 &roc_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_remain_on_channel failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
+}
+
+int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	status = nrf_wifi_sys_fmac_p2p_roc_stop(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, 0);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_cancel_remain_on_channel failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
+}
+
+int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, int ctwindow)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	if (legacy_ps == -1) {
+		status = 0;
+		goto out;
+	}
+
+	if (legacy_ps != 0 && legacy_ps != 1) {
+		LOG_ERR("%s: Invalid legacy_ps value: %d", __func__, legacy_ps);
+		goto out;
+	}
+
+	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
+						  legacy_ps);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_set_p2p_powersave failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
 }
 
 #ifdef CONFIG_NRF70_AP_MODE
@@ -2798,7 +3011,9 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_umac_chg_sta_info chg_sta = {0};
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	int peer_id = -1;
 	int ret = -1;
 
 	if (!if_priv || !addr) {
@@ -2831,6 +3046,19 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		goto out;
+	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+
+	peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, chg_sta.mac_addr);
+	if (peer_id == -1) {
+		nrf_wifi_osal_log_err("%s: Invalid peer",
+				      __func__);
+		goto out;
+	}
+
+	if (chg_sta.sta_flags2.nrf_wifi_set & NRF_WIFI_STA_FLAG_AUTHORIZED) {
+		sys_dev_ctx->tx_config.peers[peer_id].authorized = true;
 	}
 
 	ret = 0;

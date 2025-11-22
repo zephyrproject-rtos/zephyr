@@ -102,6 +102,12 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* Networking
+
+  * Wi-Fi
+
+    * Add support for Wi-Fi Direct (P2P) mode.
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`

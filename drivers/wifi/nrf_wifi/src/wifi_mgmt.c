@@ -18,6 +18,7 @@
 #include "system/fmac_api.h"
 #include "system/fmac_tx.h"
 #include "common/fmac_util.h"
+#include "common/fmac_structs_common.h"
 #include "fmac_main.h"
 #include "wifi_mgmt.h"
 
@@ -757,6 +758,8 @@ int nrf_wifi_mode(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	struct peers_info *peer = NULL;
+	int i = 0;
 	int ret = -1;
 
 	if (!dev || !mode) {
@@ -798,10 +801,16 @@ int nrf_wifi_mode(const struct device *dev,
 			goto out;
 		}
 
-		if (vif_ctx_zep->authorized && (mode->mode == NRF_WIFI_MONITOR_MODE)) {
-			LOG_ERR("%s: Cannot set monitor mode when station is connected",
-				__func__);
-			goto out;
+		for (i = 0; i < MAX_PEERS; i++) {
+			peer = &sys_dev_ctx->tx_config.peers[i];
+			if (peer->peer_id == -1) {
+				continue;
+			}
+			if (peer->authorized && (mode->mode == NRF_WIFI_MONITOR_MODE)) {
+				LOG_ERR("%s: Cannot set monitor mode when station is connected",
+					__func__);
+					goto out;
+			}
 		}
 
 		/**
@@ -851,6 +860,8 @@ int nrf_wifi_channel(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
+	struct peers_info *peer = NULL;
+	int i = 0;
 	int ret = -1;
 
 	if (!dev || !channel) {
@@ -864,9 +875,16 @@ int nrf_wifi_channel(const struct device *dev,
 		return ret;
 	}
 
-	if (vif_ctx_zep->authorized) {
-		LOG_ERR("%s: Cannot change channel when in station connected mode", __func__);
-		return ret;
+	for (i = 0; i < MAX_PEERS; i++) {
+		peer = &sys_dev_ctx->tx_config.peers[i];
+		if (peer->peer_id == -1) {
+			continue;
+		}
+		if (peer->authorized) {
+			LOG_ERR("%s: Cannot change channel when in station connected mode",
+				__func__);
+			return ret;
+		}
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;

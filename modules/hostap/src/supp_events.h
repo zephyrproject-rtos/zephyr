@@ -137,6 +137,10 @@ union supplicant_event_data {
 		unsigned int id;
 	} network_removed;
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	struct wifi_p2p_device_info p2p_device_found;
+#endif
+
 	char supplicant_event_str[NM_WIFI_EVENT_STR_LEN];
 };
 
@@ -158,6 +162,9 @@ enum supplicant_event_num {
 	SUPPLICANT_EVENT_NETWORK_REMOVED,
 	SUPPLICANT_EVENT_DSCP_POLICY,
 	SUPPLICANT_EVENT_REGDOM_CHANGE,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	SUPPLICANT_EVENT_P2P_DEVICE_FOUND,
+#endif
 };
 
 struct supplicant_int_event_data {

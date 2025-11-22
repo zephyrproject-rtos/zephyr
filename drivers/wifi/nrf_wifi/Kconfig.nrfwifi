@@ -119,6 +119,7 @@ config NRF70_ENABLE_DUAL_VIF
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
+	default y if WIFI_NM_WPA_SUPPLICANT_P2P
 
 config NRF70_SYSTEM_WITH_RAW_MODES
 	bool "nRF70 system mode with raw modes"
