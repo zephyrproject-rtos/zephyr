@@ -796,6 +796,16 @@ static int spi_sam_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
+static int spi_sam_acquire(const struct device *dev,
+			   const struct spi_config *config)
+{
+	struct spi_sam_data *data = dev->data;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
+	return 0;
+}
+
 static int spi_sam_release(const struct device *dev,
 			   const struct spi_config *config)
 {
@@ -851,6 +861,7 @@ static DEVICE_API(spi, spi_sam_driver_api) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_sam_iodev_submit,
 #endif
+	.acquire = spi_sam_acquire,
 	.release = spi_sam_release,
 };
 
