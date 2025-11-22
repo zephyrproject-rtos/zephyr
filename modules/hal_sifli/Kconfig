@@ -234,6 +234,15 @@ config USE_SIFLI_HAL_WDT
 	help
 	  Enable WDT SiFli HAL module driver
 
+config USE_SIFLI_IPC_QUEUE
+	bool "IPC_QUEUE SiFli IPC queue"
+	select USE_SIFLI_HAL_MAILBOX
+	select USE_SIFLI_HAL_LCPU_CONFIGURE
+	select USE_SIFLI_HAL_LCPU_PATCH
+	select USE_SIFLI_HAL_AON
+	help
+	  Enable IPC queue module for SiFli core communication
+
 endif # USE_SIFLI_HAL
 
 endif # HAS_SIFLI_HAL
