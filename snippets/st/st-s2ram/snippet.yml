@@ -1,0 +1,9 @@
+# Copyright 2025 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: st-s2ram
+
+append:
+      EXTRA_CONF_FILE: st-s2ram.conf
+      EXTRA_DTC_OVERLAY_FILE: st-s2ram.overlay
