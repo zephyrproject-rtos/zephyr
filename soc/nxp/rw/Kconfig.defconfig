@@ -88,6 +88,11 @@ config COUNTER
 config MCUX_OS_TIMER_PM_POWERED_OFF
 	default y
 
+# When MCUX_OS_TIMER_PM_POWERED_OFF is used, reset function
+# is needed to place OS_TIMER in a known state after power cycling
+config RESET
+	default y if MCUX_OS_TIMER_PM_POWERED_OFF
+
 # PM code that runs from the idle loop has a large
 # footprint. Hence increase the size when PM is enabled.
 config IDLE_STACK_SIZE
