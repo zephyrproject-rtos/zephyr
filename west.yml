@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: Maxjta
+      url-base: https://github.com/Maxjta
 
   group-filter: [-babblesim, -optional]
 
@@ -156,6 +158,12 @@ manifest:
     - name: hal_ambiq
       revision: 5efc0228528a8adce5eae0d226fac85d2551eb3b
       path: modules/hal/ambiq
+      groups:
+        - hal
+    - name: hal_at32
+      remote: Maxjta
+      revision: cde5f1c528045d750eabcb6c5944295931837e8a
+      path: modules/hal/at32
       groups:
         - hal
     - name: hal_atmel
