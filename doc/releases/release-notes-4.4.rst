@@ -140,6 +140,11 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+DeviceTree
+**********
+
+* :c:macro:`DT_CHILD_BY_UNIT_ADDR`
+* :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR`
 
 Libraries / Subsystems
 **********************
