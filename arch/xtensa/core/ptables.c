@@ -67,6 +67,13 @@
 /** Construct a page table entry (PTE) */
 #define PTE(paddr, ring, attr) PTE_WITH_BCKUP(paddr, ring, attr, RING_KERNEL, PTE_ATTR_ILLEGAL)
 
+/** Get the Physical Page Number from a PTE */
+#define PTE_PPN_GET(pte) ((pte) & XTENSA_MMU_PTE_PPN_MASK)
+
+/** Set the Physical Page Number in a PTE */
+#define PTE_PPN_SET(pte, ppn)                                                                      \
+	(((pte) & ~XTENSA_MMU_PTE_PPN_MASK) | ((ppn) & XTENSA_MMU_PTE_PPN_MASK))
+
 /** Get the attributes from a PTE */
 #define PTE_ATTR_GET(pte) (((pte) & PTE_ATTR_MASK) >> PTE_ATTR_SHIFT)
 
@@ -388,7 +395,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 				PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 
-		l2_table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+		l2_table = (uint32_t *)PTE_PPN_GET(xtensa_kernel_ptables[l1_pos]);
 		l2_table[l2_pos] = pte;
 	}
 }
@@ -552,7 +559,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	}
 #endif
 
-	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+	l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
 	l2_table[l2_pos] = PTE(phys, is_user ? RING_USER : RING_KERNEL, attrs);
 
 	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
@@ -732,7 +739,7 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	dup_l2_table_if_needed(l1_table, l1_pos);
 #endif
 
-	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+	l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
 
 	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 		sys_cache_data_invd_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
@@ -1072,8 +1079,7 @@ static uint32_t *dup_l1_table(void)
 			uint32_t *l2_table, *src_l2_table;
 			bool l2_need_dup = false;
 
-			src_l2_table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] &
-						    XTENSA_MMU_PTE_PPN_MASK);
+			src_l2_table = (uint32_t *)PTE_PPN_GET(xtensa_kernel_ptables[l1_pos]);
 
 			/* Need to check if the L2 table has been modified between boot and
 			 * this function call. We do not want to inherit any changes in
@@ -1097,7 +1103,7 @@ static uint32_t *dup_l1_table(void)
 				 * duplicate the L2 table.
 				 */
 				vaddr = vaddr_from_pt_pos(l1_pos, l2_pos);
-				if ((src_l2_table[l2_pos] & XTENSA_MMU_PTE_PPN_MASK) != vaddr) {
+				if (PTE_PPN_GET(src_l2_table[l2_pos]) != vaddr) {
 					l2_need_dup = true;
 					break;
 				}
@@ -1129,7 +1135,7 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
 {
 	uint32_t *l2_table, *src_l2_table;
 
-	src_l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+	src_l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
 
 	if (l2_page_tables_counter[l2_table_to_counter_pos(src_l2_table)] == 1) {
 		/* Only one user of L2 table, no need to duplicate. */
@@ -1214,13 +1220,14 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		dup_l2_table_if_needed(l1_table, l1_pos);
 #endif
 
-		l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+		l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
 
 		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 			sys_cache_data_invd_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 		}
 
 		pte = l2_table[l2_pos];
+		pte = PTE_PPN_SET(pte, start + offset);
 
 		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
 			new_attrs = PTE_BCKUP_ATTR_GET(pte);
@@ -1430,7 +1437,7 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 		return false;
 	}
 
-	l2_table = (uint32_t *)(ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+	l2_table = (uint32_t *)PTE_PPN_GET(ptables[l1_pos]);
 	pte = l2_table[l2_pos];
 
 	if (is_pte_illegal(pte)) {
