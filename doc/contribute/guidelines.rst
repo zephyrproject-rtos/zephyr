@@ -209,6 +209,9 @@ Additional requirements:
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
 
+- Even cherry picking a commit contributed by someone else, you must add a
+  Signed-off-by line, without removing existing ones.
+
 .. _source_tree_v2:
 
 Source Tree Structure
