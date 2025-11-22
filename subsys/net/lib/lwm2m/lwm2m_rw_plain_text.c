@@ -438,5 +438,13 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 		msg->path.level = 3U;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	if (ret == -EALREADY) {
+		/* If resource was already handled when resuming postponed message
+		 * processing, move on.
+		 */
+		ret = 0;
+	}
+
+	return ret;
 }

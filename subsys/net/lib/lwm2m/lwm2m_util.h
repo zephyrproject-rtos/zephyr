@@ -45,4 +45,12 @@ char *lwm2m_sprint_ip_addr(const struct net_sockaddr *addr);
  */
 char *sprint_token(const uint8_t *token, uint8_t tkl);
 
+struct lwm2m_message;
+
+/** @brief Restore quote characters removed by JSON parser.
+ *
+ * @param[in] msg LwM2M message to process
+ */
+void lwm2m_json_restore_quotes(struct lwm2m_message *msg);
+
 #endif /* LWM2M_UTIL_H_ */
