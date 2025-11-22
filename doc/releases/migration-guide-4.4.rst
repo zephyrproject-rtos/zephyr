@@ -116,6 +116,11 @@ Networking
 Other subsystems
 ****************
 
+* Cache
+
+  * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
+    :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
+
 Modules
 *******
 
@@ -128,3 +133,6 @@ Trusted Firmware-M
 
 Architectures
 *************
+
+* ``CONFIG_ARCH_HAS_COHERENCE`` to :kconfig:option:`CONFIG_CACHE_CAN_SAY_MEM_COHERENCE` as
+  the feature is cache related so move it under cache.
