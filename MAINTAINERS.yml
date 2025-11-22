@@ -4810,9 +4810,9 @@ Silabs SiM3U Platforms:
 State machine framework:
   status: maintained
   maintainers:
-    - sambhurst
     - vlad-kulikov
   collaborators:
+    - sambhurst
     - keith-zephyr
     - glenn-andrews
   files:
