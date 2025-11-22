@@ -64,6 +64,7 @@ sdhc: &sdmmc1 {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	sdhi-on-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	power-delay-ms = <50>;
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
 	hw-flow-control;
