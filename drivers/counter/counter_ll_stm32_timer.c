@@ -464,6 +464,26 @@ static uint32_t counter_stm32_get_freq(const struct device *dev)
 	return data->freq;
 }
 
+static int counter_stm32_reset_timer(const struct device *dev)
+{
+	const struct counter_stm32_config *config = dev->config;
+	TIM_TypeDef *timer = config->timer;
+
+	LL_TIM_SetCounter(timer, 0);
+
+	return 0;
+}
+
+static int counter_stm32_set_value(const struct device *dev, uint32_t ticks)
+{
+	const struct counter_stm32_config *config = dev->config;
+	TIM_TypeDef *timer = config->timer;
+
+	LL_TIM_SetCounter(timer, ticks);
+
+	return 0;
+}
+
 static void counter_stm32_top_irq_handle(const struct device *dev)
 {
 	struct counter_stm32_data *data = dev->data;
@@ -510,6 +530,8 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
 	.get_guard_period = counter_stm32_get_guard_period,
 	.set_guard_period = counter_stm32_set_guard_period,
 	.get_freq = counter_stm32_get_freq,
+	.reset = counter_stm32_reset_timer,
+	.set_value = counter_stm32_set_value,
 };
 
 #define TIM_IRQ_HANDLE_CC(timx, cc)						\
