@@ -22,8 +22,8 @@
 #include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
-#include "bap_endpoint.h"
-#include "bap_iso.h"
+#include "audio/bap_endpoint.h"
+#include "audio/bap_iso.h"
 
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
 static struct bt_bap_unicast_group bap_unicast_group;
