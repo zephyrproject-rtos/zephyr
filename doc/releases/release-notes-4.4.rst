@@ -144,6 +144,10 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* LoRa/LoRaWAN
+
+   * :c:func:`lora_airtime`
+
 Other notable changes
 *********************
 
