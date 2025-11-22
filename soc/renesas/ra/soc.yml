@@ -37,6 +37,18 @@ family:
       - name: ra4m3
         socs:
           - name: r7fa4m3af3cfb
+      - name: ra4t1
+        socs:
+          - name: r7fa4t1b93cfj
+          - name: r7fa4t1b93cfl
+          - name: r7fa4t1b93cfm
+          - name: r7fa4t1b93cne
+          - name: r7fa4t1b93cnh
+          - name: r7fa4t1bb3cfj
+          - name: r7fa4t1bb3cfl
+          - name: r7fa4t1bb3cfm
+          - name: r7fa4t1bb3cne
+          - name: r7fa4t1bb3cnh
       - name: ra4w1
         socs:
           - name: r7fa4w1ad2cng
