@@ -61,6 +61,7 @@ description: |
     - bias-pull-down: Enable pull-down resistor.
     - low-power-enable: Configure pin as an input with input buffer
       disconnected.
+    - slew-rate: Configure slew rate, higher value is faster.
 
     Note that bias options are mutually exclusive.
 
@@ -93,6 +94,7 @@ child-binding:
           - bias-pull-down
           - bias-pull-up
           - low-power-enable
+          - slew-rate
 
     properties:
       psels:

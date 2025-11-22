@@ -11,7 +11,8 @@
  * organized as follows:
  *
  * - 31..24: Pin function.
- * - 19-23:  Reserved.
+ * - 21-23:  Reserved.
+ * - 19-20:  Pin slew rate setting (BIAS)
  * - 18:     Associated peripheral belongs to GD FAST ACTIVE1 (nRF54H only)
  * - 17:     Clockpin enable.
  * - 16:     Pin inversion mode.
@@ -30,6 +31,10 @@
 #define NRF_FUN_POS 24U
 /** Mask for the function field. */
 #define NRF_FUN_MSK 0xFFU
+/** Position of the slew setting field. */
+#define NRF_BIAS_POS 19U
+/** Mask for the slew setting field. */
+#define NRF_BIAS_MSK 0x3U
 /** Position of the GPD FAST ACTIVE1 */
 #define NRF_GPD_FAST_ACTIVE1_POS 18U
 /** Mask for the GPD FAST ACTIVE1 */
