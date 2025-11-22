@@ -250,7 +250,7 @@ static int rm67162_init(const struct device *dev)
 		}
 		/* Per datasheet, reset low pulse width should be at least 10usec */
 		k_sleep(K_USEC(30));
-		gpio_pin_set_dt(&config->reset_gpio, 1);
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret < 0) {
 			LOG_ERR("Could not pull reset high (%d)", ret);
 			return ret;

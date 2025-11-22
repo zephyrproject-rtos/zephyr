@@ -1,0 +1,16 @@
+# Private config options for display sample
+
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Display sample application"
+
+source "Kconfig.zephyr"
+
+config SAMPLE_BUFFER_ADDR_ALIGN
+	int "The display buffer address alignment"
+	default 1
+
+config SAMPLE_PITCH_ALIGN
+	int "The update area pitch alignment"
+	default 1

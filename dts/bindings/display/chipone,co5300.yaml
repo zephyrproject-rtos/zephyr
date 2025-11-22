@@ -29,8 +29,9 @@ properties:
       VSYNC interval. This permits the controller to send new display
       data during a VSYNC interval, removing tearing.
 
-  power-gpios:
-    type: phandle-array
+  pitch-align:
+    type: int
+    default: 1
     description: |
-      The RESETn pin is asserted to disable the controller causing a hard
-      reset. The controller receives this as an active-low signal.
+      The CO5300 maintains an internal frame buffer. Its stride must be
+      compliant with the display controller's requirement.
