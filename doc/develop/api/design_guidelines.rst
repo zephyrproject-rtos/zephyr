@@ -7,6 +7,208 @@ Zephyr development and evolution is a group effort, and to simplify
 maintenance and enhancements there are some general policies that should
 be followed when developing a new capability or interface.
 
+.. _doxygen_documentation_guidelines:
+
+API Documentation
+*****************
+
+The Zephyr Project uses `Doxygen`_ to generate documentation from source code comments. A high-level
+summary of the Doxygen guidelines for all public API is as follows:
+
+- Each public header file, function declaration, type definition, typedef, define, macro and global
+  variable declaration SHALL be fully documented.
+
+- Each public header file, function declaration, type definition, typedef, define, macro and global
+  variable declaration SHALL belong to at least one Doxygen group. See
+  :ref:`doxygen_guidelines_groups` for more details.
+
+- Each public header file SHALL have an ``@file`` block at the top of the file after the SPDX
+  License Identifier. See :ref:`doxygen_guidelines_files` for more details.
+
+- Each construct that is defined in a public header file but only meant for internal use SHALL be
+  enclosed in ``@cond INTERNAL_HIDDEN`` / ``@endcond`` sections.
+  See :ref:`doxygen_guidelines_internals` for more details.
+
+- All documentation SHALL use grammatically correct sentences with proper punctuation.
+
+.. _Doxygen: https://www.doxygen.nl/
+.. _Doxygen commands: https://www.doxygen.nl/manual/commands.html
+
+General Doxygen considerations
+==============================
+
+- Using the ``@brief`` command is optional. If omitted, the first sentence of the comment block
+  (ending with a period) is treated as the brief description.
+
+.. _doxygen_guidelines_groups:
+
+Groups
+======
+
+- Doxygen group names shall use `snake case <https://en.wikipedia.org/wiki/Snake_case>`_.
+
+- Use ``@defgroup`` and ``@addtogroup`` with ``@{`` and ``@}`` brackets to add members to a group.
+
+- A group shall be defined at most once.
+
+- Each group shall be documented with a title, brief description and an optional detailed
+  description.
+
+  - The title is a short, descriptive name for the group. As groups inherently collapse various
+    interfaces/API together, do _not_ use "API" or "Interface" (or any other variant of these) terms
+    in the title.
+  - The brief description is a short, one-sentence description of the group that should not
+    paraphrase the title.
+  - The detailed description is a longer, more detailed description of the group.
+
+- A group must be contained in at least one group, so that it correctly appears in the documentation
+  hierarchy. Use the ``@ingroup`` command to specify the parent group(s) a group belongs to.
+
+  .. note::
+
+     There are situations where it makes sense for a group to be contained in multiple groups. For
+     example, Zephyr device driver emulators appear both in the ``io_emulators`` group (in the
+     Testing section of the documentation), as well as in the group corresponding to the emulated
+     driver class (e.g. ``adc_interface``).
+
+Example:
+
+.. code-block:: c
+
+   /**
+    * @defgroup lora_api LoRa
+    * @brief Set of APIs for interacting with LoRa radio.
+    * @ingroup drivers
+    *
+    * @{
+    */
+
+    /* here the fully documented contents of the LoRa header file */
+
+    /** @} */
+
+
+.. _doxygen_guidelines_files:
+
+Files
+=====
+
+- ``@file`` blocks shall have a brief description and an optional detailed description.
+
+- The brief description should concisely state what the file provides, e.g.:
+
+  - This header file provides the API of the ABC subsystem.
+  - This file defines helper macros for the XYZ module.
+
+- The optional detailed description should explain the context or grouping logic of the file
+  contents.
+
+- Avoid repeating content that should be in group or individual symbol documentation.
+
+Type Definitions
+================
+
+- Each type (``typedef``, ``struct``, ``enum``) and type member shall be documented with a brief
+  description and an optional detailed description.
+
+- For the brief description of types, use phrases like this:
+
+  - This type represents ... and so on.
+  - This structure represents ... and so on.
+  - This structure provides ... and so on.
+  - This enumeration represents ... and so on.
+  - The XYZ represents ... and so on.
+
+- For the brief description of type members, use phrases like this:
+
+  - This member represents ... and so on.
+  - This member contains ... and so on.
+  - This member references ... and so on.
+  - The XYZ lock protects ... and so on.
+
+Function Declarations
+=====================
+
+- Each function declaration or function-like macro in a header file shall be documented with a brief
+  description and an optional detailed description.
+
+- For the brief description, use descriptive-style, for example "Creates a thread." or "Sends the
+  events to the thread." or "Obtains the semaphore.".
+
+Parameters
+----------
+
+- Each parameter shall be documented with an ``@param`` entry. List the ``@param`` entries in the
+  order of the function parameters.
+
+- For non-``const`` pointer parameters:
+
+  - Use ``@param[out]``, if the function *writes* to the pointed data.
+  - Use ``@param[in, out]``, if the function both *reads* and *writes* to it.
+
+- Do not use ``[in]``, ``[out]`` or ``[in, out]`` specifiers for const pointers or scalars.
+
+- Parameter descriptions should clarify unit, constraints, and purpose.
+
+Return Values
+-------------
+
+- Return values shall be documented with ``@retval`` (for distinctive values) and ``@return``
+  (for non-distinctive values) paragraphs.
+
+- Place ``@retval`` descriptions before the ``@return`` description, starting with the most common
+  return value.
+
+- For functions returning a boolean value, use ``@return`` and a phrase like this: "Returns true,
+  if some condition is satisfied, otherwise false."
+
+.. _doxygen_guidelines_internals:
+
+Hiding internals
+================
+
+- Use ``@cond INTERNAL_HIDDEN`` / ``@endcond`` sections to hide internal details from the generated
+  documentation.
+
+- It is good practice to still document internal symbols for developer understanding.
+
+Example:
+
+.. code-block:: c
+
+   /**
+    * @brief This structure represents a foo.
+    *
+    * Opaque structure that holds the state of a foo.
+    */
+    struct foo {
+      /**
+       * @cond INTERNAL_HIDDEN
+       */
+      int bar;
+      /**
+       * @endcond
+       */
+    };
+
+Zephyr-specific Doxygen commands
+================================
+
+.. _doxygen_guidelines_kconfig_dependencies:
+
+Indicating Kconfig dependencies
+-------------------------------
+
+Some APIs might be available to the user only when one or more Kconfig options are enabled. The
+``@kconfig_dep`` command can be used to convey this information to the user in a consistent way.
+
+The command can be used with one, two or three Kconfig options.
+For example, ``@kconfig_dep{CONFIG_PM,CONFIG_SMP}`` (a made up example) will automatically add a
+note to the generated documentation that will read "Available only when the following Kconfig
+options are enabled: ``CONFIG_PM``, ``CONFIG_SMP``.".
+
+You can check an example of ``@kconfig_dep`` usage in the documentation of :c:struct:`coap_packet`.
+
 Using Callbacks
 ***************
 
@@ -65,6 +267,8 @@ Examples
   :c:struct:`counter_alarm_cfg` used to register the callback, depending
   on user needs.
 
+.. _doxygen_guidelines_conditional_data_and_apis:
+
 Conditional Data and APIs
 *************************
 
@@ -99,9 +303,38 @@ practices should be followed.
   other content the feature-specific code should be conditionally
   processed using ``#ifdef CONFIG_MYFEATURE``.
 
-The Kconfig flag used to enable the feature should be added to the
-``PREDEFINED`` variable in :file:`doc/zephyr.doxyfile.in` to ensure the
-conditional API and functions appear in generated documentation.
+Making conditional code visible to Doxygen
+==========================================
+
+Kconfig flag(s) used to enable a feature may be added to the ``PREDEFINED`` variable in
+:zephyr_file:`doc/zephyr.doxyfile.in` to ensure the conditional API and functions appear in
+generated documentation.
+
+Alternatively, you can rely on the ``__DOXYGEN__`` macro to make the conditional code visible to
+Doxygen, as this macro is defined only when generating documentation.
+
+.. code-block:: c
+   :emphasize-lines: 11
+   :caption: Making conditional code visible to Doxygen
+
+   /**
+   * @brief Representation of a CoAP Packet.
+   */
+   struct coap_packet {
+       uint8_t *data;    /**< User allocated buffer */
+       uint16_t offset;  /**< CoAP lib maintains offset while adding data */
+       uint16_t max_len; /**< Max CoAP packet data length */
+       uint8_t hdr_len;  /**< CoAP header length */
+       uint16_t opt_len; /**< Total options length (delta + len + value) */
+       uint16_t delta;   /**< Used for delta calculation in CoAP packet */
+   #if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(__DOXYGEN__)
+       /**
+       * Application specific user data.
+       * @kconfig_dep{CONFIG_COAP_KEEP_USER_DATA}
+       */
+       void *user_data;
+   #endif
+   };
 
 Return Codes
 ************
