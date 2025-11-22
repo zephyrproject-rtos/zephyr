@@ -12,6 +12,11 @@
 	model = "QEMU Cortex-R5";
 	compatible = "xlnx,zynqmp-qemu";
 
+	tcm_ram: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(192)>;
+	};
+
 	sram0: memory@4000000 {
 		compatible = "mmio-sram";
 		reg = <0x4000000 DT_SIZE_M(64)>;
