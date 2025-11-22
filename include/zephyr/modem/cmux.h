@@ -132,7 +132,9 @@ struct modem_cmux_frame {
 	bool pf;
 	uint8_t type;
 	const uint8_t *data;
+	const uint8_t *tx_extra;
 	uint16_t data_len;
+	uint16_t tx_extra_len;
 };
 
 struct modem_cmux_work {
