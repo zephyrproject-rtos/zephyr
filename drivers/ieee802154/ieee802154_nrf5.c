@@ -344,7 +344,7 @@ static int nrf5_set_pan_id(const struct device *dev, uint16_t pan_id)
 	sys_put_le16(pan_id, pan_id_le);
 	nrf_802154_pan_id_set(pan_id_le);
 
-	LOG_DBG("0x%x", pan_id);
+	LOG_DBG("pan_id 0x%x", pan_id);
 
 	return 0;
 }
@@ -358,7 +358,7 @@ static int nrf5_set_short_addr(const struct device *dev, uint16_t short_addr)
 	sys_put_le16(short_addr, short_addr_le);
 	nrf_802154_short_address_set(short_addr_le);
 
-	LOG_DBG("0x%x", short_addr);
+	LOG_DBG("short_addr 0x%x", short_addr);
 
 	return 0;
 }
@@ -381,7 +381,7 @@ static int nrf5_filter(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter)
 {
-	LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u set=%d", type, set);
 
 	if (!set) {
 		return -ENOTSUP;
