@@ -128,6 +128,16 @@ LOG_MODULE_REGISTER(NRFX_MODULE_PREFIX, NRFX_MODULE_LOG_LEVEL);
 #define NRFX_LOG_ERROR_STRING_GET(error_code)  nrfx_error_string_get(error_code)
 extern char const *nrfx_error_string_get(nrfx_err_t code);
 
+/**
+ * @brief Macro for getting the textual representation of a given errno error code.
+ *
+ * @param[in] error_code Errno error code.
+ *
+ * @return String containing the textual representation of the errno error code.
+ */
+#define NRFX_NEW_LOG_ERROR_STRING_GET(error_code) nrfx_new_error_string_get(error_code)
+extern char const *nrfx_new_error_string_get(int code);
+
 /** @} */
 
 #ifdef __cplusplus
