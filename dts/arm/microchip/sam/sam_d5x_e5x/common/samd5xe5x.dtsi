@@ -111,6 +111,19 @@
 			clock-names = "mclk", "gclk";
 		};
 
+
+		usb0: usb@41000000 {
+			compatible = "microchip,usb-g1";
+			status = "disabled";
+			reg = <0x41000000 0x1000>;
+			interrupts = <80 0>, <81 0>, <82 0>, <83 0>;
+			num-bidir-endpoints = <8>;
+			maximum-speed = "full-speed";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_USB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_USB>;
+			clock-names = "mclk", "gclk";
+		};
+
 		nvmctrl: nvmctrl@41004000 {
 			compatible = "microchip,nvmctrl-g1-flash";
 			status = "okay";

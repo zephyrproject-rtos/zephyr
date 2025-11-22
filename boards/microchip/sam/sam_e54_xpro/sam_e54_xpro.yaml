@@ -22,4 +22,6 @@ supported:
   - reset
   - shell
   - uart
+  - usb
+  - watchdog
 vendor: microchip
