@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 
 #include "adxl372.h"
+#include <assert.h>
 
 LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -114,7 +115,10 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		adxl372_configure_fifo(dev, current_fifo_mode, data->fifo_config.fifo_format,
 					data->fifo_config.fifo_samples);
 
-		adxl372_set_op_mode(dev, cfg_372->op_mode);
+		
+		// adxl372_set_op_mode returns a non-zero integer on error
+		int set_op_mode_res = adxl372_set_op_mode(dev, cfg_372->op_mode);
+		assert(set_op_mode_res == 0);
 	}
 
 	rc = gpio_pin_interrupt_configure_dt(&cfg_372->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
