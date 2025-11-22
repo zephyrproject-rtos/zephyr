@@ -1,14 +1,24 @@
 sample:
   name: Bluetooth Multiple Extended Advertising Broadcaster
+common:
+  harness: bluetooth
+  tags:
+    - bluetooth
 tests:
-  sample.bluetooth.multiple_broadcast:
-    harness: bluetooth
+  sample.bluetooth.broadcaster_multiple:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.broadcaster_multiple.bt_ll_sw_split:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+    platform_allow:
       - nrf51dk/nrf51822
       - nrf52_bsim
       - nrf52dk/nrf52832
-    tags: bluetooth
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - qemu_cortex_m3
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840

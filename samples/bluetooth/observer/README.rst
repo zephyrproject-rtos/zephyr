@@ -16,6 +16,13 @@ If the used Bluetooth Low Energy Controller supports Extended Scanning, you may
 enable :kconfig:option:`CONFIG_BT_EXT_ADV` in the project configuration file. Refer to the
 project configuration file for further details.
 
+Building Extended Scanning support with Zephyr Controller
+*********************************************************
+
+.. code-block:: console
+
+   west build -b nrf52840dk/nrf52840 . -- -DCONF_FILE='prj_extended.conf' -DEXTRA_CONF_FILE='overlay-bt_ll_sw_split.conf'
+
 Building Extended Scanning support for BBC Micro Bit board
 **********************************************************
 
