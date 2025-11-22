@@ -132,6 +132,7 @@ struct modem_cellular_data {
 	uint8_t *chat_delimiter;
 	uint8_t *chat_filter;
 	uint8_t *chat_argv[32];
+	uint8_t script_failure_counter;
 
 	/* Status */
 	enum cellular_registration_status registration_status_gsm;
@@ -1296,6 +1297,36 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 	}
 }
 
+static void modem_cellular_script_failed_handler(struct modem_cellular_data *data,
+						 const struct modem_cellular_config *config)
+{
+	const uint8_t max_script_failures = 3;
+
+	data->script_failure_counter++;
+	LOG_INF("Script failed %d times", data->script_failure_counter);
+	if (data->script_failure_counter >= max_script_failures) {
+		data->script_failure_counter = 0;
+		if (data->state == MODEM_CELLULAR_STATE_CARRIER_ON) {
+			net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+		}
+		modem_chat_release(&data->chat);
+		modem_cmux_release(&data->cmux);
+		if (data->state >= MODEM_CELLULAR_STATE_AWAIT_REGISTERED) {
+			modem_ppp_release(data->ppp);
+		}
+
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
+		LOG_ERR("Maximum script failures reached, restarting modem");
+	}
+	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+}
+
+static void modem_cellular_script_success_handler(struct modem_cellular_data *data)
+{
+	data->script_failure_counter = 0;
+}
+
 static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data *data)
 {
 	modem_cellular_start_timer(data, K_NO_WAIT);
@@ -1314,9 +1345,10 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		modem_chat_run_script_async(&data->chat, config->dial_chat_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		modem_cellular_script_failed_handler(data, config);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		modem_cellular_script_success_handler(data);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		break;
 
@@ -1353,8 +1385,12 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_success_handler(data);
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_failed_handler(data, config);
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
@@ -1400,6 +1436,11 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		result.success = evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS;
 
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		if (result.success) {
+			modem_cellular_script_success_handler(data);
+		} else {
+			modem_cellular_script_failed_handler(data, config);
+		}
 		modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
 		break;
 
