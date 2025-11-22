@@ -14,6 +14,11 @@
 #include <r_riic_rx_private.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
+#include <iodefine.h>
+
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+#include <zephyr/drivers/misc/renesas_rx_dtc/renesas_rx_dtc.h>
+#endif /* CONFIG_RENESAS_RX_I2C_DTC */
 
 LOG_MODULE_REGISTER(i2c_renesas_rx, CONFIG_I2C_LOG_LEVEL);
 
@@ -34,11 +39,183 @@ struct i2c_rx_data {
 	i2c_callback_t user_callback;
 	void *user_data;
 	bool skip_callback;
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	volatile struct st_riic *p_regs;
+	/* DTC device */
+	const struct device *dtc;
+	/* RX */
+	transfer_info_t rxi_dtc_info;
+	uint8_t rxi_count;
+	uint8_t rxi_dtc_activation_irq;
+
+	/* TX */
+	transfer_info_t txi_dtc_info;
+	uint8_t txi_count;
+	uint8_t txi_dtc_activation_irq;
+
+	/* Msgs to send and receive */
+	struct i2c_msg *msgs;
+	uint8_t slv_addr;
+	uint8_t num_msgs;
+	uint8_t num_processed_msgs;
+#endif
 };
+
+/** Internal module driver functions */
+riic_return_t riic_bps_calc(riic_info_t *p_riic_info, uint16_t kbps);
+
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+static inline void riic_start_cond_generate(struct i2c_rx_data *data)
+{
+	data->p_regs->ICIER.BIT.STIE = 1;
+	data->p_regs->ICSR2.BIT.START = 0;
+	data->p_regs->ICCR2.BIT.ST = 1;
+}
+
+static inline void riic_restart_cond_generate(struct i2c_rx_data *data)
+{
+	data->p_regs->ICIER.BIT.STIE = 1;
+	data->p_regs->ICSR2.BIT.START = 0;
+	data->p_regs->ICCR2.BIT.RS = 1;
+}
+
+static inline void riic_stop_cond_generate(struct i2c_rx_data *data)
+{
+	data->p_regs->ICIER.BIT.SPIE = 1;
+	data->p_regs->ICSR2.BIT.STOP = 0;
+	data->p_regs->ICCR2.BIT.SP = 1;
+}
+
+static inline void riic_txi_trigger(struct i2c_rx_data *data)
+{
+	/** Enable txi */
+	data->p_regs->ICIER.BIT.TIE = 1;
+
+	/** Enable write to TRS */
+	data->p_regs->ICMR1.BIT.MTWP = 1;
+	/** Clear TRS bit to clear the TDRE flag */
+	data->p_regs->ICCR2.BIT.TRS = 0;
+	data->p_regs->ICMR1.BIT.MTWP = 0;
+
+	while (data->p_regs->ICCR2.BIT.TRS) {
+		/* code */
+	}
+
+	/** Set TRS bit to set TDRE flag => trigger txi */
+	data->p_regs->ICMR1.BIT.MTWP = 1;
+	data->p_regs->ICCR2.BIT.TRS = 1;
+	data->p_regs->ICMR1.BIT.MTWP = 0;
+}
+static uint8_t dummy_dest;
+#endif
 
 static void riic_eei_isr(const struct device *dev)
 {
 	struct i2c_rx_data *data = (struct i2c_rx_data *const)dev->data;
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	if (data->p_regs->ICSR2.BIT.TMOF) {
+		LOG_ERR("Timed Out");
+		/** Disable interrupt and clear flag */
+		data->p_regs->ICIER.BIT.TMOIE = 0;
+		data->p_regs->ICSR2.BIT.TMOF = 0;
+
+		riic_stop_cond_generate(data);
+		k_sem_give(&data->bus_sync);
+		if ((data->user_callback != NULL) && !data->skip_callback) {
+			data->user_callback(dev, -ETIME, data->user_data);
+		}
+		return;
+	}
+	if (data->p_regs->ICSR2.BIT.STOP) {
+		/** Disable interrupt and clear flag */
+		data->p_regs->ICIER.BIT.SPIE = 0;
+		data->p_regs->ICSR2.BIT.STOP = 0;
+
+		k_sem_give(&data->bus_sync);
+		if ((data->user_callback != NULL) && !data->skip_callback) {
+			data->user_callback(dev, 0, data->user_data);
+		}
+		return;
+	}
+	if (data->p_regs->ICSR2.BIT.NACKF) {
+		/** Disable interrupt and clear flag */
+		data->p_regs->ICIER.BIT.NAKIE = 0;
+		data->p_regs->ICSR2.BIT.NACKF = 0;
+
+		/** Generate stop condition */
+		riic_stop_cond_generate(data);
+		return;
+	}
+	if (data->p_regs->ICSR2.BIT.AL) {
+		LOG_ERR("Arbitration Lost");
+		/** Disable interrupt and clear flag */
+		data->p_regs->ICIER.BIT.ALIE = 0;
+		data->p_regs->ICSR2.BIT.AL = 0;
+
+		/** Generate stop condition */
+		riic_stop_cond_generate(data);
+		return;
+	}
+	if (data->p_regs->ICSR2.BIT.START) {
+
+		data->p_regs->ICIER.BIT.TIE = 1;
+		/** Disable interrupt and clear flag */
+		data->p_regs->ICIER.BIT.STIE = 0;
+		data->p_regs->ICSR2.BIT.START = 0;
+
+		if (data->num_msgs == 0) {
+			riic_stop_cond_generate(data);
+			return;
+		}
+
+		/** In case msg_len = 0, skip this msg */
+		while (data->msgs[data->num_processed_msgs].len == 0) {
+			data->num_processed_msgs++;
+			if (data->num_processed_msgs == data->num_msgs) {
+				riic_stop_cond_generate(data);
+				return;
+			}
+		}
+
+		static uint8_t first_byte;
+
+		first_byte = data->slv_addr << 1;
+		if ((data->msgs[data->num_processed_msgs].flags & I2C_MSG_RW_MASK) ==
+		    I2C_MSG_WRITE) {
+			first_byte &= W_CODE;
+		} else {
+			first_byte |= R_CODE;
+
+			data->rxi_count = 0;
+			data->rxi_dtc_info.p_src = (void *)(&data->p_regs->ICDRR);
+			/**
+			 * The first frame has no data
+			 * but have to dummy read the data reg to clear flag
+			 */
+			data->rxi_dtc_info.length = 1;
+			data->rxi_dtc_info.p_dest = &dummy_dest;
+			dtc_renesas_rx_configuration(data->dtc, data->rxi_dtc_activation_irq,
+						     &data->rxi_dtc_info);
+			dtc_renesas_rx_start_transfer(data->dtc, data->rxi_dtc_activation_irq);
+			data->p_regs->ICIER.BIT.RIE = 1;
+		}
+
+		/** Config DTC */
+		data->txi_count = 0;
+		data->txi_dtc_info.p_dest = (void *)(&data->p_regs->ICDRT);
+		data->txi_dtc_info.p_src = &first_byte;
+		data->txi_dtc_info.length = 1;
+
+		dtc_renesas_rx_configuration(data->dtc, data->txi_dtc_activation_irq,
+					     &data->txi_dtc_info);
+		dtc_renesas_rx_start_transfer(data->dtc, data->txi_dtc_activation_irq);
+
+		riic_txi_trigger(data);
+
+		return;
+	}
+	return;
+#else
 	const struct i2c_rx_config *config = dev->config;
 
 	riic_return_t rdp_ret;
@@ -63,26 +240,174 @@ static void riic_eei_isr(const struct device *dev)
 	}
 
 	config->riic_eei_sub();
+#endif
 }
 static void riic_rxi_isr(const struct device *dev)
 {
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	struct i2c_rx_data *data = dev->data;
+
+	if (data->rxi_count == 0) {
+		data->rxi_count++;
+
+		/** Config DTC for rxi */
+		data->rxi_dtc_info.p_dest = data->msgs[data->num_processed_msgs].buf;
+		data->rxi_dtc_info.length = data->msgs[data->num_processed_msgs].len;
+
+		dtc_renesas_rx_configuration(data->dtc, data->rxi_dtc_activation_irq,
+					     &data->rxi_dtc_info);
+		dtc_renesas_rx_start_transfer(data->dtc, data->rxi_dtc_activation_irq);
+		return;
+	} else if (data->rxi_count == 1) {
+		data->rxi_count++;
+		data->p_regs->ICMR3.BIT.ACKWP = 1;
+		data->p_regs->ICMR3.BIT.ACKBT = 1;
+		data->p_regs->ICMR3.BIT.ACKWP = 0;
+		return;
+	}
+	data->p_regs->ICIER.BIT.RIE = 0;
+
+	/** Update processed msg count */
+	data->num_processed_msgs++;
+	/** Stop when there no more msg */
+	if (data->num_processed_msgs == data->num_msgs) {
+		riic_stop_cond_generate(data);
+		return;
+	}
+	/** Check restart flag of current msg */
+	if (data->msgs[data->num_processed_msgs].flags & I2C_MSG_RESTART) {
+		riic_restart_cond_generate(data);
+	} else {
+		/** Stop in other cases */
+		riic_stop_cond_generate(data);
+	}
+	return;
+
+#else
 	const struct i2c_rx_config *config = dev->config;
 
 	config->riic_rxi_sub();
+#endif
 }
 
 static void riic_txi_isr(const struct device *dev)
 {
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	struct i2c_rx_data *data = (struct i2c_rx_data *const)dev->data;
+
+	if (data->txi_count == 0) {
+		data->txi_count++;
+
+		if ((data->msgs[data->num_processed_msgs].flags & I2C_MSG_RW_MASK) ==
+		    I2C_MSG_WRITE) {
+			/** Reconfig DTC */
+			data->txi_dtc_info.p_src = data->msgs[data->num_processed_msgs].buf;
+			data->txi_dtc_info.length = data->msgs[data->num_processed_msgs].len;
+			if (data->msgs[data->num_processed_msgs].len == 1) {
+				/** Enable transmit end interrupt */
+				data->p_regs->ICIER.BIT.TEIE = 1;
+			}
+
+			dtc_renesas_rx_configuration(data->dtc, data->txi_dtc_activation_irq,
+						     &data->txi_dtc_info);
+			dtc_renesas_rx_start_transfer(data->dtc, data->txi_dtc_activation_irq);
+
+			riic_txi_trigger(data);
+		} else {
+			data->p_regs->ICIER.BIT.TIE = 0;
+		}
+	} else if (data->txi_count == 1) {
+		data->txi_count++;
+
+		if (data->msgs[data->num_processed_msgs].len > 1) {
+			/** Reconfig DTC */
+			data->txi_dtc_info.length = 1;
+			data->txi_dtc_info.p_src = data->msgs[data->num_processed_msgs].buf +
+						   data->msgs[data->num_processed_msgs].len - 1;
+
+			dtc_renesas_rx_configuration(data->dtc, data->txi_dtc_activation_irq,
+						     &data->txi_dtc_info);
+			dtc_renesas_rx_start_transfer(data->dtc, data->txi_dtc_activation_irq);
+
+			/** Enable transmit end interrupt */
+			data->p_regs->ICIER.BIT.TEIE = 1;
+
+			riic_txi_trigger(data);
+		} else {
+			data->p_regs->ICIER.BIT.TIE = 0;
+		}
+	} else {
+		data->p_regs->ICIER.BIT.TIE = 0;
+	}
+
+#else
 	const struct i2c_rx_config *config = dev->config;
 
 	config->riic_txi_sub();
+#endif
 }
 
 static void riic_tei_isr(const struct device *dev)
 {
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	struct i2c_rx_data *data = dev->data;
+
+	data->p_regs->ICSR2.BIT.TEND = 0;
+	data->p_regs->ICIER.BIT.TEIE = 0;
+
+	/** Check the stop flag of processed msg */
+	if (data->msgs[data->num_processed_msgs].flags & I2C_MSG_STOP) {
+		data->num_processed_msgs++;
+		riic_stop_cond_generate(data);
+		return;
+	}
+
+	/** Update processed msg count */
+	data->num_processed_msgs++;
+
+	/** When there no more msgs -> stop */
+	if (data->num_processed_msgs == data->num_msgs) {
+		riic_stop_cond_generate(data);
+		return;
+	}
+
+	/** Check restart flag of current msg */
+	if (data->msgs[data->num_processed_msgs].flags & I2C_MSG_RESTART) {
+		riic_restart_cond_generate(data);
+		return;
+	}
+
+	/**
+	 * Check flag read write
+	 * if READ => stop because it need restart but no restart flag
+	 * if WRITE => update DTC and trigger txi
+	 */
+	if ((data->msgs[data->num_processed_msgs].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		/** Update DTC */
+		if (data->msgs[data->num_processed_msgs].len > 1) {
+			data->txi_dtc_info.length = data->msgs[data->num_processed_msgs].len - 1;
+		} else {
+			data->txi_dtc_info.length = 1;
+
+			/** Enable transmit end interrupt */
+			data->p_regs->ICIER.BIT.TEIE = 1;
+		}
+		data->txi_count = 1;
+		data->txi_dtc_info.p_src = data->msgs[data->num_processed_msgs].buf;
+		dtc_renesas_rx_configuration(data->dtc, data->txi_dtc_activation_irq,
+					     &data->txi_dtc_info);
+		dtc_renesas_rx_start_transfer(data->dtc, data->txi_dtc_activation_irq);
+
+		riic_txi_trigger(data);
+	} else {
+		riic_stop_cond_generate(data);
+	}
+
+#else
 	const struct i2c_rx_config *config = dev->config;
 
 	config->riic_tei_sub();
+#endif
 }
 
 static void rdp_callback(void)
@@ -90,6 +415,7 @@ static void rdp_callback(void)
 	/* Do nothing */
 }
 
+#ifndef CONFIG_RENESAS_RX_I2C_DTC
 static void setup_rdp_info(struct i2c_rx_data *data, uint8_t *buf1, size_t len1, uint8_t *buf2,
 			   size_t len2, uint16_t *addr)
 {
@@ -99,13 +425,14 @@ static void setup_rdp_info(struct i2c_rx_data *data, uint8_t *buf1, size_t len1,
 	data->rdp_info.p_data2nd = buf2 ? buf2 : FIT_NO_PTR;
 	data->rdp_info.p_slv_adr = (uint8_t *)addr;
 }
+#endif /* CONFIG_RENESAS_RX_I2C_DTC */
 
 static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr, bool async)
 {
 	struct i2c_rx_data *data = (struct i2c_rx_data *const)dev->data;
-	riic_return_t rdp_ret;
 	int ret;
+	riic_return_t rdp_ret = 0;
 
 	ret = k_sem_take(&data->bus_lock, async ? K_NO_WAIT : K_FOREVER);
 	if (ret != 0) {
@@ -114,6 +441,26 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 
 	k_sem_reset(&data->bus_sync);
 
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+	/** Wait for the bus become free */
+	while (data->p_regs->ICCR2.BIT.BBSY == 1) {
+	}
+	/** Store msgs info */
+	data->slv_addr = addr;
+	data->msgs = msgs;
+	data->num_msgs = num_msgs;
+	data->num_processed_msgs = 0;
+
+	/** Disable all interrupt */
+	data->p_regs->ICIER.BYTE = 0x00;
+
+	/** Enable error interrupt */
+	data->p_regs->ICIER.BIT.TMOIE = 1;
+	data->p_regs->ICIER.BIT.ALIE = 1;
+	data->p_regs->ICIER.BIT.NAKIE = 1;
+
+	riic_start_cond_generate(data);
+#else
 	if (addr == 0x00) {
 		/* Enter transmission pattern 4 */
 		LOG_DBG("RDP RX I2C master transmit pattern 4\n");
@@ -188,11 +535,14 @@ unsupport_pattern:
 	goto transfer_exit;
 
 transfer_blocking:
+#endif /* CONFIG_RENESAS_RX_I2C_DTC */
 	if (!rdp_ret && !async) {
 		data->skip_callback = false; /* Invoke callback */
 		k_sem_take(&data->bus_sync, K_FOREVER);
 	}
+#ifndef CONFIG_RENESAS_RX_I2C_DTC
 transfer_exit:
+#endif /* CONFIG_RENESAS_RX_I2C_DTC */
 	k_sem_give(&data->bus_lock);
 
 	if (!rdp_ret) {
@@ -341,6 +691,51 @@ static DEVICE_API(i2c, i2c_rx_driver_api) = {
 #endif
 };
 
+/* clang-format off */
+#ifdef CONFIG_RENESAS_RX_I2C_DTC
+#define DTC_DATA_STRUCT_INIT(n)                                                                    \
+	.dtc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), dtc)),                                     \
+	.rxi_count = 0,                                                                            \
+	.rxi_dtc_activation_irq = DT_INST_IRQ_BY_NAME(n, rxi, irq),                                \
+	.rxi_dtc_info =                                                                            \
+		{                                                                                  \
+			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED, \
+			.transfer_settings_word_b.repeat_area = TRANSFER_REPEAT_AREA_DESTINATION,  \
+			.transfer_settings_word_b.irq = TRANSFER_IRQ_END,                          \
+			.transfer_settings_word_b.chain_mode = TRANSFER_CHAIN_MODE_DISABLED,       \
+			.transfer_settings_word_b.src_addr_mode = TRANSFER_ADDR_MODE_FIXED,        \
+			.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,                     \
+			.transfer_settings_word_b.mode = TRANSFER_MODE_NORMAL,                     \
+			.p_dest = (void *)NULL,                                                    \
+			.p_src = (void const *)NULL,                                               \
+			.num_blocks = 0,                                                           \
+			.length = 0,                                                               \
+	},                                                                                         \
+	.txi_count = 0,                                                                            \
+	.txi_dtc_activation_irq = DT_INST_IRQ_BY_NAME(n, txi, irq),                                \
+	.txi_dtc_info =                                                                            \
+		{                                                                                  \
+			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_FIXED,       \
+			.transfer_settings_word_b.repeat_area = TRANSFER_REPEAT_AREA_SOURCE,       \
+			.transfer_settings_word_b.irq = TRANSFER_IRQ_END,                          \
+			.transfer_settings_word_b.chain_mode = TRANSFER_CHAIN_MODE_DISABLED,       \
+			.transfer_settings_word_b.src_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,  \
+			.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,                     \
+			.transfer_settings_word_b.mode = TRANSFER_MODE_NORMAL,                     \
+			.p_dest = (void *)NULL,                                                    \
+			.p_src = (void const *)NULL,                                               \
+			.num_blocks = 0,                                                           \
+			.length = 0,                                                               \
+	},                                                                                         \
+	.slv_addr = 0x00,                                                                          \
+	.msgs = NULL,                                                                              \
+	.num_msgs = 0,                                                                             \
+	.num_processed_msgs = 0,
+#else
+#define DTC_DATA_STRUCT_INIT(n)
+#endif /* CONFIG_RENESAS_RX_I2C_DTC */
+/* clang-format on */
+
 #define I2C_RX_RIIC_INIT(index)                                                                    \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -377,13 +772,14 @@ static DEVICE_API(i2c, i2c_rx_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_rx_data i2c_rx_data_##index = {                                          \
+		.p_regs = (struct st_riic *)DT_INST_REG_ADDR(index),                               \
 		.rdp_info =                                                                        \
 			{                                                                          \
 				.dev_sts = RIIC_NO_INIT,                                           \
 				.ch_no = DT_INST_PROP(index, channel),                             \
 				.callbackfunc = rdp_callback,                                      \
 			},                                                                         \
-	};                                                                                         \
+		DTC_DATA_STRUCT_INIT(index)};                                                      \
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(index, i2c_rx_init, NULL, &i2c_rx_data_##index,                  \
 				  &i2c_rx_config_##index, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,   \
