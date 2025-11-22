@@ -17,8 +17,11 @@ tests:
       - qemu_x86
     platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
-    harness: keyboard
+    harness: pytest
     min_flash: 145
+    harness_config:
+      pytest_dut_scope: session
+      fixture: multi_instance_harness
   bluetooth.shell.power_control_request:
     extra_configs:
       - CONFIG_BT_TRANSMIT_POWER_CONTROL=y

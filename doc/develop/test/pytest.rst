@@ -184,6 +184,59 @@ device.
       unlaunched_dut.launch()
       unlaunched_dut.readlines_until('Hello world')
 
+
+harness_devices
+===============
+This fixture is designed for multi-device testing in connectivity test, such as BLE, etc.
+This fixture will load harness devices info from multi_instance_harness fixture,
+then flash and initialize the devices as dut fixture,
+Give access to a list of `DeviceAdapter`_ type objects (has to be same platform).
+To use this fixture, harness_build_dirs fixture must to be defined in test suite.
+which should return the buid_dirs for each harness devices.
+
+.. code-block:: yaml
+
+   multi_harness_devices_for_one_dut:
+      - connected: true
+        id: 001063989196
+        platform: frdm_mcxw72/mcxw27c/cpu0
+        product: J-Link
+        runner: jlink
+        serial: COM4
+      - connected: true
+        id: 001063989178
+        platform: frdm_mcxw72/mcxw27c/cpu0
+        product: J-Link
+        runner: jlink
+        serial: COM5
+
+.. code-block:: python
+
+   import pytest
+   from typing import List
+   from twister_harness import DeviceAdapter, harness_devices
+
+   def harness_build_dirs(request: pytest.FixtureRequest) -> List[str]:
+    build_dir = request.config.getoption('--build-dir')
+    return [build_dir, build_dir]
+
+   def test_sample(harness_devices: list[DeviceAdapter]):
+      for harness_device in harness_devices:
+         harness_device.readlines_until(regex=r'Bluetooth initialized', timeout=3)
+
+harness_shells
+==============
+This fixture is designed with harness_devices, just like shell fixture with dut.
+give access to a list of `Shell`_ type objects for each harness device.
+
+.. code-block:: python
+
+   from twister_harness import Shell
+
+   def test_sample(harness_shells: list[Shell]):
+      for shell in harness_shells:
+        shell.exec_command('help')
+
 Classes
 *******
 
