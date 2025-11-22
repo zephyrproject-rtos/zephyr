@@ -1,0 +1,29 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: A2DP Source"
+
+config BT_A2DP_SOURCE_DISCOVER_RESULT_COUNT
+	int "Maximum result count per device discovery"
+	default 10
+
+config BT_A2DP_SOURCE_EPS_DISCOVER_COUNT
+	int "Maximum result count per a2dp endpoint discovery"
+	default 10
+
+config BT_A2DP_SOURCE_SBC_BIT_RATE_DEFAULT
+	int "default sbc bit rate"
+	default 229
+
+config BT_A2DP_SOURCE_DATA_SEND_INTERVAL
+	int "data send interval (ms)"
+	default 10
+
+config BT_A2DP_SOURCE_DATA_BUF_SIZE
+	int "data buffer size (bytes)"
+	default 1000
+
+source "Kconfig.zephyr"
