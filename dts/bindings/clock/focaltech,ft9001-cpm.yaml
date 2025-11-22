@@ -1,0 +1,17 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FocalTech FT9001 Clock & Power Manager (CPM) specifiers use the packed IDs
+  defined in include/zephyr/dt-bindings/clock/focaltech_ft9001_clock.h
+
+compatible: "focaltech,ft9001-cpm"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id

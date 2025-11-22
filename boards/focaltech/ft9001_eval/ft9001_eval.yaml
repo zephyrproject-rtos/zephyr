@@ -1,0 +1,12 @@
+identifier: ft9001_eval
+name: FocalTech FT9001 Evaluation Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 256
+flash: 2048
+supported:
+  - serial
+vendor: focaltech
