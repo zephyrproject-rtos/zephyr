@@ -29,6 +29,37 @@ M5Stack CoreS3/CoreS3 SE features consist of:
 - Proximity sensor LTR-553ALS-WA (Not available for CoreS3 SE)
 - 6-Axis IMU BMI270 (Not available for CoreS3 SE)
 
+Power of M-Bus/Grove and USB-OTG
+================================
+
+The 5V power outputs for the M-Bus/Grove connectors and the USB-OTG port are
+disabled by default. These rails are controlled by the ``BUS_OUT_EN`` and
+``USB_OTG_EN`` signals, respectively. Their behavior under different enable
+combinations is shown below:
+
++----------------+----------------+-----------+---------+-------------+
+| ``BUS_OUT_EN`` | ``USB_OTG_EN`` | Battery   | USB-OTG | M-Bus/Grove |
++================+================+===========+=========+=============+
+| 0              | 0              | Charging  | Input   | Input       |
++----------------+----------------+-----------+---------+-------------+
+| 1              | 0              | Charging  | Input   | Output      |
++----------------+----------------+-----------+---------+-------------+
+| 0              | 1              | Charging  | Output  | Input       |
++----------------+----------------+-----------+---------+-------------+
+| 1              | 1              | Discharge | Output  | Output      |
++----------------+----------------+-----------+---------+-------------+
+
+Two snippets are provided to enable these power outputs:
+
+- :ref:`m5stack-cores3-bus-out-en`
+- :ref:`m5stack-cores3-usb-otg-en`
+
+Example usage:
+
+.. code-block:: console
+
+   west build -S cores3-bus-out-en [...]
+
 .. include:: ../../../espressif/common/soc-esp32s3-features.rst
    :start-after: espressif-soc-esp32s3-features
 
