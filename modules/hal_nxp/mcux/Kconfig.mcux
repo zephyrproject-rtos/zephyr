@@ -1,7 +1,7 @@
 # MCUXpresso SDK
 
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
-# Copyright 2024 NXP
+# Copyright 2024, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_MCUX
@@ -51,6 +51,11 @@ config HAS_MCUX_XCACHE
 	bool
 	help
 	  Set if the XCACHE module is present on the SoC.
+
+config HAS_MCUX_LMEM_CACHE
+	bool
+	help
+	  Set if the LMEM Cache module is present on the SoC.
 
 config HAS_NXP_MONOLITHIC_NBU
 	bool
