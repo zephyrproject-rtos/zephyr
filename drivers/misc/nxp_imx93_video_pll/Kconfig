@@ -1,0 +1,21 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_IMX93_VIDEO_PLL
+	bool "Initialize NXP iMX93 VIDEO PLL"
+	default y
+	depends on DT_HAS_NXP_IMX93_VIDEO_PLL_ENABLED
+	help
+	  Enable initialization of VIDEO PLL using device tree configuration.
+
+if NXP_IMX93_VIDEO_PLL
+
+module = VIDEO_PLL
+module-str = video pll
+source "subsys/logging/Kconfig.template.log_config"
+
+config IMX93_VIDEO_PLL_INIT_PRIORITY
+	int "i.MX93 video pll initialization priority"
+	default 30
+
+endif # NXP_IMX93_VIDEO_PLL
