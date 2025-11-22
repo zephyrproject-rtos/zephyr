@@ -89,6 +89,13 @@
 	};
 };
 
+/* Add the STM32C011Fx package-specific wake-up pins */
+&pwr {
+	wkup-pin@2 {
+		wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+};
+
 &clk_hsi {
 	status = "okay";
 };

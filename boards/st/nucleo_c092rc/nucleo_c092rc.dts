@@ -74,6 +74,7 @@
 	};
 };
 
+/* Add the STM32C09xCx package-specific wake-up pins */
 &pwr {
 	wkup-pin@2 {
 		reg = <0x2>;
