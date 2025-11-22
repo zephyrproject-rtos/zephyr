@@ -230,8 +230,23 @@ def process_pr(gh, maintainer_file, number):
     num_files = 0
     fn = list(pr.get_files())
 
-    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1):
+    # Check if PR currently has 'size: XS' label
+    current_labels = [label.name for label in pr.labels]
+    has_size_xs_label = 'size: XS' in current_labels
+
+    # Determine if PR qualifies for 'size: XS' label
+    qualifies_for_xs = pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1)
+
+    if qualifies_for_xs:
         labels = {'size: XS'}
+    elif has_size_xs_label and not qualifies_for_xs:
+        # Remove 'size: XS' label if PR no longer qualifies
+        log(
+            f"removing 'size: XS' label (commits: {pr.commits}, "
+            f"additions: {pr.additions}, deletions: {pr.deletions})..."
+        )
+        if not args.dry_run:
+            pr.remove_from_labels('size: XS')
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")
