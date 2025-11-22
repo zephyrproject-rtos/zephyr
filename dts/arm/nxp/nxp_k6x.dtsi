@@ -1,4 +1,7 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ */
 
 #include <mem.h>
 #include <freq.h>
@@ -518,6 +521,7 @@
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
+			nxp,max-mb = <16>;
 			status = "disabled";
 		};
 

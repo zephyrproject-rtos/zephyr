@@ -35,10 +35,21 @@
 	};
 };
 
+&flexcan0 {
+	nxp,max-mb = <32>;
+	nxp,max-mb-fd = <7>;
+};
+
+&flexcan1 {
+	nxp,max-mb = <32>;
+	nxp,max-mb-fd = <7>;
+};
+
 &flexcan2 {
 	compatible = "nxp,flexcan";
 	interrupts = <92 0>, <93 0>, <95 0>;
 	interrupt-names = "ored-warning-bus-off", "error", "mb-0-15";
+	nxp,max-mb = <16>;
 };
 
 /delete-node/ &ftm4;

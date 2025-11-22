@@ -34,3 +34,18 @@
 		write-block-size = <8>;
 	};
 };
+
+&flexcan0 {
+	nxp,max-mb = <32>;
+	nxp,max-mb-fd = <7>;
+};
+
+&flexcan1 {
+	nxp,max-mb = <32>;
+	nxp,max-mb-fd = <7>;
+};
+
+&flexcan2 {
+	nxp,max-mb = <32>;
+	nxp,max-mb-fd = <7>;
+};

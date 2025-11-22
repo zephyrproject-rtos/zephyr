@@ -52,3 +52,27 @@
 };
 
 #include <nxp/nxp_mcxe31x_common.dtsi>
+
+&flexcan_0 {
+	nxp,max-mb = <96>;
+};
+
+&flexcan_1 {
+	nxp,max-mb = <64>;
+};
+
+&flexcan_2 {
+	nxp,max-mb = <64>;
+};
+
+&flexcan_3 {
+	nxp,max-mb = <32>;
+};
+
+&flexcan_4 {
+	nxp,max-mb = <32>;
+};
+
+&flexcan_5 {
+	nxp,max-mb = <32>;
+};
