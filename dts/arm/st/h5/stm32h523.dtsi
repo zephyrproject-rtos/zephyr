@@ -37,5 +37,14 @@
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
+
+		vrefbuf: vrefbuf@44007400 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x44007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
+			resets = <&rctl STM32_RESET(APB3, 20)>;
+			ref-voltages = <2500000>, <2048000>, <1800000>;
+			status = "disabled";
+		};
 	};
 };

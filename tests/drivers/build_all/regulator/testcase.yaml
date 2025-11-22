@@ -1,11 +1,16 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags:
+    - drivers
+    - regulator
+  build_only: true
 tests:
   drivers.regulator.build:
-    tags:
-      - drivers
-      - regulator
-    build_only: true
     platform_allow:
       - native_sim
+  drivers.regulator.stm32_vrefbuf.build:
+    platform_allow:
+      - stm32h573i_dk
+      - stm32u5a9j_dk
