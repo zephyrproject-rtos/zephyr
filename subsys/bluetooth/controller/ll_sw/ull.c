@@ -86,7 +86,15 @@
 #include "ll_test.h"
 #include "ll_settings.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "hal/debug.h"
+
+#define TEST_TICKER_NODES         (TICKER_NODES)
+#define TEST_TICKER_TICKS_SLOT_US 100000U
+#define TEST_TICKER_INTERVAL_US   (((TEST_TICKER_TICKS_SLOT_US) + \
+				    (HAL_TICKER_RESCHEDULE_MARGIN_US)) * \
+				   (TEST_TICKER_NODES))
 
 #if defined(CONFIG_BT_BROADCASTER)
 #define BT_ADV_TICKER_NODES ((TICKER_ID_ADV_LAST) - (TICKER_ID_ADV_STOP) + 1)
@@ -555,6 +563,16 @@ static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 
 static void *mark_disable;
 
+#if defined(CONFIG_BT_CTLR_TEST)
+static struct k_sem sem_test_ticker;
+static uint32_t test_ticker_latency_ticks;
+static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
+			   uint16_t lazy, uint8_t force, void *context);
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext test_ticker_ext[TEST_TICKER_NODES];
+#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* CONFIG_BT_CTLR_TEST */
+
 static inline int init_reset(void);
 static void perform_lll_reset(void *param);
 static inline void *mark_set(void **m, void *param);
@@ -778,6 +796,65 @@ int ll_init(struct k_sem *sem_rx)
 	err = ecb_ut();
 	if (err) {
 		return err;
+	}
+
+	k_sem_init(&sem_test_ticker, 0, TEST_TICKER_NODES);
+
+	const uint32_t ticks_now = ticker_ticks_now_get();
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		uint32_t ret;
+
+#if defined(CONFIG_BT_TICKER_EXT)
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		test_ticker_ext[ticker_id].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS((TEST_TICKER_INTERVAL_US) +
+						(TEST_TICKER_TICKS_SLOT_US));
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+		ret = ticker_start_ext(
+#else /* !CONFIG_BT_TICKER_EXT */
+		ret = ticker_start(
+#endif /* !CONFIG_BT_TICKER_EXT */
+			  TICKER_INSTANCE_ID_CTLR /* instance */
+			, TICKER_USER_ID_THREAD /* user */
+			, ticker_id /* ticker id */
+			, ticks_now /* anchor point */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_INTERVAL_US) /* first interval */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_INTERVAL_US) /* periodic interval */
+			, HAL_TICKER_REMAINDER(TEST_TICKER_INTERVAL_US) /* remainder */
+			, 0 /* lazy */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_TICKS_SLOT_US) /* slot */
+			, test_ticker_cb /* timeout callback function */
+			, (void *)(uint32_t)ticker_id /* context */
+			, 0 /* op func */
+			, 0 /* op context */
+#if defined(CONFIG_BT_TICKER_EXT)
+			, &test_ticker_ext[ticker_id]
+#endif /* CONFIG_BT_TICKER_EXT */
+			);
+		LL_ASSERT_ERR(ret == TICKER_STATUS_SUCCESS);
+	}
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		k_sem_take(&sem_test_ticker, K_FOREVER);
+	}
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		uint32_t ret;
+
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_THREAD,
+				  ticker_id,
+				  NULL,
+				  NULL);
+		LL_ASSERT_ERR(ret == TICKER_STATUS_SUCCESS);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		printk("%s: Radio %u, LLL %u, ULL_HIGH %u, ULL_LOW %u, Latency %u.\n",
+		       __func__, lll_prof_radio_get(), lll_prof_lll_get(), lll_prof_ull_high_get(),
+		       lll_prof_ull_low_get(), HAL_TICKER_TICKS_TO_US(test_ticker_latency_ticks));
 	}
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
@@ -2377,6 +2454,30 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 	}
 }
 #endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_TEST)
+static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
+			   uint16_t lazy, uint8_t force, void *context)
+{
+	uint32_t ticks_latency;
+	uint32_t ticks_now;
+
+	ticks_now = ticker_ticks_now_get();
+	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
+	if (ticks_latency > test_ticker_latency_ticks) {
+		test_ticker_latency_ticks = ticks_latency;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		printk("%s: %u/%u at %u + %u + %u us (ULL_LOW %u us)\n", __func__,
+		       (uint32_t)context, TEST_TICKER_NODES,
+		       HAL_TICKER_TICKS_TO_US(ticks_at_expire), HAL_TICKER_TICKS_TO_US(ticks_drift),
+		       HAL_TICKER_TICKS_TO_US(ticks_latency), lll_prof_ull_low_get());
+	}
+
+	k_sem_give(&sem_test_ticker);
+}
+#endif /* CONFIG_BT_CTLR_TEST */
 
 static inline int init_reset(void)
 {
