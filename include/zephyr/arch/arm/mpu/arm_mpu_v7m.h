@@ -111,13 +111,12 @@
 
 /* Some helper defines for common regions */
 
-/* On Cortex-M, we can only set the XN bit when CONFIG_XIP=y. When
- * CONFIG_XIP=n, the entire image will be linked to SRAM, so we need to keep
- * the SRAM region XN bit clear or the application code will not be executable.
- */
+/* Executable flag for RAM */
+#define RAM_EXEC COND_CODE_1(CONFIG_EXECUTABLE_RAM, (0), (NOT_EXEC))
+
 #define REGION_RAM_ATTR(size)                                                                      \
 	{(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |                        \
-	  IF_ENABLED(CONFIG_XIP, (MPU_RASR_XN_Msk |)) size | P_RW_U_NA_Msk)}
+	  RAM_EXEC | size | P_RW_U_NA_Msk)}
 #define REGION_RAM_NOCACHE_ATTR(size)                                                              \
 	{(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)}
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
