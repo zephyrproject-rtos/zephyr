@@ -18,7 +18,6 @@ import zephyr_module
 
 
 class Blobs(WestCommand):
-
     DEFAULT_LIST_FMT = '{module} {status} {path} {type} {abspath}'
 
     def __init__(self):
@@ -27,7 +26,8 @@ class Blobs(WestCommand):
             # Keep this in sync with the string in west-commands.yml.
             'work with binary blobs',
             'Work with binary blobs',
-            accepts_unknown_args=False)
+            accepts_unknown_args=False,
+        )
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
@@ -61,22 +61,30 @@ class Blobs(WestCommand):
             - uri: URI to the remote location of the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
-            '''))
+            '''),
+        )
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('subcmd', nargs=1,
-                            choices=['list', 'fetch', 'clean'],
-                            help='sub-command to execute')
+        parser.add_argument(
+            'subcmd', nargs=1, choices=['list', 'fetch', 'clean'], help='sub-command to execute'
+        )
 
-        parser.add_argument('modules', metavar='MODULE', nargs='*',
-                            help='''zephyr modules to operate on;
-                            all modules will be used if not given''')
+        parser.add_argument(
+            'modules',
+            metavar='MODULE',
+            nargs='*',
+            help='''zephyr modules to operate on;
+                    all modules will be used if not given''',
+        )
 
         group = parser.add_argument_group('west blob list options')
-        group.add_argument('-f', '--format',
-                            help='''format string to use to list each blob;
-                                    see FORMAT STRINGS below''')
+        group.add_argument(
+            '-f',
+            '--format',
+            help='''format string to use to list each blob;
+                    see FORMAT STRINGS below''',
+        )
 
         group = parser.add_argument_group('west blobs fetch options')
         group.add_argument(
@@ -86,8 +94,12 @@ class Blobs(WestCommand):
                     Only local paths matching this regex will be fetched.
                     Note that local paths are relative to the module directory''',
         )
-        group.add_argument('-a', '--auto-accept', action='store_true',
-                            help='''auto accept license if the fetching needs click-through''')
+        group.add_argument(
+            '-a',
+            '--auto-accept',
+            action='store_true',
+            help='''auto accept license if the fetching needs click-through''',
+        )
 
         return parser
 
@@ -125,6 +137,7 @@ class Blobs(WestCommand):
         scheme = urlparse(url).scheme
         self.dbg(f'Fetching {path} with {scheme}')
         import fetchers
+
         fetcher = fetchers.get_fetcher_cls(scheme)
 
         self.dbg(f'Found fetcher: {fetcher}')
@@ -139,8 +152,9 @@ class Blobs(WestCommand):
 
         status = zephyr_module.get_blob_status(blob['abspath'], blob['sha256'])
         if status == zephyr_module.BLOB_OUTDATED:
-            self.err(textwrap.dedent(
-                f'''\
+            self.err(
+                textwrap.dedent(
+                    f'''\
                 The checksum of the downloaded file does not match that
                 in the blob metadata:
                 - if it is not certain that the download was successful,
@@ -153,7 +167,9 @@ class Blobs(WestCommand):
                 Module: {blob['module']}
                 Blob:   {blob['path']}
                 URL:    {blob['url']}
-                Info:   {blob['description']}'''))
+                Info:   {blob['description']}'''
+                )
+            )
             return False
         return True
 
@@ -176,9 +192,11 @@ class Blobs(WestCommand):
 
             if blob['click-through'] and not args.auto_accept:
                 while True:
-                    user_input = input("For this blob, need to read and accept "
-                                       "license to continue. Read it?\n"
-                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    user_input = input(
+                        "For this blob, need to read and accept "
+                        "license to continue. Read it?\n"
+                        "Please type 'y' or 'n' and press enter to confirm: "
+                    )
                     if user_input.upper() == "Y" or user_input.upper() == "N":
                         break
 
@@ -191,8 +209,10 @@ class Blobs(WestCommand):
                     print(license_content)
 
                 while True:
-                    user_input = input("Accept license to continue?\n"
-                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    user_input = input(
+                        "Accept license to continue?\n"
+                        "Please type 'y' or 'n' and press enter to confirm: "
+                    )
                     if user_input.upper() == "Y" or user_input.upper() == "N":
                         break
 
