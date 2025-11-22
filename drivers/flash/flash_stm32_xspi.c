@@ -997,6 +997,7 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	LOG_DBG("MemoryMap mode enabled");
 	return 0;
 }
+#endif /* CONFIG_STM32_MEMMAP */
 
 static int stm32_xspi_abort(const struct device *dev)
 {
@@ -1009,10 +1010,7 @@ static int stm32_xspi_abort(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_STM32_MEMMAP */
 
-
-#if defined(CONFIG_STM32_MEMMAP) || defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 /* Function to return true if the octoflash is in MemoryMapped else false */
 static bool stm32_xspi_is_memorymap(const struct device *dev)
 {
@@ -1020,7 +1018,6 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 
 	return stm32_reg_read_bits(&dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
 }
-#endif
 
 /*
  * Function to erase the flash : chip or sector with possible OCTO/SPI and STR/DTR
@@ -1218,7 +1215,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#if defined(CONFIG_STM32_MEMMAP) || defined(CONFIG_STM32_APP_IN_EXT_FLASH)
+#if defined(CONFIG_STM32_MEMMAP) || defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP)
 	ARG_UNUSED(dev_cfg);
 	ARG_UNUSED(dev_data);
 	/*
@@ -2093,7 +2090,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_STM32_APP_IN_EXT_FLASH
+#if defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP)
 	/* If MemoryMapped then configure skip init
 	 * Check clock status first as reading CR register without bus clock doesn't work on N6
 	 * If clock is off, then MemoryMapped is off too and we do init
@@ -2195,12 +2192,28 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		dev_data->hxspi.Init.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE;
 	}
 
+	if (stm32_xspi_is_memorymap(dev)) {
+		/* Memory map could have been set by previous application */
+		/* Force HAL instance in correct state */
+		dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
+	}
+
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
 		LOG_ERR("XSPI Init failed");
 		return -EIO;
 	}
 
 	LOG_DBG("XSPI Init'd");
+
+	if (stm32_xspi_is_memorymap(dev)) {
+		/* Memory map could have been set by previous application */
+		/* Abort to allow following card oriented transactions */
+		/* If needed by the application, it will be re-enabled just after */
+		ret = stm32_xspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before init");
+		}
+	}
 
 #if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
 	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)
