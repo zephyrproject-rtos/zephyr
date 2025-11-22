@@ -75,66 +75,57 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet
  * @see midi_ump_mt
  */
-#define UMP_MT(ump) \
-	((ump).data[0] >> 28)
+#define UMP_MT(ump) ((ump).data[0] >> 28)
 
 /**
  * There are 16 UMP message types, each of which can be 1 to 4 uint32 long.
  * Hence this packed representation of 16x2b array as an uint32 lookup table
  */
-#define UMP_NUM_WORDS_LOOKUP_TABLE \
-	((0U << 0) | (0U << 2) | (0U << 4) | (1U << 6) | \
-	(1U << 8) | (3U << 10) | (0U << 12) | (0U << 14) | \
-	(1U << 16) | (1U << 18) | (1U << 20) | (2U << 22) | \
-	(2U << 24) | (3U << 26) | (3U << 28) | (3U << 30))
+#define UMP_NUM_WORDS_LOOKUP_TABLE                                                                 \
+	((0U << 0) | (0U << 2) | (0U << 4) | (1U << 6) | (1U << 8) | (3U << 10) | (0U << 12) |     \
+	 (0U << 14) | (1U << 16) | (1U << 18) | (1U << 20) | (2U << 22) | (2U << 24) |             \
+	 (3U << 26) | (3U << 28) | (3U << 30))
 
 /**
  * @brief      Size of a Universal MIDI Packet, in 32bit words
  * @param[in]  ump    Universal MIDI Packet
  * @see ump112: 2.1.4 Message Type (MT) Allocation
  */
-#define UMP_NUM_WORDS(ump) \
-	(1 + ((UMP_NUM_WORDS_LOOKUP_TABLE >> (2 * UMP_MT(ump))) & 3))
+#define UMP_NUM_WORDS(ump) (1 + ((UMP_NUM_WORDS_LOOKUP_TABLE >> (2 * UMP_MT(ump))) & 3))
 
 /**
  * @brief      MIDI group field of a Universal MIDI Packet
  * @param[in]  ump    Universal MIDI Packet
  */
-#define UMP_GROUP(ump) \
-	(((ump).data[0] >> 24) & 0xF)
+#define UMP_GROUP(ump) (((ump).data[0] >> 24) & 0xF)
 
 /**
  * @brief      Status byte of a MIDI channel voice or system message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI1 event)
  * @see midi_ump_sys
  */
-#define UMP_MIDI_STATUS(ump) \
-	(((ump).data[0] >> 16) & 0xFF)
+#define UMP_MIDI_STATUS(ump)  (((ump).data[0] >> 16) & 0xFF)
 /**
  * @brief      Command of a MIDI channel voice message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
  * @see midi_ump_cmd
  */
-#define UMP_MIDI_COMMAND(ump) \
-	(UMP_MIDI_STATUS(ump) >> 4)
+#define UMP_MIDI_COMMAND(ump) (UMP_MIDI_STATUS(ump) >> 4)
 /**
  * @brief      Channel of a MIDI channel voice message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
  */
-#define UMP_MIDI_CHANNEL(ump) \
-	(UMP_MIDI_STATUS(ump) & 0xF)
+#define UMP_MIDI_CHANNEL(ump) (UMP_MIDI_STATUS(ump) & 0xF)
 /**
  * @brief      First parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
-#define UMP_MIDI1_P1(ump) \
-	(((ump).data[0] >> 8) & 0x7F)
+#define UMP_MIDI1_P1(ump)     (((ump).data[0] >> 8) & 0x7F)
 /**
  * @brief      Second parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
-#define UMP_MIDI1_P2(ump) \
-	((ump).data[0] & 0x7F)
+#define UMP_MIDI1_P2(ump)     ((ump).data[0] & 0x7F)
 
 /**
  * @brief      Initialize a UMP with a MIDI1 channel voice message
@@ -145,15 +136,15 @@ struct midi_ump {
  * @param      p1       The 1st MIDI1 parameter
  * @param      p2       The 2nd MIDI1 parameter
  */
-#define UMP_MIDI1_CHANNEL_VOICE(group, command, channel, p1, p2) \
-	(struct midi_ump) {.data = {                             \
-		(UMP_MT_MIDI1_CHANNEL_VOICE << 28)               \
-		| (((group) & 0x0f) << 24)                       \
-		| (((command) & 0x0f) << 20)                     \
-		| (((channel) & 0x0f) << 16)                     \
-		| (((p1) & 0x7f) << 8)                           \
-		| ((p2) & 0x7f)                                  \
-	}}
+#define UMP_MIDI1_CHANNEL_VOICE(group, command, channel, p1, p2)                                   \
+	(struct midi_ump)                                                                          \
+	{                                                                                          \
+		.data = {                                                                          \
+			(UMP_MT_MIDI1_CHANNEL_VOICE << 28) | (((group) & 0x0f) << 24) |            \
+			(((command) & 0x0f) << 20) | (((channel) & 0x0f) << 16) |                  \
+			(((p1) & 0x7f) << 8) | ((p2) & 0x7f)                                       \
+		}                                                                                  \
+	}
 
 /**
  * @defgroup midi_ump_cmd MIDI commands
@@ -181,14 +172,14 @@ struct midi_ump {
  * @param      p1       The 1st parameter
  * @param      p2       The 2nd parameter
  */
-#define UMP_SYS_RT_COMMON(group, status, p1, p2) \
-	(struct midi_ump) {.data = {             \
-		(UMP_MT_SYS_RT_COMMON << 28)     \
-		| (((group) & 0x0f) << 24)       \
-		| ((status) << 16)               \
-		| (((p1) & 0x7f) << 8)           \
-		| ((p2) & 0x7f)                  \
-	}}
+#define UMP_SYS_RT_COMMON(group, status, p1, p2)                                                   \
+	(struct midi_ump)                                                                          \
+	{                                                                                          \
+		.data = {                                                                          \
+			(UMP_MT_SYS_RT_COMMON << 28) | (((group) & 0x0f) << 24) |                  \
+			((status) << 16) | (((p1) & 0x7f) << 8) | ((p2) & 0x7f)                    \
+		}                                                                                  \
+	}
 
 /**
  * @defgroup midi_ump_sys System common and System Real Time message status
@@ -211,7 +202,6 @@ struct midi_ump {
 #define UMP_SYS_RESET          0xff /**< Reset (no param) */
 /** @} */
 
-
 /**
  * @defgroup midi_ump_stream UMP Stream specific fields
  * @ingroup midi_ump
@@ -225,8 +215,7 @@ struct midi_ump {
  * @param[in]  ump     Universal MIDI Packet (containing a UMP Stream message)
  * @see midi_ump_stream_format
  */
-#define UMP_STREAM_FORMAT(ump) \
-	(((ump).data[0] >> 26) & 0x03)
+#define UMP_STREAM_FORMAT(ump) (((ump).data[0] >> 26) & 0x03)
 
 /**
  * @defgroup midi_ump_stream_format UMP Stream format
@@ -255,8 +244,7 @@ struct midi_ump {
  * @param[in]  ump     Universal MIDI Packet (containing a UMP Stream message)
  * @see midi_ump_stream_status
  */
-#define UMP_STREAM_STATUS(ump) \
-	(((ump).data[0] >> 16) & 0x3FF)
+#define UMP_STREAM_STATUS(ump) (((ump).data[0] >> 16) & 0x3FF)
 
 /**
  * @defgroup midi_ump_stream_status UMP Stream status
@@ -295,8 +283,7 @@ struct midi_ump {
  * @see ump112: 7.1.1 Endpoint Discovery Message
  * @see midi_ump_ep_disc
  */
-#define UMP_STREAM_EP_DISCOVERY_FILTER(ump) \
-	((ump).data[1] & 0xFF)
+#define UMP_STREAM_EP_DISCOVERY_FILTER(ump) ((ump).data[1] & 0xFF)
 
 /**
  * @defgroup midi_ump_ep_disc UMP Stream endpoint discovery message filter bits
@@ -326,16 +313,14 @@ struct midi_ump {
  * @see ump112: 7.1.7 Function Block Discovery Message
  * @see midi_ump_fb_disc
  */
-#define UMP_STREAM_FB_DISCOVERY_FILTER(ump) \
-	((ump).data[0] & 0xFF)
+#define UMP_STREAM_FB_DISCOVERY_FILTER(ump) ((ump).data[0] & 0xFF)
 
 /**
  * @brief      Block number requested in a Function Block Discovery message
  * @param[in]  ump     Universal MIDI Packet (containing a Function Block Discovery message)
  * @see ump112: 7.1.7 Function Block Discovery Message
  */
-#define UMP_STREAM_FB_DISCOVERY_NUM(ump) \
-	(((ump).data[0] >> 8) & 0xFF)
+#define UMP_STREAM_FB_DISCOVERY_NUM(ump) (((ump).data[0] >> 8) & 0xFF)
 
 /**
  * @defgroup midi_ump_fb_disc UMP Stream Function Block discovery message filter bits
@@ -354,6 +339,58 @@ struct midi_ump {
 
 /** @} */
 
+/** @} */
+
+/**
+ * @defgroup midi_cin_code Code Index Numbers (CIN)
+ * @ingroup midi_ump
+ * @see USB Device Class Definition for MIDI Devices 1.0: Table 4-1
+ * @{
+ */
+#define MIDI_CIN_MISC              0x0
+#define MIDI_CIN_CABLE_EVENT       0x1
+#define MIDI_CIN_SYS_COMMON_2BYTE  0x2
+#define MIDI_CIN_SYS_COMMON_3BYTE  0x3
+#define MIDI_CIN_SYSEX_START       0x4
+#define MIDI_CIN_SYSEX_END_1BYTE   0x5
+#define MIDI_CIN_SYSEX_END_2BYTE   0x6
+#define MIDI_CIN_SYSEX_END_3BYTE   0x7
+#define MIDI_CIN_NOTE_OFF          0x8
+#define MIDI_CIN_NOTE_ON           0x9
+#define MIDI_CIN_POLY_KEYPRESS     0xA
+#define MIDI_CIN_CONTROL_CHANGE    0xB
+#define MIDI_CIN_PROGRAM_CHANGE    0xC
+#define MIDI_CIN_CHANNEL_PRESSURE  0xD
+#define MIDI_CIN_PITCH_BEND_CHANGE 0xE
+#define MIDI_CIN_SINGLE_BYTE       0xF
+/** @} */
+
+/**
+ * @defgroup midi_status_byte MIDI 1.0 Status Bytes
+ * @ingroup midi_ump
+ * @see ump112: 7.3 MIDI 1.0 Channel Voice Messages
+ * @see ump112: 7.6 System Common and System Real Time Messages
+ * @{
+ */
+#define MIDI_STATUS_NOTE_OFF         0x80
+#define MIDI_STATUS_NOTE_ON          0x90
+#define MIDI_STATUS_POLY_KEYPRESS    0xA0
+#define MIDI_STATUS_CONTROL_CHANGE   0xB0
+#define MIDI_STATUS_PROGRAM_CHANGE   0xC0
+#define MIDI_STATUS_CHANNEL_PRESSURE 0xD0
+#define MIDI_STATUS_PITCH_BEND       0xE0
+#define MIDI_STATUS_SYSEX_START      0xF0
+#define MIDI_STATUS_TIME_CODE        0xF1
+#define MIDI_STATUS_SONG_POS         0xF2
+#define MIDI_STATUS_SONG_SELECT      0xF3
+#define MIDI_STATUS_TUNE_REQUEST     0xF6
+#define MIDI_STATUS_SYSEX_END        0xF7
+#define MIDI_STATUS_TIMING_CLOCK     0xF8
+#define MIDI_STATUS_START            0xFA
+#define MIDI_STATUS_CONTINUE         0xFB
+#define MIDI_STATUS_STOP             0xFC
+#define MIDI_STATUS_ACTIVE_SENSING   0xFE
+#define MIDI_STATUS_RESET            0xFF
 /** @} */
 
 #ifdef __cplusplus
