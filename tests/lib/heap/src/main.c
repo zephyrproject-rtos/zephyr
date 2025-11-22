@@ -57,6 +57,8 @@
  */
 void *heapmem[BIG_HEAP_SZ / sizeof(void *)];
 void *scratchmem[SCRATCH_SZ / sizeof(void *)];
+/* Chunk aligned memory buffer for predictable behaviour */
+static uint8_t alignedmem[4096] __aligned(8);
 
 /* How many alloc/free operations are tested on each heap.  Two per
  * byte of heap sounds about right to get exhaustive coverage without
@@ -483,6 +485,54 @@ ZTEST(lib_heap, test_heap_listeners)
 #else /* CONFIG_SYS_HEAP_LISTENER */
 	ztest_test_skip();
 #endif /* CONFIG_SYS_HEAP_LISTENER */
+}
+
+static int find_maximum_single_allocation(struct sys_heap *heap, int base_size)
+{
+	void *mem;
+
+	for (int i = base_size + 16; i > 0; i--) {
+		mem = sys_heap_alloc(heap, i);
+		if (mem) {
+			sys_heap_free(heap, mem);
+			return i;
+		}
+	}
+	return 0;
+}
+
+ZTEST(lib_heap, test_heap_overhead)
+{
+	int16_t base_heap_sizes[] = {64, 128, 256, 512, 1024, 2048};
+	struct sys_heap heap;
+	int base;
+	int no_overhead;
+	int min_overhead;
+	int min_size_for;
+
+	TC_PRINT("Base |  Raw | Z_HEAP_MIN_SIZE | Z_HEAP_MIN_SIZE_FOR\n");
+
+	for (int i = 0; i < ARRAY_SIZE(base_heap_sizes); i++) {
+		base = base_heap_sizes[i];
+
+		if (base < Z_HEAP_MIN_SIZE) {
+			/* Avoid assertions */
+			no_overhead = 0;
+		} else {
+			sys_heap_init(&heap, alignedmem, base);
+			no_overhead = find_maximum_single_allocation(&heap, base);
+		}
+		sys_heap_init(&heap, alignedmem, base + Z_HEAP_MIN_SIZE);
+		min_overhead = find_maximum_single_allocation(&heap, base);
+		sys_heap_init(&heap, alignedmem, Z_HEAP_MIN_SIZE_FOR(base));
+		min_size_for = find_maximum_single_allocation(&heap, base);
+
+		TC_PRINT("%4u | %4u | %15u | %19u\n", base, no_overhead, min_overhead,
+			 min_size_for);
+
+		zassert_true(min_size_for >= base,
+			"Z_HEAP_MIN_SIZE_FOR(%d) could not allocate %d", base, base);
+	}
 }
 
 ZTEST_SUITE(lib_heap, NULL, NULL, NULL, NULL, NULL);
