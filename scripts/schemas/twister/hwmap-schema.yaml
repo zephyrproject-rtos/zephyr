@@ -50,6 +50,9 @@ sequence:
       "pre_script":
         type: str
         required: false
+      "failure_script":
+        type: str
+        required: false
       "fixtures":
         type: seq
         required: false
@@ -75,5 +78,8 @@ sequence:
             type: int
             required: false
           "post_flash_timeout":
+            type: int
+            required: false
+          "failure_script_timeout":
             type: int
             required: false
