@@ -9,3 +9,5 @@ tests:
       type: one_line
       regex:
         - "USB device support enabled"
+    platform_exclude:
+      - pico_plus2/rp2350b/m33/w
