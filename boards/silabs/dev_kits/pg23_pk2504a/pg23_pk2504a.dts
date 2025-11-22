@@ -158,6 +158,18 @@
 	status = "okay";
 };
 
+&eusart1 {
+	compatible = "silabs,eusart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <4000000>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+};
+
 &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
