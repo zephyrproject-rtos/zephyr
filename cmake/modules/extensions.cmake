@@ -5313,7 +5313,7 @@ function(zephyr_iterable_section)
   endif()
 
   if(DEFINED SECTION_SUBALIGN)
-    set(subalign "SUBALIGN ${SECTION_SUBALIGN}")
+    set(subalign SUBALIGN ${SECTION_SUBALIGN})
   endif()
 
   if(SECTION_ALIGN_WITH_INPUT)
