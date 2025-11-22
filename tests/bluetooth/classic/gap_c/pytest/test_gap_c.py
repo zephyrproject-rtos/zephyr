@@ -274,7 +274,10 @@ async def tc_gap_c_3(hci_port, shell, dut, address) -> None:
 
             # Test Start
             logger.info("Step 1: DUT initiates general inquiry")
-            await send_cmd_to_iut(shell, dut, "br discovery on", dongle_address)
+            await send_cmd_to_iut(shell, dut, "br discovery on")
+
+            found, _ = await _wait_for_shell_response(dut, dongle_address, 60)
+            assert found, "Device not discovered during inquiry"
 
             logger.info("Step 2: Tester responds to the inquiry")
             logger.info("This is a passive step and it always succeed.")
