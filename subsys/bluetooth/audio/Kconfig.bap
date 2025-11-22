@@ -16,6 +16,7 @@ config BT_BAP_UNICAST_SERVER
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
 	depends on BT_BONDABLE
+	depends on UTF8
 	select BT_PAC_SNK if BT_ASCS_ASE_SNK
 	select BT_PAC_SRC if BT_ASCS_ASE_SRC
 	help
@@ -30,6 +31,7 @@ config BT_BAP_UNICAST_CLIENT
 	depends on BT_CENTRAL
 	depends on BT_ISO_CENTRAL
 	depends on BT_BONDABLE
+	depends on UTF8
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
@@ -121,6 +123,7 @@ endif # BT_BAP_UNICAST_CLIENT
 config BT_BAP_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support"
 	depends on BT_ISO_BROADCASTER
+	depends on UTF8
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
@@ -162,6 +165,7 @@ config BT_BAP_BROADCAST_SINK
 	depends on BT_PAC_SNK
 	depends on BT_PERIPHERAL
 	depends on BT_BAP_SCAN_DELEGATOR
+	depends on UTF8
 	help
 	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
