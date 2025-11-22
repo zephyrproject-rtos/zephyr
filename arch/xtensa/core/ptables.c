@@ -336,7 +336,7 @@ static inline uint32_t *alloc_l2_table(void)
 
 	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
 		if (l2_page_tables_counter[idx] == 0) {
-			l2_page_tables_counter[idx] = 1;
+			l2_page_tables_counter_inc(l2_page_tables[idx]);
 			ret = (uint32_t *)&l2_page_tables[idx];
 			break;
 		}
