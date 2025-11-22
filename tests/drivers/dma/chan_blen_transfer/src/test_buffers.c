@@ -8,5 +8,6 @@
 
 #include "test_buffers.h"
 
-__aligned(32) char tx_data[TEST_BUF_SIZE] = "It is harder to be kind than to be wise........";
-__aligned(32) char rx_data[TEST_BUF_SIZE] = { 0 };
+__aligned(CONFIG_DMA_BLEN_ALIGNMENT) char tx_data[TEST_BUF_SIZE] =
+	"It is harder to be kind than to be wise........";
+__aligned(CONFIG_DMA_BLEN_ALIGNMENT) char rx_data[TEST_BUF_SIZE] = {0};

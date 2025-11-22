@@ -12,3 +12,7 @@ config DMA_CYCLIC_CHANNEL_NR
 config DMA_CYCLIC_XFER_SIZE
 	int "Number of bytes to transfer"
 	default 4096
+
+config DMA_CYCLIC_ALIGNMENT
+	int "TX and RX data alignment in bytes"
+	default 32

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Alex Apostolu
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Link Transfer Test"
+
+source "Kconfig.zephyr"
+
+config DMA_LINK_ALIGNMENT
+	int "TX and RX data alignment in bytes"
+	default 32
