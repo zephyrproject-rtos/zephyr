@@ -1,0 +1,21 @@
+sample:
+  description: Extended POSIX (Linux) API timerfd() example
+  name: timerfd
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  tags: posix
+  platform_exclude: m2gl025_miv
+  integration_platforms:
+    - mps2/an385
+tests:
+  sample.posix.timerfd:
+    min_ram: 32
+    tags: posix
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Timer expired 1 times"
+        - "Timer expired 3 times"
+        - "Timer closed"

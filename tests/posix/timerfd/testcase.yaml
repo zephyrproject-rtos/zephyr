@@ -1,0 +1,36 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - timerfd
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  integration_platforms:
+    - qemu_riscv64
+tests:
+  portability.posix.timerfd: {}
+  portability.posix.timerfd.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.timerfd.newlib:
+    platform_exclude:
+      - intel_ehl_crb
+      - lpcxpresso55s06
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.timerfd.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  portability.posix.timerfd.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+  portability.posix.timerfd.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
