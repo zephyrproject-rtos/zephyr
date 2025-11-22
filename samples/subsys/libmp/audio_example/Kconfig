@@ -1,0 +1,12 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config CODEC_MASTER
+	bool "Configure the selected codec device as a master device."
+	default true
+
+config I2S_MASTER
+	bool "Configure the selected I2S peripheral as a master device."
+	default false
