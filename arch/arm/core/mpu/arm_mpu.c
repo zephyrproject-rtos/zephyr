@@ -132,6 +132,14 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 				 "RAM_NOCACHE with DT_MEM_CACHEABLE attribute\n");
 			break;
 #endif
+#ifdef REGION_RAM_NOCACHE_OUT_SHARABLE_ATTR
+		case DT_MEM_ARM_MPU_RAM_NOCACHE_OUT_SHARABLE:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+							 REGION_RAM_NOCACHE_OUT_SHARABLE_ATTR);
+			__ASSERT(!(region[idx].dt_attr & DT_MEM_CACHEABLE),
+				 "RAM_NOCACHE with DT_MEM_CACHEABLE attribute\n");
+			break;
+#endif
 #ifdef REGION_FLASH_ATTR
 		case DT_MEM_ARM_MPU_FLASH:
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
