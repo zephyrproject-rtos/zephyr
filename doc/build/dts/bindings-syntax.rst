@@ -73,9 +73,9 @@ These keys are explained in the following sections.
 Title
 *****
 
-Short description of the bound device, typically the hardware model. It should
-typically be on the format "Vendor Family Model". If acronyms are used, they
-should be spelled out in parentheses. The naming should stay as close to the
+An *optional*, short description of the bound device, typically the hardware model.
+It should typically be of the format "Vendor Family Model". If acronyms are used,
+they should be spelled out in parentheses. The naming should stay as close to the
 vendor datasheet as possible.
 
 Titles should not exceed 100 characters. The description field should be used
