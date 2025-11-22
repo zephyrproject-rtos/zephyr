@@ -9,6 +9,7 @@ common:
 tests:
   sample.drivers.adc.adc_dt:
     platform_allow:
+      - nucleo_f446re
       - nucleo_l073rz
       - nucleo_h753zi
       - disco_l475_iot1
