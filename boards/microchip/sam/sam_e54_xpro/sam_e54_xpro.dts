@@ -27,6 +27,7 @@
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -56,6 +57,11 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&rtc {
+	prescaler = <1024>;
+	status = "okay";
 };
 
 &flash0 {
