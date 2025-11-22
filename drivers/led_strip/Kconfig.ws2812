@@ -26,6 +26,13 @@ config WS2812_STRIP_SPI_FORCE_NOCACHE
 	  For SPI communication using DMA, place the WS2812 SPI buffer in the __nocache section to
 	  ensure it is stored in uncached memory, as DMA usually requires access to uncached regions.
 
+config WS2812_STRIP_SPI_RESET_DELAY_SEND_NOP
+	bool "Send reset delay using NOP frames"
+	help
+	  Use SPI NOP frames to generate the reset delay before and after sending pixel data. This
+	  ensures the MOSI line is held low during the reset period, which may not be guaranteed on
+	  some platforms such as STM32.
+
 endif
 
 config WS2812_STRIP_UART
