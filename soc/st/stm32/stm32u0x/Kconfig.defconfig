@@ -9,7 +9,7 @@ rsource "Kconfig.defconfig.stm32u0*"
 
 if I2C_STM32
 
-config SHARED_INTERRUPTS
+configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c3)
 	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c4)
 	default y if $(dt_nodelabel_enabled,i2c3) && $(dt_nodelabel_enabled,i2c4)
