@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+
+&sercom2{
+	current-speed = <115200>;
+};
+
+/*EXT1*/
+&pinctrl{
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PA5D_SERCOM0_PAD1>,
+				 <PA4D_SERCOM0_PAD0>;
+		};
+	};
+};
+
+&sercom0{
+	status = "okay";
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+};
+
+&nvmctrl{
+	status = "okay";
+};

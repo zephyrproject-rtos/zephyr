@@ -1,0 +1,6 @@
+shields:
+  - name: mchp_rnbd451_bt
+    full_name: RNBD451 Add-on Board
+    vendor: microchip
+    supported_features:
+      - bluetooth
