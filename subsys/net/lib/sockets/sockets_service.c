@@ -28,7 +28,7 @@ static K_CONDVAR_DEFINE(wait_start);
 STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
-static struct service {
+static struct service_context {
 	struct zsock_pollfd events[CONFIG_ZVFS_POLL_MAX];
 	int count;
 } ctx;
