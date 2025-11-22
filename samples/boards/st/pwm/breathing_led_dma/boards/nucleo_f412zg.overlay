@@ -1,0 +1,56 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmaa = &dma1;
+		pribreath = &pwm3;
+		secbreath = &pwm4;
+	};
+};
+
+&timers3 {
+	st,prescaler = <1000>;
+	status = "okay";
+	
+	pwm3: pwm {
+		/* I could not find a better way to assign the dmas to the timer channel
+		than listing them in order here. The result is that unused channels before
+		used channels have to be listed as <0>.
+		Unused channels after used ones can be ommitted. */
+		dmas = <0>,
+		       <0>,
+		       <&dma1 7 5 (STM32_DMA_PERIPH_TX | STM32_DMA_MODE_CYCLIC | STM32_DMA_PRIORITY_HIGH | STM32_DMA_MEM_32BITS | STM32_DMA_PERIPH_32BITS) STM32_DMA_FIFO_FULL>,
+		       <0>;
+		dma-names = "tch1", "tch2", "tch3", "tch4"; // the number of entries here must match the number of dmas entries above
+		pinctrl-0 = <&tim3_ch3_pb0>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <1000>;
+	status = "okay";
+	
+	pwm4: pwm {
+		/* I could not find a better way to assign the dmas to the timer channel
+		than listing them in order here. The result is that unused channels before
+		used channels have to be listed as <0>.
+		Unused channels after used ones can be ommitted. */
+		dmas = <0>,
+		       <&dma1 3 2 (STM32_DMA_PERIPH_TX | STM32_DMA_MODE_CYCLIC | STM32_DMA_PRIORITY_HIGH | STM32_DMA_MEM_32BITS | STM32_DMA_PERIPH_32BITS) STM32_DMA_FIFO_FULL>,
+		       <0>,
+		       <0>;
+		dma-names = "tch1", "tch2", "tch3", "tch4"; // the number of entries here must match the number of dmas entries above
+		pinctrl-0 = <&tim4_ch2_pb7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&dma1 {
+	status = "okay";
+};

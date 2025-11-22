@@ -1,0 +1,9 @@
+tests:
+  drivers.pwm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    filter: dt_alias_exists("pwm-test")
+    depends_on: 
+      - pwm

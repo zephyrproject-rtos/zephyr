@@ -440,6 +440,42 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 				     uint32_t channel);
 #endif /* CONFIG_PWM_CAPTURE */
 
+#ifdef CONFIG_PWM_DMA
+/**
+ * @brief Set the period and provide values in nanoseconds for dma update for a single PWM output.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param period Period (in nanoseconds) set to the PWM.
+ * @param dma_buffer Pointer that holds the pulse width values (in nanoseconds).
+ * @param num_values Number of entries in the dma_buffer.
+ * @param flags Flags for pin configuration (polarity).
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If requested period or pulse cycles are not supported.
+ * @retval -errno Other negative errno code on failure.
+ */
+ typedef int (*pwm_set_dma_t)(const struct device *dev, uint32_t channel,
+	uint32_t period, uint32_t *dma_buffer,  uint32_t num_values, pwm_flags_t flags);
+
+/**
+ * @brief Set the period and provide values in cycles for dma update for a single PWM output.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param period Period (in cycles) set to the PWM.
+ * @param dma_buffer Pointer that holds the pulse width values (in cycles).
+ * @param num_values Number of entries in the dma_buffer.
+ * @param flags Flags for pin configuration (polarity).
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If requested period or pulse cycles are not supported.
+ * @retval -errno Other negative errno code on failure.
+ */
+typedef int (*pwm_set_cycles_dma_t)(const struct device *dev, uint32_t channel,
+	uint32_t period_cycles, uint32_t *dma_buffer,  uint32_t num_values, pwm_flags_t flags);
+#endif /* CONFIG_PWM_DMA */
+
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
@@ -449,6 +485,9 @@ __subsystem struct pwm_driver_api {
 	pwm_enable_capture_t enable_capture;
 	pwm_disable_capture_t disable_capture;
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_DMA
+	pwm_set_cycles_dma_t set_cycles_dma;
+#endif /* CONFIG_PWM_DMA */
 };
 /** @endcond */
 
@@ -613,6 +652,109 @@ static inline int pwm_set_pulse_dt(const struct pwm_dt_spec *spec,
 	return pwm_set(spec->dev, spec->channel, spec->period, pulse,
 		       spec->flags);
 }
+
+#ifdef CONFIG_PWM_DMA
+/**
+ * @brief Set the period and provide values in nanoseconds for DMA update for a single PWM output.
+ *
+ * @note If the DMA is configured in cyclic mode, the passed values are repeated continuously.
+ * The output stays at the last value if not in cyclic mode.
+ *
+ * @note Some multi-channel PWM controllers share the PWM period across all
+ * channels. Depending on the hardware, changing the PWM period for one channel
+ * may affect the PWM period for the other channels of the same PWM controller.
+ * 
+ * @note The values in the dma_buffer are overwritten with the cycles values
+ * calculated from the passed nanosecond values.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param period Period (in nanoseconds) set to the PWM.
+ * @param dma_buffer Pointer to a buffer with pulse width values (in nanoseconds)
+ * @param num_values Number of values in the buffer.
+ * @param flags Flags for pin configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If buffer is null.
+ * @retval -errno Negative errno code on failure.
+ */
+__syscall int pwm_set_dma(const struct device *dev, uint32_t channel,
+	uint32_t period, uint32_t *dma_buffer, uint32_t num_values, pwm_flags_t flags);
+
+static inline int z_impl_pwm_set_dma(const struct device *dev, uint32_t channel,
+	uint32_t period, uint32_t *dma_buffer, uint32_t num_values, pwm_flags_t flags)
+{
+	int err;
+	uint64_t pulse_cycles;
+	uint64_t period_cycles;
+	uint64_t cycles_per_sec;
+
+	if (NULL == dma_buffer) {
+		return -EINVAL;
+	}
+
+	err = pwm_get_cycles_per_sec(dev, channel, &cycles_per_sec);
+	if (err < 0) {
+		return err;
+	}
+
+	period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
+	if (period_cycles > UINT32_MAX) {
+		return -ENOTSUP;
+	}
+
+	for(int buf_idx = 0; buf_idx < num_values; buf_idx++) {
+		pulse_cycles = (dma_buffer[buf_idx] * cycles_per_sec) / NSEC_PER_SEC;
+		if (pulse_cycles > UINT32_MAX) {
+			return -ENOTSUP;
+
+		}
+		dma_buffer[buf_idx] = pulse_cycles;
+	}
+
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	return api->set_cycles_dma(dev, channel, period_cycles, dma_buffer, num_values * sizeof(uint32_t), flags);
+}
+
+/**
+ * @brief Set the period and provide values in cycles for DMA update for a single PWM output.
+ * 
+ * @note If the DMA is configured in cyclic mode, the passed values are repeated continuously.
+ * The output stays at the last value if not in cyclic mode.
+ *
+ * @note Some multi-channel PWM controllers share the PWM period across all
+ * channels. Depending on the hardware, changing the PWM period for one channel
+ * may affect the PWM period for the other channels of the same PWM controller.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param period_cycles Period (in clock cycles) set to the PWM. HW specific.
+ * @param dma_buffer Pointer to a buffer with pulse width values(in clock cycles). HW specific.
+ * @param num_values Number of values in the buffer.
+ * @param flags Flags for pin configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If buffer is null.
+ * @retval -errno Negative errno code on failure.
+ */
+__syscall int pwm_set_cycles_dma(const struct device *dev, uint32_t channel,
+	uint32_t period_cycles, uint32_t *dma_buffer, uint32_t num_values, pwm_flags_t flags);
+
+static inline int z_impl_pwm_set_cycles_dma(const struct device *dev, uint32_t channel,
+	uint32_t period_cycles, uint32_t *dma_buffer, uint32_t num_values, pwm_flags_t flags)
+{
+	if (NULL == dma_buffer) {
+		return -EINVAL;
+	}
+
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	return api->set_cycles_dma(dev, channel, period_cycles, dma_buffer, num_values * sizeof(uint32_t), flags);
+}
+#endif /* CONFIG_PWM_DMA */
 
 /**
  * @brief Convert from PWM cycles to microseconds.

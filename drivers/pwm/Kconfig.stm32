@@ -13,3 +13,10 @@ config PWM_STM32
 	  This option enables the PWM driver for STM32 family of
 	  processors. Say y if you wish to use PWM port on STM32
 	  MCU.
+
+config PWM_DMA
+	bool "STM32 MCU PWM DMA Support"
+	select DMA
+	help
+	  Enable the PWM DMA mode for PWM instances
+	  

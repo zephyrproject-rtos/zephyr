@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PWM DMA API test"
+
+source "Kconfig.zephyr"
+
+config DEFAULT_PWM_PORT
+	int "Default PWM port/channel"
+	default 3 if PWM_STM32
+	default 0
+	help
+	  PWM port matching the channel associated with PWM pin.
+
+config DEFAULT_PERIOD_CYCLE
+	int "Default PWM period in cycles"
+	default 1200
+	help
+	  Default PWM period in clock cycles.
+
+config DEFAULT_PERIOD_NSEC
+	int "Default PWM period in nanoseconds"
+	default 20000000
+	help
+	  Default PWM period in nanoseconds.
+
+config DEFAULT_STEP_NUMBER
+	int "Number of steps in sequence"
+	default 30
+	help
+	  Number of steps in sequence.
