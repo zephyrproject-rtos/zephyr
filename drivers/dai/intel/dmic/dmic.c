@@ -745,7 +745,7 @@ static int dai_dmic_get_config(const struct device *dev, struct dai_config *cfg,
 }
 
 static int dai_dmic_set_config(const struct device *dev,
-		const struct dai_config *cfg, const void *bespoke_cfg)
+		const struct dai_config *cfg, const void *bespoke_cfg, size_t size)
 
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;

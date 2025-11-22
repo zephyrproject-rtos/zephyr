@@ -315,7 +315,7 @@ __subsystem struct dai_driver_api {
 	int (*probe)(const struct device *dev);
 	int (*remove)(const struct device *dev);
 	int (*config_set)(const struct device *dev, const struct dai_config *cfg,
-			  const void *bespoke_cfg);
+			  const void *bespoke_cfg, size_t size);
 	int (*config_get)(const struct device *dev, struct dai_config *cfg,
 			  enum dai_dir dir);
 
@@ -390,6 +390,7 @@ static inline int dai_remove(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg Pointer to the structure containing configuration parameters.
  * @param bespoke_cfg Pointer to the structure containing bespoke config.
+ * @param size Bespoke config size.
  *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid argument.
@@ -397,11 +398,12 @@ static inline int dai_remove(const struct device *dev)
  */
 static inline int dai_config_set(const struct device *dev,
 				 const struct dai_config *cfg,
-				 const void *bespoke_cfg)
+				 const void *bespoke_cfg,
+				 size_t size)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	return api->config_set(dev, cfg, bespoke_cfg);
+	return api->config_set(dev, cfg, bespoke_cfg, size);
 }
 
 /**
