@@ -25,38 +25,25 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LFCLK_LFRC_STARTUP_TIME_US DT_INST_PROP(0, lfrc_startup_time_us)
 
 #define LFCLK_MAX_OPTS 4
-#define LFCLK_DEF_OPTS 2
 
 #define NRFS_CLOCK_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS)
 
 #define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
 
-/* Clock options sorted from highest to lowest power consumption.
- * - Clock synthesized from a high frequency clock
+/*
+ * Clock options sorted from lowest to highest power consumption. If clock option
+ * is not available it is not included.
+ * - External sine or square wave
+ * - XTAL low precision
+ * - XTAL high precision
  * - Internal RC oscillator
- * - External clock. These are inserted into the list at driver initialization.
- *   Set to one of the following:
- *   - XTAL. Low or High precision
- *   - External sine or square wave
+ * - Clock synthesized from a high frequency clock
  */
 static struct clock_options {
 	uint16_t accuracy : 15;
 	uint16_t precision : 1;
 	nrfs_clock_src_t src;
-} clock_options[LFCLK_MAX_OPTS] = {
-	{
-		/* NRFS will request FLL16M use HFXO in bypass mode if SYNTH src is used */
-		.accuracy = LFCLK_HFXO_ACCURACY,
-		.precision = 1,
-		.src = NRFS_CLOCK_SRC_LFCLK_SYNTH,
-	},
-	{
-		.accuracy = LFCLK_LFRC_ACCURACY,
-		.precision = 0,
-		.src = NRFS_CLOCK_SRC_LFCLK_LFRC,
-	},
-	/* Remaining options are populated on lfclk_init */
-};
+} clock_options[LFCLK_MAX_OPTS];
 
 struct lfclk_dev_data {
 	STRUCT_CLOCK_CONFIG(lfclk, ARRAY_SIZE(clock_options)) clk_cfg;
@@ -161,7 +148,7 @@ static int lfclk_resolve_spec_to_idx(const struct device *dev,
 		     ? dev_data->max_accuracy
 		     : req_spec->accuracy;
 
-	for (int i = dev_data->clock_options_cnt - 1; i >= 0; --i) {
+	for (int i = 0; i < dev_data->clock_options_cnt; i++) {
 		/* Iterate to a more power hungry and accurate clock source
 		 * If the requested accuracy is higher (lower ppm) than what
 		 * the clock source can provide.
@@ -331,15 +318,17 @@ static int api_get_rate_lfclk(const struct device *dev,
 static int lfclk_init(const struct device *dev)
 {
 	struct lfclk_dev_data *dev_data = dev->data;
-	nrf_bicr_lfosc_mode_t lfosc_mode;
 	nrfs_err_t res;
+	int ret;
+	nrf_bicr_lfosc_mode_t lfosc_mode;
+	struct clock_options *clock_option;
 
 	res = nrfs_clock_init(clock_evt_handler);
 	if (res != NRFS_SUCCESS) {
 		return -EIO;
 	}
 
-	dev_data->clock_options_cnt = LFCLK_DEF_OPTS;
+	dev_data->clock_options_cnt = 0;
 
 	lfosc_mode = nrf_bicr_lfosc_mode_get(BICR);
 
@@ -347,8 +336,6 @@ static int lfclk_init(const struct device *dev)
 	    lfosc_mode == NRF_BICR_LFOSC_MODE_DISABLED) {
 		dev_data->max_accuracy = LFCLK_HFXO_ACCURACY;
 	} else {
-		int ret;
-
 		ret = lfosc_get_accuracy(&dev_data->max_accuracy);
 		if (ret < 0) {
 			LOG_ERR("LFOSC enabled with invalid accuracy");
@@ -357,34 +344,41 @@ static int lfclk_init(const struct device *dev)
 
 		switch (lfosc_mode) {
 		case NRF_BICR_LFOSC_MODE_CRYSTAL:
-			clock_options[LFCLK_MAX_OPTS - 1].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 1].precision = 0;
-			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE;
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 0;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE;
+			dev_data->clock_options_cnt++;
 
-			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 2].precision = 1;
-			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE_HP;
-
-			dev_data->clock_options_cnt += 2;
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 1;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE_HP;
+			dev_data->clock_options_cnt++;
 			break;
+
 		case NRF_BICR_LFOSC_MODE_EXTSINE:
-			clock_options[LFCLK_MAX_OPTS - 1].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 1].precision = 0;
-			clock_options[LFCLK_MAX_OPTS - 1].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE;
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 0;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE;
+			dev_data->clock_options_cnt++;
 
-			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 2].precision = 1;
-			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE_HP;
-
-			dev_data->clock_options_cnt += 2;
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 1;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SINE_HP;
+			dev_data->clock_options_cnt++;
 			break;
+
 		case NRF_BICR_LFOSC_MODE_EXTSQUARE:
-			clock_options[LFCLK_MAX_OPTS - 2].accuracy = dev_data->max_accuracy;
-			clock_options[LFCLK_MAX_OPTS - 2].precision = 0;
-			clock_options[LFCLK_MAX_OPTS - 2].src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SQUARE;
-
-			dev_data->clock_options_cnt += 1;
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 0;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_EXT_SQUARE;
+			dev_data->clock_options_cnt++;
 			break;
+
 		default:
 			LOG_ERR("Unexpected LFOSC mode");
 			return -EINVAL;
@@ -397,6 +391,18 @@ static int lfclk_init(const struct device *dev)
 			return -ENODEV;
 		}
 	}
+
+	clock_option = &clock_options[dev_data->clock_options_cnt];
+	clock_option->accuracy = LFCLK_LFRC_ACCURACY;
+	clock_option->precision = 0;
+	clock_option->src = NRFS_CLOCK_SRC_LFCLK_LFRC;
+	dev_data->clock_options_cnt++;
+
+	clock_option = &clock_options[dev_data->clock_options_cnt];
+	clock_option->accuracy = LFCLK_HFXO_ACCURACY;
+	clock_option->precision = 1;
+	clock_option->src = NRFS_CLOCK_SRC_LFCLK_SYNTH;
+	dev_data->clock_options_cnt++;
 
 	dev_data->hfxo_startup_time_us = nrf_bicr_hfxo_startup_time_us_get(BICR);
 	if (dev_data->hfxo_startup_time_us == NRF_BICR_HFXO_STARTUP_TIME_UNCONFIGURED) {
