@@ -14,7 +14,7 @@ extern "C" {
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/mspi.h>
 #include "jesd216.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(supply_gpios)
 #define WITH_SUPPLY_GPIO 1

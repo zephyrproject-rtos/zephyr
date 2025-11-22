@@ -22,7 +22,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
 
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 #include "jesd216.h"
 
 #include "flash_stm32_ospi.h"

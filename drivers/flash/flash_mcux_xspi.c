@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include "memc_mcux_xspi.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/spi/spi_nor.h>
 
 LOG_MODULE_REGISTER(flash_mcux_xspi);
 
