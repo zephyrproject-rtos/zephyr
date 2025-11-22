@@ -1284,7 +1284,6 @@ exclude = [
     "./scripts/utils/pinctrl_nrf_migrate.py",
     "./scripts/utils/twister_to_list.py",
     "./scripts/west_commands/bindesc.py",
-    "./scripts/west_commands/blobs.py",
     "./scripts/west_commands/boards.py",
     "./scripts/west_commands/build.py",
     "./scripts/west_commands/build_helpers.py",
