@@ -29,6 +29,7 @@ if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND edgeprotecttools image-metadata --image ${unsigned_hex} --output ${signed_hex}
         --erased-val 0xff --hex-addr ${header_addr} --header-size ${header_size}
+        --slot-size 0x130000
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${signed_hex})
