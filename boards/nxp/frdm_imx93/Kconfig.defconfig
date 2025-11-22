@@ -51,4 +51,8 @@ config GPIO
 
 endif # IMX_USDHC
 
+# USB Except
+configdefault UDC_WORKQUEUE_STACK_SIZE
+	default 4096
+
 endif # BOARD_FRDM_IMX93
