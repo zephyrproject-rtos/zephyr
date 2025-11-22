@@ -114,7 +114,9 @@ enum npcx_i3c_mctrl_type {
 #define BAMATCH_DIV     0x4 /* BAMATCH = APB4_CLK divided by four */
 
 /* Default maximum time we allow for an I3C transfer */
-#define I3C_TRANS_TIMEOUT_MS K_MSEC(100)
+#define I3C_TRANS_TIMEOUT_MS       K_MSEC(100)
+/* Timeout for RX FIFO to empty after I3C COMPLETE during DMA read */
+#define NPCX_I3C_DMA_RX_TIMEOUT_US 1000
 
 #define MCLKD_FREQ_MHZ(freq) MHZ(freq)
 
@@ -836,6 +838,95 @@ static int npcx_i3c_xfer_read_fifo(struct i3c_reg *inst, uint8_t *buf, uint8_t r
 }
 
 #ifdef CONFIG_I3C_NPCX_DMA
+static int npcx_i3c_cfg_dma_rx(const struct device *dev, bool dma_en, uint8_t *buf,
+			       uint16_t len)
+{
+	const struct npcx_i3c_config *config = dev->config;
+	struct i3c_reg *i3c_inst = config->base;
+	struct mdma_reg *mdma_inst = config->mdma_base;
+
+	if (dev == NULL) {
+		LOG_ERR("Invalid device");
+		return -EINVAL;
+	}
+
+	if (dma_en && len == 0) {
+		LOG_ERR("Invalid length for DMA transfer");
+		return -EINVAL;
+	}
+
+	if (dma_en) {
+		/* Enable I3C DMA until DMA is disabled by setting DMAFB to 00 */
+		SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMAFB, MDMA_DMAFB_EN_MANUAL);
+		/* Enable I3C COMPLETE interrupt for transfer end */
+		i3c_inst->MINTSET |= BIT(NPCX_I3C_MINTSET_COMPLETE);
+
+		/* Enable DMA read (MDMA CH_0) */
+		mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_MDMAEN); /* Disable MDMA */
+		mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_TC);     /* Clear TC */
+		mdma_inst->MDMA_TCNT0 = len;                        /* Set MDMA transfer count */
+		mdma_inst->MDMA_DSTB0 = (uint32_t)buf;              /* Set destination address */
+		mdma_inst->MDMA_CTL0 |= BIT(NPCX_MDMA_CTL_MDMAEN);  /* Start DMA transfer */
+	} else {
+		/* Disable DMA
+		 * Manually disable DMA since DMA won't stop if read size is smaller than expected.
+		 */
+		mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_MDMAEN);
+		mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_TC); /* Clear TC */
+
+		/* Disable I3C DMA config */
+		i3c_inst->MINTCLR |= BIT(NPCX_I3C_MINTCLR_COMPLETE);
+		SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMAFB, MDMA_DMAFB_DISABLE);
+	}
+
+	return 0;
+}
+
+static int npcx_i3c_cfg_dma_tx(const struct device *dev, bool dma_en, uint8_t *buf,
+			       uint16_t len)
+{
+	const struct npcx_i3c_config *config = dev->config;
+	struct i3c_reg *i3c_inst = config->base;
+	struct mdma_reg *mdma_inst = config->mdma_base;
+
+	if (dev == NULL) {
+		LOG_ERR("Invalid device");
+		return -EINVAL;
+	}
+
+	if (dma_en && len == 0) {
+		LOG_ERR("Invalid length for DMA transfer");
+		return -EINVAL;
+	}
+
+	if (dma_en) {
+		/* Enable I3C MDMA write for one frame.
+		 * DMATB automatically self-clears when the current message is
+		 * complete as indicated by COMPLETE bit in MSTATUS register.
+		 */
+		SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMATB, MDMA_DMATB_EN_ONE_FRAME);
+		/* Enable I3C COMPLETE interrupt */
+		i3c_inst->MINTSET |= BIT(NPCX_I3C_MINTSET_COMPLETE);
+
+		/* Enable DMA write (MDMA CH_1) */
+		mdma_inst->MDMA_CTL1 &= ~BIT(NPCX_MDMA_CTL_MDMAEN); /* Disable MDMA */
+		mdma_inst->MDMA_CTL1 &= ~BIT(NPCX_MDMA_CTL_TC);     /* Clear TC */
+		mdma_inst->MDMA_TCNT1 = len;                        /* Set MDMA transfer count */
+		mdma_inst->MDMA_SRCB1 = (uint32_t)buf;              /* Set source address */
+		mdma_inst->MDMA_CTL1 |= BIT(NPCX_MDMA_CTL_MDMAEN);  /* Start DMA transfer */
+	} else {
+		/* Disable DMA */
+		mdma_inst->MDMA_CTL1 &= ~BIT(NPCX_MDMA_CTL_MDMAEN); /* Disable DMA */
+		mdma_inst->MDMA_CTL1 &= ~BIT(NPCX_MDMA_CTL_TC);     /* Clear TC */
+
+		/* Disable I3C DMA config */
+		i3c_inst->MINTCLR |= BIT(NPCX_I3C_MINTCLR_COMPLETE);
+		SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMATB, MDMA_DMATB_DISABLE);
+	}
+
+	return 0;
+}
+
 /*
  * brief:  Perform DMA write transaction.
  *
@@ -857,14 +948,8 @@ static int npcx_i3c_xfer_write_fifo_dma(const struct device *dev, uint8_t *buf, 
 
 	set_oper_state(dev, NPCX_I3C_OP_STATE_WR);
 
-	/* Enable I3C MDMA write for one frame */
-	SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMATB, MDMA_DMATB_EN_ONE_FRAME);
-	i3c_inst->MINTSET |= BIT(NPCX_I3C_MINTCLR_COMPLETE); /* Enable I3C complete interrupt */
-
-	/* Write Operation (MDMA CH_1) */
-	mdma_inst->MDMA_TCNT1 = buf_sz;                    /* Set MDMA transfer count */
-	mdma_inst->MDMA_SRCB1 = (uint32_t)buf;             /* Set source address */
-	mdma_inst->MDMA_CTL1 |= BIT(NPCX_MDMA_CTL_MDMAEN); /* Start DMA transfer */
+	/* Start DMA */
+	npcx_i3c_cfg_dma_tx(dev, true, buf, buf_sz);
 
 	/* Wait I3C COMPLETE */
 	ret = i3c_ctrl_wait_completion(dev);
@@ -880,12 +965,13 @@ static int npcx_i3c_xfer_write_fifo_dma(const struct device *dev, uint8_t *buf, 
 		goto out_wr_fifo_dma;
 	}
 
-	mdma_inst->MDMA_CTL1 &= ~BIT(NPCX_MDMA_CTL_TC); /* Clear TC, W0C */
-	ret = buf_sz - mdma_inst->MDMA_CTCNT1;          /* Set transferred count */
+	ret = buf_sz - mdma_inst->MDMA_CTCNT1; /* Set transferred count */
 	LOG_DBG("Write cnt=%d", ret);
 
 out_wr_fifo_dma:
-	i3c_inst->MINTCLR |= BIT(NPCX_I3C_MINTCLR_COMPLETE); /* Disable I3C complete interrupt */
+	/* Stop DMA */
+	npcx_i3c_cfg_dma_tx(dev, false, 0, 0);
+
 	npcx_i3c_fifo_flush(i3c_inst);
 	set_oper_state(dev, NPCX_I3C_OP_STATE_IDLE);
 
@@ -915,27 +1001,30 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
 
 	set_oper_state(dev, NPCX_I3C_OP_STATE_RD);
 
-	/* Enable DMA until DMA is disabled by setting DMAFB to 00 */
-	SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMAFB, MDMA_DMAFB_EN_MANUAL);
+	/* Start DMA */
+	npcx_i3c_cfg_dma_rx(dev, true, buf, buf_sz);
 
-	/* Read Operation (MDMA CH_0) */
-	mdma_inst->MDMA_TCNT0 = buf_sz;                    /* Set MDMA transfer count */
-	mdma_inst->MDMA_DSTB0 = (uint32_t)buf;             /* Set destination address */
-	mdma_inst->MDMA_CTL0 |= BIT(NPCX_MDMA_CTL_SIEN);   /* Enable stop interrupt */
-	mdma_inst->MDMA_CTL0 |= BIT(NPCX_MDMA_CTL_MDMAEN); /* Start DMA transfer */
-
-	/* Wait MDMA TC */
+	/* Wait I3C COMPLETE */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_DBG("Check DMA done time out");
-	} else {
-		ret = buf_sz - mdma_inst->MDMA_CTCNT0; /* Set transferred count */
-		LOG_DBG("Read cnt=%d", ret);
+		LOG_ERR("Wait I3C COMPLETE timeout, ret = %d", ret);
+		goto out_xfer_rd_fifo_dma;
 	}
 
-	mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_SIEN); /* Disable stop interrupt */
-	/* Disable I3C MDMA read */
-	SET_FIELD(i3c_inst->MDMACTRL, NPCX_I3C_MDMACTRL_DMAFB, MDMA_DMAFB_DISABLE);
+	/* Check all the RX FIFO data transferred to RAM by DMA */
+	if (WAIT_FOR(IS_BIT_SET(i3c_inst->MDATACTRL, NPCX_I3C_MDATACTRL_RXEMPTY),
+		     NPCX_I3C_DMA_RX_TIMEOUT_US, NULL) == false) {
+		LOG_ERR("DMA transfer incomplete: RX FIFO not empty");
+		goto out_xfer_rd_fifo_dma;
+	}
+
+	ret = buf_sz - mdma_inst->MDMA_CTCNT0; /* Set transferred count */
+	LOG_DBG("Read cnt=%d", ret);
+
+out_xfer_rd_fifo_dma:
+	/* Stop DMA */
+	npcx_i3c_cfg_dma_rx(dev, false, 0, 0);
+
 	npcx_i3c_fifo_flush(i3c_inst);
 	set_oper_state(dev, NPCX_I3C_OP_STATE_IDLE);
 
@@ -2861,31 +2950,21 @@ static void npcx_i3c_isr(const struct device *dev)
 	const struct npcx_i3c_config *config = dev->config;
 	struct i3c_reg *inst = config->base;
 
+	/* Handle target isr */
 	if (IS_BIT_SET(inst->CONFIG, NPCX_I3C_CONFIG_TGTENA)) {
 		npcx_i3c_target_isr(dev);
 		return;
 	}
 
+	/* Handle controller isr */
 #ifdef CONFIG_I3C_NPCX_DMA
-	struct mdma_reg *mdma_inst = config->mdma_base;
-
-	/* Controller write end */
-	if (IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_COMPLETE)) {
+	/* Controller transfer end */
+	if (IS_BIT_SET(inst->MINTMASKED, NPCX_I3C_MINTMASKED_COMPLETE)) {
 		inst->MSTATUS = BIT(NPCX_I3C_MSTATUS_COMPLETE); /* W1C */
 
-		/* MDMA write */
-		if (get_oper_state(dev) == NPCX_I3C_OP_STATE_WR) {
-			i3c_ctrl_notify(dev);
-			return;
-		}
-	}
-
-	/* Controller read end */
-	if (IS_BIT_SET(mdma_inst->MDMA_CTL0, NPCX_MDMA_CTL_TC)) {
-		mdma_inst->MDMA_CTL0 &= ~BIT(NPCX_MDMA_CTL_TC); /* W0C */
-
-		/* MDMA read */
-		if (get_oper_state(dev) == NPCX_I3C_OP_STATE_RD) {
+		/* MDMA write and read */
+		if (get_oper_state(dev) == NPCX_I3C_OP_STATE_WR ||
+		    get_oper_state(dev) == NPCX_I3C_OP_STATE_RD) {
 			i3c_ctrl_notify(dev);
 			return;
 		}
