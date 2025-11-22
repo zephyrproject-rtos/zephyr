@@ -31,9 +31,9 @@ static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
 {
 	switch (eid) {
 	case REMOTE_HELLO_EID:
-		LOG_INF("got mctp message %s for eid %d, replying to 5 with \"world\"", (char *)msg,
+		LOG_INF("got mctp message \"%s\" from eid %d, replying with \"world\"", (char *)msg,
 			eid);
-		mctp_message_tx(mctp_ctx, LOCAL_HELLO_EID, false, 0, "world", sizeof("world"));
+		mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "world", sizeof("world"));
 		break;
 	default:
 		LOG_INF("Unknown endpoint %d", eid);
@@ -58,8 +58,8 @@ int main(void)
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
 
 	/* MCTP poll loop */
+	mctp_uart_start_rx(&mctp_endpoint);
 	while (true) {
-		mctp_uart_start_rx(&mctp_endpoint);
 		k_sem_take(&mctp_rx, K_FOREVER);
 	}
 

@@ -25,7 +25,7 @@ K_SEM_DEFINE(mctp_rx, 0, 1);
 static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
 {
-	LOG_INF("received message %s for endpoint %d, msg_tag %d, len %zu", (char *)msg, eid,
+	LOG_INF("received message \"%s\" from endpoint %d, msg_tag %d, len %zu", (char *)msg, eid,
 		msg_tag, len);
 	k_sem_give(&mctp_rx);
 }
@@ -48,10 +48,12 @@ int main(void)
 
 	/* MCTP poll loop, send "hello" and get "world" back */
 	while (true) {
+		k_sleep(K_MSEC(1000));
+		LOG_INF("Sending message \"hello\" to endpoint %d", REMOTE_HELLO_EID);
 		rc = mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "hello",
 				     sizeof("hello"));
 		if (rc != 0) {
-			LOG_WRN("Failed to send message, errno %d\n", rc);
+			LOG_WRN("Failed to send message, errno %d", rc);
 			k_msleep(1000);
 		} else {
 			k_sem_take(&mctp_rx, K_MSEC(10));
