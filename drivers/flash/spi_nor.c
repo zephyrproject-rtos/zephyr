@@ -46,6 +46,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define SPI_NOR_3B_ADDR_MAX    0xFFFFFF
 
 #define ANY_INST_HAS_MXICY_MX25R_POWER_MODE DT_ANY_INST_HAS_PROP_STATUS_OKAY(mxicy_mx25r_power_mode)
+#define ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH \
+	DT_ANY_INST_HAS_PROP_STATUS_OKAY(winbond_w25q_output_driver_strength)
 #define ANY_INST_HAS_DPD DT_ANY_INST_HAS_BOOL_STATUS_OKAY(has_dpd)
 #define ANY_INST_HAS_T_EXIT_DPD DT_ANY_INST_HAS_PROP_STATUS_OKAY(t_exit_dpd)
 #define ANY_INST_HAS_DPD_WAKEUP_SEQUENCE DT_ANY_INST_HAS_PROP_STATUS_OKAY(dpd_wakeup_sequence)
@@ -72,6 +74,12 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #define JEDEC_MACRONIX_ID   0xc2
 #define JEDEC_MX25R_TYPE_ID 0x28
+
+/* Winbond related defines */
+#define WINBOND_DRIVE_STRENGTH_MASK   0x60
+#define WINBOND_DRIVE_STRENGTH_OFFSET 5
+
+#define JEDEC_WINBOND_ID    0xEF
 
 /* Build-time data associated with the device. */
 struct spi_nor_config {
@@ -139,6 +147,10 @@ struct spi_nor_config {
 #if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 	uint16_t t_crdp_ms; /* in milliseconds */
 	uint16_t t_rdp_ms;  /* in milliseconds */
+#endif
+
+#if ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH
+	uint8_t winbond_w25q_drive_strength;
 #endif
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -858,6 +870,66 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 }
 
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
+
+#if ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH
+
+static int w25q_configure(const struct device *dev, const uint8_t *jedec_id)
+{
+	const struct spi_nor_config *cfg = dev->config;
+	uint8_t drive_strength;
+	uint8_t reg;
+	int ret = 0;
+
+	/* Only supported on Winbond Flash Devices */
+	if (jedec_id[0] != JEDEC_WINBOND_ID) {
+		LOG_WRN("Drive strength not supported for device id: %02x %02x %02x", jedec_id[0],
+			jedec_id[1], jedec_id[2]);
+		/* No error, device still works */
+		return 0;
+	}
+
+	acquire_device(dev);
+
+	/* Read current state of status register 3 */
+	ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR3, &reg, sizeof(reg));
+	if (ret != 0) {
+		goto end;
+	}
+
+	/* Check current drive strength against desired drive strength */
+	drive_strength = ((reg & WINBOND_DRIVE_STRENGTH_MASK) >> WINBOND_DRIVE_STRENGTH_OFFSET);
+	if (drive_strength == cfg->winbond_w25q_drive_strength) {
+		/* Already matching drive strength */
+		LOG_DBG("Drive strength already configured");
+		goto end;
+	}
+	LOG_DBG("Updating drive strength from %d to %d", drive_strength,
+		cfg->winbond_w25q_drive_strength);
+
+	/* Override drive strength bits to desired values */
+	reg = (reg & ~WINBOND_DRIVE_STRENGTH_MASK) |
+		(cfg->winbond_w25q_drive_strength << WINBOND_DRIVE_STRENGTH_OFFSET);
+
+	/* Disable write protection */
+	ret = spi_nor_write_protection_set(dev, false);
+	if (ret) {
+		goto end;
+	}
+
+	/* Write the updated status register 3 byte */
+	ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR3, NOR_ACCESS_WRITE, 0, &reg, 1);
+	if (ret) {
+		goto end;
+	}
+
+	/* Wait for the write to complete */
+	ret = spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+end:
+	release_device(dev);
+	return ret;
+}
+
+#endif /* ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH */
 
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 			size_t size)
@@ -1659,6 +1731,13 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
+#if ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH
+	if (cfg->winbond_w25q_drive_strength != UINT8_MAX) {
+		/* Do not fail init if setting configuration register fails */
+		(void)w25q_configure(dev, jedec_id);
+	}
+#endif /* ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH */
+
 	return 0;
 }
 
@@ -1869,6 +1948,10 @@ static DEVICE_API(flash, spi_nor_api) = {
 			DT_INST_PROP_BY_IDX(idx, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)),\
 		(.t_dpdd_ms = 0, .t_crdp_ms = 0, .t_rdp_ms = 0))
 
+#define INIT_WINBOND_W25Q_DRIVE_STRENGTH(idx)							\
+	.winbond_w25q_drive_strength = DT_INST_ENUM_IDX_OR(idx,					\
+		winbond_w25q_output_driver_strength, UINT8_MAX)
+
 #define INIT_MXICY_MX25R_POWER_MODE(idx)							\
 	.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX_OR(idx, mxicy_mx25r_power_mode, 0)
 
@@ -1902,6 +1985,8 @@ static DEVICE_API(flash, spi_nor_api) = {
 		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\
 			(INIT_T_EXIT_DPD(idx),))						\
 		IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))	\
+		IF_ENABLED(ANY_INST_HAS_WINBOND_W25Q_OUTPUT_DRIVER_STRENGTH,			\
+			(INIT_WINBOND_W25Q_DRIVE_STRENGTH(idx),))				\
 		IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE,					\
 			(INIT_MXICY_MX25R_POWER_MODE(idx),))					\
 		IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))			\
