@@ -15,19 +15,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/device_runtime.h>
 
-/**
- * @brief Initialize state for all static devices.
- *
- * The state object is always zero-initialized, but this may not be
- * sufficient.
- */
-void z_device_state_init(void)
-{
-	STRUCT_SECTION_FOREACH(device, dev) {
-		k_object_init(dev);
-	}
-}
-
 int do_device_init(const struct device *dev)
 {
 	int rc = 0;
