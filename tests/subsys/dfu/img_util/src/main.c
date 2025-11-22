@@ -6,13 +6,20 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/flash_img.h>
 
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
 
+#define FIXED_PARTITION_GET_FLASH_NODE(node_id)                                    \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions),   \
+		    (DT_PARENT(DT_GPARENT(node_id))), (DT_GPARENT(node_id)))
+
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	DT_SAME_NODE(FIXED_PARTITION_GET_FLASH_NODE(DT_CHOSEN(zephyr_code_partition)),             \
+		     FIXED_PARTITION_GET_FLASH_NODE(DT_NODELABEL(label))) &&                       \
 	(FIXED_PARTITION_OFFSET(label) <= CONFIG_FLASH_LOAD_OFFSET &&                              \
 	 FIXED_PARTITION_OFFSET(label) + FIXED_PARTITION_SIZE(label) > CONFIG_FLASH_LOAD_OFFSET)
 
