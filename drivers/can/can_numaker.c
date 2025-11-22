@@ -16,6 +16,10 @@
 #include <soc.h>
 #include <NuMicro.h>
 
+#if defined(CONFIG_SOC_SERIES_M55M1X)
+#include <zephyr/dt-bindings/clock/numaker_m55m1x_clock.h>
+#endif
+
 LOG_MODULE_REGISTER(can_numaker, CONFIG_CAN_LOG_LEVEL);
 
 /* Implementation notes
@@ -42,11 +46,28 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_numaker_config *config = mcan_config->custom;
 	uint32_t clksrc_rate_idx;
 	uint32_t clkdiv_divider;
+	__typeof__(CANFD0_MODULE) clk_modidx_real;
+
+#if defined(CONFIG_SOC_SERIES_M55M1X)
+	switch (config->clk_modidx) {
+	case NUMAKER_CANFD0_MODULE:
+		clk_modidx_real = CANFD0_MODULE;
+		break;
+	case NUMAKER_CANFD1_MODULE:
+		clk_modidx_real = CANFD1_MODULE;
+		break;
+	default:
+		LOG_ERR("Invalid clock module index");
+		return -EIO;
+	}
+#else
+	clk_modidx_real = config->clk_modidx;
+#endif
 
 	/* Module clock source rate */
-	clksrc_rate_idx = CLK_GetModuleClockSource(config->clk_modidx);
+	clksrc_rate_idx = CLK_GetModuleClockSource(clk_modidx_real);
 	/* Module clock divider */
-	clkdiv_divider = CLK_GetModuleClockDivider(config->clk_modidx) + 1;
+	clkdiv_divider = CLK_GetModuleClockDivider(clk_modidx_real) + 1;
 
 	switch (clksrc_rate_idx) {
 #if defined(CONFIG_SOC_SERIES_M46X) || defined(CONFIG_SOC_SERIES_M333X)
