@@ -18,4 +18,5 @@ supported:
   - uart
   - dma
   - i2c
+  - flash
 vendor: doiting
