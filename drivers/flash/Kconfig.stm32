@@ -25,6 +25,9 @@ menuconfig SOC_FLASH_STM32
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select USE_STM32_HAL_FLASH if BT_STM32WBA
 	select USE_STM32_HAL_FLASH_EX if BT_STM32WBA
+	select FLASH_HAS_ASYNC_OPS if SOC_SERIES_STM32L4X || \
+	                              SOC_SERIES_STM32F4X || \
+	                              SOC_SERIES_STM32H7X
 	help
 	  Enable flash driver for STM32 series
 
@@ -101,5 +104,14 @@ config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	help
 	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
 	  (32H) for the PP_1_4_4 operation (usually 38H).
+
+config FLASH_STM32_ASYNC
+	bool "Use asynchronous flash operations"
+	depends on MULTITHREADING && FLASH_HAS_ASYNC_OPS
+	select USE_STM32_HAL_FLASH
+	select USE_STM32_HAL_FLASH_EX
+	help
+	  Use asynchronous flash operations to unblock other threads while
+	  flash is busy.
 
 endif # SOC_FLASH_STM32
