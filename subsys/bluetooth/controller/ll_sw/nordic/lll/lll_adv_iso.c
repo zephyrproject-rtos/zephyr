@@ -182,19 +182,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 static int prepare_cb_common(struct lll_prepare_param *p)
 {
 	struct lll_adv_iso *lll;
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
+	uint8_t crc_init[PDU_CRCINIT_SIZE];
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
-	uint16_t event_counter;
-	uint8_t access_addr[4];
 	uint64_t payload_count;
+	struct pdu_bis *pdu;
+	uint16_t event_counter;
+	struct ull_hdr *ull;
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
-	uint8_t crc_init[3];
-	struct pdu_bis *pdu;
-	struct ull_hdr *ull;
 	uint32_t remainder;
-	uint32_t start_us;
 	uint8_t pkt_flags;
+	uint32_t start_us;
 	uint32_t ret;
 	uint8_t phy;
 
@@ -490,13 +490,13 @@ static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_tx,
 			  radio_isr_cb_t isr_done)
 {
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
+	uint8_t crc_init[PDU_CRCINIT_SIZE];
 	struct pdu_bis *pdu = NULL;
 	uint8_t data_chan_use = 0;
 	struct lll_adv_iso *lll;
-	uint8_t access_addr[4];
 	uint64_t payload_count;
 	uint16_t data_chan_id;
-	uint8_t crc_init[3];
 	uint8_t is_ctrl;
 	uint8_t bis;
 
@@ -946,7 +946,7 @@ static void next_chan_calc_seq(struct lll_adv_iso *lll, uint16_t event_counter,
 					      &lll->data_chan.prn_s,
 					      &lll->data_chan.remap_idx);
 	} else if (lll->bis_curr < lll->num_bis) {
-		uint8_t access_addr[4];
+		uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 
 		/* Calculate the Access Address for the next BIS subevent */
 		util_bis_aa_le32((lll->bis_curr + 1U), lll->seed_access_addr,
@@ -981,7 +981,7 @@ static void next_chan_calc_int(struct lll_adv_iso *lll, uint16_t event_counter)
 	    (lll->bn_curr == 1U) &&
 	    (lll->irc_curr == 1U) &&
 	    (lll->ptc_curr == 0U)) {
-		uint8_t access_addr[4];
+		uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 
 		/* Calculate the Access Address for the next BIS subevent */
 		util_bis_aa_le32((lll->bis_curr + 1U), lll->seed_access_addr,
