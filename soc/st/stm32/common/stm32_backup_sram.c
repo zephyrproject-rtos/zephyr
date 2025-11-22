@@ -43,6 +43,15 @@ static int stm32_backup_sram_init(const struct device *dev)
 	/* Add a refcount to backup domain access and never remove it */
 	stm32_backup_domain_enable_access();
 
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * For series like stm32u5 which have LDO/SMPS internal regulator, enabling
+	 * the Backup RAM retention is possible only when the regulator is LDO.
+	 * The backup regulator position has been set at soc init ;
+	 * exit now to avoid writing the BREN bit of the PWR_BDCR1 register.
+	 */
+	return 0;
+#else /* CONFIG_SOC_SERIES_STM32U5X */
 	/* enable backup sram regulator (required to retain backup SRAM content
 	 * while in standby or VBAT modes).
 	 */
@@ -51,6 +60,8 @@ static int stm32_backup_sram_init(const struct device *dev)
 	}
 
 	return 0;
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
 }
 
 static const struct stm32_backup_sram_config config = {
