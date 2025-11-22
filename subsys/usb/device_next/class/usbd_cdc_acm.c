@@ -132,12 +132,14 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE, sizeof(struct udc_buf_info),
+		    NULL);
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
-					 const uint8_t ep)
+					 const uint8_t ep, size_t size_hint)
 {
 	ARG_UNUSED(c_data);
+	ARG_UNUSED(size_hint);
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
@@ -157,9 +159,21 @@ static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
  * common (UDC) buffer, as this results in a smaller footprint.
  */
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
-					 const uint8_t ep)
+					 const uint8_t ep, size_t size_hint)
 {
-	return usbd_ep_buf_alloc(c_data, ep, USBD_MAX_BULK_MPS);
+	/* The USB stack handles packetizing to the endpoint size, therefore
+	 * allocating buffers largers than the endpoint size reduces the number
+	 * of round trips through this class driver when the TX FIFO size is
+	 * larger than the endpoint, improving throughput.
+	 *
+	 * Limit the maximum allocation size to 1/4 of the total pool size
+	 * to prevent starving other USB users. Ensure the maximum allocation
+	 * never drops below USBD_MAX_BULK_MPS.
+	 */
+	size_t max_alloc = max(USBD_MAX_BULK_MPS, CONFIG_UDC_BUF_POOL_SIZE / 4);
+	size_t alloc_size = min(max_alloc, size_hint);
+
+	return usbd_ep_buf_alloc(c_data, ep, alloc_size);
 }
 #endif /* CONFIG_USBD_CDC_ACM_BUF_POOL */
 
@@ -651,7 +665,8 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_in(c_data));
+	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_in(c_data),
+				ring_buf_size_get(data->tx_fifo.rb));
 	if (buf == NULL) {
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
@@ -707,7 +722,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data));
+	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data), USBD_MAX_BULK_MPS);
 	if (buf == NULL) {
 		return;
 	}
