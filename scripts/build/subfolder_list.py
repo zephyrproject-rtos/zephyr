@@ -21,8 +21,9 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False)
 
-    parser.add_argument('-d', '--directory', required=True,
-                        help='Directory to walk for sub-directory discovery')
+    parser.add_argument('-d', '--directory', required=True, action='append',
+                        help='Directory to walk for sub-directory discovery \
+                              (can be specified multiple times)')
     parser.add_argument('-c', '--create-links', required=False,
                         help='Create links for each directory found in \
                               directory given')
@@ -37,34 +38,55 @@ def parse_args():
     return args
 
 
-def get_subfolder_list(directory, create_links=None):
-    """Return subfolder list of a directory"""
+def get_subfolder_list(directories, create_links=None):
+    """Return subfolder list of directories"""
     dirlist = []
+    used_link_names = set()
 
-    if create_links is not None:
-        if not os.path.exists(create_links):
-            os.makedirs(create_links)
-        symbase = os.path.basename(directory)
-        symlink = create_links + os.path.sep + symbase
-        if not os.path.exists(symlink):
-            os.symlink(directory, symlink)
-        dirlist.append(symlink)
-    else:
-        dirlist.append(directory)
+    for directory in directories:
+        if create_links is not None:
+            if not os.path.exists(create_links):
+                os.makedirs(create_links)
+            symbase = os.path.basename(directory)
 
-    for root, dirs, _ in os.walk(directory, topdown=True):
-        dirs.sort()
-        for subdir in dirs:
-            if create_links is not None:
-                targetdirectory = os.path.join(root, subdir)
-                reldir = os.path.relpath(targetdirectory, directory)
-                linkname = symbase + '_' + reldir.replace(os.path.sep, '_')
-                symlink = create_links + os.path.sep + linkname
-                if not os.path.exists(symlink):
-                    os.symlink(targetdirectory, symlink)
-                dirlist.append(symlink)
-            else:
-                dirlist.append(os.path.join(root, subdir))
+            # Ensure unique link name for the base directory
+            linkname = symbase
+            counter = 1
+            while linkname in used_link_names:
+                linkname = f"{symbase}_{counter}"
+                counter += 1
+            used_link_names.add(linkname)
+
+            symlink = create_links + os.path.sep + linkname
+            if not os.path.exists(symlink):
+                os.symlink(directory, symlink)
+            dirlist.append(symlink)
+        else:
+            dirlist.append(directory)
+
+        for root, dirs, _ in os.walk(directory, topdown=True):
+            dirs.sort()
+            for subdir in dirs:
+                if create_links is not None:
+                    targetdirectory = os.path.join(root, subdir)
+                    reldir = os.path.relpath(targetdirectory, directory)
+                    base_linkname = (os.path.basename(directory) +
+                        '_' + reldir.replace(os.path.sep, '_'))
+
+                    # Ensure unique link name for subdirectories
+                    linkname = base_linkname
+                    counter = 1
+                    while linkname in used_link_names:
+                        linkname = f"{base_linkname}_{counter}"
+                        counter += 1
+                    used_link_names.add(linkname)
+
+                    symlink = create_links + os.path.sep + linkname
+                    if not os.path.exists(symlink):
+                        os.symlink(targetdirectory, symlink)
+                    dirlist.append(symlink)
+                else:
+                    dirlist.append(os.path.join(root, subdir))
 
     return dirlist
 
@@ -108,7 +130,8 @@ def main():
     """Parse command line arguments and take respective actions"""
     args = parse_args()
 
-    dirs = get_subfolder_list(args.directory, args.create_links)
+    directories = sorted(set(args.directory))
+    dirs = get_subfolder_list(directories, args.create_links)
     gen_out_file(args.out_file, dirs)
 
     # Always touch trigger file to ensure json files are updated
