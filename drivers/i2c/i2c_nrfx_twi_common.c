@@ -16,12 +16,12 @@ LOG_MODULE_DECLARE(i2c_nrfx_twi);
 int i2c_nrfx_twi_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twi_config *config = dev->config;
-	nrfx_err_t result = nrfx_twi_init(&config->twi, &config->config,
-					  config->event_handler, (void *)dev);
-	if (result != NRFX_SUCCESS) {
+	int result = nrfx_twi_init(&config->twi, &config->config,
+				   config->event_handler, (void *)dev);
+	if (result != 0) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);
-		return -EBUSY;
+		return result;
 	}
 
 	return 0;
@@ -58,13 +58,11 @@ int i2c_nrfx_twi_recover_bus(const struct device *dev)
 	const struct i2c_nrfx_twi_config *config = dev->config;
 	uint32_t scl_pin;
 	uint32_t sda_pin;
-	nrfx_err_t err;
 
 	scl_pin = nrf_twi_scl_pin_get(config->twi.p_twi);
 	sda_pin = nrf_twi_sda_pin_get(config->twi.p_twi);
 
-	err = nrfx_twi_bus_recover(scl_pin, sda_pin);
-	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
+	return nrfx_twi_bus_recover(scl_pin, sda_pin);
 }
 
 int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
@@ -74,7 +72,6 @@ int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
 	const struct i2c_nrfx_twi_config *config = dev->config;
 	int ret = 0;
 	uint32_t xfer_flags = 0;
-	nrfx_err_t res;
 	nrfx_twi_xfer_desc_t cur_xfer = {
 		.p_primary_buf = buf,
 		.primary_length = buf_len,
@@ -110,17 +107,7 @@ int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
 	}
 
 	if (!ret) {
-		res = nrfx_twi_xfer(&config->twi, &cur_xfer, xfer_flags);
-		switch (res) {
-		case NRFX_SUCCESS:
-			break;
-		case NRFX_ERROR_BUSY:
-			ret = -EBUSY;
-			break;
-		default:
-			ret = -EIO;
-			break;
-		}
+		ret = nrfx_twi_xfer(&config->twi, &cur_xfer, xfer_flags);
 	}
 
 	return ret;

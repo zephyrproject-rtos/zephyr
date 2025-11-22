@@ -63,6 +63,10 @@ source "soc/nordic/common/Kconfig.peripherals"
 
 source "boards/native/common/extra_args/Kconfig"
 
+config SOC_NORDIC_BSP_NAME
+	string
+	default "stable"
+
 endif # SOC_SERIES_BSIM_NRFXX
 
 

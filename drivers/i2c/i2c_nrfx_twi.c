@@ -27,7 +27,7 @@ struct i2c_nrfx_twi_data {
 	uint32_t dev_config;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
-	volatile nrfx_err_t res;
+	volatile int res;
 };
 
 /* Enforce dev_config matches the same offset as the common structure,
@@ -109,16 +109,16 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 
 	switch (p_event->type) {
 	case NRFX_TWI_EVT_DONE:
-		dev_data->res = NRFX_SUCCESS;
+		dev_data->res = 0;
 		break;
 	case NRFX_TWI_EVT_ADDRESS_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_ANACK;
+		dev_data->res = -EIO;
 		break;
 	case NRFX_TWI_EVT_DATA_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_DNACK;
+		dev_data->res = -EAGAIN;
 		break;
 	default:
-		dev_data->res = NRFX_ERROR_INTERNAL;
+		dev_data->res = -ECANCELED;
 		break;
 	}
 
@@ -131,49 +131,40 @@ static DEVICE_API(i2c, i2c_nrfx_twi_driver_api) = {
 	.recover_bus = i2c_nrfx_twi_recover_bus,
 };
 
-#define I2C_NRFX_TWI_DEVICE(idx)					       \
-	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));			       \
-	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
-		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
-		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	static int twi_##idx##_init(const struct device *dev)		       \
-	{								       \
-		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
-			    nrfx_isr, nrfx_twi_##idx##_irq_handler, 0);	       \
-		const struct i2c_nrfx_twi_config *config = dev->config;	       \
-		int err = pinctrl_apply_state(config->pcfg,		       \
-					      PINCTRL_STATE_DEFAULT);	       \
-		if (err < 0) {						       \
-			return err;					       \
-		}							       \
-		return i2c_nrfx_twi_init(dev);				       \
-	}								       \
-	static struct i2c_nrfx_twi_data twi_##idx##_data = {		       \
-		.transfer_sync = Z_SEM_INITIALIZER(                            \
-			twi_##idx##_data.transfer_sync, 1, 1),                 \
-		.completion_sync = Z_SEM_INITIALIZER(                          \
-			twi_##idx##_data.completion_sync, 0, 1)		       \
-	};								       \
-	PINCTRL_DT_DEFINE(I2C(idx));					       \
-	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
-		.twi = NRFX_TWI_INSTANCE(idx),				       \
-		.config = {						       \
-			.skip_gpio_cfg = true,				       \
-			.skip_psel_cfg = true,				       \
-			.frequency = I2C_FREQUENCY(idx),		       \
-		},							       \
-		.event_handler = event_handler,				       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
-	};								       \
-	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);		       \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
-		      twi_##idx##_init,					       \
-		      PM_DEVICE_DT_GET(I2C(idx)),			       \
-		      &twi_##idx##_data,				       \
-		      &twi_##idx##z_config,				       \
-		      POST_KERNEL,					       \
-		      CONFIG_I2C_INIT_PRIORITY,				       \
-		      &i2c_nrfx_twi_driver_api)
+#define I2C_NRFX_TWI_DEVICE(idx)                                                                   \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));                                             \
+	BUILD_ASSERT(I2C_FREQUENCY(I2C(idx)) != I2C_NRFX_TWI_INVALID_FREQUENCY,                    \
+		     "Wrong I2C " #idx " frequency setting in dts");                               \
+	static int twi_##idx##_init(const struct device *dev)                                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority), nrfx_isr,               \
+			    nrfx_twi_##idx##_irq_handler, 0);                                      \
+		const struct i2c_nrfx_twi_config *config = dev->config;                            \
+		int err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                \
+		if (err < 0) {                                                                     \
+			return err;                                                                \
+		}                                                                                  \
+		return i2c_nrfx_twi_init(dev);                                                     \
+	}                                                                                          \
+	static struct i2c_nrfx_twi_data twi_##idx##_data = {                                       \
+		.transfer_sync = Z_SEM_INITIALIZER(twi_##idx##_data.transfer_sync, 1, 1),          \
+		.completion_sync = Z_SEM_INITIALIZER(twi_##idx##_data.completion_sync, 0, 1)};     \
+	PINCTRL_DT_DEFINE(I2C(idx));                                                               \
+	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {                            \
+		.twi = NRFX_TWI_INSTANCE(idx),                                                     \
+		.config =                                                                          \
+			{                                                                          \
+				.skip_gpio_cfg = true,                                             \
+				.skip_psel_cfg = true,                                             \
+				.frequency = I2C_FREQUENCY(I2C(idx)),                              \
+			},                                                                         \
+		.event_handler = event_handler,                                                    \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                                       \
+	};                                                                                         \
+	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);                                         \
+	I2C_DEVICE_DT_DEFINE(I2C(idx), twi_##idx##_init, PM_DEVICE_DT_GET(I2C(idx)),               \
+			     &twi_##idx##_data, &twi_##idx##z_config, POST_KERNEL,                 \
+			     CONFIG_I2C_INIT_PRIORITY, &i2c_nrfx_twi_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_TWI0
 I2C_NRFX_TWI_DEVICE(0);

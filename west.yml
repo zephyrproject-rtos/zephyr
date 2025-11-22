@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: mcutools
+      url-base: https://github.com/mcu-tools
 
   group-filter: [-babblesim, -optional]
 
@@ -200,7 +202,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 7858281d843468fe53c829995fb63f45a227387a
+      revision: pull/326/head
       path: modules/hal/nordic
       groups:
         - hal
@@ -321,7 +323,8 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: f3cc9476e233364031e9ab842290392f260fba82
+      remote: mcutools
+      revision: pull/2507/head
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -339,7 +342,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 26ed181181eed53e400db8f63fa83c566a05d971
+      revision: pull/11/head
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: a39e9b155830461c9d1cf587afb151b894369b91
@@ -369,7 +372,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 04aa7243e04946b5422b124bea9c0675ab6b120f
+      revision: pull/156/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

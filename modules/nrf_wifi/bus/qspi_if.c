@@ -18,7 +18,6 @@
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
 #include <soc.h>
-#include <nrf_erratas.h>
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>
@@ -296,17 +295,17 @@ static inline int qspi_get_lines_read(uint8_t lines)
 	return ret;
 }
 
-nrfx_err_t _nrfx_qspi_read(void *p_rx_buffer, size_t rx_buffer_length, uint32_t src_address)
+int _nrfx_qspi_read(void *p_rx_buffer, size_t rx_buffer_length, uint32_t src_address)
 {
 	return nrfx_qspi_read(p_rx_buffer, rx_buffer_length, src_address);
 }
 
-nrfx_err_t _nrfx_qspi_write(void const *p_tx_buffer, size_t tx_buffer_length, uint32_t dst_address)
+int _nrfx_qspi_write(void const *p_tx_buffer, size_t tx_buffer_length, uint32_t dst_address)
 {
 	return nrfx_qspi_write(p_tx_buffer, tx_buffer_length, dst_address);
 }
 
-nrfx_err_t _nrfx_qspi_init(nrfx_qspi_config_t const *p_config, nrfx_qspi_handler_t handler,
+int _nrfx_qspi_init(nrfx_qspi_config_t const *p_config, nrfx_qspi_handler_t handler,
 			   void *p_context)
 {
 	NRF_QSPI_Type *p_reg = NRF_QSPI;
@@ -319,7 +318,7 @@ nrfx_err_t _nrfx_qspi_init(nrfx_qspi_config_t const *p_config, nrfx_qspi_handler
 	/* LOG_DBG("%04x : IFTIMING", p_reg->IFTIMING & qspi_cfg->RDC4IO); */
 
 	/* ACTIVATE task fails for slave bitfile so ignore it */
-	return NRFX_SUCCESS;
+	return 0;
 }
 
 
@@ -338,32 +337,6 @@ static struct qspi_nor_data qspi_nor_memory_data = {
 NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(QSPI_IF_BUS_NODE);
 
 IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(QSPI_IF_BUS_NODE)));
-
-/**
- * @brief Converts NRFX return codes to the zephyr ones
- */
-static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
-{
-	switch (res) {
-	case NRFX_SUCCESS:
-		return 0;
-	case NRFX_ERROR_INVALID_PARAM:
-	case NRFX_ERROR_INVALID_ADDR:
-		return -EINVAL;
-	case NRFX_ERROR_INVALID_STATE:
-		return -ECANCELED;
-#if NRF53_ERRATA_159_ENABLE_WORKAROUND
-	case NRFX_ERROR_FORBIDDEN:
-		LOG_ERR("nRF5340 anomaly 159 conditions detected");
-		LOG_ERR("Set the CPU clock to 64 MHz before starting QSPI operation");
-		return -ECANCELED;
-#endif
-	case NRFX_ERROR_BUSY:
-	case NRFX_ERROR_TIMEOUT:
-	default:
-		return -EBUSY;
-	}
-}
 
 static inline struct qspi_nor_data *get_dev_data(const struct device *dev)
 {
@@ -431,11 +404,11 @@ static inline void qspi_trans_unlock(const struct device *dev)
 #endif /* CONFIG_MULTITHREADING */
 }
 
-static inline void qspi_wait_for_completion(const struct device *dev, nrfx_err_t res)
+static inline void qspi_wait_for_completion(const struct device *dev, int res)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
-	if (res == NRFX_SUCCESS) {
+	if (res == 0) {
 #ifdef CONFIG_MULTITHREADING
 		k_sem_take(&dev_data->sync, K_FOREVER);
 #else /* CONFIG_MULTITHREADING */
@@ -469,7 +442,7 @@ static inline void _qspi_complete(struct qspi_nor_data *dev_data)
 
 	qspi_complete(dev_data);
 }
-static inline void _qspi_wait_for_completion(const struct device *dev, nrfx_err_t res)
+static inline void _qspi_wait_for_completion(const struct device *dev, int res)
 {
 	if (!qspi_cfg->easydma) {
 		return;
@@ -499,7 +472,6 @@ static bool qspi_initialized;
 static int qspi_device_init(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
-	nrfx_err_t res;
 	int ret = 0;
 
 	if (!IS_ENABLED(CONFIG_NRF70_QSPI_LOW_POWER)) {
@@ -517,8 +489,7 @@ static int qspi_device_init(const struct device *dev)
 #endif
 
 	if (!qspi_initialized) {
-		res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
-		ret = qspi_get_zephyr_ret_code(res);
+		ret = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 		NRF_QSPI->IFTIMING |= qspi_cfg->RDC4IO;
 		qspi_initialized = (ret == 0);
 	}
@@ -543,7 +514,7 @@ static void _qspi_device_uninit(const struct device *dev)
 #endif
 
 	if (last) {
-		while (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
+		while (nrfx_qspi_mem_busy_check() != 0) {
 			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 				k_msleep(50);
 			} else {
@@ -632,7 +603,7 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd, b
 	int res = nrfx_qspi_cinstr_xfer(&cinstr_cfg, tx_buf, rx_buf);
 
 	qspi_unlock(dev);
-	return qspi_get_zephyr_ret_code(res);
+	return res;
 }
 
 /* RDSR wrapper.  Negative value is error. */
@@ -740,16 +711,13 @@ static int qspi_nrfx_configure(const struct device *dev)
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
-	nrfx_err_t res = _nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
+	int ret = _nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 	/* Restore the default /4 divider after the QSPI initialization. */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
-
-	int ret = qspi_get_zephyr_ret_code(res);
-
 	if (ret == 0) {
 		/* Set QE to match transfer mode. If not using quad
 		 * it's OK to leave QE set, but doing so prevents use
@@ -806,7 +774,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 	return ret;
 }
 
-static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, void *dest,
+static inline int read_non_aligned(const struct device *dev, int addr, void *dest,
 					  size_t size)
 {
 	uint8_t __aligned(WORD_SIZE) buf[WORD_SIZE * 2];
@@ -833,7 +801,7 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 		flash_suffix = size - flash_prefix - flash_middle;
 	}
 
-	nrfx_err_t res = NRFX_SUCCESS;
+	int res = 0;
 
 	/* read from aligned flash to aligned memory */
 	if (flash_middle != 0) {
@@ -841,7 +809,7 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS) {
+		if (res != 0) {
 			return res;
 		}
 
@@ -857,7 +825,7 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS) {
+		if (res != 0) {
 			return res;
 		}
 
@@ -870,7 +838,7 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS) {
+		if (res != 0) {
 			return res;
 		}
 
@@ -891,31 +859,28 @@ static int qspi_nor_read(const struct device *dev, int addr, void *dest, size_t 
 		return 0;
 	}
 
-	int rc = qspi_device_init(dev);
+	int ret = qspi_device_init(dev);
 
-	if (rc != 0) {
+	if (ret != 0) {
 		goto out;
 	}
 
 	qspi_lock(dev);
 
-	nrfx_err_t res = read_non_aligned(dev, addr, dest, size);
+	ret = read_non_aligned(dev, addr, dest, size);
 
 	qspi_unlock(dev);
-
-	rc = qspi_get_zephyr_ret_code(res);
-
 out:
 	qspi_device_uninit(dev);
-	return rc;
+	return ret;
 }
 
 /* addr aligned, sptr not null, slen less than 4 */
-static inline nrfx_err_t write_sub_word(const struct device *dev, int addr, const void *sptr,
+static inline int write_sub_word(const struct device *dev, int addr, const void *sptr,
 					size_t slen)
 {
 	uint8_t __aligned(4) buf[4];
-	nrfx_err_t res;
+	int res;
 
 	/* read out the whole word so that unchanged data can be
 	 * written back
@@ -923,7 +888,7 @@ static inline nrfx_err_t write_sub_word(const struct device *dev, int addr, cons
 	res = _nrfx_qspi_read(buf, sizeof(buf), addr);
 	_qspi_wait_for_completion(dev, res);
 
-	if (res == NRFX_SUCCESS) {
+	if (res == 0) {
 		memcpy(buf, sptr, slen);
 		res = _nrfx_qspi_write(buf, sizeof(buf), addr);
 		_qspi_wait_for_completion(dev, res);
@@ -948,11 +913,9 @@ static int qspi_nor_write(const struct device *dev, int addr, const void *src, s
 		return -EINVAL;
 	}
 
-	nrfx_err_t res = NRFX_SUCCESS;
+	int res = qspi_device_init(dev);
 
-	int rc = qspi_device_init(dev);
-
-	if (rc != 0) {
+	if (res != 0) {
 		goto out;
 	}
 
@@ -970,11 +933,9 @@ static int qspi_nor_write(const struct device *dev, int addr, const void *src, s
 	qspi_unlock(dev);
 
 	qspi_trans_unlock(dev);
-
-	rc = qspi_get_zephyr_ret_code(res);
 out:
 	qspi_device_uninit(dev);
-	return rc;
+	return res;
 }
 
 /**
@@ -1460,7 +1421,7 @@ int qspi_enable_encryption(uint8_t *key)
 	memcpy(qspi_cfg->p_cfg.key, key, 16);
 
 	err = nrfx_qspi_dma_encrypt(&qspi_cfg->p_cfg);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("nrfx_qspi_dma_encrypt failed: %d", err);
 		return -EIO;
 	}

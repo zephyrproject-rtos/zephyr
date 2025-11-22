@@ -13,10 +13,8 @@
 #include <hal/nrf_pwm.h>
 #endif
 #include <nrfx_gpiote.h>
-#ifdef PPI_PRESENT
-#include <nrfx_ppi.h>
-#endif
-#include <nrf_peripherals.h>
+#include <gpiote_nrfx.h>
+#include <helpers/nrfx_gppi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
@@ -91,7 +89,7 @@ struct display_drv_config {
 #if USE_PWM
 	NRF_PWM_Type *pwm;
 #else
-	nrfx_gpiote_t gpiote;
+	nrfx_gpiote_t *gpiote;
 #endif
 	uint8_t rows[ROW_COUNT];
 	uint8_t cols[COL_COUNT];
@@ -327,7 +325,7 @@ static void prepare_pixel_pulse(const struct device *dev,
 
 	/* First timer channel is used for timing the period of pulses. */
 	nrf_timer_cc_set(dev_config->timer, 1 + channel_idx, pulse);
-	dev_config->gpiote.p_reg->CONFIG[dev_data->gpiote_ch[channel_idx]] = gpiote_cfg;
+	dev_config->gpiote->p_reg->CONFIG[dev_data->gpiote_ch[channel_idx]] = gpiote_cfg;
 #endif /* USE_PWM */
 }
 
@@ -357,7 +355,7 @@ static void timer_irq_handler(void *arg)
 	}
 #else
 	for (int i = 0; i < GROUP_SIZE; ++i) {
-		dev_config->gpiote.p_reg->CONFIG[dev_data->gpiote_ch[i]] = 0;
+		dev_config->gpiote->p_reg->CONFIG[dev_data->gpiote_ch[i]] = 0;
 	}
 #endif
 
@@ -437,38 +435,37 @@ static int instance_init(const struct device *dev)
 	nrf_pwm_loop_set(dev_config->pwm, 0);
 	nrf_pwm_shorts_set(dev_config->pwm, NRF_PWM_SHORT_SEQEND0_STOP_MASK);
 #else
-	nrfx_err_t err;
-	nrf_ppi_channel_t ppi_ch;
+	nrfx_gppi_handle_t ppi_handle;
+	int rv;
 
 	for (int i = 0; i < GROUP_SIZE; ++i) {
 		uint8_t *gpiote_ch = &dev_data->gpiote_ch[i];
 
-		err = nrfx_ppi_channel_alloc(&ppi_ch);
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("Failed to allocate PPI channel.");
-			/* Do not bother with freeing resources allocated
-			 * so far. The application needs to be reconfigured
-			 * anyway.
-			 */
-			return -ENOMEM;
-		}
-
-		err = nrfx_gpiote_channel_alloc(&dev_config->gpiote, gpiote_ch);
-		if (err != NRFX_SUCCESS) {
+		rv = nrfx_gpiote_channel_alloc(dev_config->gpiote, gpiote_ch);
+		if (rv != 0) {
 			LOG_ERR("Failed to allocate GPIOTE channel.");
 			/* Do not bother with freeing resources allocated
 			 * so far. The application needs to be reconfigured
 			 * anyway.
 			 */
-			return -ENOMEM;
+			return rv;
 		}
 
-		nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch,
+		rv = nrfx_gppi_conn_alloc(
 			nrf_timer_event_address_get(dev_config->timer,
 				nrf_timer_compare_event_get(1 + i)),
-			nrf_gpiote_event_address_get(dev_config->gpiote.p_reg,
-				nrf_gpiote_out_task_get(*gpiote_ch)));
-		nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
+			nrf_gpiote_event_address_get(dev_config->gpiote->p_reg,
+				nrf_gpiote_out_task_get(*gpiote_ch)),
+			&ppi_handle);
+		if (rv < 0) {
+			LOG_ERR("Failed to allocate PPI channel.");
+			/* Do not bother with freeing resources allocated
+			 * so far. The application needs to be reconfigured
+			 * anyway.
+			 */
+			return rv;
+		}
+		nrfx_gppi_conn_enable(ppi_handle);
 	}
 #endif /* USE_PWM */
 
@@ -542,8 +539,7 @@ static const struct display_drv_config instance_config = {
 #if USE_PWM
 	.pwm = (NRF_PWM_Type *)DT_REG_ADDR(PWM_NODE),
 #else
-	.gpiote = NRFX_GPIOTE_INSTANCE(
-			NRF_DT_GPIOTE_INST_BY_IDX(MATRIX_NODE, col_gpios, 0)),
+	.gpiote = &GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE(MATRIX_NODE, col_gpios)),
 #endif
 	.rows = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, row_gpios, GET_PIN_INFO) },
 	.cols = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, col_gpios, GET_PIN_INFO) },
