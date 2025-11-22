@@ -152,6 +152,12 @@ enum video_colorfx {
  */
 #define VIDEO_CID_BAND_STOP_FILTER (VIDEO_CID_BASE + 33)
 
+/** Switch the camera between video mode and snapshot mode.
+ * Defaults to video mode unless max buffer count is set to 1
+ * 1 - enable snapshot mode
+ */
+#define VIDEO_CID_SNAPSHOT_MODE (VIDEO_CID_BASE + 34)
+
 /** Sets the alpha color component.
  * Some devices produce data with a user-controllable alpha component. Set the value applied to
  * the alpha channel of every pixel produced.
