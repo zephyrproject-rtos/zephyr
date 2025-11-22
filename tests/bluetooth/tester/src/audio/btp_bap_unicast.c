@@ -7,13 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -167,6 +172,37 @@ static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase
 	ev.state = (uint8_t)state;
 
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_ASE_STATE_CHANGED, &ev, sizeof(ev));
+}
+
+static void btp_send_ascs_cis_connected_ev(const struct bt_bap_stream *stream)
+{
+	struct btp_bap_unicast_stream *u_stream;
+	struct btp_ascs_cis_connected_ev ev;
+
+	u_stream = stream_bap_to_unicast(stream);
+	__ASSERT(u_stream != NULL, "Failed to get unicast_stream from %p", stream);
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(stream->conn));
+	ev.ase_id = u_stream->ase_id;
+	ev.cis_id = u_stream->cis_id;
+
+	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_CIS_CONNECTED, &ev, sizeof(ev));
+}
+
+static void btp_send_ascs_cis_disconnected_ev(const struct bt_bap_stream *stream, uint8_t reason)
+{
+	struct btp_bap_unicast_stream *u_stream;
+	struct btp_ascs_cis_disconnected_ev ev;
+
+	u_stream = stream_bap_to_unicast(stream);
+	__ASSERT(u_stream != NULL, "Failed to get unicast_stream from %p", stream);
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(stream->conn));
+	ev.ase_id = u_stream->ase_id;
+	ev.cis_id = u_stream->cis_id;
+	ev.reason = reason;
+
+	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_CIS_DISCONNECTED, &ev, sizeof(ev));
 }
 
 static void btp_send_ascs_operation_completed_ev(struct bt_conn *conn, uint8_t ase_id,
@@ -525,22 +561,41 @@ static void stream_qos_set_cb(struct bt_bap_stream *stream)
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	struct bt_bap_ep_info info;
-	struct bt_conn_info conn_info;
+	const bool iso_connected =
+		stream->iso == NULL ? false : stream->iso->state == BT_ISO_STATE_CONNECTED;
 	int err;
 
 	LOG_DBG("Enabled stream %p", stream);
 
-	(void)bt_bap_ep_get_info(stream->ep, &info);
-	(void)bt_conn_get_info(stream->conn, &conn_info);
-	if (conn_info.role == BT_HCI_ROLE_PERIPHERAL && info.dir == BT_AUDIO_DIR_SINK) {
-		/* Automatically do the receiver start ready operation */
-		/* TODO: This should ideally be done by the upper tester */
-		err = bt_bap_stream_start(stream);
-		if (err != 0) {
-			LOG_DBG("Failed to start stream %p", stream);
+	if (iso_connected) {
+		struct bt_bap_ep_info ep_info;
+		struct bt_conn_info conn_info;
 
-			return;
+		err = bt_bap_ep_get_info(stream->ep, &ep_info);
+		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+		err = bt_conn_get_info(stream->conn, &conn_info);
+		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+		/* If we are central and the endpoint is a source or if we are a peripheral and the
+		 * endpoint is a sink, then we can start it, else the remote device needs to start
+		 * the endpoint
+		 */
+		const bool start_stream =
+			(IS_ENABLED(CONFIG_BT_CENTRAL) && conn_info.role == BT_HCI_ROLE_CENTRAL &&
+			 ep_info.dir == BT_AUDIO_DIR_SOURCE) ||
+			(IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+			 conn_info.role == BT_HCI_ROLE_PERIPHERAL &&
+			 ep_info.dir == BT_AUDIO_DIR_SINK);
+
+		if (start_stream) {
+			/* Automatically do the receiver start ready operation */
+			/* TODO: This should ideally be done by the upper tester */
+			err = bt_bap_stream_start(stream);
+			if (err != 0) {
+				LOG_DBG("Failed to start stream %p", stream);
+
+				return;
+			}
 		}
 	}
 
@@ -655,12 +710,16 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 		}
 
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
-			/* Automatically do the receiver start ready operation for source ASEs as
-			 * the client
-			 */
-			err = bt_bap_stream_start(stream);
-			if (err != 0) {
-				LOG_ERR("Failed to start stream %p", stream);
+			if (ep_info.state == BT_BAP_EP_STATE_ENABLING) {
+				/* Automatically do the receiver start ready operation for source
+				 * ASEs as the client when in the enabling state.
+				 * The CIS may be connected in the QoS Configured state as well, in
+				 * which case we should wait until we enter the enabling state.
+				 */
+				err = bt_bap_stream_start(stream);
+				if (err != 0) {
+					LOG_ERR("Failed to start stream %p", stream);
+				}
 			}
 		} else {
 			struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
@@ -670,6 +729,15 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 							     BTP_ASCS_STATUS_SUCCESS);
 		}
 	}
+
+	btp_send_ascs_cis_connected_ev(stream);
+}
+
+static void stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	LOG_DBG("Disconnected stream %p: 0x%02X", stream, reason);
+
+	btp_send_ascs_cis_disconnected_ev(stream, reason);
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -750,6 +818,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv_cb,
 	.sent = btp_bap_audio_stream_sent_cb,
 	.connected = stream_connected_cb,
+	.disconnected = stream_disconnected_cb,
 };
 
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
