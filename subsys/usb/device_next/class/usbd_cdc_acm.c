@@ -571,54 +571,6 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static inline int cdc_acm_send_notification(const struct device *dev,
-					    const uint16_t serial_state)
-{
-	struct cdc_acm_notification notification = {
-		.bmRequestType = 0xA1,
-		.bNotificationType = USB_CDC_SERIAL_STATE,
-		.wValue = 0,
-		.wIndex = 0,
-		.wLength = sys_cpu_to_le16(sizeof(uint16_t)),
-		.data = sys_cpu_to_le16(serial_state),
-	};
-	struct cdc_acm_uart_data *data = dev->data;
-	const struct cdc_acm_uart_config *cfg = dev->config;
-	struct usbd_class_data *c_data = cfg->c_data;
-	struct net_buf *buf;
-	uint8_t ep;
-	int ret;
-
-	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
-		LOG_INF("USB configuration is not enabled");
-		return -EACCES;
-	}
-
-	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB support is suspended (FIXME)");
-		return -EACCES;
-	}
-
-	ep = cdc_acm_get_int_in(c_data);
-	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		net_buf_unref(buf);
-		return ret;
-	}
-
-	if (k_sem_take(&data->notif_sem, K_FOREVER) == -EAGAIN) {
-		return -ECANCELED;
-	}
-
-	return ret;
-}
-
 /*
  * TX handler is triggered when the state of TX fifo has been altered.
  */
@@ -1019,6 +971,54 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
+static inline int cdc_acm_send_notification(const struct device *dev,
+					    const uint16_t serial_state)
+{
+	struct cdc_acm_notification notification = {
+		.bmRequestType = 0xA1,
+		.bNotificationType = USB_CDC_SERIAL_STATE,
+		.wValue = 0,
+		.wIndex = 0,
+		.wLength = sys_cpu_to_le16(sizeof(uint16_t)),
+		.data = sys_cpu_to_le16(serial_state),
+	};
+	struct cdc_acm_uart_data *data = dev->data;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_class_data *c_data = cfg->c_data;
+	struct net_buf *buf;
+	uint8_t ep;
+	int ret;
+
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		LOG_INF("USB configuration is not enabled");
+		return -EACCES;
+	}
+
+	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
+		LOG_INF("USB support is suspended (FIXME)");
+		return -EACCES;
+	}
+
+	ep = cdc_acm_get_int_in(c_data);
+	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (ret) {
+		net_buf_unref(buf);
+		return ret;
+	}
+
+	if (k_sem_take(&data->notif_sem, K_FOREVER) == -EAGAIN) {
+		return -ECANCELED;
+	}
+
+	return ret;
+}
+
 static int cdc_acm_line_ctrl_set(const struct device *dev,
 				 const uint32_t ctrl, const uint32_t val)
 {
