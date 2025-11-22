@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 &spi2 {
-
 	lpd8806: lpd8806@0 {
 		compatible = "greeled,lpd8806";
 		reg = <0>;

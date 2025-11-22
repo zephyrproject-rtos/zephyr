@@ -10,6 +10,7 @@
 
 &gpio0 {
 	status = "okay";
+
 	hog1 {
 		gpio-hog;
 		gpios = <3 GPIO_ACTIVE_LOW>;

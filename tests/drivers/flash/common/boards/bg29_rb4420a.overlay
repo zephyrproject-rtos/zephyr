@@ -15,7 +15,6 @@
 /* Disable jedec spi nor flash to test internal flash */
 
 / {
-
 	aliases {
 		/delete-property/ spi-flash0;
 	};

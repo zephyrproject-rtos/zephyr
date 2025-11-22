@@ -9,6 +9,7 @@
 		group1 {
 			psels = <NRF_PSEL(SPIM_MISO, 7, 6)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
 				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
@@ -38,11 +39,13 @@
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
 	zephyr,pm-device-runtime-auto;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
+
 	dut_fast: fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

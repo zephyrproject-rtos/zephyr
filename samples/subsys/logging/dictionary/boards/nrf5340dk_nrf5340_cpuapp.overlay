@@ -4,7 +4,6 @@
  */
 
 / {
-
 	chosen {
 		zephyr,shell-uart = &uart1;
 	};

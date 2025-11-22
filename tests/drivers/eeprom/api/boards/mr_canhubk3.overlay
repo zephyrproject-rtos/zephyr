@@ -14,6 +14,7 @@
 
 &lpi2c0 {
 	status = "okay";
+
 	eeprom0: eeprom@50 {
 		compatible = "atmel,at24";
 		reg = <0x50>;

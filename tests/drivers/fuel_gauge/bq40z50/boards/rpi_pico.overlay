@@ -4,7 +4,7 @@
 
 &i2c0 {
 	bq40z50: bq40z50@16 {
-		compatible="ti,bq40z50";
+		compatible = "ti,bq40z50";
 		reg = <0x16>;
 		status = "okay";
 	};

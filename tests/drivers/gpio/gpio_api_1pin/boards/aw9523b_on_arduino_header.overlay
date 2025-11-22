@@ -1,5 +1,6 @@
 &arduino_i2c {
 	status = "okay";
+
 	aw9523b@58 {
 		status = "okay";
 		reg = <0x58>;

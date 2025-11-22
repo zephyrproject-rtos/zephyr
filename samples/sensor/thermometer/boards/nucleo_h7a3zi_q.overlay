@@ -19,6 +19,7 @@
 	pinctrl-names = "default";
 	compatible = "st,stm32-i2c-v2";
 	status = "okay";
+
 	tmp1075_temperature: tmp1075@48 {
 		compatible = "ti,tmp1075";
 		friendly-name = "texas_temperature_tmp1075";

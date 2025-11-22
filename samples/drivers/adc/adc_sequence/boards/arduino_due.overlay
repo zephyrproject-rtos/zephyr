@@ -32,6 +32,7 @@
 		zephyr,input-positive = <6>;
 		zephyr,vref-mv = <3300>;
 	};
+
 	channel@7 { // Connector A0
 		reg = <7>;
 		zephyr,gain = "ADC_GAIN_1";

@@ -21,6 +21,7 @@
 			/* GTIOC5A */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 15)>;
 		};
+
 		group2 {
 			/* GTIOC5B */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 9)>;

@@ -14,7 +14,7 @@
 		interrupt-parent = <&intc>;
 		ranges;
 
-		intc: interrupt-controller  {
+		intc: interrupt-controller {
 			compatible = "hazard3,hazard3-intc";
 			interrupt-controller;
 			#interrupt-cells = <2>;

@@ -14,6 +14,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led_blue: pwm_led_gpio0_21 {
 			label = "PWM LED0";
 			pwms = <&ledc0 0 1000 PWM_POLARITY_NORMAL>;
@@ -36,6 +37,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;

@@ -9,6 +9,7 @@
  * Apply input voltage to LPCMP on header J1-pin 14 (P1_2)
  */
 /delete-node/ &lpcmp0;
+
 lpcmp0: &lpcmp2 {
 	function-clock = "CMP_CLOCK";
 };

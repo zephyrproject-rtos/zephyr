@@ -16,6 +16,7 @@
 			pinmux = <PA7_PSI5_0_SDOUT1>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <PA6_PSI5_0_SDIN1>;
 			input-enable;

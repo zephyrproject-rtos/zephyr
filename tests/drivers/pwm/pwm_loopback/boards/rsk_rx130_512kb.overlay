@@ -27,6 +27,7 @@
 	status = "okay";
 	pinctrl-0 = <&pwm4_default>;
 	pinctrl-names = "default";
+
 	pwm4: pwm {
 		status = "okay";
 		prescaler = <RX_MTU_PWM_SOURCE_DIV_16>;

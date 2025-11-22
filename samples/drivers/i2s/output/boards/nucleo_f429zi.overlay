@@ -11,7 +11,7 @@
 };
 
 /* 43.836KHz (-0.37% Error) */
-&pllsai{
+&pllsai {
 	div-m = <8>;
 	mul-n = <101>;
 	div-q = <9>;

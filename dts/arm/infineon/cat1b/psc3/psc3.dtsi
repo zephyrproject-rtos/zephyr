@@ -215,7 +215,7 @@
 			status = "disabled";
 		};
 
-		tcpwm0: tcpwm0@42a00000  {
+		tcpwm0: tcpwm0@42a00000 {
 			reg = <0x42a00000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -297,7 +297,7 @@
 			};
 		};
 
-		tcpwm1: tcpwm1@42a10000  {
+		tcpwm1: tcpwm1@42a10000 {
 			reg = <0x42a10000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -455,7 +455,7 @@
 			};
 		};
 
-		tcpwm2: tcpwm2@42a20000  {
+		tcpwm2: tcpwm2@42a20000 {
 			reg = <0x42a20000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;

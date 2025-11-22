@@ -19,7 +19,7 @@
 	};
 
 	group2 {
-		pinmux =  <I2S0_O_SD_GPIO48>;
+		pinmux = <I2S0_O_SD_GPIO48>;
 		input-enable;
 	};
 

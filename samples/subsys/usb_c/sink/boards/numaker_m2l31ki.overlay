@@ -29,6 +29,7 @@
 			pinmux = <PA12MFP_GPIO>;
 			digital-path-disable;
 		};
+
 		group1 {
 			pinmux = <PC0MFP_UTCPD0_CC1>,
 				 <PC1MFP_UTCPD0_CC2>,
@@ -91,6 +92,7 @@
 &gpioa {
 	status = "okay";
 };
+
 &gpiob {
 	status = "okay";
 };

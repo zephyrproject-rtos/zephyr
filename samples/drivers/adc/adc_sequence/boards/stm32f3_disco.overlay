@@ -36,6 +36,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@1 {
 			reg = <1>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -43,6 +44,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@2 {
 			reg = <2>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -50,6 +52,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@3 {
 			reg = <3>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -57,6 +60,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@4 {
 			reg = <4>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -64,6 +68,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@5 {
 			reg = <5>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -71,6 +76,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@6 {
 			reg = <6>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -78,6 +84,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@7 {
 			reg = <7>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -85,6 +92,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@8 {
 			reg = <8>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -92,6 +100,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@9 {
 			reg = <9>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -99,6 +108,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@a {
 			reg = <0xa>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -106,6 +116,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@b {
 			reg = <0xb>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -113,6 +124,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@c {
 			reg = <0xc>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -120,6 +132,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@d {
 			reg = <0xd>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -127,6 +140,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@e {
 			reg = <0xe>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -134,6 +148,7 @@
 			zephyr,vref-mv = <8>;
 			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		};
+
 		channel@f {
 			reg = <0xf>;
 			zephyr,gain = "ADC_GAIN_1";

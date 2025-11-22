@@ -20,15 +20,15 @@
 	functional-mode = "inverting";
 	non-inverting-reference = "Input1";
 	programmable-gain = "OPAMP_GAIN_1",
-			"OPAMP_GAIN_2",
-			"OPAMP_GAIN_4";
+			    "OPAMP_GAIN_2",
+			    "OPAMP_GAIN_4";
 };
 
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	voltage-ref= <0>;
+	voltage-ref = <0>;
 
 	channel@0 {
 		reg = <0>;

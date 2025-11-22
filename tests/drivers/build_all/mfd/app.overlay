@@ -15,7 +15,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_i2c: i2c@33335555{
+		test_i2c: i2c@33335555 {
 			status = "okay";
 			compatible = "vnd,i2c";
 			reg = <0x33335555 0x1000>;
@@ -23,7 +23,7 @@
 			#size-cells = <0>;
 
 			sc18is606: sc18is606@28 {
-				compatible ="nxp,sc18is606";
+				compatible = "nxp,sc18is606";
 				status = "okay";
 				reg = <0x28>;
 
