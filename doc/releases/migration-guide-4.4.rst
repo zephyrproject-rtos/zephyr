@@ -32,6 +32,13 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+COUNTER
+=======
+
+* Drivers that implement ``get_value_64`` API will now need to select 
+  :kconfig:option:`CONFIG_COUNTER_64BITS_TICKS` to enable the API.
+  (:github:`94189`).
+
 QSPI
 ===
 
