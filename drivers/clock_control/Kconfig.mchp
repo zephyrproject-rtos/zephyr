@@ -7,12 +7,20 @@ config CLOCK_CONTROL_MCHP_COMMON
 	  Common options for Microchip clock control drivers.
 
 config CLOCK_CONTROL_MCHP_SAM_D5X_E5X
-	bool "Microchip SAM D5X/E5X clock controller Support"
+	bool
 	depends on DT_HAS_MICROCHIP_SAM_D5X_E5X_CLOCK_ENABLED
 	default y
 	select CLOCK_CONTROL_MCHP_COMMON
 	help
 	  Enable clock controller driver for Microchip SAM D5X/E5X SoC family.
+
+config CLOCK_CONTROL_MCHP_PIC32CM_JH
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CM_JH_CLOCK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip PIC32CM_JH family.
 
 if CLOCK_CONTROL_MCHP_COMMON
 

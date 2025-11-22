@@ -1,0 +1,61 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH Generic clock peripheral
+
+description: |
+  Peripheral channel gclk clock configuration. The outputs from the Generators are used as sources
+  for the Peripheral Channels, which provide the Generic Clock (GCLK_PERIPH) to the peripheral
+  modules.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-gclkperiph"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+    description: |
+      The subsystem cell is to identify a clock controller sub-system.
+
+      The subsystem can be referred from include\zephyr\dt-bindings\clock\mchp_pic32cm_jh_clock.h,
+      under the GCLKPERIPH_TYPE section of ids.
+      All clock control API use this value to specify the clock on which the API operates.
+      Since subsystem is opaque to the user, it can be accessed from the devicetree node and used.
+
+clock-cells:
+  - subsystem
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    gclkperiph-src:
+      type: string
+      enum:
+        - "gclk0"
+        - "gclk1"
+        - "gclk2"
+        - "gclk3"
+        - "gclk4"
+        - "gclk5"
+        - "gclk6"
+        - "gclk7"
+        - "gclk8"
+      default: "gclk0"
+      description: |
+        Generator to be used as the source of a peripheral clock
+
+    gclkperiph-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Enable a peripheral channel
+        0: to disable, 1: to enable

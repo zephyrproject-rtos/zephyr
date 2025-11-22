@@ -56,5 +56,71 @@
 };
 
 &cpu0 {
-	clock-frequency = <4000000>;
+	clock-frequency = <48000000>;
+};
+
+&clock {
+	compatible = "microchip,pic32cm-jh-clock";
+
+	/* If cpu sourced from osc48m, use 3 for CPU frequency above 24Mhz */
+	flash-wait-states = <2>;
+
+	xosc: xosc {
+		compatible = "microchip,pic32cm-jh-xosc";
+		xosc-frequency = <32000000>;
+		xosc-en = <1>;
+		xosc-xtal-en = <1>;
+		xosc-run-in-standby-en = <1>;
+	};
+
+	fdpll: fdpll {
+		compatible = "microchip,pic32cm-jh-fdpll";
+		fdpll-xosc-clock-divider = <15>;
+		fdpll-divider-ratio-frac = <0>;
+		fdpll-divider-ratio-int = <95>;
+		fdpll-output-prescalar = "div2";
+		fdpll-src = "xosc";
+		fdpll-run-in-standby-en = <1>;
+		fdpll-en = <1>;
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,pic32cm-jh-xosc32k";
+		xosc32k-32khz-en = <1>;
+		xosc32k-xtal-en = <1>;
+		xosc32k-startup-time = "122-us";
+		xosc32k-run-in-standby-en = <1>;
+		xosc32k-en = <1>;
+	};
+
+	osc32k: osc32k {
+		compatible = "microchip,pic32cm-jh-osc32k";
+		osc32k-32khz-en = <1>;
+		osc32k-startup-time = "183-us";
+		osc32k-run-in-standby-en = <1>;
+		osc32k-en = <0>;
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,pic32cm-jh-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "fdpll";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,pic32cm-jh-gclkperiph";
+		#clock-cells = <1>;
+
+		sercom4 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+	};
 };
