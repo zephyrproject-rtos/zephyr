@@ -697,6 +697,7 @@
 			reg-names = "port", "pfconfig";
 			mac-index = <0>;
 			si-index = <0>;
+			ptp-clock = <&netc_ptp_clock0>;
 			status = "disabled";
 		};
 
@@ -708,6 +709,13 @@
 			mac-index = <1>;
 			si-index = <1>;
 			phy-connection-type = "internal";
+			status = "disabled";
+		};
+
+		netc_ptp_clock0: ptp_clock@60b80000 {
+			compatible = "nxp,netc-ptp-clock";
+			reg = <0x60b80000 0x10000>;
+			clocks = <&ccm IMX_CCM_NETC_CLK 0x0 0>;
 			status = "disabled";
 		};
 
@@ -734,24 +742,28 @@
 			switch_port0: switch_port@0 {
 				compatible = "zephyr,dsa-port";
 				reg = <0>;
+				ptp-clock = <&netc_ptp_clock0>;
 				status = "disabled";
 			};
 
 			switch_port1: switch_port@1 {
 				compatible = "zephyr,dsa-port";
 				reg = <1>;
+				ptp-clock = <&netc_ptp_clock0>;
 				status = "disabled";
 			};
 
 			switch_port2: switch_port@2 {
 				compatible = "zephyr,dsa-port";
 				reg = <2>;
+				ptp-clock = <&netc_ptp_clock0>;
 				status = "disabled";
 			};
 
 			switch_port3: switch_port@3 {
 				compatible = "zephyr,dsa-port";
 				reg = <3>;
+				ptp-clock = <&netc_ptp_clock0>;
 				status = "disabled";
 			};
 
@@ -1488,10 +1500,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_ns_aon 0x20 0x100>;
 		interrupts = <45 0>;
@@ -1515,10 +1527,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x38 0x100>;
 		interrupts = <198 0>;
@@ -1542,10 +1554,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x3c 0x100>;
 		interrupts = <199 0>;
@@ -1569,10 +1581,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x40 0x100>;
 		interrupts = <154 0>;
@@ -1613,6 +1625,7 @@
 		reg = <0x0 DT_SIZE_K(512)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		ocram1_available: memory@4000 {
 			/* OCRAM1 first 16K access is blocked by TRDC */
 			reg = <0x0 DT_SIZE_K(496)>;
