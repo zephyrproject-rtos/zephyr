@@ -1097,8 +1097,8 @@ int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc
 		return -EINVAL;
 	}
 
-	if (svc_inst->set_size == size && svc_inst->rank == rank) {
-		LOG_DBG("Set size %u and rank %u is already set", size, rank);
+	if (svc_inst->set_size == size) {
+		LOG_DBG("Set size %u is already set", size);
 		return -EALREADY;
 	}
 
