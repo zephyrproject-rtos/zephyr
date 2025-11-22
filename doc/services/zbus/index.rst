@@ -917,6 +917,135 @@ illustrates the runtime registration usage.
   the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
 
+Proxy Agent Communication
+**************************
+
+ZBus supports proxy agent communication, enabling message passing between different execution
+domains such as CPU cores or separate devices. This is achieved through proxy agents that
+forward messages between domains.
+
+.. figure:: images/zbus_proxy_agent.png
+    :alt: ZBus proxy agent communication
+    :width: 75%
+
+..
+  Image illustrating zbus proxy agent communication between domains.
+
+Concepts
+========
+
+Proxy agent communication introduces several key concepts:
+
+* **Shadow channels**: Read-only channels that mirror channels from other domains
+* **Proxy agents**: Background services that synchronize channel data between domains
+* **Transport backends**: Communication mechanisms (IPC, UART) used by proxy agents
+
+Channels are defined using standard zbus macros (:c:macro:`ZBUS_CHAN_DEFINE` or
+:c:macro:`ZBUS_CHAN_DEFINE_WITH_ID`) and shadow channels use :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
+to create read-only mirrors linked to specific proxy agents.
+
+Transport Backends
+==================
+
+ZBus proxy agent communication relies on transport backends to forward messages between different
+execution domains.
+
+IPC Backend
+-----------
+
+The IPC backend facilitates communication between CPU cores within the same system using
+Inter-Process Communication mechanisms. It is configured through device tree nodes using the
+:dtcompatible:`zephyr,zbus-proxy-agent-ipc` compatible string.
+
+See the :zephyr:code-sample:`zbus-proxy-agent-ipc` sample for a complete implementation.
+
+UART Backend
+------------
+
+The UART backend enables communication between physically separate devices over serial connections.
+This backend extends zbus messaging across device boundaries, allowing distributed systems to
+maintain a unified message bus architecture. It is configured through device tree nodes using the
+:dtcompatible:`zephyr,zbus-proxy-agent-uart` compatible string.
+
+See the :zephyr:code-sample:`zbus-proxy-agent-uart` sample for a complete implementation.
+
+Usage
+=====
+
+Proxy agent communication requires setting up proxy agents through device tree configuration and
+defining channels appropriately. Here's a typical setup:
+
+**Device Tree Configuration:** Proxy agent setup:
+
+.. code-block:: devicetree
+
+    / {
+        ipc_proxy_agent: ipc-proxy {
+            compatible = "zephyr,zbus-proxy-agent-ipc";
+            ipc-device = <&ipc0>;
+        };
+    };
+
+**Domain A (Publisher):** Forward channel to remote domain:
+
+.. code-block:: c
+
+    #include <zephyr/zbus/zbus.h>
+    #include <zephyr/zbus/proxy_agent/zbus_proxy_agent.h>
+
+    #define PROXY_NODE DT_NODELABEL(ipc_proxy_agent)
+
+    struct my_msg {
+        int data;
+    };
+
+    /* Channel published locally, forwarded to remote */
+    ZBUS_CHAN_DEFINE(my_channel,                /* Name */
+                     struct my_msg,             /* Message type */
+                     NULL,                      /* Validator */
+                     NULL,                      /* User Data */
+                     ZBUS_OBSERVERS_EMPTY,      /* observers */
+                     ZBUS_MSG_INIT(0));         /* Initial value */
+
+    /* Add channel to proxy agent for forwarding */
+    ZBUS_PROXY_ADD_CHAN(PROXY_NODE, my_channel);
+
+    [...]
+
+    /* Publish messages, they will be automatically forwarded */
+    struct my_msg msg = {.data = 42};
+    zbus_chan_pub(&my_channel, &msg, K_MSEC(100));
+
+**Domain B (Receiver):** Receive forwarded channel:
+
+.. code-block:: c
+
+    #include <zephyr/zbus/zbus.h>
+    #include <zephyr/zbus/proxy_agent/zbus_proxy_agent.h>
+
+    #define PROXY_NODE DT_NODELABEL(ipc_proxy_agent)
+
+    struct my_msg {
+        int data;
+    };
+
+    /* Shadow channel, mirrors the channel from remote domain */
+    ZBUS_SHADOW_CHAN_DEFINE(my_channel,              /* Name (must match remote channel name) */
+                               struct my_msg,           /* Message type */
+                               PROXY_NODE,              /* Proxy Agent Node */
+                               NULL,                    /* User Data */
+                               ZBUS_OBSERVERS_EMPTY,    /* observers */
+                               ZBUS_MSG_INIT(0));       /* Initial value */
+
+    void my_listener_cb(const struct zbus_channel *chan) {
+        const struct my_msg *data = zbus_chan_const_msg(chan);
+        /* Process received message */
+        printk("Received: %d\n", data->data);
+    }
+
+    ZBUS_LISTENER_DEFINE(my_listener, my_listener_cb);
+    ZBUS_CHAN_ADD_OBS(my_channel, my_listener, 0);
+
 Samples
 *******
 
@@ -942,6 +1071,8 @@ available:
 * :zephyr:code-sample:`zbus-confirmed-channel` implements a way of implement confirmed channel only
   with subscribers;
 * :zephyr:code-sample:`zbus-benchmark` implements a benchmark with different combinations of inputs.
+* :zephyr:code-sample:`zbus-proxy-agent-ipc` demonstrates multi-core communication using IPC proxy agents;
+* :zephyr:code-sample:`zbus-proxy-agent-uart` demonstrates inter-device communication using UART proxy agents.
 
 Suggested Uses
 **************
@@ -952,6 +1083,13 @@ scenarios that can tolerate message losses and duplications; when they cannot, u
 subscribers (if you need a thread) or listeners (if you need to be lean and fast). In addition to
 the listener, another asynchronous message processing mechanism (like :ref:`message queues
 <message_queues_v2>`) may be necessary to retain the pending message until it gets processed.
+
+For proxy agent scenarios, use zbus to enable communication across execution boundaries:
+
+* **Multi-core systems**: Use IPC backend proxy agents to coordinate between application and network processors,
+  or distribute workloads across multiple CPU cores.
+* **Distributed devices**: Use UART backend proxy agents to create distributed applications where multiple
+  connected devices participate in the same logical message bus over serial connections.
 
 .. note::
    ZBus can be used to transfer streams from the producer to the consumer. However, this can
@@ -998,6 +1136,20 @@ Related configuration options:
   observers to statically allocate.
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` enable proxy agent communication support.
+
+Proxy Agent Configuration Options
+==================================
+
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC` enable IPC backend for proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_UART` enable UART backend for proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_LOG_LEVEL` set the log level for proxy agent operations;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_MESSAGE_SIZE` maximum message size for proxy agent
+  channels;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_CHANNEL_NAME_SIZE` maximum size of channel names in
+  proxy agent communication;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_STACK_SIZE` stack size for proxy agent threads;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_PRIORITY` priority of proxy agent threads;
 
 API Reference
 *************

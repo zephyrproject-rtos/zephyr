@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_ipc: fake_ipc_device {
+		compatible = "fake-ipc";
+		status = "okay";
+	};
+
+	test_proxy_agent: test-proxy-agent {
+		compatible = "zephyr,zbus-proxy-agent-ipc";
+		ipc-device = <&fake_ipc>;
+		status = "disabled";     /* Disabled so the proxy agent is not auto-started */
+	};
+};

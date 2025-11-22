@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_proxy_agent: test-proxy {
+		compatible = "zephyr,zbus-proxy-agent-mock";
+		status = "okay";
+		ack-timeout-start-ms = <10>;
+		ack-timeout-max-ms = <100>;
+		ack-attempt-limit = <5>;
+		tracking-msg-pool-size = <4>;
+	};
+};

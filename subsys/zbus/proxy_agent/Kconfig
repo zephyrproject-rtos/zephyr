@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "ZBus proxy agent support"
+
+config ZBUS_PROXY_AGENT_MESSAGE_SIZE
+	int "ZBus proxy agent message size"
+	default 128
+	help
+	  Configures the size of message buffers used in ZBus proxy agent communication.
+	  This setting sets the maximum size of messages that can be sent between domains.
+
+config ZBUS_PROXY_AGENT_CHANNEL_NAME_SIZE
+	int "ZBus proxy agent channel name size"
+	default 32
+	help
+	  Configures the size of channel name buffers used in ZBus proxy agent communication.
+	  This setting sets how long channel names can be when communicating between domains.
+
+config ZBUS_PROXY_AGENT_STACK_SIZE
+	int "ZBus proxy agent proxy stack size"
+	default 2048
+	help
+	  Configures the stack size for the ZBus proxy agent proxy agent thread.
+
+config ZBUS_PROXY_AGENT_PRIORITY
+	int "ZBus proxy agent proxy thread priority"
+	default 7
+	help
+	  Configures the priority of the ZBus proxy agent proxy agent thread.
+
+config ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	depends on UART_ASYNC_API
+	depends on CRC
+	help
+	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
+
+
+config ZBUS_PROXY_AGENT_IPC
+	bool "ZBus proxy agent IPC backend"
+	depends on IPC_SERVICE
+	depends on CRC
+	help
+	  Enables the ZBus proxy agent IPC backend, allowing communication between domains over IPC.
+
+module = ZBUS_PROXY_AGENT
+module-str = zbus_proxy_agent
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu # ZBus proxy agent support

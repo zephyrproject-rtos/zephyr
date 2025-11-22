@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+description: |
+    Base properties for Zbus proxy agent.
+    This binding is not used directly but provides common properties
+    for all proxy agent backends.
+
+properties:
+  ack-timeout-start-ms:
+    type: int
+    default: 10
+    description: |
+      Initial timeout in milliseconds to wait for an acknowledgment
+      when sending a message via this proxy agent.
+      The timeout will be increased exponentially for each retry until
+      reaching ack-timeout-end-ms.
+  ack-timeout-max-ms:
+    type: int
+    default: 1000
+    description: |
+      Maximum timeout in milliseconds to wait for an acknowledgment
+      when sending a message via this proxy agent.
+  ack-attempt-limit:
+    type: int
+    default: 10
+    description: |
+      Number of retries to attempt when waiting for an acknowledgment
+      after sending a message via this proxy agent.
+      Set to -1 to retry indefinitely until an acknowledgment is received.
+  tracking-msg-pool-size:
+    type: int
+    default: 4
+    description: |
+      Number of message tracking slots to allocate for messages
+      that are pending acknowledgment.
+  receive-msgq-size:
+    type: int
+    default: 2
+    description: |
+      Number of messages that can be queued in the receive message queue
+      for incoming messages from the remote proxy agent.
+  duplicate-detection-size:
+    type: int
+    default: 8
+    description: |
+      Size of the duplicate detection buffer. This is a ring buffer
+      that keeps track of recently received message IDs to detect
+      and filter out duplicate messages.

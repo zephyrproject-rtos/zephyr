@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zbus proxy agent mock backend
+
+compatible: "zephyr,zbus-proxy-agent-mock"
+
+include: zephyr,zbus-proxy-agent-base.yaml
