@@ -222,6 +222,7 @@
 		reg = <0x38>;
 		int-gpios = <&aw9523b_gpio 10 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&aw9523b_gpio 0 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
 	};
 };
 
