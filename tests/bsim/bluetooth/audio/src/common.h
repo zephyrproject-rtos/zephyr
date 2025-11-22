@@ -80,7 +80,8 @@ static const uint8_t mock_iso_data[] = {
 		      0xdd, 0x72, 0xcc, 0xcd)}
 
 #define MIN_SEND_COUNT 100
-#define WAIT_SECONDS   100                           /* seconds */
+#define MAX_FAIL_COUNT 0
+#define WAIT_SECONDS   100                      /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
@@ -116,7 +117,7 @@ extern enum bst_result_t bst_result;
 	} while (0)
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP         5
+#define PA_SYNC_SKIP                      5
 
 #define PBP_STREAMS_TO_SEND 2
 
@@ -169,6 +170,7 @@ struct audio_test_stream {
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
 	size_t valid_rx_cnt;
+	size_t err_rx_cnt;
 	atomic_t flag_audio_received;
 	bool last_rx_failed;
 };

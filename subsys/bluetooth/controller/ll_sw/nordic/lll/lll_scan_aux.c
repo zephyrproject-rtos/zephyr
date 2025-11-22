@@ -217,13 +217,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	overhead_us += EVENT_TICKER_RES_MARGIN_US;
 	overhead_us += EVENT_JITTER_US;
 
-	/* CPU execution overhead to setup the radio for reception plus the
-	 * minimum prepare tick offset. And allow one additional event in
-	 * between as overhead (say, an advertising event in between got closed
-	 * when reception for auxiliary PDU is being setup).
-	 */
-	overhead_us += (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 	/* Sufficient offset to ULL schedule the auxiliary PDU scan? */
 	if (aux_offset_us > overhead_us) {
@@ -607,7 +602,7 @@ sync_aux_prepare_done:
 		static memq_link_t link;
 		static struct mayfly mfy_after_cen_offset_get = {
 			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
-		struct lll_prepare_param *prepare_param;
+		static struct lll_prepare_param *prepare_param;
 
 		/* Copy the required values to calculate the offsets
 		 *
@@ -643,6 +638,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 * shall not use -EAGAIN as return value.
 	 */
 	ARG_UNUSED(resume_cb);
+
+	/* Prepare being cancelled (no resume for scan aux) */
+	if (next == NULL) {
+		return -ECANCELED;
+	}
 
 	/* Auxiliary event shall not overlap as they are not periodically
 	 * scheduled.
@@ -687,10 +687,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
-	e->lll = param;
+	e->lll = prepare_param->param;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_done(void *param)
