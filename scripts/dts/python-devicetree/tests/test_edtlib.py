@@ -738,6 +738,17 @@ def test_prop_enums():
     assert not no_enum.spec.enum_tokenizable
     assert not no_enum.spec.enum_upper_tokenizable
 
+def test_additional_property_feature():
+    with from_here():
+        edt = edtlib.EDT("test_additional.dts", ["test-bindings"])
+
+    parent = edt.get_node("/additional-parent")
+    child = edt.get_node("/additional-parent/child")
+    assert parent.props["base"].val == 7
+    assert child.props["base"].val == 8
+    assert child.props["child-only"].val == "ok"
+    assert child.props["extra"].val == 9
+
 def test_binding_inference():
     '''Test inferred bindings for special zephyr-specific nodes.'''
     warnings = io.StringIO()
