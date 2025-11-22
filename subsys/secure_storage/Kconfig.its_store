@@ -31,7 +31,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
 	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
 	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
-	depends on SETTINGS
+	depends on SETTINGS && !SETTINGS_NONE
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
 	bool "No ITS store module implementation"
