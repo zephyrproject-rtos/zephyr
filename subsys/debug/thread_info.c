@@ -88,10 +88,14 @@ const size_t _kernel_thread_info_offsets[] = {
 #elif defined(CONFIG_XTENSA)
 	/* Xtensa does not store stack pointers inside thread objects.
 	 * The registers are saved in thread stack where there is
-	 * no fixed location for this to work. So mark this as
-	 * unimplemented to avoid the #warning below.
+	 * no fixed location for this to work. It needs arch_switch in
+	 * order to work on Xtensa.
 	 */
+#ifdef CONFIG_USE_SWITCH
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread, switch_handle),
+#else
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
+#endif
 #elif defined(CONFIG_RX)
 	/* RX doesn't store *anything* inside thread objects yet */
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
