@@ -1,0 +1,21 @@
+# Copyright (c) 2020 George Gkinis
+# Copyright (c) 2021 Jan Gnip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avia HX710/HX712/HX720 sensor
+
+compatible: "avia,hx710"
+
+include: avia,hx7xx-common.yaml
+
+properties:
+  rate-hz:
+    type: int
+    description: |
+      Sensor sample rate.
+      User should provide initial value depending on HW implementation.
+      If CONFIG_PM_DEVICE_RUNTIME = y rate will not be higher
+      than 2~3Hz due to the long wake-up time needed for HX710.
+    default: 10
+    enum: [10, 40]
