@@ -110,3 +110,10 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
+
+&adc0 {
+	status = "okay";
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};

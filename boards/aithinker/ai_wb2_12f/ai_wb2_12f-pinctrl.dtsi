@@ -32,4 +32,10 @@
 			input-schmitt-enable;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <GPIO14_ADC_CH2>;
+		};
+	};
 };
