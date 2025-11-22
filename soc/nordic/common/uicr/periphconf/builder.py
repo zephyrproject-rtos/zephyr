@@ -150,7 +150,7 @@ class PeriphconfBuilder:
 
         :param node_or_nodelabel: node or label of the node to process.
         """
-        self._add_peripheral_cfg(node_or_nodelabel, is_global=False, add_gpios=False)
+        self._add_peripheral_cfg(node_or_nodelabel, is_global=False)
 
     def add_global_peripheral_cfg(
         self,
@@ -182,7 +182,6 @@ class PeriphconfBuilder:
         is_global: bool = True,
         has_irq_mapping: bool = True,
         add_ppib_channel_links: bool = True,
-        add_gpios: bool = True,
     ) -> None:
         if isinstance(node_or_nodelabel, str):
             node = self._dt.label2node[node_or_nodelabel]
@@ -223,13 +222,11 @@ class PeriphconfBuilder:
             if "nordic,nrf-comp" in node.compats or "nordic,nrf-lpcomp" in node.compats:
                 self._add_nrf_comp_lpcomp_channel_pin_spu_permissions(node)
 
-            self._add_peripheral_pinctrls_spu_permissions_and_ctrlsel(node)
-
         if "nordic,nrf-ipct-local" in node.compats:
             self._add_nrf_ipct_ipcmap_channel_links(node)
 
-        if add_gpios:
-            self._add_peripheral_gpios_spu_permissions_and_ctrlsel(node)
+        self._add_peripheral_pinctrls_spu_permissions_and_ctrlsel(node)
+        self._add_peripheral_gpios_spu_permissions_and_ctrlsel(node)
 
     def add_gpio_spu_permissions(self, node_or_nodelabel: Node | str, /) -> None:
         """Generate macros for populating SPU FEATURE.GPIO[n].PIN[m] registers based on
@@ -884,10 +881,12 @@ def dt_node_is_secure(node: Node) -> bool:
     elif node.regs:
         addr = dt_reg_addr(node)
     else:
-        raise ValueError(
+        log.debug(
             f"Failed to determine security of {node.path} "
-            "from the address of its bus node or itself"
+            "from the address of its bus node or itself. "
+            "Defaulting to Secure."
         )
+        return True
     return Address(addr).security
 
 
