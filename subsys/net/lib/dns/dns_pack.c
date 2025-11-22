@@ -486,7 +486,6 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 		    struct net_buf *buf, const uint8_t **eol)
 {
-	int dest_size = net_buf_tailroom(buf);
 	const uint8_t *end_of_label = NULL;
 	const uint8_t *curr_src = src;
 	int loop_check = 0, len = -1;
@@ -525,6 +524,8 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				return -EMSGSIZE;
 			}
 		} else {
+			size_t dest_size = net_buf_tailroom(buf);
+
 			/* Max label length is 64 bytes (because 2 bits are
 			 * used for pointer)
 			 */
@@ -533,8 +534,7 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				return -EMSGSIZE;
 			}
 
-			if (((buf->data + label_len + 1) >=
-			     (buf->data + dest_size)) ||
+			if ((label_len + 1 >= dest_size) ||
 			    ((curr_src + label_len) >= (msg + maxlen))) {
 				return -EMSGSIZE;
 			}
