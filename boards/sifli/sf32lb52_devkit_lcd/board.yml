@@ -5,5 +5,11 @@ board:
   name: sf32lb52_devkit_lcd
   full_name: SF32LB52-DevKit-LCD
   vendor: sifli
+  revision:
+    format: custom
+    default: "n16r8"
+    revisions:
+      - name: "n16r8"
+      - name: "a128r8"
   socs:
     - name: sf32lb525uc6
