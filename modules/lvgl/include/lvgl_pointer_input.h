@@ -15,6 +15,12 @@ extern "C" {
 
 int lvgl_pointer_input_init(const struct device *dev);
 
+#ifdef CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH
+
+const struct device *lvgl_pointer_from_chosen_get(void);
+
+#endif /* CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH */
+
 #ifdef __cplusplus
 }
 #endif

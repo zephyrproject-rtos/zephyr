@@ -9,11 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911_rtkmipilcdb00000be>;
+		zephyr,touch = &gt911_rtkmipilcdb00000be;
 	};
 };
 

@@ -7,11 +7,6 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 / {
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911>;
-	};
-
 	aliases {
 		accel0 = &gt911;
 	};
