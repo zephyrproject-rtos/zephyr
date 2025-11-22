@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -330,6 +331,155 @@ static uint8_t chan_d(uint8_t n)
 	return MAX(1, MAX(MIN(3, x), MIN(11, y)));
 }
 #endif /* CONFIG_BT_CTLR_ISO */
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+#include "hal/cpu.h"
+
+#define CHM_SURVEY_CHAN_COUNT_MAX 37U
+
+static struct {
+	struct chan_metrics_chan {
+		uint16_t count; /* Total metrics count */
+		uint16_t prev;  /* Previous total metrics count when good tx acknowledgment */
+		uint16_t good;  /* Total good tx acknowledgments */
+	} chan[CHM_SURVEY_CHAN_COUNT_MAX];
+
+	/* Differential state, context-safe, to notify upper layer */
+	uint8_t req;
+	uint8_t ack;
+} chan_metrics;
+
+void lll_chan_metrics_init(void)
+{
+	(void)memset((void *)&chan_metrics, 0U, sizeof(chan_metrics));
+}
+
+bool lll_chan_metrics_is_notify(void)
+{
+	return chan_metrics.req != chan_metrics.ack;
+}
+
+bool lll_chan_metrics_notify_clear(void)
+{
+	if (lll_chan_metrics_is_notify()) {
+		chan_metrics.ack = chan_metrics.req;
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool chan_metrics_notify_set(void)
+{
+	uint8_t req;
+
+	req = chan_metrics.req + 1U;
+	if (req != chan_metrics.ack) {
+		chan_metrics.req = req;
+		cpu_dmb(); /* data memory barrier */
+
+		return true;
+	}
+
+	return false;
+}
+
+static struct chan_metrics_chan *chan_metrics_count_inc(uint8_t chan_idx)
+{
+	struct chan_metrics_chan *chan;
+
+	LL_ASSERT(chan_idx < CHM_SURVEY_CHAN_COUNT_MAX);
+
+	/* Mitigate metrics overflow, half the collected good and count value */
+	chan = &chan_metrics.chan[chan_idx];
+	if (chan->count == UINT16_MAX) {
+		uint16_t diff;
+
+		/* Current consecutive bad versus good difference */
+		diff = chan->count - chan->prev;
+
+		/* Half the count and keep the current consecutive bad versus good difference.
+		 * We do not want to rollover `UINT16_MAX`, hence we normalize the `count` and
+		 * `good`, but keep the absolute `diff` between `total` and `prev`.
+		 */
+		chan->count >>= 1;
+		if (diff < chan->count) {
+			chan->prev = chan->count - diff;
+		} else {
+			chan->prev = 0U;
+		}
+
+		/* Half the good count */
+		chan->good >>= 1;
+	}
+
+	/* Increment the channel metrics count */
+	chan->count++;
+
+	return chan;
+}
+
+void lll_chan_metrics_chan_bad(uint8_t chan_idx)
+{
+	struct chan_metrics_chan *chan;
+	uint16_t diff;
+
+	/* Increment the per channel metrics count */
+	chan = chan_metrics_count_inc(chan_idx);
+
+	/* Notify beyond a bad versus good difference */
+	diff = chan->count - chan->prev;
+	if (diff > CONFIG_BT_CTLR_CHAN_METRICS_BAD_COUNT) {
+		(void)chan_metrics_notify_set();
+
+		/* Reset consecutive bad versus good difference */
+		chan->prev = chan->count;
+	}
+}
+
+void lll_chan_metrics_chan_good(uint8_t chan_idx)
+{
+	struct chan_metrics_chan *chan;
+
+	/* Increment the per channel metrics count */
+	chan = chan_metrics_count_inc(chan_idx);
+
+	/* Reset the consecutive bad versus good difference */
+	chan->prev = chan->count;
+
+	/* Increment good count */
+	chan->good++;
+}
+
+void lll_chan_metrics_print(void)
+{
+	const uint8_t max = 100U;
+
+	printk("%s:\n", __func__);
+	printk("chan #: (actual / expected reception) percentage -\n");
+	for (uint8_t i = 0; i < CHM_SURVEY_CHAN_COUNT_MAX; i++) {
+		const struct chan_metrics_chan *chan;
+		uint8_t cnt;
+		char c;
+
+		chan = &chan_metrics.chan[i];
+		if (chan->count != 0U) {
+			cnt = chan->good * max / chan->count;
+			c = '*';
+		} else {
+			cnt = max;
+			c = '-';
+		}
+
+		printk("%02d: (%05u / %05u) %03u - ", i, chan->good, chan->count, cnt);
+		for (uint8_t j = 0; j < cnt; j++) {
+			printk("%c", c);
+		}
+		printk("\n");
+	}
+}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 #if defined(CONFIG_BT_CTLR_TEST)
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part C, Section 3 LE Channel
