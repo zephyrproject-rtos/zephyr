@@ -504,6 +504,13 @@ New APIs and options
 
     * :c:func:`uvc_add_format`
 
+* Utilities
+
+  * :c:struct:`sys_set_node`
+  * :c:func:`sys_set_makeset`
+  * :c:func:`sys_set_find`
+  * :c:func:`sys_set_union`
+
 * Video
 
   * :c:member:`video_format.size` field
