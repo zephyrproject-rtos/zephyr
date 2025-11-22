@@ -385,6 +385,7 @@
 			reg = <0x40002000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
 			interrupts = <99 0>;
+			limited-instance;
 			status = "disabled";
 		};
 
