@@ -17,4 +17,5 @@ supported:
   - uart
   - gpio
   - arduino_gpio
+  - watchdog
 vendor: nxp
