@@ -243,6 +243,18 @@ static void summarize_dw16(const struct jesd216_param_header *php,
 	       dw16.sr1_interface);
 }
 
+static void summarize_dw19(const struct jesd216_param_header *php,
+			   const struct jesd216_bfp *bfp)
+{
+	struct jesd216_bfp_dw19 dw19;
+
+	if (jesd216_bfp_decode_dw19(php, bfp, &dw19) != 0) {
+		return;
+	}
+
+	printf("Octal Enable Requirement: %u\n", dw19.octal_enable_req);
+}
+
 /* Indexed from 1 to match JESD216 data word numbering */
 static const dw_extractor extractor[] = {
 	[1] = summarize_dw1,
@@ -253,6 +265,7 @@ static const dw_extractor extractor[] = {
 	[14] = summarize_dw14,
 	[15] = summarize_dw15,
 	[16] = summarize_dw16,
+	[19] = summarize_dw19,
 };
 
 static void dump_bfp(const struct jesd216_param_header *php,

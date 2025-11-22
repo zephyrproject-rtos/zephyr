@@ -343,3 +343,19 @@ int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
 
 	return 0;
 }
+
+int jesd216_bfp_decode_dw19(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw19 *res)
+{
+	/* DW19 introduced in JESD216C */
+	if (php->len_dw < 19) {
+		return -ENOTSUP;
+	}
+
+	uint32_t dw19 = sys_le32_to_cpu(bfp->dw10[9]);
+
+	res->octal_enable_req = (dw19 >> 20) & BIT_MASK(3);
+
+	return 0;
+}
