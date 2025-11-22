@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+include: [i3c-device.yaml]
+
+description: |
+  A configuration for MCTP endpoint connected to an I3C bus acting as a controller.
+
+compatible: "zephyr,mctp-i3c-endpoint"
+
+properties:
+  controller:
+    type: phandle
+    description: |
+      Reference to the MCTP controller (binding) managing this MCTP endpoint.
