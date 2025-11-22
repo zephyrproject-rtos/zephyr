@@ -1,0 +1,9 @@
+family:
+- name: litex
+  series:
+  - name: litex_vexriscv
+    socs:
+    - name: litex_vexriscv
+  - name: litex_vexiiriscv
+    socs:
+    - name: litex_vexiiriscv

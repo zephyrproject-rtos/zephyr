@@ -1,0 +1,401 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	model = "LiteX VexiiRiscV";
+	compatible = "litex,vexiiriscv";
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+		zephyr,flash-controller = &spiflash0;
+		zephyr,flash = &spiflash0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	ram0: memory@40000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_M(1024)>;
+	};
+
+	fstab {
+		compatible = "zephyr,fstab";
+		ffs1: ffs1 {
+			compatible = "zephyr,fstab,fatfs";
+			automount;
+			disk-access;
+			mount-point = "/SD:";
+		};
+
+		ffs2: ffs2 {
+			compatible = "zephyr,fstab,fatfs";
+			automount;
+			disk-access;
+			mount-point = "/SD2:";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			clock-frequency = <DT_FREQ_M(100)>;
+			compatible = "litex,vexiiriscv-standard", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imac_zicsr_zifencei";
+			status = "okay";
+
+			L0: interrupt-controller {
+				#address-cells = <0>;
+				#interrupt-cells = <0x00000001>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				status = "okay";
+			};
+		};
+	};
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "litex,vexriscv";
+		ranges;
+		ctrl0: soc_controller@f0000000 {
+			compatible = "litex,soc-controller";
+			reg = <0xf0000000 0x4>,
+				<0xf0000004 0x4>,
+				<0xf0000008 0x4>;
+			reg-names = "reset",
+				"scratch",
+				"bus_errors";
+			status = "okay";
+		};
+
+		mtimer: timer@f001bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&L0 7>;
+			reg = <0xf001bff8 0x8 0xf0014000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			status = "okay";
+		};
+
+		lintc0: clint@f0010000 {
+			compatible = "riscv,clint0";
+			interrupts-extended = <&L0 3 &L0 7>;
+			reg = <0xf0010000 0x10000>;
+			reg-names = "control";
+		};
+
+		intc0: interrupt-controller@f0c00000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf0c00000 0x400000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = < &L0 11 &L0 9>;
+			riscv,ndev = <32>;
+			riscv,max-priority = <7>;
+			status = "okay";
+		};
+
+		uart0: serial@f0000800 {
+			compatible = "litex,uart";
+			interrupt-parent = <&intc0>;
+			interrupts = <1 10>;
+			reg = <0xf0000800 0x4>,
+				<0xf0000804 0x4>,
+				<0xf0000808 0x4>,
+				<0xf000080c 0x4>,
+				<0xf0000810 0x4>,
+				<0xf0000814 0x4>,
+				<0xf0000818 0x4>,
+				<0xf000081c 0x4>;
+			reg-names = "rxtx",
+				"txfull",
+				"rxempty",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"txempty",
+				"rxfull";
+			status = "okay";
+			rx-fifo-rx-we;
+			current-speed = <115200>;
+		};
+
+		mdio0: mdio@f0002804 {
+			compatible = "litex,liteeth-mdio";
+			reg = <0xf0002804 0x4>,
+				<0xf0002808 0x4>;
+			reg-names = "mdio_w",
+				"mdio_r";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			phy0: ethernet-phy@2 {
+				compatible = "ethernet-phy";
+				reg = <0x2>;
+				status = "okay";
+			};
+		};
+
+		eth0: ethernet@f0003000 {
+			compatible = "litex,liteeth";
+			interrupt-parent = <&intc0>;
+			interrupts = <3 1>;
+			reg = <0xf0003000 0x4>,
+				<0xf0003004 0x4>,
+				<0xf0003008 0x4>,
+				<0xf000300c 0x4>,
+				<0xf0003010 0x4>,
+				<0xf0003014 0x4>,
+				<0xf0003018 0x4>,
+				<0xf000301c 0x4>,
+				<0xf0003020 0x4>,
+				<0xf0003024 0x4>,
+				<0xf0003028 0x4>,
+				<0xf000302c 0x4>,
+				<0xf0003030 0x4>,
+				<0xf0003034 0x4>,
+				<0xb0000000 0x1000>,
+				<0xb0001000 0x1000>;
+			reg-names = "rx_slot",
+				"rx_length",
+				"rx_errors",
+				"rx_ev_status",
+				"rx_ev_pending",
+				"rx_ev_enable",
+				"tx_start",
+				"tx_ready",
+				"tx_level",
+				"tx_slot",
+				"tx_length",
+				"tx_ev_status",
+				"tx_ev_pending",
+				"tx_ev_enable",
+				"rx_buffers",
+				"tx_buffers";
+			phy-handle = <&phy0>;
+			local-mac-address = [10 e2 d5 00 00 02];
+			status = "okay";
+		};
+
+		spi0: spi@0f0007800 {
+			compatible = "litex,spi-litespi";
+			interrupt-parent = <&intc0>;
+			reg = <0xf0007800 0x4>,
+				<0xf0007804 0x4>,
+				<0xf0007808 0x4>,
+				<0xf000780c 0x4>,
+				<0xf0007810 0x4>,
+				<0xf0007814 0x4>,
+				<0xf0007818 0x4>,
+				<0xf000781c 0x4>,
+				<0xf0007820 0x4>,
+				<0x20000000 0x4000000>;
+			reg-names = "phy_clk_divisor",
+				"mmap_dummy_bits",
+				"master_cs",
+				"master_phyconfig",
+				"master_rxtx",
+				"master_status",
+				"master_ev_status",
+				"master_ev_pending",
+				"master_ev_enable",
+				"flash_mmap";
+			clock-frequency = <50000000>;
+			interrupts = <6 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+			spiflash0: flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <DT_FREQ_M(100)>;
+				use-4b-addr-opcodes;
+				use-fast-read;
+				status = "okay";
+			};
+		};
+
+		sdhc0: sdhc@f0005000 {
+			compatible = "litex,litesdcard-sdhc";
+			interrupt-parent = <&intc0>;
+			reg = <0xf0005000 0x4>,
+				<0xf0005004 0x4>,
+				<0xf0005008 0x4>,
+				<0xf000500c 0x4>,
+				<0xf0005010 0x4>,
+				<0xf0005014 0x4>,
+				<0xf0005018 0x4>,
+				<0xf000501c 0x4>,
+				<0xf0005020 0x4>,
+				<0xf0005024 0x4>,
+				<0xf0005028 0x10>,
+				<0xf0005038 0x4>,
+				<0xf000503c 0x4>,
+				<0xf0005040 0x4>,
+				<0xf0005044 0x4>,
+				<0xf0005048 0x8>,
+				<0xf0005050 0x4>,
+				<0xf0005054 0x4>,
+				<0xf0005058 0x4>,
+				<0xf000505c 0x4>,
+				<0xf0005060 0x4>,
+				<0xf0005064 0x8>,
+				<0xf000506c 0x4>,
+				<0xf0005070 0x4>,
+				<0xf0005074 0x4>,
+				<0xf0005078 0x4>,
+				<0xf000507c 0x4>,
+				<0xf0005080 0x4>,
+				<0xf0005084 0x4>,
+				<0xf0005088 0x4>;
+			reg-names = "phy_card_detect",
+				"phy_clocker_divider",
+				"phy_init_initialize",
+				"phy_cmdr_timeout",
+				"phy_dataw_status",
+				"phy_datar_timeout",
+				"phy_settings",
+				"core_cmd_argument",
+				"core_cmd_command",
+				"core_cmd_send",
+				"core_cmd_response",
+				"core_cmd_event",
+				"core_data_event",
+				"core_block_length",
+				"core_block_count",
+				"block2mem_dma_base",
+				"block2mem_dma_length",
+				"block2mem_dma_enable",
+				"block2mem_dma_done",
+				"block2mem_dma_loop",
+				"block2mem_dma_offset",
+				"mem2block_dma_base",
+				"mem2block_dma_length",
+				"mem2block_dma_enable",
+				"mem2block_dma_done",
+				"mem2block_dma_loop",
+				"mem2block_dma_offset",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <4 1>;
+			status = "okay";
+			mmc {
+				compatible = "zephyr,sdmmc-disk";
+				status = "okay";
+				disk-name = "SD";
+			};
+		};
+
+		sdhc1: sdhc@f0005800 {
+			compatible = "litex,litesdcard-sdhc";
+			interrupt-parent = <&intc0>;
+			reg = <0xf0005800 0x4>,
+				<0xf0005804 0x4>,
+				<0xf0005808 0x4>,
+				<0xf000580c 0x4>,
+				<0xf0005810 0x4>,
+				<0xf0005814 0x4>,
+				<0xf0005818 0x4>,
+				<0xf000581c 0x4>,
+				<0xf0005820 0x4>,
+				<0xf0005824 0x4>,
+				<0xf0005828 0x10>,
+				<0xf0005838 0x4>,
+				<0xf000583c 0x4>,
+				<0xf0005840 0x4>,
+				<0xf0005844 0x4>,
+				<0xf0005848 0x8>,
+				<0xf0005850 0x4>,
+				<0xf0005854 0x4>,
+				<0xf0005858 0x4>,
+				<0xf000585c 0x4>,
+				<0xf0005860 0x4>,
+				<0xf0005864 0x8>,
+				<0xf000586c 0x4>,
+				<0xf0005870 0x4>,
+				<0xf0005874 0x4>,
+				<0xf0005878 0x4>,
+				<0xf000587c 0x4>,
+				<0xf0005880 0x4>,
+				<0xf0005884 0x4>,
+				<0xf0005888 0x4>;
+			reg-names = "phy_card_detect",
+				"phy_clocker_divider",
+				"phy_init_initialize",
+				"phy_cmdr_timeout",
+				"phy_dataw_status",
+				"phy_datar_timeout",
+				"phy_settings",
+				"core_cmd_argument",
+				"core_cmd_command",
+				"core_cmd_send",
+				"core_cmd_response",
+				"core_cmd_event",
+				"core_data_event",
+				"core_block_length",
+				"core_block_count",
+				"block2mem_dma_base",
+				"block2mem_dma_length",
+				"block2mem_dma_enable",
+				"block2mem_dma_done",
+				"block2mem_dma_loop",
+				"block2mem_dma_offset",
+				"mem2block_dma_base",
+				"mem2block_dma_length",
+				"mem2block_dma_enable",
+				"mem2block_dma_done",
+				"mem2block_dma_loop",
+				"mem2block_dma_offset",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <5 1>;
+			status = "okay";
+			bus-width = <8>;
+			mmc {
+				compatible = "zephyr,mmc-disk";
+				status = "okay";
+				disk-name = "SD2";
+			};
+		};
+
+		wdt0: watchdog@0f0001000 {
+			compatible = "litex,watchdog";
+			interrupt-parent = <&intc0>;
+			reg = <0xf0001000 0x4>,
+				<0xf0001004 0x4>,
+				<0xf0001008 0x4>,
+				<0xf000100c 0x4>,
+				<0xf0001010 0x4>,
+				<0xf0001014 0x4>;
+			reg-names = "control",
+				"cycles",
+				"remaining",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <2 15>;
+			status = "okay";
+		};
+	};
+};
