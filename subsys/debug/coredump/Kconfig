@@ -151,20 +151,33 @@ config DEBUG_COREDUMP_THREAD_STACK_TOP
 		   DEBUG_COREDUMP_MEMORY_DUMP_THREADS
 	depends on ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	help
-	  This option enables dumping only the top portion of each thread's
-	  stack, rather than the entire stack region. The top of the stack is
-	  defined as the area from the stack pointer to the stack end, but the
-	  size of this region can additionally be constrained using the
-	  DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT option.
+	  Dump only the top part of each thread's stack instead of the entire
+	  stack region. The top of the stack is defined as the area starting
+	  from the stack pointer and extending up to the smaller of the stack
+	  end or the limit configured by either
+	  DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT_FOR_CURRENT (for the current
+	  thread) or DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT (for remaining ones).
+
+if DEBUG_COREDUMP_THREAD_STACK_TOP
+
+config DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT_FOR_CURRENT
+	int "Stack top size limit for current thread"
+	default DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT
+	help
+	  The maximum number of stack bytes to be dumped for the thread running
+	  when the exception occurred.
+	  A negative value indicates that there is no limit, meaning that the
+	  stack is dumped till the end of its region.
 
 config DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT
-	int "Stack top size limit"
+	int "Stack top size limit for non-current threads"
 	default -1
-	depends on DEBUG_COREDUMP_THREAD_STACK_TOP
 	help
-	  See the description of the DEBUG_COREDUMP_THREAD_STACK_TOP option.
-	  The value -1 indicates that there is no limit, meaning that the stack
-	  is dumped till the end of its region.
+	  The maximum number of stack bytes to be dumped for threads that were
+	  not running when the exception occurred.
+	  A negative value indicates that there is no limit, meaning that the
+	  stack is dumped till the end of its region.
 
+endif # DEBUG_COREDUMP_THREAD_STACK_TOP
 
 endif # DEBUG_COREDUMP
