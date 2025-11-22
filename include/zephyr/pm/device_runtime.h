@@ -169,6 +169,111 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
  */
 int pm_device_runtime_usage(const struct device *dev);
 
+/** @cond INTERNAL_HIDDEN */
+
+struct pm_device_runtime_reference {
+	bool active;
+};
+
+/** @endcond */
+
+/**
+ * @brief Statically initialize a PM device runtime reference
+ *
+ * @note Must be called only once for each PM device runtime reference
+ * prior to use with other APIs.
+ */
+#define PM_DEVICE_RUNTIME_REFERENCE_INIT() \
+	{.active = false}
+
+/**
+ * @brief Statically define and initialize a PM device runtime reference.
+ *
+ * @param name Name of the PM device runtime reference.
+ */
+#define PM_DEVICE_RUNTIME_REFERENCE_DEFINE(name) \
+	struct pm_device_runtime_reference name = PM_DEVICE_RUNTIME_REFERENCE_INIT();
+
+/**
+ * @brief Initialize a PM device runtime reference.
+ *
+ * @note Must be called only once for each PM device runtime reference
+ * prior to use with other APIs if not statically defined or initialized.
+ *
+ * @param ref PM device runtime reference.
+ */
+void pm_device_runtime_reference_init(struct pm_device_runtime_reference *ref);
+
+/**
+ * @brief Check if a a PM device runtime reference is active.
+ *
+ * @param ref PM device runtime reference.
+ *
+ * @retval true if PM device runtime reference is active
+ * @retval false if PM device runtime reference is not active
+ */
+static inline bool pm_device_runtime_reference_is_active(struct pm_device_runtime_reference *ref)
+{
+	return ref->active;
+}
+
+/**
+ * @brief Resume a device based on a reference.
+ *
+ * @details Activates a reference to a device, ensuring the device is resumed
+ * by increasing the PM device runtime usage count by 1. The reference is
+ * deactivated using @ref pm_device_runtime_release or
+ * @ref pm_device_runtime_release_async, which will decrease the PM device
+ * runtime usage count by 1.
+ *
+ * @note If the reference is already active, this API is a no-op.
+ *
+ * @param dev Device instance to reference.
+ * @param ref PM device runtime reference to activate.
+ *
+ * @retval 0 if successful.
+ * @retval -errno code if failure.
+ */
+int pm_device_runtime_request(const struct device *dev,
+			      struct pm_device_runtime_reference *ref);
+
+/**
+ * @brief Suspends a device based on a reference.
+ *
+ * @details Deactivates a reference to a device, decreasing the PM device
+ * runtime usage count by 1, thus no longer ensuring the device is resumed.
+ *
+ * @note If the reference is already inactive, this API is a no-op.
+ *
+ * @param dev Device instance to dereference.
+ * @param ref PM device runtime reference to deactivate.
+ *
+ * @retval 0 if successful.
+ * @retval -errno code if failure.
+ */
+int pm_device_runtime_release(const struct device *dev,
+			      struct pm_device_runtime_reference *ref);
+
+/**
+ * @brief Suspends a device based on a reference asynchronously.
+ *
+ * @details Deactivates a reference to a device, decreasing the PM device
+ * runtime usage count by 1, thus no longer ensuring the device is resumed
+ * after a specified delay, asynchronously.
+ *
+ * @note If the reference is already inactive, this API is a no-op.
+ *
+ * @param dev Device instance to dereference.
+ * @param ref PM device runtime reference to deactivate.
+ * @param delay Minimum amount of time before the reference will be deactivated.
+ *
+ * @retval 0 if successful.
+ * @retval -errno code if failure.
+ */
+int pm_device_runtime_release_async(const struct device *dev,
+				    struct pm_device_runtime_reference *ref,
+				    k_timeout_t delay);
+
 #else
 
 static inline int pm_device_runtime_auto_enable(const struct device *dev)
@@ -219,6 +324,51 @@ static inline int pm_device_runtime_usage(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return -ENOSYS;
+}
+
+struct pm_device_runtime_reference {
+};
+
+#define PM_DEVICE_RUNTIME_REFERENCE_INIT() {}
+
+#define PM_DEVICE_RUNTIME_REFERENCE_DEFINE(name) \
+	struct pm_device_runtime_reference name;
+
+static inline void pm_device_runtime_reference_init(struct pm_device_runtime_reference *ref)
+{
+	ARG_UNUSED(ref);
+}
+
+static inline bool pm_device_runtime_reference_is_active(struct pm_device_runtime_reference *ref)
+{
+	ARG_UNUSED(ref);
+	return true;
+}
+
+static inline int pm_device_runtime_request(const struct device *dev,
+					    struct pm_device_runtime_reference *ref)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ref);
+	return 0;
+}
+
+static inline int pm_device_runtime_release(const struct device *dev,
+					    struct pm_device_runtime_reference *ref)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ref);
+	return 0;
+}
+
+static inline int pm_device_runtime_release_async(const struct device *dev,
+						  struct pm_device_runtime_reference *ref,
+						  k_timeout_t delay)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ref);
+	ARG_UNUSED(delay);
+	return 0;
 }
 
 #endif
