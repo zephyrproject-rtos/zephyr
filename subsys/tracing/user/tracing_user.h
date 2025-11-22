@@ -49,6 +49,16 @@ void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+void sys_trace_timer_init(struct k_timer *timer);
+void sys_trace_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t period);
+void sys_trace_timer_stop(struct k_timer *timer);
+void sys_trace_timer_status_sync_enter(struct k_timer *timer);
+void sys_trace_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout);
+void sys_trace_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+void sys_trace_timer_expiry_enter(struct k_timer *timer);
+void sys_trace_timer_expiry_exit(struct k_timer *timer);
+void sys_trace_timer_stop_fn_expiry_enter(struct k_timer *timer);
+void sys_trace_timer_stop_fn_expiry_exit(struct k_timer *timer);
 
 struct rtio;
 struct rtio_sqe;
@@ -388,12 +398,26 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_mem_slab_free_enter(slab)
 #define sys_port_trace_k_mem_slab_free_exit(slab)
 
-#define sys_port_trace_k_timer_init(timer)
-#define sys_port_trace_k_timer_start(timer, duration, period)
-#define sys_port_trace_k_timer_stop(timer)
-#define sys_port_trace_k_timer_status_sync_enter(timer)
-#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)
-#define sys_port_trace_k_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_init(timer)					\
+					sys_trace_timer_init(timer)
+#define sys_port_trace_k_timer_start(timer, duration, period)			\
+					sys_trace_timer_start(timer, duration, period)
+#define sys_port_trace_k_timer_stop(timer)					\
+					sys_trace_timer_stop(timer)
+#define sys_port_trace_k_timer_status_sync_enter(timer)				\
+					sys_trace_timer_status_sync_enter(timer)
+#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)		\
+					sys_trace_timer_status_sync_blocking(timer, timeout)
+#define sys_port_trace_k_timer_status_sync_exit(timer, result)			\
+					sys_trace_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_expiry_enter(timer)				\
+					sys_trace_timer_expiry_enter(timer)
+#define sys_port_trace_k_timer_expiry_exit(timer)				\
+					sys_trace_timer_expiry_exit(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)			\
+					sys_trace_timer_stop_fn_expiry_enter(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)			\
+					sys_trace_timer_stop_fn_expiry_exit(timer)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)
