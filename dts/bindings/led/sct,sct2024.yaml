@@ -1,0 +1,19 @@
+description: SCT2024 LED driver
+
+compatible: "sct,sct2024"
+
+include: ["spi-device.yaml", "led-controller.yaml"]
+
+properties:
+  la-gpios:
+    description: GPIO specifier for the LA (Latch) pin
+    required: true
+    type: phandle-array
+  oe-gpios:
+    description: GPIO specifier for the OE (Output Enable) pin
+    type: phandle-array
+
+child-binding:
+  properties:
+    index:
+      required: true
