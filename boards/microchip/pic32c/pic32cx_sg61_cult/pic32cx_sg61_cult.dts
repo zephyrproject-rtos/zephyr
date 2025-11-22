@@ -142,3 +142,7 @@
 &portc {
 	status = "okay";
 };
+
+&dmac {
+	status = "okay";
+};
