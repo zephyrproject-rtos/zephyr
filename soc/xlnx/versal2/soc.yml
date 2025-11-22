@@ -2,3 +2,4 @@ family:
 - name: amd_versal2
   socs:
   - name: amd_versal2_rpu
+  - name: amd_versal2_apu
