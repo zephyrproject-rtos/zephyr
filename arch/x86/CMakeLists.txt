@@ -31,6 +31,8 @@ else()
   include(ia32.cmake)
 endif()
 
+add_subdirectory_ifdef(CONFIG_ACPI acpi)
+
 # Always set for 64-bit (long mode requires page tables), optional for 32-bit
 if(CONFIG_MMU)
   set(GEN_MMU ${ZEPHYR_BASE}/arch/x86/gen_mmu.py)
