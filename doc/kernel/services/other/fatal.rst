@@ -117,6 +117,13 @@ reports the failed test and its location, but lacks additional debugging
 information provided to assist the user in diagnosing the problem; its use is
 discouraged.
 
+Custom Header
+=============
+
+In some cases, asserts need to be redirected at the macro level. For these cases,
+:kconfig:option:`CONFIG_ASSERT_CUSTOM_HEADER` can be used to inject an application provided
+header named ``zephyr_custom_assert.h`` at the end of :zephyr_file:`include/zephyr/sys/__assert.h`.
+
 Build Assertions
 ================
 
