@@ -300,6 +300,13 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	const struct smf_state *topmost;
 
+	/* Optimize sibling transitions (different states under same parent) */
+	if (ctx->executing != new_state && ctx->executing->parent == new_state->parent) {
+		topmost = ctx->executing->parent;
+
+		goto lca_sibling;
+	}
+
 	if (is_descendant_of(ctx->executing, new_state)) {
 		/* new state is a parent of where we are now*/
 		topmost = new_state;
@@ -311,6 +318,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 		topmost = get_lca_of(ctx->executing, new_state);
 	}
 
+lca_sibling:
 	internal->is_exit = true;
 	internal->new_state = true;
 

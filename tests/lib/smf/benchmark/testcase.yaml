@@ -1,0 +1,4 @@
+tests:
+  lib.smf.benchmark.lca:
+    tags: smf benchmark
+    harness: ztest
