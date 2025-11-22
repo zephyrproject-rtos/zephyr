@@ -135,4 +135,20 @@ config APDS9960_PPULSE_COUNT
 	range 1 64
 	default 8
 
+config APDS9960_ENABLE_GESTURE
+	bool "Gesture Sense"
+	default n
+	help
+	  Enable Gesture Sense.
+
+config APDS9960_GESTURE_PROXIMITY
+	int "Gesture Proximity Enter Threshold"
+	range 0 255
+	default 40
+
+config APDS9960_GESTURE_DIFFERENCE
+	int "Minimum IR diode difference for gesture"
+	range 0 255
+	default 5
+
 endif # APDS9960
