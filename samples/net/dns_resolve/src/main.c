@@ -170,7 +170,7 @@ static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
 {
 	bool *found = (bool *)user_data;
 	char hr_addr[NET_IPV4_ADDR_LEN];
-	struct in_addr netmask;
+	struct net_in_addr netmask;
 
 	if (*found) {
 		return;

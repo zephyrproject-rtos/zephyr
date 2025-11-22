@@ -287,7 +287,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 	{
 		const struct timeval tv = { .tv_sec = 10 };
 
-		if (zsock_setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+		if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
 			printk("Failed to set socket receive timeout (%d)\n", errno);
 			return -1;
 		}

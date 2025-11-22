@@ -92,7 +92,7 @@ error:
 static int transport_join_multicast(struct ptp_port *port)
 {
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
-		struct ip_mreqn mreqn = {0};
+		struct net_ip_mreqn mreqn = {0};
 
 		memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(struct net_in_addr));
 		mreqn.imr_ifindex = net_if_get_by_iface(port->iface);
@@ -100,7 +100,7 @@ static int transport_join_multicast(struct ptp_port *port)
 		zsock_setsockopt(port->socket[1], NET_IPPROTO_IP,
 				 ZSOCK_IP_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
 	} else {
-		struct ipv6_mreq mreqn = {0};
+		struct net_ipv6_mreq mreqn = {0};
 
 		memcpy(&mreqn.ipv6mr_multiaddr, &mcast_addr, sizeof(struct net_in6_addr));
 		mreqn.ipv6mr_ifindex = net_if_get_by_iface(port->iface);
@@ -301,7 +301,7 @@ int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	int cnt = 0;
-	uint8_t ctrl[CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
+	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
 	struct net_cmsghdr *cmsg;
 	struct net_msghdr msghdr = {0};
 	struct net_iovec iov = {

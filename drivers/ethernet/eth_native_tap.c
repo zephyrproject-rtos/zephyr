@@ -113,7 +113,7 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 	struct net_eth_hdr *hdr;
 
 	hdr = (struct net_eth_hdr *)msg_start;
-	if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
+	if (net_ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
 		return NULL;
 	}
 
@@ -313,7 +313,7 @@ static void eth_iface_init(struct net_if *iface)
 		mac_addr_cmd_opt ? mac_addr_cmd_opt : CONFIG_ETH_NATIVE_TAP_MAC_ADDR;
 #endif
 #ifdef CONFIG_NET_IPV4
-	struct in_addr addr, netmask;
+	struct net_in_addr addr, netmask;
 #endif
 
 	ctx->iface = iface;
@@ -376,11 +376,11 @@ static void eth_iface_init(struct net_if *iface)
 
 #ifdef CONFIG_NET_IPV4
 	if (ipv4_addr_cmd_opt != NULL) {
-		if (net_addr_pton(AF_INET, ipv4_addr_cmd_opt, &addr) == 0) {
+		if (net_addr_pton(NET_AF_INET, ipv4_addr_cmd_opt, &addr) == 0) {
 			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 			if (ipv4_nm_cmd_opt != NULL) {
-				if (net_addr_pton(AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
+				if (net_addr_pton(NET_AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
 					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 				} else {
 					NET_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
@@ -392,7 +392,7 @@ static void eth_iface_init(struct net_if *iface)
 	}
 
 	if (ipv4_gw_cmd_opt != NULL) {
-		if (net_addr_pton(AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
+		if (net_addr_pton(NET_AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
 			net_if_ipv4_set_gw(iface, &addr);
 		} else {
 			NET_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
