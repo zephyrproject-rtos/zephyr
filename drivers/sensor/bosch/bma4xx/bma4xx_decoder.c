@@ -390,8 +390,13 @@ static int bma4xx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec 
 	return bma4xx_one_shot_decode(buffer, ch, fit, max_count, data_out);
 }
 
-static bool bma4xx_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool bma4xx_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+				       struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(trigger);
+	ARG_UNUSED(chan_spec);
+
 	return false;
 }
 

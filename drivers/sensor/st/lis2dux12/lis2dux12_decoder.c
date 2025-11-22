@@ -514,9 +514,11 @@ static int lis2dux12_decoder_get_size_info(struct sensor_chan_spec chan_spec, si
 	}
 }
 
-static bool lis2dux12_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool lis2dux12_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					  struct sensor_chan_spec chan_spec)
 {
 #ifdef CONFIG_LIS2DUX12_STREAM
+	ARG_UNUSED(chan_spec);
 	const struct lis2dux12_decoder_header *header =
 		(const struct lis2dux12_decoder_header *)buffer;
 

@@ -730,8 +730,10 @@ static int icm4268x_decoder_get_size_info(struct sensor_chan_spec chan_spec, siz
 	}
 }
 
-static bool icm4268x_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool icm4268x_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					 struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	const struct icm4268x_fifo_data *edata = (const struct icm4268x_fifo_data *)buffer;
 
 	if (!edata->header.is_fifo) {
