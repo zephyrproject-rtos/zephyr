@@ -23,13 +23,13 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
 #include "bap_broadcast_source.h"
 #include "bap_stream.h"
 #include "bluetooth.h"
 #include "expects_util.h"
-#include "ztest_assert.h"
-#include "ztest_test.h"
 
 DEFINE_FFF_GLOBALS;
 
