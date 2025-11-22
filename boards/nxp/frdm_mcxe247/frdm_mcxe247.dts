@@ -30,6 +30,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
+		zephyr,edac = &erm0;
 	};
 
 	leds {
@@ -99,6 +100,18 @@
 
 &cpu0 {
 	clock-frequency = <80000000>;
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel1 {
+	status = "okay";
 };
 
 &sosc_clk {

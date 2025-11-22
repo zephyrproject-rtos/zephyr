@@ -1,0 +1,38 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config EDAC_NXP_ERM
+	bool "NXP ERM driver"
+	default y
+	depends on DT_HAS_NXP_ERM_ENABLED
+	help
+	  Enable the NXP Error Reporting Module driver.
+
+config EDAC_NXP_ERM_DEFAULT_CHANNEL
+	int "NXP ERM default channel"
+	default 0
+	depends on EDAC_NXP_ERM
+	help
+	  Set the NXP Error Reporting Module default channel.
+
+config EDAC_NXP_EIM
+	bool "NXP EIM driver"
+	default y
+	depends on DT_HAS_NXP_EIM_ENABLED
+	help
+	  Enable the NXP Error Injection Module driver.
+
+config EDAC_NXP_ERROR_INJECT
+	bool
+	default y if EDAC_ERROR_INJECT && EDAC_NXP_EIM
+	help
+	  This is a helper configuration that is enabled when both
+	  EDAC_ERROR_INJECT and EDAC_NXP_EIM are enabled.
+
+config EDAC_NXP_ERM_VARY_WITH_EIM_CHANNEL
+	bool "Update EIM channel based on EIM channel"
+	default y
+	depends on EDAC_NXP_EIM && EDAC_NXP_ERM
+	help
+	  Allow ERM channel to dynamically adapt based on the selected EIM channel.
