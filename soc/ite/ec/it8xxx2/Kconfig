@@ -235,6 +235,7 @@ config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	select KERNEL_NO_LTO if LTO
 	help
 	  Place kernel handling code in ILM. This can significantly improve performance.
 
