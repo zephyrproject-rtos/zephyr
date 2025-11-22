@@ -7,7 +7,14 @@
 
 if SOC_SERIES_STM32F4X
 
-rsource "Kconfig.defconfig.stm32f4*"
+configdefault NUM_IRQS
+        default 82 if SOC_STM32F405XX || SOC_STM32F407XE || SOC_STM32F407XG || SOC_STM32F415XX || SOC_STM32F417XX
+        default 85 if SOC_STM32F401XC || SOC_STM32F401XD || SOC_STM32F401XE
+        default 86 if SOC_STM32F411XE
+        default 91 if SOC_STM32F427XX || SOC_STM32F429XX || SOC_STM32F437XX || SOC_STM32F439XX
+        default 93 if SOC_STM32F469XX || SOC_STM32F479XX
+        default 97 if SOC_STM32F410RX || SOC_STM32F412RX || SOC_STM32F412CX || SOC_STM32F412VX || SOC_STM32F412ZX || SOC_STM32F446XX
+        default 102 if SOC_STM32F413XX || SOC_STM32F423XX
 
 # adjust the fallback because of the LSI oscaillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY

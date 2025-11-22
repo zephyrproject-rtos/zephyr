@@ -7,7 +7,21 @@
 
 if SOC_SERIES_STM32L0X
 
-rsource "Kconfig.defconfig.stm32l0*"
+configdefault NUM_IRQS
+	default 30 if SOC_STM32L010X4 || \
+		      SOC_STM32L010X6 || \
+		      SOC_STM32L010X8 || \
+		      SOC_STM32L010XB || \
+		      SOC_STM32L071XX
+
+	default 32 if SOC_STM32L011XX || \
+		      SOC_STM32L031XX || \
+		      SOC_STM32L051XX || \
+		      SOC_STM32L053XX || \
+		      SOC_STM32L072XX || \
+		      SOC_STM32L073XX || \
+		      SOC_STM32L081XX || \
+		      SOC_STM32L083XX
 
 # adjust the fallback because of the LSI oscillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY

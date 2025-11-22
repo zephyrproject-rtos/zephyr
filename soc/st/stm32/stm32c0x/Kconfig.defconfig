@@ -5,7 +5,13 @@
 
 if SOC_SERIES_STM32C0X
 
-rsource "Kconfig.defconfig.stm32c0*"
+configdefault NUM_IRQS
+	default 29 if SOC_STM32C011XX || \
+		      SOC_STM32C031XX || \
+		      SOC_STM32C051XX || \
+		      SOC_STM32C071XX
+	default 30 if SOC_STM32C091XX
+	default 32 if SOC_STM32C092XX
 
 if PM
 

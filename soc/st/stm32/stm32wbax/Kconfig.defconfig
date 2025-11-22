@@ -5,7 +5,13 @@
 
 if SOC_SERIES_STM32WBAX
 
-rsource "Kconfig.defconfig.stm32wba*"
+configdefault NUM_IRQS
+	default 70 if SOC_STM32WBA52XX || \
+		      SOC_STM32WBA55XX
+	default 82 if SOC_STM32WBA65XX
+
+config TFM_BL2_NOT_SUPPORTED
+	default y if SOC_STM32WBA65XX
 
 config ICACHE
 	default y

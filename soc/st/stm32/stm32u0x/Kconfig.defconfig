@@ -5,7 +5,8 @@
 
 if SOC_SERIES_STM32U0X
 
-rsource "Kconfig.defconfig.stm32u0*"
+configdefault NUM_IRQS
+	default 32
 
 if I2C_STM32
 
