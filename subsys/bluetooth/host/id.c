@@ -1384,7 +1384,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	}
 
 	/* bt_rand is not available before Bluetooth enable has been called */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		uint8_t zero_irk[16] = { 0 };
 
 		if (!(addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY))) {
