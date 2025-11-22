@@ -1,0 +1,32 @@
+# Texas Instruments AM261x MCU series
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_AM261X
+
+config KERNEL_ENTRY
+	default "_vector_table" if SOC_SERIES_AM261X_R5F
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/soc/sysclk,clock-frequency)
+
+config NUM_IRQS
+	default 222
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+config UART_NS16550_TI_K3
+	default y if SOC_SERIES_AM261X_R5F
+
+choice UART_NS16550_VARIANT
+	default UART_NS16550_VARIANT_NS16750
+endchoice
+
+endif # SERIAL
+
+endif # SOC_SERIES_AM261X
