@@ -1,7 +1,15 @@
 # Copyright (c) 2020 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO bitbanging I2C support
+title: I2C via GPIO bitbanging
+
+description: |
+  The GPIO pin used for SDA must be configured (through devicetree and pinmux) with suitable flags,
+  i.e. as open-collector/open-drain with a pull-up resistor (pull-up can be an external component).
+
+  The SCL pin should be configured in the same manner as the SDA pin, or, if it is known that the
+  hardware attached to pin does not attempt I2C clock stretching, then the SCL pin may be configured
+  as push/pull.
 
 compatible: "gpio-i2c"
 
