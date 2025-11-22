@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+		adc-read-delay-ms = <100>;
+		io-channels = <&adc2 16>;
+	};
+};
+
+&adc2 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@10 { /* channel number in hex */
+		reg = <16>; /* channel number in decimal */
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&opamp2 {
+	pinctrl-0 = <&opamp2_vinp_pb14>;
+	pinctrl-names = "default";
+	functional-mode = "follower";
+	inp = "VINP1"; /* PB14 */
+	/* st,inm-filtering = "VINM0"; */ /* PA5 - add opamp2_vinm_pb5 to pinctrl-0*/
+	io-channels = <&adc2 16>;
+	st,enable-self-calibration;
+	status = "okay";
+};
