@@ -1,0 +1,21 @@
+# Bluetooth GATT GAP service validation
+
+# Copyright (c) 2025 Koppel Electronic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GATT_GAP_SVC_VALIDATE
+	bool "GATT GAP Service validation"
+	depends on BT_CONN
+	default y
+	help
+	  Validate if in the GATT database exactly one GAP service is present.
+	  This helps to debug any issues related to GAP service that may make
+	  the Bluetooth implementation not compatible with the standard.
+
+if GATT_GAP_SVC_VALIDATE
+
+module = GATT_GAP_SVC_VALIDATE
+module-str = gatt-gap-validate
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # GATT_GAP_SVC_VALIDATE
