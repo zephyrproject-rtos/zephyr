@@ -561,7 +561,7 @@ static int cmd_device_address(const struct shell *sh,
 
 	new_addr = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_address(udev, new_addr);
+	err = usbh_device_set_address(udev, new_addr);
 	if (err) {
 		shell_error(sh, "host: Failed to set address");
 	} else {
