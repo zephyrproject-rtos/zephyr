@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2025 Space Cubics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_VERSAL_RPU
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,ttc0,clock-frequency)
+
+endif # SOC_VERSAL_RPU
