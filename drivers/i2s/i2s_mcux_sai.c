@@ -661,8 +661,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		/*set up dma settings*/
 		dev_data->tx.dma_cfg.source_data_size = word_size_bytes;
 		dev_data->tx.dma_cfg.dest_data_size = word_size_bytes;
-		dev_data->tx.dma_cfg.source_burst_length = word_size_bits;
-		dev_data->tx.dma_cfg.dest_burst_length = word_size_bits;
+		dev_data->tx.dma_cfg.source_burst_length = word_size_bytes;
+		dev_data->tx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->tx.dma_cfg.user_data = (void *)dev;
 		dev_data->tx.state = I2S_STATE_READY;
 	} else {
@@ -687,8 +687,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		/*set up dma settings*/
 		dev_data->rx.dma_cfg.source_data_size = word_size_bytes;
 		dev_data->rx.dma_cfg.dest_data_size = word_size_bytes;
-		dev_data->rx.dma_cfg.source_burst_length = word_size_bits;
-		dev_data->rx.dma_cfg.dest_burst_length = word_size_bits;
+		dev_data->rx.dma_cfg.source_burst_length = word_size_bytes;
+		dev_data->rx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->rx.dma_cfg.user_data = (void *)dev;
 		dev_data->rx.state = I2S_STATE_READY;
 	}
