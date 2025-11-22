@@ -85,20 +85,14 @@ static inline void osc8m_init(void)
 #else
 static inline void osc32k_init(void)
 {
-	uint32_t cal;
+  uint32_t calib = (*((uint32_t *) FUSES_OSC32K_CAL_ADDR) & FUSES_OSC32K_CAL_Msk) >> FUSES_OSC32K_CAL_Pos;
 
-	/* Get calibration value */
-	cal = (*((uint32_t *)FUSES_OSC32K_CAL_ADDR)
-	    & FUSES_OSC32K_CAL_Msk) >> FUSES_OSC32K_CAL_Pos;
+  SYSCTRL->OSC32K.reg = SYSCTRL_OSC32K_CALIB(calib) |
+                        SYSCTRL_OSC32K_STARTUP( 0x6u ) | // cf table 15.10 of product datasheet in chapter 15.8.6
+                        SYSCTRL_OSC32K_EN32K |
+                        SYSCTRL_OSC32K_ENABLE;
 
-	SYSCTRL->OSC32K.reg = SYSCTRL_OSC32K_CALIB(cal)
-			    | SYSCTRL_OSC32K_STARTUP(0x5) /* 34 cycles / ~1ms */
-			    | SYSCTRL_OSC32K_RUNSTDBY
-			    | SYSCTRL_OSC32K_EN32K
-			    | SYSCTRL_OSC32K_ENABLE;
-
-	while (!SYSCTRL->PCLKSR.bit.OSC32KRDY) {
-	}
+  while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_OSC32KRDY) == 0 ); // Wait for oscillator stabilization
 }
 #endif
 
@@ -136,16 +130,24 @@ static inline void xosc_init(void)
 #else
 static inline void xosc32k_init(void)
 {
-	SYSCTRL->XOSC32K.reg = SYSCTRL_XOSC32K_STARTUP(0x1) /* 4096 cycles / ~0.13s */
-			     | SYSCTRL_XOSC32K_RUNSTDBY
-			     | SYSCTRL_XOSC32K_EN32K
-			     | SYSCTRL_XOSC32K_AAMPEN
-#if CONFIG_SOC_ATMEL_SAMD_XOSC32K_CRYSTAL
-			     | SYSCTRL_XOSC32K_XTALEN
-#endif
-			     | SYSCTRL_XOSC32K_ENABLE;
+	SYSCTRL->XOSC32K.reg = SYSCTRL_XOSC32K_STARTUP( 0x6u ) | /* cf table 15.10 of product datasheet in chapter 15.8.6 */
+                         SYSCTRL_XOSC32K_XTALEN | SYSCTRL_XOSC32K_EN32K ;
+  	SYSCTRL->XOSC32K.bit.ENABLE = 1 ; /* separate call, as described in chapter 15.6.3 */
 
-	while (!SYSCTRL->PCLKSR.bit.XOSC32KRDY) {
+	while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_XOSC32KRDY) == 0 )
+	{
+		/* Wait for oscillator stabilization */
+	}
+
+	/* Software reset the module to ensure it is re-initialized correctly */
+	/* Note: Due to synchronization, there is a delay from writing CTRL.SWRST until the reset is complete.
+	* CTRL.SWRST and STATUS.SYNCBUSY will both be cleared when the reset is complete, as described in chapter 13.8.1
+	*/
+	GCLK->CTRL.reg = GCLK_CTRL_SWRST ;
+
+	while ( (GCLK->CTRL.reg & GCLK_CTRL_SWRST) && (GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY) )
+	{
+		/* Wait for reset to complete */
 	}
 }
 #endif
@@ -174,9 +176,14 @@ static inline void dfll48m_init(void)
 			  | GCLK_CLKCTRL_GEN_GCLK1
 			  | GCLK_CLKCTRL_CLKEN;
 
+	while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )
+  	{
+    	/* Wait for synchronization */
+  	}
 
 	SYSCTRL->DFLLCTRL.reg = SYSCTRL_DFLLCTRL_MODE
 			      | SYSCTRL_DFLLCTRL_QLDIS
+				  | SYSCTRL_DFLLCTRL_WAITLOCK	// From Arduino
 			      | SYSCTRL_DFLLCTRL_RUNSTDBY;
 
 	/* Get calibration values */
@@ -211,6 +218,8 @@ static inline void dfll48m_init(void)
 static inline void flash_waitstates_init(void)
 {
 	NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS(CONFIG_SOC_ATMEL_SAMD_NVM_WAIT_STATES);
+
+  	PM->APBAMASK.reg |= PM_APBAMASK_GCLK;
 }
 #endif
 
@@ -219,6 +228,7 @@ static inline void flash_waitstates_init(void)
 #else
 static inline void gclk_main_configure(void)
 {
+	
 	gclk_connect(0, GCLK_GENCTRL_SRC_DFLL48M, SOC_ATMEL_SAM0_GCLK0_DIV, 0);
 }
 #endif
@@ -261,12 +271,12 @@ static inline void osc8m_disable(void)
 
 void soc_reset_hook(void)
 {
-	osc8m_init();
+	flash_waitstates_init();
 	osc32k_init();
 	xosc_init();
 	xosc32k_init();
+	osc8m_init();
 	dfll48m_init();
-	flash_waitstates_init();
 	gclk_main_configure();
 	gclk_adc_configure();
 	gclk_rtc_configure();
