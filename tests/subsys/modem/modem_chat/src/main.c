@@ -149,6 +149,18 @@ static void on_script_result(struct modem_chat *cmd, enum modem_chat_script_resu
 }
 
 /*************************************************************************************************/
+/*                                       Dynamic Command                                         */
+/*************************************************************************************************/
+
+static uint16_t modem_baudrate_cmd(const uint8_t **request, void *user_data)
+{
+	static const char cmd[] = "AT+IPR=921600";
+
+	*request = cmd;
+	return sizeof(cmd) - 1;
+}
+
+/*************************************************************************************************/
 /*                                            Script                                             */
 /*************************************************************************************************/
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);
@@ -165,6 +177,7 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches, MODEM_CHAT_MATCH("RDY", "", on_rdy),
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_FN(modem_baudrate_cmd, ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("IMEI?", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?;+CGREG?", creg_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("", cgreg_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
@@ -339,6 +352,19 @@ ZTEST(modem_chat, test_script_no_error)
 
 	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
 	zassert_true(memcmp(buffer, "ATE0\r\n", sizeof("ATE0\r\n") - 1) == 0,
+		     "Request not sent as expected");
+
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+
+	k_msleep(100);
+
+	/*
+	 * Script sends "AT+IPR=921600\r\n"
+	 * Modem responds "OK\r\n"
+	 */
+
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT+IPR=921600\r\n", sizeof("AT+IPR=921600\r\n") - 1) == 0,
 		     "Request not sent as expected");
 
 	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);

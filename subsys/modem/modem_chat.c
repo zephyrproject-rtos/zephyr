@@ -275,19 +275,24 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 	const struct modem_chat_script_chat *script_chat =
 		&chat->script->script_chats[chat->script_chat_it];
 
-	uint8_t *request_part;
+	const uint8_t *request_part;
 	uint16_t request_size;
 	uint16_t request_part_size;
 	int ret;
 
 	switch (chat->script_send_state) {
 	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
-		request_part = (uint8_t *)(&script_chat->request[chat->script_send_pos]);
-		request_size = script_chat->request_size;
+		if (script_chat->request_size == MODEM_CHAT_REQUEST_FN_LEN) {
+			request_size = script_chat->request_fn(&request_part, chat->user_data);
+			request_part += chat->script_send_pos;
+		} else {
+			request_part = (uint8_t *)(&script_chat->request[chat->script_send_pos]);
+			request_size = script_chat->request_size;
+		}
 		break;
 
 	case MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER:
-		request_part = (uint8_t *)(&chat->delimiter[chat->script_send_pos]);
+		request_part = &chat->delimiter[chat->script_send_pos];
 		request_size = chat->delimiter_size;
 		break;
 
@@ -1007,9 +1012,9 @@ int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_cha
 {
 	size_t size;
 
-	size = strnlen(request, UINT16_MAX + 1);
+	size = strnlen(request, UINT16_MAX);
 
-	if (size == (UINT16_MAX + 1)) {
+	if (size == (UINT16_MAX)) {
 		return -ENOMEM;
 	}
 
