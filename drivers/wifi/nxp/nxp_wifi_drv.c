@@ -2207,16 +2207,18 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 #ifdef CONFIG_NXP_RW610
 void device_pm_dump_wakeup_source(void)
 {
+#ifdef CONFIG_WIFI_LOG_LEVEL_DBG
 	if (POWER_GetWakeupStatus(IMU_IRQ_N)) {
-		LOG_INF("Wakeup by WLAN");
+		LOG_DBG("Wakeup by WLAN");
 		POWER_ClearWakeupStatus(IMU_IRQ_N);
 	} else if (POWER_GetWakeupStatus(41)) {
-		LOG_INF("Wakeup by OSTIMER");
+		LOG_DBG("Wakeup by OSTIMER");
 		POWER_ClearWakeupStatus(41);
 	} else if (POWER_GetWakeupStatus(32)) {
-		LOG_INF("Wakeup by RTC");
+		LOG_DBG("Wakeup by RTC");
 		POWER_ClearWakeupStatus(32);
 	}
+#endif
 }
 #endif
 
@@ -2283,7 +2285,7 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 				}
 				wlan_hs_hanshake_cfg(false);
 			} else {
-				LOG_INF("Wakeup by other sources");
+				LOG_DBG("Wakeup by other sources");
 				wlan_hs_hanshake_cfg(true);
 			}
 #ifdef CONFIG_NXP_RW610
