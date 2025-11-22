@@ -4,6 +4,8 @@
 
 import asyncio
 import logging
+import os
+import sys
 
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
@@ -25,16 +27,13 @@ from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.common import (
+    device_power_on,
+)
+
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 class discovery_listener(Device.Listener):

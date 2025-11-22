@@ -1,11 +1,21 @@
 # Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+import logging
+import os
 import re
+import sys
 
 import pytest
-from test_l2cap_common import L2CAP_SERVER_PSM, logger
 from twister_harness import DeviceAdapter, Shell
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.l2cap import (
+    L2CAP_SERVER_PSM,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def pytest_addoption(parser) -> None:

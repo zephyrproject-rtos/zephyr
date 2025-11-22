@@ -2,6 +2,8 @@
 
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import logging
+import os
 import sys
 
 from bumble.device import Device
@@ -15,21 +17,29 @@ from bumble.l2cap import (
 from bumble.pairing import PairingConfig, PairingDelegate
 from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
-from test_l2cap_common import (
+from twister_harness import DeviceAdapter, Shell
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from utility.common import (
+    device_power_on,
+    send_cmd_to_iut,
+    wait_for_shell_response,
+)
+from utility.gap import (
+    bumble_acl_connect,
+    bumble_acl_disconnect,
+)
+from utility.l2cap import (
     L2CAP_CHAN_IUT_ID,
     L2CAP_SERVER_PSM,
     MAX_MTU,
     MIN_MTU,
     Delegate,
-    bumble_acl_connect,
-    bumble_acl_disconnect,
     bumble_l2cap_disconnect,
-    device_power_on,
-    logger,
-    send_cmd_to_iut,
-    wait_for_shell_response,
 )
-from twister_harness import DeviceAdapter, Shell
+
+logger = logging.getLogger(__name__)
 
 
 async def l2cap_client_case_1(hci_port, shell, dut, address, snoop_file) -> None:
