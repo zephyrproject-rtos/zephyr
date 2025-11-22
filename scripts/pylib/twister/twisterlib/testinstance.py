@@ -71,6 +71,7 @@ class TestInstance:
         self.suite_repeat = None
         self.test_repeat = None
         self.test_shuffle = None
+        self.force_create = False
 
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(
@@ -189,8 +190,8 @@ class TestInstance:
     def compose_case_name(self, tc_name) -> str:
         return self.testsuite.compose_case_name(tc_name)
 
-    def set_case_status_by_name(self, name, status, reason=None):
-        tc = self.get_case_or_create(name)
+    def set_case_status_by_name(self, name, status, reason=None, create=False):
+        tc = self.get_case_or_create(name, create)
         tc.status = status
         if reason:
             tc.reason = reason
@@ -208,15 +209,17 @@ class TestInstance:
                 return c
         return None
 
-    def get_case_or_create(self, name):
+    def get_case_or_create(self, name, create=False):
         for c in self.testcases:
             if c.name == name:
                 return c
 
         logger.debug(f"Could not find a matching testcase for {name}")
         tc = TestCase(name=name)
-        self.testcases.append(tc)
+        if create or self.force_create:
+            self.testcases.append(tc)
         return tc
+
 
     @staticmethod
     def testsuite_runnable(testsuite, fixtures):
