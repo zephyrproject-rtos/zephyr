@@ -9,6 +9,7 @@
 #include <renesas/r5f52618bgfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "ek_rx261-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas EK-RX261 KIT";
@@ -94,4 +95,10 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
