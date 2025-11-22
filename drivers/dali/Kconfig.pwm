@@ -1,0 +1,29 @@
+# PWM DALI configuration options
+
+# Copyright (c) 2025 by Sven Hädrich <sven.haedrich@sevenlab.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config DALI_PWM
+	bool "Generic PWM DALI driver"
+	default y
+	depends on DT_HAS_ZEPHYR_DALI_PWM_ENABLED
+	select PWM
+	select COUNTER
+	help
+	  Enable DALI driver for generic PWM MCUs.
+
+if DALI_PWM
+
+config DALI_PWM_PRIORITY
+	int "DALI workqueue priority"
+	default 5
+	help
+	  The priority of the workqueue used for the DALI driver.
+
+config DALI_PWM_STACK_SIZE
+	int "DALI driver workqueue thread stack size"
+	default 1120
+	help
+	  The thread stack size.
+
+endif # DALI_PWM
