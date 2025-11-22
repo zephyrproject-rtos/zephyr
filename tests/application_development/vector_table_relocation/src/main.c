@@ -11,6 +11,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
+
+#if defined(CONFIG_ARM_VECTOR_TABLE_DTCM)
+#define DTCM_NODE    DT_CHOSEN(zephyr_dtcm)
+#define SRAM_VT_BASE DT_REG_ADDR(DTCM_NODE)
+#define SRAM_VT_SIZE DT_REG_SIZE(DTCM_NODE)
+#elif defined(CONFIG_ARM_VECTOR_TABLE_ITCM)
+#define ITCM_NODE    DT_CHOSEN(zephyr_itcm)
+#define SRAM_VT_BASE DT_REG_ADDR(ITCM_NODE)
+#define SRAM_VT_SIZE DT_REG_SIZE(ITCM_NODE)
+#else
+#define SRAM_VT_BASE CONFIG_SRAM_BASE_ADDRESS
+#define SRAM_VT_SIZE (CONFIG_SRAM_SIZE * 1024U)
+#endif
 
 #ifdef SCB_VTOR_TBLBASE_Msk
 #define VTOR_MASK (SCB_VTOR_TBLBASE_Msk | SCB_VTOR_TBLOFF_Msk)
@@ -54,8 +68,7 @@ ZTEST(vector_table_relocation, test_vector_table_in_ram)
 	volatile uint32_t vtor_address = SCB->VTOR & VTOR_MASK;
 
 	printf("VTOR address: 0x%x\n", vtor_address);
-	zassert_true(vtor_address >= CONFIG_SRAM_BASE_ADDRESS &&
-			     vtor_address <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024U,
+	zassert_true(vtor_address >= SRAM_VT_BASE && vtor_address <= SRAM_VT_BASE + SRAM_VT_SIZE,
 		     "Vector table is not in RAM! Address: 0x%x", vtor_address);
 }
 

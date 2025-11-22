@@ -190,4 +190,43 @@ config HAS_SWO
 	help
 	  When enabled, indicates that SoC has an SWO output
 
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+DT_CHOSEN_Z_ITCM := zephyr,itcm
+
+choice
+	prompt "Vector table memory location"
+	depends on SRAM_VECTOR_TABLE
+	default ARM_VECTOR_TABLE_SRAM
+
+config ARM_VECTOR_TABLE_SRAM
+	bool "Place the vector table in DT Chosen SRAM instead of DT Chosen Flash"
+	help
+	  When executing in place (XiP), selecting this option will result in the
+	  interrupt vector table being relocated from DT 'zephyr,flash' chosen
+	  memory to DT 'zephyr,sram' chosen memory.
+
+config ARM_VECTOR_TABLE_DTCM
+	bool "Place the vector table in DT Chosen DTCM instead of DT Chosen Flash"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	help
+	  When executing in place (XiP), selecting this option will result in the
+	  interrupt vector table being relocated from DT 'zephyr,flash' chosen
+	  memory to DT 'zephyr,dtcm' chosen memory. While the vector table is
+	  instruction-fetched during exception entry, a DTCM option is provided
+	  for systems where ITCM is unavailable. DTCM still offers low-latency,
+	  deterministic access compared to normal RAM, but is not the optimal
+	  location for instruction fetch performance.
+
+config ARM_VECTOR_TABLE_ITCM
+	bool "Place the vector table in DT Chosen ITCM instead of DT Chosen Flash"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_ITCM))
+	help
+	  When executing in place (XiP), selecting this option will result in the
+	  interrupt vector table being relocated from DT 'zephyr,flash' chosen
+	  memory to DT 'zephyr,itcm' chosen memory. ITCM provides single-cycle,
+	  deterministic instruction fetches via the CPU instruction bus, it offers
+	  the lowest interrupt latency and is the preferred location when available.
+
+endchoice
+
 endmenu
