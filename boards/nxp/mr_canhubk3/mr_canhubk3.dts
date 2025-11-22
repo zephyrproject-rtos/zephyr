@@ -495,7 +495,7 @@
 		status = "okay";
 		reg = <0x12>;
 		int-gpios = <&gpiod_l 5 GPIO_ACTIVE_LOW>;
-		master-slave = "slave";
+		master-slave = "auto";
 	};
 };
 
