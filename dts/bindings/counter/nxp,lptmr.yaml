@@ -77,3 +77,10 @@ properties:
       for Time-Counter mode or for Pulse mode.
       0 <- LPTMR is configured for Time Counter Mode.
       1 <- LPTMR is configured for Pulse Mode.
+
+  free-running:
+    type: boolean
+    description: |
+      Specifies when the counter resets. If this property is false, Counter (CNR)
+      resets on the count cycle following Counter (CNR) becoming equal to Compare (CMR).
+      If this property is true, CNR resets on overflow.

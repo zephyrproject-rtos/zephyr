@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,7 @@ struct mcux_lptmr_config {
 	lptmr_timer_mode_t mode;
 	lptmr_pin_select_t pin;
 	lptmr_pin_polarity_t polarity;
+	bool free_running;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -134,7 +136,7 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	LPTMR_GetDefaultConfig(&lptmr_config);
 	lptmr_config.timerMode = config->mode;
-	lptmr_config.enableFreeRunning = false;
+	lptmr_config.enableFreeRunning = config->free_running;
 	lptmr_config.prescalerClockSource = config->clk_source;
 	lptmr_config.bypassPrescaler = config->bypass_prescaler_glitch;
 	lptmr_config.value = config->prescaler_glitch;
@@ -198,6 +200,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
+		.free_running = DT_INST_PROP(n, free_running),			\
 		.prescaler_glitch = (DT_INST_PROP(n,				\
 			prescale_glitch_filter) == 0) ? 0 : DT_INST_PROP(n,	\
 			prescale_glitch_filter) + DT_INST_PROP(n,		\
