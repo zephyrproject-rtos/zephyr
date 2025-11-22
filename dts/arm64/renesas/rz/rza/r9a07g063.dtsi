@@ -891,6 +891,7 @@
 			channel = <2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		gtm0: gtm@12801000 {
