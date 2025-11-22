@@ -34,6 +34,10 @@ Kernel
 Boards
 ******
 
+* m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
+  pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
+  PORT.C wiring.
+
 Device Drivers and Devicetree
 *****************************
 
