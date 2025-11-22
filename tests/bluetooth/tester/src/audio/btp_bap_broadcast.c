@@ -1833,6 +1833,79 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+uint8_t btp_bap_broadcast_add_receive_state(const void *cmd, uint16_t cmd_len, void *rsp,
+					    uint16_t *rsp_len)
+{
+	const struct btp_bap_add_broadcast_receive_state_cmd *cp = cmd;
+	struct btp_bap_add_broadcast_receive_state_rp *rp = rsp;
+	struct bt_bap_scan_delegator_add_src_param param = {0};
+	const uint8_t *ptr;
+	size_t remaining;
+	int err;
+
+	if (cmd_len < sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
+	param.sid = cp->advertiser_sid;
+	param.encrypt_state = (enum bt_bap_big_enc_state)cp->big_encryption;
+	param.broadcast_id = sys_get_le24(cp->broadcast_id);
+	param.num_subgroups = cp->num_subgroups;
+
+	ptr = cp->subgroups;
+	remaining = cmd_len - sizeof(*cp);
+	for (uint8_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
+		uint32_t bis_sync;
+
+		if (remaining < sizeof(uint32_t) + sizeof(uint8_t)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		bis_sync = sys_get_le32(ptr);
+		ptr += sizeof(uint32_t);
+		remaining -= sizeof(uint32_t);
+
+		if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+			subgroup->bis_sync = bis_sync;
+		} else {
+			subgroup->bis_sync = bis_sync << 1;
+		}
+
+		subgroup->metadata_len = *ptr;
+		ptr += sizeof(uint8_t);
+		remaining -= sizeof(uint8_t);
+
+		if (subgroup->metadata_len > sizeof(subgroup->metadata) ||
+		    subgroup->metadata_len > remaining) {
+			return BTP_STATUS_FAILED;
+		}
+
+		memcpy(subgroup->metadata, ptr, subgroup->metadata_len);
+		ptr += subgroup->metadata_len;
+		remaining -= subgroup->metadata_len;
+	}
+
+	if (remaining != 0U) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_scan_delegator_add_src(&param);
+	if (err < 0) {
+		return BTP_STATUS_VAL(err);
+	}
+
+	rp->src_id = (uint8_t)err;
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool broadcast_inited;
 
 int btp_bap_broadcast_init(void)
