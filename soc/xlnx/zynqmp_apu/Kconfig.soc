@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XILINX_ZYNQMP
+	bool
+
+config SOC_XILINX_ZYNQMP_APU
+	bool
+	select SOC_XILINX_ZYNQMP
+	help
+	  Xilinx ZynqMP APU
+
+config SOC_FAMILY
+	default "xilinx_zynqmp" if SOC_XILINX_ZYNQMP
+
+config SOC
+	default "zynqmp_apu" if SOC_XILINX_ZYNQMP_APU

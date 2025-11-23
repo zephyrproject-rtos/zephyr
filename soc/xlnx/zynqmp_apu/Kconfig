@@ -1,0 +1,7 @@
+config SOC_XILINX_ZYNQMP_APU
+    bool
+    select ARM64
+    select CPU_CORTEX_A53
+    select GIC
+    select GIC_V2
+    select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS

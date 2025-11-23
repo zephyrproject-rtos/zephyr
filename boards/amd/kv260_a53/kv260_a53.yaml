@@ -1,0 +1,12 @@
+identifier: kv260_a53
+name: Xilinx KV260 Development board for Cortex-A53
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 131072
+flash: 65536
+supported:
+  - uart
+vendor: xlnx
