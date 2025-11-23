@@ -250,6 +250,14 @@ struct ticker_ext {
 	uint8_t is_drift_in_window:1;  /* Drift in slot window, to be placed
 					* after an overlapping ticker
 					*/
+	uint8_t has_drift_in_window:1; /* Has drift in slot window, to be placed
+					* after an overlapping ticker
+					*/
+	uint8_t dir_drift_in_window:1; /* Drift direction inside slot window,
+					* either from start or from end side,
+					* to be placed after or before an
+					* overlapping ticker
+					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
