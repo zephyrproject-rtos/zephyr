@@ -215,8 +215,10 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 		}
 	}
 
+#ifdef CONFIG_SPI_ASYNC
 	data->ctx.callback = cb;
 	data->ctx.callback_data = userdata;
+#endif
 #endif
 	data->ctx.config = spi_cfg;
 
