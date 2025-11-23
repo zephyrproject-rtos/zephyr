@@ -71,6 +71,7 @@ The following code samples run out of the box on the DNESP32S3B board:
 
 * :zephyr:code-sample:`blinky`
 * :zephyr:code-sample:`button`
+* :zephyr:code-sample:`lvgl-demos`
 
 References
 **********
