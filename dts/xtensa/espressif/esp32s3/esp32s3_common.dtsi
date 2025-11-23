@@ -405,6 +405,13 @@
 				compatible = "espressif,esp32-lcd-cam-dvp";
 				status = "disabled";
 			};
+
+			lcd_cam_disp: lcd_cam_disp {
+				compatible = "espressif,esp32-lcd-cam-mipi-dbi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		usb_serial: uart@60038000 {

@@ -24,6 +24,7 @@ config MIPI_DBI_INIT_PRIORITY
 # zephyr-keep-sorted-start
 source "drivers/mipi_dbi/Kconfig.bflb"
 source "drivers/mipi_dbi/Kconfig.bitbang"
+source "drivers/mipi_dbi/Kconfig.esp32"
 source "drivers/mipi_dbi/Kconfig.nxp_dcnano_lcdif"
 source "drivers/mipi_dbi/Kconfig.nxp_flexio_lcdif"
 source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
