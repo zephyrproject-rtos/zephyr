@@ -30,6 +30,7 @@
 #define TICKER_NULL_SLOT        0
 #define TICKER_NULL_LAZY        0
 #define TICKER_NULL_MUST_EXPIRE 0
+#define TICKER_NULL_OUST_EXPIRE 0x8000
 
 /**
  * @}
@@ -109,12 +110,16 @@
 /* Use to ensure callback is invoked in all intervals, even when latencies
  * occur.
  */
-#define TICKER_LAZY_MUST_EXPIRE      0xFFFF
+#define TICKER_LAZY_MUST_EXPIRE         0xFFFF
 
 /* Use in ticker_start to set lazy to 0 and do not change the must_expire
  * state.
  */
-#define TICKER_LAZY_MUST_EXPIRE_KEEP 0xFFFE
+#define TICKER_LAZY_MUST_EXPIRE_KEEP    0xFFFE
+
+/* Use to ensure callback is invoked in ousted intervals, and maintains latencies.
+ */
+#define TICKER_LAZY_OUST_EXPIRE_BITMASK (TICKER_NULL_OUST_EXPIRE)
 
 /* Set this priority to ensure ticker node is always scheduled. Only one
  * ticker node can have priority TICKER_PRIORITY_CRITICAL at a time
