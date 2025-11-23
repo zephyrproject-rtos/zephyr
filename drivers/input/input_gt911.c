@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/pm/pm.h>
 
@@ -41,6 +42,7 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /** GT911 configuration (DT). */
 struct gt911_config {
+	struct input_touchscreen_common_config common;
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec rst_gpio;
@@ -69,6 +71,8 @@ struct gt911_data {
 	struct pm_notifier pm_notifier_handle;
 #endif
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct gt911_config);
 
 /** gt911 point reg */
 struct gt911_point_reg {
@@ -166,8 +170,7 @@ static int gt911_process(const struct device *dev)
 		row = ((point_reg[i].high_y) << 8U) | point_reg[i].low_y;
 		col = ((point_reg[i].high_x) << 8U) | point_reg[i].low_x;
 
-		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	}
 
@@ -187,8 +190,7 @@ static int gt911_process(const struct device *dev)
 			}
 			row = ((prev_point_reg[i].high_y) << 8U) | prev_point_reg[i].low_y;
 			col = ((prev_point_reg[i].high_x) << 8U) | prev_point_reg[i].low_x;
-			input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-			input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+			input_touchscreen_report_pos(dev, col, row, K_FOREVER);
 			input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 		}
 	}
@@ -452,6 +454,7 @@ static void gt911_##n##_pm_state_exit(enum pm_state state)                      
 
 #define GT911_INIT(index)                                                                          \
 	static const struct gt911_config gt911_config_##index = {                                  \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),		           \
 		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                     \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                               \
