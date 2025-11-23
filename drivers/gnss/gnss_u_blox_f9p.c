@@ -84,10 +84,11 @@ UBX_FRAME_DEFINE(nav_fix_mode_auto,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_NAV_CFG_FIX_MODE, UBX_FIX_MODE_AUTO));
 UBX_FRAME_DEFINE(enable_prot_in_ubx,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_IN_UBX, 1));
-UBX_FRAME_DEFINE(enable_prot_in_rtcm3,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_IN_RTCM3X, 1));
 UBX_FRAME_DEFINE(enable_prot_out_ubx,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_OUT_UBX, 1));
+#if CONFIG_GNSS_U_BLOX_F9P_RTK
+UBX_FRAME_DEFINE(enable_prot_in_rtcm3,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_IN_RTCM3X, 1));
 UBX_FRAME_DEFINE(disable_prot_out_rtcm3,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_OUT_RTCM3X, 0));
 UBX_FRAME_DEFINE(enable_ubx_rtcm_rsp,
@@ -95,6 +96,7 @@ UBX_FRAME_DEFINE(enable_ubx_rtcm_rsp,
 UBX_FRAME_DEFINE(set_rtk_fix_mode,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_NAV_HP_CFG_GNSS_MODE,
 					     UBX_NAV_HP_DGNSS_MODE_RTK_FIXED));
+#endif
 #if CONFIG_GNSS_SATELLITES
 UBX_FRAME_DEFINE(enable_sat,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_UBX_NAV_SAT_UART1, 1));
@@ -105,8 +107,11 @@ UBX_FRAME_ARRAY_DEFINE(u_blox_f9p_init_seq,
 	&disable_nmea_gbs, &disable_nmea_gll, &disable_nmea_gns, &disable_nmea_grs,
 	&disable_nmea_gsa, &disable_nmea_gst, &disable_nmea_vlw, &disable_nmea_vtg,
 	&disable_nmea_zda, &enable_nav, &nav_fix_mode_auto,
-	&enable_prot_in_ubx, &enable_prot_in_rtcm3, &enable_prot_out_ubx,
+	&enable_prot_in_ubx, &enable_prot_out_ubx,
+#if CONFIG_GNSS_U_BLOX_F9P_RTK
+	&enable_prot_in_rtcm3,
 	&disable_prot_out_rtcm3, &enable_ubx_rtcm_rsp, &set_rtk_fix_mode,
+#endif
 #if CONFIG_GNSS_SATELLITES
 	&enable_sat,
 #endif
