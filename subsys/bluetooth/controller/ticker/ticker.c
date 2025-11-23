@@ -2183,8 +2183,14 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 					lazy_periodic = ticker->lazy_periodic;
 
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
-					if (ticker->ext_data) {
-						ticker->ext_data->ticks_drift = 0U;
+					struct ticker_ext *ext_data = ticker->ext_data;
+
+					/* Expired without drift, reset flags */
+					if ((ext_data != NULL) && (ext_data->ticks_drift == 0U)) {
+						ext_data->has_drift_in_window = 0U;
+						ext_data->dir_drift_in_window = 0U;
+					} else if (ext_data != NULL) {
+						ext_data->ticks_drift = 0U;
 					}
 #endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 				} else {
@@ -2195,6 +2201,17 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 					 * in the code.
 					 */
 					ticker->req = ticker->ack;
+
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+					struct ticker_ext *ext_data = ticker->ext_data;
+
+					/* Drift direction change, reset accumulated ticks_drift */
+					if ((ext_data != NULL) &&
+					    (ext_data->is_drift_in_window != 0U) &&
+					    (ext_data->has_drift_in_window == 0U)) {
+						ext_data->ticks_drift = 0U;
+					}
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 				}
 
 				/* Reload ticks_to_expire with at least one
@@ -2348,6 +2365,8 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (ticker->ext_data) {
 		ticker->ext_data->ticks_drift = 0U;
+		ticker->ext_data->dir_drift_in_window = 0U;
+		ticker->ext_data->has_drift_in_window = 0U;
 	}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2596,7 +2615,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			    (window_end_ticks_min >= (ticks_start_offset +
 						      ticker_resched->ticks_slot))) {
 				if ((ticker_resched->ticks_slot == 0U) ||
-				    (ext_data->is_drift_in_window != 0U)) {
+				    ((ext_data->is_drift_in_window != 0U) &&
+				     (ext_data->dir_drift_in_window == 0U))) {
 					/* Place at start of window */
 					ticks_to_expire = window_start_ticks;
 					break;
@@ -2633,7 +2653,9 @@ reschedule_in_window_hop_over:
 					      HAL_TICKER_RESCHEDULE_MARGIN;
 			ticks_to_expire_offset = 0U;
 
-			if ((ticker_resched->ticks_slot == 0U) || (ext_data->is_drift_in_window != 0U)) {
+			if ((ticker_resched->ticks_slot == 0U) ||
+			    ((ext_data->is_drift_in_window != 0U) &&
+			     (ext_data->dir_drift_in_window == 0U))) {
 				if ((ticker_resched->ticks_slot == 0U) ||
 				    (window_start_ticks <= (ticks_slot_window -
 							    ticker_resched->ticks_slot))) {
@@ -2666,6 +2688,15 @@ reschedule_in_window_hop_over:
 			 * the worker callback.
 			 */
 			ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
+		}
+
+		/* Toggle drift direction flag */
+		if ((ext_data->is_drift_in_window != 0U) &&
+		    (ext_data->has_drift_in_window != 0U)) {
+			ext_data->has_drift_in_window = 0U;
+			ext_data->dir_drift_in_window ^= 1U;
+		} else {
+			ext_data->has_drift_in_window = 1U;
 		}
 
 		/* Place the ticker node sorted by expiration time and adjust
