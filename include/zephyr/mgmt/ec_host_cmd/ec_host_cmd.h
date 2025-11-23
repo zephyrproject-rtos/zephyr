@@ -222,7 +222,7 @@ struct ec_host_cmd_handler {
  *        @a _function.
  */
 #define EC_HOST_CMD_HANDLER(_id, _function, _version_mask, _request_type, _response_type)          \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
@@ -243,7 +243,7 @@ struct ec_host_cmd_handler {
  * @param _request_type The datatype of the request parameters for @a _function.
  */
 #define EC_HOST_CMD_HANDLER_REQ_ONLY(_id, _function, _version_mask, _request_type)                 \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
@@ -265,7 +265,7 @@ struct ec_host_cmd_handler {
  *        @a _function.
  */
 #define EC_HOST_CMD_HANDLER_RESP_ONLY(_id, _function, _version_mask, _response_type)               \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
@@ -285,7 +285,7 @@ struct ec_host_cmd_handler {
  *        supports. E.g. BIT(0) corresponds to version 0.
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_id, _function, _version_mask)                                 \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
