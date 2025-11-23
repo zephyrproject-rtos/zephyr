@@ -393,7 +393,7 @@
 		};
 
 		lcd_cam: lcd_cam@60041000 {
-			compatible = "espressif,esp32-lcd-cam";
+			compatible = "espressif,esp32-lcd-cam-dvp";
 			reg = <0x60041000 DT_SIZE_K(4)>;
 			clocks = <&clock ESP32_LCD_CAM_MODULE>;
 			interrupts = <LCD_CAM_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
