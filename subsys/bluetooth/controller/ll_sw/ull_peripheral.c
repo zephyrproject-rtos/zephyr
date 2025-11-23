@@ -60,6 +60,7 @@
 
 #include "hal/debug.h"
 
+static void ticker_update_conn_op_cb(uint32_t status, void *param);
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 			    memq_link_t *link, struct node_rx_pdu *rx);
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
@@ -489,7 +490,11 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && !defined(CONFIG_BT_CTLR_LOW_LAT)
+				     TICKER_NULL_OUST_EXPIRE,
+#else /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 				     TICKER_NULL_LAZY,
+#endif /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_periph_ticker_cb, conn, ticker_op_cb,
@@ -550,6 +555,63 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	conn->common.is_must_expire = (lazy == TICKER_LAZY_MUST_EXPIRE);
 #endif
+
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) && !IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) &&
+	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
+		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
+
+		uint16_t supervision_expire = conn->supervision_expire;
+
+		/* Supervision timeout, if not started already */
+		if (supervision_expire == 0U) {
+			uint32_t conn_interval_us;
+
+			if (conn->lll.interval >= BT_HCI_LE_INTERVAL_MIN) {
+				conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
+			} else {
+				conn_interval_us = (conn->lll.interval + 1U) *
+						   CONN_LOW_LAT_INT_UNIT_US;
+			}
+
+			supervision_expire =
+				RADIO_CONN_EVENTS((conn->supervision_timeout * 10U * USEC_PER_MSEC),
+						  conn_interval_us);
+		}
+
+		uint16_t elapsed_event = lazy + 1U;
+
+		/* Check supervision timeout threshold */
+		if (supervision_expire > elapsed_event) {
+			supervision_expire -= elapsed_event;
+			if (supervision_expire <= CONN_ESTAB_COUNTDOWN) {
+				uint8_t ticker_id = TICKER_ID_CONN_BASE + conn->lll.handle;
+				uint32_t ticker_status;
+
+				conn->lll.forced = 1U;
+
+				/* Call to ticker_update can fail under the race
+				 * condition where in the peripheral role is being stopped but
+				 * at the same time it is preempted by peripheral event that
+				 * gets into close state. Accept failure when peripheral role
+				 * is being stopped.
+				 */
+				ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+							      TICKER_USER_ID_ULL_HIGH,
+							      ticker_id, 0U, 0U, 0U, 0U, 0U, 1U,
+							      ticker_update_conn_op_cb, conn);
+				LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+					      (ticker_status == TICKER_STATUS_BUSY) ||
+					      ((void *)conn == ull_disable_mark_get()));
+			}
+		} else {
+			LL_ASSERT_MSG(false, "%s: %p Ousted %u lazy %u\n", __func__,
+				      &conn->lll, conn->event_counter, lazy);
+		}
+
+		DEBUG_RADIO_CLOSE_S(0);
+		return;
+	}
+
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
 	 */
@@ -603,6 +665,17 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ull_conn_tx_lll_enqueue(conn, UINT8_MAX);
 
 	DEBUG_RADIO_PREPARE_S(1);
+}
+
+static void ticker_update_conn_op_cb(uint32_t status, void *param)
+{
+	/* Peripheral ticker update succeeds, or it fails in a race condition
+	 * when disconnecting or connection update (race between ticker_update
+	 * and ticker_stop calls).
+	 */
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_update_mark_get()) ||
+		      (param == ull_disable_mark_get()));
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
