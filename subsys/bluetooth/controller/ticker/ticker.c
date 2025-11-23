@@ -2256,6 +2256,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 			if (ticker->ext_data) {
 				ticker->ext_data->ticks_drift = 0U;
+				ticker->ext_data->dir_drift_in_window = 0U;
 			}
 #endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2363,6 +2364,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (ticker->ext_data) {
 		ticker->ext_data->ticks_drift = 0U;
+		ticker->ext_data->dir_drift_in_window = 0U;
 	}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2627,7 +2629,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			    (window_end_ticks >= (ticks_start_offset +
 						 ticks_slot))) {
 				if (!ticker_resched->ticks_slot ||
-				    ext_data->is_drift_in_window ||
+				    (ext_data->is_drift_in_window &&
+				     !ext_data->dir_drift_in_window) ||
 				    ext_data->is_jitter_in_window) {
 					/* Place at start of window */
 					ticks_to_expire = window_start_ticks;
@@ -2659,6 +2662,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				ticks_to_expire = 0U;
 			}
 
+reschedule_in_window_hop_over:
 			/* Skip other pending re-schedule nodes and
 			 * tickers with no reservation or not periodic
 			 */
@@ -2670,7 +2674,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				continue;
 			}
 
-reschedule_in_window_hop_over:
 			/* We din't find a valid slot for re-scheduling - try
 			 * the next node
 			 */
@@ -2681,7 +2684,8 @@ reschedule_in_window_hop_over:
 			ticks_to_expire_offset = 0U;
 
 			if (!ticker_resched->ticks_slot ||
-			    ext_data->is_drift_in_window ||
+			    (ext_data->is_drift_in_window &&
+			     !ext_data->dir_drift_in_window) ||
 			    ext_data->is_jitter_in_window) {
 				if (!ticker_resched->ticks_slot ||
 				    (window_start_ticks <= (ticks_slot_window -
@@ -2703,6 +2707,11 @@ reschedule_in_window_hop_over:
 		}
 
 		ext_data->ticks_drift += ticks_to_expire;
+
+		/* Toggle drift direction flag */
+		if (ticks_to_expire == 0U) {
+			ext_data->dir_drift_in_window ^= 1U;
+		}
 
 		/* Place the ticker node sorted by expiration time and adjust
 		 * delta times
