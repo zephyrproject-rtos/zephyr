@@ -247,6 +247,11 @@ struct ticker_ext {
 					* node. See defines
 					* TICKER_RESCHEDULE_STATE_XXX
 					*/
+	uint8_t dir_drift_in_window:1; /* Drift direction inside slot window,
+					* either from start or from end side,
+					* to be placed after or before an
+					* overlapping ticker
+					*/
 	uint8_t is_drift_in_window:1;  /* Drift in slot window, to be placed
 					* after an overlapping ticker
 					*/
