@@ -176,8 +176,9 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	/*  Update the number of Data Bits */
 	cfg->reg->GSPI_WRITE_DATA2 = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
-	/* Swap the read data inside the GSPI controller it-self */
-	cfg->reg->GSPI_CONFIG2_b.GSPI_RD_DATA_SWAP_MNL_CSN0 = 0;
+	/* Swap the write and read data inside the GSPI controller it-self */
+	cfg->reg->GSPI_CONFIG2_b.GSPI_RD_DATA_SWAP_MNL_CSN0 = 1;
+	cfg->reg->GSPI_CONFIG2_b.GSPI_WR_DATA_SWAP_MNL_CSN0 = 1;
 
 	/* Enable full-duplex mode and manual read/write */
 	cfg->reg->GSPI_CONFIG1_b.SPI_FULL_DUPLEX_EN = 1;
