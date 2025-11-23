@@ -754,7 +754,11 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			   HAL_TICKER_US_TO_TICKS(sync_iso_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && !defined(CONFIG_BT_CTLR_LOW_LAT)
+			   TICKER_NULL_OUST_EXPIRE,
+#else /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   TICKER_NULL_LAZY,
+#endif /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso,
 			   ticker_start_op_cb, (void *)__LINE__
@@ -1062,6 +1066,51 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	sync_iso = param;
 	lll = &sync_iso->lll;
+
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) && !IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) &&
+	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
+		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
+
+		uint16_t timeout_expire = sync_iso->timeout_expire;
+
+		/* Supervision timeout, if not started already */
+		if (timeout_expire == 0U) {
+			timeout_expire = sync_iso->timeout_reload;
+		}
+
+		/* lazy has been incremented by one when ousted */
+		uint16_t elapsed_event = lazy;
+
+		/* Check timeout threshold */
+		if (timeout_expire > elapsed_event) {
+			timeout_expire -= elapsed_event;
+			if (timeout_expire <= CONN_ESTAB_COUNTDOWN) {
+				uint8_t handle = sync_iso_handle_get(sync_iso);
+				uint8_t index = sync_iso_handle_to_index(handle);
+				uint32_t ticker_status;
+
+				/* Call to ticker_update can fail under the race condition where in
+				 * the periodic sync role is being stopped but at the same time it
+				 * is preempted by periodic sync event that gets into close state.
+				 * Accept failure when periodic sync role is being stopped.
+				 */
+				ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+							      TICKER_USER_ID_ULL_HIGH,
+							      (TICKER_ID_SCAN_SYNC_ISO_BASE +
+							       index), 0U, 0U, 0U, 0U, 0U, 1U,
+							      ticker_update_op_cb, sync_iso);
+				LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+					      (ticker_status == TICKER_STATUS_BUSY) ||
+					      ((void *)sync_iso == ull_disable_mark_get()));
+			}
+		} else {
+			LL_ASSERT_MSG(false, "%s: %p Ousted %llu lazy %u\n", __func__, lll,
+				      (uint64_t)lll->payload_count, lazy);
+		}
+
+		DEBUG_RADIO_CLOSE_O(0);
+		return;
+	}
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync_iso->ull);
