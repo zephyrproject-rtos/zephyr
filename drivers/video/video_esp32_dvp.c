@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp32_lcd_cam
+#define DT_DRV_COMPAT espressif_esp32_lcd_cam_dvp
 
 #include <soc/gdma_channel.h>
 #include <zephyr/device.h>
