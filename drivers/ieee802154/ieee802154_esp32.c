@@ -232,7 +232,7 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 		ack_len = data->ack_frame[0] - IEEE802154_FCS_LENGTH;
 	}
 
-	ack_pkt = net_pkt_rx_alloc_with_buffer(data->iface, ack_len, AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(data->iface, ack_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
