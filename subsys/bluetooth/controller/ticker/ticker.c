@@ -1408,6 +1408,13 @@ void ticker_worker(void *param)
 			ticks_drift = ticker->ext_data->ticks_drift;
 			ticker->ext_data->ticks_drift = 0U;
 
+			/* Update the has drift in window flag */
+			if (ticks_drift != 0U) {
+				ticker->ext_data->has_drift_in_window = 1U;
+			} else {
+				ticker->ext_data->has_drift_in_window = 0U;
+			}
+
 			/* Revert back drift so that next expiry maintains the
 			 * average periodic interval.
 			 */
@@ -2579,6 +2586,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			ticks_slot_window)) {
 			struct ticker_node *ticker_next;
 			uint32_t window_end_ticks;
+			uint8_t is_window_end;
 
 			ticker_next = &nodes[ticker_id_next];
 			ticks_to_expire_offset += ticker_next->ticks_to_expire;
@@ -2612,12 +2620,14 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			/* Calculate new ticks_to_expire as end of window minus
 			 * slot size.
 			 */
+			is_window_end = 0U;
 			if (((window_start_ticks + ticks_slot) <=
 			     ticks_slot_window) &&
 			    (window_end_ticks >= (ticks_start_offset +
 						 ticks_slot))) {
 				if (!ticker_resched->ticks_slot ||
-				    ext_data->is_drift_in_window ||
+				    (ext_data->is_drift_in_window &&
+				     !ext_data->has_drift_in_window) ||
 				    ext_data->is_jitter_in_window) {
 					/* Place at start of window */
 					ticks_to_expire = window_start_ticks;
@@ -2629,6 +2639,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 					 */
 					ticks_to_expire = window_end_ticks -
 							  ticks_slot;
+
+					is_window_end = 1U;
 				}
 			} else {
 				/* No space in window - try the next node */
@@ -2642,13 +2654,19 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			    (ticks_to_expire >= window_start_ticks) &&
 			    (ticks_to_expire <= (window_end_ticks -
 						 ticks_slot))) {
-				/* Re-scheduled node fits before this node */
-				break;
+				if (!ext_data->is_drift_in_window ||
+				    !is_window_end) {
+					/* Re-scheduled node fits before this
+					 * node
+					 */
+					break;
+				}
 			} else {
 				/* Not inside the window */
 				ticks_to_expire = 0U;
 			}
 
+reschedule_in_window_hop_over:
 			/* Skip other pending re-schedule nodes and
 			 * tickers with no reservation or not periodic
 			 */
@@ -2660,7 +2678,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				continue;
 			}
 
-reschedule_in_window_hop_over:
 			/* We din't find a valid slot for re-scheduling - try
 			 * the next node
 			 */
@@ -2671,7 +2688,8 @@ reschedule_in_window_hop_over:
 			ticks_to_expire_offset = 0U;
 
 			if (!ticker_resched->ticks_slot ||
-			    ext_data->is_drift_in_window ||
+			    (ext_data->is_drift_in_window &&
+			     !ext_data->has_drift_in_window) ||
 			    ext_data->is_jitter_in_window) {
 				if (!ticker_resched->ticks_slot ||
 				    (window_start_ticks <= (ticks_slot_window -
