@@ -18,26 +18,26 @@
 LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
-#define DEVICE_ID  BSWAP_16(0x8140U)
-#define REG_STATUS BSWAP_16(0x814EU)
+#define GT911_DEVICE_ID  BSWAP_16(0x8140U)
+#define GT911_REG_STATUS BSWAP_16(0x814EU)
 
 /* REG_TD_STATUS: Touch points. */
-#define TOUCH_POINTS_MSK 0x0FU
+#define GT911_TOUCH_POINTS_MSK 0x0FU
 
 /* REG_TD_STATUS: Pressed. */
-#define TOUCH_STATUS_MSK (1 << 7U)
+#define GT911_TOUCH_STATUS_MSK (1 << 7U)
 
 /* The GT911's config */
-#define REG_GT911_CONFIG            BSWAP_16(0x8047U)
-#define REG_CONFIG_VERSION          REG_GT911_CONFIG
-#define REG_CONFIG_TOUCH_NUM_OFFSET 0x5
-#define REG_CONFIG_SIZE             186U
+#define GT911_REG_CONFIG                  BSWAP_16(0x8047U)
+#define GT911_REG_CONFIG_VERSION          GT911_REG_CONFIG
+#define GT911_REG_CONFIG_TOUCH_NUM_OFFSET 0x5
+#define GT911_REG_CONFIG_SIZE             186U
 #define GT911_PRODUCT_ID            0x00313139U
 
 /* Points registers */
-#define REG_POINT_0       0x814F
-#define POINT_OFFSET      0x8
-#define REG_POINT_ADDR(n) BSWAP_16(REG_POINT_0 + POINT_OFFSET * n)
+#define GT911_REG_POINT_0       0x814F
+#define GT911_POINT_OFFSET      0x8
+#define GT911_REG_POINT_ADDR(n) BSWAP_16(GT911_REG_POINT_0 + GT911_POINT_OFFSET * n)
 
 /** GT911 configuration (DT). */
 struct gt911_config {
@@ -120,13 +120,13 @@ static int gt911_process(const struct device *dev)
 	static struct gt911_point_reg prev_point_reg[CONFIG_INPUT_GT911_MAX_TOUCH_POINTS];
 
 	/* obtain number of touch points */
-	reg_addr = REG_STATUS;
+	reg_addr = GT911_REG_STATUS;
 	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &status, sizeof(status));
 	if (r < 0) {
 		return r;
 	}
 
-	if (!(status & TOUCH_STATUS_MSK)) {
+	if (!(status & GT911_TOUCH_STATUS_MSK)) {
 		/* Status bit not set, ignore this event */
 		return 0;
 	}
@@ -136,10 +136,10 @@ static int gt911_process(const struct device *dev)
 	 * the controller won't report more than the maximum number of touch
 	 * points we are configured to support
 	 */
-	points = status & TOUCH_POINTS_MSK;
+	points = status & GT911_TOUCH_POINTS_MSK;
 
 	/* need to clear the status */
-	uint8_t clear_buffer[3] = {(uint8_t)REG_STATUS, (uint8_t)(REG_STATUS >> 8), 0};
+	uint8_t clear_buffer[3] = {(uint8_t)GT911_REG_STATUS, (uint8_t)(GT911_REG_STATUS >> 8), 0};
 
 	r = gt911_i2c_write(dev, clear_buffer, sizeof(clear_buffer));
 	if (r < 0) {
@@ -148,7 +148,7 @@ static int gt911_process(const struct device *dev)
 
 	/* current points array */
 	for (i = 0; i < points; i++) {
-		reg_addr = REG_POINT_ADDR(i);
+		reg_addr = GT911_REG_POINT_ADDR(i);
 		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &point_reg[i],
 					 sizeof(point_reg[i]));
 
@@ -227,7 +227,7 @@ static uint8_t gt911_get_firmware_checksum(const uint8_t *firmware)
 	uint8_t sum = 0;
 	uint16_t i = 0;
 
-	for (i = 0; i < REG_CONFIG_SIZE - 2U; i++) {
+	for (i = 0; i < GT911_REG_CONFIG_SIZE - 2U; i++) {
 		sum += (*firmware);
 		firmware++;
 	}
@@ -237,8 +237,8 @@ static uint8_t gt911_get_firmware_checksum(const uint8_t *firmware)
 
 static bool gt911_verify_firmware(const uint8_t *firmware)
 {
-	return ((firmware[REG_CONFIG_VERSION - REG_GT911_CONFIG] != 0U) &&
-		(gt911_get_firmware_checksum(firmware) == firmware[REG_CONFIG_SIZE - 2U]));
+	return ((firmware[GT911_REG_CONFIG_VERSION - GT911_REG_CONFIG] != 0U) &&
+		(gt911_get_firmware_checksum(firmware) == firmware[GT911_REG_CONFIG_SIZE - 2U]));
 }
 
 #if CONFIG_PM
@@ -355,7 +355,7 @@ static int gt911_init(const struct device *dev)
 
 	/* check the Device ID first: '911' */
 	uint32_t reg_id = 0;
-	uint16_t reg_addr = DEVICE_ID;
+	uint16_t reg_addr = GT911_DEVICE_ID;
 
 	if (config->alt_addr != 0x0) {
 		/*
@@ -389,12 +389,12 @@ static int gt911_init(const struct device *dev)
 	}
 
 	/* need to setup the firmware first: read and write */
-	uint8_t gt911_config_firmware[REG_CONFIG_SIZE + 2] = {(uint8_t)REG_GT911_CONFIG,
-							      (uint8_t)(REG_GT911_CONFIG >> 8)};
+	uint8_t gt911_config_firmware[GT911_REG_CONFIG_SIZE + 2] = {
+		(uint8_t)GT911_REG_CONFIG, (uint8_t)(GT911_REG_CONFIG >> 8)};
 
-	reg_addr = REG_GT911_CONFIG;
+	reg_addr = GT911_REG_CONFIG;
 	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), gt911_config_firmware + 2,
-				 REG_CONFIG_SIZE);
+				 GT911_REG_CONFIG_SIZE);
 	if (r < 0) {
 		return r;
 	}
@@ -402,12 +402,12 @@ static int gt911_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	gt911_config_firmware[REG_CONFIG_TOUCH_NUM_OFFSET + 2] =
+	gt911_config_firmware[GT911_REG_CONFIG_TOUCH_NUM_OFFSET + 2] =
 		CONFIG_INPUT_GT911_MAX_TOUCH_POINTS;
 
-	gt911_config_firmware[REG_CONFIG_SIZE] =
+	gt911_config_firmware[GT911_REG_CONFIG_SIZE] =
 		gt911_get_firmware_checksum(gt911_config_firmware + 2);
-	gt911_config_firmware[REG_CONFIG_SIZE + 1] = 1;
+	gt911_config_firmware[GT911_REG_CONFIG_SIZE + 1] = 1;
 
 	r = gt911_i2c_write(dev, gt911_config_firmware, sizeof(gt911_config_firmware));
 	if (r < 0) {
