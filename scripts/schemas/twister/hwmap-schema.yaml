@@ -56,6 +56,30 @@ items:
         post_flash_timeout:
           type: integer
       additionalProperties: false
+    hooks:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum:
+              - "pre"
+              - "post"
+              - "pre_flash"
+              - "post_flash"
+          script:
+            type: string
+          args:
+            type: array
+            items:
+              type: string
+          timeout:
+            type: integer
+        required:
+          - type
+          - script
+        additionalProperties: false
     west_flash_cmd:
       type: string
   required:

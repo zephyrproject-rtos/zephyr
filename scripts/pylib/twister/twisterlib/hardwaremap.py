@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
+from typing import Any
 
 import scl
 import yaml
@@ -223,7 +224,7 @@ class HardwareMap:
         device = DUT(
             platform=platform,
             connected=True,
-            pre_script=pre_script,
+            hooks=self._prepare_hooks_from_scripts(pre_script=pre_script),
             serial_baud=baud,
             flash_timeout=flash_timeout,
             flash_with_test=flash_with_test,
@@ -236,15 +237,55 @@ class HardwareMap:
 
         self.duts.append(device)
 
+    def _prepare_hooks_from_scripts(
+        self, pre_script=None, post_script=None, post_flash_script=None, script_param=None
+    ) -> list[dict[str, Any]]:
+        """Convert script parameters to hooks format for backward compatibility."""
+        hooks: list[dict[str, Any]] = []
+        if pre_script:
+            hooks.append({
+                'type': 'pre',
+                'script': pre_script,
+                'args': [],
+                'timeout': script_param.get('pre_script_timeout', 60) if script_param else 60,
+            })
+        if post_script:
+            hooks.append({
+                'type': 'post',
+                'script': post_script,
+                'args': [],
+                'timeout': script_param.get('post_script_timeout', 60) if script_param else 60,
+            })
+        if post_flash_script:
+            hooks.append({
+                'type': 'post_flash',
+                'script': post_flash_script,
+                'args': [],
+                'timeout': script_param.get('post_flash_timeout', 60) if script_param else 60,
+            })
+        return hooks
+
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
+            # deprecated fields are still supported for backward compatibility
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
+            # prepare hooks dictionary for forward compatibility
+            _hooks = self._prepare_hooks_from_scripts(
+                pre_script=pre_script,
+                post_script=post_script,
+                post_flash_script=post_flash_script,
+                script_param=script_param,
+            )
+            # get hooks from hardware map if available
+            hooks = dut.get('hooks', _hooks)
+
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
+
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
@@ -280,11 +321,8 @@ class HardwareMap:
                               serial=serial,
                               serial_baud=serial_baud,
                               connected=connected,
-                              pre_script=pre_script,
+                              hooks=hooks,
                               flash_before=flash_before,
-                              post_script=post_script,
-                              post_flash_script=post_flash_script,
-                              script_param=script_param,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
                               west_flash_cmd=west_flash_cmd)
