@@ -168,13 +168,12 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 		uhc_mcux_nocache_free(transfer->setupPacket);
 	}
 #endif
-	if ((xfer->buf != NULL) && (transfer->transferBuffer != NULL)) {
-		if (transfer->transferSofar > 0) {
+	if ((xfer->buf != NULL) && (transfer->transferBuffer != NULL) &&
+	    USB_EP_DIR_IS_IN(xfer->ep) && (transfer->transferSofar > 0)) {
 #if defined(CONFIG_NOCACHE_MEMORY)
-			memcpy(xfer->buf->__buf, transfer->transferBuffer, transfer->transferSofar);
+		memcpy(xfer->buf->__buf, transfer->transferBuffer, transfer->transferSofar);
 #endif
-			net_buf_add(xfer->buf, transfer->transferSofar);
-		}
+		net_buf_add(xfer->buf, transfer->transferSofar);
 #if defined(CONFIG_NOCACHE_MEMORY)
 		uhc_mcux_nocache_free(transfer->transferBuffer);
 #endif
