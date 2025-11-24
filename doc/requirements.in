@@ -20,6 +20,9 @@ pykwalify
 pytest
 pyserial
 
+# Since commit cae12e6d6a7d5, building docs runs "twister"
+junitparser
+
 # Doxygen doxmlparser
 doxmlparser
 
