@@ -35,13 +35,17 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 	/* Stop receiving after 10 packets */
 	if (++cnt == 10) {
 		LOG_INF("Stopping packet receptions");
-		lora_recv_async(dev, NULL, NULL);
+		lora_recv_async(dev, NULL);
 	}
 }
 
 int main(void)
 {
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
+	const struct lora_recv_async_callbacks async_cb = {
+		.recv = lora_receive_cb,
+		.user_data = NULL,
+	};
 	struct lora_modem_config config;
 	int ret, len;
 	uint8_t data[MAX_DATA_LEN] = {0};
@@ -86,7 +90,7 @@ int main(void)
 
 	/* Enable asynchronous reception */
 	LOG_INF("Asynchronous reception");
-	lora_recv_async(lora_dev, lora_receive_cb, NULL);
+	lora_recv_async(lora_dev, &async_cb);
 	k_sleep(K_FOREVER);
 	return 0;
 }
