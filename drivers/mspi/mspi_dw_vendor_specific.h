@@ -174,6 +174,7 @@ typedef struct {
 typedef struct {
 	QSPI_TRANSFER_LIST_Type *transfer_list;
 	EVDMA_JOB_Type *joblist;
+	uint8_t bits_per_pixel;
 } nordic_qspi_vendor_data_t;
 
 /* Static allocation macros for vendor-specific data */
@@ -182,7 +183,8 @@ typedef struct {
 	static EVDMA_JOB_Type mspi_dw_##inst##_joblist[MAX_NUM_JOBS]; \
 	static const nordic_qspi_vendor_data_t mspi_dw_##inst##_vendor_data = { \
 		.transfer_list = &mspi_dw_##inst##_transfer_list, \
-		.joblist = &mspi_dw_##inst##_joblist[0] \
+		.joblist = &mspi_dw_##inst##_joblist[0], \
+		.bits_per_pixel = DT_INST_PROP_OR(inst, bits_per_pixel, 0) \
 	};
 
 #define VENDOR_SPECIFIC_DATA_GET(inst) (void *)&mspi_dw_##inst##_vendor_data
@@ -262,6 +264,23 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 			transfer_list->tx_job = &joblist[1];
 		}
 	}
+
+	/* Display settings - The wrapper uses this regardless of whether it is driving a display
+	 * or not in order to format the data when the amount of data is unaligned with 32-bits.
+	 */
+
+	/* If BPP is set in Devicetree, use that value in the BPP register. Otherwise set to 8. */
+	uint8_t bits_per_pixel = (vendor_data->bits_per_pixel == 0)
+				? 8 : vendor_data->bits_per_pixel;
+
+	preg->FORMAT.BPP = bits_per_pixel;
+	/* Set to same value as core DFS register + 1 */
+	preg->FORMAT.DFS = (dev_data->ctrlr0 & CTRLR0_DFS_MASK) + 1;
+	/* Number of pixels following the command in units of BPP */
+	preg->FORMAT.PIXELS = (packet->num_bytes * 8U) / bits_per_pixel;
+	/* Command and address length (in 32-bit words)*/
+	preg->FORMAT.CILEN = CEIL_DIV_32(dev_data->xfer.addr_length) +
+			     CEIL_DIV_32(dev_data->xfer.cmd_length);
 
 	/*
 	 * In slave mode, a tmod register in the wrapper also needs to be set. Currently
