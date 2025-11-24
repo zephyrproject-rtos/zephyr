@@ -140,18 +140,8 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 
 #if defined(CONFIG_MSPI_DMA)
 /* DMA support */
-
-#define EVDMA_ATTR_LEN_Pos (0UL)
-#define EVDMA_ATTR_LEN_Msk (0x00FFFFFFUL)
-
 #define EVDMA_ATTR_ATTR_Pos (24UL)
 #define EVDMA_ATTR_ATTR_Msk (0x3FUL << EVDMA_ATTR_ATTR_Pos)
-
-#define EVDMA_ATTR_32AXI_Pos (30UL)
-#define EVDMA_ATTR_32AXI_Msk (0x1UL << EVDMA_ATTR_32AXI_Pos)
-
-#define EVDMA_ATTR_EVENTS_Pos (31UL)
-#define EVDMA_ATTR_EVENTS_Msk (0x1UL << EVDMA_ATTR_EVENTS_Pos)
 
 typedef enum {
 	EVDMA_BYTE_SWAP = 0,
@@ -160,12 +150,8 @@ typedef enum {
 	EVDMA_FIXED_ATTR = 3,
 	EVDMA_STATIC_ADDR = 4,
 	EVDMA_PLAIN_DATA_BUF_WR = 5,
+	EVDMA_PLAIN_DATA = 0x3f,
 } EVDMA_ATTR_Type;
-
-/* Setup EVDMA attribute with the following configuratrion */
-#define EVDMA_ATTRIBUTE (BIT(EVDMA_BYTE_SWAP)   | BIT(EVDMA_JOBLIST)    | \
-			 BIT(EVDMA_BUFFER_FILL) | BIT(EVDMA_FIXED_ATTR) | \
-			 BIT(EVDMA_STATIC_ADDR) | BIT(EVDMA_PLAIN_DATA_BUF_WR))
 
 typedef struct {
 	uint8_t *addr;
@@ -229,13 +215,14 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 
 	/*
 	 * The Command and Address will always have a length of 4 from the DMA's
-	 * perspective. QSPI peripheral will use length of data specified in core registers
+	 * perspective. QSPI peripheral will use length of data specified in core registers.
+	 * Since the cmd and address are stored as uint32_t, byte swap is never needed.
 	 */
 	if (dev_data->xfer.cmd_length > 0) {
-		joblist[job_idx++] = EVDMA_JOB(&packet->cmd, 4, EVDMA_ATTRIBUTE);
+		joblist[job_idx++] = EVDMA_JOB(&packet->cmd, 4, EVDMA_PLAIN_DATA);
 	}
 	if (dev_data->xfer.addr_length > 0) {
-		joblist[job_idx++] = EVDMA_JOB(&packet->address, 4, EVDMA_ATTRIBUTE);
+		joblist[job_idx++] = EVDMA_JOB(&packet->address, 4, EVDMA_PLAIN_DATA);
 	}
 
 	if (packet->dir == MSPI_TX) {
@@ -243,7 +230,7 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 
 		if (packet->num_bytes > 0) {
 			joblist[job_idx++] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-						EVDMA_ATTRIBUTE);
+						       EVDMA_PLAIN_DATA);
 		}
 
 		/* Always terminate with null job */
@@ -263,7 +250,7 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 			joblist[job_idx++] = EVDMA_NULL_JOB();
 			transfer_list->rx_job = &joblist[job_idx];
 			joblist[job_idx++] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-						       EVDMA_ATTRIBUTE);
+						       EVDMA_PLAIN_DATA);
 			joblist[job_idx]   = EVDMA_NULL_JOB();
 		} else {
 			/* Sending command or address while configured as target isn't supported */
@@ -271,7 +258,7 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 
 			transfer_list->rx_job = &joblist[0];
 			joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-					       EVDMA_ATTRIBUTE);
+					       EVDMA_PLAIN_DATA);
 			joblist[1] = EVDMA_NULL_JOB();
 			transfer_list->tx_job = &joblist[1];
 		}
