@@ -4833,6 +4833,7 @@ SiFli SF32LB Platforms:
   collaborators:
     - cameled
     - ck-telecom
+    - HalfSweet
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
