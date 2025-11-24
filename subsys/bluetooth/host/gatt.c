@@ -5272,6 +5272,12 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			return;
 		}
 
+		att_err = att_err_from_int(err);
+
+		if (params->subscribe) {
+			params->subscribe(conn, att_err, params);
+		}
+
 		prev = NULL;
 
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&sub->list, node, tmp) {
@@ -5281,15 +5287,15 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			}
 			prev = node;
 		}
-	} else if (!params->value) {
-		/* Notify with NULL data to complete unsubscribe */
-		params->notify(conn, params, NULL, 0);
-	}
+	} else {
+		if (params->subscribe) {
+			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
+		}
 
-	att_err = att_err_from_int(err);
-
-	if (params->subscribe) {
-		params->subscribe(conn, att_err, params);
+		if (!params->value) {
+			/* Notify with NULL data to complete unsubscribe */
+			params->notify(conn, params, NULL, 0);
+		}
 	}
 }
 
