@@ -9,7 +9,7 @@
 };
 
 &flash0 {
-	reg = <0x0 DT_SIZE_M(32)>;
+	reg = <0x0 DT_SIZE_M(64)>;
 };
 
-#include <espressif/partitions_0x0_default_32M.dtsi>
+#include <espressif/partitions_0x1000_amp_64M.dtsi>
