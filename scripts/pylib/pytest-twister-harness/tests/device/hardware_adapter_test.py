@@ -11,13 +11,14 @@ import pytest
 
 from twister_harness.device.hardware_adapter import HardwareAdapter
 from twister_harness.exceptions import TwisterHarnessException
-from twister_harness.twister_harness_config import DeviceConfig
+from twister_harness.twister_harness_config import DeviceConfig, DeviceSerialConfig
 
 
 @pytest.fixture(name='device')
 def fixture_adapter(tmp_path) -> HardwareAdapter:
     build_dir = tmp_path / 'build_dir'
     os.mkdir(build_dir)
+    serial_configs = [DeviceSerialConfig(port='')]
     device_config = DeviceConfig(
         type='hardware',
         build_dir=build_dir,
@@ -26,6 +27,7 @@ def fixture_adapter(tmp_path) -> HardwareAdapter:
         id='p_id',
         base_timeout=5.0,
         flash_command='',
+        serial_configs=serial_configs,
     )
     return HardwareAdapter(device_config)
 
@@ -214,28 +216,28 @@ def test_device_log_correct_error_handle(patched_popen, device: HardwareAdapter,
         assert 'flashing error' in file.readlines()
 
 
-@mock.patch('twister_harness.device.hardware_adapter.subprocess.Popen')
-@mock.patch('twister_harness.device.hardware_adapter.serial.Serial')
+@mock.patch('twister_harness.device.device_connection.subprocess.Popen')
+@mock.patch('twister_harness.device.device_connection.serial.Serial')
 def test_if_hardware_adapter_uses_serial_pty(
     patched_serial, patched_popen, device: HardwareAdapter, monkeypatch: pytest.MonkeyPatch
 ):
-    device.device_config.serial_pty = 'script.py'
+    device.device_config.serial_configs[0].serial_pty = 'script.py'
 
     popen_mock = mock.Mock()
     popen_mock.communicate.return_value = (b'output', b'error')
     patched_popen.return_value = popen_mock
 
-    monkeypatch.setattr('twister_harness.device.hardware_adapter.pty.openpty', lambda: (123, 456))
-    monkeypatch.setattr('twister_harness.device.hardware_adapter.os.ttyname', lambda x: f'/pty/ttytest/{x}')
+    monkeypatch.setattr('twister_harness.device.device_connection.pty.openpty', lambda: (123, 456))
+    monkeypatch.setattr('twister_harness.device.device_connection.os.ttyname', lambda x: f'/pty/ttytest/{x}')
 
     serial_mock = mock.Mock()
     serial_mock.port = '/pty/ttytest/456'
     patched_serial.return_value = serial_mock
 
-    device._device_run.set()
+    device._reader_started.set()
     device.connect()
-    assert device._serial_connection.port == '/pty/ttytest/456'  # type: ignore[union-attr]
-    assert device._serial_pty_proc
+    assert device.connections[0]._serial_connection.port == '/pty/ttytest/456'  # type: ignore[union-attr]
+    assert device.connections[0]._serial_pty_proc
     patched_popen.assert_called_with(
         ['script.py'],
         stdout=123,
@@ -244,7 +246,7 @@ def test_if_hardware_adapter_uses_serial_pty(
     )
 
     device.disconnect()
-    assert not device._serial_pty_proc
+    assert not device.connections[0]._serial_pty_proc
 
 
 def test_if_hardware_adapter_properly_send_data_to_subprocess(
@@ -255,7 +257,7 @@ def test_if_hardware_adapter_properly_send_data_to_subprocess(
     output. Flashing command is mocked by "dummy" echo command.
     """
     device.command = ['echo', 'TEST']  # only to mock flashing command
-    device.device_config.serial_pty = f'python3 {shell_simulator_path}'
+    device.device_config.serial_configs[0].serial_pty = f'python3 {shell_simulator_path}'
     device.launch()
     time.sleep(0.1)
     device.write(b'zen\n')
