@@ -12,6 +12,7 @@ for ensuring security is addressed within the Zephyr project.
 
    security-overview.rst
    reporting.rst
+   cve-assignment-criteria.rst
    secure-coding.rst
    sensor-threat.rst
    hardening-tool.rst
