@@ -50,17 +50,6 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ_NAME     usb
 #endif
 
-/* Shorthand to obtain PHY node for an instance */
-#define UDC_STM32_PHY(usb_node)			DT_PROP_BY_IDX(usb_node, phys, 0)
-
-/* Evaluates to 1 if PHY of 'usb_node' is an embedded HS PHY, 0 otherwise */
-#define UDC_STM32_PHY_HAS_EMBEDDED_HS_COMPAT(usb_node)					\
-	UTIL_OR(DT_NODE_HAS_COMPAT(UDC_STM32_PHY(usb_node), st_stm32_usbphyc),		\
-		DT_NODE_HAS_COMPAT(UDC_STM32_PHY(usb_node), st_stm32u5_otghs_phy))
-
-/* Evaluates to 1 if 'usb_node' is HS-capable, 0 otherwise. */
-#define UDC_STM32_NODE_IS_HS_CAPABLE(usb_node)	DT_NODE_HAS_COMPAT(usb_node, st_stm32_otghs)
-
 /*
  * Returns the 'PCD_PHY_Module' value for 'usb_node', which
  * corresponds to the PHY interface that should be used by
@@ -83,14 +72,12 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  *  - Others ('usb-nop-xceiv') are assumed to be embedded FS PHYs
  */
 #define UDC_STM32_NODE_PHY_ITFACE(usb_node)					\
-	COND_CODE_0(UDC_STM32_NODE_IS_HS_CAPABLE(usb_node),			\
-		(PCD_PHY_EMBEDDED),						\
-	(COND_CODE_1(DT_NODE_HAS_COMPAT(UDC_STM32_PHY(usb_node), usb_ulpi_phy),	\
+	COND_CODE_1(USB_STM32_NODE_PHY_IS_ULPI(usb_node),			\
 		(PCD_PHY_ULPI),							\
-	(COND_CODE_1(UDC_STM32_PHY_HAS_EMBEDDED_HS_COMPAT(usb_node),		\
+	(COND_CODE_1(USB_STM32_NODE_PHY_IS_EMBEDDED_HS(usb_node),		\
 		(PCD_PHY_UTMI),							\
 		(PCD_PHY_EMBEDDED))						\
-	))))
+	))
 
 /*
  * Evaluates to 1 if 'usb_node' uses an embedded FS PHY or has
@@ -112,7 +99,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * other uses are invalid and silently ignored.
  */
 #define UDC_STM32_NODE_SPEED(usb_node)					\
-	COND_CODE_0(UDC_STM32_NODE_IS_HS_CAPABLE(usb_node),		\
+	COND_CODE_0(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),		\
 		(PCD_SPEED_FULL),					\
 	(COND_CODE_1(UDC_STM32_NODE_LIMITED_TO_FS(usb_node),		\
 		(PCD_SPEED_HIGH_IN_FULL),				\
@@ -1298,7 +1285,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.thread_stack = udc0_thr_stk,
 	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
 	.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),
-	.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(UDC_STM32_PHY(DT_DRV_INST(0)), reset_gpios, {0}),
+	.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(USB_STM32_PHY(DT_DRV_INST(0)), reset_gpios, {0}),
 };
 
 static int udc_stm32_clock_enable(const struct device *dev)
