@@ -271,15 +271,13 @@
 .endm
 
 .macro z_dspic_do_swap
-    /* Set the SPLIM to end of RAM
-     * To avoid, stack overflow fault.
-     */
 	/* Switch to context 0 before starting context save and restore
 	 * This Arch has 7 context and each has banked register sets for w0-w8
 	 * So in interrupt we are in ctx 1 and need to go to ctx 0 for tasks
 	 */
     ctxtswp #0x0
-
+    nop
+    nop
     /* Save the current context
      */
     z_dspic_stack_thread_to_irq

@@ -130,6 +130,39 @@ Building
 
       west build -p always -b dspic33a_curiosity/<qualifier> samples/hello_world/ -- -DZEPHYR_TOOLCHAIN_VARIANT=xcdsc -DXCDSC_TOOLCHAIN_PATH=/opt/microchip/xc-dsc/<version>
 
+Optimizations
+-------------
+
+The XC-DSC toolchain hooks its optimization levels in
+``cmake/compiler/xcdsc/compiler_flags.cmake`` by mapping Zephyr's generic
+properties to concrete compiler flags. In this file:
+
+* ``optimization_speed`` uses ``-O2``.
+* ``optimization_size`` uses ``-O2``.
+* ``optimization_size_aggressive`` uses ``-Os``.
+* ``optimization_debug`` uses ``-O1``.
+
+In general, :kconfig:option:`CONFIG_SIZE_OPTIMIZATIONS` is enabled in the base
+configuration, so Zephyr picks ``optimization_size`` and therefore ``-O2`` for
+every ``west build`` unless you override the setting in your **application
+prj.conf** (the configuration that sits inside your sample or app directory,
+not a global project file).
+
+To change that default, set one of these options in your application's
+``prj.conf`` and rebuild:
+
+- ``CONFIG_SIZE_OPTIMIZATIONS`` (Zephyr default) keeps the ``-O2`` size profile.
+- ``CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE`` switches to ``optimization_size_aggressive``,
+  which adds the ``-Os`` mapping described in ``compiler_flags.cmake``. This
+  level is only available when your XC-DSC compiler is licensed.
+- ``CONFIG_SPEED_OPTIMIZATIONS`` selects ``optimization_speed`` (``-O2``).
+- ``CONFIG_DEBUG_OPTIMIZATIONS`` selects ``optimization_debug`` (``-O1``).
+- ``CONFIG_NO_OPTIMIZATIONS`` forces (``-O0``).
+
+After saving the desired configuration in your application's ``prj.conf``, rerun
+``west build`` and the build system will regenerate all XC-DSC command lines
+with the matching optimization level, no edits to the CMake files are required.
+
 Flashing
 ========
 #. Run your favorite terminal program to listen for output.

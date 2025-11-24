@@ -6,6 +6,8 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
+/* SOC level init for dspic33a family of chips
+ */
 void soc_early_init_hook(void)
 {
 }

@@ -16,15 +16,17 @@
     .type __COMMONInterrupt,@function
 __COMMONInterrupt:
     .section .isr.text._COMMONInterrupt,keep,code,keep
+    mov.sl #__irq_vector_table+4, w0
+    subr.l w0, [--w15], w0
+    lsr w0, #2, w0
     lnk #0x4
     /* Handle ISR calls and clear handles IRQ
      */
     mov.l w8, [w15++]
     mov.sl #__kernel + ___cpu_t_nested_OFFSET,w8
     add.l [w8],#1,[w8]
-    mov.w _INTTREGbits,w0
-    and.l #0x1ff,w0
-    sub.l w0,#9,w0
+
+    mov.l w0, [w15++]
     mov.sl #__sw_isr_table,w1
     sl.l w0,#3,w0
     add.l w0,w1,w2
@@ -32,9 +34,7 @@ __COMMONInterrupt:
     mov.l [w2],w0
 
     call	w1
-    mov.w _INTTREGbits,w0
-    and.l #0x1ff,w0
-    sub.l w0,#9,w0
+    mov.l [--w15], w0
     call	_arch_dspic_irq_clear
 
     /* Check and perform context switch
@@ -54,6 +54,8 @@ __COMMONInterrupt:
     bra	z,.L2
     ulnk
     CTXTSWP #0x0
+    nop
+    nop
     z_dspic_save_caller_saved
     z_dspic_save_callee_saved
 

@@ -96,7 +96,7 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	ARG_UNUSED(usec_to_wait);
 	__asm__ volatile("sl.l w0,#0x03,w0\n\t"
 			 "repeat.w w0\n\t"
-			 "neop\n\n\t");
+			 "nop\n\n\t");
 }
 #endif
 

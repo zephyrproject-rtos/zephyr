@@ -15,6 +15,18 @@ Microchip Technology featuring a high-performance 32-bit CPU core with DSP
 capabilities, integrated FPU, and rich peripheral set. The family is designed
 for real-time control applications requiring signal processing capabilities.
 
+dsPIC33A on Zephyr
+******************
+.. image:: ./images/block_diagram.png
+   :align: center          
+
+The dsPIC33A port provides:
+
+- **Board support:** the dsPIC33A Curiosity Platform baseboard (EV74H48A) fitted with either the dsPIC33AK128MC106 or dsPIC33AK512MPS512 DIM modules.
+- **SoC support:** both dsPIC33AK128MC106 (128 KB flash / 16 KB RAM) and dsPIC33AK512MPS512 (512 KB flash / 64 KB RAM) devices.
+- **Driver coverage:** dsPIC33-specific pin control, GPIO, UART console, and system timer drivers.
+- **Basic services:** console output, logging back ends, and idle/power management.
+
 Key supported features
 **********************
 
