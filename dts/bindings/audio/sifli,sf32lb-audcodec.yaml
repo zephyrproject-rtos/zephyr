@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sifli SF32LB audio codec.
+
+compatible: "sifli,sf32lb-audcodec"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+
+  pa-power-gpios:
+    type: phandle-array  # Mandatory for GPIO properties
+    description: |
+      Power Amplifier (PA) enable GPIO.
+      This GPIO controls the power state of the external audio power amplifier.
+      The property takes a phandle to a GPIO controller plus pin number and flags.
+      Example: <&gpio0 5 GPIO_ACTIVE_HIGH> (GPIO 0, pin 5, active high).
+    required: true
