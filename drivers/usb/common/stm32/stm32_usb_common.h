@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_USB_COMMON_STM32_STM32_USB_COMMON_H_
+#define ZEPHYR_DRIVERS_USB_COMMON_STM32_STM32_USB_COMMON_H_
+
+/**
+ * @brief Configures the Power Controller as necessary
+ * for proper operation of the USB controllers
+ *
+ * @returns 0 on success, negative error code otherwise.
+ */
+int stm32_usb_pwr_enable(void);
+
+#endif /* ZEPHYR_DRIVERS_USB_COMMON_STM32_STM32_USB_COMMON_H_ */
