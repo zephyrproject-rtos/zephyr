@@ -19,10 +19,21 @@ if I2C_MCHP_SERCOM
 
 config I2C_MCHP_INTERRUPT_DRIVEN
 	bool "Interrupt support for Microchip I2C devices"
-	default y
+	depends on !I2C_MCHP_DMA_DRIVEN
 	help
 	  This enables INTERRUPT driven transactions for the I2C peripheral.
 	  interrupt driven mode can be used in blocking & non blocking mode.
+
+config I2C_MCHP_DMA_DRIVEN
+	bool "DMA support for Microchip I2C devices"
+	default y
+	depends on I2C_CALLBACK
+	depends on DMA
+	help
+	  This enables DMA driven transactions for the I2C peripheral.
+	  DMA driven mode requires fewer interrupts to handle the
+	  transaction and ensures that high speed modes are not delayed
+	  by data reloading.
 
 config I2C_MCHP_TARGET
 	bool "Target device support for Microchip I2C devices"
