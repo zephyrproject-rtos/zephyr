@@ -19,7 +19,7 @@
  *
  * @defgroup audio_codec_interface Audio Codec Interface
  * @since 1.13
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup audio_interface
  * @{
  */
@@ -35,66 +35,67 @@ extern "C" {
  * PCM audio sample rates
  */
 typedef enum {
-	AUDIO_PCM_RATE_8K	= 8000,		/**< 8 kHz sample rate */
-	AUDIO_PCM_RATE_11P025K	= 11025,	/**< 11.025 kHz sample rate */
-	AUDIO_PCM_RATE_16K	= 16000,	/**< 16 kHz sample rate */
-	AUDIO_PCM_RATE_22P05K	= 22050,	/**< 22.05 kHz sample rate */
-	AUDIO_PCM_RATE_24K	= 24000,	/**< 24 kHz sample rate */
-	AUDIO_PCM_RATE_32K	= 32000,	/**< 32 kHz sample rate */
-	AUDIO_PCM_RATE_44P1K	= 44100,	/**< 44.1 kHz sample rate */
-	AUDIO_PCM_RATE_48K	= 48000,	/**< 48 kHz sample rate */
-	AUDIO_PCM_RATE_96K	= 96000,	/**< 96 kHz sample rate */
-	AUDIO_PCM_RATE_192K	= 192000,	/**< 192 kHz sample rate */
+	AUDIO_PCM_RATE_8K = 8000,       /**< 8 kHz sample rate */
+	AUDIO_PCM_RATE_11P025K = 11025, /**< 11.025 kHz sample rate */
+	AUDIO_PCM_RATE_16K = 16000,     /**< 16 kHz sample rate */
+	AUDIO_PCM_RATE_22P05K = 22050,  /**< 22.05 kHz sample rate */
+	AUDIO_PCM_RATE_24K = 24000,     /**< 24 kHz sample rate */
+	AUDIO_PCM_RATE_32K = 32000,     /**< 32 kHz sample rate */
+	AUDIO_PCM_RATE_44P1K = 44100,   /**< 44.1 kHz sample rate */
+	AUDIO_PCM_RATE_48K = 48000,     /**< 48 kHz sample rate */
+	AUDIO_PCM_RATE_96K = 96000,     /**< 96 kHz sample rate */
+	AUDIO_PCM_RATE_192K = 192000,   /**< 192 kHz sample rate */
 } audio_pcm_rate_t;
 
 /**
  * PCM audio sample bit widths
  */
 typedef enum {
-	AUDIO_PCM_WIDTH_16_BITS	= 16,	/**< 16-bit sample width */
-	AUDIO_PCM_WIDTH_20_BITS	= 20,	/**< 20-bit sample width */
-	AUDIO_PCM_WIDTH_24_BITS	= 24,	/**< 24-bit sample width */
-	AUDIO_PCM_WIDTH_32_BITS	= 32,	/**< 32-bit sample width */
+	AUDIO_PCM_WIDTH_16_BITS = 16, /**< 16-bit sample width */
+	AUDIO_PCM_WIDTH_20_BITS = 20, /**< 20-bit sample width */
+	AUDIO_PCM_WIDTH_24_BITS = 24, /**< 24-bit sample width */
+	AUDIO_PCM_WIDTH_32_BITS = 32, /**< 32-bit sample width */
 } audio_pcm_width_t;
 
 /**
  * Digital Audio Interface (DAI) type
  */
 typedef enum {
-	AUDIO_DAI_TYPE_I2S,	/**< I2S Interface */
-	AUDIO_DAI_TYPE_LEFT_JUSTIFIED,	/**< I2S Interface, left justified */
-	AUDIO_DAI_TYPE_RIGHT_JUSTIFIED,	/**< I2S Interface, right justified */
-	AUDIO_DAI_TYPE_PCMA,		/**< PCM Interface, variant A */
-	AUDIO_DAI_TYPE_PCMB,		/**< PCM Interface, variant B */
-	AUDIO_DAI_TYPE_INVALID,	/**< Other interfaces can be added here */
+	AUDIO_DAI_TYPE_I2S,             /**< I2S Interface */
+	AUDIO_DAI_TYPE_LEFT_JUSTIFIED,  /**< I2S Interface, left justified */
+	AUDIO_DAI_TYPE_RIGHT_JUSTIFIED, /**< I2S Interface, right justified */
+	AUDIO_DAI_TYPE_PCMA,            /**< PCM Interface, variant A */
+	AUDIO_DAI_TYPE_PCMB,            /**< PCM Interface, variant B */
+	AUDIO_DAI_TYPE_PCM,             /**< PCM Interface */
+	AUDIO_DAI_TYPE_INVALID,         /**< Other interfaces can be added here */
 } audio_dai_type_t;
 
 /**
  * Codec properties that can be set by audio_codec_set_property().
  */
 typedef enum {
-	AUDIO_PROPERTY_OUTPUT_VOLUME,	/**< Output volume */
-	AUDIO_PROPERTY_OUTPUT_MUTE,	/**< Output mute/unmute */
-	AUDIO_PROPERTY_INPUT_VOLUME,	/**< Input volume */
-	AUDIO_PROPERTY_INPUT_MUTE	/**< Input mute/unmute */
+	AUDIO_PROPERTY_OUTPUT_VOLUME, /**< Output volume */
+	AUDIO_PROPERTY_OUTPUT_MUTE,   /**< Output mute/unmute */
+	AUDIO_PROPERTY_INPUT_VOLUME,  /**< Input volume */
+	AUDIO_PROPERTY_INPUT_MUTE     /**< Input mute/unmute */
 } audio_property_t;
 
 /**
  * Audio channel identifiers to use in audio_codec_set_property().
  */
 typedef enum {
-	AUDIO_CHANNEL_FRONT_LEFT,	/**< Front left channel */
-	AUDIO_CHANNEL_FRONT_RIGHT,	/**< Front right channel */
-	AUDIO_CHANNEL_LFE,		/**< Low frequency effect channel */
-	AUDIO_CHANNEL_FRONT_CENTER,	/**< Front center channel */
-	AUDIO_CHANNEL_REAR_LEFT,	/**< Rear left channel */
-	AUDIO_CHANNEL_REAR_RIGHT,	/**< Rear right channel */
-	AUDIO_CHANNEL_REAR_CENTER,	/**< Rear center channel */
-	AUDIO_CHANNEL_SIDE_LEFT,	/**< Side left channel */
-	AUDIO_CHANNEL_SIDE_RIGHT,	/**< Side right channel */
-	AUDIO_CHANNEL_HEADPHONE_LEFT,   /**< Headphone left */
-	AUDIO_CHANNEL_HEADPHONE_RIGHT,  /**< Headphone right */
-	AUDIO_CHANNEL_ALL,		/**< All channels */
+	AUDIO_CHANNEL_FRONT_LEFT,      /**< Front left channel */
+	AUDIO_CHANNEL_FRONT_RIGHT,     /**< Front right channel */
+	AUDIO_CHANNEL_LFE,             /**< Low frequency effect channel */
+	AUDIO_CHANNEL_FRONT_CENTER,    /**< Front center channel */
+	AUDIO_CHANNEL_REAR_LEFT,       /**< Rear left channel */
+	AUDIO_CHANNEL_REAR_RIGHT,      /**< Rear right channel */
+	AUDIO_CHANNEL_REAR_CENTER,     /**< Rear center channel */
+	AUDIO_CHANNEL_SIDE_LEFT,       /**< Side left channel */
+	AUDIO_CHANNEL_SIDE_RIGHT,      /**< Side right channel */
+	AUDIO_CHANNEL_HEADPHONE_LEFT,  /**< Headphone left */
+	AUDIO_CHANNEL_HEADPHONE_RIGHT, /**< Headphone right */
+	AUDIO_CHANNEL_ALL,             /**< All channels */
 
 	/**
 	 * Number of all common channel identifiers.
@@ -114,13 +115,43 @@ typedef enum {
 } audio_channel_t;
 
 /**
+ * DAI Direction Bitmap
+ */
+typedef uint8_t audio_dai_dir_t;
+/** Transmit data */
+#define AUDIO_DAI_DIR_TX   BIT(0)
+/** Receive data */
+#define AUDIO_DAI_DIR_RX   BIT(1)
+/** Both receive and transmit data */
+#define AUDIO_DAI_DIR_TXRX (AUDIO_DAI_DIR_TX | AUDIO_DAI_DIR_RX)
+
+/** @struct pcm_config
+ * @brief PCM configuration options.
+ */
+struct pcm_config {
+	/** pcm direction */
+	audio_dai_dir_t dir;
+	/** Number of bits representing one data word. */
+	audio_pcm_width_t pcm_width;
+	/** Number of channels per frame. */
+	uint8_t channels;
+	/** Size of one RX/TX memory block (buffer) in bytes,
+	 * it should be a multiple of 4 for some DMA limits.
+	 */
+	size_t block_size;
+	/** pcm samplerate */
+	audio_pcm_rate_t samplerate;
+};
+
+/**
  * @brief Digital Audio Interface Configuration.
  *
  * Configuration is dependent on DAI type
  */
 typedef union {
-	struct i2s_config i2s;	/**< I2S configuration */
-				/* Other DAI types go here */
+	struct i2s_config i2s; /**< I2S configuration */
+	struct pcm_config pcm; /**< PCM configuration */
+			       /* Other DAI types go here */
 } audio_dai_cfg_t;
 
 /*
@@ -137,18 +168,18 @@ typedef enum {
  * Codec configuration parameters
  */
 struct audio_codec_cfg {
-	uint32_t		mclk_freq;	/**< MCLK input frequency in Hz */
-	audio_dai_type_t	dai_type;	/**< Digital interface type */
-	audio_dai_cfg_t		dai_cfg;	/**< DAI configuration info */
-	audio_route_t		dai_route;	/**< Codec route type */
+	uint32_t mclk_freq;        /**< MCLK input frequency in Hz */
+	audio_dai_type_t dai_type; /**< Digital interface type */
+	audio_dai_cfg_t dai_cfg;   /**< DAI configuration info */
+	audio_route_t dai_route;   /**< Codec route type */
 };
 
 /**
  * Codec property values
  */
 typedef union {
-	int	vol;	/**< Volume level (codec-specific) */
-	bool	mute;	/**< Mute if @a true, unmute if @a false */
+	int vol;   /**< Volume level (codec-specific) */
+	bool mute; /**< Mute if @a true, unmute if @a false */
 } audio_property_value_t;
 
 /**
@@ -181,25 +212,48 @@ enum audio_codec_error_type {
 typedef void (*audio_codec_error_callback_t)(const struct device *dev, uint32_t errors);
 
 /**
+ * @typedef audio_codec_tx_done_callback_t
+ * @brief Callback for one frame(block memory) size data transmitted
+ *
+ * @param dev Pointer to the codec device
+ * @param user_data Pointer to user data
+ */
+typedef void (*audio_codec_tx_done_callback_t)(const struct device *dev, void *user_data);
+
+/**
+ * @typedef audio_codec_rx_done_callback_t
+ * @brief Callback for coming one frame size data
+ *
+ * @param dev Pointer to the codec device
+ * @param buf Pointer to received data
+ * @param len received data size in bytes
+ * @param user_data Pointer to user data
+ */
+typedef void (*audio_codec_rx_done_callback_t)(const struct device *dev, uint8_t *buf, uint32_t len,
+					       void *user_data);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * For internal use only, skip these in public documentation.
  */
 struct audio_codec_api {
-	int (*configure)(const struct device *dev,
-			 struct audio_codec_cfg *cfg);
+	int (*configure)(const struct device *dev, struct audio_codec_cfg *cfg);
 	void (*start_output)(const struct device *dev);
 	void (*stop_output)(const struct device *dev);
-	int (*set_property)(const struct device *dev,
-			    audio_property_t property,
-			    audio_channel_t channel,
-			    audio_property_value_t val);
+	int (*set_property)(const struct device *dev, audio_property_t property,
+			    audio_channel_t channel, audio_property_value_t val);
 	int (*apply_properties)(const struct device *dev);
 	int (*clear_errors)(const struct device *dev);
-	int (*register_error_callback)(const struct device *dev,
-			 audio_codec_error_callback_t cb);
+	int (*register_error_callback)(const struct device *dev, audio_codec_error_callback_t cb);
 	int (*route_input)(const struct device *dev, audio_channel_t channel, uint32_t input);
 	int (*route_output)(const struct device *dev, audio_channel_t channel, uint32_t output);
+	int (*start)(const struct device *dev, audio_dai_dir_t dir);
+	int (*stop)(const struct device *dev, audio_dai_dir_t dir);
+	int (*write)(const struct device *dev, uint8_t *data, size_t data_size);
+	int (*register_done_callback)(const struct device *dev,
+				      audio_codec_tx_done_callback_t tx_cb, void *tx_cb_user_data,
+				      audio_codec_rx_done_callback_t rx_cb, void *rx_cb_user_data);
 };
 /**
  * @endcond
@@ -216,11 +270,9 @@ struct audio_codec_api {
  *
  * @return 0 on success, negative error code on failure
  */
-static inline int audio_codec_configure(const struct device *dev,
-					struct audio_codec_cfg *cfg)
+static inline int audio_codec_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -234,8 +286,7 @@ static inline int audio_codec_configure(const struct device *dev,
  */
 static inline void audio_codec_start_output(const struct device *dev)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	api->start_output(dev);
 }
@@ -249,8 +300,7 @@ static inline void audio_codec_start_output(const struct device *dev)
  */
 static inline void audio_codec_stop_output(const struct device *dev)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	api->stop_output(dev);
 }
@@ -267,13 +317,10 @@ static inline void audio_codec_stop_output(const struct device *dev)
  *
  * @return 0 on success, negative error code on failure
  */
-static inline int audio_codec_set_property(const struct device *dev,
-					   audio_property_t property,
-					   audio_channel_t channel,
-					   audio_property_value_t val)
+static inline int audio_codec_set_property(const struct device *dev, audio_property_t property,
+					   audio_channel_t channel, audio_property_value_t val)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	return api->set_property(dev, property, channel, val);
 }
@@ -291,8 +338,7 @@ static inline int audio_codec_set_property(const struct device *dev,
  */
 static inline int audio_codec_apply_properties(const struct device *dev)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	return api->apply_properties(dev);
 }
@@ -309,8 +355,7 @@ static inline int audio_codec_apply_properties(const struct device *dev)
  */
 static inline int audio_codec_clear_errors(const struct device *dev)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	if (api->clear_errors == NULL) {
 		return -ENOSYS;
@@ -334,10 +379,9 @@ static inline int audio_codec_clear_errors(const struct device *dev)
  * @return 0 if successful, negative errno code if failure.
  */
 static inline int audio_codec_register_error_callback(const struct device *dev,
-				     audio_codec_error_callback_t cb)
+						      audio_codec_error_callback_t cb)
 {
-	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->api;
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
 
 	if (api->register_error_callback == NULL) {
 		return -ENOSYS;
@@ -394,6 +438,108 @@ static inline int audio_codec_route_output(const struct device *dev, audio_chann
 	}
 
 	return api->route_output(dev, channel, output);
+}
+
+/**
+ * @brief Set codec to start audio playback or capture
+ *
+ * Setup the audio codec device to start the audio playback or capture
+ *
+ * @param dev Pointer to the device structure for codec driver instance.
+ * @param dir device audio playback and capture selection.
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_start(const struct device *dev, audio_dai_dir_t dir)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->start == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->start(dev, dir);
+}
+
+/**
+ * @brief Set codec to stop audio playback or capture.
+ *
+ * Setup the audio codec device to stop the audio playback or capture.
+ *
+ * @param dev Pointer to the device structure for codec driver instance.
+ * @param dir device audio playback and capture selection.
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_stop(const struct device *dev, audio_dai_dir_t dir)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->stop == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->stop(dev, dir);
+}
+
+/**
+ * @brief  write one block size data for audio playback.
+ *
+ * Write audio data to the device for audio playback without waiting for the data
+ * to be transmitted. This is a non-blocking API: the function returns as soon
+ * as the driver has accepted (or rejected) the buffer, not when the audio data
+ * has actually been played out.
+ *
+ * @param dev Pointer to the device structure for codec driver instance.
+ * @param data Pointer to data.
+ * @param data_size data size in bytes.
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_write(const struct device *dev, uint8_t *data, size_t data_size)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->write == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->write(dev, data, data_size);
+}
+
+/**
+ * @brief Register a callback function for codec one frame data tx/rx done.
+ *
+ * The callback will be called from a DMA ISR (interrupt) context.
+ * Callbacks must therefore:
+ * - Be very short and avoid deep call stacks or large stack allocations,
+ *   since the ISR stack is limited.
+ * - Do not sleep or block (do not wait on semaphores, mutexes, queues, etc.).
+ * - Only call APIs that are explicitly documented as IRQ/ISR-safe.
+ * - Avoid heavy processing or extensive logging; instead, defer such work
+ *   to thread or workqueue context (for example, by submitting a work item).
+ *
+ * @param dev Pointer to the audio codec device
+ * @param tx_cb The function that should be called when an DMA frame transmitted
+ * @param tx_cb_user_data The user data that will be passed to tx_cb
+ * @param rx_cb The function that should be called when an DMA frame received
+ * @param rx_cb_user_data The user data that will be passed to rx_cb
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_register_done_callback(const struct device *dev,
+						     audio_codec_tx_done_callback_t tx_cb,
+						     void *tx_cb_user_data,
+						     audio_codec_rx_done_callback_t rx_cb,
+						     void *rx_cb_user_data)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->register_done_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->register_done_callback(dev, tx_cb, tx_cb_user_data, rx_cb, rx_cb_user_data);
 }
 
 #ifdef __cplusplus
