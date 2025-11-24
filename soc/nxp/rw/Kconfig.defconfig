@@ -28,19 +28,14 @@ config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
 config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
 	default y
 
-#if (BT || WIFI_NM_WPA_SUPPLICANT)
-
 config MBEDTLS_USER_CONFIG_ENABLE
 	default y
+	depends on BT || WIFI_NM_WPA_SUPPLICANT
 
 config MBEDTLS_USER_CONFIG_FILE
-	string "mbedTLS user config file"
-	default "ble_els_pkc_mbedtls_psa_config.h" if BT
+	depends on MBEDTLS_USER_CONFIG_ENABLE
+	default "ble_els_pkc_mbedtls_psa_config.h" if BT && !WIFI_NM_WPA_SUPPLICANT
 	default "wpa_supp_els_pkc_mbedtls_config.h" if WIFI_NM_WPA_SUPPLICANT
-	help
-		Automatically select mbedTLS config file based on enabled modules.
-
-#endif # (BT || WIFI_NM_WPA_SUPPLICANT)
 
 endif # MBEDTLS_PSA_CRYPTO_C
 
