@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ENSEMBLE
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_ENSEMBLE
