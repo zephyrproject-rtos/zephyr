@@ -348,6 +348,11 @@ static int getopt_internal(struct sys_getopt_state *state, int nargc, char *cons
 		return -1;
 	}
 
+	/* Reset if optind is 0 */
+	if (state->optind == 0) {
+		sys_getopt_init_r(state);
+	}
+
 	/*
 	 * Disable GNU extensions if options string begins with a '+'.
 	 */
@@ -366,14 +371,6 @@ static int getopt_internal(struct sys_getopt_state *state, int nargc, char *cons
 #endif
 	if (*options == '+' || *options == '-') {
 		options++;
-	}
-
-	/*
-	 * XXX Some GNU programs (like cvs) set optind to 0 instead of
-	 * XXX using optreset.  Work around this braindamage.
-	 */
-	if (state->optind == 0) {
-		state->optind = state->optreset = 1;
 	}
 
 	state->optarg = NULL;
@@ -568,6 +565,13 @@ start:
  * getopt_long --
  *	Parse argc/argv argument vector.
  */
+int sys_getopt_long_r(int nargc, char *const *nargv, const char *options,
+		      const struct sys_getopt_option *long_options, int *idx,
+		      struct sys_getopt_state *state)
+{
+	return getopt_internal(state, nargc, nargv, options, long_options, idx, FLAG_PERMUTE);
+}
+
 int sys_getopt_long(int nargc, char *const *nargv, const char *options,
 		    const struct sys_getopt_option *long_options, int *idx)
 {
@@ -588,6 +592,14 @@ int sys_getopt_long(int nargc, char *const *nargv, const char *options,
  * getopt_long_only --
  *	Parse argc/argv argument vector.
  */
+int sys_getopt_long_only_r(int nargc, char *const *nargv, const char *options,
+			   const struct sys_getopt_option *long_options, int *idx,
+			   struct sys_getopt_state *state)
+{
+	return getopt_internal(state, nargc, nargv, options, long_options, idx,
+			       FLAG_PERMUTE | FLAG_LONGONLY);
+}
+
 int sys_getopt_long_only(int nargc, char *const *nargv, const char *options,
 			 const struct sys_getopt_option *long_options, int *idx)
 {

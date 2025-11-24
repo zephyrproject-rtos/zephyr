@@ -54,10 +54,6 @@ void z_getopt_global_state_update(struct sys_getopt_state *state)
 	sys_getopt_optopt = state->optopt;
 	sys_getopt_optreset = state->optreset;
 	sys_getopt_optarg = state->optarg;
-
-	if (!IS_ENABLED(CONFIG_NATIVE_LIBC) && IS_ENABLED(CONFIG_POSIX_C_LIB_EXT)) {
-		z_getopt_global_state_update_shim(state);
-	}
 }
 
 /* It is internal getopt API function, it shall not be called by the user. */

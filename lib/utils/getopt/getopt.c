@@ -40,12 +40,8 @@ LOG_MODULE_REGISTER(sys_getopt);
 #define BADARG ((int)':')
 #define EMSG   ""
 
-void sys_getopt_init(void)
+void sys_getopt_init_r(struct sys_getopt_state *state)
 {
-	struct sys_getopt_state *state;
-
-	state = sys_getopt_state_get();
-
 	state->opterr = 1;
 	state->optind = 1;
 	state->optopt = 0;
@@ -58,25 +54,30 @@ void sys_getopt_init(void)
 	state->nonopt_start = -1; /* first non option argument (for permute) */
 	state->nonopt_end = -1;   /* first option after non options (for permute) */
 #endif
+}
 
-	sys_getopt_opterr = 1;
-	sys_getopt_optind = 1;
-	sys_getopt_optopt = 0;
-	sys_getopt_optreset = 0;
-	sys_getopt_optarg = NULL;
+void sys_getopt_init(void)
+{
+	struct sys_getopt_state *state;
+
+	state = sys_getopt_state_get();
+
+	sys_getopt_init_r(state);
+	z_getopt_global_state_update(state);
 }
 
 /*
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int sys_getopt(int nargc, char *const nargv[], const char *ostr)
+int sys_getopt_r(int nargc, char *const nargv[], const char *ostr, struct sys_getopt_state *state)
 {
-	struct sys_getopt_state *state;
 	char *oli; /* option letter list index */
 
-	/* get getopt state of the current thread */
-	state = sys_getopt_state_get();
+	/* Reset if optind is 0 */
+	if (state->optind == 0) {
+		sys_getopt_init_r(state);
+	}
 
 	if (state->optreset || *state->place == 0) { /* update scanning pointer */
 		state->optreset = 0;
@@ -84,7 +85,6 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 		if (state->optind >= nargc || *state->place++ != '-') {
 			/* Argument is absent or is not an option */
 			state->place = EMSG;
-			z_getopt_global_state_update(state);
 			return -1;
 		}
 		state->optopt = *state->place++;
@@ -92,7 +92,6 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 			/* "--" => end of options */
 			++state->optind;
 			state->place = EMSG;
-			z_getopt_global_state_update(state);
 			return -1;
 		}
 		if (state->optopt == 0) {
@@ -101,7 +100,6 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 			 */
 			state->place = EMSG;
 			if (strchr(ostr, '-') == NULL) {
-				z_getopt_global_state_update(state);
 				return -1;
 			}
 			state->optopt = '-';
@@ -119,7 +117,6 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 		if (state->opterr && *ostr != ':') {
 			LOG_DBG("illegal option -- %c", state->optopt);
 		}
-		z_getopt_global_state_update(state);
 		return BADCH;
 	}
 
@@ -142,18 +139,32 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 			/* option-argument absent */
 			state->place = EMSG;
 			if (*ostr == ':') {
-				z_getopt_global_state_update(state);
 				return BADARG;
 			}
 			if (state->opterr) {
 				LOG_DBG("option requires an argument -- %c", state->optopt);
 			}
-			z_getopt_global_state_update(state);
 			return BADCH;
 		}
 		state->place = EMSG;
 		++state->optind;
 	}
-	z_getopt_global_state_update(state);
 	return state->optopt; /* return option letter */
+}
+
+/*
+ * getopt --
+ *	Parse argc/argv argument vector.
+ */
+int sys_getopt(int nargc, char *const nargv[], const char *ostr)
+{
+	struct sys_getopt_state *state;
+	int ret;
+
+	/* Get state of the current thread */
+	state  = sys_getopt_state_get();
+	ret = sys_getopt_r(nargc, nargv, ostr, state);
+
+	z_getopt_global_state_update(state);
+	return ret;
 }
