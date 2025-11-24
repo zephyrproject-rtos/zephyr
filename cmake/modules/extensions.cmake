@@ -1771,10 +1771,6 @@ function(zephyr_syscall_include_directories)
       syscalls_interface INTERFACE
       ${include_dir}
     )
-    add_dependencies(
-      syscalls_interface
-      ${include_dir}
-    )
 
     unset(include_dir)
   endforeach()
@@ -1793,10 +1789,6 @@ function(zephyr_syscall_header)
 
     target_sources(
       syscalls_interface INTERFACE
-      ${header_file}
-    )
-    add_dependencies(
-      syscalls_interface
       ${header_file}
     )
 
