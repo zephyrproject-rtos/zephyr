@@ -1564,9 +1564,8 @@ The ``--device-serial`` option denotes the serial device the board is connected 
 This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
 If the platform supports multiple serial ports, you can provide ``--device-serial``
-multiple times, and it will be passed to the pytest harness.
-However, currently the pytest-twister-harness plugin handles only the first serial port,
-other ports must be opened manually in the test code.
+multiple times, and it will be passed to the pytest harness. Alternatively you can use
+the hardware map, see :ref:`multi-core testing <twister_multi_core_testing>` for more details
 
 The ``--device-serial-baud`` option is only needed if your device does not run at
 115200 baud.
@@ -1913,6 +1912,34 @@ Using Single Board For Multiple Variants
       product: J-Link
       runner: nrfjprog
       serial: /dev/ttyACM1
+
+.. _twister_multi_core_testing:
+
+Multi-Core testing support
+--------------------------
+
+Twister supports testing multi-core applications where different cores use
+separate UART interfaces. This feature works only with the pytest harness
+(``harness: pytest``). Generated hardware map should contain multiple entries
+for the same physical device, each representing a different core connection.
+For example:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 001234567890
+      serial: /dev/ttyACM0
+    - connected: true
+      id: 001234567890
+      platform:
+      - nrf54l15dk/nrf54l15/cpuapp
+      product: J-Link
+      runner: nrfutil
+      serial: /dev/ttyACM1
+
+Both instances share the same device ID but have different serial ports, allowing
+tests to interact with multiple cores simultaneously. Each connection
+is handled independently with separate log files.
 
 Quarantine
 ----------
