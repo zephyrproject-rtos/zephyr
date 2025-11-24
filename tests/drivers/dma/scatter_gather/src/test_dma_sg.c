@@ -66,7 +66,7 @@ static int test_sg(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
+	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
