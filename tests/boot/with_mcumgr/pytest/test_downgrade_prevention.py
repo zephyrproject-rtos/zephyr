@@ -48,7 +48,7 @@ def test_downgrade_prevention(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     match_no_lines(output, ['Starting swap using move algorithm'])
     match_lines(output, ['erased due to downgrade prevention'])
     logger.info('Verify that the original APP is booted')
