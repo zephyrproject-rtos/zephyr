@@ -26,6 +26,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,canbus = &flexcan3;
+		zephyr,edac = &mecc1;
 	};
 
 	hyperram0: memory@14000000 {
@@ -155,5 +156,13 @@ temp_sensor: &tmpsns {
 
 &sema1 {
 	domain-id = <8>;
+	status = "okay";
+};
+
+&mecc1 {
+	status = "okay";
+};
+
+&mecc2 {
 	status = "okay";
 };

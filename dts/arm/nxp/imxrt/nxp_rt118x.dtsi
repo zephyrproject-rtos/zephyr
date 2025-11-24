@@ -352,6 +352,29 @@
 		status = "disabled";
 	};
 
+	mecc1: mecc@42920000 {
+		compatible = "nxp,mecc";
+		reg = <0x42920000 0x1000>;
+		interrupts = <91 0>;
+		/* OCRAM1 first 16K access is blocked by TRDC.
+		 * in order to enable the normal operation of the mecc function,
+		 * it is necessary to initialize the memory by the CPU in the
+		 * MECC driver. Therefore, reserved it for mecc1 node.
+		 */
+		memory-start-address = <0x20484000>;
+		memory-end-address = <0x204fffff>;
+		status = "disabled";
+	};
+
+	mecc2: mecc@42930000 {
+		compatible = "nxp,mecc";
+		reg = <0x42930000 0x1000>;
+		interrupts = <92 0>;
+		memory-start-address = <0x20500000>;
+		memory-end-address = <0x2053ffff>;
+		status = "disabled";
+	};
+
 	gpt1: timer@46c0000 {
 		compatible = "nxp,imx-gpt";
 		reg = <0x46c0000 0x4000>;
