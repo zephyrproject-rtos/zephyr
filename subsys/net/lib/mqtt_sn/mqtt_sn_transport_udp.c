@@ -50,7 +50,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 
 	udp->sock = zsock_socket(udp->bcaddr.sa_family, NET_SOCK_DGRAM, 0);
 	if (udp->sock < 0) {
-		return errno;
+		return -errno;
 	}
 
 	LOG_DBG("Socket %d", udp->sock);
@@ -59,7 +59,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	err = zsock_setsockopt(udp->sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
 			       &optval, sizeof(optval));
 	if (err < 0) {
-		return errno;
+		return -errno;
 	}
 
 	if (IS_ENABLED(CONFIG_MQTT_SN_LOG_LEVEL_DBG)) {
@@ -109,7 +109,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	err = zsock_bind(udp->sock, &addrm, sizeof(addrm));
 	if (err) {
 		LOG_ERR("Error during bind: %d", errno);
-		return errno;
+		return -errno;
 	}
 
 	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -127,7 +127,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
 				       &mreqn, sizeof(mreqn));
 		if (err < 0) {
-			return errno;
+			return -errno;
 		}
 	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
 		struct net_sockaddr_in6 *bcaddr_in6 = (struct net_sockaddr_in6 *)&udp->bcaddr;
@@ -144,7 +144,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
 				       &mreq, sizeof(mreq));
 		if (err < 0) {
-			return errno;
+			return -errno;
 		}
 	} else {
 		LOG_ERR("Unknown AF");
@@ -155,7 +155,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL,
 			       &optval, sizeof(optval));
 	if (err < 0) {
-		return errno;
+		return -errno;
 	}
 
 	return 0;
