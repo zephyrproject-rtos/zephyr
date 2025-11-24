@@ -120,7 +120,7 @@ writing tests which are device-type-agnostic. Scope of this fixture is determine
    from twister_harness import DeviceAdapter
 
    def test_sample(dut: DeviceAdapter):
-      dut.readlines_until('Hello world')
+      dut.readlines_until(regex='Hello world')
 
 shell
 =====
@@ -182,7 +182,7 @@ device.
 
    def test_sample(unlaunched_dut: DeviceAdapter):
       unlaunched_dut.launch()
-      unlaunched_dut.readlines_until('Hello world')
+      unlaunched_dut.readlines_until(regex='Hello world')
 
 Classes
 *******
@@ -194,7 +194,7 @@ DeviceAdapter
 
    .. automethod:: launch
 
-   .. automethod:: connect
+   .. automethod:: close
 
    .. automethod:: readline
 
@@ -203,10 +203,6 @@ DeviceAdapter
    .. automethod:: readlines_until
 
    .. automethod:: write
-
-   .. automethod:: disconnect
-
-   .. automethod:: close
 
 .. _shell_class:
 
