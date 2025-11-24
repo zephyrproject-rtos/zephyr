@@ -310,31 +310,13 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
-"./scripts/pylib/pytest-twister-harness/src/twister_harness/device/binary_adapter.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-]
-"./scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/factory.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/fifo_handler.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./scripts/pylib/pytest-twister-harness/src/twister_harness/device/hardware_adapter.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
-]
-"./scripts/pylib/pytest-twister-harness/src/twister_harness/device/qemu_adapter.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/pylib/pytest-twister-harness/src/twister_harness/fixtures.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -956,11 +938,6 @@ exclude = [
     "./scripts/net/enumerate_http_status.py",
     "./scripts/profiling/stackcollapse.py",
     "./scripts/pylib/build_helpers/domains.py",
-    "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/binary_adapter.py",
-    "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py",
-    "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/fifo_handler.py",
-    "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/hardware_adapter.py",
-    "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/qemu_adapter.py",
     "./scripts/pylib/pytest-twister-harness/src/twister_harness/fixtures.py",
     "./scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/mcumgr.py",
     "./scripts/pylib/pytest-twister-harness/src/twister_harness/plugin.py",
