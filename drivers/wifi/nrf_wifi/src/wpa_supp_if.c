@@ -559,6 +559,10 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		}
 	}
 
+	if (params->p2p_probe) {
+		scan_info->scan_params.no_cck = 1;
+	}
+
 	scan_info->scan_reason = SCAN_CONNECT;
 
 	/* Copy extra_ies */
