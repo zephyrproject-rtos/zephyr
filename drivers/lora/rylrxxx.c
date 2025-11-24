@@ -540,6 +540,9 @@ int rylr_recv_async(const struct device *dev, const struct lora_recv_async_callb
 		err = -EINVAL;
 		goto bail;
 	}
+	if (cb->preamble_detected || cb->header_valid) {
+		LOG_DBG("Only the `recv` callback supported");
+	}
 
 	if (data->is_tx) {
 		LOG_ERR("radio is configured for tx");

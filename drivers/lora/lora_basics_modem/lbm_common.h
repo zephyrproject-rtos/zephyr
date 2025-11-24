@@ -54,11 +54,8 @@ struct lbm_lora_data_common {
 			int16_t rssi_dbm;
 			int8_t snr_db;
 		} sync;
-		struct {
-			/* Async RX params */
-			lora_recv_cb rx_cb;
-			void *user_data;
-		} async;
+		/* Async RX params */
+		struct lora_recv_async_callbacks async;
 	} rx_state;
 	/* User signal */
 	struct k_poll_signal *operation_done;

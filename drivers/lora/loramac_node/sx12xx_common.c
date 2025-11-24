@@ -321,6 +321,9 @@ int sx12xx_lora_recv_async(const struct device *dev, const struct lora_recv_asyn
 	if (cb->recv == NULL) {
 		return -EINVAL;
 	}
+	if (cb->preamble_detected || cb->header_valid) {
+		LOG_DBG("LoRaMAC-node only supports the `recv` callback");
+	}
 
 	/* Ensure available */
 	if (!modem_acquire(&dev_data)) {
