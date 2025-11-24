@@ -126,7 +126,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 
 		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
 				       &mreqn, sizeof(mreqn));
-		if (err < 0) {
+		if (err < 0 && errno != EALREADY) {
 			return -errno;
 		}
 	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -143,7 +143,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 
 		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
 				       &mreq, sizeof(mreq));
-		if (err < 0) {
+		if (err < 0 && errno != EALREADY) {
 			return -errno;
 		}
 	} else {
