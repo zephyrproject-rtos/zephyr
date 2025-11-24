@@ -9,6 +9,7 @@
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+	printk("Zephyr contribution practice change!\n");
 
 	return 0;
 }
