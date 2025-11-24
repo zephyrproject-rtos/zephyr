@@ -1,0 +1,16 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_STM32
+
+config STM32_USB_COMMON
+	bool
+	help
+	  Enable compilation of STM32 USB common code.
+	  This option is selected by the USB drivers when appropriate.
+
+module = STM32_USB_COMMON
+module-str = STM32 USB common code
+source "subsys/logging/Kconfig.template.log_config"
+
+endif  # SOC_FAMILY_STM32
