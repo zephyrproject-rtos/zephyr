@@ -6,3 +6,16 @@ description: Nordic QSPI v2 Interface using SSI IP
 compatible: "nordic,nrf-qspi-v2"
 
 include: snps,designware-ssi.yaml
+properties:
+  bits-per-pixel:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 4
+      - 8
+      - 16
+    description: |
+      When using the peripheral to drive the display in controller mode, the wrapper needs to know
+      how many bits per pixel (BPP) are being used. If 0, the reordering of the data based on the
+      BPP is disabled.
