@@ -5652,6 +5652,7 @@ West:
   collaborators:
     - ithinuel
     - ccli8
+    - johan-alfven-arm
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
