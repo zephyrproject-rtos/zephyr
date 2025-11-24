@@ -17,22 +17,45 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include <infineon_kconfig.h>
+#include <cy_device_headers.h>
 #include <cy_scb_uart.h>
 #include <cy_gpio.h>
 #include <cy_syslib.h>
 #include <cy_sysint.h>
+#include <cy_sysclk.h>
 
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);
+LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
 
-#define IFX_CAT1_UART_OVERSAMPLE_MIN              8UL
-#define IFX_CAT1_UART_OVERSAMPLE_MAX              16UL
-#define IFX_CAT1_UART_MAX_BAUD_PERCENT_DIFFERENCE 10
+#define IFX_UART_OVERSAMPLE_MIN              8UL
+#define IFX_UART_OVERSAMPLE_MAX              16UL
+#define IFX_UART_MAX_BAUD_PERCENT_DIFFERENCE 10U
+
+#if defined(CY_IP_MXSCB_INSTANCES)
+#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
+#elif defined(CY_IP_M0S8SCB_INSTANCES)
+#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_M0S8SCB_INSTANCES)
+#elif defined(CY_IP_MXS22SCB_INSTANCES)
+#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXS22SCB_INSTANCES)
+#endif /* CY_IP_MXSCB_INSTANCES */
+
+#if defined(CONFIG_SOC_SERIES_PSOC4100TP)
+#define IFX_UART_RX_FIFO_TRIGGER_LEVEL 7
+#define IFX_UART_TX_FIFO_TRIGGER_LEVEL 0
+#else
+#define IFX_UART_RX_FIFO_TRIGGER_LEVEL 63UL
+#define IFX_UART_TX_FIFO_TRIGGER_LEVEL 63UL
+#endif /* CONFIG_SOC_SERIES_PSOC4100TP */
+
+#define IFX_UART_RX_INT_MASK_NONE 0UL
+#define IFX_UART_TX_INT_MASK_NONE 0UL
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
@@ -112,80 +135,83 @@ struct ifx_cat1_uart_config {
 
 typedef void (*ifx_cat1_uart_event_callback_t)(void *callback_arg);
 
-/* Helper API */
-static cy_en_scb_uart_parity_t convert_uart_parity_z_to_cy(const enum uart_config_parity parity)
-{
-	cy_en_scb_uart_parity_t cy_parity;
+const uint8_t data_bits_lut[] = {
+	[UART_CFG_DATA_BITS_5] = 5, [UART_CFG_DATA_BITS_6] = 6, [UART_CFG_DATA_BITS_7] = 7,
+	[UART_CFG_DATA_BITS_8] = 8, [UART_CFG_DATA_BITS_9] = 9,
+};
 
+const uint8_t stop_bits_lut[] = {
+	[UART_CFG_STOP_BITS_1] = CY_SCB_UART_STOP_BITS_1,
+	[UART_CFG_STOP_BITS_2] = CY_SCB_UART_STOP_BITS_2,
+};
+
+const uint8_t parity_lut[] = {
+	[UART_CFG_PARITY_NONE] = CY_SCB_UART_PARITY_NONE,
+	[UART_CFG_PARITY_ODD] = CY_SCB_UART_PARITY_ODD,
+	[UART_CFG_PARITY_EVEN] = CY_SCB_UART_PARITY_EVEN,
+};
+
+static inline uint32_t convert_uart_parity_z_to_cy(uint32_t parity)
+{
 	switch (parity) {
 	case UART_CFG_PARITY_NONE:
-		cy_parity = CY_SCB_UART_PARITY_NONE;
-		break;
+		return CY_SCB_UART_PARITY_NONE;
 	case UART_CFG_PARITY_ODD:
-		cy_parity = CY_SCB_UART_PARITY_ODD;
-		break;
+		return CY_SCB_UART_PARITY_ODD;
 	case UART_CFG_PARITY_EVEN:
-		cy_parity = CY_SCB_UART_PARITY_EVEN;
-		break;
+		return CY_SCB_UART_PARITY_EVEN;
 	default:
-		cy_parity = CY_SCB_UART_PARITY_NONE;
+		return CY_SCB_UART_PARITY_NONE;
 	}
-	return cy_parity;
 }
 
-static uint8_t convert_uart_stop_bits_z_to_cy(const enum uart_config_stop_bits stop_bits)
+static inline uint32_t convert_uart_stop_bits_z_to_cy(uint32_t sb)
 {
-	uint32_t cy_stop_bits;
-
-	switch (stop_bits) {
-	case UART_CFG_STOP_BITS_1:
-		cy_stop_bits = CY_SCB_UART_STOP_BITS_1;
-		break;
-
-	case UART_CFG_STOP_BITS_2:
-		cy_stop_bits = CY_SCB_UART_STOP_BITS_2;
-		break;
-	default:
-		cy_stop_bits = CY_SCB_UART_STOP_BITS_1;
+	if (sb <= UART_CFG_STOP_BITS_2) {
+		return stop_bits_lut[sb];
 	}
-	return cy_stop_bits;
+
+	LOG_WRN("Invalid stop bits (%u), defaulting to 1 stop bit", sb);
+	return CY_SCB_UART_STOP_BITS_1;
 }
 
-static uint32_t convert_uart_data_bits_z_to_cy(const enum uart_config_data_bits data_bits)
+static inline uint32_t convert_uart_data_bits_z_to_cy(uint32_t db)
 {
-	uint32_t cy_data_bits;
-
-	switch (data_bits) {
-	case UART_CFG_DATA_BITS_5:
-		cy_data_bits = 5u;
-		break;
-
-	case UART_CFG_DATA_BITS_6:
-		cy_data_bits = 6u;
-		break;
-
-	case UART_CFG_DATA_BITS_7:
-		cy_data_bits = 7u;
-		break;
-
-	case UART_CFG_DATA_BITS_8:
-		cy_data_bits = 8u;
-		break;
-
-	case UART_CFG_DATA_BITS_9:
-		cy_data_bits = 9u;
-		break;
-
-	default:
-		cy_data_bits = 1u;
+	if (db <= UART_CFG_DATA_BITS_9) {
+		return data_bits_lut[db];
 	}
-	return cy_data_bits;
+
+	LOG_WRN("Invalid data bits (%u), defaulting to 1 bit", db);
+	return 1U;
+}
+
+static inline uint32_t ifx_uart_baud_diff(uint32_t actual, uint32_t baud)
+{
+	return (actual > baud) ? (((actual - baud) * 100U) / baud)
+			       : (((baud - actual) * 100U) / baud);
+}
+
+static inline uint32_t ifx_uart_divider(uint32_t freq, uint32_t baud, uint32_t oversample)
+{
+	return (freq + ((baud * oversample) / 2U)) / (baud * oversample);
+}
+
+static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
+{
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	return (data_width <= CY_SCB_BYTE_WIDTH) ? CY_SCB_CTRL_MEM_WIDTH_BYTE
+						 : CY_SCB_CTRL_MEM_WIDTH_HALFWORD;
+#else
+	return (data_width <= CY_SCB_BYTE_WIDTH) ? CY_SCB_MEM_WIDTH_BYTE
+						 : CY_SCB_MEM_WIDTH_HALFWORD;
+#endif
 }
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
 #endif
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 {
 #if defined(CONFIG_SOC_SERIES_PSE84)
@@ -237,6 +263,7 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 #endif
 	return -EINVAL;
 }
+#endif
 
 cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 {
@@ -244,7 +271,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	struct ifx_cat1_uart_data *data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	uint8_t best_oversample = IFX_CAT1_UART_OVERSAMPLE_MIN;
+	uint8_t best_oversample = IFX_UART_OVERSAMPLE_MIN;
 	uint8_t best_difference = 0xFF;
 	uint32_t divider;
 
@@ -263,15 +290,14 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	peri_frequency = Cy_SysClk_ClkHfGetFrequency(hfclk);
+#else
+	peri_frequency = Cy_SysClk_ClkHfGetFrequency();
 #endif
-
-	for (uint8_t i = IFX_CAT1_UART_OVERSAMPLE_MIN; i < IFX_CAT1_UART_OVERSAMPLE_MAX + 1; i++) {
+	for (uint8_t i = IFX_UART_OVERSAMPLE_MIN; i < IFX_UART_OVERSAMPLE_MAX + 1; i++) {
 		uint32_t tmp_divider = ((peri_frequency + ((baudrate * i) / 2))) / (baudrate * i);
 
 		uint32_t actual_baud = (peri_frequency / (tmp_divider * i));
-		uint8_t difference = (actual_baud > baudrate)
-					     ? ((actual_baud * 100) - (baudrate * 100)) / baudrate
-					     : ((baudrate * 100) - (actual_baud * 100)) / baudrate;
+		uint8_t difference = ifx_uart_baud_diff(actual_baud, baudrate);
 
 		if (difference < best_difference) {
 			best_difference = difference;
@@ -279,16 +305,13 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 		}
 	}
 
-	if (best_difference > IFX_CAT1_UART_MAX_BAUD_PERCENT_DIFFERENCE) {
+	if (best_difference > IFX_UART_MAX_BAUD_PERCENT_DIFFERENCE) {
 		status = -EINVAL;
 	}
 
-	best_oversample = best_oversample;
-
 	data->scb_config.oversample = best_oversample;
 
-	divider = ((peri_frequency + ((baudrate * best_oversample) / 2)) /
-		   (baudrate * best_oversample));
+	divider = ifx_uart_divider(peri_frequency, baudrate, best_oversample);
 
 	en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
 
@@ -300,15 +323,15 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 								   divider - 1, 0);
 	}
 
+	if (status < 0) {
+		return status;
+	}
+
 /* Configure the UART interface */
 #if (CY_IP_MXSCB_VERSION >= 2) || (CY_IP_MXS22SCB_VERSION >= 1)
-	uint32_t mem_width = (data->scb_config.dataWidth <= CY_SCB_BYTE_WIDTH)
-				     ? CY_SCB_MEM_WIDTH_BYTE
-				     : CY_SCB_MEM_WIDTH_HALFWORD;
-
 	SCB_CTRL(config->reg_addr) =
 		_BOOL2FLD(SCB_CTRL_ADDR_ACCEPT, data->scb_config.acceptAddrInFifo) |
-		_BOOL2FLD(SCB_CTRL_MEM_WIDTH, mem_width) |
+		_BOOL2FLD(SCB_CTRL_MEM_WIDTH, ifx_uart_mem_width(data->scb_config.dataWidth)) |
 		_VAL2FLD(SCB_CTRL_OVS, best_oversample - 1) |
 		_VAL2FLD(SCB_CTRL_MODE, CY_SCB_CTRL_MODE_UART);
 #else /* Older versions of the block */
@@ -541,7 +564,7 @@ static int ifx_cat1_uart_irq_tx_complete(const struct device *dev)
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
 	return Cy_SCB_IsTxComplete(config->reg_addr) ||
-	       (0UL == (data->context.txStatus & CY_SCB_UART_TRANSMIT_ACTIVE));
+	       ((data->context.txStatus & CY_SCB_UART_TRANSMIT_ACTIVE) == 0);
 }
 
 static void ifx_cat1_uart_irq_rx_enable(const struct device *dev)
@@ -675,7 +698,11 @@ static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.breakWidth = 11UL,
 	.dropOnFrameError = false,
 	.dropOnParityError = false,
+#if !defined(CONFIG_SOC_SERIES_PSOC4100TP)
 	.breaklevel = false,
+#else
+	.breakLevel = false,
+#endif
 	.receiverAddress = 0x0UL,
 	.receiverAddressMask = 0x0UL,
 	.acceptAddrInFifo = false,
@@ -683,10 +710,10 @@ static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.ctsPolarity = CY_SCB_UART_ACTIVE_LOW,
 	.rtsRxFifoLevel = 0UL,
 	.rtsPolarity = CY_SCB_UART_ACTIVE_LOW,
-	.rxFifoTriggerLevel = 63UL,
-	.rxFifoIntEnableMask = 0UL,
-	.txFifoTriggerLevel = 63UL,
-	.txFifoIntEnableMask = 0UL,
+	.rxFifoTriggerLevel = IFX_UART_RX_FIFO_TRIGGER_LEVEL,
+	.rxFifoIntEnableMask = IFX_UART_RX_INT_MASK_NONE,
+	.txFifoTriggerLevel = IFX_UART_TX_FIFO_TRIGGER_LEVEL,
+	.txFifoIntEnableMask = IFX_UART_TX_INT_MASK_NONE,
 };
 #ifdef CONFIG_UART_ASYNC_API
 
@@ -1154,14 +1181,6 @@ unlock:
 }
 
 #endif /*CONFIG_UART_ASYNC_API */
-
-#if defined(CY_IP_MXSCB_INSTANCES)
-#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
-#elif defined(CY_IP_M0S8SCB_INSTANCES)
-#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_M0S8SCB_INSTANCES)
-#elif defined(CY_IP_MXS22SCB_INSTANCES)
-#define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXS22SCB_INSTANCES)
-#endif /* CY_IP_MXSCB_INSTANCES */
 
 CySCB_Type *const _IFX_CAT1_SCB_BASE_ADDRESSES[_IFX_CAT1_SCB_ARRAY_SIZE] = {
 #ifdef SCB0
