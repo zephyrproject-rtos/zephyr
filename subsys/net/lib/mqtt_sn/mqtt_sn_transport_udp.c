@@ -63,7 +63,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	}
 
 	if (IS_ENABLED(CONFIG_MQTT_SN_LOG_LEVEL_DBG)) {
-		char ip[30], *out;
+		char ip[NET_INET6_ADDRSTRLEN], *out;
 		uint16_t port = 0;
 
 		out = get_ip_str((struct net_sockaddr *)&udp->bcaddr, ip, sizeof(ip));
