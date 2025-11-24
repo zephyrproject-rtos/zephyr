@@ -76,17 +76,16 @@ static int entropy_gecko_trng_get_entropy(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_CRYPTO_ACC_GECKO_TRNG
+	CMU_ClockEnable(cmuClock_CRYPTOACC, true);
+#endif
+
 	while (length) {
 #ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 		available = TRNG0->FIFOLEVEL * 4;
 #else
-		CMU_ClockEnable(cmuClock_CRYPTOACC, true);
 		available = S2_FIFO_LEVEL * 4;
 #endif
-		if (available == 0) {
-			return -EINVAL;
-		}
-
 		count = SL_MIN(length, available);
 		entropy_gecko_trng_read(buffer, count);
 		buffer += count;
