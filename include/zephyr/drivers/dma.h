@@ -164,9 +164,11 @@ struct dma_block_config {
 };
 
 /** The DMA callback event has occurred at the completion of a transfer list */
-#define DMA_STATUS_COMPLETE	0
+#define DMA_STATUS_COMPLETE			0
 /** The DMA callback has occurred at the completion of a single transfer block in a transfer list */
-#define DMA_STATUS_BLOCK	1
+#define DMA_STATUS_BLOCK			1
+/** The DMA callback event has occurred at the half completion of a single transfer block */
+#define DMA_STATUS_HALF_COMPLETE	2
 
 /**
  * @typedef dma_callback_t
@@ -208,6 +210,8 @@ struct dma_config {
 	 * - others hardware specific
 	 */
 	uint32_t  channel_direction :    3;
+	/** enable half completion callback when set to 1 */
+	uint32_t  half_complete_callback_en : 1;
 	/**
 	 * Completion callback enable
 	 *
@@ -249,7 +253,7 @@ struct dma_config {
 	/** Cyclic transfer list, HW specific */
 	uint32_t  cyclic :				 1;
 
-	uint32_t  _reserved :             3;
+	uint32_t  _reserved :             2;
 	/** Width of source data (in bytes) */
 	uint32_t  source_data_size :    16;
 	/** Width of destination data (in bytes) */
