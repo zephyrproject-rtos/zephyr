@@ -1,4 +1,4 @@
-# Copyright 2018-2023, NXP
+# Copyright 2018-2023, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP FlexSPI controller
@@ -10,6 +10,28 @@ include: [spi-controller.yaml, pinctrl-device.yaml]
 properties:
   reg:
     required: true
+    description: |
+      FlexSPI controller register space and AHB memory windows.
+      reg[0]: FlexSPI controller registers
+      reg[1]: AHB flash memory windows for XIP
+
+  port-count:
+    type: int
+    default: 4
+    description: Number of FlexSPI ports supported by this controller
+
+  ahb-port-bases:
+    type: array
+    description: |
+      AHB base addresses for each FlexSPI port (0-3).
+      Specify the AHB window base address for each port directly.
+      Use 0 for unused ports.
+      Example: <0x18000000 0 0x38000000 0> means:
+        - Port 0: 0x18000000
+        - Port 1: unused (0)
+        - Port 2: 0x38000000
+        - Port 3: unused (0)
+      If omitted, falls back to legacy single window behavior.
 
   interrupts:
     required: true

@@ -39,4 +39,7 @@
  */
 &flexspi {
 	pinctrl-0 = <&pinmux_flexspi_safe>;
+
+	ahb-port-bases = <0x18000000 0 0x38000000 0>;
+	port-count = <4>;
 };
