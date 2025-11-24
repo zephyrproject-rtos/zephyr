@@ -50,3 +50,12 @@
 &trng {
 	status = "okay";
 };
+
+&uart0 {
+	dmas = <&dma1 1 MAX32_DMA_SLOT_UART_TX>, <&dma1 0 MAX32_DMA_SLOT_UART_RX>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
