@@ -342,9 +342,11 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 	lpspi_data->rx_curr.words_clocked = 0;
 
 	LOG_DBG("Starting LPSPI transfer");
+	base->TCR = (base->TCR & ~(LPSPI_TCR_PCS_MASK)) |
+		    LPSPI_TCR_PCS(spi_cfg->slave) |
+		    LPSPI_TCR_CONT_MASK;
 	spi_context_cs_control(&data->ctx, true);
 
-	base->TCR |= LPSPI_TCR_CONT_MASK;
 	/* tcr is written to tx fifo */
 	lpspi_wait_tx_fifo_empty(dev);
 
