@@ -143,6 +143,15 @@ config NET_SOCKETS_SOCKOPT_TLS
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
 
+config NET_SOCKETS_TLS_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds for TLS handshake"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	default 10000
+	range 0 60000
+	help
+	  This variable specifies the maximum time in milliseconds that a TLS
+	  handshake can take on a secure socket, before reporting a timeout.
+
 config NET_SOCKETS_TLS_PRIORITY
 	int "Default processing priority for TLS sockets"
 	default 45
