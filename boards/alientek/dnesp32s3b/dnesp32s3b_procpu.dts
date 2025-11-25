@@ -23,6 +23,7 @@
 		eeprom-0 = &eeprom;
 		i2s-tx = &i2s0;
 		i2s-rx = &i2s0;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -147,6 +148,23 @@
 
 &dma {
 	status = "okay";
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <DT_FREQ_M(40)>;
+		bus-width = <1>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
 };
 
 &wifi {
