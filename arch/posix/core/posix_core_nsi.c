@@ -11,6 +11,7 @@
  */
 
 #include "nct_if.h"
+#include "posix_core.h"
 
 static void *te_state;
 

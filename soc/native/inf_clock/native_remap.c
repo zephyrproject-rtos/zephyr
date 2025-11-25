@@ -5,6 +5,7 @@
  */
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
+#include <soc.h>
 
 /**
  * Dummy version which does nothing

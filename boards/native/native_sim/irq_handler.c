@@ -21,6 +21,7 @@
 #include "irq_handler.h"
 #include "board_soc.h"
 #include "nsi_cpu_if.h"
+#include <posix_board_if.h>
 
 typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);

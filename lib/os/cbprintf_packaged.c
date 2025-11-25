@@ -883,7 +883,7 @@ static bool is_fmt_spec(char c)
 /* Function checks if nth argument is a pointer (%p). Returns true is yes. Returns
  * false if not or if string does not have nth argument.
  */
-bool is_ptr(const char *fmt, int n)
+static bool is_ptr(const char *fmt, int n)
 {
 	char c;
 	bool mod = false;

@@ -10,6 +10,7 @@
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include <posix_board_if.h>
 #include <posix_soc.h>
+#include <kernel_arch_interface.h>
 #include "nsi_hw_scheduler.h"
 #include "nsi_timer_model.h"
 

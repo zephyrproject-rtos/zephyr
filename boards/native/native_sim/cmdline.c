@@ -5,6 +5,7 @@
  */
 
 #include "nsi_cmdline.h"
+#include "cmdline.h"
 
 void native_add_command_line_opts(struct args_struct_t *args)
 {

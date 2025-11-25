@@ -9,6 +9,7 @@
 #include <zephyr/arch/posix/posix_trace.h>
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
+#include <zephyr/drivers/console/posix_arch_console.h>
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];

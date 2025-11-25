@@ -27,7 +27,7 @@ struct alloc_node {
 	void *data;
 };
 
-void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
+static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 {
 	void *ret;
 

@@ -12,6 +12,7 @@
 #include <inttypes.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/arch/posix/posix_soc_if.h>
+#include <kernel_arch_interface.h>
 
 extern void nsi_raise_sigtrap(void);
 

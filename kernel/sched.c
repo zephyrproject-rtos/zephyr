@@ -939,7 +939,7 @@ int z_unpend_all(_wait_q_t *wait_q)
 	return need_sched;
 }
 
-void init_ready_q(struct _ready_q *ready_q)
+static void init_ready_q(struct _ready_q *ready_q)
 {
 	_priq_run_init(&ready_q->runq);
 }

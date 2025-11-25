@@ -31,7 +31,7 @@ Z_THREAD_LOCAL int z_errno_var;
 #else
 
 #ifdef CONFIG_USERSPACE
-int *z_impl_z_errno(void)
+static int *z_impl_z_errno(void)
 {
 	/* Initialized to the lowest address in the stack so the thread can
 	 * directly read/write it
@@ -46,7 +46,7 @@ static inline int *z_vrfy_z_errno(void)
 #include <zephyr/syscalls/z_errno_mrsh.c>
 
 #else
-int *z_impl_z_errno(void)
+static int *z_impl_z_errno(void)
 {
 	return &_current->errno_var;
 }

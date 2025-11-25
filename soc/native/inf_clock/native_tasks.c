@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <posix_native_task.h>
+
 /**
  * @brief Run the set of special native tasks corresponding to the given level
  *

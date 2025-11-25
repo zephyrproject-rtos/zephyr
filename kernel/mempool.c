@@ -8,6 +8,7 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+#include <kernel_internal.h>
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 

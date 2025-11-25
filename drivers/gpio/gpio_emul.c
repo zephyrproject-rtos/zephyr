@@ -293,9 +293,9 @@ static void gpio_emul_pend_interrupt(const struct device *port, gpio_port_pins_t
 	k_spin_unlock(&drv_data->lock, key);
 }
 
-int gpio_emul_input_set_masked_int(const struct device *port,
-				   gpio_port_pins_t mask,
-				   gpio_port_value_t values)
+static int gpio_emul_input_set_masked_int(const struct device *port,
+					  gpio_port_pins_t mask,
+					  gpio_port_value_t values)
 {
 	gpio_port_pins_t input_mask;
 	gpio_port_pins_t prev_values;

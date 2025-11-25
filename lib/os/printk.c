@@ -23,6 +23,7 @@
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/llext/symbol.h>
 #include <sys/types.h>
+#include <kernel_arch_interface.h>
 
 /* Option present only when CONFIG_USERSPACE enabled. */
 #ifndef CONFIG_PRINTK_BUFFER_SIZE

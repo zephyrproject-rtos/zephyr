@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/arch/posix/posix_soc_if.h>
+#include <zephyr/irq.h>
 #include "board_irq.h"
 
 #ifdef CONFIG_IRQ_OFFLOAD

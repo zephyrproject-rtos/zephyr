@@ -8,6 +8,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/linker/section_tags.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/common/init.h>
 
 /* LCOV_EXCL_START
  *
