@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <silabs/xg24/mgm240sd22vna.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "arduino_nano_matter-pinctrl.dtsi"
 #include "arduino_nano_matter_connector.dtsi"

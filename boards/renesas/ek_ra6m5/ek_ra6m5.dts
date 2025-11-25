@@ -6,8 +6,8 @@
 /dts-v1/;
 
 #include <renesas/ra/ra6/r7fa6m5bh3cfc.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 

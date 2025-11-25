@@ -5,4 +5,4 @@
  */
 
 #include <bflb/bl70x.dtsi>
-#include <dt-bindings/pinctrl/bl704x-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/bl704x-pinctrl.h>
