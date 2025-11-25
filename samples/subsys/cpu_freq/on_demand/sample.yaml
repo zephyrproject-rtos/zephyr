@@ -8,7 +8,7 @@ common:
     type: multi_line
     regex:
       - "^.*<inf> cpu_freq_sample: Starting CPU Freq Subsystem Sample!"
-      - "^.*<dbg> cpu_load_metric: cpu_load_get: CPU[0-9]+ Execution cycles: \
+      - "^.*<dbg> cpu_load_metric: cpu_load_metric_get: CPU[0-9]+ Execution cycles: \
          [0-9]+, Total cycles: [0-9]+"
       - "^.*<dbg> cpu_freq_policy_on_demand: cpu_freq_policy_select_pstate: \
          CPU[0-9]+ Load: [0-9]+%"

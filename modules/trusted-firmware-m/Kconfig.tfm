@@ -475,6 +475,15 @@ config TFM_SPM_LOG_LEVEL_SILENCE
 	bool "Off"
 endchoice
 
+config TFM_SECURE_UART
+	bool "TF-M configure UART instance as secure peripheral"
+	default y if SOC_FAMILY_NORDIC_NRF && !TFM_LOG_LEVEL_SILENCE
+	help
+	  Configure the UART instance as a secure peripheral for TF-M logging.
+	  This makes the UART instance unavailable to the non-secure application.
+	  When this option is selected the device tree node for the UART instance
+	  needs to be disabled for the non-secure application.
+
 config TFM_EXCEPTION_INFO_DUMP
 	bool "TF-M exception info dump"
 	default y

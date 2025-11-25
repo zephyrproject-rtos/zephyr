@@ -22,6 +22,7 @@
 ZTEST(sys_util, test_wait_for)
 {
 	uint32_t start, end, expected;
+	int i = 0;
 
 	zassert_true(WAIT_FOR(true, 0, NULL), "true, no wait, NULL");
 	zassert_true(WAIT_FOR(true, 0, k_yield()), "true, no wait, yield");
@@ -30,6 +31,8 @@ ZTEST(sys_util, test_wait_for)
 	zassert_false(WAIT_FOR(false, 1, k_yield()), "false, 1usec, yield");
 	zassert_true(WAIT_FOR(true, 1000, k_yield()), "true, 1msec, yield");
 
+	WAIT_FOR(++i == 2, 1000, NULL);
+	zassert_equal(i, 2);
 
 	expected = 1000*(sys_clock_hw_cycles_per_sec()/USEC_PER_SEC);
 	start = k_cycle_get_32();

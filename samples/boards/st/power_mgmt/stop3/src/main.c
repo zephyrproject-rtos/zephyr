@@ -9,7 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
-#include <stm32u5xx_ll_pwr.h>
+#include <stm32_ll_pwr.h>
 #include <gpio/gpio_stm32.h>
 
 #define SLEEP_TIME_MS   2000

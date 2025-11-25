@@ -34,25 +34,26 @@
 		compatible = "gpio-leds";
 
 		blue_led: led_0 {
-			gpios =  <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 			label = "Blue - LED0";
 		};
 
 		green_led: led_1 {
-			gpios =  <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "Green - LED1";
 		};
 
 		red_led: led_2 {
-			gpios =  <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED2";
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button_0: sw0 {
-			gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -100,4 +101,12 @@
 
 &gpio0 {
 	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 };

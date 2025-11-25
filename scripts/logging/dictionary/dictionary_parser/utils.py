@@ -62,6 +62,6 @@ def find_string_in_mappings(string_mappings, str_ptr):
     for ptr, string in string_mappings.items():
         if ptr <= str_ptr < (ptr + len(string)):
             whole_str = string_mappings[ptr]
-            return whole_str[str_ptr - ptr:]
+            return whole_str[str_ptr - ptr :]
 
     return None

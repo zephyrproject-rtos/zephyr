@@ -90,6 +90,18 @@
 #define BT_HFP_HF_FEATURE_HF_IND_ENABLE 0
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 
+#if defined(CONFIG_BT_HFP_HF_CODEC_MSBC)
+#define BT_HFP_HF_SDP_FEATURE_WBS_ENABLE BT_HFP_HF_SDP_FEATURE_WBS
+#else
+#define BT_HFP_HF_SDP_FEATURE_WBS_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CODEC_MSBC */
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)
+#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS_ENABLE BT_HFP_HF_SDP_FEATURE_SUPER_WBS
+#else
+#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CODEC_LC3_SWB */
+
 /* HFP HF Supported features */
 #define BT_HFP_HF_SUPPORTED_FEATURES (\
 	BT_HFP_HF_FEATURE_CLI_ENABLE | \
@@ -112,7 +124,9 @@
 	BT_HFP_HF_SDP_FEATURE_3WAY_CALL_ENABLE | \
 	BT_HFP_HF_SDP_FEATURE_VOICE_RECG_ENABLE | \
 	BT_HFP_HF_SDP_FEATURE_ENH_VOICE_RECG_ENABLE | \
-	BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT_ENABLE)
+	BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT_ENABLE | \
+	BT_HFP_HF_SDP_FEATURE_WBS_ENABLE | \
+	BT_HFP_HF_SDP_FEATURE_SUPER_WBS_ENABLE)
 
 #define BT_HFP_HF_CODEC_CVSD_MASK BIT(BT_HFP_HF_CODEC_CVSD)
 
@@ -147,6 +161,10 @@ enum {
 	BT_HFP_HF_FLAG_QUERY_CALLS,   /* Require to query list of current calls */
 	BT_HFP_HF_FLAG_USR_CLCC_CMD,  /* User-initiated AT+CLCC command */
 	BT_HFP_HF_FLAG_USR_CLCC_PND,  /* User-initiated AT+CLCC command is pending */
+	BT_HFP_HF_FLAG_DISCOVER_DONE, /* SDP discovered done */
+	BT_HFP_HF_FLAG_RECORD_FOUND,  /* SDP AG Record found */
+	BT_HFP_HF_FLAG_DLC_CONNECTED, /* HFP HF DLC is connected */
+	BT_HFP_HF_FLAG_FEAT_UPDATED,  /* Remote feature has been updated */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
@@ -196,11 +214,22 @@ struct bt_hfp_hf {
 	struct k_fifo tx_pending;
 	/* SCO Channel */
 	struct bt_sco_chan chan;
+	/* SCO connect */
+	struct bt_conn *sco_conn;
+
+	/* SDP discover params */
+	struct bt_sdp_discover_params sdp_param;
+
+	/* SCL work */
+	struct k_work slc_work;
+
 	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;
 	uint8_t hf_codec_ids;
+	uint8_t active_codec_id;
+	uint8_t neg_codec_id;
 	uint8_t vgm;
 	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
@@ -208,6 +237,10 @@ struct bt_hfp_hf {
 	uint32_t hf_ind;
 	uint32_t ag_ind;
 	uint32_t ind_enable;
+
+	/* AG profile information */
+	uint16_t ag_sdp_version;
+	uint16_t ag_sdp_features;
 
 	/* AT command initialization indicator */
 	uint8_t cmd_init_seq;

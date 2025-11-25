@@ -9,6 +9,12 @@
 / {
 	chosen {
 		zephyr,display = &zephyr_lcd_controller;
+		zephyr,touch = &st1633i;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&st1633i>;
 	};
 };
 
@@ -88,7 +94,7 @@
 	status = "okay";
 	width = <480>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 
 	bl-ctrl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
 
@@ -109,5 +115,14 @@
 		vsync-len = <1>;
 		vback-porch = <13>;
 		vfront-porch = <50>;
+	};
+};
+
+&qsh_030_i2c {
+	st1633i: st1633i@70 {
+		compatible = "sitronix,cf1133";
+		reg = <0x70>;
+		int-gpios = <&dsi_lcd_qsh_030 4 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

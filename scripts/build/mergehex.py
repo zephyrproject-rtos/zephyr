@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument("--overlap", default="error",
                         help="What to do when files overlap (error, ignore, replace). "
                              "See IntelHex.merge() for more info.")
-    parser.add_argument("--output-bin", default=False,
+    parser.add_argument("--output-bin", action='store_true',
                         help="Save the merged content as binary file.")
     parser.add_argument("input_files", nargs='*')
     return parser.parse_args()

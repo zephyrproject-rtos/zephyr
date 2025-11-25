@@ -1756,34 +1756,6 @@ static uint8_t write_without_rsp(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t write_signed_without_rsp(const void *cmd, uint16_t cmd_len,
-					void *rsp, uint16_t *rsp_len)
-{
-	const struct btp_gatt_signed_write_without_rsp_cmd *cp = cmd;
-	struct bt_conn *conn;
-
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_length)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cp->handle),
-					   cp->data,
-					   sys_le16_to_cpu(cp->data_length),
-					   true) < 0) {
-		bt_conn_unref(conn);
-		return BTP_STATUS_FAILED;
-	}
-
-	bt_conn_unref(conn);
-	return BTP_STATUS_SUCCESS;
-}
-
 static void write_rsp(struct bt_conn *conn, uint8_t err,
 		      struct bt_gatt_write_params *params)
 {
@@ -2111,7 +2083,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	const size_t min_cnt = 1U;
 	int err = 0;
-	uint16_t attr_data_len = 0;
+	uint16_t server_db_start_handle = server_db[0].handle;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + (cp->cnt * sizeof(cp->attr_id[0])))) {
@@ -2133,14 +2105,23 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	(void)memset(params, 0, sizeof(params));
 
 	for (uint16_t i = 0U; i < cp->cnt; i++) {
-		struct bt_gatt_attr attr = server_db[cp->attr_id[i] -
-			server_db[0].handle];
+		const struct bt_gatt_attr *attr;
+		const struct gatt_value *value;
+		uint16_t handle = sys_le16_to_cpu(cp->attr_id[i]);
 
-		attr_data_len = strtoul(attr.user_data, NULL, 16);
+		if (!IN_RANGE(handle, server_db_start_handle,
+			      server_db_start_handle + attr_count)) {
+			LOG_ERR("ATT handle %u not in server DB range", handle);
+			return BTP_STATUS_FAILED;
+		}
+
+		attr = &server_db[handle - server_db_start_handle];
+		value = attr->user_data;
+
 		params[i].uuid = 0;
-		params[i].attr = &attr;
-		params[i].data = &attr.user_data;
-		params[i].len = attr_data_len;
+		params[i].attr = attr;
+		params[i].data = value->data;
+		params[i].len = value->len;
 		params[i].func = notify_cb;
 		params[i].user_data = NULL;
 	}
@@ -2531,11 +2512,6 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_WRITE_WITHOUT_RSP,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_without_rsp,
-	},
-	{
-		.opcode = BTP_GATT_SIGNED_WRITE_WITHOUT_RSP,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = write_signed_without_rsp,
 	},
 	{
 		.opcode = BTP_GATT_WRITE,

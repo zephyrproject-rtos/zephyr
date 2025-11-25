@@ -22,9 +22,6 @@ tests:
   bluetooth.init.test_13:
     extra_args: CONF_FILE=prj_13.conf
     platform_allow: qemu_cortex_m3
-  bluetooth.init.test_14:
-    extra_args: CONF_FILE=prj_14.conf
-    platform_allow: qemu_cortex_m3
   bluetooth.init.test_15:
     extra_args: CONF_FILE=prj_15.conf
     platform_allow: qemu_cortex_m3
@@ -63,15 +60,6 @@ tests:
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_6:
     extra_args: CONF_FILE=prj_6.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_7:
-    extra_args: CONF_FILE=prj_7.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_8:
-    extra_args: CONF_FILE=prj_8.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_9:
-    extra_args: CONF_FILE=prj_9.conf
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_ctlr:
     extra_args: CONF_FILE=prj_ctlr.conf

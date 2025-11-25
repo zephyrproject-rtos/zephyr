@@ -28,5 +28,11 @@ SECTION_PROLOGUE(.sram_vt,,)
 	. += _vector_end - _vector_start;
 	MPU_ALIGN(_sram_vector_size);
 	_sram_vector_end = .;
+#if defined(CONFIG_ARM_VECTOR_TABLE_ITCM)
+} GROUP_DATA_LINK_IN(ITCM, ROMABLE_REGION)
+#elif defined(CONFIG_ARM_VECTOR_TABLE_DTCM)
+} GROUP_DATA_LINK_IN(DTCM, ROMABLE_REGION)
+#else
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 _sram_vector_size = _sram_vector_end - _sram_vector_start;

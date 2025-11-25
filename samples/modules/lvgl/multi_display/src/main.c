@@ -76,7 +76,14 @@ int main(void)
 
 	lv_timer_handler();
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
-		display_blanking_off(display_dev[i]);
+		int ret;
+
+		ret = display_blanking_off(display_dev[i]);
+		if (ret < 0 && ret != -ENOSYS) {
+			LOG_ERR("Failed to turn display %s blanking off (error %d)",
+				display_dev[i]->name, ret);
+			return 0;
+		}
 	}
 
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP

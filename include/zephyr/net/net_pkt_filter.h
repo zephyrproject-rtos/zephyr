@@ -419,10 +419,10 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
- *against
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
  * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
 	struct npf_test_ip _name = {					\
@@ -442,10 +442,10 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
- *against
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
  * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
 	struct npf_test_ip _name = {					\
@@ -628,7 +628,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_TYPE_MATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_type_match,				\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "eth type",			\
@@ -643,7 +643,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_TYPE_UNMATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_type_unmatch,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth type",			\
@@ -659,7 +659,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_VLAN_TYPE_MATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_vlan_type_match,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "eth vlan type",		\
@@ -675,7 +675,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_VLAN_TYPE_UNMATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_vlan_type_unmatch,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth vlan type",		\

@@ -140,7 +140,7 @@ struct bt_hci_cmd_hdr {
 #define BT_CMD_TEST(cmd, octet, bit)            (cmd[octet] & BIT(bit))
 #define BT_CMD_LE_STATES(cmd)                   BT_CMD_TEST(cmd, 28, 3)
 
-#define BT_FEAT_TEST(feat, page, octet, bit)    (feat[page][octet] & BIT(bit))
+#define BT_FEAT_TEST(feat, page, octet, bit)    ((feat[page][octet] & BIT(bit)) != 0)
 
 #define BT_FEAT_BREDR(feat)                     !BT_FEAT_TEST(feat, 0, 4, 5)
 #define BT_FEAT_LE(feat)                        BT_FEAT_TEST(feat, 0, 4, 6)
@@ -210,6 +210,8 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_TONE_QUAL_IND    48
 #define BT_LE_FEAT_BIT_EXTENDED_FEAT_SET        63
 #define BT_LE_FEAT_BIT_FRAME_SPACE_UPDATE       65
+#define BT_LE_FEAT_BIT_SHORTER_CONN_INTERVALS   72
+#define BT_LE_FEAT_BIT_SHORTER_CONN_INTERVALS_HOST_SUPP  73
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
@@ -290,6 +292,10 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_EXTENDED_FEAT_SET)
 #define BT_FEAT_LE_FRAME_SPACE_UPDATE_SET(feat)   BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_FRAME_SPACE_UPDATE)
+#define BT_FEAT_LE_SHORTER_CONN_INTERVALS(feat)   BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_SHORTER_CONN_INTERVALS)
+#define BT_FEAT_LE_SHORTER_CONN_INTERVALS_HOST_SUPP(feat) BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_SHORTER_CONN_INTERVALS_HOST_SUPP)
 
 #define BT_FEAT_LE_CIS(feat)            (BT_FEAT_LE_CIS_CENTRAL(feat) | \
 					BT_FEAT_LE_CIS_PERIPHERAL(feat))
@@ -426,6 +432,62 @@ struct bt_hci_cp_accept_conn_req {
 	bt_addr_t bdaddr;
 	uint8_t   role;
 } __packed;
+
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD        0x00
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_ULAW        0x01
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_ALAW        0x02
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT 0x03
+
+#define BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT 0x00
+
+#define BT_HCI_VOICE_SETTING_SAMPLE_SIZE_8_BITS  0x00
+#define BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS 0x01
+
+#define BT_HCI_VOICE_SETTING_DATA_FMT_1_COMPLEMENT 0x00
+#define BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT 0x01
+#define BT_HCI_VOICE_SETTING_DATA_FMT_SIGNED       0x02
+#define BT_HCI_VOICE_SETTING_DATA_FMT_UNSIGNED     0x03
+
+#define BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR 0x00
+#define BT_HCI_VOICE_SETTING_CODING_FMT_ULAW   0x01
+#define BT_HCI_VOICE_SETTING_CODING_FMT_ALAW   0x02
+
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_MASK GENMASK(1, 0)
+#define BT_HCI_VOICE_SETTING_PCM_BIT_POS_MASK    GENMASK(2, 4)
+#define BT_HCI_VOICE_SETTING_SAMPLE_SIZE_MASK    GENMASK(5, 5)
+#define BT_HCI_VOICE_SETTING_DATA_FMT_MASK       GENMASK(7, 6)
+#define BT_HCI_VOICE_SETTING_CODING_FMT_MASK     GENMASK(9, 8)
+
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_PREP(val) \
+	FIELD_PREP(BT_HCI_VOICE_SETTING_AIR_CODING_FMT_MASK, val)
+#define BT_HCI_VOICE_SETTING_PCM_BIT_POS_PREP(val) \
+	FIELD_PREP(BT_HCI_VOICE_SETTING_PCM_BIT_POS_MASK, val)
+#define BT_HCI_VOICE_SETTING_SAMPLE_SIZE_PREP(val) \
+	FIELD_PREP(BT_HCI_VOICE_SETTING_SAMPLE_SIZE_MASK, val)
+#define BT_HCI_VOICE_SETTING_DATA_FMT_PREP(val) FIELD_PREP(BT_HCI_VOICE_SETTING_DATA_FMT_MASK, val)
+#define BT_HCI_VOICE_SETTING_CODING_FMT_PREP(val) \
+	FIELD_PREP(BT_HCI_VOICE_SETTING_CODING_FMT_MASK, val)
+
+#define BT_HCI_VOICE_SETTING_AIR_CODING_FMT_GET(val) \
+	FIELD_GET(BT_HCI_VOICE_SETTING_AIR_CODING_FMT_MASK, val)
+#define BT_HCI_VOICE_SETTING_PCM_BIT_POS_GET(val) \
+	FIELD_GET(BT_HCI_VOICE_SETTING_PCM_BIT_POS_MASK, val)
+#define BT_HCI_VOICE_SETTING_SAMPLE_SIZE_GET(val) \
+	FIELD_GET(BT_HCI_VOICE_SETTING_SAMPLE_SIZE_MASK, val)
+#define BT_HCI_VOICE_SETTING_DATA_FMT_GET(val) FIELD_GET(BT_HCI_VOICE_SETTING_DATA_FMT_MASK, val)
+#define BT_HCI_VOICE_SETTING_CODING_FMT_GET(val) \
+	FIELD_GET(BT_HCI_VOICE_SETTING_CODING_FMT_MASK, val)
+
+#define BT_HCI_VOICE_SETTINGS(air_coding_fmt, pcm_bit_pos, sample_size, data_fmt, coding_fmt) \
+	(BT_HCI_VOICE_SETTING_AIR_CODING_FMT_PREP(air_coding_fmt) | \
+	 BT_HCI_VOICE_SETTING_PCM_BIT_POS_PREP(pcm_bit_pos) | \
+	 BT_HCI_VOICE_SETTING_SAMPLE_SIZE_PREP(sample_size) | \
+	 BT_HCI_VOICE_SETTING_DATA_FMT_PREP(data_fmt) | \
+	 BT_HCI_VOICE_SETTING_CODING_FMT_PREP(coding_fmt))
+
+#define BT_HCI_SCO_MAX_LATENCY_DEFAULT 0xffff /* do not care about SCO link latency */
+
+#define BT_HCI_SCO_RETRANS_EFFORT_DEFAULT 0xff /* do not care about SCO retransmission effort */
 
 #define BT_HCI_OP_SETUP_SYNC_CONN               BT_OP(BT_OGF_LINK_CTRL, 0x0028) /* 0x0428 */
 struct bt_hci_cp_setup_sync_conn {
@@ -928,6 +990,7 @@ struct bt_hci_rp_configure_data_path {
 #define BT_HCI_VERSION_5_4                      13
 #define BT_HCI_VERSION_6_0                      14
 #define BT_HCI_VERSION_6_1                      15
+#define BT_HCI_VERSION_6_2                      16
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
@@ -2868,6 +2931,66 @@ struct bt_hci_cp_le_frame_space_update {
 
 #define BT_HCI_OP_LE_FRAME_SPACE_UPDATE BT_OP(BT_OGF_LE, 0x009D) /* 0x209D */
 
+/** All limits according to BT Core spec 6.2 [Vol 4, Part E, 7.8.154]. */
+#define BT_HCI_LE_SCI_INTERVAL_MIN_125US   (0x0003U)
+#define BT_HCI_LE_SCI_INTERVAL_MAX_125US   (0x7D00U)
+#define BT_HCI_LE_SCI_INTERVAL_MIN_US      (375U)
+#define BT_HCI_LE_SCI_INTERVAL_MAX_US      (4000000U)
+#define BT_HCI_LE_SCI_INTERVAL_UNIT_US     (125U)
+
+#define BT_HCI_LE_SCI_STRIDE_MIN_125US     (0x0001U)
+
+#define BT_HCI_LE_MIN_SUPP_CONN_INT_MIN_US (375U)
+#define BT_HCI_LE_MIN_SUPP_CONN_INT_MAX_US (7500U)
+
+#define BT_HCI_LE_SCI_CE_LEN_MIN_125US     (0x0001U)
+#define BT_HCI_LE_SCI_CE_LEN_MAX_125US     (0x3E7FU)
+
+struct bt_hci_le_read_min_supported_conn_interval_group {
+	uint16_t group_min;
+	uint16_t group_max;
+	uint16_t group_stride;
+} __packed;
+
+struct bt_hci_op_le_read_min_supported_conn_interval {
+	uint8_t status;
+	uint8_t min_supported_conn_interval;
+	uint8_t num_groups;
+	struct bt_hci_le_read_min_supported_conn_interval_group groups[];
+} __packed;
+
+#define BT_HCI_OP_LE_READ_MIN_SUPPORTED_CONN_INTERVAL                                    \
+	BT_OP(BT_OGF_LE, 0x00A3) /* 0x20A3 */
+
+struct bt_hci_op_le_set_default_rate_parameters {
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_DEFAULT_RATE_PARAMETERS BT_OP(BT_OGF_LE, 0x00A2) /* 0x20A2 */
+
+struct bt_hci_op_le_connection_rate_request {
+	uint16_t handle;
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
+} __packed;
+
+#define BT_HCI_OP_LE_CONNECTION_RATE_REQUEST BT_OP(BT_OGF_LE, 0x00A1) /* 0x20A1 */
+
 /* Event definitions */
 
 #define BT_HCI_EVT_UNKNOWN                      0x00
@@ -3246,9 +3369,12 @@ struct bt_hci_evt_le_advertising_report {
 /** All limits according to BT Core Spec v5.4 [Vol 4, Part E]. */
 #define BT_HCI_LE_INTERVAL_MIN           0x0006
 #define BT_HCI_LE_INTERVAL_MAX           0x0c80
+#define BT_HCI_LE_PERIPHERAL_LATENCY_MIN (0x0000U)
 #define BT_HCI_LE_PERIPHERAL_LATENCY_MAX 0x01f3
 #define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN 0x000a
 #define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX 0x0c80
+
+#define BT_HCI_LE_INTERVAL_UNIT_US (1250U)
 
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
 struct bt_hci_evt_le_conn_update_complete {
@@ -3637,6 +3763,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 /** All limits according to BT Core Spec v5.4 [Vol 4, Part E]. */
 #define BT_HCI_LE_SUBRATE_FACTOR_MIN   0x0001
 #define BT_HCI_LE_SUBRATE_FACTOR_MAX   0x01f4
+#define BT_HCI_LE_CONTINUATION_NUM_MIN (0x0000U)
 #define BT_HCI_LE_CONTINUATION_NUM_MAX 0x01f3
 
 #define BT_HCI_EVT_LE_SUBRATE_CHANGE            0x23
@@ -4081,6 +4208,17 @@ struct bt_hci_evt_le_frame_space_update_complete {
 	uint16_t spacing_types;
 } __packed;
 
+#define BT_HCI_EVT_LE_CONN_RATE_CHANGE 0x37
+struct bt_hci_evt_le_conn_rate_change {
+	uint8_t  status;
+	uint16_t handle;
+	uint16_t conn_interval;
+	uint16_t subrate_factor;
+	uint16_t peripheral_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT(n) (1ULL << (n))
@@ -4183,6 +4321,7 @@ struct bt_hci_evt_le_frame_space_update_complete {
 #define BT_EVT_MASK_LE_CS_TEST_END_COMPLETE                           BT_EVT_BIT(50)
 
 #define BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE BT_EVT_BIT(52)
+#define BT_EVT_MASK_LE_CONN_RATE_CHANGE            BT_EVT_BIT(54)
 
 /** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00

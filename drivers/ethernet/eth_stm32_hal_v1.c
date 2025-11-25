@@ -135,7 +135,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
 
 	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface,
-					   total_len, AF_UNSPEC, 0, K_MSEC(100));
+					   total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;

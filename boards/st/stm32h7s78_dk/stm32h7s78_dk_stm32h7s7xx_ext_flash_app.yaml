@@ -4,7 +4,7 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-ram: 128
+ram: 456
 flash: 61439  # size in kB of 1 app slot minus MCUboot header size (1KB)
 sysbuild: true
 supported:

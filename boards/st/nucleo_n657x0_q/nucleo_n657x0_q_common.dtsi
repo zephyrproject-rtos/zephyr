@@ -70,6 +70,7 @@
 	csi_gpio0_hog: csi-gpio0-hog {
 		gpio-hog;
 		gpios = <5 GPIO_ACTIVE_HIGH>;
+		/* NOTE: disabled by default so PO5 stays free unless CSI is used */
 		status = "disabled";
 	};
 };
@@ -78,6 +79,7 @@
 	csi_gpio1_hog: csi-gpio1-hog {
 		gpio-hog;
 		gpios = <0 GPIO_ACTIVE_HIGH>;
+		/* NOTE: disabled by default so PA0 stays free unless CSI is used */
 		status = "disabled";
 	};
 };

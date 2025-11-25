@@ -64,50 +64,33 @@ config VIDEO_ENCODER_H264
 config VIDEO_ENCODER_JPEG
 	bool "JPEG video encoder support"
 
-source "drivers/video/Kconfig.esp32_dvp"
-
-source "drivers/video/Kconfig.mcux_csi"
-
-source "drivers/video/Kconfig.mcux_mipi_csi2rx"
-
-source "drivers/video/Kconfig.shell"
-
-source "drivers/video/Kconfig.sw_generator"
-
-source "drivers/video/Kconfig.mt9m114"
-
-source "drivers/video/Kconfig.ov7725"
-
-source "drivers/video/Kconfig.ov2640"
-
-source "drivers/video/Kconfig.stm32_dcmi"
-
-source "drivers/video/Kconfig.stm32_venc"
-
-source "drivers/video/Kconfig.ov5640"
-
-source "drivers/video/Kconfig.ov7670"
-
-source "drivers/video/Kconfig.ov9655"
-
-source "drivers/video/Kconfig.gc2145"
-
-source "drivers/video/Kconfig.hm01b0"
-
-source "drivers/video/Kconfig.mcux_sdma"
-
+# zephyr-keep-sorted-start
 source "drivers/video/Kconfig.emul_imager"
-
 source "drivers/video/Kconfig.emul_rx"
-
+source "drivers/video/Kconfig.esp32_dvp"
+source "drivers/video/Kconfig.gc2145"
+source "drivers/video/Kconfig.hm01b0"
+source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx335"
-
-source "drivers/video/Kconfig.st_mipid02"
-
-source "drivers/video/Kconfig.stm32_dcmipp"
-
+source "drivers/video/Kconfig.mcux_csi"
+source "drivers/video/Kconfig.mcux_mipi_csi2rx"
+source "drivers/video/Kconfig.mcux_sdma"
+source "drivers/video/Kconfig.mt9m114"
+source "drivers/video/Kconfig.ov2640"
+source "drivers/video/Kconfig.ov5640"
+source "drivers/video/Kconfig.ov7670"
+source "drivers/video/Kconfig.ov7725"
+source "drivers/video/Kconfig.ov9655"
 source "drivers/video/Kconfig.renesas_ra_ceu"
-
+source "drivers/video/Kconfig.shell"
+source "drivers/video/Kconfig.st_mipid02"
+source "drivers/video/Kconfig.stm32_dcmi"
+source "drivers/video/Kconfig.stm32_dcmipp"
 source "drivers/video/Kconfig.stm32_jpeg"
+source "drivers/video/Kconfig.stm32_venc"
+source "drivers/video/Kconfig.sw_generator"
+# zephyr-keep-sorted-stop
+
+source "drivers/video/Kconfig.ov5642"
 
 endif # VIDEO

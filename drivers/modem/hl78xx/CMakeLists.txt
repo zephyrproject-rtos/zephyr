@@ -1,7 +1,7 @@
 #
-#  Copyright (c) 2025 Netfeasa Ltd.
+# Copyright (c) 2025 Netfeasa Ltd.
 #
-#  SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 #
 zephyr_library()
 

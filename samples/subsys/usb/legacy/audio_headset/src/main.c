@@ -27,7 +27,7 @@ static void data_received(const struct device *dev,
 		return;
 	}
 
-	LOG_DBG("Received %d data, buffer %p", size, buffer);
+	LOG_DBG("Received %zu data, buffer %p", size, buffer);
 
 	/* Check if the device OUT buffer can be used for input */
 	if (size == usb_audio_get_in_frame_size(dev)) {

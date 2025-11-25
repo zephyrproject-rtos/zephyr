@@ -7,9 +7,6 @@ sample:
 common:
   sysbuild: true
   harness: pytest
-  harness_config:
-    pytest_dut_scope: session
-  timeout: 20
 
 tests:
   sample.sysbuild.hello_world.nrf5340dk_cpuapp_cpunet:
@@ -59,6 +56,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
+    harness_config: &pytest_only_first_uart
+      pytest_root:
+        - "pytest/test_both_uart.py::test_uart_in_app"
     extra_args:
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_CORE=y
       - hello_world_SNIPPET=nordic-flpr
@@ -67,6 +67,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
+    harness_config: *pytest_only_first_uart
     extra_args:
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-flpr-xip

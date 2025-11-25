@@ -211,6 +211,10 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Adc1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
+	CLOCK_SetIpSrc(kCLOCK_Lpit0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm0))
 	CLOCK_SetIpSrc(kCLOCK_Ftm0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm0), ip_source));

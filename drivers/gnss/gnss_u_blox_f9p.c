@@ -546,7 +546,7 @@ static DEVICE_API(gnss, ublox_f9p_driver_api) = {
 	static struct ubx_f9p_data ubx_f9p_data_##inst;						   \
 												   \
 	IF_ENABLED(CONFIG_GNSS_U_BLOX_F9P_RTK,							   \
-		   (GNSS_RTK_DATA_CALLBACK_DEFINE(DEVICE_DT_INST_GET(inst), f9p_rtk_data_cb)));	   \
+		   (GNSS_DT_RTK_DATA_CALLBACK_DEFINE(DT_DRV_INST(inst), f9p_rtk_data_cb)));	   \
 												   \
 	DEVICE_DT_INST_DEFINE(inst,								   \
 			      ublox_f9p_init,							   \

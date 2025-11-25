@@ -49,29 +49,29 @@ static const char *CONFIG =
 #endif
 		"";
 
-static struct sockaddr_in6 in6_addr_my = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(MY_SRC_PORT),
+static struct net_sockaddr_in6 ipv6_addr_my = {
+	.sin6_family = NET_AF_INET6,
+	.sin6_port = net_htons(MY_SRC_PORT),
 };
 
-static struct sockaddr_in6 in6_addr_dst = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(DEF_PORT),
+static struct net_sockaddr_in6 ipv6_addr_dst = {
+	.sin6_family = NET_AF_INET6,
+	.sin6_port = net_htons(DEF_PORT),
 };
 
-static struct sockaddr_in in4_addr_dst = {
-	.sin_family = AF_INET,
-	.sin_port = htons(DEF_PORT),
+static struct net_sockaddr_in ipv4_addr_dst = {
+	.sin_family = NET_AF_INET,
+	.sin_port = net_htons(DEF_PORT),
 };
 
-static struct sockaddr_in in4_addr_my = {
-	.sin_family = AF_INET,
-	.sin_port = htons(MY_SRC_PORT),
+static struct net_sockaddr_in ipv4_addr_my = {
+	.sin_family = NET_AF_INET,
+	.sin_port = net_htons(MY_SRC_PORT),
 };
 
-static struct in6_addr shell_ipv6;
+static struct net_in6_addr shell_ipv6;
 
-static struct in_addr shell_ipv4;
+static struct net_in_addr shell_ipv4;
 
 #define DEVICE_NAME "zperf shell"
 
@@ -154,7 +154,7 @@ static long parse_number(const char *string, const uint32_t *divisor_arr,
 }
 
 static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
-			   struct sockaddr_in6 *addr)
+			   struct net_sockaddr_in6 *addr)
 {
 	int ret;
 
@@ -162,12 +162,12 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET6, host, &addr->sin6_addr);
+	ret = net_addr_pton(NET_AF_INET6, host, &addr->sin6_addr);
 	if (ret < 0) {
 		return -EDESTADDRREQ;
 	}
 
-	addr->sin6_port = htons(strtoul(port, NULL, 10));
+	addr->sin6_port = net_htons(strtoul(port, NULL, 10));
 	if (!addr->sin6_port) {
 		shell_fprintf(sh, SHELL_WARNING,
 			      "Invalid port %s\n", port);
@@ -178,7 +178,7 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 }
 
 static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
-			   struct sockaddr_in *addr)
+			   struct net_sockaddr_in *addr)
 {
 	int ret;
 
@@ -186,12 +186,12 @@ static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET, host, &addr->sin_addr);
+	ret = net_addr_pton(NET_AF_INET, host, &addr->sin_addr);
 	if (ret < 0) {
 		return -EDESTADDRREQ;
 	}
 
-	addr->sin_port = htons(strtoul(port, NULL, 10));
+	addr->sin_port = net_htons(strtoul(port, NULL, 10));
 	if (!addr->sin_port) {
 		shell_fprintf(sh, SHELL_WARNING,
 			      "Invalid port %s\n", port);
@@ -218,7 +218,7 @@ static int zperf_bind_host(const struct shell *sh,
 
 	if (argc >= 3) {
 		char *addr_str = argv[2];
-		struct sockaddr addr;
+		struct net_sockaddr addr;
 
 		memset(&addr, 0, sizeof(addr));
 
@@ -278,7 +278,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (net_addr_pton(AF_INET6, argv[start + 1], &shell_ipv6) < 0) {
+		if (net_addr_pton(NET_AF_INET6, argv[start + 1], &shell_ipv6) < 0) {
 			if (argc != 2) {
 				shell_help(sh);
 				return -ENOEXEC;
@@ -396,7 +396,7 @@ static int shell_cmd_download(const struct shell *sh, size_t argc,
 		switch (argv[i][1]) {
 		case 'I':
 			/*
-			 * IFNAMSIZ by default CONFIG_NET_INTERFACE_NAME_LEN
+			 * NET_IFNAMSIZ by default CONFIG_NET_INTERFACE_NAME_LEN
 			 * is at least 1 so no overflow risk here
 			 */
 			i++;
@@ -405,8 +405,8 @@ static int shell_cmd_download(const struct shell *sh, size_t argc,
 					      "-I <interface name>\n");
 				return -ENOEXEC;
 			}
-			(void)memset(param->if_name, 0x0, IFNAMSIZ);
-			strncpy(param->if_name, argv[i], IFNAMSIZ - 1);
+			(void)memset(param->if_name, 0x0, NET_IFNAMSIZ);
+			strncpy(param->if_name, argv[i], NET_IFNAMSIZ - 1);
 
 			opt_cnt += 2;
 			break;
@@ -778,28 +778,28 @@ static int ping_handler(struct net_icmp_ctx *ctx,
 }
 
 static void send_ping(const struct shell *sh,
-		      struct in6_addr *addr,
+		      struct net_in6_addr *addr,
 		      int timeout_ms)
 {
 	static struct k_sem sem_wait;
-	struct sockaddr_in6 dest_addr = { 0 };
+	struct net_sockaddr_in6 dest_addr = { 0 };
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
 	if (ret < 0) {
 		shell_fprintf(sh, SHELL_WARNING, "Cannot send ping (%d)\n", ret);
 		return;
 	}
 
-	dest_addr.sin6_family = AF_INET6;
+	dest_addr.sin6_family = NET_AF_INET6;
 	net_ipv6_addr_copy_raw((uint8_t *)&dest_addr.sin6_addr, (uint8_t *)addr);
 
 	k_sem_init(&sem_wait, 0, 1);
 
 	(void)net_icmp_send_echo_request(&ctx,
 					 net_if_get_default(),
-					 (struct sockaddr *)&dest_addr,
+					 (struct net_sockaddr *)&dest_addr,
 					 NULL, &sem_wait);
 
 	ret = k_sem_take(&sem_wait, K_MSEC(timeout_ms));
@@ -836,9 +836,9 @@ static int execute_upload(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, "Starting...\n");
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && param->peer_addr.sa_family == AF_INET6) {
-		struct sockaddr_in6 *ipv6 =
-				(struct sockaddr_in6 *)&param->peer_addr;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && param->peer_addr.sa_family == NET_AF_INET6) {
+		struct net_sockaddr_in6 *ipv6 =
+				(struct net_sockaddr_in6 *)&param->peer_addr;
 		/* For IPv6, we should make sure that neighbor discovery
 		 * has been done for the peer. So send ping here, wait
 		 * some time and start the test after that.
@@ -968,8 +968,8 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
 {
 	struct zperf_upload_params param = { 0 };
-	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
-	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
+	struct net_sockaddr_in6 ipv6 = { .sin6_family = NET_AF_INET6 };
+	struct net_sockaddr_in ipv4 = { .sin_family = NET_AF_INET };
 	char *port_str;
 	bool async = false;
 	bool is_udp;
@@ -980,7 +980,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 
 	param.unix_offset_us = k_uptime_get() * USEC_PER_MSEC;
 	param.options.priority = -1;
-	is_udp = proto == IPPROTO_UDP;
+	is_udp = proto == NET_IPPROTO_UDP;
 
 	/* Parse options */
 	for (size_t i = 1; i < argc; ++i) {
@@ -1056,8 +1056,8 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 					      "-I <interface name>\n");
 				return -ENOEXEC;
 			}
-			(void)memset(param.if_name, 0x0, IFNAMSIZ);
-			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+			(void)memset(param.if_name, 0x0, NET_IFNAMSIZ);
+			strncpy(param.if_name, argv[i], NET_IFNAMSIZ - 1);
 
 			opt_cnt += 2;
 			break;
@@ -1213,19 +1213,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 
 static int cmd_tcp_upload(const struct shell *sh, size_t argc, char *argv[])
 {
-	return shell_cmd_upload(sh, argc, argv, IPPROTO_TCP);
+	return shell_cmd_upload(sh, argc, argv, NET_IPPROTO_TCP);
 }
 
 static int cmd_udp_upload(const struct shell *sh, size_t argc, char *argv[])
 {
-	return shell_cmd_upload(sh, argc, argv, IPPROTO_UDP);
+	return shell_cmd_upload(sh, argc, argv, NET_IPPROTO_UDP);
 }
 
 static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
 {
 	struct zperf_upload_params param = { 0 };
-	sa_family_t family;
+	net_sa_family_t family;
 	uint8_t is_udp;
 	bool async = false;
 	int start = 0;
@@ -1233,7 +1233,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	int seconds;
 
 	param.unix_offset_us = k_uptime_get() * USEC_PER_MSEC;
-	is_udp = proto == IPPROTO_UDP;
+	is_udp = proto == NET_IPPROTO_UDP;
 
 	/* Parse options */
 	for (size_t i = 1; i < argc; ++i) {
@@ -1309,8 +1309,8 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 					      "-I <interface name>\n");
 				return -ENOEXEC;
 			}
-			(void)memset(param.if_name, 0x0, IFNAMSIZ);
-			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+			(void)memset(param.if_name, 0x0, NET_IFNAMSIZ);
+			strncpy(param.if_name, argv[i], NET_IFNAMSIZ - 1);
 
 			opt_cnt += 2;
 			break;
@@ -1362,10 +1362,10 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	family = !strcmp(argv[start + 1], "v4") ? AF_INET : AF_INET6;
+	family = !strcmp(argv[start + 1], "v4") ? NET_AF_INET : NET_AF_INET6;
 
-	if (family == AF_INET6) {
-		if (net_ipv6_is_addr_unspecified(&in6_addr_dst.sin6_addr)) {
+	if (family == NET_AF_INET6) {
+		if (net_ipv6_is_addr_unspecified(&ipv6_addr_dst.sin6_addr)) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Invalid destination IPv6 address.\n");
 			return -ENOEXEC;
@@ -1373,11 +1373,11 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connecting to %s\n",
-			      net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
+			      net_sprint_ipv6_addr(&ipv6_addr_dst.sin6_addr));
 
-		memcpy(&param.peer_addr, &in6_addr_dst, sizeof(in6_addr_dst));
+		memcpy(&param.peer_addr, &ipv6_addr_dst, sizeof(ipv6_addr_dst));
 	} else {
-		if (net_ipv4_is_addr_unspecified(&in4_addr_dst.sin_addr)) {
+		if (net_ipv4_is_addr_unspecified(&ipv4_addr_dst.sin_addr)) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Invalid destination IPv4 address.\n");
 			return -ENOEXEC;
@@ -1385,9 +1385,9 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connecting to %s\n",
-			      net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
+			      net_sprint_ipv4_addr(&ipv4_addr_dst.sin_addr));
 
-		memcpy(&param.peer_addr, &in4_addr_dst, sizeof(in4_addr_dst));
+		memcpy(&param.peer_addr, &ipv4_addr_dst, sizeof(ipv4_addr_dst));
 	}
 
 	if (argc > 2) {
@@ -1420,13 +1420,13 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 static int cmd_tcp_upload2(const struct shell *sh, size_t argc,
 			   char *argv[])
 {
-	return shell_cmd_upload2(sh, argc, argv, IPPROTO_TCP);
+	return shell_cmd_upload2(sh, argc, argv, NET_IPPROTO_TCP);
 }
 
 static int cmd_udp_upload2(const struct shell *sh, size_t argc,
 			   char *argv[])
 {
-	return shell_cmd_upload2(sh, argc, argv, IPPROTO_UDP);
+	return shell_cmd_upload2(sh, argc, argv, NET_IPPROTO_UDP);
 }
 
 static int cmd_tcp(const struct shell *sh, size_t argc, char *argv[])
@@ -1851,17 +1851,17 @@ void zperf_shell_init(void)
 	int ret;
 
 	if (IS_ENABLED(MY_IP6ADDR_SET) && MY_IP6ADDR) {
-		ret = net_addr_pton(AF_INET6, MY_IP6ADDR,
-				    &in6_addr_my.sin6_addr);
+		ret = net_addr_pton(NET_AF_INET6, MY_IP6ADDR,
+				    &ipv6_addr_my.sin6_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set %s address\n", "IPv6");
 		} else {
 			NET_INFO("Setting IP address %s",
-				 net_sprint_ipv6_addr(&in6_addr_my.sin6_addr));
+				 net_sprint_ipv6_addr(&ipv6_addr_my.sin6_addr));
 		}
 
-		ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
-				    &in6_addr_dst.sin6_addr);
+		ret = net_addr_pton(NET_AF_INET6, DST_IP6ADDR,
+				    &ipv6_addr_dst.sin6_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set destination %s address %s",
 				 "IPv6",
@@ -1869,22 +1869,22 @@ void zperf_shell_init(void)
 					     : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
-				 net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
+				 net_sprint_ipv6_addr(&ipv6_addr_dst.sin6_addr));
 		}
 	}
 
 	if (IS_ENABLED(MY_IP4ADDR_SET) && MY_IP4ADDR) {
-		ret = net_addr_pton(AF_INET, MY_IP4ADDR,
-				    &in4_addr_my.sin_addr);
+		ret = net_addr_pton(NET_AF_INET, MY_IP4ADDR,
+				    &ipv4_addr_my.sin_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set %s address\n", "IPv4");
 		} else {
 			NET_INFO("Setting IP address %s",
-				 net_sprint_ipv4_addr(&in4_addr_my.sin_addr));
+				 net_sprint_ipv4_addr(&ipv4_addr_my.sin_addr));
 		}
 
-		ret = net_addr_pton(AF_INET, DST_IP4ADDR,
-				    &in4_addr_dst.sin_addr);
+		ret = net_addr_pton(NET_AF_INET, DST_IP4ADDR,
+				    &ipv4_addr_dst.sin_addr);
 		if (ret < 0) {
 			NET_WARN("Unable to set destination %s address %s",
 				 "IPv4",
@@ -1892,7 +1892,7 @@ void zperf_shell_init(void)
 					      : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
-				 net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
+				 net_sprint_ipv4_addr(&ipv4_addr_dst.sin_addr));
 		}
 	}
 }

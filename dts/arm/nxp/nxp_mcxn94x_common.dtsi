@@ -86,6 +86,7 @@
 		reg = <0x110000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP0_CLK>;
 	};
 
@@ -94,6 +95,7 @@
 		reg = <0x40113000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP1_CLK>;
 	};
 
@@ -102,6 +104,7 @@
 		reg = <0x115000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP2_CLK>;
 	};
 

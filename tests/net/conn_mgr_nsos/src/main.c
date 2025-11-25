@@ -130,7 +130,7 @@ ZTEST(conn_mgr_nsos, test_conn_mgr_nsos)
 ZTEST(conn_mgr_nsos, test_conn_mgr_nsos_idle)
 {
 	struct net_if *iface = net_if_get_default();
-	struct sockaddr_in v4addr;
+	struct net_sockaddr_in v4addr;
 	int sock, rc;
 
 	/* 2 second idle timeout */
@@ -149,13 +149,13 @@ ZTEST(conn_mgr_nsos, test_conn_mgr_nsos_idle)
 	zassert_equal(0, k_sem_take(&l4_connected, K_SECONDS(2)));
 
 	/* Send data after a second (to localhost) */
-	rc = zsock_inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
+	rc = zsock_inet_pton(NET_AF_INET, "127.0.0.1", (void *)&v4addr);
 	zassert_equal(1, rc);
-	v4addr.sin_family = AF_INET;
-	v4addr.sin_port = htons(1234);
+	v4addr.sin_family = NET_AF_INET;
+	v4addr.sin_port = net_htons(1234);
 
-	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	rc = zsock_sendto(sock, "TEST", 4, 0, (const struct sockaddr *)&v4addr, sizeof(v4addr));
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	rc = zsock_sendto(sock, "TEST", 4, 0, (const struct net_sockaddr *)&v4addr, sizeof(v4addr));
 	zassert_equal(4, rc);
 
 	/* Should have reset the idle timeout */
@@ -202,7 +202,7 @@ static void *testsuite_init(void)
 {
 	static struct net_mgmt_event_callback l4_callback;
 	struct net_if *iface = net_if_get_default();
-	struct in_addr addr;
+	struct net_in_addr addr;
 
 	net_mgmt_init_event_callback(&l4_callback, l4_event_handler,
 				     NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED);
@@ -211,7 +211,7 @@ static void *testsuite_init(void)
 	conn_mgr_all_if_down(false);
 
 	/* Add an IP address so that NET_EVENT_L4_CONNECTED can trigger */
-	net_addr_pton(AF_INET, "192.0.2.1", &addr);
+	net_addr_pton(NET_AF_INET, "192.0.2.1", &addr);
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	return NULL;

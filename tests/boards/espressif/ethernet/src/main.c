@@ -41,13 +41,14 @@ static void ipv4_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	char buf[NET_IPV4_ADDR_LEN];
 
 	LOG_INF("Address[%d]: %s", net_if_get_by_iface(iface),
-		net_addr_ntop(AF_INET, &iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr, buf,
+		net_addr_ntop(NET_AF_INET,
+			      &iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr, buf,
 			      sizeof(buf)));
 	LOG_INF("Subnet[%d]: %s", net_if_get_by_iface(iface),
-		net_addr_ntop(AF_INET, &iface->config.ip.ipv4->unicast[0].netmask, buf,
+		net_addr_ntop(NET_AF_INET, &iface->config.ip.ipv4->unicast[0].netmask, buf,
 			      sizeof(buf)));
 	LOG_INF("Router[%d]: %s", net_if_get_by_iface(iface),
-		net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw, buf, sizeof(buf)));
+		net_addr_ntop(NET_AF_INET, &iface->config.ip.ipv4->gw, buf, sizeof(buf)));
 	LOG_INF("Lease time[%d]: %u seconds", net_if_get_by_iface(iface),
 		iface->config.dhcpv4.lease_time);
 
@@ -73,7 +74,7 @@ static void option_handler(struct net_dhcpv4_option_callback *cb, size_t length,
 	char buf[NET_IPV4_ADDR_LEN];
 
 	LOG_INF("DHCP Option %d: %s", cb->option,
-		net_addr_ntop(AF_INET, cb->data, buf, sizeof(buf)));
+		net_addr_ntop(NET_AF_INET, cb->data, buf, sizeof(buf)));
 }
 
 ZTEST(ethernet, test_dhcp_check)
@@ -91,16 +92,16 @@ ZTEST(ethernet, test_icmp_check)
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
 	struct in_addr gw_addr_4;
-	struct sockaddr_in dst4 = {0};
+	struct net_sockaddr_in dst4 = {0};
 	int ret;
 
 	gw_addr_4 = net_if_ipv4_get_gw(iface);
 	zassert_not_equal(gw_addr_4.s_addr, 0, "Gateway address is not set");
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst4.sin_family = AF_INET;
+	dst4.sin_family = NET_AF_INET;
 	memcpy(&dst4.sin_addr, &gw_addr_4, sizeof(gw_addr_4));
 
 	params.identifier = 1234;
@@ -112,7 +113,7 @@ ZTEST(ethernet, test_icmp_check)
 
 	LOG_INF("Pinging the gateway...");
 
-	ret = net_icmp_send_echo_request(&ctx, iface, (struct sockaddr *)&dst4, &params, NULL);
+	ret = net_icmp_send_echo_request(&ctx, iface, (struct net_sockaddr *)&dst4, &params, NULL);
 	zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
 
 	zassert_equal(k_sem_take(&net_event, K_SECONDS(CONFIG_GATEWAY_PING_TIMEOUT)), 0,

@@ -64,32 +64,32 @@ static void test_crime(void)
 {
 	int ret, recv_len;
 	int client_fd;
-	int proto = IPPROTO_TCP;
+	int proto = NET_IPPROTO_TCP;
 	char *ptr;
 	const char *data;
 	size_t len;
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	static unsigned char buf[512];
 
 	zassert_ok(http_server_start(), "Failed to start the server");
 
-	ret = zsock_socket(AF_INET, SOCK_STREAM, proto);
+	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, proto);
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
 	client_fd = ret;
 
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(SERVER_PORT);
+	sa.sin_family = NET_AF_INET;
+	sa.sin_port = net_htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
+	ret = zsock_inet_pton(NET_AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
 	zassert_not_equal(-1, ret, "inet_pton() failed (%d)", errno);
 	zassert_not_equal(0, ret, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
 	zassert_equal(1, ret, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
 
 	memset(buf, '\0', sizeof(buf));
-	ptr = (char *)zsock_inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
+	ptr = (char *)zsock_inet_ntop(NET_AF_INET, &sa.sin_addr, buf, sizeof(buf));
 	zassert_not_equal(ptr, NULL, "inet_ntop() failed (%d)", errno);
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(ret, -1, "failed to connect (%s/%d)", strerror(errno), errno);
 
 	char *http1_request = "GET / HTTP/1.1\r\n"

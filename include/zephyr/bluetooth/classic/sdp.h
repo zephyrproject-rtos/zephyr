@@ -518,6 +518,32 @@ struct bt_sdp_record {
 }
 
 /**
+ *  @brief SDP Supported Capabilities Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported capabilities of a profile/protocol.
+ *
+ *  @param _capabilities Capability mask as 8bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_CAPABILITIES(_capabilities) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_CAPABILITIES, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT8), BT_SDP_ARRAY_8(_capabilities) } \
+}
+
+/**
+ *  @brief SDP Supported Functions Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported functions of a profile/protocol.
+ *
+ *  @param _functions Function mask as 32bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_FUNCTIONS(_functions) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_FUNCTIONS, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT32), BT_SDP_ARRAY_32(_functions) } \
+}
+
+/**
  *  @brief SDP Service Declaration Macro.
  *
  *  Helper macro to declare a service.

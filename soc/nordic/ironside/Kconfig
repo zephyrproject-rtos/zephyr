@@ -69,6 +69,12 @@ config NRF_IRONSIDE_DVFS_SERVICE
 	help
 	  Service used to handle DVFS operating point requests.
 
+config NRF_IRONSIDE_COUNTER_SERVICE
+	bool "IronSide counter service"
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to manage secure monotonic counters.
+
 if NRF_IRONSIDE_DVFS_SERVICE
 
 config NRF_IRONSIDE_ABB_STATUSANA_CHECK_MAX_ATTEMPTS

@@ -15,6 +15,11 @@
 					       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),),	\
 			())
 
+#define MMU_REGION_MCAN_DEFN(idx, n)								\
+		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mcan##n)),			\
+			   (MMU_REGION_FLAT_ENTRY("mcan"#n, MCAN##n##_BASE_ADDRESS, 0x4000,	\
+						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 #define MMU_REGION_XDMAC_DEFN(idx, n)								\
 		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma##n)),			\
 			   (MMU_REGION_FLAT_ENTRY("xdmac"#n, XDMAC##n##_BASE_ADDRESS, 0x4000,	\
@@ -23,6 +28,14 @@
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
+
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_can),
+		   (MMU_REGION_FLAT_ENTRY("sram", IRAM_ADDR, IRAM_SIZE,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_can),
+		   (MMU_REGION_FLAT_ENTRY("sfr", SFR_BASE_ADDRESS, 0x2050,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 
 	FOR_EACH_IDX(MMU_REGION_FLEXCOM_DEFN, (), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
@@ -36,6 +49,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gmac1)),
 		   (MMU_REGION_FLAT_ENTRY("gmac1", GMAC1_BASE_ADDRESS, 0x4000,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	FOR_EACH_IDX(MMU_REGION_MCAN_DEFN, (), 0, 1, 2, 3, 4, 5)
 
 	MMU_REGION_FLAT_ENTRY("pioa", PIO_BASE_ADDRESS, 0x4000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
@@ -76,12 +91,24 @@ void relocate_vector_table(void)
 	write_vbar(CONFIG_KERNEL_VM_BASE);
 }
 
+#define MCAN_CLK_INIT_DEFN(idx, n)								\
+		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mcan##n)),			\
+			   (PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_MCAN##n);			\
+			    PMC_REGS->PMC_PCR = (PMC_REGS->PMC_PCR & PMC_PCR_MCKID_Msk) |	\
+						PMC_PCR_CMD_Msk |				\
+						PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |		\
+						PMC_PCR_GCLKDIV(4) | PMC_PCR_GCLKCSS_SYSPLL |	\
+						PMC_PCR_PID(ID_MCAN##n);))
+
 void soc_early_init_hook(void)
 {
 	/* Enable Generic clock for PIT64B0 for system tick */
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
 			    PMC_PCR_GCLKDIV(40 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
 			    PMC_PCR_PID(ID_PIT64B0);
+
+	/* Enable generic clock for MCANx, frequency SYSPLL / (4 + 1) = 80MHz */
+	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4, 5)
 
 	/* Enable Generic clock for SDMMC0, frequency is 200MHz */
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |

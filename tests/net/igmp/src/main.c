@@ -63,9 +63,9 @@ static const unsigned char igmp_v3_query[] = {
 	0x11, 0x64, 0xec, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x02, 0x7d, 0x00, 0x00,
 };
 
-static struct in_addr my_addr = { { { 192, 0, 2, 1 } } };
-static struct in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
-static struct in_addr any_addr = INADDR_ANY_INIT;
+static struct net_in_addr my_addr = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
+static struct net_in_addr any_addr = NET_INADDR_ANY_INIT;
 
 static struct net_if *net_iface;
 static bool is_group_joined;
@@ -183,7 +183,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		zassert_false(is_igmpv2_query_sent, "IGMPv3 response to IGMPv2 request");
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-		zassert_equal(ntohs(igmp_header->groups_len), 1,
+		zassert_equal(net_ntohs(igmp_header->groups_len), 1,
 			      "Invalid group length of IGMPv3 report (%d)",
 			      igmp_header->groups_len);
 
@@ -314,7 +314,8 @@ static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3)
 	const unsigned char *igmp_query = is_igmpv3 ? igmp_v3_query : igmp_v2_query;
 	size_t igmp_query_size = is_igmpv3 ? sizeof(igmp_v3_query) : sizeof(igmp_v2_query);
 
-	pkt = net_pkt_alloc_with_buffer(iface, igmp_query_size, AF_INET, IPPROTO_IGMP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, igmp_query_size, NET_AF_INET,
+					NET_IPPROTO_IGMP, K_FOREVER);
 	zassert_not_null(pkt, "Failed to allocate buffer");
 
 	zassert_ok(net_pkt_write(pkt, igmp_query, igmp_query_size));
@@ -432,33 +433,33 @@ ZTEST(net_igmp, test_igmp_verify_catch_join)
 	verify_leave_group();
 }
 
-static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
+static void socket_group_with_address(struct net_in_addr *local_addr, bool do_join)
 {
-	struct ip_mreqn mreqn = { 0 };
+	struct net_ip_mreqn mreqn = { 0 };
 	int option;
 	int ret, fd;
 
 	if (do_join) {
-		option = IP_ADD_MEMBERSHIP;
+		option = ZSOCK_IP_ADD_MEMBERSHIP;
 	} else {
-		option = IP_DROP_MEMBERSHIP;
+		option = ZSOCK_IP_DROP_MEMBERSHIP;
 	}
 
-	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	fd = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, 0);
 	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
 
-	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IP, option,
 			       NULL, sizeof(mreqn));
 	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
 	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
 
-	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IP, option,
 			       (void *)&mreqn, 1);
 	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
 	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
 
 	/* First try with empty mreqn */
-	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IP, option,
 			       (void *)&mreqn, sizeof(mreqn));
 	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
 	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
@@ -466,7 +467,7 @@ static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
 	memcpy(&mreqn.imr_address, local_addr, sizeof(mreqn.imr_address));
 	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
 
-	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IP, option,
 			       (void *)&mreqn, sizeof(mreqn));
 
 	if (do_join) {
@@ -496,25 +497,25 @@ static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
 	k_msleep(THREAD_SLEEP);
 }
 
-static void socket_group_with_index(struct in_addr *local_addr, bool do_join)
+static void socket_group_with_index(struct net_in_addr *local_addr, bool do_join)
 {
-	struct ip_mreqn mreqn = { 0 };
+	struct net_ip_mreqn mreqn = { 0 };
 	int option;
 	int ret, fd;
 
 	if (do_join) {
-		option = IP_ADD_MEMBERSHIP;
+		option = ZSOCK_IP_ADD_MEMBERSHIP;
 	} else {
-		option = IP_DROP_MEMBERSHIP;
+		option = ZSOCK_IP_DROP_MEMBERSHIP;
 	}
 
-	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	fd = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, 0);
 	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
 
 	mreqn.imr_ifindex = net_if_ipv4_addr_lookup_by_index(local_addr);
 	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
 
-	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IP, option,
 			       (void *)&mreqn, sizeof(mreqn));
 
 	if (do_join) {
@@ -541,22 +542,22 @@ static void socket_group_with_index(struct in_addr *local_addr, bool do_join)
 	k_msleep(THREAD_SLEEP);
 }
 
-static void socket_join_group_with_address(struct in_addr *addr)
+static void socket_join_group_with_address(struct net_in_addr *addr)
 {
 	socket_group_with_address(addr, true);
 }
 
-static void socket_leave_group_with_address(struct in_addr *addr)
+static void socket_leave_group_with_address(struct net_in_addr *addr)
 {
 	socket_group_with_address(addr, false);
 }
 
-static void socket_join_group_with_index(struct in_addr *addr)
+static void socket_join_group_with_index(struct net_in_addr *addr)
 {
 	socket_group_with_index(addr, true);
 }
 
-static void socket_leave_group_with_index(struct in_addr *addr)
+static void socket_leave_group_with_index(struct net_in_addr *addr)
 {
 	socket_group_with_index(addr, false);
 }

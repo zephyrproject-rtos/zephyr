@@ -35,12 +35,6 @@ extern "C" {
  * public documentation.
  */
 __subsystem struct mdio_driver_api {
-	/** Enable the MDIO bus device */
-	void (*bus_enable)(const struct device *dev);
-
-	/** Disable the MDIO bus device */
-	void (*bus_disable)(const struct device *dev);
-
 	/** Read data from MDIO bus */
 	int (*read)(const struct device *dev, uint8_t prtad, uint8_t regad,
 		    uint16_t *data);
@@ -60,36 +54,6 @@ __subsystem struct mdio_driver_api {
 /**
  * @endcond
  */
-
-/**
- * @brief      Enable MDIO bus
- *
- * @param[in]  dev   Pointer to the device structure for the controller
- *
- */
-__syscall void mdio_bus_enable(const struct device *dev);
-
-static inline void z_impl_mdio_bus_enable(const struct device *dev)
-{
-	if (DEVICE_API_GET(mdio, dev)->bus_enable != NULL) {
-		DEVICE_API_GET(mdio, dev)->bus_enable(dev);
-	}
-}
-
-/**
- * @brief      Disable MDIO bus and tri-state drivers
- *
- * @param[in]  dev   Pointer to the device structure for the controller
- *
- */
-__syscall void mdio_bus_disable(const struct device *dev);
-
-static inline void z_impl_mdio_bus_disable(const struct device *dev)
-{
-	if (DEVICE_API_GET(mdio, dev)->bus_disable != NULL) {
-		DEVICE_API_GET(mdio, dev)->bus_disable(dev);
-	}
-}
 
 /**
  * @brief      Read from MDIO Bus

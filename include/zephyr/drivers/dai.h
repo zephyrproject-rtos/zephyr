@@ -16,7 +16,7 @@
 /**
  * @defgroup dai_interface DAI
  * @since 3.1
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @brief Interfaces for Digital Audio Interfaces.
  *
@@ -315,7 +315,7 @@ __subsystem struct dai_driver_api {
 	int (*probe)(const struct device *dev);
 	int (*remove)(const struct device *dev);
 	int (*config_set)(const struct device *dev, const struct dai_config *cfg,
-			  const void *bespoke_cfg);
+			  const void *bespoke_cfg, size_t size);
 	int (*config_get)(const struct device *dev, struct dai_config *cfg,
 			  enum dai_dir dir);
 
@@ -390,6 +390,7 @@ static inline int dai_remove(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg Pointer to the structure containing configuration parameters.
  * @param bespoke_cfg Pointer to the structure containing bespoke config.
+ * @param size Bespoke config size.
  *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid argument.
@@ -397,11 +398,12 @@ static inline int dai_remove(const struct device *dev)
  */
 static inline int dai_config_set(const struct device *dev,
 				 const struct dai_config *cfg,
-				 const void *bespoke_cfg)
+				 const void *bespoke_cfg,
+				 size_t size)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	return api->config_set(dev, cfg, bespoke_cfg);
+	return api->config_set(dev, cfg, bespoke_cfg, size);
 }
 
 /**
@@ -410,7 +412,7 @@ static inline int dai_config_set(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param cfg Pointer to the config structure to be filled by the instance
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
- * @retval 0 if success, negative if invalid parameters or DAI un-configured
+ * @return 0 if success, negative if invalid parameters or DAI un-configured
  */
 static inline int dai_config_get(const struct device *dev,
 				 struct dai_config *cfg,
@@ -428,7 +430,7 @@ static inline int dai_config_get(const struct device *dev,
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
  * @param stream_id Stream id: some drivers may have stream specific
  *        properties, this id specifies the stream.
- * @retval Pointer to the structure containing properties,
+ * @return Pointer to the structure containing properties,
  *         or NULL if error or no properties
  */
 static inline const struct dai_properties *dai_get_properties(const struct device *dev,
@@ -565,7 +567,7 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If the configuration update operation is not implemented.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 static inline int dai_config_update(const struct device *dev,
 									const void *bespoke_cfg,

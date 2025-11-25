@@ -118,7 +118,7 @@ static int netc_eth_rx(const struct device *dev)
 	}
 #endif
 	/* Copy to pkt */
-	pkt = net_pkt_rx_alloc_with_buffer(iface_dst, length, AF_UNSPEC, 0, NETC_TIMEOUT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface_dst, length, NET_AF_UNSPEC, 0, NETC_TIMEOUT);
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(iface_dst);
 		ret = -ENOBUFS;
@@ -409,7 +409,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-	pkt_is_gptp = ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
+	pkt_is_gptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
 	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
 	    (netc_eth_get_ptp_clock(dev) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;

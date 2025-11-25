@@ -156,6 +156,12 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_SPM_LOG_LEVEL=${TFM_SPM_LOG_LEVEL})
   endif()
 
+  if(CONFIG_TFM_SECURE_UART)
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=1)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=0)
+  endif()
+
   # Enable TFM partitions as specified in Kconfig
   foreach(partition ${TFM_VALID_PARTITIONS})
     if(CONFIG_${partition})
@@ -319,8 +325,8 @@ if(CONFIG_BUILD_WITH_TFM)
     # number of parallel jobs to 1.
     set(PARALLEL_JOBS -j 1)
   else()
-	# Leave PARALLEL_JOBS unset and use the default number of
-	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
+    # Leave PARALLEL_JOBS unset and use the default number of
+    # threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
 
   set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
@@ -565,10 +571,10 @@ if(CONFIG_BUILD_WITH_TFM)
 
   set(MERGED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
   set(MERGED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.bin)
-  set(S_NS_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed.hex)
   set(S_NS_SIGNED_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed_signed.hex)
   set(S_NS_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
   set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(S_NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.bin)
   set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
   set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
   set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
@@ -600,14 +606,14 @@ if(CONFIG_BUILD_WITH_TFM)
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd_s_ns_confirm_hex SUFFIX "S_NS"
       HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
-      INPUT_FILE ${S_NS_CONFIRMED_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
+      INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
     tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
       HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_CONFIRMED_HEX_FILE}
+        -o ${S_NS_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
         ${NS_HEX_APP_FILE}
 
@@ -618,28 +624,21 @@ if(CONFIG_BUILD_WITH_TFM)
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
         ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
+
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${MERGED_HEX_FILE} ${MERGED_BIN_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_HEX_FILE}
-        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_HEX_APP_FILE}
-
       COMMAND ${sign_cmd_s_ns_hex}
 
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_BIN_FILE} --output-bin
-        $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
-        $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_NS_SIGNED_HEX_FILE}
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${S_NS_SIGNED_HEX_FILE} ${S_NS_SIGNED_BIN_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_NS_CONFIRMED_HEX_FILE}
       ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
       ${S_NS_HEX_FILE}
       ${S_NS_SIGNED_HEX_FILE}
+      ${S_NS_SIGNED_BIN_FILE}
       ${MERGED_HEX_FILE}
       ${MERGED_BIN_FILE}
     )

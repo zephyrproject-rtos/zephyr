@@ -969,6 +969,22 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
+			if (params->server_cert_domain_exact_len > 0) {
+				if (!wpa_cli_cmd_v("set_network %d domain_match \"%s\"",
+						   resp.network_id,
+						   params->server_cert_domain_exact)) {
+					goto out;
+				}
+			}
+
+			if (params->server_cert_domain_suffix_len > 0) {
+				if (!wpa_cli_cmd_v("set_network %d domain_suffix_match \"%s\"",
+						   resp.network_id,
+						   params->server_cert_domain_suffix)) {
+					goto out;
+				}
+			}
+
 			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
 			    (!params->verify_peer_cert))) {
@@ -1729,6 +1745,15 @@ int supplicant_reg_domain(const struct device *dev,
 	if (reg_domain->oper == WIFI_MGMT_SET) {
 		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
+		if (IS_ENABLED(CONFIG_WIFI_NM_HOSTAPD_AP)) {
+			const struct device *dev2 = net_if_get_device(net_if_get_wifi_sap());
+
+			ret = hostapd_ap_reg_domain(dev2, reg_domain);
+			if (ret) {
+				goto out;
+			}
+		}
+
 		wpa_s = get_wpa_s_handle(dev);
 		if (!wpa_s) {
 			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
@@ -1737,14 +1762,6 @@ int supplicant_reg_domain(const struct device *dev,
 
 		if (!wpa_cli_cmd_v("set country %s", reg_domain->country_code)) {
 			goto out;
-		}
-
-		if (IS_ENABLED(CONFIG_WIFI_NM_HOSTAPD_AP)) {
-			const struct device *dev2 = net_if_get_device(net_if_get_wifi_sap());
-
-			if (!hostapd_ap_reg_domain(dev2, reg_domain)) {
-				goto out;
-			}
 		}
 
 		ret = 0;

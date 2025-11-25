@@ -405,6 +405,24 @@ int settings_commit(void);
  */
 int settings_commit_subtree(const char *subtree);
 
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION) || defined(__DOXYGEN__)
+/**
+ * Save a single currently running serialized value to persisted storage (if it has changed
+ * value) by reading the value using the get function, or save a whole subtree's currently
+ * running serialized items out.
+ *
+ * @param name Name/key of the settings item or subtree.
+ * @param save_if_subtree Set to true if the item should be save and it is a subtree.
+ * @param save_if_single_setting Set to true if the item should be save and it is a single
+ * setting.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_save_subtree_or_single_without_modification(const char *name,
+							 bool save_if_subtree,
+							 bool save_if_single_setting);
+#endif
+
 /**
  * @} settings
  */
@@ -682,9 +700,9 @@ int settings_runtime_commit(const char *name);
  * It might pointer to: `struct nvs_fs`, `struct fcb` or string witch file name
  * depends on settings backend type used.
  *
- * @retval Pointer to which reference to the storage object can be stored.
+ * @return Pointer to which reference to the storage object can be stored.
  *
- * @retval 0 on success, negative error code on failure.
+ * @return 0 on success, negative error code on failure.
  */
 int settings_storage_get(void **storage);
 

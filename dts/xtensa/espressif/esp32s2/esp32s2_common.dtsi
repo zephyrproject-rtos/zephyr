@@ -116,6 +116,18 @@
 			};
 		};
 
+		rtc_fast_ram: memory@3ff9e000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ff9e000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
 		icache0: icache0@40080000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x40080000 DT_SIZE_K(7680)>;

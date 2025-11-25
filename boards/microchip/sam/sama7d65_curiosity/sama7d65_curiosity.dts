@@ -49,7 +49,36 @@
 	};
 };
 
+&flx10 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_TWI>;
+	status = "okay";
+
+	i2c10: i2c10@600 {
+		pinctrl-0 = <&pinctrl_i2c10_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		eeprom0: eeprom0@51 {
+			compatible = "atmel,24mac02e4", "atmel,at24";
+			reg = <0x51>;
+			address-width = <8>;
+			pagesize = <16>;
+			size = <256>;
+			timeout = <5>;
+			status = "okay";
+		};
+	};
+};
+
 &pinctrl {
+	pinctrl_i2c10_default: i2c10-default {
+		group1 {
+			pinmux = <PIN_PB19__FLEXCOM10_IO1>,
+				 <PIN_PB20__FLEXCOM10_IO0>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_uart6_default: uart6-default {
 		group1 {
 			pinmux = <PIN_PD18__FLEXCOM6_IO0>,

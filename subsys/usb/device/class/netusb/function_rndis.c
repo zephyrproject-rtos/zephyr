@@ -931,7 +931,7 @@ static int rndis_send(struct net_pkt *pkt)
 	size_t len = net_pkt_get_len(pkt);
 	int ret;
 
-	LOG_DBG("send pkt %p len %u", pkt, len);
+	LOG_DBG("send pkt %p len %zu", pkt, len);
 
 	if (rndis.media_status == RNDIS_OBJECT_ID_MEDIA_DISCONNECTED) {
 		LOG_DBG("Media disconnected, drop pkt %p", pkt);

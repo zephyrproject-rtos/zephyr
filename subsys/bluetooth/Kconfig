@@ -117,7 +117,7 @@ config BT_CONN_TX
 
 config BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE
 	int
-	default 1 if BT_FRAME_SPACE_UPDATE
+	default 1 if BT_FRAME_SPACE_UPDATE || BT_SHORTER_CONNECTION_INTERVALS
 	default 0
 	depends on BT_LE_EXTENDED_FEAT_SET
 	help
@@ -259,6 +259,15 @@ config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT
 	  Controls the number of the reassembly buffers for CS subevent
 	  results. Each running CS procedure is allocated one buffer and the
 	  number of concurrent CS procedures is limited by this value.
+
+config BT_SHORTER_CONNECTION_INTERVALS
+	bool "Shorter Connection Intervals"
+	depends on !HAS_BT_CTLR || BT_CTLR_SHORTER_CONNECTION_INTERVALS_SUPPORT
+	depends on BT_LE_EXTENDED_FEAT_SET
+	depends on BT_SUBRATING
+	help
+	  Enable support for the Bluetooth 6.2 Shorter Connection Intervals
+	  feature.
 
 endif # BT_CONN
 

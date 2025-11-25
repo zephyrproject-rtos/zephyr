@@ -553,7 +553,7 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
-.. figure:: img/ReelBoard-Blinky.png
+.. figure:: img/ReelBoard-Blinky.webp
    :width: 400px
    :name: reelboard-blinky
 

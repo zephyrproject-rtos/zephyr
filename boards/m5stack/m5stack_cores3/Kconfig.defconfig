@@ -8,4 +8,35 @@ if BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE
 config INPUT
 	default y
 
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+# Takes good care of initialization priorities
+
+if REGULATOR_AXP192_AXP2101
+config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
+	default 81
+endif # REGULATOR_AXP192_AXP2101
+
+if MIPI_DBI
+config MIPI_DBI_INIT_PRIORITY
+	default 82
+endif # MIPI_DBI
+
+if DISPLAY
+config DISPLAY_INIT_PRIORITY
+	default 83
+endif # DISPLAY
+
 endif # BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE

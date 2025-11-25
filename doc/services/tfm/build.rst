@@ -61,12 +61,6 @@ When :kconfig:option:`CONFIG_TFM_BL2` is set to ``y``, TF-M uses a secure bootlo
 is validated by the bootloader during updates using the corresponding public
 key, which is stored inside the secure bootloader firmware image.
 
-During the signing procedure, all HEX files are marked as ``confirmed``,
-whereas all BIN files remain ``unconfirmed``. This guarantees that any image
-flashed into a device possesses the required properties for compatibility
-with the `PSA Certified Firmware Update API`_. The corresponding BIN file
-can then be used as the payload in the Firmware Update procedure.
-
 By default, ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072.pem`` is used to sign secure
 images, and ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072_1.pem`` is used to sign
 non-secure images. These default .pem keys can (and **should**) be overridden
@@ -95,13 +89,27 @@ flags.
      and it will no longer be possible to update your devices in the field!
 
 After the built-in signing script has run, it creates a ``tfm_merged.hex``
-file that contains all three binaries: bl2, tfm_s, and the zephyr app. This
-hex file can then be flashed to your development board or run in QEMU.
+(and ``tfm_merged.bin``) file that contains all three binaries: bl2, tfm_s,
+and the zephyr app. These files can then be flashed to your development board
+or run in QEMU.
 
 .. _PSA Certified Level 1:
   https://www.psacertified.org/security-certification/psa-certified-level-1/
 .. _PSA Certified Firmware Update API:
   https://arm-software.github.io/psa-api/fwu/
+
+Output Files
+************
+
+Upon completion of the Zephyr TF-M build, the following output files exist:
+
+.. csv-table:: TF-M Output Files
+  :header: Filename, Created From, Bootloader Flags, Usage
+
+  ``tfm_s_signed.{hex/bin}``, "TF-M Secure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 2)
+  ``zephyr_ns_signed.{hex/bin}``, "Zephyr Nonsecure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 2)
+  ``tfm_s_zephyr_ns_signed.{hex/bin}``, "TF-M Secure, Zephyr Nonsecure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 1)
+  ``tfm_merged.{hex/bin}``, "Bootloader, TF-M Secure, Zephyr Nonsecure", "Signed, Confirmed", "Production Programming, flashed by ``west flash``"
 
 Custom CMake arguments
 ======================

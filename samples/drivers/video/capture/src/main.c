@@ -170,7 +170,6 @@ static int app_query_video_info(const struct device *const video_dev,
 			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
 			fcap->width_min, fcap->width_max, fcap->width_step,
 			fcap->height_min, fcap->height_max, fcap->height_step);
-		i++;
 	}
 
 	/* Get default/native format */

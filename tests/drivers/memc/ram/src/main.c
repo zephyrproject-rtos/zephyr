@@ -71,7 +71,7 @@ ZTEST(test_ram, test_sdram1)
 ZTEST(test_ram, test_ram0)
 {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
-	test_ram_rw(buf_ram0, RAM_SIZE_SRAM);
+	test_ram_rw(buf_ram0, RAM_SIZE);
 #else
 	ztest_test_skip();
 #endif

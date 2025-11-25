@@ -458,7 +458,7 @@ static inline const char *code2str(uint8_t code)
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 static int do_bootstrap_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
-				 const struct sockaddr *from)
+				 const struct net_sockaddr *from)
 {
 	uint8_t code;
 
@@ -514,7 +514,7 @@ int engine_trigger_bootstrap(void)
 }
 static int do_registration_reply_cb(const struct coap_packet *response,
 				    struct coap_reply *reply,
-				    const struct sockaddr *from)
+				    const struct net_sockaddr *from)
 {
 	struct coap_option options[2];
 	uint8_t code;
@@ -580,7 +580,7 @@ static void do_registration_timeout_cb(struct lwm2m_message *msg)
 
 static int do_update_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
-			      const struct sockaddr *from)
+			      const struct net_sockaddr *from)
 {
 	uint8_t code;
 
@@ -623,7 +623,7 @@ static void do_update_timeout_cb(struct lwm2m_message *msg)
 
 static int do_deregister_reply_cb(const struct coap_packet *response,
 				  struct coap_reply *reply,
-				  const struct sockaddr *from)
+				  const struct net_sockaddr *from)
 {
 	uint8_t code;
 

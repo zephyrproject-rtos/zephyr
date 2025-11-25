@@ -125,6 +125,12 @@ static uint8_t cmux_frame_dlci2_sabm_ack[] = {0xF9, 0x0B, 0x73, 0x01, 0x92, 0xF9
 static uint8_t cmux_frame_dlci2_disc_cmd[] = {0xF9, 0x0B, 0x53, 0x01, 0xB8, 0xF9};
 static uint8_t cmux_frame_dlci2_msc_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
 					     0x05, 0x0B, 0x8D, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_ack[] = {0xF9, 0x03, 0xEF, 0x09, 0xE1,
+					     0x05, 0x0B, 0x8D, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_fcon_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
+					     0x05, 0x0B, 0x8F, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_fcon_ack[] = {0xF9, 0x03, 0xEF, 0x09, 0xE1,
+					     0x05, 0x0B, 0x8F, 0xFB, 0xF9};
 static uint8_t cmux_frame_dlci2_ua_ack[] = {0xF9, 0x0B, 0x73, 0x01, 0x92, 0xF9};
 static uint8_t cmux_frame_control_msc_cmd[] = {0xF9, 0x01, 0xEF, 0x09, 0xE3,
 					       0x05, 0x07, 0x01, 0x9A, 0xF9};
@@ -238,8 +244,8 @@ const static struct modem_backend_mock_transaction transaction_dlci1_msc = {
 const static struct modem_backend_mock_transaction transaction_dlci2_msc = {
 	.get = cmux_frame_dlci2_msc_cmd,
 	.get_size = sizeof(cmux_frame_dlci2_msc_cmd),
-	.put = NULL,
-	.put_size = 0};
+	.put = cmux_frame_dlci2_msc_ack,
+	.put_size = sizeof(cmux_frame_dlci2_msc_ack)};
 
 const static struct modem_backend_mock_transaction transaction_dlci1_sabm = {
 	.get = cmux_frame_dlci1_sabm_cmd,
@@ -253,6 +259,13 @@ const static struct modem_backend_mock_transaction transaction_dlci2_sabm = {
 	.get_size = sizeof(cmux_frame_dlci2_sabm_cmd),
 	.put = cmux_frame_dlci2_ua_ack,
 	.put_size = sizeof(cmux_frame_dlci2_ua_ack),
+	.next = &transaction_dlci2_msc};
+
+const static struct modem_backend_mock_transaction transaction_dlci2_ppp_with_msc = {
+	.get = cmux_frame_dlci2_msc_fcon_cmd,
+	.get_size = sizeof(cmux_frame_dlci2_msc_fcon_cmd),
+	.put = cmux_frame_dlci2_msc_fcon_ack,
+	.put_size = sizeof(cmux_frame_dlci2_msc_fcon_ack),
 	.next = &transaction_dlci2_msc};
 
 static void test_modem_cmux_callback(struct modem_cmux *cmux, enum modem_cmux_event event,
@@ -413,9 +426,12 @@ ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_ppp)
 	int ret;
 	uint32_t events;
 
+	/* Expect MSC command with FC bit on as we push 70 bytes into buffer of 127 and
+	 * threshold is set to 65 bytes
+	 */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_ppp_with_msc);
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
-
 	k_msleep(100);
 
 	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
@@ -435,6 +451,8 @@ ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_ppp)
 			    cmux_frame_data_dlci2_ppp_18,
 			    sizeof(cmux_frame_data_dlci2_ppp_18)) == 0,
 		     "Incorrect data received");
+
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_transmit_dlci2_ppp)
@@ -935,6 +953,25 @@ ZTEST(modem_cmux, test_modem_cmux_invalid_cr)
 				  false, K_MSEC(100));
 
 	zassert_false(events, "Wrong CMD should have been ignored");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_invalid_command)
+{
+	static uint8_t invalid_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0x00,
+					     0x00, 0x00, 0x00, 0xFB, 0xF9};
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, invalid_cmd,
+			       sizeof(invalid_cmd));
+
+	events = k_event_wait_all(&cmux_event,
+				  (MODEM_CMUX_EVENT_CONNECTED | MODEM_CMUX_EVENT_DISCONNECTED),
+				  false, K_SECONDS(1));
+
+	zassert_false(events, "Wrong CMD should have been ignored");
+
+	/* Invalid command should not cause any response */
+	zassert_equal(0, modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)));
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

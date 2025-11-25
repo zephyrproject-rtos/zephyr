@@ -224,10 +224,12 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	return i2c_nrfx_twim_common_init(dev);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int i2c_nrfx_twim_deinit(const struct device *dev)
 {
 	return i2c_nrfx_twim_common_deinit(dev);
 }
+#endif
 
 static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.configure = i2c_nrfx_twim_configure,

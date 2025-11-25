@@ -221,4 +221,14 @@
 			reg = <0x680000 DT_SIZE_K(24)>;
 		};
 	};
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		periphconf_partition: partition@60a000 {
+			reg = <0x60a000 DT_SIZE_K(8)>;
+		};
+	};
 };

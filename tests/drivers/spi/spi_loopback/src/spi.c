@@ -142,21 +142,66 @@ static const struct gpio_dt_spec cs_loopback_gpio =
 			GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), cs_loopback_gpios, {0});
 static struct gpio_callback cs_cb_data;
 atomic_t cs_count;
+int cs_start;
 
 static void spi_loopback_gpio_cs_loopback_prepare(void)
 {
+	/* record start state of CS pin and reset edge counter */
+	cs_start = gpio_pin_get_dt(&cs_loopback_gpio);
 	atomic_set(&cs_count, 0);
 }
 
+/* valid expected triggers are 0, 1, or 2, and this function input is not validated */
 static int spi_loopback_gpio_cs_loopback_check(int expected_triggers)
 {
 	int actual_triggers = atomic_get(&cs_count);
+	/* 1 should mean CS is asserted, 0 not */
+	int cs_level = gpio_pin_get_dt(&cs_loopback_gpio);
 
-	if (actual_triggers != expected_triggers) {
-		TC_PRINT("Expected %d CS triggers, got %d", expected_triggers, actual_triggers);
+	/* putting this first simplifies a lot of the checks needed below */
+	if (actual_triggers > expected_triggers) {
+		goto error;
+	}
+
+	/* Case should not happen unless test is set up wrong */
+	if (actual_triggers == 0 && cs_level != cs_start) {
+		TC_PRINT("Got 0 triggers but CS changed, GPIO interrupt not working?");
 		return -1;
 	}
+
+	/* already handled error case for this */
+	if (expected_triggers == 0) {
+		return 0;
+	}
+
+	/* all the other cases should get at least one gpio callback */
+	if (actual_triggers == 0) {
+		goto error;
+	}
+
+	/* a lot of the following code for cases of expecting 1 and 2 is for
+	 * handling race conditions due to gpio interrupt latency, where two edges can happen
+	 * before the first one's interrupt is processed
+	 */
+
+	/* expected case is that cs level is opposite of start */
+	if ((expected_triggers == 1) && (cs_level == cs_start)) {
+		/* only possibly case at this point is that the CS triggered twice */
+		actual_triggers = 2;
+		goto error;
+	}
+
+	/* expected case is that cs level is same as start */
+	if ((expected_triggers == 2) && (cs_level != cs_start)) {
+		/* only possibly case at this point is that the CS triggered once */
+		actual_triggers = 1;
+		goto error;
+	}
+
 	return 0;
+error:
+	TC_PRINT("Expected %d CS triggers, got %d", expected_triggers, actual_triggers);
+	return -1;
 }
 
 static void cs_callback(const struct device *port,
@@ -167,7 +212,6 @@ static void cs_callback(const struct device *port,
 	ARG_UNUSED(cb);
 	ARG_UNUSED(pins);
 
-	/* Give semaphore to indicate CS triggered */
 	atomic_inc(&cs_count);
 }
 
@@ -473,7 +517,7 @@ ZTEST(spi_loopback, test_spi_rx_half_start)
 ZTEST(spi_loopback, test_spi_rx_half_end)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
-		TC_PRINT("Skipped spi_rx_hald_end");
+		ztest_test_skip();
 		return;
 	}
 
@@ -496,7 +540,7 @@ ZTEST(spi_loopback, test_spi_rx_every_4)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA) ||
 	    IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
-		TC_PRINT("Skipped spi_rx_every_4");
+		ztest_test_skip();
 		return;
 	};
 
@@ -523,7 +567,7 @@ ZTEST(spi_loopback, test_spi_rx_bigger_than_tx)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
 		TC_PRINT("Skipped spi_rx_bigger_than_tx");
-		return;
+		ztest_test_skip();
 	}
 
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
@@ -626,6 +670,10 @@ ZTEST(spi_loopback, test_spi_write_back)
 /* similar to test_spi_write_back, simulates the real common case of 1 word command */
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		ztest_test_skip();
+	}
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
 	struct spi_buf buf[2] = {

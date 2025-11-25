@@ -233,7 +233,7 @@ env:
 .. _twister_tests_long_version:
 
 Tests
-******
+*****
 
 Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
 files in the application's project directory. This test application
@@ -666,7 +666,11 @@ filter: <expression>
             }
 
     Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
-    can be done. Existence of "dt_*" entries indicates devicetree is needed.
+    can be done.
+
+    Existence of "dt_*" entries indicates devicetree is needed. Refer to :ref:`twister_dt_filter_expressions`
+    for detailed description of the different DT expressions available.
+
     Existence of "CONFIG*" entries indicates kconfig is needed.
     If there are no other types of entries in the expression a filtration can be done without creating a complete build system.
     If there are entries of other types a full cmake is required.
@@ -804,6 +808,119 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+.. _twister_dt_filter_expressions:
+
+Devicetree Filtering Expressions
+================================
+
+Expressions starting with "dt_*" are used to filter boards based on specific
+devicetree properties, such as compatibles, aliases, node labels, node
+properties, chosen nodes, etc. when selecting test scenarios.
+
+.. note::
+
+   The source code for these expressions can be found at
+   :zephyr_file:`scripts/pylib/twister/expr_parser.py`.
+
+Expressions
+-----------
+
+``dt_compat_enabled(compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified compatible string (``compat``) is enabled.
+
+**Parameters:**
+   - ``compat``: The compatible string to match.
+
+``dt_alias_exists(alias)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified alias exists and is enabled.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+
+``dt_enabled_alias_with_parent_compat(alias, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if the DT has an enabled alias node whose parent has the specified compatible string.
+   Useful for nodes like ``gpio-leds`` child nodes, which may not have their own compatible.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_label_with_parent_compat_enabled(label, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and its parent has the
+   specified compatible string.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_chosen_enabled(chosen)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT chosen property with the specified name exists and the node assigned to it
+   is enabled.
+
+**Parameters:**
+   - ``chosen``: The name of the chosen property.
+
+``dt_nodelabel_enabled(label)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists and is enabled.
+
+**Parameters:**
+   - ``label``: The node label to match.
+
+``dt_nodelabel_prop_enabled(label, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and has the specified property
+   with a non-empty value.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``prop``: The node's property to check.
+
+``dt_node_has_prop(node_id, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node (specified by alias or path) has the specified property, regardless of its
+   status. Useful for nodes that do not have a status, like ``zephyr,user`` node.
+
+**Parameters:**
+   - ``node_id``: The node alias (defined in ``aliases`` node) or node path to match.
+   - ``prop``: The node's property to check.
+
+Usage
+-----
+
+These expressions are used in Twister’s test scenarios filtering logic to select boards that match
+specific DT conditions. For example:
+
+.. code-block:: yaml
+
+   tests:
+     - test: my_test
+       filter: dt_compat_enabled("my-compat-string")
+
+The test scenario ``my_test`` will only build for boards where a DT node with ``my-compat-string``
+is enabled.
 
 .. _twister_harnesses:
 
@@ -1085,7 +1202,7 @@ testing using video fingerprints.
    Window being displayed for a "compare" run where fingerprint is a 90% match with the reference.
 
 Hardware setup
-++++++++++++++
+--------------
 
 The display capture harness requires:
 
@@ -1095,7 +1212,7 @@ The display capture harness requires:
 - DUT connected to the same PC for flashing and serial console access
 
 Configuration
-+++++++++++++
+-------------
 
 The harness uses a YAML configuration file that defines camera settings, test parameters, and video
 signature analysis options. A typical configuration is shown below:
@@ -1210,7 +1327,7 @@ environment variable:
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
 
 Workflow
-++++++++
+--------
 
 First, generate **reference fingerprints** for a known-good display output:
 
@@ -1423,7 +1540,7 @@ reports for each run with detailed FAIL/PASS results.
 
 
 Executing tests on a single device
-===================================
+==================================
 
 To use this feature on a single connected device, run twister with
 the following new options:
@@ -1447,6 +1564,10 @@ the following new options:
 The ``--device-serial`` option denotes the serial device the board is connected to.
 This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
+If the platform supports multiple serial ports, you can provide ``--device-serial``
+multiple times, and it will be passed to the pytest harness.
+However, currently the pytest-twister-harness plugin handles only the first serial port,
+other ports must be opened manually in the test code.
 
 The ``--device-serial-baud`` option is only needed if your device does not run at
 115200 baud.
@@ -1696,7 +1817,7 @@ Would result in calling ``./custom_flash_script.py
 --flag "complex, argument"``.
 
 Fixtures
-+++++++++
+--------
 
 Some tests require additional setup or special wiring specific to the test.
 Running the tests without this setup or test fixture may fail. A test scenario can
@@ -1734,7 +1855,7 @@ fixture name by a ``:``. Only the fixture name is matched against the fixtures
 requested by test scenarios.
 
 Notes
-+++++
+-----
 
 It may be useful to annotate board descriptions in the hardware map file
 with additional information.  Use the ``notes`` keyword to do this.  For
@@ -1757,7 +1878,7 @@ example:
       serial: null
 
 Overriding Board Identifier
-+++++++++++++++++++++++++++
+---------------------------
 
 When (re-)generated the hardware map file will contain an ``id`` keyword
 that serves as the argument to ``--board-id`` when flashing.  In some
@@ -1776,7 +1897,7 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
       serial: null
 
 Using Single Board For Multiple Variants
-++++++++++++++++++++++++++++++++++++++++
+----------------------------------------
 
   The ``platform`` attribute can be a list of names or a string
   with names separated by spaces. This allows to run tests for
@@ -1795,7 +1916,7 @@ Using Single Board For Multiple Variants
       serial: /dev/ttyACM1
 
 Quarantine
-++++++++++
+----------
 
 Twister allows user to provide configuration files defining a list of tests or
 platforms to be put under quarantine. Such tests will be skipped and marked

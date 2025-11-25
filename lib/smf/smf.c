@@ -37,19 +37,17 @@ static bool is_descendant_of(const struct smf_state *test_state,
 static const struct smf_state *get_child_of(const struct smf_state *states,
 					    const struct smf_state *parent)
 {
-	const struct smf_state *tmp = states;
+	const struct smf_state *state = states;
 
-	while (true) {
-		if (tmp->parent == parent) {
-			return tmp;
+	while (state != NULL) {
+		if (state->parent == parent) {
+			return state;
 		}
 
-		if (tmp->parent == NULL) {
-			return NULL;
-		}
-
-		tmp = tmp->parent;
+		state = state->parent;
 	}
+
+	return NULL;
 }
 
 /**
@@ -238,7 +236,7 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	 * The final target will be the deepest leaf state that
 	 * the target contains. Set that as the real target.
 	 */
-	while (init_state->initial) {
+	while (init_state->initial != NULL) {
 		init_state = init_state->initial;
 	}
 #endif
@@ -348,7 +346,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	 * The final target will be the deepest leaf state that
 	 * the target contains. Set that as the real target.
 	 */
-	while (new_state->initial) {
+	while (new_state->initial != NULL) {
 		new_state = new_state->initial;
 	}
 #endif

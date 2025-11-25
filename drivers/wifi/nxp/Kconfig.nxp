@@ -1071,6 +1071,14 @@ config NXP_WIFI_HOST_SLEEP
 	help
 	  This option enables HOST Sleep support for MCU.
 
+config NXP_WIFI_WAKE_TIMER_ENABLE
+	bool "Wake Timer Enable"
+	depends on NXP_WIFI_HOST_SLEEP
+	help
+	  This option enables wake timer in the Wi-Fi driver and the duration is 5
+	  seconds. Once wake timer is enabled, low power mode will be blocked for 5
+	  seconds after device wakes up from sleep.
+
 config NXP_WIFI_MEF_CFG
 	bool "Memory Efficient Filtering"
 	default y if PM

@@ -5,34 +5,11 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
-"./arch/x86/gen_gdt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_idt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_mmu.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP034",    # https://docs.astral.sh/ruff/rules/extraneous-parentheses
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./arch/x86/zefi/zefi.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/xtensa/core/gen_vectors.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/xtensa/core/gen_zsr.py" = [
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
 ]
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -296,52 +273,10 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/ci/check_compliance.py" = [
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/coverage/coverage_analysis.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/errno.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/guideline_check.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/ci/stats/merged_prs.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/ci/test_plan.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E401",     # https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/ci/upload_test_results_es.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/version_mgr.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/coredump/coredump_gdbserver.py" = [
@@ -1088,17 +1023,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./tests/drivers/can/host/pytest/can_shell.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
-]
-"./tests/drivers/can/host/pytest/test_can.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1161,12 +1085,7 @@
 
 [format]
 exclude = [
-    "./arch/x86/gen_gdt.py",
-    "./arch/x86/gen_idt.py",
-    "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
-    "./arch/xtensa/core/gen_vectors.py",
-    "./arch/xtensa/core/gen_zsr.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
@@ -1221,15 +1140,7 @@ exclude = [
     "./scripts/build/subfolder_list.py",
     "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
-    "./scripts/ci/check_compliance.py",
-    "./scripts/ci/coverage/coverage_analysis.py",
-    "./scripts/ci/errno.py",
-    "./scripts/ci/guideline_check.py",
-    "./scripts/ci/stats/merged_prs.py",
-    "./scripts/ci/test_plan.py",
-    "./scripts/ci/twister_report_analyzer.py",
     "./scripts/ci/upload_test_results_es.py",
-    "./scripts/ci/version_mgr.py",
     "./scripts/coredump/coredump_gdbserver.py",
     "./scripts/coredump/coredump_parser/elf_parser.py",
     "./scripts/coredump/coredump_parser/log_parser.py",
@@ -1271,15 +1182,6 @@ exclude = [
     "./scripts/list_boards.py",
     "./scripts/list_hardware.py",
     "./scripts/list_shields.py",
-    "./scripts/logging/dictionary/database_gen.py",
-    "./scripts/logging/dictionary/dictionary_parser/data_types.py",
-    "./scripts/logging/dictionary/dictionary_parser/log_database.py",
-    "./scripts/logging/dictionary/dictionary_parser/log_parser.py",
-    "./scripts/logging/dictionary/dictionary_parser/log_parser_v1.py",
-    "./scripts/logging/dictionary/dictionary_parser/log_parser_v3.py",
-    "./scripts/logging/dictionary/dictionary_parser/utils.py",
-    "./scripts/logging/dictionary/log_parser.py",
-    "./scripts/logging/dictionary/log_parser_uart.py",
     "./scripts/make_bugs_pickle.py",
     "./scripts/net/enumerate_http_status.py",
     "./scripts/profiling/stackcollapse.py",
@@ -1382,7 +1284,6 @@ exclude = [
     "./scripts/utils/pinctrl_nrf_migrate.py",
     "./scripts/utils/twister_to_list.py",
     "./scripts/west_commands/bindesc.py",
-    "./scripts/west_commands/blobs.py",
     "./scripts/west_commands/boards.py",
     "./scripts/west_commands/build.py",
     "./scripts/west_commands/build_helpers.py",
@@ -1481,9 +1382,6 @@ exclude = [
     "./tests/boot/with_mcumgr/pytest/test_downgrade_prevention.py",
     "./tests/boot/with_mcumgr/pytest/test_upgrade.py",
     "./tests/boot/with_mcumgr/pytest/west_sign_wrapper.py",
-    "./tests/drivers/can/host/pytest/can_shell.py",
-    "./tests/drivers/can/host/pytest/conftest.py",
-    "./tests/drivers/can/host/pytest/test_can.py",
     "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py",
     "./tests/kernel/timer/timer_behavior/pytest/test_timer.py",
     "./tests/lib/devicetree/memory_region_flags/pytest/test_memory_region_flags.py",
@@ -1498,6 +1396,5 @@ exclude = [
     "./tests/net/socket/tls_configurations/pytest/test_app_vs_openssl.py",
     "./tests/net/socket/udp/generate-c-string.py",
     "./tests/subsys/debug/gdbstub/pytest/test_gdbstub.py",
-    "./tests/subsys/logging/dictionary/pytest/test_logging_dictionary.py",
     "./tests/ztest/ztest_param/pytest/test_parameters.py",
 ]

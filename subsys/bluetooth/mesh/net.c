@@ -82,7 +82,8 @@ struct iv_val {
 
 static struct {
 	uint32_t src : 15, /* MSb of source is always 0 */
-	      seq : 17;
+		 seq : 17;
+	uint16_t net_idx;
 } msg_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static uint16_t msg_cache_next;
 
@@ -145,20 +146,22 @@ static bool check_dup(struct net_buf_simple *data)
 	return false;
 }
 
-static bool msg_cache_match(struct net_buf_simple *pdu)
+static bool msg_cache_match(struct net_buf_simple *pdu, uint16_t net_idx)
 {
 	uint16_t i;
 
 	for (i = msg_cache_next; i > 0U;) {
 		if (msg_cache[--i].src == SRC(pdu->data) &&
-		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17)) &&
+		    msg_cache[i].net_idx == net_idx) {
 			return true;
 		}
 	}
 
 	for (i = ARRAY_SIZE(msg_cache); i > msg_cache_next;) {
 		if (msg_cache[--i].src == SRC(pdu->data) &&
-		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17)) &&
+		    msg_cache[i].net_idx == net_idx) {
 			return true;
 		}
 	}
@@ -171,6 +174,7 @@ static void msg_cache_add(struct bt_mesh_net_rx *rx)
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
 	msg_cache[msg_cache_next].src = rx->ctx.addr;
 	msg_cache[msg_cache_next].seq = rx->seq;
+	msg_cache[msg_cache_next].net_idx = rx->sub->net_idx;
 	msg_cache_next++;
 }
 
@@ -653,15 +657,14 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 		return false;
 	}
 
-	if (rx->net_if == BT_MESH_NET_IF_ADV && msg_cache_match(out)) {
+	if (rx->net_if == BT_MESH_NET_IF_ADV && msg_cache_match(out, rx->sub->net_idx)) {
 		LOG_DBG("Duplicate found in Network Message Cache");
 		return false;
 	}
 
 	LOG_DBG("src 0x%04x", rx->ctx.addr);
 
-	return bt_mesh_net_decrypt(&cred->enc, out, BT_MESH_NET_IVI_RX(rx),
-				   proxy) == 0;
+	return bt_mesh_net_decrypt(&cred->enc, out, BT_MESH_NET_IVI_RX(rx), proxy) == 0;
 }
 
 /* Relaying from advertising to the advertising bearer should only happen

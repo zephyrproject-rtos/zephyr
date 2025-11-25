@@ -2656,6 +2656,121 @@
 
 /** @} */ /* end of subsys_tracing_apis_gpio */
 
+/**
+ * @brief RTIO Tracing APIs
+ * @defgroup subsys_tracing_apis_rtio RTIO Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace RTIO Submit Enter API
+ * @param rtio RTIO context
+ * @param wait_count Number of submissions to wait for completion of.
+ */
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
+
+/**
+ * @brief Trace RTIO Submit Exit API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_submit_exit(rtio)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Acquire Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Acquire Exit API
+ * @param rtio RTIO context
+ * @param sqe Submission Queue Event
+ */
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Cancel API
+ * @param sqe Submission Queue Event
+ */
+#define sys_port_trace_rtio_sqe_cancel(sqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Submit Enter API
+ * @param rtio RTIO context
+ * @param result Integer result code (could be -errno)
+ * @param flags Flags to use for the CQE see RTIO_CQE_FLAG_*
+ */
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Submit Exit API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_submit_exit(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Acquire Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Acquire Exit API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Release API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_release(rtio, cqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Consume Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_consume_enter(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Consume Exit API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
+
+/**
+ * @brief Trace RTIO get next transaction Enter API
+ * @param rtio RTIO context
+ * @param iodev_sqe Current submission queue entry
+ */
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next transaction Exit API
+ * @param rtio RTIO context
+ * @param iodev_sqe Next submission queue entry
+ */
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next sqe in chain Enter API
+ * @param rtio RTIO context
+ * @param iodev_sqe Current submission queue entry
+ */
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next sqe in chain Exit API
+ * @param rtio RTIO context
+ * @param iodev_sqe Next submission queue entry
+ */
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+
+/** @} */ /* end of subsys_tracing_apis_rtio */
+
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"
 

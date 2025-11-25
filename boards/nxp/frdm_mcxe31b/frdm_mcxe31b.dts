@@ -21,6 +21,8 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		rtc = &counter_rtc;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -30,6 +32,7 @@
 		zephyr,flash = &program_flash;
 		zephyr,flash-controller = &flash;
 		zephyr,console = &lpuart_5;
+		zephyr,shell-uart = &lpuart_5;
 	};
 
 	leds {
@@ -171,4 +174,16 @@
 &stm_0 {
 	status = "okay";
 	prescaler = <1>;
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};
+
+&swt_0 {
+	status = "okay";
 };

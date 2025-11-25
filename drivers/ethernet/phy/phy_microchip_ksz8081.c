@@ -681,8 +681,6 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 		return ret;
 	}
 
-	mdio_bus_enable(config->mdio_dev);
-
 	ret = ksz8081_init_reset_gpios(dev);
 	if (ret) {
 		return ret;
@@ -706,6 +704,8 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 	}
 
 	data->flags |= KSZ8081_INITIALIZED;
+
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
 	return 0;
 }

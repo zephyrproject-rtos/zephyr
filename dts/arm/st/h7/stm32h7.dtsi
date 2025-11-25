@@ -164,6 +164,15 @@
 			};
 		};
 
+		pwr: power@58024800 {
+			/* TODO:
+			 * Add "st,stm32-pwr" to compatible list
+			 * when support for wake-up pins is added
+			 */
+			compatible = "st,stm32h7-pwr";
+			reg = <0x58024800 0x400>;
+		};
+
 		exti: interrupt-controller@58000000 {
 			compatible = "st,stm32-exti";
 			interrupt-controller;

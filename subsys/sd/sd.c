@@ -202,7 +202,16 @@ static int sd_command_init(struct sd_card *card)
 	if (ret) {
 		return ret;
 	}
-
+#ifdef CONFIG_MMC_STACK
+	/*
+	 * If card type is already known, skip to relevant init.
+	 * SDMMC init takes pretty long, until it fails and we can
+	 * try MMC init.
+	 */
+	if (card->type == CARD_MMC) {
+		goto mmc_init;
+	}
+#endif /* CONFIG_MMC_STACK */
 #ifdef CONFIG_SDIO_STACK
 	/* Attempt to initialize SDIO card */
 	if (!sdio_card_init(card)) {
@@ -216,6 +225,7 @@ static int sd_command_init(struct sd_card *card)
 	}
 #endif /* CONFIG_SDMMC_STACK */
 #ifdef CONFIG_MMC_STACK
+mmc_init:
 	ret = sd_idle(card);
 	if (ret) {
 		LOG_ERR("Card error on CMD0");

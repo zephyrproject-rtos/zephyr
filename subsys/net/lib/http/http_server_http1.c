@@ -196,8 +196,43 @@ static int handle_http1_static_resource(
 	ret; })
 
 #define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
-	"HTTP/1.1 %d\r\n"                                                                          \
+	"HTTP/1.1 %d%s%s\r\n"                                                                      \
 	"Transfer-Encoding: chunked\r\n"
+
+static const char *http_status_str(enum http_status status)
+{
+#if defined(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES)
+	switch (status) {
+	case HTTP_200_OK:
+		return "OK";
+	case HTTP_201_CREATED:
+		return "Created";
+	case HTTP_204_NO_CONTENT:
+		return "No Content";
+	case HTTP_400_BAD_REQUEST:
+		return "Bad Request";
+	case HTTP_401_UNAUTHORIZED:
+		return "Unauthorized";
+	case HTTP_403_FORBIDDEN:
+		return "Forbidden";
+	case HTTP_404_NOT_FOUND:
+		return "Not Found";
+	case HTTP_405_METHOD_NOT_ALLOWED:
+		return "Method Not Allowed";
+	case HTTP_500_INTERNAL_SERVER_ERROR:
+		return "Internal Server Error";
+	default:
+		return "";
+	}
+#endif
+	return "";
+}
+
+#if defined(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES)
+#define REASON_PHRASE_MAX_LENGTH sizeof("Internal Server Error")
+#else
+#define REASON_PHRASE_MAX_LENGTH 0
+#endif
 
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
 			      const struct http_header *headers, size_t header_count,
@@ -205,7 +240,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 {
 	int ret;
 	bool content_type_sent = false;
-	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
+	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx") +
+			       REASON_PHRASE_MAX_LENGTH,
 			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
 
 	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
@@ -219,7 +255,9 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 	}
 
 	/* Send response code and transfer encoding */
-	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status);
+	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status,
+		 IS_ENABLED(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES) ? " " : "",
+		 http_status_str(status));
 
 	ret = http_server_sendall(client, http_response,
 				  strnlen(http_response, sizeof(http_response) - 1));

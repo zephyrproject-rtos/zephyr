@@ -268,7 +268,7 @@ static inline void set_association(struct net_if *iface, struct ieee802154_conte
 		set_linkaddr_to_ext_addr(iface, ctx);
 	} else {
 		ctx->linkaddr.len = IEEE802154_SHORT_ADDR_LENGTH;
-		short_addr_be = htons(short_addr);
+		short_addr_be = net_htons(short_addr);
 		memcpy(ctx->linkaddr.addr, &short_addr_be, IEEE802154_SHORT_ADDR_LENGTH);
 		update_net_if_link_addr(iface, ctx);
 		ieee802154_radio_filter_short_addr(iface, ctx->short_addr);

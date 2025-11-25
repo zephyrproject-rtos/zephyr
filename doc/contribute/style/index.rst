@@ -96,9 +96,10 @@ to quickly reformat large amounts of devicetree files to our `Coding Style Guide
 standards. You can also run it manually like this:
 
 For individual files
+
 .. code-block:: bash
 
-   npx dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
+   npx --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
    git apply diff.patch
 
 You can omit ``--file`` and this will format all files under the directory where the command
@@ -106,9 +107,10 @@ has been called. Alternatively ``--cwd`` can also be passed set the base dir whe
 should look for files. This option is also used to make the paths relative in the patch file.
 
 You can also fix in place with
+
 .. code-block:: bash
 
-   npx dts-linter --formatFixAll
+   npx --prefix ./scripts/ci dts-linter --formatFixAll
 
 
 Editor Integration

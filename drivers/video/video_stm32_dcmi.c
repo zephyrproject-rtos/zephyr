@@ -535,10 +535,7 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.sensor_dev = SOURCE_DEV(0),

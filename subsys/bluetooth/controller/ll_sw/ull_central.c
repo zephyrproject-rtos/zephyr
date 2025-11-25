@@ -559,7 +559,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
 
-	if (cis || ull_lp_cc_is_enqueued(conn)) {
+	if (cis || ull_lp_cc_is_enqueued(conn, NULL)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */

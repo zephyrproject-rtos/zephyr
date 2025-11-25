@@ -83,6 +83,8 @@ static struct bt_ag_tx ag_tx[CONFIG_BT_HFP_AG_TX_BUF_COUNT * 2];
 static K_FIFO_DEFINE(ag_tx_free);
 static K_FIFO_DEFINE(ag_tx_notify);
 
+#define BT_HFP_AG_VERSION BT_HFP_VERSION_1_9
+
 /* HFP Gateway SDP record */
 static struct bt_sdp_attribute hfp_ag_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -141,7 +143,7 @@ static struct bt_sdp_attribute hfp_ag_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0109)
+				BT_SDP_ARRAY_16(BT_HFP_AG_VERSION)
 			},
 			)
 		},
@@ -1098,6 +1100,44 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
+static void bt_hfp_ag_check_ind_value(struct bt_hfp_ag *ag, uint8_t ind)
+{
+	if ((ag_ind[ind].max < ag->indicator_value[ind]) ||
+	    (ag_ind[ind].min > ag->indicator_value[ind])) {
+		LOG_WRN("Invalid value of indicator[%u] %u", ind, ag->indicator_value[ind]);
+		ag->indicator_value[ind] = 0;
+	}
+}
+
+static void bt_hfp_ag_get_ind_values(struct bt_hfp_ag *ag)
+{
+	int err;
+
+	if ((bt_ag == NULL) || (bt_ag->get_indicator_value == NULL)) {
+		LOG_DBG("No indicator value retrieval method available");
+		return;
+	}
+
+	if (ag->state == BT_HFP_CONNECTED) {
+		LOG_ERR("Only works during SLC establishment phase");
+		return;
+	}
+
+	err = bt_ag->get_indicator_value(ag, &ag->indicator_value[BT_HFP_AG_SERVICE_IND],
+					 &ag->indicator_value[BT_HFP_AG_SIGNAL_IND],
+					 &ag->indicator_value[BT_HFP_AG_ROAM_IND],
+					 &ag->indicator_value[BT_HFP_AG_BATTERY_IND]);
+	if (err != 0) {
+		LOG_DBG("No indicator value call retrieved");
+		return;
+	}
+
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_SERVICE_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_SIGNAL_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_ROAM_IND);
+	bt_hfp_ag_check_ind_value(ag, BT_HFP_AG_BATTERY_IND);
+}
+
 static int bt_hfp_ag_get_ongoing_calls(struct bt_hfp_ag *ag)
 {
 	int err;
@@ -1229,6 +1269,8 @@ static int bt_hfp_ag_cind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			ag_ind[BT_HFP_AG_BATTERY_IND].min, ag_ind[BT_HFP_AG_BATTERY_IND].connector,
 			ag_ind[BT_HFP_AG_BATTERY_IND].max);
 	} else {
+		bt_hfp_ag_get_ind_values(ag);
+
 		err = bt_hfp_ag_get_ongoing_calls(ag);
 		if (err != 0) {
 			err = bt_hfp_ag_notify_cind_value(ag);
@@ -1475,6 +1517,33 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 	}
 }
 
+static int hfp_ag_set_voice_setting(struct bt_hfp_ag *ag)
+{
+	uint16_t air_coding_fmt;
+
+	switch (ag->selected_codec_id) {
+	case BT_HFP_AG_CODEC_CVSD:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
+		break;
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+	case BT_HFP_AG_CODEC_MSBC:
+	case BT_HFP_AG_CODEC_LC3_SWB:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+	default:
+		LOG_ERR("Unsupported codec ID %u", ag->selected_codec_id);
+		return -EINVAL;
+	}
+
+	ag->sco_chan.voice_setting = BT_HCI_VOICE_SETTINGS(
+		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
+		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
+		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
+
+	return 0;
+}
+
 static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 {
 	static const struct bt_sco_chan_ops ops = {
@@ -1485,7 +1554,15 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 	LOG_DBG("");
 
 	if (ag->sco_conn == NULL) {
+		int err;
+
 		ag->sco_chan.ops = &ops;
+
+		err = hfp_ag_set_voice_setting(ag);
+		if (err < 0) {
+			LOG_ERR("Fail to set voice setting :(%d)", err);
+			return NULL;
+		}
 
 		/* create SCO connection*/
 		ag->sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
@@ -1595,7 +1672,7 @@ static int bt_hfp_ag_create_audio_connection(struct bt_hfp_ag *ag, struct bt_hfp
 	return err;
 }
 
-static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag)
 {
 	struct bt_hfp_ag_ongoing_call *ongoing_call;
 	struct bt_hfp_ag_call *call;
@@ -1678,7 +1755,7 @@ static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data
 	ag->indicator_value[BT_HFP_AG_CALL_SETUP_IND] = call_setup_value;
 }
 
-static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag)
 {
 	bool is_inband_ringtone;
 
@@ -1689,14 +1766,17 @@ static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
 
 		atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, err == 0);
 	}
-
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_notify_ongoing_calls, NULL);
 }
 
 static void bt_hfp_ag_slc_connected(struct bt_hfp_ag *ag, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	bt_hfp_ag_set_state(ag, BT_HFP_CONNECTED);
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_set_in_band_ring, NULL);
+
+	bt_hfp_ag_set_in_band_ring(ag);
+
+	bt_hfp_ag_notify_ongoing_calls(ag);
 }
 
 static int bt_hfp_ag_cmer_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
@@ -2358,6 +2438,8 @@ static int bt_hfp_ag_chup_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			}
 		} else if (call_state == BT_HFP_CALL_ACTIVE) {
 			next_step = bt_hfp_ag_unit_call_terminate;
+		} else if (call_state == BT_HFP_CALL_OUTGOING) {
+			next_step = bt_hfp_ag_call_terminate;
 		}
 
 		if (next_step) {
@@ -2856,11 +2938,6 @@ static int bt_hfp_ag_outgoing_call(struct bt_hfp_ag *ag, const char *number, uin
 		return -ENAMETOOLONG;
 	}
 
-	hfp_ag_lock(ag);
-	(void)strcpy(ag->last_number, number);
-	ag->type = type;
-	hfp_ag_unlock(ag);
-
 	call = get_call_from_number(ag, number, type);
 	if (call) {
 		return -EBUSY;
@@ -2914,25 +2991,43 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
 	char *number = NULL;
+	uint8_t *data;
 	bool is_memory_dial = false;
-
-	if (buf->data[buf->len - 1] != '\r') {
-		return -ENOTSUP;
-	}
+	uint16_t len;
 
 	if (is_char(buf, '>')) {
 		is_memory_dial = true;
 	}
 
-	if ((buf->len - 1) > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
+	len = sizeof(uint8_t) + sizeof(uint8_t);
+	if (buf->len <= len) {
+		LOG_WRN("Short packet");
+		return -EINVAL;
+	}
+
+	len = buf->len - len;
+	data = net_buf_pull_mem(buf, len);
+
+	if (!is_char(buf, ';')) {
+		LOG_WRN("Missing semicolon character");
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		LOG_WRN("Missing enter character");
+		return -ENOTSUP;
+	}
+
+	/* Change the `;` to `\0` */
+	data[len] = 0;
+
+	if (len > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
 		return -ENAMETOOLONG;
 	}
 
-	buf->data[buf->len - 1] = '\0';
-
 	if (is_memory_dial) {
-		if (bt_ag && bt_ag->memory_dial) {
-			err = bt_ag->memory_dial(ag, &buf->data[0], &number);
+		if ((bt_ag != NULL) && (bt_ag->memory_dial != NULL)) {
+			err = bt_ag->memory_dial(ag, data, &number);
 			if ((err != 0) || (number == NULL)) {
 				return -ENOTSUP;
 			}
@@ -2940,10 +3035,10 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			return -ENOTSUP;
 		}
 	} else {
-		number = &buf->data[0];
-		if (bt_ag && bt_ag->number_call) {
-			err = bt_ag->number_call(ag, &buf->data[0]);
-			if (err) {
+		number = (char *)data;
+		if ((bt_ag != NULL) && (bt_ag->number_call != NULL)) {
+			err = bt_ag->number_call(ag, number);
+			if (err != 0) {
 				return err;
 			}
 		} else {
@@ -2956,11 +3051,27 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static int bt_hfp_ag_bldn_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
+	int err;
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+
 	if (!is_char(buf, '\r')) {
 		return -ENOTSUP;
 	}
 
-	return bt_hfp_ag_outgoing_call(ag, ag->last_number, ag->type);
+	if ((bt_ag == NULL) || (bt_ag->redial == NULL)) {
+		return -ENOTSUP;
+	}
+
+	memset(number, 0, sizeof(number));
+	err = bt_ag->redial(ag, number);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Add null-terminated to avoid unexpected issue. */
+	number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN] = '\0';
+
+	return bt_hfp_ag_outgoing_call(ag, number, 0);
 }
 
 static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
@@ -3618,12 +3729,30 @@ static void hfp_ag_postprocess_at_cmd(struct bt_hfp_ag *ag)
 	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
 }
 
+static int hfp_ag_at_cmd_ack(struct bt_hfp_ag *ag, int err)
+{
+	enum at_cme cme_err;
+
+	if ((err != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CMEE_ENABLE)) {
+		cme_err = bt_hfp_ag_get_cme_err(err);
+		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
+	} else {
+		bt_hfp_ag_tx_cb_t cb;
+
+		cb = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED)
+			     ? bt_hfp_ag_slc_connected
+			     : NULL;
+		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
+	}
+
+	return err;
+}
+
 static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
 	uint8_t *data = buf->data;
 	uint16_t len = buf->len;
-	enum at_cme cme_err;
 	int err = -ENOEXEC;
 
 	LOG_HEXDUMP_DBG(data, len, "Received:");
@@ -3651,17 +3780,14 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return;
 	}
 
-	if ((err != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CMEE_ENABLE)) {
-		cme_err = bt_hfp_ag_get_cme_err(err);
-		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
-	} else {
-		bt_hfp_ag_tx_cb_t cb;
-
-		cb = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED)
-			     ? bt_hfp_ag_slc_connected
-			     : NULL;
-		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
+	if (!atomic_test_and_set_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
+		LOG_DBG("First AT command ack will be replied later");
+		ag->ack_err = err;
+		k_work_submit(&ag->slc_work);
+		return;
 	}
+
+	err = hfp_ag_at_cmd_ack(ag, err);
 
 	hfp_ag_postprocess_at_cmd(ag);
 
@@ -3895,16 +4021,123 @@ static void bt_ag_ongoing_call_work(struct k_work *work)
 	bt_ag_send_ok_code(ag);
 }
 
+static void bt_ag_slc_work(struct k_work *work)
+{
+	struct bt_hfp_ag *ag = CONTAINER_OF(work, struct bt_hfp_ag, slc_work);
+	int err;
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE)) {
+		return;
+	}
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
+		return;
+	}
+
+	if (atomic_test_and_set_bit(ag->flags, BT_HFP_AG_FEAT_UPDATED)) {
+		return;
+	}
+
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_RECORD_FOUND)) {
+		err = hfp_ag_at_cmd_ack(ag, ag->ack_err);
+		hfp_ag_postprocess_at_cmd(ag);
+		if (err != 0) {
+			LOG_ERR("Failed to send AT command ACK: %d", err);
+		}
+		return;
+	}
+
+	err = bt_hfp_ag_disconnect(ag);
+	if (err != 0) {
+		LOG_ERR("Failed to disconnect HF: %d", err);
+	}
+}
+
+#define HFP_SDP_FEAT_MASK GENMASK(4, 0)
+
+static uint8_t bt_hfp_ag_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				     const struct bt_sdp_discover_params *params)
+{
+	size_t index;
+	struct bt_hfp_ag *ag;
+	int err;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_ag_pool), "Index is out of bounds");
+
+	ag = &bt_hfp_ag_pool[index];
+
+	if ((result == NULL) || (result->resp_buf == NULL)) {
+		LOG_ERR("SDP discovery failed");
+		goto failed;
+	}
+
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
+					 &ag->hf_sdp_version);
+	if (err != 0) {
+		LOG_ERR("Failed to get HF profile version");
+		goto failed;
+	}
+	err = bt_sdp_get_features(result->resp_buf, &ag->hf_sdp_features);
+	if (err != 0) {
+		LOG_ERR("Failed to get HF feature");
+		goto failed;
+	}
+
+	if ((ag->hf_sdp_version <= BT_HFP_VERSION_1_5) ||
+	    (BT_HFP_AG_VERSION <= BT_HFP_VERSION_1_5)) {
+		if (ag->hf_sdp_features & BT_HFP_HF_SDP_FEATURE_WBS) {
+			LOG_WRN("Unsupported SDP feature (WBS) is enabled.");
+			ag->hf_sdp_features &= ~BT_HFP_HF_SDP_FEATURE_WBS;
+		}
+
+		if (ag->hf_sdp_features & BT_HFP_HF_SDP_FEATURE_SUPER_WBS) {
+			LOG_WRN("Unsupported SDP feature (Super WBS) is enabled.");
+			ag->hf_sdp_features &= ~BT_HFP_HF_SDP_FEATURE_SUPER_WBS;
+		}
+	}
+
+	if ((ag->hf_sdp_version <= BT_HFP_VERSION_0_96) ||
+	    (BT_HFP_AG_VERSION <= BT_HFP_VERSION_0_96)) {
+		/* Update the AG features according to the SDP features for HFP version 0.96.
+		 *
+		 * Hands-Free Profile Specification V1.9, 6.3 SDP Interoperability Requirements
+		 * The values of the “SupportedFeatures” bitmap given in Table 6.6 shall be the
+		 * same as the values of the Bits 0 to 4 of the unsolicited result code +BRSF.
+		 */
+		ag->hf_features = ag->hf_sdp_features & HFP_SDP_FEAT_MASK;
+	}
+
+	atomic_set_bit(ag->flags, BT_HFP_AG_RECORD_FOUND);
+failed:
+	atomic_set_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE);
+	k_work_submit(&ag->slc_work);
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
 static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 {
+	size_t index;
+	struct bt_hfp_ag *ag;
+	int err;
+
 	static struct bt_rfcomm_dlc_ops ops = {
 		.connected = hfp_ag_connected,
 		.disconnected = hfp_ag_disconnected,
 		.recv = hfp_ag_recv,
 		.sent = hfp_ag_sent,
 	};
-	size_t index;
-	struct bt_hfp_ag *ag;
+	static struct bt_sdp_attribute_id_range id_range[] = {
+		{ BT_SDP_ATTR_PROTO_DESC_LIST, BT_SDP_ATTR_PROTO_DESC_LIST },
+		{ BT_SDP_ATTR_PROFILE_DESC_LIST, BT_SDP_ATTR_PROFILE_DESC_LIST },
+		{ BT_SDP_ATTR_SUPPORTED_FEATURES, BT_SDP_ATTR_SUPPORTED_FEATURES },
+	};
+	static struct bt_sdp_attribute_id_list id_list = {
+		.count = ARRAY_SIZE(id_range),
+		.ranges = id_range,
+	};
+	static struct bt_uuid_16 uuid;
 
 	LOG_DBG("conn %p", conn);
 
@@ -3919,6 +4152,20 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	(void)memset(ag, 0, sizeof(struct bt_hfp_ag));
 
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = BT_SDP_HANDSFREE_SVCLASS;
+
+	ag->sdp_param.func = bt_hfp_ag_discover_cb;
+	ag->sdp_param.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+	ag->sdp_param.uuid = &uuid.uuid;
+	ag->sdp_param.pool = &ag_pool;
+	ag->sdp_param.ids  = &id_list;
+
+	err = bt_sdp_discover(conn, &ag->sdp_param);
+	if (err != 0) {
+		return NULL;
+	}
+
 	sys_slist_init(&ag->tx_pending);
 	sys_slist_init(&ag->tx_submit_pending);
 
@@ -3929,6 +4176,11 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Set the supported features*/
 	ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
+	ag->ag_features |= BT_FEAT_SC(bt_dev.features) ? BT_HFP_AG_FEATURE_ESCO_S4 : 0;
+
+	/* Set the default HF infrmation */
+	ag->hf_sdp_features = 0;
+	ag->hf_sdp_version = BT_HFP_VERSION_0_96;
 
 	/* Support HF indicators */
 	if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
@@ -3971,6 +4223,8 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Set Codec ID*/
 	ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
+
+	k_work_init(&ag->slc_work, bt_ag_slc_work);
 
 	/* Init delay work */
 	k_work_init_delayable(&ag->tx_work, bt_ag_tx_work);
@@ -4889,6 +5143,11 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 	LOG_DBG("");
 
 	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if ((BT_HFP_AG_SUPPORTED_CODEC_IDS & BIT(id)) == 0) {
+		LOG_ERR("Unsupported Codec ID %u", id);
 		return -EINVAL;
 	}
 

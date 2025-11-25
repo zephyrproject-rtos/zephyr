@@ -1,0 +1,42 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_MCHP_SERCOM
+	bool
+	help
+	  Common options for Microchip I2C SERCOM drivers.
+
+config I2C_MCHP_SERCOM_G1
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_SERCOM_G1_I2C_ENABLED
+	select PINCTRL
+	select I2C_MCHP_SERCOM
+	help
+	  Enable support for Microchip SERCOM I2C g1 driver.
+
+if I2C_MCHP_SERCOM
+
+config I2C_MCHP_INTERRUPT_DRIVEN
+	bool "Interrupt support for Microchip I2C devices"
+	default y
+	help
+	  This enables INTERRUPT driven transactions for the I2C peripheral.
+	  interrupt driven mode can be used in blocking & non blocking mode.
+
+config I2C_MCHP_TARGET
+	bool "Target device support for Microchip I2C devices"
+	default y
+	depends on I2C_TARGET
+	help
+	  This enables target device support for the I2C peripheral.
+
+config I2C_MCHP_TRANSFER_TIMEOUT
+	int "Microchip Transfer timeout [ms]"
+	default 500
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+
+endif # I2C_MCHP_SERCOM

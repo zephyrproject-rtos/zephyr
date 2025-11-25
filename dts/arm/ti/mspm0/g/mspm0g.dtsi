@@ -9,7 +9,7 @@
 
 / {
 	clocks: clocks {
-		pll: pll {
+		syspll: syspll {
 			compatible = "ti,mspm0-pll";
 			clocks = <&sysosc>;
 			p-div = <2>;
@@ -18,12 +18,6 @@
 			clk2x-div = <2>;
 			#clock-cells = <0>;
 			status = "okay";
-		};
-
-		syspll2x: syspll2x {
-			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
-			status = "disabled";
 		};
 	};
 
@@ -151,6 +145,14 @@
 			current-speed = <115200>;
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			clk-div = <1>;
+			status = "disabled";
+		};
+
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			ti,clk-div = <1>;
 			status = "disabled";
 		};
 	};

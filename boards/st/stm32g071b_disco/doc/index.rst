@@ -3,7 +3,7 @@
 Overview
 ********
 The STM32G071B-DISCO Discovery board is a demonstration and development platform
-for the STMicroelectronics Arm® Cortex® -M0+ core-based STM32G071RB USB Type-C |reg|
+for the STMicroelectronics Arm® Cortex®-M0+ core-based STM32G071RB USB Type-C |reg|
 and Power Delivery microcontroller. The STM32G071B-DISCO Discovery board is
 presented with all necessary interfaces for easy connection and
 interoperability with other USB Type-C |reg| devices. The STM32G071B-DISCO Discovery

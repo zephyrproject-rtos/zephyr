@@ -361,6 +361,7 @@ config RISCV_PMP
 	select THREAD_LOCAL_STORAGE if USERSPACE
 	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
 	select MEM_DOMAIN_ISOLATED_STACKS
+	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR
 	help
 	  MCU implements Physical Memory Protection.
 
@@ -414,6 +415,7 @@ endif #RISCV_PMP
 config PMP_STACK_GUARD
 	def_bool y
 	depends on HW_STACK_PROTECTION
+	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
 config PMP_STACK_GUARD_MIN_SIZE
 	int "Stack Guard area size"
@@ -429,6 +431,12 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  catch any sudden jump in stack pointer decrement, plus some
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
+
+config PMP_KERNEL_MODE_DYNAMIC
+	bool
+	help
+	  Enable this to dynamically reconfigure and activate PMP entries for
+	  Machine mode when switching between kernel (ISR, syscall) and threads.
 
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
@@ -459,6 +467,17 @@ config RISCV_IMPRECISE_FPU_STATE_TRACKING
 	  (Section 3.1.6.6), some implementations may choose to track the dirtiness of
 	  the floating-point register state imprecisely by reporting the state to be
 	  dirty even when it has not been modified. This option reflects that.
+
+config RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+	bool "NMI delivery on SMRNMI hardware (MNSTATUS.NMIE=1)"
+	select RISCV_ISA_EXT_ZICSR
+	help
+	  Set MNSTATUS.NMIE bit to 1 during boot to enable NMI delivery on
+	  RISC-V hardware implementing the SMRNMI extension.
+
+	  This option only enables NMI delivery. It does not provide RNMI
+	  handlers or mnret instruction support. Proper RNMI handlers must
+	  be implemented in SoC-specific code to handle NMI events.
 
 endmenu
 

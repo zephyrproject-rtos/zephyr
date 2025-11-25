@@ -129,7 +129,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
 		.start = (uint32_t)__cold_start,
 		.end   = (uint32_t)__cold_end,
-		.attrs = XTENSA_MMU_PERM_X,
+		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
 		.name = "imr cold",
 	},
 	{
@@ -142,12 +142,6 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.end   = (uint32_t)__imr_data_end,
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
 		.name = "imr data",
-	},
-	{
-		.start = (uint32_t)IMR_L3_HEAP_BASE,
-		.end   = (uint32_t)(IMR_L3_HEAP_BASE + IMR_L3_HEAP_SIZE),
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr L3 heap",
 	},
 	{
 		.start = (uint32_t)LP_SRAM_BASE,

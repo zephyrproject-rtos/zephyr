@@ -95,6 +95,18 @@
 #define BT_HFP_AG_FEATURE_REJECT_CALL_ENABLE 0
 #endif /* CONFIG_BT_HFP_AG_REJECT_CALL */
 
+#if defined(CONFIG_BT_HFP_AG_CODEC_MSBC)
+#define BT_HFP_AG_SDP_FEATURE_WBS_ENABLE BT_HFP_AG_SDP_FEATURE_WBS
+#else
+#define BT_HFP_AG_SDP_FEATURE_WBS_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_MSBC */
+
+#if defined(CONFIG_BT_HFP_AG_CODEC_LC3_SWB)
+#define BT_HFP_AG_SDP_FEATURE_SUPER_WBS_ENABLE BT_HFP_AG_SDP_FEATURE_SUPER_WBS
+#else
+#define BT_HFP_AG_SDP_FEATURE_SUPER_WBS_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_LC3_SWB */
+
 /* HFP AG Supported features */
 #define BT_HFP_AG_SUPPORTED_FEATURES (\
 	BT_HFP_AG_FEATURE_3WAY_CALL_ENABLE | \
@@ -119,7 +131,29 @@
 	BT_HFP_AG_SDP_FEATURE_VOICE_RECG_ENABLE | \
 	BT_HFP_AG_SDP_FEATURE_ENH_VOICE_RECG_ENABLE | \
 	BT_HFP_AG_SDP_FEATURE_VOICE_RECG_TEXT_ENABLE | \
-	BT_HFP_AG_SDP_FEATURE_VOICE_TAG_ENABLE)
+	BT_HFP_AG_SDP_FEATURE_VOICE_TAG_ENABLE | \
+	BT_HFP_AG_SDP_FEATURE_WBS_ENABLE | \
+	BT_HFP_AG_SDP_FEATURE_SUPER_WBS_ENABLE)
+
+#define BT_HFP_AG_CODEC_CVSD_ENABLE BIT(BT_HFP_AG_CODEC_CVSD)
+
+#if defined(CONFIG_BT_HFP_AG_CODEC_MSBC)
+#define BT_HFP_AG_CODEC_MSBC_ENABLE BIT(BT_HFP_AG_CODEC_MSBC)
+#else
+#define BT_HFP_AG_CODEC_MSBC_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_MSBC */
+
+#if defined(CONFIG_BT_HFP_AG_CODEC_LC3_SWB)
+#define BT_HFP_AG_CODEC_LC3_SWB_ENABLE BIT(BT_HFP_AG_CODEC_LC3_SWB)
+#else
+#define BT_HFP_AG_CODEC_LC3_SWB_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_LC3_SWB */
+
+/* HFP HF Supported Codec IDs*/
+#define BT_HFP_AG_SUPPORTED_CODEC_IDS (\
+	BT_HFP_AG_CODEC_CVSD_ENABLE | \
+	BT_HFP_AG_CODEC_MSBC_ENABLE | \
+	BT_HFP_AG_CODEC_LC3_SWB_ENABLE)
 
 /* bt_hfp_ag flags: the flags defined here represent HFP AG parameters */
 enum {
@@ -139,6 +173,10 @@ enum {
 	BT_HGP_AG_ONGOING_CALLS, /* Waiting ongoing calls */
 	BT_HFP_AG_SLC_CONNECTED, /* SLC connected event needs to be notified */
 	BT_HFP_AG_AT_PROCESS,    /* AT command is in processing */
+	BT_HFP_AG_DISCOVER_DONE, /* SDP Record discovered done */
+	BT_HFP_AG_RECORD_FOUND,  /* SDP HF Record found */
+	BT_HFP_AG_1ST_AT_RECV,   /* 1st AT is received */
+	BT_HFP_AG_FEAT_UPDATED,  /* Remote feature has been updated */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
@@ -232,6 +270,10 @@ struct bt_hfp_ag {
 	uint32_t hf_indicators_of_hf;
 	uint32_t hf_indicators;
 
+	/* AG profile information */
+	uint16_t hf_sdp_version;
+	uint16_t hf_sdp_features;
+
 	/* operator */
 	uint8_t mode;
 	char operator[AT_COPS_OPERATOR_MAX_LEN + 1];
@@ -245,15 +287,18 @@ struct bt_hfp_ag {
 	/* ongoing calls work */
 	struct k_work_delayable ongoing_call_work;
 
-	/* last dialing number and type */
-	char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
-	uint8_t type;
-
 	/* SCO Connection Object */
 	struct bt_sco_chan sco_chan;
 
 	/* SCO connect */
 	struct bt_conn *sco_conn;
+
+	/* SDP discover params */
+	struct bt_sdp_discover_params sdp_param;
+
+	/* SCL work */
+	struct k_work slc_work;
+	int ack_err;
 
 	/* HFP TX pending */
 	sys_slist_t tx_pending;

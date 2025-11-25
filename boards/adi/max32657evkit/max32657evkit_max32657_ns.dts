@@ -67,8 +67,8 @@
 		 * };
 		 */
 
-		storage_partition: partition@f0000 {
-			label = "storage";
+		tfm_storage_partition: partition@f0000 {
+			label = "tfm-storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
 		};
 	};

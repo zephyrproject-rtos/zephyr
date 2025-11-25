@@ -30,8 +30,8 @@
 #include <zephyr/pm/pm.h>
 #include "app_conf.h"
 #include "linklayer_plat.h"
-#include <stm32wbaxx_ll_bus.h>
-#include <stm32wbaxx_ll_pwr.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 #endif
 
 #include <linklayer_plat_local.h>
@@ -124,7 +124,7 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * thus stops acknowledging consecutive frames).
 		 */
 		pkt = net_pkt_rx_alloc_with_buffer(stm32wba_radio->iface, pkt_len,
-						   AF_UNSPEC, 0, K_FOREVER);
+						   NET_AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame->psdu, pkt_len) != 0) {
 			LOG_ERR("Failed to write packet data");
@@ -466,7 +466,7 @@ static int handle_ack(struct stm32wba_802154_data_t *stm32wba_radio)
 	}
 
 	ack_pkt = net_pkt_rx_alloc_with_buffer(stm32wba_radio->iface, ack_len,
-					       AF_UNSPEC, 0, K_NO_WAIT);
+					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (ack_pkt == NULL) {
 		LOG_ERR("No free packet available.");
 		return -ENOMEM;

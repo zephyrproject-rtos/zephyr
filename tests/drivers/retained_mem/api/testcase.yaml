@@ -6,6 +6,12 @@ tests:
       - retained_mem
   drivers.retained_mem.api.ram:
     platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
+      - esp32s3_devkitm/esp32s3/procpu
       - qemu_cortex_m3
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp

@@ -37,7 +37,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
@@ -265,6 +265,7 @@ zephyr_udc0: &usbotg_hs {
 		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
 	pinctrl-names = "default";
 	dual-flash;
+	ssht-enable;
 	status = "okay";
 
 	mt25ql512ab1: qspi-nor-flash-1@0 {

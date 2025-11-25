@@ -95,6 +95,22 @@ typedef enum {
 	AUDIO_CHANNEL_HEADPHONE_LEFT,   /**< Headphone left */
 	AUDIO_CHANNEL_HEADPHONE_RIGHT,  /**< Headphone right */
 	AUDIO_CHANNEL_ALL,		/**< All channels */
+
+	/**
+	 * Number of all common channel identifiers.
+	 */
+	AUDIO_CHANNEL_COMMON_COUNT,
+
+	/**
+	 * This and higher values are codec specific.
+	 * Refer to the codec's header file.
+	 */
+	AUDIO_CHANNEL_PRIV_START = AUDIO_CHANNEL_COMMON_COUNT,
+
+	/**
+	 * Maximum value describing an audio codec channel identifier.
+	 */
+	AUDIO_CHANNEL_MAX = INT16_MAX
 } audio_channel_t;
 
 /**

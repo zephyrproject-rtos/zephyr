@@ -86,8 +86,6 @@ static int keymap_init(const struct device *dev)
 #define KEYMAP_ENTRY_OFFSET(keymap_entry, col_size) \
 	(MATRIX_ROW(keymap_entry) * col_size + MATRIX_COL(keymap_entry))
 
-#define KEYMAP_ENTRY_CODE(keymap_entry) (keymap_entry & 0xffff)
-
 #define KEYMAP_ENTRY_VALIDATE(node_id, prop, idx)			\
 	BUILD_ASSERT(MATRIX_ROW(DT_PROP_BY_IDX(node_id, prop, idx)) <	\
 		     DT_PROP(node_id, row_size), "invalid row");	\
@@ -96,7 +94,7 @@ static int keymap_init(const struct device *dev)
 
 #define CODES_INIT(node_id, prop, idx) \
 	[KEYMAP_ENTRY_OFFSET(DT_PROP_BY_IDX(node_id, prop, idx), DT_PROP(node_id, col_size))] = \
-		KEYMAP_ENTRY_CODE(DT_PROP_BY_IDX(node_id, prop, idx)),
+		MATRIX_CODE(DT_PROP_BY_IDX(node_id, prop, idx)),
 
 #define INPUT_KEYMAP_DEFINE(inst)								\
 	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb,		\

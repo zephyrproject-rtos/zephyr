@@ -85,7 +85,8 @@ config NET_SOCKET_MAX_SEND_WAIT
 
 config NET_SOCKETS_SERVICE
 	bool "Socket service support"
-	select EVENTFD
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
@@ -94,6 +95,13 @@ config NET_SOCKETS_SERVICE
 	  so that enough sockets entries can be serviced. This depends on
 	  system needs as multiple services can be activated at the same time
 	  depending on network configuration.
+
+config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
+	int "Socket service file descriptor requirements"
+	default 1
+	help
+	  The socket service opens a permanent zvfs_eventfd, which consumes a file
+	  descriptor.
 
 config NET_SOCKETS_SERVICE_THREAD_PRIO
 	int "Priority of the socket service dispatcher thread"
@@ -327,7 +335,7 @@ config NET_SOCKETS_PACKET_DGRAM
 	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
 	  is removed before the packet is passed to the user.  Packets sent
 	  through a SOCK_DGRAM packet socket get a suitable L2 header based
-	  on the information in the sockaddr_ll destination address before
+	  on the information in the net_sockaddr_ll destination address before
 	  they are queued.
 
 config NET_SOCKETS_INET_RAW

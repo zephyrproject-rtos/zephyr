@@ -26,12 +26,53 @@
 
 .. _zephyr_4.3:
 
-Zephyr 4.3.0 (Working Draft)
-############################
+Zephyr 4.3.0
+############
 
 We are pleased to announce the release of Zephyr version 4.3.0.
 
 Major enhancements with this release include:
+
+**USB Device "Next" stack is now the default**
+  The new :ref:`USB device stack <usb_device_stack_next>`, built on the modern UDC (USB Device
+  Controller) API, replaces the legacy stack and brings support for multiple simultaneous
+  controllers, runtime configuration, and overall better architecture.
+  The legacy stack is now deprecated and will be removed in Zephyr 4.5.
+
+**CPU load and dynamic frequency scaling subsystems**
+  A new experimental :ref:`CPU frequency <cpu_freq>` scaling subsystem enables dynamic,
+  policy-driven, clock adjustments to balance power consumption and performance.
+  Alongside it, a new :ref:`cpu_load` subsystem allows users to obtain CPU usage metrics based on
+  scheduler statistics, which can be used to drive the frequency scaling policy.
+
+**Instrumentation Subsystem**
+  A new :ref:`instrumentation subsystem <instrumentation>` simplifies tracing and profiling of
+  Zephyr applications by leveraging compiler-managed function instrumentation, allowing the
+  recording of call-graph traces and statistical profiles at runtime.
+
+**OCPP 1.6 library**
+  A new :ref:`OCPP (Open Charge Point Protocol) <ocpp_interface>` library enables EV charging
+  station development with Zephyr. The library implements OCPP 1.6 Charge Point functionality
+  over WebSocket, supporting core profile operations including authorization, transaction
+  management, and meter value reporting for communication with Central System servers.
+
+**Twister Display Harness**
+  Twister can now :ref:`validate on-target display output <twister_display_capture_harness>` by
+  capturing frames from a USB video camera and matching them against pre-recorded visual
+  "fingerprints".
+
+**Developer Experience Improvements**
+  Several new tools have been introduced to help with common development and troubleshooting tasks:
+
+  - :ref:`dtdoctor` to help diagnose Devicetree build errors.
+  - :ref:`traceconfig <kconfig_traceconfig>` build target to help understand where Kconfig symbols
+    come from and their final values.
+  - :ref:`Interactive footprint charts <footprint_tools_plot>` to visualize RAM/ROM usage of an
+    application.
+
+**Expanded Board Support**
+  Support for 105 :ref:`new boards <boards_added_in_zephyr_4_3>` and 39
+  :ref:`new shields <shields_added_in_zephyr_4_3>` has been added in this release.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.2.0 to Zephyr v4.3.0 can be found in the separate :ref:`migration guide<migration_4.3>`.
@@ -42,10 +83,16 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
-* :cve:`2025-9408`: Under embargo until 2025-11-10
+* :cve:`2025-9408` `Zephyr project bug tracker GHSA-3r6j-5mp3-75wr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3r6j-5mp3-75wr>`_
 * :cve:`2025-9557`: Under embargo until 2025-11-24
 * :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
+* :cve:`2025-12899`: Under embargo until 2026-01-28
+* :cve:`2025-59438` `Padding oracle through timing of cipher error reporting
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-invalid-padding-error/>`_
+* :cve:`2025-54764` `Side channel in RSA key generation and operations (SSBleed, M-Step)
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-ssbleed-mstep/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -68,9 +115,9 @@ Removed APIs and options
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
-* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
-* STM32 LPTIM clock source selection through Kconfig was removed. Device Tree must now be used instead.
-  Affected Kconfig symbols: ``CONFIG_STM32_LPTIM_CLOCK_LSI`` / ``CONFIG_STM32_LPTIM_CLOCK_LSI``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in Devicetree.
+* STM32 LPTIM clock source selection through Kconfig was removed. Devicetree must now be used instead.
+  Affected Kconfig symbols: :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSI` / :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSE`
 
 Deprecated APIs and options
 ===========================
@@ -89,9 +136,6 @@ Deprecated APIs and options
   preferred for automatic updates.
 
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
-
-* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
-  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
   PSA Crypto API based alternative (i.e. :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA`).
@@ -127,6 +171,13 @@ New APIs and options
     * :c:func:`z_arm_save_scb_context` / :c:func:`z_arm_restore_scb_context`
     * :c:func:`z_arm_save_mpu_context` / :c:func:`z_arm_restore_mpu_context`
     * Existing :c:func:`z_arm_save_fp_context` and :c:func:`z_arm_save_fp_context` have also been updated
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_HIFI_SHARING_MODEL`
+    * :kconfig:option:`CONFIG_XTENSA_EAGER_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_LAZY_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_EXCEPTION_ENTER_GDB`
 
 * Bluetooth
 
@@ -177,6 +228,11 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
+
+* Ethernet
+
+   * The devicetree property ``default-speeds`` was added to most of the ethernet phys to configure
+     the advertised speeds for auto-negotiation during initialization of the driver.
 
 * Haptics
 
@@ -306,11 +362,85 @@ New APIs and options
 
     * :c:struct:`coap_client_response_data`
     * :c:member:`coap_client_request.payload_cb`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`
+
+  * Connection manager
+
+    * :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT`
+    * :c:func:`conn_mgr_if_set_idle_timeout`
+    * :c:func:`conn_mgr_if_get_idle_timeout`
+    * :c:func:`conn_mgr_if_used`
+
+  * DNS
+
+    * :c:enumerator:`DNS_QUERY_TYPE_CNAME`
+    * :c:enumerator:`DNS_QUERY_TYPE_TXT`
+    * :c:enumerator:`DNS_QUERY_TYPE_SRV`
+    * :c:func:`dns_resolve_enable_packet_forwarding`
+    * :c:func:`dns_resolve_remove_server_addresses`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE`
+    * :c:struct:`http_service_config`
+
+  * IPv6
+
+    * :kconfig:option:`CONFIG_NET_IPV6_NS_TIMEOUT`
+    * :c:func:`net_ipv6_get_addr_mcast_scope`
+
+  * LwM2M
+
+    * :c:type:`lwm2m_cache_filter_cb_t`
+    * :c:func:`lwm2m_set_cache_filter`
+
+  * MQTT-SN
+
+    * :c:func:`mqtt_sn_predefine_topic`
+    * :c:func:`mqtt_sn_update_will_topic`
+    * :c:func:`mqtt_sn_update_will_message`
+    * :c:func:`mqtt_sn_define_short_topic`
+
+  * Misc
+
+    * :kconfig:option:`CONFIG_NET_LATMON`
+    * :kconfig:option:`CONFIG_NETMIDI2_HOST`
+    * :kconfig:option:`CONFIG_OCPP`
+    * :c:member:`npf_rule.priority`
+    * :c:macro:`NPF_PRIORITY`
+    * :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC`
+    * :c:func:`ppp_peer_async_control_character_map`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_CHANNEL_MONITOR_AUTO_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_RCP_RESTORATION_MAX_COUNT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_SRP_SERVER_FAST_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_TREL_MANAGE_DNSSD`
 
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
+    * :c:macro:`IP_RECVTTL`
+    * :c:macro:`IPV6_PKTINFO`
+    * :c:macro:`IPV6_RECVHOPLIMIT`
+    * :c:macro:`IPV6_HOPLIMIT`
+
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS`
+    * Set enterprise crypto insecure because certificate validation is disabled.
+    * If the usage mode option has AP enabled, then automatically enable AP mode.
+    * Add configuration options for background scanning (bgscan) in wpa_supplicant.
+    * Add support for multiple virtual interfaces (VIF).
 
 * Newlib
 
@@ -328,7 +458,7 @@ New APIs and options
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
    * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
-     only needs to enable any "suspend-to-ram" power state in the devicetree.
+     only needs to enable any "suspend-to-ram" power state in the Devicetree.
    * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
      :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
      is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
@@ -381,6 +511,8 @@ New APIs and options
   * :c:func:`video_transfer_buffer`
 
 .. zephyr-keep-sorted-stop
+
+.. _boards_added_in_zephyr_4_3:
 
 New Boards
 **********
@@ -612,6 +744,8 @@ New Boards
    * :zephyr:board:`weact_stm32g030_core` (``weact_stm32g030_core``)
    * :zephyr:board:`weact_stm32wb55_core` (``weact_stm32wb55_core``)
    * :zephyr:board:`weact_esp32s3_b` (``weact_esp32s3_b``)
+
+.. _shields_added_in_zephyr_4_3:
 
 New Shields
 ***********
@@ -1174,6 +1308,15 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Firmware
+
+  * SCMI
+
+    * Added :kconfig:option:`ARM_SCMI_CHAN_SEM_TIMEOUT_USEC` to allow configuring the channel semaphore timeout.
+    * Use :c:func:`scmi_status_to_errno` directly for checking the returned command status code.
+    * Added new parameter to :c:func:`scmi_send_message` allowing users to specify if they want to use polling or not.
+    * [NXP] Various additions related to the NXP-specific CPU protocol.
+
 * Logging:
 
   * Added hybrid rate-limited logging macros to prevent log flooding when messages are generated frequently.
@@ -1193,6 +1336,11 @@ Libraries / Subsystems
     case while :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS` is set in the latter.
     :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_CUSTOM` is also added to allow end users to
     provide a custom solution.
+
+  * Updated from version 3.6.4 to version 3.6.5. Release notes for this release can be found at the
+    following link:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.5
 
 * Secure storage
 

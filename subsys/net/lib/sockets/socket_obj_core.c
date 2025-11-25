@@ -161,7 +161,7 @@ out:
 int sock_obj_core_alloc_find(int sock, int new_sock, int type)
 {
 	struct net_socket_register *reg = NULL;
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 	int family;
 	int ret;
 

@@ -222,6 +222,7 @@ int main(void)
 	struct display_buffer_descriptor buf_desc;
 	size_t buf_size = 0;
 	fill_buffer fill_buffer_fnc = NULL;
+	int ret;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -362,7 +363,15 @@ int main(void)
 		if ((capabilities.y_resolution - idx) < h_step) {
 			buf_desc.height = (capabilities.y_resolution - idx);
 		}
-		display_write(display_dev, 0, idx, &buf_desc, buf);
+		ret = display_write(display_dev, 0, idx, &buf_desc, buf);
+		if (ret < 0) {
+			LOG_ERR("Failed to write to display (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+			posix_exit_main(1);
+#else
+			return 0;
+#endif
+		}
 	}
 
 	buf_desc.pitch = rect_w;
@@ -372,12 +381,28 @@ int main(void)
 	fill_buffer_fnc(TOP_LEFT, 0, buf, buf_size);
 	x = 0;
 	y = 0;
-	display_write(display_dev, x, y, &buf_desc, buf);
+	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	if (ret < 0) {
+		LOG_ERR("Failed to write to display (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
+	}
 
 	fill_buffer_fnc(TOP_RIGHT, 0, buf, buf_size);
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
-	display_write(display_dev, x, y, &buf_desc, buf);
+	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	if (ret < 0) {
+		LOG_ERR("Failed to write to display (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
+	}
 
 	/*
 	 * This is the last write of the frame, so turn this off.
@@ -389,9 +414,25 @@ int main(void)
 	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size);
 	x = capabilities.x_resolution - rect_w;
 	y = capabilities.y_resolution - rect_h;
-	display_write(display_dev, x, y, &buf_desc, buf);
+	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	if (ret < 0) {
+		LOG_ERR("Failed to write to display (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
+	}
 
-	display_blanking_off(display_dev);
+	ret = display_blanking_off(display_dev);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
+	}
 
 	grey_count = 0;
 	x = 0;
@@ -400,7 +441,16 @@ int main(void)
 	LOG_INF("Display starts");
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
-		display_write(display_dev, x, y, &buf_desc, buf);
+		ret = display_write(display_dev, x, y, &buf_desc, buf);
+		if (ret < 0) {
+			LOG_ERR("Failed to write to display (error %d)", ret);
+#ifdef CONFIG_ARCH_POSIX
+			posix_exit_main(1);
+#else
+			return 0;
+#endif
+		}
+
 		++grey_count;
 		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST

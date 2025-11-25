@@ -45,7 +45,7 @@
 			lxt = "enable";
 			hirc48m = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
-					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
+				       NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <DT_FREQ_M(180)>;
 			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
 
@@ -211,6 +211,34 @@
 			interrupts = <88 2>;
 		};
 
+		canfd0: canfd@40020000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40020000 0x200>, <0x40020200 0x400>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <112 0>, <113 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD0_RST>;
+			clocks = <&pcc NUMAKER_CANFD0_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV1_CANFD0(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: canfd@40024000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40024000 0x200>, <0x40024200 0x400>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <114 0>, <115 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD1_RST>;
+			clocks = <&pcc NUMAKER_CANFD1_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
+				  NUMAKER_CLK_CLKDIV1_CANFD1(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
 		rtc: rtc@40041000 {
 			compatible = "nuvoton,numaker-rtc";
 			reg = <0x40041000 0x138>;
@@ -225,6 +253,39 @@
 			reg = <0x40096000 0x10>;
 			interrupts = <9 0>;
 			clocks = <&pcc NUMAKER_WWDT0_MODULE NUMAKER_CLK_CLKSEL1_WWDT0SEL_LIRC 0>;
+			status = "disabled";
+		};
+
+		spi0: spi@40061000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40061000 0x1000>;
+			interrupts = <23 0>;
+			resets = <&rst NUMAKER_SPI0_RST>;
+			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40062000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40062000 0x1000>;
+			interrupts = <51 0>;
+			resets = <&rst NUMAKER_SPI1_RST>;
+			clocks = <&pcc NUMAKER_SPI1_MODULE NUMAKER_CLK_CLKSEL2_SPI1SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40063000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40063000 0x1000>;
+			interrupts = <52 0>;
+			resets = <&rst NUMAKER_SPI2_RST>;
+			clocks = <&pcc NUMAKER_SPI2_MODULE NUMAKER_CLK_CLKSEL2_SPI2SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

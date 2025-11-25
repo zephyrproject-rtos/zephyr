@@ -18,4 +18,6 @@ supported:
   - pinctrl
   - uart
   - dma
+  - i2c
+  - display
 vendor: bflb

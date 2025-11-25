@@ -187,31 +187,13 @@ static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
 static int phy_adin2111_reg_read(const struct device *dev, uint16_t reg_addr,
 				 uint32_t *data)
 {
-	const struct phy_adin2111_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_adin2111_c22_read(dev, reg_addr, (uint16_t *) data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_adin2111_c22_read(dev, reg_addr, (uint16_t *) data);
 }
 
 static int phy_adin2111_reg_write(const struct device *dev, uint16_t reg_addr,
 				  uint32_t data)
 {
-	const struct phy_adin2111_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_adin2111_c22_write(dev, reg_addr, (uint16_t) data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_adin2111_c22_write(dev, reg_addr, (uint16_t) data);
 }
 
 static int phy_adin2111_await_phy(const struct device *dev)

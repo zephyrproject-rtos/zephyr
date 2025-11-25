@@ -1375,8 +1375,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		if (!session->dlcs) {
 			/* Start a session idle timer */
-			k_work_reschedule(&dlc->session->rtx_work,
-					  RFCOMM_IDLE_TIMEOUT);
+			k_work_reschedule(&session->rtx_work, RFCOMM_IDLE_TIMEOUT);
 		}
 	} else {
 		/* Cancel idle timer */

@@ -499,8 +499,6 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 
 	data->state.is_up = false;
 
-	mdio_bus_enable(cfg->mdio);
-
 	if (cfg->no_reset == false) {
 		ret = reset(dev);
 		if (ret < 0) {

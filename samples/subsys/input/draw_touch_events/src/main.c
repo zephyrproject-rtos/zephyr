@@ -63,16 +63,31 @@ static void touch_event_callback(struct input_event *evt, void *user_data)
 }
 INPUT_CALLBACK_DEFINE(touch_dev, touch_event_callback, NULL);
 
-static void clear_screen(void)
+static int clear_screen(void)
 {
 	int x;
 	int y;
+	int ret;
 
 	for (x = 0; x < WIDTH; x += CROSS_DIM) {
 		for (y = 0; y < HEIGHT; y += CROSS_DIM) {
-			display_write(display_dev, x, y, &buf_desc, buffer_cross_empty);
+			struct display_buffer_descriptor ddesc = buf_desc;
+			uint16_t rem_w = WIDTH - x;
+			uint16_t rem_h = HEIGHT - y;
+
+			ddesc.width = MIN(buf_desc.width, rem_w);
+			ddesc.height = MIN(buf_desc.height, rem_h);
+			ddesc.buf_size = ddesc.width * ddesc.height * BPP;
+
+			ret = display_write(display_dev, x, y, &ddesc, buffer_cross_empty);
+			if (ret < 0) {
+				LOG_ERR("Failed to write to display (error %d)", ret);
+				return ret;
+			}
 		}
 	}
+
+	return 0;
 }
 
 static void fill_cross_buffer(void)
@@ -109,6 +124,7 @@ static int get_draw_position(int value, int upper_bound)
 
 int main(void)
 {
+	int ret;
 
 	LOG_INF("Touch sample for touchscreen: %s, dc: %s", touch_dev->name, display_dev->name);
 
@@ -127,9 +143,18 @@ int main(void)
 		return 0;
 	}
 	fill_cross_buffer();
-	display_blanking_off(display_dev);
+	ret = display_blanking_off(display_dev);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		return 0;
+	}
 
-	clear_screen();
+	ret = clear_screen();
+	if (ret < 0) {
+		LOG_ERR("Failed to clear the screen");
+		return 0;
+	}
+
 	touch_point_drawn.x = CROSS_DIM / 2;
 	touch_point_drawn.y = CROSS_DIM / 2;
 	touch_point.x = -1;
@@ -143,12 +168,21 @@ int main(void)
 		LOG_INF("TOUCH %s X, Y: (%d, %d)", touch_point.pressed ? "PRESS" : "RELEASE",
 			touch_point.x, touch_point.y);
 
-		display_write(display_dev, get_draw_position(touch_point_drawn.x, WIDTH),
-			      get_draw_position(touch_point_drawn.y, HEIGHT), &buf_desc,
-			      buffer_cross_empty);
+		ret = display_write(display_dev, get_draw_position(touch_point_drawn.x, WIDTH),
+				    get_draw_position(touch_point_drawn.y, HEIGHT), &buf_desc,
+				    buffer_cross_empty);
+		if (ret < 0) {
+			LOG_ERR("Failed to write to display (error %d)", ret);
+			return 0;
+		}
 
-		display_write(display_dev, get_draw_position(touch_point.x, WIDTH),
-			      get_draw_position(touch_point.y, HEIGHT), &buf_desc, buffer_cross);
+		ret = display_write(display_dev, get_draw_position(touch_point.x, WIDTH),
+				    get_draw_position(touch_point.y, HEIGHT), &buf_desc,
+				    buffer_cross);
+		if (ret < 0) {
+			LOG_ERR("Failed to write to display (error %d)", ret);
+			return 0;
+		}
 
 		touch_point_drawn.x = touch_point.x;
 		touch_point_drawn.y = touch_point.y;

@@ -7,8 +7,8 @@
 
 .. _migration_4.3:
 
-Migration guide to Zephyr v4.3.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.3.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v4.2.0 to
 Zephyr v4.3.0.
@@ -58,7 +58,7 @@ Base Libraries
   The old Kconfig option still exists, but will be overridden if the custom requirements
   are larger. To force the old Kconfig option to be used, even when its value is less
   than the indicated custom requirements, a new :kconfig:option:`CONFIG_ZVFS_OPEN_IGNORE_MIN`
-  option has been introduced (which defaults being disabled).
+  option has been introduced (which defaults to being disabled).
 
 Boards
 ******
@@ -83,7 +83,7 @@ Boards
   (> v0.12.0) in which the HLA/SWD transport has been deprecated (see
   https://review.openocd.org/c/openocd/+/8523 and commit
   https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4/).
-  Issues may be encountered when connecting to an ST-Link adapter running firmware prior
+  Issues may be encountered when connecting to an ST-Link adapter running firmware prior to
   v2j24 which do not support the new transport. In this case, the ST-Link firmware should
   be upgraded or, if not possible, the OpenOCD configuration script should be changed to
   source "interface/stlink-hla.cfg" and select the "hla_swd" interface explicitly.
@@ -134,7 +134,36 @@ DMA
 
 * DMA no longer implements user mode syscalls as part of its API. The syscalls were determined to be
   too broadly defined in access and impossible to implement the syscall parameter verification step
-  in another.
+  in a safe manner.
+
+Ethernet
+========
+
+* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
+  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
+  nature was hard-coded into the driver. (:github:`91726`).
+
+* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
+  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
+  now enabled by default to improve performance, however, offloading is always disabled for QEMU
+  targets due to the checksum generation in hardware not being emulated regardless of whether it
+  is explicitly disabled via the Devicetree or not. (:github:`95435`)
+
+  * Replaced Devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
+    ``disable-rx-checksum-offload`` which now actively disables it.
+  * Replaced Devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
+    ``disable-tx-checksum-offload`` which now actively disables it.
+
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the Devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
+
+* The :dtcompatible:`nxp,enet-mac` and :dtcompatible:`xlnx,gem` drivers are no longer configuring
+  the link speed and duplex mode of the phy via  :c:func:`phy_configure_link` during initialization.
+  Instead, the user has to use the ``default-speeds`` Devicetree property of the phy, if they want
+  to restrict the advertised speeds for auto-negotiation, when the mac only supports a subset of the
+  phy supported speeds. (:github:`91572`)
 
 MFD
 ===
@@ -211,14 +240,11 @@ Bluetooth Controller
 
 * The following have been renamed:
 
-    * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
-      :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
-    * :c:struct:`bt_hci_vs_fata_error_cpu_data_cortex_m` to
-      :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
-      value.
-
-   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
-     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
+  * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
+    :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+  * :c:struct:`bt_hci_vs_fata_error_cpu_data_cortex_m` to
+    :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
+    value.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -238,7 +264,7 @@ Bluetooth Audio
 * The BAP Scan Delegator will no longer automatically update the PA sync state, and
   :c:func:`bt_bap_scan_delegator_set_pa_state` must be used to update the state. If the
   BAP Scan Delegator is used together with the BAP Broadcast Sink, then the PA state of the
-  receive state of a  :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
+  receive state of a :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
   PA state changes. (:github:`95453`)
 
 
@@ -247,7 +273,7 @@ Bluetooth Audio
 Bluetooth HCI
 =============
 
-* The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
+* The deprecated ``ipm`` value was removed from ``bt-hci-bus`` Devicetree property.
   ``ipc`` should be used instead.
 
 Bluetooth Mesh
@@ -266,40 +292,17 @@ Bluetooth Host
   passkey for pairing, or :c:macro:`BT_PASSKEY_RAND` for the Host to generate a random passkey
   instead.
 
-Ethernet
-========
-
-* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
-  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
-  nature was hard-coded into the driver. (:github:`91726`).
-
-* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
-  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
-  now enabled by default to improve performance, however, offloading is always disabled for QEMU
-  targets due to the checksum generation in hardware not being emulated regardless of whether it
-  is explicitly disabled via the devicetree or not. (:github:`95435`)
-
-    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
-      ``disable-rx-checksum-offload`` which now actively disables it.
-    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
-      ``disable-tx-checksum-offload`` which now actively disables it.
-
-* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
-  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
-  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
-  has therefore been removed.
-
 Power management
 ****************
 
 * :kconfig:option:`CONFIG_PM_S2RAM` and :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` have been
-  refactored to be automatically managed by SoCs and the devicetree. Applications shall no
+  refactored to be automatically managed by SoCs and the Devicetree. Applications shall no
   longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
-  in the devicetree.
+  in the Devicetree.
 
-* For the NXP RW61x, the devicetree property ``exit-latency-us`` has been updated to reflect more
+* For the NXP RW61x, the Devicetree property ``exit-latency-us`` has been updated to reflect more
   accurate, measured wake-up times. For applications utilizing Standby mode (PM3), this update and
-  an increase to the ``min-residency-us`` devicetree property may influence how the system
+  an increase to the ``min-residency-us`` Devicetree property may influence how the system
   transitions between power modes. In some cases, this could lead to changes in power consumption.
 
 Networking
@@ -314,6 +317,10 @@ Networking
   be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
   ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
   configuration.
+
+* :c:func:`net_icmp_init_ctx` API has changed, it now accepts an additional ``family`` argument
+  to indicate what packet family the context should work with. For ICMPv4 contexts, use ``AF_INET``,
+  for ICMPv6 contexts use ``AF_INET6``.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -354,7 +361,7 @@ PTP Clock
 *********
 
 * The doc of :c:func:`ptp_clock_rate_adjust` API didn't provide proper and clear function description.
-  Drivers implemented it to adjust rate ratio relatively based on current frequency.
+  Drivers implemented it to adjust rate ratio relative to the current frequency.
   Now PI servo is introduced in both PTP and gPTP, and this API function is changed to use for rate
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
@@ -451,7 +458,7 @@ Shell
 =====
 
 * The MQTT topics related to :kconfig:option:`SHELL_BACKEND_MQTT` have been renamed. Renamed
-  ``<device_id>_rx`` to ``<device_id>/sh/rx`` and ``<device_id>_tx`` to ``<device_id>/sh/rx``. The
+  ``<device_id>_rx`` to ``<device_id>/sh/rx`` and ``<device_id>_tx`` to ``<device_id>/sh/tx``. The
   part after the ``<device_id>`` is now configurable via :kconfig:option:`SHELL_MQTT_TOPIC_RX_ID`
   and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
   compatibility.
@@ -476,7 +483,7 @@ MCUboot
 =======
 
 * The default operating mode for MCUboot has been changed to swap using offset, this provides
-  faster swap updates needed less overhead and reduces the flash endurance cycles required to
+  faster swap updates, needs less overhead, and reduces the flash endurance cycles required to
   perform an update, the previous default was swap using move. If a board was optimised for swap
   using move by having a primary slot that was one sector larger than the secondary then this
   needs to change to have the secondary slot one sector larger than the primary (for optimised
@@ -489,14 +496,14 @@ Silabs
 
 * Aligned the name of the Rail options with the other SiSDK related options:
 
-   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_HEADER` to
-     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_HEADER`
-   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_TYPES_HEADER` to
-     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER`
-   * :kconfig:option:`CONFIG_RAIL_PA_ENABLE_CALIBRATION` to
-     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION`
+  * :kconfig:option:`CONFIG_RAIL_PA_CURVE_HEADER` to
+    :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_HEADER`
+  * :kconfig:option:`CONFIG_RAIL_PA_CURVE_TYPES_HEADER` to
+    :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER`
+  * :kconfig:option:`CONFIG_RAIL_PA_ENABLE_CALIBRATION` to
+    :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION`
 
-* Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
+* Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These options contained PART_NUMBER in their
   while they shouldn't.
 
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
@@ -523,24 +530,32 @@ Trusted Firmware-M
   TF-M NS and require BL2 must have their flash layout with the flash controller
   information. This will ensure that when signing the hex/bin files all the
   details will be present in the S and NS images. The image now has the details
-  to allow the FWU state machine be correct and allow FOTA.
+  to allow the FWU state machine to be correct and allow FOTA.
   (:github:`94470`)
 
-    * The ``--align`` parameter was fixed to 1. Now, it's set to the flash DT ``write_block_size``
-      property, but still provides 1 as a fallback for specific vendors.
-    * The ``--max-sectors`` value is now calculated based on the number of images, taking into
-      consideration the largest image size.
-    * The ``--confirm`` option now confirms both S and NS HEX images, ensuring that any image
-      that runs is valid for production and development.
-    * S and NS BIN images are now available. These are the correct images to be used in FOTA. Note
-      that S and NS images are unconfirmed by default, and the application is responsible for
-      confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
-      reboot.
+  * The ``--align`` parameter was fixed to 1. Now, it's set to the flash DT ``write_block_size``
+    property, but still provides 1 as a fallback for specific vendors.
+  * The ``--max-sectors`` value is now calculated based on the number of images, taking into
+    consideration the largest image size.
+  * The ``--confirm`` option now confirms both S and NS HEX images, ensuring that any image
+    that runs is valid for production and development.
+  * S and NS BIN images are now available. These are the correct images to be used in FOTA. Note
+    that S and NS images are unconfirmed by default, and the application is responsible for
+    confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
+    reboot.
+
+* A compatibility issue was identified in the TF-M attestation procedure introduced
+  after the TF-M v2.1.0 release. As a result, systems using TF-M v2.1 cannot be
+  upgraded to any later TF-M version without encountering failures.
+  This limitation affects Zephyr versions using TF-M v2.1.0 through v2.1.2, specifically,
+  Zephyr v3.7 through v4.2, preventing seamless upgrades between these releases.
+  The issue was resolved in mainline TF-M as of October 25 and the fix is included
+  in Zephyr v4.3.0. Users are advised to migrate directly from any earlier Zephyr
+  release to Zephyr v4.3.0 or later to ensure full TF-M attestation functionality
+  and upgrade compatibility.
+  (:github:`94859`)
 
 * Support for automatically downloading MCUboot and ethos by CMake in a build has been removed,
   the in-tree versions of these modules will be used instead. To use custom versions, create a
   :ref:`west manifest <west-manifest-files>` which pulls in the desired versions of these
   repositories instead.
-
-Architectures
-*************

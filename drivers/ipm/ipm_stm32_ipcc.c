@@ -290,10 +290,7 @@ static void stm32_ipcc_mailbox_config_func(const struct device *dev);
 static const struct stm32_ipcc_mailbox_config stm32_ipcc_mailbox_0_config = {
 	.irq_config_func = stm32_ipcc_mailbox_config_func,
 	.ipcc = (IPCC_TypeDef *)DT_INST_REG_ADDR(0),
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits)
-	},
-
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 DEVICE_DT_INST_DEFINE(0,

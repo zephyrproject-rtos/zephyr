@@ -54,8 +54,7 @@ static int stm32_backup_sram_init(const struct device *dev)
 }
 
 static const struct stm32_backup_sram_config config = {
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, NULL, NULL, &config,

@@ -454,6 +454,7 @@ static int uart_bflb_init(const struct device *dev)
 	return rc;
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int uart_bflb_deinit(const struct device *dev)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -472,6 +473,7 @@ static int uart_bflb_deinit(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 static int uart_bflb_poll_in(const struct device *dev, unsigned char *c)
 {

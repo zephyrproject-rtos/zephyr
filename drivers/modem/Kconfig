@@ -188,13 +188,15 @@ config MODEM_CELL_INFO
 	help
 	  Query for numerical operator id, location area code and cell id.
 
-source "drivers/modem/Kconfig.ublox-sara-r4"
-source "drivers/modem/Kconfig.quectel-bg9x"
-source "drivers/modem/Kconfig.wncm14a2a"
-source "drivers/modem/Kconfig.cellular"
+# zephyr-keep-sorted-start
 source "drivers/modem/Kconfig.at_shell"
-source "drivers/modem/hl78xx/Kconfig.hl78xx"
+source "drivers/modem/Kconfig.cellular"
 source "drivers/modem/Kconfig.hl7800"
+source "drivers/modem/Kconfig.quectel-bg9x"
+source "drivers/modem/Kconfig.ublox-sara-r4"
+source "drivers/modem/Kconfig.wncm14a2a"
+source "drivers/modem/hl78xx/Kconfig.hl78xx"
 source "drivers/modem/simcom/Kconfig"
+# zephyr-keep-sorted-stop
 
 endif # MODEM

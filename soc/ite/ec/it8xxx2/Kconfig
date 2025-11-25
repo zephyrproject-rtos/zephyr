@@ -187,6 +187,9 @@ config SOC_IT8XXX2_EXT_32K
 
 endchoice
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 4
+
 config SOC_IT8XXX2_USE_ILM
 	bool
 	default y
@@ -212,6 +215,13 @@ config SOC_IT8XXX2_LIBRARY_TO_RAM
 	help
 	  If this is selected it means that there is a library that needs to be excluded
 	  from the text section.
+
+config SOC_IT8XXX2_SWITCH_IN_RAM
+	bool "Place switch handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place content switching code in ILM for better performance.
 
 config SOC_IT8XXX2_SERIAL_IN_RAM
 	bool "Place serial handling code in RAM"

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Two loopbacks are required:
+ * P1.08 - P1.09
+ * P1.12 - P1.13
+ */
+
 / {
 	aliases {
 		i2c-slave = &i2c22;
@@ -47,6 +58,7 @@ dut_twim: &i2c21 {
 	pinctrl-1 = <&i2c21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+
 	sensor: sensor@54 {
 		reg = <0x54>;
 	};

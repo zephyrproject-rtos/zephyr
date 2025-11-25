@@ -831,13 +831,17 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 			mcp2515_tx_done(dev, 0, 0);
 		}
 
+#if MCP2515_TX_CNT > 1
 		if (canintf & MCP2515_CANINTF_TX1IF) {
 			mcp2515_tx_done(dev, 1, 0);
 		}
+#endif /* MCP2515_TX_CNT > 1 */
 
+#if MCP2515_TX_CNT > 2
 		if (canintf & MCP2515_CANINTF_TX2IF) {
 			mcp2515_tx_done(dev, 2, 0);
 		}
+#endif /* MCP2515_TX_CNT > 2 */
 
 		if (canintf & MCP2515_CANINTF_ERRIF) {
 			mcp2515_handle_errors(dev);

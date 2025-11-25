@@ -21,8 +21,8 @@ endif()
 
 
 target_sources(app PRIVATE
-	src/broadcast_sink_test.c
-	src/test_main.c
+  src/broadcast_sink_test.c
+  src/test_main.c
 )
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)

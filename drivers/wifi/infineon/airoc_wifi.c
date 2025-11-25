@@ -390,7 +390,8 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 
 	if ((airoc_wifi_iface != NULL) && net_if_flag_is_set(airoc_wifi_iface, NET_IF_UP)) {
 
-		pkt = net_pkt_rx_alloc_with_buffer(airoc_wifi_iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(airoc_wifi_iface, len,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 		if (pkt != NULL) {
 			if (net_pkt_write(pkt, data, len) < 0) {

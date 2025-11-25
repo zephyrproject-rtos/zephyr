@@ -19,9 +19,9 @@ static void happy_path(
 	const unsigned int expected_msg_len = strlen(expected_msg);
 	char actual_msg[32];
 	size_t actual_msg_len;
-	struct iovec iovec;
-	struct msghdr msghdr;
-	socklen_t len;
+	struct net_iovec iovec;
+	struct net_msghdr msghdr;
+	net_socklen_t len;
 
 	/* sockets are bidirectional. test functions from both ends */
 	for (int i = 0; i < 2; ++i) {
@@ -105,22 +105,22 @@ static void happy_path(
 	}
 }
 
-ZTEST_USER_F(net_socketpair, test_AF_LOCAL_SOCK_STREAM_0)
+ZTEST_USER_F(net_socketpair, test_AF_LOCAL_NET_SOCK_STREAM_0)
 {
 	happy_path(
 		fixture,
-		AF_LOCAL, "AF_LOCAL",
-		SOCK_STREAM, "SOCK_STREAM",
+		NET_AF_LOCAL, "AF_LOCAL",
+		NET_SOCK_STREAM, "SOCK_STREAM",
 		0, "0"
 	);
 }
 
-ZTEST_USER_F(net_socketpair, test_AF_UNIX_SOCK_STREAM_0)
+ZTEST_USER_F(net_socketpair, test_AF_UNIX_NET_SOCK_STREAM_0)
 {
 	happy_path(
 		fixture,
-		AF_UNIX, "AF_UNIX",
-		SOCK_STREAM, "SOCK_STREAM",
+		NET_AF_UNIX, "AF_UNIX",
+		NET_SOCK_STREAM, "SOCK_STREAM",
 		0, "0"
 	);
 }

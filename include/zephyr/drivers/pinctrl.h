@@ -16,7 +16,7 @@
  * @brief Interfaces for pin controllers.
  * @defgroup pinctrl_interface Pin Control
  * @since 3.0
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

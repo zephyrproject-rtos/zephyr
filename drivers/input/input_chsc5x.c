@@ -28,6 +28,8 @@ struct chsc5x_data {
 	struct gpio_callback int_gpio_cb;
 };
 
+INPUT_TOUCH_STRUCT_CHECK(struct chsc5x_config);
+
 enum {
 	CHSC5X_IC_TYPE_CHSC5472 = 0x00,
 	CHSC5X_IC_TYPE_CHSC5448 = 0x01,

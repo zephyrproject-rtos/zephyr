@@ -78,5 +78,28 @@
 		storage_partition: partition@600000 {
 			reg = <0x600000 DT_SIZE_K(40)>;
 		};
+
+		periphconf_partition: partition@60a000 {
+			reg = <0x60a000 DT_SIZE_K(8)>;
+		};
+
+		/* 0x60c000 was chosen for secure_storage_partition such that
+		 * it resides in the beginning of MRAM11 in storage partition.
+		 */
+		secure_storage_partition: partition@60c000 {
+			compatible = "fixed-subpartitions";
+			reg = <0x60c000 DT_SIZE_K(8)>;
+			ranges = <0x0 0x60c000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cpuapp_crypto_partition: partition@0 {
+				reg = <0x0 DT_SIZE_K(4)>;
+			};
+
+			cpuapp_its_partition: partition@1000 {
+				reg = <0x1000 DT_SIZE_K(4)>;
+			};
+		};
 	};
 };

@@ -39,10 +39,12 @@
 			compatible = "adc-keys";
 			io-channels = <&test_adc 0>;
 			keyup-threshold-mv = <0>;
+
 			button_0 {
 				press-thresholds-mv = <1500>, <1750>;
 				zephyr,code = <0>;
 			};
+
 			button_1 {
 				press-thresholds-mv = <2500>, <1750>;
 				zephyr,code = <1>;
@@ -52,6 +54,7 @@
 		gpio-keys {
 			compatible = "gpio-keys";
 			debounce-interval-ms = <30>;
+
 			button_0 {
 				gpios = <&test_gpio 0 0>;
 				zephyr,code = <0>;
@@ -61,6 +64,7 @@
 		gpio-keys-polled {
 			compatible = "gpio-keys";
 			debounce-interval-ms = <30>;
+
 			button_0 {
 				gpios = <&test_gpio 0 0>;
 				zephyr,code = <0>;
@@ -134,6 +138,7 @@
 
 		analog_axis {
 			compatible = "analog-axis";
+
 			axis-x {
 				io-channels = <&test_adc 0>;
 				out-min = <(-127)>;
@@ -174,6 +179,7 @@
 
 			sbus {
 				compatible = "futaba,sbus";
+
 				right_stick_x {
 					channel = <1>;
 					type = <INPUT_EV_ABS>;
@@ -194,6 +200,13 @@
 				compatible = "focaltech,ft5336";
 				reg = <0x0>;
 				int-gpios = <&test_gpio 0 0>;
+			};
+
+			ft6146@0 {
+				compatible = "focaltech,ft6146";
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
 			};
 
 			gt911@1 {

@@ -65,7 +65,7 @@
 /***************************************/
 osSemaphoreId_t forks[NUM_PHIL];
 
-#define fork(x) (forks[x])
+#define philosopher_fork(x) (forks[x])
 
 #define STACK_SIZE CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 static K_THREAD_STACK_ARRAY_DEFINE(stacks, NUM_PHIL, STACK_SIZE);
@@ -174,11 +174,11 @@ void philosopher(void *id)
 
 	/* Djkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
-		fork1 = fork(0);
-		fork2 = fork(my_id);
+		fork1 = philosopher_fork(0);
+		fork2 = philosopher_fork(my_id);
 	} else {
-		fork1 = fork(my_id);
-		fork2 = fork(my_id + 1);
+		fork1 = philosopher_fork(my_id);
+		fork2 = philosopher_fork(my_id + 1);
 	}
 
 	while (1) {

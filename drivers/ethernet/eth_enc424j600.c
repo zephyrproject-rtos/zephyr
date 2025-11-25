@@ -387,7 +387,7 @@ static int enc424j600_rx(const struct device *dev)
 
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
-					   AF_UNSPEC, 0,
+					   NET_AF_UNSPEC, 0,
 					   K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("Could not allocate rx buffer");

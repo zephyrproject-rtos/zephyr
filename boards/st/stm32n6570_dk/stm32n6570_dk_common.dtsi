@@ -36,7 +36,6 @@
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&gt911>;
 		display = <&ltdc>;
-		invert-y;
 	};
 
 	psram: memory@90000000 {
@@ -61,7 +60,7 @@
 		};
 
 		red_led_1: led_2 {
-			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 	};
@@ -90,6 +89,7 @@
 	csi_gpio0_hog: csi-gpio0-hog {
 		gpio-hog;
 		gpios = <8 GPIO_ACTIVE_HIGH>;
+		/* NOTE: keep CSI pins free unless the camera connector is used */
 		status = "disabled";
 	};
 };
@@ -98,6 +98,7 @@
 	csi_gpio1_hog: csi-gpio1-hog {
 		gpio-hog;
 		gpios = <2 GPIO_ACTIVE_HIGH>;
+		/* NOTE: keep CSI pins free unless the camera connector is used */
 		status = "disabled";
 	};
 };
@@ -443,7 +444,7 @@ zephyr_udc0: &usbotg_hs1 {
  */
 &eth1_rgmii_gtx_clk_pf0 {
 	st,io-delay-path = "output";
-	st,io-delay-ps = <2000>;
+	st,io-delay-ps = <1000>;
 };
 
 &mac {

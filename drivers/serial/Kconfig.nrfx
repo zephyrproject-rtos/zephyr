@@ -55,6 +55,31 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
+config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	bool "Use TIMER to count RX bytes"
+	depends on UART_ASYNC_API
+	depends on !ARCH_POSIX # Mode not supported on BSIM target
+	select NRFX_GPPI
+
+config UART_NRFX_UARTE_BOUNCE_BUF_LEN
+	int "RX bounce buffer size"
+	depends on UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	default 256
+	range 64 1024
+	help
+	  Buffer is used when workaround with bounce buffers is applied
+
+config UART_NRFX_UARTE_BOUNCE_BUF_SWAP_LATENCY
+	int "RX bounce buffer swap latency (in microseconds)"
+	depends on UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	default 300
+	help
+	  Option decides how long before current bounce buffer is filled driver
+	  attempts to swap the buffer. It must be long enough to ensure that
+	  space following the buffer is not overwritten. Too high value results
+	  in more frequent buffer swaps so it impacts performance. Setting should
+	  take into account potential interrupt handling latency.
+
 config UART_NRFX_UARTE_DIRECT_ISR
 	bool "Use direct ISR"
 	default y if !MULTITHREADING

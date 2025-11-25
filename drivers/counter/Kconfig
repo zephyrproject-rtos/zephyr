@@ -26,110 +26,62 @@ module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/counter/Kconfig.ambiq"
-
-source "drivers/counter/Kconfig.gecko"
-
-source "drivers/counter/Kconfig.tmr_cmsdk_apb"
-
-source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
-
-source "drivers/counter/Kconfig.mcux_rtc"
-
-source "drivers/counter/Kconfig.mcux_lpc_rtc"
-
-source "drivers/counter/Kconfig.nrfx"
-
-source "drivers/counter/Kconfig.imx_epit"
-
-source "drivers/counter/Kconfig.ite_it51xxx"
-
-source "drivers/counter/Kconfig.ite_it8xxx2"
-
-source "drivers/counter/Kconfig.stm32_rtc"
-
-source "drivers/counter/Kconfig.stm32_timer"
-
-source "drivers/counter/Kconfig.sam"
-
-source "drivers/counter/Kconfig.sam0"
-
+# zephyr-keep-sorted-start
 source "drivers/counter/Kconfig.ace"
-
-source "drivers/counter/Kconfig.cmos"
-
-source "drivers/counter/Kconfig.mcux_gpt"
-
-source "drivers/counter/Kconfig.mcux_qtmr"
-
-source "drivers/counter/Kconfig.mcux_snvs"
-
-source "drivers/counter/Kconfig.mcux_tpm"
-
-source "drivers/counter/Kconfig.xec"
-
-source "drivers/counter/Kconfig.mcux_lptmr"
-
-source "drivers/counter/Kconfig.mcux_lpit"
-
-source "drivers/counter/Kconfig.mcux_ftm"
-
-source "drivers/counter/Kconfig.mcux_stm"
-
-source "drivers/counter/Kconfig.maxim_ds3231"
-
-source "drivers/counter/Kconfig.native_sim"
-
-source "drivers/counter/Kconfig.nxp_pit"
-
-source "drivers/counter/Kconfig.xlnx"
-
-source "drivers/counter/Kconfig.esp32_tmr"
-
-source "drivers/counter/Kconfig.esp32_rtc"
-
-source "drivers/counter/Kconfig.smartbond_timer"
-
-source "drivers/counter/Kconfig.mcp7940n"
-
-source "drivers/counter/Kconfig.mcux_ctimer"
-
-source "drivers/counter/Kconfig.ifx_cat1"
-
-source "drivers/counter/Kconfig.ifx_tcpwm"
-
+source "drivers/counter/Kconfig.ambiq"
 source "drivers/counter/Kconfig.andes_atcpit100"
-
-source "drivers/counter/Kconfig.nxp_s32"
-
-source "drivers/counter/Kconfig.gd32"
-
-source "drivers/counter/Kconfig.dw"
-
-source "drivers/counter/Kconfig.rpi_pico"
-
-source "drivers/counter/Kconfig.max32_timer"
-
-source "drivers/counter/Kconfig.max32_rtc"
-
-source "drivers/counter/Kconfig.nxp_mrt"
-
-source "drivers/counter/Kconfig.renesas_ra"
-
-source "drivers/counter/Kconfig.renesas_rz"
-
-source "drivers/counter/Kconfig.rts5912_slwtmr"
-
-source "drivers/counter/Kconfig.rts5912"
-
-source "drivers/counter/Kconfig.neorv32"
-
-source "drivers/counter/Kconfig.max32_wut"
-
-source "drivers/counter/Kconfig.cc23x0_rtc"
-
 source "drivers/counter/Kconfig.cc23x0_lgpt"
-
+source "drivers/counter/Kconfig.cc23x0_rtc"
+source "drivers/counter/Kconfig.cmos"
+source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
+source "drivers/counter/Kconfig.dw"
+source "drivers/counter/Kconfig.esp32_rtc"
+source "drivers/counter/Kconfig.esp32_tmr"
+source "drivers/counter/Kconfig.gd32"
+source "drivers/counter/Kconfig.gecko"
+source "drivers/counter/Kconfig.ifx_cat1"
+source "drivers/counter/Kconfig.ifx_tcpwm"
+source "drivers/counter/Kconfig.imx_epit"
+source "drivers/counter/Kconfig.ite_it51xxx"
+source "drivers/counter/Kconfig.ite_it8xxx2"
+source "drivers/counter/Kconfig.max32_rtc"
+source "drivers/counter/Kconfig.max32_timer"
+source "drivers/counter/Kconfig.max32_wut"
+source "drivers/counter/Kconfig.maxim_ds3231"
+source "drivers/counter/Kconfig.mcp7940n"
+source "drivers/counter/Kconfig.mcux_ctimer"
+source "drivers/counter/Kconfig.mcux_ftm"
+source "drivers/counter/Kconfig.mcux_gpt"
+source "drivers/counter/Kconfig.mcux_lpc_rtc"
+source "drivers/counter/Kconfig.mcux_lpit"
+source "drivers/counter/Kconfig.mcux_lptmr"
+source "drivers/counter/Kconfig.mcux_qtmr"
+source "drivers/counter/Kconfig.mcux_rtc"
+source "drivers/counter/Kconfig.mcux_rtc_jdp"
+source "drivers/counter/Kconfig.mcux_snvs"
+source "drivers/counter/Kconfig.mcux_stm"
+source "drivers/counter/Kconfig.mcux_tpm"
 source "drivers/counter/Kconfig.mspm0"
+source "drivers/counter/Kconfig.native_sim"
+source "drivers/counter/Kconfig.neorv32"
+source "drivers/counter/Kconfig.npcx"
+source "drivers/counter/Kconfig.nrfx"
+source "drivers/counter/Kconfig.nxp_mrt"
+source "drivers/counter/Kconfig.nxp_pit"
+source "drivers/counter/Kconfig.nxp_s32"
+source "drivers/counter/Kconfig.renesas_ra"
+source "drivers/counter/Kconfig.renesas_rz"
+source "drivers/counter/Kconfig.rpi_pico"
+source "drivers/counter/Kconfig.rts5912"
+source "drivers/counter/Kconfig.rts5912_slwtmr"
+source "drivers/counter/Kconfig.sam"
+source "drivers/counter/Kconfig.sam0"
+source "drivers/counter/Kconfig.smartbond_timer"
+source "drivers/counter/Kconfig.stm32_rtc"
+source "drivers/counter/Kconfig.stm32_timer"
+source "drivers/counter/Kconfig.tmr_cmsdk_apb"
+source "drivers/counter/Kconfig.xec"
+source "drivers/counter/Kconfig.xlnx"
+# zephyr-keep-sorted-stop
 
 endif # COUNTER

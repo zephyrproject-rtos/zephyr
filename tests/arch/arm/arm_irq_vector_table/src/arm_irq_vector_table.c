@@ -267,6 +267,17 @@ const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #endif
 };
 
+#elif defined(CONFIG_SOC_FAMILY_RENESAS_SMARTBOND)
+
+extern void timer2_isr(void);
+
+const vth __irq_vector_table _irq_vector_table[] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+	[TIMER2_IRQn] = timer2_isr,
+};
+
 #else
 
 #if defined(CONFIG_MCUX_OS_TIMER)

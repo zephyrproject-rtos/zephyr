@@ -24,6 +24,10 @@ void board_early_init_hook(void)
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_SHAREDDATASEL(3);
 	/* Enable Transmit I2S - Flexcomm 3 for Shared Data Out */
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_FC3DATAOUTEN(1);
+#else
+	/* Set shared signal set 0: SCK, WS from Flexcomm1 */
+	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(1) |
+				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(1);
 #endif
 
 	/* Set Receive I2S - Flexcomm 1 SCK, WS from shared signal set 0 */

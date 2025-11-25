@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "dns_pack.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -45,20 +46,20 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV6)
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 /* Interface 1 addresses */
-static struct in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
 #endif
 
 static struct net_if *iface1;
@@ -388,14 +389,14 @@ ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 			continue;
 		}
 
 		count++;
 
 		if (net_sin(&ctx->servers[i].dns_server)->sin_port ==
-		    ntohs(53)) {
+		    net_ntohs(53)) {
 			port++;
 		}
 	}
@@ -418,14 +419,14 @@ ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
 			continue;
 		}
 
 		count++;
 
 		if (net_sin6(&ctx->servers[i].dns_server)->sin6_port ==
-		    ntohs(53)) {
+		    net_ntohs(53)) {
 			port++;
 		}
 	}
@@ -666,7 +667,7 @@ ZTEST(dns_resolve, test_dns_query_ipv6)
 }
 
 struct expected_addr_status {
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int status1;
 	int status2;
 	const char *caller;
@@ -687,7 +688,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 		zassert_true(false, "Invalid status");
 	}
 
-	if (info && info->ai_family == AF_INET) {
+	if (info && info->ai_family == NET_AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
 				      &my_addr2) != true) {
@@ -696,7 +697,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 #endif
 	}
 
-	if (info && info->ai_family == AF_INET6) {
+	if (info && info->ai_family == NET_AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		if (net_ipv6_addr_cmp(&net_sin6(&info->ai_addr)->sin6_addr,
 				      &my_addr3) != true) {
@@ -770,7 +771,7 @@ ZTEST(dns_resolve, test_dns_query_ipv6_numeric)
 ZTEST(dns_resolve, test_mdns_ipv4_igmp_group)
 {
 	struct net_if_mcast_addr *maddr;
-	struct sockaddr_in addr4;
+	struct net_sockaddr_in addr4;
 	bool st;
 
 	/* Skip this test if mDNS responder is enabled because it will join
@@ -781,7 +782,7 @@ ZTEST(dns_resolve, test_mdns_ipv4_igmp_group)
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_IGMP);
 
 	st = net_ipaddr_parse(MDNS_IPV4_ADDR, sizeof(MDNS_IPV4_ADDR) - 1,
-			      (struct sockaddr *)&addr4);
+			      (struct net_sockaddr *)&addr4);
 	zassert_true(st, "Cannot parse IPv4 address");
 
 	maddr = net_if_ipv4_maddr_lookup(&addr4.sin_addr, NULL);
@@ -794,7 +795,7 @@ ZTEST(dns_resolve, test_mdns_ipv4_igmp_group)
 ZTEST(dns_resolve, test_mdns_ipv6_mld_group)
 {
 	struct net_if_mcast_addr *maddr;
-	struct sockaddr_in6 addr6;
+	struct net_sockaddr_in6 addr6;
 	bool st;
 
 	/* Skip this test if mDNS responder is enabled because it will join
@@ -805,7 +806,7 @@ ZTEST(dns_resolve, test_mdns_ipv6_mld_group)
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_MLD);
 
 	st = net_ipaddr_parse(MDNS_IPV6_ADDR, sizeof(MDNS_IPV6_ADDR) - 1,
-			      (struct sockaddr *)&addr6);
+			      (struct net_sockaddr *)&addr6);
 	zassert_true(st, "Cannot parse IPv6 address");
 
 	maddr = net_if_ipv6_maddr_lookup(&addr6.sin6_addr, NULL);
@@ -827,7 +828,7 @@ ZTEST(dns_resolve, test_dns_hostname_resolve_ipv4)
 	char hostname[MAX_HOSTNAME_LEN + 1] = { 0 };
 	int ret;
 
-	hints.ai_family = AF_INET;
+	hints.ai_family = NET_AF_INET;
 	strncpy(hostname, net_hostname_get(), sizeof(hostname) - 1);
 
 	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
@@ -852,7 +853,7 @@ ZTEST(dns_resolve, test_dns_hostname_resolve_ipv6)
 	char hostname[MAX_HOSTNAME_LEN + 1] = { 0 };
 	int ret;
 
-	hints.ai_family = AF_INET6;
+	hints.ai_family = NET_AF_INET6;
 	strncpy(hostname, net_hostname_get(), sizeof(hostname) - 1);
 
 	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
@@ -871,20 +872,20 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv4)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
 
-	struct in_addr addr = INADDR_LOOPBACK_INIT;
+	struct net_in_addr addr = NET_INADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";
 	int ret;
 
-	hints.ai_family = AF_INET;
+	hints.ai_family = NET_AF_INET;
 
 	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
 	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
 		      ret, zsock_gai_strerror(ret));
 
 	zassert_equal(memcmp(&net_sin(addrinfos[0].ai_addr)->sin_addr,
-			     &addr, sizeof(struct in_addr)),
+			     &addr, sizeof(struct net_in_addr)),
 		      0, "not loopback address");
 }
 
@@ -892,21 +893,160 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
 
-	struct in6_addr addr = IN6ADDR_LOOPBACK_INIT;
+	struct net_in6_addr addr = NET_IN6ADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";
 	int ret;
 
-	hints.ai_family = AF_INET6;
+	hints.ai_family = NET_AF_INET6;
 
 	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
 	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
 		      ret, zsock_gai_strerror(ret));
 
 	zassert_equal(memcmp(&net_sin6(addrinfos[0].ai_addr)->sin6_addr,
-			     &addr, sizeof(struct in6_addr)),
+			     &addr, sizeof(struct net_in6_addr)),
 		      0, "not loopback address");
+}
+
+NET_BUF_POOL_DEFINE(test_dns_qname_pool, 2, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+		    0, NULL);
+
+ZTEST(dns_resolve, test_dns_unpack_name)
+{
+	/* NULL string terminator serves a role of a final zero-length label */
+	static const uint8_t *test_records[] = {
+		/* example.com */
+		"\007example\003com",
+		/* www.zephyrproject.org */
+		"\003www\015zephyrproject\003org",
+		/* These records should barely fit (fills up the buffer size limit). */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+	};
+	static const uint8_t *expected_names[] = {
+		"example.com",
+		"www.zephyrproject.org",
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		const uint8_t *end_of_label = NULL;
+
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, &end_of_label);
+		zassert_equal(ret, strlen(expected_names[i]),
+			      "Error parsing records (%d)", ret);
+		zassert_str_equal(expected_names[i], result->data,
+				  "Parsed wrong name (%s)", result->data);
+		zassert_equal_ptr(test_records[i] + strlen(test_records[i]) + 1,
+				  end_of_label, "Wrong end of label");
+
+		net_buf_unref(result);
+	}
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_with_pointer)
+{
+	static const uint8_t test_records[] = {
+		/* www.example.com followed by ftp.example.com with pointer */
+		"\003www\007example\003com\000\003ftp\300\004" /* Last two bytes are pointer */
+	};
+	static const uint8_t *expected_names[] = {
+		"www.example.com",
+		"ftp.example.com",
+	};
+	const size_t offset_2nd_rec = 17;
+	const uint8_t *end_of_label = NULL;
+	struct net_buf *result;
+	int ret;
+
+	/* First name */
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[0]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[0], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_2nd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Second name with a pointer within */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_2nd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[1]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[1], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	/* -1 as end_of_label should point to the last byte in the buffer (pointer offset) */
+	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_overflow)
+{
+	static const uint8_t *test_records[] = {
+		/* 4 records 63 bytes (252 bytes) + 3 bytes for dot separators,
+		 * no space left for NULL terminator.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx",
+		/* 4 records fit (251 bytes), 4 bytes for dot separators, 5th one-byte
+		 * record won't fit.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx"
+		"\001x",
+		/* Single 64 byte record, that's forbidden (max record len is 63). */
+		"\100very_long_record_that_has_a_length_of_64_bytes_that_is_incorrect",
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, NULL);
+		zassert_equal(ret, -EMSGSIZE, "Name parsing should've failed");
+
+		net_buf_unref(result);
+	}
 }
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

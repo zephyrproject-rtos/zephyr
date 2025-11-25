@@ -85,6 +85,7 @@
 };
 
 &usart6 {
+	/* NOTE: optional console UART, remains disabled by default */
 	pinctrl-0 = <&usart6_tx_pf13 &usart6_rx_pf14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;

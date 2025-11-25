@@ -319,7 +319,7 @@ static bool is_eapol(struct net_pkt *pkt)
 	uint16_t ethertype;
 
 	hdr = NET_ETH_HDR(pkt);
-	ethertype = ntohs(hdr->type);
+	ethertype = net_ntohs(hdr->type);
 
 	return ethertype == NET_ETH_PTYPE_EAPOL;
 }
@@ -515,10 +515,10 @@ static void ip_maddr_event_handler(struct net_if *iface,
 	}
 
 	switch (addr->family) {
-	case AF_INET:
+	case NET_AF_INET:
 		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
 		break;
-	case AF_INET6:
+	case NET_AF_INET6:
 		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 		break;
 	default:
@@ -1363,7 +1363,9 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	/* FMAC statistics */
-	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx,
+					     RPU_STATS_TYPE_ALL,
+					     &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_WRN("%s: nrf_wifi_fmac_stats_get failed", __func__);
 		/* Special value to indicate that

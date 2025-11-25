@@ -181,6 +181,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const uint8_t *src = buf;
 	uint16_t row;
 
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
+
 	if ((x == 0) && (y == 0) &&
 	    (desc->width == config->width) &&
 	    (desc->height ==  config->height) &&
@@ -248,6 +254,12 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	uint8_t *dst = buf;
 	const uint8_t *src = data->front_buf;
 	uint16_t row;
+
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
 
 	/* src = pointer to upper left pixel of the rectangle to be read from frame buffer */
 	src += (x * data->current_pixel_size);

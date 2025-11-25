@@ -60,6 +60,34 @@
 #         Like 'files-regex', but any matching files will be excluded from the
 #         area.
 #
+#     file-groups:
+#         A list of groups of files that are treated as a single unit.
+#         This is useful for areas where different collaborators are responsible for
+#         different parts of the area.
+#
+#         File groups inherit file patterns from their parent area. A file will only
+#         match a file group if it first matches the parent area's patterns, and then
+#         also matches the file group's own patterns. This allows file groups to
+#         further filter and subdivide files that are already covered by the area.
+#
+#         Each group should have the following structure:
+#         - name: <group name>
+#           collaborators:
+#             - <GitHub handle>
+#             - <GitHub handle>
+#           files:
+#             - <file path>
+#             - <file path>
+#           files-regex:
+#             - <regex pattern>
+#             - <regex pattern>
+#           files-exclude:
+#             - <file path>
+#             - <file path>
+#           files-regex-exclude:
+#             - <regex pattern>
+#             - <regex pattern>
+#
 #     description: >-
 #         Plain-English description. Describe what the system is about, from an
 #         outsider's perspective.
@@ -333,6 +361,8 @@ Arduino Platforms:
     - pillo79
   collaborators:
     - facchinm
+    - iabdalkader
+    - pennam
   files:
     - boards/arduino/
     - boards/shields/arduino_*/
@@ -748,6 +778,7 @@ Build system:
     - misc/empty_file.c
     - misc/generated/
     - snippets/
+    - scripts/schemas/snippet-schema.yaml
     - modules/Kconfig.sysbuild
     - scripts/list_boards.py
     - scripts/list_hardware.py
@@ -762,6 +793,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+    - scripts/tests/build/test_subfolder_list.py
+    - scripts/tests/build_helpers/test_domains.py
   files-exclude:
     - doc/build/dts/
   labels:
@@ -860,6 +893,7 @@ CPU Frequency Scaling:
     - include/zephyr/cpu_freq/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
+    - doc/services/cpu_freq/
   labels:
     - "area: CPU Frequency Scaling"
 
@@ -871,6 +905,7 @@ CRC:
     - include/zephyr/sys/crc.h
     - subsys/crc/
     - tests/subsys/crc/
+    - doc/hardware/peripherals/crc.rst
   labels:
     - "area: CRC"
 
@@ -884,6 +919,7 @@ Cache:
     - doc/hardware/cache/index.rst
     - drivers/cache/
     - tests/kernel/cache/
+    - doc/hardware/cache/
   labels:
     - "area: Cache"
   tests:
@@ -928,6 +964,7 @@ Console:
   files:
     - include/zephyr/console/
     - subsys/console/
+    - doc/services/console.rst
   labels:
     - "area: Console"
   tests:
@@ -948,7 +985,8 @@ Continuous Integration:
     - scripts/make_bugs_pickle.py
     - .checkpatch.conf
     - scripts/gitlint/
-    - scripts/set_assignees.py
+    - scripts/ci/set_assignees.py
+    - scripts/footprint/
   labels:
     - "area: Continuous Integration"
 
@@ -1106,6 +1144,7 @@ Devicetree Bindings:
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
+    - scripts/bindings_properties_allowlist.yaml
   labels:
     - "area: Devicetree Bindings"
 
@@ -1135,12 +1174,13 @@ Disk:
     - drivers.disk
 
 Display drivers:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - JarmouniA
   collaborators:
     - jfischer-no
     - danieldegrasse
     - VynDragon
-    - jarmouniA
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1202,6 +1242,7 @@ Documentation Infrastructure:
     - carlescufi
     - nashif
   files:
+    - doc/404.rst
     - doc/requirements.in
     - doc/requirements.txt
     - doc/_*/
@@ -1758,6 +1799,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - rriveramcrus
+  collaborators:
+    - Liam-Ogletree
   files:
     - drivers/haptics/
     - dts/bindings/haptics/
@@ -1968,6 +2011,7 @@ Documentation Infrastructure:
     - danieldegrasse
   files:
     - drivers/mipi_dbi/
+    - include/zephyr/drivers/mipi_dbi.h
     - dts/bindings/mipi-dbi/
     - include/zephyr/dt-bindings/mipi_dbi/
   labels:
@@ -2045,6 +2089,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - rerickson1
+  collaborators:
+    - SeppoTakalo
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -2497,6 +2543,7 @@ Documentation Infrastructure:
     - doc/services/virtualization/
     - include/zephyr/drivers/virtualization/ivshmem.h
     - samples/drivers/virtualization/
+    - doc/hardware/virtualization/
   labels:
     - "area: Virtualization"
   tests:
@@ -2510,6 +2557,7 @@ Documentation Infrastructure:
     - casparfriedrich
   files:
     - doc/hardware/peripherals/w1.rst
+    - doc/hardware/peripherals/1-Wire_bus_topology.drawio.svg
     - drivers/w1/
     - dts/bindings/w1/
     - include/zephyr/drivers/w1.h
@@ -2597,8 +2645,6 @@ Documentation Infrastructure:
     - wm-eisos
   files:
     - drivers/sensor/wsen/
-  labels:
-    - "area: Sensors"
   tests:
     - drivers.sensors
   description: >-
@@ -2873,6 +2919,8 @@ Infineon Platforms:
   collaborators:
     - mcatee-infineon
     - talih0
+    - billwatersiii
+    - jsbatch
   files:
     - boards/cypress/
     - boards/infineon/
@@ -2918,6 +2966,7 @@ Instrumentation Subsystem:
     - fkokosinski
     - tgorochowik
   files:
+    - doc/services/instrumentation/
     - include/zephyr/instrumentation/
     - samples/subsys/instrumentation/
     - scripts/instrumentation/
@@ -3112,6 +3161,7 @@ Kernel:
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/
+    - include/zephyr/linker/llext-sections.ld
   labels:
     - "area: llext"
   tests:
@@ -3262,7 +3312,7 @@ MAINTAINERS file:
   files:
     - MAINTAINERS.yml
     - scripts/get_maintainer.py
-    - scripts/set_assignees.py
+    - scripts/ci/set_assignees.py
     - scripts/check_maintainers.py
   labels:
     - "area: MAINTAINER File"
@@ -3357,7 +3407,6 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - ArunMCHP
-    - pdgendt
     - stephanosio
   files:
     - boards/atmel/
@@ -3390,6 +3439,8 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - SeppoTakalo
   files:
     - subsys/modem/
     - include/zephyr/modem/
@@ -3444,13 +3495,13 @@ NXP Platform Drivers:
     - decsny
     - manuargue
     - dbaluta
-    - Raymond0225
+    - Holt-Sun
+    - zejiang0jason
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
     - drivers\/.*[_\/]+lpc[_\.\d]+.*c
   files:
-    - drivers/*/*imx*
     - drivers/*/*mcux*.c
     - drivers/*/*.mcux
     - drivers/*/*.nxp
@@ -3461,7 +3512,6 @@ NXP Platform Drivers:
     - include/zephyr/dt-bindings/*/*nxp*
     - include/zephyr/dt-bindings/*/*mcux*
     - include/zephyr/dt-bindings/inputmux/
-    - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
     - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
@@ -3471,33 +3521,23 @@ NXP Platform Drivers:
   files-exclude:
     - drivers/wifi/
     - drivers/bluetooth/
-    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
+  file-groups:
+    - name: NXP USB
+      collaborators:
+        - mmahadevan108
+        - MarkWangChinese
+      files:
+        - drivers/usb/
   labels:
     - "platform: NXP"
   description: NXP Drivers
-
-NXP Platform MCUX USB:
-  status: maintained
-  maintainers:
-    - mmahadevan108
-    - MarkWangChinese
-  files:
-    - drivers/usb/*/*mcux*
-    - boards/nxp/usb_kw24d512/
-  labels:
-    - "platform: NXP"
-  description: NXP MCUX USB shim drivers
 
 NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
-    - MaochenWang1
-    - axelnxp
-    - George-Stefan
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3512,6 +3552,43 @@ NXP Platform Wireless:
     - samples/net/**/*rw*
     - soc/nxp/mcx/mcxw/
     - soc/nxp/rw/
+  file-groups:
+    - name: NXP BLE
+      collaborators:
+        - axelnxp
+        - yeaissa
+      files:
+        - drivers/bluetooth/
+        - samples/bluetooth/
+    - name: NXP Wifi
+      collaborators:
+        - MaochenWang1
+      files:
+        - drivers/wifi/
+        - samples/net/
+    - name: NXP IEEE802.15.4
+      collaborators:
+        - George-Stefan
+      files:
+        - drivers/hdlc_rcp_if/
+        - drivers/ieee802154/
+        - soc/
+    - name: MCXW platform
+      collaborators:
+        - EmilioCBen
+        - decsny
+        - axelnxp
+      files:
+        - boards/nxp/*mcxw*/
+        - soc/nxp/mcx/mcxw/
+    - name: RW6xx platform
+      collaborators:
+        - decsny
+        - MaochenWang1
+        - axelnxp
+      files:
+        - soc/nxp/rw/
+        - boards/nxp/*rw*/
   labels:
     - "platform: NXP"
 
@@ -3521,8 +3598,6 @@ NXP Platforms (MCU):
     - dleach02
     - mmahadevan108
   collaborators:
-    - DerekSnell
-    - EmilioCBen
     - decsny
     - butok
   files:
@@ -3543,11 +3618,76 @@ NXP Platforms (MCU):
     - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
+    - boards/nxp/vmu*/
+    - boards/nxp/rddrone_fmuk66/
+    - tests/boards/vmu_rt1170/
   files-exclude:
     - dts/arm/nxp/nxp_imx*
     - boards/nxp/frdm_imx*/
   files-regex-exclude:
     - .*s32.*
+  file-groups:
+    - name: NXP RT
+      collaborators:
+        - lucien-nxp
+        - Raymond0225
+      files:
+        - boards/nxp/mimxrt*/
+        - soc/nxp/imxrt/
+        - dts/arm/nxp/*rt*
+    - name: NXP MCX
+      collaborators:
+        - peterwangsz
+        - NeilChen93
+        - jacob-wienecke-nxp
+      files:
+        - boards/nxp/frdm_mcx*/
+        - soc/nxp/mcx/
+        - dts/arm/nxp/*mcx*
+        - boards/nxp/mcx_*/
+    - name: NXP Kinetis
+      collaborators:
+        - EmilioCBen
+      files:
+        - boards/nxp/frdm_k*/
+        - soc/nxp/kinetis/
+        - dts/arm/nxp/nxp_k*
+    - name: NXP LPC
+      collaborators:
+        - EmilioCBen
+      files:
+        - boards/nxp/lpc*/
+        - soc/nxp/lpc/
+        - dts/arm/nxp/nxp_lpc*
+    - name: NXP MCU Xtensa
+      collaborators:
+        - iuliana-prodan
+        - TomasBarakNXP
+        - VitekST
+      files:
+        - soc/nxp/imxrt/*/f1/
+        - soc/nxp/imxrt/*/hifi*/
+        - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
+        - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
+    - name: NXP MCU UX
+      collaborators:
+        - DerekSnell
+        - jacob-wienecke-nxp
+      files-regex:
+        - \.rst$
+        - .*Kconfig.*
+        - \.conf$
+      files:
+        - dts/bindings/
+        - samples/
+    - name: NXP MCU Robotics
+      collaborators:
+        - bperseghetti
+        - PetervdPerk-NXP
+      files:
+        - boards/nxp/vmu*/
+        - boards/nxp/rddrone_fmuk66/
+        - tests/boards/vmu_rt1170/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
@@ -3558,12 +3698,13 @@ NXP Platforms (MPU):
   maintainers:
     - JiafeiPan
   collaborators:
-    - dleach02
     - dbaluta
     - iuliana-prodan
     - yangbolu1991
     - Zhiqiang-Hou
   files:
+    - drivers/*/*imx*
+    - include/zephyr/dt-bindings/rdc/
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
@@ -3575,21 +3716,6 @@ NXP Platforms (MPU):
     - "platform: NXP MPU"
     - "platform: NXP"
   description: NXP MPU platforms
-
-NXP Platforms (Robotics Products):
-  status: maintained
-  maintainers:
-    - bperseghetti
-    - PetervdPerk-NXP
-  collaborators:
-    - manuargue
-  files:
-    - boards/nxp/vmu*/
-    - boards/nxp/rddrone_fmuk66/
-    - boards/nxp/mr_canhubk3/
-    - boards/nxp/ucans32k1sic/
-    - tests/boards/vmu_rt1170/
-  description: NXP Robotics Module Platform Products
 
 NXP Platforms (S32):
   status: maintained
@@ -3610,30 +3736,19 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
-  files-exclude:
-    - boards/nxp/ucans32k1sic/
+    - boards/nxp/mr_canhubk3/
+  file-groups:
+    - name: NXP S32 Robotics
+      collaborators:
+        - bperseghetti
+        - PetervdPerk-NXP
+      files:
+        - boards/nxp/mr_canhubk3/
+        - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
     - "platform: NXP"
   description: NXP S32 platforms and S32-specific drivers
-
-NXP Platforms (Xtensa):
-  status: maintained
-  maintainers:
-    - dbaluta
-  collaborators:
-    - iuliana-prodan
-    - TomasBarakNXP
-  files:
-    - soc/nxp/imx/*/adsp/
-    - soc/nxp/imxrt/*/f1/
-    - soc/nxp/imxrt/*/hifi*/
-    - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
-    - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
-  labels:
-    - "platform: NXP Xtensa"
-    - "platform: NXP"
-  description: NXP Xtensa platforms
 
 Native_sim and POSIX arch:
   status: maintained
@@ -3913,6 +4028,7 @@ Networking:
     - samples/net/ocpp/
     - subsys/net/lib/ocpp/
     - tests/net/lib/ocpp/
+    - doc/connectivity/networking/api/ocpp.rst
   labels:
     - "area: OCPP"
 
@@ -3922,10 +4038,8 @@ Networking:
     - rlubos
   collaborators:
     - pdgendt
-    - canisLupus1313
     - kkasperczyk-no
     - edmont
-    - maciejbaczmanski
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -4322,6 +4436,22 @@ Realtek EC Platforms:
   labels:
     - "platform: Realtek EC"
 
+Release:
+  status: maintained
+  maintainers:
+    - nashif
+  collaborators:
+    - kartben
+  files:
+    - VERSION
+    - scripts/dump_bugs_pickle.py
+    - SDK_VERSION
+    - LICENSE
+    - LICENSES/
+    - scripts/release/
+  labels:
+    - "Release"
+
 Release Notes:
   status: maintained
   maintainers:
@@ -4493,10 +4623,10 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
-    - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
+    - juickar
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4743,8 +4873,9 @@ Silabs SiM3U Platforms:
 State machine framework:
   status: maintained
   maintainers:
-    - sambhurst
+    - vlad-kulikov
   collaborators:
+    - sambhurst
     - keith-zephyr
     - glenn-andrews
   files:
@@ -4838,8 +4969,6 @@ TDK Sensors:
     - gjabouley-invn
   files:
     - drivers/sensor/tdk/
-  labels:
-    - "area: Sensors"
   tests:
     - drivers.sensors
 
@@ -4868,6 +4997,7 @@ TI MSPM0 Platforms:
   status: maintained
   maintainers:
     - ssekar15
+    - d-philpot
   files:
     - soc/ti/mspm0/
     - boards/ti/lp_mspm0g3507/
@@ -4892,6 +5022,7 @@ TI SimpleLink Platforms:
     - vaishnavachath
   collaborators:
     - bogdanovs
+    - jpanisbl
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
@@ -5085,6 +5216,7 @@ USB:
     - jfischer-no
   collaborators:
     - tmon-nordic
+    - josuah
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -5469,8 +5601,6 @@ West:
   status: maintained
   maintainers:
     - nandojve
-  collaborators:
-    - pdgendt
   files:
     - modules/Kconfig.atmel
   labels:
@@ -5544,6 +5674,8 @@ West:
     - parthitce
     - talih0
     - mcatee-infineon
+    - billwatersiii
+    - jsbatch
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
@@ -5663,7 +5795,8 @@ West:
     - thaoluonguw
     - binhnguyen2434
     - nhutnguyenkc
-  files: []
+  files:
+    - modules/Kconfig.renesas
   labels:
     - "platform: Renesas"
 
@@ -5723,10 +5856,12 @@ West:
   collaborators:
     - FRASTM
     - gautierg-st
-    - marwaiehm-st
+    - etienne-lms
+    - mathieuchopstm
+    - juickar
+    - djiatsaf-st
     - asm5878
     - HoZHel
-    - benothmn-st
   files:
     - modules/Kconfig.stm32
   labels:
@@ -5736,9 +5871,9 @@ West:
   status: maintained
   maintainers:
     - afontaine-invn
-  collaborators:
     - rbuisson-invn
     - gjabouley-invn
+  collaborators:
     - sriccardi-invn
   files:
     - modules/hal_tdk/Kconfig
@@ -5757,6 +5892,7 @@ West:
   maintainers:
     - vaishnavachath
     - ssekar15
+    - d-philpot
   files: []
   labels:
     - "platform: TI"
@@ -5831,9 +5967,10 @@ West:
     - "area: MCTP"
 
 "West project: libmetal":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - arnopo
+    - iuliana-prodan
   files:
     - modules/Kconfig.libmetal
   labels:
@@ -5886,25 +6023,15 @@ West:
   labels:
     - "area: LVGL"
 
-"West project: lz4":
-  status: odd fixes
-  collaborators:
-    - parthitce
-  files:
-    - modules/lz4/
-    - samples/modules/compression/lz4/
-  labels:
-    - "area: Compression"
-
 "West project: mbedtls":
   status: maintained
   maintainers:
     - d3zd3z
     - ceolin
-  collaborators:
-    - wearyzen
     - valeriosetti
     - tomi-font
+  collaborators:
+    - wearyzen
     - ithinuel
   files:
     - modules/mbedtls/
@@ -5986,10 +6113,12 @@ West:
     - "area: Wi-Fi"
 
 "West project: open-amp":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - arnopo
+    - iuliana-prodan
   collaborators:
     - uLipe
-    - iuliana-prodan
   files:
     - modules/Kconfig.open-amp
   labels:
@@ -6001,10 +6130,8 @@ West:
     - rlubos
   collaborators:
     - pdgendt
-    - canisLupus1313
-    - mariuszpos
+    - kkasperczyk-no
     - edmont
-    - maciejbaczmanski
   files:
     - modules/openthread/
   labels:
@@ -6036,11 +6163,11 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -6055,29 +6182,15 @@ West:
   labels:
     - "area: Debugging"
 
-"West project: sof":
-  status: maintained
-  maintainers:
-    - kv2019i
-  collaborators:
-    - andyross
-    - nashif
-    - lyakh
-    - lgirdwood
-  files:
-    - modules/Kconfig.sof
-  labels:
-    - "area: Audio"
-
 "West project: tf-m-tests":
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -6123,11 +6236,11 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - tomi-font
   collaborators:
     - Vge0rge
     - wearyzen
     - valeriosetti
-    - tomi-font
     - ithinuel
   files:
     - modules/trusted-firmware-m/
@@ -6168,12 +6281,6 @@ West:
   labels:
     - "area: Rust"
 
-"West project: zscilib":
-  status: maintained
-  maintainers:
-    - microbuilder
-  files: []
-
 Wurth Elektronik Platforms:
   status: maintained
   maintainers:
@@ -6212,6 +6319,7 @@ Xilinx Platforms:
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
+    - kedareswararao
   files:
     - boards/amd/
     - drivers/*/*xilinx*

@@ -35,9 +35,9 @@ struct net_pmtu_entry {
  * @return PMTU entry if found, NULL otherwise
  */
 #if defined(CONFIG_NET_PMTU)
-struct net_pmtu_entry *net_pmtu_get_entry(const struct sockaddr *dst);
+struct net_pmtu_entry *net_pmtu_get_entry(const struct net_sockaddr *dst);
 #else
-static inline struct net_pmtu_entry *net_pmtu_get_entry(const struct sockaddr *dst)
+static inline struct net_pmtu_entry *net_pmtu_get_entry(const struct net_sockaddr *dst)
 {
 	ARG_UNUSED(dst);
 
@@ -52,9 +52,9 @@ static inline struct net_pmtu_entry *net_pmtu_get_entry(const struct sockaddr *d
  * @return MTU value (> 0) if found, <0 otherwise
  */
 #if defined(CONFIG_NET_PMTU)
-int net_pmtu_get_mtu(const struct sockaddr *dst);
+int net_pmtu_get_mtu(const struct net_sockaddr *dst);
 #else
-static inline int net_pmtu_get_mtu(const struct sockaddr *dst)
+static inline int net_pmtu_get_mtu(const struct net_sockaddr *dst)
 {
 	ARG_UNUSED(dst);
 
@@ -70,9 +70,9 @@ static inline int net_pmtu_get_mtu(const struct sockaddr *dst)
  * @return >0 previous MTU, <0 if error
  */
 #if defined(CONFIG_NET_PMTU)
-int net_pmtu_update_mtu(const struct sockaddr *dst, uint16_t mtu);
+int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu);
 #else
-static inline int net_pmtu_update_mtu(const struct sockaddr *dst, uint16_t mtu)
+static inline int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu)
 {
 	ARG_UNUSED(dst);
 	ARG_UNUSED(mtu);

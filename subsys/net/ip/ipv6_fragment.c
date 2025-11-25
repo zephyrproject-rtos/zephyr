@@ -158,8 +158,8 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 }
 
 static bool reassembly_cancel(uint32_t id,
-			      struct in6_addr *src,
-			      struct in6_addr *dst)
+			      struct net_in6_addr *src,
+			      struct net_in6_addr *dst)
 {
 	int i, j;
 
@@ -335,7 +335,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	ipv6.hdr->len = htons(len);
+	ipv6.hdr->len = net_htons(len);
 
 	net_pkt_set_data(pkt, &ipv6_access);
 	net_pkt_set_ip_reassembled(pkt, true);
@@ -601,7 +601,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len +
 					     net_pkt_ipv6_ext_len(pkt) +
 					     NET_IPV6_FRAGH_LEN,
-					     AF_INET6, 0, BUF_ALLOC_TIMEOUT);
+					     NET_AF_INET6, 0, BUF_ALLOC_TIMEOUT);
 	if (!frag_pkt) {
 		return -ENOMEM;
 	}
@@ -635,7 +635,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	frag_hdr->nexthdr = next_hdr;
 	frag_hdr->reserved = 0U;
 	frag_hdr->id = net_pkt_ipv6_fragment_id(pkt);
-	frag_hdr->offset = htons(((frag_offset / 8U) << 3) | !final);
+	frag_hdr->offset = net_htons(((frag_offset / 8U) << 3) | !final);
 
 	net_pkt_set_chksum_done(frag_pkt, true);
 
@@ -736,13 +736,13 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		net_pkt_skip(pkt, last_hdr_off);
 
 		switch (next_hdr) {
-		case IPPROTO_ICMPV6:
+		case NET_IPPROTO_ICMPV6:
 			ret = net_icmpv6_finalize(pkt, true);
 			break;
-		case IPPROTO_TCP:
+		case NET_IPPROTO_TCP:
 			ret = net_tcp_finalize(pkt, true);
 			break;
-		case IPPROTO_UDP:
+		case NET_IPPROTO_UDP:
 			ret = net_udp_finalize(pkt, true);
 			break;
 		default:

@@ -307,10 +307,7 @@ static struct wwdg_stm32_data wwdg_stm32_dev_data = {
 };
 
 static struct wwdg_stm32_config wwdg_stm32_dev_config = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.Instance = (WWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 

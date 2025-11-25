@@ -150,8 +150,7 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 	static const struct qdec_stm32_dev_cfg qdec##n##_stm32_config = {                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.timer_inst = ((TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n))),                     \
-		.pclken = {.bus = DT_CLOCKS_CELL(DT_INST_PARENT(n), bus),                          \
-			   .enr = DT_CLOCKS_CELL(DT_INST_PARENT(n), bits)},                        \
+		.pclken = STM32_CLOCK_INFO(0, DT_INST_PARENT(n)),				   \
 		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),                                  \
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),         \
 		.input_filtering_level = DT_INST_PROP(n, st_input_filter_level),                   \

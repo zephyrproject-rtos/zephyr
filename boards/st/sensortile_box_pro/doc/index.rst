@@ -8,7 +8,7 @@ and is a ready-to-use box kit for wireless IoT and wearable sensor platforms to 
 and developing apps based on remote motion and environmental sensor data.
 
 The SensorTile.box PRO board fits into a small plastic box with a long-life rechargeable
-battery, and communicates with a standard smartphone through its Bluetooth interface,
+battery, and communicates with a standard smartphone through its Bluetooth |reg| interface,
 providing data coming from the sensors.
 
 More information about the board can be found at the `SensorTile.box PRO website`_.
@@ -213,7 +213,7 @@ functions.
 BlueNRG-LP chip
 ===============
 
-The board is equipped with an STMicroelectronics `BlueNRG-LP`_ chip. Before running Zephyr Bluetooth samples
+The board is equipped with an STMicroelectronics `BlueNRG-LP`_ chip. Before running Zephyr Bluetooth |reg| samples
 on SensorTile.box PRO, it is required to upgrade the BlueNRG chip with a Zephyr BLE stack compatible firmware.
 The upgrade may be easily performed using the application provided in `SensorTile.box PRO BLE firmware upgrade package`_.
 For more information about BLE binaries for SensorTile.box family, see `stsw-mkbox-bleco`_.

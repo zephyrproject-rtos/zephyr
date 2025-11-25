@@ -46,6 +46,7 @@
 #include <soc/system_reg.h>
 #endif
 
+#include "memory.h"
 #include "hw_init.h"
 #include "soc_init.h"
 #include "soc_random.h"
@@ -268,6 +269,7 @@ void __start(void)
 {
 #ifdef CONFIG_RISCV_GP
 
+	__asm__ __volatile__("li sp, %0" :: "i"(DRAM_STACK_START));
 	__asm__ __volatile__("la t0, _vector_table\n"
 			     "csrw mtvec, t0\n");
 

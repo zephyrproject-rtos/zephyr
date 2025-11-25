@@ -66,9 +66,9 @@ endforeach()
 if(DEFINED SB_CONF_FILE AND NOT DEFINED CACHE{SB_CONF_FILE})
   # We only want to set this in cache it has been defined and is not already there.
   set(SB_CONF_FILE ${SB_CONF_FILE} CACHE STRING "If desired, you can build the application with \
-  SYSbuild configuration settings specified in an alternate .conf file using this parameter. \
-  These settings will override the settings in the application’s SYSBuild config file or its \
-  default .conf file. Multiple files may be listed, e.g. SB_CONF_FILE=\"sys1.conf sys2.conf\"")
+    SYSbuild configuration settings specified in an alternate .conf file using this parameter. \
+    These settings will override the settings in the application’s SYSBuild config file or its \
+    default .conf file. Multiple files may be listed, e.g. SB_CONF_FILE=\"sys1.conf sys2.conf\"")
 endif()
 
 if(NOT DEFINED SB_CONF_FILE)
@@ -80,8 +80,8 @@ endif()
 
 if(NOT EXISTS "${APPLICATION_CONFIG_DIR}")
   message(FATAL_ERROR "${APPLICATION_CONFIG_DIR} (APPLICATION_CONFIG_DIR) doesn't exist. "
-          "Unable to lookup sysbuild.conf or other related sysbuild configuration files. "
-	  "Please ensure APPLICATION_CONFIG_DIR points to a valid location."
+    "Unable to lookup sysbuild.conf or other related sysbuild configuration files. "
+    "Please ensure APPLICATION_CONFIG_DIR points to a valid location."
   )
 endif()
 

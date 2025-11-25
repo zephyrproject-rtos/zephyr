@@ -108,6 +108,7 @@ if FLASH_SHELL
 config FLASH_SHELL_TEST_COMMANDS
 	bool "Flash read/write/erase test commands"
 	select CBPRINTF_FP_SUPPORT
+	select TIMING_FUNCTIONS
 	help
 	  Enable additional flash shell commands for performing
 	  read/write/erase tests with speed output.

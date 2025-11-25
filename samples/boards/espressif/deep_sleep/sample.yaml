@@ -6,10 +6,11 @@ tests:
     build_only: true
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s3_devkitm/esp32s3/procpu
-      - esp32s2_devkitc
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32s2_devkitc
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32h2_devkitm
       - esp8684_devkitm
   sample.esp32.deep_sleep.dut:
     extra_args:
@@ -19,10 +20,11 @@ tests:
       - CONFIG_ESP32_USE_UNSUPPORTED_REVISION=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
-      - esp32s3_devkitm/esp32s3/procpu
-      - esp32s2_devkitc
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32s2_devkitc
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32h2_devkitm
       - esp8684_devkitm
     tags: esp32
     harness: console

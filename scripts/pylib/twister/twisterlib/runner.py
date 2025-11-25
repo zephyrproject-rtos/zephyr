@@ -30,6 +30,7 @@ from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
+from twisterlib.hardwaremap import DUT
 from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
 
@@ -884,7 +885,7 @@ class ProjectBuilder(FilterBuilder):
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
-        self.duts = None
+        self.duts: list[DUT] = []
 
     @property
     def trace(self) -> bool:
@@ -1819,7 +1820,7 @@ class TwisterRunner:
         self.env = env
         self.instances: dict[str, TestInstance] = instances
         self.suites: dict[str, TestSuite] = suites
-        self.duts = None
+        self.duts: list[DUT] = []
         self.jobs = 1
         self.results = None
         self.jobserver = None

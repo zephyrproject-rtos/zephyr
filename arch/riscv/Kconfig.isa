@@ -119,6 +119,15 @@ config RISCV_ISA_EXT_ZICSR
 	  The "Zicsr" extension introduces support for the full set of CSR
 	  instructions that operate on CSRs registers.
 
+config RISCV_ISA_EXT_SMCSRIND
+	bool
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Smcsrind) - Standard Extension for Indirect CSR Access
+
+	  The Smcsrind extension provides indirect access to CSRs through
+	  the MISELECT and MIREG registers.
+
 config RISCV_ISA_EXT_ZIFENCEI
 	bool
 	help

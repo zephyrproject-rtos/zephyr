@@ -65,6 +65,15 @@ config PHY_MICROCHIP_KSZ9131
 	help
 	  Enable Microchip KSZ9131 Ethernet PHY Driver
 
+config PHY_MICROCHIP_LAN8742
+	bool "Microchip LAN8742 PHY Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8742_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_LAN8742),reset-gpios))
+	help
+	  Enable Microchip LAN8742 Ethernet PHY Driver
+
 config PHY_MICROCHIP_VSC8541
 	bool "Microchip VSC8541 PHY Driver"
 	default y
@@ -138,5 +147,13 @@ config PHY_VERIFY_DEVICE_IDENTIFICATION
 	help
 	  Verify the organizationally unique identifier that is reported
 	  by the phy chip.
+
+config PHY_MOTORCOMM_YT8521
+	bool "Motorcomm YT8521 Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED
+	select MDIO
+	help
+	  Enable Motorcomm YT8521 Ethernet PHY Driver
 
 endif # "Ethernet PHY Drivers"

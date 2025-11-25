@@ -68,7 +68,11 @@
 
 #define PROV_ALG_P256          0x00
 
+#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
 #define PROV_IO_OOB_SIZE_MAX   8  /* in bytes */
+#else
+#define PROV_IO_OOB_SIZE_MAX   32  /* in bytes */
+#endif
 
 #define PRIV_KEY_SIZE 32
 #define PUB_KEY_SIZE  PDU_LEN_PUB_KEY
@@ -164,10 +168,14 @@ static inline void bt_mesh_prov_buf_init(struct net_buf_simple *buf, uint8_t typ
 	net_buf_simple_add_u8(buf, type);
 }
 
-
 static inline uint8_t bt_mesh_prov_auth_size_get(void)
 {
-	return bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM ? 16 : 32;
+	if (IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
+		return bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM ? 16
+											    : 32;
+	} else {
+		return 16;
+	}
 }
 
 static inline k_timeout_t bt_mesh_prov_protocol_timeout_get(void)
@@ -182,7 +190,7 @@ int bt_mesh_prov_reset_state(void);
 
 bool bt_mesh_prov_active(void);
 
-int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8_t size);
+int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, size_t size);
 
 int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
 			   const struct bt_mesh_rpr_node *srv, const uint8_t uuid[16],

@@ -163,7 +163,7 @@ void virtnet_rx_cb(void *priv, uint32_t len)
 
 	len -= sizeof(struct _virtio_net_hdr);
 	struct net_pkt *pkt =
-		net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+		net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 
 	if (pkt == NULL) {
 		LOG_ERR("received packet, but could not pass it to the operating system");

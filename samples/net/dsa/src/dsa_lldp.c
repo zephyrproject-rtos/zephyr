@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>

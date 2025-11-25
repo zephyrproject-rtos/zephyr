@@ -3523,7 +3523,7 @@ static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
 		 * result in an overflow
 		 */
 		const uint32_t calculated_delay_us =
-			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_US(conn->le.interval);
+			2 * (conn->le.latency + 1) * conn->le.interval_us;
 		const uint32_t calculated_delay_ms = calculated_delay_us / USEC_PER_MSEC;
 
 		return K_MSEC(MAX(100, calculated_delay_ms + rand_delay));

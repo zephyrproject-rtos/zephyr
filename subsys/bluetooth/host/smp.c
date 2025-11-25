@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (c) 2025 Xiaomi Corporation
  * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
@@ -92,21 +93,21 @@ LOG_MODULE_REGISTER(bt_smp);
 #if defined(CONFIG_BT_CLASSIC)
 
 #define BT_SMP_AUTH_MASK_SC	0x2f
-#if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
+#if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) || defined(CONFIG_BT_SMP_LEGACY_PAIR_ONLY)
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS | BT_SMP_AUTH_CT2)
 #else
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS | BT_SMP_AUTH_CT2 |\
 			     BT_SMP_AUTH_SC)
-#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY || CONFIG_BT_SMP_LEGACY_PAIR_ONLY */
 
 #else
 
 #define BT_SMP_AUTH_MASK_SC	0x0f
-#if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
+#if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) || defined(CONFIG_BT_SMP_LEGACY_PAIR_ONLY)
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS)
 #else
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS | BT_SMP_AUTH_SC)
-#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY || CONFIG_BT_SMP_LEGACY_PAIR_ONLY */
 
 #endif /* CONFIG_BT_CLASSIC */
 
@@ -321,7 +322,8 @@ static struct {
 
 static bool le_sc_supported(void)
 {
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) ||
+	    IS_ENABLED(CONFIG_BT_SMP_LEGACY_PAIR_ONLY)) {
 		return false;
 	}
 
@@ -666,7 +668,9 @@ static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 	}
 
 	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
-	     smp->method == JUST_WORKS) {
+	    ((smp->method == JUST_WORKS) ||
+	     (!atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
+	      (smp->method == PASSKEY_DISPLAY || smp->method == PASSKEY_INPUT)))) {
 		return false;
 	}
 
@@ -716,7 +720,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 {
 	struct bt_l2cap_chan *chan;
 
-	if (conn->type == BT_CONN_TYPE_LE) {
+	if (bt_conn_is_le(conn)) {
 		struct bt_smp *smp;
 
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_SMP);
@@ -734,7 +738,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 	}
 
 #if defined(CONFIG_BT_CLASSIC)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (bt_conn_is_br(conn)) {
 		struct bt_smp_br *smp;
 
 		chan = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
@@ -2491,11 +2495,12 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	 * Fail if we have keys that are stronger than keys that will be
 	 * distributed in new pairing. This is to avoid replacing authenticated
 	 * keys with unauthenticated ones.
-	  */
+	 */
 	keys = bt_keys_find_addr(conn->id, &conn->le.dst);
 	if (keys && (keys->flags & BT_KEYS_AUTHENTICATED) &&
-	    smp->method == JUST_WORKS) {
-		LOG_ERR("JustWorks failed, authenticated keys present");
+	    (smp->method == JUST_WORKS || smp->method == PASSKEY_DISPLAY ||
+	     smp->method == PASSKEY_INPUT)) {
+		LOG_ERR("Pairing failed, authenticated keys present");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2983,7 +2988,9 @@ static uint8_t remote_sec_level_reachable(struct bt_smp *smp)
 		}
 		__fallthrough;
 	case BT_SECURITY_L3:
-		if (smp->method == JUST_WORKS) {
+		if (smp->method == JUST_WORKS ||
+		    (!atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
+		     (smp->method == PASSKEY_DISPLAY || smp->method == PASSKEY_INPUT))) {
 			return BT_SMP_ERR_AUTH_REQUIREMENTS;
 		}
 
@@ -5728,12 +5735,12 @@ int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
 {
 	struct bt_smp *smp;
 
-	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
+	if (!bt_conn_is_br(conn) && !bt_conn_is_le(conn)) {
 		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+	if (bt_conn_is_br(conn)) {
 		if (enable && atomic_test_and_set_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
 			return -EALREADY;
 		}
@@ -6319,12 +6326,16 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	case LE_SC_OOB:
 	case LEGACY_OOB:
 		conn->le.keys->flags |= BT_KEYS_OOB;
-		/* fallthrough */
+		conn->le.keys->flags |= BT_KEYS_AUTHENTICATED;
+		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
 	case PASSKEY_CONFIRM:
-		conn->le.keys->flags |= BT_KEYS_AUTHENTICATED;
-		break;
+		if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+			conn->le.keys->flags |= BT_KEYS_AUTHENTICATED;
+			break;
+		}
+		/* fallthrough */
 	case JUST_WORKS:
 	default:
 		/* unauthenticated key, clear it */

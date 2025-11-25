@@ -380,8 +380,8 @@ struct hl7800_socket {
 	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
-	struct sockaddr src;
-	struct sockaddr dst;
+	struct net_sockaddr src;
+	struct net_sockaddr dst;
 
 	bool created;
 	bool reconfig;
@@ -843,27 +843,21 @@ static void socket_put(struct hl7800_socket *sock)
 	sock->error = 0;
 	sock->rx_size = 0;
 	sock->state = SOCK_IDLE;
-	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
-	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
+	(void)memset(&sock->src, 0, sizeof(struct net_sockaddr));
+	(void)memset(&sock->dst, 0, sizeof(struct net_sockaddr));
 }
 
-char *hl7800_sprint_ip_addr(const struct sockaddr *addr)
+char *hl7800_sprint_ip_addr(const struct net_sockaddr *addr)
 {
 	static char buf[NET_IPV6_ADDR_LEN];
 
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
-		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, buf,
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
+		return net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr, buf,
 				     sizeof(buf));
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (addr->sa_family == AF_INET) {
-		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf,
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
+		return net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr, buf,
 				     sizeof(buf));
-	} else
-#endif
-	{
+	} else {
 		LOG_ERR("Unknown IP address family:%d", addr->sa_family);
 		return NULL;
 	}
@@ -1471,7 +1465,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		}
 		snprintk(buf, sizeof(buf), "AT+KUDPSND=%d,\"%s\",%u,%zu",
 			 sock->socket_id, dst_addr,
-			 ntohs(net_sin(&sock->dst)->sin_port), send_len);
+			 net_ntohs(net_sin(&sock->dst)->sin_port), send_len);
 	}
 	send_at_cmd(sock, buf, K_NO_WAIT, 0, false);
 
@@ -1612,15 +1606,15 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
 		if (net_ipv6_create(
 			    pkt,
-			    &((struct sockaddr_in6 *)&sock->dst)->sin6_addr,
-			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr)) {
+			    &((struct net_sockaddr_in6 *)&sock->dst)->sin6_addr,
+			    &((struct net_sockaddr_in6 *)&sock->src)->sin6_addr)) {
 			return -1;
 		}
-		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct sockaddr_in6));
-		pkt->remote.sa_family = AF_INET6;
+		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct net_sockaddr_in6));
+		pkt->remote.sa_family = NET_AF_INET6;
 		src_port = net_sin6(&sock->src)->sin6_port;
 		dst_port = net_sin6(&sock->dst)->sin6_port;
 
@@ -1628,14 +1622,14 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 	}
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
+	if (net_pkt_family(pkt) == NET_AF_INET) {
 		if (net_ipv4_create(
-			    pkt, &((struct sockaddr_in *)&sock->dst)->sin_addr,
-			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
+			    pkt, &((struct net_sockaddr_in *)&sock->dst)->sin_addr,
+			    &((struct net_sockaddr_in *)&sock->src)->sin_addr)) {
 			return -1;
 		}
-		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct sockaddr_in));
-		pkt->remote.sa_family = AF_INET;
+		net_pkt_set_remote_address(pkt, &sock->dst, sizeof(struct net_sockaddr_in));
+		pkt->remote.sa_family = NET_AF_INET;
 		src_port = net_sin(&sock->src)->sin_port;
 		dst_port = net_sin(&sock->dst)->sin_port;
 
@@ -1644,7 +1638,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 #endif
 
 #if defined(CONFIG_NET_UDP)
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		if (net_udp_create(pkt, dst_port, src_port)) {
 			return -1;
 		}
@@ -1653,7 +1647,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt, struct hl7800_socket *sock)
 	}
 #endif
 #if defined(CONFIG_NET_TCP)
-	if (sock->ip_proto == IPPROTO_TCP) {
+	if (sock->ip_proto == NET_IPPROTO_TCP) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 
 		tcp = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
@@ -1922,7 +1916,7 @@ static void dns_work_cb(struct k_work *work)
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
-	struct sockaddr temp_addr;
+	struct net_sockaddr temp_addr;
 	bool valid_address = false;
 	bool retry = false;
 	static const char *const dns_servers_str[] = {
@@ -2042,7 +2036,7 @@ static int hl7800_net_addr6_pton(const char *src, struct in6_addr *dst)
 			return -EINVAL;
 		}
 		ipv6_section = (ipv6_section << 8) | (uint16_t)strtol(src, NULL, 10);
-		UNALIGNED_PUT(htons(ipv6_section), &dst->s6_addr16[i]);
+		UNALIGNED_PUT(net_htons(ipv6_section), &dst->s6_addr16[i]);
 
 		src = strchr(src, '.');
 		if (src) {
@@ -2127,7 +2121,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	temp_addr_str[addr_len] = 0;
 	LOG_DBG("IP addr: %s", temp_addr_str);
 	if (is_ipv4) {
-		ret = net_addr_pton(AF_INET, temp_addr_str, &new_ipv4_addr);
+		ret = net_addr_pton(NET_AF_INET, temp_addr_str, &new_ipv4_addr);
 	} else {
 		ret = hl7800_net_addr6_pton(temp_addr_str, &new_ipv6_addr);
 	}
@@ -2143,7 +2137,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		addr_len = delims[3] - sm_start;
 		strncpy(temp_addr_str, sm_start, addr_len);
 		temp_addr_str[addr_len] = 0;
-		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.subnet);
+		ret = net_addr_pton(NET_AF_INET, temp_addr_str, &iface_ctx.subnet);
 		if (ret < 0) {
 			LOG_ERR("Invalid subnet");
 			return true;
@@ -2154,7 +2148,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		addr_len = delims[4] - addr_start;
 		strncpy(temp_addr_str, addr_start, addr_len);
 		temp_addr_str[addr_len] = 0;
-		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.gateway);
+		ret = net_addr_pton(NET_AF_INET, temp_addr_str, &iface_ctx.gateway);
 		if (ret < 0) {
 			LOG_ERR("Invalid gateway");
 			return true;
@@ -2173,7 +2167,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		}
 		strncpy(iface_ctx.dns_v4_string, addr_start, addr_len);
 		iface_ctx.dns_v4_string[addr_len] = 0;
-		ret = net_addr_pton(AF_INET, iface_ctx.dns_v4_string, &iface_ctx.dns_v4);
+		ret = net_addr_pton(NET_AF_INET, iface_ctx.dns_v4_string, &iface_ctx.dns_v4);
 		LOG_DBG("IPv4 DNS addr: %s", iface_ctx.dns_v4_string);
 	}
 #ifdef CONFIG_NET_IPV6
@@ -2186,7 +2180,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		strncpy(iface_ctx.dns_v6_string, addr_start, addr_len);
 
 		ret = hl7800_net_addr6_pton(iface_ctx.dns_v6_string, &iface_ctx.dns_v6);
-		net_addr_ntop(AF_INET6, &iface_ctx.dns_v6, iface_ctx.dns_v6_string,
+		net_addr_ntop(NET_AF_INET6, &iface_ctx.dns_v6, iface_ctx.dns_v6_string,
 			      sizeof(iface_ctx.dns_v6_string));
 		LOG_DBG("IPv6 DNS addr: %s", iface_ctx.dns_v6_string);
 	}
@@ -3346,7 +3340,7 @@ static void notify_all_tcp_sockets_closed(void)
 
 	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
 		sock = &iface_ctx.sockets[i];
-		if ((sock->context != NULL) && (sock->type == SOCK_STREAM)) {
+		if ((sock->context != NULL) && (sock->type == NET_SOCK_STREAM)) {
 			LOG_DBG("Sock %d closed", sock->socket_id);
 			/* signal RX callback with null packet */
 			if (sock->recv_cb) {
@@ -3936,7 +3930,7 @@ static void sock_notif_cb_work(struct k_work *work)
 		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work,
 					    MDM_SOCK_NOTIF_DELAY);
 	} else {
-		if (sock->type == SOCK_STREAM) {
+		if (sock->type == NET_SOCK_STREAM) {
 			LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
 			k_work_submit_to_queue(&hl7800_workq, &sock->recv_cb_work);
 		}
@@ -4020,9 +4014,9 @@ static int delete_socket(struct hl7800_socket *sock, enum net_sock_type type, ui
 {
 	char cmd[sizeof("AT+KUDPCLOSE=###")];
 
-	if (type == SOCK_STREAM) {
+	if (type == NET_SOCK_STREAM) {
 		snprintk(cmd, sizeof(cmd), "AT+KTCPDEL=%d", id);
-	} else if (type == SOCK_DGRAM) {
+	} else if (type == NET_SOCK_DGRAM) {
 		snprintk(cmd, sizeof(cmd), "AT+KUDPCLOSE=%d", id);
 	}
 
@@ -4058,9 +4052,9 @@ static bool on_cmd_sockcreate(enum net_sock_type type, struct net_buf **buf, uin
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 	iface_ctx.last_socket_id = strtol(value, NULL, 10);
-	if (type == SOCK_STREAM) {
+	if (type == NET_SOCK_STREAM) {
 		LOG_DBG("+KTCPCFG: %d", iface_ctx.last_socket_id);
-	} else if (type == SOCK_DGRAM) {
+	} else if (type == NET_SOCK_DGRAM) {
 		LOG_DBG("+KUDPCFG: %d", iface_ctx.last_socket_id);
 	}
 
@@ -4097,13 +4091,13 @@ done:
 /* Handler: +KTCPCFG: <session_id> */
 static bool on_cmd_sock_tcp_create(struct net_buf **buf, uint16_t len)
 {
-	return on_cmd_sockcreate(SOCK_STREAM, buf, len);
+	return on_cmd_sockcreate(NET_SOCK_STREAM, buf, len);
 }
 
 /* Handler: +KUDPCFG: <session_id> */
 static bool on_cmd_sock_udp_create(struct net_buf **buf, uint16_t len)
 {
-	return on_cmd_sockcreate(SOCK_DGRAM, buf, len);
+	return on_cmd_sockcreate(NET_SOCK_DGRAM, buf, len);
 }
 
 static void sockreadrecv_cb_work(struct k_work *work)
@@ -4270,7 +4264,7 @@ rx_err:
 	net_pkt_unref(sock->recv_pkt);
 	sock->recv_pkt = NULL;
 done:
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		if (sock->error == 0) {
 			sock->state = SOCK_CONNECTED;
 		}
@@ -4317,7 +4311,7 @@ static int start_socket_rx(struct hl7800_socket *sock, uint16_t rx_size)
 
 	LOG_DBG("Start socket RX ID:%d size:%d", sock->socket_id, rx_size);
 	sock->state = SOCK_RX;
-	if (sock->type == SOCK_DGRAM) {
+	if (sock->type == NET_SOCK_DGRAM) {
 #if defined(CONFIG_NET_IPV4)
 		if (rx_size > (net_if_get_mtu(iface_ctx.iface) - NET_IPV4UDPH_LEN)) {
 			sock->rx_size =
@@ -5859,12 +5853,12 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 	restore_on_boot = true;
 #endif
 
-	if (sock->dst.sa_family == AF_INET6) {
+	if (sock->dst.sa_family == NET_AF_INET6) {
 		af = MDM_HL7800_SOCKET_AF_IPV6;
-		dst_port = ntohs(net_sin6(&sock->dst)->sin6_port);
-	} else if (sock->dst.sa_family == AF_INET) {
+		dst_port = net_ntohs(net_sin6(&sock->dst)->sin6_port);
+	} else if (sock->dst.sa_family == NET_AF_INET) {
 		af = MDM_HL7800_SOCKET_AF_IPV4;
-		dst_port = ntohs(net_sin(&sock->dst)->sin_port);
+		dst_port = net_ntohs(net_sin(&sock->dst)->sin_port);
 	} else {
 		return -EINVAL;
 	}
@@ -5897,9 +5891,9 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 
 	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
-	if (sock->family == AF_INET) {
+	if (sock->family == NET_AF_INET) {
 		af = MDM_HL7800_SOCKET_AF_IPV4;
-	} else if (sock->family == AF_INET6) {
+	} else if (sock->family == NET_AF_INET6) {
 		af = MDM_HL7800_SOCKET_AF_IPV6;
 	} else {
 		return -EINVAL;
@@ -5994,7 +5988,7 @@ static int offload_get(sa_family_t family, enum net_sock_type type,
 	 * TCP socket needs to be created later once the
 	 * connection IP address is known.
 	 */
-	if (type == SOCK_DGRAM) {
+	if (type == NET_SOCK_DGRAM) {
 		wakeup_hl7800();
 
 		/* reconfig IP connection if necessary */
@@ -6016,7 +6010,7 @@ done:
 }
 
 static int offload_bind(struct net_context *context,
-			const struct sockaddr *addr, socklen_t addr_len)
+			const struct net_sockaddr *addr, socklen_t addr_len)
 {
 	struct hl7800_socket *sock = NULL;
 
@@ -6032,21 +6026,16 @@ static int offload_bind(struct net_context *context,
 
 	/* save bind address information */
 	sock->src.sa_family = addr->sa_family;
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		net_ipaddr_copy(&net_sin6(&sock->src)->sin6_addr,
 				&net_sin6(addr)->sin6_addr);
 		net_sin6(&sock->src)->sin6_port = net_sin6(addr)->sin6_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->src)->sin_addr,
 				&net_sin(addr)->sin_addr);
 		net_sin(&sock->src)->sin_port = net_sin(addr)->sin_port;
-	} else
-#endif
-	{
+	} else {
 		return -EPFNOSUPPORT;
 	}
 
@@ -6060,7 +6049,7 @@ static int offload_listen(struct net_context *context, int backlog)
 }
 
 static int offload_connect(struct net_context *context,
-			   const struct sockaddr *addr, socklen_t addr_len,
+			   const struct net_sockaddr *addr, socklen_t addr_len,
 			   net_context_connect_cb_t cb, int32_t timeout,
 			   void *user_data)
 {
@@ -6086,34 +6075,28 @@ static int offload_connect(struct net_context *context,
 
 	sock->dst.sa_family = addr->sa_family;
 
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		net_ipaddr_copy(&net_sin6(&sock->dst)->sin6_addr,
 				&net_sin6(addr)->sin6_addr);
 		dst_port = net_sin6(addr)->sin6_port;
 		net_sin6(&sock->dst)->sin6_port = dst_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->dst)->sin_addr,
 				&net_sin(addr)->sin_addr);
 		dst_port = net_sin(addr)->sin_port;
 		net_sin(&sock->dst)->sin_port = dst_port;
-	} else
-#endif
-	{
+	} else {
 		return -EINVAL;
 	}
 
 	if (dst_port < 0) {
-		LOG_ERR("Invalid port: %d", ntohs(dst_port));
+		LOG_ERR("Invalid port: %d", net_ntohs(dst_port));
 		return -EINVAL;
 	}
 
 	hl7800_lock();
 
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		wakeup_hl7800();
 
 		reconfigure_IP_connection();
@@ -6152,7 +6135,7 @@ static int offload_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	return -ENOTSUP;
 }
 
-static int offload_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr,
+static int offload_sendto(struct net_pkt *pkt, const struct net_sockaddr *dst_addr,
 			  socklen_t addr_len, net_context_send_cb_t cb,
 			  int32_t timeout, void *user_data)
 {
@@ -6170,21 +6153,15 @@ static int offload_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_IPV6)
-	if (dst_addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && dst_addr->sa_family == NET_AF_INET6) {
 		net_ipaddr_copy(&net_sin6(&sock->dst)->sin6_addr,
 				&net_sin6(dst_addr)->sin6_addr);
 		net_sin6(&sock->dst)->sin6_port = net_sin6(dst_addr)->sin6_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (dst_addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && dst_addr->sa_family == NET_AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->dst)->sin_addr,
 				&net_sin(dst_addr)->sin_addr);
 		net_sin(&sock->dst)->sin_port = net_sin(dst_addr)->sin_port;
-	} else
-#endif
-	{
+	} else {
 		return -EINVAL;
 	}
 
@@ -6218,17 +6195,12 @@ static int offload_send(struct net_pkt *pkt, net_context_send_cb_t cb,
 	socklen_t addr_len;
 
 	addr_len = 0;
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		addr_len = sizeof(struct sockaddr_in6);
-	} else
-#endif /* CONFIG_NET_IPV6 */
-#if defined(CONFIG_NET_IPV4)
-		if (net_pkt_family(pkt) == AF_INET) {
-		addr_len = sizeof(struct sockaddr_in);
-	} else
-#endif /* CONFIG_NET_IPV4 */
-	{
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
+		addr_len = sizeof(struct net_sockaddr_in6);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+		addr_len = sizeof(struct net_sockaddr_in);
+	} else {
 		return -EPFNOSUPPORT;
 	}
 
@@ -6278,7 +6250,7 @@ static int offload_put(struct net_context *context)
 	hl7800_lock();
 
 	/* close connection */
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		snprintk(cmd, sizeof(cmd), "AT+KTCPCLOSE=%d",
 			 sock->socket_id);
 	} else {
@@ -6288,11 +6260,11 @@ static int offload_put(struct net_context *context)
 
 	wakeup_hl7800();
 
-	if ((sock->type == SOCK_DGRAM) || (sock->error != -ENOTCONN)) {
+	if ((sock->type == NET_SOCK_DGRAM) || (sock->error != -ENOTCONN)) {
 		send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	}
 
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		/* delete session */
 		delete_socket(sock, sock->type, sock->socket_id);
 	}
@@ -6301,7 +6273,7 @@ static int offload_put(struct net_context *context)
 
 	socket_put(sock);
 	net_context_unref(context);
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		/* TCP contexts are referenced twice,
 		 * once for the app and once for the stack.
 		 * Since TCP stack is not used for offload,

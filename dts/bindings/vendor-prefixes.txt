@@ -447,6 +447,7 @@ miramems	MiraMEMS Sensing Technology Co., Ltd.
 mitsubishi	Mitsubishi Electric Corporation
 modtronix	Modtronix Engineering
 mosaixtech	Mosaix Technologies, Inc.
+motorcomm	Motorcomm Electronic Technology Co., Ltd.
 motorola	Motorola, Inc.
 moxa	Moxa Inc.
 mpl	MPL AG
@@ -659,6 +660,7 @@ solomon	Solomon Systech Limited
 sony	Sony Corporation
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
+spinalhdl	SpinalHDL
 sprd	Spreadtrum Communications Inc.
 sqn	Sequans Communications
 sst	Silicon Storage Technology, Inc.

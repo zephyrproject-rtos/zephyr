@@ -13,6 +13,8 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
   test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -29,6 +31,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=cpuppr
       - ipc_sessions_SNIPPET=nordic-ppr
+      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
   test.ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

@@ -26,83 +26,48 @@ module = DMA
 module-str = dma
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/dma/Kconfig.stm32"
-
-source "drivers/dma/Kconfig.sam_xdmac"
-
-source "drivers/dma/Kconfig.dw"
-
-source "drivers/dma/Kconfig.nios2_msgdma"
-
-source "drivers/dma/Kconfig.sam0"
-
-source "drivers/dma/Kconfig.mcux_edma"
-
-source "drivers/dma/Kconfig.mcux_lpc"
-
-source "drivers/dma/Kconfig.dma_pl330"
-
-source "drivers/dma/Kconfig.iproc_pax"
-
-source "drivers/dma/Kconfig.intel_adsp_gpdma"
-
-source "drivers/dma/Kconfig.intel_adsp_hda"
-
-source "drivers/dma/Kconfig.gd32"
-
-source "drivers/dma/Kconfig.esp32"
-
-source "drivers/dma/Kconfig.xec"
-
-source "drivers/dma/Kconfig.xmc4xxx"
-
-source "drivers/dma/Kconfig.rpi_pico"
-
-source "drivers/dma/Kconfig.renesas_ra"
-
-source "drivers/dma/Kconfig.renesas_rz"
-
-source "drivers/dma/Kconfig.ifx_cat1"
-
-source "drivers/dma/Kconfig.intel_lpss"
-
-source "drivers/dma/Kconfig.mcux_pxp"
-
-source "drivers/dma/Kconfig.max32"
-
-source "drivers/dma/Kconfig.mcux_smartdma"
-
+# zephyr-keep-sorted-start
 source "drivers/dma/Kconfig.andes_atcdmacx00"
-
-source "drivers/dma/Kconfig.sedi"
-
-source "drivers/dma/Kconfig.si32"
-
-source "drivers/dma/Kconfig.silabs"
-
-source "drivers/dma/Kconfig.siwx91x"
-
-source "drivers/dma/Kconfig.smartbond"
-
-source "drivers/dma/Kconfig.nxp_sof_host_dma"
-
-source "drivers/dma/Kconfig.emul"
-
-source "drivers/dma/Kconfig.nxp_edma"
-
-source "drivers/dma/Kconfig.dw_axi_dmac"
-source "drivers/dma/Kconfig.xilinx_axi_dma"
-
-source "drivers/dma/Kconfig.nxp_sdma"
-
-source "drivers/dma/Kconfig.wch"
-
-source "drivers/dma/Kconfig.ti_cc23x0"
-
-source "drivers/dma/Kconfig.npcx"
-
-source "drivers/dma/Kconfig.sf32lb"
-
 source "drivers/dma/Kconfig.bflb"
+source "drivers/dma/Kconfig.dma_pl330"
+source "drivers/dma/Kconfig.dw"
+source "drivers/dma/Kconfig.dw_axi_dmac"
+source "drivers/dma/Kconfig.emul"
+source "drivers/dma/Kconfig.esp32"
+source "drivers/dma/Kconfig.gd32"
+source "drivers/dma/Kconfig.ifx_cat1"
+source "drivers/dma/Kconfig.intel_adsp_gpdma"
+source "drivers/dma/Kconfig.intel_adsp_hda"
+source "drivers/dma/Kconfig.intel_lpss"
+source "drivers/dma/Kconfig.iproc_pax"
+source "drivers/dma/Kconfig.max32"
+source "drivers/dma/Kconfig.mchp"
+source "drivers/dma/Kconfig.mcux_edma"
+source "drivers/dma/Kconfig.mcux_lpc"
+source "drivers/dma/Kconfig.mcux_pxp"
+source "drivers/dma/Kconfig.mcux_smartdma"
+source "drivers/dma/Kconfig.nios2_msgdma"
+source "drivers/dma/Kconfig.npcx"
+source "drivers/dma/Kconfig.nxp_edma"
+source "drivers/dma/Kconfig.nxp_sdma"
+source "drivers/dma/Kconfig.nxp_sof_host_dma"
+source "drivers/dma/Kconfig.renesas_ra"
+source "drivers/dma/Kconfig.renesas_rz"
+source "drivers/dma/Kconfig.rpi_pico"
+source "drivers/dma/Kconfig.sam0"
+source "drivers/dma/Kconfig.sam_xdmac"
+source "drivers/dma/Kconfig.sedi"
+source "drivers/dma/Kconfig.sf32lb"
+source "drivers/dma/Kconfig.si32"
+source "drivers/dma/Kconfig.silabs"
+source "drivers/dma/Kconfig.siwx91x"
+source "drivers/dma/Kconfig.smartbond"
+source "drivers/dma/Kconfig.stm32"
+source "drivers/dma/Kconfig.ti_cc23x0"
+source "drivers/dma/Kconfig.wch"
+source "drivers/dma/Kconfig.xec"
+source "drivers/dma/Kconfig.xilinx_axi_dma"
+source "drivers/dma/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # DMA

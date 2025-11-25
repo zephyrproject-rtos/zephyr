@@ -411,8 +411,8 @@ static void telnet_restart_server(void)
 static void telnet_accept(struct zsock_pollfd *pollfd)
 {
 	int sock, ret = 0;
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(struct sockaddr);
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(struct net_sockaddr);
 
 	sock = zsock_accept(pollfd->fd, &addr, &addrlen);
 	if (sock < 0) {
@@ -442,8 +442,8 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 		goto error;
 	}
 
-	LOG_DBG("Telnet client connected (family AF_INET%s)",
-		addr.sa_family == AF_INET ? "" : "6");
+	LOG_DBG("Telnet client connected (family NET_AF_INET%s)",
+		addr.sa_family == NET_AF_INET ? "" : "6");
 
 	/* Disable echo - if command handling is enabled we reply that we
 	 * support echo.
@@ -465,7 +465,7 @@ error:
 static void telnet_server_cb(struct net_socket_service_event *evt)
 {
 	int sock_error;
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 
 	if (sh_telnet == NULL) {
 		return;
@@ -473,8 +473,8 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 
 	if ((evt->event.revents & ZSOCK_POLLERR) ||
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(evt->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
+		(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
+				       ZSOCK_SO_ERROR, &sock_error, &optlen);
 		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
@@ -506,43 +506,43 @@ error:
 	telnet_restart_server();
 }
 
-static int telnet_setup_server(struct zsock_pollfd *pollfd, sa_family_t family,
-			       struct sockaddr *addr, socklen_t addrlen)
+static int telnet_setup_server(struct zsock_pollfd *pollfd, net_sa_family_t family,
+			       struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret = 0;
 
-	pollfd->fd = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
+	pollfd->fd = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (pollfd->fd < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to create telnet AF_INET%s socket",
-			family == AF_INET ? "" : "6");
+		LOG_ERR("Failed to create telnet NET_AF_INET%s socket",
+			family == NET_AF_INET ? "" : "6");
 		goto error;
 	}
 
 	if (zsock_bind(pollfd->fd, addr, addrlen) < 0) {
 		ret = -errno;
-		LOG_ERR("Cannot bind on family AF_INET%s (%d)",
-			family == AF_INET ? "" : "6", ret);
+		LOG_ERR("Cannot bind on family NET_AF_INET%s (%d)",
+			family == NET_AF_INET ? "" : "6", ret);
 		goto error;
 	}
 
 	if (zsock_listen(pollfd->fd, 1)) {
 		ret = -errno;
-		LOG_ERR("Cannot listen on family AF_INET%s (%d)",
-			family == AF_INET ? "" : "6", ret);
+		LOG_ERR("Cannot listen on family NET_AF_INET%s (%d)",
+			family == NET_AF_INET ? "" : "6", ret);
 		goto error;
 	}
 
 	pollfd->events = ZSOCK_POLLIN;
 
-	LOG_DBG("Telnet console enabled on AF_INET%s",
-		family == AF_INET ? "" : "6");
+	LOG_DBG("Telnet console enabled on NET_AF_INET%s",
+		family == NET_AF_INET ? "" : "6");
 
 	return 0;
 
 error:
-	LOG_ERR("Unable to start telnet on AF_INET%s (%d)",
-		family == AF_INET ? "" : "6", ret);
+	LOG_ERR("Unable to start telnet on NET_AF_INET%s (%d)",
+		family == NET_AF_INET ? "" : "6", ret);
 
 	if (pollfd->fd >= 0) {
 		(void)zsock_close(pollfd->fd);
@@ -557,14 +557,14 @@ static int telnet_init(struct shell_telnet *ctx)
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		struct sockaddr_in any_addr4 = {
-			.sin_family = AF_INET,
-			.sin_port = htons(TELNET_PORT),
-			.sin_addr = INADDR_ANY_INIT
+		struct net_sockaddr_in any_addr4 = {
+			.sin_family = NET_AF_INET,
+			.sin_port = net_htons(TELNET_PORT),
+			.sin_addr = NET_INADDR_ANY_INIT
 		};
 
 		ret = telnet_setup_server(&ctx->fds[SOCK_ID_IPV4_LISTEN],
-					  AF_INET, (struct sockaddr *)&any_addr4,
+					  NET_AF_INET, (struct net_sockaddr *)&any_addr4,
 					  sizeof(any_addr4));
 		if (ret < 0) {
 			goto error;
@@ -572,14 +572,14 @@ static int telnet_init(struct shell_telnet *ctx)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		struct sockaddr_in6 any_addr6 = {
-			.sin6_family = AF_INET6,
-			.sin6_port = htons(TELNET_PORT),
-			.sin6_addr = IN6ADDR_ANY_INIT
+		struct net_sockaddr_in6 any_addr6 = {
+			.sin6_family = NET_AF_INET6,
+			.sin6_port = net_htons(TELNET_PORT),
+			.sin6_addr = NET_IN6ADDR_ANY_INIT
 		};
 
 		ret = telnet_setup_server(&ctx->fds[SOCK_ID_IPV6_LISTEN],
-					  AF_INET6, (struct sockaddr *)&any_addr6,
+					  NET_AF_INET6, (struct net_sockaddr *)&any_addr6,
 					  sizeof(any_addr6));
 		if (ret < 0) {
 			goto error;

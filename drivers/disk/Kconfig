@@ -8,11 +8,13 @@ menuconfig DISK_DRIVERS
 
 if DISK_DRIVERS
 
-source "drivers/disk/Kconfig.ram"
+# zephyr-keep-sorted-start
 source "drivers/disk/Kconfig.flash"
-source "drivers/disk/Kconfig.sdmmc"
-source "drivers/disk/Kconfig.mmc"
 source "drivers/disk/Kconfig.loopback"
+source "drivers/disk/Kconfig.mmc"
+source "drivers/disk/Kconfig.ram"
+source "drivers/disk/Kconfig.sdmmc"
+# zephyr-keep-sorted-stop
 
 rsource "nvme/Kconfig"
 

@@ -459,6 +459,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_SCAN_SYNC_ISO_SET 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#define BT_CTLR_CONN_ISO_STREAMS CONFIG_BT_CTLR_CONN_ISO_STREAMS
+#else
+#define BT_CTLR_CONN_ISO_STREAMS 0
+#endif
+
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
@@ -508,7 +514,7 @@ static struct {
 	(sizeof(memq_link_t) *                                                 \
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
 	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
-	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
+	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) + BT_CTLR_CONN_ISO_STREAMS +         \
 	  (IQ_REPORT_CNT)))
 static struct {
 	uint16_t quota_pdu; /* Number of un-utilized buffers */
@@ -1726,8 +1732,8 @@ void ll_rx_mem_release(void **node_rx)
 
 				ll_conn_release(conn);
 			} else if (IS_CIS_HANDLE(rx_free->hdr.handle)) {
-				ll_rx_link_quota_inc();
-				ll_rx_release(rx_free);
+				/* Notify ull_conn_iso */
+				ull_conn_iso_cis_terminate_done(rx_free);
 			}
 		}
 		break;

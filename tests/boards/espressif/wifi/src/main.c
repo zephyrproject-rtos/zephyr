@@ -275,17 +275,17 @@ ZTEST(wifi, test_2_icmp)
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx icmp_ctx;
 	struct in_addr gw_addr_4;
-	struct sockaddr_in dst4 = {0};
+	struct net_sockaddr_in dst4 = {0};
 	int retry = CONFIG_WIFI_PING_ATTEMPTS;
 	int ret;
 
 	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
 	zassert_not_equal(gw_addr_4.s_addr, 0, "Gateway address is not set");
 
-	ret = net_icmp_init_ctx(&icmp_ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
+	ret = net_icmp_init_ctx(&icmp_ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst4.sin_family = AF_INET;
+	dst4.sin_family = NET_AF_INET;
 	memcpy(&dst4.sin_addr, &gw_addr_4, sizeof(gw_addr_4));
 
 	params.identifier = 1234;
@@ -299,7 +299,7 @@ ZTEST(wifi, test_2_icmp)
 
 	do {
 		ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface,
-						 (struct sockaddr *)&dst4, &params, NULL);
+						 (struct net_sockaddr *)&dst4, &params, NULL);
 		zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
 
 		int timeout = k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT));

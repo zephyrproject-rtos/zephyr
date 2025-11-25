@@ -207,24 +207,16 @@ Programming and Debugging
 
 STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 
-Applications for the ``stm32h7s78_dk`` board configuration can be built and
-flashed in the usual way (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
-Flashing
-========
-
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Flashing an application to STM32H7S78-DK Discovery
---------------------------------------------------
+Application in SoC Flash
+========================
 
-Connect the STM32H7S78-DK Discovery to your host computer using the USB port.
-Then build and flash an application. Here is an example for the
-:zephyr:code-sample:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-Run a serial host program to connect with your Nucleo board:
+Connect the STM32H7S78-DK Discovery to your host computer using the USB port,
+then run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
@@ -243,8 +235,12 @@ You should see the following message on the console:
 
    Hello World! stm32h7s78_dk
 
+If the application size is too big to fit in SoC Flash,
+Zephyr :ref:`Code and Data Relocation <code_data_relocation>` can be used to relocate
+the non-critical and big parts of the application to external Flash.
+
 Debugging
-=========
+---------
 
 You can debug an application in the usual way.  Here is an example for the
 :zephyr:code-sample:`hello_world` application.
@@ -255,11 +251,93 @@ You can debug an application in the usual way.  Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+Application in External Flash
+=============================
+
+Because of the limited amount of SoC Flash (64KB), you may want to store the application
+in external QSPI Flash instead, and run it from there. In that case, the MCUboot bootloader
+is needed to chainload the application. A dedicated board variant, ``ext_flash_app``, was created
+for this usecase.
+
+:ref:`sysbuild` makes it possible to build and flash all necessary images needed to run a user application
+from external Flash.
+
+The following example shows how to build :zephyr:code-sample:`hello_world` with Sysbuild enabled:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+   :goals: build
+   :west-args: --sysbuild
+
+By default, Sysbuild creates MCUboot and user application images.
+
+For more information, refer to the :ref:`sysbuild` documentation.
+
+Flashing
+--------
+
+Both MCUboot and user application images can be flashed by running:
+
+.. code-block:: console
+
+   west flash
+
+You should see the following message in the serial host program:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-192-g96576b341ee1 ***
+   *** Using Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   I: Starting bootloader
+   I: Bootloader chainload address offset: 0x0
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   Hello World! stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   west flash --domain hello_world
+
+With the default configuration, the board uses MCUboot's Swap-using-offset mode.
+To get more information about the different MCUboot operating modes and how to
+perform application upgrade, refer to `MCUboot design`_.
+To learn more about how to secure the application images stored in external Flash,
+refer to `MCUboot Encryption`_.
+
+Debugging
+---------
+
+You can debug the application in external flash using ``west`` and ``GDB``.
+
+After flashing MCUboot and the app, execute the following command:
+
+.. code-block:: console
+
+   west debugserver
+
+Then, open another terminal (don't forget to activate Zephyr's environment) and execute:
+
+.. code-block:: console
+
+   west attach
+
+By default, user application symbols are loaded. To debug MCUboot application,
+launch:
+
+.. code-block:: console
+
+   west attach --domain mcuboot
+
 .. _STM32H7S78-DK Discovery website:
    https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
 
 .. _STM32H7S78-DK Discovery board User Manual:
-   https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
+   https://www.st.com/resource/en/user_manual/um3289-discovery-kit-with-stm32h7s7l8-mcu-stmicroelectronics.pdf
 
 .. _STM32H7Sx on www.st.com:
    https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
@@ -269,3 +347,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCUboot design:
+   https://docs.mcuboot.com/design.html
+
+.. _MCUboot Encryption:
+   https://docs.mcuboot.com/encrypted_images.html

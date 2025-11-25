@@ -30,6 +30,26 @@
 		};
 	};
 
+	performance-states {
+		pstate_0: pstate-0 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <60>;
+			cpu-frequency-level = "high";
+		};
+
+		pstate_1: pstate-1 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <30>;
+			cpu-frequency-level = "medium";
+		};
+
+		pstate_2: pstate-2 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <0>;
+			cpu-frequency-level = "low";
+		};
+	};
+
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 		status = "okay";

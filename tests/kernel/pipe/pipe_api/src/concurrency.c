@@ -190,6 +190,14 @@ ZTEST(k_pipe_concurrency, test_zero_size_pipe_read_write)
 	uint8_t input[DUMMY_DATA_SIZE];
 	uint8_t output[DUMMY_DATA_SIZE];
 
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* Zero size pipes are not supported due to requiring cache
+	 * management on data buffers as the buffers can reside in
+	 * incoherent memory. So skip this test.
+	 */
+	ztest_test_skip();
+#endif
+
 	memset(input, 0xAA, sizeof(input));
 	memset(output, 0xCC, sizeof(output));
 	k_pipe_init(&input_pipe, NULL, 0);

@@ -357,18 +357,19 @@ menu "Compiler Options"
 
 config REQUIRES_STD_C99
 	bool
+	select DEPRECATED
 	help
 	  Hidden option to select compiler support C99 standard or higher.
 
 config REQUIRES_STD_C11
 	bool
+	select DEPRECATED
 	select REQUIRES_STD_C99
 	help
 	  Hidden option to select compiler support C11 standard or higher.
 
 config REQUIRES_STD_C17
 	bool
-	select REQUIRES_STD_C11
 	help
 	  Hidden option to select compiler support C17 standard or higher.
 
@@ -381,27 +382,28 @@ config REQUIRES_STD_C23
 choice STD_C
 	prompt "C Standard"
 	default STD_C23 if REQUIRES_STD_C23
-	default STD_C17 if REQUIRES_STD_C17
-	default STD_C11 if REQUIRES_STD_C11
-	default STD_C99
+	default STD_C17
 	help
 	  C Standards.
 
 config STD_C90
-	bool "C90"
+	bool "C90 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C99
 	help
 	  1989 C standard as completed in 1989 and ratified by ISO/IEC
 	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
 
 config STD_C99
-	bool "C99"
+	bool "C99 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C11
 	help
 	  1999 C standard.
 
 config STD_C11
-	bool "C11"
+	bool "C11 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C17
 	help
 	  2011 C standard.

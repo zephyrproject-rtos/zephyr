@@ -18,7 +18,7 @@
 
 /* Increase the string length to be able to store IPv4/6 address */
 #if defined(CONFIG_NET_IPV6)
-#define CTF_NET_MAX_STRING_LEN INET6_ADDRSTRLEN
+#define CTF_NET_MAX_STRING_LEN NET_INET6_ADDRSTRLEN
 #else
 #define CTF_NET_MAX_STRING_LEN CTF_MAX_STRING_LEN
 #endif

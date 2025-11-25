@@ -965,14 +965,14 @@ void sys_trace_socket_shutdown_exit(int sock, int ret)
 	ctf_top_socket_shutdown_exit(sock, ret);
 }
 
-void sys_trace_socket_bind_enter(int sock, const struct sockaddr *addr, size_t addrlen)
+void sys_trace_socket_bind_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
 	ctf_net_bounded_string_t addr_str;
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
 
-	ctf_top_socket_bind_enter(sock, addr_str, addrlen, ntohs(net_sin(addr)->sin_port));
+	ctf_top_socket_bind_enter(sock, addr_str, addrlen, net_ntohs(net_sin(addr)->sin_port));
 }
 
 void sys_trace_socket_bind_exit(int sock, int ret)
@@ -980,7 +980,7 @@ void sys_trace_socket_bind_exit(int sock, int ret)
 	ctf_top_socket_bind_exit(sock, ret);
 }
 
-void sys_trace_socket_connect_enter(int sock, const struct sockaddr *addr, size_t addrlen)
+void sys_trace_socket_connect_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
 	ctf_net_bounded_string_t addr_str;
 
@@ -1010,8 +1010,8 @@ void sys_trace_socket_accept_enter(int sock)
 	ctf_top_socket_accept_enter(sock);
 }
 
-void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const uint32_t *addrlen,
-				  int ret)
+void sys_trace_socket_accept_exit(int sock, const struct net_sockaddr *addr,
+				  const uint32_t *addrlen, int ret)
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
 	uint32_t addr_len = 0U;
@@ -1031,7 +1031,7 @@ void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const u
 }
 
 void sys_trace_socket_sendto_enter(int sock, int len, int flags,
-				   const struct sockaddr *dest_addr, uint32_t addrlen)
+				   const struct net_sockaddr *dest_addr, uint32_t addrlen)
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
 
@@ -1048,7 +1048,7 @@ void sys_trace_socket_sendto_exit(int sock, int ret)
 	ctf_top_socket_sendto_exit(sock, ret);
 }
 
-void sys_trace_socket_sendmsg_enter(int sock, const struct msghdr *msg, int flags)
+void sys_trace_socket_sendmsg_enter(int sock, const struct net_msghdr *msg, int flags)
 {
 	ctf_net_bounded_string_t addr = {"unknown"};
 	uint32_t len = 0;
@@ -1058,8 +1058,9 @@ void sys_trace_socket_sendmsg_enter(int sock, const struct msghdr *msg, int flag
 	}
 
 	if (msg->msg_name != NULL) {
-		(void)net_addr_ntop(((struct sockaddr *)msg->msg_name)->sa_family,
-				    &net_sin((struct sockaddr *)msg->msg_name)->sin_addr, addr.buf,
+		(void)net_addr_ntop(((struct net_sockaddr *)msg->msg_name)->sa_family,
+				    &net_sin((struct net_sockaddr *)msg->msg_name)->sin_addr,
+				    addr.buf,
 				    sizeof(addr.buf));
 	}
 
@@ -1072,20 +1073,21 @@ void sys_trace_socket_sendmsg_exit(int sock, int ret)
 }
 
 void sys_trace_socket_recvfrom_enter(int sock, int max_len, int flags,
-				     struct sockaddr *addr, uint32_t *addrlen)
+				     struct net_sockaddr *addr, uint32_t *addrlen)
 {
 	ctf_top_socket_recvfrom_enter(sock, max_len, flags, (uint32_t)(uintptr_t)addr,
 				      (uint32_t)(uintptr_t)addrlen);
 }
 
-void sys_trace_socket_recvfrom_exit(int sock, const struct sockaddr *src_addr,
+void sys_trace_socket_recvfrom_exit(int sock, const struct net_sockaddr *src_addr,
 				    const uint32_t *addrlen, int ret)
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
 	int len = 0;
 
 	if (src_addr != NULL) {
-		(void)net_addr_ntop(src_addr->sa_family, &net_sin(src_addr)->sin_addr, addr_str.buf,
+		(void)net_addr_ntop(src_addr->sa_family, &net_sin(src_addr)->sin_addr,
+				    addr_str.buf,
 				    sizeof(addr_str.buf));
 	}
 
@@ -1096,7 +1098,7 @@ void sys_trace_socket_recvfrom_exit(int sock, const struct sockaddr *src_addr,
 	ctf_top_socket_recvfrom_exit(sock, addr_str, len, ret);
 }
 
-void sys_trace_socket_recvmsg_enter(int sock, const struct msghdr *msg, int flags)
+void sys_trace_socket_recvmsg_enter(int sock, const struct net_msghdr *msg, int flags)
 {
 	uint32_t max_len = 0;
 
@@ -1107,7 +1109,7 @@ void sys_trace_socket_recvmsg_enter(int sock, const struct msghdr *msg, int flag
 	ctf_top_socket_recvmsg_enter(sock, (uint32_t)(uintptr_t)msg, max_len, flags);
 }
 
-void sys_trace_socket_recvmsg_exit(int sock, const struct msghdr *msg, int ret)
+void sys_trace_socket_recvmsg_exit(int sock, const struct net_msghdr *msg, int ret)
 {
 	uint32_t len = 0;
 	ctf_net_bounded_string_t addr = {"unknown"};
@@ -1117,8 +1119,9 @@ void sys_trace_socket_recvmsg_exit(int sock, const struct msghdr *msg, int ret)
 	}
 
 	if (msg->msg_name != NULL) {
-		(void)net_addr_ntop(((struct sockaddr *)msg->msg_name)->sa_family,
-				    &net_sin((struct sockaddr *)msg->msg_name)->sin_addr, addr.buf,
+		(void)net_addr_ntop(((struct net_sockaddr *)msg->msg_name)->sa_family,
+				    &net_sin((struct net_sockaddr *)msg->msg_name)->sin_addr,
+				    addr.buf,
 				    sizeof(addr.buf));
 	}
 
@@ -1196,7 +1199,7 @@ void sys_trace_socket_getpeername_enter(int sock)
 	ctf_top_socket_getpeername_enter(sock);
 }
 
-void sys_trace_socket_getpeername_exit(int sock,  struct sockaddr *addr,
+void sys_trace_socket_getpeername_exit(int sock,  struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
 	ctf_net_bounded_string_t addr_str;
@@ -1212,7 +1215,7 @@ void sys_trace_socket_getsockname_enter(int sock)
 	ctf_top_socket_getsockname_enter(sock);
 }
 
-void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr,
+void sys_trace_socket_getsockname_exit(int sock, const struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
 	ctf_net_bounded_string_t addr_str;

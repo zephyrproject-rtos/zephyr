@@ -23,6 +23,7 @@
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
 		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 	};
 
 	gpio_keys {
@@ -59,6 +60,11 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911>;
+	};
+
 	aliases {
 		led0 = &blue_led_1;
 		led1 = &red_led_2;
@@ -72,6 +78,13 @@
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <CSI_IO0 0 &mcp23017 4 0>,
 			   <CSI_IO1 0 &mcp23017 3 0>;
+	};
+
+	eth_ram: sram@2fffc000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2fffc000 DT_SIZE_K(16)>;
+		#memory-region-cells = <0>;
+		zephyr,memory-region = "ETH_SRAM";
 	};
 };
 
@@ -111,12 +124,27 @@
 	status = "okay";
 };
 
+&pll4 {
+	clocks = <&clk_hsi>;
+	div-m = <2>;
+	mul-n = <50>;
+	div-p = <12>;
+	div-q = <60>;
+	div-r = <6>;
+	fracn = <0>;
+	status = "okay";
+};
+
 &rcc {
 	clock-frequency = <DT_FREQ_M(1000)>;
 	clocks = <&pll>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
+};
+
+&sysram {
+	reg = <0x2ffe0000 DT_SIZE_K(112)>;
 };
 
 &uart4 {
@@ -180,6 +208,13 @@ csi_i2c: &i2c5 {
 				};
 			};
 		};
+	};
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&gpioh 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpiof 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
 
@@ -249,4 +284,32 @@ csi_interface: &dcmipp {
 	pinctrl-names = "default";
 
 	status = "disabled";
+};
+
+&mac {
+	pinctrl-0 = <&eth1_txd0_pg13
+		     &eth1_txd1_pg14
+		     &eth1_tx_ctl_pb11
+		     &eth1_ref_clk_pa1
+		     &eth1_rxd0_pc4
+		     &eth1_rxd1_pc5
+		     &eth1_crs_dv_pc1>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	memory-regions = <&eth_ram>;
+
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth1_mdio_pa2 &eth1_mdc_pg2>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "microchip,lan8742";
+		reg = <0>;
+		reset-gpios = <&mcp23017 9 GPIO_ACTIVE_LOW>;
+	};
 };

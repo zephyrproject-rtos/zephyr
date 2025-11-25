@@ -5,6 +5,7 @@ config CAN_MAX32
 	bool "ADI MAX32 CAN Driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_CAN_ENABLED
+	select PINCTRL
 	help
 	  Enable ADI MAX32 CAN Driver
 

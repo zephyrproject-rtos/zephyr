@@ -43,6 +43,7 @@
 
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		/* NOTE: disabled by default, TIM3_CH3 reuses PB0 (green LED) */
 		status = "disabled";
 
 		pwm_led_1: green_led_1 {
