@@ -1,0 +1,26 @@
+description: A single channel of Renesas R-Car Compare Match Timer as a counter
+
+compatible: "renesas,rcar-cmt-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    description: |
+      Offset of the channel register from the CMT module it belongs to.
+    required: true
+
+  interrupts:
+    required: true
+
+  channel-index:
+    type: int
+    required: true
+    description: |
+      The channel of CMT module which this counter device belongs to.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
