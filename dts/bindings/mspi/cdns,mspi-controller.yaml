@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2025 - 2026 Siemens Mobility GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence MSPI Controller
+
+compatible: "cdns,mspi-controller"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Address and length of the MSPI configuration register and the indirect
+      write FIFO location
+
+  clock-frequency:
+    required: true
+
+  read-buffer-size:
+    required: true
+    type: int
+    description: |
+      Amount of address bits of the internal peripheral SRAM bus that are used
+      for indirects reads. The other address bits are used for indirect write
+      operations. The amount of available bits is dependent on the SRAM depth
+      configuration used inside the peripheral and the resulting amount of bytes
+      depends on the bus width, which may be specified in the SoC datasheet.
+
+      It is recommended to look at the SoC datasheet/TRM and set this to half of
+      the maximum of the "SRAM Partition Configuration Register" value (which is
+      also its reset value), leading to half of the locations being used for
+      indirect reads and the other half for indirect writes

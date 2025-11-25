@@ -1,6 +1,8 @@
 # MSPI driver configuration options
 
 # Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -66,6 +68,7 @@ module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/mspi/Kconfig.ambiq"
+source "drivers/mspi/Kconfig.cadence"
 source "drivers/mspi/Kconfig.dw"
 source "drivers/mspi/Kconfig.mspi_emul"
 
