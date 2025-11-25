@@ -19,11 +19,6 @@ CRC
 Structured Data APIs
 ********************
 
-JSON
-====
-
-.. doxygengroup:: json
-
 JWT
 ===
 
