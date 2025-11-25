@@ -2470,6 +2470,10 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	ret = tls_mbedtls_handshake(
 		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 	if (ret < 0) {
+		if ((ret == -EAGAIN) && is_blocking(parent->sock, 0)) {
+			ret = -ETIMEDOUT;
+		}
+
 		goto error;
 	}
 
