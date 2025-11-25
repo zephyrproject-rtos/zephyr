@@ -1972,7 +1972,7 @@ static void avrcp_pass_through_rsp_handler(struct bt_avrcp *avrcp, uint8_t tid, 
 
 	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
 
-	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->subunit_info_rsp != NULL)) {
+	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->passthrough_rsp != NULL)) {
 		if (buf->len < sizeof(*rsp)) {
 			LOG_ERR("Invalid passthrough length: %d", buf->len);
 			return;
