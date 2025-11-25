@@ -17,11 +17,16 @@
 
 LOG_MODULE_DECLARE(fpga_ice40, CONFIG_FPGA_LOG_LEVEL);
 
-static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
+static void fpga_ice40_load_handler(struct k_work *item)
 {
+	struct fpga_ice40_work_item *work_item =
+		CONTAINER_OF(item, struct fpga_ice40_work_item, work);
+	const struct device *dev = work_item->dev;
+	uint32_t *image_ptr = work_item->image_ptr;
+	const uint32_t img_size = work_item->image_size;
+
 	int ret;
 	uint32_t crc;
-	k_spinlock_key_t key;
 	struct spi_buf tx_buf;
 	const struct spi_buf_set tx_bufs = {
 		.buffers = &tx_buf,
@@ -31,8 +36,6 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 	uint8_t clock_buf[(UINT8_MAX + 1) / BITS_PER_BYTE];
 	const struct fpga_ice40_config *config = dev->config;
 	struct spi_dt_spec bus;
-
-	key = k_spin_lock(&data->lock);
 
 	/*
 	 * Disable the automatism for chip select within the SPI driver,
@@ -84,7 +87,7 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 
 	/* Wait a minimum of 200ns */
 	LOG_DBG("Delay %u us", config->creset_delay_us);
-	k_usleep(config->creset_delay_us);
+	k_busy_wait(config->creset_delay_us);
 
 	if (gpio_pin_get_dt(&config->cdone) != 0) {
 		LOG_ERR("CDONE should be low after the reset");
@@ -170,9 +173,10 @@ unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 
-	k_spin_unlock(&data->lock, key);
+	work_item->result = ret;
+	k_sem_give(&work_item->finished);
 
-	return ret;
+	return;
 }
 
 static DEVICE_API(fpga, fpga_ice40_api) = {
@@ -187,7 +191,7 @@ static DEVICE_API(fpga, fpga_ice40_api) = {
 #define FPGA_ICE40_DEFINE(inst)                                                                    \
 	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
                                                                                                    \
-	FPGA_ICE40_CONFIG_DEFINE(inst, NULL);                                                      \
+	FPGA_ICE40_CONFIG_DEFINE(inst, fpga_ice40_load_handler, NULL);                             \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
 			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
