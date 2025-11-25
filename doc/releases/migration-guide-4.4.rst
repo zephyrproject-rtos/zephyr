@@ -61,7 +61,7 @@ MDIO
   (:github:`99690`).
 
 QSPI
-===
+====
 
 * :dtcompatible:`st,stm32-qspi` compatible nodes configured with ``dual-flash`` property
   now need to also include the ``ssht-enable`` property to reenable sample shifting.
