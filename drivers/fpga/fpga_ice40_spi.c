@@ -32,21 +32,30 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 	const struct fpga_ice40_config *config = dev->config;
 	struct spi_dt_spec bus;
 
-	memcpy(&bus, &config->bus, sizeof(bus));
+	key = k_spin_lock(&data->lock);
+
 	/*
 	 * Disable the automatism for chip select within the SPI driver,
 	 * as the configuration sequence requires this signal to be inactive
 	 * during the leading and trailing clock phase.
 	 */
-	bus.config.cs.gpio.port = NULL;
+	memcpy(&bus, &config->bus, sizeof(bus));
+	__ASSERT(bus.config.cs.cs_is_gpio, "driver only compatible with gpio based cs");
+	if (bus.config.cs.cs_is_gpio) {
+		uint32_t delay_ns = bus.config.cs.delay * 1000;
+
+		bus.config.cs = (struct spi_cs_control){
+			.cs_is_gpio = false,
+			.setup_ns = delay_ns,
+			.hold_ns = delay_ns,
+		};
+	}
 
 	/* crc check */
 	crc = crc32_ieee((uint8_t *)image_ptr, img_size);
 	if (data->loaded && crc == data->crc) {
 		LOG_WRN("already loaded with image CRC32c: 0x%08x", data->crc);
 	}
-
-	key = k_spin_lock(&data->lock);
 
 	/* clear crc */
 	data->crc = 0;
