@@ -13,6 +13,7 @@ supported:
   - crypto
   - dma
   - entropy
+  - hwinfo
   - pwm
   - sdhc
   - shell
