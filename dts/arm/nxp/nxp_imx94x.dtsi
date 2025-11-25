@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <freq.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/imx943_clock.h>
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>

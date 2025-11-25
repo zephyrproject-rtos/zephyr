@@ -10,8 +10,8 @@
 #define DIV_16_5_BIT 02
 #define DIV_24_5_BIT 03
 
-#include <dt-bindings/clock/ifx_clock_source_common.h>
-#include <dt-bindings/clock/ifx_clock_source_psc3xx.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_psc3xx.h>
 
 / {
 	srss_power: srss_power {

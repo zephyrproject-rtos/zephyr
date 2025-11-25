@@ -5,10 +5,10 @@
  */
 
 #include <arm/nxp/nxp_s32k344_m7.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <freq.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "mr_canhubk3-pinctrl.dtsi"
 #include <zephyr/dt-bindings/sensor/qdec_nxp_s32.h>
 

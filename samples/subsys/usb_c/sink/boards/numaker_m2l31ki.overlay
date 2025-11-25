@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <dt-bindings/usb-c/pd.h>
+#include <zephyr/dt-bindings/usb-c/pd.h>
 
 / {
 	aliases {
