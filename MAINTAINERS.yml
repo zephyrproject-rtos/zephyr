@@ -5768,6 +5768,7 @@ West:
   status: odd fixes
   collaborators:
     - dleach02
+    - zejiang0jason
   files:
     - modules/Kconfig.vega
   labels:
