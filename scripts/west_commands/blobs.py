@@ -72,6 +72,13 @@ class Blobs(WestCommand):
         parser.add_argument('modules', metavar='MODULE', nargs='*',
                             help='''zephyr modules to operate on;
                             all modules will be used if not given''')
+        parser.add_argument(
+            '-l',
+            '--allow-regex',
+            help='''Regex pattern to apply to the blob local path.
+                    Only local paths matching this regex will be listed/fetched.
+                    Note that local paths are relative to the module directory''',
+        )
 
         group = parser.add_argument_group('west blob list options')
         group.add_argument('-f', '--format',
@@ -79,13 +86,6 @@ class Blobs(WestCommand):
                                     see FORMAT STRINGS below''')
 
         group = parser.add_argument_group('west blobs fetch options')
-        group.add_argument(
-            '-l',
-            '--allow-regex',
-            help='''Regex pattern to apply to the blob local path.
-                    Only local paths matching this regex will be fetched.
-                    Note that local paths are relative to the module directory''',
-        )
         group.add_argument('-a', '--auto-accept', action='store_true',
                             help='''auto accept license if the fetching needs click-through''')
 
@@ -116,6 +116,13 @@ class Blobs(WestCommand):
         blobs = self.get_blobs(args)
         fmt = args.format or self.DEFAULT_LIST_FMT
         for blob in blobs:
+            # if args.allow_regex is set, use it to filter the blob by path
+            if args.allow_regex and not re.match(args.allow_regex, blob['path']):
+                self.dbg(
+                    f"Blob {blob['module']}: {blob['abspath']} does not match regex "
+                    f"'{args.allow_regex}', skipping"
+                )
+                continue
             self.inf(fmt.format(**blob))
 
     def ensure_folder(self, path):

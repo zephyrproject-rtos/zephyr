@@ -1816,13 +1816,14 @@ endfunction()
 # fatal error message is printed (depends on REQUIRED flag).
 #
 # Usage:
-#   zephyr_blobs_verify(<MODULE module|FILES file [files...]> [REQUIRED])
+#   zephyr_blobs_verify(<MODULE module|FILES file [files...]> [REQUIRED] [REGEX regex_pattern])
 #
 # Example:
 # zephyr_blobs_verify(MODULE my_module REQUIRED) # verify all blobs in my_module and fail on error
+# zephyr_blobs_verify(MODULE my_module REGEX ".*esp32c6.*" REQUIRED) # verify only esp32c6 blobs
 # zephyr_blobs_verify(FILES img/file.bin)        # verify a single file and print on error
 function(zephyr_blobs_verify)
-  cmake_parse_arguments(BLOBS_VERIFY "REQUIRED" "MODULE" "FILES" ${ARGN})
+  cmake_parse_arguments(BLOBS_VERIFY "REQUIRED" "MODULE;REGEX" "FILES" ${ARGN})
 
   if((DEFINED BLOBS_VERIFY_MODULE) EQUAL (DEFINED BLOBS_VERIFY_FILES))
     message(FATAL_ERROR "Either MODULE or FILES required when calling ${CMAKE_CURRENT_FUNCTION}")
@@ -1832,8 +1833,21 @@ function(zephyr_blobs_verify)
     return()
   endif()
 
+  # Build the west command arguments
+  set(west_args blobs list)
+  if(DEFINED BLOBS_VERIFY_MODULE)
+    list(APPEND west_args ${BLOBS_VERIFY_MODULE})
+  endif()
+
+  # if REGEX is specified, add --allow-regex to the west command
+  if(BLOBS_VERIFY_REGEX)
+    list(APPEND west_args --allow-regex ${BLOBS_VERIFY_REGEX})
+  endif()
+
+  list(APPEND west_args --format "{status} {abspath}")
+
   execute_process(
-    COMMAND ${WEST} blobs list ${BLOBS_VERIFY_MODULE} --format "{status} {abspath}"
+    COMMAND ${WEST} ${west_args}
     OUTPUT_VARIABLE BLOBS_LIST_OUTPUT
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
