@@ -194,21 +194,20 @@
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "microchip,sercom-g1-uart";
 	#address-cells = <1>;
 	#size-cells = <0>;
-
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
 	stop-bits = "1";
-
 	rxpo = <1>;
 	txpo = <0>;
-
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 1 8>, <&dmac 2 9>;
+	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &sercom7 {
