@@ -25,3 +25,9 @@ properties:
     required: true
     description: |
       Size of DMA buffer in bytes
+
+  allow-disable-usb-on-unplug:
+    type: boolean
+    description: |
+      Supports USB controller can be disabled temporarily when USB cable is unplugged
+      and then enabled back when the cable is re-plugged.
