@@ -43,6 +43,30 @@ static const uint32_t dma_priority[] = {
 #endif
 };
 
+#if defined(CONFIG_DMA_STM32U5)
+static const uint32_t dma_src_size[] = {
+	DMA_SRC_DATAWIDTH_BYTE,
+	DMA_SRC_DATAWIDTH_HALFWORD,
+	DMA_SRC_DATAWIDTH_WORD,
+};
+static const uint32_t dma_dest_size[] = {
+	DMA_DEST_DATAWIDTH_BYTE,
+	DMA_DEST_DATAWIDTH_HALFWORD,
+	DMA_DEST_DATAWIDTH_WORD,
+};
+#else
+static const uint32_t dma_p_size[] = {
+	DMA_PDATAALIGN_BYTE,
+	DMA_PDATAALIGN_HALFWORD,
+	DMA_PDATAALIGN_WORD,
+};
+static const uint32_t dma_m_size[] = {
+	DMA_MDATAALIGN_BYTE,
+	DMA_MDATAALIGN_HALFWORD,
+	DMA_MDATAALIGN_WORD,
+};
+#endif
+
 struct queue_item {
 	void *buffer;
 	size_t size;
@@ -317,17 +341,34 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Request = dma_cfg.dma_slot;
 #endif
 
+	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+		LOG_ERR("Source and destination data sizes are not aligned");
+		return -EINVAL;
+	}
+
+	int idx = find_lsb_set(dma_cfg.source_data_size) - 1;
+
 #if defined(CONFIG_DMA_STM32U5)
+	if (idx >= ARRAY_SIZE(dma_src_size)) {
+		LOG_ERR("Invalid source and destination DMA data size");
+		return -EINVAL;
+	}
+
+	hdma->Init.SrcDataWidth = dma_src_size[idx];
+	hdma->Init.DestDataWidth = dma_dest_size[idx];
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
-	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
 	hdma->Init.SrcBurstLength = 1;
 	hdma->Init.DestBurstLength = 1;
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #else
-	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+	if (idx >= ARRAY_SIZE(dma_m_size)) {
+		LOG_ERR("Invalid peripheral and memory DMA data size");
+		return -EINVAL;
+	}
+
+	hdma->Init.PeriphDataAlignment = dma_p_size[idx];
+	hdma->Init.MemDataAlignment = dma_m_size[idx];
 	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma->Init.MemInc = DMA_MINC_ENABLE;
 #endif
@@ -836,7 +877,7 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.read = i2s_stm32_sai_read,
 };
 
-#define SAI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)                                        \
+#define SAI_DMA_CHANNEL_INIT(index, dir, src, dest)                                                \
 	.stream = {                                                                                \
 		.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),                              \
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                     \
@@ -844,9 +885,13 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 			DT_PHANDLE_BY_NAME(DT_DRV_INST(index), dmas, dir)),                        \
 		.dma_cfg = {                                                                       \
 			.dma_slot = STM32_DMA_SLOT(index, dir, slot),                              \
-			.channel_direction = src_dev##_TO_##dest_dev,                              \
+			.channel_direction = src##_TO_##dest,                                      \
 			.dma_callback = dma_callback,                                              \
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(                             \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(                    \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(                     \
 				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		},                                                                                 \
 		.stream_start = stream_start,                                                      \
