@@ -12,15 +12,16 @@ much faster if non-cryptographic values are needed.
 The cryptographically secure random functions shall be compliant to the
 FIPS 140-2 [NIST02]_ recommended algorithms. Hardware based random-number
 generators (RNG) can be used on platforms with appropriate hardware support.
-Platforms without hardware RNG support shall use the `CTR-DRBG algorithm
-<https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf>`_.
-
-The algorithm can be provided by  `mbedTLS <https://tls.mbed.org/ctr-drbg-source-code>`_.
+Platforms without hardware RNG support shall use cryptographically secure
+random number generation through the `PSA Crypto API
+<https://arm-software.github.io/psa-api/crypto/>`_.
 
   .. note::
 
-    The CTR-DRBG generator needs an entropy source to establish and
-    maintain the cryptographic security of the PRNG.
+    Cryptographically secure random number generators need an entropy source
+    to establish and maintain the cryptographic security of the PRNG. The PSA
+    Crypto API leverages the underlying entropy sources available on the platform,
+    which may include hardware entropy sources when available.
 
 .. _random_kconfig:
 
@@ -40,7 +41,7 @@ An override of the default value can be specified in the SOC or board
 
 .. code-block:: none
 
-   choice RNG_GENERATOR_CHOICE
+   choice CSPRNG_GENERATOR_CHOICE
 	   default XOSHIRO_RANDOM_GENERATOR
    endchoice
 
@@ -66,7 +67,7 @@ override of the default value can be specified in the SOC or board
 .. code-block:: none
 
    choice CSPRNG_GENERATOR_CHOICE
-	   default CTR_DRBG_CSPRNG_GENERATOR
+	   default PSA_CSPRNG_GENERATOR
    endchoice
 
 The cryptographically secure random number generators available include:
@@ -76,14 +77,17 @@ The cryptographically secure random number generators available include:
  hardware random generator driver
 
 :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR`
- enables the CTR-DRBG pseudo-random number generator. The CTR-DRBG is
- a FIPS140-2 recommended cryptographically secure random number generator.
+ enables a cryptographically secure random number generator that uses the
+ PSA Crypto API. This option is deprecated and will be removed in a future
+ release. New applications should use :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`
+ instead.
 
-Personalization data can be provided in addition to the entropy source
-to make the initialization of the CTR-DRBG as unique as possible.
-
-:kconfig:option:`CONFIG_CS_CTR_DRBG_PERSONALIZATION`
- CTR-DRBG Initialization Personalization string
+:kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`
+ enables a cryptographically secure random number generator that uses the
+ PSA Crypto API. This CSPRNG implementation leverages the underlying PSA Crypto
+ library's secure random number generation capabilities, which may use hardware
+ entropy sources when available. The PSA CSPRNG provides cryptographically secure
+ random numbers suitable for security-sensitive applications.
 
 API Reference
 *************
