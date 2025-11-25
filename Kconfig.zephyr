@@ -531,6 +531,14 @@ config LTO
 	help
 	  This option enables Link Time Optimization.
 
+config LTO_SINGLE_THREADED
+	bool "Single-threaded LTO"
+	depends on LTO
+	help
+	  This option instructs the linker to use a single thread to process
+	  LTO. See the following issue for more info:
+	  https://github.com/zephyrproject-rtos/sdk-ng/issues/1038
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
