@@ -3751,7 +3751,8 @@ static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
 {
 	int eatt_err;
 
-	if (err || level < BT_SECURITY_L2 || !bt_att_fixed_chan_only(conn)) {
+	if (!bt_conn_is_le(conn) || (err != 0) || level < BT_SECURITY_L2 ||
+	    !bt_att_fixed_chan_only(conn)) {
 		return;
 	}
 
