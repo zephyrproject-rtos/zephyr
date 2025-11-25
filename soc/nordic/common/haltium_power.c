@@ -12,12 +12,85 @@
 #include <hal/nrf_memconf.h>
 #include <hal/nrf_cache.h>
 #include <zephyr/cache.h>
-#include <power.h>
+#include <haltium_power.h>
 #include <soc_lrcconf.h>
-#include "soc.h"
-#include "pm_s2ram.h"
+#include <soc.h>
+#include "haltium_pm_s2ram.h"
 
-extern sys_snode_t soc_node;
+#if defined(CONFIG_SOC_NRF54H20_CPUAPP) || defined(CONFIG_SOC_NRF9280_CPUAPP)
+#define RAMBLOCK_CONTROL_BIT_ICACHE MEMCONF_POWER_CONTROL_MEM1_Pos
+#define RAMBLOCK_CONTROL_BIT_DCACHE MEMCONF_POWER_CONTROL_MEM2_Pos
+#define RAMBLOCK_POWER_ID           0
+#define RAMBLOCK_CONTROL_OFF        0
+#define RAMBLOCK_RET_MASK           (MEMCONF_POWER_RET_MEM0_Msk)
+#define RAMBLOCK_RET_BIT_ICACHE     MEMCONF_POWER_RET_MEM1_Pos
+#define RAMBLOCK_RET_BIT_DCACHE     MEMCONF_POWER_RET_MEM2_Pos
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD) || defined(CONFIG_SOC_NRF9280_CPURAD)
+#define RAMBLOCK_CONTROL_BIT_ICACHE MEMCONF_POWER_CONTROL_MEM6_Pos
+#define RAMBLOCK_CONTROL_BIT_DCACHE MEMCONF_POWER_CONTROL_MEM7_Pos
+#define RAMBLOCK_POWER_ID           0
+#define RAMBLOCK_CONTROL_OFF        0
+#define RAMBLOCK_RET_MASK                                                                          \
+	(MEMCONF_POWER_RET_MEM0_Msk | MEMCONF_POWER_RET_MEM1_Msk | MEMCONF_POWER_RET_MEM2_Msk |    \
+	 MEMCONF_POWER_RET_MEM3_Msk | MEMCONF_POWER_RET_MEM4_Msk | MEMCONF_POWER_RET_MEM5_Msk |    \
+	 MEMCONF_POWER_RET_MEM8_Msk)
+#define RAMBLOCK_RET2_MASK                                                                         \
+	(MEMCONF_POWER_RET2_MEM0_Msk | MEMCONF_POWER_RET2_MEM1_Msk | MEMCONF_POWER_RET2_MEM2_Msk | \
+	 MEMCONF_POWER_RET2_MEM3_Msk | MEMCONF_POWER_RET2_MEM4_Msk | MEMCONF_POWER_RET2_MEM5_Msk | \
+	 MEMCONF_POWER_RET2_MEM8_Msk)
+#define RAMBLOCK_RET_BIT_ICACHE  MEMCONF_POWER_RET_MEM6_Pos
+#define RAMBLOCK_RET_BIT_DCACHE  MEMCONF_POWER_RET_MEM7_Pos
+#define RAMBLOCK_RET2_BIT_ICACHE MEMCONF_POWER_RET2_MEM6_Pos
+#define RAMBLOCK_RET2_BIT_DCACHE MEMCONF_POWER_RET2_MEM7_Pos
+#endif
+
+static sys_snode_t soc_node;
+
+static void nrf_soc_memconf_retain_set(bool enable)
+{
+	uint32_t ret_mask = BIT(RAMBLOCK_RET_BIT_ICACHE) | BIT(RAMBLOCK_RET_BIT_DCACHE);
+
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, ret_mask, enable);
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, ret_mask, enable);
+
+#if defined(RAMBLOCK_RET2_MASK)
+	ret_mask = 0;
+#if defined(RAMBLOCK_RET2_BIT_ICACHE)
+	ret_mask |= BIT(RAMBLOCK_RET2_BIT_ICACHE);
+#endif
+#if defined(RAMBLOCK_RET2_BIT_DCACHE)
+	ret_mask |= BIT(RAMBLOCK_RET2_BIT_DCACHE);
+#endif
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, ret_mask, enable);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 1, ret_mask, enable);
+#endif /* defined(RAMBLOCK_RET2_MASK) */
+}
+
+void nrf_power_domain_init(void)
+{
+	/*
+	 * Set:
+	 *  - LRCCONF010.POWERON.MAIN: 1
+	 *  - LRCCONF010.POWERON.ACT: 1
+	 *  - LRCCONF010.RETAIN.MAIN: 1
+	 *  - LRCCONF010.RETAIN.ACT: 1
+	 *
+	 *  This is done here at boot so that when the idle routine will hit
+	 *  WFI the power domain will be correctly retained.
+	 */
+
+	soc_lrcconf_poweron_request(&soc_node, NRF_LRCCONF_POWER_DOMAIN_0);
+	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, false);
+	nrf_soc_memconf_retain_set(false);
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_MASK, true);
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_MASK, true);
+#if defined(RAMBLOCK_RET2_MASK)
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_MASK, true);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_MASK, true);
+#endif
+}
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
 
 static void nrf_power_down_cache(void)
 {
@@ -244,3 +317,5 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	irq_unlock(0);
 }
+
+#endif /* defined(CONFIG_PM) || defined(CONFIG_POWEROFF) */
