@@ -38,9 +38,21 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button1 {
+			label = "Key";
+			gpios = <&ioport3 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
+
+		sw0 = &sw1;
 	};
 };
 
@@ -118,5 +130,13 @@
 &adc {
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq1 {
+	status = "okay";
+};
+
+&port_irq2 {
 	status = "okay";
 };
