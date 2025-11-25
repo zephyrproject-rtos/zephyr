@@ -53,4 +53,12 @@ endif # NXP_RW6XX_BOOT_HEADER
 rsource "../common/Kconfig.flexspi_xip"
 rsource "../common/Kconfig.nbu"
 
+config SOC_FLEXSPI_DISABLE_AHB_RXBUF7_PREFETCH
+    bool "Disable FlexSPI AHB RX buffer 7 prefetch (RW61x workaround)"
+    default y
+    help
+      Workaround for an RW61x FlexSPI / cache limitation: when enabled,
+      the memc FlexSPI driver clears the prefetch bit for AHB RX buffer 7
+      regardless of rx-buffer-config. Other SoCs are not affected.
+
 endif # SOC_SERIES_RW6XX

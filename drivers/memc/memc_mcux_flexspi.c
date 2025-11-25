@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 NXP
+ * Copyright 2020-2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,8 @@ struct port_lut {
 struct memc_flexspi_data {
 	FLEXSPI_Type *base;
 	uint8_t *ahb_base;
+	/* per-port windows */
+	uint8_t  *ahb_base_port[kFLEXSPI_PortCount];
 	bool xip;
 	bool ahb_bufferable;
 	bool ahb_cacheable;
@@ -290,6 +292,8 @@ int memc_flexspi_transfer(const struct device *dev,
 	return 0;
 }
 
+
+
 void *memc_flexspi_get_ahb_address(const struct device *dev,
 		flexspi_port_t port, off_t offset)
 {
@@ -300,6 +304,17 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 		LOG_ERR("Invalid port number: %u", port);
 		return NULL;
 	}
+
+    /* If this port has its own AHB window, use it directly */
+    if (data->ahb_base_port[port] != NULL) {
+        return data->ahb_base_port[port] + offset;
+    }
+
+    /* Fallback: legacy contiguous mapping from first window */
+    if (data->ahb_base == NULL) {
+        LOG_ERR("No AHB base available");
+        return NULL;
+    }
 
 	for (i = 0; i < port; i++) {
 		offset += data->size[i];
@@ -372,6 +387,18 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 		/* RX buffer allocation (total available buffer space is instance/SOC specific) */
 		flexspi_config.ahbConfig.buffer[i].bufferSize = data->buf_cfg[i].buf_size;
 	}
+
+#if defined(CONFIG_SOC_FLEXSPI_DISABLE_AHB_RXBUF7_PREFETCH) && \
+	CONFIG_SOC_FLEXSPI_DISABLE_AHB_RXBUF7_PREFETCH
+    /* RW61x-only workaround:
+     * Disable prefetch on AHB RX buffer 7 to avoid cache incoherence
+     * when accesses fall back to this buffer (e.g. with port B / PSRAM).
+     *
+     * Guarded by SOC_SERIES_RW61X so only RW61x
+     * builds that opt in are affected.
+     */
+    flexspi_config.ahbConfig.buffer[7].enablePrefetch = false;
+#endif
 
 	if (memc_flexspi_is_running_xip(dev)) {
 		/* Save flash sizes- FlexSPI init will reset them */
@@ -446,16 +473,36 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
 
+#define FLEXSPI_PORT_COUNT(n) DT_INST_PROP_OR(n, port_count, 4)
+
+/* Helper macros to handle ahb-port-bases property */
+#define FLEXSPI_HAS_PORT_BASES(n) DT_INST_NODE_HAS_PROP(n, ahb_port_bases)
+
+/* Helper macro to convert one port base address */
+#define FLEXSPI_PORT_BASE_ENTRY(i, n) \
+    COND_CODE_1(FLEXSPI_HAS_PORT_BASES(n), \
+        ((DT_INST_PROP_LEN_OR(n, ahb_port_bases, 0) > i ? \
+            (DT_INST_PROP_BY_IDX(n, ahb_port_bases, i) ? \
+                (uint8_t *)DT_INST_PROP_BY_IDX(n, ahb_port_bases, i) : NULL) : NULL)), \
+        (NULL))
+
+/* Generate ahb_base_port array initialization dynamically */
+#define FLEXSPI_AHB_BASE_PORT_INIT(n) \
+    { LISTIFY(FLEXSPI_PORT_COUNT(n), FLEXSPI_PORT_BASE_ENTRY, (,), n) }
+
 #define MEMC_FLEXSPI(n)							\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	static uint16_t  buf_cfg_##n[] =				\
 		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
-									\
+				\
 	static struct memc_flexspi_data					\
 		memc_flexspi_data_##n = {				\
-		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
+		.base = (FLEXSPI_Type *)DT_INST_REG_ADDR(n),		\
 		.xip = MEMC_FLEXSPI_CFG_XIP(DT_DRV_INST(n)),		\
-		.ahb_base = (uint8_t *) DT_INST_REG_ADDR_BY_IDX(n, 1),	\
+		.ahb_base = (DT_NUM_REGS(DT_DRV_INST(n)) > 1 ? 	\
+			(uint8_t *)DT_INST_REG_ADDR_BY_IDX(n, 1) : NULL), \
+		.ahb_base_port = FLEXSPI_AHB_BASE_PORT_INIT(n),		\
+		.size = {0},                                        \
 		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),	\
 		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),	\
 		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),		\
