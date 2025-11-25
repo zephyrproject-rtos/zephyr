@@ -93,6 +93,7 @@ module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
 
 if !MCUBOOT
+
 config UPDATEABLE_IMAGE_NUMBER
 	int "Number of updateable images"
 	default 1
@@ -100,6 +101,7 @@ config UPDATEABLE_IMAGE_NUMBER
 	help
 	  If value is set to 2 or greater then, this enables support needed when
 	  application is combined with MCUboot multi-image boot.
+
 endif
 
 endif # IMG_MANAGER
