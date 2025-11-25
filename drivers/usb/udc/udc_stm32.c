@@ -115,20 +115,6 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_NODE_EP_MPS(node_id)					\
 	((UDC_STM32_NODE_SPEED(node_id) == PCD_SPEED_HIGH) ? 1024U : 1023U)
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-#define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
-#endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
-static const int syscfg_otg_hs_phy_clk[] = {
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_1,	/* 16Mhz   */
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_2,	/* 19.2Mhz */
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_3,	/* 20Mhz   */
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_4,	/* 24Mhz   */
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_5,	/* 26Mhz   */
-	SYSCFG_OTG_HS_PHY_CLK_SELECT_6,	/* 32Mhz   */
-};
-#endif
 
 /*
  * Hardcode EP0 max packet size (bMaxPacketSize0) to 64,
@@ -182,6 +168,8 @@ struct udc_stm32_config {
 	struct stm32_pclken *pclken;
 	/* Pinctrl configuration from DTS */
 	const struct pinctrl_dev_config *pinctrl;
+	/* USB PHY pseudo-device */
+	const struct stm32_usb_phy *phy;
 	/* Disconnect GPIO information (if applicable) */
 	const struct gpio_dt_spec disconnect_gpio;
 	/* ULPI reset GPIO information (if applicable) */
@@ -1277,6 +1265,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.pclken = (struct stm32_pclken *)udc0_pclken,
 	.num_clocks = DT_INST_NUM_CLOCKS(0),
 	.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.phy = USB_STM32_PHY_PSEUDODEV_GET_OR_NULL(DT_DRV_INST(0)),
 	.in_eps = udc0_in_ep_cfg,
 	.out_eps = udc0_out_ep_cfg,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
@@ -1292,6 +1281,7 @@ static int udc_stm32_clock_enable(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct udc_stm32_config *cfg = dev->config;
+	int err;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
@@ -1334,97 +1324,14 @@ static int udc_stm32_clock_enable(const struct device *dev)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-	/* PHY configuration */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	/*
-	 * Note that the USBPHYC is clocked only when
-	 * the OTG_HS instance is also clocked, so this
-	 * must come after clock_control_on() or the
-	 * SoC will deadlock.
-	 */
-
-	/* Reset specific configuration bits before setting new values */
-	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;
-
-	/* Configure the USB PHY Control Register to operate in the High frequency "24 MHz"
-	 * by setting the Frequency Selection (FSEL) bits 4 and 5 to 10,
-	 * which ensures proper communication.
-	 */
-	USB1_HS_PHYC->USBPHYC_CR |= USB_USBPHYC_CR_FSEL_24MHZ;
-
-	/* Peripheral OTGPHY clock enable */
-	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
-	const struct stm32_pclken hsphy_clk[] = STM32_DT_CLOCKS(DT_NODELABEL(otghs_phy));
-	const uint32_t hsphy_clknum = DT_NUM_CLOCKS(DT_NODELABEL(otghs_phy));
-
-	/* Configure OTG PHY reference clock through SYSCFG */
-	__HAL_RCC_SYSCFG_CLK_ENABLE();
-
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
-		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
-	);
-
-	/* De-assert reset and enable clock of OTG PHY */
-	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
-
-	if (hsphy_clknum > 1) {
-		if (clock_control_configure(clk, (void *)&hsphy_clk[1], NULL) != 0) {
-			LOG_ERR("Failed OTGHS PHY mux configuration");
-			return -EIO;
+	/* Configure PHY if applicable (must be after enabling UDC clock) */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->enable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to enable USB PHY: %d", err);
+			return err;
 		}
 	}
-
-	if (clock_control_on(clk, (void *)&hsphy_clk[0]) != 0) {
-		LOG_ERR("Failed enabling OTGHS PHY clock");
-		return -EIO;
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * If HS PHY (over ULPI) is used, enable ULPI interface clock.
-	 * Otherwise, disable ULPI clock in sleep/low-power mode.
-	 * (No need to disable Run mode clock, it is off by default)
-	 */
-	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
-		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-	} else {
-		LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	/*
-	 * Preprocessor check is required here because
-	 * the OTGPHYC defines are not provided if it
-	 * doesn't exist on SoC.
-	 */
-	#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
-		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	#elif UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_UTMI
-		/*
-		 * For some reason, the ULPI clock still needs to be
-		 * enabled when the internal USBPHYC HS PHY is used.
-		 */
-		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-	#endif
-#else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
-	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
-		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	} else if (UDC_STM32_NODE_SPEED(DT_DRV_INST(0)) == PCD_SPEED_HIGH_IN_FULL) {
-		/*
-		 * Some parts of the STM32F4 series require the OTGHSULPILPEN to be
-		 * cleared if the OTG_HS is used in FS mode. Disable it on all parts
-		 * since it has no nefarious effect if performed when not required.
-		 */
-		LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	}
-#endif /* CONFIG_SOC_SERIES_* */
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-	/* The USB2 controller only works in FS mode, but the ULPI clock needs
-	 * to be disabled in sleep mode for it to work.
-	 */
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 
 	return 0;
 }
@@ -1433,14 +1340,21 @@ static int udc_stm32_clock_disable(const struct device *dev)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct udc_stm32_config *cfg = dev->config;
+	int err;
+
+	/* Per API contract, disable PHY before USB controller */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->disable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to disable USB PHY: %d", err);
+			return err;
+		}
+	}
 
 	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-#endif
 
 	return 0;
 }
