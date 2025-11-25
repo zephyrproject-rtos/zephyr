@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
 # zephyr-keep-sorted-start
@@ -18,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCHP_XEC_SYMCR crypto_mchp_xec_symcr.
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCUX_DCP crypto_mcux_dcp.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NPCX_SHA crypto_npcx_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NRF_ECB crypto_nrf_ecb.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_NXP_S32_HSE crypto_nxp_s32_hse.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_RTS5912_SHA crypto_rts5912_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32 crypto_si32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SMARTBOND crypto_smartbond.c)
