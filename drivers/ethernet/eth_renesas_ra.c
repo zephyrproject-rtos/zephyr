@@ -339,7 +339,7 @@ static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto out;

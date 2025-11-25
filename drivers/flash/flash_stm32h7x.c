@@ -791,6 +791,9 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 		rc = rc2;
 	}
 
+#ifdef CONFIG_DCACHE
+	flash_stm32h7_flush_caches(dev, offset, len);
+#endif
 	flash_stm32_sem_give(dev);
 
 	return rc;

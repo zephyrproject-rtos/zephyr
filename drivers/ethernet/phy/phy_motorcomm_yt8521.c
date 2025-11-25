@@ -526,13 +526,10 @@ static int mc_ytphy_get_id(const struct device *dev, uint32_t *phy_id)
 
 static int mc_ytphy_init(const struct device *dev)
 {
-	const struct mc_ytphy_config *const config = dev->config;
 	struct mc_ytphy_data *const data = dev->data;
 	int ret;
 
 	k_sem_init(&data->sem, 1, 1);
-
-	mdio_bus_enable(config->mdio);
 
 	data->state.is_up = false;
 	data->dev = dev;

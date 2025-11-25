@@ -9,6 +9,13 @@ config ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 
 if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
 
+config USE_INFINEON_LEGACY_HAL
+	bool
+	help
+	  Use Legacy HAL driver instead of PDL based drivers.  This allows devices to use HAL based
+	  drivers until fully transitioned to the PDL.  The old HAL drivers will be removed when all
+	  devices have been transitioned.
+
 config USE_INFINEON_ADC
 	bool
 	help

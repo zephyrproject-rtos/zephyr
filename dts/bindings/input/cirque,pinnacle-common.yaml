@@ -94,12 +94,12 @@ properties:
   invert-x:
     type: boolean
     description: |
-      In the absolute mode invert X coordinate.
+      Invert X coordinate values, in both relative and absolute modes.
 
   invert-y:
     type: boolean
     description: |
-      In the absolute mode invert Y coordinate.
+      Invert Y coordinate values, in both relative and absolute modes.
 
   primary-tap-enable:
     type: boolean

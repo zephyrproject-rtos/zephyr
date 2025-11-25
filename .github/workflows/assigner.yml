@@ -34,16 +34,17 @@ jobs:
         persist-credentials: false
 
     - name: Set up Python
-      uses: zephyrproject-rtos/action-python-env@ace91a63fd503cd618ff1eb83fbcf302dabd7d44 # main
+      uses: zephyrproject-rtos/action-python-env@32e53bef090c33d53aa94f1d9a9d29c93cfdc5f7 # main
       with:
         python-version: 3.12
 
-    - name: Fetch west.yml from pull request
+    - name: Fetch west.yml/Maintainer.yml from pull request
       if: >
         github.event_name == 'pull_request_target'
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge
         git show FETCH_HEAD:west.yml > pr_west.yml
+        git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
 
     - name: west setup
       if: >
@@ -62,7 +63,7 @@ jobs:
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml"
+          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
         elif [ "${{ github.event_name }}" = "issues" ]; then
           FLAGS+=" -I ${{ github.event.issue.number }}"
         elif [ "${{ github.event_name }}" = "schedule" ]; then
@@ -71,4 +72,13 @@ jobs:
           echo "Unknown event: ${{ github.event_name }}"
           exit 1
         fi
-        python3 scripts/set_assignees.py $FLAGS
+        python3 scripts/ci/set_assignees.py $FLAGS
+
+    - name: Check maintainer file changes
+      if: >
+        github.event_name == 'pull_request_target'
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+      run: |
+        python  ./scripts/ci/check_maintainer_changes.py  \
+          --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml

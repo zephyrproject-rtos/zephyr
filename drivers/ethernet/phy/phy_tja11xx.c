@@ -58,30 +58,12 @@ static inline int phy_tja11xx_c22_write(const struct device *dev, uint16_t reg, 
 
 static int phy_tja11xx_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
-	const struct phy_tja11xx_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_tja11xx_c22_read(dev, reg_addr, (uint16_t *)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_tja11xx_c22_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_tja11xx_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
-	const struct phy_tja11xx_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_tja11xx_c22_write(dev, reg_addr, (uint16_t)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_tja11xx_c22_write(dev, reg_addr, (uint16_t)data);
 }
 
 static int update_link_state(const struct device *dev)

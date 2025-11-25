@@ -71,7 +71,7 @@ static int eth_fake_send(const struct device *dev,
 	 * Ignore packets we don't care about for this test, like
 	 * the IP autoconfig related ones, etc.
 	 */
-	if (eth_hdr->type != htons(NET_ETH_PTYPE_ALL)) {
+	if (eth_hdr->type != net_htons(NET_ETH_PTYPE_ALL)) {
 		DBG("Fake send ignoring pkt %p\n", pkt);
 		return 0;
 	}
@@ -242,7 +242,7 @@ static void _recv_data(struct net_if *iface)
 	int ret;
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(eth_hdr) + sizeof(data),
-					   AF_UNSPEC, 0, K_FOREVER);
+					   NET_AF_UNSPEC, 0, K_FOREVER);
 	zassert_not_null(pkt, "");
 
 	/*
@@ -266,7 +266,7 @@ static void _recv_data(struct net_if *iface)
 	eth_hdr.src.addr[4] = 0x77;
 	eth_hdr.src.addr[5] = 0x88;
 
-	eth_hdr.type = htons(NET_ETH_PTYPE_ALL);
+	eth_hdr.type = net_htons(NET_ETH_PTYPE_ALL);
 
 	ret = net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr));
 	zassert_equal(ret, 0, "");

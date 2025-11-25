@@ -35,7 +35,8 @@ menuconfig HTTP_SERVER
 	select HTTP_PARSER_URL
 	select EXPERIMENTAL
 	select NET_SOCKETS
-	select EVENTFD
+	select ZVFS
+	select ZVFS_EVENTFD
 	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  HTTP1 and HTTP2 server support.
@@ -230,6 +231,15 @@ config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
 	  If set to 0, the server will use the minimal viable buffer size for the response.
 	  Please note that it is allocated on the stack of the HTTP server thread,
 	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
+
+config HTTP_SERVER_COMPLETE_STATUS_PHRASES
+	bool "Complete HTTP status reason phrases"
+	help
+	  Include reason phrases for HTTP status codes in server responses.
+	  When disabled, HTTP responses will not include reason phrases,
+	  reducing code size. Note that reason phrases are optional per
+	  HTTP specification and their absence does not affect protocol
+	  compliance or client behavior.
 
 endif
 

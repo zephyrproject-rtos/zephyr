@@ -28,12 +28,20 @@ if(CONFIG_BUILD_WITH_TFA)
     set(TFA_BUILD_DEBUG "0")
   endif()
 
+  # ARMv9-A is AArch64-only, disable AArch32 register context
+  if(CONFIG_ARMV9_A)
+    set(TFA_AARCH32_REGS "CTX_INCLUDE_AARCH32_REGS=0")
+  else()
+    set(TFA_AARCH32_REGS "")
+  endif()
+
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND make -C ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
             DEBUG=${TFA_BUILD_DEBUG}
             CROSS_COMPILE=${CROSS_COMPILE}
             BUILD_BASE=${TFA_BINARY_DIR} PLAT=${TFA_PLAT}
             BL33=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+            ${TFA_AARCH32_REGS}
             all fip
   )
 endif()

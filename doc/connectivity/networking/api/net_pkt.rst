@@ -109,14 +109,14 @@ bytes:
 
 .. code-block:: c
 
-    pkt = net_pkt_alloc_with_buffer(iface, 800, AF_INET4, IPPROTO_UDP, K_FOREVER);
+    pkt = net_pkt_alloc_with_buffer(iface, 800, NET_AF_INET4, IPPROTO_UDP, K_FOREVER);
 
 will successfully allocate 800 + 20 + 8 bytes of buffer for the new
 net_pkt where:
 
 .. code-block:: c
 
-    pkt = net_pkt_alloc_with_buffer(iface, 1600, AF_INET4, IPPROTO_UDP, K_FOREVER);
+    pkt = net_pkt_alloc_with_buffer(iface, 1600, NET_AF_INET4, IPPROTO_UDP, K_FOREVER);
 
 will successfully allocate 1500 bytes, and where 20 + 8 bytes (IPv4 +
 UDP headers) will not be used for the payload.

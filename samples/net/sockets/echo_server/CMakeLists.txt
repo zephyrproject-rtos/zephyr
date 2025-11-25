@@ -6,8 +6,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sockets_echo_server)
 
 if(CONFIG_NET_SOCKETS_SOCKOPT_TLS AND
-   CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED AND
-   (CONFIG_NET_SAMPLE_PSK_HEADER_FILE STREQUAL "dummy_psk.h"))
+  CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED AND
+  (CONFIG_NET_SAMPLE_PSK_HEADER_FILE STREQUAL "dummy_psk.h")
+)
   add_custom_target(development_psk
     COMMAND ${CMAKE_COMMAND} -E echo "----------------------------------------------------------"
     COMMAND ${CMAKE_COMMAND} -E echo "--- WARNING: Using dummy PSK! Only suitable for        ---"
@@ -32,17 +33,17 @@ include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 foreach(inc_file
-	ca.der
-	server.der
-	server_privkey.der
-	echo-apps-cert.der
-	echo-apps-key.der
-    )
+  ca.der
+  server.der
+  server_privkey.der
+  echo-apps-cert.der
+  echo-apps-key.der
+)
   generate_inc_file_for_target(
     app
     src/${inc_file}
     ${gen_dir}/${inc_file}.inc
-    )
+  )
 endforeach()
 
 if(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE)
@@ -54,9 +55,11 @@ if(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE)
 endif()
 if(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
   zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE NAME
-			      http_resource_desc_wss_console_service
-			      KVMA RAM_REGION GROUP RODATA_REGION)
+    http_resource_desc_wss_console_service
+    KVMA RAM_REGION GROUP RODATA_REGION
+  )
 endif()
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE NAME
-			    http_resource_desc_ws_console_service
-			    KVMA RAM_REGION GROUP RODATA_REGION)
+  http_resource_desc_ws_console_service
+  KVMA RAM_REGION GROUP RODATA_REGION
+)

@@ -1756,34 +1756,6 @@ static uint8_t write_without_rsp(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t write_signed_without_rsp(const void *cmd, uint16_t cmd_len,
-					void *rsp, uint16_t *rsp_len)
-{
-	const struct btp_gatt_signed_write_without_rsp_cmd *cp = cmd;
-	struct bt_conn *conn;
-
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_length)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cp->handle),
-					   cp->data,
-					   sys_le16_to_cpu(cp->data_length),
-					   true) < 0) {
-		bt_conn_unref(conn);
-		return BTP_STATUS_FAILED;
-	}
-
-	bt_conn_unref(conn);
-	return BTP_STATUS_SUCCESS;
-}
-
 static void write_rsp(struct bt_conn *conn, uint8_t err,
 		      struct bt_gatt_write_params *params)
 {
@@ -2540,11 +2512,6 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GATT_WRITE_WITHOUT_RSP,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = write_without_rsp,
-	},
-	{
-		.opcode = BTP_GATT_SIGNED_WRITE_WITHOUT_RSP,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = write_signed_without_rsp,
 	},
 	{
 		.opcode = BTP_GATT_WRITE,

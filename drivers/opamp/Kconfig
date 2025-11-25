@@ -18,7 +18,9 @@ config OPAMP_INIT_PRIORITY
 	help
 	  Opamp device driver initialization priority.
 
+# zephyr-keep-sorted-start
 rsource "Kconfig.mcux_opamp"
 rsource "Kconfig.mcux_opamp_fast"
+# zephyr-keep-sorted-stop
 
 endif # OPAMP

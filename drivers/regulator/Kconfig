@@ -26,24 +26,26 @@ module = REGULATOR
 module-str = regulator
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/regulator/Kconfig.axp192"
+# zephyr-keep-sorted-start
 source "drivers/regulator/Kconfig.adp5360"
+source "drivers/regulator/Kconfig.axp192"
 source "drivers/regulator/Kconfig.cp9314"
 source "drivers/regulator/Kconfig.da1469x"
 source "drivers/regulator/Kconfig.fake"
 source "drivers/regulator/Kconfig.fixed"
 source "drivers/regulator/Kconfig.gpio"
 source "drivers/regulator/Kconfig.max20335"
+source "drivers/regulator/Kconfig.mpm54304"
 source "drivers/regulator/Kconfig.npm1100"
 source "drivers/regulator/Kconfig.npm13xx"
 source "drivers/regulator/Kconfig.npm2100"
 source "drivers/regulator/Kconfig.npm6001"
+source "drivers/regulator/Kconfig.nxp_vref"
+source "drivers/regulator/Kconfig.nxp_vrefv1"
 source "drivers/regulator/Kconfig.pca9420"
 source "drivers/regulator/Kconfig.pca9422"
 source "drivers/regulator/Kconfig.pf1550"
 source "drivers/regulator/Kconfig.rpi_pico"
-source "drivers/regulator/Kconfig.nxp_vref"
-source "drivers/regulator/Kconfig.nxp_vrefv1"
-source "drivers/regulator/Kconfig.mpm54304"
+# zephyr-keep-sorted-stop
 
 endif # REGULATOR

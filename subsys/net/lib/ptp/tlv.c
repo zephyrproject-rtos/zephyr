@@ -26,7 +26,7 @@ static inline void tlv_ntohs(void *ptr)
 {
 	uint16_t val = *(uint16_t *)ptr;
 
-	val = ntohs(val);
+	val = net_ntohs(val);
 	memcpy(ptr, &val, sizeof(val));
 }
 
@@ -34,7 +34,7 @@ static inline void tlv_htons(void *ptr)
 {
 	uint16_t val = *(uint16_t *)ptr;
 
-	val = htons(val);
+	val = net_htons(val);
 	memcpy(ptr, &val, sizeof(val));
 }
 
@@ -195,9 +195,9 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		default_ds = (struct ptp_tlv_default_ds *)mgmt_tlv->data;
 
-		default_ds->n_ports = ntohs(default_ds->n_ports);
+		default_ds->n_ports = net_ntohs(default_ds->n_ports);
 		default_ds->clk_quality.offset_scaled_log_variance =
-			ntohs(default_ds->clk_quality.offset_scaled_log_variance);
+			net_ntohs(default_ds->clk_quality.offset_scaled_log_variance);
 		break;
 	case PTP_MGMT_CURRENT_DATA_SET:
 		if (length != sizeof(struct ptp_tlv_current_ds)) {
@@ -205,9 +205,9 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		current_ds = (struct ptp_tlv_current_ds *)mgmt_tlv->data;
 
-		current_ds->steps_rm = ntohs(current_ds->steps_rm);
-		current_ds->offset_from_tt = ntohll(current_ds->offset_from_tt);
-		current_ds->mean_delay = ntohll(current_ds->mean_delay);
+		current_ds->steps_rm = net_ntohs(current_ds->steps_rm);
+		current_ds->offset_from_tt = net_ntohll(current_ds->offset_from_tt);
+		current_ds->mean_delay = net_ntohll(current_ds->mean_delay);
 		break;
 	case PTP_MGMT_PARENT_DATA_SET:
 		if (length != sizeof(struct ptp_tlv_parent_ds)) {
@@ -215,13 +215,13 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		parent_ds = (struct ptp_tlv_parent_ds *)mgmt_tlv->data;
 
-		parent_ds->port_id.port_number = ntohs(parent_ds->port_id.port_number);
+		parent_ds->port_id.port_number = net_ntohs(parent_ds->port_id.port_number);
 		parent_ds->obsreved_parent_offset_scaled_log_variance =
-			ntohs(parent_ds->obsreved_parent_offset_scaled_log_variance);
+			net_ntohs(parent_ds->obsreved_parent_offset_scaled_log_variance);
 		parent_ds->obsreved_parent_clk_phase_change_rate =
-			ntohl(parent_ds->obsreved_parent_clk_phase_change_rate);
+			net_ntohl(parent_ds->obsreved_parent_clk_phase_change_rate);
 		parent_ds->gm_clk_quality.offset_scaled_log_variance =
-			ntohs(parent_ds->gm_clk_quality.offset_scaled_log_variance);
+			net_ntohs(parent_ds->gm_clk_quality.offset_scaled_log_variance);
 		break;
 	case PTP_MGMT_TIME_PROPERTIES_DATA_SET:
 		if (length != sizeof(struct ptp_tlv_time_prop_ds)) {
@@ -229,7 +229,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		time_prop_ds = (struct ptp_tlv_time_prop_ds *)mgmt_tlv->data;
 
-		time_prop_ds->current_utc_offset = ntohs(time_prop_ds->current_utc_offset);
+		time_prop_ds->current_utc_offset = net_ntohs(time_prop_ds->current_utc_offset);
 		break;
 	case PTP_MGMT_PORT_DATA_SET:
 		if (length != sizeof(struct ptp_tlv_port_ds)) {
@@ -237,15 +237,15 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		port_ds = (struct ptp_tlv_port_ds *)mgmt_tlv->data;
 
-		port_ds->id.port_number = ntohs(port_ds->id.port_number);
-		port_ds->mean_link_delay = ntohll(port_ds->mean_link_delay);
+		port_ds->id.port_number = net_ntohs(port_ds->id.port_number);
+		port_ds->mean_link_delay = net_ntohll(port_ds->mean_link_delay);
 		break;
 	case PTP_MGMT_TIME:
 		ts = *(struct ptp_timestamp *)mgmt_tlv->data;
 
-		ts.seconds_high = ntohs(ts.seconds_high);
-		ts.seconds_low = ntohl(ts.seconds_low);
-		ts.nanoseconds = ntohl(ts.nanoseconds);
+		ts.seconds_high = net_ntohs(ts.seconds_high);
+		ts.seconds_low = net_ntohl(ts.seconds_low);
+		ts.nanoseconds = net_ntohl(ts.nanoseconds);
 
 		memcpy(mgmt_tlv->data, &ts, sizeof(ts));
 		break;
@@ -281,45 +281,45 @@ static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt *mgmt_tlv)
 	case PTP_MGMT_DEFAULT_DATA_SET:
 		default_ds = (struct ptp_tlv_default_ds *)mgmt_tlv->data;
 
-		default_ds->n_ports = htons(default_ds->n_ports);
+		default_ds->n_ports = net_htons(default_ds->n_ports);
 		default_ds->clk_quality.offset_scaled_log_variance =
-			htons(default_ds->clk_quality.offset_scaled_log_variance);
+			net_htons(default_ds->clk_quality.offset_scaled_log_variance);
 		break;
 	case PTP_MGMT_CURRENT_DATA_SET:
 		current_ds = (struct ptp_tlv_current_ds *)mgmt_tlv->data;
 
-		current_ds->steps_rm = htons(current_ds->steps_rm);
-		current_ds->offset_from_tt = htonll(current_ds->offset_from_tt);
-		current_ds->mean_delay = htonll(current_ds->mean_delay);
+		current_ds->steps_rm = net_htons(current_ds->steps_rm);
+		current_ds->offset_from_tt = net_htonll(current_ds->offset_from_tt);
+		current_ds->mean_delay = net_htonll(current_ds->mean_delay);
 		break;
 	case PTP_MGMT_PARENT_DATA_SET:
 		parent_ds = (struct ptp_tlv_parent_ds *)mgmt_tlv->data;
 
-		parent_ds->port_id.port_number = htons(parent_ds->port_id.port_number);
+		parent_ds->port_id.port_number = net_htons(parent_ds->port_id.port_number);
 		parent_ds->obsreved_parent_offset_scaled_log_variance =
-			htons(parent_ds->obsreved_parent_offset_scaled_log_variance);
+			net_htons(parent_ds->obsreved_parent_offset_scaled_log_variance);
 		parent_ds->obsreved_parent_clk_phase_change_rate =
-			htons(parent_ds->obsreved_parent_clk_phase_change_rate);
+			net_htons(parent_ds->obsreved_parent_clk_phase_change_rate);
 		parent_ds->gm_clk_quality.offset_scaled_log_variance =
-			htons(parent_ds->gm_clk_quality.offset_scaled_log_variance);
+			net_htons(parent_ds->gm_clk_quality.offset_scaled_log_variance);
 		break;
 	case PTP_MGMT_TIME_PROPERTIES_DATA_SET:
 		time_prop_ds = (struct ptp_tlv_time_prop_ds *)mgmt_tlv->data;
 
-		time_prop_ds->current_utc_offset = htons(time_prop_ds->current_utc_offset);
+		time_prop_ds->current_utc_offset = net_htons(time_prop_ds->current_utc_offset);
 		break;
 	case PTP_MGMT_PORT_DATA_SET:
 		port_ds = (struct ptp_tlv_port_ds *)mgmt_tlv->data;
 
-		port_ds->id.port_number = htons(port_ds->id.port_number);
-		port_ds->mean_link_delay = htonll(port_ds->mean_link_delay);
+		port_ds->id.port_number = net_htons(port_ds->id.port_number);
+		port_ds->mean_link_delay = net_htonll(port_ds->mean_link_delay);
 		break;
 	case PTP_MGMT_TIME:
 		ts = *(struct ptp_timestamp *)mgmt_tlv->data;
 
-		ts.seconds_high = htons(ts.seconds_high);
-		ts.seconds_low = htonl(ts.seconds_low);
-		ts.nanoseconds = htonl(ts.nanoseconds);
+		ts.seconds_high = net_htons(ts.seconds_high);
+		ts.seconds_low = net_htonl(ts.seconds_low);
+		ts.nanoseconds = net_htonl(ts.nanoseconds);
 
 		memcpy(mgmt_tlv->data, &ts, sizeof(ts));
 		break;
@@ -369,7 +369,7 @@ int ptp_tlv_post_recv(struct ptp_tlv *tlv)
 			return -EBADMSG;
 		}
 		mgmt = (struct ptp_tlv_mgmt *)tlv;
-		mgmt->id = ntohs(mgmt->id);
+		mgmt->id = net_ntohs(mgmt->id);
 
 		/* Value of length is 2 + N, where N is length of data field
 		 * based on IEEE 1588-2019 Section 15.5.2.2.
@@ -383,8 +383,8 @@ int ptp_tlv_post_recv(struct ptp_tlv *tlv)
 			return -EBADMSG;
 		}
 		mgmt_err = (struct ptp_tlv_mgmt_err *)tlv;
-		mgmt_err->err_id = ntohs(mgmt_err->err_id);
-		mgmt_err->id = ntohs(mgmt_err->id);
+		mgmt_err->err_id = net_ntohs(mgmt_err->err_id);
+		mgmt_err->id = net_ntohs(mgmt_err->id);
 		break;
 	default:
 		break;
@@ -406,18 +406,18 @@ void ptp_tlv_pre_send(struct ptp_tlv *tlv)
 		if (tlv->length > sizeof(mgmt->id)) {
 			tlv_mgmt_pre_send(mgmt);
 		}
-		mgmt->id = htons(mgmt->id);
+		mgmt->id = net_htons(mgmt->id);
 		break;
 	case PTP_TLV_TYPE_MANAGEMENT_ERROR_STATUS:
 		mgmt_err = (struct ptp_tlv_mgmt_err *)tlv;
 
-		mgmt_err->err_id = htons(mgmt_err->err_id);
-		mgmt_err->id = htons(mgmt_err->id);
+		mgmt_err->err_id = net_htons(mgmt_err->err_id);
+		mgmt_err->id = net_htons(mgmt_err->id);
 		break;
 	default:
 		break;
 	}
 
-	tlv->length = htons(tlv->length);
-	tlv->type = htons(tlv->type);
+	tlv->length = net_htons(tlv->length);
+	tlv->type = net_htons(tlv->type);
 }

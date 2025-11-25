@@ -61,16 +61,17 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	mv a0, s0
 #endif
 
-#if defined(CONFIG_PMP_STACK_GUARD)
-	/* Stack guard has priority over user space for PMP usage. */
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+	/* Kernel mode has priority over user space for PMP usage. */
 	mv s0, a0
-	call z_riscv_pmp_stackguard_enable
+	call z_riscv_pmp_kernelmode_enable
 	mv a0, s0
 #elif defined(CONFIG_USERSPACE)
 	/*
-	 * When stackguard is not enabled, we need to configure the PMP only
-	 * at context switch time as the PMP is not in effect while inm-mode.
-	 * (it is done on every exception return otherwise).
+	 * When kernel mode dynamic configuration is not enabled, we need to
+	 * configure the PMP only at context switch time as the PMP is not
+	 * in effect while in m-mode. (it is done on every exception return
+	 * otherwise).
 	 */
 	lb t0, _thread_offset_to_user_options(a0)
 	andi t0, t0, K_USER

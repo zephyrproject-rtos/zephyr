@@ -27,8 +27,8 @@ __net_socket struct modem_socket {
 	sa_family_t family;
 	enum net_sock_type type;
 	int ip_proto;
-	struct sockaddr src;
-	struct sockaddr dst;
+	struct net_sockaddr src;
+	struct net_sockaddr dst;
 
 	/** The number identifying the socket handle inside the modem */
 	int id;

@@ -14,14 +14,20 @@ target_sources(app PRIVATE ${common_sources} ${app_sources})
 
 # Include paths to allow access to functions implemented in Bluetooth LE controller
 target_include_directories(app PRIVATE
-			   ${CMAKE_CURRENT_SOURCE_DIR}/../common/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+)
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/bluetooth/controller)
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller
+)
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include)
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
+)
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw)
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+)
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic)
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
+)
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll)
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll
+)

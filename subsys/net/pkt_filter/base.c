@@ -53,12 +53,12 @@ struct npf_rule_list npf_ipv6_recv_rules = {
 static struct npf_rule_list *get_ip_rules(uint8_t pf)
 {
 	switch (pf) {
-	case PF_INET:
+	case NET_PF_INET:
 #ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
 		return &npf_ipv4_recv_rules;
 #endif
 		break;
-	case PF_INET6:
+	case NET_PF_INET6:
 #ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
 		return &npf_ipv6_recv_rules;
 #endif
@@ -294,16 +294,18 @@ bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 	uint8_t pkt_family = net_pkt_family(pkt);
 
 	for (uint32_t ip_it = 0; ip_it < test_ip->ipaddr_num; ip_it++) {
-		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
-			struct in_addr *addr = (struct in_addr *)NET_IPV4_HDR(pkt)->src;
+		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == NET_AF_INET) {
+			struct net_in_addr *addr = (struct net_in_addr *)NET_IPV4_HDR(pkt)->src;
 
-			if (net_ipv4_addr_cmp(addr, &((struct in_addr *)test_ip->ipaddr)[ip_it])) {
+			if (net_ipv4_addr_cmp(addr,
+					      &((struct net_in_addr *)test_ip->ipaddr)[ip_it])) {
 				return true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
-			struct in6_addr *addr = (struct in6_addr *)NET_IPV6_HDR(pkt)->src;
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == NET_AF_INET6) {
+			struct net_in6_addr *addr = (struct net_in6_addr *)NET_IPV6_HDR(pkt)->src;
 
-			if (net_ipv6_addr_cmp(addr, &((struct in6_addr *)test_ip->ipaddr)[ip_it])) {
+			if (net_ipv6_addr_cmp(addr,
+					      &((struct net_in6_addr *)test_ip->ipaddr)[ip_it])) {
 				return true;
 			}
 		}
@@ -392,18 +394,18 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 
 		for (uint32_t i = 0; i < test_ip->ipaddr_num; i++) {
 			if (IS_ENABLED(CONFIG_NET_IPV4) &&
-			    test_ip->addr_family == AF_INET) {
-				struct in_addr *addr =
-					&((struct in_addr *)test_ip->ipaddr)[i];
+			    test_ip->addr_family == NET_AF_INET) {
+				struct net_in_addr *addr =
+					&((struct net_in_addr *)test_ip->ipaddr)[i];
 
 				pos += snprintk(buf + pos, len - pos,
 						"%s%s", pos > 1 ? "," : "",
 						net_sprint_ipv4_addr(addr));
 
 			} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-				   test_ip->addr_family == AF_INET6) {
-				struct in6_addr *addr =
-					&((struct in6_addr *)test_ip->ipaddr)[i];
+				   test_ip->addr_family == NET_AF_INET6) {
+				struct net_in6_addr *addr =
+					&((struct net_in6_addr *)test_ip->ipaddr)[i];
 
 				pos += snprintk(buf + pos, len - pos,
 						"%s%s", pos > 1 ? "," : "",
@@ -459,7 +461,7 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 		struct npf_test_eth_type *test_eth =
 			CONTAINER_OF(test, struct npf_test_eth_type, test);
 
-		snprintk(buf, len, "[0x%04x]", ntohs(test_eth->type));
+		snprintk(buf, len, "[0x%04x]", net_ntohs(test_eth->type));
 	}
 
 out:

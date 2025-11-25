@@ -680,7 +680,8 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 		p->rx_current_desc_number = last_desc_index;
 
 		/* Allocate packet with buffer */
-		pkt = net_pkt_rx_alloc_with_buffer(p->iface, frame_length, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(p->iface, frame_length,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("net_pkt_rx_alloc_with_buffer() failed");
 			eth_stats_update_errors_rx(p->iface);

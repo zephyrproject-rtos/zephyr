@@ -9,7 +9,7 @@ zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/testsuite/include
   ${ZEPHYR_BASE}/subsys/testsuite/coverage
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include
-  )
+)
 
 if(DEFINED TC_RUNID)
   zephyr_compile_definitions(TC_RUNID=${TC_RUNID})
@@ -24,7 +24,7 @@ zephyr_library_sources(
   src/ztest.c
   src/ztest_error_hook.c
   src/ztest_rules.c
-	)
+)
 zephyr_library_sources_ifdef(CONFIG_ZTEST_MOCKING  src/ztest_mock.c)
 zephyr_library_sources_ifdef(CONFIG_ZTRESS         src/ztress.c)
 

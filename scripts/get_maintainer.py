@@ -218,6 +218,29 @@ class Maintainers:
             area.tags = area_dict.get("tags", [])
             area.description = area_dict.get("description")
 
+            # Initialize file groups if present
+            area.file_groups = []
+            if "file-groups" in area_dict:
+                for group_dict in area_dict["file-groups"]:
+                    file_group = FileGroup()
+                    file_group.name = group_dict.get("name", "Unnamed Group")
+                    file_group.description = group_dict.get("description")
+                    file_group.collaborators = group_dict.get("collaborators", [])
+
+                    # Create match functions for this file group
+                    file_group._match_fn = \
+                        _get_match_fn(group_dict.get("files"),
+                                      group_dict.get("files-regex"))
+
+                    file_group._exclude_match_fn = \
+                        _get_match_fn(group_dict.get("files-exclude"),
+                                      group_dict.get("files-regex-exclude"))
+
+                    # Store reference to parent area for inheritance
+                    file_group._parent_area = area
+
+                    area.file_groups.append(file_group)
+
             # area._match_fn(path) tests if the path matches files and/or
             # files-regex
             area._match_fn = \
@@ -259,6 +282,32 @@ class Maintainers:
 
         return [area for area in self.areas.values()
                 if area._contains(path)]
+
+    def path2area_info(self, path):
+        """
+        Returns a list of tuples (Area, FileGroup) for the areas that contain 'path'.
+        FileGroup will be None if the path matches the area's general files rather
+        than a specific file group.
+        """
+        areas = self.path2areas(path)
+        result = []
+
+        # Make directory paths end in '/' so that foo/bar matches foo/bar/.
+        is_dir = os.path.isdir(path)
+
+        # Make 'path' relative to the repository root and normalize it.
+        path = os.path.normpath(os.path.join(
+            os.path.relpath(os.getcwd(), self._toplevel),
+            path))
+
+        if is_dir:
+            path += "/"
+
+        for area in areas:
+            file_group = area.get_file_group_for_path(path)
+            result.append((area, file_group))
+
+        return result
 
     def commits2areas(self, commits):
         """
@@ -420,6 +469,52 @@ class Maintainers:
                 print(path)  # We get here if we never hit the 'break'
 
 
+class FileGroup:
+    """
+    Represents a file group within an area in MAINTAINERS.yml.
+
+    File groups inherit file patterns from their parent area. A file will only
+    match a file group if it first matches the parent area's patterns, and then
+    also matches the file group's own patterns. This allows file groups to
+    further filter and subdivide files that are already covered by the area.
+
+    These attributes are available:
+
+    name:
+        The name of the file group, as specified in the 'name' key
+
+    description:
+        Text from 'description' key, or None if the group has no 'description'
+
+    collaborators:
+        List of collaborators specific to this file group
+    """
+    def _parent_area_contains(self, path):
+        """
+        Returns True if the parent area contains 'path', False otherwise.
+        """
+        return (self._parent_area._match_fn and
+                self._parent_area._match_fn(path) and not
+                (self._parent_area._exclude_match_fn and
+                 self._parent_area._exclude_match_fn(path)))
+
+    def _contains(self, path):
+        # Returns True if the file group contains 'path', and False otherwise
+        # File groups inherit from their parent area - a file must match the
+        # parent area's patterns first, then the file group's patterns
+
+        # First check if the path matches the parent area's patterns
+        if not self._parent_area_contains(path):
+            return False
+
+        # Then check if it matches this file group's patterns
+        return self._match_fn and self._match_fn(path) and not \
+            (self._exclude_match_fn and self._exclude_match_fn(path))
+
+    def __repr__(self):
+        return "<FileGroup {}>".format(self.name)
+
+
 class Area:
     """
     Represents an entry for an area in MAINTAINERS.yml.
@@ -447,12 +542,45 @@ class Area:
     description:
         Text from 'description' key, or None if the area has no 'description'
         key
+
+    file_groups:
+        List of FileGroup instances for any file-groups defined in the area.
+        Empty if the area has no 'file-groups' key.
     """
     def _contains(self, path):
         # Returns True if the area contains 'path', and False otherwise
+        # First check if path matches any file groups - they take precedence
+        for file_group in self.file_groups:
+            if file_group._contains(path):
+                return True
 
+        # If no file group matches, check area-level patterns
         return self._match_fn and self._match_fn(path) and not \
             (self._exclude_match_fn and self._exclude_match_fn(path))
+
+    def get_collaborators_for_path(self, path):
+        """
+        Returns a list of collaborators for a specific path.
+        If the path matches a file group, returns the file group's collaborators.
+        Otherwise, returns the area's general collaborators.
+        """
+        # Check file groups first
+        for file_group in self.file_groups:
+            if file_group._contains(path):
+                return file_group.collaborators
+
+        # Return general area collaborators if no file group matches
+        return self.collaborators
+
+    def get_file_group_for_path(self, path):
+        """
+        Returns the FileGroup instance that contains the given path,
+        or None if the path doesn't match any file group.
+        """
+        for file_group in self.file_groups:
+            if file_group._contains(path):
+                return file_group
+        return None
 
     def __repr__(self):
         return "<Area {}>".format(self.name)
@@ -483,6 +611,17 @@ def _print_areas(areas):
                             ", ".join(area.tests),
                             ", ".join(area.tags),
                             area.description or ""))
+
+        # Print file groups if any exist
+        if area.file_groups:
+            print("\tfile-groups:")
+            for file_group in area.file_groups:
+                print("\t\t{}: {}".format(
+                    file_group.name,
+                    ", ".join(file_group.collaborators) if file_group.collaborators else "no collaborators"
+                ))
+                if file_group.description:
+                    print("\t\t  description: {}".format(file_group.description))
 
 
 def _get_match_fn(globs, regexes):
@@ -552,7 +691,7 @@ def _check_maintainers(maints_path, yaml):
 
     ok_keys = {"status", "maintainers", "collaborators", "inform", "files",
                "files-exclude", "files-regex", "files-regex-exclude",
-               "labels", "description", "tests", "tags"}
+               "labels", "description", "tests", "tags", "file-groups"}
 
     ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
@@ -572,8 +711,8 @@ def _check_maintainers(maints_path, yaml):
             ferr("bad 'status' key on area '{}', should be one of {}"
                  .format(area_name, ok_status_s))
 
-        if not area_dict.keys() & {"files", "files-regex"}:
-            ferr("either 'files' or 'files-regex' (or both) must be specified "
+        if not area_dict.keys() & {"files", "files-regex", "file-groups"}:
+            ferr("either 'files', 'files-regex', or 'file-groups' (or combinations) must be specified "
                  "for area '{}'".format(area_name))
 
         if not area_dict.get("maintainers") and area_dict.get("status") == "maintained":
@@ -616,6 +755,64 @@ def _check_maintainers(maints_path, yaml):
                         ferr("bad regular expression '{}' in '{}' in "
                              "'{}': {}".format(regex, files_regex_key,
                                                area_name, e.msg))
+
+        # Validate file-groups structure
+        if "file-groups" in area_dict:
+            file_groups = area_dict["file-groups"]
+            if not isinstance(file_groups, list):
+                ferr("malformed 'file-groups' value for area '{}' -- should be a list"
+                     .format(area_name))
+
+            ok_group_keys = {"name", "description", "collaborators", "files",
+                           "files-exclude", "files-regex", "files-regex-exclude"}
+
+            for i, group_dict in enumerate(file_groups):
+                if not isinstance(group_dict, dict):
+                    ferr("malformed file group {} in area '{}' -- should be a dict"
+                         .format(i, area_name))
+
+                for key in group_dict:
+                    if key not in ok_group_keys:
+                        ferr("unknown key '{}' in file group {} in area '{}'"
+                             .format(key, i, area_name))
+
+                # Each file group must have either files or files-regex
+                if not group_dict.keys() & {"files", "files-regex"}:
+                    ferr("file group {} in area '{}' must specify either 'files' or 'files-regex'"
+                         .format(i, area_name))
+
+                # Validate string fields in file groups
+                for str_field in ["name", "description"]:
+                    if str_field in group_dict and not isinstance(group_dict[str_field], str):
+                        ferr("malformed '{}' in file group {} in area '{}' -- should be a string"
+                             .format(str_field, i, area_name))
+
+                # Validate list fields in file groups
+                for list_field in ["collaborators", "files", "files-exclude", "files-regex", "files-regex-exclude"]:
+                    if list_field in group_dict:
+                        lst = group_dict[list_field]
+                        if not (isinstance(lst, list) and all(isinstance(elm, str) for elm in lst)):
+                            ferr("malformed '{}' in file group {} in area '{}' -- should be a list of strings"
+                                 .format(list_field, i, area_name))
+
+                # Validate file patterns in file groups
+                for files_key in "files", "files-exclude":
+                    if files_key in group_dict:
+                        for glob_pattern in group_dict[files_key]:
+                            paths = tuple(root.glob(glob_pattern))
+                            if not paths:
+                                ferr("glob pattern '{}' in '{}' in file group {} in area '{}' does not "
+                                     "match any files".format(glob_pattern, files_key, i, area_name))
+
+                # Validate regex patterns in file groups
+                for files_regex_key in "files-regex", "files-regex-exclude":
+                    if files_regex_key in group_dict:
+                        for regex in group_dict[files_regex_key]:
+                            try:
+                                re.compile(regex)
+                            except re.error as e:
+                                ferr("bad regular expression '{}' in '{}' in file group {} in area '{}': {}"
+                                     .format(regex, files_regex_key, i, area_name, e.msg))
 
         if "description" in area_dict and \
            not isinstance(area_dict["description"], str):

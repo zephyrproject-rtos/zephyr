@@ -1,6 +1,6 @@
 /*
- * (c) 2025 Infineon Technologies AG, or an affiliate of Infineon Technologies AG.
- * All rights reserved.
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,9 @@
  * @brief I2C driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_i2c_pdl
+#define DT_DRV_COMPAT infineon_cat1_i2c
+
+#include <infineon_kconfig.h>
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -60,7 +62,7 @@ struct ifx_cat1_i2c_data {
 	bool error;
 	uint32_t async_pending;
 	struct ifx_cat1_clock clock;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(COMPONENT_CAT1D)
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	uint8_t clock_peri_group;
 #endif
 	struct i2c_target_config *p_target_config;
@@ -230,7 +232,7 @@ void ifx_cat1_i2c_register_callback(const struct device *dev,
 uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_slave)
 {
 /* Peripheral clock values for different I2C speeds according PDL API Reference Guide */
-#if defined(COMPONENT_CAT1D)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 /* Must be between 1.55 MHz and 12.8 MHz for running i2c master at 100KHz   */
 #define _SCB_PERI_CLOCK_SLAVE_STD 6000000
 /* Must be between 7.82 MHz and 15.38 MHz for running i2c master at 400KHz  */
@@ -240,7 +242,7 @@ uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_
 #define _SCB_PERI_CLOCK_SLAVE_STD 8000000
 /* Must be between 7.82 MHz and 15.38 MHz for running i2c master at 400KHz  */
 #define _SCB_PERI_CLOCK_SLAVE_FST 12500000
-#endif /* defined(COMPONENT_CAT1D) */
+#endif /* defined(CONFIG_SOC_FAMILY_INFINEON_EDGE) */
 
 /* Must be between 1.55 MHz and 3.2 MHz for running i2c slave at 100KHz     */
 #define _SCB_PERI_CLOCK_MASTER_STD  2000000
@@ -251,7 +253,7 @@ uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_
 
 /* Must be between 15.84 MHz and 89.0 MHz for running i2c master at 1MHz */
 #if defined(COMPONENT_CAT1A) || defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||            \
-	defined(COMPONENT_CAT1D)
+	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define _SCB_PERI_CLOCK_SLAVE_FSTP 50000000
 #elif defined(COMPONENT_CAT2)
 #define _SCB_PERI_CLOCK_SLAVE_FSTP 24000000
@@ -678,13 +680,13 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
 	.target_register = ifx_cat1_i2c_target_register,
 	.target_unregister = ifx_cat1_i2c_target_unregister};
 
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(COMPONENT_CAT1D)
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 #else
 #define PERI_INFO(n)
 #endif
 
-#if defined(COMPONENT_CAT1D)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define I2C_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
 		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \

@@ -1009,7 +1009,30 @@ void subrate_changed(struct bt_conn *conn,
 		bt_shell_print("Subrate change failed (HCI status 0x%02x)", params->status);
 	}
 }
-#endif
+
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+static void conn_rate_changed(struct bt_conn *conn, uint8_t status,
+		       const struct bt_conn_le_conn_rate_changed *params)
+{
+	if (status == BT_HCI_ERR_SUCCESS) {
+		bt_shell_print("Connection rate parameters changed: "
+			       "Connection Interval: %u us "
+			       "Subrate Factor: %d "
+			       "Peripheral latency: 0x%04x "
+			       "Continuation Number: %d "
+			       "Supervision timeout: 0x%04x (%d ms)",
+			       params->interval_us,
+			       params->subrate_factor,
+			       params->peripheral_latency,
+			       params->continuation_number,
+			       params->supervision_timeout_10ms,
+			       params->supervision_timeout_10ms * 10);
+	} else {
+		bt_shell_print("Connection rate change failed (HCI status 0x%02x)", status);
+	}
+}
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+#endif /* CONFIG_BT_SUBRATING */
 
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 void read_all_remote_feat_complete(struct bt_conn *conn,
@@ -1254,6 +1277,9 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 #endif
 #if defined(CONFIG_BT_SUBRATING)
 	.subrate_changed = subrate_changed,
+#endif
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+	.conn_rate_changed = conn_rate_changed,
 #endif
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 	.read_all_remote_feat_complete = read_all_remote_feat_complete,
@@ -3361,7 +3387,130 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 
 	return 0;
 }
-#endif
+
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+static int cmd_read_min_conn_interval_groups(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_conn_le_min_conn_interval_info info;
+
+	err = bt_conn_le_read_min_conn_interval_groups(&info);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_read_min_conn_interval_groups returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Minimum supported connection interval: %u us",
+		    info.min_supported_conn_interval_us);
+	shell_print(sh, "Number of groups: %u", info.num_groups);
+
+	for (uint8_t i = 0; i < info.num_groups; i++) {
+		shell_print(
+			sh,
+			"  Group %u: min=0x%04x (%u us), max=0x%04x (%u us), stride=0x%04x (%u us)",
+			i,
+			info.groups[i].min_125us,
+			BT_CONN_SCI_INTERVAL_TO_US(info.groups[i].min_125us),
+			info.groups[i].max_125us,
+			BT_CONN_SCI_INTERVAL_TO_US(info.groups[i].max_125us),
+			info.groups[i].stride_125us,
+			BT_CONN_SCI_INTERVAL_TO_US(info.groups[i].stride_125us));
+	}
+
+	return 0;
+}
+
+static int cmd_read_min_conn_interval(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint16_t min_interval_us;
+
+	err = bt_conn_le_read_min_conn_interval(&min_interval_us);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_read_min_conn_interval returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Minimum supported connection interval: %u us", min_interval_us);
+	return 0;
+}
+
+static int cmd_conn_rate_set_defaults(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	for (size_t argn = 1; argn < argc; argn++) {
+		(void)shell_strtoul(argv[argn], 10, &err);
+
+		if (err != 0) {
+			shell_help(sh);
+			shell_error(sh, "Could not parse input number %zu", argn);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	const struct bt_conn_le_conn_rate_param params = {
+		.interval_min_125us = shell_strtoul(argv[1], 10, &err),
+		.interval_max_125us = shell_strtoul(argv[2], 10, &err),
+		.subrate_min = shell_strtoul(argv[3], 10, &err),
+		.subrate_max = shell_strtoul(argv[4], 10, &err),
+		.max_latency = shell_strtoul(argv[5], 10, &err),
+		.continuation_number = shell_strtoul(argv[6], 10, &err),
+		.supervision_timeout_10ms = shell_strtoul(argv[7], 10, &err),
+		.min_ce_len_125us = shell_strtoul(argv[8], 10, &err),
+		.max_ce_len_125us = shell_strtoul(argv[9], 10, &err),
+	};
+
+	err = bt_conn_le_conn_rate_set_defaults(&params);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_conn_rate_set_defaults returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_conn_rate_request(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	for (size_t argn = 1; argn < argc; argn++) {
+		(void)shell_strtoul(argv[argn], 10, &err);
+
+		if (err != 0) {
+			shell_help(sh);
+			shell_error(sh, "Could not parse input number %zu", argn);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	const struct bt_conn_le_conn_rate_param params = {
+		.interval_min_125us = shell_strtoul(argv[1], 10, &err),
+		.interval_max_125us = shell_strtoul(argv[2], 10, &err),
+		.subrate_min = shell_strtoul(argv[3], 10, &err),
+		.subrate_max = shell_strtoul(argv[4], 10, &err),
+		.max_latency = shell_strtoul(argv[5], 10, &err),
+		.continuation_number = shell_strtoul(argv[6], 10, &err),
+		.supervision_timeout_10ms = shell_strtoul(argv[7], 10, &err),
+		.min_ce_len_125us = shell_strtoul(argv[8], 10, &err),
+		.max_ce_len_125us = shell_strtoul(argv[9], 10, &err),
+	};
+
+	err = bt_conn_le_conn_rate_request(default_conn, &params);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_conn_rate_request returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+#endif /* CONFIG_BT_SUBRATING */
 
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 static int cmd_read_all_remote_features(const struct shell *sh, size_t argc, char *argv[])
@@ -3714,9 +3863,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		shell_print(sh, "Interval: 0x%04x (%u us)",
-			    info.le.interval,
-			    BT_CONN_INTERVAL_TO_US(info.le.interval));
+		shell_print(sh, "Interval: %u us", info.le.interval_us);
 		shell_print(sh, "Latency: 0x%04x",
 			    info.le.latency);
 		shell_print(sh, "Supervision timeout: 0x%04x (%d ms)",
@@ -4138,9 +4285,9 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u", selected,
-			       info.id, role_str, addr, info.le.interval, info.le.latency,
-			       info.le.timeout);
+		bt_shell_print("%s#%u [LE][%s] %s: Interval %u us, latency %u, timeout %u ms",
+			       selected, info.id, role_str, addr, info.le.interval_us,
+			       info.le.latency, info.le.timeout * 10);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
@@ -5211,7 +5358,25 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		"<min subrate factor> <max subrate factor> <max peripheral latency> "
 		"<min continuation number> <supervision timeout (seconds)>",
 		cmd_subrate_request, 6, 0),
-#endif
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+	SHELL_CMD_ARG(read-min-conn-interval-groups, NULL,
+		"Read minimum supported connection interval and groups",
+		cmd_read_min_conn_interval_groups, 1, 0),
+	SHELL_CMD_ARG(read-min-conn-interval, NULL,
+		"Read minimum supported connection interval only",
+		cmd_read_min_conn_interval, 1, 0),
+	SHELL_CMD_ARG(conn-rate-set-defaults, NULL,
+		"<min interval (125us)> <max interval (125us)> <min subrate> <max subrate> "
+		"<max latency> <continuation number> <supervision timeout (10ms)> "
+		"<min CE len (125us)> <max CE len (125us)>",
+		cmd_conn_rate_set_defaults, 10, 0),
+	SHELL_CMD_ARG(conn-rate-request, NULL,
+		"<min interval (125us)> <max interval (125us)> <min subrate> <max subrate> "
+		"<max latency> <continuation number> <supervision timeout (10ms)> "
+		"<min CE len (125us)> <max CE len (125us)>",
+		cmd_conn_rate_request, 10, 0),
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+#endif /* CONFIG_BT_SUBRATING */
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 	SHELL_CMD_ARG(read-all-remote-features, NULL, "<pages_requested>",
 		cmd_read_all_remote_features, 2, 0),

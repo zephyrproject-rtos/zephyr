@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
@@ -97,7 +96,7 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 	int iface_index = -1;
 
 	/* Parse arguments manually to find -i or --iface,
-	 * it's intentional not to use getopt() here to avoid
+	 * it's intentional not to use sys_getopt() here to avoid
 	 * permuting the arguments.
 	 */
 	for (int i = 1; i < argc; i++) {
@@ -583,46 +582,46 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"ssid", required_argument, 0, 's'},
-		{"passphrase", required_argument, 0, 'p'},
-		{"key-mgmt", required_argument, 0, 'k'},
-		{"ieee-80211w", required_argument, 0, 'w'},
-		{"bssid", required_argument, 0, 'm'},
-		{"band", required_argument, 0, 'b'},
-		{"channel", required_argument, 0, 'c'},
-		{"timeout", required_argument, 0, 't'},
-		{"anon-id", required_argument, 0, 'a'},
-		{"bandwidth", required_argument, 0, 'B'},
-		{"key1-pwd", required_argument, 0, 'K'},
-		{"key2-pwd", required_argument, 0, 'K'},
-		{"wpa3-enterprise", required_argument, 0, 'S'},
-		{"TLS-cipher", required_argument, 0, 'T'},
-		{"verify-peer-cert", required_argument, 0, 'A'},
-		{"eap-version", required_argument, 0, 'V'},
-		{"eap-id1", required_argument, 0, 'I'},
-		{"eap-id2", required_argument, 0, 'I'},
-		{"eap-id3", required_argument, 0, 'I'},
-		{"eap-id4", required_argument, 0, 'I'},
-		{"eap-id5", required_argument, 0, 'I'},
-		{"eap-id6", required_argument, 0, 'I'},
-		{"eap-id7", required_argument, 0, 'I'},
-		{"eap-id8", required_argument, 0, 'I'},
-		{"eap-pwd1", required_argument, 0, 'P'},
-		{"eap-pwd2", required_argument, 0, 'P'},
-		{"eap-pwd3", required_argument, 0, 'P'},
-		{"eap-pwd4", required_argument, 0, 'P'},
-		{"eap-pwd5", required_argument, 0, 'P'},
-		{"eap-pwd6", required_argument, 0, 'P'},
-		{"eap-pwd7", required_argument, 0, 'P'},
-		{"eap-pwd8", required_argument, 0, 'P'},
-		{"ignore-broadcast-ssid", required_argument, 0, 'g'},
-		{"ieee-80211r", no_argument, 0, 'R'},
-		{"iface", required_argument, 0, 'i'},
-		{"server-cert-domain-exact", required_argument, 0, 'e'},
-		{"server-cert-domain-suffix", required_argument, 0, 'x'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"passphrase", sys_getopt_required_argument, 0, 'p'},
+		{"key-mgmt", sys_getopt_required_argument, 0, 'k'},
+		{"ieee-80211w", sys_getopt_required_argument, 0, 'w'},
+		{"bssid", sys_getopt_required_argument, 0, 'm'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"timeout", sys_getopt_required_argument, 0, 't'},
+		{"anon-id", sys_getopt_required_argument, 0, 'a'},
+		{"bandwidth", sys_getopt_required_argument, 0, 'B'},
+		{"key1-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"key2-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"wpa3-enterprise", sys_getopt_required_argument, 0, 'S'},
+		{"TLS-cipher", sys_getopt_required_argument, 0, 'T'},
+		{"verify-peer-cert", sys_getopt_required_argument, 0, 'A'},
+		{"eap-version", sys_getopt_required_argument, 0, 'V'},
+		{"eap-id1", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id2", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id3", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id4", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id5", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id6", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id7", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id8", sys_getopt_required_argument, 0, 'I'},
+		{"eap-pwd1", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd2", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd3", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd4", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd5", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd6", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd7", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd8", sys_getopt_required_argument, 0, 'P'},
+		{"ignore-broadcast-ssid", sys_getopt_required_argument, 0, 'g'},
+		{"ieee-80211r", sys_getopt_no_argument, 0, 'R'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
+		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
 	int idx = 1;
@@ -650,9 +649,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			params->ssid = state->optarg;
@@ -1029,26 +1028,26 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"bands", required_argument, 0, 'b'},
-		{"dwell_time_active", required_argument, 0, 'a'},
-		{"dwell_time_passive", required_argument, 0, 'p'},
-		{"ssid", required_argument, 0, 's'},
-		{"max_bss", required_argument, 0, 'm'},
-		{"chans", required_argument, 0, 'c'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"bands", sys_getopt_required_argument, 0, 'b'},
+		{"dwell_time_active", sys_getopt_required_argument, 0, 'a'},
+		{"dwell_time_passive", sys_getopt_required_argument, 0, 'p'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"max_bss", sys_getopt_required_argument, 0, 'm'},
+		{"chans", sys_getopt_required_argument, 0, 'c'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	int val;
 	int opt_num = 0;
 
 	*do_scan = true;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!strncasecmp(state->optarg, "passive", 7)) {
@@ -1741,36 +1740,36 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	long value;
 	double twt_mantissa_scale = 0.0;
 	double twt_interval_scale = 0.0;
 	uint16_t scale = 1000;
 	int exponent = 0;
-	static const struct option long_options[] = {
-		{"negotiation-type", required_argument, 0, 'n'},
-		{"setup-cmd", required_argument, 0, 'c'},
-		{"dialog-token", required_argument, 0, 't'},
-		{"flow-id", required_argument, 0, 'f'},
-		{"responder", required_argument, 0, 'r'},
-		{"trigger", required_argument, 0, 'T'},
-		{"implicit", required_argument, 0, 'I'},
-		{"announce", required_argument, 0, 'a'},
-		{"wake-interval", required_argument, 0, 'w'},
-		{"interval", required_argument, 0, 'p'},
-		{"wake-ahead-duration", required_argument, 0, 'D'},
-		{"info-disable", required_argument, 0, 'd'},
-		{"exponent", required_argument, 0, 'e'},
-		{"mantissa", required_argument, 0, 'm'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	static const struct sys_getopt_option long_options[] = {
+		{"negotiation-type", sys_getopt_required_argument, 0, 'n'},
+		{"setup-cmd", sys_getopt_required_argument, 0, 'c'},
+		{"dialog-token", sys_getopt_required_argument, 0, 't'},
+		{"flow-id", sys_getopt_required_argument, 0, 'f'},
+		{"responder", sys_getopt_required_argument, 0, 'r'},
+		{"trigger", sys_getopt_required_argument, 0, 'T'},
+		{"implicit", sys_getopt_required_argument, 0, 'I'},
+		{"announce", sys_getopt_required_argument, 0, 'a'},
+		{"wake-interval", sys_getopt_required_argument, 0, 'w'},
+		{"interval", sys_getopt_required_argument, 0, 'p'},
+		{"wake-ahead-duration", sys_getopt_required_argument, 0, 'D'},
+		{"info-disable", sys_getopt_required_argument, 0, 'd'},
+		{"exponent", sys_getopt_required_argument, 0, 'e'},
+		{"mantissa", sys_getopt_required_argument, 0, 'm'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'n':
 			if (!parse_number(sh, &value, state->optarg, NULL,
@@ -2150,22 +2149,22 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"max_inactivity", required_argument, 0, 't'},
-		{"max_num_sta", required_argument, 0, 's'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"max_inactivity", sys_getopt_required_argument, 0, 't'},
+		{"max_num_sta", sys_getopt_required_argument, 0, 's'},
 #if defined(CONFIG_WIFI_NM_HOSTAPD_AP)
-		{"ht_capab", required_argument, 0, 'n'},
-		{"vht_capab", required_argument, 0, 'c'},
+		{"ht_capab", sys_getopt_required_argument, 0, 'n'},
+		{"vht_capab", sys_getopt_required_argument, 0, 'c'},
 #endif
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "t:s:n:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:s:n:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!parse_number(sh, &val, state->optarg, "max_inactivity",
@@ -2277,14 +2276,14 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	bool force = false;
 	bool verbose = false;
 	int opt_index = 0;
-	static const struct option long_options[] = {
-		{"force", no_argument, 0, 'f'},
-		{"verbose", no_argument, 0, 'v'},
-		{"iface", required_argument, 0, 'i'},
+	static const struct sys_getopt_option long_options[] = {
+		{"force", sys_getopt_no_argument, 0, 'f'},
+		{"verbose", sys_getopt_no_argument, 0, 'v'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{NULL, 0, NULL, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
 		switch (opt) {
 		case 'f':
 			force = true;
@@ -2300,24 +2299,25 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		}
 	}
 
-	if (optind == argc) {
+	if (sys_getopt_optind == argc) {
 		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
-	} else if (optind == argc - 1) {
-		if (strlen(argv[optind]) != 2) {
+	} else if (sys_getopt_optind == argc - 1) {
+		if (strlen(argv[sys_getopt_optind]) != 2) {
 			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
 		/* Two letter country code with special case of 00 for WORLD */
-		if (((argv[optind][0] < 'A' || argv[optind][0] > 'Z') ||
-			(argv[optind][1] < 'A' || argv[optind][1] > 'Z')) &&
-			(argv[optind][0] != '0' || argv[optind][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[optind][0], argv[optind][1]);
+		if (((argv[sys_getopt_optind][0] < 'A' || argv[sys_getopt_optind][0] > 'Z') ||
+			(argv[sys_getopt_optind][1] < 'A' || argv[sys_getopt_optind][1] > 'Z')) &&
+			(argv[sys_getopt_optind][0] != '0' || argv[sys_getopt_optind][1] != '0')) {
+			PR_WARNING("Invalid reg domain %c%c\n", argv[sys_getopt_optind][0],
+				   argv[sys_getopt_optind][1]);
 			return -ENOEXEC;
 		}
-		regd.country_code[0] = argv[optind][0];
-		regd.country_code[1] = argv[optind][1];
+		regd.country_code[0] = argv[sys_getopt_optind][0];
+		regd.country_code[1] = argv[sys_getopt_optind][1];
 		regd.force = force;
 		regd.oper = WIFI_MGMT_SET;
 	} else {
@@ -2646,20 +2646,20 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int opt_index = 0;
 	int opt_num = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"sta", no_argument, 0, 's'},
-		{"monitor", no_argument, 0, 'm'},
-		{"ap", no_argument, 0, 'a'},
-		{"softap", no_argument, 0, 'k'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"sta", sys_getopt_no_argument, 0, 's'},
+		{"monitor", sys_getopt_no_argument, 0, 'm'},
+		{"ap", sys_getopt_no_argument, 0, 'a'},
+		{"softap", sys_getopt_no_argument, 0, 'k'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	mode->oper = WIFI_MGMT_GET;
-	while ((opt = getopt_long(argc, argv, "i:smtpakh",
+	while ((opt = sys_getopt_long(argc, argv, "i:smtpakh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			mode->mode |= WIFI_STA_MODE;
@@ -2749,17 +2749,17 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", optional_argument, 0, 'i'},
-		{"channel", required_argument, 0, 'c'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_optional_argument, 0, 'i'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:c:gh",
+	while ((opt = sys_getopt_long(argc, argv, "i:c:gh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			channel->channel = (uint16_t)atoi(state->optarg);
@@ -2847,21 +2847,21 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"capture-len", optional_argument, 0, 'b'},
-		{"all", no_argument, 0, 'a'},
-		{"mgmt", no_argument, 0, 'm'},
-		{"ctrl", no_argument, 0, 'c'},
-		{"data", no_argument, 0, 'd'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"capture-len", sys_getopt_optional_argument, 0, 'b'},
+		{"all", sys_getopt_no_argument, 0, 'a'},
+		{"mgmt", sys_getopt_no_argument, 0, 'm'},
+		{"ctrl", sys_getopt_no_argument, 0, 'c'},
+		{"data", sys_getopt_no_argument, 0, 'd'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh",
+	while ((opt = sys_getopt_long(argc, argv, "i:b:amcdgh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -2971,20 +2971,20 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"role", required_argument, 0, 'r'},
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3023,17 +3023,17 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"own", required_argument, 0, 'o'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"own", sys_getopt_required_argument, 0, 'o'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "o:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "o:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'o':
 			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
@@ -3063,17 +3063,17 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"role", required_argument, 0, 'r'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "r:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "r:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			params->listen.role = shell_strtol(state->optarg, 10, &ret);
@@ -3103,19 +3103,19 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"opclass", required_argument, 0, 'o'},
-		{"channel", required_argument, 0, 'h'},
-		{"mac", required_argument, 0, 'a'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"opclass", sys_getopt_required_argument, 0, 'o'},
+		{"channel", sys_getopt_required_argument, 0, 'h'},
+		{"mac", sys_getopt_required_argument, 0, 'a'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "t:o:h:a:i:",
+	while ((opt = sys_getopt_long(argc, argv, "t:o:h:a:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
@@ -3169,18 +3169,18 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			params->configurator_set.configurator =
@@ -3461,10 +3461,10 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 	struct net_if *iface = get_iface(IFACE_TYPE_SAP, argc, argv);
@@ -3472,9 +3472,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = getopt_long(argc, argv, "p:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3574,20 +3574,21 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 	int err;
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"short-interval", required_argument, 0, 's'},
-		{"rss-threshold", required_argument, 0, 'r'},
-		{"long-interval", required_argument, 0, 'l'},
-		{"btm-queries", required_argument, 0, 'b'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"short-interval", sys_getopt_required_argument, 0, 's'},
+		{"rss-threshold", sys_getopt_required_argument, 0, 'r'},
+		{"long-interval", sys_getopt_required_argument, 0, 'l'},
+		{"btm-queries", sys_getopt_required_argument, 0, 'b'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	unsigned long uval;
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "t:s:r:l:b:i:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "t:s:r:l:b:i:", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (strcmp("simple", state->optarg) == 0) {
@@ -3679,16 +3680,16 @@ static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"okc", required_argument, 0, 'o'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"okc", sys_getopt_required_argument, 0, 'o'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "o:i:",
+	while ((opt = sys_getopt_long(argc, argv, "o:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'o':
 			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {

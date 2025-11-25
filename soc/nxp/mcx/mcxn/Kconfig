@@ -43,6 +43,7 @@ config SOC_MCXN236
 	select ARMV8_M_DSP
 	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
+	select HAS_CPU_FREQ
 
 if SOC_FAMILY_MCXN
 

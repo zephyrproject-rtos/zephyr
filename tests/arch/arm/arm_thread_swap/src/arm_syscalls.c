@@ -21,6 +21,8 @@
 #define PRIORITY 0
 #define DB_VAL   0xDEADBEEF
 
+extern void z_yield_testing_only(void);
+
 static struct k_thread user_thread;
 static K_THREAD_STACK_DEFINE(user_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
@@ -90,7 +92,7 @@ void arm_isr_handler(const void *args)
 
 		/* Trigger thread yield() manually */
 		(void)irq_lock();
-		z_move_thread_to_end_of_prio_q(_current);
+		z_yield_testing_only();
 		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 		irq_unlock(0);
 

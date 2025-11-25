@@ -19,7 +19,7 @@ ZTEST(net, test_inet_addr)
 		int out;
 	} parms[] = {
 	/* expect failure */
-#ifndef CONFIG_ARCH_POSIX
+#ifndef CONFIG_NATIVE_LIBC
 		{NULL, (uint32_t)-1}, /* this value will segfault using the host libc */
 #endif
 		{".", (uint32_t)-1},

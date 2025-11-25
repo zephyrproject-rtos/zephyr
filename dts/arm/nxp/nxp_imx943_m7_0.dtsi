@@ -49,7 +49,7 @@
 
 			suspend: power-state-suspend {
 				compatible = "zephyr,power-state";
-				power-state-name = "standby";
+				power-state-name = "suspend-to-ram";
 				min-residency-us = <5000>;
 				exit-latency-us = <1000>;
 			};

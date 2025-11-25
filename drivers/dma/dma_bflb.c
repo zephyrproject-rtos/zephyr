@@ -153,6 +153,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 		ch_config |= BFLB_DMA_FLOW_M_P << DMA_FLOWCNTRL_SHIFT;
 	} else if (config->channel_direction == PERIPHERAL_TO_PERIPHERAL) {
 		ch_config |= BFLB_DMA_FLOW_P_P << DMA_FLOWCNTRL_SHIFT;
+		return -ENOTSUP;
 	} else {
 		LOG_ERR("Direction error. %d", config->channel_direction);
 		return -EINVAL;
@@ -164,12 +165,12 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	sys_write32(block->dest_address, cfg->base_reg + DMA_CxDSTADDR_OFFSET
 			+ BFLB_DMA_CH_OFFSET(channel));
 
-	/* For peripherals we treat the address as the peripheral ID */
+	/* For peripherals we treat dma_slot as the peripheral ID */
 	ch_config &= ~DMA_SRCPERIPHERAL_MASK;
 	ch_config &= ~DMA_DSTPERIPHERAL_MASK;
-	ch_config |= (block->source_address << DMA_SRCPERIPHERAL_SHIFT)
+	ch_config |= (config->dma_slot << DMA_SRCPERIPHERAL_SHIFT)
 			& DMA_SRCPERIPHERAL_MASK;
-	ch_config |= (block->dest_address << DMA_DSTPERIPHERAL_SHIFT)
+	ch_config |= (config->dma_slot << DMA_DSTPERIPHERAL_SHIFT)
 			& DMA_DSTPERIPHERAL_MASK;
 
 	if (!block->source_addr_adj) {

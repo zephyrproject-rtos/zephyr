@@ -23,7 +23,7 @@ static inline enum net_verdict canbus_recv(struct net_if *iface,
 	net_pkt_lladdr_dst(pkt)->len = 0U;
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_CANBUS_RAW;
 
-	net_pkt_set_family(pkt, AF_CAN);
+	net_pkt_set_family(pkt, NET_AF_CAN);
 
 	return NET_CONTINUE;
 }

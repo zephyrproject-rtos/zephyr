@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/sntp.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "net_sample_common.h"
 

@@ -79,6 +79,26 @@ config CPU_CORTEX_A78
 	help
 	  This option signifies the use of a Cortex-A78 CPU
 
+config CPU_CORTEX_A510
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A510 CPU, which is Arm's
+	  efficiency core implementing the ARMv9-A architecture. It provides
+	  power-efficient processing optimized for embedded applications with
+	  ARMv9-A features.
+
+config CPU_CORTEX_A320
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A320 CPU, which implements
+	  the ARMv9.2-A architecture. It provides advanced features including
+	  enhanced SVE2, improved security extensions, and specialized performance
+	  optimizations.
+
 config CPU_CORTEX_R82
 	bool
 	select CPU_AARCH64_CORTEX_R
@@ -101,10 +121,15 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 4096
 
+config PRIVILEGED_STACK_SIZE
+	default 4096 if FPU_SHARING
+	default 2048
+
 config ISR_STACK_SIZE
 	default 4096
 
 config TEST_EXTRA_STACK_SIZE
+	default 4096 if FPU_SHARING
 	default 2048
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
@@ -222,6 +247,20 @@ config ARMV8_A
 	  compatibility with the Armv7-A architecture and enhances that profile
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
+
+config ARMV9_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_MMU
+	select ARCH_HAS_USERSPACE if ARM_MMU
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MMU
+	imply ARM64_SVE if FPU_SHARING
+	help
+	  This option signifies the use of an ARMv9-A processor
+	  implementation.
+	  ARMv9-A builds on ARMv8-A and introduces additional security,
+	  performance, and machine learning capabilities while maintaining
+	  backward compatibility with ARMv8-A software.
 
 rsource "xen/Kconfig"
 
@@ -348,6 +387,8 @@ config ARM64_PA_BITS
 
 config MAX_XLAT_TABLES
 	int "Maximum numbers of translation tables"
+	default 32 if USERSPACE && TEST && SMP
+	default 24 if USERSPACE && TEST
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
 	default 12 if (ARM64_VA_BITS >= 40)
@@ -379,5 +420,28 @@ config ARM64_BOOT_DISABLE_DCACHE
 	  from EL2, enable this option, it will clean and invalidate all data
 	  cache and then disable data cache, it will will be re-enabled after
 	  MMU is configured and enabled.
+
+config ARM64_SVE
+	bool "Scalable Vector Extension (SVE) support"
+	depends on ARMV9_A
+	help
+	  Enable support for ARM64 Scalable Vector Extension (SVE).
+	  This allows threads to use SVE/SVE2 instructions and automatically
+	  handles context switching of SVE registers (Z0-Z31, P0-P15, FFR)
+	  if CONFIG_FPU_SHARING is also set. Requires ARMv9-A architecture.
+
+config ARM64_SVE_VL_MAX
+	int "Maximum SVE vector length in bytes"
+	depends on ARM64_SVE
+	default 16
+	range 16 256
+	help
+	  Maximum supported SVE vector length in bytes. This determines
+	  the SVE context size within each thread structure. Valid values
+	  are any power of two from 16 to 256 inclusive (128 to 2048 bits).
+	  This can be smaller than the hardware supported vector length to
+	  save some per-thread memory in which case the hardware will be
+	  limited to the specified length. Having a larger value than what
+	  the hardware supports will only waste memory.
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

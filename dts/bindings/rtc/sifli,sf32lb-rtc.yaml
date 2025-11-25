@@ -5,7 +5,7 @@ description: SiFli SF32LB RTC
 
 compatible: "sifli,sf32lb-rtc"
 
-include: [base.yaml, sifli-sf32lb-cfg.yaml]
+include: [rtc-device.yaml, sifli-sf32lb-cfg.yaml]
 
 properties:
   reg:

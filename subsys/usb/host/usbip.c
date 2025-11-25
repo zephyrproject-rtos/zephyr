@@ -649,29 +649,29 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 static void usbip_thread_handler(void *const a, void *const b, void *const c)
 {
 	struct usbip_bus_ctx *const bus_ctx = a;
-	struct sockaddr_in srv;
+	struct net_sockaddr_in srv;
 	int listenfd;
 	int connfd;
 	int reuse = 1;
 
 	LOG_DBG("Started connection handling thread");
 
-	listenfd = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	listenfd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (listenfd < 0) {
 		LOG_ERR("socket() failed: %s", strerror(errno));
 		return;
 	}
 
-	if (zsock_setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+	if (zsock_setsockopt(listenfd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
 			     (const char *)&reuse, sizeof(reuse)) < 0) {
 		LOG_INF("setsockopt() failed: %s", strerror(errno));
 	}
 
-	srv.sin_family = AF_INET;
-	srv.sin_addr.s_addr = htonl(INADDR_ANY);
+	srv.sin_family = NET_AF_INET;
+	srv.sin_addr.s_addr = htonl(NET_INADDR_ANY);
 	srv.sin_port = htons(USBIP_PORT);
 
-	if (zsock_bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
+	if (zsock_bind(listenfd, (struct net_sockaddr *)&srv, sizeof(srv)) < 0) {
 		LOG_ERR("bind() failed: %s", strerror(errno));
 		return;
 	}
@@ -682,12 +682,12 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 	}
 
 	while (true) {
-		struct sockaddr_in client_addr;
+		struct net_sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
-		char addr_str[INET_ADDRSTRLEN];
+		char addr_str[NET_INET_ADDRSTRLEN];
 		int err;
 
-		connfd = zsock_accept(listenfd, (struct sockaddr *)&client_addr,
+		connfd = zsock_accept(listenfd, (struct net_sockaddr *)&client_addr,
 				      &client_addr_len);
 		if (connfd < 0) {
 			LOG_ERR("accept() failed: %d", errno);

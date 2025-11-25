@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/arch/cfi.h>
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 #include <zephyr/random/random.h>
 
@@ -35,6 +36,17 @@ extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 				 void *p1, void *p2, void *p3)
 {
+/*
+ * Inform the unwinder that the current return address is undefined.
+ *
+ * This is typically used at points in the code where execution does not
+ * return like a normal function (for example, thread entry routines).
+ * Marking the return address as undefined prevents stack unwinding or
+ * backtrace tools from following a bogus return address, which could
+ * otherwise lead to reading invalid memory and cause faults during
+ * unwinding or debugging.
+ */
+	ARCH_CFI_UNDEFINED_RETURN_ADDRESS();
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 	z_tls_current = k_sched_current_thread_query();
 #endif

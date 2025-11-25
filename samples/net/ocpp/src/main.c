@@ -4,8 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strdup() */
 #include <stdio.h>
 #include <time.h>
+
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
@@ -17,10 +25,6 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "net_sample_common.h"
-
-#if __POSIX_VISIBLE < 200809
-char    *strdup(const char *);
-#endif
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -289,10 +293,10 @@ int main(void)
 	char *ip = NULL;
 
 	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
-	struct ocpp_cs_info csi = { NULL,
-				    "/steve/websocket/CentralSystemService/zephyr",
-				    CONFIG_NET_SAMPLE_OCPP_PORT,
-				    AF_INET };
+	struct ocpp_cs_info csi = {NULL,
+				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
+				   CONFIG_NET_SAMPLE_OCPP_PORT,
+				   AF_INET};
 
 	printk("OCPP sample %s\n", CONFIG_BOARD);
 

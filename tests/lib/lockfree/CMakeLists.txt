@@ -9,4 +9,4 @@ target_sources(app PRIVATE src/test_spsc.c src/test_mpsc.c)
 
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/include
-	${ZEPHYR_BASE}/arch/${ARCH}/include)
+  ${ZEPHYR_BASE}/arch/${ARCH}/include)

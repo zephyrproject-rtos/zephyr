@@ -113,6 +113,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
 	pinctrl-names = "default";

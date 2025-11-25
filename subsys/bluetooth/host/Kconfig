@@ -605,6 +605,7 @@ config BT_RPA_SHARING
 
 config BT_SIGNING
 	bool "Data signing support"
+	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
@@ -1161,6 +1162,15 @@ config BT_CONN_DISABLE_SECURITY
 
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
+
+config BT_SMP_LEGACY_PAIR_ONLY
+	bool "Force legacy pairing"
+	depends on BT_TESTING
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option enforces legacy pairing. This is required for testing
+	  legacy pairing between two Zephyr Bluetooth devices, as without this
+	  option the devices will default to using Secure Connections pairing.
 
 rsource "./classic/Kconfig"
 

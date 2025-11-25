@@ -9,7 +9,7 @@
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
 
-static int sntp_simple_helper(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
+static int sntp_simple_helper(struct net_sockaddr *addr, net_socklen_t addr_len, uint32_t timeout,
 			      struct sntp_time *ts)
 {
 	int res;
@@ -71,7 +71,7 @@ static int sntp_simple_helper(struct sockaddr *addr, socklen_t addr_len, uint32_
 	return res;
 }
 
-int sntp_simple_addr(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
+int sntp_simple_addr(struct net_sockaddr *addr, net_socklen_t addr_len, uint32_t timeout,
 		     struct sntp_time *ts)
 {
 	/* 123 is the standard SNTP port per RFC4330 */
@@ -90,8 +90,8 @@ int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *ts)
 	static struct zsock_addrinfo hints;
 	struct zsock_addrinfo *addr;
 
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_family = NET_AF_UNSPEC;
+	hints.ai_socktype = NET_SOCK_DGRAM;
 	hints.ai_protocol = 0;
 	/* 123 is the standard SNTP port per RFC4330 */
 	res = net_getaddrinfo_addr_str(server, "123", &hints, &addr);

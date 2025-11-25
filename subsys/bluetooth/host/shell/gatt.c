@@ -172,10 +172,6 @@ static void print_chrc_props(uint8_t properties)
 		bt_shell_print("[indicate]");
 	}
 
-	if (properties & BT_GATT_CHRC_AUTH) {
-		bt_shell_print("[auth]");
-	}
-
 	if (properties & BT_GATT_CHRC_EXT_PROP) {
 		bt_shell_print("[ext prop]");
 	}

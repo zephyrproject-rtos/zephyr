@@ -66,6 +66,9 @@ void udp_plat_deinit(void)
 			sockfd_udp[idx].fd = -1;
 		}
 	}
+
+	net_socket_service_register(&handle_udp_receive, sockfd_udp,
+				    ARRAY_SIZE(sockfd_udp), NULL);
 }
 
 otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
@@ -78,13 +81,14 @@ otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
 	VerifyOrExit(sock_cnt < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES,
 		     error = OT_ERROR_INVALID_STATE);
 
-	sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(sock >= 0, error = OT_ERROR_FAILED);
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
 	int off = 0;
 
-	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off)) == 0,
+	VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY,
+				      &off, sizeof(off)) == 0,
 		     error = OT_ERROR_FAILED);
 #endif
 
@@ -139,7 +143,7 @@ otError otPlatUdpBind(otUdpSocket *aUdpSocket)
 {
 	otError error = OT_ERROR_NONE;
 	int sock = -1;
-	struct sockaddr_in6 addr = {0};
+	struct net_sockaddr_in6 addr = {0};
 	int on = 1;
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
@@ -147,15 +151,17 @@ otError otPlatUdpBind(otUdpSocket *aUdpSocket)
 
 	sock = (int)POINTER_TO_INT(aUdpSocket->mHandle);
 	VerifyOrExit(sock >= 0, error = OT_ERROR_INVALID_ARGS);
-	addr.sin6_family = AF_INET6;
-	addr.sin6_port = htons(aUdpSocket->mSockName.mPort);
+	addr.sin6_family = NET_AF_INET6;
+	addr.sin6_port = net_htons(aUdpSocket->mSockName.mPort);
 	memcpy(&addr.sin6_addr, &aUdpSocket->mSockName.mAddress, sizeof(otIp6Address));
 
-	VerifyOrExit(zsock_bind(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0,
+	VerifyOrExit(zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_RECVPKTINFO,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_RECVHOPLIMIT,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
@@ -167,7 +173,7 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 	otError error = OT_ERROR_NONE;
 	int sock = -1;
 	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = {0};
-	struct ifreq if_req = {0};
+	struct net_ifreq if_req = {0};
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
 		     error = OT_ERROR_INVALID_ARGS);
@@ -177,15 +183,16 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 
 	switch (aNetifIdentifier) {
 	case OT_NETIF_UNSPECIFIED:
-		VerifyOrExit(zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, NULL, 0) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+					      NULL, 0) == 0,
 			     error = OT_ERROR_FAILED);
 		break;
 	case OT_NETIF_THREAD_HOST:
 		VerifyOrExit(net_if_get_name(ot_iface_ptr, name, CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 			     error = OT_ERROR_FAILED);
 		memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
-		VerifyOrExit(zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &if_req,
-					      sizeof(if_req)) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+					      &if_req, sizeof(if_req)) == 0,
 			     error = OT_ERROR_FAILED);
 		break;
 	case OT_NETIF_THREAD_INTERNAL:
@@ -210,7 +217,7 @@ otError otPlatUdpConnect(otUdpSocket *aUdpSocket)
 {
 	otError error = OT_ERROR_NONE;
 	int sock = -1;
-	struct sockaddr_in6 addr = {0};
+	struct net_sockaddr_in6 addr = {0};
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
 		     error = OT_ERROR_INVALID_ARGS);
@@ -219,11 +226,11 @@ otError otPlatUdpConnect(otUdpSocket *aUdpSocket)
 
 	if (aUdpSocket->mPeerName.mPort != 0 &&
 	    !otIp6IsAddressUnspecified(&aUdpSocket->mPeerName.mAddress)) {
-		addr.sin6_family = AF_INET6;
+		addr.sin6_family = NET_AF_INET6;
 		memcpy(&addr.sin6_addr, &aUdpSocket->mPeerName.mAddress, sizeof(otIp6Address));
-		addr.sin6_port = htons(aUdpSocket->mPeerName.mPort);
+		addr.sin6_port = net_htons(aUdpSocket->mPeerName.mPort);
 
-		VerifyOrExit(zsock_connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0,
+		VerifyOrExit(zsock_connect(sock, (struct net_sockaddr *)&addr, sizeof(addr)) == 0,
 			     error = OT_ERROR_FAILED);
 	}
 
@@ -237,18 +244,19 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 {
 	otError error = OT_ERROR_NONE;
 	struct otbr_msg_ctx *req = NULL;
-	uint8_t control_buf[CMSG_SPACE(sizeof(struct in6_pktinfo)) + CMSG_SPACE(sizeof(int))] = {0};
+	uint8_t control_buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo)) +
+			    NET_CMSG_SPACE(sizeof(int))] = {0};
 	uint16_t len = otMessageGetLength(aMessage);
 	size_t control_len = 0;
-	struct sockaddr_in6 peer = {0};
+	struct net_sockaddr_in6 peer = {0};
 	int sock = -1;
-	struct iovec iov = {0};
-	struct msghdr msg_hdr = {0};
-	struct cmsghdr *cmsg_hdr = NULL;
+	struct net_iovec iov = {0};
+	struct net_msghdr msg_hdr = {0};
+	struct net_cmsghdr *cmsg_hdr = NULL;
 	int hop_limit = 0;
 	int on = 1, off = 0;
 	int optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
 		     error = OT_ERROR_INVALID_ARGS);
@@ -263,8 +271,8 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	iov.iov_base = req->buffer;
 	iov.iov_len = len;
 
-	peer.sin6_family = AF_INET6;
-	peer.sin6_port = htons(aMessageInfo->mPeerPort);
+	peer.sin6_family = NET_AF_INET6;
+	peer.sin6_port = net_htons(aMessageInfo->mPeerPort);
 	memcpy(&peer.sin6_addr, &aMessageInfo->mPeerAddr, sizeof(otIp6Address));
 
 	if (((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
@@ -282,36 +290,36 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 
 	msg_hdr.msg_flags = 0;
 
-	cmsg_hdr = CMSG_FIRSTHDR(&msg_hdr);
-	cmsg_hdr->cmsg_level = IPPROTO_IPV6;
-	cmsg_hdr->cmsg_type = IPV6_HOPLIMIT;
-	cmsg_hdr->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg_hdr = NET_CMSG_FIRSTHDR(&msg_hdr);
+	cmsg_hdr->cmsg_level = NET_IPPROTO_IPV6;
+	cmsg_hdr->cmsg_type = ZSOCK_IPV6_HOPLIMIT;
+	cmsg_hdr->cmsg_len = NET_CMSG_LEN(sizeof(int));
 
 	hop_limit = (aMessageInfo->mHopLimit ? aMessageInfo->mHopLimit : 255);
-	memcpy(CMSG_DATA(cmsg_hdr), &hop_limit, sizeof(int));
-	control_len += CMSG_SPACE(sizeof(int));
+	memcpy(NET_CMSG_DATA(cmsg_hdr), &hop_limit, sizeof(int));
+	control_len += NET_CMSG_SPACE(sizeof(int));
 
 	if (!otIp6IsAddressUnspecified(&aMessageInfo->mSockAddr)) {
-		struct in6_pktinfo pktinfo;
+		struct net_in6_pktinfo pktinfo;
 
-		cmsg_hdr = CMSG_NXTHDR(&msg_hdr, cmsg_hdr);
-		cmsg_hdr->cmsg_level = IPPROTO_IPV6;
-		cmsg_hdr->cmsg_type = IPV6_PKTINFO;
-		cmsg_hdr->cmsg_len = CMSG_LEN(sizeof(pktinfo));
+		cmsg_hdr = NET_CMSG_NXTHDR(&msg_hdr, cmsg_hdr);
+		cmsg_hdr->cmsg_level = NET_IPPROTO_IPV6;
+		cmsg_hdr->cmsg_type = ZSOCK_IPV6_PKTINFO;
+		cmsg_hdr->cmsg_len = NET_CMSG_LEN(sizeof(pktinfo));
 
 		pktinfo.ipi6_ifindex = aMessageInfo->mIsHostInterface ? 0 : ail_iface_index;
 
 		memcpy(&pktinfo.ipi6_addr, &aMessageInfo->mSockAddr, sizeof(otIp6Address));
-		memcpy(CMSG_DATA(cmsg_hdr), &pktinfo, sizeof(pktinfo));
+		memcpy(NET_CMSG_DATA(cmsg_hdr), &pktinfo, sizeof(pktinfo));
 
-		control_len += CMSG_SPACE(sizeof(pktinfo));
+		control_len += NET_CMSG_SPACE(sizeof(pktinfo));
 	}
 
 	msg_hdr.msg_controllen = control_len;
 
 	if (aMessageInfo->mMulticastLoop) {
-		VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &on,
-					      sizeof(on)) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_LOOP,
+					      &on, sizeof(on)) == 0,
 			     error = OT_ERROR_FAILED);
 	}
 
@@ -320,13 +328,13 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	otMessageFree(aMessage);
 	aMessage = NULL;
 
-	VerifyOrExit(zsock_getsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &optval,
+	VerifyOrExit(zsock_getsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_LOOP, &optval,
 				      &optlen) == 0,
 		     error = OT_ERROR_FAILED);
 
 	if (optval) {
-		VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &off,
-					      sizeof(off)) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_LOOP,
+					      &off, sizeof(off)) == 0,
 			     error = OT_ERROR_FAILED);
 	}
 
@@ -366,8 +374,8 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier a
 		break;
 	}
 
-	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq,
-				      sizeof(mreq)) == 0,
+	VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
+				      &mreq, sizeof(mreq)) == 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
@@ -378,7 +386,7 @@ otError otPlatUdpLeaveMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier 
 				     const otIp6Address *aAddress)
 {
 	otError error = OT_ERROR_NONE;
-	struct ipv6_mreq mreq = {0};
+	struct net_ipv6_mreq mreq = {0};
 	int sock;
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
@@ -402,8 +410,8 @@ otError otPlatUdpLeaveMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier 
 		break;
 	}
 
-	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq,
-				      sizeof(mreq)) == 0,
+	VerifyOrExit(zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_DROP_MEMBERSHIP,
+				      &mreq, sizeof(mreq)) == 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
@@ -412,11 +420,12 @@ exit:
 
 static void udp_receive_handler(struct net_socket_service_event *evt)
 {
-	uint8_t control[CMSG_SPACE(sizeof(int)) + CMSG_SPACE(sizeof(struct in6_pktinfo))] = {0};
-	struct msghdr msg = {0};
-	struct iovec iov = {0};
-	struct cmsghdr *cmsg = NULL;
-	struct sockaddr_in6 peer_addr = {0};
+	uint8_t control[NET_CMSG_SPACE(sizeof(int)) +
+			NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))] = {0};
+	struct net_msghdr msg = {0};
+	struct net_iovec iov = {0};
+	struct net_cmsghdr *cmsg = NULL;
+	struct net_sockaddr_in6 peer_addr = {0};
 	struct otbr_msg_ctx *req = NULL;
 	ssize_t rval = 0;
 
@@ -450,22 +459,22 @@ static void udp_receive_handler(struct net_socket_service_event *evt)
 	VerifyOrExit(rval > 0);
 	req->length = (uint16_t)rval;
 
-	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-		if (cmsg->cmsg_level == IPPROTO_IPV6) {
-			if (cmsg->cmsg_type == IPV6_PKTINFO &&
-			    cmsg->cmsg_len == CMSG_LEN(sizeof(struct in6_pktinfo))) {
-				struct in6_pktinfo pktinfo;
+	for (cmsg = NET_CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(&msg, cmsg)) {
+		if (cmsg->cmsg_level == NET_IPPROTO_IPV6) {
+			if (cmsg->cmsg_type == ZSOCK_IPV6_PKTINFO &&
+			    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in6_pktinfo))) {
+				struct net_in6_pktinfo pktinfo;
 
-				memcpy(&pktinfo, CMSG_DATA(cmsg), sizeof(pktinfo));
+				memcpy(&pktinfo, NET_CMSG_DATA(cmsg), sizeof(pktinfo));
 				memcpy(&req->message_info.mSockAddr, &pktinfo.ipi6_addr,
 				       sizeof(otIp6Address));
 				req->message_info.mIsHostInterface =
 					(pktinfo.ipi6_ifindex == (unsigned int)ail_iface_index);
-			} else if (cmsg->cmsg_type == IPV6_HOPLIMIT &&
-				   cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
+			} else if (cmsg->cmsg_type == ZSOCK_IPV6_HOPLIMIT &&
+				   cmsg->cmsg_len == NET_CMSG_LEN(sizeof(int))) {
 				int hoplimit;
 
-				memcpy(&hoplimit, CMSG_DATA(cmsg), sizeof(hoplimit));
+				memcpy(&hoplimit, NET_CMSG_DATA(cmsg), sizeof(hoplimit));
 				req->message_info.mHopLimit = (uint8_t)hoplimit;
 			} else {
 				continue;
@@ -475,7 +484,7 @@ static void udp_receive_handler(struct net_socket_service_event *evt)
 	}
 
 	memcpy(&req->message_info.mPeerAddr, &peer_addr.sin6_addr, sizeof(otIp6Address));
-	req->message_info.mPeerPort = ntohs(peer_addr.sin6_port);
+	req->message_info.mPeerPort = net_ntohs(peer_addr.sin6_port);
 	req->message_info.mSockPort = req->socket->mSockName.mPort;
 
 	openthread_border_router_post_message(req);

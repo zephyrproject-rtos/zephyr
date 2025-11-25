@@ -105,13 +105,30 @@
 
 	soc {
 		itcm: itcm@0 {
-			compatible = "nxp,imx-itcm";
-			reg = <0x0 DT_SIZE_K(256)>;
+			compatible = "zephyr,memory-region", "nxp,imx-itcm";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "ITCM";
 		};
 
 		dtcm: dtcm@20000000 {
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 0x4000>;
+			interrupts = <46 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 0x4000>;
+			interrupts = <47 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO2>;
+			status = "disabled";
 		};
 
 		flexspi: spi@425e0000 {
@@ -517,6 +534,32 @@
 			clk-source = <2>;
 			prescale-glitch-filter = <0>;
 			resolution = <32>;
+			status = "disabled";
+		};
+
+		i3c1: i3c@44330000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x44330000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C1>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i3c2: i3c@42520000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x42520000 0x1000>;
+			interrupts = <57 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C2>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

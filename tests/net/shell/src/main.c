@@ -128,46 +128,46 @@ static void *test_setup(void)
 	struct net_if *iface;
 	struct net_if_addr *ifaddr;
 
-	struct sockaddr_in6 any_addr6;
-	const struct in6_addr in6addr_anyaddr = IN6ADDR_ANY_INIT;
+	struct net_sockaddr_in6 any_addr6;
+	const struct net_in6_addr in6addr_anyaddr = NET_IN6ADDR_ANY_INIT;
 
-	struct sockaddr_in6 my_addr6;
-	struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_sockaddr_in6 my_addr6;
+	struct net_in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-	struct sockaddr_in6 peer_addr6;
-	struct in6_addr in6addr_peer = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_sockaddr_in6 peer_addr6;
+	struct net_in6_addr in6addr_peer = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0x4e, 0x11, 0, 0, 0x2 } } };
 
-	struct sockaddr_in any_addr4;
-	const struct in_addr in4addr_any = { { { 0 } } };
+	struct net_sockaddr_in any_addr4;
+	const struct net_in_addr in4addr_any = { { { 0 } } };
 
-	struct sockaddr_in my_addr4;
-	struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
+	struct net_sockaddr_in my_addr4;
+	struct net_in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 
-	struct sockaddr_in peer_addr4;
-	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
+	struct net_sockaddr_in peer_addr4;
+	struct net_in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	test_failed = false;
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_anyaddr);
-	any_addr6.sin6_family = AF_INET6;
+	any_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
-	my_addr6.sin6_family = AF_INET6;
+	my_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&peer_addr6.sin6_addr, &in6addr_peer);
-	peer_addr6.sin6_family = AF_INET6;
+	peer_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&any_addr4.sin_addr, &in4addr_any);
-	any_addr4.sin_family = AF_INET;
+	any_addr4.sin_family = NET_AF_INET;
 
 	net_ipaddr_copy(&my_addr4.sin_addr, &in4addr_my);
-	my_addr4.sin_family = AF_INET;
+	my_addr4.sin_family = NET_AF_INET;
 
 	net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
-	peer_addr4.sin_family = AF_INET;
+	peer_addr4.sin_family = NET_AF_INET;
 
 	k_sem_init(&recv_lock, 0, UINT_MAX);
 

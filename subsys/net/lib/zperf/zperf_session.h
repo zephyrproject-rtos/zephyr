@@ -63,9 +63,9 @@ struct session {
 typedef void (*session_cb_t)(struct session *ses, enum session_proto proto,
 			     void *user_data);
 
-struct session *get_session(const struct sockaddr *addr,
+struct session *get_session(const struct net_sockaddr *addr,
 			    enum session_proto proto);
-struct session *get_free_session(const struct sockaddr *addr,
+struct session *get_free_session(const struct net_sockaddr *addr,
 				 enum session_proto proto);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);

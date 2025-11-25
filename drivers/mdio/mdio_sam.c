@@ -122,20 +122,6 @@ static int mdio_sam_write_c45(const struct device *dev, uint8_t prtad,
 	return err;
 }
 
-static void mdio_sam_bus_enable(const struct device *dev)
-{
-	const struct mdio_sam_dev_config *const cfg = dev->config;
-
-	cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
-}
-
-static void mdio_sam_bus_disable(const struct device *dev)
-{
-	const struct mdio_sam_dev_config *const cfg = dev->config;
-
-	cfg->regs->GMAC_NCR &= ~GMAC_NCR_MPE;
-}
-
 static int mdio_sam_initialize(const struct device *dev)
 {
 	const struct mdio_sam_dev_config *const cfg = dev->config;
@@ -156,6 +142,10 @@ static int mdio_sam_initialize(const struct device *dev)
 #endif
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval >= 0) {
+		/* Enable MDIO */
+		cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
+	}
 
 	return retval;
 }
@@ -165,8 +155,6 @@ static DEVICE_API(mdio, mdio_sam_driver_api) = {
 	.write = mdio_sam_write,
 	.read_c45 = mdio_sam_read_c45,
 	.write_c45 = mdio_sam_write_c45,
-	.bus_enable = mdio_sam_bus_enable,
-	.bus_disable = mdio_sam_bus_disable,
 };
 
 #define MDIO_SAM_CLOCK(n)						\

@@ -26,8 +26,8 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     set(BOARD_NAME mimxrt1050_evk)
   else()
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT1060-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration or device configuration data blocks")
+      "the MIMXRT1060-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration or device configuration data blocks")
     # Default EVK configuration uses qspi, so use that file
     set(FLASH_CONF evkbmimxrt1060_flexspi_nor_config.c)
     set(BOARD_NAME mimxrt1060_evk)

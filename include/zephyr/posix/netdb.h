@@ -63,10 +63,10 @@ void endhostent(void);
 void endnetent(void);
 void endprotoent(void);
 void endservent(void);
-void freeaddrinfo(struct zsock_addrinfo *ai);
+void freeaddrinfo(struct addrinfo *ai);
 const char *gai_strerror(int errcode);
-int getaddrinfo(const char *host, const char *service, const struct zsock_addrinfo *hints,
-		struct zsock_addrinfo **res);
+int getaddrinfo(const char *host, const char *service, const struct addrinfo *hints,
+		struct addrinfo **res);
 struct hostent *gethostent(void);
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen, int flags);

@@ -3,7 +3,7 @@
 
 config SOC_FAMILY_STM32
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
-	select STM32_ENABLE_DEBUG_SLEEP_STOP if DEBUG || ZTEST
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if ZTEST
 	select BUILD_OUTPUT_HEX
 
 if SOC_FAMILY_STM32
@@ -40,6 +40,7 @@ config STM32_BACKUP_SRAM_INIT_PRIORITY
 
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"
+	default y if DEBUG
 	help
 	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
 	  of power consumption. As a side-effects this prevents
@@ -74,48 +75,6 @@ config STM32_WKUP_PINS
 	depends on DT_HAS_ST_STM32_PWR_ENABLED
 	help
 	  Enable support for STM32 PWR wake-up pins.
-
-choice POWER_SUPPLY_CHOICE
-	prompt "STM32 power supply configuration"
-	default POWER_SUPPLY_LDO
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || \
-		SOC_SERIES_STM32U5X || SOC_STM32WBA55XX || SOC_STM32WBA65XX
-
-config POWER_SUPPLY_LDO
-	bool "LDO supply"
-
-config POWER_SUPPLY_DIRECT_SMPS
-	bool "Direct SMPS supply"
-
-config POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO
-	bool "SMPS 1.8V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO
-	bool "SMPS 2.5V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO
-	bool "External SMPS 1.8V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO
-	bool "External SMPS 2.5V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT
-	bool "External SMPS 1.8V supply and bypass"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT
-	bool "External SMPS 2.5V supply and bypass"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-config POWER_SUPPLY_EXTERNAL_SOURCE
-	bool "Bypass"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
-
-endchoice
 
 config STM32_BACKUP_PROTECTION
 	bool "SoC has backup domain protection access"

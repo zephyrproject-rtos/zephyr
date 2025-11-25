@@ -5,21 +5,6 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
-"./arch/x86/gen_gdt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_idt.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/x86/gen_mmu.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP034",    # https://docs.astral.sh/ruff/rules/extraneous-parentheses
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./arch/x86/zefi/zefi.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -288,52 +273,10 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/ci/check_compliance.py" = [
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/coverage/coverage_analysis.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/errno.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/guideline_check.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/ci/stats/merged_prs.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/ci/test_plan.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E401",     # https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/ci/upload_test_results_es.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/ci/version_mgr.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/coredump/coredump_gdbserver.py" = [
@@ -1142,9 +1085,6 @@
 
 [format]
 exclude = [
-    "./arch/x86/gen_gdt.py",
-    "./arch/x86/gen_idt.py",
-    "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
     "./doc/_scripts/gen_devicetree_rest.py",
@@ -1200,15 +1140,7 @@ exclude = [
     "./scripts/build/subfolder_list.py",
     "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
-    "./scripts/ci/check_compliance.py",
-    "./scripts/ci/coverage/coverage_analysis.py",
-    "./scripts/ci/errno.py",
-    "./scripts/ci/guideline_check.py",
-    "./scripts/ci/stats/merged_prs.py",
-    "./scripts/ci/test_plan.py",
-    "./scripts/ci/twister_report_analyzer.py",
     "./scripts/ci/upload_test_results_es.py",
-    "./scripts/ci/version_mgr.py",
     "./scripts/coredump/coredump_gdbserver.py",
     "./scripts/coredump/coredump_parser/elf_parser.py",
     "./scripts/coredump/coredump_parser/log_parser.py",
@@ -1352,7 +1284,6 @@ exclude = [
     "./scripts/utils/pinctrl_nrf_migrate.py",
     "./scripts/utils/twister_to_list.py",
     "./scripts/west_commands/bindesc.py",
-    "./scripts/west_commands/blobs.py",
     "./scripts/west_commands/boards.py",
     "./scripts/west_commands/build.py",
     "./scripts/west_commands/build_helpers.py",

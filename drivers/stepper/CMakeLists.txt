@@ -13,5 +13,7 @@ add_subdirectory(ti)
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+# zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_FAKE_STEPPER fake_stepper_controller.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_SHELL stepper_shell.c)
+# zephyr-keep-sorted-stop

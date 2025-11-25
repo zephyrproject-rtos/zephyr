@@ -6,4 +6,4 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_TIMEAWARE_GPIO_INTEL timeaware_gpio_intel.c)
 
-zephyr_library_sources_ifdef(CONFIG_USERSPACE  timeaware_gpio_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE timeaware_gpio_handlers.c)

@@ -26,8 +26,8 @@ static void set_optional_tlv(struct net_if *iface)
 {
 	NET_DBG("");
 
-	tlv.type_length = htons((LLDP_TLV_SYSTEM_NAME << 9) |
-				((sizeof(tlv) - sizeof(uint16_t)) & 0x01ff));
+	tlv.type_length = net_htons((LLDP_TLV_SYSTEM_NAME << 9) |
+				    ((sizeof(tlv) - sizeof(uint16_t)) & 0x01ff));
 
 	net_lldp_config_optional(iface, (uint8_t *)&tlv, sizeof(tlv));
 }
@@ -64,8 +64,8 @@ static int setup_iface(struct net_if *eth_iface,
 		       uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
-	struct in_addr addr4;
-	struct in6_addr addr6;
+	struct net_in_addr addr4;
+	struct net_in6_addr addr6;
 	int ret;
 
 	ret = net_eth_vlan_enable(eth_iface, vlan_tag);
@@ -73,7 +73,7 @@ static int setup_iface(struct net_if *eth_iface,
 		LOG_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
 	}
 
-	if (net_addr_pton(AF_INET6, ipv6_addr, &addr6)) {
+	if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
 		LOG_ERR("Invalid address: %s", ipv6_addr);
 		return -EINVAL;
 	}
@@ -84,7 +84,7 @@ static int setup_iface(struct net_if *eth_iface,
 		return -EINVAL;
 	}
 
-	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
+	if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
 		LOG_ERR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}

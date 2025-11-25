@@ -32,7 +32,10 @@ if(DEFINED CONFIG_POSIX_THREADS)
   set(CMAKE_USE_PTHREADS_INIT 1)
 endif()
 
-find_package_handle_standard_args(Threads DEFAULT_MSG Threads_FOUND)
+find_package_handle_standard_args(Threads
+  DEFAULT_MSG
+  Threads_FOUND
+)
 
 if(Threads_FOUND AND NOT TARGET Threads::Threads)
   # This is just an empty interface, because we don't need to provide any

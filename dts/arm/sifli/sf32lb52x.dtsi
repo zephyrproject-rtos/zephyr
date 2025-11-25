@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Core Devices LLC
+ * Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -105,6 +106,14 @@
 			status = "disabled";
 		};
 
+		trng: trng@5000f000 {
+			compatible = "sifli,sf32lb-trng";
+			reg = <0x5000f000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_TRNG>;
+			interrupts = <69 0>;
+			status = "disabled";
+		};
+
 		mpi1: memory-controller@50041000 {
 			/*
 			 * configure compatible depending on memory type, choices:
@@ -131,6 +140,13 @@
 			status = "disabled";
 		};
 
+		crc: crc@50048000 {
+			compatible = "sifli,sf32lb-crc";
+			reg = <0x50048000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_CRC1>;
+			status = "disabled";
+		};
+
 		dmac: dma-controller@50081000 {
 			compatible = "sifli,sf32lb-dmac";
 			reg = <0x50081000 0x1000>;
@@ -140,6 +156,13 @@
 			dma-channels = <8>;
 			dma-requests = <64>;
 			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		mailbox: mailbox@50082000 {
+			compatible = "sifli,sf32lb-mailbox";
+			reg = <0x50082000 0x1000>;
+			interrupts = <58 1>;
 			status = "disabled";
 		};
 
@@ -163,6 +186,14 @@
 			reg = <0x50086000 0x400>;
 			interrupts = <95 0>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_USART3>;
+			status = "disabled";
+		};
+
+		tsen: tsen@50089000 {
+			compatible = "sifli,sf32lb-tsen";
+			reg = <0x50089000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_TSEN>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
 
@@ -271,6 +302,7 @@
 			#size-cells = <1>;
 			interrupts = <49 0>;
 			sifli,cfg = <&cfg>;
+			alarms-count = <1>;
 			status = "disabled";
 
 			backup-registers@30 {

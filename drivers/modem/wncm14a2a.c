@@ -108,8 +108,8 @@ struct wncm14a2a_socket {
 	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
-	struct sockaddr src;
-	struct sockaddr dst;
+	struct net_sockaddr src;
+	struct net_sockaddr dst;
 
 	int socket_id;
 
@@ -277,27 +277,21 @@ static void socket_put(struct wncm14a2a_socket *sock)
 
 	sock->context = NULL;
 	sock->socket_id = 0;
-	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
-	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
+	(void)memset(&sock->src, 0, sizeof(struct net_sockaddr));
+	(void)memset(&sock->dst, 0, sizeof(struct net_sockaddr));
 }
 
-char *wncm14a2a_sprint_ip_addr(const struct sockaddr *addr)
+char *wncm14a2a_sprint_ip_addr(const struct net_sockaddr *addr)
 {
 	static char buf[NET_IPV6_ADDR_LEN];
 
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
-		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr,
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
+		return net_addr_ntop(NET_AF_INET6, &net_sin6(addr)->sin6_addr,
 				     buf, sizeof(buf));
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
-		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr,
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
+		return net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
 				     buf, sizeof(buf));
-	} else
-#endif
-	{
+	} else {
 		LOG_ERR("Unknown IP address family:%d", addr->sa_family);
 		return NULL;
 	}
@@ -433,49 +427,39 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 	int hdr_len = 0;
 	uint16_t src_port = 0U, dst_port = 0U;
 
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		if (net_ipv6_create(
 			    pkt,
-			    &((struct sockaddr_in6 *)&sock->dst)->sin6_addr,
-			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr)) {
+			    &((struct net_sockaddr_in6 *)&sock->dst)->sin6_addr,
+			    &((struct net_sockaddr_in6 *)&sock->src)->sin6_addr)) {
 			return -1;
 		}
-		src_port = ntohs(net_sin6(&sock->src)->sin6_port);
-		dst_port = ntohs(net_sin6(&sock->dst)->sin6_port);
+		src_port = net_ntohs(net_sin6(&sock->src)->sin6_port);
+		dst_port = net_ntohs(net_sin6(&sock->dst)->sin6_port);
 
 		hdr_len = sizeof(struct net_ipv6_hdr);
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		if (net_ipv4_create(
 			    pkt,
-			    &((struct sockaddr_in *)&sock->dst)->sin_addr,
-			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
+			    &((struct net_sockaddr_in *)&sock->dst)->sin_addr,
+			    &((struct net_sockaddr_in *)&sock->src)->sin_addr)) {
 			return -1;
 		}
-		src_port = ntohs(net_sin(&sock->src)->sin_port);
-		dst_port = ntohs(net_sin(&sock->dst)->sin_port);
+		src_port = net_ntohs(net_sin(&sock->src)->sin_port);
+		dst_port = net_ntohs(net_sin(&sock->dst)->sin_port);
 
 		hdr_len = sizeof(struct net_ipv4_hdr);
-	} else
-#endif
-	{
+	} else {
 		/* no error here as hdr_len is checked later for 0 value */
 	}
 
-#if defined(CONFIG_NET_UDP)
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (IS_ENABLED(CONFIG_NET_UDP) && sock->ip_proto == NET_IPPROTO_UDP) {
 		if (net_udp_create(pkt, dst_port, src_port)) {
 			return -1;
 		}
 
 		hdr_len += NET_UDPH_LEN;
-	} else
-#endif
-#if defined(CONFIG_NET_TCP)
-	if (sock->ip_proto == IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && sock->ip_proto == NET_IPPROTO_TCP) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp;
 
@@ -495,9 +479,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 		}
 
 		hdr_len += NET_TCPH_LEN;
-	} else
-#endif /* CONFIG_NET_TCP */
-	{
+	} else {
 		/* no error here as hdr_len is checked later for 0 value */
 	}
 
@@ -1471,7 +1453,7 @@ static int offload_get(sa_family_t family,
 	sock->socket_id = MDM_MAX_SOCKETS + 1; /* socket # needs assigning */
 
 	snprintk(buf, sizeof(buf), "AT@SOCKCREAT=%d,%d", type,
-		 family == AF_INET ? 0 : 1);
+		 family == NET_AF_INET ? 0 : 1);
 	ret = send_at_cmd(NULL, buf, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("AT@SOCKCREAT ret:%d", ret);
@@ -1482,7 +1464,7 @@ static int offload_get(sa_family_t family,
 }
 
 static int offload_bind(struct net_context *context,
-			const struct sockaddr *addr,
+			const struct net_sockaddr *addr,
 			socklen_t addrlen)
 {
 	struct wncm14a2a_socket *sock = NULL;
@@ -1499,21 +1481,16 @@ static int offload_bind(struct net_context *context,
 
 	/* save bind address information */
 	sock->src.sa_family = addr->sa_family;
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		net_ipaddr_copy(&net_sin6(&sock->src)->sin6_addr,
 				&net_sin6(addr)->sin6_addr);
 		net_sin6(&sock->src)->sin6_port = net_sin6(addr)->sin6_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->src)->sin_addr,
 				&net_sin(addr)->sin_addr);
 		net_sin(&sock->src)->sin_port = net_sin(addr)->sin_port;
-	} else
-#endif
-	{
+	} else {
 		return -EPFNOSUPPORT;
 	}
 
@@ -1527,7 +1504,7 @@ static int offload_listen(struct net_context *context, int backlog)
 }
 
 static int offload_connect(struct net_context *context,
-			   const struct sockaddr *addr,
+			   const struct net_sockaddr *addr,
 			   socklen_t addrlen,
 			   net_context_connect_cb_t cb,
 			   int32_t timeout,
@@ -1560,23 +1537,17 @@ static int offload_connect(struct net_context *context,
 
 	sock->dst.sa_family = addr->sa_family;
 
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		net_ipaddr_copy(&net_sin6(&sock->dst)->sin6_addr,
 				&net_sin6(addr)->sin6_addr);
-		dst_port = ntohs(net_sin6(addr)->sin6_port);
+		dst_port = net_ntohs(net_sin6(addr)->sin6_port);
 		net_sin6(&sock->dst)->sin6_port = dst_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->dst)->sin_addr,
 				&net_sin(addr)->sin_addr);
-		dst_port = ntohs(net_sin(addr)->sin_port);
+		dst_port = net_ntohs(net_sin(addr)->sin_port);
 		net_sin(&sock->dst)->sin_port = dst_port;
-	} else
-#endif
-	{
+	} else {
 		return -EINVAL;
 	}
 
@@ -1618,7 +1589,7 @@ static int offload_accept(struct net_context *context,
 }
 
 static int offload_sendto(struct net_pkt *pkt,
-			  const struct sockaddr *dst_addr,
+			  const struct net_sockaddr *dst_addr,
 			  socklen_t addrlen,
 			  net_context_send_cb_t cb,
 			  int32_t timeout,
@@ -1660,17 +1631,11 @@ static int offload_send(struct net_pkt *pkt,
 	struct net_context *context = net_pkt_context(pkt);
 	socklen_t addrlen;
 
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		addrlen = sizeof(struct sockaddr_in6);
-	} else
-#endif /* CONFIG_NET_IPV6 */
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		addrlen = sizeof(struct sockaddr_in);
-	} else
-#endif /* CONFIG_NET_IPV4 */
-	{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
+		addrlen = sizeof(struct net_sockaddr_in6);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+		addrlen = sizeof(struct net_sockaddr_in);
+	} else {
 		return -EPFNOSUPPORT;
 	}
 
@@ -1729,7 +1694,7 @@ static int offload_put(struct net_context *context)
 
 	socket_put(sock);
 	net_context_unref(context);
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		/* TCP contexts are referenced twice,
 		 *  once for the app and once for the stack.
 		 *  Since TCP stack is not used for offload,

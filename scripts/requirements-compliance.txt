@@ -4,6 +4,7 @@
 # zephyr-keep-sorted-start
 clang-format>=15.0.0
 gitlint-core
+jsonschema
 junitparser>=4.0.1
 lxml>=5.3.0
 pykwalify
@@ -11,9 +12,12 @@ pylint>=3
 python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
+reuse
 ruff==0.14.2
 sphinx-lint
+tabulate
 unidiff
 vermin
+west>=0.14.0
 yamllint
 # zephyr-keep-sorted-stop

@@ -75,8 +75,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 
@@ -123,6 +122,10 @@
 	ppre2 = <2>;
 	ppre4 = <2>;
 	ppre5 = <2>;
+};
+
+&pwr {
+	power-supply = "smps-direct";
 };
 
 &uart4 {

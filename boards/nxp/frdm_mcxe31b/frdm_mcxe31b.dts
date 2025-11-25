@@ -22,6 +22,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button;
 		rtc = &counter_rtc;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -180,5 +181,9 @@
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&swt_0 {
 	status = "okay";
 };
