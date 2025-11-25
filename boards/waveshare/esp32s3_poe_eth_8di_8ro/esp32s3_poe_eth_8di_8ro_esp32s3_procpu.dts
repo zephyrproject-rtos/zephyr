@@ -7,11 +7,9 @@
 
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
-#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
-#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include "esp32s3_poe_eth_8di_8ro-pinctrl.dtsi"
 
 / {
 	model = "ESP32-S3-POE-ETH-8DI-8RO PROCPU";
@@ -102,46 +100,6 @@
 
 &gpio1 {
 	status = "okay";
-};
-
-&pinctrl {
-
-	spim2_default: spim2_default {
-		group1 {
-			pinmux = <SPIM2_MOSI_GPIO13>,
-				 <SPIM2_SCLK_GPIO15>,
-				 <SPIM2_CSEL_GPIO16>;
-		};
-
-		group2 {
-			pinmux = <SPIM2_MISO_GPIO14>;
-			input-enable;
-		};
-	};
-
-	spim3_default: spim3_default {
-		group2 {
-			pinmux = <SPIM3_MOSI_GPIO38>;
-		};
-	};
-
-	sdhc0_default: sdhc0_default {
-		pinmux = <SDHC0_CLKOUT_GPIO48>,
-				<SDHC0_CMD_GPIO47>,
-				<SDHC0_DATA0_GPIO45>;
-		bias-pull-up;
-		output-high;
-	};
-
-	i2c0_default: i2c0_default {
-		group1 {
-			pinmux = <I2C0_SDA_GPIO42>,
-				 <I2C0_SCL_GPIO41>;
-			bias-pull-up;
-			drive-open-drain;
-			output-high;
-		};
-	};
 };
 
 &spi2 {
