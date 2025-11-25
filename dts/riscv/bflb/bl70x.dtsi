@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/bl70x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl70x_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	#address-cells = <1>;
@@ -179,6 +180,16 @@
 			status = "disabled";
 
 			interrupts = <48 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		pwm0: pwm@4000a400 {
+			compatible = "bflb,pwm-1";
+			reg = <0x4000a400 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+
+			interrupts = <50 0>;
 			interrupt-parent = <&clic>;
 		};
 

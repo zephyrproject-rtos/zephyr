@@ -1013,6 +1013,8 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval |= (1 << 17);
 	/* enable I2C0 clock routing */
 	regval |= (1 << 19);
+	/* enable PWM clock routing */
+	regval |= (1 << 20);
 	/* enable I2C1 clock routing */
 	regval |= (1 << 25);
 	/* enable SPI0 clock routing */
