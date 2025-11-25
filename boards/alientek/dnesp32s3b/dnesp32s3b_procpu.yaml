@@ -10,5 +10,6 @@ supported:
   - gpio
   - uart
   - i2c
+  - sdhc
   - watchdog
 vendor: alientek
