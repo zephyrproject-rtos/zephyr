@@ -9,6 +9,18 @@ config STM32_USB_COMMON
 	  Enable compilation of STM32 USB common code.
 	  This option is selected by the USB drivers when appropriate.
 
+config STM32_PHY_USBPHYC
+	def_bool y
+	depends on DT_HAS_ST_STM32_USBPHYC_ENABLED
+	help
+	  Enable STM32 USBPHYC embedded High-Speed PHY driver.
+
+config STM32_PHY_U5OTGHSPHY
+	def_bool y
+	depends on DT_HAS_ST_STM32U5_OTGHS_PHY_ENABLED
+	help
+	  Enable STM32 U5OTGHS embedded High-Speed PHY driver.
+
 module = STM32_USB_COMMON
 module-str = STM32 USB common code
 source "subsys/logging/Kconfig.template.log_config"
