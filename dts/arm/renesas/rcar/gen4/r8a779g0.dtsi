@@ -63,6 +63,45 @@
 			current-speed = <921600>;
 			status = "disabled";
 		};
+
+		cmt1: timer@e6130000 {
+			compatible = "renesas,rcar-cmt-counter";
+			reg = <0xe6130000 0x722>,
+			      <0xe6131000 0x4>;
+			interrupts = <GIC_SPI 262 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 263 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 264 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 265 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 911>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			status = "disabled";
+		};
+
+		cmt2: timer@e6140000 {
+			compatible = "renesas,rcar-cmt-counter";
+			reg = <0xe6140000 0x722>,
+			      <0xe6141000 0x4>;
+			interrupts = <GIC_SPI 270 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 271 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 272 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 273 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 912>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			status = "disabled";
+		};
+
+		cmt3: timer@e6148000 {
+			compatible = "renesas,rcar-cmt-counter";
+			reg = <0xe6148000 0x722>,
+			      <0xe6149000 0x4>;
+			interrupts = <GIC_SPI 278 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 279 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 280 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 281 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 913>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			status = "disabled";
+		};
 	};
 
 	clocks {

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RCAR_CMT
+	bool "Renesas CMT counter driver"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_CMT_COUNTER_ENABLED
+	help
+	  Enable R-Car CMT counter driver.
