@@ -37,6 +37,8 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
 Ethernet
 ========
 
@@ -93,6 +95,8 @@ STM32
   * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+.. zephyr-keep-sorted-stop
 
 Bluetooth
 *********
