@@ -3,6 +3,7 @@ common:
   tags:
     - net
     - mdns
+    - fdtable
 sample:
   name: mDNS responder
 tests:

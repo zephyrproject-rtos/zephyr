@@ -3,6 +3,7 @@ common:
     - net
     - cloud
     - dns
+    - fdtable
     - http
     - wifi
   min_ram: 64

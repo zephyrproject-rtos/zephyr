@@ -2,6 +2,7 @@ common:
   depends_on: netif
   min_ram: 60
   tags:
+    - fdtable
     - http
     - net
     - server

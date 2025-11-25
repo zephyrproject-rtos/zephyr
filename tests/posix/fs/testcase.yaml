@@ -4,6 +4,7 @@ common:
     - posix
     - filesystem
     - fatfs
+    - fdtable
   min_ram: 128
   modules:
     - fatfs

@@ -1,5 +1,8 @@
 sample:
   name: format filesystem sample
+common:
+  tags:
+    - fdtable
 tests:
   sample.filesystem.format.littlefs:
     platform_allow:

@@ -2,6 +2,7 @@ sample:
   name: virtio filesystem sample
 common:
   tags:
+    - fdtable
     - filesystem
     - virtio
 tests:

@@ -2,6 +2,7 @@ common:
   tags:
     - dns
     - net
+    - fdtable
   depends_on: netif
   timeout: 600
   min_ram: 21

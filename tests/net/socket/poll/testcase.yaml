@@ -7,3 +7,4 @@ tests:
       - net
       - socket
       - poll
+      - fdtable

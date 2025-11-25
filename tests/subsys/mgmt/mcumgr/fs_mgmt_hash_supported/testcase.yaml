@@ -8,6 +8,7 @@ common:
     - mgmt
     - mcumgr
     - fs_mgmt_hash_supported
+    - fdtable
   integration_platforms:
     - native_sim
   platform_exclude:
