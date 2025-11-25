@@ -430,6 +430,7 @@
 			compatible = "st,stm32-watchdog";
 			reg = <0x44040000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(IWDG4, STM32_CLK)>;
+			interrupts = <3 0>;
 			status = "disabled";
 		};
 
