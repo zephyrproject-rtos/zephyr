@@ -473,6 +473,7 @@
 			status = "disabled";
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
+			allow-disable-usb-on-unplug;
 		};
 
 		hsusbd: hsusbd@40205000 {
