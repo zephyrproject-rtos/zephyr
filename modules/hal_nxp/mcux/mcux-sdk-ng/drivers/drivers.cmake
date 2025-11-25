@@ -69,6 +69,7 @@ set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_DMAMUX  CONFIG_MCUX_COMPONENT_driver.dma
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_rev2)
 set_variable_ifdef(CONFIG_EDAC_NXP_EIM          CONFIG_MCUX_COMPONENT_driver.eim)
 set_variable_ifdef(CONFIG_EDAC_NXP_ERM          CONFIG_MCUX_COMPONENT_driver.erm)
+set_variable_ifdef(CONFIG_EDAC_NXP_MECC         CONFIG_MCUX_COMPONENT_driver.mecc)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_RNGA     CONFIG_MCUX_COMPONENT_driver.rnga)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trng)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
