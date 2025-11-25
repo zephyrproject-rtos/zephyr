@@ -13,7 +13,6 @@
 		wkup_button: wkup {
 			label = "WKUP";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			zephyr,code = <INPUT_KEY_POWER>;
 		};
 	};
 };

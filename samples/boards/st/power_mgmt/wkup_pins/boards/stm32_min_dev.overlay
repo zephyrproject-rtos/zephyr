@@ -1,0 +1,32 @@
+/*
+ * Copyright (c)  2025 Arad Eizen <arad.rgb@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* The board has no actual button, you need to connect PA0 to GND with a jumper wire.
+	 * The internal PA0 pull-up seems to stop on poweroff mode so need an external resistor.
+	 */
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User SW0";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	aliases {
+		wkup-src = &user_button;
+	};
+};
+
+&pwr {
+	status = "okay";
+};
+
+&adc1 {
+	/* Disable since ADC1 input pin conflicts wake-up user_button */
+	status = "disabled";
+};
