@@ -51,7 +51,6 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_SF32LB_MPI_QSPI_NOR flash_sf32lb_mpi_q
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_OSPI flash_stm32_ospi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_XSPI flash_stm32_xspi.c)
-zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_ifx_cat1_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC23X0 soc_flash_cc23x0.c)
@@ -85,6 +84,12 @@ zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT25XV021A spi_flash_at25xv021a.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_ifx_serial_memory_qspi.c)
+else()
+  zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_ifx_cat1_qspi.c)
+endif()
 
 if(CONFIG_FLASH_SIMULATOR)
   zephyr_library_sources(flash_simulator.c)
