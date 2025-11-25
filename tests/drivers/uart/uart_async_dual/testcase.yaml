@@ -89,3 +89,4 @@ tests:
     extra_configs:
       - CONFIG_TEST_CHOPPED_TX=n
       - CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER=n
+      - CONFIG_UART_1_NRF_HW_ASYNC=n
