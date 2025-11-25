@@ -84,14 +84,26 @@
 	clocks {
 		hfxo: hfxo {
 			compatible = "fixed-clock";
+			status = "disabled";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(32)>;
+			clock-frequency = <DT_FREQ_M(64)>;
+		};
+
+		lfxo: lfxo {
+			compatible = "fixed-clock";
+			status = "disabled";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
 		};
 
 		fll16m: fll16m {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-fll16m";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
+			open-loop-accuracy-ppm = <20000>;
+			open-loop-startup-time-us = <200>; /* To be measured */
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
 		};
 
 		hsfll120: hsfll120 {
@@ -103,6 +115,19 @@
 						       128000000
 						       256000000
 						       320000000>;
+		};
+
+		lfclk: lfclk {
+			compatible = "nordic,nrf-lfclk";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "okay";
+			lfrc-accuracy-ppm = <500>;
+			lflprc-accuracy-ppm = <1000>;
+			lfrc-startup-time-us = <200>; /* To be measured */
+			lflprc-startup-time-us = <200>; /* To be measured */
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
 		};
 	};
 
@@ -760,6 +785,8 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
+				clocks = <&lfclk>, <&fll16m>;
+				clock-names = "lfclock", "hfclock";
 			};
 
 			dppic133: dppic@9a1000 {

@@ -12,10 +12,10 @@
 #include <hal/nrf_memconf.h>
 #include <hal/nrf_cache.h>
 #include <zephyr/cache.h>
-#include <power.h>
+#include <haltium_power.h>
 #include <soc_lrcconf.h>
 #include "soc.h"
-#include "pm_s2ram.h"
+#include "haltium_pm_s2ram.h"
 
 extern sys_snode_t soc_node;
 
