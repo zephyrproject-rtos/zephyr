@@ -12,12 +12,6 @@
 #include <zephyr/drivers/uart.h>
 #include <ctype.h>
 
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-
 LOG_MODULE_REGISTER(app);
 
 extern void foo(void);
@@ -109,14 +103,13 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	struct sys_getopt_state *state;
 	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 
-	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
-		state = sys_getopt_state_get();
+	while ((c = sys_getopt_r(argc, argv, "abhc:", &state)) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -125,7 +118,7 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = state->optarg;
+			cvalue = state.optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -135,18 +128,18 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
-			if (state->optopt == 'c') {
+			if (state.optopt == 'c') {
 				shell_print(sh,
 					"Option -%c requires an argument.",
-					state->optopt);
-			} else if (isprint(state->optopt) != 0) {
+					state.optopt);
+			} else if (isprint(state.optopt) != 0) {
 				shell_print(sh,
 					"Unknown option `-%c'.",
-					state->optopt);
+					state.optopt);
 			} else {
 				shell_print(sh,
 					"Unknown option character `\\x%x'.",
-					state->optopt);
+					state.optopt);
 			}
 			return 1;
 		default:
@@ -165,8 +158,9 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 	int aflag = 0;
 	int bflag = 0;
 	int c;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 
-	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
+	while ((c = sys_getopt_r(argc, argv, "abhc:", &state)) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -175,7 +169,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = sys_getopt_optarg;
+			cvalue = state.optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -185,17 +179,17 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
-			if (sys_getopt_optopt == 'c') {
+			if (state.optopt == 'c') {
 				shell_print(sh,
 					"Option -%c requires an argument.",
-					sys_getopt_optopt);
-			} else if (isprint(sys_getopt_optopt) != 0) {
+					state.optopt);
+			} else if (isprint(state.optopt) != 0) {
 				shell_print(sh, "Unknown option `-%c'.",
-					    sys_getopt_optopt);
+					    state.optopt);
 			} else {
 				shell_print(sh,
 					"Unknown option character `\\x%x'.",
-					sys_getopt_optopt);
+					state.optopt);
 			}
 			return 1;
 		default:

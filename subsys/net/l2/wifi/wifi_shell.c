@@ -582,7 +582,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"ssid", sys_getopt_required_argument, 0, 's'},
 		{"passphrase", sys_getopt_required_argument, 0, 'p'},
@@ -649,12 +649,11 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 's':
-			params->ssid = state->optarg;
+			params->ssid = state.optarg;
 			params->ssid_length = strlen(params->ssid);
 			if (params->ssid_length > WIFI_SSID_MAX_LEN) {
 				PR_WARNING("SSID too long (max %d characters)\n",
@@ -663,17 +662,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'k':
-			params->security = atoi(state->optarg);
+			params->security = atoi(state.optarg);
 			if (params->security) {
 				secure_connection = true;
 			}
 			break;
 		case 'p':
-			params->psk = state->optarg;
+			params->psk = state.optarg;
 			params->psk_length = strlen(params->psk);
 			break;
 		case 'c':
-			channel = strtol(state->optarg, &endptr, 10);
+			channel = strtol(state.optarg, &endptr, 10);
 			if (iface_mode == WIFI_MODE_AP && channel == 0) {
 				params->channel = channel;
 				break;
@@ -710,7 +709,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'b':
 			if (iface_mode == WIFI_MODE_INFRA ||
 			    iface_mode == WIFI_MODE_AP) {
-				switch (atoi(state->optarg)) {
+				switch (atoi(state.optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
 					break;
@@ -728,7 +727,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					}
 					__fallthrough;
 				default:
-					PR_ERROR("Invalid band: %d\n", atoi(state->optarg));
+					PR_ERROR("Invalid band: %d\n", atoi(state.optarg));
 					return -EINVAL;
 				}
 			}
@@ -740,26 +739,26 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					 wifi_security_txt(params->security));
 				return -EINVAL;
 			}
-			params->mfp = atoi(state->optarg);
+			params->mfp = atoi(state.optarg);
 			break;
 		case 'm':
 			if (net_bytes_from_str(params->bssid, sizeof(params->bssid),
-					       state->optarg) < 0) {
+					       state.optarg) < 0) {
 				PR_WARNING("Invalid MAC address\n");
 				return -EINVAL;
 			}
 			break;
 		case 't':
 			if (iface_mode == WIFI_MODE_INFRA) {
-				params->timeout = strtol(state->optarg, &endptr, 10);
+				params->timeout = strtol(state.optarg, &endptr, 10);
 				if (*endptr != '\0') {
-					PR_ERROR("Invalid timeout: %s\n", state->optarg);
+					PR_ERROR("Invalid timeout: %s\n", state.optarg);
 					return -EINVAL;
 				}
 			}
 			break;
 		case 'a':
-			params->anon_id = state->optarg;
+			params->anon_id = state.optarg;
 			params->aid_length = strlen(params->anon_id);
 			if (params->aid_length > WIFI_ENT_IDENTITY_MAX_LEN) {
 				PR_WARNING("anon_id too long (max %d characters)\n",
@@ -769,7 +768,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'B':
 			if (iface_mode == WIFI_MODE_AP) {
-				switch (atoi(state->optarg)) {
+				switch (atoi(state.optarg)) {
 				case 1:
 					params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 					break;
@@ -780,7 +779,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					params->bandwidth = WIFI_FREQ_BANDWIDTH_80MHZ;
 					break;
 				default:
-					PR_ERROR("Invalid bandwidth: %d\n", atoi(state->optarg));
+					PR_ERROR("Invalid bandwidth: %d\n", atoi(state.optarg));
 					return -EINVAL;
 				}
 			}
@@ -792,7 +791,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 
 			if (key_passwd_cnt == 0) {
-				params->key_passwd = state->optarg;
+				params->key_passwd = state.optarg;
 				params->key_passwd_length = strlen(params->key_passwd);
 				if (params->key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 					PR_WARNING("key_passwd too long (max %d characters)\n",
@@ -800,7 +799,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					return -EINVAL;
 				}
 			} else if (key_passwd_cnt == 1) {
-				params->key2_passwd = state->optarg;
+				params->key2_passwd = state.optarg;
 				params->key2_passwd_length = strlen(params->key2_passwd);
 				if (params->key2_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 					PR_WARNING("key2_passwd too long (max %d characters)\n",
@@ -811,18 +810,18 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			key_passwd_cnt++;
 			break;
 		case 'S':
-			params->wpa3_ent_mode = atoi(state->optarg);
+			params->wpa3_ent_mode = atoi(state.optarg);
 			break;
 		case 'T':
-			params->TLS_cipher = atoi(state->optarg);
+			params->TLS_cipher = atoi(state.optarg);
 			break;
 		case 'A':
 			if (iface_mode == WIFI_MODE_INFRA) {
-				params->verify_peer_cert = !!atoi(state->optarg);
+				params->verify_peer_cert = !!atoi(state.optarg);
 			}
 			break;
 		case 'V':
-			params->eap_ver = atoi(state->optarg);
+			params->eap_ver = atoi(state.optarg);
 			if (params->eap_ver != 0U && params->eap_ver != 1U) {
 				PR_WARNING("eap_ver error %d\n", params->eap_ver);
 				return -EINVAL;
@@ -835,10 +834,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				return -EINVAL;
 			}
 
-			params->eap_identity = state->optarg;
+			params->eap_identity = state.optarg;
 			params->eap_id_length = strlen(params->eap_identity);
 
-			params->identities[params->nusers] = state->optarg;
+			params->identities[params->nusers] = state.optarg;
 			params->nusers++;
 			if (params->eap_id_length > WIFI_ENT_IDENTITY_MAX_LEN) {
 				PR_WARNING("eap identity too long (max %d characters)\n",
@@ -853,10 +852,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				return -EINVAL;
 			}
 
-			params->eap_password = state->optarg;
+			params->eap_password = state.optarg;
 			params->eap_passwd_length = strlen(params->eap_password);
 
-			params->passwords[params->passwds] = state->optarg;
+			params->passwords[params->passwds] = state.optarg;
 			params->passwds++;
 			if (params->eap_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 				PR_WARNING("eap password length too long (max %d characters)\n",
@@ -868,25 +867,25 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->ft_used = true;
 			break;
 		case 'g':
-			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
+			params->ignore_broadcast_ssid = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		case 'e':
-			params->server_cert_domain_exact = state->optarg;
+			params->server_cert_domain_exact = state.optarg;
 			params->server_cert_domain_exact_len =
 					strlen(params->server_cert_domain_exact);
 			break;
 		case 'x':
-			params->server_cert_domain_suffix = state->optarg;
+			params->server_cert_domain_suffix = state.optarg;
 			params->server_cert_domain_suffix_len =
 					strlen(params->server_cert_domain_suffix);
 			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -1028,7 +1027,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"type", sys_getopt_required_argument, 0, 't'},
 		{"bands", sys_getopt_required_argument, 0, 'b'},
@@ -1045,24 +1044,23 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 
 	*do_scan = true;
 
-	while ((opt = sys_getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "t:b:a:p:s:m:c:i:h",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 't':
-			if (!strncasecmp(state->optarg, "passive", 7)) {
+			if (!strncasecmp(state.optarg, "passive", 7)) {
 				params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
-			} else if (!strncasecmp(state->optarg, "active", 6)) {
+			} else if (!strncasecmp(state.optarg, "active", 6)) {
 				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 			} else {
-				PR_ERROR("Invalid scan type %s\n", state->optarg);
+				PR_ERROR("Invalid scan type %s\n", state.optarg);
 				return -ENOEXEC;
 			}
 
 			opt_num++;
 			break;
 		case 'b':
-			if (wifi_utils_parse_scan_bands(state->optarg, &params->bands)) {
+			if (wifi_utils_parse_scan_bands(state.optarg, &params->bands)) {
 				PR_ERROR("Invalid band value(s)\n");
 				return -ENOEXEC;
 			}
@@ -1070,7 +1068,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'a':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 
 			if (val < 0) {
 				PR_ERROR("Invalid dwell_time_active val\n");
@@ -1081,7 +1079,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'p':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 
 			if (val < 0) {
 				PR_ERROR("Invalid dwell_time_passive val\n");
@@ -1092,7 +1090,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 's':
-			if (wifi_utils_parse_scan_ssids(state->optarg,
+			if (wifi_utils_parse_scan_ssids(state.optarg,
 							params->ssids,
 							ARRAY_SIZE(params->ssids))) {
 				PR_ERROR("Invalid SSID(s)\n");
@@ -1102,7 +1100,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'm':
-			val = atoi(state->optarg);
+			val = atoi(state.optarg);
 
 			if ((val < 0) || (val > WIFI_MGMT_SCAN_MAX_BSS_CNT)) {
 				PR_ERROR("Invalid max_bss val\n");
@@ -1113,7 +1111,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'c':
-			if (wifi_utils_parse_scan_chan(state->optarg,
+			if (wifi_utils_parse_scan_chan(state.optarg,
 						       params->band_chan,
 						       ARRAY_SIZE(params->band_chan))) {
 				PR_ERROR("Invalid band or channel value(s)\n");
@@ -1740,7 +1738,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	long value;
 	double twt_mantissa_scale = 0.0;
 	double twt_interval_scale = 0.0;
@@ -1767,12 +1765,11 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'n':
-			if (!parse_number(sh, &value, state->optarg, NULL,
+			if (!parse_number(sh, &value, state.optarg, NULL,
 					  WIFI_TWT_INDIVIDUAL,
 					  WIFI_TWT_WAKE_TBTT)) {
 				return -EINVAL;
@@ -1781,7 +1778,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'c':
-			if (!parse_number(sh, &value, state->optarg, NULL,
+			if (!parse_number(sh, &value, state.optarg, NULL,
 					  WIFI_TWT_SETUP_CMD_REQUEST,
 					  WIFI_TWT_SETUP_CMD_DEMAND)) {
 				return -EINVAL;
@@ -1790,14 +1787,14 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 't':
-			if (!parse_number(sh, &value, state->optarg, NULL, 1, 255)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 1, 255)) {
 				return -EINVAL;
 			}
 			params->dialog_token = (uint8_t)value;
 			break;
 
 		case 'f':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+			if (!parse_number(sh, &value, state.optarg, NULL, 0,
 					  (WIFI_MAX_TWT_FLOWS - 1))) {
 				return -EINVAL;
 			}
@@ -1805,35 +1802,35 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'r':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 1)) {
 				return -EINVAL;
 			}
 			params->setup.responder = (bool)value;
 			break;
 
 		case 'T':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 1)) {
 				return -EINVAL;
 			}
 			params->setup.trigger = (bool)value;
 			break;
 
 		case 'I':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 1)) {
 				return -EINVAL;
 			}
 			params->setup.implicit = (bool)value;
 			break;
 
 		case 'a':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 1)) {
 				return -EINVAL;
 			}
 			params->setup.announce = (bool)value;
 			break;
 
 		case 'w':
-			if (!parse_number(sh, &value, state->optarg, NULL, 1,
+			if (!parse_number(sh, &value, state.optarg, NULL, 1,
 					  WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 				return -EINVAL;
 			}
@@ -1841,7 +1838,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'p':
-			if (!parse_number(sh, &value, state->optarg, NULL, 1,
+			if (!parse_number(sh, &value, state.optarg, NULL, 1,
 					  WIFI_MAX_TWT_INTERVAL_US)) {
 				return -EINVAL;
 			}
@@ -1849,7 +1846,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'D':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+			if (!parse_number(sh, &value, state.optarg, NULL, 0,
 					  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
 				return -EINVAL;
 			}
@@ -1857,14 +1854,14 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'd':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 1)) {
 				return -EINVAL;
 			}
 			params->setup.twt_info_disable = (bool)value;
 			break;
 
 		case 'e':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+			if (!parse_number(sh, &value, state.optarg, NULL, 0,
 					  WIFI_MAX_TWT_EXPONENT)) {
 				return -EINVAL;
 			}
@@ -1872,7 +1869,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'm':
-			if (!parse_number(sh, &value, state->optarg, NULL, 0, 0xFFFF)) {
+			if (!parse_number(sh, &value, state.optarg, NULL, 0, 0xFFFF)) {
 				return -EINVAL;
 			}
 			params->setup.twt_mantissa = (uint16_t)value;
@@ -2149,7 +2146,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"max_inactivity", sys_getopt_required_argument, 0, 't'},
 		{"max_num_sta", sys_getopt_required_argument, 0, 's'},
@@ -2162,12 +2159,11 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = sys_getopt_long(argc, argv, "t:s:n:c:i:h",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "t:s:n:c:i:h",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 't':
-			if (!parse_number(sh, &val, state->optarg, "max_inactivity",
+			if (!parse_number(sh, &val, state.optarg, "max_inactivity",
 					  0, WIFI_AP_STA_MAX_INACTIVITY)) {
 				return -EINVAL;
 			}
@@ -2175,7 +2171,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY;
 			break;
 		case 's':
-			if (!parse_number(sh, &val, state->optarg, "max_num_sta",
+			if (!parse_number(sh, &val, state.optarg, "max_num_sta",
 					  0, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA)) {
 				return -EINVAL;
 			}
@@ -2184,11 +2180,11 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			break;
 #if defined(CONFIG_WIFI_NM_HOSTAPD_AP)
 		case 'n':
-			strncpy(params->ht_capab, state->optarg, WIFI_AP_IEEE_80211_CAPAB_MAX_LEN);
+			strncpy(params->ht_capab, state.optarg, WIFI_AP_IEEE_80211_CAPAB_MAX_LEN);
 			params->type |= WIFI_AP_CONFIG_PARAM_HT_CAPAB;
 			break;
 		case 'c':
-			strncpy(params->vht_capab, state->optarg, WIFI_AP_IEEE_80211_CAPAB_MAX_LEN);
+			strncpy(params->vht_capab, state.optarg, WIFI_AP_IEEE_80211_CAPAB_MAX_LEN);
 			params->type |= WIFI_AP_CONFIG_PARAM_VHT_CAPAB;
 			break;
 #endif
@@ -2199,7 +2195,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
@@ -2276,6 +2272,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	bool force = false;
 	bool verbose = false;
 	int opt_index = 0;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"force", sys_getopt_no_argument, 0, 'f'},
 		{"verbose", sys_getopt_no_argument, 0, 'v'},
@@ -2283,7 +2280,8 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		{NULL, 0, NULL, 0}
 	};
 
-	while ((opt = sys_getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long_r(argc, argv, "fvi:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'f':
 			force = true;
@@ -2299,25 +2297,25 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		}
 	}
 
-	if (sys_getopt_optind == argc) {
+	if (state.optind == argc) {
 		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
-	} else if (sys_getopt_optind == argc - 1) {
-		if (strlen(argv[sys_getopt_optind]) != 2) {
+	} else if (state.optind == argc - 1) {
+		if (strlen(argv[state.optind]) != 2) {
 			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
 		/* Two letter country code with special case of 00 for WORLD */
-		if (((argv[sys_getopt_optind][0] < 'A' || argv[sys_getopt_optind][0] > 'Z') ||
-			(argv[sys_getopt_optind][1] < 'A' || argv[sys_getopt_optind][1] > 'Z')) &&
-			(argv[sys_getopt_optind][0] != '0' || argv[sys_getopt_optind][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[sys_getopt_optind][0],
-				   argv[sys_getopt_optind][1]);
+		if (((argv[state.optind][0] < 'A' || argv[state.optind][0] > 'Z') ||
+			(argv[state.optind][1] < 'A' || argv[state.optind][1] > 'Z')) &&
+			(argv[state.optind][0] != '0' || argv[state.optind][1] != '0')) {
+			PR_WARNING("Invalid reg domain %c%c\n", argv[state.optind][0],
+				   argv[state.optind][1]);
 			return -ENOEXEC;
 		}
-		regd.country_code[0] = argv[sys_getopt_optind][0];
-		regd.country_code[1] = argv[sys_getopt_optind][1];
+		regd.country_code[0] = argv[state.optind][0];
+		regd.country_code[1] = argv[state.optind][1];
 		regd.force = force;
 		regd.oper = WIFI_MGMT_SET;
 	} else {
@@ -2646,7 +2644,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int opt_index = 0;
 	int opt_num = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"sta", sys_getopt_no_argument, 0, 's'},
@@ -2657,9 +2655,8 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		{0, 0, 0, 0}};
 
 	mode->oper = WIFI_MGMT_GET;
-	while ((opt = sys_getopt_long(argc, argv, "i:smtpakh",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "i:smtpakh",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 's':
 			mode->mode |= WIFI_STA_MODE;
@@ -2678,7 +2675,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			opt_num++;
 			break;
 		case 'i':
-			mode->if_index = (uint8_t)atoi(state->optarg);
+			mode->if_index = (uint8_t)atoi(state.optarg);
 			/* Don't count iface as it's common for both get and set */
 			break;
 		case 'h':
@@ -2749,7 +2746,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"iface", sys_getopt_optional_argument, 0, 'i'},
 		{"channel", sys_getopt_required_argument, 0, 'c'},
@@ -2757,15 +2754,14 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = sys_getopt_long(argc, argv, "i:c:gh",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "i:c:gh",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'c':
-			channel->channel = (uint16_t)atoi(state->optarg);
+			channel->channel = (uint16_t)atoi(state.optarg);
 			break;
 		case 'i':
-			channel->if_index = (uint8_t)atoi(state->optarg);
+			channel->if_index = (uint8_t)atoi(state.optarg);
 			break;
 		case 'g':
 			channel->oper = WIFI_MGMT_GET;
@@ -2847,7 +2843,7 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"capture-len", sys_getopt_optional_argument, 0, 'b'},
@@ -2859,9 +2855,8 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = sys_getopt_long(argc, argv, "i:b:amcdgh",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "i:b:amcdgh",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -2876,10 +2871,10 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 			filter->filter |= WIFI_PACKET_FILTER_DATA;
 			break;
 		case 'i':
-			filter->if_index = (uint8_t)atoi(state->optarg);
+			filter->if_index = (uint8_t)atoi(state.optarg);
 			break;
 		case 'b':
-			filter->buffer_size = (uint16_t)atoi(state->optarg);
+			filter->buffer_size = (uint16_t)atoi(state.optarg);
 			break;
 		case 'h':
 			shell_help(sh);
@@ -2971,7 +2966,7 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"peer", sys_getopt_required_argument, 0, 'p'},
 		{"role", sys_getopt_required_argument, 0, 'r'},
@@ -2982,30 +2977,29 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "p:r:c:m:s:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'p':
-			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
+			params->auth_init.peer = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'r':
-			params->auth_init.role = shell_strtol(state->optarg, 10, &ret);
+			params->auth_init.role = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'c':
-			params->auth_init.configurator = shell_strtol(state->optarg, 10, &ret);
+			params->auth_init.configurator = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'm':
-			params->auth_init.conf = shell_strtol(state->optarg, 10, &ret);
+			params->auth_init.conf = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->auth_init.ssid, state.optarg, WIFI_SSID_MAX_LEN);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3023,7 +3017,7 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"own", sys_getopt_required_argument, 0, 'o'},
 		{"freq", sys_getopt_required_argument, 0, 'f'},
@@ -3031,21 +3025,20 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "o:f:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "o:f:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'o':
-			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
+			params->chirp.id = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'f':
-			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
+			params->chirp.freq = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3063,7 +3056,7 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"role", sys_getopt_required_argument, 0, 'r'},
 		{"freq", sys_getopt_required_argument, 0, 'f'},
@@ -3071,21 +3064,20 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "r:f:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "r:f:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'r':
-			params->listen.role = shell_strtol(state->optarg, 10, &ret);
+			params->listen.role = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'f':
-			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
+			params->listen.freq = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3103,7 +3095,7 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"type", sys_getopt_required_argument, 0, 't'},
 		{"opclass", sys_getopt_required_argument, 0, 'o'},
@@ -3113,28 +3105,27 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "t:o:h:a:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "t:o:h:a:i:",
+				      long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 't':
-			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
+			params->bootstrap_gen.type = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'o':
-			params->bootstrap_gen.op_class = shell_strtol(state->optarg, 10, &ret);
+			params->bootstrap_gen.op_class = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'h':
-			params->bootstrap_gen.chan = shell_strtol(state->optarg, 10, &ret);
+			params->bootstrap_gen.chan = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'a':
 			ret = net_bytes_from_str(params->bootstrap_gen.mac,
-						 WIFI_MAC_ADDR_LEN, state->optarg);
+						 WIFI_MAC_ADDR_LEN, state.optarg);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3169,7 +3160,7 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"configurator", sys_getopt_required_argument, 0, 'c'},
 		{"mode", sys_getopt_required_argument, 0, 'm'},
@@ -3178,25 +3169,24 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "p:r:c:m:s:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'c':
 			params->configurator_set.configurator =
-				shell_strtol(state->optarg, 10, &ret);
+				shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'm':
-			params->configurator_set.conf = shell_strtol(state->optarg, 10, &ret);
+			params->configurator_set.conf = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->configurator_set.ssid, state.optarg, WIFI_SSID_MAX_LEN);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3461,7 +3451,7 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"peer", sys_getopt_required_argument, 0, 'p'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
@@ -3472,18 +3462,17 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = sys_getopt_long(argc, argv, "p:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "p:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'p':
-			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
+			params.auth_init.peer = shell_strtol(state.optarg, 10, &ret);
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			return -EINVAL;
 		}
 
@@ -3574,7 +3563,7 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 	int err;
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"type", sys_getopt_required_argument, 0, 't'},
 		{"short-interval", sys_getopt_required_argument, 0, 's'},
@@ -3586,51 +3575,50 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 	unsigned long uval;
 	long val;
 
-	while ((opt = sys_getopt_long(argc, argv, "t:s:r:l:b:i:", long_options,
-				      &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "t:s:r:l:b:i:", long_options,
+					&opt_index, &state)) != -1) {
 		switch (opt) {
 		case 't':
-			if (strcmp("simple", state->optarg) == 0) {
+			if (strcmp("simple", state.optarg) == 0) {
 				params->type = WIFI_BGSCAN_SIMPLE;
-			} else if (strcmp("learn", state->optarg) == 0) {
+			} else if (strcmp("learn", state.optarg) == 0) {
 				params->type = WIFI_BGSCAN_LEARN;
-			} else if (strcmp("none", state->optarg) == 0) {
+			} else if (strcmp("none", state.optarg) == 0) {
 				params->type = WIFI_BGSCAN_NONE;
 			} else {
-				PR_ERROR("Invalid type %s\n", state->optarg);
+				PR_ERROR("Invalid type %s\n", state.optarg);
 				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 			break;
 		case 's':
-			uval = shell_strtoul(state->optarg, 10, &err);
+			uval = shell_strtoul(state.optarg, 10, &err);
 			if (err < 0) {
-				PR_ERROR("Invalid short interval %s\n", state->optarg);
+				PR_ERROR("Invalid short interval %s\n", state.optarg);
 				return err;
 			}
 			params->short_interval = uval;
 			break;
 		case 'l':
-			uval = shell_strtoul(state->optarg, 10, &err);
+			uval = shell_strtoul(state.optarg, 10, &err);
 			if (err < 0) {
-				PR_ERROR("Invalid long interval %s\n", state->optarg);
+				PR_ERROR("Invalid long interval %s\n", state.optarg);
 				return err;
 			}
 			params->long_interval = uval;
 			break;
 		case 'b':
-			uval = shell_strtoul(state->optarg, 10, &err);
+			uval = shell_strtoul(state.optarg, 10, &err);
 			if (err < 0) {
-				PR_ERROR("Invalid BTM queries %s\n", state->optarg);
+				PR_ERROR("Invalid BTM queries %s\n", state.optarg);
 				return err;
 			}
 			params->btm_queries = uval;
 			break;
 		case 'r':
-			val = shell_strtol(state->optarg, 10, &err);
+			val = shell_strtol(state.optarg, 10, &err);
 			if (err < 0) {
-				PR_ERROR("Invalid RSSI threshold %s\n", state->optarg);
+				PR_ERROR("Invalid RSSI threshold %s\n", state.optarg);
 				return err;
 			}
 			params->rssi_threshold = val;
@@ -3639,7 +3627,7 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
@@ -3680,19 +3668,18 @@ static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct sys_getopt_state *state;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	static const struct sys_getopt_option long_options[] = {
 		{"okc", sys_getopt_required_argument, 0, 'o'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = sys_getopt_long(argc, argv, "o:i:",
-				  long_options, &opt_index)) != -1) {
-		state = sys_getopt_state_get();
+	while ((opt = sys_getopt_long_r(argc, argv, "o:i:",
+					long_options, &opt_index, &state)) != -1) {
 		switch (opt) {
 		case 'o':
-			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {
+			if (!parse_number(sh, &val, state.optarg, "okc", 0, 1)) {
 				return -EINVAL;
 			}
 			params->okc = val;
@@ -3702,7 +3689,7 @@ static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char 
 			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", state->optopt);
+			PR_ERROR("Invalid option %c\n", state.optopt);
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}

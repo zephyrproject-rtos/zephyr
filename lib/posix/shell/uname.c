@@ -42,7 +42,7 @@ static void uname_print_usage(const struct shell *sh)
 
 static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 {
-	struct sys_getopt_state *state = sys_getopt_state_get();
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 	struct utsname info;
 	unsigned int set;
 	int option;
@@ -53,8 +53,7 @@ static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 
 	/* Get the uname options */
 
-	optind = 1;
-	while ((option = sys_getopt(argc, argv, "asonrvmpi")) != -1) {
+	while ((option = sys_getopt_r(argc, argv, "asonrvmpi", &state)) != -1) {
 		switch (option) {
 		case 'a':
 			set = UNAME_ALL;
@@ -93,13 +92,13 @@ static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 
 		case '?':
 		default:
-			badarg = (char)state->optopt;
+			badarg = (char)state.optopt;
 			break;
 		}
 	}
 
-	if (argc != optind) {
-		shell_error(sh, "uname: extra operand %s", argv[optind]);
+	if (argc != state.optind) {
+		shell_error(sh, "uname: extra operand %s", argv[state.optind]);
 		uname_print_usage(sh);
 		return -1;
 	}
