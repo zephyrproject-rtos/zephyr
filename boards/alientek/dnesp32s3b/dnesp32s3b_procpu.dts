@@ -90,6 +90,10 @@
 	status = "disabled";
 };
 
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	pinctrl-0 = <&uart0_default>;
