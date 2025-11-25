@@ -270,7 +270,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 	LCDIFV3_SetLayerSize(base, 0, display_config.panelWidth, display_config.panelHeight);
 	LCDIFV3_EnableLayer(base, 0, true);
 	LCDIFV3_EnablePlanePanic(base);
-	LCDIFV3_SetLayerBufferAddr(base, 0, (uint64_t)data->fb[0]);
+	LCDIFV3_SetLayerBufferAddr(base, 0, (uint32_t)(uintptr_t)data->fb[0]);
 	LCDIFV3_TriggerLayerShadowLoad(base, 0);
 	LCDIFV3_EnableInterrupts(base, kLCDIFV3_VerticalBlankingInterrupt);
 
