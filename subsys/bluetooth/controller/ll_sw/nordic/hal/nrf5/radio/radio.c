@@ -794,7 +794,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			delay = HAL_RADIO_NS2US_ROUND(
 			    hal_radio_tx_ready_delay_ns_get(phy_next,
 							    flags_next) +
-			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
+			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1)+
+				hal_radio_tx_chain_delay_ns_get(phy_curr,
+								flags_curr));
 
 			hal_radio_txen_on_sw_switch(cc, ppi);
 		}
