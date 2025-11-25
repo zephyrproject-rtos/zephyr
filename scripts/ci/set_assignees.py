@@ -89,12 +89,14 @@ def parse_args():
 
     args = parser.parse_args()
 
+
 def load_areas(filename: str):
     with open(filename) as f:
         doc = yaml.safe_load(f)
     return {
         k: v for k, v in doc.items() if isinstance(v, dict) and ("files" in v or "files-regex" in v)
     }
+
 
 def process_manifest(old_manifest_file):
     log("Processing manifest changes")
@@ -124,8 +126,10 @@ def process_manifest(old_manifest_file):
     log(f'manifest areas: {areas}')
     return areas
 
+
 def set_or_empty(d, key):
     return set(d.get(key, []) or [])
+
 
 def compare_areas(old, new, repo_fullname=None, token=None):
     old_areas = set(old.keys())
@@ -212,6 +216,7 @@ def compare_areas(old, new, repo_fullname=None, token=None):
 
     return added_areas | removed_areas | changed_areas
 
+
 def process_pr(gh, maintainer_file, number):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -225,8 +230,23 @@ def process_pr(gh, maintainer_file, number):
     num_files = 0
     fn = list(pr.get_files())
 
-    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1):
+    # Check if PR currently has 'size: XS' label
+    current_labels = [label.name for label in pr.labels]
+    has_size_xs_label = 'size: XS' in current_labels
+
+    # Determine if PR qualifies for 'size: XS' label
+    qualifies_for_xs = pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1)
+
+    if qualifies_for_xs:
         labels = {'size: XS'}
+    elif has_size_xs_label and not qualifies_for_xs:
+        # Remove 'size: XS' label if PR no longer qualifies
+        log(
+            f"removing 'size: XS' label (commits: {pr.commits}, "
+            f"additions: {pr.additions}, deletions: {pr.deletions})..."
+        )
+        if not args.dry_run:
+            pr.remove_from_labels('size: XS')
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")
@@ -257,9 +277,7 @@ def process_pr(gh, maintainer_file, number):
         elif changed_file.filename in ['MAINTAINERS.yml']:
             areas = maintainer_file.path2areas(changed_file.filename)
             if args.updated_maintainer_file:
-                log(
-                    "cannot process MAINTAINERS.yml changes, skipping..."
-                )
+                log("cannot process MAINTAINERS.yml changes, skipping...")
 
                 old_areas = load_areas(args.updated_maintainer_file)
                 new_areas = load_areas('MAINTAINERS.yml')

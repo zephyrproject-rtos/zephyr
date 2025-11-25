@@ -37,6 +37,13 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+MDIO
+====
+
+* The ``mdio_bus_enable()`` and ``mdio_bus_disable()`` functions have been removed.
+  MDIO bus enabling/disabling is now handled internally by the MDIO drivers.
+  (:github:`99690`).
+
 QSPI
 ===
 
@@ -82,6 +89,10 @@ Bluetooth Host
 * :c:member:`bt_conn_le_info.interval` has been deprecated. Use
   :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed: ``interval``
   was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
+* Legacy Bluetooth LE pairing using the passkey entry method no longer grants authenticated (MITM)
+  protection as of the Bluetooth Core Specification v6.2. Stored bonds that were generated using
+  this method will be downgraded to unauthenticated when loaded from persistent storage, resulting
+  in a lower security level.
 
 Networking
 **********

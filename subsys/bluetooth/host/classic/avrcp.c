@@ -94,6 +94,9 @@ NET_BUF_POOL_FIXED_DEFINE(avctp_ctrl_tx_pool, CONFIG_BT_MAX_CONN,
 			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+NET_BUF_POOL_DEFINE(avctp_browsing_rx_pool, BT_BUF_ACL_RX_COUNT,
+		    CONFIG_BT_AVRCP_BROWSING_L2CAP_MTU,
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 /*
  * This macros returns true if the CT/TG has been initialized, which
  * typically happens after the avrcp callack have been registered.
@@ -629,7 +632,7 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t
 
 static struct net_buf *avrcp_create_browsing_pdu(struct bt_avrcp *avrcp)
 {
-	return bt_avctp_create_pdu(NULL);
+	return bt_avrcp_create_pdu(NULL);
 }
 
 static int avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr,
@@ -1597,7 +1600,7 @@ static const struct avrcp_pdu_vendor_handler rsp_vendor_handlers[] = {
 	{ BT_AVRCP_PDU_ID_REGISTER_NOTIFICATION, sizeof(uint8_t), BT_AVRCP_CTYPE_NOTIFY,
 	  process_register_notification_rsp },
 	{ BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_ATTRS,
-	  sizeof(struct bt_avrcp_list_app_setting_attr_rsp),
+	  sizeof(struct bt_avrcp_list_player_app_setting_attrs_rsp),
 	  BT_AVRCP_CTYPE_STATUS, process_list_player_app_setting_attrs_rsp },
 	{ BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_VALS,
 	  sizeof(struct bt_avrcp_list_player_app_setting_vals_rsp),
@@ -2591,7 +2594,7 @@ static void init_avctp_browsing_channel(struct bt_avctp *session)
 {
 	LOG_DBG("session %p", session);
 
-	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
+	session->br_chan.rx.mtu = CONFIG_BT_AVRCP_BROWSING_L2CAP_MTU;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
 	session->br_chan.rx.optional = false;
 	session->br_chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
@@ -2634,60 +2637,191 @@ static void browsing_avrcp_disconnected(struct bt_avctp *session)
 static int avrcp_ct_handle_set_browsed_player(struct bt_avrcp *avrcp,
 					      uint8_t tid, struct net_buf *buf)
 {
-	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->browsed_player_rsp == NULL)) {
-		return -EINVAL;
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->set_browsed_player == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
 	}
 
-	avrcp_ct_cb->browsed_player_rsp(get_avrcp_ct(avrcp), tid, buf);
+	avrcp_ct_cb->set_browsed_player(get_avrcp_ct(avrcp), tid, buf);
 
-	return 0;
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_get_folder_items(struct bt_avrcp *avrcp,
+					    uint8_t tid, struct net_buf *buf)
+{
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_folder_items == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_ct_cb->get_folder_items(get_avrcp_ct(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_change_path(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf)
+{
+	uint8_t status;
+	uint32_t num_items = 0;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->change_path == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	status = net_buf_pull_u8(buf);
+	if (status == BT_AVRCP_STATUS_OPERATION_COMPLETED) {
+		num_items = net_buf_pull_be32(buf);
+	}
+
+	avrcp_ct_cb->change_path(get_avrcp_ct(avrcp), tid, status, num_items);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_get_item_attrs(struct bt_avrcp *avrcp,
+					  uint8_t tid, struct net_buf *buf)
+{
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_item_attrs == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_ct_cb->get_item_attrs(get_avrcp_ct(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_get_total_number_of_items(struct bt_avrcp *avrcp,
+						     uint8_t tid, struct net_buf *buf)
+{
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_total_number_of_items == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_ct_cb->get_total_number_of_items(get_avrcp_ct(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_search(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf)
+{
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->search == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_ct_cb->search(get_avrcp_ct(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_ct_handle_browsing_general_reject(struct bt_avrcp *avrcp,
+						   uint8_t tid, struct net_buf *buf)
+{
+	uint8_t status;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->browsing_general_reject == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	status = net_buf_pull_u8(buf);
+	avrcp_ct_cb->browsing_general_reject(get_avrcp_ct(avrcp), tid, status);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
 }
 
 static const struct avrcp_pdu_handler rsp_brow_handlers[] = {
-	{BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER, sizeof(struct bt_avrcp_set_browsed_player_rsp),
-	 avrcp_ct_handle_set_browsed_player},
+	{BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER, sizeof(uint8_t), avrcp_ct_handle_set_browsed_player},
+	{ BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS, sizeof(uint8_t), avrcp_ct_handle_get_folder_items},
+	{ BT_AVRCP_PDU_ID_CHANGE_PATH, sizeof(uint8_t), avrcp_ct_handle_change_path},
+	{ BT_AVRCP_PDU_ID_GET_ITEM_ATTRS, sizeof(uint8_t), avrcp_ct_handle_get_item_attrs},
+	{ BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS, sizeof(uint8_t),
+	  avrcp_ct_handle_get_total_number_of_items},
+	{ BT_AVRCP_PDU_ID_SEARCH, sizeof(uint8_t), avrcp_ct_handle_search},
+	{ BT_AVRCP_PDU_ID_GENERAL_REJECT, sizeof(uint8_t), avrcp_ct_handle_browsing_general_reject},
 };
 
 static int avrcp_tg_handle_set_browsed_player_req(struct bt_avrcp *avrcp,
 						  uint8_t tid, struct net_buf *buf)
 {
 	uint16_t player_id;
-	struct net_buf *rsp_buf;
-	int err;
 
-	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->set_browsed_player_req == NULL)) {
-		goto error_rsp;
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->set_browsed_player == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
 	}
 
 	player_id = net_buf_pull_be16(buf);
 
 	LOG_DBG("Set browsed player request: player_id=0x%04x", player_id);
 
-	avrcp_tg_cb->set_browsed_player_req(get_avrcp_tg(avrcp), tid, player_id);
-	return 0;
+	avrcp_tg_cb->set_browsed_player(get_avrcp_tg(avrcp), tid, player_id);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
 
-error_rsp:
-	rsp_buf = bt_avrcp_create_pdu(NULL);
-	__ASSERT(rsp_buf != NULL, "Failed to allocate response buffer");
-
-	if (net_buf_tailroom(rsp_buf) < sizeof(uint8_t)) {
-		LOG_ERR("Insufficient space in response buffer");
-		net_buf_unref(rsp_buf);
-		return -ENOMEM;
+static int avrcp_tg_handle_get_folder_items_req(struct bt_avrcp *avrcp, uint8_t tid,
+						struct net_buf *buf)
+{
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->get_folder_items == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
 	}
-	net_buf_add_u8(rsp_buf, BT_AVRCP_STATUS_INTERNAL_ERROR);
 
-	err = bt_avrcp_tg_send_set_browsed_player_rsp(get_avrcp_tg(avrcp), tid, rsp_buf);
-	if (err < 0) {
-		LOG_ERR("Failed to send browsed player error response (err: %d)", err);
-		net_buf_unref(rsp_buf);
+	avrcp_tg_cb->get_folder_items(get_avrcp_tg(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_tg_handle_change_path_req(struct bt_avrcp *avrcp, uint8_t tid,
+					   struct net_buf *buf)
+{
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->change_path == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
 	}
-	return err;
+
+	avrcp_tg_cb->change_path(get_avrcp_tg(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_tg_handle_get_item_attrs_req(struct bt_avrcp *avrcp, uint8_t tid,
+					      struct net_buf *buf)
+{
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->get_item_attrs == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_tg_cb->get_item_attrs(get_avrcp_tg(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_tg_handle_get_total_number_of_items_req(struct bt_avrcp *avrcp,
+							 uint8_t tid, struct net_buf *buf)
+{
+	uint8_t scope;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->get_total_number_of_items == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	scope = net_buf_pull_u8(buf);
+
+	avrcp_tg_cb->get_total_number_of_items(get_avrcp_tg(avrcp), tid, scope);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
+}
+
+static int avrcp_tg_handle_search_req(struct bt_avrcp *avrcp, uint8_t tid,
+				      struct net_buf *buf)
+{
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->search == NULL)) {
+		return BT_AVRCP_STATUS_INTERNAL_ERROR;
+	}
+
+	avrcp_tg_cb->search(get_avrcp_tg(avrcp), tid, buf);
+	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
 }
 
 static const struct avrcp_pdu_handler cmd_brow_handlers[] = {
 	{BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER, sizeof(uint16_t),
 	 avrcp_tg_handle_set_browsed_player_req},
+	{BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS, sizeof(struct bt_avrcp_get_folder_items_cmd),
+	 avrcp_tg_handle_get_folder_items_req},
+	{BT_AVRCP_PDU_ID_CHANGE_PATH, sizeof(struct bt_avrcp_change_path_cmd),
+	 avrcp_tg_handle_change_path_req},
+	{BT_AVRCP_PDU_ID_GET_ITEM_ATTRS, sizeof(struct bt_avrcp_get_item_attrs_cmd),
+	 avrcp_tg_handle_get_item_attrs_req},
+	{BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS,
+	 sizeof(struct bt_avrcp_get_total_number_of_items_cmd),
+	 avrcp_tg_handle_get_total_number_of_items_req},
+	{BT_AVRCP_PDU_ID_SEARCH, sizeof(struct bt_avrcp_search_cmd),
+	 avrcp_tg_handle_search_req},
 };
 
 static int handle_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
@@ -2702,13 +2836,13 @@ static int handle_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
 
 		if (buf->len < handler->min_len) {
 			LOG_ERR("Too small (%u bytes) pdu_id 0x%02x", buf->len, pdu_id);
-			return -EINVAL;
+			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 
 		return handler->func(avrcp, tid, buf);
 	}
 
-	return -EOPNOTSUPP;
+	return BT_AVRCP_STATUS_INVALID_COMMAND;
 }
 
 static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t cr,
@@ -2716,6 +2850,8 @@ static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt
 {
 	struct bt_avrcp *avrcp = AVRCP_BROW_AVCTP(session);
 	struct bt_avrcp_brow_pdu *brow;
+	int status;
+	int err;
 
 	if (buf->len < sizeof(struct bt_avrcp_brow_pdu)) {
 		LOG_ERR("Invalid AVRCP browsing header received: buffer too short (%u)", buf->len);
@@ -2734,18 +2870,42 @@ static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt
 		tid, brow->pdu_id);
 
 	if (cr == BT_AVCTP_RESPONSE) {
-		return handle_pdu(avrcp, tid, buf, brow->pdu_id, rsp_brow_handlers,
-				  ARRAY_SIZE(rsp_brow_handlers));
+		handle_pdu(avrcp, tid, buf, brow->pdu_id, rsp_brow_handlers,
+			   ARRAY_SIZE(rsp_brow_handlers));
+		return 0;
 	}
 
-	return handle_pdu(avrcp, tid, buf, brow->pdu_id, cmd_brow_handlers,
-			  ARRAY_SIZE(cmd_brow_handlers));
+	status = handle_pdu(avrcp, tid, buf, brow->pdu_id, cmd_brow_handlers,
+			 ARRAY_SIZE(cmd_brow_handlers));
+	if (status != BT_AVRCP_STATUS_OPERATION_COMPLETED) {
+		err = bt_avrcp_tg_browsing_general_reject(get_avrcp_tg(avrcp), tid,
+							  status);
+		if (err < 0) {
+			LOG_ERR("Failed to send browsing general reject: %d", err);
+		}
+		return err;
+	}
+
+	return 0;
+}
+
+static struct net_buf *browsing_avrcp_l2cap_alloc_buf(struct bt_avctp *session)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&avctp_browsing_rx_pool, K_FOREVER);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+	}
+
+	return buf;
 }
 
 static const struct bt_avctp_ops_cb browsing_avctp_ops = {
 	.connected = browsing_avrcp_connected,
 	.disconnected = browsing_avrcp_disconnected,
 	.recv = browsing_avrcp_recv,
+	.alloc_buf = browsing_avrcp_l2cap_alloc_buf,
 };
 
 static int avrcp_browsing_accept(struct bt_conn *conn, struct bt_avctp **session)
@@ -2880,6 +3040,7 @@ int bt_avrcp_disconnect(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 	if (avrcp->browsing_session.br_chan.chan.conn != NULL) {
 		/* If browsing session is still active, disconnect it first */
 		err = bt_avrcp_browsing_disconnect(conn);
@@ -2888,6 +3049,7 @@ int bt_avrcp_disconnect(struct bt_conn *conn)
 			return err;
 		}
 	}
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 	err = bt_avctp_disconnect(&(avrcp->session));
 	if (err < 0) {
@@ -3058,51 +3220,6 @@ int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, u
 	}
 	return err;
 }
-
-#if defined(CONFIG_BT_AVRCP_BROWSING)
-int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id)
-{
-	struct net_buf *buf;
-	struct bt_avrcp_brow_pdu *pdu;
-	int err;
-
-	if ((ct == NULL) || (ct->avrcp == NULL)) {
-		return -EINVAL;
-	}
-
-	if (!IS_CT_ROLE_SUPPORTED()) {
-		return -ENOTSUP;
-	}
-
-	if (ct->avrcp->browsing_session.br_chan.chan.conn == NULL) {
-		LOG_ERR("Browsing session not connected");
-		return -ENOTCONN;
-	}
-
-	buf = avrcp_create_browsing_pdu(ct->avrcp);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	if (net_buf_tailroom(buf) < sizeof(*pdu) + sizeof(player_id)) {
-		LOG_ERR("Not enough tailroom in buffer for browsing PDU");
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
-
-	pdu = net_buf_add(buf, sizeof(*pdu));
-	pdu->pdu_id = BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER;
-	pdu->param_len = sys_cpu_to_be16(sizeof(player_id));
-	net_buf_add_be16(buf, player_id);
-
-	err = avrcp_browsing_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
-	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP browsing PDU (err: %d)", err);
-		net_buf_unref(buf);
-	}
-	return err;
-}
-#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t event_id,
 				      uint32_t interval, bt_avrcp_notify_changed_cb_t cb)
@@ -3758,45 +3875,427 @@ int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid)
 	return bt_avrcp_send_subunit_info(tg->avrcp, tid, BT_AVRCP_RSP_STABLE);
 }
 
-#if defined(CONFIG_BT_AVRCP_BROWSING)
-int bt_avrcp_tg_send_set_browsed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
-					    struct net_buf *buf)
+static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, uint8_t pdu_id,
+				  uint8_t avctp_type, uint8_t tid)
 {
 	struct bt_avrcp_brow_pdu *hdr;
 	uint16_t param_len;
-	int err;
 
-	if ((tg == NULL) || (tg->avrcp == NULL) || (buf == NULL)) {
-		LOG_ERR("Invalid AVRCP target");
+	if ((avrcp == NULL) || (buf == NULL)) {
+		LOG_ERR("Invalid AVRCP context or buffer");
 		return -EINVAL;
 	}
 
-	if (!IS_TG_ROLE_SUPPORTED()) {
-		LOG_ERR("Target role not supported");
-		return -ENOTSUP;
-	}
-
-	if (tg->avrcp->browsing_session.br_chan.chan.conn == NULL) {
+	if (avrcp->browsing_session.br_chan.chan.conn == NULL) {
 		LOG_ERR("Browsing session not connected");
 		return -ENOTCONN;
 	}
 
 	param_len = buf->len;
 
+	/* Add minimum size check based on avctp_type */
+	if (avctp_type == BT_AVCTP_CMD) {
+		for (size_t i = 0; i < ARRAY_SIZE(cmd_brow_handlers); i++) {
+			if (cmd_brow_handlers[i].pdu_id == pdu_id) {
+				if (param_len < cmd_brow_handlers[i].min_len) {
+					LOG_ERR("Too small (%u < %u) for cmd pdu_id 0x%02x",
+						param_len, cmd_brow_handlers[i].min_len, pdu_id);
+					return -EINVAL;
+				}
+				break;
+			}
+		}
+	} else {
+		for (size_t i = 0; i < ARRAY_SIZE(rsp_brow_handlers); i++) {
+			if (rsp_brow_handlers[i].pdu_id == pdu_id) {
+				if (param_len < rsp_brow_handlers[i].min_len) {
+					LOG_ERR("Too small (%u < %u) for rsp pdu_id 0x%02x",
+						param_len, rsp_brow_handlers[i].min_len, pdu_id);
+					return -EINVAL;
+				}
+				break;
+			}
+		}
+	}
+
 	if (net_buf_headroom(buf) < sizeof(struct bt_avrcp_brow_pdu)) {
-		LOG_ERR("Not enough headroom in buffer for bt_avrcp_brow_pdu");
+		LOG_ERR("Not enough headroom for browsing PDU header");
 		return -ENOMEM;
 	}
+
 	hdr = net_buf_push(buf, sizeof(struct bt_avrcp_brow_pdu));
-	memset(hdr, 0, sizeof(struct bt_avrcp_brow_pdu));
-	hdr->pdu_id = BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER;
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->pdu_id    = pdu_id;
 	hdr->param_len = sys_cpu_to_be16(param_len);
 
-	err = avrcp_browsing_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tid);
+	return avrcp_browsing_send(avrcp, buf, avctp_type, tid);
+}
+
+#if defined(CONFIG_BT_AVRCP_BROWSING)
+static inline int avrcp_ct_precheck(struct bt_avrcp_ct *ct, struct net_buf *buf)
+{
+	if ((ct == NULL) || (ct->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (avrcp_ct_cb->set_browsed_player == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	buf = avrcp_create_browsing_pdu(ct->avrcp);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		net_buf_unref(buf);
+		return err;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(player_id)) {
+		LOG_ERR("Not enough tailroom for SET_BROWSED_PLAYER cmd");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_be16(buf, player_id);
+
+	err =  bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER,
+				      BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP browsing PDU (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_get_folder_items(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		return err;
+	}
+
+	if (avrcp_ct_cb->get_folder_items == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS,
+				     BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_FOLDER_ITEMS cmd (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_change_path(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		return err;
+	}
+
+	if (avrcp_ct_cb->change_path == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_CHANGE_PATH,
+				     BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send CHANGE_PATH cmd (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_get_item_attrs(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		return err;
+	}
+
+	if (avrcp_ct_cb->get_item_attrs == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_ITEM_ATTRS,
+				     BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_ITEM_ATTRIBUTES cmd (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_get_total_number_of_items(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t scope)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (scope > BT_AVRCP_SCOPE_NOW_PLAYING) {
+		return -EINVAL;
+	}
+
+	if (avrcp_ct_cb->get_total_number_of_items == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	buf = avrcp_create_browsing_pdu(ct->avrcp);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		net_buf_unref(buf);
+		return err;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(scope)) {
+		LOG_ERR("Not enough tailroom for scope");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, scope);
+
+	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS,
+				     BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS cmd (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_search(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_ct_precheck(ct, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		return err;
+	}
+
+	if (avrcp_ct_cb->search == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_SEARCH,
+				     BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send SEARCH cmd (err: %d)", err);
+	}
+	return err;
+}
+
+static inline int avrcp_tg_precheck(struct bt_avrcp_tg *tg, struct net_buf *buf)
+{
+	if ((tg == NULL) || (tg->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_TG_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int bt_avrcp_tg_set_browsed_player(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		return err;
+	}
+
+	err =  bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER,
+				      BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
 		LOG_ERR("Failed to send AVRCP browsing PDU (err: %d)", err);
 	}
 	return err;
+}
+
+int bt_avrcp_tg_get_folder_items(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		return err;
+	}
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_FOLDER_ITEMS rsp (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_change_path(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, uint32_t num_items)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = avrcp_create_browsing_pdu(tg->avrcp);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		net_buf_unref(buf);
+		return err;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(status) +
+	   ((status == BT_AVRCP_STATUS_OPERATION_COMPLETED) ? sizeof(num_items) : 0U)) {
+		LOG_ERR("Not enough tailroom for CHANGE_PATH rsp");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	net_buf_add_u8(buf, status);
+	if (status == BT_AVRCP_STATUS_OPERATION_COMPLETED) {
+		net_buf_add_be32(buf, num_items);
+	}
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_CHANGE_PATH,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send CHANGE_PATH rsp (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_get_item_attrs(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		return err;
+	}
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_ITEM_ATTRS,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_ITEM_ATTRIBUTES rsp (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_get_total_number_of_items(struct bt_avrcp_tg *tg, uint8_t tid,
+						   struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		return err;
+	}
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS rsp (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_search(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		return err;
+	}
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_SEARCH,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send SEARCH rsp (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_browsing_general_reject(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (AVRCP_STATUS_IS_REJECTED(status) != true) {
+		LOG_ERR("Invalid status");
+		return -EINVAL;
+	}
+
+	buf = avrcp_create_browsing_pdu(tg->avrcp);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	err = avrcp_tg_precheck(tg, buf);
+	if (err < 0) {
+		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		net_buf_unref(buf);
+		return err;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(status)) {
+		LOG_ERR("Not enough tailroom for GENERAL_REJECT rsp");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, status);
+
+	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GENERAL_REJECT,
+				     BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send GENERAL_REJECT rsp (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+
 }
 #endif /* CONFIG_BT_AVRCP_BROWSING */
 

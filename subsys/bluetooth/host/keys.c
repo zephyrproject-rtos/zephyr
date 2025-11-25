@@ -427,6 +427,18 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		memcpy(keys->storage_start, val, len);
 	}
 
+	/* As of Core v6.2, authenticated keys are only valid for OOB or LE SC pairing
+	 * methods. This check ensures that keys are valid if a device is updated from a
+	 * previous version that did not enforce this requirement.
+	 */
+	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
+	    !((keys->flags & BT_KEYS_OOB) || (keys->flags & BT_KEYS_SC))) {
+		LOG_WRN("The keys for %s are downgraded to unauthenticated as they no longer meet "
+			"authentication requirements",
+			bt_addr_le_str(&addr));
+		keys->flags &= ~BT_KEYS_AUTHENTICATED;
+	}
+
 	LOG_DBG("Successfully restored keys for %s", bt_addr_le_str(&addr));
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (aging_counter_val < keys->aging_counter) {

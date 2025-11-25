@@ -69,7 +69,7 @@ NET_BUF_POOL_DEFINE(netmidi2_pool, 2 + CONFIG_NETMIDI2_HOST_MAX_CLIENTS,
 	do { \
 		const struct net_sockaddr *addr = net_sad(&(_s)->addr); \
 		const struct net_sockaddr_in6 *addr6 = net_sin6(addr); \
-		char __pn[INET6_ADDRSTRLEN]; \
+		char __pn[NET_INET6_ADDRSTRLEN]; \
 		net_addr_ntop(addr->sa_family, &addr6->sin6_addr, __pn, sizeof(__pn)); \
 		NET_##_lvl("%s:%d " _fmt, __pn, addr6->sin6_port, ##__VA_ARGS__); \
 	} while (0)

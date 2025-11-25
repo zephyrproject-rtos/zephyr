@@ -2182,10 +2182,10 @@ static const struct ethernet_api eth_api = {
 		},
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-#define BUF_TX_FRAME_LIST_QUE (uint32_t *)&tx_frame_list##n##_que[x * NET_PKT_PER_QUE]
+#define BUF_TX_FRAME_LIST_QUE(n, x) (uint32_t *)&tx_frame_list##n##_que[x * NET_PKT_PER_QUE]
 #define DEFN_TX_FRAME_LIST(n, x)							\
 		.tx_frames = {								\
-			.buf = BUF_TX_FRAME_LIST_QUE,					\
+			.buf = BUF_TX_FRAME_LIST_QUE(n, x),				\
 			.len = NET_PKT_PER_QUE,						\
 		},
 #else /* CONFIG_PTP_CLOCK_SAM_GMAC */

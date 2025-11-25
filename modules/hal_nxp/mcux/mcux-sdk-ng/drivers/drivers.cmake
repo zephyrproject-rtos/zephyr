@@ -304,7 +304,7 @@ if(CONFIG_SOC_SERIES_IMXRT118X)
   set_variable_ifdef(CONFIG_WDT_MCUX_RTWDOG	CONFIG_MCUX_COMPONENT_driver.src_3)
 endif()
 
-if(${MCUX_DEVICE} MATCHES "S32K3")
+if(CONFIG_SOC_SERIES_S32K3 OR CONFIG_SOC_SERIES_S32ZE)
   if(CONFIG_DMA)
     zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/dmamux)
     set(CONFIG_MCUX_COMPONENT_driver.dmamux ON)

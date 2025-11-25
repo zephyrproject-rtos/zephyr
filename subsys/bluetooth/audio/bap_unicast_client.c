@@ -327,8 +327,8 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 		ep->unicast_group->has_been_connected = true;
 	}
 
-	if (ep->state != BT_BAP_EP_STATE_ENABLING) {
-		LOG_DBG("endpoint not in enabling state: %s", bt_bap_ep_state_str(ep->state));
+	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED && ep->state != BT_BAP_EP_STATE_ENABLING) {
+		LOG_DBG("endpoint in invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return;
 	}
 

@@ -88,14 +88,6 @@
 		zephyr,memory-region = "ITCM";
 	};
 
-	ext_memory: memory@70000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x70000000 DT_SIZE_M(256)>;
-		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
 	clocks {
 		#address-cells = <1>;
 		#size-cells = <0>;

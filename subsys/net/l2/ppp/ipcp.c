@@ -198,7 +198,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 	}
 #endif
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		char dst[INET_ADDRSTRLEN];
+		char dst[NET_INET_ADDRSTRLEN];
 		char *addr_str;
 
 		addr_str = net_addr_ntop(NET_AF_INET, &data->addr, dst,
@@ -433,7 +433,7 @@ static void ipcp_up(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 	struct net_if_addr *addr;
-	char dst[INET_ADDRSTRLEN];
+	char dst[NET_INET_ADDRSTRLEN];
 	char *addr_str;
 
 	if (ctx->is_ipcp_up) {

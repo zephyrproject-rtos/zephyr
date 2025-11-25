@@ -3495,14 +3495,13 @@ NXP Platform Drivers:
     - decsny
     - manuargue
     - dbaluta
-    - Raymond0225
     - Holt-Sun
+    - zejiang0jason
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
     - drivers\/.*[_\/]+lpc[_\.\d]+.*c
   files:
-    - drivers/*/*imx*
     - drivers/*/*mcux*.c
     - drivers/*/*.mcux
     - drivers/*/*.nxp
@@ -3513,7 +3512,6 @@ NXP Platform Drivers:
     - include/zephyr/dt-bindings/*/*nxp*
     - include/zephyr/dt-bindings/*/*mcux*
     - include/zephyr/dt-bindings/inputmux/
-    - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
     - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
@@ -3523,33 +3521,23 @@ NXP Platform Drivers:
   files-exclude:
     - drivers/wifi/
     - drivers/bluetooth/
-    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
+  file-groups:
+    - name: NXP USB
+      collaborators:
+        - mmahadevan108
+        - MarkWangChinese
+      files:
+        - drivers/usb/
   labels:
     - "platform: NXP"
   description: NXP Drivers
-
-NXP Platform MCUX USB:
-  status: maintained
-  maintainers:
-    - mmahadevan108
-    - MarkWangChinese
-  files:
-    - drivers/usb/*/*mcux*
-    - boards/nxp/usb_kw24d512/
-  labels:
-    - "platform: NXP"
-  description: NXP MCUX USB shim drivers
 
 NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
-    - MaochenWang1
-    - axelnxp
-    - George-Stefan
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3564,6 +3552,43 @@ NXP Platform Wireless:
     - samples/net/**/*rw*
     - soc/nxp/mcx/mcxw/
     - soc/nxp/rw/
+  file-groups:
+    - name: NXP BLE
+      collaborators:
+        - axelnxp
+        - yeaissa
+      files:
+        - drivers/bluetooth/
+        - samples/bluetooth/
+    - name: NXP Wifi
+      collaborators:
+        - MaochenWang1
+      files:
+        - drivers/wifi/
+        - samples/net/
+    - name: NXP IEEE802.15.4
+      collaborators:
+        - George-Stefan
+      files:
+        - drivers/hdlc_rcp_if/
+        - drivers/ieee802154/
+        - soc/
+    - name: MCXW platform
+      collaborators:
+        - EmilioCBen
+        - decsny
+        - axelnxp
+      files:
+        - boards/nxp/*mcxw*/
+        - soc/nxp/mcx/mcxw/
+    - name: RW6xx platform
+      collaborators:
+        - decsny
+        - MaochenWang1
+        - axelnxp
+      files:
+        - soc/nxp/rw/
+        - boards/nxp/*rw*/
   labels:
     - "platform: NXP"
 
@@ -3573,8 +3598,6 @@ NXP Platforms (MCU):
     - dleach02
     - mmahadevan108
   collaborators:
-    - DerekSnell
-    - EmilioCBen
     - decsny
     - butok
   files:
@@ -3595,11 +3618,76 @@ NXP Platforms (MCU):
     - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
+    - boards/nxp/vmu*/
+    - boards/nxp/rddrone_fmuk66/
+    - tests/boards/vmu_rt1170/
   files-exclude:
     - dts/arm/nxp/nxp_imx*
     - boards/nxp/frdm_imx*/
   files-regex-exclude:
     - .*s32.*
+  file-groups:
+    - name: NXP RT
+      collaborators:
+        - lucien-nxp
+        - Raymond0225
+      files:
+        - boards/nxp/mimxrt*/
+        - soc/nxp/imxrt/
+        - dts/arm/nxp/*rt*
+    - name: NXP MCX
+      collaborators:
+        - peterwangsz
+        - NeilChen93
+        - jacob-wienecke-nxp
+      files:
+        - boards/nxp/frdm_mcx*/
+        - soc/nxp/mcx/
+        - dts/arm/nxp/*mcx*
+        - boards/nxp/mcx_*/
+    - name: NXP Kinetis
+      collaborators:
+        - EmilioCBen
+      files:
+        - boards/nxp/frdm_k*/
+        - soc/nxp/kinetis/
+        - dts/arm/nxp/nxp_k*
+    - name: NXP LPC
+      collaborators:
+        - EmilioCBen
+      files:
+        - boards/nxp/lpc*/
+        - soc/nxp/lpc/
+        - dts/arm/nxp/nxp_lpc*
+    - name: NXP MCU Xtensa
+      collaborators:
+        - iuliana-prodan
+        - TomasBarakNXP
+        - VitekST
+      files:
+        - soc/nxp/imxrt/*/f1/
+        - soc/nxp/imxrt/*/hifi*/
+        - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
+        - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
+    - name: NXP MCU UX
+      collaborators:
+        - DerekSnell
+        - jacob-wienecke-nxp
+      files-regex:
+        - \.rst$
+        - .*Kconfig.*
+        - \.conf$
+      files:
+        - dts/bindings/
+        - samples/
+    - name: NXP MCU Robotics
+      collaborators:
+        - bperseghetti
+        - PetervdPerk-NXP
+      files:
+        - boards/nxp/vmu*/
+        - boards/nxp/rddrone_fmuk66/
+        - tests/boards/vmu_rt1170/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
@@ -3610,12 +3698,13 @@ NXP Platforms (MPU):
   maintainers:
     - JiafeiPan
   collaborators:
-    - dleach02
     - dbaluta
     - iuliana-prodan
     - yangbolu1991
     - Zhiqiang-Hou
   files:
+    - drivers/*/*imx*
+    - include/zephyr/dt-bindings/rdc/
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
@@ -3627,21 +3716,6 @@ NXP Platforms (MPU):
     - "platform: NXP MPU"
     - "platform: NXP"
   description: NXP MPU platforms
-
-NXP Platforms (Robotics Products):
-  status: maintained
-  maintainers:
-    - bperseghetti
-    - PetervdPerk-NXP
-  collaborators:
-    - manuargue
-  files:
-    - boards/nxp/vmu*/
-    - boards/nxp/rddrone_fmuk66/
-    - boards/nxp/mr_canhubk3/
-    - boards/nxp/ucans32k1sic/
-    - tests/boards/vmu_rt1170/
-  description: NXP Robotics Module Platform Products
 
 NXP Platforms (S32):
   status: maintained
@@ -3662,30 +3736,19 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
-  files-exclude:
-    - boards/nxp/ucans32k1sic/
+    - boards/nxp/mr_canhubk3/
+  file-groups:
+    - name: NXP S32 Robotics
+      collaborators:
+        - bperseghetti
+        - PetervdPerk-NXP
+      files:
+        - boards/nxp/mr_canhubk3/
+        - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
     - "platform: NXP"
   description: NXP S32 platforms and S32-specific drivers
-
-NXP Platforms (Xtensa):
-  status: maintained
-  maintainers:
-    - dbaluta
-  collaborators:
-    - iuliana-prodan
-    - TomasBarakNXP
-  files:
-    - soc/nxp/imx/*/adsp/
-    - soc/nxp/imxrt/*/f1/
-    - soc/nxp/imxrt/*/hifi*/
-    - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
-    - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
-  labels:
-    - "platform: NXP Xtensa"
-    - "platform: NXP"
-  description: NXP Xtensa platforms
 
 Native_sim and POSIX arch:
   status: maintained
@@ -4810,9 +4873,9 @@ Silabs SiM3U Platforms:
 State machine framework:
   status: maintained
   maintainers:
-    - sambhurst
     - vlad-kulikov
   collaborators:
+    - sambhurst
     - keith-zephyr
     - glenn-andrews
   files:
@@ -4959,6 +5022,7 @@ TI SimpleLink Platforms:
     - vaishnavachath
   collaborators:
     - bogdanovs
+    - jpanisbl
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/

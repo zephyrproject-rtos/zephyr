@@ -2048,6 +2048,11 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		if (cis->qos->tx != NULL && cis->qos->tx->sdu != 0U) {
 			is_c_to_p = true;
 		}
+
+		if (!is_p_to_c && !is_c_to_p) {
+			LOG_DBG("Neither C to P nor P to C can be configured");
+			return false;
+		}
 	}
 
 	if (param->framing != BT_ISO_FRAMING_UNFRAMED && param->framing != BT_ISO_FRAMING_FRAMED) {
