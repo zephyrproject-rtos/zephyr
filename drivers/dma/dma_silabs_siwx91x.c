@@ -669,6 +669,7 @@ static void siwx91x_dma_isr(const struct device *dev)
 	}
 
 	if (data->chan_info[channel].Cnt == data->chan_info[channel].Size) {
+		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
 		if (data->zephyr_channel_info[channel].channel_active) {
 			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			data->zephyr_channel_info[channel].channel_active = false;
@@ -678,7 +679,6 @@ static void siwx91x_dma_isr(const struct device *dev)
 			data->zephyr_channel_info[channel].dma_callback(
 				dev, data->zephyr_channel_info[channel].cb_data, channel, 0);
 		}
-		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
 	} else {
 		/* Call UDMA ROM IRQ handler. */
 		ROMAPI_UDMA_WRAPPER_API->uDMAx_IRQHandler(&udma_resources, udma_resources.desc,
