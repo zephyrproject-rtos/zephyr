@@ -196,8 +196,11 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
 				DT_DMAS_CELL_BY_NAME(id, dir, channel_config)),                    \
 			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                 \
 				DT_DMAS_CELL_BY_NAME(id, dir, channel_config)),                    \
-			.source_burst_length = 1, /* SINGLE transfer */                            \
-			.dest_burst_length = 1,   /* SINGLE transfer */                            \
+			/* single transfers (burst length = data size) */                          \
+			.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(             \
+				DT_DMAS_CELL_BY_NAME(id, dir, channel_config)),                    \
+			.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(              \
+				DT_DMAS_CELL_BY_NAME(id, dir, channel_config)),                    \
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(                             \
 				DT_DMAS_CELL_BY_NAME(id, dir, channel_config)),                    \
 			.dma_callback = dma_callback,                                              \
