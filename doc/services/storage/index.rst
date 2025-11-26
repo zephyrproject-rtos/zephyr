@@ -6,6 +6,7 @@ Storage
 .. toctree::
    :maxdepth: 1
 
+   file_system/index.rst
    nvs/nvs.rst
    zms/zms.rst
    disk/access.rst

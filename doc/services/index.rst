@@ -14,7 +14,6 @@ OS Services
    debugging/index.rst
    device_mgmt/index
    dsp/index.rst
-   file_system/index.rst
    formatted_output.rst
    input/index.rst
    instrumentation/index.rst
