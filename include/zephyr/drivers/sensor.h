@@ -139,6 +139,8 @@ enum sensor_channel {
 	SENSOR_CHAN_PM_1_0_COUNT,
 	/** Number of particles ≥ 2.5 µm per 0.1 liter of air */
 	SENSOR_CHAN_PM_2_5_COUNT,
+	/** Number of particles ≥ 4.0 µm per 0.1 liter of air */
+	SENSOR_CHAN_PM_4_0_COUNT,
 	/** Number of particles ≥ 5.0 µm per 0.1 liter of air */
 	SENSOR_CHAN_PM_5_COUNT,
 	/** Number of particles ≥ 10.0 µm per 0.1 liter of air */
