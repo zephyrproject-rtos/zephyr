@@ -52,8 +52,9 @@ static K_MUTEX_DEFINE(mbedtls_sessions_lock);
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-static int mbedtls_get_unused_session_index(void)
+static struct mbedtls_shim_session *mbedtls_get_unused_session(void)
 {
+	struct mbedtls_shim_session *session = NULL;
 	int i;
 
 	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
@@ -61,13 +62,20 @@ static int mbedtls_get_unused_session_index(void)
 	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
 		if (!mbedtls_sessions[i].in_use) {
 			mbedtls_sessions[i].in_use = true;
-			k_mutex_unlock(&mbedtls_sessions_lock);
-			return i;
+			session = &mbedtls_sessions[i];
+			break;
 		}
 	}
 
 	k_mutex_unlock(&mbedtls_sessions_lock);
-	return -1;
+	return session;
+}
+
+static inline void mbedtls_free_session(struct mbedtls_shim_session *session)
+{
+	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
+	session->in_use = false;
+	k_mutex_unlock(&mbedtls_sessions_lock);
 }
 
 #if CONFIG_PSA_WANT_KEY_TYPE_AES
@@ -261,7 +269,6 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_status_t status;
 	struct mbedtls_shim_session *session;
-	int ctx_idx;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
@@ -278,13 +285,11 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ctx_idx = mbedtls_get_unused_session_index();
-	if (ctx_idx < 0) {
+	session = mbedtls_get_unused_session();
+	if (session == NULL) {
 		LOG_ERR("No free session for now");
 		return -ENOSPC;
 	}
-
-	session = &mbedtls_sessions[ctx_idx];
 
 	switch (mode) {
 #if CONFIG_PSA_WANT_KEY_TYPE_AES
@@ -315,7 +320,7 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 #endif /* CONFIG_PSA_WANT_KEY_TYPE_AES*/
 	default:
 		LOG_ERR("Unsupported mode");
-		session->in_use = false;
+		mbedtls_free_session(session);
 		return -ENOTSUP;
 	}
 
@@ -331,6 +336,7 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 	psa_reset_key_attributes(&key_attr);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_import_key() failed (%d)", status);
+		mbedtls_free_session(session);
 		return -EIO;
 	}
 
@@ -345,10 +351,7 @@ static int mbedtls_cipher_session_free(const struct device *dev, struct cipher_c
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 
 	psa_destroy_key(session->key_id);
-
-	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
-	session->in_use = false;
-	k_mutex_unlock(&mbedtls_sessions_lock);
+	mbedtls_free_session(session);
 
 	return 0;
 }
@@ -397,20 +400,18 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 				   enum hash_algo algo)
 {
 	struct mbedtls_shim_session *session;
-	int ctx_idx;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
-	ctx_idx = mbedtls_get_unused_session_index();
-	if (ctx_idx < 0) {
+	session = mbedtls_get_unused_session();
+	if (session == NULL) {
 		LOG_ERR("No free session for now");
 		return -ENOSPC;
 	}
 
-	session = &mbedtls_sessions[ctx_idx];
 	session->hash_op = psa_hash_operation_init();
 	switch (algo) {
 #if CONFIG_PSA_WANT_ALG_SHA_224
@@ -435,10 +436,9 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 #endif
 	default:
 		LOG_ERR("Unsupported algo: %d", algo);
+		mbedtls_free_session(session);
 		return -EINVAL;
 	}
-
-	session->in_use = true;
 
 	ctx->hash_hndlr = mbedtls_hash_compute;
 	ctx->drv_sessn_state = session;
@@ -449,16 +449,14 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 
 static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
 {
-	struct mbedtls_shim_session *mbedtls_session =
-		(struct mbedtls_shim_session *)ctx->drv_sessn_state;
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 
-	if (psa_hash_abort(&mbedtls_session->hash_op) != PSA_SUCCESS) {
+	if (psa_hash_abort(&session->hash_op) != PSA_SUCCESS) {
 		LOG_ERR("PSA hash abort failed");
 		return -EIO;
 	}
-	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
-	mbedtls_session->in_use = false;
-	k_mutex_unlock(&mbedtls_sessions_lock);
+
+	mbedtls_free_session(session);
 
 	return 0;
 }
