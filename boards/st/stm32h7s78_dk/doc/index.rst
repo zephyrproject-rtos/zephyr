@@ -180,6 +180,7 @@ Default Zephyr Peripheral Mapping:
 - USB OTG FS DM/DP : PM12/PM11
 - XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
 - I2C1 SCL/SDA: PB6/PB9
+- FDCAN1 RX/TX : PB8/PB9
 
 System Clock
 ------------
@@ -199,6 +200,13 @@ USB
 
 STM32H7S78-DK Discovery board has 2 USB Type-C connectors. Currently, only
 USB port2 (FS) is supported.
+
+FDCAN
+-----
+
+STM32H7S78-DK Discovery board has 2 FDCAN bus interfaces.
+FDCAN1 is configured but not enabled by default. To enable it, make sure
+that ``i2c1`` is disabled, since they share the PB9 pin.
 
 Programming and Debugging
 *************************
