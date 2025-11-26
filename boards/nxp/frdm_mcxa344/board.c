@@ -94,6 +94,21 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GatePORT4);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER2, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	RESET_ReleasePeripheralReset(kGPIO0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO0);
