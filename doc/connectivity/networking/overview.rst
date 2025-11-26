@@ -166,7 +166,7 @@ The networking stack source code tree is organized as follows:
   Application-level protocols (DNS, MQTT, etc.) and additional stack
   components (BSD Sockets, etc.).
 
-``include/net/``
+``include/zephyr/net/``
   Public API header files. These are the header files applications need
   to include to use IP networking functionality.
 
