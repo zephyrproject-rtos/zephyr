@@ -1,0 +1,11 @@
+# Adafruit TRRS Trinkey board configuration
+
+# Copyright (c) 2022 Embla Flatlandsmo <embla.flatlandsmo@gmail.com>
+# Copyright (c) 2025 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_TRRS_TRINKEY
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_ADAFRUIT_TRRS_TRINKEY

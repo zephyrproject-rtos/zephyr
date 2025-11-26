@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2018 Google LLC.
+ * Copyright (c) 2025 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd21.dtsi>
+#include <atmel/samx2xx18.dtsi>
+#include <freq.h>
+#include "adafruit_trrs_trinkey-pinctrl.dtsi"
+
+/ {
+	model = "Adafruit TRRS Trinkey";
+	compatible = "adafruit,trrs-trinkey", "atmel,samd21e18a", "atmel,samd21";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		i2c-0 = &sercom2;
+		watchdog0 = &wdog;
+	};
+
+	stemma_connector: stemma_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &porta 9 0>, /* SCL */
+			   <1 0 &porta 8 0>; /* SDA */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(48)>;
+};
+
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
+};
+
+zephyr_i2c: &sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom2_i2c_default>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "uf2";
+			reg = <0x00000000 DT_SIZE_K(8)>;
+			read-only;
+		};
+
+		code_partition: partition@2000 {
+			label = "code";
+			reg = <0x2000 DT_SIZE_K(232)>;
+			read-only;
+		};
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&wdog {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
