@@ -3476,7 +3476,7 @@ NVMEM:
   collaborators:
     - henrikbrixandersen
   files:
-    - doc/services/nvmem/
+    - doc/services/storage/nvmem/
     - dts/bindings/nvmem/
     - include/zephyr/devicetree/nvmem.h
     - include/zephyr/nvmem.h

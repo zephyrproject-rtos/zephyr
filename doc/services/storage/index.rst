@@ -11,6 +11,7 @@ Storage
    zms/zms.rst
    disk/access.rst
    flash_map/flash_map.rst
+   nvmem/index.rst
    fcb/fcb.rst
    retention/index.rst
    stream/stream_flash.rst
