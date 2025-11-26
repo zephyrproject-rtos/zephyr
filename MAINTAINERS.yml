@@ -3530,6 +3530,21 @@ NXP Platform Drivers:
         - MarkWangChinese
       files:
         - drivers/usb/
+    - name: NXP Ethernet
+      collaborators:
+        - stanislav-poboril
+      files:
+        - drivers/ethernet/
+    - name: NXP Audio
+      collaborators:
+        - TomasBarakNXP
+      files:
+        - drivers/audio/
+    - name: NXP Multicore
+      collaborators:
+        - TomasGalbickaNXP
+      files:
+        - drivers/mbox/
   labels:
     - "platform: NXP"
   description: NXP Drivers
@@ -3538,6 +3553,7 @@ NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
+    - mmahadevan108
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3600,6 +3616,7 @@ NXP Platforms (MCU):
   collaborators:
     - decsny
     - butok
+    - michal-smola
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
