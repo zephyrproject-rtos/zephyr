@@ -145,7 +145,7 @@ With GCC, the output resembles:
 .. code-block:: none
 
 	tests/kernel/fatal/src/main.c: In function 'test_main':
-	include/toolchain/gcc.h:28:37: error: static assertion failed: "Invalid value of FOO"
+	include/zephyr/toolchain/gcc.h:28:37: error: static assertion failed: "Invalid value of FOO"
 	 #define BUILD_ASSERT(EXPR, MSG) _Static_assert(EXPR, "" MSG)
 					 ^~~~~~~~~~~~~~
 	tests/kernel/fatal/src/main.c:370:2: note: in expansion of macro 'BUILD_ASSERT'
