@@ -595,7 +595,7 @@ static void sen6x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_
 	}
 }
 
-static DEVICE_API(sensor, sen6x_driver_api) = {
+DEVICE_API(sensor, sen6x_driver_api) = {
 	.get_decoder = sen6x_get_decoder,
 	.submit = sen6x_submit,
 };

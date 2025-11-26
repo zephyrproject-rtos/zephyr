@@ -1,7 +1,7 @@
 # Copyright 2025 sevenlab engineering GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-config SEN6X
+menuconfig SEN6X
 	bool "SEN6x environmental sensor"
 	default y
 	depends on DT_HAS_SENSIRION_SEN6X_ENABLED
@@ -23,3 +23,11 @@ config SEN6X
 	    sensors submit function.
 	    The driver allows submitting a read with 0 channels, to poll just
 	    the status.
+
+if SEN6X
+
+config SEN6X_SHELL
+	bool "SEN6x shell"
+	depends on SHELL
+
+endif # SEN6X
