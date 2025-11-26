@@ -219,6 +219,7 @@ html_context = {
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
+        "Glossary": f"{reference_prefix}/glossary.html",
     },
     # Set google_searchengine_id to your Search Engine ID to replace built-in search
     # engine with Google's Programmable Search Engine.
