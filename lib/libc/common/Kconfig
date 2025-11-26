@@ -133,6 +133,12 @@ config COMMON_LIBC_FEOF
 	help
 	  Common implementation of feof().
 
+config COMMON_LIBC_FERROR
+	bool "Common C library ferror"
+	default y
+	help
+	  Common implementation of ferror().
+
 config COMMON_LIBC_FPUTC
 	bool "Common C library fputc"
 	default y if ZVFS
