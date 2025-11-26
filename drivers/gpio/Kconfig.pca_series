@@ -20,7 +20,7 @@ if GPIO_PCA_SERIES
 
 config GPIO_PCA_SERIES_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
