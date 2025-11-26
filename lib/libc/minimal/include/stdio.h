@@ -84,6 +84,14 @@ int fclose(FILE *stream);
  * @return 1 if file position indicator is at end of file; EOF with errno set otherwise
  */
 int feof(FILE *stream);
+/**
+ * @brief Check error indicator for stream. Currently unimplemented.
+ *
+ * @param stream Stream to check
+ *
+ * @return Zero
+ */
+int ferror(FILE *stream);
 int fputc(int c, FILE *stream);
 /**
  * @brief Read data from stream.
