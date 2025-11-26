@@ -21,6 +21,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - interrupt_controller
   - mcuboot
   - pinctrl
   - pwm
