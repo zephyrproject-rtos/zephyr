@@ -772,7 +772,7 @@ static void bt_hfp_ag_set_call_state(struct bt_hfp_ag_call *call, bt_hfp_call_st
 
 static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 {
-	struct bt_conn *sco = NULL;
+	struct bt_conn *sco;
 	int call_count;
 
 	LOG_DBG("");
@@ -785,9 +785,9 @@ static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 		return;
 	}
 
-	if (ag->sco_conn != NULL) {
-		bt_conn_unref(ag->sco_conn);
-		ag->sco_conn = NULL;
+	sco = atomic_ptr_set(&ag->sco_conn, NULL);
+	if (sco != NULL) {
+		bt_conn_unref(sco);
 		sco = ag->sco_chan.sco;
 	}
 	hfp_ag_unlock(ag);
@@ -1450,8 +1450,8 @@ static void hfp_ag_sco_connected(struct bt_sco_chan *chan)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(chan, struct bt_hfp_ag, sco_chan);
 
-	if (ag->sco_conn == NULL) {
-		ag->sco_conn = bt_conn_ref(chan->sco);
+	if (atomic_ptr_cas(&ag->sco_conn, NULL, chan->sco)) {
+		bt_conn_ref(chan->sco);
 	}
 
 	if ((bt_ag) && bt_ag->sco_connected) {
@@ -1462,14 +1462,15 @@ static void hfp_ag_sco_connected(struct bt_sco_chan *chan)
 static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(chan, struct bt_hfp_ag, sco_chan);
+	struct bt_conn *sco;
 
 	if ((bt_ag != NULL) && bt_ag->sco_disconnected) {
 		bt_ag->sco_disconnected(chan->sco, reason);
 	}
 
-	if (ag->sco_conn != NULL) {
-		bt_conn_unref(ag->sco_conn);
-		ag->sco_conn = NULL;
+	sco = atomic_ptr_set(&ag->sco_conn, NULL);
+	if (sco != NULL) {
+		bt_conn_unref(sco);
 	}
 }
 
@@ -1506,32 +1507,51 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 		.connected = hfp_ag_sco_connected,
 		.disconnected = hfp_ag_sco_disconnected,
 	};
+	struct bt_conn *sco;
+	int err;
+	bool updated;
 
 	LOG_DBG("");
 
-	if (ag->sco_conn == NULL) {
-		int err;
+	sco = atomic_ptr_get(&ag->sco_conn);
+	if (sco != NULL) {
+		return sco;
+	}
 
-		ag->sco_chan.ops = &ops;
+	ag->sco_chan.ops = &ops;
 
-		err = hfp_ag_set_voice_setting(ag);
-		if (err < 0) {
-			LOG_ERR("Fail to set voice setting :(%d)", err);
-			return NULL;
-		}
+	err = hfp_ag_set_voice_setting(ag);
+	if (err < 0) {
+		LOG_ERR("Fail to set voice setting :(%d)", err);
+		return NULL;
+	}
 
-		/* create SCO connection*/
-		ag->sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
-		if (ag->sco_conn != NULL) {
-			LOG_DBG("Created sco %p", ag->sco_conn);
-			if (ag->sco_chan.sco == NULL) {
-				/* SCO connection exists */
-				LOG_WRN("SCO conn has been created outside");
-			}
+	/* create SCO connection*/
+	sco = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
+	updated = atomic_ptr_cas(&ag->sco_conn, NULL, sco);
+	if (!updated) {
+		LOG_WRN("SCO is not NULL (%p), target (%p)", atomic_ptr_get(&ag->sco_conn), sco);
+		__ASSERT(atomic_ptr_get(&ag->sco_conn) == sco,
+				"Concurrent SCO connection creation detected");
+		/* The `ag->sco_conn` has been updated in callback `hfp_ag_sco_connected()`.
+		 * The reference count has been increased in callback `hfp_ag_sco_connected()`.
+		 * The reference count should be decreased in this case.
+		 */
+		if (sco != NULL) {
+			LOG_DBG("Unreference SCO connection %p", sco);
+			bt_conn_unref(sco);
 		}
 	}
 
-	return ag->sco_conn;
+	if (sco != NULL) {
+		LOG_DBG("Created sco %p", sco);
+		if (ag->sco_chan.sco == NULL) {
+			/* SCO connection exists */
+			LOG_WRN("SCO conn has been created outside");
+		}
+	}
+
+	return sco;
 }
 
 static int hfp_ag_open_sco(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call)
@@ -1544,7 +1564,7 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call)
 	}
 
 	hfp_ag_lock(ag);
-	create_sco = (ag->sco_conn == NULL) ? true : false;
+	create_sco = atomic_ptr_get(&ag->sco_conn) == NULL ? true : false;
 	if (create_sco) {
 		atomic_set_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
 	}
@@ -2702,7 +2722,7 @@ static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	if (ag->sco_conn != NULL) {
+	if (atomic_ptr_get(&ag->sco_conn) != NULL) {
 		hfp_ag_unlock(ag);
 		return -ECONNREFUSED;
 	}
@@ -4300,9 +4320,8 @@ static void ag_sco_disconnected(struct bt_conn *conn, uint8_t reason)
 	__ASSERT(conn != NULL, "Invalid SCO conn");
 
 	ARRAY_FOR_EACH(bt_hfp_ag_pool, i) {
-		if (bt_hfp_ag_pool[i].sco_conn == conn) {
-			bt_conn_unref(bt_hfp_ag_pool[i].sco_conn);
-			bt_hfp_ag_pool[i].sco_conn = NULL;
+		if (atomic_ptr_cas(&bt_hfp_ag_pool[i].sco_conn, conn, NULL)) {
+			bt_conn_unref(conn);
 		}
 	}
 }
@@ -5127,7 +5146,7 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 		}
 	}
 
-	if (ag->sco_conn != NULL) {
+	if (atomic_ptr_get(&ag->sco_conn) != NULL) {
 		LOG_ERR("Audio conenction has been connected");
 		hfp_ag_unlock(ag);
 		return -ECONNREFUSED;
