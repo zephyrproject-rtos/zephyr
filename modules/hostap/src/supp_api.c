@@ -507,7 +507,7 @@ static struct wifi_eap_config eap_config[] = {
 	{WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2, WIFI_EAP_TYPE_TTLS, WIFI_EAP_TYPE_NONE, "TTLS",
 	 "auth=MSCHAPV2"},
 	{WIFI_SECURITY_TYPE_EAP_PEAP_TLS, WIFI_EAP_TYPE_PEAP, WIFI_EAP_TYPE_TLS, "PEAP",
-	 "auth=TLS"},
+	 "auth=TLS tls_disable_tlsv1_3=1"},
 };
 
 int process_cipher_config(struct wifi_connect_req_params *params,
