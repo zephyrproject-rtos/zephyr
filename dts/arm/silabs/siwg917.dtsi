@@ -134,6 +134,7 @@
 		siwx91x_soc_pd: siwx91x-soc-pd {
 			compatible = "silabs,siwx91x-power-domain";
 			#power-domain-cells = <0>;
+			zephyr,disabling-power-states = <&pstate_ps4_sleep>;
 			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
