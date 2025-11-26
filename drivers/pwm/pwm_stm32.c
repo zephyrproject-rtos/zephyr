@@ -26,6 +26,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_PWM_DMA
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
+#include <stm32_ll_dma.h>
+#endif
+
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
@@ -74,6 +80,37 @@ struct pwm_stm32_capture_data {
 
 #endif /*CONFIG_PWM_CAPTURE*/
 
+#ifdef CONFIG_PWM_DMA
+static int pwm_stm32_dma_init(const struct device *dev, uint32_t channel);
+static int pwm_stm32_set_cycles_dma(const struct device *dev, uint32_t channel,
+	uint32_t period_cycles, uint32_t *pulse_buffer, uint32_t num_values, pwm_flags_t flags);
+static inline void pwm_stm32_dma_enable(const struct device *dev, uint32_t channel);
+#endif
+
+#ifdef CONFIG_PWM_DMA
+struct stream {
+	const struct device *dma_dev;
+	uint32_t channel; /* stores the channel for dma or mux */
+	struct dma_config dma_cfg;
+	struct dma_block_config blk_cfg;
+	uint8_t priority;
+	bool src_addr_increment;
+	bool dst_addr_increment;
+	int fifo_threshold;
+	uint8_t *buffer;
+	size_t buffer_length;
+};
+#endif
+
+/** Maximum number of timer channels : some stm32 soc have 6 else only 4 */
+#if defined(LL_TIM_CHANNEL_CH6)
+#define TIMER_HAS_6CH 1
+#define TIMER_MAX_CH 6u
+#else
+#define TIMER_HAS_6CH 0
+#define TIMER_MAX_CH 4u
+#endif
+
 /** PWM data. */
 struct pwm_stm32_data {
 	/** Timer clock (Hz). */
@@ -83,6 +120,9 @@ struct pwm_stm32_data {
 #ifdef CONFIG_PWM_CAPTURE
 	struct pwm_stm32_capture_data capture;
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_DMA
+	struct stream dma[TIMER_MAX_CH]; 
+#endif /* CONFIG_SPI_STM32_DMA */
 };
 
 /** PWM configuration. */
@@ -317,6 +357,142 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 
 	return 0;
 }
+
+#ifdef CONFIG_PWM_DMA
+static int pwm_stm32_set_cycles_dma(const struct device *dev, uint32_t channel,
+	uint32_t period_cycles, uint32_t *pulse_buffer, uint32_t num_values, pwm_flags_t flags)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	TIM_TypeDef *timer = cfg->timer;
+	struct pwm_stm32_data *data = dev->data;
+
+	int ret;
+	uint32_t ll_channel;
+	uint32_t current_ll_channel; /* complementary output if used */
+	uint32_t negative_ll_channel;
+	uint32_t tmr_channel;
+
+	if (channel < 1u || channel > TIMER_MAX_CH) {
+		LOG_ERR("Invalid channel (%d)", channel);
+		return -EINVAL;
+	}
+
+	tmr_channel = channel - 1;
+	dma_stop(data->dma[tmr_channel].dma_dev, data->dma[tmr_channel].channel);
+	pwm_stm32_dma_init(dev, tmr_channel);
+
+	/*
+	 * Non 32-bit timers count from 0 up to the value in the ARR register
+	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
+	 */
+	if (!IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) &&
+	    (period_cycles > UINT16_MAX + 1)) {
+		LOG_ERR("Cannot set PWM output, value exceeds 16-bit timer limit.");
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_PWM_CAPTURE
+	if (LL_TIM_IsEnabledIT_CC1(cfg->timer) || LL_TIM_IsEnabledIT_CC2(cfg->timer) ||
+	    LL_TIM_IsEnabledIT_CC3(cfg->timer) || LL_TIM_IsEnabledIT_CC4(cfg->timer)) {
+		LOG_ERR("Cannot set PWM output, capture in progress");
+		return -EBUSY;
+	}
+#endif /* CONFIG_PWM_CAPTURE */
+
+	ll_channel = ch2ll[channel - 1u];
+
+	if (channel <= ARRAY_SIZE(ch2ll_n)) {
+		negative_ll_channel = ch2ll_n[channel - 1u];
+	} else {
+		negative_ll_channel = 0;
+	}
+
+	/* in LL_TIM_CC_DisableChannel and LL_TIM_CC_IsEnabledChannel,
+	 * the channel param could be the complementary one
+	 */
+	if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
+		if (!negative_ll_channel) {
+			/* setting a flag on a channel that has not this capability */
+			LOG_ERR("Channel %d has NO complementary output", channel);
+			return -EINVAL;
+		}
+		current_ll_channel = negative_ll_channel;
+	} else {
+		current_ll_channel = ll_channel;
+	}
+
+	if (period_cycles == 0u) {
+		LL_TIM_CC_DisableChannel(cfg->timer, current_ll_channel);
+		return 0;
+	}
+
+	if (cfg->countermode == LL_TIM_COUNTERMODE_UP) {
+		/* remove 1 period cycle, accounts for 1 extra low cycle */
+		period_cycles -= 1U;
+	} else if (is_center_aligned(cfg->countermode)) {
+		period_cycles /= 2U;
+	} else {
+		return -ENOTSUP;
+	}
+
+	LL_TIM_OC_SetPolarity(timer, current_ll_channel, get_polarity(flags));
+	LL_TIM_SetAutoReload(timer, period_cycles);
+
+	if (!LL_TIM_CC_IsEnabledChannel(timer, current_ll_channel)) {
+#ifdef CONFIG_PWM_CAPTURE
+		if (IS_TIM_SLAVE_INSTANCE(timer)) {
+			LL_TIM_SetSlaveMode(timer,
+					LL_TIM_SLAVEMODE_DISABLED);
+			LL_TIM_SetTriggerInput(timer, LL_TIM_TS_ITR0);
+			LL_TIM_DisableMasterSlaveMode(timer);
+		}
+#endif /* CONFIG_PWM_CAPTURE */
+
+		LL_TIM_OC_SetMode(timer, ll_channel, LL_TIM_OCMODE_PWM1);
+#ifdef LL_TIM_OCIDLESTATE_LOW
+		LL_TIM_OC_SetIdleState(timer, current_ll_channel, LL_TIM_OCIDLESTATE_LOW);
+#endif
+		LL_TIM_CC_EnableChannel(timer, current_ll_channel);
+		LL_TIM_EnableARRPreload(timer);
+		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
+		LL_TIM_OC_EnablePreload(timer, ll_channel);
+		LL_TIM_GenerateEvent_UPDATE(timer);
+	}
+
+	if (data->dma[tmr_channel].dma_dev == NULL) {
+		return -ENODEV;
+	}
+
+	data->dma[tmr_channel].buffer = (uint8_t *)pulse_buffer;
+	data->dma[tmr_channel].buffer_length = num_values;
+
+	LOG_DBG("tx: l= %d", data->dma[tmr_channel].buffer_length);
+
+	/* set source and destination  address */
+	data->dma[tmr_channel].blk_cfg.source_address = (uint32_t)data->dma[tmr_channel].buffer;
+	data->dma[tmr_channel].blk_cfg.dest_address = (uint32_t)(&(timer->CCR1) + tmr_channel);
+
+	data->dma[tmr_channel].blk_cfg.block_size = data->dma[tmr_channel].buffer_length;
+
+	ret = dma_config(data->dma[tmr_channel].dma_dev, data->dma[tmr_channel].channel,
+				&data->dma[tmr_channel].dma_cfg);
+
+	if (ret != 0) {
+		LOG_ERR("dma config error!");
+		return -EINVAL;
+	}
+
+	if (dma_start(data->dma[tmr_channel].dma_dev, data->dma[tmr_channel].channel)) {
+		LOG_ERR("PWM err: DMA start failed!");
+		return -EFAULT;
+	}
+
+	/* Enable  DMA requests */
+	pwm_stm32_dma_enable(dev, tmr_channel);
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_PWM_CAPTURE
 static void init_capture_channels(const struct device *dev, uint32_t channel,
@@ -629,7 +805,107 @@ static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.enable_capture = pwm_stm32_enable_capture,
 	.disable_capture = pwm_stm32_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_DMA
+	.set_cycles_dma = pwm_stm32_set_cycles_dma,
+#endif /* CONFIG_PWM_DMA */
 };
+
+#ifdef CONFIG_PWM_DMA
+static inline void pwm_stm32_dma_enable(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_stm32_config *config = dev->config;
+
+	switch(channel) {
+		case 0:
+			LL_TIM_EnableDMAReq_CC1(config->timer);
+			LL_TIM_CC_EnableChannel(config->timer, LL_TIM_CHANNEL_CH1);
+			break;
+		case 1:
+			LL_TIM_EnableDMAReq_CC2(config->timer);
+			LL_TIM_CC_EnableChannel(config->timer, LL_TIM_CHANNEL_CH2);
+			break;
+		case 2:
+			LL_TIM_EnableDMAReq_CC3(config->timer);
+			LL_TIM_CC_EnableChannel(config->timer, LL_TIM_CHANNEL_CH3);
+				break;
+		case 3:
+			LL_TIM_EnableDMAReq_CC4(config->timer);
+			LL_TIM_CC_EnableChannel(config->timer, LL_TIM_CHANNEL_CH4);
+			break;
+	}
+}
+
+static inline void pwm_stm32_dma_disable(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_stm32_config *config = dev->config;
+
+	switch(channel) {
+		case 0:
+			LL_TIM_DisableDMAReq_CC1(config->timer);
+			LL_TIM_CC_DisableChannel(config->timer, LL_TIM_CHANNEL_CH1);
+			break;
+		case 1:
+			LL_TIM_DisableDMAReq_CC2(config->timer);
+			LL_TIM_CC_DisableChannel(config->timer, LL_TIM_CHANNEL_CH2);
+			break;
+		case 2:
+			LL_TIM_DisableDMAReq_CC3(config->timer);
+			LL_TIM_CC_DisableChannel(config->timer, LL_TIM_CHANNEL_CH3);
+			break;
+		case 3:
+			LL_TIM_DisableDMAReq_CC4(config->timer);
+			LL_TIM_CC_DisableChannel(config->timer, LL_TIM_CHANNEL_CH4);
+			break;
+	}
+}
+
+static int pwm_stm32_dma_init(const struct device *dev, uint32_t channel)
+{
+	struct pwm_stm32_data *data = dev->data;
+
+	if (data->dma[channel].dma_dev != NULL) {
+		if (!device_is_ready(data->dma[channel].dma_dev)) {
+			return -ENODEV;
+		}
+	}
+	else {
+		return 0;
+	}
+
+	LOG_DBG("Initializing PWM with DMA transfer");
+
+	pwm_stm32_dma_disable(dev, channel);
+
+	/* Configure dma pwm update config */
+	memset(&data->dma[channel].blk_cfg, 0, sizeof(data->dma[channel].blk_cfg));
+
+	data->dma[channel].blk_cfg.dest_address = 0; /* not ready */
+	data->dma[channel].blk_cfg.source_address = 0; /* not ready */
+
+	if (data->dma[channel].src_addr_increment) {
+		data->dma[channel].blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		data->dma[channel].blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+
+	if (data->dma[channel].dst_addr_increment) {
+		data->dma[channel].blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		data->dma[channel].blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+
+	/* Enable/disable pwm update circular buffer */
+	data->dma[channel].blk_cfg.source_reload_en = data->dma[channel].dma_cfg.cyclic;
+	data->dma[channel].blk_cfg.dest_reload_en = data->dma[channel].dma_cfg.cyclic;
+
+	data->dma[channel].blk_cfg.fifo_mode_control = data->dma[channel].fifo_threshold;
+
+	data->dma[channel].dma_cfg.head_block = &data->dma[channel].blk_cfg;
+	data->dma[channel].dma_cfg.user_data = (void *)dev;
+
+	return 0;
+}
+#endif /* CONFIG_PWM_DMA */
 
 static int pwm_stm32_init(const struct device *dev)
 {
@@ -730,10 +1006,51 @@ static int pwm_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif /* CONFIG_PWM_CAPTURE */
 
+// #ifdef CONFIG_PWM_DMA
+// 	return pwm_stm32_dma_init(dev);
+// #else
 	return 0;
+// #endif /* CONFIG_PWM_DMA */
 }
 
 #define PWM(index) DT_INST_PARENT(index)
+
+#ifdef CONFIG_PWM_DMA
+/* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
+#define PWM_DMA_CHANNEL_INIT(index, dma_idx, src_dev, dest_dev)					\
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, dma_idx)),		\
+	.channel = DT_INST_DMAS_CELL_BY_IDX(index, dma_idx, channel),			\
+	.dma_cfg = { \
+		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, dma_idx, slot),		\
+		.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)),		\
+		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)),		\
+		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)),		\
+		.source_burst_length = 1,       /* SINGLE transfer */		\
+		.dest_burst_length = 1,         /* SINGLE transfer */		\
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)),		\
+		.dma_callback = 0 /*dma_callback*/,					\
+		.block_count = 2,						\
+		.cyclic = STM32_DMA_CONFIG_CYCLIC ( \
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)) \
+	},									\
+	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(		\
+		STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx)),			\
+	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
+		STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, dma_idx))
+
+#define PWM_DMA_CHANNEL(index, dma_idx, src, dest)			\
+	.dma[dma_idx] = {									\
+		COND_CODE_1(DT_INST_DMAS_HAS_IDX(index, dma_idx),					\
+		(PWM_DMA_CHANNEL_INIT(index, dma_idx, src, dest)), \
+ 		())	 \
+	}, 
+#else
+#define PWM_DMA_CHANNEL(index, channel, src, dest)
+#endif
 
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
@@ -771,6 +1088,10 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index = {		       \
 		.reset = RESET_DT_SPEC_GET(PWM(index)),			       \
+		PWM_DMA_CHANNEL(index, 0, MEMORY, PERIPHERAL)		\
+		PWM_DMA_CHANNEL(index, 1, MEMORY, PERIPHERAL)		\
+		PWM_DMA_CHANNEL(index, 2, MEMORY, PERIPHERAL)		\
+		PWM_DMA_CHANNEL(index, 3, MEMORY, PERIPHERAL)		\
 	};								       \
 									       \
 	IRQ_CONFIG_FUNC(index)						       \
