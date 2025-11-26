@@ -52,7 +52,7 @@ The flash_map.h API uses data generated from the :ref:`devicetree_api`, in
 particular its :ref:`devicetree-flash-api`. Zephyr additionally has some
 partitioning conventions used for :ref:`dfu` via the MCUboot bootloader, as
 well as defining partitions usable by :ref:`file systems <file_system_api>` or
-other nonvolatile :ref:`storage <storage_reference>`.
+other non-volatile :ref:`storage <storage_services>`.
 
 Here is an example devicetree fragment which uses fixed flash partitions for
 both MCUboot and a storage partition. Some details were left out for clarity.
