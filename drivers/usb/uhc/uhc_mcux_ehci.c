@@ -197,8 +197,17 @@ static usb_host_transfer_t *uhc_mcux_hal_init_transfer(const struct device *dev,
 	(void)uhc_mcux_hal_init_transfer_common(dev, mcux_xfer, mcux_ep_handle, xfer,
 						uhc_mcux_transfer_callback);
 #if defined(CONFIG_NOCACHE_MEMORY)
-	mcux_xfer->setupPacket = uhc_mcux_nocache_alloc(8u);
-	memcpy(mcux_xfer->setupPacket, xfer->setup_pkt, 8u);
+	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+		mcux_xfer->setupPacket = uhc_mcux_nocache_alloc(8u);
+		if (mcux_xfer->setupPacket == NULL) {
+			k_mem_slab_free(&mcux_uhc_transfer_pool, mcux_xfer);
+			return NULL;
+		}
+
+		memcpy(mcux_xfer->setupPacket, xfer->setup_pkt, 8u);
+	} else {
+		mcux_xfer->setupPacket = NULL;
+	}
 
 	if (mcux_xfer->transferBuffer != NULL && mcux_xfer->transferLength != 0) {
 		uint8_t *nocache_buf = uhc_mcux_nocache_alloc(mcux_xfer->transferLength);
