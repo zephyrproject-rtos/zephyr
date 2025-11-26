@@ -1,0 +1,6 @@
+board:
+  name: ensemble_e8_dk
+  full_name: Alif Ensemble E8 Development Kit
+  vendor: alif
+  socs:
+  - name: ae822fa0e5597ls0
