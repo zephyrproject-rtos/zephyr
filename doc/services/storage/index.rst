@@ -11,6 +11,7 @@ Storage
    disk/access.rst
    flash_map/flash_map.rst
    fcb/fcb.rst
+   retention/index.rst
    stream/stream_flash.rst
    secure_storage/index.rst
    settings/index.rst
