@@ -23,4 +23,6 @@ supported:
   - arduino_gpio
   - comparator
   - dma
+  - counter
+  - pwm
 vendor: nxp
