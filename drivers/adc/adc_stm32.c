@@ -1828,8 +1828,11 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
-			.source_burst_length = 1,       /* SINGLE transfer */		\
-			.dest_burst_length = 1,         /* SINGLE transfer */		\
+			/* single transfers (burst length = data size) */		\
+			.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.dma_callback = dma_callback,					\
