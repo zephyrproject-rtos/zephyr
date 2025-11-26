@@ -2040,7 +2040,25 @@ This has been fixed in main for v4.3.0
 :cve:`2025-9557`
 ----------------
 
-Under embargo until 2025-11-24
+Bluetooth: Mesh: Out-of-Bound Write in gen_prov_cont
+
+An out-of-bound write can lead to an arbitrary code execution. Even on
+devices with some form of memory protection, this can still lead to a
+crash and a resultant denial of service.
+
+- `Zephyr project bug tracker GHSA-r3j3-c5v7-2ppf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r3j3-c5v7-2ppf>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 95061 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/95061>`_
+
+- `PR 97518 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97518>`_
+
+- `PR 97517 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97517>`_
 
 :cve:`2025-9558`
 ----------------
