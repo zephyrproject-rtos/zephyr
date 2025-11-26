@@ -9,7 +9,7 @@
 
 #define USE_NON_SECURE_ADDRESS_MAP 1
 
-#include <nordic/nrf54l10_cpuappns.dtsi>
+#include <nordic/nrf54l10_cpuapp_ns.dtsi>
 #include "nrf54l_10_15_cpuapp_common.dtsi"
 
 / {
