@@ -1,0 +1,10 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_MCHP_EIC_G1
+	bool "External Interrupt Controller (EIC) Driver for Microchip devices"
+	default y
+	depends on DT_HAS_MICROCHIP_EIC_G1_INTC_ENABLED
+	help
+	  Enable EIC driver for Microchip EIC G1 peripherals. This is required for
+	  GPIO interrupt support.
