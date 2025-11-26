@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - counter
   - flash
   - gpio
   - uart
