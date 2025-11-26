@@ -10,6 +10,7 @@ OS Services
    console.rst
    cpu_freq/index.rst
    cpu_load/index.rst
+   crc/index.rst
    crypto/index
    debugging/index.rst
    device_mgmt/index

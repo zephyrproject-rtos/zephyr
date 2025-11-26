@@ -907,6 +907,7 @@ CRC:
     - subsys/crc/
     - tests/subsys/crc/
     - doc/hardware/peripherals/crc.rst
+    - doc/services/crc/index.rst
   labels:
     - "area: CRC"
 
