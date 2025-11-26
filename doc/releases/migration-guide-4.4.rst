@@ -307,14 +307,20 @@ Ethernet
 * Driver MAC address configuration support using :c:struct:`net_eth_mac_config` has been introduced
   for the following drivers:
 
-  * :dtcompatible:`vnd,ethernet` (:github:`96598`)
-
   * :dtcompatible:`atmel,sam-gmac` and :dtcompatible:`atmel,sam0-gmac` (:github:`96598`)
 
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM``
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS``
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE``
     * Removed ``mac-eeprom`` property
+
+  * :dtcompatible:`litex,liteeth` (:github:`100620`)
+  * :dtcompatible:`microchip,lan865x` (:github:`100318`)
+  * :dtcompatible:`microchip,lan9250` (:github:`99127`)
+  * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
+  * :dtcompatible:`virtio,net` (:github:`100106`)
+  * :dtcompatible:`vnd,ethernet` (:github:`96598`)
+  * :dtcompatible:`wiznet,w5500` (:github:`100919`)
 
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
