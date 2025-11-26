@@ -31,10 +31,6 @@
 #include <zephyr/net/dsa.h>
 #endif
 
-#if defined(CONFIG_NET_ETHERNET_BRIDGE)
-#include <zephyr/net/ethernet_bridge.h>
-#endif
-
 #if defined(CONFIG_NVMEM)
 #include <zephyr/nvmem.h>
 #endif
