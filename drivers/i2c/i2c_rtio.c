@@ -171,24 +171,27 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
 	int res = 0;
 
 	k_sem_take(&ctx->lock, K_FOREVER);
+	(void)rtio_flush_completion_queue(r);
 
 	ctx->dt_spec.addr = addr;
 
 	sqe = i2c_rtio_copy(r, iodev, msgs, num_msgs);
 	if (sqe == NULL) {
 		LOG_ERR("Not enough submission queue entries");
+		rtio_sqe_drop_all(r);
 		res = -ENOMEM;
 		goto out;
 	}
 
-	rtio_submit(r, 1);
+	rtio_submit(r, 0);
 
-	cqe = rtio_cqe_consume(r);
-	while (cqe != NULL) {
-		res = cqe->result;
-		rtio_cqe_release(r, cqe);
-		cqe = rtio_cqe_consume(r);
+	cqe = rtio_cqe_consume_block_timeout(r, K_SECONDS(3));
+	if (!cqe) {
+		res = -ETIMEDOUT;
+		goto out;
 	}
+	res = cqe->result;
+	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);
@@ -204,10 +207,12 @@ int i2c_rtio_configure(struct i2c_rtio *ctx, uint32_t i2c_config)
 	int res = 0;
 
 	k_sem_take(&ctx->lock, K_FOREVER);
+	(void)rtio_flush_completion_queue(r);
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
 		LOG_ERR("Not enough submission queue entries");
+		rtio_sqe_drop_all(r);
 		res = -ENOMEM;
 		goto out;
 	}
@@ -216,9 +221,13 @@ int i2c_rtio_configure(struct i2c_rtio *ctx, uint32_t i2c_config)
 	sqe->iodev = iodev;
 	sqe->i2c_config = i2c_config;
 
-	rtio_submit(r, 1);
+	rtio_submit(r, 0);
 
-	cqe = rtio_cqe_consume(r);
+	cqe = rtio_cqe_consume_block_timeout(r, K_SECONDS(3));
+	if (!cqe) {
+		res = -ETIMEDOUT;
+		goto out;
+	}
 	res = cqe->result;
 	rtio_cqe_release(r, cqe);
 
@@ -236,10 +245,12 @@ int i2c_rtio_recover(struct i2c_rtio *ctx)
 	int res = 0;
 
 	k_sem_take(&ctx->lock, K_FOREVER);
+	(void)rtio_flush_completion_queue(r);
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
 		LOG_ERR("Not enough submission queue entries");
+		rtio_sqe_drop_all(r);
 		res = -ENOMEM;
 		goto out;
 	}
@@ -247,9 +258,13 @@ int i2c_rtio_recover(struct i2c_rtio *ctx)
 	sqe->op = RTIO_OP_I2C_RECOVER;
 	sqe->iodev = iodev;
 
-	rtio_submit(r, 1);
+	rtio_submit(r, 0);
 
-	cqe = rtio_cqe_consume(r);
+	cqe = rtio_cqe_consume_block_timeout(r, K_SECONDS(3));
+	if (!cqe) {
+		res = -ETIMEDOUT;
+		goto out;
+	}
 	res = cqe->result;
 	rtio_cqe_release(r, cqe);
 
