@@ -685,6 +685,7 @@ Bluetooth Qualification:
   collaborators:
     - Thalley
     - jhedberg
+    - alxelax
   files:
     - doc/connectivity/bluetooth/autopts/
     - tests/bluetooth/qualification/
