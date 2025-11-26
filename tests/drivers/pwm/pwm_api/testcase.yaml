@@ -67,27 +67,42 @@ tests:
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.mchp_tcc0:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc0.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc1:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc1.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc2:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc2.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc3:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc3.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc4:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc4.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
