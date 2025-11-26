@@ -148,7 +148,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=5", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 10);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 100);
 
 /* Post-restart script (moved from hl78xx.c) */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,

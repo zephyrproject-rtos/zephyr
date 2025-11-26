@@ -801,14 +801,17 @@ config MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS
 
 config MODEM_HL78XX_DEV_STARTUP_TIME_MS
 	int "Wait before assuming the device is ready."
-	default 1000
+	default 120
 	help
-	  The expected time (in milliseconds) the modem needs to fully power on
-	  and become operational.
+	  The expected delay time (in milliseconds) the modem needs to fully power on
+	  and become operational.This delay before the driver opens the UART pipe
+	  and attaches the chat layer. The value must be long enough for the driver
+	  startup code to initialize, but short enough to ensure the pipe is ready
+	  before the modem sends its first URCs during boot.
 
 config MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS
 	int "Wait before assuming the device is completely off."
-	default 1000
+	default 120
 	help
 	  The amount of time (in milliseconds) the system should wait for the modem
 	  to fully shut down
