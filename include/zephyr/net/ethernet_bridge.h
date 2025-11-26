@@ -18,6 +18,7 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/ethernet.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +136,46 @@ typedef void (*eth_bridge_cb_t)(struct eth_bridge_iface_context *br, void *user_
  * @param user_data User supplied data
  */
 void net_eth_bridge_foreach(eth_bridge_cb_t cb, void *user_data);
+
+/**
+ * @brief Check if the iface is bridged.
+ *
+ * @param ctx Pointer to ethernet_context
+ *
+ * @return true if bridged, or false.
+ */
+static inline bool net_eth_iface_is_bridged(struct ethernet_context *ctx)
+{
+#if defined(CONFIG_NET_ETHERNET_BRIDGE)
+	struct eth_bridge_iface_context *br_ctx;
+
+	if (ctx->bridge == NULL) {
+		return false;
+	}
+
+	br_ctx = net_if_get_device(ctx->bridge)->data;
+	if (br_ctx->is_setup) {
+		return true;
+	}
+#endif
+	return false;
+}
+
+/**
+ * @brief Get bridge iface.
+ *
+ * @param ctx Pointer to ethernet_context
+ *
+ * @return Pointer to bridge iface, or NULL.
+ */
+static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
+{
+#if defined(CONFIG_NET_ETHERNET_BRIDGE)
+	return ctx->bridge;
+#else
+	return NULL;
+#endif
+}
 
 /**
  * @}
