@@ -12,8 +12,6 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/usb/usbh.h>
 
-#include "usbh_class.h"
-#include "usbh_class_api.h"
 #include "usbh_device.h"
 #include "usbh_internal.h"
 
@@ -50,33 +48,18 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 	struct usb_device *udev;
-
-	LOG_DBG("Device connected event");
-
-	udev = usbh_device_alloc(ctx);
-	if (udev == NULL) {
-		LOG_ERR("Failed allocate new device");
-		return;
-	}
-
-	udev->state = USB_STATE_DEFAULT;
+	uint8_t speed;
 
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
-		udev->speed = USB_SPEED_SPEED_HS;
+		speed = USB_SPEED_SPEED_HS;
 	} else {
-		udev->speed = USB_SPEED_SPEED_FS;
+		speed = USB_SPEED_SPEED_FS;
 	}
 
-	k_mutex_lock(&ctx->mutex, K_FOREVER);
-	sys_dlist_append(&ctx->udevs, &udev->node);
-	k_mutex_unlock(&ctx->mutex);
-
-	if (usbh_device_init(udev)) {
-		LOG_ERR("Failed to reset new USB device");
-		sys_dlist_remove(&udev->node);
+	udev = usbh_connect_device(ctx, speed);
+	if (udev == NULL) {
+		return;
 	}
-
-	usbh_class_probe_device(usbh_device_get_root(ctx));
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
@@ -84,15 +67,11 @@ static void dev_removed_handler(struct usbh_context *const ctx)
 	struct usb_device *udev = NULL;
 
 	udev = usbh_device_get_root(ctx);
-
 	if (udev) {
-		usbh_class_remove_all(udev);
-		usbh_device_free(udev);
-		LOG_DBG("Device removed");
+		usbh_disconnect_device(ctx, udev);
 	} else {
 		LOG_DBG("Spurious device removed event");
 	}
-	/* TODO: handle remove for all of classes for the unattached device */
 }
 
 static int discard_ep_request(struct usbh_context *const ctx,
