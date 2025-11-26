@@ -9,3 +9,6 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
     sen6x_decoder.c
 )
+zephyr_library_sources_ifdef(CONFIG_SEN6X_SHELL
+    shell.c
+)
