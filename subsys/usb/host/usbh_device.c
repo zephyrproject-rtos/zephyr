@@ -8,6 +8,8 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -472,6 +474,47 @@ bool usbh_device_is_root(struct usbh_context *const ctx,
 	}
 
 	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
+struct usb_device *usbh_connect_device(struct usbh_context *const ctx,
+					    uint8_t speed)
+{
+	struct usb_device *udev;
+
+	LOG_DBG("Device connected event");
+
+	/* Allocate new device */
+	udev = usbh_device_alloc(ctx);
+	if (udev == NULL) {
+		LOG_ERR("Failed allocate new device");
+		return NULL;
+	}
+
+	udev->state = USB_STATE_DEFAULT;
+	udev->speed = speed;
+
+	if (usbh_device_init(udev)) {
+		LOG_ERR("Failed to init new USB device");
+		usbh_device_free(udev);
+		return NULL;
+	}
+
+	usbh_class_probe_device(udev);
+
+	return udev;
+}
+
+void usbh_disconnect_device(struct usbh_context *ctx, struct usb_device *udev)
+{
+	if (!ctx || !udev) {
+		return;
+	}
+
+	usbh_class_remove_all(udev);
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
 }
 
 int usbh_device_init(struct usb_device *const udev)
