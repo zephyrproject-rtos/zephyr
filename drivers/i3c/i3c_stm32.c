@@ -2150,8 +2150,11 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                         \
 				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
-		.source_burst_length = 1, /* SINGLE transfer */                                    \
-		.dest_burst_length = 1,                                                            \
+		/* single transfers (burst length = data size) */                                  \
+		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                     \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                      \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		.block_count = 1,                                                                  \
 		.dma_callback = i3c_stm32_dma_##dir##_cb,                                          \
 	},                                                                                         \
