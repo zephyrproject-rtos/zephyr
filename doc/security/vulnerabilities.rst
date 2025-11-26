@@ -2063,7 +2063,27 @@ This has been fixed in main for v4.3.0
 :cve:`2025-9558`
 ----------------
 
-Under embargo until 2025-11-24
+Bluetooth: Mesh: Out-of-Bound Write in gen_prov_start
+
+There is a potential OOB Write vulnerability in the gen_prov_start
+function in pb_adv.c. The full length of the received data is copied
+into the link.rx.buf receiver buffer without any validation on the
+data size.
+
+- `Zephyr project bug tracker GHSA-8wvr-688x-68vr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8wvr-688x-68vr>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 95064 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/95064>`_
+
+- `PR 97520 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97520>`_
+
+- `PR 97519 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97519>`_
+
 
 :cve:`2025-12035`
 -----------------
