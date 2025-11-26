@@ -1,0 +1,13 @@
+tests:
+  arch.arm.mpu.write_through:
+    tags:
+      - arm
+      - mpu
+      - cache
+      - dma
+    arch_allow:
+      - arm
+    filter: CONFIG_ARM_MPU
+    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
