@@ -76,4 +76,6 @@ struct sen6x_config {
 
 bool sen6x_u16_array_checksum_ok(const void *data_, size_t data_len);
 
+extern const struct sensor_driver_api sen6x_driver_api;
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_SEN6X_H_ */
