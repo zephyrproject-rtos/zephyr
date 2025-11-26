@@ -442,9 +442,7 @@ static void i2s_siwx91x_dma_rx_callback(const struct device *dma_dev, void *user
 
 rx_disable:
 	i2s_siwx91x_stream_disable(stream, dma_dev);
-	if (stream->state == I2S_STATE_READY && stream->last_block) {
-		pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
-	}
+	pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
 }
 
 static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user_data,
@@ -511,9 +509,7 @@ static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user
 
 tx_disable:
 	i2s_siwx91x_stream_disable(stream, dma_dev);
-	if (stream->state == I2S_STATE_READY && stream->last_block) {
-		pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
-	}
+	pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
 }
 
 static int i2s_siwx91x_param_config(const struct device *dev, enum i2s_dir dir)
