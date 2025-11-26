@@ -210,6 +210,15 @@
 	channels = <6>;
 };
 
+&tc0 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <32>;
+	prescaler = <1>;
+};
+
 &portb {
 	status = "okay";
 };
