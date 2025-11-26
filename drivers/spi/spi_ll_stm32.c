@@ -1366,11 +1366,12 @@ static int transceive_dma(const struct device *dev,
 	spi_stm32_cs_control(dev, true);
 
 	uint8_t word_size_bytes = SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE;
+	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 
-	data->dma_rx.dma_cfg.source_data_size = word_size_bytes;
-	data->dma_rx.dma_cfg.dest_data_size = word_size_bytes;
-	data->dma_tx.dma_cfg.source_data_size = word_size_bytes;
-	data->dma_tx.dma_cfg.dest_data_size = word_size_bytes;
+	rx_cfg->source_data_size = rx_cfg->source_burst_length = word_size_bytes;
+	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = word_size_bytes;
+	tx_cfg->source_data_size = tx_cfg->source_burst_length = word_size_bytes;
+	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = word_size_bytes;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -1712,8 +1713,11 @@ static int spi_stm32_init(const struct device *dev)
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
-		.source_burst_length = 1, /* SINGLE transfer */			\
-		.dest_burst_length = 1, /* SINGLE transfer */			\
+		/* use single transfers (burst length = data size) */		\
+		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.dma_callback = dma_callback,					\
