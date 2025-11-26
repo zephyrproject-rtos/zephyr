@@ -277,6 +277,47 @@ def _needs_save():
     # No need to prompt for save
     return False
 
+def _detect_system_dark_mode():
+    if sys.platform == "win32":
+        try:
+            import winreg
+            registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+            key = winreg.OpenKey(registry,
+                r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            winreg.CloseKey(key)
+            return value == 0
+        except (ImportError, OSError, WindowsError) as _:
+            return False
+
+    elif sys.platform.startswith("linux"):
+        if os.getenv('GTK_THEME', '').lower().find('dark') != -1:
+            return True
+
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"],
+                capture_output=True, text=True
+            )
+            if "dark" in result.stdout.lower():
+                return True
+        except (subprocess.SubprocessError, OSError) as _:
+            pass
+
+        try:
+            result = subprocess.run(
+                ["kreadconfig5", "--group", "General", "--key", "ColorScheme"],
+                capture_output=True, text=True
+            )
+            if "dark" in result.stdout.lower():
+                return True
+        except (subprocess.SubprocessError, OSError) as _:
+            return False
+
+    # TK 8.6.9+ supports dark mode natively on macOS
+    return False
+
 
 def _create_id_to_node():
     global _id_to_node
@@ -399,6 +440,8 @@ def _fix_treeview_issues():
 
 def _init_misc_ui():
     # Does misc. UI initialization, like setting the title, icon, and theme
+    global _dark_mode
+    _dark_mode = _detect_system_dark_mode()
 
     _root.title(_kconf.mainmenu_text)
     # iconphoto() isn't available in Python 2's Tkinter
@@ -408,12 +451,69 @@ def _init_misc_ui():
     _root.minsize(128, 128)
     _root.protocol("WM_DELETE_WINDOW", _on_quit)
 
-    # Use the 'clam' theme on *nix if it's available. It looks nicer than the
-    # 'default' theme.
-    if _root.tk.call("tk", "windowingsystem") == "x11":
+    if _dark_mode:
         style = ttk.Style()
-        if "clam" in style.theme_names():
-            style.theme_use("clam")
+        _root.configure(bg='#2b2b2b')
+
+        style.theme_use('clam')
+
+        style.configure(".",
+                       background='#2b2b2b',
+                       foreground='#ffffff',
+                       fieldbackground='#3c3c3c',
+                       bordercolor='#404040',
+                       darkcolor='#222222',
+                       lightcolor='#404040',
+                       selectbackground='#5a5a5a',
+                       selectforeground='#ffffff')
+
+        style.configure("Treeview",
+                       background='#3c3c3c',
+                       foreground='#ffffff',
+                       fieldbackground='#3c3c3c')
+        style.configure("Treeview.Heading",
+                       background='#404040',
+                       foreground='#ffffff')
+        style.map("Treeview.Heading",
+                 background=[('active', '#5a5a5a')],
+                 foreground=[('active', '#ffffff')])
+        style.map('Treeview',
+                 background=[('selected', '#5a5a5a')],
+                 foreground=[('selected', '#ffffff')])
+
+        style.configure("TButton",
+                       background='#404040',
+                       foreground='#ffffff',)
+        style.map("TButton",
+                 background=[('active', '#5a5a5a')])
+
+        style.configure("TEntry",
+                       fieldbackground='#3c3c3c',
+                       foreground='#ffffff',
+                       insertcolor='#ffffff')
+
+        style.configure("TLabel",
+                       background='#2b2b2b',
+                       foreground='#ffffff')
+
+        style.configure("TFrame",
+                       background='#2b2b2b')
+
+        style.configure("TCheckbutton",
+                       background='#2b2b2b',
+                       foreground='#ffffff',
+                       focuscolor='none')
+        style.map("TCheckbutton",
+                 background=[('active', '#3c3c3c')],
+                 foreground=[('active', '#ffffff')])
+
+        style.configure("TPanedwindow",
+                       background='#2b2b2b')
+    else:
+        if _root.tk.call("tk", "windowingsystem") == "x11":
+            style = ttk.Style()
+            if "clam" in style.theme_names():
+                style.theme_use("clam")
 
 
 def _create_top_widgets():
@@ -590,12 +690,22 @@ def _create_kconfig_desc(parent):
 
     frame = ttk.Frame(parent)
 
-    desc = Text(frame, height=12, wrap="word", borderwidth=0,
-                state="disabled")
-    desc.grid(column=0, row=0, sticky="nsew")
+    if _dark_mode:
+        desc = Text(frame, height=12, wrap="word", borderwidth=0,
+                   state="disabled",
+                   bg='#3c3c3c',
+                   fg='#ffffff',
+                   insertbackground='#ffffff',
+                   selectbackground='#5a5a5a',
+                   selectforeground='#ffffff',
+                   relief='flat')
+    else:
+        desc = Text(frame, height=12, wrap="word", borderwidth=0,
+                   state="disabled")
 
     # Work around not being to Ctrl-C/V text from a disabled Text widget, with a
     # tip found in https://stackoverflow.com/questions/3842155/is-there-a-way-to-make-the-tkinter-text-widget-read-only
+    desc.grid(column=0, row=0, sticky="nsew")
     desc.bind("<1>", lambda _: desc.focus_set())
 
     _add_vscrollbar(frame, desc)
@@ -1200,6 +1310,10 @@ def _set_val_dialog(node, parent):
     sym = node.item
 
     dialog = Toplevel(parent)
+
+    if _dark_mode:
+        dialog.configure(bg='#2b2b2b')
+
     dialog.title("Enter {} value".format(TYPE_TO_STR[sym.type]))
     dialog.resizable(False, False)
     dialog.transient(parent)
@@ -1786,6 +1900,10 @@ def _jump_to_dialog(_=None):
 
 
     dialog = Toplevel(_root)
+
+    if _dark_mode:
+        dialog.configure(bg='#2b2b2b')
+
     dialog.geometry("+{}+{}".format(
         _root.winfo_rootx() + 50, _root.winfo_rooty() + 50))
     dialog.title("Jump to symbol/choice/menu/comment")
