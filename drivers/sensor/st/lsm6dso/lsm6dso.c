@@ -700,25 +700,25 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * set the bank now.
 	 */
 	if (lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK) < 0) {
-		LOG_DBG("Failed to set user bank");
+		LOG_ERR("Failed to set user bank");
 		return -EIO;
 	}
 
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
-		LOG_DBG("Failed reading chip id");
+		LOG_ERR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%x", chip_id);
 
 	if (chip_id != LSM6DSO_ID) {
-		LOG_DBG("Invalid chip id 0x%x", chip_id);
+		LOG_ERR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
 	/* I3C disable stay preserved after s/w reset */
 	if (lsm6dso_i3c_disable_set(ctx, LSM6DSO_I3C_DISABLE) < 0) {
-		LOG_DBG("Failed to disable I3C");
+		LOG_ERR("Failed to disable I3C");
 		return -EIO;
 	}
 
@@ -726,7 +726,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * must be disabled, followed by a 300 μs wait."
 	 */
 	if (lsm6dso_sh_master_get(ctx, &master_on) < 0) {
-		LOG_DBG("Failed to get I2C_MASTER status");
+		LOG_ERR("Failed to get I2C_MASTER status");
 		return -EIO;
 	}
 	if (master_on) {
@@ -737,6 +737,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	/* reset device */
 	if (lsm6dso_reset_set(ctx, 1) < 0) {
+		LOG_ERR("Failed to reset device");
 		return -EIO;
 	}
 
@@ -803,12 +804,12 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	/* Set FIFO bypass mode */
 	if (lsm6dso_fifo_mode_set(ctx, LSM6DSO_BYPASS_MODE) < 0) {
-		LOG_DBG("failed to set FIFO mode");
+		LOG_ERR("failed to set FIFO mode");
 		return -EIO;
 	}
 
 	if (lsm6dso_block_data_update_set(ctx, 1) < 0) {
-		LOG_DBG("failed to set BDU mode");
+		LOG_ERR("failed to set BDU mode");
 		return -EIO;
 	}
 
@@ -826,7 +827,7 @@ static int lsm6dso_init(const struct device *dev)
 	data->dev = dev;
 
 	if (lsm6dso_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
+		LOG_ERR("failed to initialize chip");
 		return -EIO;
 	}
 
