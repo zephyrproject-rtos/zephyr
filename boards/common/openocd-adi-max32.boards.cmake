@@ -34,6 +34,7 @@ endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${MAX32_INTERFACE_CFG}]")
 board_runner_args(openocd --cmd-pre-init "source [find target/${MAX32_TARGET_CFG}]")
+board_runner_args(openocd "--target-handle=_CHIPNAME.cpu")
 
 if(CONFIG_SOC_FAMILY_MAX32_M4)
   board_runner_args(openocd --cmd-pre-init "allow_low_pwr_dbg")
