@@ -1,0 +1,15 @@
+tests:
+  arch.arm.mpu.write_through:
+    tags:
+      - arm
+      - mpu
+      - cache
+      - dma
+    arch_allow:
+      - arm
+    filter: CONFIG_ARM_MPU and dt_alias_exists("test-dma")
+    integration_platforms:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    extra_configs:
+      - CONFIG_ARM_MPU_SRAM_WRITE_THROUGH=y
