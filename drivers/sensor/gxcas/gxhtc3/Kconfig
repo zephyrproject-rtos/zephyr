@@ -1,0 +1,11 @@
+# Copyright (c) 2024 LCKFB
+# SPDX-License-Identifier: Apache-2.0
+
+config GXHTC3
+	bool "GXHTC3 temperature and humidity sensor"
+	default y
+	depends on DT_HAS_GXCAS_GXHTC3_ENABLED
+	select I2C
+	help
+	  Enable driver for GXCAS GXHTC3 I2C-based temperature and humidity sensor.
+

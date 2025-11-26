@@ -1,0 +1,11 @@
+# Copyright (c) 2025 LCKFB
+# SPDX-License-Identifier: Apache-2.0
+
+config QMI8658C
+	bool "QMI8658C 6-axis IMU sensor"
+	default y
+	depends on DT_HAS_QSTCORP_QMI8658C_ENABLED
+	select I2C
+	help
+	  Enable driver for QSTCORP QMI8658C 6-axis IMU sensor (accelerometer + gyroscope).
+

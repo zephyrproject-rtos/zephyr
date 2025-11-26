@@ -1,0 +1,13 @@
+# Copyright (c) 2025 LCKFB
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSTCORP QMI8658C 6-axis IMU sensor (accelerometer + gyroscope).
+  
+  This sensor provides 3-axis accelerometer and 3-axis gyroscope data via I2C interface.
+  I2C address: 0x6A (7-bit)
+
+compatible: "qstcorp,qmi8658c"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+

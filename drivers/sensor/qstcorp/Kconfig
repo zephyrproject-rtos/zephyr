@@ -1,0 +1,8 @@
+# Copyright (c) 2025 LCKFB
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/qstcorp/qmc5883l/Kconfig"
+source "drivers/sensor/qstcorp/qmi8658c/Kconfig"
+# zephyr-keep-sorted-stop
+
