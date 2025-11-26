@@ -125,6 +125,8 @@
 	device-id = [0d 5d 00 00 00 00 00 00];
 	fast-freq = <DT_FREQ_M(144)>;
 	normal-freq = <DT_FREQ_M(33)>;
+	half-sleep-supported;
+	external-ldo;
 	status = "okay";
 
 	psram: psram@a000000 {
