@@ -68,6 +68,9 @@ struct lsm6dsv16x_config {
 		struct i3c_device_desc **i3c;
 #endif
 	} stmemsc_cfg;
+#ifdef CONFIG_LSM6DSV16X_SELF_TEST
+	uint8_t self_test_en;
+#endif
 	uint8_t accel_pm;
 	uint8_t accel_odr;
 	uint8_t accel_range;
@@ -155,6 +158,8 @@ struct lsm6dsv16x_data {
 	uint8_t shub_ext[LSM6DSV16X_SHUB_MAX_NUM_TARGETS];
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
+	uint8_t xl_st_result;
+	uint8_t gy_st_result;
 	uint8_t accel_freq;
 	uint8_t accel_fs;
 	uint8_t gyro_freq;

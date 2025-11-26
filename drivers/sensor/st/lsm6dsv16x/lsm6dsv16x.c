@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
+#include <zephyr/drivers/sensor/lsm6dsvxxx.h>
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include "lsm6dsv16x.h"
 #include "lsm6dsv16x_decoder.h"
@@ -282,6 +283,231 @@ static int lsm6dsv16x_accel_wake_duration_set(const struct device *dev,
 	return lsm6dsv16x_act_thresholds_set(ctx, &thresholds);
 }
 
+#ifdef CONFIG_LSM6DSV16X_SELF_TEST
+/* Self test limits. */
+#define MIN_ST_LIMIT_mg		50.0f
+#define MAX_ST_LIMIT_mg		1700.0f
+#define MIN_ST_LIMIT_mdps	150000.0f
+#define MAX_ST_LIMIT_mdps	700000.0f
+
+/*
+ * Accelerometer Self Test
+ */
+static int lsm6dsv16x_accel_self_test(const struct device *dev)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dsv16x_data_ready_t drdy;
+	int16_t data_raw[3];
+	float_t val_st_off[3];
+	float_t val_st_on[3];
+	float_t test_val[3];
+	uint8_t i, j, st_result;
+
+	/* Set Output Data Rate */
+	lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSV16X_ODR_AT_60Hz);
+
+	/* Set full scale */
+	lsm6dsv16x_xl_full_scale_set(ctx, LSM6DSV16X_4g);
+
+	/* Wait stable output */
+	k_msleep(100);
+
+	/* Check if new value available */
+	do {
+		lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+	} while (!drdy.drdy_xl);
+
+	/* Read dummy data and discard it */
+	lsm6dsv16x_acceleration_raw_get(ctx, data_raw);
+
+	/* Read 5 sample and get the average vale for each axis */
+	memset(val_st_off, 0x0, 3 * sizeof(float));
+
+	for (i = 0; i < 5; i++) {
+		/* Check if new value available */
+		do {
+			lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+		} while (!drdy.drdy_xl);
+
+		/* Read data and accumulate the mg value */
+		lsm6dsv16x_acceleration_raw_get(ctx, data_raw);
+
+		for (j = 0; j < 3; j++) {
+			val_st_off[j] += lsm6dsv16x_from_fs4_to_mg(data_raw[j]);
+		}
+	}
+
+	/* Calculate the mg average values */
+	for (i = 0; i < 3; i++) {
+		val_st_off[i] /= 5.0f;
+	}
+
+	/* Enable Self Test negative */
+	lsm6dsv16x_xl_self_test_set(ctx, LSM6DSV16X_XL_ST_NEGATIVE);
+
+	/* Wait stable output */
+	k_msleep(100);
+
+	/* Check if new value available */
+	do {
+		lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+	} while (!drdy.drdy_xl);
+
+	/* Read dummy data and discard it */
+	lsm6dsv16x_acceleration_raw_get(ctx, data_raw);
+	/* Read 5 sample and get the average vale for each axis */
+	memset(val_st_on, 0x00, 3 * sizeof(float));
+
+	for (i = 0; i < 5; i++) {
+		/* Check if new value available */
+		do {
+			lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+		} while (!drdy.drdy_xl);
+
+		/* Read data and accumulate the mg value */
+		lsm6dsv16x_acceleration_raw_get(ctx, data_raw);
+
+		for (j = 0; j < 3; j++) {
+			val_st_on[j] += lsm6dsv16x_from_fs4_to_mg(data_raw[j]);
+		}
+	}
+
+	/* Calculate the mg average values */
+	for (i = 0; i < 3; i++) {
+		val_st_on[i] /= 5.0f;
+	}
+
+	/* Calculate the mg values for self test */
+	for (i = 0; i < 3; i++) {
+		test_val[i] = fabsf((val_st_on[i] - val_st_off[i]));
+	}
+
+	/* Check self test limit */
+	st_result = 0;
+	for (i = 0; i < 3; i++) {
+		if ((test_val[i] < MIN_ST_LIMIT_mg) ||
+		    (test_val[i] > MAX_ST_LIMIT_mg)) {
+			st_result = -1;
+			break;
+		}
+	}
+
+	/* Disable Self Test */
+	lsm6dsv16x_xl_self_test_set(ctx, LSM6DSV16X_XL_ST_DISABLE);
+
+	/* Disable sensor. */
+	lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSV16X_ODR_OFF);
+
+	LOG_INF("Accel self-test result: %s", st_result ? "FAIL" : "PASS");
+	return st_result;
+}
+
+/*
+ * Gyroscope Self Test
+ */
+static int lsm6dsv16x_gyro_self_test(const struct device *dev)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dsv16x_data_ready_t drdy;
+	int16_t data_raw[3];
+	float_t val_st_off[3];
+	float_t val_st_on[3];
+	float_t test_val[3];
+	uint8_t i, j, st_result;
+
+	/* Set Output Data Rate */
+	lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSV16X_ODR_AT_240Hz);
+
+	/* Set full scale */
+	lsm6dsv16x_gy_full_scale_set(ctx, LSM6DSV16X_2000dps);
+
+	/* Wait stable output */
+	k_msleep(100);
+
+	/* Check if new value available */
+	do {
+		lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+	} while (!drdy.drdy_gy);
+
+	/* Read dummy data and discard it */
+	lsm6dsv16x_angular_rate_raw_get(ctx, data_raw);
+	/* Read 5 sample and get the average vale for each axis */
+	memset(val_st_off, 0x00, 3 * sizeof(float));
+
+	for (i = 0; i < 5; i++) {
+		/* Check if new value available */
+		do {
+			lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+		} while (!drdy.drdy_gy);
+		/* Read data and accumulate the mg value */
+		lsm6dsv16x_angular_rate_raw_get(ctx, data_raw);
+
+		for (j = 0; j < 3; j++) {
+			val_st_off[j] += lsm6dsv16x_from_fs2000_to_mdps(data_raw[j]);
+		}
+	}
+
+	/* Calculate the mg average values */
+	for (i = 0; i < 3; i++) {
+		val_st_off[i] /= 5.0f;
+	}
+
+	/* Enable Self Test positive (or negative) */
+	lsm6dsv16x_gy_self_test_set(ctx, LSM6DSV16X_GY_ST_POSITIVE);
+
+	/* Wait stable output */
+	k_msleep(100);
+
+	/* Read 5 sample and get the average vale for each axis */
+	memset(val_st_on, 0x00, 3 * sizeof(float));
+
+	for (i = 0; i < 5; i++) {
+		/* Check if new value available */
+		do {
+			lsm6dsv16x_flag_data_ready_get(ctx, &drdy);
+		} while (!drdy.drdy_gy);
+
+		/* Read data and accumulate the mg value */
+		lsm6dsv16x_angular_rate_raw_get(ctx, data_raw);
+
+		for (j = 0; j < 3; j++) {
+			val_st_on[j] += lsm6dsv16x_from_fs2000_to_mdps(data_raw[j]);
+		}
+	}
+
+	/* Calculate the mg average values */
+	for (i = 0; i < 3; i++) {
+		val_st_on[i] /= 5.0f;
+	}
+
+	/* Calculate the mg values for self test */
+	for (i = 0; i < 3; i++) {
+		test_val[i] = fabsf((val_st_on[i] - val_st_off[i]));
+	}
+
+	/* Check self test limit */
+	st_result = 0;
+	for (i = 0; i < 3; i++) {
+		if ((test_val[i] < MIN_ST_LIMIT_mdps) ||
+		    (test_val[i] > MAX_ST_LIMIT_mdps)) {
+			st_result = -1;
+			break;
+		}
+	}
+
+	/* Disable Self Test */
+	lsm6dsv16x_gy_self_test_set(ctx, LSM6DSV16X_GY_ST_DISABLE);
+
+	/* Disable sensor. */
+	lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSV16X_ODR_OFF);
+
+	LOG_INF("Gyro self-test result: %s", st_result ? "FAIL" : "PASS");
+	return st_result;
+}
+#endif
+
 static int lsm6dsv16x_accel_config(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -501,6 +727,12 @@ static int lsm6dsv16x_accel_get_config(const struct device *dev,
 	struct lsm6dsv16x_data *data = dev->data;
 
 	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_SELF_TEST
+	case SENSOR_ATTR_GET_SELF_TEST_RESULT:
+		val->val1 = (data->xl_st_result == 0) ? LSM6DSVXXX_ST_OK : LSM6DSVXXX_ST_FAIL;
+		val->val2 = 0;
+		break;
+#endif
 	case SENSOR_ATTR_FULL_SCALE:
 		sensor_g_to_ms2(cfg->accel_fs_map[data->accel_fs], val);
 		break;
@@ -573,6 +805,12 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 	struct lsm6dsv16x_data *data = dev->data;
 
 	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_SELF_TEST
+	case SENSOR_ATTR_GET_SELF_TEST_RESULT:
+		val->val1 = (data->gy_st_result == 0) ? 0 : 1;
+		val->val2 = 0;
+		break;
+#endif
 	case SENSOR_ATTR_FULL_SCALE:
 		sensor_degrees_to_rad(lsm6dsv16x_gyro_fs_map[data->gyro_fs], val);
 		break;
@@ -1120,6 +1358,15 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		k_sleep(K_MSEC(30));
 	}
 
+#ifdef CONFIG_LSM6DSV16X_SELF_TEST
+	lsm6dsv16x->xl_st_result = 0;
+	lsm6dsv16x->gy_st_result = 0;
+	if (cfg->self_test_en) {
+		lsm6dsv16x->xl_st_result = lsm6dsv16x_accel_self_test(dev);
+		lsm6dsv16x->gy_st_result = lsm6dsv16x_gyro_self_test(dev);
+	}
+#endif
+
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
 	if (lsm6dsv16x_accel_set_fs_raw(dev, fs) < 0) {
@@ -1281,6 +1528,8 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
 
 #define LSM6DSV16X_CONFIG_COMMON(inst, prefix)					\
+	IF_ENABLED(CONFIG_LSM6DSV16X_SELF_TEST,					\
+		(.self_test_en = DT_INST_PROP(inst, self_test),))		\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),				\
 	.accel_range = DT_INST_ENUM_IDX(inst, accel_range),			\
 	.accel_fs_map = prefix##_accel_fs_map,					\
