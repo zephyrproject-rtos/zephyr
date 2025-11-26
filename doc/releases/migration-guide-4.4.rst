@@ -54,6 +54,12 @@ Ethernet
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE``
     * Removed ``mac-eeprom`` property
 
+  * :dtcompatible:`virtio,net` (:github:`100106`)
+
+  * :dtcompatible:`microchip,lan865x` (:github:`100318`)
+
+  * :dtcompatible:`microchip,lan9250` (:github:`100320`)
+
 MDIO
 ====
 
