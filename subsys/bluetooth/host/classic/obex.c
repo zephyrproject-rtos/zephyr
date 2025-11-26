@@ -351,8 +351,11 @@ static int obex_server_put_common(struct bt_obex_server *server, bool final, uin
 			goto failed;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&server->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&server->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&server->_opcode),
+				opcode);
+			rsp_code = BT_OBEX_RSP_CODE_INTER_ERROR;
+			goto failed;
 		}
 	}
 
@@ -432,8 +435,11 @@ static int obex_server_get_common(struct bt_obex_server *server, bool final, uin
 			goto failed;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&server->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&server->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&server->_opcode),
+				opcode);
+			rsp_code = BT_OBEX_RSP_CODE_INTER_ERROR;
+			goto failed;
 		}
 	}
 
@@ -569,8 +575,11 @@ static int obex_server_action_common(struct bt_obex_server *server, bool final, 
 			goto failed;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&server->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&server->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&server->_opcode),
+				opcode);
+			rsp_code = BT_OBEX_RSP_CODE_INTER_ERROR;
+			goto failed;
 		}
 	}
 
@@ -1823,8 +1832,10 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 			return -EBUSY;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&client->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
+				opcode);
+			return -EINVAL;
 		}
 	}
 
@@ -1958,8 +1969,10 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 			return -EBUSY;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&client->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
+				opcode);
+			return -EINVAL;
 		}
 	}
 
@@ -2344,8 +2357,10 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 			return -EBUSY;
 		}
 
-		if (opcode != req_code) {
-			atomic_cas(&client->_opcode, opcode, req_code);
+		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
+			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
+				opcode);
+			return -EINVAL;
 		}
 	}
 
