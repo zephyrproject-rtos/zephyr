@@ -98,6 +98,8 @@ enum sensor_channel {
 	 * object is close.
 	 */
 	SENSOR_CHAN_PROX,
+	/** Ambient humidity, in percent. */
+	SENSOR_CHAN_AMBIENT_HUMIDITY,
 	/** Humidity, in percent. */
 	SENSOR_CHAN_HUMIDITY,
 	/** Ambient illuminance in visible spectrum, in lux. */
@@ -125,6 +127,8 @@ enum sensor_channel {
 	SENSOR_CHAN_PM_1_0,
 	/** 2.5 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_2_5,
+	/** 4.0 micro-meters Particulate Matter, in ug/m^3 */
+	SENSOR_CHAN_PM_4_0,
 	/** 10 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_10,
 	/** Number of particles ≥ 0.3 µm per 0.1 liter of air */
@@ -145,6 +149,8 @@ enum sensor_channel {
 
 	/** CO2 level, in parts per million (ppm) **/
 	SENSOR_CHAN_CO2,
+	/** HCHO level, in parts per million (ppm) **/
+	SENSOR_CHAN_HCHO,
 	/** O2 level, in parts per million (ppm) **/
 	SENSOR_CHAN_O2,
 	/** VOC level, in parts per billion (ppb) **/
