@@ -42,3 +42,17 @@ properties:
   fast-freq:
     type: int
     required: true
+
+  half-sleep-supported:
+    type: boolean
+    description: |
+      Indicates that the attached PSRAM supports entry into and exit from
+      half-sleep mode using the C0 half-sleep command sequence. When set to
+      true, the driver will enable low-power sequences utilizing half-sleep
+      mode. If false, half-sleep features are disabled.
+
+  external-ldo:
+    type: boolean
+    description: |
+      Present if the PSRAM is powered from the external LDO.
+      If absent, internal LDO (PSRAM) is assumed.
