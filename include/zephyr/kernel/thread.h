@@ -56,7 +56,7 @@ struct _thread_base {
 	 */
 	_wait_q_t *pended_on;
 
-	/* user facing 'thread options'; values defined in include/kernel.h */
+	/* user facing 'thread options'; values defined in include/zephyr/kernel.h */
 	uint8_t user_options;
 
 	/* thread state */
