@@ -36,5 +36,24 @@
 			zephyr,memory-region = "PERIPHERALS";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
 		};
+
+		clockctrl: clock-controller@1a602000 {
+			compatible = "alif,clockctrl";
+			reg = <0x1a602000 0x2c>,
+			      <0x4903f000 0xb0>,
+			      <0x4902f000 0xbc>,
+			      <0x1a604000 0x48>,
+			      <0x1a609000 0x14>,
+			      <0x43007000 0x28>,
+			      <0x400f0000 0x14>;
+			reg-names = "cgu",
+				    "clkctl_per_mst",
+				    "clkctl_per_slv",
+				    "aon",
+				    "vbat",
+				    "m55he_cfg",
+				    "m55hp_cfg";
+			#clock-cells = <1>;
+		};
 	};
 };
