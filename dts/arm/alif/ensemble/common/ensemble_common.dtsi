@@ -5,9 +5,30 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
+	clocks {
+		syst_aclk: axi-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(400)>;
+			#clock-cells = <0>;
+		};
+
+		syst_hclk: ahb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(200)>;
+			#clock-cells = <0>;
+		};
+
+		syst_pclk: apb-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(100)>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc: soc {
 		peripheral_region: memory@1a000000 {
 			compatible = "zephyr,memory-region";
