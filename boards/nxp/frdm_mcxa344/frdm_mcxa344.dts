@@ -21,6 +21,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -185,4 +186,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+};
+
+&wwdt0 {
+	status = "okay";
 };
