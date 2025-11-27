@@ -694,21 +694,21 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 static void stream_connected_cb(struct bt_bap_stream *stream)
 {
 	struct bt_conn_info conn_info;
+	struct bt_bap_ep_info ep_info;
+	int err;
 
 	LOG_DBG("Connected stream %p", stream);
 
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get info: %d", err);
+
+		return;
+	}
+
 	(void)bt_conn_get_info(stream->conn, &conn_info);
+
 	if (conn_info.role == BT_HCI_ROLE_CENTRAL) {
-		struct bt_bap_ep_info ep_info;
-		int err;
-
-		err = bt_bap_ep_get_info(stream->ep, &ep_info);
-		if (err != 0) {
-			LOG_ERR("Failed to get info: %d", err);
-
-			return;
-		}
-
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
 			if (ep_info.state == BT_BAP_EP_STATE_ENABLING) {
 				/* Automatically do the receiver start ready operation for source
@@ -727,6 +727,18 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 			btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 							     BT_ASCS_START_OP,
 							     BTP_ASCS_STATUS_SUCCESS);
+		}
+	} else {
+		if (ep_info.dir == BT_AUDIO_DIR_SINK && ep_info.state == BT_BAP_EP_STATE_ENABLING) {
+			/* Automatically do the receiver start ready operation for sink
+			 * ASEs as the server when in the enabling state.
+			 * The CIS may be connected in the QoS Configured state as well, in
+			 * which case we should wait until we enter the enabling state.
+			 */
+			err = bt_bap_stream_start(stream);
+			if (err != 0) {
+				LOG_ERR("Failed to start stream %p", stream);
+			}
 		}
 	}
 
