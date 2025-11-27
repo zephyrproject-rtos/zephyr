@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Core Devices LLC
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SF32LB_PMUC
+	bool "SF32LB PMUC low-speed clock controller"
+	default y
+	depends on CLOCK_CONTROL
+	depends on DT_HAS_SIFLI_SF32LB_PMUC_CLK_ENABLED
+	help
+	  Enable driver for the PMUC-managed low-speed clocks (LRC10, LRC32, LXT32)
+	  on SiFli SF32LB SoCs.
+
+config CLOCK_CONTROL_SF32LB_PMUC_INIT_PRIORITY
+	int "PMUC clock controller init priority"
+	default 29
+	depends on CLOCK_CONTROL_SF32LB_PMUC
+	help
+	  Initialization priority for the PMUC low-speed clock controller.
+	  Must be lower (numerically) than the RCC clock controller init
+	  priority so that PMUC clocks are available when RCC initializes.
