@@ -2116,7 +2116,7 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 
 	udc_ep_buf_set_setup(buf);
 	data_ptr = net_buf_tail(buf);
-	numaker_usbd_setup_copy_to_user(dev, data_ptr);
+	memcpy(data_ptr, msg->setup.packet, 8);
 	net_buf_add(buf, 8);
 
 	/* Update to next stage of CTRL transfer */
