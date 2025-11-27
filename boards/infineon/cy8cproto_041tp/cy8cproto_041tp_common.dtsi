@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cy8cproto_041tp-pinctrl.dtsi"
+
+uart0: &scb0 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri_div_16bit_0>;
+	pinctrl-0 = <&p5_2_scb0_uart_tx &p5_1_scb0_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri_div_16bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <0>;
+};
+
+&peri_div_16bit_1 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <1>;
+};
+
+&peri_div_16bit_2 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <1>;
+};
+
+&peri_div_16bit_3 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <0>;
+	clock-div = <11500>;
+};
+
+&hf_clk_mux0 {
+	status = "okay";
+};
+
+&hf_clk_mux1 {
+	status = "okay";
+};
+
+&clk_hf {
+	clocks = <&hf_clk_mux0>;
+	status = "okay";
+};
+
+&pump_clk_mux0 {
+	status = "okay";
+};
+
+&pump_clk_mux1 {
+	status = "okay";
+};
+
+&clk_pump {
+	clocks = <&pump_clk_mux0>;
+	status = "okay";
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+	interrupts = <4 4>;
+};
