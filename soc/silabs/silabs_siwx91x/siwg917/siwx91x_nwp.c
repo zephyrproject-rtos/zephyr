@@ -300,7 +300,6 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 
 static int siwx91x_check_nwp_version(void)
 {
-	sl_wifi_firmware_version_t expected_version;
 	sl_wifi_firmware_version_t version;
 	int ret;
 
@@ -309,38 +308,29 @@ static int siwx91x_check_nwp_version(void)
 		return -EINVAL;
 	}
 
-	sscanf(SIWX91X_NWP_FW_EXPECTED_VERSION, "%hhX.%hhd.%hhd.%hhd.%hhd.%hhd.%hd",
-	       &expected_version.rom_id,
-	       &expected_version.major,
-	       &expected_version.minor,
-	       &expected_version.security_version,
-	       &expected_version.patch_num,
-	       &expected_version.customer_id,
-	       &expected_version.build_num);
-
 	/* Ignore rom_id:
-	 * B is parsed as an hex value and we get 11 in expected_version.rom_id
-	 * We received rom_id=17 in version.rom_id, we suspect a double hex->decimal conversion
+	 * the right value is 0x0B but we received 17 in version.rom_id, we suspect a double
+	 * hex->decimal conversion
 	 */
-	if (expected_version.major != version.major) {
+	if (siwx91x_nwp_fw_expected_version.major != version.major) {
 		return -EINVAL;
 	}
-	if (expected_version.minor != version.minor) {
+	if (siwx91x_nwp_fw_expected_version.minor != version.minor) {
 		return -EINVAL;
 	}
-	if (expected_version.security_version != version.security_version) {
+	if (siwx91x_nwp_fw_expected_version.security_version != version.security_version) {
 		return -EINVAL;
 	}
-	if (expected_version.patch_num != version.patch_num) {
+	if (siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
 		return -EINVAL;
 	}
-	if (expected_version.customer_id != version.customer_id) {
-		LOG_DBG("customer_id diverge: expected %d, actual %d", expected_version.customer_id,
-			version.customer_id);
+	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
+		LOG_DBG("customer_id diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.customer_id, version.customer_id);
 	}
-	if (expected_version.build_num != version.build_num) {
-		LOG_DBG("build_num diverge: expected %d, actual %d", expected_version.build_num,
-			version.build_num);
+	if (siwx91x_nwp_fw_expected_version.build_num != version.build_num) {
+		LOG_DBG("build_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.build_num, version.build_num);
 	}
 
 	return 0;
@@ -448,8 +438,15 @@ static int siwx91x_nwp_init(const struct device *dev)
 	/* Check if the NWP firmware version is correct */
 	ret = siwx91x_check_nwp_version();
 	if (ret < 0) {
-		LOG_ERR("Unexpected NWP firmware version (expected: %s)",
-			SIWX91X_NWP_FW_EXPECTED_VERSION);
+		LOG_ERR("Unexpected NWP firmware version (expected: %X.%d.%d.%d.%d.%d.%d)",
+			siwx91x_nwp_fw_expected_version.rom_id,
+			siwx91x_nwp_fw_expected_version.major,
+			siwx91x_nwp_fw_expected_version.minor,
+			siwx91x_nwp_fw_expected_version.security_version,
+			siwx91x_nwp_fw_expected_version.patch_num,
+			siwx91x_nwp_fw_expected_version.customer_id,
+			siwx91x_nwp_fw_expected_version.build_num);
+		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
