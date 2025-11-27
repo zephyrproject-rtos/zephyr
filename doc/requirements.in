@@ -12,6 +12,7 @@ sphinx-togglebutton
 sphinx-sitemap
 sphinx-autobuild
 sphinxcontrib.programoutput
+sphinx-design
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0
