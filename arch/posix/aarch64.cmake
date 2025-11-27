@@ -4,7 +4,7 @@
 # distributions. Userspace is (generally) either 32-bit or 64-bit but not
 # both.
 
-# @Intent: Call a script to get userspace wordsize for comparison with CONFIG_64BIT
+# Get userspace wordsize for comparison with CONFIG_64BIT
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
