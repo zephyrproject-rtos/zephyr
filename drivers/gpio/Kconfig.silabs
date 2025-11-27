@@ -5,6 +5,7 @@ menuconfig GPIO_SILABS
 	bool "Silabs GPIO driver"
 	default y
 	depends on DT_HAS_SILABS_GPIO_ENABLED
+	depends on CLOCK_CONTROL
 	select SILABS_SISDK_GPIO
 	help
 	  Enable the Silabs gpio driver.

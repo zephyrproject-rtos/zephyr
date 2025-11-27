@@ -5,6 +5,7 @@ config DAC_SILABS_VDAC
 	bool "Silabs DAC driver for VDAC"
 	default y
 	depends on DT_HAS_SILABS_VDAC_ENABLED
+	depends on CLOCK_CONTROL
 	select PINCTRL
 	select SILABS_SISDK_VDAC
 	help
