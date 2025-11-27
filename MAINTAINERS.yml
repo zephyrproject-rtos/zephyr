@@ -2933,8 +2933,7 @@ Infineon Platforms:
   files:
     - boards/cypress/
     - boards/infineon/
-    - drivers/*/*ifx_cat1*
-    - drivers/*/*ifx*
+    - drivers/*/*infineon*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - drivers/wifi/infineon/
