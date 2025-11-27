@@ -63,7 +63,7 @@ static int fixed_factor_clk_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_PSE84) || defined(CONFIG_SOC_SERIES_PSC3)
 	uint32_t rslt;
 #endif
-	uint32_t source_instance = 0;
+	uint32_t err;
 
 	switch (config->block) {
 
@@ -75,12 +75,27 @@ static int fixed_factor_clk_init(const struct device *dev)
 
 	case IFX_HF:
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-		Cy_SysClk_ClkHfSetSource(source_instance);
+		err = Cy_SysClk_ClkHfSetSource(config->instance);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
 		Cy_SysClk_ClkHfSetDivider(config->divider);
 #else
-		Cy_SysClk_ClkHfSetSource(config->instance, source_instance);
-		Cy_SysClk_ClkHfSetDivider(config->instance, config->divider);
-		Cy_SysClk_ClkHfEnable(config->instance);
+		err = Cy_SysClk_ClkHfSetSource(config->instance, source_instance);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = Cy_SysClk_ClkHfSetDivider(config->instance, config->divider);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = Cy_SysClk_ClkHfEnable(config->instance);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
 #endif
 		break;
 
@@ -94,11 +109,17 @@ static int fixed_factor_clk_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_INSTANCE(n) DT_PROP_OR(DT_INST_PHANDLE(n, clocks), instance, 0)
+#else
+#define IFX_INSTANCE(n) DT_INST_PROP(n, instance)
+#endif
+
 #define FIXED_CLK_INIT(n)                                                                          \
 	static const struct fixed_factor_clock_config fixed_factor_clock_config_##n = {            \
 		.divider = DT_INST_PROP_OR(n, clock_div, 1u),                                      \
 		.block = DT_INST_PROP(n, system_clock),                                            \
-		.instance = DT_INST_PROP(n, instance),                                             \
+		.instance = IFX_INSTANCE(n),                                                       \
 		.source_path = DT_INST_PROP_OR(n, source_path, 1u),                                \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, fixed_factor_clk_init, NULL, NULL,                                \
