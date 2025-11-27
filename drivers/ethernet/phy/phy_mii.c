@@ -210,8 +210,7 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	link_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
-
+	link_up = IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT);
 	/* If link is down, we can stop here. */
 	if (!link_up) {
 		data->state.speed = 0;
@@ -228,7 +227,7 @@ static int update_link_state(const struct device *dev)
 	}
 
 	/* If auto-negotiation is not enabled, we only need to check the link speed */
-	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
+	if (!IS_BIT_SET(bmcr_reg, MII_BMCR_AUTONEG_ENABLE_BIT)) {
 		enum phy_link_speed new_speed = phy_mii_get_link_speed_bmcr_reg(dev, bmcr_reg);
 
 		if ((data->state.speed != new_speed) || !data->state.is_up) {
@@ -285,7 +284,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 		return -EIO;
 	}
 
-	if ((bmsr_reg & MII_BMSR_AUTONEG_COMPLETE) == 0U) {
+	if (!IS_BIT_SET(bmsr_reg, MII_BMSR_AUTONEG_COMPLETE_BIT)) {
 		if (sys_timepoint_expired(data->autoneg_timeout)) {
 			LOG_DBG("PHY (%d) auto-negotiate timeout", cfg->phy_addr);
 			return -ETIMEDOUT;
