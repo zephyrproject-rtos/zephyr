@@ -358,8 +358,12 @@ static bool check_dev_power_state(const struct device *dev, enum pm_device_state
 static int test_loop_repeated_start_stop(const struct device *dma)
 {
 	static int chan_id;
-	enum pm_device_state init_state = pm_device_on_power_domain(dma) ?
-					  PM_DEVICE_STATE_OFF : PM_DEVICE_STATE_SUSPENDED;
+
+	if (!check_dev_power_state(dma, PM_DEVICE_STATE_SUSPENDED) &&
+	    !check_dev_power_state(dma, PM_DEVICE_STATE_OFF)) {
+		TC_PRINT("ERROR: device %s is not in the correct init power state", dma->name);
+		return TC_FAIL;
+	}
 
 	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started\n");
@@ -392,10 +396,6 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
-	if (!check_dev_power_state(dma, PM_DEVICE_STATE_OFF)) {
-		return TC_FAIL;
-	}
-
 	chan_id = dma_request_channel(dma, NULL);
 	if (chan_id < 0) {
 		TC_PRINT("this platform do not support the dma channel\n");
@@ -423,7 +423,9 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
-	if (!check_dev_power_state(dma, init_state)) {
+	if (!check_dev_power_state(dma, PM_DEVICE_STATE_SUSPENDED) &&
+	    !check_dev_power_state(dma, PM_DEVICE_STATE_OFF)) {
+		TC_PRINT("ERROR: device %s is not in the correct power state", dma->name);
 		return TC_FAIL;
 	}
 
@@ -463,7 +465,9 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
-	if (!check_dev_power_state(dma, init_state)) {
+	if (!check_dev_power_state(dma, PM_DEVICE_STATE_SUSPENDED) &&
+	    !check_dev_power_state(dma, PM_DEVICE_STATE_OFF)) {
+		TC_PRINT("ERROR: device %s is not in the correct power state", dma->name);
 		return TC_FAIL;
 	}
 
