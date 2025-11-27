@@ -102,6 +102,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_NODELABEL(timer4)
 #elif defined(CONFIG_SOC_MEC1753_QSZ)
 #define SAMPLE_TIMER DT_NODELABEL(timer4)
+#elif defined(CONFIG_COUNTER_RCAR_CMT)
+#define SAMPLE_TIMER DT_INST(0, renesas_rcar_cmt_counter)
 #else
 #error Unable to find a counter device node in devicetree
 #endif
