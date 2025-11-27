@@ -7,7 +7,19 @@
 
 if SOC_SERIES_STM32F0X
 
-rsource "Kconfig.defconfig.stm32f0*"
+configdefault NUM_IRQS
+        default 28 if SOC_STM32F030X4 || \
+		      SOC_STM32F030X6 || \
+		      SOC_STM32F031X6
+        default 29 if SOC_STM32F030X8
+        default 31 if SOC_STM32F030XC || \
+		      SOC_STM32F051X8 || \
+		      SOC_STM32F091XC || \
+		      SOC_STM32F098XX
+        default 32 if SOC_STM32F042X6 || \
+		      SOC_STM32F070XB || \
+		      SOC_STM32F072X8 || \
+		      SOC_STM32F072XB
 
 config SRAM_VECTOR_TABLE
 	default y

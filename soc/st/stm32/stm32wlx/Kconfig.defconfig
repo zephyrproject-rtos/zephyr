@@ -5,6 +5,7 @@
 
 if SOC_SERIES_STM32WLX
 
-rsource "Kconfig.defconfig.stm32wl*"
+configdefault NUM_IRQS
+	default 62
 
 endif # SOC_SERIES_STM32WLX

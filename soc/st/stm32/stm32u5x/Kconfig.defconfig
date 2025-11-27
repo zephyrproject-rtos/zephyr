@@ -5,7 +5,17 @@
 
 if SOC_SERIES_STM32U5X
 
-rsource "Kconfig.defconfig.stm32u5*"
+configdefault NUM_IRQS
+	default 126 if SOC_STM32U535XX || \
+		       SOC_STM32U545XX
+	default 125 if SOC_STM32U575XX || \
+		       SOC_STM32U585XX
+	default 132 if SOC_STM32U595XX
+	default 139 if SOC_STM32U599XX || \
+		       SOC_STM32U5A5XX || \
+		       SOC_STM32U5A9XX
+	default 141 if SOC_STM32U5F9XX || \
+		       SOC_STM32U5G9XX
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT

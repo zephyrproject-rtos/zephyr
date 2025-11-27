@@ -5,6 +5,7 @@
 
 if SOC_SERIES_STM32MP1X
 
-rsource "Kconfig.defconfig.stm32mp15_m4"
+configdefault NUM_IRQS
+	default 150 if SOC_STM32MP15_M4
 
 endif # SOC_SERIES_STM32MP1X

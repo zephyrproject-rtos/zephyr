@@ -8,6 +8,25 @@
 
 if SOC_SERIES_STM32L4X
 
-rsource "Kconfig.defconfig.stm32l4*"
+configdefault NUM_IRQS
+	default 83 if SOC_STM32L412XX || \
+		      SOC_STM32L422XX || \
+		      SOC_STM32L431XX || \
+		      SOC_STM32L432XX || \
+		      SOC_STM32L433XX
+        default 85 if SOC_STM32L451XX || \
+		      SOC_STM32L452XX || \
+		      SOC_STM32L462XX
+        default 82 if SOC_STM32L471XX || \
+		      SOC_STM32L475XX || \
+		      SOC_STM32L476XX || \
+		      SOC_STM32L486XX
+        default 91 if SOC_STM32L496XX || \
+	              SOC_STM32L4A6XX
+        default 95 if SOC_STM32L4P5XX || \
+		      SOC_STM32L4Q5XX || \
+		      SOC_STM32L4R5XX || \
+		      SOC_STM32L4R9XX || \
+		      SOC_STM32L4S5XX
 
 endif # SOC_SERIES_STM32L4X
