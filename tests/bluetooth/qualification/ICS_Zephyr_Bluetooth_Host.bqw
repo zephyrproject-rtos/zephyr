@@ -353,7 +353,6 @@
         <Feature>GATT 4/27</Feature>
         <Feature>GATT 4/5</Feature>
         <Feature>GATT 4/6</Feature>
-        <Feature>GATT 7/5</Feature>
         <Feature>GATT 10/7</Feature>
         <Feature>GATT 10/12</Feature>
         <Feature>GATT 9/8</Feature>
@@ -367,7 +366,6 @@
         <Feature>GATT 4/21</Feature>
         <Feature>GATT 4/22</Feature>
         <Feature>GATT 7/4</Feature>
-        <Feature>GATT 7/6</Feature>
         <Feature>GATT 10/11</Feature>
         <Feature>GATT 2/3a</Feature>
         <Feature>GATT 9/2</Feature>
@@ -381,7 +379,6 @@
         <Feature>GATT 3/4</Feature>
         <Feature>GATT 3/9</Feature>
         <Feature>GATT 4/1</Feature>
-        <Feature>GATT 4/13</Feature>
         <Feature>GATT 4/18</Feature>
         <Feature>GATT 4/3</Feature>
         <Feature>GATT 4a/1</Feature>
