@@ -2009,6 +2009,9 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - danieldegrasse
+  collaborators:
+    - JarmouniA
+    - VynDragon
   files:
     - drivers/mipi_dbi/
     - include/zephyr/drivers/mipi_dbi.h
@@ -2019,6 +2022,8 @@ Documentation Infrastructure:
 
 "Drivers: MIPI-DSI":
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
