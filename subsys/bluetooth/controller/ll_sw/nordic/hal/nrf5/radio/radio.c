@@ -1911,13 +1911,13 @@ uint32_t radio_tmr_sample_get(void)
 int radio_gpio_pa_lna_init(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-	if (nrfx_gpiote_channel_alloc(gpiote_palna, &gpiote_ch_palna) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_palna, &gpiote_ch_palna) != 0) {
 		return -ENOMEM;
 	}
 #endif
 
 #if defined(NRF_GPIO_PDN_PIN)
-	if (nrfx_gpiote_channel_alloc(gpiote_pdn, &gpiote_ch_pdn) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_pdn, &gpiote_ch_pdn) != 0) {
 		return -ENOMEM;
 	}
 #endif
