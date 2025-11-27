@@ -72,6 +72,10 @@
 	status = "okay";
 };
 
+&lxt32 {
+	status = "okay";
+};
+
 &rcc_clk {
 	status = "okay";
 
