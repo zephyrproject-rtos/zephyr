@@ -1,0 +1,22 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB VBAT Sensor
+
+compatible: "sifli,sf32lb-vbat"
+
+include: [base.yaml, sifli-sf32lb-cfg.yaml, nvmem-consumer.yaml]
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for Vbat sensor
+
+  ratio:
+    type: int
+    default: 2
+    required: true
+    description: Voltage divider ratio
+
+  sifli,cfg:
+    required: true
