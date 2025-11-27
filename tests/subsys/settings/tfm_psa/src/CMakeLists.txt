@@ -6,9 +6,9 @@
 zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/settings/include
   ${ZEPHYR_BASE}/subsys/settings/src
-  ${ZEPHYR_BASE}/tests/subsys/settings/its/src
+  ${ZEPHYR_BASE}/tests/subsys/settings/tfm_psa/src
 )
 
-target_sources(app PRIVATE settings_test_its.c)
+target_sources(app PRIVATE settings_test_psa.c)
 
 add_subdirectory(../../src settings_test_bindir)

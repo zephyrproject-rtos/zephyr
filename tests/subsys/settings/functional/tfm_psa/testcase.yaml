@@ -13,4 +13,4 @@ tests:
       - settings
       - trusted-firmware-m
     extra_args:
-      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_SETTINGS_TFM_PSA=y
