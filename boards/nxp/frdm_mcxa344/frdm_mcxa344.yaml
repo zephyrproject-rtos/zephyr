@@ -17,5 +17,6 @@ supported:
   - arduino_gpio
   - flash
   - gpio
+  - i2c
   - uart
 vendor: nxp
