@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Core Devices LLC
+ * Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,11 +15,16 @@
 #include <zephyr/drivers/clock_control/sf32lb.h>
 #include <zephyr/dt-bindings/clock/sf32lb-clocks-common.h>
 #include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
+#include <zephyr/dt-bindings/clock/sf32lb-pmuc-clocks.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include <register.h>
 
+#define PMUC_CR           offsetof(PMUC_TypeDef, CR)
+#define PMUC_LRC10_CR     offsetof(PMUC_TypeDef, LRC10_CR)
+#define PMUC_LRC32_CR     offsetof(PMUC_TypeDef, LRC32_CR)
 #define HPSYS_CFG_CAU2_CR offsetof(HPSYS_CFG_TypeDef, CAU2_CR)
 
 #define PMUC_HXT_CR1 offsetof(PMUC_TypeDef, HXT_CR1)
@@ -36,15 +42,27 @@
 #define HPSYS_RCC_DLLXCR_OUT_DIV2_EN HPSYS_RCC_DLL1CR_OUT_DIV2_EN
 #define HPSYS_RCC_DLLXCR_READY       HPSYS_RCC_DLL1CR_READY
 
-#define SF32LB_CLOCK_FREQ_BY_NAME(inst, name)                                                      \
-	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name), clock_frequency)
+#define SF32LB_CLOCK_FREQ_BY_NAME(inst, name)                                                     \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name),                   \
+					       sifli_sf32lb_pmuc_clk),                          \
+		    (DT_PROP_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name),                   \
+				    clock_frequencies,                                         \
+				    DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clk_id))),         \
+		    (DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name), clock_frequency)))
 
-#define SF32LB_DLL_FREQ(inst, node)                                                                \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, node), okay),                        \
+#define SF32LB_DLL_FREQ(inst, node)                                                               \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, node), okay),                          \
 		    (DT_PROP(DT_INST_CHILD(inst, node), clock_frequency)), (0U))
 
 #define SF32LB_DLL1_FREQ(inst) SF32LB_DLL_FREQ(inst, dll1)
 #define SF32LB_DLL2_FREQ(inst) SF32LB_DLL_FREQ(inst, dll2)
+
+#define SF32LB_CLOCK_NODE_ENABLED(inst, name)                                                      \
+	DT_NODE_HAS_STATUS(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name), okay)
+
+#define SF32LB_LXT32_NODE         DT_NODELABEL(lxt32)
+#define SF32LB_LXT32_ENABLED      DT_NODE_HAS_STATUS(SF32LB_LXT32_NODE, okay)
+#define SF32LB_LXT32_FREQUENCY_HZ DT_PROP(SF32LB_LXT32_NODE, clock_frequency)
 
 /* Enum values match the register field encoding used by RCC */
 enum sf32lb_sys_clk_idx {
@@ -52,6 +70,11 @@ enum sf32lb_sys_clk_idx {
 	SF32LB_SYS_CLK_IDX_HXT48 = 1,
 	SF32LB_SYS_CLK_IDX_LPCLK = 2,
 	SF32LB_SYS_CLK_IDX_DLL1 = 3,
+};
+
+enum sf32lb_clkwdt_src_idx {
+	SF32LB_CLKWDT_SRC_LRC10 = 0,
+	SF32LB_CLKWDT_SRC_LRC32 = 1,
 };
 
 enum sf32lb_peri_clk_idx {
@@ -80,12 +103,19 @@ enum sf32lb_usb_clk_idx {
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), sifli_mpi2_clk_src, SF32LB_MPI_CLK_IDX_PERI)
 #define SF32LB_USB_CLK_SRC_IDX(inst)                                                               \
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), sifli_usb_clk_src, SF32LB_USB_CLK_IDX_SYSCLK)
+#define SF32LB_CLKWDT_SRC_IDX(inst)                                                                \
+	DT_ENUM_IDX_OR(DT_DRV_INST(inst), sifli_clk_wdt_src, SF32LB_CLKWDT_SRC_LRC10)
 
 #define SF32LB_SYS_CLK_SRC_VALUE(inst)  SF32LB_SYS_CLK_SRC_IDX(inst)
 #define SF32LB_PERI_CLK_SRC_VALUE(inst) SF32LB_PERI_CLK_SRC_IDX(inst)
 #define SF32LB_MPI1_CLK_SRC_VALUE(inst) SF32LB_MPI1_CLK_SRC_IDX(inst)
 #define SF32LB_MPI2_CLK_SRC_VALUE(inst) SF32LB_MPI2_CLK_SRC_IDX(inst)
 #define SF32LB_USB_CLK_SRC_VALUE(inst)  SF32LB_USB_CLK_SRC_IDX(inst)
+
+#define SF32LB_CLK_WDT_FREQ(inst)                                                                  \
+	((SF32LB_CLKWDT_SRC_IDX(inst) == SF32LB_CLKWDT_SRC_LRC32)                                  \
+		 ? SF32LB_CLOCK_FREQ_BY_NAME(inst, lrc32)                                          \
+		 : SF32LB_CLOCK_FREQ_BY_NAME(inst, lrc10))
 
 #define SF32LB_SYS_CLK_FREQ(inst)                                                                  \
 	((SF32LB_SYS_CLK_SRC_IDX(inst) == SF32LB_SYS_CLK_IDX_HRC48)                                \
@@ -125,6 +155,7 @@ struct clock_control_sf32lb_rcc_config {
 	uintptr_t base;
 	uintptr_t cfg;
 	uintptr_t pmuc;
+	const struct device *pmuc_clk;
 	uint8_t hdiv;
 	uint8_t pdiv1;
 	uint8_t pdiv2;
@@ -134,17 +165,34 @@ struct clock_control_sf32lb_rcc_config {
 	uint8_t mpi2_clk_src;
 	uint8_t usb_clk_src;
 	uint8_t usb_div;
-	uint32_t sys_clk_freq;
 	uint32_t peri_clk_freq;
 	uint32_t hrc48_freq;
 	uint32_t hxt48_freq;
-	uint32_t lrc32_freq;
-	uint32_t lrc10_freq;
-	uint32_t lxt32_freq;
 	uint32_t dll1_freq;
 	uint32_t dll2_freq;
 	const struct device *hxt48;
 };
+
+struct clock_control_sf32lb_rcc_data {
+	uint32_t lrc32_freq;
+	uint32_t lrc10_freq;
+};
+
+static int sf32lb_select_lpclk(const struct clock_control_sf32lb_rcc_config *config)
+{
+	uint8_t clkwdt_src = SF32LB_CLKWDT_SRC_IDX(0);
+	uint32_t val = sys_read32(config->pmuc + PMUC_CR);
+
+	if (clkwdt_src == SF32LB_CLKWDT_SRC_LRC32) {
+		val |= PMUC_CR_SEL_LPCLK;
+	} else {
+		val &= ~PMUC_CR_SEL_LPCLK;
+	}
+
+	sys_write32(val, config->pmuc + PMUC_CR);
+
+	return 0;
+}
 
 static inline void configure_dll(const struct device *dev, uint32_t freq, uint32_t dllxcr)
 {
@@ -174,27 +222,40 @@ static bool sf32lb_rcc_needs_hxt48(const struct clock_control_sf32lb_rcc_config 
 	       (config->dll2_freq != 0U);
 }
 
-static uint32_t sf32lb_get_sys_clk(const struct clock_control_sf32lb_rcc_config *config)
+static uint32_t sf32lb_get_sys_clk(const struct clock_control_sf32lb_rcc_config *config,
+				   const struct clock_control_sf32lb_rcc_data *data)
 {
-	return config->sys_clk_freq;
+	switch (config->sys_clk_src) {
+	case SF32LB_SYS_CLK_IDX_LPCLK:
+		return data->lrc32_freq;
+	case SF32LB_SYS_CLK_IDX_HXT48:
+		return config->hxt48_freq;
+	case SF32LB_SYS_CLK_IDX_DLL1:
+		return config->dll1_freq;
+	case SF32LB_SYS_CLK_IDX_HRC48:
+	default:
+		return config->hrc48_freq;
+	}
 }
 
-static uint32_t sf32lb_get_hclk(const struct clock_control_sf32lb_rcc_config *config)
+static uint32_t sf32lb_get_hclk(const struct clock_control_sf32lb_rcc_config *config,
+				const struct clock_control_sf32lb_rcc_data *data)
 {
 	uint32_t hdiv = config->hdiv;
 
 	if (hdiv == 0U) {
-		return sf32lb_get_sys_clk(config);
+		return sf32lb_get_sys_clk(config, data);
 	}
 
-	return sf32lb_get_sys_clk(config) / hdiv;
+	return sf32lb_get_sys_clk(config, data) / hdiv;
 }
 
-static uint32_t sf32lb_get_pclk1(const struct clock_control_sf32lb_rcc_config *config)
+static uint32_t sf32lb_get_pclk1(const struct clock_control_sf32lb_rcc_config *config,
+				 const struct clock_control_sf32lb_rcc_data *data)
 {
 	uint32_t divisor = BIT(config->pdiv1);
 
-	return sf32lb_get_hclk(config) / MAX(divisor, 1U);
+	return sf32lb_get_hclk(config, data) / MAX(divisor, 1U);
 }
 
 static uint32_t sf32lb_get_clk_peri(const struct clock_control_sf32lb_rcc_config *config)
@@ -215,11 +276,12 @@ static uint32_t sf32lb_get_mpi_clk(const struct clock_control_sf32lb_rcc_config 
 	}
 }
 
-static uint32_t sf32lb_get_usb_clk(const struct clock_control_sf32lb_rcc_config *config)
+static uint32_t sf32lb_get_usb_clk(const struct clock_control_sf32lb_rcc_config *config,
+				   const struct clock_control_sf32lb_rcc_data *data)
 {
 	uint32_t src = (config->usb_clk_src == SF32LB_USB_CLK_IDX_DLL2)
 			       ? config->dll2_freq
-			       : sf32lb_get_sys_clk(config);
+			       : sf32lb_get_sys_clk(config, data);
 
 	if (config->usb_div == 0U) {
 		return src;
@@ -254,6 +316,7 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 				      uint32_t *rate)
 {
 	const struct clock_control_sf32lb_rcc_config *config = dev->config;
+	const struct clock_control_sf32lb_rcc_data *data = dev->data;
 	uint16_t id = *(uint16_t *)sys;
 
 	switch (id) {
@@ -266,7 +329,7 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 	case SF32LB52X_CLOCK_SDMMC1:
 	case SF32LB52X_CLOCK_CRC1:
 	case SF32LB52X_CLOCK_SECU1:
-		*rate = sf32lb_get_hclk(config);
+		*rate = sf32lb_get_hclk(config, data);
 		return 0;
 	case SF32LB52X_CLOCK_MPI1:
 		*rate = sf32lb_get_mpi_clk(config, config->mpi1_clk_src);
@@ -275,7 +338,7 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 		*rate = sf32lb_get_mpi_clk(config, config->mpi2_clk_src);
 		return 0;
 	case SF32LB52X_CLOCK_USBC:
-		*rate = sf32lb_get_usb_clk(config);
+		*rate = sf32lb_get_usb_clk(config, data);
 		return 0;
 	case SF32LB52X_CLOCK_MAILBOX1:
 	case SF32LB52X_CLOCK_PINMUX1:
@@ -288,14 +351,14 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 	case SF32LB52X_CLOCK_TSEN:
 	case SF32LB52X_CLOCK_GPTIM1:
 	case SF32LB52X_CLOCK_ATIM1:
-		*rate = sf32lb_get_pclk1(config);
+		*rate = sf32lb_get_pclk1(config, data);
 		return 0;
 	case SF32LB52X_CLOCK_GPTIM2:
 		*rate = 24000000U;
 		return 0;
 	case SF32LB52X_CLOCK_BTIM1:
 	case SF32LB52X_CLOCK_BTIM2:
-		*rate = sf32lb_get_pclk1(config) / 2U;
+		*rate = sf32lb_get_pclk1(config, data) / 2U;
 		return 0;
 	case SF32LB52X_CLOCK_I2C1:
 	case SF32LB52X_CLOCK_I2C2:
@@ -344,9 +407,45 @@ static DEVICE_API(clock_control, clock_control_sf32lb_rcc_api) = {
 static int clock_control_sf32lb_rcc_init(const struct device *dev)
 {
 	const struct clock_control_sf32lb_rcc_config *config = dev->config;
+	struct clock_control_sf32lb_rcc_data *data = dev->data;
 	bool need_hxt48 = sf32lb_rcc_needs_hxt48(config);
 	uint32_t val;
 	int ret;
+
+	if ((config->pmuc_clk == NULL) || !device_is_ready(config->pmuc_clk)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(config->pmuc_clk,
+			       (clock_control_subsys_t)(uintptr_t)SF32LB_PMUC_CLOCK_LRC10);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_on(config->pmuc_clk,
+			       (clock_control_subsys_t)(uintptr_t)SF32LB_PMUC_CLOCK_LRC32);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_get_rate(config->pmuc_clk,
+				     (clock_control_subsys_t)(uintptr_t)SF32LB_PMUC_CLOCK_LRC10,
+				     &data->lrc10_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_get_rate(config->pmuc_clk,
+				     (clock_control_subsys_t)(uintptr_t)SF32LB_PMUC_CLOCK_LRC32,
+				     &data->lrc32_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sf32lb_select_lpclk(config);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (need_hxt48) {
 		if ((config->hxt48 == NULL) || !device_is_ready(config->hxt48)) {
@@ -460,11 +559,23 @@ BUILD_ASSERT(IN_RANGE(SF32LB_USB_DIV_VALUE(0), 1, 7),
 BUILD_ASSERT(!SF32LB_USB_CLK_REQUIRES_DLL2(0) || DT_NODE_HAS_STATUS(DT_INST_CHILD(0, dll2), okay),
 	     "USB clock selection requires the dll2 node to be enabled when set to DLL2");
 
+BUILD_ASSERT(SF32LB_CLOCK_NODE_ENABLED(0, lrc32) || SF32LB_CLOCK_NODE_ENABLED(0, lrc10),
+	     "At least one low-speed RC oscillator must be enabled");
+
+BUILD_ASSERT((SF32LB_CLKWDT_SRC_IDX(0) != SF32LB_CLKWDT_SRC_LRC32) ||
+		     SF32LB_CLOCK_NODE_ENABLED(0, lrc32),
+	     "clk_wdt source set to lrc32 requires the lrc32 clock to be enabled");
+
+BUILD_ASSERT((SF32LB_CLKWDT_SRC_IDX(0) != SF32LB_CLKWDT_SRC_LRC10) ||
+		     SF32LB_CLOCK_NODE_ENABLED(0, lrc10),
+	     "clk_wdt source set to lrc10 requires the lrc10 clock to be enabled");
+
 static const struct clock_control_sf32lb_rcc_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 	.cfg = DT_REG_ADDR(DT_INST_PHANDLE(0, sifli_cfg)),
 	.pmuc = DT_REG_ADDR(DT_INST_PHANDLE(0, sifli_pmuc)),
 	.hxt48 = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR_BY_NAME(0, hxt48)),
+	.pmuc_clk = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR_BY_NAME(0, lrc32)),
 	.hdiv = DT_INST_PROP(0, sifli_hdiv),
 	.pdiv1 = DT_INST_PROP(0, sifli_pdiv1),
 	.pdiv2 = DT_INST_PROP(0, sifli_pdiv2),
@@ -474,18 +585,16 @@ static const struct clock_control_sf32lb_rcc_config config = {
 	.mpi2_clk_src = SF32LB_MPI2_CLK_SRC_VALUE(0),
 	.usb_clk_src = SF32LB_USB_CLK_SRC_VALUE(0),
 	.usb_div = SF32LB_USB_DIV_VALUE(0),
-	.sys_clk_freq = SF32LB_SYS_CLK_FREQ(0),
 	.peri_clk_freq = SF32LB_PERI_CLK_FREQ(0),
 	.hrc48_freq = SF32LB_CLOCK_FREQ_BY_NAME(0, hrc48),
 	.hxt48_freq = SF32LB_CLOCK_FREQ_BY_NAME(0, hxt48),
-	.lrc32_freq = SF32LB_CLOCK_FREQ_BY_NAME(0, lrc32),
-	.lrc10_freq = SF32LB_CLOCK_FREQ_BY_NAME(0, lrc10),
-	.lxt32_freq = SF32LB_CLOCK_FREQ_BY_NAME(0, lxt32),
 	.dll1_freq = COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(0, dll1), okay),
 				 (DT_PROP(DT_INST_CHILD(0, dll1), clock_frequency)), (0U)),
 		 .dll2_freq = COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(0, dll2), okay),
-				 (DT_PROP(DT_INST_CHILD(0, dll2), clock_frequency)), (0U)),
+				  (DT_PROP(DT_INST_CHILD(0, dll2), clock_frequency)), (0U)),
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_sf32lb_rcc_init, NULL, NULL, &config, PRE_KERNEL_1,
+static struct clock_control_sf32lb_rcc_data data;
+
+DEVICE_DT_INST_DEFINE(0, clock_control_sf32lb_rcc_init, NULL, &data, &config, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_sf32lb_rcc_api);
