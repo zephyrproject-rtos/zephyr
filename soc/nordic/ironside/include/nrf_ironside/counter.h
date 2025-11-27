@@ -7,7 +7,7 @@
 #define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_COUNTER_H_
 
 #include <stdint.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 #include <nrf_ironside/call.h>
 
 /**
