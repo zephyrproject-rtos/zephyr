@@ -19,8 +19,14 @@
 
 static void next_list(struct at_client *at)
 {
-	if (at->buf[at->pos] == ',') {
-		at->pos++;
+	char c = ',';
+
+	if (at->rsp_buf.len < sizeof(c)) {
+		return;
+	}
+
+	if (at->rsp_buf.data[0] == (uint8_t)c) {
+		net_buf_simple_pull(&at->rsp_buf, sizeof(c));
 	}
 }
 
@@ -38,50 +44,71 @@ int at_check_byte(struct net_buf *buf, char check_byte)
 
 static void skip_space(struct at_client *at)
 {
-	while (at->buf[at->pos] == ' ') {
-		at->pos++;
+	char space = ' ';
+
+	while (at->rsp_buf.len > 0) {
+		if (at->rsp_buf.data[0] != (uint8_t)space) {
+			break;
+		}
+		net_buf_simple_pull(&at->rsp_buf, sizeof(space));
 	}
 }
 
 int at_get_number(struct at_client *at, uint32_t *val)
 {
-	uint32_t i;
-
 	skip_space(at);
 
-	for (i = 0U, *val = 0U;
-	     isdigit((unsigned char)at->buf[at->pos]) != 0;
-	     at->pos++, i++) {
-		*val = *val * 10U + at->buf[at->pos] - '0';
+	if ((at->rsp_buf.len == 0) || (isdigit((unsigned char)at->rsp_buf.data[0]) == 0)) {
+		return -ENODATA;
 	}
 
-	if (i == 0U) {
-		return -ENODATA;
+	*val = 0;
+
+	while (at->rsp_buf.len > 0) {
+		if (isdigit((unsigned char)at->rsp_buf.data[0]) == 0) {
+			break;
+		}
+
+		*val = *val * 10 + at->rsp_buf.data[0] - (uint8_t)'0';
+		net_buf_simple_pull_u8(&at->rsp_buf);
 	}
 
 	next_list(at);
 	return 0;
 }
 
-static bool str_has_prefix(const char *str, const char *prefix)
+static bool str_has_prefix(struct at_client *at, const char *prefix)
 {
-	if (strncmp(str, prefix, strlen(prefix)) != 0) {
+	size_t len = strlen(prefix);
+
+	if (at->rsp_buf.len < len) {
+		return false;
+	}
+
+	if (strncmp(at->rsp_buf.data, prefix, len) != 0) {
 		return false;
 	}
 
 	return true;
 }
 
-static int at_parse_result(const char *str, struct net_buf *buf,
+static int at_parse_result(struct at_client *at, struct net_buf *buf,
 			   enum at_result *result)
 {
+	char *ok = "OK";
+	char *error = "ERROR";
+	size_t ok_len = strlen(ok);
+	size_t error_len = strlen(error);
+
 	/* Map the result and check for end lf */
-	if ((!strncmp(str, "OK", 2)) && (at_check_byte(buf, '\n') == 0)) {
+	if ((at->rsp_buf.len >= ok_len) && (strncmp(at->rsp_buf.data, ok, ok_len) == 0) &&
+	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_OK;
 		return 0;
 	}
 
-	if ((!strncmp(str, "ERROR", 5)) && (at_check_byte(buf, '\n')) == 0) {
+	if ((at->rsp_buf.len >= error_len) && (strncmp(at->rsp_buf.data, error, error_len) == 0) &&
+	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_ERROR;
 		return 0;
 	}
@@ -89,31 +116,33 @@ static int at_parse_result(const char *str, struct net_buf *buf,
 	return -ENOMSG;
 }
 
+static void init_rsp_buffer(struct at_client *at, struct net_buf *buf)
+{
+	at->rsp_buf.data = buf->data;
+	at->rsp_buf.__buf = buf->data;
+	at->rsp_buf.size = buf->len;
+	at->rsp_buf.len = 0;
+}
+
 static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 			 char stop_byte, enum at_cmd_state cmd_state)
 {
-	int cmd_len = 0;
-	uint8_t pos = at->pos;
-	const char *str = (char *)buf->data;
+	if (at->rsp_buf.len == 0) {
+		init_rsp_buffer(at, buf);
+	}
 
-	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
-		if (*str != stop_byte) {
-			at->buf[at->pos++] = *str;
-			cmd_len++;
-			str++;
-			pos = at->pos;
-		} else {
-			cmd_len++;
-			at->buf[at->pos] = '\0';
-			at->pos = 0U;
+	while (buf->len > 0) {
+		if (buf->data[0] == stop_byte) {
 			at->cmd_state = cmd_state;
+			net_buf_pull_u8(buf);
 			break;
 		}
+		net_buf_simple_add(&at->rsp_buf, sizeof(uint8_t));
+		net_buf_pull_u8(buf);
 	}
-	net_buf_pull(buf, cmd_len);
 
-	if (pos == at->buf_max_len) {
-		return -ENOBUFS;
+	if (at->rsp_buf.len == 0) {
+		return -ENODATA;
 	}
 
 	return 0;
@@ -126,46 +155,45 @@ static bool is_stop_byte(char target, char *stop_string)
 
 static bool is_vgm_or_vgs(struct at_client *at)
 {
-	if (!strcmp(at->buf, "VGM")) {
+	if (at->rsp_buf.len == 0) {
+		return false;
+	}
+
+	if (!strncmp(at->rsp_buf.data, "VGM", strlen("VGM"))) {
 		return true;
 	}
 
-	if (!strcmp(at->buf, "VGS")) {
+	if (!strncmp(at->rsp_buf.data, "VGS", strlen("VGS"))) {
 		return true;
 	}
+
 	return false;
 }
 
 static int get_response_string(struct at_client *at, struct net_buf *buf, char *stop_string,
 			       enum at_state state)
 {
-	int cmd_len = 0;
-	uint8_t pos = at->pos;
-	const char *str = (char *)buf->data;
+	if (at->rsp_buf.len == 0) {
+		init_rsp_buffer(at, buf);
+	}
 
-	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
-		if (!is_stop_byte(*str, stop_string)) {
-			at->buf[at->pos++] = *str;
-			cmd_len++;
-			str++;
-			pos = at->pos;
-		} else {
-			char stop_byte = at->buf[at->pos];
+	while (buf->len > 0) {
+		if (is_stop_byte(buf->data[0], stop_string)) {
+			char stop_byte = buf->data[0];
 
-			cmd_len++;
-			at->buf[at->pos] = '\0';
-			at->pos = 0U;
 			at->state = state;
 			if ((stop_byte == '=') && !is_vgm_or_vgs(at)) {
 				return -EINVAL;
 			}
+			net_buf_pull_u8(buf);
 			break;
 		}
+		net_buf_simple_add(&at->rsp_buf, sizeof(uint8_t));
+		net_buf_pull_u8(buf);
 	}
-	net_buf_pull(buf, cmd_len);
 
-	if (pos == at->buf_max_len) {
-		return -ENOBUFS;
+	if (at->rsp_buf.len == 0) {
+		return -ENODATA;
 	}
 
 	return 0;
@@ -173,8 +201,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf, char *
 
 static void reset_buffer(struct at_client *at)
 {
-	(void)memset(at->buf, 0, at->buf_max_len);
-	at->pos = 0U;
+	net_buf_simple_init_with_data(&at->rsp_buf, NULL, 0);
 }
 
 static int at_state_start(struct at_client *at, struct net_buf *buf)
@@ -224,7 +251,14 @@ static int at_state_get_cmd_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_cmer(struct at_client *at)
 {
-	if (strncmp(at->buf, "CME ERROR", 9) == 0) {
+	char *cmer = "CME ERROR";
+	size_t len = strlen(cmer);
+
+	if (at->rsp_buf.len < len) {
+		return false;
+	}
+
+	if (strncmp(at->rsp_buf.data, cmer, len) == 0) {
 		return true;
 	}
 
@@ -254,7 +288,14 @@ static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_ring(struct at_client *at)
 {
-	if (strncmp(at->buf, "RING", 4) == 0) {
+	char *ring = "RING";
+	size_t len = strlen(ring);
+
+	if (at->rsp_buf.len < len) {
+		return false;
+	}
+
+	if (strncmp(at->rsp_buf.data, ring, len) == 0) {
 		return true;
 	}
 
@@ -271,7 +312,7 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 		return 0;
 	}
 
-	if (at_parse_result(at->buf, buf, &result) == 0) {
+	if (at_parse_result(at, buf, &result) == 0) {
 		if (at->finish) {
 			/* cme_err is 0 - Is invalid until result is
 			 * AT_RESULT_CME_ERROR
@@ -359,7 +400,7 @@ static int at_cmd_start(struct at_client *at, struct net_buf *buf,
 			const char *prefix, parse_val_t func,
 			enum at_cmd_type type)
 {
-	if (!str_has_prefix(at->buf, prefix)) {
+	if (!str_has_prefix(at, prefix)) {
 		if (type == AT_CMD_TYPE_NORMAL) {
 			at->state = AT_STATE_UNSOLICITED_CMD;
 		}
@@ -447,9 +488,17 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 	return 0;
 }
 
-int at_has_next_list(struct at_client *at)
+bool at_has_next_list(struct at_client *at)
 {
-	return at->buf[at->pos] != '\0' && at->buf[at->pos] != ')';
+	if (at->rsp_buf.len == 0) {
+		return false;
+	}
+
+	if (at->rsp_buf.data[0] == ')') {
+		return false;
+	}
+
+	return true;
 }
 
 int at_open_list(struct at_client *at)
@@ -457,10 +506,11 @@ int at_open_list(struct at_client *at)
 	skip_space(at);
 
 	/* The list shall start with '(' open parenthesis */
-	if (at->buf[at->pos] != '(') {
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != '(')) {
 		return -ENODATA;
 	}
-	at->pos++;
+
+	net_buf_simple_pull_u8(&at->rsp_buf);
 
 	return 0;
 }
@@ -469,10 +519,11 @@ int at_close_list(struct at_client *at)
 {
 	skip_space(at);
 
-	if (at->buf[at->pos] != ')') {
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != ')')) {
 		return -ENODATA;
 	}
-	at->pos++;
+
+	net_buf_simple_pull_u8(&at->rsp_buf);
 
 	next_list(at);
 
@@ -481,32 +532,37 @@ int at_close_list(struct at_client *at)
 
 int at_list_get_string(struct at_client *at, char *name, uint8_t len)
 {
-	int i = 0;
+	uint8_t *start;
+	size_t str_len;
 
 	skip_space(at);
 
-	if (at->buf[at->pos] != '"') {
-		return -ENODATA;
-	}
-	at->pos++;
-
-	while (at->buf[at->pos] != '\0' && at->buf[at->pos] != '"') {
-		if (i == len) {
-			return -ENODATA;
-		}
-		name[i++] = at->buf[at->pos++];
-	}
-
-	if (i == len) {
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != '"')) {
 		return -ENODATA;
 	}
 
-	name[i] = '\0';
+	net_buf_simple_pull_u8(&at->rsp_buf);
 
-	if (at->buf[at->pos] != '"') {
+	start = at->rsp_buf.data;
+
+	while ((at->rsp_buf.len > 0) && (at->rsp_buf.data[0] != '"')) {
+		net_buf_simple_pull_u8(&at->rsp_buf);
+	}
+
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != '"')) {
 		return -ENODATA;
 	}
-	at->pos++;
+
+	str_len = at->rsp_buf.data - start;
+	if (str_len > (len - 1)) {
+		return -ENOMEM;
+	}
+
+	/* Pull char '"' from the buffer */
+	net_buf_simple_pull_u8(&at->rsp_buf);
+
+	memcpy(name, start, str_len);
+	name[str_len] = '\0';
 
 	skip_space(at);
 	next_list(at);
@@ -517,25 +573,25 @@ int at_list_get_string(struct at_client *at, char *name, uint8_t len)
 int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max)
 {
 	uint32_t low, high;
-	int ret;
+	int err;
 
-	ret = at_get_number(at, &low);
-	if (ret < 0) {
-		return ret;
+	err = at_get_number(at, &low);
+	if (err < 0) {
+		return err;
 	}
 
-	if (at->buf[at->pos] == '-') {
-		at->pos++;
+	if ((at->rsp_buf.len > 0) && (at->rsp_buf.data[0] == '-')) {
+		net_buf_simple_pull_u8(&at->rsp_buf);
 		goto out;
 	}
 
-	if (isdigit((unsigned char)at->buf[at->pos]) == 0) {
+	if ((at->rsp_buf.len == 0) || (isdigit((unsigned char)at->rsp_buf.data[0]) == 0)) {
 		return -ENODATA;
 	}
 out:
-	ret = at_get_number(at, &high);
-	if (ret < 0) {
-		return ret;
+	err = at_get_number(at, &high);
+	if (err < 0) {
+		return err;
 	}
 
 	*min = low;
@@ -560,29 +616,28 @@ void at_register(struct at_client *at, at_resp_cb_t resp, at_finish_cb_t finish)
 
 char *at_get_string(struct at_client *at)
 {
-	uint8_t pos = at->pos;
 	char *string;
 
 	skip_space(at);
 
-	if (at->buf[at->pos] != '"') {
-		at->pos = pos;
-		return NULL;
-	}
-	at->pos++;
-	string = &at->buf[at->pos];
-
-	while (at->buf[at->pos] != '\0' && at->buf[at->pos] != '"') {
-		at->pos++;
-	}
-
-	if (at->buf[at->pos] != '"') {
-		at->pos = pos;
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != '"')) {
 		return NULL;
 	}
 
-	at->buf[at->pos] = '\0';
-	at->pos++;
+	net_buf_simple_pull_u8(&at->rsp_buf);
+
+	string = (char *)at->rsp_buf.data;
+
+	while ((at->rsp_buf.len > 0) && (at->rsp_buf.data[0] != '"')) {
+		net_buf_simple_pull_u8(&at->rsp_buf);
+	}
+
+	if ((at->rsp_buf.len == 0) || (at->rsp_buf.data[0] != '"')) {
+		return NULL;
+	}
+
+	at->rsp_buf.data[0] = '\0';
+	net_buf_simple_pull_u8(&at->rsp_buf);
 
 	skip_space(at);
 	next_list(at);
@@ -596,16 +651,19 @@ char *at_get_raw_string(struct at_client *at, size_t *string_len)
 
 	skip_space(at);
 
-	string = &at->buf[at->pos];
-
-	while (at->buf[at->pos] != '\0' &&
-		   at->buf[at->pos] != ',' &&
-		   at->buf[at->pos] != ')') {
-		at->pos++;
+	if (at->rsp_buf.len == 0) {
+		return NULL;
 	}
 
-	if (string_len) {
-		*string_len = &at->buf[at->pos] - string;
+	string = (char *)at->rsp_buf.data;
+
+	while ((at->rsp_buf.len > 0) && (at->rsp_buf.data[0] != ',') &&
+	       (at->rsp_buf.data[0] != ')')) {
+		net_buf_simple_pull_u8(&at->rsp_buf);
+	}
+
+	if (string_len != NULL) {
+		*string_len = (char *)at->rsp_buf.data - string;
 	}
 
 	skip_space(at);
