@@ -88,6 +88,7 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 	sys_slist_append(&query_list, &ctx->node);
 
 	switch (qtype) {
+	case DNS_RR_TYPE_A:
 	case DNS_RR_TYPE_AAAA:
 		VerifyOrExit(dns_get_addr_info(name, qtype, &ctx->resolve_query_id,
 					       dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
@@ -108,7 +109,6 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 	default:
 		break;
 	}
-
 
 exit:
 	net_buf_unref(result);
