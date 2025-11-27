@@ -70,29 +70,29 @@ DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
 ZTEST(devicetree_devices, test_init_get)
 {
 	/* Check device pointers */
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_GPIO));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_I2C));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_DEVA));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_DEVB));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_GPIOX));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_DEVC));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION_OUTER)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION_OUTER)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_PARTITION_OUTER));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION0)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION0)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_PARTITION0));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION1)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION1)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_PARTITION1));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_GPIO_INJECTED));
-	zassert_equal(DEVICE_INIT_GET(manual_dev)->dev,
+	zassert_equal(DEVICE_INIT_GET(manual_dev)->init_obj.dev,
 		      DEVICE_GET(manual_dev));
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->dev,
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->init_obj.dev,
 		      DEVICE_DT_GET(TEST_NOLABEL));
 
 	/* Check init functions */

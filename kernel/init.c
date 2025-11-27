@@ -138,6 +138,9 @@ enum init_level {
 extern const struct init_entry __init_SMP_start[];
 #endif /* CONFIG_SMP */
 
+TYPE_SECTION_START_EXTERN(struct service, service);
+TYPE_SECTION_END_EXTERN(struct service, service);
+
 /*
  * storage space for the interrupt stack
  *
@@ -207,6 +210,19 @@ static void z_device_state_init(void)
 }
 
 /**
+ * @brief Check if the init_entry is for a service or not
+ *
+ * @param a pointer (see struct init_entry's init_obj._obj attribute)
+ *
+ * @return True if it's a service, false otherwise
+ */
+static inline bool is_entry_about_service(const void *obj)
+{
+	return (obj >= (void *)_service_list_start &&
+		obj < (void *)_service_list_end);
+}
+
+/**
  * @brief Execute all the init entry initialization functions at a given level
  *
  * @details Invokes the initialization routine for each init entry object
@@ -234,17 +250,26 @@ static void z_sys_init_run_level(enum init_level level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev;
 		int result = 0;
 
+		if (unlikely(entry->init_obj._obj == NULL)) {
+			continue;
+		}
+
 		sys_trace_sys_init_enter(entry, level);
-		if (dev != NULL) {
+
+		if (is_entry_about_service(entry->init_obj._obj)) {
+			const struct service *srv = entry->init_obj.srv;
+
+			result = srv->init();
+		} else {
+			const struct device *dev = entry->init_obj.dev;
+
 			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
 				result = do_device_init(dev);
 			}
-		} else {
-			result = entry->init_fn();
 		}
+
 		sys_trace_sys_init_exit(entry, level, result);
 	}
 }

@@ -51,6 +51,8 @@ _IGNORE_COMPATIBLES = frozenset([
 
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
+# The offset of the init pointer in "struct service", in number of pointers.
+SERVICE_INIT_OFFSET = 0
 
 class Priority:
     """Parses and holds a device initialization priority.
@@ -207,20 +209,23 @@ class ZephyrInitLevels:
                     raise ValueError(f"no symbol at addr {addr:08x}")
                 obj, size, shidx = self._objects[addr]
 
-                arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
-                arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
+                obj_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
+                if obj_name != "unknown":
+                    obj_addr = self._object_addr[obj_name]
+                    _, _, shidx = self._objects[obj_addr]
 
-                ordinal = self._device_ord_from_name(arg1_name)
-                if ordinal:
-                    dev_addr = self._object_addr[arg1_name]
-                    _, _, shidx = self._objects[dev_addr]
-                    arg0_name = self._object_name(self._initlevel_pointer(
-                        dev_addr, DEVICE_INIT_OFFSET, shidx))
+                    ordinal = self._device_ord_from_name(obj_name)
+                    if ordinal:
+                        init_fn_name = self._object_name(self._initlevel_pointer(
+                            obj_addr, DEVICE_INIT_OFFSET, shidx))
 
-                    prio = Priority(level, priority)
-                    self.devices[ordinal] = (prio, arg0_name)
+                        prio = Priority(level, priority)
+                        self.devices[ordinal] = (prio, init_fn_name)
+                    else:
+                        init_fn_name = self._object_name(self._initlevel_pointer(
+                            obj_addr, SERVICE_INIT_OFFSET, shidx))
 
-                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+                    self.initlevels[level].append(f"{obj}: {init_fn_name}({obj_name})")
 
                 addr += size
                 priority += 1
