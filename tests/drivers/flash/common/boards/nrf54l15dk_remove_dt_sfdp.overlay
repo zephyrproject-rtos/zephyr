@@ -5,9 +5,9 @@
  */
 
 &mx25r64 {
-/delete-property/ jedec-id;
-/delete-property/ sfdp-bfp;
-/delete-property/ has-dpd;
-/delete-property/ t-enter-dpd;
-/delete-property/ t-exit-dpd;
+	/delete-property/ jedec-id;
+	/delete-property/ sfdp-bfp;
+	/delete-property/ has-dpd;
+	/delete-property/ t-enter-dpd;
+	/delete-property/ t-exit-dpd;
 };
