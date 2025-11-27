@@ -223,6 +223,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_XLNX_TTC
 	DEVS_FOR_DT_COMPAT(xlnx_ttc_counter)
 #endif
+#ifdef CONFIG_COUNTER_RCAR_CMT
+	DEVS_FOR_DT_COMPAT(renesas_rcar_cmt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -1293,6 +1296,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 #endif
 #ifdef CONFIG_COUNTER_XLNX_TTC
 	return true;
+#endif
+#ifdef CONFIG_COUNTER_RCAR_CMT
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
 #endif
 	return false;
 }
