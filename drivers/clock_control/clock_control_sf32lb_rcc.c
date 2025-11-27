@@ -53,9 +53,6 @@
 #define SF32LB_DLL1_FREQ(inst) SF32LB_DLL_FREQ(inst, dll1)
 #define SF32LB_DLL2_FREQ(inst) SF32LB_DLL_FREQ(inst, dll2)
 
-#define SF32LB_CLOCK_NODE_ENABLED(inst, name)                                                      \
-	DT_NODE_HAS_STATUS(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name), okay)
-
 #define SF32LB_LXT32_NODE         DT_NODELABEL(lxt32)
 #define SF32LB_LXT32_ENABLED      DT_NODE_HAS_STATUS(SF32LB_LXT32_NODE, okay)
 #define SF32LB_LXT32_FREQUENCY_HZ DT_PROP(SF32LB_LXT32_NODE, clock_frequency)
