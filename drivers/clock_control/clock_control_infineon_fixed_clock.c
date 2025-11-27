@@ -128,11 +128,15 @@ static void clk_dpll_hp_init(cy_stc_dpll_hp_config_t dpll_hp_config)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
 static void clk_wco_init(void)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_SysClk_WcoEnable(500000UL);
+#else
 	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 1U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
 	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 0U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
 	if (CY_SYSCLK_SUCCESS != Cy_SysClk_WcoEnable(1000000UL)) {
 		clock_startup_error(CY_CFG_SYSCLK_WCO_ERROR);
 	}
+#endif
 }
 #endif
 
@@ -163,15 +167,27 @@ static int fixed_rate_clk_init(const struct device *dev)
 		break;
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
-	case IFX_PILO:
-		Cy_SysClk_PiloEnable();
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ilo))
+	case IFX_ILO:
+		Cy_SysClk_IloEnable();
 		break;
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
 	case IFX_WCO:
 		clk_wco_init();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ext))
+	case IFX_EXT:
+		Cy_SysClk_ExtClkSetFrequency(config->rate);
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
+	case IFX_PILO:
+		Cy_SysClk_PiloEnable();
 		break;
 #endif
 

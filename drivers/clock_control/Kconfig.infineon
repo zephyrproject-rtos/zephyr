@@ -43,4 +43,5 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	  Infineon fixed factor clock control driver initialization priority.
 	  This should be lower than the priority of fixed factor clock driver
 	  to ensure the clock paths are initialized before.
+
 endif # CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK

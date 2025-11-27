@@ -63,7 +63,7 @@ static int fixed_factor_clk_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_PSE84) || defined(CONFIG_SOC_SERIES_PSC3)
 	uint32_t rslt;
 #endif
-	uint32_t source_instance = 0;
+	int err;
 
 	switch (config->block) {
 
@@ -75,12 +75,45 @@ static int fixed_factor_clk_init(const struct device *dev)
 
 	case IFX_HF:
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-		Cy_SysClk_ClkHfSetSource(source_instance);
-		Cy_SysClk_ClkHfSetDivider(config->divider);
+		err = Cy_SysClk_ClkHfSetSource(config->source_path);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		/* Note : you can use only 4 divider types
+		 *
+		 * - IFX_CLK_HF_NO_DIVIDE
+		 * - IFX_CLK_HF_DIVIDE_BY_2
+		 * - IFX_CLK_HF_DIVIDE_BY_4
+		 * - IFX_CLK_HF_DIVIDE_BY_8
+		 */
+		Cy_SysClk_ClkHfSetDivider(IFX_PSOC4_HFCLK_DIV(config->divider));
 #else
-		Cy_SysClk_ClkHfSetSource(config->instance, source_instance);
-		Cy_SysClk_ClkHfSetDivider(config->instance, config->divider);
-		Cy_SysClk_ClkHfEnable(config->instance);
+		uint32_t source_instance = 0;
+
+		err = Cy_SysClk_ClkHfSetSource(config->instance, source_instance);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = Cy_SysClk_ClkHfSetDivider(config->instance, config->divider);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = Cy_SysClk_ClkHfEnable(config->instance);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+#endif
+		break;
+
+	case IFX_PUMP:
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		err = Cy_SysClk_ClkPumpSetSource(config->source_path);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
 #endif
 		break;
 
