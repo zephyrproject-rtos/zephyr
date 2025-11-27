@@ -178,6 +178,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT_DIR}/components/sli_wifi_command_engine/inc
   )
   zephyr_library_sources(
+    nwp_fw_version.c
     ${WISECONNECT_DIR}/components/common/src/sl_utility.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
