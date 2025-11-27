@@ -70,7 +70,7 @@ static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to read */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
@@ -87,7 +87,7 @@ static inline int phy_mii_reg_write(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to write */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
@@ -393,7 +393,7 @@ static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_sp
 	int ret = 0;
 
 	/* if there is no mdio (fixed-link) it is not supported to configure link */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
