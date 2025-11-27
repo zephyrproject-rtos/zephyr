@@ -61,6 +61,7 @@
 		sw1 = &key2;
 		rtc = &rtc;
 		watchdog0 = &wdt;
+		adc0 = &gpadc;
 	};
 };
 
@@ -186,5 +187,11 @@ temp_sensor: &tsen {
 &spi1 {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+};
+
+&gpadc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 };
