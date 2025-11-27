@@ -147,6 +147,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_A2DP)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_A2DP);
 #endif /* CONFIG_BT_A2DP */
+#if defined(CONFIG_BT_AVDTP)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_AVDTP);
+#endif /* CONFIG_BT_AVDTP */
 
 	*rsp_len = sizeof(*rp) + 4U;
 
@@ -308,6 +311,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_a2dp();
 		break;
 #endif /*CONFIG_BT_A2DP */
+#if defined(CONFIG_BT_AVDTP)
+	case BTP_SERVICE_ID_AVDTP:
+		status = tester_init_avdtp();
+		break;
+#endif /*CONFIG_BT_AVDTP */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -473,6 +481,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_a2dp();
 		break;
 #endif /* CONFIG_BT_A2DP */
+#if defined(CONFIG_BT_AVDTP)
+	case BTP_SERVICE_ID_AVDTP:
+		status = tester_unregister_avdtp();
+		break;
+#endif /* CONFIG_BT_AVDTP */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
