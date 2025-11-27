@@ -50,6 +50,10 @@ config SOC_FAMILY_NORDIC_NRF
 
 if SOC_FAMILY_NORDIC_NRF
 
+config SOC_NORDIC_BSP_NAME
+	string
+	default "stable"
+
 rsource "common/Kconfig.peripherals"
 rsource "*/Kconfig"
 
