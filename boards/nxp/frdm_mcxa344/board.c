@@ -129,6 +129,16 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPI2C1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI0, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI1, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART0, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART0);
