@@ -397,6 +397,13 @@
 				status = "disabled";
 			};
 		};
+
+		vbat: vbat {
+			compatible = "sifli,sf32lb-vbat";
+			sifli,cfg = <&cfg>;
+			io-channels = <&gpadc 7>;
+			status = "disabled";
+		};
 	};
 };
 
