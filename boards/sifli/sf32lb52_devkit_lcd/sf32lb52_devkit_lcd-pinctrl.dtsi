@@ -39,4 +39,11 @@
 			bias-pull-down;
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA44_GPIO>;
+			input-enable;
+		};
+	};
 };
