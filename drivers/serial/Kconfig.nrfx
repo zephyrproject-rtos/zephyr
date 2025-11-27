@@ -36,9 +36,6 @@ config UART_NRFX_UARTE_NO_IRQ
 
 config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
-	depends on UART_ASYNC_API
-	depends on !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
-	default y
 	select DEPRECATED
 	help
 	  Option is deprecated as it is used as default unless TIMER peripheral is used
@@ -62,8 +59,16 @@ config UART_ASYNC_TX_CACHE_SIZE
 config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	bool "Use TIMER to count RX bytes"
 	depends on UART_ASYNC_API
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),frame-timeout-supported)
 	depends on !ARCH_POSIX # Mode not supported on BSIM target
 	select NRFX_GPPI
+
+config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER_LEGACY
+	bool "Use TIMER to count RX bytes on legacy platforms"
+	depends on UART_ASYNC_API
+	select NRFX_GPPI
+	help
+	  Method used on nRF52x, nRF53x and nRF91x series.
 
 config UART_NRFX_UARTE_BOUNCE_BUF_LEN
 	int "RX bounce buffer size"
