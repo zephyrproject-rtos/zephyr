@@ -457,46 +457,65 @@ static void adc_stm32_start_conversion(const struct device *dev)
 #endif
 }
 
-/*
- * Disable ADC peripheral, and wait until it is disabled
+/* If force is true, this function will disable ADC peripheral (forcefully stopping on-going
+ * conversions, if any), and wait until it is disabled before returning 0.
+ * If force is false and there is no on-going conversion, the ADC will be disabled, and the
+ * function will wait until it is disabled before returning 0.
+ * If force is false but there is an on-going conversion, then the ADC won't be disabled, and the
+ * function returns -EBUSY.
  */
-static void adc_stm32_disable(ADC_TypeDef *adc)
+static int adc_stm32_disable(ADC_TypeDef *adc, bool force)
 {
+	int err = 0;
+
 	if (LL_ADC_IsEnabled(adc) != 1UL) {
-		return;
+		return 0;
 	}
 
-	/* Stop ongoing conversion if any
-	 * Software must poll ADSTART (or JADSTART) until the bit is reset before assuming
-	 * the ADC is completely stopped.
-	 */
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	if (LL_ADC_REG_IsConversionOngoing(adc)) {
-		LL_ADC_REG_StopConversion(adc);
-		while (LL_ADC_REG_IsConversionOngoing(adc)) {
+		if (force) {
+			LL_ADC_REG_StopConversion(adc);
+			while (LL_ADC_REG_IsConversionOngoing(adc)) {
+			}
+		} else {
+			err = -EBUSY;
 		}
+	}
+#else
+	if ((stm32_reg_read(&adc->SR) & LL_ADC_FLAG_STRT) == LL_ADC_FLAG_STRT && !force) {
+		err = -EBUSY;
 	}
 #endif
 
 #ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	if (LL_ADC_INJ_IsConversionOngoing(adc)) {
-		LL_ADC_INJ_StopConversion(adc);
-		while (LL_ADC_INJ_IsConversionOngoing(adc)) {
+		if (force) {
+			LL_ADC_INJ_StopConversion(adc);
+			while (LL_ADC_INJ_IsConversionOngoing(adc)) {
+			}
+		} else {
+			err = -EBUSY;
 		}
+	}
+#else
+	if ((stm32_reg_read(&adc->SR) & LL_ADC_FLAG_JSTRT) == LL_ADC_FLAG_JSTRT && !force) {
+		err = -EBUSY;
 	}
 #endif
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
-	LL_ADC_Disable(adc);
-
-	/* Wait ADC is fully disabled so that we don't leave the driver into intermediate state
-	 * which could prevent enabling the peripheral
-	 */
-	while (LL_ADC_IsEnabled(adc) == 1UL) {
+	if (err == 0) {
+		LL_ADC_Disable(adc);
+		/* Wait ADC is fully disabled so that we don't leave the driver into intermediate
+		 * state which could prevent enabling the peripheral
+		 */
+		while (LL_ADC_IsEnabled(adc) == 1UL) {
+		}
 	}
+
+	return err;
 }
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
@@ -623,7 +642,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 			stm32_reg_modify_bits(&adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
 			__DMB();
 			stm32_reg_set_bits(&adc->CALFACT, ADC_CALFACT_LATCH_COEF);
-			adc_stm32_disable(adc);
+			adc_stm32_disable(adc, true);
 		}
 	}
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
@@ -650,7 +669,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 	}
 }
 
-static int adc_stm32_calibrate(const struct device *dev)
+static int adc_stm32_calibrate(const struct device *dev, bool force)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
@@ -678,7 +697,10 @@ static int adc_stm32_calibrate(const struct device *dev)
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
 	!defined(CONFIG_SOC_SERIES_STM32N6X)
-	adc_stm32_disable(adc);
+	err = adc_stm32_disable(adc, force);
+	if (err < 0) {
+		return err;
+	}
 	adc_stm32_calibration_start(dev, true);
 	if (config->differential_channels_used) {
 		adc_stm32_calibration_start(dev, false);
@@ -768,23 +790,23 @@ static const uint32_t table_oversampling_ratio[] = {
  * Function to configure the oversampling scope. It is basically a wrapper over
  * LL_ADC_SetOverSamplingScope() which in addition stops the ADC if needed.
  */
-static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
+static int adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
 {
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	/*
-	 * Setting OVS bits is conditioned to ADC state: ADC must be disabled
-	 * or enabled without conversion on going : disable it, it will stop.
-	 * For the G0 series, ADC must be disabled to prevent CKMODE bitfield
-	 * from getting reset, see errata ES0418 section 2.6.4.
+	int err;
+
+	/* Setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop
 	 */
 	if (LL_ADC_GetOverSamplingScope(adc) == ovs_scope) {
-		return;
+		return 0;
 	}
-	adc_stm32_disable(adc);
-#endif
-	LL_ADC_SetOverSamplingScope(adc, ovs_scope);
+
+	err = adc_stm32_disable(adc, false);
+	if (err == 0) {
+		LL_ADC_SetOverSamplingScope(adc, ovs_scope);
+	}
+
+	return err;
 }
 
 /*
@@ -792,19 +814,25 @@ static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
  * wrapper over LL_ADC_SetOverSamplingRatioShift() which in addition stops the
  * ADC if needed.
  */
-static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, uint32_t shift)
+static int adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, uint32_t shift)
 {
+	int err;
+
 	/*
 	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
 	 * or enabled without conversion on going : disable it, it will stop
 	 */
 	if ((LL_ADC_GetOverSamplingRatio(adc) == ratio)
 	    && (LL_ADC_GetOverSamplingShift(adc) == shift)) {
-		return;
+		return 0;
 	}
-	adc_stm32_disable(adc);
 
-	LL_ADC_ConfigOverSamplingRatioShift(adc, ratio, shift);
+	err = adc_stm32_disable(adc, false);
+	if (err == 0) {
+		LL_ADC_ConfigOverSamplingRatioShift(adc, ratio, shift);
+	}
+
+	return err;
 }
 
 /*
@@ -908,6 +936,7 @@ static int set_resolution(const struct device *dev,
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	__maybe_unused ADC_TypeDef *adc = config->base;
+	int err = 0;
 	int i;
 
 	for (i = 0; i < config->table_resolution_size; i++) {
@@ -923,15 +952,48 @@ static int set_resolution(const struct device *dev,
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	if (LL_ADC_GetResolution(adc) != config->table_ll_resolution[i]) {
-		adc_stm32_disable(adc);
-		LL_ADC_SetResolution(adc, config->table_ll_resolution[i]);
+		err = adc_stm32_disable(adc, false);
+		if (err == 0) {
+			LL_ADC_SetResolution(adc, config->table_ll_resolution[i]);
+		}
 	}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
-	return 0;
+	return err;
 }
 
-static void set_sequencer(const struct device *dev)
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
+static int adc_stm32_preselection_setup(const struct device *dev, uint32_t channel_id)
+{
+	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = config->base;
+	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	int err;
+
+	if (!config->has_channel_preselection ||
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	    (LL_ADC_GetChannelPreselection(adc, channel) & channel) == channel) {
+#else
+	    (LL_ADC_GetChannelPreselection(adc) & channel) == channel) {
+#endif
+		/* Nothing to configure */
+		return 0;
+	}
+
+	err = adc_stm32_disable(adc, false);
+
+	if (err == 0) {
+		/* Each channel in the sequence must be previously enabled in PCSEL.
+		 * This register controls the analog switch integrated in the IO level.
+		 */
+		LL_ADC_SetChannelPreselection(adc, channel);
+	}
+
+	return err;
+}
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
+
+static int set_sequencer(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
@@ -955,20 +1017,18 @@ static void set_sequencer(const struct device *dev)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
 		if (config->sequencer_type == SEQUENCER_PROGRAMMABLE) {
-#if ANY_ADC_HAS_CHANNEL_PRESELECTION && !defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
-			if (config->has_channel_preselection) {
-				/*
-				 * Each channel in the sequence must be previously enabled in PCSEL.
-				 * This register controls the analog switch integrated in the IO
-				 * level.
-				 */
-				LL_ADC_SetChannelPreselection(adc, channel);
-			}
-#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && ! CONFIG_ADC_STM32_INJECTED_CHANNELS*/
 			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
 			LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
 		}
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
+
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION && !defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
+		int err = adc_stm32_preselection_setup(dev, channel_id);
+
+		if (err < 0) {
+			return err;
+		}
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 	}
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_FIXED)
@@ -991,6 +1051,8 @@ static void set_sequencer(const struct device *dev)
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_SetSequencersScanMode(adc, LL_ADC_SEQ_SCAN_ENABLE);
 #endif /* st_stm32f1_adc || st_stm32f4_adc */
+
+	return 0;
 }
 
 #ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
@@ -1048,17 +1110,20 @@ static int start_inj_read(const struct device *dev, const struct adc_sequence *s
 
 	err = check_buffer(sequence, data->inj_channel_count);
 	if (err < 0) {
+		LOG_ERR("ADC buffer error");
 		return err;
 	}
 
 	err = set_resolution(dev, sequence);
 	if (err < 0) {
+		LOG_ERR("Error setting the ADC resolution");
 		return err;
 	}
 
 	/* Configure the sequencer */
 	err = set_inj_sequencer(dev);
 	if (err < 0) {
+		LOG_ERR("Error setting the ADC injected sequencer");
 		return err;
 	}
 
@@ -1108,20 +1173,27 @@ static int start_read(const struct device *dev,
 	/* Check and set the resolution */
 	err = set_resolution(dev, sequence);
 	if (err < 0) {
+		LOG_ERR("Error setting the ADC resolution");
 		return err;
 	}
 
 	/* Configure the sequencer */
-	set_sequencer(dev);
+	err = set_sequencer(dev);
+	if (err < 0) {
+		LOG_ERR("Error setting the ADC sequencer");
+		return err;
+	}
 
 	err = check_buffer(sequence, data->channel_count);
 	if (err) {
+		LOG_ERR("ADC buffer error");
 		return err;
 	}
 
 #ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(dev, sequence->oversampling);
 	if (err) {
+		LOG_ERR("Error setting the ADC oversampler");
 		return err;
 	}
 #else
@@ -1133,7 +1205,11 @@ static int start_read(const struct device *dev,
 
 	if (sequence->calibrate) {
 #if defined(HAS_CALIBRATION)
-		adc_stm32_calibrate(dev);
+		err = adc_stm32_calibrate(dev, false);
+		if (err < 0) {
+			LOG_ERR("Calibration error");
+			return err;
+		}
 #else
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
@@ -1466,22 +1542,29 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 }
 
 #if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
-static void set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
+static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
 {
 	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : LL_ADC_SINGLE_ENDED;
 	const uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	int err;
 
 	/* The ADC must be disabled to change the single ended / differential mode setting. The
 	 * disable / re-enable cycle can take some time, so avoid doing this if the channel is
 	 * already set to the correct mode.
 	 */
 	if (LL_ADC_GetChannelSingleDiff(adc, channel) == mode) {
-		return;
+		return 0;
 	}
 
-	adc_stm32_disable(adc);
+	err = adc_stm32_disable(adc, false);
+	if (err < 0) {
+		return err;
+	}
+
 	LL_ADC_SetChannelSingleDiff(adc, channel, mode);
 	adc_stm32_enable(adc);
+
+	return 0;
 }
 #endif
 
@@ -1490,6 +1573,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 {
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	__maybe_unused ADC_TypeDef *adc = config->base;
+	__maybe_unused int err;
 
 	if (!config->has_differential_support) {
 		if (channel_cfg->differential) {
@@ -1506,7 +1590,12 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	set_channel_differential_mode(adc, channel_cfg->channel_id, channel_cfg->differential);
+	err = set_channel_differential_mode(adc, channel_cfg->channel_id,
+					    channel_cfg->differential);
+	if (err != 0) {
+		LOG_ERR("Error setting differential channel");
+		return err;
+	}
 #endif
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
@@ -1525,18 +1614,13 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if ANY_ADC_HAS_CHANNEL_PRESELECTION
-	if (config->has_channel_preselection) {
-		/*
-		 * Each channel in the sequence must be previously enabled in PCSEL.
-		 * This register controls the analog switch integrated in the IO
-		 * level.
-		 */
-		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_cfg->channel_id);
-
-		LL_ADC_SetChannelPreselection(adc, channel);
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION && defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
+	err = adc_stm32_preselection_setup(dev, channel_cfg->channel_id);
+	if (err < 0) {
+		LOG_ERR("Error setting preselection register");
+		return err;
 	}
-#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
 	if (adc == ADC1) {
@@ -1829,7 +1913,7 @@ static int adc_stm32_init(const struct device *dev)
 	}
 
 #if defined(HAS_CALIBRATION)
-	adc_stm32_calibrate(dev);
+	adc_stm32_calibrate(dev, true);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
 
@@ -1838,7 +1922,7 @@ static int adc_stm32_init(const struct device *dev)
 	 * To that end, make sure to disable ADC at the end of the initialization, it will be
 	 * enabled later when necessary anyway.
 	 */
-	adc_stm32_disable(adc);
+	adc_stm32_disable(adc, true);
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -1859,7 +1943,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	int err;
 
 	/* Disable ADC */
-	adc_stm32_disable(adc);
+	adc_stm32_disable(adc, true);
 
 #if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) || \
 	ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
