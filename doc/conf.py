@@ -77,6 +77,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
     "sphinxcontrib.programoutput",
+    "sphinx_design",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",

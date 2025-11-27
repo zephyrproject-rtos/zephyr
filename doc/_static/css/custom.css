@@ -1119,3 +1119,34 @@ li>a.code-sample-link.reference.internal {
 li>a.code-sample-link.reference.internal.current {
     text-decoration: underline;
 }
+
+/* sphinx-design classes */
+
+.sd-card {
+    background-color: var(--navbar-background-color) !important;
+    border-radius: 0.75rem !important;
+    border: 1px solid transparent !important;
+    transition: all 0.15s ease;
+    box-shadow: none !important;
+}
+
+.sd-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.sd-card-title {
+    font-size: 1.125rem !important;
+    font-weight: bold !important;
+    margin-bottom: 0.25rem !important;
+    color: #fff !important;
+}
+
+.sd-card-text {
+    color: var(--navbar-level-1-color) !important;
+    font-weight: 300 !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    opacity: 0.85;
+}
