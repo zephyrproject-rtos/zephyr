@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro
- *
+ * Copyright 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,11 +15,27 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_PWM_CAPTURE
+#include <zephyr/irq.h>
+#endif
+
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_mcux, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT 2
+#define PWM_MCUX_CAPTURE_CHANNEL kPWM_PwmX
+
+#ifdef CONFIG_PWM_CAPTURE
+struct pwm_mcux_capture_data {
+	pwm_capture_callback_handler_t callback;
+	void *user_data;
+	uint32_t overflow_count;
+	uint32_t capture_channel;
+	bool continuous : 1;
+	bool pulse_capture : 1;
+};
+#endif /* CONFIG_PWM_CAPTURE */
 
 struct pwm_mcux_config {
 	PWM_Type *base;
@@ -32,12 +48,21 @@ struct pwm_mcux_config {
 	bool run_wait;
 	bool run_debug;
 	const struct pinctrl_dev_config *pincfg;
+#ifdef CONFIG_PWM_CAPTURE
+	uint8_t input_filter_count;
+	uint8_t input_filter_period;
+	void (*irq_config_func)(const struct device *dev);
+#endif
 };
 
 struct pwm_mcux_data {
 	uint32_t period_cycles[CHANNEL_COUNT];
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 	struct k_mutex lock;
+#ifdef CONFIG_PWM_CAPTURE
+	struct pwm_mcux_capture_data capture;
+	bool capture_active;
+#endif
 };
 
 static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t channel,
@@ -47,6 +72,13 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	pwm_level_select_t level;
+
+#ifdef CONFIG_PWM_CAPTURE
+	if (data->capture_active) {
+		LOG_ERR("PWM capture is active, cannot set PWM output");
+		return -EBUSY;
+	}
+#endif
 
 	if (flags & PWM_POLARITY_INVERTED) {
 		level = kPWM_LowTrue;
@@ -204,6 +236,215 @@ static int mcux_pwm_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_PWM_CAPTURE
+static int mcux_pwm_calc_ticks(uint16_t first_capture, uint16_t second_capture, uint32_t mod,
+			       uint32_t overflows, uint32_t *result)
+{
+	uint32_t ticks;
+
+	if (second_capture >= first_capture) {
+		/* No timer overflow between captures */
+		ticks = second_capture - first_capture;
+	} else {
+		/* Timer overflowed between captures */
+		ticks = (mod - first_capture) + second_capture + 1U;
+		if (overflows > 0) {
+			/* Account for the overflow we just calculated */
+			overflows--;
+		}
+	}
+
+	/* Add additional overflows */
+	if (u32_mul_overflow(overflows, mod, &overflows)) {
+		LOG_ERR("overflow while calculating overflow cycles.");
+		return -ERANGE;
+	}
+
+	if (u32_add_overflow(ticks, overflows, &ticks)) {
+		LOG_ERR("overflow while calculating capture cycles.");
+		return -ERANGE;
+	}
+
+	*result = ticks;
+
+	return 0;
+}
+
+static void mcux_pwm_isr(const struct device *dev)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	struct pwm_mcux_capture_data *capture = &data->capture;
+	uint32_t status;
+	uint16_t first_edge_value;
+	uint16_t second_edge_value;
+	uint32_t ticks = 0;
+	int err = 0;
+
+	uint16_t modValue = config->base->SM[config->index].VAL1 -
+		config->base->SM[config->index].INIT;
+
+	status = PWM_GetStatusFlags(config->base, config->index);
+	PWM_ClearStatusFlags(config->base, config->index, status);
+
+	if (status & kPWM_ReloadFlag) {
+		err = u32_add_overflow(capture->overflow_count, 1, &capture->overflow_count);
+	}
+
+	if (status & kPWM_CaptureX0Flag) {
+		capture->overflow_count = 0;
+	}
+
+	if (status & kPWM_CaptureX1Flag) {
+		if (err != 0) {
+			LOG_ERR("overflow_count overflows.");
+		} else {
+			first_edge_value = config->base->SM[config->index].CVAL0;
+			second_edge_value = config->base->SM[config->index].CVAL1;
+			err = mcux_pwm_calc_ticks(first_edge_value, second_edge_value, modValue,
+					capture->overflow_count, &ticks);
+			LOG_DBG("First edge capture: %d, second edge capture: %d,"
+				"overflow: %d, ticks: %d", first_edge_value, second_edge_value,
+				capture->overflow_count, ticks);
+		}
+
+		if (capture->pulse_capture) {
+			capture->callback(dev, capture->capture_channel, 0, ticks, err,
+					capture->user_data);
+		} else {
+			capture->callback(dev, capture->capture_channel, ticks, 0, err,
+					capture->user_data);
+		}
+
+		capture->overflow_count = 0;
+	}
+}
+
+static int mcux_pwm_configure_capture(const struct device *dev,
+				      uint32_t channel, pwm_flags_t flags,
+				      pwm_capture_callback_handler_t cb,
+				      void *user_data)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	bool inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	pwm_input_capture_param_t capture_config;
+
+	memset(&capture_config, 0, sizeof(capture_config));
+
+	if (channel != PWM_MCUX_CAPTURE_CHANNEL) {
+		LOG_ERR("Only Channel 2(FlexPWM channel X) can be configured as an input.");
+		return -ENOTSUP;
+	}
+
+	if (data->capture_active) {
+		LOG_ERR("PWM capture already in progress");
+		return -EBUSY;
+	}
+
+	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
+		LOG_ERR("No capture type specified");
+		return -EINVAL;
+	}
+
+	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
+		LOG_ERR("Cannot capture both period and pulse width");
+		return -ENOTSUP;
+	}
+
+	/* Initialize capture data */
+	data->capture.callback = cb;
+	data->capture.user_data = user_data;
+	data->capture.capture_channel = channel;
+	data->capture.continuous =
+		(flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS;
+	data->capture.pulse_capture =
+		(flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_PULSE;
+	data->capture.overflow_count = 0;
+
+	/* Configure input capture parameters */
+	capture_config.captureInputSel = false;        /* Use raw input signal (not edge counter) */
+	if (data->capture.pulse_capture) {
+		capture_config.edge0 = inverted ? kPWM_FallingEdge : kPWM_RisingEdge;
+		capture_config.edge1 = inverted ? kPWM_RisingEdge : kPWM_FallingEdge;
+	} else {
+		capture_config.edge0 = inverted ? kPWM_FallingEdge : kPWM_RisingEdge;
+		capture_config.edge1 = inverted ? kPWM_FallingEdge : kPWM_RisingEdge;
+	}
+	capture_config.enableOneShotCapture = !data->capture.continuous;
+	capture_config.fifoWatermark = 0;
+
+	/* Setup input capture on channel */
+	PWM_SetupInputCapture(config->base, config->index, channel, &capture_config);
+
+	/* Set capture filter */
+	config->base->SM[config->index].CAPTFILTX =
+		PWM_CAPTFILTX_CAPTX_FILT_PER(config->input_filter_period) |
+		PWM_CAPTFILTX_CAPTX_FILT_CNT(config->input_filter_count);
+
+	return 0;
+}
+
+static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	uint32_t status;
+
+	if (channel != PWM_MCUX_CAPTURE_CHANNEL) {
+		LOG_ERR("Only Channel 2(FlexPWM channel X) can be configured as an input.");
+		return -ENOTSUP;
+	}
+
+	if (!data->capture.callback) {
+		LOG_ERR("PWM capture not configured");
+		return -EINVAL;
+	}
+
+	if (data->capture_active) {
+		LOG_ERR("PWM capture already enabled");
+		return -EBUSY;
+	}
+
+	data->capture_active = true;
+	/* Make sure the flags are cleared in case it enters IRQ immediately after enable
+	 * interrupts, results in error result at first.
+	 */
+	status = PWM_GetStatusFlags(config->base, config->index);
+	PWM_ClearStatusFlags(config->base, config->index, status);
+
+	PWM_EnableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
+		kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
+
+	/* Start the PWM counter if it's stopped.*/
+	if ((config->base->MCTRL & PWM_MCTRL_RUN_MASK) == 0) {
+		PWM_StartTimer(config->base, (1U << config->index));
+	}
+
+	return 0;
+}
+
+static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+
+	if (channel != PWM_MCUX_CAPTURE_CHANNEL) {
+		LOG_ERR("Only Channel 2(FlexPWM channel X) can be configured as an input.");
+		return -ENOTSUP;
+	}
+
+	/* Disable capture interrupts */
+	PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
+		kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
+
+	data->capture_active = false;
+	data->capture.callback = NULL;
+
+	return 0;
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
 static int pwm_mcux_init(const struct device *dev)
 {
 	const struct pwm_mcux_config *config = dev->config;
@@ -233,6 +474,10 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config.clockSource = kPWM_BusClock;
 	pwm_config.enableDebugMode = config->run_debug;
 #if !defined(FSL_FEATURE_PWM_HAS_NO_WAITEN) || (!FSL_FEATURE_PWM_HAS_NO_WAITEN)
+	/* Note: When the CPU enters a low-power mode, if enableWait is not set to true,
+	 * the FlexPWM module will stop operating, which may interfere with input capture
+	 * functionality
+	 */
 	pwm_config.enableWait = config->run_wait;
 #endif
 
@@ -252,17 +497,47 @@ static int pwm_mcux_init(const struct device *dev)
 	data->channel[1].pwmChannel = kPWM_PwmB;
 	data->channel[1].level = kPWM_HighTrue;
 
+#ifdef CONFIG_PWM_CAPTURE
+	if (config->irq_config_func) {
+		config->irq_config_func(dev);
+	}
+#endif
+
 	return 0;
 }
 
 static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 	.set_cycles = mcux_pwm_set_cycles,
 	.get_cycles_per_sec = mcux_pwm_get_cycles_per_sec,
+#ifdef CONFIG_PWM_CAPTURE
+	.configure_capture = mcux_pwm_configure_capture,
+	.enable_capture = mcux_pwm_enable_capture,
+	.disable_capture = mcux_pwm_disable_capture,
+#endif
 };
+
+#ifdef CONFIG_PWM_CAPTURE
+
+#define PWM_MCUX_IRQ_CONFIG_FUNC(n) \
+	static void pwm_mcux_config_func_##n(const struct device *dev) \
+	{	\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), \
+				mcux_pwm_isr, DEVICE_DT_INST_GET(n), 0); \
+		irq_enable(DT_INST_IRQN(n));	\
+	}
+#define PWM_MCUX_CAPTURE_CONFIG_INIT(n) \
+	.irq_config_func = pwm_mcux_config_func_##n,	\
+	.input_filter_count = DT_INST_PROP_OR(n, input_filter_count, 0),	\
+	.input_filter_period = DT_INST_PROP_OR(n, input_filter_period, 0),
+#else
+#define PWM_MCUX_IRQ_CONFIG_FUNC(n)
+#define PWM_MCUX_CAPTURE_CONFIG_INIT(n)
+#endif /* CONFIG_PWM_CAPTURE */
 
 #define PWM_DEVICE_INIT_MCUX(n)			  \
 	static struct pwm_mcux_data pwm_mcux_data_ ## n;		  \
 	PINCTRL_DT_INST_DEFINE(n);					  \
+	PWM_MCUX_IRQ_CONFIG_FUNC(n)					  \
 									  \
 	static const struct pwm_mcux_config pwm_mcux_config_ ## n = {     \
 		.base = (PWM_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),	  \
@@ -276,6 +551,7 @@ static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 		.run_wait = DT_INST_PROP(n, run_in_wait),		  \
 		.run_debug = DT_INST_PROP(n, run_in_debug),		  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
+		PWM_MCUX_CAPTURE_CONFIG_INIT(n)	\
 	};								  \
 									  \
 	DEVICE_DT_INST_DEFINE(n,					  \
