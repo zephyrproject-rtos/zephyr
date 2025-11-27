@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "drivers/sensor/sifli/sf32lb_tsen/Kconfig"
+source "drivers/sensor/sifli/sf32lb_vbat/Kconfig"
