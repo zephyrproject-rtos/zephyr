@@ -83,6 +83,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* ADC
+
+  * :c:member:`adc_sequence.injected_mode`
+  * :kconfig:option:`CONFIG_ADC_INJECTED_CHANNELS`
+
 * Audio
 
   * :c:macro:`PDM_DT_IO_CFG_GET`
