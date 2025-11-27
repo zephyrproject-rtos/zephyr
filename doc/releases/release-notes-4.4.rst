@@ -119,6 +119,17 @@ New APIs and options
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
 
+* PWM
+
+  * Extended API with PWM events
+
+    * :c:struct:`pwm_event_callback` to hold a pwm event callback
+    * :c:func:`pwm_init_event_callback` to help initialize a :c:struct:`pwm_event_callback` object
+    * :c:func:`pwm_add_event_callback` to add a callback
+    * :c:func:`pwm_remove_event_callback` to remove a callback
+    * :c:member:`manage_event_callback` in :c:struct:`pwm_driver_api` to manage pwm events
+    * :kconfig:option:`CONFIG_PWM_EVENT`
+
 * Power
 
   * The new ``voltage-scale`` property of :dtcompatible:`st,stm32u5-pwr` can be used to
