@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_dsa_sample, CONFIG_NET_DSA_LOG_LEVEL);
 #include "dsa_lldp.h"
 #endif
 
-struct ud user_data;
+struct ud g_user_data = {0};
 
 static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 {
@@ -24,28 +24,25 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) {
-		if (ifaces->conduit == NULL) {
-			ifaces->conduit = iface;
+	if ((net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) &&
+	    (ifaces->conduit == NULL)) {
+		ifaces->conduit = iface;
 
-			/* Get user interfaces */
-			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
+		/* Get user interfaces */
+		for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
 #if defined(CONFIG_NET_DSA_DEPRECATED)
-				struct net_if *user = dsa_get_slave_port(iface, i);
+			struct net_if *user = dsa_get_slave_port(iface, i);
 #else
-				struct net_if *user = dsa_user_get_iface(iface, i);
+			struct net_if *user = dsa_user_get_iface(iface, i);
 #endif
-
-				if (user == NULL) {
-					continue;
-				}
-				LOG_INF("[%d] User interface %d found.", i,
-					net_if_get_by_iface(user));
-
-				ifaces->lan[i] = user;
+			if (user == NULL) {
+				continue;
 			}
-			return;
+			LOG_INF("[%d] User interface %d found.", i, net_if_get_by_iface(user));
+
+			ifaces->lan[i] = user;
 		}
+		return;
 	}
 }
 
@@ -74,8 +71,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 int main(void)
 {
 	/* Initialize interfaces - read them to user_data */
-	(void)memset(&user_data, 0, sizeof(user_data));
-	net_if_foreach(dsa_iface_find_cb, &user_data);
+	net_if_foreach(dsa_iface_find_cb, &g_user_data);
 
 #if defined(CONFIG_NET_MGMT_EVENT)
 	net_mgmt_init_event_callback(&mgmt_cb,
@@ -84,7 +80,7 @@ int main(void)
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #if defined(CONFIG_NET_SAMPLE_DSA_LLDP)
-	dsa_lldp(&user_data);
+	dsa_lldp(&g_user_data);
 #endif
 	LOG_INF("DSA ports init - OK");
 	return 0;
