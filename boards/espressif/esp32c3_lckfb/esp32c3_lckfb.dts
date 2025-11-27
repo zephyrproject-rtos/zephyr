@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_wroom_n4.dtsi>
+#include <espressif/esp32c3/esp32c3_common.dtsi>
 #include "esp32c3_lckfb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_default_8M.dtsi>
@@ -28,10 +28,6 @@
 		sw0 = &user_button1;
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
-		gxhtc3-0 = &gxhtc3;
-		shtc3-0 = &gxhtc3;
-		qmc5883l-0 = &qmc5883l;
-		qmi8658c-0 = &qmi8658c;
 	};
 
 	gpio_keys {
@@ -61,29 +57,6 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-
-	/* GXHTC3 temperature and humidity sensor (testing with SHTC3 driver) */
-	gxhtc3: shtc3@70 {
-		compatible = "sensirion,shtc3", "sensirion,shtcx";
-		reg = <0x70>;
-		measure-mode = "normal";
-		clock-stretching;
-		status = "okay";
-	};
-
-	/* QMC5883L magnetometer sensor */
-	qmc5883l: qmc5883l@0d {
-		compatible = "qstcorp,qmc5883l";
-		reg = <0x0d>;
-		status = "okay";
-	};
-
-	/* QMI8658C 6-axis IMU sensor */
-	qmi8658c: qmi8658c@6a {
-		compatible = "qstcorp,qmi8658c";
-		reg = <0x6a>;
-		status = "okay";
-	};
 };
 
 &i2s {

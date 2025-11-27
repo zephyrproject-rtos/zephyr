@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2025 LCKFB
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: QMI8658C Sensor Sample
+tests:
+  sample.sensor.qmi8658c:
+    build_only: true
+    platform_allow: esp32c3_lckfb
+    tags: sensors
+    integration_platforms:
+      - esp32c3_lckfb
+

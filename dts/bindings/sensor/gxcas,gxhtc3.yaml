@@ -1,9 +1,0 @@
-# Copyright (c) 2024 LCKFB
-# SPDX-License-Identifier: Apache-2.0
-
-description: GXCAS GXHTC3 temperature and humidity sensor
-
-compatible: "gxcas,gxhtc3"
-
-include: [sensor-device.yaml, i2c-device.yaml]
-

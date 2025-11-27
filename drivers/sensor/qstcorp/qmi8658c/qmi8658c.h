@@ -11,6 +11,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 /* QMI8658C I2C address */
 #define QMI8658C_I2C_ADDR		0x6A
@@ -55,13 +56,35 @@
 #define QMI8658C_CTRL7_ACC_EN		BIT(0)
 #define QMI8658C_CTRL7_GYR_EN		BIT(1)
 
-/* CTRL2: Accelerometer configuration */
-/* 0x95 = 4g range, 250Hz ODR */
-#define QMI8658C_CTRL2_ACC_4G_250HZ	0x95
+/* CTRL2: Accelerometer configuration bits */
+#define QMI8658C_CTRL2_ACC_FS_MASK	GENMASK(1, 0)
+#define QMI8658C_CTRL2_ACC_FS_SHIFT	0
+#define QMI8658C_CTRL2_ACC_ODR_MASK	GENMASK(5, 2)
+#define QMI8658C_CTRL2_ACC_ODR_SHIFT	2
 
-/* CTRL3: Gyroscope configuration */
-/* 0xd5 = 512dps range, 250Hz ODR */
-#define QMI8658C_CTRL3_GYR_512DPS_250HZ	0xd5
+/* CTRL3: Gyroscope configuration bits */
+#define QMI8658C_CTRL3_GYR_FS_MASK	GENMASK(1, 0)
+#define QMI8658C_CTRL3_GYR_FS_SHIFT	0
+#define QMI8658C_CTRL3_GYR_ODR_MASK	GENMASK(5, 2)
+#define QMI8658C_CTRL3_GYR_ODR_SHIFT	2
+
+/* Accelerometer full-scale range values (in g) */
+#define QMI8658C_ACC_FS_2G		2
+#define QMI8658C_ACC_FS_4G		4
+#define QMI8658C_ACC_FS_8G		8
+#define QMI8658C_ACC_FS_16G		16
+
+/* Gyroscope full-scale range values (in dps) */
+#define QMI8658C_GYR_FS_125DPS		125
+#define QMI8658C_GYR_FS_250DPS		250
+#define QMI8658C_GYR_FS_512DPS		512
+#define QMI8658C_GYR_FS_1000DPS		1000
+
+/* ODR values (in Hz) */
+#define QMI8658C_ODR_125HZ		125
+#define QMI8658C_ODR_250HZ		250
+#define QMI8658C_ODR_500HZ		500
+#define QMI8658C_ODR_1000HZ		1000
 
 /* STATUS0: Data ready bits */
 #define QMI8658C_STATUS0_ACC_DRDY	BIT(0)

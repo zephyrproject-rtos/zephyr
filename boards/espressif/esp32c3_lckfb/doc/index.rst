@@ -3,9 +3,14 @@
 Overview
 ********
 
-LCKFB ESP32-C3 is a development board based on ESP32-C3-WROOM-02 module,
-which integrates 4 MB SPI flash. This board integrates complete Wi-Fi and
-Bluetooth Low Energy functions.
+LCKFB ESP32-C3 is a feature-rich development board based on ESP32-C3,
+which integrates 8 MB SPI flash. This board integrates complete Wi-Fi and Bluetooth Low Energy
+functions, along with a comprehensive set of sensors, audio capabilities, and display interfaces.
+
+The board is designed for IoT applications requiring motion sensing, environmental monitoring,
+audio processing, and graphical display capabilities.
+
+For more information, check `LCKFB ESP32-C3 Development Board`_.
 
 Hardware
 ********
@@ -45,4 +50,6 @@ References
 **********
 
 .. target-notes::
+
+.. _`LCKFB ESP32-C3 Development Board`: https://wiki.lckfb.com/zh-hans/szpi-esp32c3/
 

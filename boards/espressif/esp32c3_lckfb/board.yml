@@ -1,7 +1,7 @@
 board:
   name: esp32c3_lckfb
   full_name: ESP32-C3 Development Board (LCKFB)
-  vendor: lckfb
+  vendor: espressif
   socs:
   - name: esp32c3
 

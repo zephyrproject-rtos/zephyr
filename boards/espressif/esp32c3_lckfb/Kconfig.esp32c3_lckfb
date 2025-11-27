@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ESP32C3_LCKFB
-	select SOC_ESP32C3_WROOM_02_N8
+	select SOC_ESP32C3
 

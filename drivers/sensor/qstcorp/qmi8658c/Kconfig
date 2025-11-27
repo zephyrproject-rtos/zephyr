@@ -3,7 +3,7 @@
 
 config QMI8658C
 	bool "QMI8658C 6-axis IMU sensor"
-	default y
+	default n
 	depends on DT_HAS_QSTCORP_QMI8658C_ENABLED
 	select I2C
 	help

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 LCKFB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qmi8658c-0 = &qmi8658c_6a;
+	};
+};
+
+&i2c0 {
+	qmi8658c_6a: qmi8658c@6a {
+		compatible = "qstcorp,qmi8658c";
+		reg = <0x6a>;
+		status = "okay";
+	};
+};
+

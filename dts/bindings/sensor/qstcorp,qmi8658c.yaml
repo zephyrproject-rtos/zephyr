@@ -11,3 +11,13 @@ compatible: "qstcorp,qmi8658c"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
+properties:
+  reg:
+    required: true
+    description: I2C device address (0x6A)
+
+  status:
+    type: string
+    default: "okay"
+    description: Device status
+

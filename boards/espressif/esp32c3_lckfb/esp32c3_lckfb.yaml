@@ -18,5 +18,5 @@ supported:
   - entropy
   - crypto
   - retained_mem
-vendor: lckfb
+vendor: espressif
 

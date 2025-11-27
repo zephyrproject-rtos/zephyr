@@ -23,13 +23,12 @@
 
 	spim2_default: spim2_default {
 		group1 {
-			pinmux = <SPIM2_MISO_GPIO2>,
-				 <SPIM2_SCLK_GPIO6>,
-				 <SPIM2_CSEL_GPIO10>;
+			pinmux = <SPIM2_SCLK_GPIO3>,
+				 <SPIM2_CSEL_GPIO4>;
 		};
 
 		group2 {
-			pinmux = <SPIM2_MOSI_GPIO7>;
+			pinmux = <SPIM2_MOSI_GPIO5>;
 			output-low;
 		};
 	};
@@ -46,11 +45,9 @@
 
 	i2s_default: i2s_default {
 		group1 {
-			pinmux = <I2S_MCLK_GPIO19>,
-				 <I2S_O_WS_GPIO6>,
-				 <I2S_O_BCK_GPIO7>,
-				 <I2S_O_SD_GPIO8>,
-				 <I2S_I_SD_GPIO18>;
+			pinmux = <I2S_MCLK_GPIO10>,
+				 <I2S_O_BCK_GPIO8>,
+				 <I2S_I_SD_GPIO7>;
 		};
 	};
 
