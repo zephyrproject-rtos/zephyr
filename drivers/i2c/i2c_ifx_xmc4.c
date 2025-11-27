@@ -470,7 +470,7 @@ static DEVICE_API(i2c, i2c_xmc4_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.scl_src = DT_INST_ENUM_IDX(n, scl_src),                                           \
 		.sda_src = DT_INST_ENUM_IDX(n, sda_src),                                           \
-		.bitrate = DT_INST_PROP_OR(n, clock_frequency, I2C_SPEED_STANDARD),                \
+		.bitrate = DT_INST_PROP_OR(n, clock_frequency, XMC4_I2C_SPEED_STANDARD),           \
 		XMC4_IRQ_HANDLER_STRUCT_INIT(n)                                                    \
 	};                                                                                         \
                                                                                                    \
