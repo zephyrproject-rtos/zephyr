@@ -150,6 +150,24 @@ static int fixed_rate_clk_init(const struct device *dev)
 		break;
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ilo))
+	case IFX_ILO:
+		Cy_SysClk_IloEnable();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
+	case IFX_WCO:
+		Cy_SysClk_WcoEnable(CY_SYSCLK_WCO_TIMEOUT_US);
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ext))
+	case IFX_EXT:
+		Cy_SysClk_ExtClkSetFrequency(config->rate);
+		break;
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
 	case IFX_PILO:
 		Cy_SysClk_PiloEnable();
