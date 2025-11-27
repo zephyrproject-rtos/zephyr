@@ -272,14 +272,6 @@ static int check_autonegotiation_completion(const struct device *dev)
 	uint16_t c1kt_reg = 0;
 	uint16_t s1kt_reg = 0;
 
-	/* On some PHY chips, the BMSR bits are latched, so the first read may
-	 * show incorrect status. A second read ensures correct values.
-	 */
-	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-		return -EIO;
-	}
-
-	/* Second read, clears the latched bits and gives the correct status */
 	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 		return -EIO;
 	}
@@ -290,6 +282,18 @@ static int check_autonegotiation_completion(const struct device *dev)
 			return -ETIMEDOUT;
 		}
 		return -EINPROGRESS;
+	}
+
+	/* Link status bit is latched low, so read it again to get current status */
+	if (unlikely(!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT))) {
+		/* Second read, clears the latched bits and gives the correct status */
+		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+			return -EIO;
+		}
+
+		if (!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT)) {
+			return -EAGAIN;
+		}
 	}
 
 	LOG_DBG("PHY (%d) auto-negotiate sequence completed",
@@ -331,7 +335,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE;
 	}
 
-	data->state.is_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
+	data->state.is_up = true;
 
 	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
 		cfg->phy_addr,
