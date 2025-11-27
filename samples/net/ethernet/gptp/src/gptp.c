@@ -66,6 +66,9 @@ static int get_current_status(void)
 	case GPTP_PORT_SLAVE:
 		printk("SLAVE\n");
 		return 2;
+	default:
+		printk("Unknown Status\n");
+		return -1;
 	}
 
 	return -1;
