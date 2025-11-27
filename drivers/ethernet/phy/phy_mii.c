@@ -64,6 +64,8 @@ struct phy_mii_dev_data {
 static void invoke_link_cb(const struct device *dev);
 
 #if ANY_DYNAMIC_LINK
+static int check_autonegotiation_completion(const struct device *dev);
+
 static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
@@ -258,7 +260,8 @@ static int update_link_state(const struct device *dev)
 	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
 
 	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
-	return -EINPROGRESS;
+
+	return check_autonegotiation_completion(dev);
 }
 
 static int check_autonegotiation_completion(const struct device *dev)
