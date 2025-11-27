@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_hfp_hf);
 
 #define MAX_IND_STR_LEN 17
 
+#define HFP_HF_INDICATOR_INVALID -1
+
 struct bt_hfp_hf_cb *bt_hf;
 
 NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
@@ -1336,7 +1338,17 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 
 	LOG_DBG("Index :%u, Value :%u", index, value);
 
-	if (index >= ARRAY_SIZE(ag_ind)) {
+	if (index >= ARRAY_SIZE(hf->ind_table)) {
+		LOG_ERR("Invalid indicator index: %u", index);
+		return;
+	}
+
+	if (hf->ind_table[index] == HFP_HF_INDICATOR_INVALID) {
+		LOG_ERR("Indicator index %u not found", index);
+		return;
+	}
+
+	if (hf->ind_table[index] >= ARRAY_SIZE(ag_ind)) {
 		LOG_ERR("Max only %zu indicators are supported", ARRAY_SIZE(ag_ind));
 		return;
 	}
@@ -2790,7 +2802,8 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 
 	bia_status = &buffer[0];
 	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
-		if ((hf->ind_table[index] != -1) && (index < NUM_BITS(sizeof(status)))) {
+		if ((hf->ind_table[index] != HFP_HF_INDICATOR_INVALID) &&
+		    (index < NUM_BITS(sizeof(status)))) {
 			if (status & BIT(hf->ind_table[index])) {
 				*bia_status = '1';
 			} else {
@@ -4433,8 +4446,8 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 
 	k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
 
-	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
-		hf->ind_table[index] = -1;
+	ARRAY_FOR_EACH(hf->ind_table, i) {
+		hf->ind_table[i] = HFP_HF_INDICATOR_INVALID;
 	}
 
 	return hf;
