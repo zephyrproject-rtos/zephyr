@@ -71,7 +71,7 @@ void dsa_lldp(struct ud *user_data);
 		struct instance_data data;                                                         \
 		struct net_if *iface;                                                              \
                                                                                                    \
-		iface = user_data.lan[ID - 1];                                                     \
+		iface = g_user_data.lan[ID - 1];                                                   \
                                                                                                    \
 		data.if_name = "lan" #ID;                                                          \
 		ret = start_user_port_packet_socket(iface, &data);                                \

@@ -166,7 +166,7 @@ static int dsa_lldp_send(struct net_if *iface, struct instance_data *pd, uint16_
 static void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 {
 	uint16_t tl, length;
-	uint8_t type, subtype;
+	uint8_t type;
 	uint8_t *p, t1, t2;
 	char t[LLDP_INPUT_DATA_BUF_SIZE];
 
@@ -181,13 +181,10 @@ static void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 		type = tl >> 9;
 		length = tl & 0x1FF;
 
-		switch (type) {
-		case LLDP_TLV_CHASSIS_ID:
-		case LLDP_TLV_PORT_ID:
+		if (type == LLDP_TLV_CHASSIS_ID || type == LLDP_TLV_PORT_ID) {
 			/* Extract subtype */
-			subtype = *lldp_p++;
+			lldp_p++;
 			length--;
-			break;
 		}
 
 		p = lldp_p;
@@ -211,6 +208,9 @@ static void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 			memset(t, 0, length + 1);
 			memcpy(t, p, length);
 			LOG_INF("\tSYSTEM NAME:\t%s", t);
+			break;
+		default:
+			LOG_WRN("\tUnknown TLV type: %d (length: %d)", type, length);
 			break;
 		}
 		lldp_p += length;

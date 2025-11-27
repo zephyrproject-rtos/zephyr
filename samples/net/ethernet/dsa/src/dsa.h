@@ -15,7 +15,7 @@
 #endif
 #include <zephyr/net/ethernet.h>
 
-extern struct ud user_data;
+extern struct ud g_user_data;
 
 /* User data for the interface callback */
 struct ud {
