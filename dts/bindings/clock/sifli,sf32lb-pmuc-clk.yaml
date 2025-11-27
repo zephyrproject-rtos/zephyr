@@ -20,13 +20,5 @@ properties:
     const: 1
     description: Clock index, see dt-bindings/clock/sf32lb-pmuc-clocks.h
 
-  clock-frequencies:
-    type: array
-    required: true
-    description: |
-      Frequencies (in Hz) for PMUC managed clocks, ordered by clock index:
-        0: LRC10 (10 kHz RC oscillator)
-        1: LRC32 (32 kHz RC oscillator)
-
 clock-cells:
   - clk_id
