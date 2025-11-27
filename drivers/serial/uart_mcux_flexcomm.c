@@ -89,6 +89,7 @@ struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_callback;
 	void *irq_cb_data;
+	uint32_t usart_intenset;
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 	uart_callback_t async_callback;
@@ -1205,10 +1206,12 @@ static void mcux_flexcomm_pm_restore_wake(const struct device *dev,
 }
 #endif /* FC_UART_IS_WAKEUP */
 
-static uint32_t usart_intenset;
 static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
 {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+#endif
 	int ret;
 
 	switch (action) {
@@ -1217,14 +1220,18 @@ static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-		usart_intenset = USART_GetEnabledInterrupts(config->base);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		data->usart_intenset = USART_GetEnabledInterrupts(config->base);
+#endif
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		ret = mcux_flexcomm_init_common(dev);
 		if (ret) {
 			return ret;
 		}
-		USART_EnableInterrupts(config->base, usart_intenset);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		USART_EnableInterrupts(config->base, data->usart_intenset);
+#endif
 		break;
 	default:
 		return -ENOTSUP;
