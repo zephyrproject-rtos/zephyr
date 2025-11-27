@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  settings.tfm_its:
+  settings.tfm_psa_its:
     filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
-    min_ram: 32
     integration_platforms:
       - max32657evkit/max32657/ns
       - nrf5340dk/nrf5340/cpuapp/ns
@@ -14,4 +13,5 @@ tests:
       - mps2/an521/cpu0/ns
       - lpcxpresso55s69/lpc55s69/cpu0/ns
     tags:
+      - settings
       - trusted-firmware-m

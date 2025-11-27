@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SETTINGS_TEST_ITS_H
-#define _SETTINGS_TEST_ITS_H
+#ifndef _SETTINGS_TEST_PSA_H
+#define _SETTINGS_TEST_PSA_H
 
 #include <stdio.h>
 #include <string.h>
@@ -41,4 +41,4 @@ void settings_config_teardown(void *fixture);
 }
 #endif
 
-#endif /* _SETTINGS_TEST_ITS_H */
+#endif /* _SETTINGS_TEST_PSA_H */

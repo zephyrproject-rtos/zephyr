@@ -63,4 +63,4 @@ tests:
     integration_platforms:
       - mps2/an521/cpu0/ns
     extra_args:
-      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_SETTINGS_TFM_PSA=y
