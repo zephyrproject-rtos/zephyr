@@ -162,6 +162,12 @@ JWT
   the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
   that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
 
+Libsbc
+======
+
+* Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
+  include/zephyr/bluetooth now.
+
 Modules
 *******
 
