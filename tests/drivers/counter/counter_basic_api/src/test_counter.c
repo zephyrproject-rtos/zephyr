@@ -202,6 +202,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_BEE_RTC
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_rtc)
 #endif
+#ifdef CONFIG_COUNTER_RCAR_CMT
+	DEVS_FOR_DT_COMPAT(renesas_rcar_cmt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
