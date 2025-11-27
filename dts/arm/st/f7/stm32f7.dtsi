@@ -28,6 +28,7 @@
 	chosen {
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
+		zephyr,cortex-m-idle-timer = &rtc;
 	};
 
 	cpus {
@@ -38,12 +39,23 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			cpu-power-states = <&stop>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+			};
+
+
+			power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <400>;
+				exit-latency-us = <300>;
 			};
 		};
 	};
@@ -997,8 +1009,8 @@
 		#size-cells = <0>;
 		reg = <0x40015804 0x20>;
 		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-		dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				   STM32_DMA_16BITS) 0>;
+			dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+					STM32_DMA_16BITS) 0>;
 		status = "disabled";
 	};
 
@@ -1008,8 +1020,8 @@
 		#size-cells = <0>;
 		reg = <0x40015824 0x20>;
 		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-		dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				   STM32_DMA_16BITS) 0>;
+			dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+					STM32_DMA_16BITS) 0>;
 		status = "disabled";
 	};
 };
