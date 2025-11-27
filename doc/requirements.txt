@@ -529,6 +529,7 @@ sphinx==8.2.3 \
     #   -r requirements.in
     #   sphinx-autobuild
     #   sphinx-copybutton
+    #   sphinx-design
     #   sphinx-last-updated-by-git
     #   sphinx-notfound-page
     #   sphinx-rtd-theme
@@ -544,6 +545,10 @@ sphinx-autobuild==2025.8.25 \
 sphinx-copybutton==0.5.2 \
     --hash=sha256:4cf17c82fb9646d1bc9ca92ac280813a3b605d8c421225fd9913154103ee1fbd \
     --hash=sha256:fb543fd386d917746c9a2c50360c7905b605726b9355cd26e9974857afeae06e
+    # via -r requirements.in
+sphinx-design==0.6.1 \
+    --hash=sha256:b11f37db1a802a183d61b159d9a202314d4d2fe29c163437001324fe2f19549c \
+    --hash=sha256:b44eea3719386d04d765c1a8257caca2b3e6f8421d7b3a5e742c0fd45f84e632
     # via -r requirements.in
 sphinx-last-updated-by-git==0.3.8 \
     --hash=sha256:6382c8285ac1f222483a58569b78c0371af5e55f7fbf9c01e5e8a72d6fdfa499 \
