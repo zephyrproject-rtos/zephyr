@@ -566,7 +566,11 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
 	/* Advertise default speeds */
-	phy_mii_cfg_link(dev, cfg->default_speeds, 0);
+	ret = phy_mii_cfg_link(dev, cfg->default_speeds, 0);
+	if (ret == -EALREADY) {
+		data->autoneg_in_progress = true;
+		data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
+	}
 
 	/* This will schedule the monitor work, if not already scheduled by phy_mii_cfg_link(). */
 	k_work_schedule(&data->monitor_work, K_NO_WAIT);
