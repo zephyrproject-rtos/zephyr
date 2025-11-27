@@ -31,9 +31,10 @@
 
 	clocks {
 		lxt32: lxt32 {
-			compatible = "fixed-clock";
+			compatible = "sifli,sf32lb-lxt32", "fixed-clock";
 			clock-frequency = <32768>;
 			#clock-cells = <0>;
+			sifli,pmuc = <&pmuc>;
 			status = "disabled";
 		};
 
@@ -71,10 +72,8 @@
 
 			rcc_clk: clock-controller {
 				compatible = "sifli,sf32lb-rcc-clk";
-				clocks = <&lrc32>, <&lrc10>, <&hrc48>, <&hxt48>,
-					 <&lxt32>;
-				clock-names = "lrc32", "lrc10", "hrc48",
-					      "hxt48", "lxt32";
+				clocks = <&lrc32>, <&lrc10>, <&hrc48>, <&hxt48>;
+				clock-names = "lrc32", "lrc10", "hrc48", "hxt48";
 				#clock-cells = <1>;
 				sifli,cfg = <&cfg>;
 				sifli,pmuc = <&pmuc>;
