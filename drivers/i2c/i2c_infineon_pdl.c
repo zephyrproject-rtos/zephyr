@@ -166,6 +166,10 @@ static void ifx_master_event_handler(void *callback_arg, uint32_t event)
 		k_sem_give(&data->transfer_sem);
 	}
 
+	if (data->p_target_config == NULL) {
+		return;
+	}
+
 	if (0 != (CY_SCB_I2C_SLAVE_READ_EVENT & event)) {
 		if (data->p_target_config->callbacks->read_requested) {
 			data->p_target_config->callbacks->read_requested(data->p_target_config,
@@ -321,6 +325,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	const struct ifx_cat1_i2c_config *config = dev->config;
 	cy_en_scb_i2c_status_t rslt;
 	int ret;
+	bool is_slave_mode = false;
 
 	if (dev_config != 0) {
 		switch (I2C_SPEED_GET(dev_config)) {
@@ -346,9 +351,13 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 		if (dev_config & I2C_MODE_CONTROLLER) {
 			_i2c_default_config.i2cMode = CY_SCB_I2C_MASTER;
+			is_slave_mode = false;
 		} else {
 			_i2c_default_config.i2cMode = CY_SCB_I2C_SLAVE;
+			is_slave_mode = true;
 		}
+	} else {
+		is_slave_mode = (_i2c_default_config.i2cMode == CY_SCB_I2C_SLAVE);
 	}
 
 	/* Acquire semaphore (block I2C operation for another thread) */
@@ -359,7 +368,16 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 	_i2c_default_config.slaveAddress = data->slave_address;
 
-	/* Configure the I2C resource to be master */
+	if (is_slave_mode) {
+		_i2c_default_config.slaveAddressMask = 0;
+		_i2c_default_config.ackGeneralAddr = false;
+	}
+
+	/* De-initialize SCB before re-configuring (required when switching modes) */
+	Cy_SCB_I2C_Disable(config->base, &data->context);
+	Cy_SCB_I2C_DeInit(config->base);
+
+	/* Configure the I2C resource */
 	rslt = Cy_SCB_I2C_Init(config->base, &_i2c_default_config, &data->context);
 	if (rslt != CY_SCB_I2C_SUCCESS) {
 		LOG_ERR("I2C configure failed with err 0x%x", rslt);
@@ -370,7 +388,6 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 #ifdef USE_I2C_SET_PERI_DIVIDER
 	_i2c_set_peri_divider(dev, CAT1_I2C_SPEED_STANDARD_HZ,
 			      (_i2c_default_config.i2cMode == CY_SCB_I2C_SLAVE));
-
 #endif
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
