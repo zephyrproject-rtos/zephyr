@@ -63,10 +63,6 @@
 	status = "okay";
 };
 
-&subclk {
-	status = "okay";
-};
-
 &pll {
 	status = "okay";
 
