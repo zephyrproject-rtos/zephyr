@@ -21,6 +21,12 @@ config SAMPLE_USBD_PRODUCT
 	help
 	  USB device sample product stringa.
 
+config SAMPLE_USBD_VID
+	hex "USB device sample Vendor ID"
+	default 0x2fe3
+	help
+	  USB device sample Vendor ID.
+
 config SAMPLE_USBD_PID
 	hex "USB device sample Product ID"
 	default 0x0001
