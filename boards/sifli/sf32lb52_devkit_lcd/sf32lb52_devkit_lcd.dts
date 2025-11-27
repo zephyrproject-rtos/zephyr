@@ -71,6 +71,12 @@
 	status = "okay";
 };
 
+&lxt32 {
+	status = "okay";
+	pinctrl-0 = <&lxt32_default>;
+	pinctrl-names = "default";
+};
+
 &rcc_clk {
 	status = "okay";
 
