@@ -13,6 +13,7 @@ sphinx-sitemap
 sphinx-autobuild
 sphinxcontrib.programoutput
 sphinxcontrib.mermaid
+sphinx-design
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0

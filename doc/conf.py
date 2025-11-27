@@ -78,6 +78,7 @@ extensions = [
     "sphinxcontrib.jquery",
     "sphinxcontrib.mermaid",
     "sphinxcontrib.programoutput",
+    "sphinx_design",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
