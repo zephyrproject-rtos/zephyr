@@ -17,6 +17,8 @@
 
 #define DT_DRV_COMPAT zephyr_swdp_gpio
 
+#include "swdp_common.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/swdp.h>
@@ -59,32 +61,6 @@ struct sw_cfg_data {
 	bool data_phase;
 	bool fast_clock;
 };
-
-/*
- * Move A[2:3], RnW, APnDP bits to their position,
- * add start bit, stop bit(6), park bit and parity bit.
- * For example, reading IDCODE would be APnDP=0, RnW=1, A2=0, A3=0.
- * The request would be 0xa5, which is 10100101 in binary.
- *
- * For more information, see:
- * - CMSIS-DAP Command Specification, DAP_Transfer
- * - ARM Debug Interface v5 Architecture Specification
- */
-const static uint8_t sw_request_lut[16] = {
-	0x81, 0xa3, 0xa5, 0x87, 0xa9, 0x8b, 0x8d, 0xaf,
-	0xb1, 0x93, 0x95, 0xb7, 0x99, 0xbb, 0xbd, 0x9f
-};
-
-static ALWAYS_INLINE uint32_t sw_get32bit_parity(uint32_t data)
-{
-	data ^= data >> 16;
-	data ^= data >> 8;
-	data ^= data >> 4;
-	data ^= data >> 2;
-	data ^= data >> 1;
-
-	return data & 1U;
-}
 
 /* Set SWCLK DAP hardware output pin to high level */
 static ALWAYS_INLINE void pin_swclk_set(const struct device *dev)
@@ -335,12 +311,12 @@ static int sw_transfer(const struct device *dev,
 	LOG_DBG("request 0x%02x idle %u", request, idle_cycles);
 	if (!(request & SWDP_REQUEST_RnW)) {
 		LOG_DBG("write data 0x%08x", *data);
-		parity = sw_get32bit_parity(*data);
+		parity = swd_get32bit_parity(*data);
 	}
 
 	key = irq_lock();
 
-	val = sw_request_lut[request & 0xFU];
+	val = SWD_REQUEST_FROM_LUT(request);
 	for (n = 8U; n; n--) {
 		SW_WRITE_BIT(dev, val, sw_data->clock_delay);
 		val >>= 1;
@@ -374,7 +350,7 @@ static int sw_transfer(const struct device *dev,
 			sw_cycle_turnaround(dev);
 			pin_swdio_out_enable(dev);
 
-			if ((sw_get32bit_parity(val) ^ bit) & 1U) {
+			if ((swd_get32bit_parity(val) ^ bit) & 1U) {
 				ack = SWDP_TRANSFER_ERROR;
 			}
 
