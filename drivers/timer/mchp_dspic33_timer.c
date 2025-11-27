@@ -93,10 +93,9 @@ static void initialize_timer(void)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 void arch_busy_wait(uint32_t usec_to_wait)
 {
-	ARG_UNUSED(usec_to_wait);
-	__asm__ volatile("sl.l w0,#0x03,w0\n\t"
-			 "repeat.w w0\n\t"
-			 "nop\n\n\t");
+	usec_to_wait <<= 3;
+	__asm__ volatile("repeat.w %0\n\t"
+			 "nop\n\t"::"r"(usec_to_wait));
 }
 #endif
 
