@@ -88,6 +88,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_INST(0, renesas_rza2m_ostm_counter)
 #elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
 #define SAMPLE_TIMER DT_ALIAS(counter)
+#elif defined(CONFIG_COUNTER_RCAR_CMT)
+#define SAMPLE_TIMER DT_INST(0, renesas_rcar_cmt_counter)
 #else
 #error Unable to find a counter device node in devicetree
 #endif
