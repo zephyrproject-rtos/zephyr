@@ -99,7 +99,7 @@ static const struct uvc_control_map uvc_control_map_pu[] = {
 		.type = UVC_CONTROL_SIGNED,
 	},
 	{
-		.size = 1,
+		.size = 2,
 		.bit = 1,
 		.selector = UVC_PU_CONTRAST_CONTROL,
 		.cid = VIDEO_CID_CONTRAST,
