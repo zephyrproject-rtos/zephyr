@@ -19,6 +19,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
+BUILD_ASSERT(CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE >= sizeof(struct net_sockaddr_in) ||
+	     !IS_ENABLED(CONFIG_NET_IPV4));
+
+BUILD_ASSERT(CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE >= sizeof(struct net_sockaddr_in6) ||
+	     !IS_ENABLED(CONFIG_NET_IPV6));
+
 static char *get_ip_str(const struct net_sockaddr *sa, char *s, size_t maxlen)
 {
 	switch (sa->sa_family) {
