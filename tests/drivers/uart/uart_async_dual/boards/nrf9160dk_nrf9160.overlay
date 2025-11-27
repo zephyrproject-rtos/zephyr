@@ -46,12 +46,17 @@
 	};
 };
 
+&timer1 {
+	status = "reserved";
+};
+
 dut: &uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	timer = <&timer1>;
 	hw-flow-control;
 };
 
