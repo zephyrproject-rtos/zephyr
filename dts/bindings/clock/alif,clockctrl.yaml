@@ -1,0 +1,51 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Alif Semiconductor clock controller
+
+  This binding describes the clock controller for Alif Semiconductor SoCs
+  that manages clocks for various peripherals.
+
+  The clock controller requires 7 register regions to control different
+  aspects of the clock tree:
+  - cgu: Clock Generation Unit
+  - clkctl_per_mst: Peripheral clock control (Master)
+  - clkctl_per_slv: Peripheral clock control (Slave)
+  - aon: Always-on domain
+  - vbat: Vbat domain
+  - m55he_cfg: Cortex-M55 HE cluster configuration
+  - m55hp_cfg: Cortex-M55 HP cluster configuration
+
+compatible: "alif,clockctrl"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Clock controller register regions. 7 regions are required in the
+      following order: cgu, clkctl_per_mst, clkctl_per_slv, aon, vbat,
+      m55he_cfg, m55hp_cfg
+
+  reg-names:
+    required: true
+    description: |
+      Names for the register regions. Each name corresponds to a clock
+      control module and is used by the driver to locate the appropriate
+      register base address. See the description above for valid names.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
+
+    uart0: uart@49018000 {
+        clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
+    };
