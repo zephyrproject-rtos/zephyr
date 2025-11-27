@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,6 +19,7 @@
 	aliases {
 		uart-5 = &uart5;
 		led0 = &user_led;
+		led1 = &green_led;
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
 	};
@@ -39,6 +41,11 @@
 			label = "LED_0";
 			gpios = <&gpio_prt6 3 GPIO_ACTIVE_LOW>;
 		};
+
+		green_led: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt7 1 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	gpio_keys {
@@ -48,6 +55,26 @@
 			label = "SW_0";
 			gpios = <&gpio_prt0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000000>;
+		};
+
+		suspend_to_ram: suspend_to_ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <2000000>;
+		};
+	};
+
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&idle &suspend_to_ram>;
 		};
 	};
 };

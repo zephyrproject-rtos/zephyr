@@ -10,31 +10,31 @@
 
 / {
 	aliases {
-		pwm-test = &pwm0_0;
+		pwm-test = &pwm0_7;
 	};
 };
 
-&tcpwm0_0 {
+&tcpwm0_7 {
 	status = "okay";
 
-	pwm0_0: pwm0_0 {
+	pwm0_7: pwm0_7 {
 		status = "okay";
-		clocks = <&peri0_group1_16bit_0>;
-		pinctrl-0 = <&p3_4_pwm0_0>;
+		clocks = <&peri0_group1_16bit_1>;
+		pinctrl-0 = <&p16_7_pwm0_7>;
 		pinctrl-names = "default";
 	};
 };
 
-&peri0_group1_16bit_0 {
+&peri0_group1_16bit_1 {
 	status = "okay";
 	resource-type = <IFX_RSC_TCPWM>;
 	resource-instance = <0>;
-	resource-channel = <0>;
+	resource-channel = <7>;
 	clock-div = <9600>;
 };
 
 &pinctrl {
-	p3_4_pwm0_0: p3_4_pwm0_0 {
+	p16_7_pwm0_7: p16_7_pwm0_7 {
 		drive-push-pull;
 	};
 };
