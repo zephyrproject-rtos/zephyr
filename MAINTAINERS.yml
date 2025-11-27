@@ -1205,8 +1205,8 @@ Documentation:
   status: maintained
   maintainers:
     - kartben
-    - carlescufi
   collaborators:
+    - carlescufi
     - nashif
   files:
     - CODE_OF_CONDUCT.md
@@ -6424,6 +6424,7 @@ nRF Platforms:
     - anangl
     - masz-nordic
     - bjarki-andreasen
+    - carlescufi
   collaborators:
     - jaz1-nordic
     - kl-cruz
