@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gint
+
+tests:
+  drivers.interrupt_controller.intc_nxp_gint:
+    platform_allow:
