@@ -510,9 +510,10 @@ and :code:`bap_broadcast_assistant discover` commands must have been issued and 
    cap_handover - Bluetooth CAP handover shell commands
    Subcommands:
      unicast_to_broadcast  : Handover current unicast group to broadcast (unicast
-                           group will be deleted)
+                           group will be deleted) [enc <broadcast_code>] [preset <preset_name>]
      broadcast_to_unicast  : Handover current broadcast source to unicast
                            (broadcast source will be deleted)
+                           [csip] [conns <count>|all] [preset <preset_name>]
 
 
 
