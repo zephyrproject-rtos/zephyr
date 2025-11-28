@@ -6,17 +6,16 @@
 Blackbox tests for twister's command line functions - simple does-error-out or not tests
 """
 
-import importlib
-from unittest import mock
 import os
 import pytest
-import sys
 import re
+import sys
+from unittest import mock
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
+from conftest import TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
-from twisterlib.error import TwisterRuntimeError
+from twisterlib.twister_main import main as twister_main
 
 
 class TestError:
@@ -26,17 +25,17 @@ class TestError:
             os.path.join('scripts', 'tests', 'twister_blackbox', 'test_data', 'tests',
                          'dummy', 'agnostic', 'group1', 'subgroup1',
                          'dummy.agnostic.group1.subgroup1'),
-            SystemExit
+            (0, '')
         ),
         (
             None,
             'dummy.agnostic.group1.subgroup1',
-            TwisterRuntimeError
+            (1, 'No testsuites found at the specified location...')
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             'dummy.agnostic.group1.subgroup1',
-            SystemExit
+            (0, '')
         )
     ]
     TESTDATA_2 = [
@@ -50,24 +49,13 @@ class TestError:
         )
     ]
 
-    @classmethod
-    def setup_class(cls):
-        apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
-        cls.loader = importlib.machinery.SourceFileLoader('__main__', apath)
-        cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
-        cls.twister_module = importlib.util.module_from_spec(cls.spec)
-
-    @classmethod
-    def teardown_class(cls):
-        pass
-
     @pytest.mark.parametrize(
-        'testroot, test, expected_exception',
+        'testroot, test, expected_return',
         TESTDATA_1,
         ids=['valid', 'invalid', 'valid']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
-    def test_test(self, out_path, testroot, test, expected_exception):
+    def test_test(self, out_path, testroot, test, expected_return, capsys):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         args = []
         if testroot:
@@ -77,13 +65,14 @@ class TestError:
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(expected_exception) as exc:
-            self.loader.exec_module(self.twister_module)
+        expected_return_code, expected_message = expected_return
 
-        if expected_exception == SystemExit:
-            assert str(exc.value) == '0'
-        assert True
+        return_code = twister_main(args)
+        captured = capsys.readouterr()
+
+        assert return_code == expected_return_code
+        if expected_message:
+            assert expected_message in captured.err
 
     @pytest.mark.parametrize(
         'switch, expected',
@@ -106,9 +95,7 @@ class TestError:
         if switch:
             args += [switch]
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+        return_code = twister_main(args)
 
         out, err = capfd.readouterr()
         sys.stdout.write(out)
@@ -116,8 +103,8 @@ class TestError:
 
         print(args)
         if switch:
-            assert str(sys_exit.value) == '1'
+            assert return_code == 1
         else:
-            assert str(sys_exit.value) == '0'
+            assert return_code == 0
 
         assert re.search(expected, err)
