@@ -19,6 +19,17 @@ config FLOAT_HARD
 	  This option enables the hard-float calling convention.
 	  Adds eight floating-point argument registers.
 
+config RISCV_USE_MSAVE_RESTORE
+	bool "Compile with -msave-restore to reduce some code footprint"
+	help
+	  The `-msave-restore` option enables the compiler to emit calls to library
+	  routines `__riscv_save_X` and `__riscv_restore_X` for preserving the
+	  callee-saved registers instead of inlining them in every function. This
+	  can reduce code size in some large functions. However, it introduces extra
+	  branching overhead, which may impact the performance in hot paths.
+
+	  If supported by your SoC, the `Zcmp` ISA extension should be preferred.
+
 choice RISCV_GP_PURPOSE
 	prompt "Purpose of the global pointer (GP) register"
 	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
