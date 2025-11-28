@@ -1374,11 +1374,13 @@ static void uart_stm32_isr(const struct device *dev)
 
 		LL_USART_ClearFlag_WKUP(usart);
 
+#ifdef CONFIG_UART_ASYNC_API
 		if (!data->rx_woken) {
 			/* Prevent SoC from entering STOP mode until RX goes IDLE */
 			uart_stm32_pm_policy_state_lock_get_unconditional();
 			data->rx_woken = true;
 		}
+#endif
 
 #ifdef USART_ISR_REACK
 		while (LL_USART_IsActiveFlag_REACK(usart) == 0) {
