@@ -6,3 +6,4 @@ board:
     - name: stm32h573xx
       variants:
         - name: ext_flash_app
+        - name: ns
