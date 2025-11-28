@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,22 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+		};
+
+		gint0: gint@40002000 {
+			compatible = "nxp,gint";
+			reg = <0x40002000 0x1000>;
+			interrupts = <2 2>;
+			resets = <&reset NXP_SYSCON_RESET(0, 19)>;
+			status = "disabled";
+		};
+
+		gint1: gint@40003000 {
+			compatible = "nxp,gint";
+			reg = <0x40003000 0x1000>;
+			interrupts = <3 2>;
+			resets = <&reset NXP_SYSCON_RESET(0, 19)>;
+			status = "disabled";
 		};
 
 		pint: pint@40004000 {

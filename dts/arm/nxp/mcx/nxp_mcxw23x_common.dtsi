@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,6 +159,14 @@
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
+	};
+
+	gint0: gint@2000 {
+		compatible = "nxp,gint";
+		reg = <0x2000 0x1000>;
+		interrupts = <2 2>;
+		resets = <&reset NXP_SYSCON_RESET(0, 19)>;
+		status = "disabled";
 	};
 
 	gpio: gpio@8c000 {
