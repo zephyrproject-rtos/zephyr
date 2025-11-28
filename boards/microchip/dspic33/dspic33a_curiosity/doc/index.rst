@@ -137,7 +137,7 @@ The XC-DSC toolchain hooks its optimization levels in
 ``cmake/compiler/xcdsc/compiler_flags.cmake`` by mapping Zephyr's generic
 properties to concrete compiler flags. In this file:
 
-* ``optimization_speed`` uses ``-O2``.
+* ``optimization_speed`` uses ``-O3``.
 * ``optimization_size`` uses ``-O2``.
 * ``optimization_size_aggressive`` uses ``-Os``.
 * ``optimization_debug`` uses ``-O1``.
@@ -155,7 +155,7 @@ To change that default, set one of these options in your application's
 - ``CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE`` switches to ``optimization_size_aggressive``,
   which adds the ``-Os`` mapping described in ``compiler_flags.cmake``. This
   level is only available when your XC-DSC compiler is licensed.
-- ``CONFIG_SPEED_OPTIMIZATIONS`` selects ``optimization_speed`` (``-O2``).
+- ``CONFIG_SPEED_OPTIMIZATIONS`` selects ``optimization_speed`` (``-O3``).
 - ``CONFIG_DEBUG_OPTIMIZATIONS`` selects ``optimization_debug`` (``-O1``).
 - ``CONFIG_NO_OPTIMIZATIONS`` forces (``-O0``).
 

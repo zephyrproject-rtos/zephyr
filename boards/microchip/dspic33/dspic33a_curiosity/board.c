@@ -6,8 +6,9 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-/* Board level init for dspic33a_curiosity
- */
 void board_early_init_hook(void)
 {
+	/* Intentionally empty: This system dosent use Board level init.
+	 * Board level init for dspic33a_curiosity
+	 */
 }
