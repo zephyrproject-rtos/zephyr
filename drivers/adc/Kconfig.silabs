@@ -37,6 +37,7 @@ config ADC_SILABS_SIWX91X
 	bool "Silabs Siwx91x MCU ADC driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_ADC_ENABLED
+	depends on CLOCK_CONTROL
 	select ADC_CONFIGURABLE_INPUTS
 	select PINCTRL
 	help
