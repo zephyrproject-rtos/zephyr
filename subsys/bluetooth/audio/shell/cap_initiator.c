@@ -28,6 +28,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/conn.h>
@@ -43,14 +44,13 @@
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
-#define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 struct bt_cap_unicast_audio_start_stream_param
-	cap_initiator_audio_start_stream_params[UNICAST_CLIENT_STREAM_COUNT];
+	cap_initiator_audio_start_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 struct bt_cap_unicast_group_stream_param
-	cap_initiator_unicast_group_stream_params[UNICAST_CLIENT_STREAM_COUNT];
+	cap_initiator_unicast_group_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 struct bt_cap_unicast_group_stream_pair_param
-	cap_initiator_unicast_group_pair_params[UNICAST_CLIENT_STREAM_COUNT];
+	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
 struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
 
@@ -181,6 +181,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 		     sizeof(cap_initiator_unicast_group_stream_params));
 	(void)memset(&cap_initiator_unicast_audio_start_param, 0,
 		     sizeof(cap_initiator_unicast_audio_start_param));
+	(void)memset(&cap_initiator_unicast_group_pair_params, 0,
+		     sizeof(cap_initiator_unicast_group_pair_params));
 	(void)memset(&cap_initiator_unicast_group_param, 0,
 		     sizeof(cap_initiator_unicast_group_param));
 
@@ -238,6 +240,12 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 		}
 	}
 
+	if ((source_cnt + sink_cnt) * conn_cnt > ARRAY_SIZE(unicast_streams)) {
+		shell_error(sh, "Cannot start %zu sinks and %zu sources (max %zu)", sink_cnt,
+			    source_cnt, ARRAY_SIZE(unicast_streams));
+		return -ENOEXEC;
+	}
+
 	shell_print(sh, "Setting up %u sinks and %u sources on each (%u) conn", sink_cnt,
 		    source_cnt, conn_cnt);
 
@@ -265,9 +273,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 				&cap_initiator_unicast_group_stream_params[stream_cnt];
 			struct bt_cap_unicast_group_stream_pair_param *stream_pair_param =
 				&cap_initiator_unicast_group_pair_params[pair_cnt + j];
-			struct bt_cap_stream *stream =
-				&unicast_streams[cap_initiator_unicast_audio_start_param.count]
-					 .stream;
+			struct bt_cap_stream *stream = &unicast_streams[stream_cnt].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][j];
@@ -1336,6 +1342,12 @@ static int cmd_broadcast_stop(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_broadcast_delete(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
+		return -ENOEXEC;
+	}
 
 	if (default_source.cap_source == NULL || !default_source.is_cap) {
 		shell_info(sh, "CAP Broadcast source not created");
