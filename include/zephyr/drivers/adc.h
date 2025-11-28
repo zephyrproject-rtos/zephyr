@@ -285,8 +285,12 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
 /**
  * @brief Container for ADC channel information specified in devicetree.
  *
+ * @see ADC_DT_SPEC_GET_BY_NAME
+ * @see ADC_DT_SPEC_GET_BY_NAME_OR
  * @see ADC_DT_SPEC_GET_BY_IDX
+ * @see ADC_DT_SPEC_GET_BY_IDX_OR
  * @see ADC_DT_SPEC_GET
+ * @see ADC_DT_SPEC_GET_OR
  */
 struct adc_dt_spec {
 	/**
@@ -429,6 +433,22 @@ struct adc_dt_spec {
 	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
 			   DT_IO_CHANNELS_INPUT_BY_NAME(node_id, name))
 
+/**
+ * @brief Like ADC_DT_SPEC_GET_BY_NAME(), with a fallback to a default value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param name Channel name.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ *
+ * @see ADC_DT_SPEC_INST_GET_BY_NAME_OR
+ */
+#define ADC_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value) \
+	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
+		    (ADC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
+
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance by name.
  *
@@ -441,6 +461,21 @@ struct adc_dt_spec {
  */
 #define ADC_DT_SPEC_INST_GET_BY_NAME(inst, name) \
 	ADC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Like ADC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name Channel name.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ *
+ * @see ADC_DT_SPEC_GET_BY_NAME_OR
+ */
+#define ADC_DT_SPEC_INST_GET_BY_NAME_OR(inst, name, default_value) \
+	ADC_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Get ADC io-channel information from devicetree.
@@ -515,6 +550,22 @@ struct adc_dt_spec {
 	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
 			   DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx))
 
+/**
+ * @brief Like ADC_DT_SPEC_GET_BY_IDX(), with a fallback to a default value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param idx Channel index.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ *
+ * @see ADC_DT_SPEC_INST_GET_BY_IDX_OR
+ */
+#define ADC_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value) \
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
+		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
+
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance.
  *
@@ -529,6 +580,20 @@ struct adc_dt_spec {
 	ADC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
+ * @brief Like ADC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx Channel index.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX_OR
+ */
+#define ADC_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value) \
+	ADC_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
+/**
  * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX(node_id, 0).
  *
  * @see ADC_DT_SPEC_GET_BY_IDX()
@@ -539,7 +604,22 @@ struct adc_dt_spec {
  */
 #define ADC_DT_SPEC_GET(node_id) ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
 
-/** @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
+/**
+ * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value).
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX_OR()
+ *
+ * @param node_id Devicetree node identifier.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ */
+#define ADC_DT_SPEC_GET_OR(node_id, default_value) \
+	ADC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
+
+/**
+ * @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
  * @see ADC_DT_SPEC_GET()
  *
@@ -548,6 +628,20 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default).
+ *
+ * @see ADC_DT_SPEC_GET_OR()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct adc_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ */
+#define ADC_DT_SPEC_INST_GET_OR(inst, default_value) \
+	ADC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
