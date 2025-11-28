@@ -917,6 +917,15 @@
 			status = "disabled";
 		};
 
+		vrefbuf: vrefbuf@46007400 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x46007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
+			resets = <&rctl STM32_RESET(APB3, 20)>;
+			ref-voltages = <1500000>, <1800000>, <2048000>, <2500000>;
+			status = "disabled";
+		};
+
 		pwr: power@46020800 {
 			compatible = "st,stm32-dualreg-pwr", "st,stm32-pwr";
 			reg = <0x46020800 0x400>; /* PWR register bank */
