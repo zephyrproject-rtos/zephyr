@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This is used multiple times in the documentation.
+ * If you change it for one example, you could break others, so be careful.
+ */
+
+/* start-after-here */
+
+/dts-v1/;
+
+/ {
+
+	aliases {
+		sensor-controller = &i2c1;
+	};
+
+	soc {
+		i2c1: i2c@40002000 {
+			compatible = "vnd,soc-i2c";
+			label = "I2C_1";
+			reg = <0x40002000 0x1000>;
+			status = "okay";
+			clock-frequency = < 100000 >;
+		};
+	};
+};
