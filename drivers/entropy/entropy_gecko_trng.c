@@ -44,6 +44,25 @@
 #endif	/* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
 #endif	/* CONFIG_CRYPTO_ACC_GECKO_TRNG */
 
+static int entropy_gecko_trng_init(const struct device *dev)
+{
+	/* Enable the TRNG0 clock. */
+#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
+	CMU_ClockEnable(cmuClock_TRNG0, true);
+
+	/* Enable TRNG0. */
+	TRNG0->CONTROL = TRNG_CONTROL_ENABLE;
+#else
+	/* Enable the CRYPTO ACC clock. */
+	CMU_ClockEnable(cmuClock_CRYPTOACC, true);
+
+	/* Enable TRNG */
+	S2_CTRL |= S2_CTRL_ENABLE;
+#endif
+
+	return 0;
+}
+
 static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 {
 #ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
@@ -77,7 +96,7 @@ static int entropy_gecko_trng_get_entropy(const struct device *dev,
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_CRYPTO_ACC_GECKO_TRNG
-	CMU_ClockEnable(cmuClock_CRYPTOACC, true);
+	entropy_gecko_trng_init(dev);
 #endif
 
 	while (length) {
@@ -128,25 +147,6 @@ static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
 		}
 		return ret;
 	}
-}
-
-static int entropy_gecko_trng_init(const struct device *dev)
-{
-	/* Enable the TRNG0 clock. */
-#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
-	CMU_ClockEnable(cmuClock_TRNG0, true);
-
-	/* Enable TRNG0. */
-	TRNG0->CONTROL = TRNG_CONTROL_ENABLE;
-#else
-	/* Enable the CRYPTO ACC clock. */
-	CMU_ClockEnable(cmuClock_CRYPTOACC, true);
-
-	/* Enable TRNG */
-	S2_CTRL |= S2_CTRL_ENABLE;
-#endif
-
-	return 0;
 }
 
 static DEVICE_API(entropy, entropy_gecko_trng_api_funcs) = {
