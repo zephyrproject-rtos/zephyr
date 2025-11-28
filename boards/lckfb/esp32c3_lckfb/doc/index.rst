@@ -52,4 +52,3 @@ References
 .. target-notes::
 
 .. _`LCKFB ESP32-C3 Development Board`: https://wiki.lckfb.com/zh-hans/szpi-esp32c3/
-

@@ -107,4 +107,3 @@ For more information about the QMI8658C sensor, see the QSTCORP datasheet.
 For more information about Zephyr sensor API, see:
 - :ref:`sensor_api`
 - :ref:`sensor_drivers`
-

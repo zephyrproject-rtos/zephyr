@@ -5,4 +5,3 @@
 
 config BOARD_ESP32C3_LCKFB
 	select SOC_ESP32C3
-

@@ -8,4 +8,3 @@ endchoice
 choice BOOT_SIGNATURE_TYPE
 	default BOOT_SIGNATURE_TYPE_NONE
 endchoice
-

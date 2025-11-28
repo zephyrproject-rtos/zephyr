@@ -4,4 +4,3 @@
 # zephyr-keep-sorted-start
 source "drivers/sensor/qstcorp/qmi8658c/Kconfig"
 # zephyr-keep-sorted-stop
-

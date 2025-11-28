@@ -3,7 +3,7 @@
 
 description: |
   QSTCORP QMI8658C 6-axis IMU sensor (accelerometer + gyroscope).
-  
+
   This sensor provides 3-axis accelerometer and 3-axis gyroscope data via I2C interface.
   I2C address: 0x6A (7-bit)
 
@@ -20,4 +20,3 @@ properties:
     type: string
     default: "okay"
     description: Device status
-

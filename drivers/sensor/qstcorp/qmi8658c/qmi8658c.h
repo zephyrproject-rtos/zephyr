@@ -104,4 +104,3 @@ struct qmi8658c_config {
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_QMI8658C_QMI8658C_H_ */
-

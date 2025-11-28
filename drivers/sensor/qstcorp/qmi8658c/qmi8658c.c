@@ -213,6 +213,5 @@ static int qmi8658c_init(const struct device *dev)
 				      &qmi8658c_config_##inst, POST_KERNEL,	\
 				      CONFIG_SENSOR_INIT_PRIORITY,		\
 				      &qmi8658c_driver_api);			\
-	
-DT_INST_FOREACH_STATUS_OKAY(QMI8658C_DEFINE)
 
+DT_INST_FOREACH_STATUS_OKAY(QMI8658C_DEFINE)

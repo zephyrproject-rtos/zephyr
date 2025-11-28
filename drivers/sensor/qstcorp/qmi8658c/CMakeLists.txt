@@ -3,4 +3,3 @@
 zephyr_library()
 
 zephyr_library_sources(qmi8658c.c)
-

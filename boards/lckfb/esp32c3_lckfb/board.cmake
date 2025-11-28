@@ -7,4 +7,3 @@ find_program(OPENOCD openocd PATHS ${ESPRESSIF_TOOLCHAIN_PATH}/openocd-esp32/bin
 
 include(${ZEPHYR_BASE}/boards/common/esp32.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
-

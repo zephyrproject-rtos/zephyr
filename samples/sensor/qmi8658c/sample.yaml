@@ -13,4 +13,3 @@ tests:
     tags: sensors
     integration_platforms:
       - esp32c3_lckfb
-

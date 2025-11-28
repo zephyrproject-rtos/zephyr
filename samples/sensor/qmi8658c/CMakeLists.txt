@@ -10,4 +10,3 @@ project(qmi8658c)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
-

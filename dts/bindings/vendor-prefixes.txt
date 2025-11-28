@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2013-2024 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
 # Device tree binding vendor prefix registry. Keep this list in
 # alphabetical order.
 #

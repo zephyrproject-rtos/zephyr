@@ -8,4 +8,3 @@ config QMI8658C
 	select I2C
 	help
 	  Enable driver for QSTCORP QMI8658C 6-axis IMU sensor (accelerometer + gyroscope).
-
