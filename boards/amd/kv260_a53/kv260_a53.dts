@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "kv260 Cortex-A53";
+	compatible = "xlnx,zynqmp-a53";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	sram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x40000000 0x0 0x08000000>;
+	};
+
+        cpus {
+            #address-cells = <2>;
+            #size-cells = <0>;
+	    cpu@0 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a53";
+		reg = <0x0 0x0>;
+		status = "okay";
+	    };
+
+	    cpu@1 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a53";
+		reg = <0x0 0x1>;
+	    };
+
+	    cpu@2 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a53";
+		reg = <0x0 0x2>;
+	    };
+
+	    cpu@3 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a53";
+		reg = <0x0 0x3>;
+	    };
+        };
+
+
+	gic: interrupt-controller@f9010000 {
+		compatible = "arm,gic-v2", "arm,gic";
+        	interrupt-controller;
+		#interrupt-cells = <4>;
+		reg = <0x0 0xf9010000 0x0 0x10000>,
+	      	      <0x0 0xf9020000 0x0 0x20000>,
+	      	      <0x0 0xf9040000 0x0 0x20000>,
+		      <0x0 0xf9060000 0x0 0x20000>;
+		status = "okay";
+	};
+		
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uart1: serial@ff010000 {
+		compatible = "xlnx,xuartps";
+		status = "okay";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg = <0x0 0xff010000 0x0 0x1000>;
+	};
+	
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+	
+	aliases {
+	        serial0 = &uart1;
+        };
+        
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <99999901>;
+};

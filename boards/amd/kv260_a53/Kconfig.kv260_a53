@@ -1,0 +1,7 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KV260_A53
+        bool "AMD KV260 Cortex-A53" 
+	select SOC_XILINX_ZYNQMP_APU
+	default y

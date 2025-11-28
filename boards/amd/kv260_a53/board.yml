@@ -1,0 +1,6 @@
+board:
+  name: kv260_a53
+  full_name: KV260 Development Board APU Cortex-A53
+  vendor: amd
+  socs:
+  - name: zynqmp_apu
