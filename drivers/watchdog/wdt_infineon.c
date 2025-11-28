@@ -9,6 +9,7 @@
 
 #define DT_DRV_COMPAT infineon_cat1_watchdog
 
+#include <infineon_kconfig.h>
 #include "cy_wdt.h"
 #include "cy_sysclk.h"
 
@@ -35,6 +36,12 @@ typedef struct {
 #define ifx_wdt_unlock()
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_PSOC4_ILO_FREQ_HZ                40000
+#define IFX_PSOC4_TICK_PERIOD_US             25
+#define IFX_PSOC4_ILO_COMPENSATE_MAX_ATTEMPTS 10
+#endif
+
 #if defined(SRSS_NUM_WDT_A_BITS)
 #define IFX_WDT_MATCH_BITS (SRSS_NUM_WDT_A_BITS)
 #elif defined(COMPONENT_CAT1A) || defined(COMPONENT_CAT1C)
@@ -43,7 +50,7 @@ typedef struct {
 #else
 #define IFX_WDT_MATCH_BITS (32)
 #endif
-#elif defined(COMPONENT_CAT1B)
+#elif defined(COMPONENT_CAT1B) || defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #define IFX_WDT_MATCH_BITS (16)
 #else
 #error Unhandled device type
@@ -78,6 +85,25 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	{1, 1},       /* 12 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 };
 #endif
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_WDT_MAX_TIMEOUT_MS  4915
+#define IFX_WDT_MAX_IGNORE_BITS 12
+
+static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
+	{3072, 2305}, /* 0 bits: 16-bit counter, max_match=65535, max_timeout=4915ms */
+	{1536, 1153}, /* 1 bit:  15-bit counter, max_match=32767, max_timeout=2458ms */
+	{768, 577},   /* 2 bits: 14-bit counter, max_match=16383, max_timeout=1229ms */
+	{384, 289},   /* 3 bits: 13-bit counter, max_match=8191, max_timeout=614ms */
+	{192, 145},   /* 4 bits: 12-bit counter, max_match=4095, max_timeout=307ms */
+	{96, 73},     /* 5 bits: 11-bit counter, max_match=2047, max_timeout=154ms */
+	{48, 37},     /* 6 bits: 10-bit counter, max_match=1023, max_timeout=77ms */
+	{24, 19},     /* 7 bits: 9-bit counter, max_match=511, max_timeout=38ms */
+	{12, 10},     /* 8 bits: 8-bit counter, max_match=255, max_timeout=19ms */
+	{6, 5},       /* 9 bits: 7-bit counter, max_match=127, max_timeout=10ms */
+	{3, 3},       /* 10 bits: 6-bit counter, max_match=63, max_timeout=5ms */
+	{2, 2},       /* 11 bits: 5-bit counter, max_match=31, max_timeout=2ms */
+	{1, 1},       /* 12 bits: 4-bit counter, max_match=15, max_timeout=1ms */
+};
 #elif (defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)) && (IFX_WDT_MATCH_BITS == 22)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  384000
@@ -200,20 +226,90 @@ struct ifx_cat1_wdt_data {
 #endif
 	uint32_t timeout;
 	bool timeout_installed;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t ilo_compensated_counts;
+	bool ilo_measurement_started;
+#endif
 };
 
 static struct ifx_cat1_wdt_data wdt_data;
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
 #define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+/* PSOC4 ILO compensation functions */
+static int ifx_psoc4_ilo_start_measurement(void)
+{
+	Cy_SysClk_IloStartMeasurement();
+	wdt_data.ilo_measurement_started = true;
+	return 0;
+}
+
+static int ifx_psoc4_ilo_compensate(uint32_t desired_delay_us, uint32_t *compensated_cycles)
+{
+	int attempts;
+	cy_en_sysclk_status_t status;
+	int ret = 0;
+
+	for (attempts = 0; attempts < IFX_PSOC4_ILO_COMPENSATE_MAX_ATTEMPTS; attempts++) {
+		status = Cy_SysClk_IloCompensate(desired_delay_us, compensated_cycles);
+
+		if (status == CY_SYSCLK_SUCCESS) {
+			ret = 0;
+			break;
+		} else if (status == CY_SYSCLK_STARTED) {
+			k_busy_wait(1000);
+		} else {
+			LOG_ERR("ILO compensation failed with status: %d", status);
+			ret = -EIO;
+			break;
+		}
+	}
+
+	if (attempts == IFX_PSOC4_ILO_COMPENSATE_MAX_ATTEMPTS) {
+		LOG_ERR("ILO compensation timed out");
+		ret = -ETIMEDOUT;
+	}
+
+	return ret;
+}
+
+static void ifx_psoc4_ilo_stop_measurement(void)
+{
+	Cy_SysClk_IloStopMeasurement();
+	wdt_data.ilo_measurement_started = false;
+}
+#endif
 
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t ignore_bits)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t match_count;
+
+	if (wdt_data.ilo_compensated_counts > 0) {
+		match_count = wdt_data.ilo_compensated_counts;
+	} else {
+		/* Use nominal ILO frequency calculation */
+		match_count = ((timeout_ms * IFX_PSOC4_ILO_FREQ_HZ) / 1000UL);
+	}
+
+	/* Ensure match count is within valid range for 16-bit WDT */
+	if (match_count > 65535) {
+		match_count = 65535;
+	}
+
+	LOG_INF("WDT match count: %u for timeout: %u ms", match_count, timeout_ms);
+	return match_count;
+#else
 	uint32_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
 	uint32_t timeout_count = ((timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000UL);
 	/* handle multiple possible wraps of WDT counter */
 	timeout_count = ((timeout_count + Cy_WDT_GetCount()) % wrap_count_for_ignore_bits);
 	return timeout_count;
+#endif
 }
 
 /* Rounds up *timeout_ms if it's outside of the valid timeout range (ifx_wdt_ignore_data) */
@@ -265,7 +361,26 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 	Cy_WDT_MaskInterrupt();
 
 	dev_data->wdt_initial_timeout_ms = dev_data->timeout;
-#if defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2)
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	ifx_psoc4_ilo_start_measurement();
+
+	dev_data->wdt_ignore_bits = ifx_wdt_timeout_to_ignore_bits(&dev_data->timeout);
+	dev_data->wdt_rounded_timeout_ms = dev_data->timeout;
+
+	uint32_t desired_delay_us = dev_data->wdt_rounded_timeout_ms * 1000UL;
+
+	if (ifx_psoc4_ilo_compensate(desired_delay_us, &dev_data->ilo_compensated_counts) != 0) {
+		/* Fallback to nominal calculation if compensation fails */
+		dev_data->ilo_compensated_counts = 0;
+	}
+
+	uint32_t match = ifx_wdt_timeout_to_match(dev_data->wdt_rounded_timeout_ms,
+						  dev_data->wdt_ignore_bits);
+
+	Cy_WDT_SetIgnoreBits(dev_data->wdt_ignore_bits);
+	Cy_WDT_SetMatch(match);
+#elif defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2)
 	Cy_WDT_SetUpperLimit(ifx_wdt_timeout_to_match(dev_data->wdt_initial_timeout_ms));
 	Cy_WDT_SetUpperAction(CY_WDT_LOW_UPPER_LIMIT_ACTION_RESET);
 #else
@@ -323,6 +438,11 @@ static int ifx_cat1_wdt_disable(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	ifx_psoc4_ilo_stop_measurement();
+	dev_data->ilo_compensated_counts = 0;
+#endif
+
 	ifx_wdt_unlock();
 	Cy_WDT_Disable();
 	ifx_wdt_lock();
@@ -374,8 +494,17 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 
 	ifx_wdt_unlock();
 	Cy_WDT_ClearWatchdog(); /* Clear to prevent reset from WDT */
-	Cy_WDT_SetMatch(ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms,
-						 data->wdt_ignore_bits));
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* For PSOC4, use the same match calculation as setup */
+	uint32_t match =
+		ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms, data->wdt_ignore_bits);
+	Cy_WDT_SetMatch(match);
+#else
+	Cy_WDT_SetMatch(
+		ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms, data->wdt_ignore_bits));
+#endif
+
 	ifx_wdt_lock();
 
 	return 0;
@@ -393,6 +522,11 @@ static int ifx_cat1_wdt_init(const struct device *dev)
 	data->wdt_initialized = false;
 	data->wdt_initial_timeout_ms = 0;
 	data->wdt_rounded_timeout_ms = 0;
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	data->ilo_compensated_counts = 0;
+	data->ilo_measurement_started = false;
+#endif
 
 	return 0;
 }
