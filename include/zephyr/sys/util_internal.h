@@ -73,63 +73,44 @@
 
 /* Used by COND_CASE_1(); supports up to 16 flag/value pairs */
 #define Z_COND_CASE_1(...) \
-	Z_COND_CASE_1_SELECT(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
+	Z_COND_CASE_1_CAT_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
 
-#define Z_COND_CASE_1_SELECT(count_minus_one, ...) \
-	UTIL_CAT(Z_COND_CASE_1_LEVEL_, count_minus_one)(__VA_ARGS__)
+#define Z_COND_CASE_1_CAT_N(count_minus_one, ...) \
+	UTIL_CAT(Z_COND_CASE_1_N_, count_minus_one)(__VA_ARGS__)
 
-#define Z_COND_CASE_1_LEVEL_0(_default) __DEBRACKET _default
-#define Z_COND_CASE_1_LEVEL_1(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_2(flag0, value0, _default) \
+#define Z_COND_CASE_1_N_0(_default) __DEBRACKET _default
+#define Z_COND_CASE_1_N_2(flag0, value0, _default) \
 	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (__DEBRACKET _default))
-#define Z_COND_CASE_1_LEVEL_3(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_4(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_2(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_5(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_6(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_4(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_7(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_8(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_6(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_9(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_10(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_8(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_11(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_12(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_10(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_13(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_14(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_12(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_15(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_16(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_14(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_17(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_18(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_16(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_19(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_20(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_18(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_21(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_22(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_20(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_23(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_24(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_22(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_25(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_26(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_24(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_27(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_28(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_26(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_29(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_30(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_28(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_31(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-#define Z_COND_CASE_1_LEVEL_32(flag0, value0, ...) \
-	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_LEVEL_30(__VA_ARGS__)))
-#define Z_COND_CASE_1_LEVEL_33(...) Z_COND_SWITCH_REQUIRES_FLAG_VALUE_PAIRS
-
-#define Z_COND_CASE_1_REQUIRES_FLAG_VALUE_PAIRS Z_COND_CASE_1_REQUIRES_FLAG_VALUE_PAIRS
+#define Z_COND_CASE_1_N_4(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_2(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_6(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_4(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_8(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_6(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_10(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_8(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_12(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_10(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_14(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_12(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_16(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_14(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_18(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_16(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_20(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_18(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_22(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_20(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_24(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_22(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_26(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_24(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_28(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_26(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_30(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_28(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_32(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_30(__VA_ARGS__)))
 
 /* Used by IS_EMPTY() */
 /* reference: https://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/ */

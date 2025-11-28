@@ -165,6 +165,37 @@ ZTEST(util, test_COND_CODE_0) {
 	zassert_true((y3 == 1));
 }
 
+ZTEST(util, test_COND_CASE_1) {
+	/* Intentionally undefined symbols used to verify that only the selected
+	 * branch expands.
+	 */
+	int val;
+
+	#define CASE_TRUE 1
+	#define CASE_FALSE 0
+
+	val = COND_CASE_1(CASE_TRUE, (42),
+			  CASE_TRUE, (COND_CASE_1_SHOULD_NOT_REACH_SECOND_TRUE_CASE),
+			  (0));
+	zexpect_equal(val, 42);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_FIRST_CASE),
+			  CASE_TRUE, (7),
+			  (11));
+	zexpect_equal(val, 7);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_SECOND_CASE),
+			  CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_THIRD_CASE),
+			  (5));
+	zexpect_equal(val, 5);
+
+	val = COND_CASE_1((9));
+	zexpect_equal(val, 9);
+
+	#undef CASE_TRUE
+	#undef CASE_FALSE
+}
+
 #undef ZERO
 #undef SEVEN
 #undef A_BUILD_ERROR
