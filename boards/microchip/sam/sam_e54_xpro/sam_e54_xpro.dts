@@ -147,6 +147,14 @@
 			gclkgen-src = "fdpll0";
 			gclkgen-en = <1>;
 		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -157,6 +165,12 @@
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
+		};
+
+		dac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
 		};
 	};
 
@@ -227,4 +241,9 @@
 
 &portc {
 	status = "okay";
+};
+
+&dac {
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
 };
