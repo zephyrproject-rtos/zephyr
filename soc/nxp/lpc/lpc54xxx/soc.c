@@ -89,6 +89,10 @@ __weak void clock_init(void)
 #endif
 
 #endif /* CONFIG_SOC_LPC54114_M4 */
+
+	if (IS_ENABLED(CONFIG_NXP_GINT)) {
+		CLOCK_EnableClock(kCLOCK_Gint);
+	}
 }
 
 /**
