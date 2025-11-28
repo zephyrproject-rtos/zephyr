@@ -29,8 +29,24 @@ properties:
       VSYNC interval. This permits the controller to send new display
       data during a VSYNC interval, removing tearing.
 
-  power-gpios:
-    type: phandle-array
+  pitch-align:
+    type: int
+    default: 1
     description: |
-      The RESETn pin is asserted to disable the controller causing a hard
-      reset. The controller receives this as an active-low signal.
+      The CO5300 driver maintains an internal frame buffer. This property
+      serves for defining a pitch for it that's compliant with the SoC's
+      display controller's requirements.
+
+  addr-align:
+    type: int
+    default: 1
+    description: |
+      The CO5300 driver maintains an internal frame buffer. This property
+      serves for defining an alignment for its address that's compliant
+      with the SoC's display controller's requirements.
+
+  ext-ram:
+    type: phandle
+    description: |
+      Secondary RAM in which the panel controller's frame buffer will
+      be stored. If not defined, the 'zephyr,ram' chosen memory will be used.
