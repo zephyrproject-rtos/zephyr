@@ -182,6 +182,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 					sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	lll->central.chan_curr = data_chan_use;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	lll_conn_tx_pkt_set(lll, pdu_data_tx);
 
 	radio_isr_set(lll_conn_isr_tx, lll);
