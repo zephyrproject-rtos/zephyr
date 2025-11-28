@@ -135,6 +135,13 @@
 			status = "disabled";
 		};
 
+		watchdog0: watchdog@40030000 {
+			compatible = "infineon,cat1-watchdog";
+			reg = <0x40030000 0xf1c>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+
 		tcpwm0: tcpwm0@40200100 {
 			reg = <0x40200100 0x180>;
 			#address-cells = <1>;
