@@ -25,3 +25,10 @@ disk devices as well. The test has the following phases:
   of various length to various sectors (once again, the driver must reject
   writes that would be outside the bounds of the disk), then performs multiple
   writes to the same location.
+
+* Erase test: Verifies that the driver can consistently erase sectors. This test
+  follows the same flow as the write test, but at each step erases the data
+  written to the disk and reads it back to ensure all data is 0x00 or 0xFF. The
+  test first performs writes of various length to various sectors (once again,
+  the driver must reject erases that would be outside the bounds of the disk),
+  then performs multiple erases to the same location.
