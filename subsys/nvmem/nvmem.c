@@ -18,6 +18,10 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t 
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(cell->dev)) {
+		return -ENODEV;
+	}
+
 	if (IS_ENABLED(CONFIG_NVMEM_EEPROM) && DEVICE_API_IS(eeprom, cell->dev)) {
 		return eeprom_read(cell->dev, cell->offset + off, buf, len);
 	}
@@ -39,6 +43,10 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 
 	if (cell->read_only) {
 		return -EROFS;
+	}
+
+	if (!device_is_ready(cell->dev)) {
+		return -ENODEV;
 	}
 
 	if (IS_ENABLED(CONFIG_NVMEM_EEPROM) && DEVICE_API_IS(eeprom, cell->dev)) {
