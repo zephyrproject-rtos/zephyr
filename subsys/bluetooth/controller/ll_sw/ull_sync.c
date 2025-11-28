@@ -275,6 +275,8 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		if (sync->skip > skip_max) {
 			sync->skip = skip_max;
 		}
+	} else {
+		sync->skip = 0U;
 	}
 
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
@@ -322,14 +324,9 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
 
 	/* Calculate offset and schedule sync radio events */
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-
 	sync_offset_us = PDU_ADV_SYNC_INFO_OFFSET_GET(si) * lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-	sync_offset_us -= EVENT_JITTER_US;
-	sync_offset_us -= ready_delay_us;
 
 	if (conn_evt_offset) {
 		int64_t conn_offset_us = (int64_t)conn_evt_offset * conn_interval_us;
@@ -387,7 +384,11 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	slot_us += ready_delay_us;
+	slot_us += lll->window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
@@ -411,7 +412,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Compensate for window widening */
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(conn->lll.periph.window_widening_event_us);
+		sync_offset_us += conn->lll.periph.window_widening_event_us;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -1104,13 +1105,8 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
 
-	/* Minimum prepare tick offset + minimum preempt tick offset are the
-	 * overheads before ULL scheduling can setup radio for reception
-	 */
-	overhead_us = HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
-
 	/* CPU execution overhead to setup the radio for reception */
-	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
+	overhead_us = EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 	/* If not sufficient CPU processing time, skip to receiving next
 	 * event.
@@ -1125,6 +1121,9 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
 	slot_us += ready_delay_us;
+	slot_us += lll->window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
