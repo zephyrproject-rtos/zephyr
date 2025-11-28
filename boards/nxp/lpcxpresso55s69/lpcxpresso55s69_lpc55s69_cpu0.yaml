@@ -29,4 +29,5 @@ supported:
   - usb_device
   - watchdog
   - rtc
+  - gint
 vendor: nxp
