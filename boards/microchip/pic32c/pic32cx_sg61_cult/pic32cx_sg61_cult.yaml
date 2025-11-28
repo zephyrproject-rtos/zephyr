@@ -16,5 +16,6 @@ supported:
   - gpio
   - pinctrl
   - pwm
+  - reset
   - uart
 vendor: microchip
