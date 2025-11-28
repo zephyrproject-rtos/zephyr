@@ -10,8 +10,7 @@ Simple Network Time Protocol Library
 Overview
 ********
 
-The SNTP library implements
-`IETF RFC4330 (Simple Network Time Protocol v4) <https://tools.ietf.org/html/rfc4330>`_.
+The SNTP library implements :rfc:`4330`.
 
 SNTP provides a way to synchronize clocks in computer networks.
 

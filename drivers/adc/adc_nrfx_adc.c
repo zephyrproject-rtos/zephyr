@@ -265,12 +265,12 @@ static int init_adc(const struct device *dev)
 {
 	const nrfx_adc_config_t config = NRFX_ADC_DEFAULT_CONFIG;
 
-	nrfx_err_t result = nrfx_adc_init(&config, event_handler);
+	int result = nrfx_adc_init(&config, event_handler);
 
-	if (result != NRFX_SUCCESS) {
+	if (result != 0) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);
-		return -EBUSY;
+		return result;
 	}
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),

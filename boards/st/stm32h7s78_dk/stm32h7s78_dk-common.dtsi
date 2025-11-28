@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &display_ctp;
+		zephyr,canbus = &fdcan1;
 	};
 
 	psram: memory@90000000 {
@@ -202,6 +203,11 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	/*
+	 * Make sure FDCAN and i2c1 are not enabled at the same time
+	 * because they share the pb9 pin
+	 * reference: DS14359 Rev 4 page 134
+	 */
 	status = "okay";
 
 	display_ctp: gt911@5d {
@@ -210,6 +216,16 @@
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	/*
+	 * fdcan1 is disabled by default in favor of i2c1 due to pb9 pin conflict
+	 * reference: DS14359 Rev 4 page 134
+	 */
+	status = "disabled";
 };
 
 &xspi1 {

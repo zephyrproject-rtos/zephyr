@@ -6,11 +6,11 @@
 
 #include <nrfx.h>
 #include <zephyr/kernel.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 
 void nrfx_isr(const void *irq_handler)
 {
-	((nrfx_irq_handler_t)irq_handler)();
+	((nrfx_irq_handler_t)irq_handler)(NULL);
 }
 
 void nrfx_busy_wait(uint32_t usec_to_wait)
@@ -22,26 +22,22 @@ void nrfx_busy_wait(uint32_t usec_to_wait)
 	}
 }
 
-char const *nrfx_error_string_get(nrfx_err_t code)
+char const *nrfx_error_string_get(int code)
 {
-	#define NRFX_ERROR_STRING_CASE(code)  case code: return #code
-	switch (code) {
-		NRFX_ERROR_STRING_CASE(NRFX_SUCCESS);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_INTERNAL);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_NO_MEM);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_NOT_SUPPORTED);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_INVALID_PARAM);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_INVALID_STATE);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_INVALID_LENGTH);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_TIMEOUT);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_FORBIDDEN);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_NULL);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_INVALID_ADDR);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_BUSY);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_ALREADY);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_DRV_TWI_ERR_OVERRUN);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_DRV_TWI_ERR_ANACK);
-		NRFX_ERROR_STRING_CASE(NRFX_ERROR_DRV_TWI_ERR_DNACK);
-		default: return "unknown";
+	switch (-code) {
+	case 0: return STRINGIFY(0);
+	case ECANCELED: return STRINGIFY(ECANCELED);
+	case ENOMEM: return STRINGIFY(ENOMEM);
+	case ENOTSUP: return STRINGIFY(ENOTSUP);
+	case EINVAL: return STRINGIFY(EINVAL);
+	case EINPROGRESS: return STRINGIFY(EINPROGRESS);
+	case E2BIG: return STRINGIFY(E2BIG);
+	case ETIMEDOUT: return STRINGIFY(ETIMEDOUT);
+	case EPERM: return STRINGIFY(EPERM);
+	case EFAULT: return STRINGIFY(EFAULT);
+	case EACCES: return STRINGIFY(EACCES);
+	case EBUSY: return STRINGIFY(EBUSY);
+	case EALREADY: return STRINGIFY(EALREADY);
+	default: return "unknown";
 	}
 }

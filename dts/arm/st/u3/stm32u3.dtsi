@@ -453,6 +453,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -470,6 +475,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -486,6 +496,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -526,6 +541,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -542,6 +562,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 

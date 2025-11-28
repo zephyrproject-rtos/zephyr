@@ -1617,7 +1617,9 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 	state->adv_sid = param->sid;
 	state->broadcast_id = param->broadcast_id;
 	state->pa_sync_state = param->pa_state;
+	state->encrypt_state = param->encrypt_state;
 	state->num_subgroups = param->num_subgroups;
+
 	if (state->num_subgroups > 0U) {
 		(void)memcpy(state->subgroups, param->subgroups,
 			     sizeof(state->subgroups));

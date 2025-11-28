@@ -346,6 +346,7 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 			volatile uint32_t *ioretenr_x = (&PWR->IORETENRA) + 2 * i;
 
 			stm32_reg_set_bits(ioretenr_x, 1U << gpio->pin);
+			break;
 		}
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WBAX */

@@ -59,6 +59,17 @@ void soc_early_init_hook(void)
 		LL_PWR_DisableUCPDDeadBattery();
 	}
 #endif
+#ifdef CONFIG_STM32_BACKUP_SRAM
+	/*
+	 * Enabling the Backup SRAM regulator is possible only when the LDO
+	 * voltage regulator is selected, as is the case after reset. If the
+	 * backup SRAM driver is enabled, make sure to enable the Backup SRAM
+	 * regulator on its behalf before (potentially) switching to SMPS.
+	 */
+	LL_PWR_EnableBkUpRegulator();
+	while (!LL_PWR_IsEnabledBkUpRegulator()) {
+	}
+#endif /* CONFIG_STM32_BACKUP_SRAM */
 
 	/* Power Configuration */
 	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);

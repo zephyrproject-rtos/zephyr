@@ -22,73 +22,13 @@ config SPI_NRFX_SPI
 config SPI_NRFX_SPIM
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
-	select NRFX_SPIM0 if HAS_HW_NRF_SPIM0
-	select NRFX_SPIM1 if HAS_HW_NRF_SPIM1
-	select NRFX_SPIM2 if HAS_HW_NRF_SPIM2
-	select NRFX_SPIM3 if HAS_HW_NRF_SPIM3
-	select NRFX_SPIM4 if HAS_HW_NRF_SPIM4
-	select NRFX_SPIM00 if HAS_HW_NRF_SPIM00
-	select NRFX_SPIM01 if HAS_HW_NRF_SPIM01
-	select NRFX_SPIM20 if HAS_HW_NRF_SPIM20
-	select NRFX_SPIM21 if HAS_HW_NRF_SPIM21
-	select NRFX_SPIM22 if HAS_HW_NRF_SPIM22
-	select NRFX_SPIM23 if HAS_HW_NRF_SPIM23
-	select NRFX_SPIM24 if HAS_HW_NRF_SPIM24
-	select NRFX_SPIM30 if HAS_HW_NRF_SPIM30
-	select NRFX_SPIM120 if HAS_HW_NRF_SPIM120
-	select NRFX_SPIM121 if HAS_HW_NRF_SPIM121
-	select NRFX_SPIM130 if HAS_HW_NRF_SPIM130
-	select NRFX_SPIM131 if HAS_HW_NRF_SPIM131
-	select NRFX_SPIM132 if HAS_HW_NRF_SPIM132
-	select NRFX_SPIM133 if HAS_HW_NRF_SPIM133
-	select NRFX_SPIM134 if HAS_HW_NRF_SPIM134
-	select NRFX_SPIM135 if HAS_HW_NRF_SPIM135
-	select NRFX_SPIM136 if HAS_HW_NRF_SPIM136
-	select NRFX_SPIM137 if HAS_HW_NRF_SPIM137
+	select NRFX_SPIM
 
 config SPI_NRFX_SPIS
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
 	select SPI_SLAVE
-	select NRFX_SPIS0 if HAS_HW_NRF_SPIS0
-	select NRFX_SPIS1 if HAS_HW_NRF_SPIS1
-	select NRFX_SPIS2 if HAS_HW_NRF_SPIS2
-	select NRFX_SPIS3 if HAS_HW_NRF_SPIS3
-	select NRFX_SPIS00 if HAS_HW_NRF_SPIS00
-	select NRFX_SPIS01 if HAS_HW_NRF_SPIS01
-	select NRFX_SPIS20 if HAS_HW_NRF_SPIS20
-	select NRFX_SPIS21 if HAS_HW_NRF_SPIS21
-	select NRFX_SPIS22 if HAS_HW_NRF_SPIS22
-	select NRFX_SPIS23 if HAS_HW_NRF_SPIS23
-	select NRFX_SPIS24 if HAS_HW_NRF_SPIS24
-	select NRFX_SPIS30 if HAS_HW_NRF_SPIS30
-	select NRFX_SPIS120 if HAS_HW_NRF_SPIS120
-	select NRFX_SPIS130 if HAS_HW_NRF_SPIS130
-	select NRFX_SPIS131 if HAS_HW_NRF_SPIS131
-	select NRFX_SPIS132 if HAS_HW_NRF_SPIS132
-	select NRFX_SPIS133 if HAS_HW_NRF_SPIS133
-	select NRFX_SPIS134 if HAS_HW_NRF_SPIS134
-	select NRFX_SPIS135 if HAS_HW_NRF_SPIS135
-	select NRFX_SPIS136 if HAS_HW_NRF_SPIS136
-	select NRFX_SPIS137 if HAS_HW_NRF_SPIS137
-
-config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-	depends on SOC_NRF52832
-	select NRFX_PPI
-	bool "Allow enabling the SPIM driver despite PAN 58"
-	help
-	  Allow enabling the nRF SPI Master with EasyDMA, despite
-	  Product Anomaly Notice 58 (SPIM: An additional byte is
-	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
-	  Without this override, the SPI Master is only available
-	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not.
-	  When used in conjunction with nRF SPIM Devicetree property
-	  'anomaly-58-workaround' a workaround can be enabled per SPIM
-	  instance.  If you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed
-	  then nRF52832 PPI and GPIOTE resources can be saved by not
-	  enabling 'anomaly-58-workaround' via the Devicetree.
+	select NRFX_SPIS
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"

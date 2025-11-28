@@ -81,7 +81,7 @@ The following is an example of a very simple response handling function:
 CoAP options may also be added to the request by the application. The following is an example of
 the application adding a Block2 option to the initial request, to suggest a maximum block size to
 the server for a resource that it expects to be large enough to require a blockwise transfer (see
-RFC7959 Figure 3: Block-Wise GET with Early Negotiation).
+:rfc:`7959` Figure 3: Block-Wise GET with Early Negotiation).
 
 .. code-block:: c
 

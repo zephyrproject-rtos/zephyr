@@ -254,7 +254,7 @@ static int init_app(void)
 		link_types.count = MIN(ARRAY_SIZE(link_types.type),
 				       ARRAY_SIZE(link_types_to_monitor));
 
-		params.family = AF_UNSPEC;
+		params.family = NET_AF_UNSPEC;
 		memcpy(&params.link_types, &link_types,
 		       sizeof(struct virtual_interface_link_types));
 

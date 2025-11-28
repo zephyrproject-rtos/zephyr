@@ -14,14 +14,13 @@ that the addresses of these kobjects would remain
 the same during later stages of linking.
 """
 
-import sys
 import argparse
 import os
-from packaging import version
+import sys
 
 import elftools
 from elftools.elf.elffile import ELFFile
-
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -38,19 +37,15 @@ def write_define(out_fp, prefix, name, value):
 def output_simple_header(one_sect):
     """Write the header for kobject section"""
 
-    out_fn = os.path.join(args.outdir,
-                          f"linker-kobject-prebuilt-{one_sect['name']}.h")
-    out_fp = open(out_fn, "w")
+    out_fn = os.path.join(args.outdir, f"linker-kobject-prebuilt-{one_sect['name']}.h")
+    with open(out_fn, "w") as out_fp:
+        if one_sect['exists']:
+            align = one_sect['align']
+            size = one_sect['size']
+            prefix = one_sect['define_prefix']
 
-    if one_sect['exists']:
-        align = one_sect['align']
-        size = one_sect['size']
-        prefix = one_sect['define_prefix']
-
-        write_define(out_fp, prefix, 'ALIGN', align)
-        write_define(out_fp, prefix, 'SZ', size)
-
-    out_fp.close()
+            write_define(out_fp, prefix, 'ALIGN', align)
+            write_define(out_fp, prefix, 'SZ', size)
 
 
 def generate_linker_headers(obj):
@@ -63,25 +58,25 @@ def generate_linker_headers(obj):
             "define_prefix": "DATA",
             "exists": False,
             "multiplier": int(args.datapct) + 100,
-            },
+        },
         ".rodata": {
             "name": "rodata",
             "define_prefix": "RODATA",
             "exists": False,
             "extra_bytes": args.rodata,
-            },
+        },
         ".priv_stacks.noinit": {
             "name": "priv-stacks",
             "define_prefix": "PRIV_STACKS",
             "exists": False,
-            },
+        },
     }
 
     for one_sect in obj.iter_sections():
         # REALLY NEED to match exact type as all other sections
         # (symbol, debug, etc.) are descendants where
         # isinstance() would match.
-        if type(one_sect) is not elftools.elf.sections.Section: # pylint: disable=unidiomatic-typecheck
+        if type(one_sect) is not elftools.elf.sections.Section:  # pylint: disable=unidiomatic-typecheck
             continue
 
         name = one_sect.name
@@ -108,18 +103,19 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("--object", required=True,
-                        help="Points to kobject_prebuilt_hash.c.obj")
-    parser.add_argument("--outdir", required=True,
-                        help="Output directory (<build_dir>/include/generated)")
-    parser.add_argument("--datapct", required=True,
-                        help="Multiplier to the size of reserved space for DATA region")
-    parser.add_argument("--rodata", required=True,
-                        help="Extra bytes to reserve for RODATA region")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Verbose messages")
+    parser.add_argument("--object", required=True, help="Points to kobject_prebuilt_hash.c.obj")
+    parser.add_argument(
+        "--outdir", required=True, help="Output directory (<build_dir>/include/generated)"
+    )
+    parser.add_argument(
+        "--datapct", required=True, help="Multiplier to the size of reserved space for DATA region"
+    )
+    parser.add_argument("--rodata", required=True, help="Extra bytes to reserve for RODATA region")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose messages")
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1

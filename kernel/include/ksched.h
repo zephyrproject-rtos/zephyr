@@ -53,7 +53,6 @@ extern struct k_spinlock _sched_spinlock;
 extern struct k_thread _thread_dummy;
 
 void z_sched_init(void);
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
@@ -73,7 +72,7 @@ void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
-void move_thread_to_end_of_prio_q(struct k_thread *thread);
+void move_current_to_end_of_prio_q(void);
 bool thread_is_sliceable(struct k_thread *thread);
 
 static inline void z_reschedule_unlocked(void)

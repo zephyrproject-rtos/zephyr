@@ -718,6 +718,9 @@ ep_request_error:
 		}
 	}
 	msc_free_scsi_buf(ctx, buf->__buf);
+	if (buf->frags) {
+		msc_free_scsi_buf(ctx, buf->frags->__buf);
+	}
 	usbd_ep_buf_free(uds_ctx, buf);
 }
 

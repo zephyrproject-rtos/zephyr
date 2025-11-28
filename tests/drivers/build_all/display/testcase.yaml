@@ -10,9 +10,15 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
+    platform_exclude:
+      - ai_m62_12f
 
   drivers.display.build.rk055hdmipi4ma0:
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
     extra_args:
       - SHIELD=rk055hdmipi4ma0
+
+  drivers.display.build.bflb_dbi:
+    platform_allow:
+      - ai_m62_12f

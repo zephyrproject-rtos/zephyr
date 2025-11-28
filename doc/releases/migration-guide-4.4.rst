@@ -37,6 +37,24 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
+Ethernet
+========
+
+* Driver MAC address configuration support using :c:struct:`net_eth_mac_config` has been introduced
+  for the following drivers:
+
+  * :zephyr_file:`drivers/ethernet/eth_test.c` (:github:`96598`)
+
+  * :zephyr_file:`drivers/ethernet/eth_sam_gmac.c` (:github:`96598`)
+
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM``
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS``
+    * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE``
+    * Removed ``mac-eeprom`` property from :dtcompatible:`atmel,sam-gmac` and
+      :dtcompatible:`atmel,sam0-gmac`
+
 MDIO
 ====
 
@@ -45,7 +63,7 @@ MDIO
   (:github:`99690`).
 
 QSPI
-===
+====
 
 * :dtcompatible:`st,stm32-qspi` compatible nodes configured with ``dual-flash`` property
   now need to also include the ``ssht-enable`` property to reenable sample shifting.
@@ -77,6 +95,8 @@ STM32
   * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+.. zephyr-keep-sorted-stop
 
 Bluetooth
 *********

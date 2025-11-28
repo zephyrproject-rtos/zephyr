@@ -473,10 +473,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	/* TODO: disallow sending sync commands from syswq altogether */
 
-	/* Since the commands are now processed in the syswq, we cannot suspend
-	 * and wait. We have to send the command from the current context.
+	/* If the commands are processed in the syswq and we are on the
+	 * syswq, then we cannot suspend and wait. We have to send the
+	 * command from the current context.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) && k_current_get() == &k_sys_work_q.thread) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
@@ -5103,24 +5104,99 @@ static bool process_pending_cmd(k_timeout_t timeout)
 static void tx_processor(struct k_work *item)
 {
 	LOG_DBG("TX process start");
+
+	/* Historically, the code in process_pending_cmd() and
+	 * bt_conn_tx_processor() has been invoked only from
+	 * cooperative threads. For now, we assume their
+	 * implementations rely on this and ensure the current
+	 * thread is cooperative.
+	 */
+	k_sched_lock();
+
 	if (process_pending_cmd(K_NO_WAIT)) {
 		/* If we processed a command, let the scheduler run before
 		 * processing another command (or data).
 		 */
 		bt_tx_irq_raise();
-		return;
+		goto exit;
 	}
 
 	/* Hand over control to conn to process pending data */
 	if (IS_ENABLED(CONFIG_BT_CONN_TX)) {
 		bt_conn_tx_processor();
 	}
+
+exit:
+	k_sched_unlock();
 }
 
+/**
+ * This work item shall never be cancelled.
+ */
 static K_WORK_DEFINE(tx_work, tx_processor);
 
+#if defined(CONFIG_BT_TX_PROCESSOR_THREAD)
+static K_THREAD_STACK_DEFINE(bt_tx_processor_stack, CONFIG_BT_TX_PROCESSOR_STACK_SIZE);
+
+/**
+ * This work queue shall never be stopped, drained or plugged.
+ */
+static struct k_work_q bt_tx_processor_workq;
+
+static int bt_tx_processor_init(void)
+{
+	struct k_work_queue_config cfg = {};
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		cfg.name = "bt_tx_processor";
+	}
+
+	k_work_queue_start(&bt_tx_processor_workq, bt_tx_processor_stack,
+			   K_THREAD_STACK_SIZEOF(bt_tx_processor_stack),
+			   CONFIG_BT_TX_PROCESSOR_THREAD_PRIO, &cfg);
+
+	return 0;
+}
+
+/* Priority 999 is the last to run in POST_KERNEL. We don't actually
+ * care when it runs, so long as it's before APPLICATION, when
+ * `bt_enable()` can be called. Running it last will allow more urgent
+ * initializations competing for CPU time to complete first.
+ */
+SYS_INIT(bt_tx_processor_init, POST_KERNEL, 999);
+#endif /* CONFIG_BT_TX_PROCESSOR_THREAD */
+
+/**
+ * This function shall not be called before init level APPLICATION.
+ */
 void bt_tx_irq_raise(void)
 {
+	int __maybe_unused err;
 	LOG_DBG("kick TX");
+#if defined(CONFIG_BT_TX_PROCESSOR_THREAD)
+	err = k_work_submit_to_queue(&bt_tx_processor_workq, &tx_work);
+	__ASSERT(err >= 0, "%d", err);
+	/* Assertions:
+	 *
+	 * EBUSY shall not occur because `bt_tx_processor_workq` shall
+	 * never be draining or plugged, and `tx_work` shall never be
+	 * cancelled.
+	 *
+	 * EINVAL is not possible because taking address of variable
+	 * cannot result in the null pointer.
+	 *
+	 * ENODEV shall not occur because `bt_tx_processor_workq` shall
+	 * never be stopped, is started before init level APPLICATION,
+	 * and this function shall not be called before init level
+	 * APPLICATION.
+	 *
+	 * The above is an exhaustive list of the API errors.
+	 *
+	 * Defensive coding: If any error occurs and asserts are
+	 * disabled, the program will recover if bt_tx_irq_raise is
+	 * called again and is successful. No cleanup is needed.
+	 */
+#else
 	k_work_submit(&tx_work);
+#endif
 }

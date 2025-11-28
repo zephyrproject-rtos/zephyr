@@ -1751,20 +1751,11 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 		dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	}
 
+	udc_dwc2_ep_disable(dev, cfg, false, true);
+
 	dxepctl = sys_read32(dxepctl_reg);
-
-	if (dxepctl & USB_DWC2_DEPCTL_USBACTEP) {
-		LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x",
-			cfg->addr, ep_idx, dxepctl);
-
-		udc_dwc2_ep_disable(dev, cfg, false, true);
-
-		dxepctl = sys_read32(dxepctl_reg);
-		dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
-	} else {
-		LOG_WRN("ep 0x%02x is not active DxEPCTL%u %x",
-			cfg->addr, ep_idx, dxepctl);
-	}
+	LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x", cfg->addr, ep_idx, dxepctl);
+	dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
 
 	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U &&
 	    ep_idx != 0U) {
@@ -2361,6 +2352,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	config->irq_disable_func(dev);
+	cancel_hibernation_request(priv);
 
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);

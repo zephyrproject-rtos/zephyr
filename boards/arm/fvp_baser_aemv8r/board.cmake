@@ -37,7 +37,7 @@ if(CONFIG_BOARD_FVP_BASER_AEMV8R_FVP_AEMV8R_AARCH64 OR
 
     -C bp.vis.disable_visualisation=1
     -C bp.vis.rate_limit-enable=0
-    -C cache_state_modelled=1
+    -C cache_state_modelled=0
     )
 elseif(CONFIG_BOARD_FVP_BASER_AEMV8R_FVP_AEMV8R_AARCH32 OR
     CONFIG_BOARD_FVP_BASER_AEMV8R_FVP_AEMV8R_AARCH32_SMP)
