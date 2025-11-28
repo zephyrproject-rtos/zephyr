@@ -1,8 +1,6 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_UHC_MAX3421E := maxim,max3421e-spi
-
 config UHC_MAX3421E
 	bool "MAX3421E driver"
 	default y
