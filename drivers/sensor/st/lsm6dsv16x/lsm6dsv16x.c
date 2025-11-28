@@ -1103,6 +1103,37 @@ static int lsm6dsv16x_tap_set_config(const struct device *dev, struct lsm6dsv16x
 	return 0;
 }
 
+static const struct shell *tap_sh = NULL;
+static stmdev_ctx_t *tap_ctx = NULL;
+
+static void tap_thread_func(
+	__attribute__((unused)) void* p1,
+	__attribute__((unused)) void* p2,
+	__attribute__((unused)) void* p3)
+{
+	while(true) {
+		k_msleep(400);
+		if (tap_sh == NULL || tap_ctx == NULL) {
+			continue;
+		}
+		lsm6dsv16x_tap_src_t status;
+		if (lsm6dsv16x_read_reg(tap_ctx, LSM6DSV16X_TAP_SRC, (uint8_t *)&status, 1)) {
+			shell_error(tap_sh, "Failed to read tap status");
+		}
+		if (*(uint8_t*)&status == 0) {
+			continue;
+		}
+		shell_print(tap_sh, "%10u %sdetect d xyz: %s%s%s%s%s%s", (unsigned)k_uptime_get(),
+			    status.tap_ia ? "" : "not ", status.tap_sign ? "+" : "-",
+			    status.x_tap ? "x" : "", status.y_tap ? "y" : "",
+			    status.z_tap ? "z" : "", status.double_tap ? "double " : "",
+			    status.single_tap ? "single " : "");
+	}
+}
+K_THREAD_DEFINE(tap_tid, 1600,
+	tap_thread_func, NULL, NULL, NULL, // entry point and up to 3 arguments
+	12, 0, 0     ); // priority, stack options, delay
+
 static int lsm6dsv16x_shell_tap_get_handler(const struct shell *sh,
 	size_t argc, char **argv, void *data)
 {
@@ -1130,6 +1161,8 @@ static int lsm6dsv16x_shell_tap_get_handler(const struct shell *sh,
 		status.double_tap ? "double " : "",
 		status.single_tap ? "single " : "");
 
+	tap_ctx = ctx;
+	tap_sh = sh;
 	return 0;
 }
 
