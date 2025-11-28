@@ -17,6 +17,16 @@ uart0: &scb0 {
 	pinctrl-names = "default";
 };
 
+spi1: &scb1 {
+	compatible = "infineon,cat1-spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri_div_16bit_2>;
+	pinctrl-0 = <&p4_4_scb1_spi_m_mosi &p4_5_scb1_spi_m_miso &p4_6_scb1_spi_m_clk>;
+	pinctrl-names = "default";
+};
+
 &peri_div_16bit_0 {
 	status = "okay";
 	resource-type = <IFX_RSC_SCB>;
