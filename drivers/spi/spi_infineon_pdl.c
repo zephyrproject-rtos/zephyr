@@ -25,13 +25,10 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include <cy_scb_spi.h>
 #include <cy_trigmux.h>
 
-#define IFX_CAT1_SPI_DEFAULT_OVERSAMPLE (4)
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define IFX_CAT1_SPI_MIN_DATA_WIDTH (4)
-#else
-#define IFX_CAT1_SPI_MIN_DATA_WIDTH (8)
-#endif
-#define IFX_CAT1_SPI_MAX_DATA_WIDTH (32)
+#define IFX_CAT1_SPI_DEFAULT_OVERSAMPLE CONFIG_IFX_CAT1_SPI_OVERSAMPLE_DEFAULT
+
+#define IFX_CAT1_SPI_MIN_DATA_WIDTH CONFIG_IFX_CAT1_SPI_MIN_DATA_WIDTH
+#define IFX_CAT1_SPI_MAX_DATA_WIDTH CONFIG_IFX_CAT1_SPI_MAX_DATA_WIDTH
 
 #define IFX_CAT1_SPI_OVERSAMPLE_MIN 4
 #define IFX_CAT1_SPI_OVERSAMPLE_MAX 16
@@ -48,6 +45,12 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
 #if CY_SCB_DRV_VERSION_MINOR >= 20 && defined(COMPONENT_CAT1) && CY_SCB_DRV_VERSION_MAJOR == 3
 #define IFX_CAT1_SPI_ASYMM_PDL_FUNC_AVAIL
+#endif
+
+#if defined(CY_IP_MXSCB_INSTANCES)
+#define _IFX_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
+#elif defined(CY_IP_M0S8SCB_INSTANCES)
+#define _IFX_SCB_ARRAY_SIZE (CY_IP_M0S8SCB_INSTANCES)
 #endif
 
 #ifdef CONFIG_IFX_CAT1_SPI_DMA
@@ -139,7 +142,120 @@ static void ifx_cat1_spi_cb_wrapper(const struct device *dev, uint32_t event);
 cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *tx, size_t tx_length,
 				      uint8_t *rx, size_t rx_length);
 
-int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr);
+CySCB_Type *const _IFX_SCB_BASE_ADDR[_IFX_SCB_ARRAY_SIZE] = {
+#ifdef SCB0
+	SCB0,
+#endif
+#ifdef SCB1
+	SCB1,
+#endif
+#ifdef SCB2
+	SCB2,
+#endif
+#ifdef SCB3
+	SCB3,
+#endif
+#ifdef SCB4
+	SCB4,
+#endif
+#ifdef SCB5
+	SCB5,
+#endif
+#ifdef SCB6
+	SCB6,
+#endif
+#ifdef SCB7
+	SCB7,
+#endif
+#ifdef SCB8
+	SCB8,
+#endif
+#ifdef SCB9
+	SCB9,
+#endif
+#ifdef SCB10
+	SCB10,
+#endif
+#ifdef SCB11
+	SCB11,
+#endif
+#ifdef SCB12
+	SCB12,
+#endif
+#ifdef SCB13
+	SCB13,
+#endif
+#ifdef SCB14
+	SCB14,
+#endif
+#ifdef SCB15
+	SCB15,
+#endif
+};
+
+const uint8_t _IFX_SCB_BASE_ADDR_IDX[_IFX_SCB_ARRAY_SIZE] = {
+#ifdef SCB0
+	0u,
+#endif
+#ifdef SCB1
+	1u,
+#endif
+#ifdef SCB2
+	2u,
+#endif
+#ifdef SCB3
+	3u,
+#endif
+#ifdef SCB4
+	4u,
+#endif
+#ifdef SCB5
+	5u,
+#endif
+#ifdef SCB6
+	6u,
+#endif
+#ifdef SCB7
+	7u,
+#endif
+#ifdef SCB8
+	8u,
+#endif
+#ifdef SCB9
+	9u,
+#endif
+#ifdef SCB10
+	10u,
+#endif
+#ifdef SCB11
+	11u,
+#endif
+#ifdef SCB12
+	12u,
+#endif
+#ifdef SCB13
+	13u,
+#endif
+#ifdef SCB14
+	14u,
+#endif
+#ifdef SCB15
+	15u,
+#endif
+};
+
+int32_t ifx_get_hw_block_num(CySCB_Type *reg_addr)
+{
+	uint32_t val;
+
+	for (val = 0u; val < _IFX_SCB_ARRAY_SIZE; val++) {
+		if (_IFX_SCB_BASE_ADDR[val] == reg_addr) {
+			return _IFX_SCB_BASE_ADDR_IDX[val];
+		}
+	}
+
+	return -1;
+}
 
 static uint8_t get_dfs_value(struct spi_context *ctx)
 {
@@ -248,6 +364,13 @@ static void spi_interrupt_callback(void *arg, uint32_t event)
 	const struct device *dev = (const struct device *)arg;
 	struct ifx_cat1_spi_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* PSOC4 slave mode: completion is handled by polling in transceive() */
+	if (data->is_slave) {
+		return;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 	if (event & CY_SCB_SPI_TRANSFER_ERR_EVENT) {
 		const struct ifx_cat1_spi_config *const config = dev->config;
@@ -404,6 +527,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 {
 	int result;
 	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
@@ -419,6 +543,28 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	spi_context_cs_control(ctx, true);
 
 	transfer_chunk(dev);
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	if (data->is_slave) {
+		/* PSOC4 SPI slave mode: Use polling for transfer completion.
+		 * The slave doesn't control when the master starts the transaction,
+		 * so we poll until CY_SCB_SPI_TRANSFER_ACTIVE clears (matching
+		 * the bare-metal implementation approach).
+		 * Use short sleep to allow other threads to run while waiting.
+		 */
+		while (CY_SCB_SPI_TRANSFER_ACTIVE &
+		       Cy_SCB_SPI_GetTransferStatus(config->reg_addr, &data->context)) {
+			k_sleep(K_USEC(100));
+		}
+
+		spi_context_update_tx(ctx, data->dfs_value, data->chunk_len);
+		spi_context_update_rx(ctx, data->dfs_value, data->chunk_len);
+		spi_context_cs_control(ctx, false);
+		spi_context_release(ctx, 0);
+		return 0;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
+
 	result = spi_context_wait_for_completion(&data->ctx);
 
 	spi_context_release(ctx, result);
@@ -472,7 +618,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 
 	/* Dedicate SCB HW resource */
 	data->resource.type = IFX_RSC_SCB;
-	data->resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
+	data->resource.block_num = ifx_get_hw_block_num(config->reg_addr);
 
 #ifdef CONFIG_IFX_CAT1_SPI_DMA
 	/* spi_rx_trigger is initialized to PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0,
@@ -570,6 +716,20 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #define EN_XFER_SEPARATION enableTransferSeperation
 #endif
 
+/*
+ * Trigger level 7 to optimize DMA efficiency by enabling 8-byte burst transfers,
+ * which reduces overhead. Lower values would lead to frequent single-byte DMA operations,
+ * which are less efficient. This strikes a good balance between throughput and latency.
+ * (matching bare-metal implementation)
+ */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define DEFAULT_TX_FIFO_TRIGGER_LEVEL 7
+#define DEFAULT_RX_FIFO_TRIGGER_LEVEL 7
+#else
+#define DEFAULT_TX_FIFO_TRIGGER_LEVEL 0
+#define DEFAULT_RX_FIFO_TRIGGER_LEVEL 0
+#endif
+
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define SPI_PERI_CLOCK_INIT(n)                                                                     \
 	.clock =                                                                                   \
@@ -591,6 +751,16 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define ADVANCED_SPI_FIELDS(n)                                                                     \
+	.parity = CY_SCB_SPI_PARITY_NONE, .dropOnParityError = false,                              \
+	.ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),                                     \
+	.ssHoldDelay = DT_INST_PROP_OR(n, ss_hold_delay, 0),                                       \
+	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0)
+#else
+#define ADVANCED_SPI_FIELDS(n)
 #endif
 
 #define IFX_CAT1_SPI_INIT(n)                                                                       \
@@ -627,11 +797,14 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
 			 .EN_XFER_SEPARATION =                                                     \
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
+			 ADVANCED_SPI_FIELDS(n),                                                   \
 			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
-			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
+			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level,           \
+							       DEFAULT_RX_FIFO_TRIGGER_LEVEL),     \
 			 .rxFifoIntEnableMask = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),    \
-			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 0),       \
+			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level,           \
+							       DEFAULT_TX_FIFO_TRIGGER_LEVEL),     \
 			 .txFifoIntEnableMask = DT_INST_PROP_OR(n, tx_fifo_int_enable_mask, 0),    \
 			 .masterSlaveIntEnableMask =                                               \
 				 DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0)},             \
@@ -701,6 +874,15 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 
 			data->rx_buffer = rx + (tx_words);
 			data->rx_buffer_size = rx_words - tx_words;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		} else if (data->is_slave) {
+			/* PSOC4 slave mode: receive all bytes in one transfer.
+			 * Pass rx_words as the transfer size.
+			 */
+			data->pending = IFX_CAT1_SPI_PENDING_RX;
+			tx = NULL;
+			tx_words = rx_words;
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 		} else {
 			/*  I) read only. */
 			data->pending = IFX_CAT1_SPI_PENDING_RX;
@@ -783,6 +965,7 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
 #endif
@@ -838,6 +1021,7 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 #endif
 	return -EINVAL;
 }
+#endif
 
 static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t hz,
 					    uint8_t *over_sample_val)
@@ -862,6 +1046,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency(hfclk);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency();
 #endif
 
 	if (!data->is_slave) {
@@ -980,6 +1166,15 @@ static cy_rslt_t spi_init_hw(const struct device *dev, cy_stc_scb_spi_config_t *
 		data->callback_data.callback_arg = NULL;
 		data->irq_cause = 0;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		/* PSOC4 slave mode: set active slave select BEFORE enabling SPI
+		 * (matching bare-metal initialization order)
+		 */
+		if (cfg->spiMode == CY_SCB_SPI_SLAVE) {
+			Cy_SCB_SPI_SetActiveSlaveSelect(config->reg_addr, CY_SCB_SPI_SLAVE_SELECT0);
+		}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
+
 		irq_enable(config->irq_num);
 		Cy_SCB_SPI_Enable(config->reg_addr);
 	} else {
@@ -1028,6 +1223,13 @@ static void spi_irq_handler(const struct device *dev)
 	const struct ifx_cat1_spi_config *const config = dev->config;
 
 	Cy_SCB_SPI_Interrupt(config->reg_addr, &(data->context));
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* PSOC4 slave mode: completion is handled by polling in transceive() */
+	if (data->is_slave) {
+		return;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 	if (!data->is_async) {
 		if (CY_SCB_MASTER_INTR_SPI_DONE &
