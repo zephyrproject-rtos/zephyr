@@ -17,6 +17,7 @@
 #include <string.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include "lsm6dsv16x.h"
@@ -1054,6 +1055,118 @@ static DEVICE_API(sensor, lsm6dsv16x_driver_api) = {
 	.submit = lsm6dsv16x_submit,
 #endif
 };
+
+struct lsm6dsv16x_tap_config {
+	bool en_x;
+	bool en_y;
+	bool en_z;
+	uint8_t axis_prio;
+	uint8_t thresh_x;
+	uint8_t thresh_y;
+	uint8_t thresh_z;
+	uint8_t time_shock;
+	uint8_t time_quiet;
+	uint8_t time_gap;
+	bool double_tap;
+};
+
+static int lsm6dsv16x_tap_get_config(const struct device *dev, struct lsm6dsv16x_tap_config *tapcfg)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	lsm6dsv16x_tap_detection_t det;
+	if (lsm6dsv16x_tap_detection_get(ctx, &det) < 0) {
+		return -EIO;
+	}
+	tapcfg->en_x = det.tap_x_en;
+	tapcfg->en_y = det.tap_y_en;
+	tapcfg->en_z = det.tap_z_en;
+
+	return 0;
+}
+
+static int lsm6dsv16x_tap_set_config(const struct device *dev, struct lsm6dsv16x_tap_config *tapcfg)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	lsm6dsv16x_tap_detection_t det = {
+		tapcfg->en_x,
+		tapcfg->en_y,
+		tapcfg->en_z,
+	};
+	if (lsm6dsv16x_tap_detection_set(ctx, det) < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int lsm6dsv16x_shell_tap_get_handler(const struct shell *sh,
+	size_t argc, char **argv, void *data)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_lsm6dsv16x));
+	struct lsm6dsv16x_tap_config tapcfg;
+	if (lsm6dsv16x_tap_get_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to get tap config");
+		return -EIO;
+	}
+	shell_print(sh, "en: %s%s%s prio: %d thres: %d/%d/%d shock: %d quiet: %d gap: %d",
+		tapcfg.en_x ? "x": "", tapcfg.en_y ? "y": "", tapcfg.en_z ? "z": "",
+		tapcfg.axis_prio, tapcfg.thresh_x, tapcfg.thresh_y, tapcfg.thresh_z,
+		tapcfg.time_shock, tapcfg.time_quiet, tapcfg.time_gap);
+
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dsv16x_tap_src_t status;
+	if (lsm6dsv16x_read_reg(ctx, LSM6DSV16X_TAP_SRC, (uint8_t *)&status, 1)) {
+		shell_error(sh, "Failed to read tap status");
+		return -EIO;
+	}
+	shell_print(sh, "%sdetect d xyz: %s%s%s%s%s%s", status.tap_ia ? "" : "not ",
+		status.tap_sign ? "+" : "-", status.x_tap ? "x" : "",
+		status.y_tap ? "y" : "", status.z_tap ? "z" : "",
+		status.double_tap ? "double " : "",
+		status.single_tap ? "single " : "");
+
+	return 0;
+}
+
+static int lsm6dsv16x_shell_tap_en_handler(const struct shell *sh,
+	size_t argc, char **argv, void *data)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_lsm6dsv16x));
+	struct lsm6dsv16x_tap_config tapcfg;
+	if (lsm6dsv16x_tap_get_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to get tap config");
+		return -EIO;
+	}
+	if (strcmp(argv[1], "x") == 0) {
+		tapcfg.en_x = !tapcfg.en_x;
+		shell_print(sh, "%sable tap x", tapcfg.en_x ? "en" : "dis");
+	}
+	if (strcmp(argv[1], "y") == 0) {
+		tapcfg.en_y = !tapcfg.en_y;
+		shell_print(sh, "%sable tap y", tapcfg.en_y ? "en" : "dis");
+	}
+	if (strcmp(argv[1], "z") == 0) {
+		tapcfg.en_z = !tapcfg.en_z;
+		shell_print(sh, "%sable tap z", tapcfg.en_z ? "en" : "dis");
+	}
+	if (lsm6dsv16x_tap_set_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to set tap config");
+		return -EIO;
+	}
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_tap,
+	SHELL_CMD(get, NULL, "Get tap config", lsm6dsv16x_shell_tap_get_handler),
+	SHELL_CMD_ARG(en, NULL, "Toggle tap axis enable", lsm6dsv16x_shell_tap_en_handler, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+SHELL_CMD_REGISTER(tap, &sub_tap, "LSM6DSV16x tap commands", NULL);
 
 static int lsm6dsv16x_init_chip(const struct device *dev)
 {
