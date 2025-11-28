@@ -41,6 +41,12 @@ The following CVEs are addressed by this release:
 * `CVE-2025-52497 <https://www.cve.org/CVERecord?id=CVE-2025-52497>`_
   `Heap buffer under-read when parsing PEM-encrypted material
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-2/>`_
+* `CVE-2025-59438 <https://www.cve.org/CVERecord?id=CVE-2025-59438>`_
+  `Padding oracle through timing of cipher error reporting
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-invalid-padding-error/>`_
+* `CVE-2025-54764 <https://www.cve.org/CVERecord?id=CVE-2025-54764>`_
+  `Side channel in RSA key generation and operations (SSBleed, M-Step)
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-ssbleed-mstep/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -143,7 +149,8 @@ These GitHub issues were addressed since the previous 3.7.1 tagged release:
 Mbed TLS
 ********
 
-Mbed TLS was updated to version 3.6.4 (from 3.6.2). The release notes can be found at:
+Mbed TLS was updated to version 3.6.5 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.5
 https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.4
 https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
 
