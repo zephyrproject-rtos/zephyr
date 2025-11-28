@@ -83,7 +83,8 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 		}
 	}
 
-	data->streams[data->cnt++] = cap_stream;
+	data->streams[data->cnt] = cap_stream;
+	data->cnt++;
 
 	return true;
 }
@@ -815,7 +816,8 @@ static bool broadcast_source_foreach_stream_cb(struct bt_cap_stream *cap_stream,
 		return false;
 	}
 
-	data->streams[data->cnt++] = cap_stream;
+	data->streams[data->cnt] = cap_stream;
+	data->cnt++;
 
 	return true;
 }
