@@ -49,4 +49,10 @@
 				 <PC3B_ADC1_AIN5>;	/* EXT3 pin 4 */
 		};
 	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT0>;
+		};
+	};
 };
