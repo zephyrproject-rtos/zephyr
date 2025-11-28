@@ -217,9 +217,10 @@ class TestPlan:
                                 testsuite_pattern=self.options.test_pattern)
 
         if num == 0:
-            raise TwisterRuntimeError("No testsuites found at the specified location...")
+            print("No testsuites found at the specified location...", file=sys.stderr)
+            raise SystemExit(1)
         if self.load_errors:
-            raise TwisterRuntimeError(
+            raise SystemExit(
                 f"Found {self.load_errors} errors loading {num} test configurations."
             )
 
@@ -236,7 +237,7 @@ class TestPlan:
         qv = self.options.quarantine_verify
         if qv and not ql:
             logger.error("No quarantine list given to be verified")
-            raise TwisterRuntimeError("No quarantine list given to be verified")
+            raise SystemExit("No quarantine list given to be verified")
         if ql:
             for quarantine_file in ql:
                 try:
