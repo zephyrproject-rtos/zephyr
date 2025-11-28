@@ -1,19 +1,152 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT adi_tmc51xx
 
 #include <stdlib.h>
 
 #include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 #include <adi_tmc_bus.h>
+#include <adi_tmc_spi.h>
+#include <adi_tmc_uart.h>
 #include <adi_tmc5xxx_common.h>
-#include "tmc51xx.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
+
+/* Check for supported bus types */
+#define TMC51XX_BUS_SPI  DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define TMC51XX_BUS_UART DT_ANY_INST_ON_BUS_STATUS_OKAY(uart)
+
+/* Common configuration structure for TMC51xx */
+struct tmc51xx_config {
+	union tmc_bus bus;
+	const struct tmc_bus_io *bus_io;
+	uint8_t comm_type;
+	const uint32_t gconf;
+	const uint32_t clock_frequency;
+	const uint16_t default_micro_step_res;
+	const int8_t sg_threshold;
+	const bool is_sg_enabled;
+	const uint32_t sg_velocity_check_interval_ms;
+	const uint32_t sg_threshold_velocity;
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN
+	const struct tmc_ramp_generator_data default_ramp_config;
+#endif
+#if TMC51XX_BUS_UART
+	const struct gpio_dt_spec sw_sel_gpio;
+	uint8_t uart_addr;
+#endif
+#if TMC51XX_BUS_SPI
+	struct gpio_dt_spec diag0_gpio;
+#endif
+};
+
+struct tmc51xx_data {
+	struct k_sem sem;
+	struct k_work_delayable stallguard_dwork;
+	struct k_work_delayable rampstat_callback_dwork;
+	struct gpio_callback diag0_cb;
+	const struct device *stepper;
+	stepper_event_callback_t callback;
+	void *event_cb_user_data;
+};
+
+#if TMC51XX_BUS_SPI
+
+static int tmc51xx_bus_check_spi(const union tmc_bus *bus, uint8_t comm_type)
+{
+	if (comm_type != TMC_COMM_SPI) {
+		return -ENOTSUP;
+	}
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
+}
+
+static int tmc51xx_reg_write_spi(const struct device *dev, const uint8_t reg_addr,
+				 const uint32_t reg_val)
+{
+	const struct tmc51xx_config *config = dev->config;
+	int err;
+
+	err = tmc_spi_write_register(&config->bus.spi, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
+	if (err < 0) {
+		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+	}
+
+	return err;
+}
+
+static int tmc51xx_reg_read_spi(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val)
+{
+	const struct tmc51xx_config *config = dev->config;
+	int err;
+
+	err = tmc_spi_read_register(&config->bus.spi, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
+	if (err < 0) {
+		LOG_ERR("Failed to read register 0x%x", reg_addr);
+	}
+
+	return err;
+}
+
+const struct tmc_bus_io tmc51xx_spi_bus_io = {
+	.check = tmc51xx_bus_check_spi,
+	.read = tmc51xx_reg_read_spi,
+	.write = tmc51xx_reg_write_spi,
+};
+#endif /* TMC51XX_BUS_SPI */
+
+#if TMC51XX_BUS_UART
+
+static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
+{
+	if (comm_type != TMC_COMM_UART) {
+		return -ENOTSUP;
+	}
+	return device_is_ready(bus->uart) ? 0 : -ENODEV;
+}
+
+static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
+				  const uint32_t reg_val)
+{
+	const struct tmc51xx_config *config = dev->config;
+	int err;
+
+	/* Route to the adi_tmc_uart.h implementation */
+	err = tmc_uart_write_register(config->bus.uart, config->uart_addr, reg_addr, reg_val);
+	if (err < 0) {
+		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+	}
+
+	return err;
+}
+
+static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_addr,
+				 uint32_t *reg_val)
+{
+	const struct tmc51xx_config *config = dev->config;
+	int err;
+
+	/* Route to the adi_tmc_uart.h implementation */
+	err = tmc_uart_read_register(config->bus.uart, config->uart_addr, reg_addr, reg_val);
+	if (err < 0) {
+		LOG_ERR("Failed to read register 0x%x", reg_addr);
+	}
+
+	return err;
+}
+
+const struct tmc_bus_io tmc51xx_uart_bus_io = {
+	.check = tmc51xx_bus_check_uart,
+	.read = tmc51xx_reg_read_uart,
+	.write = tmc51xx_reg_write_uart,
+};
+#endif /* TMC51XX_BUS_UART */
 
 static inline int tmc51xx_bus_check(const struct device *dev)
 {
