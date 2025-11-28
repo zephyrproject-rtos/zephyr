@@ -42,6 +42,10 @@ void soc_early_init_hook(void)
 	POWER_DisablePD(kPDRUNCFG_PD_VD7_ENA);
 	POWER_DisablePD(kPDRUNCFG_PD_VREFP_SW);
 	POWER_DisablePD(kPDRUNCFG_PD_TEMPS);
+
+	if (IS_ENABLED(CONFIG_NXP_GINT)) {
+		CLOCK_EnableClock(kCLOCK_Gint);
+	}
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
