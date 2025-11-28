@@ -641,9 +641,9 @@ def test_testplan_find_subtests(
 
 
 TESTDATA_3 = [
-    (0, 0, [], False, [], TwisterRuntimeError, []),
-    (1, 1, [], False, [], TwisterRuntimeError, []),
-    (1, 0, [], True, [], TwisterRuntimeError, ['No quarantine list given to be verified']),
+    (0, 0, [], False, [], SystemExit, []),
+    (1, 1, [], False, [], SystemExit, []),
+    (1, 0, [], True, [], SystemExit, ['No quarantine list given to be verified']),
     (1, 0, ['qfile.yaml'], False, ['- platforms:\n  - demo_board_3\n  comment: "board_3"'], None, []),
 ]
 
@@ -714,10 +714,10 @@ TESTDATA_4 = [
 ]
 
 @pytest.mark.parametrize(
-    'report_suffix, only_failed, load_tests, test_only, subset,' \
-    ' exception, expected_selected_platforms, expected_generate_subset_args',
+    'report_suffix, only_failed, load_tests, test_only, subset, ' \
+    'exception, expected_selected_platforms, expected_generate_subset_args',
     TESTDATA_4,
-    ids=['apply_filters only', 'only failed', 'load tests', 'test only']
+    ids=['apply-filters-only', 'only-failed', 'load-tests', 'test-only']
 )
 def test_testplan_load(
     tmp_path,
