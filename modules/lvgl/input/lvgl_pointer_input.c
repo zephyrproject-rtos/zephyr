@@ -35,8 +35,16 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 	struct lvgl_pointer_input_data *data = dev->data;
 	lv_display_t *disp = lv_indev_get_display(data->common_data.indev);
 	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
-	struct display_capabilities *cap = &disp_data->cap;
-	lv_point_t *point = &data->common_data.pending_event.point;
+	struct display_capabilities *cap;
+	lv_point_t *point;
+
+	if (disp_data == NULL) {
+		LOG_WRN_ONCE("disp_data is NULL");
+		return;
+	}
+
+	cap = &disp_data->cap;
+	point = &data->common_data.pending_event.point;
 
 	switch (evt->code) {
 	case INPUT_ABS_X:
