@@ -1,0 +1,135 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip DAC G1 Driver
+
+description: |
+  Binding for the Microchip DAC driver supporting G1 DAC peripherals.
+
+  Group G1 DAC driver supports the following hardware peripheral:
+    - module name="DAC" id="U2502" version="1.0.0"
+
+compatible: "microchip,dac-g1"
+
+include:
+  - name: dac-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  "#io-channel-cells":
+    type: int
+    required: true
+    const: 1
+    description: |
+      Number of cells needed to represent a channel.
+
+  refsel:
+    type: string
+    required: true
+    enum:
+      - "vrefau"
+      - "vddana"
+      - "vrefab"
+      - "intref"
+    description: |
+      Reference Voltage selection.
+
+      Must be one of:
+      - "vrefau" (0x0) - Unbuffered External Voltage Reference
+      - "vddana" (0x1) - Voltage Supply
+      - "vrefab" (0x2) - Buffered External Voltage Reference
+      - "intref" (0x3) - Internal Bandgap Reference
+
+  max-channels:
+    type: int
+    default: 2
+    description: |
+      Maximum number of channels
+
+child-binding:
+  description: |
+    Channel configuration.
+    All nodes using this binding must be named "channel".
+
+  properties:
+    channel:
+      type: int
+      required: true
+      description: |
+        Channel identifier.
+
+    rate:
+      type: int
+      required: true
+      description: |
+        Conversion Speed in kSPS(Kilo Samples per second)
+      enum:
+        - 100
+        - 500
+        - 1000
+
+    ext-filter:
+      type: boolean
+      description: |
+        Enable External Filter
+
+    data-adj:
+      type: string
+      default: right
+      description: |
+        Adjust Data in Data Register
+      enum:
+        - right
+        - left
+
+    dither:
+      type: boolean
+      description: |
+        Enable the Dithering Mode
+
+    sampling-ratio:
+      type: int
+      default: 1
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+      description: |
+        Set the Oversampling Ratio
+
+        Setting the Oversampling Ratio will Disable the refresh rate.
+
+    refresh:
+      type: int
+      default: 0
+      description: |
+        Refresh Period in us ( 0 - Disabled )
+      enum:
+        - 0
+        - 30
+        - 60
+        - 90
+        - 120
+        - 150
+        - 180
+        - 210
+        - 240
+        - 270
+        - 300
+        - 330
+        - 360
+        - 390
+        - 420
+        - 450
