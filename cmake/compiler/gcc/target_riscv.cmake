@@ -136,6 +136,10 @@ if(NOT CONFIG_RISCV_ISA_EXT_M AND
   string(APPEND riscv_march "_zmmul")
 endif()
 
+if(CONFIG_RISCV_USE_MSAVE_RESTORE)
+  list(APPEND RISCV_C_FLAGS -msave-restore)
+endif()
+
 list(APPEND RISCV_C_FLAGS
      -mabi=${riscv_mabi}
      -march=${riscv_march}
