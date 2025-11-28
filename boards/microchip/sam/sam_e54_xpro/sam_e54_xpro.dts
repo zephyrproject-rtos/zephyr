@@ -180,6 +180,12 @@
 			gclkperiph-src = "gclk1";
 			gclkperiph-en = <0>;
 		};
+
+		dac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
 	};
 
 	mclkperiph: mclkperiph {
@@ -261,5 +267,10 @@
 	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
 	prescaler = <4>;
 	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+};
+
+&dac {
+	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
 };
