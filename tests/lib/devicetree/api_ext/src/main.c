@@ -33,17 +33,31 @@ ZTEST(devicetree_api_ext, test_adc_dt_spec)
 
 	/* ADC_DT_SPEC_GET_BY_NAME */
 	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch1);
-	zassert_equal(adc_spec.channel_id, 10, "");
+	zexpect_equal(adc_spec.channel_id, 10, "");
 
 	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch2);
-	zassert_equal(adc_spec.channel_id, 20, "");
+	zexpect_equal(adc_spec.channel_id, 20, "");
 
 	/* ADC_DT_SPEC_INST_GET_BY_NAME */
 	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch1);
-	zassert_equal(adc_spec.channel_id, 10, "");
+	zexpect_equal(adc_spec.channel_id, 10, "");
 
 	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch2);
-	zassert_equal(adc_spec.channel_id, 20, "");
+	zexpect_equal(adc_spec.channel_id, 20, "");
+
+	/* ADC_DT_SPEC_GET_BY_IDX */
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_IDX(TEST_TEMP, 0);
+	zexpect_equal(adc_spec.channel_id, 10, "");
+
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_IDX(TEST_TEMP, 1);
+	zexpect_equal(adc_spec.channel_id, 20, "");
+
+	/* ADC_DT_SPEC_INST_GET_BY_IDX */
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_IDX(0, 0);
+	zexpect_equal(adc_spec.channel_id, 10, "");
+
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_IDX(0, 1);
+	zexpect_equal(adc_spec.channel_id, 20, "");
 }
 
 DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL, 90, NULL);
