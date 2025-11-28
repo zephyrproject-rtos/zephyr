@@ -135,6 +135,14 @@
 		enable-gpios = <&gpio3 15 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
+	psram: memory@0x38000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x38000000 0x8000000>;
+		status = "okay";
+		zephyr,memory-region = "FLEXSPI2";
+	};
 };
 
 /*
