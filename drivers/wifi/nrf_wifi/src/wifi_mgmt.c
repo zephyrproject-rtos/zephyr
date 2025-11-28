@@ -875,18 +875,6 @@ int nrf_wifi_channel(const struct device *dev,
 		return ret;
 	}
 
-	for (i = 0; i < MAX_PEERS; i++) {
-		peer = &sys_dev_ctx->tx_config.peers[i];
-		if (peer->peer_id == -1) {
-			continue;
-		}
-		if (peer->authorized) {
-			LOG_ERR("%s: Cannot change channel when in station connected mode",
-				__func__);
-			return ret;
-		}
-	}
-
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
@@ -901,6 +889,18 @@ int nrf_wifi_channel(const struct device *dev,
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+
+	for (i = 0; i < MAX_PEERS; i++) {
+		peer = &sys_dev_ctx->tx_config.peers[i];
+		if (peer->peer_id == -1) {
+			continue;
+		}
+		if (peer->authorized) {
+			LOG_ERR("%s: Cannot change channel when in station connected mode",
+				__func__);
+			return ret;
+		}
+	}
 
 	if (channel->oper == WIFI_MGMT_SET) {
 		/**
