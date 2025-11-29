@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Lemonbeat GmbH
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +91,14 @@
 			   <ARDUINO_HEADER_R3_D14 0 &gpio1 21 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpio1 20 0>;
 	};
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
 };
 
 &flexcomm0 {
