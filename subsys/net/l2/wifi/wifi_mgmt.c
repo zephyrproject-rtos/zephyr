@@ -1656,10 +1656,21 @@ out:
 	return ret;
 }
 
+struct add_stored_network_arg {
+	struct net_if *iface;
+	bool connected;
+};
+
 static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 {
+	struct add_stored_network_arg *arg = cb_arg;
 	int ret = 0;
 	struct wifi_credentials_personal creds;
+
+	if (arg->connected) {
+		/* Already connected */
+		return;
+	}
 
 	/* load stored data */
 	ret = wifi_credentials_get_by_ssid_personal_struct(ssid, ssid_len, &creds);
@@ -1670,7 +1681,11 @@ static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 		return;
 	}
 
-	add_network_from_credentials_struct_personal(&creds, (struct net_if *)cb_arg);
+	ret = add_network_from_credentials_struct_personal(&creds, arg->iface);
+	if (ret == 0) {
+		/* Indicate that we are connected */
+		arg->connected = true;
+	}
 }
 
 static int add_static_network_config(struct net_if *iface)
@@ -1724,6 +1739,9 @@ static int add_static_network_config(struct net_if *iface)
 static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, void *data,
 				  size_t len)
 {
+	struct add_stored_network_arg cb_arg = {
+		.iface = iface,
+	};
 	int ret = 0;
 
 	ret = add_static_network_config(iface);
@@ -1731,7 +1749,7 @@ static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, v
 		return ret;
 	}
 
-	wifi_credentials_for_each_ssid(add_stored_network, iface);
+	wifi_credentials_for_each_ssid(add_stored_network, &cb_arg);
 
 	return ret;
 };
