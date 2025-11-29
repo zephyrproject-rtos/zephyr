@@ -69,7 +69,8 @@ static int st_stm32_common_config(void)
 
 #if defined(CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_DBGMCU_EnableDBGSleepMode();
 	LL_DBGMCU_EnableDBGStopMode();
 	LL_DBGMCU_EnableDBGStandbyMode();
@@ -89,7 +90,8 @@ static int st_stm32_common_config(void)
 #else
 
 /* keeping in mind that debugging draws a lot of power we explicitly disable when not needed */
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_DBGMCU_DisableDBGSleepMode();
 	LL_DBGMCU_DisableDBGStopMode();
 	LL_DBGMCU_DisableDBGStandbyMode();
