@@ -279,6 +279,12 @@ Libraries / Subsystems
 
    * :c:func:`lora_airtime`
 
+* Mbed TLS
+
+  * Added :kconfig:option:`CONFIG_MBEDTLS_VERSION_C` to simplify the
+    export of version information from Mbed TLS. If enabled, the
+    :c:func:`mbedtls_version_get_number()` function will be available.
+
 Other notable changes
 *********************
 
