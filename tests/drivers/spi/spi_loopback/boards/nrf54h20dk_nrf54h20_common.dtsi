@@ -51,6 +51,7 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
+
 	cs-gpios = <&gpio7 0 0>;
 };
 

@@ -457,6 +457,7 @@ zephyr_udc0: &usb0 {
 		disk-name = "SD2";
 		status = "okay";
 	};
+
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";
 	mmc-hs200-1_8v;

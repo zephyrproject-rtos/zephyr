@@ -361,6 +361,7 @@ i2s1: &flexcomm3 {
 		disk-name = "SD";
 		status = "okay";
 	};
+
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";
 };
