@@ -319,12 +319,12 @@ static DEVICE_API(mbox, mbox_xlnx_ipi_driver_api) = {
 
 /* Child node is used for MBOX driver */
 #define MBOX_XLNX_VERSAL_IPI_CHILD(ch_node)\
-	struct mbox_xlnx_ipi_child_data mbox_xlnx_ipi_child_data##ch_node = {\
+	static struct mbox_xlnx_ipi_child_data mbox_xlnx_ipi_child_data##ch_node = {\
 		.enabled = false,\
 		.mb_callback = NULL,\
 		.user_data = NULL,\
 	};\
-	struct mbox_xlnx_ipi_child_config mbox_xlnx_ipi_child_config##ch_node = {\
+	static const struct mbox_xlnx_ipi_child_config mbox_xlnx_ipi_child_config##ch_node = {\
 		.reg_base = DT_REG_ADDR_BY_NAME(ch_node, ctrl),\
 		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(ch_node, msg, NULL),\
 		.remote_ipi_id = DT_PROP(ch_node, xlnx_ipi_id),\
