@@ -8,6 +8,7 @@ tests:
     platform_allow:
       - nucleo_c092rc
       - nucleo_f103rb
+      - nucleo_f302r8
       - nucleo_g031k8
       - nucleo_l152re
       - nucleo_l4r5zi
