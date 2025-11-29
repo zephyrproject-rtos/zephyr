@@ -204,6 +204,10 @@
 	status = "okay";
 };
 
+&gint0 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
