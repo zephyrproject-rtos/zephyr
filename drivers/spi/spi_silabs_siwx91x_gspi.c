@@ -49,7 +49,7 @@ struct gspi_siwx91x_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t mosi_overrun __aligned(4);
+	uint8_t mosi_overrun __aligned(32);
 };
 
 struct gspi_siwx91x_data {
