@@ -1,0 +1,72 @@
+menu "Enhanced Fault Tolerance Support"
+
+config FT_API_ENABLED
+    bool "Enable Enhanced Fault Tolerance API"
+    default n
+    help
+      Enable this option to include the enhanced fault tolerance API in the build.
+      This API provides detection and recovery for various embedded system faults.
+
+if FT_API_ENABLED
+
+config FT_EVENT_QUEUE_SIZE
+    int "Fault event queue size"
+    default 16
+    range 4 128
+    help
+      Maximum number of fault events that can be queued for processing.
+
+config FT_WORKER_STACK_SIZE
+    int "Worker thread stack size"
+    default 2048
+    range 512 8192
+    help
+      Stack size for the fault tolerance worker thread.
+
+config FT_WORKER_PRIORITY
+    int "Worker thread priority"
+    default 5
+    range 0 15
+    help
+      Priority of the fault tolerance worker thread.
+      Lower values indicate higher priority.
+
+config FT_INIT_PRIORITY
+    int "Initialization priority"
+    default 50
+    range 0 99
+    help
+      System initialization priority for fault tolerance subsystem.
+
+module = FT
+module-str = Fault Tolerance
+source "subsys/logging/Kconfig.template.log_config"
+
+config FT_STACK_OVERFLOW_DETECT
+    bool "Enable stack overflow detection"
+    default y
+    help
+      Enable detection of thread stack overflows.
+
+config FT_WATCHDOG_SUPPORT
+    bool "Enable watchdog monitoring"
+    default n
+    depends on WATCHDOG
+    help
+      Enable watchdog timer monitoring and bark detection.
+
+config FT_DEADLOCK_DETECT
+    bool "Enable deadlock detection"
+    default n
+    help
+      Enable runtime deadlock detection between threads.
+
+config FT_MEMORY_CORRUPTION_DETECT
+    bool "Enable memory corruption detection"
+    default n
+    help
+      Enable memory corruption detection using checksums or canaries.
+
+endif # FT_API_ENABLED
+
+endmenu
