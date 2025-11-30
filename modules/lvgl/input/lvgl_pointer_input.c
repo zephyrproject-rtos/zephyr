@@ -57,6 +57,8 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 		data->common_data.pending_event.state =
 			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 		break;
+	default:
+		return;
 	}
 
 	if (!evt->sync) {
