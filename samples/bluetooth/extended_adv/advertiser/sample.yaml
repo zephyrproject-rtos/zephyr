@@ -3,5 +3,10 @@ sample:
 tests:
   sample.bluetooth.extended_advertising.advertiser:
     harness: bluetooth
-    platform_allow: nrf52840dk/nrf52840
+    platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - nrf52840dk/nrf52840
     tags: bluetooth

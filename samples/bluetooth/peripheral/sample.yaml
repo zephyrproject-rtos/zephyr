@@ -6,6 +6,10 @@ tests:
     harness: bluetooth
     platform_allow:
       - qemu_x86
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
       - nucleo_wb55rg
       - lp_em_cc35x1/cc3551e
     integration_platforms:
