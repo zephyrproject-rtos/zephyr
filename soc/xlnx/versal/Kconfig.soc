@@ -4,10 +4,24 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config SOC_AMD_VERSAL
+	bool
+
 config SOC_VERSAL_RPU
 	bool
+	select SOC_AMD_VERSAL
 	help
 	  AMD Versal RPU
 
+config SOC_VERSAL_APU
+	bool
+	select SOC_AMD_VERSAL
+	help
+	  AMD Versal APU
+
+config SOC_FAMILY
+	default "amd_versal" if SOC_AMD_VERSAL
+
 config SOC
 	default "versal_rpu" if SOC_VERSAL_RPU
+	default "versal_apu" if SOC_VERSAL_APU
