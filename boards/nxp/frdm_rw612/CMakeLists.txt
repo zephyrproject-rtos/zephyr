@@ -10,7 +10,6 @@ dt_nodelabel(xtal32 NODELABEL "xtal32")
 dt_node_has_status(xtal32_status PATH ${xtal32} STATUS okay)
 
 if(CONFIG_NXP_RW6XX_BOOT_HEADER)
-  zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
   # This FCB is specific to the flash on this board, it won't work
   # for boards with different flash chips. If you flash this FCB
   # onto a board with a different flash chip you may break it.
