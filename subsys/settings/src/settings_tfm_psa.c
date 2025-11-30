@@ -68,6 +68,7 @@ static int store_entries(void)
 {
 	psa_status_t status;
 	psa_storage_uid_t uid = SETTINGS_PSA_UID_RANGE_BEGIN;
+	size_t write_size = SETTINGS_PSA_MAX_ASSET_SIZE;
 	size_t remaining = sizeof(entries);
 	const uint8_t *data_ptr = (const uint8_t *)&entries;
 
@@ -77,7 +78,6 @@ static int store_entries(void)
 	 * number of allocated UIDs and to allocate bytes in the most efficient way.
 	 */
 	while (remaining > 0) {
-		size_t write_size = SETTINGS_PSA_MAX_ASSET_SIZE;
 		if (remaining < SETTINGS_PSA_MAX_ASSET_SIZE) {
 			write_size = remaining;
 		}
@@ -106,8 +106,10 @@ static int load_entries(void)
 	psa_status_t status;
 	size_t bytes_read;
 	psa_storage_uid_t uid = SETTINGS_PSA_UID_RANGE_BEGIN;
+	size_t read_size = SETTINGS_PSA_MAX_ASSET_SIZE;
 	size_t remaining = sizeof(entries);
 	uint8_t *data_ptr = (uint8_t *)&entries;
+	int i;
 
 	/*
 	 * Each storage UID is treated like a sector. Data is written to each KV pair until
@@ -115,7 +117,6 @@ static int load_entries(void)
 	 * number of allocated UIDs and to allocate bytes in the most efficient way.
 	 */
 	while (remaining > 0) {
-		size_t read_size = SETTINGS_PSA_MAX_ASSET_SIZE;
 		if (remaining < SETTINGS_PSA_MAX_ASSET_SIZE) {
 			read_size = remaining;
 		}
@@ -130,7 +131,7 @@ static int load_entries(void)
 		uid++;
 	}
 
-	for (int i = 0; i < CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES; i++) {
+	for (i = 0; i < CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES; i++) {
 		if (strnlen(entries[i].name, SETTINGS_MAX_NAME_LEN) != 0) {
 			entries_count++;
 		}
@@ -164,9 +165,10 @@ static ssize_t settings_psa_read_fn(void *back_end, void *data, size_t len)
 
 static int settings_psa_load(struct settings_store *cs, const struct settings_load_arg *arg)
 {
+	int i;
 	int ret;
 
-	for (int i = 0; i < entries_count; i++) {
+	for (i = 0; i < entries_count; i++) {
 		if (strnlen(entries[i].name, SETTINGS_MAX_NAME_LEN) != 0) {
 			/*
 			 * Pass the key to the settings handler with it's index as an argument,
@@ -174,7 +176,7 @@ static int settings_psa_load(struct settings_store *cs, const struct settings_lo
 			 */
 			ret = settings_call_set_handler(entries[i].name, entries[i].val_len,
 							settings_psa_read_fn, (void *)&i,
-							(void *)arg);
+							arg);
 			if (ret) {
 				return ret;
 			}
@@ -187,6 +189,9 @@ static int settings_psa_load(struct settings_store *cs, const struct settings_lo
 static int settings_psa_save(struct settings_store *cs, const char *name, const char *value,
 			     size_t val_len)
 {
+	int index;
+	bool delete;
+
 	if (entries_count >= CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES) {
 		LOG_ERR("%s: Max settings reached: %d", __func__,
 			CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES);
@@ -197,9 +202,6 @@ static int settings_psa_save(struct settings_store *cs, const char *name, const 
 		LOG_ERR("%s: Invalid settings size - val_len: %d", __func__, val_len);
 		return -EINVAL;
 	}
-
-	int index;
-	bool delete;
 
 	/* Find out if we are doing a delete */
 	delete = ((value == NULL) || (val_len == 0));
@@ -215,7 +217,6 @@ static int settings_psa_save(struct settings_store *cs, const char *name, const 
 		if (strncmp(entries[index].name, name, SETTINGS_MAX_NAME_LEN) == 0) {
 			break;
 		} else if (entries[index].val_len == 0) {
-
 			/* Setting already deleted */
 			if (delete) {
 				LOG_DBG("%s: %s Already deleted!", __func__, name);
@@ -268,21 +269,21 @@ void worker_persist_entries_struct_fn(struct k_work *work)
 
 int settings_backend_init(void)
 {
-	psa_status_t status;
-
 	/* Load settings from storage */
-	status = load_entries();
+	psa_status_t status = load_entries();
 
-	/* If resource DNE, we need to allocate it */
-	if (status == PSA_ERROR_DOES_NOT_EXIST) {
-		status = store_entries();
-		if (status) {
-			LOG_ERR("Error storing metadata in %s: (status %d)", __func__, status);
+	if (status != PSA_SUCCESS) {
+		if (status != PSA_ERROR_DOES_NOT_EXIST) {
+			LOG_ERR("Error %s metadata: status %d", "loading", status);
 			return -EIO;
 		}
-	} else if (status) {
-		LOG_ERR("Error loading metadata in %s: (status %d)", __func__, status);
-		return -EIO;
+
+		/* If resource does not exist, we need to allocate it */
+		status = store_entries();
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Error %s metadata: status %d", "storing", status);
+			return -EIO;
+		}
 	}
 
 	settings_dst_register(&default_settings_psa);
