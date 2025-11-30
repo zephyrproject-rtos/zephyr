@@ -15,8 +15,15 @@
 
 #include <zephyr/linker/sections.h>
 
-#define __noinit             __in_section_unique(_NOINIT_SECTION_NAME)
-#define __noinit_named(name) __in_section_unique_named(_NOINIT_SECTION_NAME, name)
+/* Special handling for .noinit to avoid GNU ld KEEP() issues with quoted section names.
+ * Instead of using ___in_section() which creates .noinit."WEST_TOPDIR/path/file.c".symbol,
+ * we create section names like .noinit.WEST_TOPDIR/path/file.c.symbol without quotes.
+ */
+#define ____noinit_section(seg, file, id) __attribute__((section("." #seg "." file "." #id)))
+#define ___noinit_section(seg, file, id)  ____noinit_section(seg, file, id)
+
+#define __noinit             ___noinit_section(_NOINIT_SECTION_NAME, __FILE__, __COUNTER__)
+#define __noinit_named(name) ___noinit_section(_NOINIT_SECTION_NAME, __FILE__, name)
 
 #define __irq_vector_table Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
 #define __sw_isr_table     Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
