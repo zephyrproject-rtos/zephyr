@@ -11,3 +11,9 @@ config SOC_VERSAL_RPU
 	select CPU_HAS_DCLS
 	select VFP_DP_D16
 	select SOC_RESET_HOOK
+
+config SOC_VERSAL_APU
+	select ARM64
+	select ARM_ARCH_TIMER
+	select CPU_CORTEX_A72
+	select CPU_HAS_MMU
