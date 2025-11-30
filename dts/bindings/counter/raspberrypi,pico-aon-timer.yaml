@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Dmitrii Sharshakov
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico always-on (AON) timer
+
+compatible: "raspberrypi,pico-aon-timer"
+
+include: [base.yaml]
