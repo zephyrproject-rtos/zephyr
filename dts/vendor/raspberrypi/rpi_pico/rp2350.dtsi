@@ -23,6 +23,7 @@
 
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,cortex-m-idle-timer = &aon_timer;
 	};
 
 	cpus {
@@ -410,6 +411,14 @@
 			reg = <0x40100000 0x200>;
 			status = "okay";
 			raspberrypi,brown-out-detection;
+		};
+
+		aon_timer: aon_timer@40100060 {
+			compatible = "raspberrypi,pico-aon-timer";
+			reg = <0x40100060 0x2c>;
+			interrupts = <45 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "POWMAN_IRQ_TIMER";
+			status = "disabled";
 		};
 
 		dma: dma@50000000 {
