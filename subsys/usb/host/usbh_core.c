@@ -13,6 +13,7 @@
 #include <zephyr/usb/usbh.h>
 
 #include "usbh_device.h"
+#include "usbh_class.h"
 #include "usbh_internal.h"
 
 #include <zephyr/logging/log.h>
