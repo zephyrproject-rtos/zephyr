@@ -179,6 +179,39 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 	return ret;
 }
 
+int usbh_req_desc_str(struct usb_device *const udev,
+		      const uint8_t index,
+		      const uint16_t len,
+		      const uint16_t langid,
+		      struct usb_string_descriptor *const desc)
+{
+	const uint8_t type = USB_DESC_STRING;
+	const uint16_t wLength = len;
+	struct net_buf *buf;
+	uint8_t *bString_bytes = NULL;
+	uint16_t bString_val;
+	int ret;
+
+	buf = usbh_xfer_buf_alloc(udev, len);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_desc(udev, type, index, langid, wLength, buf);
+	if (ret == 0) {
+		memcpy(desc, buf->data, len);
+		bString_bytes = (uint8_t *)&desc->bString;
+		for (size_t i = 0; i < (len - 2) / 2; i++) {
+			bString_val = sys_get_le16(&bString_bytes[i * 2]);
+			sys_put_le16(bString_val, &bString_bytes[i * 2]);
+		}
+	}
+
+	usbh_xfer_buf_free(udev, buf);
+
+	return ret;
+}
+
 int usbh_req_set_address(struct usb_device *const udev,
 			 const uint8_t addr)
 {
