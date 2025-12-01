@@ -1141,7 +1141,7 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--runner', 'stm32cubeprogrammer', '--tool-opt=sn=12345',
+         '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
          'param1', 'param2']
     ),
     (
