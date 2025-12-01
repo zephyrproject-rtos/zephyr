@@ -1,0 +1,23 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common base for SiFli SF32LB LDO regulators.
+
+  These regulators are child nodes of the PMUC (Power Management Unit Controller).
+  All LDOs share the same PERI_LDO register at offset 0x5c within PMUC.
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-always-on
+      - regulator-boot-on
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+
+properties:
+  reg:
+    required: true
+    description: Regulator index.

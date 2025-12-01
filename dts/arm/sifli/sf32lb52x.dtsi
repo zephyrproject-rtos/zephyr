@@ -350,6 +350,32 @@
 		pmuc: syscon@500ca000 {
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ldo18: regulator@0 {
+				compatible = "sifli,sf32lb-ldo18";
+				reg = <0>;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				status = "disabled";
+			};
+
+			ldo2_3v3: regulator@1 {
+				compatible = "sifli,sf32lb-ldo2-3v3";
+				reg = <1>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				status = "disabled";
+			};
+
+			ldo3_3v3: regulator@2 {
+				compatible = "sifli,sf32lb-ldo3-3v3";
+				reg = <2>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@500cb000 {
