@@ -62,6 +62,7 @@
 		rtc = &rtc;
 		watchdog0 = &wdt;
 		adc0 = &gpadc;
+		volt-sensor0 = &vbat;
 	};
 };
 
@@ -194,4 +195,27 @@ temp_sensor: &tsen {
 	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+};
+
+&vbat {
+	status = "okay";
+	ratio = <2>;
+	nvmem-cells = <&adc_nvmem_cell>;
+	nvmem-cell-names = "adc-nvmem-cell";
+};
+
+&efuse {
+	status = "okay";
+
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		adc_nvmem_cell: nvmem-cell@20 {
+			reg = <0x20 32>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+	};
 };
