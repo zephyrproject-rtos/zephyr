@@ -2548,6 +2548,20 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 	return prop;
 }
 
+static int dai_ssp_get_properties_copy(const struct device *dev,
+				enum dai_dir dir, int stream_id, struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_ssp_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static void ssp_acquire_ip(struct dai_intel_ssp *dp)
 {
 	struct dai_intel_ssp_plat_data *ssp = dai_get_plat_data(dp);
@@ -2730,6 +2744,7 @@ static DEVICE_API(dai, dai_intel_ssp_api_funcs) = {
 	.config_get		= dai_ssp_config_get,
 	.trigger		= dai_ssp_trigger,
 	.get_properties		= dai_ssp_get_properties,
+	.get_properties_copy	= dai_ssp_get_properties_copy,
 	.config_update		= dai_ssp_dma_control_set,
 };
 
