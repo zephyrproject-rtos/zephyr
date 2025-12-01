@@ -35,8 +35,9 @@ ENTRY(rom_entry);
  * section to ">ram" or ">ucram" as appropriate, to prevent the linker
  * from filling in 512MB of sparse zeros.
  */
-#ifdef CONFIG_KERNEL_COHERENCE
 #define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
+
+#ifdef CONFIG_KERNEL_COHERENCE
 #ifdef CONFIG_MMU
 #define SEGSTART_CACHED   RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_XTENSA_CACHED_REGION)
 #define SEGSTART_UNCACHED RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_XTENSA_UNCACHED_REGION)
@@ -611,4 +612,27 @@ SECTIONS {
 #include <zephyr/linker/intlist.ld>
 #endif
 #include <zephyr/linker/llext-sections.ld>
+
+#define MEM_MAP_SYM_PROVIDE(sym)                                                                   \
+	PROVIDE(sym##_c = RPO_SET(sym, CONFIG_XTENSA_CACHED_REGION));                              \
+	PROVIDE(sym##_uc = RPO_SET(sym, CONFIG_XTENSA_UNCACHED_REGION));
+
+	MEM_MAP_SYM_PROVIDE(_cached_start)
+	MEM_MAP_SYM_PROVIDE(_cached_end)
+	MEM_MAP_SYM_PROVIDE(__cold_start)
+	MEM_MAP_SYM_PROVIDE(__cold_end)
+	MEM_MAP_SYM_PROVIDE(__coldrodata_start)
+	MEM_MAP_SYM_PROVIDE(_heap_start)
+	MEM_MAP_SYM_PROVIDE(_heap_end)
+	MEM_MAP_SYM_PROVIDE(_image_ram_start)
+	MEM_MAP_SYM_PROVIDE(_image_ram_end)
+	MEM_MAP_SYM_PROVIDE(__imr_data_start)
+	MEM_MAP_SYM_PROVIDE(__imr_data_end)
+	MEM_MAP_SYM_PROVIDE(_imr_end)
+	MEM_MAP_SYM_PROVIDE(__common_ram_region_start)
+	MEM_MAP_SYM_PROVIDE(__common_ram_region_end)
+	MEM_MAP_SYM_PROVIDE(__rodata_region_start)
+	MEM_MAP_SYM_PROVIDE(__rodata_region_end)
+	MEM_MAP_SYM_PROVIDE(__text_region_start)
+	MEM_MAP_SYM_PROVIDE(__text_region_end)
 }
