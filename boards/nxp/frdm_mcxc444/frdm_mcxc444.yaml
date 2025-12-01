@@ -24,6 +24,7 @@ supported:
   - usb_device
   - usbd
   - watchdog
+  - dma
 testing:
   ignore_tags:
     - net
