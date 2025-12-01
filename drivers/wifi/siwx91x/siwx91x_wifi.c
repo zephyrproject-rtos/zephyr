@@ -267,9 +267,17 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 					     sl_wifi_buffer_t *buffer)
 {
 	sl_si91x_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
+	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)si_pkt->data;
 	struct net_if *iface = net_if_get_first_wifi();
+	const struct net_linkaddr *ll = net_if_get_link_addr(iface);
 	struct net_pkt *pkt;
 	int ret;
+
+	/* NWP sometime echoes the Tx frames */
+	if (memcmp(eth->src.addr, ll->addr, sizeof(eth->src.addr)) == 0) {
+		LOG_DBG("Dropped packet (source MAC matches our MAC)");
+		return SL_STATUS_OK;
+	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
