@@ -6,9 +6,6 @@ zephyr_library_named(libsbc)
 # validated. So these warnings are presumed to be false positives.
 zephyr_library_compile_options(-O3 -std=c11 -ffast-math -Wno-stringop-overflow)
 
-zephyr_library_compile_definitions(SBC_FOR_EMBEDDED_LINUX)
-zephyr_library_compile_definitions(SBC_NO_PCM_CPY_OPTION)
-
 zephyr_include_directories(
     ${ZEPHYR_LIBSBC_MODULE_DIR}/encoder/include
   )
