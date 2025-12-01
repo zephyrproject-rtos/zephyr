@@ -10,9 +10,11 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768
 
+# WiseConnect create threads with realtime priority. Default (10kHz) clock tick
+# prevent proper use of the system with these threads.
 configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 128 if !TICKLESS_KERNEL && SILABS_SLEEPTIMER_TIMER
-	default 1024 if SILABS_SLEEPTIMER_TIMER
+	default 1024 if SILABS_SLEEPTIMER_TIMER || SILABS_SIWX91X_NWP
 
 configdefault CLOCK_CONTROL
 	default y
@@ -40,11 +42,6 @@ configdefault PM_POLICY_DEVICE_CONSTRAINTS
 endif # PM_DEVICE
 
 if SILABS_SIWX91X_NWP
-
-# WiseConnect create threads with realtime priority. Default (10kHz) clock tick
-# prevent proper use of the system with these threads.
-config SYS_CLOCK_TICKS_PER_SEC
-	default 1024
 
 # Wiseconnect needs more than 1024 bytes of main stack size to initialize
 # (especially with PM)
