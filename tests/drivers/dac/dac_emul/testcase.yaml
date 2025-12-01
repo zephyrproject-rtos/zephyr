@@ -1,0 +1,9 @@
+tests:
+  drivers.dac.emul:
+    tags:
+      - drivers
+      - dac
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
