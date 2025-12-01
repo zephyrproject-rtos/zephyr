@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip External Interrupt Controller for g1 peripherals
+
+  Group g1 EIC driver supports following hardware peripherals:
+    - module name="EIC" id="U2254" version="3.0.0"
+
+compatible: "microchip,eic-g1-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies the base address and size of the register
+      block for the watchdog timer.
+
+  interrupts:
+    required: true
+    description: |
+      Specifies the interrupt line in the NVIC
+
+  low-power-mode:
+    type: boolean
+    description: |
+      Enables low power mode for eic peripheral
