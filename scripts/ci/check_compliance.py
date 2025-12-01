@@ -1435,6 +1435,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                     and sym_name not in self.UNDEF_KCONFIG_ALLOWLIST
                     and not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms)
                     and not sym_name.startswith("BOARD_REVISION_")
+                    and not (sym_name.startswith("DT_HAS_") and sym_name.endswith("_ENABLED"))
                 ):
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
