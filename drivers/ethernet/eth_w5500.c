@@ -278,21 +278,38 @@ static void w5500_update_link_status(const struct device *dev)
 {
 	uint8_t phycfgr;
 	struct w5500_runtime *ctx = dev->data;
+	enum phy_link_speed speed;
 
 	if (w5500_spi_read(dev, W5500_PHYCFGR, &phycfgr, 1) < 0) {
 		return;
 	}
 
-	if (phycfgr & 0x01) {
-		if (ctx->link_up != true) {
+	if (IS_BIT_SET(phycfgr, W5500_PHYCFGR_LNK_BIT)) {
+		if (ctx->state.is_up != true) {
 			LOG_INF("%s: Link up", dev->name);
-			ctx->link_up = true;
+			ctx->state.is_up = true;
 			net_eth_carrier_on(ctx->iface);
 		}
+
+		if (IS_BIT_SET(phycfgr, W5500_PHYCFGR_SPD_BIT)) {
+			speed = IS_BIT_SET(phycfgr, W5500_PHYCFGR_DPX_BIT) ? LINK_FULL_100BASE
+									   : LINK_HALF_100BASE;
+		} else {
+			speed = IS_BIT_SET(phycfgr, W5500_PHYCFGR_DPX_BIT) ? LINK_FULL_10BASE
+									   : LINK_HALF_10BASE;
+		}
+
+		if (ctx->state.speed != speed) {
+			ctx->state.speed = speed;
+			LOG_INF("%s: Link speed %s Mb, %s duplex", dev->name,
+				PHY_LINK_IS_SPEED_100M(speed) ? "100" : "10",
+				PHY_LINK_IS_FULL_DUPLEX(speed) ? "full" : "half");
+		}
 	} else {
-		if (ctx->link_up != false) {
+		if (ctx->state.is_up != false) {
 			LOG_INF("%s: Link down", dev->name);
-			ctx->link_up = false;
+			ctx->state.is_up = false;
+			ctx->state.speed = 0;
 			net_eth_carrier_off(ctx->iface);
 		}
 	}
@@ -314,7 +331,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */
-			if (ctx->link_up != true) {
+			if (ctx->state.is_up != true) {
 				w5500_update_link_status(dev);
 			}
 
@@ -458,13 +475,36 @@ static int w5500_hw_stop(const struct device *dev)
 	return 0;
 }
 
+static const struct device *w5500_get_phy(const struct device *dev)
+{
+	const struct w5500_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
 static const struct ethernet_api w5500_api_funcs = {
 	.iface_api.init = w5500_iface_init,
 	.get_capabilities = w5500_get_capabilities,
 	.set_config = w5500_set_config,
 	.start = w5500_hw_start,
 	.stop = w5500_hw_stop,
+	.get_phy = w5500_get_phy,
 	.send = w5500_tx,
+};
+
+static int w5500_get_link_state(const struct device *dev,
+				  struct phy_link_state *state)
+{
+	struct w5500_runtime *const data = dev->data;
+
+	state->speed = data->state.speed;
+	state->is_up = data->state.is_up;
+
+	return 0;
+}
+
+static DEVICE_API(ethphy, w5500_phy_driver_api) = {
+	.get_link = w5500_get_link_state,
 };
 
 static int w5500_soft_reset(const struct device *dev)
@@ -525,8 +565,6 @@ static int w5500_init(const struct device *dev)
 	uint8_t rtr[2];
 	const struct w5500_config *config = dev->config;
 	struct w5500_runtime *ctx = dev->data;
-
-	ctx->link_up = false;
 
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
@@ -611,6 +649,8 @@ static int w5500_init(const struct device *dev)
 	return 0;
 }
 
+DEVICE_DECLARE(eth_w5500_phy_0);
+
 static struct w5500_runtime w5500_0_runtime = {
 	.tx_sem = Z_SEM_INITIALIZER(w5500_0_runtime.tx_sem,
 					1,  UINT_MAX),
@@ -623,9 +663,13 @@ static const struct w5500_config w5500_0_config = {
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
+	.phy_dev = DEVICE_GET(eth_w5500_phy_0),
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    w5500_init, NULL,
 		    &w5500_0_runtime, &w5500_0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &w5500_api_funcs, NET_ETH_MTU);
+
+DEVICE_DEFINE(eth_w5500_phy_0, DEVICE_DT_NAME(DT_DRV_INST(0)) "_phy", NULL, NULL, &w5500_0_runtime,
+	      &w5500_0_config, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, &w5500_phy_driver_api);
