@@ -441,11 +441,16 @@ int nrf_wifi_if_send(const struct device *dev,
 		ra = nrf_wifi_util_get_ra(sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx], nbuf);
 		peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, ra);
 		if (peer_id == -1) {
+			/* TODO: Make this an error once we fix ping_work sending packets despite
+			 * the interface being dormant
+			 */
+#if CONFIG_WIFI_NRF70_LOG_LEVEL >= LOG_LEVEL_DBG
 			char ra_buf[18] = {0};
 
-			LOG_ERR("%s: Got packet for unknown PEER: %s", __func__,
+			LOG_DBG("%s: Got packet for unknown PEER: %s", __func__,
 				nrf_wifi_sprint_ll_addr_buf(ra, 6, ra_buf,
 							    sizeof(ra_buf)));
+#endif
 			goto drop;
 		}
 
