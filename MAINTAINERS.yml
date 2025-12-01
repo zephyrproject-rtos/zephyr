@@ -1684,6 +1684,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - LaurentiuM1234
+  collaborators:
+    - yongxu-wang15
   files:
     - drivers/firmware/
     - include/zephyr/drivers/firmware/
