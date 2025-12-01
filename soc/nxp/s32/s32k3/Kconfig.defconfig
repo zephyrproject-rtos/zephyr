@@ -28,4 +28,9 @@ endif # ETH_DRIVER && NET_L2_ETHERNET
 config CACHE_MANAGEMENT
 	default y
 
+# S32K3 places the vector table at +0x400
+# This makes the bootloader and the sign tool compatible with that.
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 endif # SOC_SERIES_S32K3
