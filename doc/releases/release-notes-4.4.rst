@@ -114,6 +114,12 @@ New APIs and options
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
 
+* Power
+
+  * The new ``voltage-scale`` property of :dtcompatible:`st,stm32u5-pwr` can be used to
+    select the voltage scale manually on STM32U5 series via Devicetree. This notably
+    enables usage of the USB controller at lower system clock frequencies.
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
