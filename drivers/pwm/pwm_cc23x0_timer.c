@@ -55,6 +55,7 @@ static inline void pwm_cc23x0_pm_policy_state_lock_put(void)
 static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uint32_t period,
 				 uint32_t pulse, pwm_flags_t flags)
 {
+	uint8_t capture_compare_action;
 	const struct pwm_cc23x0_config *config = dev->config;
 
 	LOG_DBG("set cycles period[%x] pulse[%x]", period, pulse);
@@ -73,15 +74,17 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 		return -EINVAL;
 	}
 
+	capture_compare_action = (flags & PWM_POLARITY_INVERTED) ? 0xB : 0xA;
+
 	if (channel == 0) {
 		HWREG(config->base + LGPT_O_C0CC) = pulse;
-		HWREG(config->base + LGPT_O_C0CFG) = 0x100 | 0xB;
+		HWREG(config->base + LGPT_O_C0CFG) = 0x100 | capture_compare_action;
 	} else if (channel == 1) {
 		HWREG(config->base + LGPT_O_C1CC) = pulse;
-		HWREG(config->base + LGPT_O_C1CFG) = 0x200 | 0xB;
+		HWREG(config->base + LGPT_O_C1CFG) = 0x200 | capture_compare_action;
 	} else if (channel == 2) {
 		HWREG(config->base + LGPT_O_C2CC) = pulse;
-		HWREG(config->base + LGPT_O_C2CFG) = 0x400 | 0xB;
+		HWREG(config->base + LGPT_O_C2CFG) = 0x400 | capture_compare_action;
 	} else {
 		LOG_ERR("Invalid chan ID");
 		return -ENOTSUP;
