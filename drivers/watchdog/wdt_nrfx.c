@@ -75,7 +75,7 @@ static int wdt_nrf_disable(const struct device *dev)
 
 	if (err_code < 0) {
 		/* This can only happen if wdt_nrf_setup() is not called first. */
-		return err_code;
+		return -EFAULT;
 	}
 
 #if defined(WDT_NRFX_SYNC_STOP)
