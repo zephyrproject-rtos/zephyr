@@ -39,7 +39,7 @@ OS Services
    sensing/index.rst
    task_wdt/index.rst
    tfm/index
+   uuid/index.rst
    virtualization/index.rst
    rtio/index.rst
    zbus/index.rst
-   misc.rst
