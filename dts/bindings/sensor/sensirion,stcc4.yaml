@@ -1,0 +1,41 @@
+# Copyright (c) 2025, Sensirion AG
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "sensirion,stcc4"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+description: |
+  The STCC4 is Sensirion's next generation miniature CO2 sensor for indoor air quality applications.
+  Learn more: https://sensirion.com/products/catalog/STCC4
+  Supported I2C addresses: 0x64(default)
+
+properties:
+  pressure:
+    type: int
+    default: 101300
+    description: |
+      Set the pressure compensation in pascal (Pa).
+      Default: 101'300 Pa
+  humidity-compensation:
+    type: int
+    default: 0
+    description: |
+      By default this option is not set and the SHT4x sensor is used for compensation.
+      For manual compensation:
+      - Set a compensation value for temperature and humidity in ticks.
+        humidity ticks = (humidity + 6) * 65535 / 125
+  temperature-compensation:
+    type: int
+    default: 0
+    description: |
+      By default this option is not set and the SHT4x sensor is used for compensation.
+      For manual compensation:
+      - Set a compensation value for temperature and humidity in ticks.
+        temperature ticks = (temperature + 45) * 65535 / 175
+  do-perform-conditioning:
+    type: boolean
+    description: |
+      The perform_conditioning command is recommended to improve sensor performance
+      when the sensor has not completed measurements for more than 3 hours.
+      Please note that conditioning takes 22 seconds.
