@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
  */
 #if EMIOS_PWM_IP_USED
 
-#if defined(CONFIG_SOC_SERIES_S32ZE)
+#if defined(CONFIG_SOC_SERIES_S32ZE) || defined(CONFIG_SOC_SERIES_S32K5)
 #define eMios_Icu_Ip_IndexInChState eMios_Icu_Ip_u8IndexInChState
 #endif
 
@@ -51,7 +51,6 @@ extern uint8 eMios_Icu_Ip_IndexInChState[EMIOS_ICU_IP_INSTANCE_COUNT][EMIOS_ICU_
 	((bus == EMIOS_ICU_BUS_A) ? 23 :					\
 	(IF_DISABLED(CONFIG_SOC_SERIES_S32ZE, (bus == EMIOS_ICU_BUS_F) ? 22 :)	\
 	((bus == EMIOS_ICU_BUS_DIVERSE) ? ((channel >> 3) * 8) : channel)))
-
 /* We need maximum three edges for measure both period and cycle */
 #define MAX_NUM_EDGE 3
 #endif
