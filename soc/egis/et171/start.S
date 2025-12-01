@@ -22,7 +22,11 @@ SECTION_FUNC(init, entry)
 	.word 0x53494745 /* "EGIS" */
 	.word CONFIG_SOC_EGIS_ET171_FIRMWARE_VERSION /* version */
 	.word CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET /* flash start address */
+#if CONFIG_SOC_EGIS_ET171_VENDOR_FIRMWARE_SIZE > 0
+	.word CONFIG_SOC_EGIS_ET171_VENDOR_FIRMWARE_SIZE
+#else
 	.word __egis_binary_size /* It's not included 64 bytes signature */
+#endif
 	.word 0 /* unused */
 	.word 0 /* unused */
 
