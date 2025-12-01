@@ -51,3 +51,26 @@ config STM32_BACKUP_PROTECTION
 	help
 	  Enabled for SoCs for which access protection to backup domain
 	  resources needs to be explicitly handled.
+
+config STM32_IOCELL
+	bool "STM32 I/O cell"
+	default y
+	depends on DT_HAS_ST_STM32_IOCELL_ENABLED
+	help
+	  Enable support for STM32 I/O compensation cell and HSLV configuration
+
+config STM32_IOCELL_PRIORITY
+	int "STM32 I/O cell initialization priority"
+	default 50
+	help
+	  Initialization priority of the routine within the EARLY level.
+
+config STM32_IOCELL_CHECK_ENABLE
+	bool "STM32 I/O cell check"
+	default y
+	depends on LOG
+	depends on DT_HAS_ST_STM32_IOCELL_ENABLED
+	help
+	  Enables logging of I/O cell driver. This can be useful for reporting
+	  discrepancy between device-tree configuration and value stored in
+	  device OTP/option bytes
