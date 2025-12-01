@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/dt-bindings/power/stm32n6_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -239,6 +240,37 @@
 	};
 
 	soc {
+		iocell: iocell {
+			compatible = "st,stm32-iocell";
+			status = "disabled";
+
+			/* If iocell is enabled,
+			 * the bsec node needs to be enabled as well
+			 */
+			nvmem-cells = <&otp124_hconf1>;
+			nvmem-cell-names = "safeguard";
+
+			vddio {
+				domain = <STM32_DT_IOCELL_VDD>;
+			};
+
+			vddio2 {
+				domain = <STM32_DT_IOCELL_VDDIO2>;
+			};
+
+			vddio3 {
+				domain = <STM32_DT_IOCELL_VDDIO3>;
+			};
+
+			vddio4 {
+				domain = <STM32_DT_IOCELL_VDDIO4>;
+			};
+
+			vddio5 {
+				domain = <STM32_DT_IOCELL_VDDIO5>;
+			};
+		};
+
 		rcc: rcc@56028000 {
 			compatible = "st,stm32n6-rcc";
 			clocks-controller;
@@ -768,6 +800,11 @@
 				compatible = "fixed-layout";
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				otp124_hconf1: opt124_hconf1@1f0 {
+					reg = <0x1f0 0x4>;
+					#nvmem-cell-cells = <0>;
+				};
 
 				mac_address0: mac-address@2a4 {
 					reg = <0x2a4 0x6>;

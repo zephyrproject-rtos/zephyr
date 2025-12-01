@@ -18,6 +18,10 @@ if(CONFIG_STM32_WKUP_PINS)
   zephyr_sources(stm32_wkup_pins.c)
 endif()
 
+if(CONFIG_STM32_IOCELL)
+  zephyr_sources(stm32_iocell.c)
+endif()
+
 if(CONFIG_PM AND CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
   message(WARNING "\
 SoC Power Management (CONFIG_PM) enabled but the DBGMCU is still enabled \
