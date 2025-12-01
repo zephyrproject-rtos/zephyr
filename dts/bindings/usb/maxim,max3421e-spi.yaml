@@ -4,7 +4,7 @@
 description: |
     MAX3421E USB Peripheral/Host Controller controller with SPI interface
 
-compatible: "maxim,max3421e_spi"
+compatible: "maxim,max3421e-spi"
 
 include: [spi-device.yaml]
 

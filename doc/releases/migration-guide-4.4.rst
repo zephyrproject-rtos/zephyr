@@ -110,6 +110,11 @@ STM32
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
 
+USB
+===
+
+  * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
