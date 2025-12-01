@@ -9,3 +9,4 @@
 /delete-node/ &i3c0;
 /delete-node/ &flexio0;
 /delete-node/ &trng;
+/delete-node/ &flexcan1;
