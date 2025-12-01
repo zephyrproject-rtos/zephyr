@@ -8,6 +8,8 @@ import os
 import pytest
 from packaging import version
 from spdx_tools.spdx.parser.parse_anything import parse_file
+from west.manifest import Manifest
+from west.util import WestNotFound, west_topdir
 
 
 def pytest_addoption(parser):
@@ -96,3 +98,13 @@ def build_doc(spdx_dir):
 def modules_doc(spdx_dir):
     """Fixture providing the parsed modules-deps.spdx document."""
     return parse_file(os.path.join(spdx_dir, "modules-deps.spdx"))
+
+
+@pytest.fixture(scope="session")
+def west_manifest(build_dir):
+    """Load west manifest from workspace; None if not in a west workspace."""
+    try:
+        topdir = west_topdir(os.path.abspath(build_dir))
+        return Manifest.from_topdir(topdir)
+    except WestNotFound:
+        return None
