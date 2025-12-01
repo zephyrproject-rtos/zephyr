@@ -923,12 +923,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	HSUSBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
 
-	/* Setup token */
-	if (cepintsts & HSUSBD_CEPINTSTS_SETUPTKIF_Msk) {
-		/* Flush CEP FIFO */
-		base->CEPCTL = HSUSBD_CEPCTL_FLUSH | HSUSBD_CEPCTL_NAKCLR_Msk;
-	}
-
 	/* Setup packet */
 	if (cepintsts & HSUSBD_CEPINTSTS_SETUPPKIF_Msk) {
 		/* By USB spec, following transactions, regardless of Data/Status stage,
@@ -2100,7 +2094,11 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	/* Abort previous CTRL OUT/IN */
 	if (config->is_hsusbd) {
 		/* For HSUSBD, there is timing concern between FIFO flush and
-		 * immediately following data transaction. Do in ISR for in time.
+		 * immediately following Data OUT transaction. Even though FIFO flush
+		 * is done in Setup token ISR (HSUSBD_CEPINTSTS_SETUPTKIF_Msk),
+		 * it can still be not timely. For this, error recovery with FIFO
+		 * is not done in-place here and rely on USB reset handler to do it
+		 * as catch-all.
 		 */
 		numaker_usbd_ep_abort(ep_cur, true);
 		numaker_usbd_ep_abort(ep_cur + 1, true);
