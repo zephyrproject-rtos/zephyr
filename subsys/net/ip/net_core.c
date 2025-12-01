@@ -384,6 +384,11 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		goto err;
 	}
 
+	if (!net_if_is_up(net_pkt_iface(pkt))) {
+		ret = -ENETDOWN;
+		goto err;
+	}
+
 	net_pkt_trim_buffer(pkt);
 	net_pkt_cursor_init(pkt);
 
