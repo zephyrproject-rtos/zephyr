@@ -354,7 +354,11 @@ static int pwm_suspend(const struct device *dev)
 	while (!nrfx_pwm_stopped_check(&data->pwm)) {
 	}
 
-	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
+	/* Explicitly clear driver state that might be invalid after subsequent resume. */
+	data->period_cycles = 0;
+	data->pwm_needed = 0;
+	data->prescaler = 0;
+	data->stop_requested = 0;
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
 	return 0;
