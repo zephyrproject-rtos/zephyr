@@ -19,6 +19,7 @@ OS Services
    input/index.rst
    instrumentation/index.rst
    ipc/index.rst
+   jwt/index.rst
    llext/index.rst
    logging/index.rst
    tracing/index.rst
