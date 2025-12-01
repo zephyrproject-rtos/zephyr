@@ -1118,7 +1118,6 @@ static int lsm6dsv16x_tap_set_config(const struct device *dev, struct lsm6dsv16x
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lsm6dsv16x_interrupt_mode_t int_mode;
 
 	lsm6dsv16x_tap_detection_t det = {
 		tapcfg->en_x,
@@ -1151,16 +1150,6 @@ static int lsm6dsv16x_tap_set_config(const struct device *dev, struct lsm6dsv16x
 	lsm6dsv16x_tap_mode_t mode =
 		tapcfg->double_tap ? LSM6DSV16X_BOTH_SINGLE_DOUBLE : LSM6DSV16X_ONLY_SINGLE;
 	if (lsm6dsv16x_tap_mode_set(ctx, mode)) {
-		return -EIO;
-	}
-
-	int_mode.lir = 1;
-	if (tapcfg->en_x || tapcfg->en_y || tapcfg->en_z) {
-		int_mode.enable = 1;
-	} else {
-		int_mode.enable = 0;
-	}
-	if (lsm6dsv16x_interrupt_enable_set(ctx, int_mode)) {
 		return -EIO;
 	}
 
@@ -1447,6 +1436,13 @@ static int lsm6dsv16x_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	if (cfg->trig_enabled) {
+		struct lsm6dsv16x_tap_config tapcfg = {
+			false, false, true, LSM6DSV16X_DT_TAP_PRIO_ZXY, 2, 2, 3, 2, 2, 1, true,
+		};
+		if (lsm6dsv16x_tap_set_config(dev, &tapcfg) < 0) {
+			LOG_ERR("Failed to set tap config.");
+			return -EIO;
+		}
 		if (lsm6dsv16x_init_interrupt(dev) < 0) {
 			LOG_ERR("Failed to initialize interrupt.");
 			return -EIO;

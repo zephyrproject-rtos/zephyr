@@ -182,6 +182,10 @@ struct lsm6dsv16x_data {
 	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_wakeup;
 	const struct sensor_trigger *trig_wakeup;
+	sensor_trigger_handler_t handler_single_tap;
+	const struct sensor_trigger *trig_single_tap;
+	sensor_trigger_handler_t handler_double_tap;
+	const struct sensor_trigger *trig_double_tap;
 
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSV16X_THREAD_STACK_SIZE);
