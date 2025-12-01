@@ -111,6 +111,31 @@
 			status = "disabled";
 		};
 
+		eic: eic@40002800 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x40002800 0x38>;
+			interrupts = <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>, <17 0>, <18 0>, <19 0>,
+				     <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			low-power-mode;
+			/* Created this by listing down the mapping between eic lines and the port
+			 * and pin numbers available in the samd5xe5x family datasheet. The set
+			 * bits are commented beside the values
+			 */
+			porta-unsupported-pins = <0x34000300>; /*8|9|26|28|29*/
+			portc-unsupported-pins = <0x20004300>; /*8|9|14|29*/
+			portd-supported-pins = <0x301f03>; /*0|1|8|9|10|11|12|20|21*/
+
+			portb-special-pins-1 = <0x3c000000 0x2>; /*26|27|28|29*/
+			portc-special-pins-1 = <0x80 0x2>; /*7*/
+			portd-special-pins-1 = <0x1f00 0x5>; /*8|9|10|11|12*/
+			portd-special-pins-2 = <0x300000 0x6>; /*20|21*/
+		};
+
 		sercom0: sercom@40003000 {
 			compatible = "microchip,sercom-g1";
 			status = "disabled";
