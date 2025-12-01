@@ -1,0 +1,8 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB LDO18 - 1.8V LDO for PSRAM (VDDSIP).
+
+compatible: "sifli,sf32lb-ldo18"
+
+include: sifli,sf32lb-ldo-common.yaml
