@@ -38,7 +38,7 @@ static bool is_data_valid(const struct paa3905_encoded_data *edata)
 	uint32_t shutter;
 
 	if (!REG_MOTION_DETECTED(edata->motion)) {
-		LOG_WRN("Invalid data - No motion detected");
+		LOG_DBG("Invalid data - No motion detected");
 		return false;
 	}
 
