@@ -362,6 +362,19 @@
 						   NXP_VREF_MODE_LOW_POWER
 						   NXP_VREF_MODE_HIGH_POWER>;
 		};
+
+		dma: dma-controller@40008000 {
+			compatible = "nxp,4ch-dma";
+			#dma-cells = <2>;
+			dma-channels = <4>;
+			dma-requests = <64>;
+			reg = <0x40008000 0x1000>,
+			      <0x40021000 0x1000>;
+			clocks = <&sim KINETIS_SIM_DMA_CLK 0 0>,
+				 <&sim KINETIS_SIM_DMAMUX_CLK 0 0>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
+			status = "disabled";
+		};
 	};
 };
 
