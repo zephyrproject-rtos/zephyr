@@ -4,6 +4,12 @@
 
 if SOC_SERIES_MCXW2XX
 
+# MCXW23 uses SYSTICK timer as the kernel timer by default.
+# In case we need to switch to OS timer, then
+# define CONFIG_MCUX_OS_TIMER=y
+configdefault MCUX_OS_TIMER
+	default n
+
 config CORTEX_M_SYSTICK
 	default n if MCUX_OS_TIMER
 
