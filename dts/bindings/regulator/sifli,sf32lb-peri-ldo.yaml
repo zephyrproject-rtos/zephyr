@@ -1,0 +1,65 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli SF32LB52x Peripheral LDO Regulators.
+
+  This node provides access to internal LDOs in the PMUC (Power Management Unit Controller):
+  - ldo18: 1.8V LDO for PSRAM (VDDSIP)
+  - ldo2-3v3: 3.3V LDO2 for peripherals
+  - ldo3-3v3: 3.3V LDO3 for peripherals
+
+  Example:
+    peri_ldo: peri-ldo@500ca05c {
+      compatible = "sifli,sf32lb-peri-ldo";
+      reg = <0x500ca05c 0x4>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      ldo18: ldo18@0 {
+        reg = <0>;
+        regulator-min-microvolt = <1800000>;
+        regulator-max-microvolt = <1800000>;
+        regulator-boot-on;
+      };
+    };
+
+compatible: "sifli,sf32lb-peri-ldo"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Address of the PERI_LDO register in PMUC.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
+  properties:
+    reg:
+      type: int
+      required: true
+      enum:
+        - 0  # SF32LB_PERI_LDO18
+        - 1  # SF32LB_PERI_LDO2_3V3
+        - 2  # SF32LB_PERI_LDO3_3V3
+      description: |
+        LDO index, use values from dt-bindings/regulator/sf32lb.h:
+        - SF32LB_PERI_LDO18 (0): 1.8V LDO for PSRAM
+        - SF32LB_PERI_LDO2_3V3 (1): 3.3V LDO2
+        - SF32LB_PERI_LDO3_3V3 (2): 3.3V LDO3
