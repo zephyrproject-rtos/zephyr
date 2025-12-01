@@ -326,8 +326,6 @@ REDIRECTS = (
     ('services/modbus/index', 'connectivity/modbus/index'),
     ('services/nvmem/index', 'services/storage/nvmem/index'),
     ('services/portability/posix', 'services/portability/posix/index'),
-    ('services/retention/blinfo', 'services/storage/retention/blinfo'),
-    ('services/retention/index', 'services/storage/retention/index'),
     ('services/secure_storage', 'services/storage/secure_storage/index'),
     ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
