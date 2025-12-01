@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/sys/util.h>
 
 #include "includes.h"
 #include "common.h"
@@ -399,13 +400,16 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
-		if (pwe == 1) {
-			return WIFI_SECURITY_TYPE_SAE_H2E;
-		} else if (pwe == 2) {
-			return WIFI_SECURITY_TYPE_SAE_AUTO;
-		} else {
-			return WIFI_SECURITY_TYPE_SAE_HNP;
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+			if (pwe == 1) {
+				return WIFI_SECURITY_TYPE_SAE_H2E;
+			} else if (pwe == 2) {
+				return WIFI_SECURITY_TYPE_SAE_AUTO;
+			} else {
+				return WIFI_SECURITY_TYPE_SAE_HNP;
+			}
 		}
+		return WIFI_SECURITY_TYPE_UNKNOWN;
 	case WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_PSK:
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256:
@@ -414,7 +418,10 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
-		return WIFI_SECURITY_TYPE_FT_SAE;
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+			return WIFI_SECURITY_TYPE_FT_SAE;
+		}
+		return WIFI_SECURITY_TYPE_UNKNOWN;
 	case WPA_KEY_MGMT_FT_IEEE8021X:
 		return WIFI_SECURITY_TYPE_FT_EAP;
 	case WPA_KEY_MGMT_DPP:
@@ -422,7 +429,10 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
-		return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+			return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
+		}
+		return WIFI_SECURITY_TYPE_UNKNOWN;
 	case WPA_KEY_MGMT_DPP | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_DPP;
 	default:
@@ -711,10 +721,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		}
 
-		if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
-		    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
-		    params->security == WIFI_SECURITY_TYPE_SAE_EXT_KEY) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3) &&
+		    (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+		     params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+		     params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
+		     params->security == WIFI_SECURITY_TYPE_SAE_EXT_KEY)) {
 			if (params->sae_password) {
 				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
 				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
@@ -811,40 +822,48 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (params->sae_password) {
-				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
-				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
-					wpa_printf(MSG_ERROR,
-						"Passphrase should be in range (%d-%d) characters",
-						WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
-					goto out;
-				}
-				strncpy(sae_null_terminated, params->sae_password,
-					WIFI_SAE_PSWD_MAX_LEN);
-				sae_null_terminated[params->sae_password_length] = '\0';
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, sae_null_terminated)) {
-					goto out;
-				}
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, psk_null_terminated)) {
-					goto out;
-				}
-			}
-
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
 					   psk_null_terminated)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set sae_pwe 2")) {
-				goto out;
-			}
+			if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+				if (params->sae_password) {
+					if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
+					    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+						wpa_printf(MSG_ERROR,
+							"Passphrase should be in range (%d-%d) characters",
+							WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
+						goto out;
+					}
+					strncpy(sae_null_terminated, params->sae_password,
+						WIFI_SAE_PSWD_MAX_LEN);
+					sae_null_terminated[params->sae_password_length] = '\0';
+					if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
+							   resp.network_id, sae_null_terminated)) {
+						goto out;
+					}
+				} else {
+					if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
+							   resp.network_id, psk_null_terminated)) {
+						goto out;
+					}
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK WPA-PSK-SHA256 SAE",
-					   resp.network_id)) {
-				goto out;
+				if (!wpa_cli_cmd_v("set sae_pwe 2")) {
+					goto out;
+				}
+
+				if (!wpa_cli_cmd_v(
+					"set_network %d key_mgmt WPA-PSK WPA-PSK-SHA256 SAE",
+					resp.network_id)) {
+					goto out;
+				}
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK WPA-PSK-SHA256",
+						   resp.network_id)) {
+					goto out;
+				}
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d proto WPA RSN", resp.network_id)) {
