@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 #include <soc.h>
@@ -41,6 +42,9 @@ struct ambiq_i2c_ios_data {
 	struct i2c_target_config *tgt;
 	bool enabled;
 	uint8_t sram_buf[1023];
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	bool pm_active;
+#endif
 
 	/* read buffer-mode staging */
 	const uint8_t *rd_ptr;
@@ -280,14 +284,27 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	struct ambiq_i2c_ios_data *data = dev->data;
 	am_hal_ios_config_t ios = {0};
 	uint32_t acc_mask = AM_HAL_IOS_ACCESS_INT_00;
+	int ret;
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	bool pm_got = false;
+#endif
 
 	if (data->tgt) {
 		return -EBUSY;
 	}
 
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+	pm_got = true;
+#endif
+
 	/* Disable IOS instance as it cannot be configured when enabled */
 	if (am_hal_ios_disable(data->i2c_ios_handle) != AM_HAL_STATUS_SUCCESS) {
-		return -EIO;
+		ret = -EIO;
+		goto err_pm_put;
 	}
 
 	ios.ui32InterfaceSelect = AM_HAL_IOS_USE_I2C | AM_HAL_IOS_I2C_ADDRESS(tcfg->address << 1);
@@ -300,17 +317,19 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	ios.ui32SRAMBufferCap = sizeof(data->sram_buf);
 
 	if (am_hal_ios_configure(data->i2c_ios_handle, &ios) != AM_HAL_STATUS_SUCCESS) {
-		return -EIO;
+		ret = -EIO;
+		goto err_pm_put;
 	}
 
-	int rc = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-	if (rc < 0) {
-		return rc;
+	if (ret < 0) {
+		goto err_pm_put;
 	}
 
 	if (am_hal_ios_enable(data->i2c_ios_handle) != AM_HAL_STATUS_SUCCESS) {
-		return -EIO;
+		ret = -EIO;
+		goto err_pm_put;
 	}
 
 	am_hal_ios_interrupt_clear(data->i2c_ios_handle, AM_HAL_IOS_INT_ALL);
@@ -320,6 +339,9 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 
 	data->tgt = tcfg;
 	data->enabled = true;
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	data->pm_active = pm_got;
+#endif
 
 	if (IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE) && data->tgt->callbacks &&
 	    data->tgt->callbacks->buf_read_requested) {
@@ -336,6 +358,14 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	}
 
 	return 0;
+
+err_pm_put:
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	if (pm_got) {
+		(void)pm_device_runtime_put(dev);
+	}
+#endif
+	return ret;
 }
 
 static int i2c_ambiq_ios_target_unregister(const struct device *dev, struct i2c_target_config *tcfg)
@@ -352,6 +382,12 @@ static int i2c_ambiq_ios_target_unregister(const struct device *dev, struct i2c_
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_ACC_INTDIS, &acc_mask);
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_FIFO_BUF_CLR, NULL);
 	am_hal_ios_disable(data->i2c_ios_handle);
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	if (data->pm_active) {
+		(void)pm_device_runtime_put(dev);
+		data->pm_active = false;
+	}
+#endif
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
 	data->tgt = NULL;
@@ -397,6 +433,9 @@ static int i2c_ambiq_ios_init(const struct device *dev)
 	data->tgt = NULL;
 	data->rd_ptr = NULL;
 	data->rd_len = data->rd_pos = 0;
+#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+	data->pm_active = false;
+#endif
 	return 0;
 }
 
