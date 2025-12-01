@@ -216,7 +216,6 @@ static void w5500_rx(const struct device *dev)
 	struct net_buf *pkt_buf = NULL;
 	struct net_pkt *pkt;
 	struct w5500_runtime *ctx = dev->data;
-	const struct w5500_config *config = dev->config;
 
 	w5500_spi_read(dev, W5500_S0_RX_RSR, tmp, 2);
 	rx_buf_len = sys_get_be16(tmp);
@@ -231,8 +230,8 @@ static void w5500_rx(const struct device *dev)
 	w5500_readbuf(dev, off, header, 2);
 	rx_len = sys_get_be16(header) - 2;
 
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len,
-			NET_AF_UNSPEC, 0, K_MSEC(config->timeout));
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_W5500_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
 		return;
@@ -623,7 +622,6 @@ static const struct w5500_config w5500_0_config = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
-	.timeout = CONFIG_ETH_W5500_TIMEOUT,
 	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 };
 
