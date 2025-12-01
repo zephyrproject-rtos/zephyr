@@ -32,3 +32,12 @@
 		};
 	};
 };
+
+&iocell {
+	status = "okay";
+
+	vddxspi2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};

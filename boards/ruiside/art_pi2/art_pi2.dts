@@ -121,3 +121,17 @@
 &vbat {
 	status = "okay";
 };
+
+&iocell {
+	status = "okay";
+
+	vddxspi1 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+
+	vddxspi2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
