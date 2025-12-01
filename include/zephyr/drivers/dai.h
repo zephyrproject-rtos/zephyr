@@ -322,6 +322,10 @@ __subsystem struct dai_driver_api {
 	const struct dai_properties *(*get_properties)(const struct device *dev,
 						       enum dai_dir dir,
 						       int stream_id);
+	int (*get_properties_copy)(const struct device *dev,
+				   enum dai_dir dir,
+				   int stream_id,
+				   struct dai_properties *dst);
 
 	int (*trigger)(const struct device *dev, enum dai_dir dir,
 		       enum dai_trigger_cmd cmd);
@@ -454,6 +458,31 @@ static inline const struct dai_properties *dai_get_properties(const struct devic
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
 	return api->get_properties(dev, dir, stream_id);
+}
+
+/**
+ * @brief Fetch properties of a DAI driver
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
+ * @param stream_id Stream id: some drivers may have stream specific
+ *        properties, this id specifies the stream.
+ * @param dst address where to write properties to
+ * @retval Zero on success
+ */
+__syscall int dai_get_properties_copy(const struct device *dev,
+				      enum dai_dir dir,
+				      int stream_id,
+				      struct dai_properties *dst);
+
+static inline int z_impl_dai_get_properties_copy(const struct device *dev,
+						 enum dai_dir dir,
+						 int stream_id,
+						 struct dai_properties *dst)
+{
+	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+
+	return api->get_properties_copy(dev, dir, stream_id, dst);
 }
 
 /**

@@ -59,6 +59,18 @@ static inline int z_vrfy_dai_config_get(const struct device *dev,
 }
 #include <zephyr/syscalls/dai_config_get_mrsh.c>
 
+static inline int z_vrfy_dai_get_properties_copy(const struct device *dev,
+						enum dai_dir dir,
+						int stream_id,
+						struct dai_properties *dst)
+{
+	K_OOPS(K_SYSCALL_DRIVER_DAI(dev, get_properties_copy));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, sizeof(*dst)));
+
+	return z_impl_dai_get_properties_copy(dev, dir, stream_id, dst);
+}
+#include <zephyr/syscalls/dai_get_properties_copy_mrsh.c>
+
 static inline int z_vrfy_dai_trigger(const struct device *dev,
 				     enum dai_dir dir,
 				     enum dai_trigger_cmd cmd)
