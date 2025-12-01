@@ -359,7 +359,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: afeed6ed87146d9828e0ff862f3533790df8c421
+      revision: 941cd8436a2e0f1da9d8584b83a403930826899d
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
