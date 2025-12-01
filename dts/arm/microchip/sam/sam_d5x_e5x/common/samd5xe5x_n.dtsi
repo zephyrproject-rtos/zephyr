@@ -57,6 +57,7 @@
 	portc: gpio@41008100 {
 		compatible = "microchip,port-g1-gpio";
 		reg = <0x41008100 0x80>;
+		port-id = <2>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		#microchip,pin-cells = <2>;

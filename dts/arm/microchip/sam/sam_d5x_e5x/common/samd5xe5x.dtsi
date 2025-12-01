@@ -190,6 +190,7 @@
 			porta: gpio@41008000 {
 				compatible = "microchip,port-g1-gpio";
 				reg = <0x41008000 0x80>;
+				port-id = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
@@ -199,6 +200,7 @@
 			portb: gpio@41008080 {
 				compatible = "microchip,port-g1-gpio";
 				reg = <0x41008080 0x80>;
+				port-id = <1>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
