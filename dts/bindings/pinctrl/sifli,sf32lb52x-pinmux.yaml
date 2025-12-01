@@ -1,4 +1,5 @@
 # Copyright (c) 2025 Core Devices LLC
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -58,11 +59,12 @@ description: |
     - bias-pull-up: Enable pull-up resistor.
     - bias-pull-down: Enable pull-down resistor.
     - input-enable: Enable input buffer.
-    - input-schmitt-enable: Enable Schmitt trigger.
-    - slew-rate: 0 (slow, default), 1 (fast).
-    - drive-strength: 2, 4 (default), 8, or 12 mA.
+    - drive-strength: 2, 4, 8, 12 or 20 mA drive strength. 20mA is only valid
+      for PA39-PA42 pins.
 
     Note that drive and bias options are mutually exclusive.
+    Note: SR (slew-rate) and IS (input-schmitt) registers are preserved
+    from hardware defaults and cannot be changed via pinctrl.
 
     To link pin configurations with a device, use a pinctrl-N property for some
     number N, like this example you could place in your board's DTS file:
@@ -130,6 +132,7 @@ child-binding:
         default: 4
         enum:
           - 2
-          - 4
           - 8
+          - 4
           - 12
+          - 20
