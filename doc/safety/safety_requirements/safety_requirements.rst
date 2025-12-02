@@ -102,13 +102,13 @@ It supports hierarchical requirements, traceability, and HTML export for easy re
 Requirements are written in StrictDoc's own markdown syntax.
 For those that prefer editing in a wisiwig fashion, the .html exports of StrictDoc can also be edited using StrictDoc's local server.
 
-To set up your Toolchain, jump to the `Getting started with Requirements management`_ section.
+To set up your Toolchain, jump to the `getting_started_with_safety_requirements`_ section.
 
 Verification of Requirements:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 New and changed requirements (what is in the PRs to the Requirements Repository) need to be verified by a review. The review comments can be captured directly in the
 comments during the PR review. A requirements review has to consider both technical correctness and the formal need that requirements need be be created following certain criteria.
-More details regarding the checklist and the formal expectations can be found in the Safety `Requirements Checklist <https://docs.zephyrproject.org/latest/safety/safety_requirements_checklist.html>`_
+More details regarding the checklist and the formal expectations can be found in the `safety_requirements_checklist`_
 In the tests of the Zephyrproject adherence of the implementation to the functionality described in the requirements must be evaluated.
 
 Glossary of Requirements Grammar Elements

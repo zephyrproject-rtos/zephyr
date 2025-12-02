@@ -13,3 +13,4 @@ follows a suitable approach.
 
    safety_requirements.rst
    safety_requirements_checklist.rst
+   getting_started/index
