@@ -99,6 +99,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &erm0 {
 	status = "okay";
 };
