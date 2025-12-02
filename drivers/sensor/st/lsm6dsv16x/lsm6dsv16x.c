@@ -17,6 +17,7 @@
 #include <string.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include "lsm6dsv16x.h"
@@ -1055,6 +1056,249 @@ static DEVICE_API(sensor, lsm6dsv16x_driver_api) = {
 #endif
 };
 
+struct lsm6dsv16x_tap_config {
+	bool en_x;
+	bool en_y;
+	bool en_z;
+	uint8_t axis_prio;
+	uint8_t thresh_x;
+	uint8_t thresh_y;
+	uint8_t thresh_z;
+	uint8_t time_shock;
+	uint8_t time_quiet;
+	uint8_t time_gap;
+	bool double_tap;
+};
+
+static int lsm6dsv16x_tap_get_config(const struct device *dev, struct lsm6dsv16x_tap_config *tapcfg)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	lsm6dsv16x_tap_detection_t det;
+	if (lsm6dsv16x_tap_detection_get(ctx, &det) < 0) {
+		return -EIO;
+	}
+	tapcfg->en_x = det.tap_x_en;
+	tapcfg->en_y = det.tap_y_en;
+	tapcfg->en_z = det.tap_z_en;
+
+	lsm6dsv16x_tap_axis_priority_t prio;
+	if (lsm6dsv16x_tap_axis_priority_get(ctx, &prio)) {
+		return -EIO;
+	}
+	tapcfg->axis_prio = prio;
+
+	lsm6dsv16x_tap_thresholds_t thresh;
+	if (lsm6dsv16x_tap_thresholds_get(ctx, &thresh)) {
+		return -EIO;
+	}
+	tapcfg->thresh_x = thresh.x;
+	tapcfg->thresh_y = thresh.y;
+	tapcfg->thresh_z = thresh.z;
+
+	lsm6dsv16x_tap_time_windows_t windows;
+	if (lsm6dsv16x_tap_time_windows_get(ctx, &windows)) {
+		return -EIO;
+	}
+	tapcfg->time_shock = windows.shock;
+	tapcfg->time_quiet = windows.quiet;
+	tapcfg->time_gap = windows.tap_gap;
+
+	lsm6dsv16x_tap_mode_t mode;
+	if (lsm6dsv16x_tap_mode_get(ctx, &mode)) {
+		return -EIO;
+	}
+	tapcfg->double_tap = (mode == LSM6DSV16X_BOTH_SINGLE_DOUBLE);
+
+	return 0;
+}
+
+static int lsm6dsv16x_tap_set_config(const struct device *dev, struct lsm6dsv16x_tap_config *tapcfg)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	lsm6dsv16x_tap_detection_t det = {
+		tapcfg->en_x,
+		tapcfg->en_y,
+		tapcfg->en_z,
+	};
+	if (lsm6dsv16x_tap_detection_set(ctx, det) < 0) {
+		return -EIO;
+	}
+	lsm6dsv16x_tap_axis_priority_t prio = tapcfg->axis_prio;
+	if (lsm6dsv16x_tap_axis_priority_set(ctx, prio)) {
+		return -EIO;
+	}
+	lsm6dsv16x_tap_thresholds_t thresh = {
+		tapcfg->thresh_x,
+		tapcfg->thresh_y,
+		tapcfg->thresh_z,
+	};
+	if (lsm6dsv16x_tap_thresholds_set(ctx, thresh)) {
+		return -EIO;
+	}
+	lsm6dsv16x_tap_time_windows_t windows = {
+		tapcfg->time_shock,
+		tapcfg->time_quiet,
+		tapcfg->time_gap,
+	};
+	if (lsm6dsv16x_tap_time_windows_set(ctx, windows)) {
+		return -EIO;
+	}
+	lsm6dsv16x_tap_mode_t mode =
+		tapcfg->double_tap ? LSM6DSV16X_BOTH_SINGLE_DOUBLE : LSM6DSV16X_ONLY_SINGLE;
+	if (lsm6dsv16x_tap_mode_set(ctx, mode)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static void lsm6dsv16x_shell_tap_print_cfg(const struct shell *sh,
+					   struct lsm6dsv16x_tap_config tapcfg)
+{
+	shell_print(sh, "en: %s%s%s%s prio: %d thres: %d/%d/%d shock: %d quiet: %d gap: %d",
+		    tapcfg.en_x ? "x" : "", tapcfg.en_y ? "y" : "", tapcfg.en_z ? "z" : "",
+		    tapcfg.double_tap ? "2" : "", tapcfg.axis_prio, tapcfg.thresh_x,
+		    tapcfg.thresh_y, tapcfg.thresh_z, tapcfg.time_shock, tapcfg.time_quiet,
+		    tapcfg.time_gap);
+}
+
+static const struct shell *tap_sh = NULL;
+static stmdev_ctx_t *tap_ctx = NULL;
+static void tap_thread_func(__attribute__((unused)) void *p1, __attribute__((unused)) void *p2,
+			    __attribute__((unused)) void *p3)
+{
+	while (true) {
+		k_msleep(50);
+		if (tap_sh == NULL || tap_ctx == NULL) {
+			continue;
+		}
+		lsm6dsv16x_tap_src_t status;
+		if (lsm6dsv16x_read_reg(tap_ctx, LSM6DSV16X_TAP_SRC, (uint8_t *)&status, 1)) {
+			shell_error(tap_sh, "Failed to read tap status");
+		}
+		if (*(uint8_t *)&status == 0) {
+			continue;
+		}
+		shell_print(tap_sh, "%10u %sdetect d xyz: %s%s%s%s%s%s", (unsigned)k_uptime_get(),
+			    status.tap_ia ? "" : "not ", status.tap_sign ? "+" : "-",
+			    status.x_tap ? "x" : "", status.y_tap ? "y" : "",
+			    status.z_tap ? "z" : "", status.double_tap ? "double " : "",
+			    status.single_tap ? "single " : "");
+	}
+}
+K_THREAD_DEFINE(tap_tid, 1600, tap_thread_func, NULL, NULL,
+		NULL,      // entry point and up to 3 arguments
+		12, 0, 0); // priority, stack options, delay
+
+static int lsm6dsv16x_shell_tap_get_handler(const struct shell *sh, size_t argc, char **argv,
+					    void *data)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_lsm6dsv16x));
+	struct lsm6dsv16x_tap_config tapcfg;
+	if (lsm6dsv16x_tap_get_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to get tap config");
+		return -EIO;
+	}
+	lsm6dsv16x_shell_tap_print_cfg(sh, tapcfg);
+
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dsv16x_tap_src_t status;
+	if (lsm6dsv16x_read_reg(ctx, LSM6DSV16X_TAP_SRC, (uint8_t *)&status, 1)) {
+		shell_error(sh, "Failed to read tap status");
+		return -EIO;
+	}
+	shell_print(sh, "%sdetect d xyz: %s%s%s%s%s%s", status.tap_ia ? "" : "not ",
+		    status.tap_sign ? "+" : "-", status.x_tap ? "x" : "", status.y_tap ? "y" : "",
+		    status.z_tap ? "z" : "", status.double_tap ? "double " : "",
+		    status.single_tap ? "single " : "");
+
+	tap_ctx = ctx;
+	tap_sh = sh;
+	return 0;
+}
+
+static int lsm6dsv16x_shell_tap_en_handler(const struct shell *sh, size_t argc, char **argv,
+					   void *data)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_lsm6dsv16x));
+	struct lsm6dsv16x_tap_config tapcfg;
+	uint8_t val;
+	char *endptr = NULL;
+
+	if (lsm6dsv16x_tap_get_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to get tap config");
+		return -EIO;
+	}
+	val = strtol(argv[2], &endptr, 0);
+	if (!endptr || *endptr != '\0') {
+		shell_error(sh, "Invalid number %s", argv[2]);
+		return -EINVAL;
+	}
+	if (strcmp(argv[1], "x") == 0) {
+		tapcfg.en_x = val;
+	} else if (strcmp(argv[1], "y") == 0) {
+		tapcfg.en_y = val;
+	} else if (strcmp(argv[1], "z") == 0) {
+		tapcfg.en_z = val;
+	} else if (strcmp(argv[1], "z") == 0) {
+		tapcfg.en_z = val;
+	} else if (strcmp(argv[1], "prio") == 0) {
+		tapcfg.axis_prio = val;
+	} else if (strcmp(argv[1], "tx") == 0) {
+		tapcfg.thresh_x = val;
+	} else if (strcmp(argv[1], "ty") == 0) {
+		tapcfg.thresh_y = val;
+	} else if (strcmp(argv[1], "tz") == 0) {
+		tapcfg.thresh_z = val;
+	} else if (strcmp(argv[1], "shock") == 0) {
+		tapcfg.time_shock = val;
+	} else if (strcmp(argv[1], "quiet") == 0) {
+		tapcfg.time_quiet = val;
+	} else if (strcmp(argv[1], "gap") == 0) {
+		tapcfg.time_gap = val;
+	} else if (strcmp(argv[1], "double") == 0) {
+		tapcfg.double_tap = val;
+	} else {
+		shell_error(sh, "Unknown setting %s", argv[1]);
+		return -EINVAL;
+	}
+	lsm6dsv16x_shell_tap_print_cfg(sh, tapcfg);
+	if (lsm6dsv16x_tap_set_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to set tap config");
+		return -EIO;
+	}
+	return 0;
+}
+
+static int lsm6dsv16x_shell_tap_set_handler(const struct shell *sh, size_t argc, char **argv,
+					    void *data)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_lsm6dsv16x));
+	struct lsm6dsv16x_tap_config tapcfg = {
+		true, true, true, LSM6DSV16X_DT_TAP_PRIO_ZXY, 2, 2, 2, 2, 2, 2, true,
+	};
+	if (lsm6dsv16x_tap_set_config(dev, &tapcfg)) {
+		shell_error(sh, "Failed to set tap config");
+		return -EIO;
+	}
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	unsigned odr = cfg->accel_odr;
+	shell_print(sh, "accel odr is %d", odr);
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_tap, SHELL_CMD(get, NULL, "Get tap config", lsm6dsv16x_shell_tap_get_handler),
+	SHELL_CMD(set, NULL, "Set a fixed tap config", lsm6dsv16x_shell_tap_set_handler),
+	SHELL_CMD_ARG(en, NULL, "Toggle tap axis enable", lsm6dsv16x_shell_tap_en_handler, 3, 0),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(tap, &sub_tap, "LSM6DSV16x tap commands", NULL);
+
 static int lsm6dsv16x_init_chip(const struct device *dev)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
@@ -1192,6 +1436,13 @@ static int lsm6dsv16x_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	if (cfg->trig_enabled) {
+		struct lsm6dsv16x_tap_config tapcfg = {
+			false, false, true, LSM6DSV16X_DT_TAP_PRIO_ZXY, 2, 2, 3, 2, 2, 1, true,
+		};
+		if (lsm6dsv16x_tap_set_config(dev, &tapcfg) < 0) {
+			LOG_ERR("Failed to set tap config.");
+			return -EIO;
+		}
 		if (lsm6dsv16x_init_interrupt(dev) < 0) {
 			LOG_ERR("Failed to initialize interrupt.");
 			return -EIO;

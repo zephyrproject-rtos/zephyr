@@ -18,96 +18,137 @@
 
 LOG_MODULE_DECLARE(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
+enum lsm6dsv16x_int_route {
+	lsm6dsv16x_int_route_drdy_xl,
+	lsm6dsv16x_int_route_drdy_g,
+	lsm6dsv16x_int_route_drdy_g_eis,
+	lsm6dsv16x_int_route_drdy_temp,
+	lsm6dsv16x_int_route_drdy_ah_qvar,
+	lsm6dsv16x_int_route_fifo_th,
+	lsm6dsv16x_int_route_fifo_ovr,
+	lsm6dsv16x_int_route_fifo_full,
+	lsm6dsv16x_int_route_cnt_bdr,
+	lsm6dsv16x_int_route_emb_func_endop,
+	lsm6dsv16x_int_route_timestamp,
+	lsm6dsv16x_int_route_shub,
+	lsm6dsv16x_int_route_emb_func,
+	lsm6dsv16x_int_route_sixd,
+	lsm6dsv16x_int_route_single_tap,
+	lsm6dsv16x_int_route_double_tap,
+	lsm6dsv16x_int_route_wakeup,
+	lsm6dsv16x_int_route_freefall,
+	lsm6dsv16x_int_route_sleep_change,
+};
+
 /**
- * lsm6dsv16x_enable_xl_int - XL enable selected int pin to generate interrupt
+ * lsm6dsv16x_enable_int - Enable or disable selected interrupt route
  */
-static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
+static int lsm6dsv16x_enable_int(const struct device *dev, enum lsm6dsv16x_int_route int_route,
+				 int enable)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	bool int1 = (cfg->drdy_pin == 1) || (ON_I3C_BUS(cfg) && (!I3C_INT_PIN(cfg)));
+	lsm6dsv16x_pin_int_route_t val = {};
 	int ret;
 
-	if (enable) {
-		int16_t buf[3];
-
-		/* dummy read: re-trigger interrupt */
-		lsm6dsv16x_acceleration_raw_get(ctx, buf);
-	}
-
-	/* set interrupt */
-	if ((cfg->drdy_pin == 1) || (ON_I3C_BUS(cfg) && (!I3C_INT_PIN(cfg)))) {
-		lsm6dsv16x_pin_int_route_t val = {};
-
+	if (int1) {
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
 			LOG_ERR("pint_int1_route_get error");
 			return ret;
 		}
-
-		val.drdy_xl = 1;
-
-		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val = {};
-
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
 			LOG_ERR("pint_int2_route_get error");
 			return ret;
 		}
-
-		val.drdy_xl = 1;
-
-		ret = lsm6dsv16x_pin_int2_route_set(ctx, &val);
 	}
 
+	switch (int_route) {
+	case lsm6dsv16x_int_route_drdy_xl:
+		val.drdy_xl = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_drdy_g:
+		val.drdy_g = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_drdy_g_eis:
+		val.drdy_g_eis = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_drdy_temp:
+		val.drdy_temp = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_drdy_ah_qvar:
+		val.drdy_ah_qvar = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_fifo_th:
+		val.fifo_th = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_fifo_ovr:
+		val.fifo_ovr = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_fifo_full:
+		val.fifo_full = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_cnt_bdr:
+		val.cnt_bdr = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_emb_func_endop:
+		val.emb_func_endop = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_timestamp:
+		val.timestamp = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_shub:
+		val.shub = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_emb_func:
+		val.emb_func = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_sixd:
+		val.sixd = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_single_tap:
+		val.single_tap = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_double_tap:
+		val.double_tap = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_wakeup:
+		val.wakeup = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_freefall:
+		val.freefall = enable ? 1 : 0;
+		break;
+	case lsm6dsv16x_int_route_sleep_change:
+		val.sleep_change = enable ? 1 : 0;
+		break;
+	default:
+		LOG_ERR("Invalid interrupt route %d", int_route);
+		return -EINVAL;
+	}
+
+	if (int1) {
+		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
+	} else {
+		ret = lsm6dsv16x_pin_int2_route_set(ctx, &val);
+	}
 	return ret;
 }
 
 /**
- * lsm6dsv16x_enable_g_int - Gyro enable selected int pin to generate interrupt
+ * lsm6dsv16x_enable_embedded_int - Enable or disabled the embedded functions interrupts
  */
-static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
+static int lsm6dsv16x_enable_embedded_int(const struct device *dev, int enable)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	int ret;
+	lsm6dsv16x_interrupt_mode_t int_mode;
 
-	if (enable) {
-		int16_t buf[3];
-
-		/* dummy read: re-trigger interrupt */
-		lsm6dsv16x_angular_rate_raw_get(ctx, buf);
-	}
-
-	/* set interrupt */
-	if ((cfg->drdy_pin == 1) || (ON_I3C_BUS(cfg) && (!I3C_INT_PIN(cfg)))) {
-		lsm6dsv16x_pin_int_route_t val = {};
-
-		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
-		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
-			return ret;
-		}
-
-		val.drdy_g = 1;
-
-		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
-	} else {
-		lsm6dsv16x_pin_int_route_t val = {};
-
-		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
-		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
-			return ret;
-		}
-
-		val.drdy_g = 1;
-
-		ret = lsm6dsv16x_pin_int2_route_set(ctx, &val);
-	}
-
-	return ret;
+	int_mode.enable = enable ? 1 : 0;
+	int_mode.lir = !cfg->drdy_pulsed;
+	return lsm6dsv16x_interrupt_enable_set(ctx, int_mode);
 }
 
 /**
@@ -118,16 +159,6 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
-	lsm6dsv16x_interrupt_mode_t int_mode;
-
-	int_mode.enable = enable ? 1 : 0;
-	int_mode.lir = !cfg->drdy_pulsed;
-	ret = lsm6dsv16x_interrupt_enable_set(ctx, int_mode);
-	if (ret < 0) {
-		LOG_ERR("interrupt_enable_set error");
-		return ret;
-	}
-
 	if ((cfg->drdy_pin == 1) || ON_I3C_BUS(cfg)) {
 		lsm6dsv16x_pin_int_route_t val;
 
@@ -166,6 +197,7 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret = 0;
 
 	if (!cfg->trig_enabled) {
@@ -184,18 +216,60 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 			lsm6dsv16x->handler_drdy_acc = handler;
 			lsm6dsv16x->trig_drdy_acc = trig;
 			if (handler) {
-				lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_EN_BIT);
+				int16_t buf[3];
+
+				/* dummy read: re-trigger interrupt */
+				lsm6dsv16x_acceleration_raw_get(ctx, buf);
+
+				ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_drdy_xl,
+							    LSM6DSV16X_EN_BIT);
 			} else {
-				lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_DIS_BIT);
+				ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_drdy_xl,
+							    LSM6DSV16X_DIS_BIT);
 			}
 		} else if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
 			lsm6dsv16x->handler_drdy_gyr = handler;
 			lsm6dsv16x->trig_drdy_gyr = trig;
 			if (handler) {
-				lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_EN_BIT);
+				int16_t buf[3];
+
+				/* dummy read: re-trigger interrupt */
+				lsm6dsv16x_angular_rate_raw_get(ctx, buf);
+
+				ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_drdy_g,
+							    LSM6DSV16X_EN_BIT);
 			} else {
-				lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_DIS_BIT);
+				ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_drdy_g,
+							    LSM6DSV16X_DIS_BIT);
 			}
+		}
+		break;
+	case SENSOR_TRIG_TAP:
+		if (trig->chan != SENSOR_CHAN_ACCEL_XYZ) {
+			return -ENOTSUP;
+		}
+		lsm6dsv16x->handler_single_tap = handler;
+		lsm6dsv16x->trig_single_tap = trig;
+		if (handler) {
+			ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_single_tap,
+						    LSM6DSV16X_EN_BIT);
+		} else {
+			ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_single_tap,
+						    LSM6DSV16X_DIS_BIT);
+		}
+		break;
+	case SENSOR_TRIG_DOUBLE_TAP:
+		if (trig->chan != SENSOR_CHAN_ACCEL_XYZ) {
+			return -ENOTSUP;
+		}
+		lsm6dsv16x->handler_double_tap = handler;
+		lsm6dsv16x->trig_double_tap = trig;
+		if (handler) {
+			ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_double_tap,
+						    LSM6DSV16X_EN_BIT);
+		} else {
+			ret = lsm6dsv16x_enable_int(dev, lsm6dsv16x_int_route_double_tap,
+						    LSM6DSV16X_DIS_BIT);
 		}
 		break;
 	case SENSOR_TRIG_DELTA:
@@ -205,14 +279,23 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 		lsm6dsv16x->handler_wakeup = handler;
 		lsm6dsv16x->trig_wakeup = trig;
 		if (handler) {
-			lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_EN_BIT);
+			ret = lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_EN_BIT);
 		} else {
-			lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_DIS_BIT);
+			ret = lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_DIS_BIT);
 		}
 		break;
 	default:
 		ret = -ENOTSUP;
 		break;
+	}
+
+	if (ret == 0) {
+		if (lsm6dsv16x->handler_single_tap != NULL ||
+		    lsm6dsv16x->handler_double_tap != NULL || lsm6dsv16x->handler_wakeup != NULL) {
+			ret = lsm6dsv16x_enable_embedded_int(dev, LSM6DSV16X_EN_BIT);
+		} else {
+			ret = lsm6dsv16x_enable_embedded_int(dev, LSM6DSV16X_DIS_BIT);
+		}
 	}
 
 	return ret;
@@ -229,11 +312,15 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lsm6dsv16x_data_ready_t status;
-	lsm6dsv16x_all_int_src_t all_int_src;
 	int ret;
 
 	while (1) {
+		lsm6dsv16x_data_ready_t status;
+		lsm6dsv16x_all_int_src_t all_int_src;
+		lsm6dsv16x_tap_src_t tap_status = {
+			0,
+		};
+
 		/* When using I3C IBI interrupt the status register is already automatically
 		 * read (clearing the interrupt condition), so we can skip the extra bus
 		 * transaction for FIFO stream case.
@@ -247,13 +334,31 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			return;
 		}
 
+		/* Tap status clears when all_int_src is read, so read tap status first. */
+		if (lsm6dsv16x->handler_single_tap != NULL ||
+		    lsm6dsv16x->handler_double_tap != NULL) {
+			ret = lsm6dsv16x_read_reg(ctx, LSM6DSV16X_TAP_SRC, (uint8_t *)&tap_status,
+						  1);
+			if (ret < 0) {
+				LOG_DBG("failed reading tap_src reg");
+				return;
+			}
+			if ((tap_status.single_tap) && lsm6dsv16x->handler_single_tap != NULL) {
+				lsm6dsv16x->handler_single_tap(dev, lsm6dsv16x->trig_single_tap);
+			}
+			if ((tap_status.double_tap) && lsm6dsv16x->handler_double_tap != NULL) {
+				lsm6dsv16x->handler_double_tap(dev, lsm6dsv16x->trig_double_tap);
+			}
+		}
+
 		ret = lsm6dsv16x_read_reg(ctx, LSM6DSV16X_ALL_INT_SRC, (uint8_t *)&all_int_src, 1);
 		if (ret < 0) {
 			LOG_DBG("failed reading all_int_src reg");
 			return;
 		}
 
-		if (((status.drdy_xl == 0) && (status.drdy_gy == 0) && (all_int_src.wu_ia == 0)) ||
+		if (((status.drdy_xl == 0) && (status.drdy_gy == 0) && (all_int_src.wu_ia == 0) &&
+		     (tap_status.single_tap == 0) && (tap_status.double_tap == 0)) ||
 		    IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
 			break;
 		}
