@@ -168,8 +168,12 @@ static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
 	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
 	.caps = {
-#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 		.no_explicit_erase = false,
+#elif defined(CONFIG_FLASH_SIMULATOR_RAMLIKE)
+		.no_explicit_erase = true,
+#else
+#error "Flash Simulator erase capability not configured correctly"
 #endif
 	},
 };
