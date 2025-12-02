@@ -210,7 +210,7 @@ The stack is split up as follows in the source tree:
   functionality of the Bluetooth stack, but are not necessary the best
   source for sample code (see ``samples/bluetooth`` instead).
 
-``doc/connectivity/bluetooth/``
+``doc/services/connectivity/bluetooth/``
   Extra documentation, such as PICS documents.
 
 .. _Bluetooth Specification: https://www.bluetooth.com/specifications/bluetooth-core-specification
