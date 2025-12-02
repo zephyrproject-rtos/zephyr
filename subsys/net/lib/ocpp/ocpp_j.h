@@ -84,7 +84,7 @@ struct json_ocpp_start_txn_msg {
 struct json_ocpp_getconfig_msg {
 	struct json_ocpp_key_val {
 		char *key;
-		int readonly;
+		bool readonly;
 		char *value;
 	} configuration_key[1];
 
