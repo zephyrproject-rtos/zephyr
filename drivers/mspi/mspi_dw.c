@@ -1866,10 +1866,11 @@ static int dev_init(const struct device *dev)
 
 	vendor_specific_init(dev);
 
+	/* Make sure controller is disabled. */
+	write_ssienr(dev, 0);
+
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
 				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
-
-	dev_config->irq_config();
 
 #if defined(CONFIG_MULTITHREADING)
 	dev_data->dev = dev;
@@ -1916,8 +1917,7 @@ static int dev_init(const struct device *dev)
 		return rc;
 	}
 
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
+	dev_config->irq_config();
 
 	return 0;
 }
