@@ -19,7 +19,8 @@
 		dir-gpios = <&gpio1 0 0>;
 		step-gpios = <&gpio1 1 0>;
 		en-gpios = <&gpio2 1 0>;
-		msx-gpios = <&gpio3 0 0>, <&gpio4 1 0>;
+		m0-gpios = <&gpio3 0 0>;
+		m1-gpios = <&gpio4 1 0>;
 		dual-edge-step;
 	};
 };
