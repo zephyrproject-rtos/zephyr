@@ -1,0 +1,12 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config HWINFO_MCHP_SAM
+	bool "Microchip SAM device hwinfo"
+	default y
+	depends on SOC_FAMILY_MICROCHIP_SAM
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Microchip SAM device hwinfo driver.
