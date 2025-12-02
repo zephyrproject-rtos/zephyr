@@ -11,7 +11,7 @@
 	};
 
 	die_temp: dietemp {
-		ts-cal1-addr = <0x0BF90710>;
-		ts-cal2-addr = <0x0BF90742>;
+		ts-cal1-addr = <0x0bf90710>;
+		ts-cal2-addr = <0x0bf90742>;
 	};
 };
