@@ -85,6 +85,10 @@
 	};
 };
 
+&rcc_rst {
+	status = "okay";
+};
+
 &gpioa_00_31 {
 	status = "okay";
 };
