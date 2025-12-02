@@ -17,8 +17,11 @@
 #include <driverlib/clkctl.h>
 #include <driverlib/gpio.h>
 #include <inc/hw_ioc.h>
+#include <inc/hw_types.h>
 
 #define IOC_ADDR(index)       (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * (index)))
+#define IOC_PORTCFG_MASK	  IOC_IOC0_PORTCFG_M
+#define GPIO_PIN_TO_MASK(pin) (1 << (pin))
 
 struct gpio_cc23x0_config {
 	/* gpio_driver_config needs to be first */
@@ -41,6 +44,11 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 	uint32_t config = 0;
 	uint32_t iocfg_reg = IOC_ADDR(pin);
 	gpio_flags_t direction = flags & GPIO_DIR_MASK;
+
+	/*
+	 * Keep the port configuration (pinmux). pinctrl takes care of the pinmux.
+	 */
+	config |= HWREG(iocfg_reg) & IOC_PORTCFG_MASK;
 
 	if (flags & GPIO_PULL_UP) {
 		config |= IOC_IOC0_PULLCTL_PULL_UP;
