@@ -333,12 +333,6 @@ int16_t adc_siwx91x_read_data(const struct device *dev)
 		adc_temp = 0;
 	}
 
-	if (adc_temp >= 2048) {
-		adc_temp = adc_temp - 2048;
-	} else {
-		adc_temp = adc_temp + 2048;
-	}
-
 	return adc_temp;
 }
 
