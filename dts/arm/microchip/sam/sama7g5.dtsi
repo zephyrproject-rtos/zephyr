@@ -711,5 +711,26 @@
 				#size-cells = <0>;
 			};
 		};
+
+		qspi0: qspi@e080c000 {
+			compatible = "microchip,sama7g5-qspi";
+			reg = <0xe080c000 0x400>, <0x20000000 0x10000000>;
+			reg-names = "base", "mmap";
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 78>, <&pmc PMC_TYPE_GCK 78>;
+			clock-names = "hclock", "multclk";
+			skip-sfdp;
+			size = <DT_SIZE_M(128)>; /* 128 MBytes */
+			status = "disabled";
+		};
+
+		qspi1: qspi@e0810000 {
+			compatible = "microchip,sama7g5-qspi";
+			reg = <0xe0810000 0x400>, <0x30000000 0x10000000>;
+			reg-names = "base", "mmap";
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 79>, <&pmc PMC_TYPE_GCK 79>;
+			clock-names = "hclock", "multclk";
+			requires-ulbpr;
+			status = "disabled";
+		};
 	};
 };
