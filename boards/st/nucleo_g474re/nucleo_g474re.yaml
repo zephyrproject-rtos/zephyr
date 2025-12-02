@@ -23,4 +23,5 @@ supported:
   - dma
   - can
   - rtc
+  - opamp
 vendor: st
