@@ -140,32 +140,6 @@ static void generate_mac(uint8_t *mac_addr)
 #endif
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-/**
- * Configures the RISAF (RIF Security Attribute Framework) for Ethernet on STM32N6.
- * This function sets up the master and slave security attributes for the Ethernet peripheral.
- */
-
-static void RISAF_Config(void)
-{
-	/* Define and initialize the master configuration structure */
-	RIMC_MasterConfig_t RIMC_master = {0};
-
-	/* Enable the clock for the RIFSC (RIF Security Controller) */
-	__HAL_RCC_RIFSC_CLK_ENABLE();
-
-	RIMC_master.MasterCID = RIF_CID_1;
-	RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-
-	/* Configure the master attributes for the Ethernet peripheral (ETH1) */
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
-
-	/* Set the secure and privileged attributes for the Ethernet peripheral (ETH1) as a slave */
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ETH1,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
-#endif
-
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
@@ -177,11 +151,6 @@ static int eth_initialize(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-	/* RISAF Configuration */
-	RISAF_Config();
-#endif
 
 	/* enable clock */
 	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
