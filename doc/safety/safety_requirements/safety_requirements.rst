@@ -7,7 +7,7 @@ Introduction
 ************
 
 The safety committee leads the effort to gather requirements that reflect the **actual** state of
-the implementation, following the `route 3s <https://docs.zephyrproject.org/latest/safety/safety_overview.html#general-safety-scope>`_
+the implementation, following the :ref:`route 3s <general_safety_scope>`
 approach of the project's safety effort. The goal is **NOT** to create new requirements to request
 additional features for the project.
 
@@ -15,9 +15,9 @@ The requirements are gathered in the separate repository:
 `Requirement repository
 <https://github.com/zephyrproject-rtos/reqmgmt>`__
 
-The current rendered version of the Requirement Repository's content can be found at `Zephyr Project Requirements <https://zephyrproject-rtos.github.io/reqmgmt/>`_.
+The current rendered version of the Requirement Repository's content can be found at `Zephyr Project Requirements <https://zephyrproject-rtos.github.io/reqmgmt/>`__.
 
-Objections of Requirements Management in the Zephyr Project
+Objectives of Requirements Management in the Zephyr Project
 ***********************************************************
 In the development and for documentation of implemented or expected functionality, effective Requirements Management
 is essential to ensure that the Zephyr RTOS meets its intended purpose, performs reliably under its constraints, and can be
@@ -33,14 +33,13 @@ relying solely on low-level documentation can lead to fragmented understanding, 
 To enhance this understanding and add value for non-coding roles like product owners, software architects, quality management, safety management and assessors,
 the Zephyr Project needs to have higher level requirements that describe overall functionality, structure and implementation constraints.
 
-
 Guideline to Requirements Management
 ************************************
 
 Below are the guidelines for the requirements repository and the expectations regarding suitable requirement structure and syntax when adding requirements to the repository.
 
 Note: these are the guidelines to create requirements in the requirements repository, which is not written using .rst like the docs published to the Zephyr users.
-To learn more about the guidelines to create the docs, please refer to `Documentation Guideline https://docs.zephyrproject.org/latest/contribute/documentation/guidelines.html`__
+To learn more about the guidelines to create the docs, please refer to :ref:`doc_guidelines`
 
 Scope
 =====
@@ -61,12 +60,15 @@ System Requirements
   System requirements describe the behavior of the Zephyr RTOS (= the system here).
   They describe the functionality and constraints of the Zephyr RTOS from a high-level perspective,
   without going into details of the functionality itself.
+
   The purpose of the system requirements is to get an overview of the currently implemented features
   of the Zephyr RTOS.
+
   These requirements articulate what the RTOS must achieve from a functional, performance, and interface perspective —
   such as deterministic task scheduling, interrupt handling latency, memory footprint limits,
   and compliance with industry standards.
   System requirements serve as the foundation for design decisions and validation criteria.
+
   To create these requirements it is beneficial if a person writing these requirements already has some knowledge of the Zephyr RTOS
   Project and/or requirements and constraints that are specific to an RTOS.
 
@@ -74,10 +76,12 @@ Software Requirements
   Beneath the System Requirements layer, Software requirements refine the system-level requirements to a more granular level.
   These component level requirements break down the system-level expectations into detailed specifications for individual components within the RTOS.
   These include modules such as the scheduler, memory manager and inter-process communication mechanisms.
+
   Software requirements describe the behavior, interfaces, and constraints of each component, ensuring that they collectively fulfill the system-level goals.
   These requirements define the specific actions the feature shall be able to execute and the
   behavior of the feature so that each requirement can be verified by tests, analysis and/or inspection.
-  Also this level of requirements still has to be implementation free in its definitions. Implementation definitions should be in the docs, if not already there, they need to be added
+
+  This level of requirements still has to be implementation free in its definitions. Implementation definitions should be in the docs, if not already there, they need to be added
   as another task of this requirements creation effort.
 
 Requirements Management Toolchain
@@ -85,10 +89,10 @@ Requirements Management Toolchain
 
 Requirement Repository:
 ~~~~~~~~~~~~~~~~~~~~~~~
-The `Requirement repository
-<https://github.com/zephyrproject-rtos/reqmgmt>`__
-represents Zephyr's structured appraoch to requirements management, currently focusing on the creation of requirements within the scope of
+The `Requirement repository <https://github.com/zephyrproject-rtos/reqmgmt>`__
+represents Zephyr's structured approach to requirements management, currently focusing on the creation of requirements within the scope of
 its targeted safety certification, but not limited to this scope.
+
 To work with this repository, follow the normal GitHub workflow of branching and pull requests.
 The pull requests on this repository are currently reviewed by members of the safety working group and need approval at least from one of the following
 roles to get merged: Zephyr Safety Manager, Zephyr Safety Chair or Zephyr Safety Architect.
@@ -96,13 +100,17 @@ roles to get merged: Zephyr Safety Manager, Zephyr Safety Chair or Zephyr Safety
 Requirement Tooling:
 ~~~~~~~~~~~~~~~~~~~~
 For authoring, linking and rendering a browsable .html version of the Zephyr Project's requirements we are using the
-tool `strictDoc <https://strictdoc.readthedocs.io/en/stable/>`_
+tool `StrictDoc`_
+
 StrictDoc is a lightweight, open-source tool for writing, browsing, and exporting structured requirements.
 It supports hierarchical requirements, traceability, and HTML export for easy review.
-Requirements are written in StrictDoc's own markdown syntax.
-For those that prefer editing in a wisiwig fashion, the .html exports of StrictDoc can also be edited using StrictDoc's local server.
 
-To set up your Toolchain, jump to the `Getting started with Requirements management`_ section.
+Requirements are written in StrictDoc's own markdown syntax.
+
+For those that prefer editing in a WYSIWYG fashion, the .html exports of StrictDoc can also be edited using StrictDoc's local server.
+
+To set up your Toolchain, jump to the :ref:`getting_started_with_safety_requirements` section.
+
 
 Verification of Requirements:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,7 +125,7 @@ Glossary of Requirements Grammar Elements
 -----------------------------------------
 All requirements must use the defined grammar:
 
-.. list-table:: Structure for requirements caputured in StrictDoc
+.. list-table:: Structure for requirements captured in StrictDoc
    :widths: 20 80
    :header-rows: 1
 
@@ -140,19 +148,19 @@ All requirements must use the defined grammar:
      - Reference to parent and/or child requirement
 
    * - TITLE
-     - A desciptive title of the requirement. Use short and concise requirement titles.
+     - A descriptive title of the requirement. Use short and concise requirement titles.
 
    * - STATEMENT
      - Description of the requirement
 
    * - USER_STORY
-     - A user story describing the requirement (optional, only add if it adds additional value to the requireents statement)
+     - A user story describing the requirement (optional, only add if it adds additional value to the requirements statement)
 
 
 Requirement UID (Unique identifier) Handling
 --------------------------------------------
 
-The tool used to manage requirements, `strictDoc <https://strictdoc.readthedocs.io/en/stable/>`_, is
+The tool used to manage requirements, `StrictDoc`_, is
 responsible for handling the Unique Identifier (UID) associated with each requirement. To manage
 UIDs, follow these steps:
 
@@ -169,7 +177,7 @@ the steps above.
 Consistency
 -----------
 
-Consistency reagrding language and choice of words shall be maintained accross all requirements.
+Consistency regarding language and choice of words shall be maintained across all requirements.
 (See: `Syntax`_)
 
 It also is recommended to take a look at the already existing requirements in the `Requirement repository
@@ -202,6 +210,7 @@ Characteristics of a good requirement
 * Necessary
 * Implementation-free (abstract)
 
+
 Characteristics of a set of requirements
 ----------------------------------------
 
@@ -218,3 +227,5 @@ Syntax
     unfamiliar with requirements writing.
 
   * Other formats are accepted as long as the characteristics of a requirement from above are met.
+
+.. _StrictDoc: https://strictdoc.readthedocs.io/en/stable/
