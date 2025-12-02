@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_common);
 
-#include "i2c_ll_stm32.h"
+#include "i2c_stm32.h"
 
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void i2c_stm32_combined_isr(void *arg)
