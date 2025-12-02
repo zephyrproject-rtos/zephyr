@@ -152,18 +152,6 @@
 		zephyr,memory-region = "SRAM5";
 	};
 
-	dtcm: memory@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
-		reg = <0x20000000 DT_SIZE_K(128)>;
-		zephyr,memory-region = "DTCM";
-	};
-
-	itcm: memory@0 {
-		compatible = "zephyr,memory-region", "arm,itcm";
-		reg = <0x00000000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "ITCM";
-	};
-
 	ext_memory2: memory@70000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>; /* max addressable area */
