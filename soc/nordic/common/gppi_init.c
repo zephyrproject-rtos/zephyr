@@ -7,6 +7,8 @@
 #include <helpers/nrfx_gppi.h>
 #if defined(NRFX_GPPI_MULTI_DOMAIN) && !defined(NRFX_GPPI_FIXED_CONNECTIONS)
 #include <soc/interconnect/nrfx_gppi_lumos.h>
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
+#include <nrfx_gppi_cpurad.h>
 #endif
 
 static int gppi_init(void)
@@ -47,6 +49,21 @@ static int gppi_init(void)
 			NRFX_BIT_MASK(DPPIC20_GROUP_NUM_SIZE) & ~NRFX_DPPI20_GROUPS_USED);
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC30,
 			NRFX_BIT_MASK(DPPIC30_GROUP_NUM_SIZE) & ~NRFX_DPPI30_GROUPS_USED);
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
+	gppi_instance.routes = nrfx_gppi_routes_get();
+	gppi_instance.route_map = nrfx_gppi_route_map_get();
+	gppi_instance.nodes = nrfx_gppi_nodes_get();
+
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC020,
+			NRFX_BIT_MASK(DPPIC020_CH_NUM_SIZE) & ~NRFX_DPPI020_CHANNELS_USED);
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC030,
+			NRFX_BIT_MASK(DPPIC030_CH_NUM_SIZE) & ~NRFX_DPPI030_CHANNELS_USED);
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB020_030,
+			NRFX_BIT_MASK(PPIB020_NTASKSEVENTS_SIZE));
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC020,
+			NRFX_BIT_MASK(DPPIC020_GROUP_NUM_SIZE) & ~NRFX_DPPI020_GROUPS_USED);
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC030,
+			NRFX_BIT_MASK(DPPIC030_GROUP_NUM_SIZE) & ~NRFX_DPPI030_GROUPS_USED);
 #else
 #error "Not supported"
 #endif
