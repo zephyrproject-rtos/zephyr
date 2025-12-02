@@ -905,7 +905,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						goto out;
 					}
 				} else if (params->TLS_cipher == WIFI_EAP_TLS_RSA_3K) {
-					snprintf(phase1, sizeof(phase1), "tls_suiteb=1");
+					snprintf(phase1, sizeof(phase1), "tls_suiteb=1 "
+						 "tls_disable_tlsv1_3=1");
 					if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"",
 							resp.network_id, &phase1[0])) {
 						goto out;
