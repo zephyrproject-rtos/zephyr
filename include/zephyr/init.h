@@ -123,13 +123,13 @@ struct init_entry {
  * @return Init level ordinal.
  */
 #define INIT_LEVEL_ORD(level)                                                  \
-	COND_CODE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
-	(COND_CODE_1(Z_INIT_PRE_KERNEL_1_##level, (Z_INIT_ORD_PRE_KERNEL_1),   \
-	(COND_CODE_1(Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),   \
-	(COND_CODE_1(Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),     \
-	(COND_CODE_1(Z_INIT_APPLICATION_##level, (Z_INIT_ORD_APPLICATION),     \
-	(COND_CODE_1(Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                     \
-	(ZERO_OR_COMPILE_ERROR(0)))))))))))))
+	COND_CASE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
+		    Z_INIT_PRE_KERNEL_1_##level, (Z_INIT_ORD_PRE_KERNEL_1),    \
+		    Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),    \
+		    Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),      \
+		    Z_INIT_APPLICATION_##level, (Z_INIT_ORD_APPLICATION),      \
+		    Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                      \
+		    (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
  * @brief Register an initialization function.

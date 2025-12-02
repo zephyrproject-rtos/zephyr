@@ -1423,14 +1423,13 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
  * @param node_id Node identifier.
  */
 #define NET_ETH_MAC_DT_CONFIG_INIT(node_id)                                                        \
-	COND_CODE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
+	COND_CASE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
 		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)),                                \
-		    (COND_CODE_1(DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                    \
-				 (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),                    \
-				 (COND_CODE_1(DT_NODE_HAS_PROP(node_id, local_mac_address),        \
-					      (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),      \
-					      (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))))))
-
+		    DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                                 \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),                                 \
+		    DT_NODE_HAS_PROP(node_id, local_mac_address),                                  \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),                                \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))
 
 /**
  * @brief Like NET_ETH_MAC_DT_CONFIG_INIT for an instance of a DT_DRV_COMPAT compatible
