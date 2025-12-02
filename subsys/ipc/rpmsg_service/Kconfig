@@ -44,6 +44,13 @@ config RPMSG_SERVICE_MODE_REMOTE
 
 endchoice
 
+config RPMSG_SERVICE_LINUX
+	bool "RPMsg Service for Linux"
+	depends on RPMSG_SERVICE_MODE_REMOTE
+	depends on (OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	help
+	  Enable this option when the host is Linux.
+
 config RPMSG_SERVICE_NUM_ENDPOINTS
 	int "Max number of registered endpoints"
 	default 2
