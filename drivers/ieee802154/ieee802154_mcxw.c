@@ -451,7 +451,7 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 	net_pkt_set_ieee802154_lqi(pkt, mcxw_radio->rx_ack_frame.lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, mcxw_radio->rx_ack_frame.rssi);
 
-	net_pkt_set_timestamp_ns(pkt, mcxw_radio->rx_ack_frame.timestamp);
+	net_pkt_set_timestamp_ns(pkt, mcxw_radio->rx_ack_frame.timestamp * NSEC_PER_USEC);
 
 	net_pkt_cursor_init(pkt);
 
@@ -465,6 +465,15 @@ free_ack:
 exit:
 	mcxw_radio->rx_ack_frame.length = 0;
 	return err;
+}
+
+static void mcxw_tx_started(const struct device *dev, struct net_pkt *pkt, struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+
+	if (mcxw_ctx.event_handler) {
+		mcxw_ctx.event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);
+	}
 }
 
 static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struct net_pkt *pkt,
@@ -540,7 +549,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 #if defined(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
-		mcxw_radio->tx_frame.tx_delay = net_pkt_timestamp_ns(pkt);
+		mcxw_radio->tx_frame.tx_delay = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
+		mcxw_radio->tx_frame.tx_delay -= IEEE802154_SHR_DURATION_US;
 		msg->msgData.dataReq.startTime =
 			rf_adjust_tstamp_from_app(mcxw_radio->tx_frame.tx_delay);
 		msg->msgData.dataReq.startTime /= IEEE802154_SYMBOL_TIME_US;
@@ -596,19 +606,19 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 
 	k_sem_reset(&mcxw_radio->tx_wait);
 
+	mcxw_radio_state tmp_state = mcxw_radio->state;
+
+	mcxw_radio->state = RADIO_STATE_TRANSMIT;
+
 	phy_status = MAC_PD_SapHandler(msg, ot_phy_ctx);
 	if (phy_status == gPhySuccess_c) {
-		mcxw_radio->tx_status = 0;
-		mcxw_radio->state = RADIO_STATE_TRANSMIT;
+		mcxw_tx_started(dev, pkt, frag);
 	} else {
+		mcxw_radio->state = tmp_state;
 		return -EIO;
 	}
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
-
-	/* PWR_AllowDeviceToSleep(); */
-
-	mcxw_radio_receive();
 
 	switch (mcxw_radio->tx_status) {
 	case 0:
@@ -653,11 +663,16 @@ void mcxw_rx_thread(void *arg1, void *arg2, void *arg3)
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame.ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		net_pkt_set_timestamp_ns(pkt, rx_frame.timestamp);
+		net_pkt_set_timestamp_ns(pkt, rx_frame.timestamp * NSEC_PER_USEC);
 #endif
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 		net_pkt_set_ieee802154_ack_seb(pkt, rx_frame.ack_seb);
+
+		if (rx_frame.ack_seb) {
+			net_pkt_set_ieee802154_ack_fc(pkt, rx_frame.ack_fc);
+			net_pkt_set_ieee802154_ack_keyid(pkt, rx_frame.ack_keyid);
+		}
 #endif
 		if (net_recv_data(mcxw_radio->iface, pkt) < 0) {
 			LOG_ERR("Packet dropped by NET stack");
@@ -840,7 +855,6 @@ static void mcxw_receive_at(uint8_t channel, uint32_t start, uint32_t duration)
 	start = rf_adjust_tstamp_from_app(start);
 
 	msg.msgType = gPlmeSetTRxStateReq_c;
-	msg.msgData.setTRxStateReq.slottedMode = gPhyUnslottedMode_c;
 	msg.msgData.setTRxStateReq.state = gPhySetRxOn_c;
 	msg.msgData.setTRxStateReq.rxDuration = duration / IEEE802154_SYMBOL_TIME_US;
 	msg.msgData.setTRxStateReq.startTime = start / IEEE802154_SYMBOL_TIME_US;
@@ -1005,8 +1019,8 @@ static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 
 static net_time_t mcxw_get_time(const struct device *dev)
 {
-	static uint64_t sw_timestamp;
-	static uint64_t hw_timestamp;
+	static uint64_t sw_timestamp; /* µs, last timestamp, monotonous */
+	static uint64_t hw_timestamp; /* µs, last converted raw reading */
 
 	ARG_UNUSED(dev);
 
@@ -1021,7 +1035,7 @@ static net_time_t mcxw_get_time(const struct device *dev)
 
 	if (counter_get_value(mcxw_ctx.counter, &ticks)) {
 		irq_unlock(key);
-		return -1;
+		return (net_time_t)-1;
 	}
 
 	hw_timestamp_new = counter_ticks_to_us(mcxw_ctx.counter, ticks);
@@ -1110,7 +1124,8 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
 		mcxw_ctx.rx_ack_frame.lqi = data_msg->msgData.dataCnf.ppduLinkQuality;
 		mcxw_ctx.rx_ack_frame.rssi = data_msg->msgData.dataCnf.ppduRssi;
-		mcxw_ctx.rx_ack_frame.timestamp = data_msg->msgData.dataCnf.timeStamp;
+		mcxw_ctx.rx_ack_frame.timestamp =
+			rf_adjust_tstamp_from_phy(data_msg->msgData.dataCnf.timeStamp);
 		memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
 		       mcxw_ctx.rx_ack_frame.length);
 
@@ -1130,7 +1145,14 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		rx_frame.ack_fpb = data_msg->msgData.dataInd.rxAckFp;
 		rx_frame.length = data_msg->msgData.dataInd.psduLength;
 		rx_frame.psdu = data_msg->msgData.dataInd.pPsdu;
+
+#if defined(CONFIG_NET_L2_OPENTHREAD)
 		rx_frame.ack_seb = data_msg->msgData.dataInd.ackedWithSecEnhAck;
+		if (rx_frame.ack_seb) {
+			rx_frame.ack_fc = data_msg->msgData.dataInd.ackFrameCounter;
+			rx_frame.ack_keyid = data_msg->msgData.dataInd.ackKeyId;
+		}
+#endif
 
 		rx_frame.phy_buffer = (void *)msg;
 
@@ -1293,7 +1315,8 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	case IEEE802154_CONFIG_EXPECTED_RX_TIME:
-		mcxw_ctx.csl_sample_time = config->expected_rx_time;
+		/* CSL endpoint (SSED) */
+		mcxw_ctx.csl_sample_time = config->expected_rx_time / NSEC_PER_USEC;
 		break;
 
 	case IEEE802154_CONFIG_RX_SLOT:
@@ -1315,6 +1338,7 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 		break;
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
+		mcxw_ctx.event_handler = config->event_handler;
 		break;
 
 	default:
