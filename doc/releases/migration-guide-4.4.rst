@@ -244,6 +244,14 @@ Libsbc
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
 
+Tracing
+========
+
+* CTF: Changed uint8_t id to uint16_t id in the CTF metadata event header. This
+  doubles the space used for event IDs but allows 65,535 events instead of 255.
+
+  With this change, existing CTF traces with 8-bit IDs won't be compatible.
+
 Modules
 *******
 
