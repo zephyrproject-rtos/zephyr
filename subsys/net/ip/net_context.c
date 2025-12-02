@@ -705,11 +705,11 @@ int net_context_unref(struct net_context *context)
 
 	net_context_set_state(context, NET_CONTEXT_UNCONNECTED);
 
+	k_mutex_unlock(&context->lock);
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 	NET_DBG("Context %p released", context);
-
-	k_mutex_unlock(&context->lock);
 
 	return 0;
 }
@@ -728,9 +728,10 @@ int net_context_put(struct net_context *context)
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		context->flags &= ~NET_CONTEXT_IN_USE;
 		ret = net_offload_put(net_context_get_iface(context), context);
-		goto unlock;
+		k_mutex_unlock(&context->lock);
+		context->flags &= ~NET_CONTEXT_IN_USE;
+		return ret;
 	}
 
 	context->connect_cb = NULL;
@@ -740,11 +741,10 @@ int net_context_put(struct net_context *context)
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	net_tcp_put(context, false);
 
+	k_mutex_unlock(&context->lock);
+
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
-
-unlock:
-	k_mutex_unlock(&context->lock);
 
 	return ret;
 }
