@@ -137,9 +137,9 @@
 			write-block-size = <512>;
 		};
 
-		flash_reserved: flash@9D800 {
+		flash_reserved: flash@9d800 {
 			compatible = "soc-nv-flash";
-			reg = <0x9D800 DT_SIZE_K(9)>;
+			reg = <0x9d800 DT_SIZE_K(9)>;
 			status = "disabled";
 		};
 
@@ -227,7 +227,7 @@
 
 	mailbox0: mailbox@8b000 {
 		compatible = "nxp,lpc-mailbox";
-		reg = <0x8b000 0xEC>;
+		reg = <0x8b000 0xec>;
 		interrupts = <31 0>;
 		resets = <&reset NXP_SYSCON_RESET(0, 26)>;
 		status = "disabled";
@@ -364,9 +364,9 @@
 		clk-divider = <1>;
 	};
 
-	adc0: adc@A0000 {
+	adc0: adc@a0000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0xA0000 0x1000>;
+		reg = <0xa0000 0x1000>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <8>;
@@ -397,7 +397,7 @@
 		status = "disabled";
 	};
 
-	usbhfs: usbhfs@A2000 {
+	usbhfs: usbhfs@a2000 {
 		compatible = "nxp,uhc-ohci";
 		reg = <0xa2000 0x1000>;
 		interrupts = <28 1>;
@@ -405,7 +405,7 @@
 		status = "disabled";
 	};
 
-	usbhhs: usbhhs@A3000 {
+	usbhhs: usbhhs@a3000 {
 		compatible = "nxp,uhc-ip3516hs";
 		reg = <0xa3000 0x1000>;
 		interrupts = <47 1>;
@@ -466,9 +466,9 @@
 		prescale = <0>;
 	};
 
-	ctimer4: ctimer@2A000 {
+	ctimer4: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
-		reg = <0x2A000 0x1000>;
+		reg = <0x2a000 0x1000>;
 		interrupts = <37 0>;
 		status = "disabled";
 		clk-source = <3>;
@@ -488,9 +488,9 @@
 		#pwm-cells = <3>;
 	};
 
-	rtc: rtc@2C000 {
+	rtc: rtc@2c000 {
 		compatible = "nxp,lpc-rtc";
-		reg = <0x2C000 0x1000>;
+		reg = <0x2c000 0x1000>;
 		interrupts = <29 0>;
 		status = "disabled";
 

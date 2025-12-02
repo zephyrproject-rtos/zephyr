@@ -90,14 +90,14 @@
 			reg = <0x00068000 DT_SIZE_K(8)>;
 		};
 
-		slot0_ns_partition: partition@6A000 {
+		slot0_ns_partition: partition@6a000 {
 			label = "image-0-nonsecure";
-			reg = <0x0006A000 DT_SIZE_K(494)>;
+			reg = <0x0006a000 DT_SIZE_K(494)>;
 		};
 
-		storage_partition: partition@E5800 {
+		storage_partition: partition@e5800 {
 			label = "storage";
-			reg = <0x000E5800 DT_SIZE_K(32)>;
+			reg = <0x000e5800 DT_SIZE_K(32)>;
 		};
 	};
 };
