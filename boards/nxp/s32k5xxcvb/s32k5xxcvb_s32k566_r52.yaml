@@ -16,4 +16,5 @@ supported:
   - pwm
   - i2c
   - can
+  - spi
 vendor: nxp
