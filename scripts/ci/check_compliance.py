@@ -606,7 +606,8 @@ class DevicetreeLintingCheck(ComplianceTest):
         if not self.ensure_npx():
             self.skip(
                 'dts-linter not installed. To run this check, '
-                'install Node.js and then run [npm ci] command inside ZEPHYR_BASE'
+                'install Node.js and then run [npm --prefix ./scripts/ci ci] command inside '
+                'ZEPHYR_BASE'
             )
         if not dts_files:
             self.skip('No DTS')
@@ -648,7 +649,8 @@ class DevicetreeLintingCheck(ComplianceTest):
                     self.failure(f"dts-linter found issues:\n{stderr_output}")
                 else:
                     err = "dts-linter failed with no output. "
-                    err += "Make sure you install Node.js and then run npm ci inside ZEPHYR_BASE"
+                    err += "Make sure you install Node.js and then run "
+                    err += "[npm --prefix ./scripts/ci ci] inside ZEPHYR_BASE"
                     self.failure(err)
             except RuntimeError as ex:
                 self.failure(f"{ex}")
