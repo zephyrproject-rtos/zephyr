@@ -152,7 +152,7 @@
 			compatible = "st,stm32f1-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x40010800 0x1C00>;
+			reg = <0x40010800 0x1c00>;
 
 			gpioa: gpio@40010800 {
 				compatible = "st,stm32-gpio";
@@ -264,7 +264,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 7>;
 			status = "disabled";

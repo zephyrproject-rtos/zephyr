@@ -198,11 +198,11 @@
 				clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			};
 
-			gpiod: gpio@40020C00 {
+			gpiod: gpio@40020c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40020C00 0x400>;
+				reg = <0x40020c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 3)>;
 			};
 
@@ -230,11 +230,11 @@
 				clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
 			};
 
-			gpioh: gpio@40021C00 {
+			gpioh: gpio@40021c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021C00 0x400>;
+				reg = <0x40021c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 7)>;
 			};
 
@@ -255,7 +255,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 7>;
 			status = "disabled";

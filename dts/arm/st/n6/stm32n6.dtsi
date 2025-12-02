@@ -420,7 +420,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x56023C00 0x400>;
+				reg = <0x56023c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB4, 15)>;
 			};
 
@@ -475,7 +475,7 @@
 
 		fdcan1: can@5000a000 {
 			compatible = "st,stm32h7-fdcan";
-			reg = <0x5000A000 0x400>, <0x5000C000 0xd54>;
+			reg = <0x5000a000 0x400>, <0x5000c000 0xd54>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <180 0>, <181 0>, <186 0>;
@@ -486,7 +486,7 @@
 
 		fdcan2: can@5000a400 {
 			compatible = "st,stm32h7-fdcan";
-			reg = <0x5000A400 0x400>, <0x5000C000 0x1aa8>;
+			reg = <0x5000a400 0x400>, <0x5000c000 0x1aa8>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <182 0>, <183 0>;
@@ -497,7 +497,7 @@
 
 		fdcan3: can@5000e800 {
 			compatible = "st,stm32h7-fdcan";
-			reg = <0x5000E800 0x400>, <0x5000C000 0x2800>;
+			reg = <0x5000e800 0x400>, <0x5000c000 0x2800>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <184 0>, <185 0>;
@@ -535,7 +535,7 @@
 
 		uart4: serial@50004c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x50004C00 0x400>;
+			reg = <0x50004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
 			resets = <&rctl STM32_RESET(APB1L, 19)>;
 			interrupts = <162 0>;
@@ -571,7 +571,7 @@
 
 		uart8: serial@50007c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x50007C00 0x400>;
+			reg = <0x50007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
 			resets = <&rctl STM32_RESET(APB1L, 31)>;
 			interrupts = <166 0>;
@@ -589,7 +589,7 @@
 
 		usart10: serial@52001c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x52001C00 0x400>;
+			reg = <0x52001c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <168 0>;
@@ -625,7 +625,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50005C00 0x400>;
+			reg = <0x50005c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			interrupts = <104 0>, <105 0>;
 			interrupt-names = "event", "error";
@@ -637,7 +637,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x56001C00 0x400>;
+			reg = <0x56001c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4, 7)>;
 			interrupts = <106 0>, <107 0>;
 			interrupt-names = "event", "error";
@@ -694,7 +694,7 @@
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50003C00 0x400>;
+			reg = <0x50003c00 0x400>;
 			interrupts = <155 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			status = "disabled";
@@ -1216,7 +1216,7 @@
 
 		xspi2: spi@5802a000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x5802A000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
+			reg = <0x5802a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <171 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
@@ -1243,7 +1243,7 @@
 
 		usbphyc1: usbphyc@5803fc00 {
 			compatible = "st,stm32-usbphyc";
-			reg = <0x5803FC00 0x400>;
+			reg = <0x5803fc00 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB5, 27)>;
 			#phy-cells = <0>;
 		};
@@ -1293,7 +1293,7 @@
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x52005C04 0x20>;
+			reg = <0x52005c04 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			dmas = <&gpdma1 3 93 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
@@ -1304,7 +1304,7 @@
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x52005C24 0x20>;
+			reg = <0x52005c24 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			dmas = <&gpdma1 2 94 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
