@@ -1252,6 +1252,15 @@ device_get_dt_nodelabels(const struct device *dev)
 	(ZERO_OR_COMPILE_ERROR(0)))))))
 
 /**
+ * @brief Issue an error if the given init priority is not supported.
+ *
+ * @param prio Priority level
+ */
+#define Z_DEVICE_CHECK_INIT_PRIO(prio)                                          \
+	BUILD_ASSERT(0 <= (prio) && (prio) <= 99,                               \
+		     Z_STRINGIFY(prio) "invalid priority")
+
+/**
  * @brief Define the init entry for a device.
  *
  * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
@@ -1262,6 +1271,7 @@ device_get_dt_nodelabels(const struct device *dev)
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio)                                   \
 	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
+	Z_DEVICE_CHECK_INIT_PRIO(prio)                                                             \
                                                                                                    \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
