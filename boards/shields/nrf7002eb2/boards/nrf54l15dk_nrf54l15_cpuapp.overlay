@@ -6,6 +6,9 @@
 
 #include "../nrf7002eb2_gpio_pins_1.dtsi"
 
+/* Conflicts with nRF7002EB2 SPI-CS pin */
+/delete-node/ &led1;
+
 / {
 	chosen {
 		zephyr,wifi = &wlan0;
@@ -14,6 +17,10 @@
 		zephyr,uart-mcumgr = &uart30;
 		zephyr,bt-mon-uart = &uart30;
 		zephyr,bt-c2h-uart = &uart30;
+	};
+
+	aliases {
+		/delete-property/ led1;
 	};
 };
 
