@@ -6,7 +6,6 @@
 
 /**
  * @file
- * @ingroup digitpot_interface
  * @brief Main header file for digital potentiometer driver API.
  */
 

@@ -11,8 +11,8 @@
 #include <zephyr/logging/log.h>
 
 
-#define AD528X_RDAC_SELECT(x)  	FIELD_PREP(BIT(7), x)
-#define AD528X_RDAC_RESET  		BIT(6)
+#define AD528X_RDAC_SELECT(x)	FIELD_PREP(BIT(7), x)
+#define AD528X_RDAC_RESET		BIT(6)
 #define AD528X_RDAC_SHUTDN		BIT(5)
 #define AD528X_RDAC_POS_NB		256
 
@@ -63,7 +63,7 @@ static int ad528x_wiper_set(const struct device *dev, uint8_t channel, uint16_t 
 		return -EINVAL;
 	}
 
-	if(position >= AD528X_RDAC_POS_NB){
+	if (position >= AD528X_RDAC_POS_NB) {
 		return -EINVAL;
 	}
 
@@ -94,7 +94,7 @@ static int ad528x_wiper_reset(const struct device *dev, uint8_t channel)
 	if (channel > (config->rdac_nb-1)) {
 		return -EINVAL;
 	}
-	
+
 	cmd = AD528X_RDAC_SELECT(channel);
 	cmd |= AD528X_RDAC_RESET;
 
@@ -135,26 +135,26 @@ static DEVICE_API(digipot, ad528x_driver_api) = {
 };
 
 /* Helper that instantiates a driver for AD5280 (1 RDAC) */
-#define INST_AD5280(index)                                                      \
-    static const struct ad528x_config config_ad5280_##index = {                \
-        .bus = I2C_DT_SPEC_INST_GET(index),                                    \
-        .rdac_nb = 1,                                                          \
-    };                                                                         \
-    DEVICE_DT_INST_DEFINE(index, ad528x_init, NULL, NULL,                      \
-                          &config_ad5280_##index,                              \
-                          POST_KERNEL, CONFIG_DIGIPOT_INIT_PRIORITY,           \
-                          &ad528x_driver_api);
+#define INST_AD5280(index)												\
+	static const struct ad528x_config config_ad5280_##index = {			\
+		.bus = I2C_DT_SPEC_INST_GET(index),								\
+		.rdac_nb = 1,													\
+	};																	\
+	DEVICE_DT_INST_DEFINE(index, ad528x_init, NULL, NULL, 				\
+							&config_ad5280_##index,						\
+							POST_KERNEL, CONFIG_DIGIPOT_INIT_PRIORITY,	\
+							&ad528x_driver_api);
 
 /* Helper that instantiates a driver for AD5282 (2 RDACs) */
-#define INST_AD5282(index)                                                      \
-    static const struct ad528x_config config_ad5282_##index = {                \
-        .bus = I2C_DT_SPEC_INST_GET(index),                                    \
-        .rdac_nb = 2,                                                          \
-    };                                                                         \
-    DEVICE_DT_INST_DEFINE(index, ad528x_init, NULL, NULL,                      \
-                          &config_ad5282_##index,                              \
-                          POST_KERNEL, CONFIG_DIGIPOT_INIT_PRIORITY,           \
-                          &ad528x_driver_api);
+#define INST_AD5282(index)												\
+	static const struct ad528x_config config_ad5282_##index = {			\
+		.bus = I2C_DT_SPEC_INST_GET(index),								\
+		.rdac_nb = 2,													\
+	};																	\
+	DEVICE_DT_INST_DEFINE(index, ad528x_init, NULL, NULL,				\
+							&config_ad5282_##index,						\
+							POST_KERNEL, CONFIG_DIGIPOT_INIT_PRIORITY,	\
+							&ad528x_driver_api);
 
 /* Instantiate for AD5280 compatibles (if any) */
 #define DT_DRV_COMPAT adi_ad5280
