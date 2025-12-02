@@ -15,6 +15,10 @@
 	model = "Microchip SAMA7D65 family SoC";
 	compatible = "microchip,sama7d6";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -65,11 +69,18 @@
 		};
 
 		rtc: rtc@e001d800 {
-			compatible = "atmel,sam-rtc";
+			compatible = "microchip,rtc-g2";
 			reg = <0xe001d800 0x30>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clk32k 1>;
+			protection = <&syscwp>;
+			status = "disabled";
+		};
+
+		syscwp: syscwp@e001d900 {
+			compatible = "syscon";
+			reg = <0xe001d900 0x8>;
 		};
 
 		pit64b0: timer@e1800000 {
