@@ -3496,10 +3496,8 @@ NVMEM:
 NXP Platform Drivers:
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
   collaborators:
-    - decsny
     - manuargue
     - dbaluta
     - Holt-Sun
@@ -3544,7 +3542,7 @@ NXP Platform Drivers:
 NXP Platform Wireless:
   status: maintained
   maintainers:
-    - dleach02
+    - mmahadevan108
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3582,15 +3580,12 @@ NXP Platform Wireless:
         - soc/
     - name: MCXW platform
       collaborators:
-        - EmilioCBen
-        - decsny
         - axelnxp
       files:
         - boards/nxp/*mcxw*/
         - soc/nxp/mcx/mcxw/
     - name: RW6xx platform
       collaborators:
-        - decsny
         - MaochenWang1
         - axelnxp
       files:
@@ -3602,10 +3597,8 @@ NXP Platform Wireless:
 NXP Platforms (MCU):
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
   collaborators:
-    - decsny
     - butok
   files:
     - boards/nxp/mimxrt*/
@@ -3654,14 +3647,14 @@ NXP Platforms (MCU):
         - boards/nxp/mcx_*/
     - name: NXP Kinetis
       collaborators:
-        - EmilioCBen
+        - mmahadevan108
       files:
         - boards/nxp/frdm_k*/
         - soc/nxp/kinetis/
         - dts/arm/nxp/nxp_k*
     - name: NXP LPC
       collaborators:
-        - EmilioCBen
+        - mmahadevan108
       files:
         - boards/nxp/lpc*/
         - soc/nxp/lpc/
@@ -5751,16 +5744,13 @@ West:
 "West project: hal_nxp":
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
-    - decsny
     - ZhaoxiangJin
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
-    - EmilioCBen
     - MaochenWang1
     - axelnxp
     - zejiang0jason
@@ -5773,7 +5763,6 @@ West:
 "West project: hal_openisa":
   status: odd fixes
   collaborators:
-    - dleach02
     - zejiang0jason
   files:
     - modules/Kconfig.vega
