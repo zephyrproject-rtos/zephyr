@@ -71,6 +71,7 @@ static uint8_t is_aborted;
 static uint16_t tx_cnt;
 static uint16_t trx_cnt;
 static uint8_t trx_busy_iteration;
+static uint8_t is_forced_defer;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static uint8_t mic_state;
@@ -156,6 +157,7 @@ void lll_conn_prepare_reset(void)
 	crc_expire = 0U;
 	is_aborted = 0U;
 	trx_busy_iteration = 0U;
+	is_forced_defer = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	mic_state = LLL_CONN_MIC_NONE;
@@ -176,8 +178,13 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 
 	if (next != curr) {
 		/* Do not be aborted by a different event if near supervision timeout */
-		if ((lll->forced == 1U) && (trx_cnt < 1U)) {
-			return 0;
+		if ((lll->forced != 0U) && ((next == NULL) || (trx_cnt < 1U))) {
+			/* Overlapping event is deferred, close this event early */
+			if (next != NULL) {
+				is_forced_defer = 1U;
+			}
+
+			return -EBUSY;
 		}
 
 	} else if ((next == curr) && (trx_cnt < 1U) &&
@@ -212,8 +219,13 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 
 	if (next != curr) {
 		/* Do not be aborted by a different event if near supervision timeout */
-		if ((lll->forced == 1U) && (tx_cnt < 1U)) {
-			return 0;
+		if ((lll->forced != 0U) && ((next == NULL) || (tx_cnt < 1U))) {
+			/* Overlapping event is deferred, close this event early */
+			if (next != NULL) {
+				is_forced_defer = 1U;
+			}
+
+			return -EBUSY;
 		}
 
 	} else if ((next == curr) && (tx_cnt < 1U) &&
@@ -470,11 +482,17 @@ void lll_conn_isr_rx(void *param)
 			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
+
 	/* Do not continue anymore if this event had continued despite an abort requested by same
 	 * connection instance when overlapping due to connection event length being larger than
 	 * the connection interval.
 	 */
 	is_done = is_done || (trx_busy_iteration != 0U);
+
+	/* Do not continue if forced and an overlapping event has been deferred, so that the
+	 * overlapping event can resume.
+	 */
+	is_done = is_done || (is_forced_defer != 0U);
 
 	if (is_done) {
 		radio_isr_set(isr_done, param);
