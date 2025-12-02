@@ -173,7 +173,7 @@ static const struct flash_parameters flash_sim_parameters = {
 #elif defined(CONFIG_FLASH_SIMULATOR_RAMLIKE)
 		.no_explicit_erase = true,
 #else
-#error "Flash Simulator erase capability not configured correctly"
+#error "Flash Simulator erase capability configured incorrectly"
 #endif
 	},
 };
