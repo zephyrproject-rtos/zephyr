@@ -67,19 +67,17 @@ struct fll16m_dev_config {
 
 static void activate_fll16m_mode(struct fll16m_dev_data *dev_data, uint8_t mode)
 {
-	if (mode != FLL16M_MODE_DEFAULT) {
-		soc_lrcconf_poweron_request(&dev_data->fll16m_node, NRF_LRCCONF_POWER_MAIN);
-	}
+	soc_lrcconf_poweron_request(&dev_data->fll16m_node, NRF_LRCCONF_POWER_MAIN);
 
 	nrf_lrcconf_clock_source_set(NRF_LRCCONF010, 0,
 				     (nrf_lrcconf_clk_src_t)(mode & FLL16M_MODE_LOOP_MASK),
 				     (mode == FLL16M_MODE_BYPASS));
 
+	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_CLKSTART_0);
+
 	if (mode == FLL16M_MODE_DEFAULT) {
 		soc_lrcconf_poweron_release(&dev_data->fll16m_node, NRF_LRCCONF_POWER_MAIN);
 	}
-
-	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_CLKSTART_0);
 
 	clock_config_update_end(&dev_data->clk_cfg, 0);
 }
