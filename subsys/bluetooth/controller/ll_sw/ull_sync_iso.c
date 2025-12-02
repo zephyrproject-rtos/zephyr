@@ -832,6 +832,9 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		lll->latency_event = 0U;
 	}
 
+	force = 0U;
+	elapsed_event = lll->lazy_prepare + 1U;
+
 	/* Reset supervision countdown */
 	if (done->extra.crc_valid) {
 		sync_iso->timeout_expire = 0U;
@@ -842,10 +845,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		}
 	}
 
-	elapsed_event = lll->lazy_prepare + 1U;
-
 	/* check timeout */
-	force = 0U;
 	if (sync_iso->timeout_expire) {
 		if (sync_iso->timeout_expire > elapsed_event) {
 			sync_iso->timeout_expire -= elapsed_event;
@@ -853,7 +853,9 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 			/* break skip */
 			lll->latency_event = 0U;
 
-			if (latency_event) {
+			if (sync_iso->timeout_expire <= CONN_ESTAB_COUNTDOWN) {
+				force = 1U;
+			} else if (latency_event) {
 				force = 1U;
 			}
 		} else {
