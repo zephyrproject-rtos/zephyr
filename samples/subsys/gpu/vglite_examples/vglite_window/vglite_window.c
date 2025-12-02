@@ -14,7 +14,19 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
-__aligned(FRAME_BUFFER_ALIGN) static uint8_t s_frameBuffer[APP_BUFFER_COUNT][720 * 1280 * 2];
+#if USE_PSRAM_FRAMEBUFFER == 0
+__aligned(FRAME_BUFFER_ALIGN) static uint8_t s_frameBufferAddress[APP_BUFFER_COUNT][720 * 1280 * 2];
+
+#else
+__aligned(128) __section(".lvgl_buf") uint8_t framebuffer0[720 * 1280 * 2];
+__aligned(128) __section(".lvgl_buf") uint8_t framebuffer1[720 * 1280 * 2];
+static const uint32_t s_frameBufferAddress[APP_BUFFER_COUNT] = {
+	framebuffer0,
+#if APP_BUFFER_COUNT > 1
+	framebuffer1,
+#endif
+};
+#endif
 
 vg_lite_error_t VGLITE_CreateWindow(vg_lite_display_t *display, vg_lite_window_t *window)
 {
@@ -29,8 +41,8 @@ vg_lite_error_t VGLITE_CreateWindow(vg_lite_display_t *display, vg_lite_window_t
 	for (int i = 0; i < APP_BUFFER_COUNT; i++) {
 		vg_lite_buffer_t *vg_buffer = &window->buffers[i];
 
-		vg_buffer->memory = (void *)s_frameBuffer[i];
-		vg_buffer->address = (uint32_t)s_frameBuffer[i];
+		vg_buffer->memory = (void *)s_frameBufferAddress[i];
+		vg_buffer->address = (uint32_t)s_frameBufferAddress[i];
 		vg_buffer->width = display->width;
 		vg_buffer->height = display->height;
 		vg_buffer->stride = display->width * 2; /* RGB565 */

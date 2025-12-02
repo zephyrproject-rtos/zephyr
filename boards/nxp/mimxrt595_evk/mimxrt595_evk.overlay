@@ -1,0 +1,17 @@
+/* Replace existing SRAM bus mapping */
+&sram
+{
+	reg = <0x20000000 0x480000>;
+	ranges = <0x20000000 0x20000000 0x480000>;
+};
+
+/* Fix actual SRAM physical region */
+&sram0
+{
+	reg = <0x20080000 DT_SIZE_K(4608)>;
+};
+
+/* Increase PSRAM clock frequency */
+&aps6408l {
+	spi-max-frequency = <DT_FREQ_M(396)>;
+};

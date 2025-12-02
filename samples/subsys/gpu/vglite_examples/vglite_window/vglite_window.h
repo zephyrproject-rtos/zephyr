@@ -17,6 +17,14 @@
 #define APP_BUFFER_COUNT            2
 #define VG_LITE_COMMAND_BUFFER_SIZE (256 << 10) /* 256 KB */
 
+#if defined(CONFIG_SOC_MIMXRT1176_CM7)
+#define USE_PSRAM_FRAMEBUFFER 0
+#elif defined(CONFIG_SOC_MIMXRT595S_CM33)
+#define USE_PSRAM_FRAMEBUFFER 1
+#else
+#error "Unsupported SoC!"
+#endif
+
 /* Default tessellation window width and height, in pixels */
 #define DEFAULT_VG_LITE_TW_WIDTH  128 /* pixels */
 #define DEFAULT_VG_LITE_TW_HEIGHT 128 /* pixels */
