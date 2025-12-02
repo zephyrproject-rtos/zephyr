@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
-#define ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_STM32_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_STM32_H_
 
 #include "spi_context.h"
 
@@ -250,4 +250,4 @@ static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 	}
 }
 
-#endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */
+#endif	/* ZEPHYR_DRIVERS_SPI_SPI_STM32_H_ */

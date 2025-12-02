@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_spi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_ll_stm32);
+LOG_MODULE_REGISTER(spi_stm32);
 
 #include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <errno.h>
 
-#include "spi_ll_stm32.h"
+#include "spi_stm32.h"
 
 #if defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY)
 /* currently, manual cache coherency management is only done on dummy_rx_tx_buffer */
