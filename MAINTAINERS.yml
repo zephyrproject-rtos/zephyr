@@ -3452,7 +3452,7 @@ Modem:
     - subsys/modem/
     - include/zephyr/modem/
     - tests/subsys/modem/
-    - doc/services/modem/
+    - doc/services/connectivity/modem/
     - samples/net/cellular_modem/
     - include/zephyr/drivers/cellular.h
   labels:
