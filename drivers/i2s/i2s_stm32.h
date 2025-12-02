@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32_I2S_H_
-#define _STM32_I2S_H_
+#ifndef ZEPHYR_DRIVERS_I2S_I2S_STM32_H_
+#define ZEPHYR_DRIVERS_I2S_I2S_STM32_H_
 
 struct queue_item {
 	void *mem_block;
@@ -62,4 +62,4 @@ static inline uint32_t ll_func_i2s_dma_busy(SPI_TypeDef *i2s)
 #endif
 }
 
-#endif	/* _STM32_I2S_H_ */
+#endif	/* ZEPHYR_DRIVERS_I2S_I2S_STM32_H_ */

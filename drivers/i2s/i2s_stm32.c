@@ -18,10 +18,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/cache.h>
 
-#include "i2s_ll_stm32.h"
+#include "i2s_stm32.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-LOG_MODULE_REGISTER(i2s_ll_stm32);
+LOG_MODULE_REGISTER(i2s_stm32);
 
 static unsigned int div_round_closest(uint32_t dividend, uint32_t divisor)
 {
