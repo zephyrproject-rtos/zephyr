@@ -41,7 +41,7 @@
 #include <stdbool.h>
 #include "rtc_utils.h"
 
-#include "rtc_ll_stm32.h"
+#include "rtc_stm32.h"
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 

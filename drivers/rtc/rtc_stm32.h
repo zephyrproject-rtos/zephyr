@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_RTC_RTC_LL_STM32_H_
-#define ZEPHYR_DRIVERS_RTC_RTC_LL_STM32_H_
+#ifndef ZEPHYR_DRIVERS_RTC_RTC_STM32_H_
+#define ZEPHYR_DRIVERS_RTC_RTC_STM32_H_
 
 /**
  * ES0584 / ES0631 §2.5.2; ES0632 §2.6.2 (both Rev. 2)
@@ -38,4 +38,4 @@
 
 #endif /* CONFIG_RTC_ALARM && !CONFIG_SOC_SERIES_STM32WB0X */
 
-#endif	/* ZEPHYR_DRIVERS_RTC_RTC_LL_STM32_H_ */
+#endif	/* ZEPHYR_DRIVERS_RTC_RTC_STM32_H_ */
