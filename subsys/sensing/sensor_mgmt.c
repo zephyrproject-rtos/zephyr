@@ -342,7 +342,7 @@ int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn)
 	}
 
 	/* create connection from sensor to application(client = NULL) */
-	tmp_conn = malloc(sizeof(*tmp_conn));
+	tmp_conn = k_malloc(sizeof(*tmp_conn));
 	if (!tmp_conn) {
 		return -ENOMEM;
 	}
@@ -371,7 +371,7 @@ int close_sensor(struct sensing_connection **conn)
 
 	save_config_and_notify(tmp_conn->source);
 
-	free(*conn);
+	k_free(*conn);
 	*conn = NULL;
 
 	return 0;

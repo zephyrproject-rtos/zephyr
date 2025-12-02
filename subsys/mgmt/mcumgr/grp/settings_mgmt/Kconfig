@@ -35,7 +35,7 @@ config MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
 	depends on HEAP_MEM_POOL_SIZE > 0
 	help
 	  Use dynamic heap memory allocation through k_malloc, if there is insufficient heap
-      memory for the allocation then the request will be rejected.
+	  memory for the allocation then the request will be rejected.
 
 endchoice
 
