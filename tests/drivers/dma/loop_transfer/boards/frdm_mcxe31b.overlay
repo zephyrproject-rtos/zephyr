@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add test label to edma node */
+tst_dma0: &edma {
+	status = "okay";
+};
+
+&dmamux_0 {
+	status = "okay";
+};
+
+&dmamux_1 {
+	status = "okay";
+};
