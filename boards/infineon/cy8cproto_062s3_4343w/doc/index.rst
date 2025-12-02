@@ -3,7 +3,7 @@
 Overview
 ********
 
-The CY8CPROTO-062S3-4343W PSOC |trade| 6 Wi-Fi BT Prototyping Kit is a low-cost hardware
+The CY8CPROTO-062S3-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit is a low-cost hardware
 platform that enables design and debug of PSOC 6 MCUs. It comes with a Murata
 LBEE5KL1DX module, based on the CYW4343W combo device, industry-leading CAPSENSE
 for touch buttons and slider, on-board debugger/programmer with KitProg3, microSD

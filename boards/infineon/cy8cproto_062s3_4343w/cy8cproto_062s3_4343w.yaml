@@ -12,19 +12,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - adc
-  - bluetooth
-  - wifi
-  - airoc
-  - cyw4343w
-  - counter
   - gpio
   - uart
-  - i2c
-  - thermistor
-  - uart
-  - dma
-  - timer
   - watchdog
-  - can
 vendor: infineon
