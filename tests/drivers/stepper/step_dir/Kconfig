@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GENERATOR
+	depends on ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	default y
+
+config MICRO_STEP_RESOLUTION
+	int "Microstep resolution for step-dir driver tests"
+	help
+	  Set the microstep resolution (number of microsteps per full step)
+	  for the step-dir driver tests.
+
+config MICRO_STEP_RESOLUTION_M0
+	int "Set Value for pin M0 for the given microstep resolution"
+
+config MICRO_STEP_RESOLUTION_M1
+	int "Set Value for pin M1 for the given microstep resolution"
+
+source "Kconfig.zephyr"
