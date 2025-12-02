@@ -31,20 +31,20 @@ static void net_event_handler(uint64_t mgmt_event, struct net_if *iface, void *i
 
 NET_MGMT_REGISTER_EVENT_HANDLER(l4_conn_handler, NET_EVENT_L4_CONNECTED, net_event_handler, NULL);
 
-static void on_coap_response(int16_t result_code, size_t offset, const uint8_t *payload, size_t len,
-			     bool last_block, void *user_data)
+static void on_coap_response(const struct coap_client_response_data *data, void *user_data)
 {
-	LOG_INF("CoAP response, result_code=%d, offset=%u, len=%u", result_code, offset, len);
+	LOG_INF("CoAP response, result_code=%d, offset=%u, len=%u", data->result_code, data->offset,
+		data->payload_len);
 
-	if ((COAP_RESPONSE_CODE_CONTENT == result_code) && last_block) {
+	if ((COAP_RESPONSE_CODE_CONTENT == data->result_code) && data->last_block) {
 		int64_t elapsed_time = k_uptime_delta(&start_time);
-		size_t total_size = offset + len;
+		size_t total_size = data->offset + data->payload_len;
 
 		LOG_INF("CoAP download done, got %u bytes in %" PRId64 " ms", total_size,
 			elapsed_time);
 		k_sem_give(&coap_done_sem);
-	} else if (COAP_RESPONSE_CODE_CONTENT != result_code) {
-		LOG_ERR("Error during CoAP download, result_code=%d", result_code);
+	} else if (COAP_RESPONSE_CODE_CONTENT != data->result_code) {
+		LOG_ERR("Error during CoAP download, result_code=%d", data->result_code);
 		k_sem_give(&coap_done_sem);
 	}
 }
@@ -59,7 +59,7 @@ static void do_coap_download(struct sockaddr *sa)
 					      .payload = NULL,
 					      .len = 0,
 					      .cb = on_coap_response,
-					      .options = NULL,
+					      .options = { },
 					      .num_options = 0,
 					      .user_data = NULL};
 

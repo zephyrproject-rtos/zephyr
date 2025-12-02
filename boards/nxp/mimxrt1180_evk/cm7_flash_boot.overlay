@@ -10,3 +10,7 @@
 		zephyr,code-partition = &slot1_partition;
 	};
 };
+
+&flexspi {
+	status = "okay";
+};

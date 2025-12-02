@@ -19,6 +19,7 @@
  * _MEMORY_FLASH_SIZE_ respectively.
  */
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
@@ -74,7 +75,7 @@ static inline size_t get_flash_size_in_bytes(void)
 	 * minus one.
 	 */
 	const uint32_t words_in_flash =
-		READ_BIT(FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
+		stm32_reg_read_bits(&FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
 
 	return words_in_flash * WORD_SIZE;
 }

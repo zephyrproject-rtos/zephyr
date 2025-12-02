@@ -39,3 +39,4 @@ DEFINE_FAKE_VALUE_FUNC(void *, k_heap_aligned_alloc, struct k_heap *,
 			size_t, size_t, k_timeout_t);
 
 struct k_work_q k_sys_work_q;
+bool z_sys_post_kernel = true;

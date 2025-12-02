@@ -69,6 +69,13 @@ config NET_SOCKETS_DNS_BACKOFF_INTERVAL
 	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
 	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
+config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
+	# Defaults to heap memory needed for a single getaddrinfo() call in
+	# a default configuration on 64-bit platform
+	int
+	default 280
+	depends on DNS_RESOLVER
+
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
 	default 10000
@@ -87,6 +94,13 @@ config NET_SOCKETS_SERVICE
 	  so that enough sockets entries can be serviced. This depends on
 	  system needs as multiple services can be activated at the same time
 	  depending on network configuration.
+
+config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
+	int "Socket service file descriptor requirements"
+	default 1
+	help
+	  The socket service opens a permanent eventfd, which consumes a file
+	  descriptor.
 
 config NET_SOCKETS_SERVICE_THREAD_PRIO
 	int "Priority of the socket service dispatcher thread"
@@ -115,8 +129,8 @@ config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
-	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
-	imply MBEDTLS_MD if !NET_L2_OPENTHREAD
+	imply MBEDTLS_SSL_PROTO_TLS1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_MD_C if !NET_L2_OPENTHREAD
 	imply MBEDTLS_RSA_C if !NET_L2_OPENTHREAD
 	imply MBEDTLS_PKCS1_V15 if !NET_L2_OPENTHREAD
 	imply MBEDTLS_PKCS1_V21 if !NET_L2_OPENTHREAD
@@ -155,7 +169,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select MBEDTLS_DTLS if NET_NATIVE
+	select MBEDTLS_SSL_PROTO_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -207,6 +221,11 @@ config NET_SOCKETS_TLS_MAX_CONTEXTS
 	help
 	  "This variable specifies maximum number of TLS/DTLS contexts that can
 	   be allocated at the same time."
+
+config ZVFS_OPEN_ADD_SIZE_TLS
+	int "Number of TLS network sockets to allocate"
+	default NET_SOCKETS_TLS_MAX_CONTEXTS if NET_SOCKETS_SOCKOPT_TLS
+	default 0
 
 config NET_SOCKETS_TLS_MAX_CREDENTIALS
 	int "Maximum number of TLS/DTLS credentials per socket"

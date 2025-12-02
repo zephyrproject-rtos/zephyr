@@ -122,6 +122,7 @@ int xtensa_irq_is_enabled(unsigned int irq)
 		break;
 #endif
 	default:
+		ie = 0;
 		break;
 	}
 #else

@@ -6,6 +6,7 @@
  */
 
 #include "clock_source_def.h"
+
 / {
 	clocks {
 		/* imo */
@@ -221,5 +222,4 @@
 			status = "disabled";
 		};
 	};
-
 };

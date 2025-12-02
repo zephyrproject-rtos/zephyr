@@ -30,14 +30,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_ld0_red: led_ld0_red {
 			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 			label = "LED LD0 RED";
 		};
+
 		led_ld0_green: led_ld0_green {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 			label = "LED LD0 GREEN";
 		};
+
 		led_ld0_blue: led_ld0_blue {
 			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 			label = "LED LD0 BLUE";
@@ -47,10 +50,12 @@
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 			label = "LED LD1 RED";
 		};
+
 		led_ld1_green: led_ld1_green {
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 			label = "LED LD1 GREEN";
 		};
+
 		led_ld1_blue: led_ld1_blue {
 			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 			label = "LED LD1 BLUE";
@@ -60,10 +65,12 @@
 			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 			label = "LED LD2 RED";
 		};
+
 		led_ld2_green: led_ld2_green {
 			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 			label = "LED LD2 GREEN";
 		};
+
 		led_ld2_blue: led_ld2_blue {
 			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 			label = "LED LD2 BLUE";
@@ -73,10 +80,12 @@
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 			label = "LED LD3 RED";
 		};
+
 		led_ld3_green: led_ld3_green {
 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 			label = "LED LD3 GREEN";
 		};
+
 		led_ld3_blue: led_ld3_blue {
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 			label = "LED LD3 BLUE";
@@ -86,14 +95,17 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "LED LD4";
 		};
+
 		led_ld5: led_ld5 {
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			label = "LED LD5";
 		};
+
 		led_ld6: led_ld6 {
 			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 			label = "LED LD6";
 		};
+
 		led_ld7: led_ld7 {
 			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 			label = "LED LD7";
@@ -102,41 +114,49 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		sw0: sw0 {
 			gpios = <&gpio0_2 0 GPIO_ACTIVE_HIGH>;
 			label = "SW0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		sw1: sw1 {
 			gpios = <&gpio0_2 1 GPIO_ACTIVE_HIGH>;
 			label = "SW1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		sw2: sw2 {
 			gpios = <&gpio0_2 2 GPIO_ACTIVE_HIGH>;
 			label = "SW2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		sw3: sw3 {
 			gpios = <&gpio0_2 3 GPIO_ACTIVE_HIGH>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_3>;
 		};
+
 		btn0: btn0 {
 			gpios = <&gpio1_2 0 GPIO_ACTIVE_HIGH>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_4>;
 		};
+
 		btn1: btn1 {
 			gpios = <&gpio1_2 1 GPIO_ACTIVE_HIGH>;
 			label = "BTN1";
 			zephyr,code = <INPUT_KEY_5>;
 		};
+
 		btn2: btn2 {
 			gpios = <&gpio1_2 2 GPIO_ACTIVE_HIGH>;
 			label = "BTN2";
 			zephyr,code = <INPUT_KEY_6>;
 		};
+
 		btn3: btn3 {
 			gpios = <&gpio1_2 3 GPIO_ACTIVE_HIGH>;
 			label = "BTN3";
@@ -261,7 +281,7 @@
 			xlnx,num-transfer-bits = <0x8>;
 
 			flash0: flash@0 {
-				compatible = "micron,n25q128a","jedec,spi-nor";
+				compatible = "micron,n25q128a", "jedec,spi-nor";
 				reg = <0>;
 				spi-max-frequency = <108000000>;
 				size = <DT_SIZE_M(128)>;

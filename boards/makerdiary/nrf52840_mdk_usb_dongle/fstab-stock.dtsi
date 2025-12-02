@@ -25,14 +25,17 @@
 			label = "image-0";
 			reg = <0x00010000 0x0005e000>;
 		};
+
 		slot1_partition: partition@6e000 {
 			label = "image-1";
 			reg = <0x0006e000 0x0005e000>;
 		};
+
 		storage_partition: partition@cc000 {
 			label = "storage";
 			reg = <0x000cc000 0x00004000>;
 		};
+
 		scratch_partition: partition@d0000 {
 			label = "image-scratch";
 			reg = <0x000d0000 0x00010000>;

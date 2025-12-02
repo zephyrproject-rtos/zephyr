@@ -12,8 +12,6 @@ This sample demonstrates the :ref:`EDAC driver API <edac_api>` in a simple EDAC 
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/edac` in the
-Zephyr tree.
 The sample can be built as follows for the :ref:`intel_ehl_crb` board:
 
 .. zephyr-app-commands::

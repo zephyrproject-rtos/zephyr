@@ -16,10 +16,15 @@ from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 
+
 def pytest_addoption(parser) -> None:
     """Add local parser options to pytest."""
-    parser.addoption('--can-context', default=None,
-                     help='Configuration context to use for python-can (default: None)')
+    parser.addoption(
+        '--can-context',
+        default=None,
+        help='Configuration context to use for python-can (default: None)',
+    )
+
 
 @pytest.fixture(name='context', scope='session')
 def fixture_context(request, dut: DeviceAdapter) -> str:
@@ -34,6 +39,7 @@ def fixture_context(request, dut: DeviceAdapter) -> str:
 
     logger.info('using python-can configuration context "%s"', ctx)
     return ctx
+
 
 @pytest.fixture(name='chosen', scope='module')
 def fixture_chosen(shell: Shell) -> str:
@@ -51,6 +57,7 @@ def fixture_chosen(shell: Shell) -> str:
     pytest.fail('zephyr,canbus chosen device not found or not ready')
     return None
 
+
 @pytest.fixture
 def can_dut(dut: DeviceAdapter, shell: Shell, chosen: str) -> BusABC:
     """Return DUT CAN bus."""
@@ -59,9 +66,10 @@ def can_dut(dut: DeviceAdapter, shell: Shell, chosen: str) -> BusABC:
     bus.shutdown()
     dut.clear_buffer()
 
+
 @pytest.fixture
 def can_host(context: str) -> BusABC:
     """Return host CAN bus."""
-    bus = Bus(config_context = context)
+    bus = Bus(config_context=context)
     yield bus
     bus.shutdown()

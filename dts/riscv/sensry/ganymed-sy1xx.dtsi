@@ -23,7 +23,6 @@
 			riscv,isa = "rv32imc_zicsr";
 			status = "okay";
 		};
-
 	};
 
 	l2_ram_text: memory@1c010200 {

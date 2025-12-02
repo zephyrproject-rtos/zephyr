@@ -42,6 +42,7 @@ struct sci_b_i2c_data {
 	struct k_sem complete_sem;
 	i2c_master_event_t event;
 	uint32_t dev_config;
+	uint8_t merge_buf[I2C_MAX_MSG_LEN];
 
 #ifdef CONFIG_I2C_CALLBACK
 	uint16_t addr;
@@ -125,6 +126,9 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 	struct i2c_msg *current, *next;
 	fsp_err_t fsp_err;
 	int ret;
+	uint8_t *merge_buf = data->merge_buf;
+	struct i2c_msg tmp_msg;
+	uint16_t tmp_len;
 
 	if (!num_msgs) {
 		return 0;
@@ -134,12 +138,9 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 	if (num_msgs == 2) {
 		if (msgs[0].len == 1U && !(msgs[0].flags & I2C_MSG_READ) &&
 		    !(msgs[1].flags & I2C_MSG_READ)) {
-			uint16_t tmp_len = msgs[0].len + msgs[1].len;
+			tmp_len = msgs[0].len + msgs[1].len;
 
 			if (tmp_len <= I2C_MAX_MSG_LEN) {
-				static uint8_t merge_buf[I2C_MAX_MSG_LEN];
-				struct i2c_msg tmp_msg;
-
 				memcpy(&merge_buf[0], msgs[0].buf, msgs[0].len);
 				memcpy(&merge_buf[msgs[0].len], msgs[1].buf, msgs[1].len);
 				tmp_msg.buf = &merge_buf[0];
@@ -593,13 +594,9 @@ static const struct i2c_driver_api renesas_ra_sci_b_i2c_driver_api = {
 #endif /* CONFIG_I2C_CALLBACK */
 };
 
-#define _ELC_EVENT_SCI_RXI(channel) ELC_EVENT_SCI##channel##_RXI
-#define _ELC_EVENT_SCI_TXI(channel) ELC_EVENT_SCI##channel##_TXI
-#define _ELC_EVENT_SCI_TEI(channel) ELC_EVENT_SCI##channel##_TEI
-
-#define ELC_EVENT_SCI_RXI(channel) _ELC_EVENT_SCI_RXI(channel)
-#define ELC_EVENT_SCI_TXI(channel) _ELC_EVENT_SCI_TXI(channel)
-#define ELC_EVENT_SCI_TEI(channel) _ELC_EVENT_SCI_TEI(channel)
+#define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
+#define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
+#define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
 
 #ifndef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
 #define SCI_B_I2C_DTC_INIT(index)
@@ -663,7 +660,8 @@ static const struct i2c_driver_api renesas_ra_sci_b_i2c_driver_api = {
 #define RXI_TRANSFER(index)                                                                        \
 	/* rxi */                                                                                  \
 	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                            \
-		ELC_EVENT_SCI_RXI(DT_INST_PROP(index, channel));                                   \
+		EVENT_SCI_RXI(DT_INST_PROP(index, channel));                                       \
+	BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_RXI(DT_INST_PROP(index, channel)));             \
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                               \
 		    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority), sci_b_i2c_rxi_isr,       \
 		    DEVICE_DT_INST_GET(index), 0);                                                 \
@@ -677,7 +675,8 @@ static const struct i2c_driver_api renesas_ra_sci_b_i2c_driver_api = {
                                                                                                    \
 		/* txi */                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			ELC_EVENT_SCI_TXI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TXI(DT_INST_PROP(index, channel));                               \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TXI(DT_INST_PROP(index, channel)));     \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),                  \
 			    sci_b_i2c_txi_isr, DEVICE_DT_INST_GET(index), 0);                      \
@@ -685,7 +684,8 @@ static const struct i2c_driver_api renesas_ra_sci_b_i2c_driver_api = {
                                                                                                    \
 		/* tei */                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
-			ELC_EVENT_SCI_TEI(DT_INST_PROP(index, channel));                           \
+			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TEI(DT_INST_PROP(index, channel)));     \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),                  \
 			    sci_b_i2c_tei_isr, DEVICE_DT_INST_GET(index), 0);                      \

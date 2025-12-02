@@ -26,6 +26,50 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M33)
+#include <fsl_flexspi_nor_boot.h>
+
+extern char __start[];
+extern char _flash_used[];
+extern char __rom_start_address[];
+const __imx_boot_container_section container boot_header = {
+	.hdr = {
+		CNT_VERSION,
+		CNT_SIZE,
+		CNT_TAG_HEADER,
+		CNT_FLAGS,
+		CNT_SW_VER,
+		CNT_FUSE_VER,
+		CNT_NUM_IMG,
+		sizeof(cnt_hdr) + CNT_NUM_IMG * sizeof(image_entry),
+		0
+	},
+	.array = {
+		{
+			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
+			(uint32_t)_flash_used,
+			(uint32_t)__rom_start_address,
+			0x00000000,
+			(uint32_t)__start,
+			0x00000000,
+			IMG_FLAGS,
+			0x0,
+			{0},
+			{0}
+		},
+	},
+	.sign_block = {
+		SGNBK_VERSION,
+		SGNBK_SIZE,
+		SGNBK_TAG,
+		0x0,
+		0x0,
+		0x0,
+		0x0
+	},
+};
+#endif
+
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
 #if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 #include <zephyr_image_info.h>
@@ -145,7 +189,6 @@ __weak void clock_init(void)
 
 	/* Init OSC RC 400M */
 	CLOCK_OSC_EnableOscRc400M();
-	CLOCK_OSC_GateOscRc400M(false);
 
 #if CONFIG_CPU_CORTEX_M7
 	/* Switch both core to OscRC400M first */
@@ -652,6 +695,36 @@ __weak void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(0, false);
 	GPC_CM_EnableCpuSleepHold(1, false);
 }
+
+#ifdef CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src, uint32_t clk_pre_div,
+				uint32_t clk_src_div)
+{
+	ARG_UNUSED(clk_pre_div);
+
+	switch (clock_name) {
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, clk_src_div);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, clk_src_div);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, clk_src_div);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
+		break;
+	default:
+		return;
+	}
+}
+#endif /* CONFIG_I2S_MCUX_SAI */
+
 
 /**
  * @brief Initialize the system clock

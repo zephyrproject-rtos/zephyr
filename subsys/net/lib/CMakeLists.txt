@@ -21,12 +21,13 @@ add_subdirectory_ifdef(CONFIG_NET_DHCPV6             dhcpv6)
 add_subdirectory_ifdef(CONFIG_PROMETHEUS             prometheus)
 add_subdirectory_ifdef(CONFIG_WIFI_CREDENTIALS       wifi_credentials)
 add_subdirectory_ifdef(CONFIG_OCPP ocpp)
+add_subdirectory_ifdef(CONFIG_NETMIDI2_HOST          midi2)
 
-if (CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
+if(CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
   add_subdirectory(dhcpv4)
 endif()
 
-if (CONFIG_DNS_RESOLVER
+if(CONFIG_DNS_RESOLVER
     OR CONFIG_MDNS_RESPONDER
     OR CONFIG_LLMNR_RESPONDER)
   add_subdirectory(dns)

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/h7/stm32h7a3.dtsi>
 
 /*
@@ -18,8 +17,8 @@
 		cryp: cryp@48021000 {
 			compatible = "st,stm32-cryp";
 			reg = <0x48021000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 4U)>;
-			resets = <&rctl STM32_RESET(AHB2, 4U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+			resets = <&rctl STM32_RESET(AHB2, 4)>;
 			interrupts = <79 0>;
 			interrupt-names = "cryp";
 			status = "disabled";

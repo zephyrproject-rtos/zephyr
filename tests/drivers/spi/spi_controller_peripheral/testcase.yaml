@@ -109,6 +109,8 @@ tests:
     extra_configs:
       - CONFIG_TESTED_SPI_MODE=0
       - CONFIG_NRF_SYS_EVENT=y
+      - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
+      - CONFIG_POWER_DOMAIN=n
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840

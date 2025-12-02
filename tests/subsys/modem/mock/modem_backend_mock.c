@@ -52,12 +52,15 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 		return ret;
 	}
 
-	ret = ring_buf_put(&mock->tx_rb, buf, size);
 	if (modem_backend_mock_update(mock, buf, size)) {
+		/* Skip ringbuffer if transaction consumes bytes */
+		ret = size;
 		modem_backend_mock_put(mock, mock->transaction->put,
 				       mock->transaction->put_size);
 
-		mock->transaction = NULL;
+		modem_backend_mock_prime(mock, mock->transaction->next);
+	} else {
+		ret = ring_buf_put(&mock->tx_rb, buf, size);
 	}
 
 	k_work_submit(&mock->transmit_idle_work);
@@ -137,6 +140,10 @@ int modem_backend_mock_get(struct modem_backend_mock *mock, uint8_t *buf, size_t
 
 void modem_backend_mock_put(struct modem_backend_mock *mock, const uint8_t *buf, size_t size)
 {
+	if (size == 0) {
+		return;
+	}
+
 	__ASSERT(ring_buf_put(&mock->rx_rb, buf, size) == size,
 		 "Mock buffer capacity exceeded");
 
@@ -154,4 +161,11 @@ void modem_backend_mock_bridge(struct modem_backend_mock *mock_a, struct modem_b
 {
 	mock_a->bridge = mock_b;
 	mock_b->bridge = mock_a;
+}
+
+void modem_backend_mock_wait_for_transaction(struct modem_backend_mock *mock)
+{
+	while (mock->transaction) {
+		k_msleep(1);
+	}
 }

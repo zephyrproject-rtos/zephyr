@@ -117,9 +117,8 @@
 			status = "disabled";
 			shared-memory = <&shmlp>;
 			shared-memory-size = <0x10>;
-			interrupts =
-				<PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
@@ -174,7 +173,7 @@
 		};
 
 		rtc_timer: rtc_timer@600b0c00 {
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			reg = <0x600B0C00 DT_SIZE_K(1)>;
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -217,7 +216,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@60008048  {
+		wdt0: watchdog@60008048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x60008048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -271,13 +270,12 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x60080000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts =
-				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
@@ -314,6 +312,8 @@
 			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S1_MODULE>;
+			dmas = <&dma 2>, <&dma 3>;
+			dma-names = "rx", "tx";
 			unit = <0>;
 			status = "disabled";
 		};
@@ -379,6 +379,20 @@
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_PCNT_MODULE>;
 			status = "disabled";
+		};
+
+		sha: sha@60089000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x60089000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@60088000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x60088000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
 		};
 	};
 };

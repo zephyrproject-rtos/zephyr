@@ -35,8 +35,11 @@ static inline void bmp581_stream_result(const struct device *dev, int err)
 	}
 }
 
-static void bmp581_stream_event_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
+static void bmp581_stream_event_complete(struct rtio *ctx, const struct rtio_sqe *sqe,
+					 int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
 	const struct device *dev = (const struct device *)sqe->userdata;
 	struct bmp581_data *data = dev->data;

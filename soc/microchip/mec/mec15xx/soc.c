@@ -12,41 +12,6 @@
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
 
-/*
- * Initialize MEC1501 EC Interrupt Aggregator (ECIA) and external NVIC
- * inputs.
- */
-static int soc_ecia_init(void)
-{
-	GIRQ_Type *pg;
-	uint32_t n;
-
-	mchp_pcr_periph_slp_ctrl(PCR_ECIA, MCHP_PCR_SLEEP_DIS);
-
-	ECS_REGS->INTR_CTRL |= MCHP_ECS_ICTRL_DIRECT_EN;
-
-	/* gate off all aggregated outputs */
-	ECIA_REGS->BLK_EN_CLR = 0xFFFFFFFFul;
-	/* gate on GIRQ's that are aggregated only */
-	ECIA_REGS->BLK_EN_SET = MCHP_ECIA_AGGR_BITMAP;
-
-	/* Clear all GIRQn source enables and source status */
-	pg = &ECIA_REGS->GIRQ08;
-	for (n = MCHP_FIRST_GIRQ; n <= MCHP_LAST_GIRQ; n++) {
-		pg->EN_CLR = 0xFFFFFFFFul;
-		pg->SRC = 0xFFFFFFFFul;
-		pg++;
-	}
-
-	/* Clear all external NVIC enables and pending status */
-	for (n = 0u; n < MCHP_NUM_NVIC_REGS; n++) {
-		NVIC->ICER[n] = 0xFFFFFFFFul;
-		NVIC->ICPR[n] = 0xFFFFFFFFul;
-	}
-
-	return 0;
-}
-
 static void configure_debug_interface(void)
 {
 	/* No debug support */
@@ -75,11 +40,12 @@ void soc_early_init_hook(void)
 {
 	uint32_t isave;
 
-
 	isave = __get_PRIMASK();
 	__disable_irq();
 
-	soc_ecia_init();
+	configure_debug_interface();
+
+	soc_ecia_init(MCHP_MEC_ECIA_GIRQ_AGGR_ONLY_BM, MCHP_MEC_ECIA_GIRQ_DIRECT_CAP_BM, 0);
 
 	/* Configure GPIO bank before usage
 	 * VTR1 is not configurable
@@ -88,8 +54,6 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_SOC_MEC1501_VTR3_1_8V
 	ECS_REGS->GPIO_BANK_PWR |= MCHP_ECS_VTR3_LVL_18;
 #endif
-
-	configure_debug_interface();
 
 	if (!isave) {
 		__enable_irq();

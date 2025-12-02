@@ -4,7 +4,7 @@
 zephyr_include_directories(.)
 zephyr_sources(common/ctrl_partitions.c)
 
-if(CONFIG_SOC_AM6234_A53 OR CONFIG_SOC_AM6232_A53)
+if(CONFIG_SOC_AM6234_A53 OR CONFIG_SOC_AM6232_A53 OR CONFIG_SOC_AM6254_A53)
   zephyr_sources_ifdef(CONFIG_ARM_MMU a53/mmu_regions.c)
 
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm64/scripts/linker.ld CACHE INTERNAL "")

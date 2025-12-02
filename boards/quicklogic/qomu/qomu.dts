@@ -29,6 +29,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_0 {
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
@@ -47,6 +48,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Push Button 0";
@@ -64,22 +66,26 @@
 		pinmux = <UART_RX_PAD45>;
 		input-enable;
 	};
+
 	uart1_tx_default: uart1_tx_default {
 		pinmux = <UART_TX_PAD44>;
 		output-enable;
 	};
+
 	usb_pu_default: usb_pu_default {
 		pinmux = <USB_PU_CTRL_PAD23>;
 		bias-high-impedance;
 		quicklogic,control-selection = "fabric";
 		output-enable;
 	};
+
 	usb_dn_default: usb_dn_default {
 		pinmux = <USB_DN_PAD28>;
 		bias-high-impedance;
 		quicklogic,control-selection = "fabric";
 		output-enable;
 	};
+
 	usb_dp_default: usb_dp_default {
 		pinmux = <USB_DP_PAD31>;
 		bias-high-impedance;

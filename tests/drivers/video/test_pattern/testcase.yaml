@@ -1,0 +1,23 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - video
+
+tests:
+
+  drivers.video.test_pattern.sw_generator:
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - SNIPPET="video-sw-generator"
+
+  drivers.video.test_pattern.mimxrt1170_evk:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+    extra_args:
+      - SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"

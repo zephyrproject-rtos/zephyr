@@ -41,11 +41,11 @@
 			device_type = "cpu";
 			compatible = "intel,ish", "intel,x86";
 			reg = <0>;
-			cpu-power-states = <&d0i0 &d0i2 &d0i3>;
+			cpu-power-states = <&d0i0 &d0i2>;
 		};
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -53,7 +53,7 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
@@ -74,17 +74,23 @@
 		zephyr,memory-region = "AON";
 	};
 
-	soc {
+	soc: soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		#interrupt-cells = <3>;
 		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		interrupts = <
+			6 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+			9 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+			10 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+		>;
+		interrupt-names = "reset_prep", "pcidev", "pmu2ioapic";
 		ranges;
 
-		hpet: hpet@4700000{
+		hpet: hpet@4700000 {
 			compatible = "intel,hpet";
 			reg = <0x04700000 0x400>;
-			interrupt-parent = <&intc>;
 			interrupts = <14 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
 
 			status = "okay";
@@ -94,7 +100,6 @@
 			compatible = "intel,sedi-ipm";
 			peripheral-id = <0>;
 			reg = <0x4100000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <0 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "okay";
@@ -104,7 +109,6 @@
 			compatible = "intel,sedi-uart";
 			peripheral-id = <0>;
 			reg = <0x08100000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <23 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
 
 			status = "okay";
@@ -115,7 +119,6 @@
 			compatible = "intel,sedi-uart";
 			peripheral-id = <1>;
 			reg = <0x08102000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <24 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
 
 			status = "disabled";
@@ -126,7 +129,6 @@
 			compatible = "intel,sedi-uart";
 			peripheral-id = <2>;
 			reg = <0x08104000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <25 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
 
 			status = "disabled";
@@ -139,7 +141,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <15 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "okay";
@@ -152,7 +153,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00002000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "okay";
@@ -165,7 +165,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00004000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <17 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "disabled";
@@ -178,7 +177,6 @@
 			#gpio-cells = <2>;
 			peripheral-id = <0>;
 			reg = <0x00100000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <13 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 			ngpios = <32>;
 
@@ -191,7 +189,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x8000000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "okay";
@@ -203,7 +200,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x8002000 0x1000>;
-			interrupt-parent = <&intc>;
 			interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 			status = "disabled";
@@ -214,7 +210,6 @@
 			peripheral-id = <0>;
 			reg = <0x10100000 0x1000>;
 			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
-			interrupt-parent = <&intc>;
 			#dma-cells = <2>;
 			dma-channels = <8>;
 			dma-buf-size-alignment = <4>;

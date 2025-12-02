@@ -36,6 +36,3 @@ Steps to test the sample:
 - Start streaming audio (for example by playing an audio file on the HOST).
 - Start recording audio stream (for example using Audacity).
 - Verify the recorded audio stream.
-
-This sample can be found under
-:zephyr_file:`samples/subsys/usb/legacy/audio_headset` in the Zephyr project tree.

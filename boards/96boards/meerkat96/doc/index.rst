@@ -1,4 +1,4 @@
-.. _96b_meerkat96:
+.. zephyr:board:: 96b_meerkat96
 
 96Boards Meerkat96
 ##################
@@ -34,10 +34,6 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
     - 4x Green user LEDs
     - 1x Blue Bluetooth LED
     - 1x Yellow WiFi LED
-
-.. image:: img/96b_meerkat96.jpg
-   :align: center
-   :alt: 96Boards Meerkat96
 
 More information about the board can be found at the
 `96Boards website`_.
@@ -91,27 +87,7 @@ More information about the i.MX7 SoC can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_meerkat96 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/96boards/meerkat96/96b_meerkat96_mcimx7d_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

@@ -19,6 +19,67 @@ where the operators supported by Ethos-U have been replaced by an Ethos-U custom
 operator. In an ideal case the complete network would be replaced by a single
 Ethos-U custom operator.
 
+Generating Vela-compiled model
+******************************
+
+Follow the steps below to generate Vela-compiled model and test input/output data.
+Use `keyword_spotting_cnn_small_int8`_ model in this sample:
+
+.. _keyword_spotting_cnn_small_int8: https://github.com/Arm-Examples/ML-zoo/tree/master/models/keyword_spotting/cnn_small/model_package_tf/model_archive/TFLite/tflite_int8
+
+.. note:: The default Vela-compiled model is to target Ethos-U55 and 128 MAC
+   on MPS3 target. Because one model can add up to hundreds of KB, don't
+   attempt to add more models into code base for other targets.
+
+1. Downloading the files below from `keyword_spotting_cnn_small_int8`_:
+
+   - cnn_s_quantized.tflite
+   - testing_input/input/0.npy
+   - testing_output/identity/0.npy
+
+2. Optimizing the model for Ethos-U using Vela
+
+   Assuming target Ethos-U is U55 and 128 MAC:
+
+   .. code-block:: console
+
+       $ vela cnn_s_quantized.tflite \
+       --output-dir . \
+       --accelerator-config ethos-u55-128 \
+       --system-config Ethos_U55_High_End_Embedded \
+       --memory-mode Shared_Sram
+
+3. Removing unnecessary header
+
+   ``testing_input/input/0.npy`` and ``testing_output/0.npy`` have 128-byte header.
+   They must be removed for integration with this sample.
+
+   .. code-block:: console
+
+       $ dd if=testing_input/input/0.npy of=testing_input/input/0_no-header.npy bs=1 skip=128
+       $ dd if=testing_output/identity/0.npy of=testing_output/identity/0_no-header.npy bs=1 skip=128
+
+4. Converting to C array
+
+   .. code-block:: console
+
+       $ xxd -c 16 -i cnn_s_quantized.tflite cnn_s_quantized.tflite.h
+       $ xxd -c 16 -i cnn_s_quantized_vela.tflite cnn_s_quantized_vela.tflite.h
+       $ xxd -c 16 -i testing_input/input/0_no-header.npy testing_input/input/0_no-header.npy.h
+       $ xxd -c 16 -i testing_output/identity/0_no-header.npy testing_output/identity/0_no-header.npy.h
+
+5. Synchronizing to this sample
+
+   Synchronize the files below to ``keyword_spotting_cnn_small_int8`` directory
+   in this sample:
+
+   - cnn_s_quantized_vela.tflite.h > model.h
+   - testing_input/input/0_no-header.npy.h > input.h
+   - testing_output/identity/0_no-header.npy.h > output.h
+
+   .. note:: To run non-Vela-compiled model (``CONFIG_TAINT_BLOBS_TFLM_ETHOSU=n``),
+      synchronize ``cnn_s_quantized.tflite.h`` instead.
+
 Building and running
 ********************
 

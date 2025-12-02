@@ -76,4 +76,13 @@ config MEM_DOMAIN_ISOLATED_STACKS
 	  Regardless of this settings, threads cannot access the stacks of
 	  threads outside of their domains.
 
+config MEM_DOMAIN_HAS_THREAD_LIST
+	bool
+	help
+	  If enabled, there is a doubly linked list in each memory domain
+	  struct to keep track of the threads associated with this
+	  particular memory domain.
+
+	  This is selected by architecture needing this to function.
+
 endmenu

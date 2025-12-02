@@ -15,7 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
-#include <ksched.h>
+#include <kernel_arch_interface.h>
 #include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm64/mm.h>

@@ -14,26 +14,26 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 38 if "$(BOARD_REVISION)" = "2.3"
-	default 36 if "$(BOARD_REVISION)" = "2.2"
+	default 38 if "$(BOARD_REVISION)" = "2.3.0"
+	default 36 if "$(BOARD_REVISION)" = "2.2.0"
 
 config ARC_MPU_VER
-	default 4 if "$(BOARD_REVISION)" = "2.3"
-	default 2 if "$(BOARD_REVISION)" = "2.2"
+	default 4 if "$(BOARD_REVISION)" = "2.3.0"
+	default 2 if "$(BOARD_REVISION)" = "2.2.0"
 
 config RGF_NUM_BANKS
 	default 1
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 25000000 if "$(BOARD_REVISION)" = "2.3"
-	default 30000000 if "$(BOARD_REVISION)" = "2.2"
+	default 25000000 if "$(BOARD_REVISION)" = "2.3.0"
+	default 30000000 if "$(BOARD_REVISION)" = "2.2.0"
 
 config HARVARD
 	default y
 
 config ARC_FIRQ
-	default n if "$(BOARD_REVISION)" = "2.3"
-	default y if "$(BOARD_REVISION)" = "2.2"
+	default n if "$(BOARD_REVISION)" = "2.3.0"
+	default y if "$(BOARD_REVISION)" = "2.2.0"
 
 config CACHE_MANAGEMENT
 	default y

@@ -9,6 +9,7 @@
 menuconfig IEEE802154
 	bool "IEEE 802.15.4 drivers"
 	depends on NETWORKING
+	select NET_PKT_CONTROL_BLOCK
 	default y if NET_L2_PHY_IEEE802154
 
 if IEEE802154
@@ -89,6 +90,8 @@ source "drivers/ieee802154/Kconfig.rf2xx"
 source "drivers/ieee802154/Kconfig.dw1000"
 
 source "drivers/ieee802154/Kconfig.esp32"
+
+source "drivers/ieee802154/Kconfig.stm32wba"
 
 source "drivers/ieee802154/Kconfig.uart_pipe"
 

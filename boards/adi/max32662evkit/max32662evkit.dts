@@ -27,6 +27,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
@@ -35,9 +36,10 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
-			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-						| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio0 6
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_0>;
 		};
@@ -138,11 +140,11 @@
 };
 
 &spi1a_mosi_p0_8 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi1a_sck_p0_17 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi1 {

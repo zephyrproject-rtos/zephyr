@@ -6,6 +6,7 @@
 
 #include <st/f3/stm32f3.dtsi>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	soc {
@@ -22,7 +23,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>,
 				 /* I2C clock source should always be defined,
 				  * even for the default value
 				  */
@@ -37,7 +38,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 5>;
 			status = "disabled";
 		};
@@ -47,7 +48,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
 			status = "disabled";
 		};
@@ -55,20 +56,19 @@
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
-			resets = <&rctl STM32_RESET(APB1, 20U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
 
 		pinctrl: pin-controller@48000000 {
-
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 21U)>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			};
 		};
 
@@ -77,7 +77,7 @@
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 				 <&rcc STM32_SRC_TIMPCLK2 TIM1_SEL(0)>;
-			resets = <&rctl STM32_RESET(APB2, 11U)>;
+			resets = <&rctl STM32_RESET(APB2, 11)>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -87,6 +87,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -111,6 +117,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -133,9 +145,9 @@
 		adc1: adc@50000000 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
-			status = "disabled";
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -143,16 +155,19 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "none";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		adc2: adc@50000100 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000100 0x4c>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
-			status = "disabled";
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -160,8 +175,11 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "none";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 	};
 

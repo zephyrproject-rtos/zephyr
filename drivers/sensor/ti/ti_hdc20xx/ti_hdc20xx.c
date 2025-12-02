@@ -242,20 +242,16 @@ static int ti_hdc20xx_init(const struct device *dev)
 }
 
 /* Main instantiation macro */
-#define TI_HDC20XX_DEFINE(inst, compat)							\
-	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;			\
-	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {	\
-		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),				\
-		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),	\
-	};										\
-	DEVICE_DT_DEFINE(DT_INST(inst, compat),						\
-			ti_hdc20xx_init,						\
-			NULL,								\
-			&ti_hdc20xx_data_##compat##inst,				\
-			&ti_hdc20xx_config_##compat##inst,				\
-			POST_KERNEL,							\
-			CONFIG_SENSOR_INIT_PRIORITY,					\
-			&ti_hdc20xx_api_funcs);
+#define TI_HDC20XX_DEFINE(inst, compat)                                                            \
+	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;                              \
+	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {                 \
+		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),                                     \
+		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),            \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_DEFINE(DT_INST(inst, compat), ti_hdc20xx_init, NULL,                      \
+				&ti_hdc20xx_data_##compat##inst,                                   \
+				&ti_hdc20xx_config_##compat##inst, POST_KERNEL,                    \
+				CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc20xx_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 #define TI_HDC20XX_FOREACH_STATUS_OKAY(compat, fn)	\

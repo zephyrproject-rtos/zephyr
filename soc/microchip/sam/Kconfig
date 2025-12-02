@@ -5,5 +5,6 @@
 
 config SOC_SERIES_SAMA7G5
 	select ARM
+	select MICROCHIP_SAM
 	select CPU_CORTEX_A7
 	select SOC_EARLY_INIT_HOOK

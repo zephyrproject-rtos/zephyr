@@ -338,6 +338,7 @@ bool pm_device_on_power_domain(const struct device *dev)
 #endif
 }
 
+__boot_func
 bool pm_device_is_powered(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
@@ -355,6 +356,7 @@ bool pm_device_is_powered(const struct device *dev)
 #endif
 }
 
+__boot_func
 int pm_device_driver_init(const struct device *dev,
 			  pm_device_action_cb_t action_cb)
 {
@@ -388,7 +390,8 @@ int pm_device_driver_init(const struct device *dev,
 
 	/* If device will have PM device runtime enabled */
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-	    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
+	    (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE) ||
+	     atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO))) {
 		return 0;
 	}
 

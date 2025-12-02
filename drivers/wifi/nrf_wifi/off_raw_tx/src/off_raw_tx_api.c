@@ -128,6 +128,25 @@ static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 }
 #endif /* CONFIG_WIFI_FIXED_MAC_ADDRESS_ENABLED */
 
+static enum op_band get_nrf_wifi_op_band(void)
+{
+	if (IS_ENABLED(CONFIG_NRF_WIFI_2G_BAND)) {
+		return BAND_24G;
+	}
+#ifdef CONFIG_NRF71_ON_IPC
+	if (IS_ENABLED(CONFIG_NRF_WIFI_5G_BAND)) {
+		return BAND_5G;
+	}
+	if (IS_ENABLED(CONFIG_NRF_WIFI_6G_BAND)) {
+		return BAND_6G;
+	}
+	if (IS_ENABLED(CONFIG_NRF_WIFI_DUAL_BAND)) {
+		return BAND_DUAL;
+	}
+#endif /* CONFIG_NRF71_ON_IPC */
+	return BAND_ALL;
+}
+
 int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
@@ -138,6 +157,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 	struct nrf_wifi_board_params board_params;
 	unsigned int fw_ver = 0;
 	k_spinlock_key_t key;
+	enum op_band op_band = get_nrf_wifi_op_band();
 
 	/* The OSAL layer needs to be initialized before any other initialization
 	 * so that other layers (like FW IF,HW IF etc) have access to OS ops
@@ -202,7 +222,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 						   HW_SLEEP_ENABLE,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
 						   NRF_WIFI_DEF_PHY_CALIB,
-						   CONFIG_NRF_WIFI_OP_BAND,
+						   op_band,
 						   IS_ENABLED(CONFIG_NRF_WIFI_BEAMFORMING),
 						   &ctrl_params,
 						   &ceil_params,

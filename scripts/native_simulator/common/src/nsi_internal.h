@@ -8,6 +8,7 @@
 #define NSI_COMMON_SRC_NSI_INTERNAL_H
 
 #include <stdint.h>
+#include "nsi_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,8 +24,7 @@ extern "C" {
  *
  * @return least significant bit set, 0 if @a op is 0
  */
-
-static inline unsigned int nsi_find_lsb_set(uint32_t op)
+NSI_INLINE unsigned int nsi_find_lsb_set(uint32_t op)
 {
 	return __builtin_ffs(op);
 }
@@ -39,8 +39,7 @@ static inline unsigned int nsi_find_lsb_set(uint32_t op)
  *
  * @return least significant bit set, 0 if @a op is 0
  */
-
-static inline unsigned int nsi_find_lsb_set64(uint64_t op)
+NSI_INLINE unsigned int nsi_find_lsb_set64(uint64_t op)
 {
 	return __builtin_ffsll(op);
 }

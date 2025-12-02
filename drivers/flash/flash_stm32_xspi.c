@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -390,7 +391,9 @@ static int stm32_xspi_wait_auto_polling(const struct device *dev,
 
 	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
 		LOG_ERR("XSPI AutoPoll wait failed");
-		HAL_XSPI_Abort(&dev_data->hxspi);
+		if (HAL_XSPI_Abort(&dev_data->hxspi) != HAL_OK) {
+			LOG_ERR("XSPI abort failed");
+		}
 		k_sem_reset(&dev_data->sync);
 		return -EIO;
 	}
@@ -565,6 +568,26 @@ static int stm32_xspi_write_enable(const struct device *dev,
 	s_config.AutomaticStop   = HAL_XSPI_AUTOMATIC_STOP_ENABLE;
 
 	return stm32_xspi_wait_auto_polling(dev, &s_config, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+}
+
+static int xspi_write_unprotect(const struct device *dev)
+{
+	int ret = 0;
+
+	/* This is a SPI/STR command to issue to the external Flash device */
+	XSPI_RegularCmdTypeDef cmd_unprotect = xspi_prepare_cmd(XSPI_SPI_MODE, XSPI_STR_TRANSFER);
+
+	cmd_unprotect.Instruction = SPI_NOR_CMD_ULBPR;
+	cmd_unprotect.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+	cmd_unprotect.AddressMode = HAL_XSPI_ADDRESS_NONE;
+	cmd_unprotect.DataMode    = HAL_XSPI_DATA_NONE;
+
+	ret = stm32_xspi_write_enable(dev, XSPI_SPI_MODE, XSPI_STR_TRANSFER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return xspi_send_cmd(dev, &cmd_unprotect);
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
@@ -995,7 +1018,7 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+	return stm32_reg_read_bits(&dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
 }
 #endif
 
@@ -1206,7 +1229,10 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
+		xspi_lock_thread(dev);
 		ret = stm32_xspi_set_memorymap(dev);
+		xspi_unlock_thread(dev);
+
 		if (ret != 0) {
 			LOG_ERR("READ: failed to set memory mapped");
 			return ret;
@@ -1352,6 +1378,10 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		case SPI_NOR_CMD_PP_1_4_4_4B:
 			__fallthrough;
 		case SPI_NOR_CMD_PP_1_4_4: {
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+			/* Microchip QSPI flash uses PP_1_1_4 opcode for the PP_1_4_4 operation */
+			cmd_pp.Instruction = SPI_NOR_CMD_PP_1_1_4;
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 			cmd_pp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
 			cmd_pp.AddressMode = HAL_XSPI_ADDRESS_4_LINES;
 			cmd_pp.DataMode = HAL_XSPI_DATA_4_LINES;
@@ -2368,6 +2398,15 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = xspi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
+	}
 
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_xspi_set_memorymap(dev);

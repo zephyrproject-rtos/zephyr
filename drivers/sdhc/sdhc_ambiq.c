@@ -555,7 +555,7 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	if (data) {
 #if CONFIG_SDHC_AMBIQ_HANDLE_CACHE
 		if (!buf_in_nocache((uintptr_t)data->data, data->blocks * data->block_size)) {
-			/* Clean Dcache before DMA write */
+			/* Clean Dcache before DMA write or after memset*/
 			sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 		}
 #endif /* CONFIG_SDHC_AMBIQ_HANDLE_CACHE */

@@ -25,7 +25,7 @@ config ENABLE_LC3
 	# By default let's enable it in the platforms we know are capable of supporting it
 	default y
 	depends on CPU_HAS_FPU && \
-		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP)
+		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || SOC_MIMXRT1062)
 	select LIBLC3
 	select FPU
 

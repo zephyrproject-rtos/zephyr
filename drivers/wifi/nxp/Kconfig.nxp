@@ -402,7 +402,7 @@ menu "Wi-Fi driver Stack configurations"
 
 config NXP_WIFI_MON_TASK_STACK_SIZE
 	int "Mon thread stack size"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
 	default 3072
 	help
 	  This option specifies the size of the stack used by the mon task.
@@ -444,7 +444,7 @@ menu "Wi-Fi thread priority configurations"
 
 config NXP_WIFI_MON_TASK_PRIO
 	int "Mon task priority"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
 	default 4
 	help
 	  This option specifies the priority of the mon task.
@@ -803,9 +803,29 @@ config NXP_WIFI_TX_PER_TRACK
 config NXP_WIFI_CSI
 	bool "CSI support"
 	default y
-	depends on NXP_RW610 || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enable/disable channel state information collection.
+
+config NXP_LIBCSI_CM33
+	bool "Lib csi support CM33"
+	depends on NXP_WIFI_CSI_AMI
+	help
+	  Image build with lib csi support CM33.
+
+config NXP_LIBCSI_CM7_20M
+	bool "Lib csi support CM7 bandwidth 20M"
+	depends on NXP_WIFI_CSI_AMI
+	help
+	  Image build with lib csi support CM7 bandwidth 20M.
+
+config NXP_WIFI_CSI_AMI
+	bool "CSI AMI support"
+	select FPU
+	select NXP_LIBCSI_CM33 if NXP_RW610
+	select NXP_LIBCSI_CM7_20M if NXP_IW610
+	depends on NXP_WIFI_CSI
+	help
+	  This option enable/disable channel state information to calculate ambient motion index feature.
 
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
@@ -1212,7 +1232,6 @@ config NXP_WIFI_EXTRA_DEBUG
 
 config NXP_WIFI_UAP_DEBUG
 	bool "WiFi driver uAP debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	depends on NXP_WIFI_SOFTAP_SUPPORT
 	help
 	  Enabling this will print out logs related
@@ -1223,7 +1242,6 @@ config NXP_WIFI_UAP_DEBUG
 
 config NXP_WIFI_EVENTS_DEBUG
 	bool "Dump event information"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will dump event codes of
 	  events received on from the firmware.
@@ -1233,7 +1251,6 @@ config NXP_WIFI_EVENTS_DEBUG
 
 config NXP_WIFI_CMD_RESP_DEBUG
 	bool "Dump command and response codes"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will dump command and response
 	  codes send to and received from firmware
@@ -1241,7 +1258,6 @@ config NXP_WIFI_CMD_RESP_DEBUG
 
 config NXP_WIFI_PS_DEBUG
 	bool "Power save debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will dump command and response
 	  codes send to and received from firmware
@@ -1249,7 +1265,6 @@ config NXP_WIFI_PS_DEBUG
 
 config NXP_WIFI_SCAN_DEBUG
 	bool "Scan debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will enable scan code logs
 	  This helps the developer to localize wlan
@@ -1258,7 +1273,6 @@ config NXP_WIFI_SCAN_DEBUG
 
 config NXP_WIFI_PKT_DEBUG
 	bool "Packet debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will enable packet TX/RX code logs
 	  This helps the developer to localize wlan
@@ -1266,7 +1280,6 @@ config NXP_WIFI_PKT_DEBUG
 
 config NXP_WIFI_IO_INFO_DUMP
 	bool "Input-Output debug (basic)"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will dump information
 	  about input/output data packets. This information
@@ -1275,7 +1288,6 @@ config NXP_WIFI_IO_INFO_DUMP
 
 config NXP_WIFI_IO_DEBUG
 	bool "Input-Output debug (advanced)"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will enable I/O debugging
 	  of wifi driver. This enables you to see
@@ -1284,7 +1296,6 @@ config NXP_WIFI_IO_DEBUG
 
 config NXP_WIFI_IO_DUMP
 	bool "Hex Dump packets"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will enable I/O debugging
 	  of wifi driver. This enables you to see
@@ -1293,7 +1304,6 @@ config NXP_WIFI_IO_DUMP
 
 config NXP_WIFI_MEM_DEBUG
 	bool "Allocations debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will enable monitoring
 	  memory allocations and frees done by
@@ -1302,7 +1312,6 @@ config NXP_WIFI_MEM_DEBUG
 
 config NXP_WIFI_AMPDU_DEBUG
 	bool "AMPDU debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enabling this will help you to  monitor what
 	  is happening to AMPDU Rx packets. Note
@@ -1313,7 +1322,6 @@ config NXP_WIFI_AMPDU_DEBUG
 
 config NXP_WIFI_TIMER_DEBUG
 	bool "Timers debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor timer activity of the
 	  driver. Timers are generally used for AMPDU out of
@@ -1322,32 +1330,42 @@ config NXP_WIFI_TIMER_DEBUG
 
 config NXP_WIFI_SDIO_DEBUG
 	bool "SDIO debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor SDIO init deinit errors
 
 config NXP_WIFI_SDIO_IO_DEBUG
 	bool "SDIO IO debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor SDIO driver read write errors
 	  for data and command operations.
 
 config NXP_WIFI_FWDNLD_IO_DEBUG
 	bool "FW download debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor FW download debug logs
 
 config NXP_WIFI_FW_DEBUG
 	bool "FW debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor debug logs from FW
 
+config NXP_FW_DUMP_FLASH_START_ADDR
+	hex "Start address in flash to store FW dump"
+	depends on NXP_WIFI_FW_DEBUG
+	help
+	  Enable this to define the start address in flash
+	  region to store the FW dump
+
+config NXP_FW_DUMP_FLASH_ERASE_LENGTH
+	hex "Erased length in flash to store FW dump"
+	default 0x200000
+	depends on NXP_WIFI_FW_DEBUG
+	help
+	  Enable this to define the erased length in flash
+	  region to store the FW dump
+
 config NXP_WIFI_FW_VDLL_DEBUG
 	bool "VDLL debug"
-	depends on NXP_WIFI_EXTRA_DEBUG
 	help
 	  Enable this to monitor VDLL debug logs
 

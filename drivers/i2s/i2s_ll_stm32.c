@@ -284,6 +284,25 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
+static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
+						     enum i2s_dir dir)
+{
+	struct i2s_stm32_data *const dev_data = dev->data;
+	struct stream *stream = NULL;
+
+	if (dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+	} else if (dir == I2S_DIR_TX) {
+		stream = &dev_data->tx;
+	}
+
+	if (stream != NULL && stream->state != I2S_STATE_NOT_READY) {
+		return &stream->cfg;
+	}
+
+	return NULL;
+}
+
 static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			     enum i2s_trigger_cmd cmd)
 {
@@ -441,6 +460,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 
 static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.configure = i2s_stm32_configure,
+	.config_get = i2s_stm32_config_get,
 	.read = i2s_stm32_read,
 	.write = i2s_stm32_write,
 	.trigger = i2s_stm32_trigger,
@@ -667,7 +687,9 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	return;
 
 tx_disable:
-	tx_stream_disable(stream, dev);
+	if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
+		tx_stream_disable(stream, dev);
+	}
 }
 
 static uint32_t i2s_stm32_irq_count;
@@ -709,6 +731,12 @@ static int i2s_stm32_initialize(const struct device *dev)
 		LOG_ERR("%s: clock enabling failed: %d",  __func__, ret);
 		return -EIO;
 	}
+
+#if defined(SPI_CFG2_IOSWP)
+	if (cfg->ioswp) {
+		LL_SPI_EnableIOSwap(cfg->i2s);
+	}
+#endif
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -950,7 +978,8 @@ static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
-	.master_clk_sel = DT_INST_PROP(index, mck_enabled)		\
+	.master_clk_sel = DT_INST_PROP(index, mck_enabled),		\
+	.ioswp = DT_INST_PROP(index, ioswp),				\
 };									\
 									\
 K_MSGQ_DEFINE(rx_##index##_queue, sizeof(struct queue_item), CONFIG_I2S_STM32_RX_BLOCK_COUNT, 4);\

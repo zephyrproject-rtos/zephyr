@@ -202,35 +202,6 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	}
 }
 
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static int emac_config_apll_clock(void)
-{
-	uint32_t expt_freq = MHZ(50);
-	uint32_t real_freq = 0;
-	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
-
-	if (ret == ESP_ERR_INVALID_ARG) {
-		LOG_ERR("Set APLL clock coefficients failed");
-		return -EIO;
-	}
-
-	if (ret == ESP_ERR_INVALID_STATE) {
-		LOG_INF("APLL is occupied already, it is working at %d Hz", real_freq);
-	}
-
-	/* If the difference of real APLL frequency
-	 * is not within 50 ppm, i.e. 2500 Hz,
-	 * the APLL is unavailable
-	 */
-	if (abs((int)real_freq - (int)expt_freq) > 2500) {
-		LOG_ERR("The APLL is working at an unusable frequency");
-		return -EIO;
-	}
-
-	return 0;
-}
-#endif /* DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios) */
-
 int eth_esp32_initialize(const struct device *dev)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
@@ -281,21 +252,7 @@ int eth_esp32_initialize(const struct device *dev)
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
-			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
-			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
-			"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
-		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
-		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
-		periph_rtc_apll_acquire();
-		res = emac_config_apll_clock();
-		if (res != 0) {
-			goto err;
-		}
-		rtc_clk_apll_enable(true);
-#else
+#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
 		emac_hal_iomux_rmii_clk_input();
 		emac_ll_clock_enable_rmii_input(dev_data->hal.ext_regs);
 #endif

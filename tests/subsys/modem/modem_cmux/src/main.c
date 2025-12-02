@@ -117,17 +117,25 @@ static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x0
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
+static uint8_t cmux_frame_dlci1_msc_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
+					     0x05, 0x07, 0x8D, 0xFB, 0xF9};
 static uint8_t cmux_frame_dlci1_ua_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci2_sabm_cmd[] = {0xF9, 0x0B, 0x3F, 0x01, 0x59, 0xF9};
 static uint8_t cmux_frame_dlci2_sabm_ack[] = {0xF9, 0x0B, 0x73, 0x01, 0x92, 0xF9};
 static uint8_t cmux_frame_dlci2_disc_cmd[] = {0xF9, 0x0B, 0x53, 0x01, 0xB8, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
+					     0x05, 0x0B, 0x8D, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_ack[] = {0xF9, 0x03, 0xEF, 0x09, 0xE1,
+					     0x05, 0x0B, 0x8D, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_fcon_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
+					     0x05, 0x0B, 0x8F, 0xFB, 0xF9};
+static uint8_t cmux_frame_dlci2_msc_fcon_ack[] = {0xF9, 0x03, 0xEF, 0x09, 0xE1,
+					     0x05, 0x0B, 0x8F, 0xFB, 0xF9};
 static uint8_t cmux_frame_dlci2_ua_ack[] = {0xF9, 0x0B, 0x73, 0x01, 0x92, 0xF9};
-static uint8_t cmux_frame_control_msc_cmd[] = {0xF9, 0x01, 0xFF, 0x0B, 0xE3,
-					       0x07, 0x0B, 0x09, 0x01, 0x6C, 0xF9};
-
-static uint8_t cmux_frame_control_msc_ack[] = {0xF9, 0x01, 0xFF, 0x0B, 0xE1,
-					       0x07, 0x0B, 0x09, 0x01, 0x6C, 0xF9};
-
+static uint8_t cmux_frame_control_msc_cmd[] = {0xF9, 0x01, 0xEF, 0x09, 0xE3,
+					       0x05, 0x07, 0x01, 0x9A, 0xF9};
+static uint8_t cmux_frame_control_msc_ack[] = {0xF9, 0x01, 0xEF, 0x09, 0xE1,
+					       0x05, 0x07, 0x01, 0x9A, 0xF9};
 static uint8_t cmux_frame_control_fcon_cmd[] = {0xF9, 0x01, 0xFF, 0x05, 0xA3, 0x01, 0x86, 0xF9};
 static uint8_t cmux_frame_control_fcon_ack[] = {0xF9, 0x01, 0xFF, 0x05, 0xA1, 0x01, 0x86, 0xF9};
 static uint8_t cmux_frame_control_fcoff_cmd[] = {0xF9, 0x01, 0xFF, 0x05, 0x63, 0x01, 0x86, 0xF9};
@@ -227,19 +235,38 @@ const static struct modem_backend_mock_transaction transaction_dlci2_disc = {
 	.put_size = sizeof(cmux_frame_dlci2_ua_ack)
 };
 
+const static struct modem_backend_mock_transaction transaction_dlci1_msc = {
+	.get = cmux_frame_dlci1_msc_cmd,
+	.get_size = sizeof(cmux_frame_dlci1_msc_cmd),
+	.put = NULL,
+	.put_size = 0};
+
+const static struct modem_backend_mock_transaction transaction_dlci2_msc = {
+	.get = cmux_frame_dlci2_msc_cmd,
+	.get_size = sizeof(cmux_frame_dlci2_msc_cmd),
+	.put = cmux_frame_dlci2_msc_ack,
+	.put_size = sizeof(cmux_frame_dlci2_msc_ack)};
+
 const static struct modem_backend_mock_transaction transaction_dlci1_sabm = {
 	.get = cmux_frame_dlci1_sabm_cmd,
 	.get_size = sizeof(cmux_frame_dlci1_sabm_cmd),
 	.put = cmux_frame_dlci1_ua_ack,
-	.put_size = sizeof(cmux_frame_dlci1_ua_ack)
-};
+	.put_size = sizeof(cmux_frame_dlci1_ua_ack),
+	.next = &transaction_dlci1_msc};
 
 const static struct modem_backend_mock_transaction transaction_dlci2_sabm = {
 	.get = cmux_frame_dlci2_sabm_cmd,
 	.get_size = sizeof(cmux_frame_dlci2_sabm_cmd),
 	.put = cmux_frame_dlci2_ua_ack,
-	.put_size = sizeof(cmux_frame_dlci2_ua_ack)
-};
+	.put_size = sizeof(cmux_frame_dlci2_ua_ack),
+	.next = &transaction_dlci2_msc};
+
+const static struct modem_backend_mock_transaction transaction_dlci2_ppp_with_msc = {
+	.get = cmux_frame_dlci2_msc_fcon_cmd,
+	.get_size = sizeof(cmux_frame_dlci2_msc_fcon_cmd),
+	.put = cmux_frame_dlci2_msc_fcon_ack,
+	.put_size = sizeof(cmux_frame_dlci2_msc_fcon_ack),
+	.next = &transaction_dlci2_msc};
 
 static void test_modem_cmux_callback(struct modem_cmux *cmux, enum modem_cmux_event event,
 				     void *user_data)
@@ -316,6 +343,9 @@ static void *test_modem_cmux_setup(void)
 	__ASSERT_NO_MSG(modem_pipe_open_async(dlci2_pipe) == 0);
 	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI2_OPEN, false, K_MSEC(100));
 	__ASSERT_NO_MSG((events & EVENT_CMUX_DLCI2_OPEN));
+
+	/* Consume the MSC command sent after DLCI opening */
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 
 	return NULL;
 }
@@ -396,9 +426,12 @@ ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_ppp)
 	int ret;
 	uint32_t events;
 
+	/* Expect MSC command with FC bit on as we push 70 bytes into buffer of 127 and
+	 * threshold is set to 65 bytes
+	 */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_ppp_with_msc);
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
-
 	k_msleep(100);
 
 	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
@@ -418,6 +451,8 @@ ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_ppp)
 			    cmux_frame_data_dlci2_ppp_18,
 			    sizeof(cmux_frame_data_dlci2_ppp_18)) == 0,
 		     "Incorrect data received");
+
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_transmit_dlci2_ppp)
@@ -603,8 +638,8 @@ ZTEST(modem_cmux, test_modem_cmux_dlci1_close_open)
 	zassert_true((events & EVENT_CMUX_DLCI1_OPEN),
 		     "DLCI1 not opened as expected");
 
-	/* Wait for potential T1 timeout */
-	k_msleep(500);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_msc);
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 
 	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
 	zassert_true(ret == 0, "Received unexpected data");
@@ -705,6 +740,9 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect)
 	zassert_true((events & EVENT_CMUX_DLCI1_OPEN),
 		     "DLCI1 not opened as expected");
 
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_msc);
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+
 	/* Wait for potential T1 timeout */
 	k_msleep(500);
 
@@ -730,8 +768,10 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect)
 	events = k_event_wait_all(&cmux_event, (EVENT_CMUX_DLCI2_OPEN),
 				  false, K_MSEC(100));
 
-	zassert_true((events & EVENT_CMUX_DLCI2_OPEN),
-		     "DLCI1 not opened as expected");
+	zassert_true((events & EVENT_CMUX_DLCI2_OPEN), "DLCI2 not opened as expected");
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_msc);
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 
 	/* Wait for potential T1 timeout */
 	k_msleep(500);
@@ -746,6 +786,10 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect_sync)
 	zassert_true(modem_pipe_close(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI1");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_disc);
 	zassert_true(modem_pipe_close(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI2");
+
+	/* Clear any pending data before CLD transaction */
+	modem_backend_mock_reset(&bus_mock);
+
 	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
 	zassert_true(modem_cmux_disconnect(&cmux) == 0, "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux) == -EALREADY,
@@ -759,9 +803,11 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect_sync)
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
 	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0,
 		     "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
 	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0,
 		     "Failed to open DLCI2 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_dlci_close_open_sync)
@@ -773,9 +819,11 @@ ZTEST(modem_cmux, test_modem_cmux_dlci_close_open_sync)
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
 	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0,
 		     "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
 	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0,
 		     "Failed to open DLCI2 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
@@ -820,10 +868,13 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
 	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
 	zassert_ok(modem_cmux_connect(&cmux));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
 	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
 	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
 ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
@@ -884,6 +935,24 @@ ZTEST(modem_cmux, test_modem_cmux_split_large_data)
 	ret = modem_backend_mock_get(&bus_mock, buffer2, sizeof(buffer2));
 	zassert_true(ret == CONFIG_MODEM_CMUX_MTU + CMUX_BASIC_HRD_SMALL_SIZE,
 		     "Incorrect number of bytes transmitted %d", ret);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_invalid_cr)
+{
+	uint32_t events;
+
+	/* We are initiator, so any CMD with CR set should be dropped */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_cld_cmd,
+			       sizeof(cmux_frame_control_cld_cmd));
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_sabm_cmd,
+			       sizeof(cmux_frame_control_sabm_cmd));
+
+	events = k_event_wait_all(&cmux_event,
+				  (MODEM_CMUX_EVENT_CONNECTED | MODEM_CMUX_EVENT_DISCONNECTED),
+				  false, K_MSEC(100));
+
+	zassert_false(events, "Wrong CMD should have been ignored");
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

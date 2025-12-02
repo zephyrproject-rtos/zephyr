@@ -68,11 +68,12 @@ static const nrfx_timer_t feedback_timer_instance =
  * SOF offset is around 0 when regulated and therefore the relative clock
  * frequency discrepancies are essentially negligible.
  */
-#define CLKS_PER_SAMPLE	(16000000 / (SAMPLES_PER_SOF * 1000))
+#define CLKS_PER_SAMPLE	(16000000 / (SAMPLE_RATE))
 
 static struct feedback_ctx {
 	int32_t rel_sof_offset;
 	int32_t base_sof_offset;
+	unsigned int nominal;
 } fb_ctx;
 
 struct feedback_ctx *feedback_init(void)
@@ -143,8 +144,8 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 	/* /2 because we treat the middle as a turning point from being
 	 * "too late" to "too early".
 	 */
-	if (framestart_cc > (SAMPLES_PER_SOF * CLKS_PER_SAMPLE)/2) {
-		sof_offset = framestart_cc - SAMPLES_PER_SOF * CLKS_PER_SAMPLE;
+	if (framestart_cc > (ctx->nominal * CLKS_PER_SAMPLE)/2) {
+		sof_offset = framestart_cc - ctx->nominal * CLKS_PER_SAMPLE;
 	} else {
 		sof_offset = framestart_cc;
 	}
@@ -159,17 +160,17 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 
 		if (sof_offset >= 0) {
 			abs_diff = sof_offset - ctx->rel_sof_offset;
-			base_change = -(SAMPLES_PER_SOF * CLKS_PER_SAMPLE);
+			base_change = -(ctx->nominal * CLKS_PER_SAMPLE);
 		} else {
 			abs_diff = ctx->rel_sof_offset - sof_offset;
-			base_change = SAMPLES_PER_SOF * CLKS_PER_SAMPLE;
+			base_change = ctx->nominal * CLKS_PER_SAMPLE;
 		}
 
 		/* Adjust base offset only if the change happened through the
 		 * outer bound. The actual changes should be significantly lower
 		 * than the threshold here.
 		 */
-		if (abs_diff > (SAMPLES_PER_SOF * CLKS_PER_SAMPLE)/2) {
+		if (abs_diff > (ctx->nominal * CLKS_PER_SAMPLE)/2) {
 			ctx->base_sof_offset += base_change;
 		}
 	}
@@ -195,19 +196,26 @@ void feedback_reset_ctx(struct feedback_ctx *ctx)
 	ARG_UNUSED(ctx);
 }
 
-void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued)
+void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued,
+		    bool microframes)
 {
+	if (microframes) {
+		ctx->nominal = SAMPLE_RATE / 8000;
+	} else {
+		ctx->nominal = SAMPLE_RATE / 1000;
+	}
+
 	/* I2S data was supposed to go out at SOF, but it is inevitably
 	 * delayed due to triggering I2S start by software. Set relative
 	 * SOF offset value in a way that ensures that values past "half
 	 * frame" are treated as "too late" instead of "too early"
 	 */
-	ctx->rel_sof_offset = (SAMPLES_PER_SOF * CLKS_PER_SAMPLE) / 2;
+	ctx->rel_sof_offset = (ctx->nominal * CLKS_PER_SAMPLE) / 2;
 	/* If there are more than 2 I2S TX blocks queued, use feedback regulator
 	 * to correct the situation.
 	 */
 	ctx->base_sof_offset = (i2s_blocks_queued - 2) *
-		(SAMPLES_PER_SOF * CLKS_PER_SAMPLE);
+		(ctx->nominal * CLKS_PER_SAMPLE);
 }
 
 int feedback_samples_offset(struct feedback_ctx *ctx)

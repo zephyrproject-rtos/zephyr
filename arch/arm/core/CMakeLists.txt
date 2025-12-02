@@ -27,7 +27,7 @@ add_subdirectory_ifdef(CONFIG_ARM_AARCH32_MMU mmu)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_R cortex_a_r)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 
-if (CONFIG_ARM_ZIMAGE_HEADER)
+if(CONFIG_ARM_ZIMAGE_HEADER)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors zimage_header.ld)
 zephyr_linker_sources(ROM_START SORT_KEY 0x1vectors vector_table.ld)
 zephyr_linker_sources(ROM_START SORT_KEY 0x2vectors cortex_m/vector_table_pad.ld)

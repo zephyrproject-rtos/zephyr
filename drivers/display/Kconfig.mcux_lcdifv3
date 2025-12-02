@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig DISPLAY_MCUX_LCDIFV3
+	bool "MCUX LCDIFV3 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_LCDIFV3_ENABLED
+	depends on CLOCK_CONTROL
+	select INIT_VIDEO_PLL
+	help
+	  Enable support for mcux LCDIFV3 driver.
+
+if DISPLAY_MCUX_LCDIFV3
+
+config MCUX_LCDIFV3_FB_NUM
+	int "Framebuffers to be allocated in driver"
+	default 2
+	range 0 2
+	help
+	  Number of framebuffers to be allocated in LCDIFV3 driver. Driver allocates
+	  framebuffers in order to support partial display update.
+
+endif # DISPLAY_MCUX_LCDIFV3

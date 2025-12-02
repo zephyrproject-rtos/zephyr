@@ -25,8 +25,12 @@ compatible: "allegro,a4979"
 
 include:
   - name: stepper-controller.yaml
+  - name: step-dir-timing.yaml
 
 properties:
+  step-width-ns:
+    default: 1000
+
   m0-gpios:
     required: true
     type: phandle-array

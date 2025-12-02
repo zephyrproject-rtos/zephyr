@@ -11,6 +11,11 @@ zephyr_sources_ifdef(CONFIG_STM32N6_NPU
 
 zephyr_include_directories(.)
 
+if(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
+  zephyr_linker_sources(SECTIONS mpu_regions.ld)
+  zephyr_sources(mpu_regions.c)
+endif()
+
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 
 zephyr_linker_sources_ifdef(CONFIG_BOOTLOADER_MCUBOOT SECTIONS ram_check.ld)

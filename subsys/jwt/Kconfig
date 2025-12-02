@@ -17,10 +17,11 @@ choice
 	  Select which algorithm to use for signing JWT tokens.
 
 config JWT_SIGN_RSA_LEGACY
-	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library."
+	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library [DEPRECATED]"
 	depends on CSPRNG_AVAILABLE
+	select DEPRECATED
 	select MBEDTLS
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
@@ -28,8 +29,7 @@ config JWT_SIGN_RSA_LEGACY
 
 config JWT_SIGN_RSA_PSA
 	bool "Use RSA signature (RS-256). Use PSA Crypto API."
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
 	select PSA_WANT_ALG_RSA_PKCS1V15_SIGN
@@ -37,8 +37,7 @@ config JWT_SIGN_RSA_PSA
 
 config JWT_SIGN_ECDSA_PSA
 	bool "Use ECDSA signature (ES-256). Use PSA Crypto API."
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_ALG_ECDSA
 	select PSA_WANT_ECC_SECP_R1_256

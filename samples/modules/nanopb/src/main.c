@@ -73,6 +73,7 @@ bool decode_message(uint8_t *buffer, size_t message_length)
 #ifdef CONFIG_SAMPLE_UNLUCKY_NUMBER
 		printk("Your unlucky number was %d!\n", (int)message.unlucky_number);
 #endif
+		pb_release(SimpleMessage_fields, &message);
 	} else {
 		printk("Decoding failed: %s\n", PB_GET_ERROR(&stream));
 	}

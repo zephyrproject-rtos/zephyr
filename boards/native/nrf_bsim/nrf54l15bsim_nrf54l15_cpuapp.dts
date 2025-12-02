@@ -28,6 +28,7 @@
 	soc {
 		/delete-node/ memory@20000000;
 		/delete-node/ memory@2002f000;
+
 		peripheral@50000000 {
 			/delete-node/ vpr@4c000;
 			/delete-node/ mailbox@0;
@@ -75,6 +76,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		storage_partition: partition@0 {
 			label = "storage";
 			reg = <0x0 DT_SIZE_K(500)>;

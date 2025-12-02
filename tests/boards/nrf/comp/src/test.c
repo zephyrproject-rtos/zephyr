@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
 #include <zephyr/drivers/comparator/nrf_comp.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
@@ -13,14 +14,11 @@ static const struct device *test_dev = DEVICE_DT_GET(DT_ALIAS(test_comp));
 static const struct gpio_dt_spec test_pin_1 = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), first_gpios);
 static const struct gpio_dt_spec test_pin_2 = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), second_gpios);
 
-#define TEST_COMP_SE_PSEL_AIN _CONCAT(COMP_NRF_COMP_PSEL_AIN, \
-				      CONFIG_TEST_COMP_SE_PSEL_AIN_INDEX)
-#define TEST_COMP_SE_EXTREFSEL_AIN _CONCAT(COMP_NRF_COMP_EXTREFSEL_AIN, \
-					   CONFIG_TEST_COMP_SE_EXTREFSEL_AIN_INDEX)
-#define TEST_COMP_DIFF_PSEL_AIN _CONCAT(COMP_NRF_COMP_PSEL_AIN, \
-					CONFIG_TEST_COMP_DIFF_PSEL_AIN_INDEX)
-#define TEST_COMP_DIFF_EXTREFSEL_AIN _CONCAT(COMP_NRF_COMP_EXTREFSEL_AIN, \
-					     CONFIG_TEST_COMP_DIFF_EXTREFSEL_AIN_INDEX)
+#define TEST_COMP_SE_PSEL_AIN      _CONCAT(NRF_COMP_AIN, CONFIG_TEST_COMP_SE_PSEL_AIN_INDEX)
+#define TEST_COMP_SE_EXTREFSEL_AIN _CONCAT(NRF_COMP_AIN, CONFIG_TEST_COMP_SE_EXTREFSEL_AIN_INDEX)
+#define TEST_COMP_DIFF_PSEL_AIN    _CONCAT(NRF_COMP_AIN, CONFIG_TEST_COMP_DIFF_PSEL_AIN_INDEX)
+#define TEST_COMP_DIFF_EXTREFSEL_AIN                                                               \
+	_CONCAT(NRF_COMP_AIN, CONFIG_TEST_COMP_DIFF_EXTREFSEL_AIN_INDEX)
 
 struct comp_nrf_comp_se_config comp_se_config = {
 	.psel = TEST_COMP_SE_PSEL_AIN,

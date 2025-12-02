@@ -162,17 +162,10 @@ static const struct test_clk_context lfclk_test_clk_contexts[] = {
 #define AUXPLL_NODE DT_INST(0, AUXPLL_COMPAT)
 #define AUXPLL_FREQ DT_PROP(AUXPLL_NODE, nordic_frequency)
 
-/* Gets selected AUXPLL DIV and selects the expected frequency */
-#if AUXPLL_FREQ == NRF_AUXPLL_FREQUENCY_DIV_MIN
-#define AUXPLL_FREQ_OUT 80000000
-#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1
-#define AUXPLL_FREQ_OUT 11289591
-#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_USB_24M
-#define AUXPLL_FREQ_OUT 24000000
-#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_AUDIO_48K
-#define AUXPLL_FREQ_OUT 12287963
-#else
-/*No use case for NRF_AUXPLL_FREQ_DIV_MAX or others yet*/
+
+/* Gets expected AUXPLL frequency */
+#define AUXPLL_FREQ_OUT CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(AUXPLL_NODE)
+#if AUXPLL_FREQ_OUT == 0
 #error "Unsupported AUXPLL frequency selection"
 #endif
 

@@ -30,14 +30,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&porta 17 0>;
 			label = "LED";
 		};
+
 		led1: led_1 {
 			gpios = <&porta 27 0>;
 			label = "TX";
 		};
+
 		led2: led_2 {
 			gpios = <&portb 3 0>;
 			label = "RX";

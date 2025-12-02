@@ -7,22 +7,42 @@ config ZEPHYR_HAL_INFINEON_MODULE
 config ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	bool
 
-if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
+if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
 
 config USE_INFINEON_ADC
 	bool
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_HPPASS_SAR_ADC
+	bool
+	help
+	  Enable Infineon HPPASS SAR ADC PDL library support
+
+config USE_INFINEON_HPPASS_ANALOG
+	bool
+	help
+	  Enable Infineon HPPASS Analog PDL library support
+
+config USE_INFINEON_AUTANALOG_SAR_ADC
+	bool
+	help
+	  Enable AutAnalog SAR ADC HAL module driver for Infineon devices
+
 config USE_INFINEON_DMA
 	bool
 	help
-	  Enable ADC HAL module driver for Infineon devices
+	  Enable DMA HAL module driver for Infineon devices
 
 config USE_INFINEON_I2C
 	bool
 	help
 	  Enable Inter-Integrated Circuit Interface (I2C) HAL module driver for Infineon devices
+
+config USE_INFINEON_I3C
+	bool
+	help
+	  Enable Improved Inter-Integrated Circuit Interface (I3C) HAL module driver for Infineon devices
 
 config USE_INFINEON_RTC
 	bool
@@ -89,7 +109,7 @@ config USE_INFINEON_SMIF
 	help
 	  Enable SMIF HAL driver for Infineon devices
 
-endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
+endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
 
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"

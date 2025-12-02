@@ -100,7 +100,7 @@
 
 		sram7: memory@200d0000 {
 			compatible = "mmio-sram";
-			reg = <0x200d0000 DT_SIZE_K(64)>;
+			reg = <0x200d0000 DT_SIZE_K(192)>;
 		};
 
 		spixf: spixf@40027000 {
@@ -124,11 +124,11 @@
 			#size-cells = <1>;
 			status = "okay";
 
-			flash1: flash@10080000 {
+			flash1: flash@10300000 {
 				compatible = "soc-nv-flash";
-				reg = <0x10080000 DT_SIZE_K(256)>;
+				reg = <0x10300000 DT_SIZE_K(256)>;
 				write-block-size = <16>;
-				erase-block-size = <16384>;
+				erase-block-size = <8192>;
 			};
 		};
 
@@ -210,7 +210,7 @@
 			#dma-cells = <2>;
 		};
 
-		wdt1: watchdog@40080800  {
+		wdt1: watchdog@40080800 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40080800 0x400>;
 			interrupts = <57 0>;
@@ -227,6 +227,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
@@ -241,6 +242,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
@@ -289,6 +291,7 @@
 			interrupts = <53 0>;
 			status = "disabled";
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-wut";
 				status = "disabled";
@@ -301,6 +304,7 @@
 			interrupts = <109 0>;
 			status = "disabled";
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-wut";
 				status = "disabled";

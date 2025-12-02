@@ -63,7 +63,7 @@ USB/IP with native_sim
 **********************
 
 The preferred method to develop with USB/IP support enabled is to use
-:ref:`native_sim <native_sim>`. Use on real hardware is not really tested yet.
+:zephyr:board:`native_sim <native_sim>`. Use on real hardware is not really tested yet.
 USB/IP requires a network connection, see :ref:`networking_with_native_sim`
 for how to set up the interface on the client side.
 

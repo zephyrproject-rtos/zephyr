@@ -6,6 +6,7 @@
  */
 
 #include "clock_source_def.h"
+
 / {
 	srss_power: srss_power {
 		#clock-cells = <0>;
@@ -133,7 +134,6 @@
 			status = "disabled";
 		};
 
-
 		/* clk_lf */
 		clk_lf: clk_lf {
 			#clock-cells = <0>;
@@ -141,7 +141,5 @@
 			clocks = <&clk_pilo>;
 			status = "okay";
 		};
-
 	};
-
 };

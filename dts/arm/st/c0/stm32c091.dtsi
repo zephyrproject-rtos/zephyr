@@ -4,15 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/c0/stm32c071.dtsi>
-
-/* STM32C091 is a superset of the C071 with the exception of USB support.
- * Since C071 provides the same set of peripheral as the C051,
- * along with the addition of USB, once the C051 is introduced,
- * it can be included instead, and the delete-node can be removed.
- */
-/delete-node/ &usb;
-/delete-node/ &usb_fs_phy;
+#include <st/c0/stm32c051.dtsi>
 
 / {
 	soc {
@@ -68,8 +60,4 @@
 			dma-requests = <53>;
 		};
 	};
-};
-
-&exti {
-	num-lines = <32>;
 };

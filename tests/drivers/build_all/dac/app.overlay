@@ -310,6 +310,28 @@
 				#io-channel-cells = <1>;
 				errb-gpios = <&test_gpio 0 0>;
 			};
+
+			test_spi_ad5601: ad5601@13 {
+				compatible = "adi,ad5601";
+				reg = <0x13>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad5611: ad5611@14 {
+				compatible = "adi,ad5611";
+				reg = <0x14>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad5621: ad5621@15 {
+				compatible = "adi,ad5621";
+				reg = <0x15>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
 		};
 	};
 };

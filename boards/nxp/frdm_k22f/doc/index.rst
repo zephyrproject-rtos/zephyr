@@ -239,8 +239,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v2.0.0 *****
    Hello World! frdm_k22f
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _FRDM-K22F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/nxp-freedom-development-platform-for-kinetis-k22-mcus:FRDM-K22F

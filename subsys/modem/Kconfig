@@ -6,6 +6,21 @@ menuconfig MODEM_MODULES
 
 if MODEM_MODULES
 
+config MODEM_DEDICATED_WORKQUEUE
+	bool "Use a dedicated workqueue for modem operations"
+
+if MODEM_DEDICATED_WORKQUEUE
+
+config MODEM_DEDICATED_WORKQUEUE_STACK_SIZE
+	int "Modem dedicated workqueue stack size"
+	default 1024
+
+config MODEM_DEDICATED_WORKQUEUE_PRIORITY
+	int "Modem dedicated workqueue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+endif # MODEM_DEDICATED_WORKQUEUE
+
 config MODEM_CHAT
 	bool "Modem chat module"
 	select RING_BUFFER
@@ -42,18 +57,36 @@ config MODEM_CMUX_MTU
 	  Maximum Transmission Unit (MTU) size for the CMUX module.
 	  Linux ldattach defaults to 127 bytes, 3GPP TS 27.010 to 31.
 
-config MODEM_CMUX_WORK_BUFFER_SIZE
-	int "CMUX module work buffer size in bytes"
-	range 23 1507
-	default 134 if MODEM_CMUX_DEFAULT_MTU_127
-	default 38
+config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
+	int "CMUX module extra work buffer size in bytes"
+	default 0
 	help
-	  Size of the work buffer used by the CMUX module.
-	  Recommended size is MODEM_CMUX_MTU + 7 (CMUX header size).
+	  Extra bytes to add to the work buffers used by the CMUX module.
+	  The default size of these buffers is MODEM_CMUX_MTU + 7 (CMUX header size).
+
+config MODEM_CMUX_MSC_FC_THRESHOLD
+	int "Enable flow control when the DLCI ring buffer has less than this many bytes free"
+	range 0 MODEM_CMUX_MTU
+	default MODEM_CMUX_MTU if MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA > 0
+	default 0
+	help
+	  When the available space in a DLCI receive ring buffer is less than this
+	  value, the CMUX module will send Modem Status Command frame with the
+	  flow control bit set to indicate that the sender should stop sending data.
+	  Flow control is released once the incoming buffer has at least MODEM_CMUX_MTU
+	  bytes free again.
+	  This only works if the peer supports MSC messages.
+	  Disable flow control by setting this value to 0.
 
 module = MODEM_CMUX
 module-str = modem_cmux
 source "subsys/logging/Kconfig.template.log_config"
+
+config MODEM_CMUX_LOG_FRAMES
+	bool "Log CMUX frames"
+	depends on MODEM_CMUX_LOG_LEVEL_DBG
+	help
+	  Enable logging of CMUX frames. This can produce a lot of log data.
 
 endif
 
@@ -71,6 +104,7 @@ config MODEM_PPP
 	select MODEM_PIPE
 	select RING_BUFFER
 	select CRC
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
 
 if MODEM_PPP
 

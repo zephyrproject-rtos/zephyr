@@ -29,15 +29,46 @@ extern "C" {
  */
 
 /**
- * @brief Get the next P-state from CPU Frequency Policy
+ * @brief Get the next P-state from CPU frequency scaling policy
  *
- * This function is implemented by a CPU Freq policy selected via Kconfig.
+ * This function is implemented by a CPU frequency scaling policy selected via
+ * Kconfig. The caller must ensure that the current CPU does not change. If
+ * called from an ISR or a single CPU system, this restriction is automatically
+ * met. If called from a thread on an SMP system, either interrupts or the
+ * scheduler must be disabled to ensure the current CPU does not change.
  *
- * @param pstate Pointer to the P-state struct where the next P-state is returned.
+ * @param pstate_out Pointer to the P-state struct where the next P-state is returned.
  *
  * @retval 0 in case of success, nonzero in case of failure.
  */
-int cpu_freq_policy_select_pstate(const struct pstate **pstate);
+int cpu_freq_policy_select_pstate(const struct pstate **pstate_out);
+
+/**
+ * @brief Reset data structures used by CPU frequency scaling policy
+ *
+ * This function is implemented by a CPU frequency scaling policy selected via
+ * Kconfig. It resets any data structured needed by the policy. It is
+ * automatically invoked by the CPU frequency scaling subsystem and should not
+ * be called directly by application code.
+ */
+void cpu_freq_policy_reset(void);
+
+/**
+ * @brief Set the CPU frequency scaling P-state according to policy
+ *
+ * This function is implemented by a CPU frequency scaling policy selected via
+ * Kconfig. It accepts a P-state previously obtained by a call to
+ * :c:func:`cpu_freq_policy_select_pstate` and attempts to apply it according
+ * to the policy. The policy may choose to apply the selected P-state, or
+ * apply a different P-state, or ignore the request altogether. This function
+ * is automatically invoked by the CPU frequency scaling subsystem and should
+ * not be called directly by application code.
+ *
+ * @param state Pointer to a P-state
+ *
+ * @return Pointer to the applied P-state, or NULL if nothing applied
+ */
+const struct pstate *cpu_freq_policy_pstate_set(const struct pstate *state);
 
 /**
  * @}

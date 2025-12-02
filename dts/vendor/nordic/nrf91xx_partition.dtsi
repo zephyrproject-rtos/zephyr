@@ -94,7 +94,7 @@
 	};
 };
 
-/ {
+&sram0 {
 	/*
 	 * Default SRAM planning when building for nRF91xx with
 	 * ARM TrustZone-M support
@@ -104,29 +104,26 @@
 	 * - 40 kB SRAM reserved for and used by the modem library (sram0_ns_modem).
 	 * - 128 kB allocated to the application (sram0_ns_app).
 	 */
-	reserved-memory {
+	sram0_s: sram@0 {
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(88)>;
+	};
+
+	sram0_ns: sram@16000 {
+		/* Non-Secure image memory */
+		reg = <0x16000 DT_SIZE_K(168)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
+		ranges = <0x0 0x16000 DT_SIZE_K(168)>;
 
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-			reg = <0x20000000 DT_SIZE_K(88)>;
-		};
-
-		sram0_ns: image_ns@20016000 {
-			/* Non-Secure image memory */
-			reg = <0x20016000 DT_SIZE_K(168)>;
-		};
-
-		sram0_ns_modem: image_ns_modem@20016000 {
+		sram0_ns_modem: sram0_ns@0 {
 			/* Modem (shared) memory */
-			reg = <0x20016000 DT_SIZE_K(40)>;
+			reg = <0x0 DT_SIZE_K(40)>;
 		};
 
-		sram0_ns_app: image_ns_app@20020000 {
+		sram0_ns_app: sram0_ns@a000 {
 			/* Non-Secure application memory */
-			reg = <0x20020000 DT_SIZE_K(128)>;
+			reg = <0xa000 DT_SIZE_K(128)>;
 		};
 	};
 };

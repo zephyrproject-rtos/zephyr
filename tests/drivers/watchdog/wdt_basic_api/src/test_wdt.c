@@ -116,6 +116,9 @@
 #define TIMEOUTS 0
 #define WDT_TEST_MAX_WINDOW 3000U
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_wdog32)
+#define WDT_TEST_MAX_WINDOW 1000U
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1

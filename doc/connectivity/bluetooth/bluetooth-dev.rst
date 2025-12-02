@@ -76,7 +76,7 @@ This setup relies on a "dual-chip" :ref:`configuration <bluetooth-configs>`
 which is comprised of the following devices:
 
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
-   :ref:`QEMU <application_run_qemu>` emulator or the :ref:`native_sim <native_sim>` native
+   :ref:`QEMU <application_run_qemu>` emulator or the :zephyr:board:`native_sim <native_sim>` native
    port of Zephyr
 #. A Controller, which can be one of the following types:
 
@@ -117,7 +117,7 @@ native_sim
 .. note::
    This is currently only available on GNU/Linux
 
-The :ref:`native_sim <native_sim>` target builds your Zephyr application
+The :zephyr:board:`native_sim <native_sim>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 
@@ -146,8 +146,8 @@ These boards, use:
    * The POSIX arch and native simulator to emulate the processor, and run natively on your host.
    * `Models of the nrf5x HW <https://github.com/BabbleSim/ext_NRF_hw_models/>`_
 
-Just like with the :ref:`native_sim <native_sim>` target, the build result is a normal Linux
-executable.
+Just like with the :zephyr:board:`native_sim <native_sim>` target, the build result is a normal
+Linux executable.
 You can find more information on how to run simulations with one or several
 devices in either of :ref:`these boards's documentation <nrf52bsim_build_and_run>`.
 

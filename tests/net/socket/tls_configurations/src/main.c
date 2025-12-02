@@ -89,7 +89,7 @@ static int create_socket(void)
 	addr.sin_port = htons(CONFIG_SERVER_PORT);
 	inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 	socket_fd = socket(addr.sin_family, SOCK_STREAM, IPPROTO_TLS_1_3);
 #else
 	socket_fd = socket(addr.sin_family, SOCK_STREAM, IPPROTO_TLS_1_2);

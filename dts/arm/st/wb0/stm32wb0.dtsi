@@ -33,12 +33,29 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
+			cpu-power-states = <&deepstop>;
 			reg = <0>;
+		};
+
+		power-states {
+			deepstop: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <0>;
+
+				/* One millisecond seems reasonable for now. */
+				min-residency-us = <1000>;
+
+				/* exit-latency-us property is not needed
+				 * since the same concept is applied by the hardware automatically.
+				 */
+			};
 		};
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -264,7 +281,7 @@
 			#dma-cells = <3>;
 			dma-channels = <8>;
 			dma-generators = <1>;
-			dma-requests= <25>;
+			dma-requests = <25>;
 			status = "disabled";
 		};
 
@@ -294,6 +311,13 @@
 
 	bt_hci_wb0: bt_hci_wb0 {
 		compatible = "st,hci-stm32wb0";
+		status = "disabled";
+	};
+
+	radio_timer: radio_timer {
+		compatible = "st,stm32wb0-radio-timer";
+		compensated-timer-freq = <409600>;
+		max-hs-startup-time = <320>;
 		status = "disabled";
 	};
 };

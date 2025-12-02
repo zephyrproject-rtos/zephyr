@@ -13,3 +13,10 @@ properties:
 
   interrupts:
     required: true
+
+  rx-fifo-rx-we:
+    type: boolean
+    description: |
+      If true, the RX FIFO read will also remove that item from the FIFO.
+      Set this property if the uart_rx_fifo_rx_we parameter in LiteX is
+      set to true.

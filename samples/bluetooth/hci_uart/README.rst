@@ -59,7 +59,7 @@ For example, to build for the nRF52832 Development Kit:
 Using the controller with QEMU or native_sim
 ============================================
 
-In order to use the HCI UART controller with QEMU or :ref:`native_sim <native_sim>` you will need
+In order to use the HCI UART controller with QEMU or :zephyr:board:`native_sim <native_sim>` you will need
 to attach it to the Linux Host first. To do so simply build the sample and
 connect the UART to the Linux machine, and then attach it with this command:
 

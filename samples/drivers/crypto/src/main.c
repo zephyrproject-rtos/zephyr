@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT ti_cc23x0_aes
 #elif CONFIG_CRYPTO_SI32
 #define CRYPTO_DEV_COMPAT silabs_si32_aes
+#elif CONFIG_CRYPTO_ESP32_AES
+#define CRYPTO_DEV_COMPAT espressif_esp32_aes
 #else
 #error "You need to enable one crypto device"
 #endif

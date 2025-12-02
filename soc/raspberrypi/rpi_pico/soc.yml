@@ -8,7 +8,9 @@ family:
     socs:
     - name: rp2350a
       cpuclusters:
+      - name: hazard3
       - name: m33
     - name: rp2350b
       cpuclusters:
+      - name: hazard3
       - name: m33

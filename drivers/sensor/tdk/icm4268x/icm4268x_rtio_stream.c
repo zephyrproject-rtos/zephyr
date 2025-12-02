@@ -5,17 +5,20 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/drivers/sensor_clock.h>
 #include "icm4268x.h"
 #include "icm4268x_decoder.h"
 #include "icm4268x_reg.h"
 #include "icm4268x_rtio.h"
+#include "icm4268x_bus.h"
 
 LOG_MODULE_DECLARE(ICM4268X_RTIO, CONFIG_SENSOR_LOG_LEVEL);
 
 void icm4268x_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct icm4268x_dev_cfg *dev_cfg = (const struct icm4268x_dev_cfg *)sensor->config;
 	struct icm4268x_dev_data *data = sensor->data;
 	struct icm4268x_cfg new_config = data->cfg;
 
@@ -46,63 +49,62 @@ void icm4268x_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *
 		int rc = icm4268x_safely_configure(sensor, &new_config);
 
 		if (rc != 0) {
-			LOG_ERR("Failed to configure sensor");
+			LOG_ERR("%p Failed to configure sensor", sensor);
 			rtio_iodev_sqe_err(iodev_sqe, rc);
 			return;
 		}
 	}
 
+	(void)atomic_set(&data->state, ICM4268X_STREAM_ON);
 	data->streaming_sqe = iodev_sqe;
+	(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static struct sensor_stream_trigger *
+icm4268x_get_read_config_trigger(const struct sensor_read_config *cfg,
+				 enum sensor_trigger_type trig)
 {
-	const struct device *dev = arg;
-	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
-	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
-
-	rtio_iodev_sqe_ok(iodev_sqe, drv_data->fifo_count);
-
-	gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+	for (int i = 0; i < cfg->count; ++i) {
+		if (cfg->triggers[i].trigger == trig) {
+			return &cfg->triggers[i];
+		}
+	}
+	LOG_DBG("Unsupported trigger (%d)", trig);
+	return NULL;
 }
 
-static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static inline void icm4268x_stream_result(const struct device *dev, int result)
 {
-	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
-	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
-	uint8_t *fifo_count_buf = (uint8_t *)&drv_data->fifo_count;
-	uint16_t fifo_count = ((fifo_count_buf[0] << 8) | fifo_count_buf[1]);
-
-	drv_data->fifo_count = fifo_count;
-
-	/* Pull a operation from our device iodev queue, validated to only be reads */
-	struct rtio_iodev_sqe *iodev_sqe = drv_data->streaming_sqe;
+	struct rtio_iodev_sqe *streaming_sqe = drv_data->streaming_sqe;
 
 	drv_data->streaming_sqe = NULL;
-
-	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
-	if (iodev_sqe == NULL) {
-		LOG_DBG("No pending SQE");
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
-		return;
+	if (result < 0) {
+		rtio_iodev_sqe_err(streaming_sqe, result);
+	} else {
+		rtio_iodev_sqe_ok(streaming_sqe, result);
 	}
+}
 
-	const size_t packet_size = drv_data->cfg.fifo_hires ? 20 : 16;
-	const size_t min_read_size = sizeof(struct icm4268x_fifo_data) + packet_size;
-	const size_t ideal_read_size = sizeof(struct icm4268x_fifo_data) + fifo_count;
+static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
+{
+	ARG_UNUSED(result);
+
+	const struct device *dev = arg;
+	struct icm4268x_dev_data *drv_data = dev->data;
+	const struct icm4268x_dev_cfg *dev_cfg = (const struct icm4268x_dev_cfg *)dev->config;
+	struct rtio_iodev_sqe *streaming_sqe = drv_data->streaming_sqe;
 	uint8_t *buf;
 	uint32_t buf_len;
+	int rc;
 
-	if (rtio_sqe_rx_buf(iodev_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+	if (drv_data->streaming_sqe == NULL ||
+	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
+		LOG_ERR("%p Complete CB triggered with NULL handle. Disabling Interrupt", dev);
+		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
+		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
 		return;
 	}
-	LOG_DBG("Requesting buffer [%u, %u] got %u", (unsigned int)min_read_size,
-		(unsigned int)ideal_read_size, buf_len);
 
 	/** FSR are fixed for high-resolution, at which point we should
 	 * override driver FS config.
@@ -121,11 +123,17 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	default:
 		CODE_UNREACHABLE;
 	}
+	/* Even if we flushed the fifo, we still need room for the header to return result info */
+	size_t required_len = sizeof(struct icm4268x_fifo_data);
 
-	/* Read FIFO and call back to rtio with rtio_sqe completion */
-	/* TODO is packet format even needed? the fifo has a header per packet
-	 * already
-	 */
+	rc = rtio_sqe_rx_buf(streaming_sqe, required_len, required_len, &buf, &buf_len);
+	CHECKIF(rc < 0 || !buf) {
+		LOG_ERR("%p Failed to obtain SQE buffer: %d", dev, rc);
+		icm4268x_stream_result(dev, -ENOMEM);
+		return;
+	}
+
+	struct icm4268x_fifo_data *edata = (struct icm4268x_fifo_data *)buf;
 	struct icm4268x_fifo_data hdr = {
 		.header = {
 			.is_fifo = true,
@@ -140,219 +148,129 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 		.int_status = drv_data->int_status,
 		.gyro_odr = drv_data->cfg.gyro_odr,
 		.accel_odr = drv_data->cfg.accel_odr,
+		.fifo_count = drv_data->cfg.fifo_wm,
 		.rtc_freq = drv_data->cfg.rtc_freq,
 	};
-	uint32_t buf_avail = buf_len;
+	*edata = hdr;
 
-	memcpy(buf, &hdr, sizeof(hdr));
-	buf_avail -= sizeof(hdr);
+	if (FIELD_GET(BIT_FIFO_FULL_INT, edata->int_status) == true) {
+		uint8_t val = BIT_FIFO_FLUSH;
 
-	uint32_t read_len = MIN(fifo_count, buf_avail);
-	uint32_t pkts = read_len / packet_size;
-
-	read_len = pkts * packet_size;
-	((struct icm4268x_fifo_data *)buf)->fifo_count = read_len;
-
-	__ASSERT_NO_MSG(read_len % packet_size == 0);
-
-	uint8_t *read_buf = buf + sizeof(hdr);
-
-	/* Flush out completions  */
-	struct rtio_cqe *cqe;
-
-	do {
-		cqe = rtio_cqe_consume(r);
-		if (cqe != NULL) {
-			rtio_cqe_release(r, cqe);
-		}
-	} while (cqe != NULL);
-
-	/* Setup new rtio chain to read the fifo data and report then check the
-	 * result
-	 */
-	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(write_fifo_addr != NULL);
-	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(read_fifo_data != NULL);
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(complete_op != NULL);
-	const uint8_t reg_addr = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_DATA);
-
-	rtio_sqe_prep_tiny_write(write_fifo_addr, spi_iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
-	write_fifo_addr->flags = RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_fifo_data, spi_iodev, RTIO_PRIO_NORM, read_buf, read_len,
-			   iodev_sqe);
-	read_fifo_data->flags = RTIO_SQE_CHAINED;
-	rtio_sqe_prep_callback(complete_op, icm4268x_complete_cb, (void *)dev, iodev_sqe);
-
-	rtio_submit(r, 0);
-}
-
-static struct sensor_stream_trigger *
-icm4268x_get_read_config_trigger(const struct sensor_read_config *cfg,
-				 enum sensor_trigger_type trig)
-{
-	for (int i = 0; i < cfg->count; ++i) {
-		if (cfg->triggers[i].trigger == trig) {
-			return &cfg->triggers[i];
-		}
-	}
-	LOG_DBG("Unsupported trigger (%d)", trig);
-	return NULL;
-}
-
-static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
-{
-	const struct device *dev = arg;
-	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
-	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
-	struct rtio_iodev_sqe *streaming_sqe = drv_data->streaming_sqe;
-	struct sensor_read_config *read_config;
-
-	if (streaming_sqe == NULL) {
-		return;
-	}
-
-	read_config = (struct sensor_read_config *)streaming_sqe->sqe.iodev->data;
-	__ASSERT_NO_MSG(read_config != NULL);
-
-	if (!read_config->is_streaming) {
-		/* Oops, not really configured for streaming data */
-		return;
-	}
-
-	struct sensor_stream_trigger *fifo_ths_cfg =
-		icm4268x_get_read_config_trigger(read_config, SENSOR_TRIG_FIFO_WATERMARK);
-	bool has_fifo_ths_trig = fifo_ths_cfg != NULL &&
-				 FIELD_GET(BIT_FIFO_THS_INT, drv_data->int_status) != 0;
-
-	struct sensor_stream_trigger *fifo_full_cfg =
-		icm4268x_get_read_config_trigger(read_config, SENSOR_TRIG_FIFO_FULL);
-	bool has_fifo_full_trig = fifo_full_cfg != NULL &&
-				  FIELD_GET(BIT_FIFO_FULL_INT, drv_data->int_status) != 0;
-
-	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
-		LOG_DBG("No FIFO trigger is configured");
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
-		return;
-	}
-
-	/* Flush completions */
-	struct rtio_cqe *cqe;
-
-	do {
-		cqe = rtio_cqe_consume(r);
-		if (cqe != NULL) {
-			rtio_cqe_release(r, cqe);
-		}
-	} while (cqe != NULL);
-
-	enum sensor_stream_data_opt data_opt;
-
-	if (has_fifo_ths_trig && !has_fifo_full_trig) {
-		/* Only care about fifo threshold */
-		data_opt = fifo_ths_cfg->opt;
-	} else if (!has_fifo_ths_trig && has_fifo_full_trig) {
-		/* Only care about fifo full */
-		data_opt = fifo_full_cfg->opt;
-	} else {
-		/* Both fifo threshold and full */
-		data_opt = MIN(fifo_ths_cfg->opt, fifo_full_cfg->opt);
-	}
-
-	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
-		uint8_t *buf;
-		uint32_t buf_len;
-
-		/* Clear streaming_sqe since we're done with the call */
-		drv_data->streaming_sqe = NULL;
-		if (rtio_sqe_rx_buf(streaming_sqe, sizeof(struct icm4268x_fifo_data),
-				    sizeof(struct icm4268x_fifo_data), &buf, &buf_len) != 0) {
-			rtio_iodev_sqe_err(streaming_sqe, -ENOMEM);
+		LOG_WRN("%p FIFO Full bit is set. Flushing FIFO...", dev);
+		rc = icm4268x_prep_reg_write_rtio_async(&drv_data->bus, REG_SIGNAL_PATH_RESET,
+							&val, 1, NULL);
+		CHECKIF(rc < 0) {
+			LOG_ERR("%p Failed to flush the FIFO buffer: %d", dev, rc);
+			icm4268x_stream_result(dev, rc);
 			return;
 		}
-
-		struct icm4268x_fifo_data *data = (struct icm4268x_fifo_data *)buf;
-
-		memset(buf, 0, buf_len);
-		data->header.timestamp = drv_data->timestamp;
-		data->int_status = drv_data->int_status;
-		data->fifo_count = 0;
-		rtio_iodev_sqe_ok(streaming_sqe, 0);
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
-		if (data_opt == SENSOR_STREAM_DATA_DROP) {
-			/* Flush the FIFO */
-			struct rtio_sqe *write_signal_path_reset = rtio_sqe_acquire(r);
-			uint8_t write_buffer[] = {
-				FIELD_GET(REG_ADDRESS_MASK, REG_SIGNAL_PATH_RESET),
-				BIT_FIFO_FLUSH,
-			};
-
-			rtio_sqe_prep_tiny_write(write_signal_path_reset, spi_iodev, RTIO_PRIO_NORM,
-						 write_buffer, ARRAY_SIZE(write_buffer), NULL);
-			/* TODO Add a new flag for fire-and-forget so we don't have to block here */
-			rtio_submit(r, 1);
-			ARG_UNUSED(rtio_cqe_consume(r));
-		}
-		return;
+		rtio_submit(drv_data->bus.rtio.ctx, 0);
 	}
 
-	/* We need the data, read the fifo length */
-	struct rtio_sqe *write_fifo_count_reg = rtio_sqe_acquire(r);
-	struct rtio_sqe *read_fifo_count = rtio_sqe_acquire(r);
-	struct rtio_sqe *check_fifo_count = rtio_sqe_acquire(r);
-	uint8_t reg = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_COUNTH);
-	uint8_t *read_buf = (uint8_t *)&drv_data->fifo_count;
+	struct rtio_cqe *cqe;
 
-	rtio_sqe_prep_tiny_write(write_fifo_count_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
-	write_fifo_count_reg->flags = RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_fifo_count, spi_iodev, RTIO_PRIO_NORM, read_buf, 2, NULL);
-	read_fifo_count->flags = RTIO_SQE_CHAINED;
-	rtio_sqe_prep_callback(check_fifo_count, icm4268x_fifo_count_cb, arg, NULL);
+	do {
+		cqe = rtio_cqe_consume(drv_data->bus.rtio.ctx);
+		if (cqe != NULL) {
+			if (rc >= 0) {
+				rc = cqe->result;
+			}
+			rtio_cqe_release(drv_data->bus.rtio.ctx, cqe);
+		}
+	} while (cqe != NULL);
 
-	rtio_submit(r, 0);
+	(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
+	icm4268x_stream_result(dev, rc);
 }
 
 void icm4268x_fifo_event(const struct device *dev)
 {
 	struct icm4268x_dev_data *drv_data = dev->data;
-	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
-	struct rtio *r = drv_data->r;
+	const struct icm4268x_dev_cfg *dev_cfg = (const struct icm4268x_dev_cfg *)dev->config;
+	struct rtio_sqe *sqe;
 	uint64_t cycles;
 	int rc;
 
-	if (drv_data->streaming_sqe == NULL) {
+	if (drv_data->streaming_sqe == NULL ||
+	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
+		LOG_ERR("%p FIFO event triggered with no stream submisssion. Disabling IRQ", dev);
+		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
+		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
+		return;
+	}
+	if (atomic_cas(&drv_data->state, ICM4268X_STREAM_ON, ICM4268X_STREAM_BUSY) == false) {
+		LOG_WRN("%p Callback triggered while stream is busy. Ignoring request", dev);
 		return;
 	}
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
+		LOG_ERR("%p Failed to get sensor clock cycles", dev);
+		icm4268x_stream_result(dev, rc);
 		return;
 	}
-
 	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
 
-	/*
-	 * Setup rtio chain of ops with inline calls to make decisions
-	 * 1. read int status
-	 * 2. call to check int status and get pending RX operation
-	 * 4. read fifo len
-	 * 5. call to determine read len
-	 * 6. read fifo
-	 * 7. call to report completion
-	 */
-	struct rtio_sqe *write_int_reg = rtio_sqe_acquire(r);
-	struct rtio_sqe *read_int_reg = rtio_sqe_acquire(r);
-	struct rtio_sqe *check_int_status = rtio_sqe_acquire(r);
-	uint8_t reg = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_INT_STATUS);
+	rc = icm4268x_prep_reg_read_rtio_async(&drv_data->bus, REG_INT_STATUS | REG_SPI_READ_BIT,
+					       &drv_data->int_status, 1, &sqe);
+	CHECKIF(rc < 0 || !sqe) {
+		LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+		icm4268x_stream_result(dev, -ENOMEM);
+		return;
+	}
+	sqe->flags |= RTIO_SQE_CHAINED;
 
-	rtio_sqe_prep_tiny_write(write_int_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
-	write_int_reg->flags = RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_int_reg, spi_iodev, RTIO_PRIO_NORM, &drv_data->int_status, 1, NULL);
-	read_int_reg->flags = RTIO_SQE_CHAINED;
-	rtio_sqe_prep_callback(check_int_status, icm4268x_int_status_cb, (void *)dev, NULL);
-	rtio_submit(r, 0);
+	struct sensor_read_config *read_config =
+		(struct sensor_read_config *)drv_data->streaming_sqe->sqe.iodev->data;
+	struct sensor_stream_trigger *fifo_ths_cfg =
+		icm4268x_get_read_config_trigger(read_config, SENSOR_TRIG_FIFO_WATERMARK);
+
+	if (fifo_ths_cfg && fifo_ths_cfg->opt == SENSOR_STREAM_DATA_INCLUDE) {
+		uint8_t *buf;
+		uint32_t buf_len;
+		uint16_t payload_read_len = drv_data->cfg.fifo_wm;
+		size_t required_len = sizeof(struct icm4268x_fifo_data) + payload_read_len;
+
+		rc = rtio_sqe_rx_buf(drv_data->streaming_sqe, required_len, required_len, &buf,
+				     &buf_len);
+		if (rc < 0) {
+			LOG_ERR("%p Failed to allocate buffer for the FIFO read: %d", dev, rc);
+			icm4268x_stream_result(dev, rc);
+			return;
+		}
+
+		/** We fill we data first, the header we'll fill once we have
+		 * read all the data.
+		 */
+		uint8_t *read_buf = buf + sizeof(struct icm4268x_fifo_data);
+
+		rc = icm4268x_prep_reg_read_rtio_async(&drv_data->bus,
+						       REG_FIFO_DATA | REG_SPI_READ_BIT,
+						       read_buf, payload_read_len, &sqe);
+		if (rc < 0 || !sqe) {
+			LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+			icm4268x_stream_result(dev, -ENOMEM);
+			return;
+		}
+		sqe->flags |= RTIO_SQE_CHAINED;
+	} else {
+		/** Because we don't want the data, flush it and be done with
+		 * it. The trigger can be passed on to the user regardless.
+		 */
+		uint8_t val = BIT_FIFO_FLUSH;
+
+		rc = icm4268x_prep_reg_write_rtio_async(&drv_data->bus, REG_SIGNAL_PATH_RESET,
+							&val, 1, &sqe);
+		if (rc < 0 || !sqe) {
+			LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+			icm4268x_stream_result(dev, -ENOMEM);
+			return;
+		}
+		sqe->flags |= RTIO_SQE_CHAINED;
+	}
+
+	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(drv_data->bus.rtio.ctx);
+
+	rtio_sqe_prep_callback(cb_sqe, icm4268x_complete_cb, (void *)dev, NULL);
+	rtio_submit(drv_data->bus.rtio.ctx, 0);
 }

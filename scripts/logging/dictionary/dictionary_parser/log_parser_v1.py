@@ -366,7 +366,7 @@ class LogParserV1(LogParser):
                 return False, offset
             offset += struct.calcsize(self.fmt_msg_type)
 
-            num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)
+            num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)[0]
             offset += struct.calcsize(self.fmt_dropped_cnt)
 
             print(f"--- {num_dropped} messages dropped ---")

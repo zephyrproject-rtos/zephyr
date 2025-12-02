@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_sama7
+  series:
+  - name: sama7d6
+    socs:
+    - name: sama7d65
+    - name: sama7d65d1g
+    - name: sama7d65d1gn2
+    - name: sama7d65d2g
+    - name: sama7d65d2gn8
+    - name: sama7d65d5m

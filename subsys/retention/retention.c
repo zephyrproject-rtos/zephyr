@@ -392,14 +392,6 @@ finish:
 	return rc;
 }
 
-static const struct retention_api retention_api = {
-	.size = retention_size,
-	.is_valid = retention_is_valid,
-	.read = retention_read,
-	.write = retention_write,
-	.clear = retention_clear,
-};
-
 #define RETENTION_DEVICE(inst)									\
 	static struct retention_data								\
 		retention_data_##inst = {							\
@@ -425,6 +417,6 @@ static const struct retention_api retention_api = {
 			      &retention_config_##inst,						\
 			      POST_KERNEL,							\
 			      CONFIG_RETENTION_INIT_PRIORITY,					\
-			      &retention_api);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(RETENTION_DEVICE)

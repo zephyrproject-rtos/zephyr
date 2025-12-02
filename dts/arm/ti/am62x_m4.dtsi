@@ -13,7 +13,6 @@
 #include <ti/k3-am62-main.dtsi>
 
 / {
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -25,14 +24,30 @@
 		};
 	};
 
+	/*
+	 * I-RAM and D-RAM can be used in unified mode, i.e. instruction code and data can be placed
+	 * in any bank. Since unaligned accesses are converted internally by the CM4 into
+	 * aligned accesses of smaller sizes, even accessing unaligned data at the boundary
+	 * between I-RAM and D-RAM should not cause problems in unified mode. However, note
+	 * that using unified mode can have a performance penalty.
+	 */
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_K(192)>;		/* 192 KB of SRAM (I-Code) */
-	};
+		reg = <0x0 DT_SIZE_K(256)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
 
-	sram1: memory1@40000 {
-		compatible = "mmio-sram";
-		reg = <0x40000 DT_SIZE_K(64)>;		/* 64 KB of SRAM (D-Code) */
+		/* 192 KB of SRAM (I-Code) */
+		sram_icode: memory@0 {
+			device_type = "memory";
+			reg = <0x00000000 DT_SIZE_K(192)>;
+		};
+
+		/* 64 KB of SRAM (D-Code) */
+		sram_dcode: memory@30000 {
+			device_type = "memory";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
 	};
 
 	sysclk: system-clock {

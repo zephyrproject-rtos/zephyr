@@ -58,6 +58,14 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				status = "disabled";
+			};
 		};
 
 		adc@4005c000 {
@@ -176,8 +184,8 @@
 		pclkblock: pclkblock@40047000 {
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40047000 4>,
-				  <0x40047004 4>,
-				  <0x40047008 4>;
+			      <0x40047004 4>,
+			      <0x40047008 4>;
 			reg-names = "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -243,7 +251,7 @@
 
 &ioport0 {
 	port-irqs = <&port_irq2 &port_irq3 &port_irq6
-	&port_irq7 &port_irq10 &port_irq15>;
+		     &port_irq7 &port_irq10 &port_irq15>;
 	port-irq-names = "port-irq2",
 			 "port-irq3",
 			 "port-irq6",
@@ -260,7 +268,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -275,7 +283,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -288,7 +296,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq5 &port_irq6 &port_irq8
-	&port_irq9>;
+		     &port_irq9>;
 	port-irq-names = "port-irq5",
 			 "port-irq6",
 			 "port-irq8",
@@ -301,8 +309,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",

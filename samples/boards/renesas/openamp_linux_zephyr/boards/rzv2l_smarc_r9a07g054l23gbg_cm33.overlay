@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/*
+	 * Allocating whole openamp region as reserved memory
+	 * to save MPU entries
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		openamp_shm: memory-region@62F00000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x62F00000 0x900000>;
+			zephyr,memory-region = "openamp_memory";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		};
+	};
+
+	chosen {
+		zephyr,ipc_shm = &vring_shm0;
+		zephyr,ipc = &mbox_consumer;
+	};
+
+	vring_ctrl0: memory@63000000 {
+		compatible = "mmio-sram";
+		reg = <0x63000000 0x50000>;
+	};
+
+	vring_ctrl1: memory@63050000 {
+		compatible = "mmio-sram";
+		reg = <0x63050000 0x50000>;
+	};
+
+	vring_shm0: memory@63200000 {
+		compatible = "mmio-sram";
+		reg = <0x63200000 0x300000>;
+	};
+
+	rsctbl: memory@62F00000 {
+		compatible = "mmio-sram";
+		reg = <0x62F00000 0x1000>;
+	};
+
+	mhu1_shm: memory@62F01008 {
+		compatible = "mmio-sram";
+		reg = <0x62F01008 0x8>;
+	};
+
+	mhu3_shm: memory@62F01018 {
+		compatible = "mmio-sram";
+		reg = <0x62F01018 0x8>;
+	};
+
+	mhu4_shm: memory@62F01020 {
+		compatible = "mmio-sram";
+		reg = <0x62F01020 0x8>;
+	};
+
+	mhu5_shm: memory@62F01028 {
+		compatible = "mmio-sram";
+		reg = <0x62F01028 0x8>;
+	};
+
+	mbox_consumer: mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox1 0>;
+		mbox-names = "tx", "rx";
+	};
+
+};
+
+&mbox1 {
+	shared-memory = <&mhu1_shm>;
+	status = "okay";
+};

@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_gpio.h>
@@ -126,6 +127,12 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 		if (pin_cfg.type == LL_GPIO_OUTPUT_OPENDRAIN) {
 			flags |= GPIO_OPEN_DRAIN;
 		}
+
+		if (pin_cfg.out_state == 0) {
+			flags |= GPIO_OUTPUT_INIT_LOW;
+		} else {
+			flags |= GPIO_OUTPUT_INIT_HIGH;
+		}
 	} else if (pin_cfg.mode == LL_GPIO_MODE_INPUT) {
 		flags |= GPIO_INPUT;
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -140,12 +147,6 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 		flags |= GPIO_PULL_UP;
 	} else if (pin_cfg.pupd == LL_GPIO_PULL_DOWN) {
 		flags |= GPIO_PULL_DOWN;
-	}
-
-	if (pin_cfg.out_state != 0) {
-		flags |= GPIO_OUTPUT_HIGH;
-	} else {
-		flags |= GPIO_OUTPUT_LOW;
 	}
 
 	*out_flags = flags;
@@ -407,7 +408,7 @@ static int gpio_stm32_port_set_bits_raw(const struct device *dev,
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
-	WRITE_REG(gpio->BSRR, pins);
+	stm32_reg_write(&gpio->BSRR, pins);
 
 	return 0;
 }
@@ -423,7 +424,7 @@ static int gpio_stm32_port_clear_bits_raw(const struct device *dev,
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly.
 	 */
-	WRITE_REG(gpio->BRR, pins);
+	stm32_reg_write(&gpio->BRR, pins);
 #else
 	/* On other series, LL abstraction is needed  */
 	LL_GPIO_ResetOutputPin(gpio, pins);
@@ -443,7 +444,7 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ pins);
+	stm32_reg_write(&gpio->ODR, stm32_reg_read(&gpio->ODR) ^ pins);
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 
 	return 0;

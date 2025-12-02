@@ -36,7 +36,7 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-tls13.conf;overlay-ec.conf
     extra_configs:
-      - CONFIG_MBEDTLS_TLS_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
       - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
       - CONFIG_SERVER_PORT=4003
     harness_config:
@@ -45,7 +45,7 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-tls13.conf
     extra_configs:
-      - CONFIG_MBEDTLS_TLS_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
       - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED=y
       - CONFIG_SERVER_PORT=4004
     harness_config:

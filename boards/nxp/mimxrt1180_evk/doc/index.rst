@@ -11,7 +11,7 @@ markets.
 Hardware
 ********
 
-- MIMXRT1189CVM8B MCU
+- MIMXRT1189CVM8C MCU
 
   - 240MHz Cortex-M33 with 256KB TCM and 16 KB caches
   - 792Mhz Cortex-M7 with 512KB TCM and 32 KB caches
@@ -57,7 +57,10 @@ For more information about the MIMXRT1180 SoC and MIMXRT1180-EVK board, see
 these references:
 
 - `i.MX RT1180 Website`_
+- `i.MX RT1180 Datasheet`_
+- `i.MX RT1180 Reference Manual`_
 - `MIMXRT1180-EVK Website`_
+- `MIMXRT1180-EVK Board Hardware User's Guide`_
 
 External Memory
 ===============
@@ -347,11 +350,19 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.7.0-xxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1180_evk/mimxrt1189/cm33
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1180-EVK Website:
-   https://www.nxp.com/design/design-center/development-boards-and-designs/i-mx-evaluation-and-development-boards/i-mx-rt1180-evaluation-kit:MIMXRT1180-EVK
+   https://www.nxp.com/design/design-center/development-boards-and-designs/MIMXRT1180-EVK
 
 .. _i.MX RT1180 Website:
-   https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1180-crossover-mcu-with-tsn-switch-and-edgelock:i.MX-RT1180
+   https://www.nxp.com/products/i.MX-RT1180
+
+.. _MIMXRT1180-EVK Board Hardware User's Guide:
+   https://www.nxp.com/webapp/Download?colCode=UM12021&isHTMLorPDF=HTML
+
+.. _i.MX RT1180 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/IMXRT1180EC.pdf
+
+.. _i.MX RT1180 Reference Manual:
+   https://www.nxp.com/docs/en/reference-manual/IMXRT1180RM.pdf

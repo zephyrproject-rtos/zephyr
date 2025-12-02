@@ -25,10 +25,6 @@ extern "C" {
 
 /** @cond ignore */
 
-#ifndef NET_PKT_HAS_CONTROL_BLOCK
-#define NET_PKT_HAS_CONTROL_BLOCK
-#endif
-
 /* See section 6.16.2.8 - Received Signal Strength Indicator (RSSI) */
 #define IEEE802154_MAC_RSSI_MIN       0U   /* corresponds to -174 dBm */
 #define IEEE802154_MAC_RSSI_MAX       254U /* corresponds to 80 dBm */

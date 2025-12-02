@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2025 MASSDRIVER EI <massdriver.space>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Bouffalo Lab L1C cache control.
+
+  The node should be added in the soc group and be provided disabled ways
+
+  soc {
+
+    ...
+
+      cache {
+        compatible = "bflb,l1c";
+        dcache-ways-disabled = <0>;
+      };
+
+    ...
+
+  };
+
+  The cache configuration is specific to the platform, this only provides controls for it.
+
+compatible: "bflb,l1c"
+
+include: base.yaml
+
+properties:
+  dcache-ways-disabled:
+    type: int
+    required: true
+    description: How many data cache lines are disabled and used as instruction cache lines.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4

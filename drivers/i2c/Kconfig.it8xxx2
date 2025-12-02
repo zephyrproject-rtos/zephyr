@@ -71,4 +71,14 @@ config I2C_TARGET_IT8XXX2_MAX_BUF_SIZE
 config I2C_TARGET_BUFFER_MODE
 	default y
 
+config I2C_TARGET_ALLOW_POWER_SAVING
+	bool "Allow I2C target to enter power-saving modes [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !SOC_IT8XXX2_REG_SET_V1
+	help
+	  When enabled, the I2C target device can enter Doze/Deep doze states
+	  while the bus is idle. Ongoing transfers will block low-power entry
+	  until they are completed, ensuring correct communication while still
+	  reducing overall power consumption.
+
 endif # I2C_TARGET

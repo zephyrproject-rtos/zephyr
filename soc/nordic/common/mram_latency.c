@@ -148,7 +148,6 @@ static int init_manager(void)
 static int init_nrfs(void)
 {
 	nrfs_err_t err;
-	int rv;
 
 	err = nrfs_backend_wait_for_connection(K_FOREVER);
 	if (err != NRFS_SUCCESS) {
@@ -172,7 +171,7 @@ static int init_nrfs(void)
 		mram_no_latency_sync_request();
 	}
 
-	return rv;
+	return 0;
 }
 
 SYS_INIT(init_manager, PRE_KERNEL_1, 0);

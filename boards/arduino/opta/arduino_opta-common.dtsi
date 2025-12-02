@@ -12,21 +12,27 @@
 		status_led_1: led_1 {
 			gpios = <&gpioi 0 GPIO_ACTIVE_HIGH>;
 		};
+
 		status_led_2: led_2 {
 			gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 		};
+
 		status_led_3: led_3 {
 			gpios = <&gpioi 3 GPIO_ACTIVE_HIGH>;
 		};
+
 		status_led_4: led_4 {
 			gpios = <&gpioh 15 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_reset: led_g {
 			gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_reset_red: led_r {
 			gpios = <&gpioh 11 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_user: led_b {
 			gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
 		};
@@ -38,12 +44,15 @@
 		output_d0: d0 {
 			gpios = <&gpioi 6 GPIO_ACTIVE_HIGH>;
 		};
+
 		output_d1: d1 {
 			gpios = <&gpioi 5 GPIO_ACTIVE_HIGH>;
 		};
+
 		output_d2: d2 {
 			gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 		};
+
 		output_d3: d3 {
 			gpios = <&gpioi 4 GPIO_ACTIVE_HIGH>;
 		};
@@ -96,6 +105,7 @@
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11 &usart3_cts_pb13 &usart3_de_pb14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+
 	/* The RS485 is often used with the ModBus protocol. */
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
@@ -129,7 +139,6 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <16>;
 	};
-
 };
 
 &adc2 {

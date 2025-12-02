@@ -250,7 +250,7 @@ board directory to a separate repository once it's working.)
 .. note::
 
   The board directory name does not need to match the name of the board.
-  Multiple boards can even defined be in one directory.
+  Multiple boards can even be defined in one directory.
 
 Your board directory should look like this:
 
@@ -367,12 +367,11 @@ If multiple boards are placed in the same board folder, then the file
 Write your devicetree
 *********************
 
-The devicetree file :file:`boards/<vendor>/plank/plank.dts` or
-:file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
+The devicetree file :file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
 hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
 your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
-In general, :file:`plank.dts` should look like this:
+In general, :file:`plank_<qualifiers>.dts` should look like this:
 
 .. code-block:: devicetree
 
@@ -422,16 +421,9 @@ In general, :file:`plank.dts` should look like this:
            status = "okay";
    };
 
-Only one ``.dts`` file will be used, and the most specific file which exists
-will be used.
-
-This means that if both :file:`plank.dts` and :file:`plank_soc1_foo.dts` exist,
-then when building for ``plank`` / ``plank/soc1``, then :file:`plank.dts` is
-used. When building for ``plank//foo`` / ``plank/soc1/foo`` the
-:file:`plank_soc1_foo.dts` is used.
-
-This allows board maintainers to write a base devicetree file for the board
-or write specific devicetree files for a given board's SoC or variant.
+In the case a board has only a single SoC, without any board variants then the dts file can be
+named :file:`<plank>.dts` instead, however this is not recommended due to the file silently be
+unused if a variant or other SoC is added to the board.
 
 If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
@@ -516,7 +508,6 @@ files for a board named ``plank``:
    ├── Kconfig
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    └── plank_<qualifiers>_defconfig
 
 :file:`Kconfig.plank`
@@ -573,23 +564,28 @@ files for a board named ``plank``:
              default y
 
      if NETWORKING
+
      config SOC_ETHERNET_DRIVER
              default y
+
      endif # NETWORKING
 
      endif # BOARD_PLANK
 
-:file:`plank_defconfig` / :file:`plank_<qualifiers>_defconfig`
+:file:`plank_<qualifiers>_defconfig` (or :file:`plank_defconfig` in limited circumstances)
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board.
 
-  If both the common :file:`plank_defconfig` file and one or more board
-  qualifiers specific :file:`plank_<qualifiers>_defconfig` files exist, then
-  all matching files will be used.
-  This allows you to place configuration which is common for all board SoCs,
-  CPU clusters, and board variants in the base :file:`plank_defconfig` and only
-  place the adjustments specific for a given SoC or board variant in the
-  :file:`plank_<qualifiers>_defconfig`.
+  :file:`plank_defconfig` can only be used with boards that have no qualifiers, no variants and a
+  single SoC present, though this style of naming is not recommended due to samples/tests or
+  downstream usage breaking suddenly without warning if a new SoC or board variant/qualifier is
+  added to an board in upstream Zephyr.
+
+.. note::
+  Multiple files are not merged and there is no fallback mechanism for files, this means if there
+  is a board with 2 different SoCs and each one has 2 board variants, a :file:`plank_defconfig`
+  file would be wholly unused, for the first qualifier and variant
+  :file:`plank_<soc1>_<variant1>_defconfig` will be used, it will not include other file.
 
   The ``_defconfig`` should contain mandatory settings for your UART,
   console, etc. The results are architecture-specific, but typically look

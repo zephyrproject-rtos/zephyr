@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <broadcom/valkyrie.dtsi>
+
 / {
 	model = "Broadcom BCM958401M2";
 	compatible = "brcm,valkyrie";

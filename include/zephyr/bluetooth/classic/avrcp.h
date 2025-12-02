@@ -277,14 +277,27 @@ struct bt_avrcp_subunit_info_rsp {
 };
 
 #define BT_AVRCP_PASSTHROUGH_GET_STATE(payload)                                                    \
-	((bt_avrcp_button_state_t)(FIELD_GET(BIT(7), ((payload)->byte0))))
+	((bt_avrcp_opid_t)(FIELD_GET(BIT(7), ((payload)->opid_state))))
 #define BT_AVRCP_PASSTHROUGH_GET_OPID(payload)                                                     \
-	((bt_avrcp_opid_t)(FIELD_GET(GENMASK(6, 0), ((payload)->byte0))))
+	((bt_avrcp_button_state_t)(FIELD_GET(GENMASK(6, 0), ((payload)->opid_state))))
+#define BT_AVRCP_PASSTHROUGH_SET_STATE_OPID(payload, state, opid)                                  \
+	(payload)->opid_state = FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid)
+
+struct bt_avrcp_passthrough_opvu_data {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
+	uint16_t opid_vu;
+} __packed;
+
+struct bt_avrcp_passthrough_cmd {
+	uint8_t opid_state; /**< [7]: state_flag, [6:0]: opid */
+	uint8_t data_len;
+	struct bt_avrcp_passthrough_opvu_data data[0]; /**< opvu data */
+} __packed;
 
 struct bt_avrcp_passthrough_rsp {
-	uint8_t byte0; /**< [7]: state_flag, [6:0]: opid */
+	uint8_t opid_state; /**< [7]: state_flag, [6:0]: opid */
 	uint8_t data_len;
-	uint8_t data[];
+	struct bt_avrcp_passthrough_opvu_data data[0]; /**< opvu data */
 } __packed;
 
 struct bt_avrcp_get_cap_rsp {
@@ -572,6 +585,15 @@ struct bt_avrcp_tg_cb {
 	 */
 	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
 
+	/** @brief Subunit Info Request callback.
+	 *
+	 *  This callback is called whenever an AVRCP subunit info is requested.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 */
+	void (*subunit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
 	/** @brief An AVRCP TG browsing connection has been established.
 	 *
 	 *  This callback notifies the application of an avrcp browsing connection,
@@ -600,6 +622,19 @@ struct bt_avrcp_tg_cb {
 	 *  @param player_id The player ID to be set as browsed player.
 	 */
 	void (*set_browsed_player_req)(struct bt_avrcp_tg *tg, uint8_t tid, uint16_t player_id);
+
+	/** @brief Pass Through command request callback.
+	 *
+	 *  This callback is called whenever an AVRCP Pass Through command is request.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param buf The buffer containing the PASS THROUGH command payload.
+	 *             The application can parse this payload according to the format defined
+	 *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+	 *             in big-endian format.
+	 */
+	void (*passthrough_req)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
 };
 
 /** @brief Register callback.
@@ -625,6 +660,17 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
 int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 				   struct bt_avrcp_unit_info_rsp *rsp);
 
+/** @brief Send the subunit info response.
+ *
+ *  This function is called by the application to send the subunit info response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid);
+
 /** @brief Send the set browsed player response.
  *
  *  This function is called by the application to send the set browsed player response.
@@ -637,6 +683,24 @@ int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
  */
 int bt_avrcp_tg_send_set_browsed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 					    struct net_buf *buf);
+
+/** @brief Send AVRCP Pass Through response.
+ *
+ *  This function is called by the application to send the Pass Through response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param result The response code, see @ref bt_avrcp_rsp_t, can support
+ *                0x8(NOT_IMPLEMENTED), 0x9 (ACCEPTED), 0xA (REJECTED)
+ *  @param buf The buffer containing the PASS THROUGH command payload.
+ *             The application can construct this payload according to the format defined
+ *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+ *             in big-endian format.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     struct net_buf *buf);
 #ifdef __cplusplus
 }
 #endif

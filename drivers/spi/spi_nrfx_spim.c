@@ -9,7 +9,6 @@
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
@@ -55,53 +54,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPIM_FOR_EACH_INSTANCE(f, sep, off_code, ...) \
 	NRFX_FOREACH_PRESENT(SPIM, f, sep, off_code, __VA_ARGS__)
 
-/* Only CPUAPP and CPURAD can control clocks and power domains, so if a fast instance is
- * used by other cores, treat the SPIM like a normal one. This presumes the CPUAPP or CPURAD
- * have requested the clocks and power domains needed by the fast instance to be ACTIVE before
- * other cores use the fast instance.
- */
-#if CONFIG_SOC_NRF54H20_CPUAPP || CONFIG_SOC_NRF54H20_CPURAD
-#define INSTANCE_IS_FAST(unused, prefix, idx, _)						\
-	UTIL_AND(										\
-		UTIL_AND(									\
-			IS_ENABLED(CONFIG_HAS_HW_NRF_SPIM##prefix##idx),			\
-			NRF_DT_IS_FAST(SPIM(idx))						\
-		),										\
-		IS_ENABLED(CONFIG_CLOCK_CONTROL)						\
-	)
-
-#if SPIM_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
-#define SPIM_ANY_FAST 1
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast SPIM PM actions can only be
- * called from a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-#endif
-
-#define SPIM_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIM(prefix##idx)),		\
-		   (SPIM_PROP(idx, cross_domain_pins_supported)),	\
-		   (0))
-
-#if NRFX_FOREACH_PRESENT(SPIM, SPIM_PINS_CROSS_DOMAIN, (||), (0))
-#include <hal/nrf_gpio.h>
-/* Certain SPIM instances support usage of cross domain pins in form of dedicated pins on
- * a port different from the default one.
- */
-#define SPIM_CROSS_DOMAIN_SUPPORTED 1
-#endif
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
-#include <nrf_sys_event.h>
-/* To use cross domain pins, constant latency mode needs to be applied, which is
- * handled via nrf_sys_event requests.
- */
-#define SPIM_CROSS_DOMAIN_PINS_HANDLE 1
-#endif
-
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -117,9 +69,6 @@ struct spi_nrfx_data {
 	uint8_t ppi_ch;
 	uint8_t gpiote_ch;
 #endif
-#ifdef SPIM_ANY_FAST
-	bool clock_requested;
-#endif
 };
 
 struct spi_nrfx_config {
@@ -134,89 +83,10 @@ struct spi_nrfx_config {
 #endif
 	uint32_t wake_pin;
 	nrfx_gpiote_t wake_gpiote;
-#ifdef SPIM_ANY_FAST
-	const struct device *clk_dev;
-	struct nrf_clock_spec clk_spec;
-#endif
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	bool cross_domain;
-	int8_t default_port;
-#endif
 	void *mem_reg;
 };
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
-
-static inline int request_clock(const struct device *dev)
-{
-#ifdef SPIM_ANY_FAST
-	struct spi_nrfx_data *dev_data = dev->data;
-	const struct spi_nrfx_config *dev_config = dev->config;
-	int error;
-
-	if (!dev_config->clk_dev) {
-		return 0;
-	}
-
-	error = nrf_clock_control_request_sync(
-			dev_config->clk_dev, &dev_config->clk_spec,
-			K_MSEC(CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE));
-	if (error < 0) {
-		LOG_ERR("Failed to request clock: %d", error);
-		return error;
-	}
-
-	dev_data->clock_requested = true;
-#else
-	ARG_UNUSED(dev);
-#endif
-
-	return 0;
-}
-
-static inline void release_clock(const struct device *dev)
-{
-#ifdef SPIM_ANY_FAST
-	struct spi_nrfx_data *dev_data = dev->data;
-	const struct spi_nrfx_config *dev_config = dev->config;
-
-	if (!dev_data->clock_requested) {
-		return;
-	}
-
-	dev_data->clock_requested = false;
-
-	nrf_clock_control_release(dev_config->clk_dev, &dev_config->clk_spec);
-#else
-	ARG_UNUSED(dev);
-#endif
-}
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-static bool spim_has_cross_domain_connection(const struct spi_nrfx_config *config)
-{
-	const struct pinctrl_dev_config *pcfg = config->pcfg;
-	const struct pinctrl_state *state;
-	int ret;
-
-	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
-	if (ret < 0) {
-		LOG_ERR("Unable to read pin state");
-		return false;
-	}
-
-	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
-		uint32_t pin = NRF_GET_PIN(state->pins[i]);
-
-		if ((pin != NRF_PIN_DISCONNECTED) &&
-		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 static inline void finalize_spi_transaction(const struct device *dev, bool deactivate_cs)
 {
@@ -230,10 +100,6 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		nrfy_spim_disable(reg);
-	}
-
-	if (!pm_device_runtime_is_enabled(dev)) {
-		release_clock(dev);
 	}
 
 	pm_device_runtime_put_async(dev, K_NO_WAIT);
@@ -640,10 +506,6 @@ static int transceive(const struct device *dev,
 
 	error = configure(dev, spi_cfg);
 
-	if (error == 0 && !pm_device_runtime_is_enabled(dev)) {
-		error = request_clock(dev);
-	}
-
 	if (error == 0) {
 		dev_data->busy = true;
 
@@ -733,6 +595,12 @@ static int spi_nrfx_release(const struct device *dev,
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 
+#ifdef CONFIG_MULTITHREADING
+	if (dev_data->ctx.owner != spi_cfg) {
+		return -EALREADY;
+	}
+#endif
+
 	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
 		return -EINVAL;
 	}
@@ -772,21 +640,7 @@ static int spim_resume(const struct device *dev)
 		return -EAGAIN;
 	}
 
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
-#if SPIM_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_request_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
-
-	return pm_device_runtime_is_enabled(dev) ? request_clock(dev) : 0;
+	return 0;
 }
 
 static void spim_suspend(const struct device *dev)
@@ -799,25 +653,7 @@ static void spim_suspend(const struct device *dev)
 		dev_data->initialized = false;
 	}
 
-	if (pm_device_runtime_is_enabled(dev)) {
-		release_clock(dev);
-	}
-
 	spi_context_cs_put_all(&dev_data->ctx);
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
-#if SPIM_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_release_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
@@ -905,14 +741,6 @@ static int spi_nrfx_deinit(const struct device *dev)
 			     ())					\
 		))
 
-/* Get initialization priority of an instance. Instances that requires clock control
- * which is using nrfs (IPC) are initialized later.
- */
-#define SPIM_INIT_PRIORITY(idx) \
-	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _), \
-		(UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)), \
-		(CONFIG_SPI_INIT_PRIORITY))
-
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPIM(idx));			       \
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SPIM(idx));	       \
@@ -964,17 +792,6 @@ static int spi_nrfx_deinit(const struct device *dev)
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPIM(idx), wake_gpios,     \
 						    WAKE_PIN_NOT_USED),	       \
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
-		IF_ENABLED(SPIM_ANY_FAST,				       \
-			(.clk_dev = DEVICE_DT_GET_OR_NULL(		       \
-				DT_CLOCKS_CTLR(SPIM(idx))),		       \
-			 .clk_spec = {					       \
-				.frequency = NRF_CLOCK_CONTROL_FREQUENCY_MAX,  \
-			 },))						       \
-		IF_ENABLED(SPIM_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),       \
-			(.cross_domain = true,				       \
-			 .default_port =				       \
-				DT_PROP_OR(DT_PHANDLE(SPIM(idx),	       \
-					default_gpio_port), port, -1),))       \
 		.mem_reg = DMM_DEV_TO_REG(SPIM(idx)),			       \
 	};								       \
 	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
@@ -987,7 +804,7 @@ static int spi_nrfx_deinit(const struct device *dev)
 		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
-		      POST_KERNEL, SPIM_INIT_PRIORITY(idx),		       \
+		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
 		      &spi_nrfx_driver_api)
 
 #define COND_NRF_SPIM_DEVICE(unused, prefix, i, _) \

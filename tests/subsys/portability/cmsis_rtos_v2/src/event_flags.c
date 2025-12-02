@@ -32,16 +32,7 @@ static void thread2(void *arg)
 {
 	int flags = osEventFlagsSet((osEventFlagsId_t)arg, FLAG2);
 
-	/* Please note that as soon as the last flag that a thread is waiting
-	 * on is set, the control shifts to that thread and that thread may
-	 * choose to clear the flags as part of its osEventFlagsWait operation.
-	 * In this test case, the main thread is waiting for FLAG1 and FLAG2.
-	 * FLAG1 gets set first and then FLAG2 gets set. As soon as FLAG2 gets
-	 * set, control shifts to the waiting thread where osEventFlagsWait
-	 * clears FLAG1 and FLAG2 internally. When this thread eventually gets
-	 * scheduled we should hence check if FLAG2 is cleared.
-	 */
-	zassert_equal(flags & FLAG2, 0, "");
+	zassert_equal(flags & FLAG2, FLAG2, "");
 }
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);

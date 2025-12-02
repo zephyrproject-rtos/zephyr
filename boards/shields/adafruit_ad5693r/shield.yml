@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_ad5693r
+  full_name: Adafruit AD5693R DAC Shield
+  vendor: adafruit
+  supported_features:
+    - dac

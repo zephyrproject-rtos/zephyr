@@ -12,6 +12,7 @@ board_runner_args(linkserver  "--device=LPC55S69:LPCXpresso55S69")
 
 if(CONFIG_SECOND_CORE_MCUX)
   board_runner_args(linkserver  "--core=all")
+  board_runner_args(jlink "--device=LPC55S69_M33_0")
 elseif(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0 OR
    CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS)
   board_runner_args(jlink "--device=LPC55S69_M33_0")

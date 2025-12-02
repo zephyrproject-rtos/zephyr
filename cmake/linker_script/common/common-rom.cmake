@@ -15,7 +15,7 @@ zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_SRAM_SW_ISR_TABLE)
   # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
-  zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN} NOINPUT)
+  zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION NOINPUT)
   zephyr_linker_section_configure(
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
@@ -152,6 +152,10 @@ if(CONFIG_SENSOR_ASYNC_API)
   zephyr_iterable_section(NAME sensor_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_ADC_STREAM)
+  zephyr_iterable_section(NAME adc_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_MCUMGR)
   zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
@@ -193,11 +197,11 @@ zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION N
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".dbg_thread_info" KEEP)
 
 if(CONFIG_SYMTAB)
-  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION SUBALIGN 4 NOINPUT)
+  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION NOINPUT)
   zephyr_linker_section_configure(SECTION symtab INPUT ".gnu.linkonce.symtab*")
 endif()
 
-if (CONFIG_DEVICE_DEPS)
+if(CONFIG_DEVICE_DEPS)
   zephyr_linker_section(NAME device_deps KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
   zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass1* KEEP SORT NAME PASS LINKER_DEVICE_DEPS_PASS1)
   zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_DEPS_PASS1)
@@ -205,29 +209,35 @@ endif()
 
 zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION)
 
-if (CONFIG_BT_IAS)
+if(CONFIG_BT_IAS)
   zephyr_iterable_section(NAME bt_ias_cb KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if (CONFIG_LOG)
+if(CONFIG_LOG)
   zephyr_iterable_section(NAME log_link KVMA RAM_REGION GROUP RODATA_REGION)
   zephyr_iterable_section(NAME log_backend KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if (CONFIG_MULTI_LEVEL_INTERRUPTS)
+if(CONFIG_MULTI_LEVEL_INTERRUPTS)
   zephyr_iterable_section(NAME intc_table KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if (CONFIG_HTTP_SERVER)
+if(CONFIG_HTTP_SERVER)
   zephyr_iterable_section(NAME http_service_desc KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if (CONFIG_COAP_SERVER)
+if(CONFIG_COAP_SERVER)
   zephyr_iterable_section(NAME coap_service KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if (CONFIG_NET_MGMT)
+if(CONFIG_NET_MGMT)
   zephyr_iterable_section(NAME net_mgmt_event_static_handler KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
+if(CONFIG_NET_SOCKETS_SERVICE)
+  zephyr_iterable_section(NAME net_socket_service_desc
+                          KVMA RAM_REGION GROUP RODATA_REGION
+  )
 endif()
 
 if(CONFIG_INPUT)

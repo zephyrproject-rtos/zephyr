@@ -338,8 +338,8 @@ void icm4268x_unlock(const struct device *dev)
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ICM4268X_RTIO_DEFINE(inst)                                                                 \
-	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG, 0U);   \
-	RTIO_DEFINE(icm4268x_rtio_##inst, 8, 4);
+	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \
+	RTIO_DEFINE(icm4268x_rtio_##inst, 32, 32);
 
 #define ICM42688_DT_CONFIG_INIT(inst)						\
 	{									\
@@ -374,8 +374,13 @@ void icm4268x_unlock(const struct device *dev)
 	IF_ENABLED(CONFIG_ICM4268X_STREAM, (ICM4268X_RTIO_DEFINE(inst)));                          \
 	static struct icm4268x_dev_data icm4268x_driver_##inst = {                                 \
 		.cfg = ICM42688_DT_CONFIG_INIT(inst),                                              \
-		IF_ENABLED(CONFIG_ICM4268X_STREAM, (.r = &icm4268x_rtio_##inst,                    \
-						    .spi_iodev = &icm4268x_spi_iodev_##inst,))     \
+		IF_ENABLED(CONFIG_ICM4268X_STREAM,						   \
+		(										   \
+			.bus.rtio = {								   \
+				.ctx = &icm4268x_rtio_##inst,					   \
+				.iodev = &icm4268x_spi_iodev_##inst,				   \
+			},									   \
+		))										   \
 	};
 
 /** The rest of the Device-tree configuration is validated in the YAML
@@ -401,7 +406,7 @@ void icm4268x_unlock(const struct device *dev)
 	ICM4268X_DEFINE_DATA(inst);                                                                \
                                                                                                    \
 	static const struct icm4268x_dev_cfg icm4268x_cfg_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG, 0U),                           \
+		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG),                               \
 		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
 	};                                                                                         \
                                                                                                    \

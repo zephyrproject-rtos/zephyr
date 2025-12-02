@@ -246,7 +246,7 @@ if DYNAMIC_THREAD
 
 config DYNAMIC_THREAD_STACK_SIZE
 	int "Size of each pre-allocated thread stack"
-	default 4096 if X86
+	default 4096 if X86 || COVERAGE_GCOV
 	default 1024 if !X86 && !64BIT
 	default 2048 if !X86 && 64BIT
 	help
@@ -734,6 +734,7 @@ config NUM_MBOX_ASYNC_MSGS
 
 config EVENTS
 	bool "Event objects"
+	depends on MULTITHREADING
 	help
 	  This option enables event objects. Threads may wait on event
 	  objects for specific events, but both threads and ISRs may deliver

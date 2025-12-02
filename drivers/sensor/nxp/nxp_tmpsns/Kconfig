@@ -1,0 +1,12 @@
+# NXP i.MX RT temperature sensor configuration options
+
+# Copyright (c) 2025 Polytech A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_TMPSNS
+	bool "NXP TMPSNS sensor"
+	depends on DT_HAS_NXP_TMPSNS_ENABLED
+	select FPU
+	default y
+	help
+	  Enable temperature measurement for NXP TMPSNS sensor

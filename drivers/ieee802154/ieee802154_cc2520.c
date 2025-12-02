@@ -1044,7 +1044,7 @@ static void cc2520_iface_init(struct net_if *iface)
 }
 
 static const struct cc2520_config cc2520_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.vreg_en = GPIO_DT_SPEC_INST_GET(0, vreg_en_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.fifo = GPIO_DT_SPEC_INST_GET(0, fifo_gpios),

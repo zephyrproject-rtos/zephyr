@@ -31,9 +31,8 @@ BUILD_ASSERT(CONFIG_DCACHE_LINE_SIZE == XCHAL_DCACHE_LINESIZE);
  */
 FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
+
 #if CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
 	soc_num_cpus_init();
 #endif

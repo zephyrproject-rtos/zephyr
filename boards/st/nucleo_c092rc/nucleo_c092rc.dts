@@ -79,10 +79,12 @@
 		reg = <0x2>;
 		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 	};
+
 	wkup-pin@5 {
 		reg = <0x5>;
 		wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 	};
+
 	wkup-pin@6 {
 		reg = <0x6>;
 		wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
@@ -165,6 +167,7 @@
 	st,adc-clock-source = "ASYNC";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;

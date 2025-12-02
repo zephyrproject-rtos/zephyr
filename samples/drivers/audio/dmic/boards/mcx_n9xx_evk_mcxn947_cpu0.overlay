@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2025 NXP
+ */
+
+dmic_dev: &micfil {
+
+	status = "okay";
+	channel0: micfil-channel@0 {
+		status = "okay";
+	};
+	channel1: micfil-channel@1 {
+		status = "okay";
+	};
+};

@@ -8,7 +8,8 @@ from __future__ import annotations
 import argparse
 import ctypes as c
 import sys
-from itertools import groupby
+from itertools import groupby, pairwise
+from typing import NamedTuple
 
 from elftools.elf.elffile import ELFFile
 from intelhex import IntelHex
@@ -24,9 +25,21 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 # Common values for representing enabled/disabled in the UICR format.
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
+PROTECTED_VALUE = ENABLED_VALUE  # UICR_PROTECTED = UICR_ENABLED per uicr_defs.h
+UNPROTECTED_VALUE = DISABLED_VALUE  # Unprotected uses the default erased value
+
+KB_4 = 4096
 
 
 class ScriptError(RuntimeError): ...
+
+
+class PartitionInfo(NamedTuple):
+    """Information about a partition for secure storage validation."""
+
+    address: int
+    size: int
+    name: str
 
 
 class PeriphconfEntry(c.LittleEndianStructure):
@@ -198,6 +211,105 @@ class Uicr(c.LittleEndianStructure):
     ]
 
 
+def validate_secure_storage_partitions(args: argparse.Namespace) -> None:
+    """
+    Validate that secure storage partitions are laid out correctly.
+
+    Args:
+        args: Parsed command line arguments containing partition information
+
+    Raises:
+        ScriptError: If validation fails
+    """
+    # Expected order: cpuapp_crypto_partition, cpurad_crypto_partition,
+    # cpuapp_its_partition, cpurad_its_partition
+    partitions = [
+        PartitionInfo(
+            args.cpuapp_crypto_address, args.cpuapp_crypto_size, "cpuapp_crypto_partition"
+        ),
+        PartitionInfo(
+            args.cpurad_crypto_address, args.cpurad_crypto_size, "cpurad_crypto_partition"
+        ),
+        PartitionInfo(args.cpuapp_its_address, args.cpuapp_its_size, "cpuapp_its_partition"),
+        PartitionInfo(args.cpurad_its_address, args.cpurad_its_size, "cpurad_its_partition"),
+    ]
+
+    # Filter out zero-sized partitions (missing partitions)
+    present_partitions = [p for p in partitions if p.size > 0]
+
+    # Require at least one subpartition to be present
+    if not present_partitions:
+        raise ScriptError(
+            "At least one secure storage subpartition must be defined. "
+            "Define one or more of: cpuapp_crypto_partition, cpurad_crypto_partition, "
+            "cpuapp_its_partition, cpurad_its_partition"
+        )
+
+    # Check 4KB alignment for secure storage start address
+    if args.securestorage_address % 4096 != 0:
+        raise ScriptError(
+            f"Secure storage address {args.securestorage_address:#x} must be aligned to 4KB "
+            f"(4096 bytes)"
+        )
+
+    # Check 4KB alignment for secure storage size
+    if args.securestorage_size % 4096 != 0:
+        raise ScriptError(
+            f"Secure storage size {args.securestorage_size} bytes must be aligned to 4KB "
+            f"(4096 bytes)"
+        )
+
+    # Check that the first present partition starts at the secure storage address
+    first_partition = present_partitions[0]
+    if first_partition.address != args.securestorage_address:
+        raise ScriptError(
+            f"First partition {first_partition.name} starts at {first_partition.address:#x}, "
+            f"but must start at secure storage address {args.securestorage_address:#x}"
+        )
+
+    # Check that all present partitions have sizes that are multiples of 1KB
+    for partition in present_partitions:
+        if partition.size % 1024 != 0:
+            raise ScriptError(
+                f"Partition {partition.name} has size {partition.size} bytes, but must be "
+                f"a multiple of 1024 bytes (1KB)"
+            )
+
+    # Check that partitions are in correct order and don't overlap
+    for curr_partition, next_partition in pairwise(present_partitions):
+        # Check order - partitions should be in ascending address order
+        if curr_partition.address >= next_partition.address:
+            raise ScriptError(
+                f"Partition {curr_partition.name} (starts at {curr_partition.address:#x}) "
+                f"must come before {next_partition.name} (starts at {next_partition.address:#x})"
+            )
+
+        # Check for overlap
+        curr_end = curr_partition.address + curr_partition.size
+        if curr_end > next_partition.address:
+            raise ScriptError(
+                f"Partition {curr_partition.name} (ends at {curr_end:#x}) overlaps with "
+                f"{next_partition.name} (starts at {next_partition.address:#x})"
+            )
+
+        # Check for gaps (should be no gaps between consecutive partitions)
+        if curr_end < next_partition.address:
+            gap = next_partition.address - curr_end
+            raise ScriptError(
+                f"Gap of {gap} bytes between {curr_partition.name} (ends at {curr_end:#x}) and "
+                f"{next_partition.name} (starts at {next_partition.address:#x})"
+            )
+
+    # Check that combined subpartition sizes equal secure_storage_partition size
+    total_subpartition_size = sum(p.size for p in present_partitions)
+    if total_subpartition_size != args.securestorage_size:
+        raise ScriptError(
+            f"Combined size of subpartitions ({total_subpartition_size} bytes) does not match "
+            f"secure_storage_partition size ({args.securestorage_size} bytes). "
+            f"The definition is not coherent."
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
@@ -256,6 +368,144 @@ def main() -> None:
         help="Absolute flash address of the UICR region (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--securestorage",
+        action="store_true",
+        help="Enable secure storage support in UICR",
+    )
+    parser.add_argument(
+        "--securestorage-address",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of the secure storage partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--securestorage-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the secure storage partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpuapp-crypto-address",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of cpuapp_crypto_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpuapp-crypto-size",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of cpuapp_crypto_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpurad-crypto-address",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of cpurad_crypto_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpurad-crypto-size",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of cpurad_crypto_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpuapp-its-address",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of cpuapp_its_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpuapp-its-size",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of cpuapp_its_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpurad-its-address",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of cpurad_its_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--cpurad-its-size",
+        default=0,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of cpurad_its_partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--permit-permanently-transitioning-device-to-deployed",
+        action="store_true",
+        help=(
+            "Safety flag required to enable both UICR.LOCK and UICR.ERASEPROTECT together. "
+            "Must be explicitly provided to acknowledge permanent device state changes."
+        ),
+    )
+    parser.add_argument(
+        "--lock",
+        action="store_true",
+        help="Enable UICR.LOCK to prevent modifications without ERASEALL",
+    )
+    parser.add_argument(
+        "--eraseprotect",
+        action="store_true",
+        help="Enable UICR.ERASEPROTECT to block ERASEALL operations",
+    )
+    parser.add_argument(
+        "--approtect-application-protected",
+        action="store_true",
+        help="Protect application domain access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-radiocore-protected",
+        action="store_true",
+        help="Protect radio core access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-coresight-protected",
+        action="store_true",
+        help="Protect CoreSight access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--protectedmem",
+        action="store_true",
+        help="Enable protected memory region in UICR",
+    )
+    parser.add_argument(
+        "--protectedmem-size-bytes",
+        type=int,
+        help="Protected memory size in bytes (must be divisible by 4096)",
+    )
+    parser.add_argument(
+        "--wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR",
+    )
+    parser.add_argument(
+        "--wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--wdtstart-crv",
+        type=int,
+        help="Initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR.SECONDARY",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Secondary watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-crv",
+        type=int,
+        help="Secondary initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
+    )
+    parser.add_argument(
         "--secondary",
         action="store_true",
         help="Enable secondary firmware support in UICR",
@@ -265,6 +515,32 @@ def main() -> None:
         default=None,
         type=lambda s: int(s, 0),
         help="Absolute flash address of the secondary firmware (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--secondary-processor",
+        default=0xBD2328A8,
+        type=lambda s: int(s, 0),
+        help="Processor to boot for the secondary firmware ",
+    )
+    parser.add_argument(
+        "--secondary-trigger",
+        action="store_true",
+        help="Enable UICR.SECONDARY.TRIGGER for automatic secondary firmware boot on reset events",
+    )
+    parser.add_argument(
+        "--secondary-trigger-resetreas",
+        default=0,
+        type=lambda s: int(s, 0),
+        help=(
+            "Bitmask of reset reasons that trigger secondary firmware boot "
+            "(decimal or 0x-prefixed hex)"
+        ),
+    )
+    parser.add_argument(
+        "--secondary-protectedmem-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the secondary protected memory region (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
         "--secondary-periphconf-address",
@@ -327,11 +603,77 @@ def main() -> None:
                     "--out-secondary-periphconf-hex is used"
                 )
 
+        # Validate secure storage argument dependencies
+        if args.securestorage:
+            if args.securestorage_address is None:
+                raise ScriptError(
+                    "--securestorage-address is required when --securestorage is used"
+                )
+            if args.securestorage_size is None:
+                raise ScriptError("--securestorage-size is required when --securestorage is used")
+
+            # Validate partition layout
+            validate_secure_storage_partitions(args)
+
         init_values = DISABLED_VALUE.to_bytes(4, "little") * (c.sizeof(Uicr) // 4)
         uicr = Uicr.from_buffer_copy(init_values)
 
         uicr.VERSION.MAJOR = UICR_FORMAT_VERSION_MAJOR
         uicr.VERSION.MINOR = UICR_FORMAT_VERSION_MINOR
+
+        # Handle secure storage configuration
+        if args.securestorage:
+            uicr.SECURESTORAGE.ENABLE = ENABLED_VALUE
+            uicr.SECURESTORAGE.ADDRESS = args.securestorage_address
+
+            # Set partition sizes in 1KB units
+            uicr.SECURESTORAGE.CRYPTO.APPLICATIONSIZE1KB = args.cpuapp_crypto_size // 1024
+            uicr.SECURESTORAGE.CRYPTO.RADIOCORESIZE1KB = args.cpurad_crypto_size // 1024
+            uicr.SECURESTORAGE.ITS.APPLICATIONSIZE1KB = args.cpuapp_its_size // 1024
+            uicr.SECURESTORAGE.ITS.RADIOCORESIZE1KB = args.cpurad_its_size // 1024
+
+        # Handle LOCK and ERASEPROTECT configuration
+        # Check if both are enabled together - this requires explicit acknowledgment
+        if (
+            args.lock
+            and args.eraseprotect
+            and not args.permit_permanently_transitioning_device_to_deployed
+        ):
+            raise ScriptError(
+                "Enabling both --lock and --eraseprotect requires "
+                "--permit-permanently-transitioning-device-to-deployed to be specified. "
+                "This combination permanently locks the device configuration and prevents "
+                "ERASEALL."
+            )
+
+        if args.lock:
+            uicr.LOCK = ENABLED_VALUE
+        if args.eraseprotect:
+            uicr.ERASEPROTECT = ENABLED_VALUE
+        # Handle APPROTECT configuration
+        if args.approtect_application_protected:
+            uicr.APPROTECT.APPLICATION = PROTECTED_VALUE
+
+        if args.approtect_radiocore_protected:
+            uicr.APPROTECT.RADIOCORE = PROTECTED_VALUE
+
+        if args.approtect_coresight_protected:
+            uicr.APPROTECT.CORESIGHT = PROTECTED_VALUE
+        # Handle protected memory configuration
+        if args.protectedmem:
+            if args.protectedmem_size_bytes % KB_4 != 0:
+                raise ScriptError(
+                    f"Protected memory size ({args.protectedmem_size_bytes} bytes) "
+                    f"must be divisible by {KB_4}"
+                )
+            uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+            uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // KB_4
+
+        # Handle WDTSTART configuration
+        if args.wdtstart:
+            uicr.WDTSTART.ENABLE = ENABLED_VALUE
+            uicr.WDTSTART.CRV = args.wdtstart_crv
+            uicr.WDTSTART.INSTANCE = args.wdtstart_instance_code
 
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
@@ -366,7 +708,22 @@ def main() -> None:
         if args.secondary:
             uicr.SECONDARY.ENABLE = ENABLED_VALUE
             uicr.SECONDARY.ADDRESS = args.secondary_address
+            uicr.SECONDARY.PROCESSOR = args.secondary_processor
 
+            # Handle secondary TRIGGER configuration
+            if args.secondary_trigger:
+                uicr.SECONDARY.TRIGGER.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.TRIGGER.RESETREAS = args.secondary_trigger_resetreas
+
+            # Handle secondary PROTECTEDMEM configuration
+            if args.secondary_protectedmem_size:
+                uicr.SECONDARY.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+                if args.secondary_protectedmem_size % 4096 != 0:
+                    raise ScriptError(
+                        f"args.secondary_protectedmem_size was {args.secondary_protectedmem_size}, "
+                        f"but must be divisible by 4096"
+                    )
+                uicr.SECONDARY.PROTECTEDMEM.SIZE4KB = args.secondary_protectedmem_size // 4096
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
                 secondary_periphconf_combined = extract_and_combine_periphconfs(
@@ -400,6 +757,12 @@ def main() -> None:
 
                 uicr.SECONDARY.PERIPHCONF.MAXCOUNT = args.secondary_periphconf_size // 8
 
+            # Handle secondary WDTSTART configuration
+            if args.secondary_wdtstart:
+                uicr.SECONDARY.WDTSTART.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.WDTSTART.CRV = args.secondary_wdtstart_crv
+                uicr.SECONDARY.WDTSTART.INSTANCE = args.secondary_wdtstart_instance_code
+
         # Create UICR hex object with final UICR data
         uicr_hex = IntelHex()
         uicr_hex.frombytes(bytes(uicr), offset=args.uicr_address)
@@ -426,6 +789,7 @@ def main() -> None:
 
 def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes:
     combined_periphconf = []
+    ipcmap_index = 0
 
     for in_file in elf_files:
         elf = ELFFile(in_file)
@@ -436,6 +800,7 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
         conf_section_data = conf_section.data()
         num_entries = len(conf_section_data) // PERIPHCONF_ENTRY_SIZE
         periphconf = (PeriphconfEntry * num_entries).from_buffer_copy(conf_section_data)
+        ipcmap_index = adjust_ipcmap_entries(periphconf, offset_index=ipcmap_index)
         combined_periphconf.extend(periphconf)
 
     combined_periphconf.sort(key=lambda e: e.regptr)
@@ -457,6 +822,37 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
         final_periphconf[i] = entry
 
     return bytes(final_periphconf)
+
+
+# This workaround is currently needed to avoid conflicts in IPCMAP whenever more than
+# one image uses IPCMAP, because at the moment each image has no way of knowing which
+# IPCMAP channel indices it should use for the configuration it generates locally.
+#
+# What the workaround does is adjust all IPCMAP entries found in the periphconf by the
+# given index offset.
+#
+# The workaround assumes that IPCMAP entries are allocated sequentially starting from 0
+# in each image, it will probably not work for arbitrary IPCMAP entries.
+def adjust_ipcmap_entries(periphconf: c.Array[PeriphconfEntry], offset_index: int) -> int:
+    max_ipcmap_index = offset_index
+
+    for entry in sorted(periphconf, key=lambda e: e.regptr):
+        if IPCMAP_CHANNEL_START_ADDR <= entry.regptr < IPCMAP_CHANNEL_END_ADDR:
+            entry.regptr += offset_index * IPCMAP_CHANNEL_SIZE
+            entry_ipcmap_index = (entry.regptr - IPCMAP_CHANNEL_START_ADDR) // IPCMAP_CHANNEL_SIZE
+            max_ipcmap_index = max(max_ipcmap_index, entry_ipcmap_index)
+
+    return max_ipcmap_index + 1
+
+
+# Size of each IPCMAP.CHANNEL[i]
+IPCMAP_CHANNEL_SIZE = 8
+# Number of entries in IPCMAP.CHANNEL
+IPCMAP_CHANNEL_COUNT = 16
+# Address of IPCMAP.CHANNEL[0]
+IPCMAP_CHANNEL_START_ADDR = 0x5F92_3000 + 256 * 4
+# Address of IPCMAP.CHANNEL[channel count] + 1
+IPCMAP_CHANNEL_END_ADDR = IPCMAP_CHANNEL_START_ADDR + IPCMAP_CHANNEL_SIZE * IPCMAP_CHANNEL_COUNT
 
 
 if __name__ == "__main__":

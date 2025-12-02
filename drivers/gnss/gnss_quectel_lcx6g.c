@@ -22,7 +22,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(quectel_lcx6g, CONFIG_GNSS_LOG_LEVEL);
 
-#define QUECTEL_LCX6G_PM_TIMEOUT_MS    500U
+#define QUECTEL_LCX6G_PM_TIMEOUT       K_MSEC(500U)
 #define QUECTEL_LCX6G_SCRIPT_TIMEOUT_S 10U
 
 #define QUECTEL_LCX6G_PAIR_NAV_MODE_STATIONARY 4
@@ -74,7 +74,7 @@ struct quectel_lcx6g_data {
 	};
 
 	struct k_sem lock;
-	k_timeout_t pm_timeout;
+	k_timepoint_t pm_deadline;
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -182,10 +182,8 @@ static void quectel_lcx6g_unlock(const struct device *dev)
 static void quectel_lcx6g_pm_changed(const struct device *dev)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	uint32_t pm_ready_at_ms;
 
-	pm_ready_at_ms = k_uptime_get() + QUECTEL_LCX6G_PM_TIMEOUT_MS;
-	data->pm_timeout = K_TIMEOUT_ABS_MS(pm_ready_at_ms);
+	data->pm_deadline = sys_timepoint_calc(QUECTEL_LCX6G_PM_TIMEOUT);
 }
 
 static void quectel_lcx6g_await_pm_ready(const struct device *dev)
@@ -193,7 +191,7 @@ static void quectel_lcx6g_await_pm_ready(const struct device *dev)
 	struct quectel_lcx6g_data *data = dev->data;
 
 	LOG_INF("Waiting until PM ready");
-	k_sleep(data->pm_timeout);
+	k_sleep(sys_timepoint_timeout(data->pm_deadline));
 }
 
 static int quectel_lcx6g_resume(const struct device *dev)

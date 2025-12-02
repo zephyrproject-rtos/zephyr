@@ -417,6 +417,23 @@ static void test_route_mcast_lookup(void)
 	zassert_equal_ptr(test_mcast_routes[3], route,
 						  "mcast lookup failed");
 }
+
+static void test_route_mcast_lookup_by_iface(void)
+{
+	struct net_route_entry_mcast *route =
+			net_route_mcast_lookup_by_iface(&mcast_prefix_admin, iface_1);
+
+	zassert_not_null(route, "mcast lookup by iface failed");
+
+	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_2);
+
+	zassert_not_null(route, "mcast lookup by iface failed");
+
+	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_1);
+
+	zassert_is_null(route, "mcast lookup by iface should not find a route on this interface");
+}
+
 static void test_route_mcast_route_del(void)
 {
 	struct net_route_entry_mcast *route;
@@ -752,6 +769,7 @@ ZTEST(route_mcast_test_suite, test_route_mcast)
 	test_route_mcast_scenario3();
 	test_route_mcast_multiple_route_ifaces();
 	test_route_mcast_lookup();
+	test_route_mcast_lookup_by_iface();
 	test_route_mcast_route_del();
 }
 ZTEST_SUITE(route_mcast_test_suite, NULL, NULL, NULL, NULL, NULL);

@@ -57,11 +57,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &cpu0 {

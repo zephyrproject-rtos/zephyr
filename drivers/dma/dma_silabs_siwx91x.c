@@ -13,6 +13,8 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/types.h>
 #include "rsi_rom_udma.h"
 #include "rsi_rom_udma_wrapper.h"
@@ -39,6 +41,7 @@ struct dma_siwx91x_channel_info {
 	void *cb_data;                      /* User callback data */
 	RSI_UDMA_DESC_T *sg_desc_addr_info; /* Scatter-Gather table start address */
 	enum dma_xfer_dir xfer_direction;   /* mem<->mem ot per<->mem */
+	bool channel_active;                /* Channel active flag */
 };
 
 struct dma_siwx91x_config {
@@ -59,6 +62,16 @@ struct dma_siwx91x_data {
 					      * related information
 					      */
 };
+
+static void siwx91x_dma_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+}
+
+static void siwx91x_dma_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+}
 
 static enum dma_xfer_dir siwx91x_transfer_direction(uint32_t dir)
 {
@@ -482,7 +495,17 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+	/* Get the power management policy state lock */
+	if (!data->zephyr_channel_info[channel].channel_active) {
+		siwx91x_dma_pm_policy_state_lock_get();
+		data->zephyr_channel_info[channel].channel_active = true;
+	}
+
 	if (RSI_UDMA_ChannelEnable(udma_handle, channel) != 0) {
+		if (data->zephyr_channel_info[channel].channel_active) {
+			siwx91x_dma_pm_policy_state_lock_put();
+			data->zephyr_channel_info[channel].channel_active = false;
+		}
 		return -EINVAL;
 	}
 
@@ -508,6 +531,11 @@ static int siwx91x_dma_stop(const struct device *dev, uint32_t channel)
 
 	if (RSI_UDMA_ChannelDisable(udma_handle, channel) != 0) {
 		return -EIO;
+	}
+
+	if (data->zephyr_channel_info[channel].channel_active) {
+		siwx91x_dma_pm_policy_state_lock_put();
+		data->zephyr_channel_info[channel].channel_active = false;
 	}
 
 	return 0;
@@ -560,8 +588,7 @@ bool siwx91x_dma_chan_filter(const struct device *dev, int channel, void *filter
 	}
 }
 
-/* Function to initialize DMA peripheral */
-static int siwx91x_dma_init(const struct device *dev)
+static int dma_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
@@ -573,25 +600,45 @@ static int siwx91x_dma_init(const struct device *dev)
 	};
 	int ret;
 
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+
+		udma_handle = UDMAx_Initialize(&udma_resources, udma_resources.desc, NULL,
+					       (uint32_t *)&data->udma_handle);
+		if (udma_handle != &data->udma_handle) {
+			return -EINVAL;
+		}
+
+		if (UDMAx_DMAEnable(&udma_resources, udma_handle) != 0) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	udma_handle = UDMAx_Initialize(&udma_resources, udma_resources.desc, NULL,
-				       (uint32_t *)&data->udma_handle);
-	if (udma_handle != &data->udma_handle) {
-		return -EINVAL;
-	}
+	return 0;
+}
+
+/* Function to initialize DMA peripheral */
+static int siwx91x_dma_init(const struct device *dev)
+{
+	const struct dma_siwx91x_config *cfg = dev->config;
 
 	/* Connect the DMA interrupt */
 	cfg->irq_configure();
 
-	if (UDMAx_DMAEnable(&udma_resources, udma_handle) != 0) {
-		return -EBUSY;
-	}
-
-	return 0;
+	return pm_device_driver_init(dev, dma_siwx91x_pm_action);
 }
 
 static void siwx91x_dma_isr(const struct device *dev)
@@ -639,6 +686,10 @@ static void siwx91x_dma_isr(const struct device *dev)
 				dev, data->zephyr_channel_info[channel].cb_data, channel, 0);
 		}
 		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
+		if (data->zephyr_channel_info[channel].channel_active) {
+			siwx91x_dma_pm_policy_state_lock_put();
+			data->zephyr_channel_info[channel].channel_active = false;
+		}
 	} else {
 		/* Call UDMA ROM IRQ handler. */
 		ROMAPI_UDMA_WRAPPER_API->uDMAx_IRQHandler(&udma_resources, udma_resources.desc,
@@ -701,7 +752,10 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 					      (siwx91x_dma_chan_desc##inst)),                      \
 		.irq_configure = siwx91x_dma_irq_configure_##inst,                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, siwx91x_dma_init, NULL, &dma_data_##inst, &dma_cfg_##inst,     \
-			      POST_KERNEL, CONFIG_DMA_INIT_PRIORITY, &siwx91x_dma_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, dma_siwx91x_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, siwx91x_dma_init,  PM_DEVICE_DT_INST_GET(inst),                \
+			      &dma_data_##inst, &dma_cfg_##inst, POST_KERNEL,                      \
+			      CONFIG_DMA_INIT_PRIORITY,                                           \
+			      &siwx91x_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_DMA_INIT)

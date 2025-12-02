@@ -20,10 +20,4 @@
 		zassert_true(i < 10000, "timeout waiting for %s", #expr); \
 	} while (0)
 
-/* Cached copy of the ipm_cavs_host driver's handler.  We save it at
- * the start of the test because we want to do unit testing on the
- * underlying adsp_ipc device, then recover it later.
- */
-extern intel_adsp_ipc_handler_t ipm_handler;
-
 #endif /* ZEPHYR_TESTS_INTEL_ADSP_TESTS_H */

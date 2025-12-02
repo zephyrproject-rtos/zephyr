@@ -46,9 +46,10 @@ static int memc_stm32_sdram_init(const struct device *dev)
 		sdram.State = HAL_SDRAM_STATE_RESET;
 		memcpy(&sdram.Init, &config->banks[i].init, sizeof(sdram.Init));
 
-		(void)HAL_SDRAM_Init(
-			&sdram,
-			(FMC_SDRAM_TimingTypeDef *)&config->banks[i].timing);
+		if (HAL_SDRAM_Init(&sdram,
+				   (FMC_SDRAM_TimingTypeDef *)&config->banks[i].timing) != HAL_OK) {
+			return -EIO;
+		}
 	}
 
 	/* SDRAM initialization sequence */
@@ -65,24 +66,34 @@ static int memc_stm32_sdram_init(const struct device *dev)
 
 	/* enable clock */
 	sdram_cmd.CommandMode = FMC_SDRAM_CMD_CLK_ENABLE;
-	(void)HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U);
+	if (HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U) != HAL_OK) {
+		return -EIO;
+	}
 
 	k_usleep(config->power_up_delay);
 
 	/* pre-charge all */
 	sdram_cmd.CommandMode = FMC_SDRAM_CMD_PALL;
-	(void)HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U);
+	if (HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U) != HAL_OK) {
+		return -EIO;
+	}
 
 	/* auto-refresh */
 	sdram_cmd.CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
-	(void)HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U);
+	if (HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U) != HAL_OK) {
+		return -EIO;
+	}
 
 	/* load mode */
 	sdram_cmd.CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
-	(void)HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U);
+	if (HAL_SDRAM_SendCommand(&sdram, &sdram_cmd, 0U) != HAL_OK) {
+		return -EIO;
+	}
 
 	/* program refresh count */
-	(void)HAL_SDRAM_ProgramRefreshRate(&sdram, config->refresh_rate);
+	if (HAL_SDRAM_ProgramRefreshRate(&sdram, config->refresh_rate) != HAL_OK) {
+		return -EIO;
+	}
 
 	return 0;
 }

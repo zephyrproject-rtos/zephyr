@@ -16,7 +16,7 @@ This is a simple example that repeatedly:
 Building
 ********
 
-This application can be built on :ref:`native_sim <native_sim>` as follows:
+This application can be built on :zephyr:board:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/hash_map

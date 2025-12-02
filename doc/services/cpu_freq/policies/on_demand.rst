@@ -4,7 +4,7 @@ On-Demand CPU Frequency Scaling Policy
 ######################################
 
 The On-Demand policy evaluates the current CPU load using the
-:ref:`CPU Load subsystem <cpu_load_subsys>`, and compares it to the trigger threshold defined by the
+:ref:`CPU Load metric <cpu_load_metric>`, and compares it to the trigger threshold defined by the
 SoC P-state definition.
 
 The On-Demand policy will iterate through the defined P-states and select the first P-state of which

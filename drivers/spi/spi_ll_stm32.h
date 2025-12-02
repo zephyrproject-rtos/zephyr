@@ -37,7 +37,8 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
-	bool fifo_enabled;
+	bool fifo_enabled: 1;
+	bool ioswp: 1;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -64,6 +65,9 @@ struct stream {
 #endif
 
 struct spi_stm32_data {
+#ifdef CONFIG_SPI_RTIO
+	struct spi_rtio *rtio_ctx;
+#endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
@@ -181,6 +185,17 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 #else
 	LL_SPI_DisableIT_ERR(spi);
 #endif /* st_stm32h7_spi */
+}
+
+static inline bool ll_func_are_int_disabled(SPI_TypeDef *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	return (spi->IER == 0U);
+#else
+	return !LL_SPI_IsEnabledIT_ERR(spi) &&
+	       !LL_SPI_IsEnabledIT_RXNE(spi) &&
+	       !LL_SPI_IsEnabledIT_TXE(spi);
+#endif
 }
 
 static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)

@@ -52,7 +52,7 @@ endfunction()
 # if it is set, to each given image CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 #
 function(native_simulator_set_primary_mcu_index)
-  if (NOT ("${SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}" STREQUAL ""))
+  if(NOT ("${SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}" STREQUAL ""))
     foreach(arg IN LISTS ARGV)
       set_property(TARGET ${arg} APPEND_STRING PROPERTY CONFIG
         "CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX=${SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}\n"

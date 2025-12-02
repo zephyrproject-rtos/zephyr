@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
+if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
   set(UOSCORE_UEDHOC_SRC_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/src)
   set(UOSCORE_UEDHOC_INCLUDE_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/inc)
@@ -14,7 +14,7 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
   zephyr_library_compile_definitions(MBEDTLS)
 
-  if (CONFIG_UOSCORE_DEBUG OR CONFIG_UEDHOC_DEBUG)
+  if(CONFIG_UOSCORE_DEBUG OR CONFIG_UEDHOC_DEBUG)
     zephyr_library_compile_definitions(DEBUG_PRINT)
   endif()
 
@@ -27,7 +27,7 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
   zephyr_library_link_libraries(mbedTLS)
 
-  if (CONFIG_BUILD_WITH_TFM)
+  if(CONFIG_BUILD_WITH_TFM)
     zephyr_library_include_directories(
       $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
     )
@@ -35,13 +35,13 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
 # UOSCORE
 
-  if (CONFIG_UOSCORE)
+  if(CONFIG_UOSCORE)
 
     zephyr_library_named(uoscore)
 
     zephyr_library_compile_definitions(MBEDTLS)
 
-    if (CONFIG_UOSCORE_DEBUG)
+    if(CONFIG_UOSCORE_DEBUG)
       zephyr_library_compile_definitions(DEBUG_PRINT)
     endif()
 
@@ -69,13 +69,13 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
 # UEDHOC
 
-  if (CONFIG_UEDHOC)
+  if(CONFIG_UEDHOC)
 
     zephyr_library_named(uedhoc)
 
     zephyr_library_compile_definitions(MBEDTLS)
 
-    if (CONFIG_UEDHOC_DEBUG)
+    if(CONFIG_UEDHOC_DEBUG)
       zephyr_library_compile_definitions(DEBUG_PRINT)
     endif()
 

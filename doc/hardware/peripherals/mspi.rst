@@ -100,10 +100,12 @@ whether to support scatter IO and callback management. The controller can determ
 which user callback to trigger based on :c:enum:`mspi_bus_event_cb_mask` upon completion
 of each async/sync transfer if the callback had been registered using
 :c:func:`mspi_register_callback`. Or not to trigger any callback at all with
-:c:enum:`MSPI_BUS_NO_CB` even if the callbacks are already registered.
-In which case that a controller supports hardware command queue, user could take full
-advantage of the hardware performance if scatter IO and callback management are supported
-by the driver implementation.
+:c:enum:`MSPI_BUS_NO_CB` even if the callbacks are already registered. If the implemented
+driver support it, the API supports :c:enum:`MSPI_BUS_XFER_COMPLETE_CB` to signal when a
+transfer finishes and :c:enum:`MSPI_BUS_TIMEOUT_CB` to signal when a transfer or request
+has timed-out. In which case that a controller supports hardware command queue, user could
+take full advantage of the hardware performance if scatter IO and callback management are
+supported by the driver implementation.
 
 Device Tree
 ===========
@@ -192,6 +194,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_MSPI_TIMING`
 * :kconfig:option:`CONFIG_MSPI_INIT_PRIORITY`
 * :kconfig:option:`CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE`
+* :kconfig:option:`CONFIG_MSPI_DMA`
 
 API Reference
 *************

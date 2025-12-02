@@ -52,12 +52,6 @@ config SPI_NOR_INIT_PRIORITY
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
 
-config SPI_NOR_CS_WAIT_DELAY
-	int "Delay time in us"
-	default 0
-	help
-	  This is the wait delay (in us) to allow for CS switching to take effect
-
 config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
 	bool "Sleep while waiting for flash operations to complete"
 	default y

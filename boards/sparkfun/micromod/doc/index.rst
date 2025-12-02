@@ -1,4 +1,4 @@
-.. _boardname_linkname:
+.. _sparkfun_micromod:
 
 SparkFun MicroMod board Processor
 #################################

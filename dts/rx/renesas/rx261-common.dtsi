@@ -15,6 +15,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -39,8 +40,12 @@
 		      <0x00872f0 0x02>,
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
-		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0";
+		      <0x0087514 0x01>,
+		      <0x0087580 0x01>,
+		      <0x0087581 0x01>,
+		      <0x0087582 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
+			    "NMIER", "NMICLR";
 
 		swint1: swint1@872e0 {
 			compatible = "renesas,rx-swint";
@@ -49,6 +54,13 @@
 			interrupt-parent = <&icu>;
 			status = "okay";
 		};
+	};
+
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x01>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
 	};
 
 	soc {
@@ -385,8 +397,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
+			dtc = <&dtc>;
 			channel = <1>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -400,8 +413,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
+			dtc = <&dtc>;
 			channel = <5>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -415,8 +429,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
+			dtc = <&dtc>;
 			channel = <6>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -430,8 +445,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8B300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
-			status = "disabled";
+			dtc = <&dtc>;
 			channel = <12>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -493,7 +509,6 @@
 				interrupt-names = "cmi";
 				status = "disabled";
 			};
-
 		};
 
 		ofsm: ofsm@ffffff80 {

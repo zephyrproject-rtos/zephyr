@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
 #include <zephyr/drivers/clock_control.h>
@@ -53,11 +54,11 @@ static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 
 static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 {
-	uint16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+	uint16_t cr1 = stm32_reg_read(&i2c->CR1);
 
 	if ((cr1 & I2C_CR1_STOP) != 0) {
 		LOG_DBG("%s: START while STOP active!", __func__);
-		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+		stm32_reg_write(&i2c->CR1, cr1 & ~I2C_CR1_STOP);
 	}
 
 	LL_I2C_GenerateStartCondition(i2c);
@@ -452,31 +453,53 @@ int i2c_stm32_error(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_stm32_data *data = dev->data;
+	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->slave_attached && !data->master_active) {
-		/* No need for a target error function right now. */
-		return 0;
+	if (data->slave_attached && !data->master_active &&
+	    data->slave_cfg != NULL && data->slave_cfg->callbacks != NULL) {
+		error_cb = data->slave_cfg->callbacks->error;
 	}
 #endif
 
 	if (LL_I2C_IsActiveFlag_AF(i2c)) {
 		LL_I2C_ClearFlag_AF(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
 		goto error;
 	}
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_ARBITRATION);
+		}
+#endif
 		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
 		goto error;
 	}
 
 	return 0;
 error:
+#if defined(CONFIG_I2C_TARGET)
+	if (!data->slave_attached || data->master_active) {
+		i2c_stm32_master_mode_end(dev, -EIO);
+	}
+#else
 	i2c_stm32_master_mode_end(dev, -EIO);
+#endif
 	return -EIO;
 
 }

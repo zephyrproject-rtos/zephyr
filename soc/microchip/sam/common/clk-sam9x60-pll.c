@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(clk_pll, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 	q * n_ + r * n_ / d_;				\
 })
 
-#define PLL_MAX_ID		7
+#define PLL_MAX_ID		SOC_NUM_CLOCK_PLL_FRAC
 
 struct sam9x60_pll_core {
 	pmc_registers_t *pmc;
@@ -73,10 +73,10 @@ struct sam9x60_div {
 #define to_sam9x60_frac(ptr)		CONTAINER_OF(ptr, struct sam9x60_frac, core)
 #define to_sam9x60_div(ptr)		CONTAINER_OF(ptr, struct sam9x60_div, core)
 
-static struct sam9x60_frac clocks_frac[7];
+static struct sam9x60_frac clocks_frac[SOC_NUM_CLOCK_PLL_FRAC];
 static uint32_t clocks_frac_idx;
 
-static struct sam9x60_div clocks_div[8];
+static struct sam9x60_div clocks_div[SOC_NUM_CLOCK_PLL_DIV];
 static uint32_t clocks_div_idx;
 
 static inline bool sam9x60_pll_ready(pmc_registers_t *pmc, int id)

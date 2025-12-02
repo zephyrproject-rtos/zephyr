@@ -59,6 +59,7 @@
 			#size-cells = <1>;
 			reg = <0x50000000 0x100>;
 			status = "okay";
+
 			gpio0x1x: gpio@50000000 {
 				compatible = "ene,kb1200-gpio";
 				reg = <0x50000000 0x04>, <0x50010000 0x04>;

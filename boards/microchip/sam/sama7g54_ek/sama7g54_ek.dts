@@ -8,10 +8,11 @@
 /dts-v1/;
 #include <common/freq.h>
 #include <dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
-#include <dt-bindings/pinctrl/sama7g5-pinctrl.h>
+#include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/microchip-sam-gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pwm/pwm.h>
 #include <microchip/sam/sama7g5.dtsi>
 
 / {
@@ -20,12 +21,16 @@
 
 	aliases {
 		led0 = &led_green;
+		pwm-led0 = &pwm_led_green;
 		sw0 = &button_user;
+		sdhc0 = &sdmmc0;
+		sdhc1 = &sdmmc1;
 	};
 
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
+		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
 	};
 
@@ -74,6 +79,31 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled"; /* Conflict with leds. */
+
+		pwm_led_green: pwm_led_green {
+			pwms = <&pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		pwm_led_blue: pwm_led_blue {
+			pwms = <&pwm 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
 };
 
 &flx3 {
@@ -119,12 +149,110 @@
 	};
 };
 
+&gmac0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gmac0_default>;
+	phy-connection-type = "gmii";
+	phy-handle = <&gmac0_phy>;
+};
+
+&gmac0_mdio {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
+	pinctrl-names = "default";
+
+	gmac0_phy: ethernet-phy@7 {
+		compatible = "microchip,ksz9131";
+		status = "okay";
+		reg = <7>;
+		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gmac1_default>;
+	phy-connection-type = "mii";
+	phy-handle = <&gmac1_phy>;
+	ref-clk-source = "external";
+};
+
+&gmac1_mdio {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac1_mdio_default>;
+	pinctrl-names = "default";
+
+	gmac1_phy: ethernet-phy@0 {
+		compatible = "microchip,ksz8081";
+		status = "okay";
+		reg = <0>;
+		int-gpios = <&pioa 21 GPIO_ACTIVE_LOW>;
+		microchip,interface-type = "rmii-25MHz";
+	};
+};
+
 &pinctrl {
 	pinctrl_flx3_default: flx3_default {
 		group1 {
 			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
 				 <PIN_PD17__FLEXCOM3_IO1>;
 			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac0_default: gmac0_default {
+		group1 {
+			pinmux = <PIN_PA16__G0_TX0>,
+				 <PIN_PA17__G0_TX1>,
+				 <PIN_PA26__G0_TX2>,
+				 <PIN_PA27__G0_TX3>,
+				 <PIN_PA19__G0_RX0>,
+				 <PIN_PA20__G0_RX1>,
+				 <PIN_PA28__G0_RX2>,
+				 <PIN_PA29__G0_RX3>,
+				 <PIN_PA15__G0_TXEN>,
+				 <PIN_PA30__G0_RXCK>,
+				 <PIN_PA18__G0_RXDV>,
+				 <PIN_PA25__G0_125CK>;
+			bias-disable;
+		};
+
+		gmac0_txck_default {
+			pinmux = <PIN_PA24__G0_TXCK>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac0_mdio_default: gmac0_mdio_default {
+		group1 {
+			pinmux = <PIN_PA22__G0_MDC>,
+				 <PIN_PA23__G0_MDIO>;
+		};
+	};
+
+	pinctrl_gmac1_default: gmac1_default {
+		group1 {
+			pinmux = <PIN_PD30__G1_TXCK>,
+				 <PIN_PD22__G1_TX0>,
+				 <PIN_PD23__G1_TX1>,
+				 <PIN_PD21__G1_TXEN>,
+				 <PIN_PD25__G1_RX0>,
+				 <PIN_PD26__G1_RX1>,
+				 <PIN_PD27__G1_RXER>,
+				 <PIN_PD24__G1_RXDV>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_gmac1_mdio_default: gmac1_mdio_default {
+		group1 {
+			pinmux = <PIN_PD28__G1_MDC>,
+				 <PIN_PD29__G1_MDIO>;
+			bias-disable;
 		};
 	};
 
@@ -135,8 +263,103 @@
 			bias-disable;
 		};
 	};
+
+	pinctrl_mikrobus_pwm_default: pinctrl_mikrobus_pwm_default {
+		mikrobus1_pwm2 {
+			pinmux = <PIN_PA13__PWMH2>;
+			bias-disable;
+		};
+
+		mikrobus2_pwm3 {
+			pinmux = <PIN_PD20__PWMH3>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_sdmmc0_default: sdmmc0_default {
+		cmd_data {
+			pinmux = <PIN_PA1__SDMMC0_CMD>,
+				 <PIN_PA3__SDMMC0_DAT0>,
+				 <PIN_PA4__SDMMC0_DAT1>,
+				 <PIN_PA5__SDMMC0_DAT2>,
+				 <PIN_PA6__SDMMC0_DAT3>,
+				 <PIN_PA7__SDMMC0_DAT4>,
+				 <PIN_PA8__SDMMC0_DAT5>,
+				 <PIN_PA9__SDMMC0_DAT6>,
+				 <PIN_PA10__SDMMC0_DAT7>;
+			bias-pull-up;
+		};
+
+		ck_cd_rstn_vddsel {
+			pinmux = <PIN_PA0__SDMMC0_CK>,
+				 <PIN_PA2__SDMMC0_RSTN>,
+				 <PIN_PA11__SDMMC0_DS>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_sdmmc1_default: sdmmc1_default {
+		cmd_data {
+			pinmux = <PIN_PB29__SDMMC1_CMD>,
+				 <PIN_PB31__SDMMC1_DAT0>,
+				 <PIN_PC0__SDMMC1_DAT1>,
+				 <PIN_PC1__SDMMC1_DAT2>,
+				 <PIN_PC2__SDMMC1_DAT3>;
+			bias-pull-up;
+		};
+
+		ck_cd_rstn_vddsel {
+			pinmux = <PIN_PB30__SDMMC1_CK>,
+				 <PIN_PB28__SDMMC1_RSTN>,
+				 <PIN_PC5__SDMMC1_1V8SEL>,
+				 <PIN_PC4__SDMMC1_CD>;
+			bias-pull-up;
+		};
+	};
 };
 
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&pwm {
+	pinctrl-0 = <&pinctrl_mikrobus_pwm_default>;
+	pinctrl-names = "default";
+};
+
+&sdmmc0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdmmc0_default>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	non-removable;
+	bus-width = <8>;
+	no-1-8-v;
+	auto-cmd23;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "okay";
+	};
+};
+
+&sdmmc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdmmc1_default>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	no-1-8-v;
+	rstn-power-en;
+	auto-cmd12;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&trng {
+	status = "okay";
 };

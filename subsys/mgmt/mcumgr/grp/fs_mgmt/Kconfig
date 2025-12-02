@@ -70,7 +70,7 @@ config MCUMGR_GRP_FS_DL_CHUNK_SIZE_LIMIT
 	help
 	  By default file chunk, that will be read off storage and fit into
 	  MCUmgr frame, is automatically calculated to fit into buffer
-	  of size MCUGMR_TRANSPORT_NETBUF_SIZE with all headers.
+	  of size MCUMGR_TRANSPORT_NETBUF_SIZE with all headers.
 	  Enabling this option allows to set MAXIMUM value that will be
 	  allowed for such chunk.
 	  Look inside fs_mgmt_config.h for details.
@@ -125,8 +125,8 @@ config MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32
 
 config MCUMGR_GRP_FS_HASH_SHA256
 	bool "SHA256 hash support"
-	depends on BUILD_WITH_TFM || MBEDTLS_SHA256
-	select PSA_WANT_ALG_SHA_256 if BUILD_WITH_TFM
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_SHA_256
 	help
 	  Enable SHA256 hash support for MCUmgr.
 

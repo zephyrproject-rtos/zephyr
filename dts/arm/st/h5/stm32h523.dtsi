@@ -24,5 +24,18 @@
 			clocks = <&rcc STM32_CLOCK(AHB4, 16)>;
 			status = "disabled";
 		};
+
+		fdcan2: can@4000a800 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a800 0x400>, <0x4000ac00 0x6a0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <109 0>, <110 0>;
+			interrupt-names = "int0", "int1";
+			/* common clock FDCAN 1 & 2 */
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
 	};
 };

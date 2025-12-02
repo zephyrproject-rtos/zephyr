@@ -20,8 +20,26 @@ config CLOCK_CONTROL
 config CORTEX_M_SYSTICK
 	default n if STM32_LPTIM_TIMER
 
+# Reduce kernel stack sizes to fit MCUs with 8 KiB RAM or less
+config MAIN_STACK_SIZE
+	default 320 if SRAM_SIZE <= 2
+	default 512 if SRAM_SIZE <= 4
+	default 640 if SRAM_SIZE <= 8
+
+config IDLE_STACK_SIZE
+	default 100 if SRAM_SIZE <= 2
+	default 150 if SRAM_SIZE <= 4
+	default 200 if SRAM_SIZE <= 8
+
+config ISR_STACK_SIZE
+	default 256 if SRAM_SIZE <= 2
+	default 512 if SRAM_SIZE <= 8
+
 DT_STM32_RCC_PATH := $(dt_nodelabel_path,rcc)
 DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-frequency)
+
+DT_STM32WB0_RADIO_TIMER_PATH := $(dt_nodelabel_path,radio_timer)
+DT_STM32WB0_TIMER_FREQ := $(dt_node_int_prop_int,$(DT_STM32WB0_RADIO_TIMER_PATH),compensated-timer-freq)
 
 DT_ST_PRESCALER := st,prescaler
 DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
@@ -37,7 +55,13 @@ DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_C
 DT_FLASH_PARENT_IS_OSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_OSPI))
 DT_FLASH_PARENT_IS_QSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_QSPI))
 
+DT_CHOSEN_Z_FLASH_CTRL := zephyr,flash-controller
+DT_COMPAT_XSPI_NOR_CTRL := st,stm32-xspi-nor
+DT_CHOSEN_FLASH_CTRL_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH_CTRL))
+DT_FLASH_CTRL_IS_XSPI_NOR  := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_NODE),$(DT_COMPAT_XSPI_NOR_CTRL))
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_STM32WB0_TIMER_FREQ)" if STM32WB0_RADIO_TIMER
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
 
 config LOG_BACKEND_SWO_REF_FREQ_HZ
@@ -68,11 +92,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default  250 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 128
 	depends on STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
-	default STM32_LPTIM_CLOCK_LSI if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
-endchoice
-
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
@@ -90,7 +109,7 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config STM32_APP_IN_EXT_FLASH
-	default $(DT_FLASH_PARENT_IS_XSPI)
+	default $(DT_FLASH_PARENT_IS_XSPI) || $(DT_FLASH_CTRL_IS_XSPI_NOR)
 
 # The XSPI PSRAM driver creates a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
 # If applicable set the LTDC / VIDEO_BUFFER SMH attribute to SMH_REG_ATTR_EXTERNAL (2)

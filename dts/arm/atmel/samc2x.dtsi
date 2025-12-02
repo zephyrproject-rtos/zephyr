@@ -56,14 +56,14 @@
 
 	id: device_id@80a00c {
 		compatible = "atmel,sam0-id";
-		reg =	<0x0080A00C 0x4>,
-			<0x0080A040 0x4>,
-			<0x0080A044 0x4>,
-			<0x0080A048 0x4>;
+		reg = <0x0080A00C 0x4>,
+		      <0x0080A040 0x4>,
+		      <0x0080A044 0x4>,
+		      <0x0080A048 0x4>;
 	};
 
 	soc {
-		nvmctrl: nvmctrl@41004000  {
+		nvmctrl: nvmctrl@41004000 {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
 			interrupts = <6 0>;

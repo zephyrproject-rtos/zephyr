@@ -927,6 +927,70 @@ div.graphviz > object {
     filter: var(--graphviz-filter);
 }
 
+/* Sidebar */
+.rst-content .sidebar {
+    border-radius: 12px;
+    padding: 0px;
+    background: var(--admonition-note-background-color);
+    color: var(--admonition-note-title-color);
+    border-color: var(--admonition-note-title-background-color);
+}
+
+@media screen and (max-width: 480px) {
+    .rst-content .sidebar {
+        float: none;
+        margin-left: 0;
+    }
+}
+
+.rst-content .sidebar {
+    color: var(--admonition-note-color);
+}
+
+.rst-content .sidebar .sidebar-title {
+    font-family: var(--header-font-family);
+    background: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    border-radius: 12px 12px 0px 0px;
+    margin: 0px;
+    text-align: center;
+}
+
+.rst-content .sidebar figure {
+    padding: 1rem;
+    margin-bottom: -1rem;
+}
+
+.rst-content .sidebar figure img {
+    height: auto !important;
+}
+
+.rst-content .sidebar figure figcaption p {
+    margin-bottom: 0px;
+}
+
+.rst-content .sidebar dl.field-list {
+    align-items: center;
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+    grid-template-columns: auto 1fr !important;
+    padding-right: 1em;
+}
+
+.rst-content .sidebar dl.field-list>dt {
+    background: transparent !important;
+}
+
+.rst-content .sidebar dl.field-list>dd {
+    margin-left: 1em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.rst-content .sidebar dl.field-list>dd code {
+    font-size: 0.9em;
+}
+
 /* Home page grid display */
 .grid {
     list-style-type: none !important;

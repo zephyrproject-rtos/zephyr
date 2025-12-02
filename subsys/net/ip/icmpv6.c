@@ -394,7 +394,8 @@ void net_icmpv6_init(void)
 	static struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REQUEST, 0, icmpv6_handle_echo_request);
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REQUEST, 0,
+				icmpv6_handle_echo_request);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_ECHO_REQUEST),
 			ret);

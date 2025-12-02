@@ -13,7 +13,7 @@ Here are some highlights of the Nucleo H533RE board:
 
 - Board connectors:
 
-  - USB Type-C |trade| Sink device FS
+  - USB Type-C |reg| Sink device FS
   - ST Zio expansion connector including Arduino Uno V3 connectivity (CN5, CN6, CN8, CN9)
   - ST morpho extension connector (CN7, CN10)
 

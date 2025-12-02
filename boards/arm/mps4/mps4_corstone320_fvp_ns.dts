@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
+#include "mps4_common_ns.dtsi"
+
 / {
 	compatible = "arm,mps4-fvp";
 	#address-cells = <1>;
@@ -20,7 +22,8 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram;
-		zephyr,flash = &code;
+		zephyr,flash = &reserved_memory;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	cpus {
@@ -68,20 +71,39 @@
 		zephyr,memory-region = "ISRAM";
 	};
 
+	/* The DDR4 node and zephyr,memory-region follow the naming convention
+	 * ddr4_$IDAUID_$SECURITY_FLAG except for the default region of board
+	 * which is named as "DDR4" to be compatible with existing
+	 * samples/tests that expect DDR4 node and region to be of the same name.
+	 */
+	ddr4: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4";
+	};
+
+	ddr4_8_ns: memory@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_8_NS";
+	};
+
+	ddr4_a_ns: memory@a0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xa0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_A_NS";
+	};
+
+	ddr4_c_ns: memory@c0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xc0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_C_NS";
+	};
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
-
-		/* The memory regions defined below must match what the TF-M
-		 * project has defined for that board - a single image boot is
-		 * assumed. Please see the memory layout in:
-		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps4/corstone320/common/partition/flash_layout.h
-		 */
-
-		code: memory@28080000 {
-			reg = <0x28080000 DT_SIZE_K(512)>;
-		};
 
 		ram: memory@21020000 {
 			reg = <0x21020000 DT_SIZE_M(1)>;

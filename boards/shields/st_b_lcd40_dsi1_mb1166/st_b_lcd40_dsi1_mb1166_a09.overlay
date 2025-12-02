@@ -20,6 +20,7 @@
 
 &zephyr_mipi_dsi {
 	status = "okay";
+
 	nt35510: nt35510@0 {
 		status = "okay";
 		compatible = "frida,nt35510";
@@ -39,6 +40,7 @@
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
 	/* frida, nt35510 */
 	display-timings {
 		compatible = "zephyr,panel-timing";

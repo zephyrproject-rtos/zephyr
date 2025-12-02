@@ -137,6 +137,8 @@ enum {
 	BT_HFP_AG_VRE_ACTIVATE,  /* VRE is activated */
 	BT_HFP_AG_VRE_R2A,       /* HF is ready to accept audio */
 	BT_HGP_AG_ONGOING_CALLS, /* Waiting ongoing calls */
+	BT_HFP_AG_SLC_CONNECTED, /* SLC connected event needs to be notified */
+	BT_HFP_AG_AT_PROCESS,    /* AT command is in processing */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
@@ -255,6 +257,7 @@ struct bt_hfp_ag {
 
 	/* HFP TX pending */
 	sys_slist_t tx_pending;
+	sys_slist_t tx_submit_pending;
 
 	/* Critical locker */
 	struct k_sem lock;

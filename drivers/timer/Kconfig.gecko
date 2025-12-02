@@ -5,7 +5,7 @@ config GECKO_BURTC_TIMER
 	bool "SiLabs Gecko BURTC system clock driver"
 	depends on SOC_FAMILY_SILABS_S2
 	depends on DT_HAS_SILABS_GECKO_BURTC_ENABLED
-	select SOC_GECKO_BURTC
+	select SILABS_SISDK_BURTC
 	select TICKLESS_CAPABLE
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help

@@ -7,6 +7,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -29,7 +30,7 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 
-#define HSE_ON (READ_BIT(RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
+#define HSE_ON (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
 static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
@@ -161,9 +162,9 @@ static void set_mode_stop_enter(uint8_t substate_id)
 			while (__HAL_FLASH_GET_LATENCY() != FLASH_LATENCY_1) {
 			}
 		}
-		ram_waitstates_backup = READ_BIT(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC);
-		MODIFY_REG(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
-		MODIFY_REG(RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
+		ram_waitstates_backup = stm32_reg_read_bits(&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC);
+		stm32_reg_modify_bits(&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
+		stm32_reg_modify_bits(&RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
 	}
 	switch (substate_id) {
 	case 1:
@@ -191,8 +192,10 @@ static void set_mode_stop_exit(uint8_t substate_id)
 			__HAL_FLASH_SET_LATENCY(flash_latency_backup);
 			while (__HAL_FLASH_GET_LATENCY() != flash_latency_backup) {
 			}
-			MODIFY_REG(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, ram_waitstates_backup);
-			MODIFY_REG(RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, ram_waitstates_backup);
+			stm32_reg_modify_bits(&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC,
+					      ram_waitstates_backup);
+			stm32_reg_modify_bits(&RAMCFG_SRAM2->CR, RAMCFG_CR_WSC,
+					      ram_waitstates_backup);
 		}
 	}
 

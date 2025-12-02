@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	cpus {
@@ -39,11 +40,13 @@
 	};
 
 	axisram1: memory@34000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "AXISRAM1";
 	};
 
 	axisram2: memory@34180400 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "AXISRAM2";
 	};
 
 	clocks {
@@ -256,7 +259,7 @@
 			axisram3: memory@34200000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM3";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -271,7 +274,7 @@
 			axisram4: memory@34270000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM4";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -286,7 +289,7 @@
 			axisram5: memory@342e0000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM5";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -301,7 +304,7 @@
 			axisram6: memory@34350000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM6";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -309,7 +312,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x56025000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4_2, 0)>;
 			num-lines = <96>;
@@ -434,32 +437,40 @@
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
 			reg = <0x50022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
+			clock-names = "adcx";
 			interrupts = <46 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 7 12 14 47 247 1500>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "none";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			status = "disabled";
 		};
 
 		adc2: adc@50022100 {
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
 			reg = <0x50022100 0x300>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
+			clock-names = "adcx";
 			interrupts = <46 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 7 12 14 47 247 1500>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "none";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			status = "disabled";
 		};
 
 		fdcan1: can@5000a000 {
@@ -633,6 +644,32 @@
 			status = "disabled";
 		};
 
+		i3c1: i3c@50006000 {
+			compatible = "st,stm32-i3c";
+			reg = <0x50006000 0x400>;
+			interrupts = <108 0>, <109 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 24)>;
+			resets = <&rctl STM32_RESET(APB1L, 24)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		i3c2: i3c@50006400 {
+			compatible = "st,stm32-i3c";
+			reg = <0x50006400 0x400>;
+			interrupts = <110 0>, <111 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
+			resets = <&rctl STM32_RESET(APB1L, 25)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
 		spi1: spi@52003000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -718,39 +755,28 @@
 				 <&rctl STM32_RESET(APB5, 6)>;
 			status = "disabled";
 
-			ports {
+			pipes {
+				compatible = "st,stm32-dcmipp-pipes";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@0 {
+				pipe_dump: pipe@0 {
 					reg = <0>;
-
-					endpoint {
-						remote-endpoint-label = "";
-						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
-					};
 				};
 
-				port@1 {
-					#address-cells = <1>;
-					#size-cells = <0>;
-
+				pipe_main: pipe@1 {
 					reg = <1>;
+				};
 
-					dcmipp_pipe_dump: endpoint@0 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <0>;
-					};
+				pipe_aux: pipe@2 {
+					reg = <2>;
+				};
+			};
 
-					dcmipp_pipe_main: endpoint@1 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <1>;
-					};
-
-					dcmipp_pipe_aux: endpoint@2 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <2>;
-					};
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 				};
 			};
 		};
@@ -763,7 +789,7 @@
 
 			mac: ethernet {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
-					"st,stm32-ethernet";
+					     "st,stm32-ethernet";
 				interrupts = <179 0>;
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB5, 23)>,
@@ -1278,8 +1304,29 @@
 		npu: npu@580c0000 {
 			compatible = "st,stm32-npu";
 			reg = <0x580c0000 0x1000>;
-			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
-			resets = <&rctl STM32_RESET(AHB5, 31)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>,
+				 <&rcc STM32_CLOCK(AHB5, 30)>;
+			clock-names = "npu", "cacheaxi";
+			resets = <&rctl STM32_RESET(AHB5, 31)>,
+				 <&rctl STM32_RESET(AHB5, 30)>;
+			status = "disabled";
+		};
+
+		venc: venc@58005000 {
+			compatible = "st,stm32-venc";
+			reg = <0x58005000 0x1000>;
+			interrupts = <62 0>;
+			clocks = <&rcc STM32_CLOCK(APB5, 5)>;
+			resets = <&rctl STM32_RESET(APB5, 5)>;
+			status = "disabled";
+		};
+
+		jpeg: codec@58023000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x58023000 0x1000>;
+			interrupts = <61 0>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 3)>;
+			resets = <&rctl STM32_RESET(AHB5, 3)>;
 			status = "disabled";
 		};
 	};

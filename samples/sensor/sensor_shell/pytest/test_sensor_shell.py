@@ -20,11 +20,14 @@ def test_sensor_shell_info(shell: Shell):
 
 
 def test_sensor_shell_get(shell: Shell):
-    logger.info('send "sensor get" command')
+    logger.info('get "sensor get" command count')
 
-    # Channel should be the last one before 'all' (because 'all' doesn't print anything) so that the
-    # for-loop in `parse_named_int()` will go through everything
-    for channel in range(59):
+    lines = shell.exec_command('sensor get sensor@0')
+    channel_count = int(lines[-2].split("=")[1].split("(")[0]) + 1
+    logger.info(f'channel count: [{channel_count}]')
+
+    logger.info('send "sensor get" command')
+    for channel in range(channel_count):
         logger.info(f'channel {channel}')
         shell.wait_for_prompt()
         lines = shell.exec_command(f'sensor get sensor@0 {channel}')
@@ -41,7 +44,7 @@ def test_sensor_shell_attr_get(shell: Shell):
     assert any(['sensor@0(channel=co2, attr=sampling_frequency)' in line for line in lines]), 'expected response not found'
 
     shell.wait_for_prompt()
-    lines = shell.exec_command('sensor attr_get sensor@1 54 3')
+    lines = shell.exec_command('sensor attr_get sensor@1 gauge_state_of_health 3')
     assert any(['sensor@1(channel=gauge_state_of_health, attr=slope_th)' in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')
@@ -56,7 +59,7 @@ def test_sensor_shell_attr_set(shell: Shell):
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
     shell.wait_for_prompt()
-    lines = shell.exec_command('sensor attr_set sensor@1 54 3 1')
+    lines = shell.exec_command('sensor attr_set sensor@1 gauge_state_of_health 3 1')
     expected_line = 'sensor@1 channel=gauge_state_of_health, attr=slope_th set to value=1'
     assert any([expected_line in line for line in lines]), 'expected response not found'
 

@@ -1,0 +1,54 @@
+# Copyright (c) 2025 Tenstorrent AI ULC
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PWM GPIO API test"
+
+source "Kconfig.zephyr"
+
+config DEFAULT_PWM_PORT
+	int "Default PWM port/channel"
+	default 1 if PWM_STM32 || PWM_MCHP_G1_TCC
+	default 0
+	help
+	  PWM port matching the channel associated with PWM pin.
+
+config INVALID_PWM_PORT
+	int "Invalid PWM port/channel"
+	default 9 if PWM_NRFX || PWM_MCHP_G1_TCC
+	default -1
+	help
+	  Invalid PWM port/channel for negative testing.
+
+config DEFAULT_PERIOD_CYCLE
+	int "Default PWM period in cycles"
+	default 1024 if SOC_MK64F12 || SOC_MKW41Z4 || SOC_ESP32S2 || SOC_ESP32S3 || SOC_ESP32C3
+	default 32768 if PWM_INTEL_BLINKY
+	default 64000
+	help
+	  Default PWM period in clock cycles.
+
+config DEFAULT_PULSE_CYCLE
+	int "Default PWM pulse in cycles"
+	default 512 if SOC_MK64F12 || SOC_MKW41Z4 || SOC_ESP32S2 || SOC_ESP32S3 || SOC_ESP32C3
+	default 16384 if PWM_INTEL_BLINKY
+	default 32000
+	help
+	  Default PWM pulse in clock cycles.
+
+config DEFAULT_PERIOD_NSEC
+	int "Default PWM period in nanoseconds"
+	default 4000000 if SOC_FAMILY_MCXW
+	default 546000 if PWM_MCHP_G1_TCC
+	default 2000000
+	help
+	  Default PWM period in nanoseconds.
+
+config DEFAULT_PULSE_NSEC
+	int "Default PWM pulse in nanoseconds"
+	default 500000 if SOC_MK64F12 || SOC_MKW41Z4 || SOC_ESP32S2 || SOC_ESP32S3 || SOC_ESP32C3
+	default 500000 if PWM_INTEL_BLINKY
+	default 2000000 if SOC_FAMILY_MCXW
+	default 273000 if PWM_MCHP_G1_TCC
+	default 1000000
+	help
+	  Default PWM pulse in nanoseconds.

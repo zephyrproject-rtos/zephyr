@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		pwm-0 = &flexio2_pwm;
+		pwm-test = &flexio2_pwm;
 	};
 };
 

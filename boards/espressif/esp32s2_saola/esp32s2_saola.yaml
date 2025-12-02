@@ -18,6 +18,7 @@ supported:
   - counter
   - entropy
   - input
+  - crypto
 testing:
   ignore_tags:
     - bluetooth

@@ -13,6 +13,7 @@
 #include <fsl_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 
@@ -120,6 +121,22 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 
 		PWM_StartTimer(config->base, 1U << config->index);
 	} else {
+		/* Wait for the registers to finish their previous load (LDOK cleared) */
+		bool ldok_got_cleared = WAIT_FOR(
+			!(config->base->MCTRL & PWM_MCTRL_LDOK(1U << config->index)),
+			1000, /* 1 millisecond timeout */
+			k_busy_wait(1) /* busywait meanwhile */
+		);
+
+		if (!ldok_got_cleared) {
+			/*
+			 * LDOK didn't get cleared in a millisecond, which is extremely rare.
+			 * We return with an error though, because setting the VALx values in
+			 * this state would do nothing
+			 */
+			return -EBUSY;
+		}
+
 		/* Setup VALx values directly for edge aligned PWM */
 		if (channel == 0) {
 			/* Side A */

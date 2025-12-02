@@ -60,7 +60,9 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  config option can be a relative path from the MCUboot repository
 	  root.)
 
-	  If left empty, you must sign the Zephyr binaries manually.
+	  If left empty and MCUBOOT_GENERATE_UNSIGNED_IMAGE is not set, you
+	  must sign and prepare the Zephyr binaries manually to be bootable
+	  from MCUboot.
 
 config MCUBOOT_ENCRYPTION_KEY_FILE
 	string "Path to the mcuboot encryption key file"
@@ -167,7 +169,9 @@ config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	help
 	  Enabling this configuration allows automatic unsigned binary image
 	  generation when MCUboot signing key is not provided,
-	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty. A hash of the
+	  image will be generated and included in the unsigned image, instead
+	  of a signature.
 
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	bool "Also generate a padded, confirmed image"
@@ -425,5 +429,16 @@ config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 	  Adds support for setting for test and confirming images
 	  when bootloader is in DirectXIP-revert mode.
 endif
+
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+DT_CHOSEN_ZEPHYR_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_FLASH))
+
+config MCUBOOT_BOOT_MAX_ALIGN
+	int "Override programmable flash block alignment"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_FLASH_NODE),write-block-size)
+	help
+	  Allow to override the programmable flash block alignment size.
+	  By default it's set to the maximum of the write block size of
+	  the chosen zephyr,flash node and 8.
 
 endif # MCUBOOT_BOOTUTIL_LIB

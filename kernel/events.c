@@ -136,7 +136,9 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		 * have been processed.
 		 */
 		thread->no_wake_on_timeout = true;
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		z_abort_timeout(&thread->base.timeout);
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 	}
 
 	return 0;

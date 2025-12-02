@@ -1833,7 +1833,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 		/* Use default */
 		if (first_start) {
-			/* RFC2131 4.1.1 requires we wait a random period
+			/* RFC2131 4.4.1 requires we wait a random period
 			 * between 1 and 10 seconds before sending the initial
 			 * discover.
 			 */

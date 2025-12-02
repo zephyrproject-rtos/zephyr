@@ -41,7 +41,7 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-#if defined(CONFIG_MBEDTLS_LMS)
+#if defined(CONFIG_MBEDTLS_LMS_C)
 #define MBEDTLS_LMS_C
 #endif
 
@@ -61,18 +61,18 @@
 /* Supported TLS versions */
 
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2)
 #define MBEDTLS_SSL_PROTO_TLS1_2
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_PROTO_TLS1_3
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 #define MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) || \
-	defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2) || \
+	defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 
 /* Common modules required for TLS 1.2 and 1.3 */
 #define MBEDTLS_SSL_TLS_C
@@ -82,18 +82,18 @@
 /* This is not supported by Mbed TLS in TLS 1.3 mode
  * (see modules/crypto/mbedtls/docs/architecture/tls13-support.md).
  */
-#if !defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if !defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 #endif
 
-#endif /* CONFIG_MBEDTLS_TLS_VERSION_1_2 || CONFIG_MBEDTLS_TLS_VERSION_1_3 */
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_2 || CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
-#if defined(CONFIG_MBEDTLS_TLS_SESSION_TICKETS)
+#if defined(CONFIG_MBEDTLS_SSL_SESSION_TICKETS)
 #define MBEDTLS_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_TICKET_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_DTLS)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_DTLS)
 #define MBEDTLS_SSL_PROTO_DTLS
 #define MBEDTLS_SSL_DTLS_ANTI_REPLAY
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
@@ -333,11 +333,11 @@
 #endif
 
 /* mbedTLS modules */
-#if defined(CONFIG_MBEDTLS_CTR_DRBG_ENABLED)
+#if defined(CONFIG_MBEDTLS_CTR_DRBG_C)
 #define MBEDTLS_CTR_DRBG_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_HMAC_DRBG_ENABLED)
+#if defined(CONFIG_MBEDTLS_HMAC_DRBG_C)
 #define MBEDTLS_HMAC_DRBG_C
 #endif
 
@@ -372,7 +372,7 @@
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MD)
+#if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
 #endif
 
@@ -510,13 +510,17 @@
 #define MBEDTLS_USE_PSA_CRYPTO
 #endif
 
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS)
+#define MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
+#endif
+
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #define MBEDTLS_PSA_CRYPTO_CLIENT
 #define MBEDTLS_PSA_CRYPTO_CONFIG
 #define MBEDTLS_PSA_CRYPTO_CONFIG_FILE   "config-psa.h"
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #endif
 

@@ -50,7 +50,7 @@ target_sources(tfm_spm
         src/tfm_hal_platform.c
 )
 
-if (TFM_PARTITION_PLATFORM)
+if(TFM_PARTITION_PLATFORM)
 install(FILES       include/tfm_ioctl_api.h
                     include/device_cfg.h
                     include/RTE_Device.h

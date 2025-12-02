@@ -35,7 +35,6 @@
 	aliases {
 		led0 = &led1;
 	};
-
 };
 
 &uart1 {

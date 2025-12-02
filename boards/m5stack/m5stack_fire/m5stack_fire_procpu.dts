@@ -79,7 +79,6 @@
 			label = "button 2";
 			zephyr,code = <INPUT_KEY_3>;
 		};
-
 	};
 
 	mipi_dbi {
@@ -166,12 +165,12 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		spi-max-frequency = <20000000>;
+
 		mmc {
 			status = "okay";
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 		};
-
 	};
 };
 

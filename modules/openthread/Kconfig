@@ -178,16 +178,16 @@ config OPENTHREAD_MBEDTLS
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_CMAC
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MD
-	select MBEDTLS_TLS_VERSION_1_2 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
-	select MBEDTLS_DTLS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_MD_C
+	select MBEDTLS_SSL_PROTO_TLS1_2 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_SSL_PROTO_DTLS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 	select MBEDTLS_ECJPAKE_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 	select MBEDTLS_ECP_DP_SECP256R1_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || \
 	    OPENTHREAD_SRP_CLIENT || OPENTHREAD_SRP_SERVER
 	select MBEDTLS_ECP_NIST_OPTIM if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
-	select MBEDTLS_CTR_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
-	select MBEDTLS_HMAC_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || \
+	select MBEDTLS_CTR_DRBG_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_HMAC_DRBG_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || \
 	    OPENTHREAD_SRP_CLIENT || OPENTHREAD_SRP_SERVER
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED if OPENTHREAD_ECDSA
 	select MBEDTLS_ECDH_C if OPENTHREAD_ECDSA
@@ -320,7 +320,7 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 
 config OPENTHREAD_CRYPTO_PSA
 	bool "ARM PSA crypto API"
-	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	depends on PSA_CRYPTO_CLIENT
 	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
 	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
@@ -356,12 +356,61 @@ config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
 
+config OPENTHREAD_PLATFORM_USEC_TIMER
+	bool
+	default y if (OPENTHREAD_CSL_RECEIVER && !OPENTHREAD_THREAD_VERSION_1_1) || OPENTHREAD_WAKEUP_END_DEVICE
+	help
+	  Enable microsecond backoff timer implemented in platform.
+
+menu "OpenThread Border Router"
+
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	imply NET_ROUTING
 	help
 	  Enable support for Border Router using Openthread's implementation.
+
+if OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_VENDOR_NAME
+	string "Base name from which mDNS host name will be derived."
+	default "Zephyr-OTBR"
+	help
+	  This value represents part of the mDNS host that will be register within OpenThread
+	  Border Router.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_BASE_SERVICE_NAME
+	string "Base name from which a service instance name will be derived."
+	default "Zephyr-BorderRouter"
+	help
+	  This value represents part of a service instance name which will be registered
+	  within OpenThread Border Router.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MODEL_NAME
+	string "Name of the Border Agent product model"
+	default "BorderRouter"
+	help
+	  This value represents Border Agent's product model.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES
+	int "The maximum number of pollable UDP sockets to be registered in platform UDP."
+	depends on OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	default 5
+	help
+	  This configuration defines the maximum number of pollable UDP sockets
+	  to be used within platform UDP module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM
+	int "Maximum entries of backbone message pool."
+	default 10
+	help
+	  This value represents the maximum number of messages from backbone interface
+	  that could be stored without being processed.
+
+endif # OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
+endmenu # "OpenThread Border Router"
 
 menu "OpenThread stack features"
 rsource "Kconfig.features"

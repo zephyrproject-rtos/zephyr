@@ -192,7 +192,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 		free_space = rd_idx - wr_idx - FREE_SPACE_DISTANCE;
 	}
 
-	len = MIN(len, MAX(free_space - (int32_t)LEN_SZ, 0));
+	len = min(len, max(free_space - (int32_t)LEN_SZ, 0));
 	*buf = &data_loc[wr_idx + LEN_SZ];
 
 	return len;

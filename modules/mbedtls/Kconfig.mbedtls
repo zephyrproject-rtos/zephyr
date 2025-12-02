@@ -9,34 +9,34 @@ menu "Mbed TLS configuration"
 
 menu "TLS"
 
-config MBEDTLS_TLS_VERSION_1_2
+config MBEDTLS_SSL_PROTO_TLS1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 
-if MBEDTLS_TLS_VERSION_1_2
+if MBEDTLS_SSL_PROTO_TLS1_2
 
-config MBEDTLS_DTLS
+config MBEDTLS_SSL_PROTO_DTLS
 	bool "Support for DTLS"
 
-endif # MBEDTLS_TLS_VERSION_1_2
+endif # MBEDTLS_SSL_PROTO_TLS1_2
 
-config MBEDTLS_TLS_VERSION_1_3
+config MBEDTLS_SSL_PROTO_TLS1_3
 	bool "Support for TLS 1.3"
 
-if MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_3
 
-config MBEDTLS_TLS_SESSION_TICKETS
+config MBEDTLS_SSL_SESSION_TICKETS
 	bool "Support for RFC 5077 session tickets in TLS 1.3"
 
-endif # MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_3
 
-if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
-endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
 endmenu # TLS
 
@@ -62,7 +62,7 @@ endif # MBEDTLS_RSA_C
 
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
@@ -101,7 +101,7 @@ config MBEDTLS_PSK_MAX_LEN
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
-	depends on MBEDTLS_MD
+	depends on MBEDTLS_MD_C
 	depends on PSA_CRYPTO_CLIENT || MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
@@ -136,7 +136,7 @@ config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
 
-if MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
 	bool "TLS 1.3 PSK key exchange mode"
@@ -147,7 +147,7 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 	bool "TLS 1.3 PSK ephemeral key exchange mode"
 
-endif # MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
@@ -273,7 +273,7 @@ config MBEDTLS_CIPHER_AES_ENABLED
 if MBEDTLS_CIPHER_AES_ENABLED
 
 config MBEDTLS_AES_ROM_TABLES
-	bool "Use precomputed AES tables stored in ROM."
+	bool "Use precomputed AES tables stored in ROM"
 
 config MBEDTLS_AES_FEWER_TABLES
 	bool "Reduce the size of precomputed AES tables by ~6kB"
@@ -325,7 +325,7 @@ config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
 
 config MBEDTLS_CMAC
-	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers"
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
 comment "Supported hash algorithms"
@@ -374,23 +374,23 @@ endmenu
 
 comment "Random number generators"
 
-config MBEDTLS_CTR_DRBG_ENABLED
+config MBEDTLS_CTR_DRBG_C
 	bool "CTR_DRBG AES-256-based random generator"
 	depends on MBEDTLS_CIPHER_AES_ENABLED
 	default y
 
-config MBEDTLS_HMAC_DRBG_ENABLED
+config MBEDTLS_HMAC_DRBG_C
 	bool "HMAC_DRBG random generator"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 
 comment "Other configurations"
 
 config MBEDTLS_CIPHER
-	bool "generic cipher layer."
+	bool "Generic cipher layer"
 	default y if PSA_WANT_ALG_CMAC
 
-config MBEDTLS_MD
-	bool "generic message digest layer."
+config MBEDTLS_MD_C
+	bool "Generic message digest layer"
 
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
@@ -489,18 +489,18 @@ config MBEDTLS_HAVE_TIME_DATE
 	help
 	  System has time.h, time(), and an implementation for gmtime_r().
 	  There also need to be a valid time source in the system, as mbedTLS
-	  expects a valid date/time for certificate validation."
+	  expects a valid date/time for certificate validation.
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	help
 	  Enable PKCS5 functions
 
 config MBEDTLS_SSL_CACHE_C
 	bool "SSL session cache support"
 	help
-	  "This option enables simple SSL cache implementation (server side)."
+	  This option enables simple SSL cache implementation (server side).
 
 if MBEDTLS_SSL_CACHE_C
 
@@ -516,11 +516,18 @@ endif # MBEDTLS_SSL_CACHE_C
 
 config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	bool "(D)TLS Extended Master Secret extension"
-	depends on MBEDTLS_TLS_VERSION_1_2
+	depends on MBEDTLS_SSL_PROTO_TLS1_2
 	help
 	  Enable support for the (D)TLS Extended Master Secret extension
 	  which ensures that master secrets are different for every
 	  connection and every session.
+
+# CONFIG_CSPRNG_AVAILABLE must automatically enable CONFIG_ENTROPY_GENERATOR.
+# But we're doing it here because this enablement should be gated by Mbed TLS
+# being also enabled in the build, otherwise this will result in entropy
+# drivers being enabled without anyone needing them.
+config CSPRNG_AVAILABLE
+	select ENTROPY_GENERATOR
 
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
@@ -530,12 +537,11 @@ choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
 	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
 	# is disabled by default.
-	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_AVAILABLE
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
-	select ENTROPY_GENERATOR
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -549,7 +555,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
+	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
 	# If there is any entropy driver in the system, then the choice would be
 	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
 	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
@@ -600,7 +606,7 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
 	select PSA_CRYPTO_CLIENT
 
-config MBEDTLS_LMS
+config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_SHA256
@@ -653,11 +659,20 @@ config MBEDTLS_PSA_KEY_SLOT_COUNT
 	  * the heap-allocated memory to store the key material of a given slot,
 	    if it is used and MBEDTLS_PSA_STATIC_KEY_SLOTS is not set.
 
+config MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
+	bool "Built-in key support in PSA Crypto core"
+	help
+	  Enable support for platform built-in keys in PSA Crypto. Built-in keys
+	  are typically derived from a hardware unique key or stored in a secure
+	  element. Mbed TLS uses key IDs from MBEDTLS_PSA_KEY_ID_BUILTIN_MIN to
+	  MBEDTLS_PSA_KEY_ID_BUILTIN_MAX for built-in keys. The platform must
+	  implement mbedtls_psa_platform_get_builtin_key().
+
 endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
-	depends on MBEDTLS_DTLS
+	depends on MBEDTLS_SSL_PROTO_DTLS
 	help
 	  Enable support for the DTLS Connection ID extension
 	  which allows to identify DTLS connections across changes

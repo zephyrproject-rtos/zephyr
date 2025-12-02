@@ -5,6 +5,7 @@
 '''Runner for flashing with nrfutil.'''
 
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -18,12 +19,12 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
-                 force=False, recover=False,
-                 ext_mem_config_file=None):
+                 force=False, recover=False, ext_mem_config_file=None,
+                 dry_run=False):
 
         super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
                          erase_mode, ext_erase_mode, reset, tool_opt, force,
-                         recover)
+                         recover, dry_run)
 
         self.ext_mem_config_file = ext_mem_config_file
 
@@ -55,7 +56,8 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                                    ext_erase_mode=args.ext_erase_mode,
                                    reset=args.reset, tool_opt=args.tool_opt,
                                    force=args.force, recover=args.recover,
-                                   ext_mem_config_file=args.ext_mem_config_file)
+                                   ext_mem_config_file=args.ext_mem_config_file,
+                                   dry_run=args.dry_run)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -63,15 +65,23 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
+        parser.add_argument('--dry-run', required=False,
+                            action='store_true',
+                            help='''Generate all the commands without actually
+                            executing them''')
 
-    def _exec(self, args):
+    def _exec(self, args, force=False):
         jout_all = []
 
         cmd = ['nrfutil', '--json', 'device'] + args
-        self._log_cmd(cmd)
 
-        if _DRY_RUN:
-            return {}
+        escaped = ' '.join(shlex.quote(s) for s in cmd)
+        if _DRY_RUN or (self.dry_run):
+            self.logger.info(escaped)
+            if not force:
+                return {}
+        else:
+            self.logger.debug(escaped)
 
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
             for line in iter(p.stdout.readline, b''):
@@ -148,7 +158,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         cmd += ['--core', op['core']] if op.get('core') else []
         cmd += ['--x-family', f'{self.family}']
         cmd += ['--x-append-batch', f'{json_file}']
-        self._exec(cmd)
+        self._exec(cmd, force=True)
 
     def _exec_batch(self):
         # Use x-append-batch to get the JSON from nrfutil itself

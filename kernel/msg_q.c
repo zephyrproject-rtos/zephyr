@@ -89,7 +89,6 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, alloc_init, msgq, ret);
-
 	return ret;
 }
 
@@ -106,12 +105,12 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 int k_msgq_cleanup(struct k_msgq *msgq)
 {
+	int ret = 0;
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
 	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, -EBUSY);
-
-		return -EBUSY;
+		ret = -EBUSY;
+		goto exit;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
@@ -119,9 +118,9 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, 0);
-
-	return 0;
+exit:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
+	return ret;
 }
 
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
@@ -228,9 +227,9 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 	return put_msg_in_queue(msgq, data, timeout, true);
 }
 
-int z_impl_k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+int z_impl_k_msgq_put_front(struct k_msgq *msgq, const void *data)
 {
-	return put_msg_in_queue(msgq, data, timeout, false);
+	return put_msg_in_queue(msgq, data, K_NO_WAIT, false);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -244,13 +243,12 @@ static inline int z_vrfy_k_msgq_put(struct k_msgq *msgq, const void *data,
 }
 #include <zephyr/syscalls/k_msgq_put_mrsh.c>
 
-static inline int z_vrfy_k_msgq_put_front(struct k_msgq *msgq, const void *data,
-				    k_timeout_t timeout)
+static inline int z_vrfy_k_msgq_put_front(struct k_msgq *msgq, const void *data)
 {
 	K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 	K_OOPS(K_SYSCALL_MEMORY_READ(data, msgq->msg_size));
 
-	return z_impl_k_msgq_put_front(msgq, data, timeout);
+	return z_impl_k_msgq_put_front(msgq, data);
 }
 #include <zephyr/syscalls/k_msgq_put_front_mrsh.c>
 #endif /* CONFIG_USERSPACE */

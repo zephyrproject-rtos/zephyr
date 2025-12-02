@@ -113,12 +113,6 @@ noted for users who do not want heap allocations within their application:
    initialized at boot with :c:macro:`K_STACK_DEFINE()`, or to initialize the
    k_stack in supervisor mode with :c:func:`k_stack_init`.
 
- - :c:func:`k_pipe_alloc_init` sets up a k_pipe object with its
-   storage buffer allocated out of a resource pool instead of a buffer provided
-   by the user. An alternative is to declare k_pipes that are automatically
-   initialized at boot with :c:macro:`K_PIPE_DEFINE()`, or to initialize the
-   k_pipe in supervisor mode with :c:func:`k_pipe_init`.
-
  - :c:func:`k_msgq_alloc_init` sets up a k_msgq object with its
    storage buffer allocated out of a resource pool instead of a buffer provided
    by the user. An alternative is to declare a k_msgq that is automatically

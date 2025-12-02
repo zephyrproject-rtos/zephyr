@@ -194,6 +194,13 @@ config DNS_RESOLVER_CACHE_MAX_ENTRIES
 
 endif # DNS_RESOLVER_CACHE
 
+config DNS_RESOLVER_PACKET_FORWARDING
+	bool "Forwards received DNS packets to application"
+	depends on !DNS_RESOLVER_CACHE
+	help
+	  This allows forwarding of received packets from DNS servers
+	  to applications that register the forwarding callback.
+
 endif # DNS_RESOLVER
 
 config MDNS_RESPONDER

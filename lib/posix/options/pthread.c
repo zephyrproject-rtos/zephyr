@@ -1518,18 +1518,21 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 			SYS_SEM_LOCK_BREAK;
 		}
 
+		const unsigned long *const x = (const unsigned long *)set;
+		unsigned long *const y = (unsigned long *)&t->sigset;
+
 		switch (how) {
 		case SIG_BLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] |= set->sig[i];
+			for (size_t i = 0; i < sizeof(sigset_t) / sizeof(unsigned long); ++i) {
+				y[i] |= x[i];
 			}
 			break;
 		case SIG_SETMASK:
 			t->sigset = *set;
 			break;
 		case SIG_UNBLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] &= ~set->sig[i];
+			for (size_t i = 0; i < sizeof(sigset_t) / sizeof(unsigned long); ++i) {
+				y[i] &= ~x[i];
 			}
 			break;
 		}
@@ -1548,3 +1551,9 @@ static int posix_thread_pool_init(void)
 	return 0;
 }
 SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);
+
+int sched_yield(void)
+{
+	k_yield();
+	return 0;
+}

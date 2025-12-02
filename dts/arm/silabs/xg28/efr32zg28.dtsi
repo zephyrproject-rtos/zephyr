@@ -5,3 +5,10 @@
  */
 
 #include <silabs/xg28/efr32xg28.dtsi>
+
+&radio {
+	bt_hci_silabs: bt_hci_silabs {
+		compatible = "silabs,bt-hci-efr32";
+		status = "disabled";
+	};
+};

@@ -129,7 +129,7 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
       set(BUILD_VERSION_STR ", build: ${BUILD_VERSION}")
     endif()
 
-    if (NOT NO_PRINT_VERSION)
+    if(NOT NO_PRINT_VERSION)
         message(STATUS "Zephyr version: ${PROJECT_VERSION_STR} (${ZEPHYR_BASE})${BUILD_VERSION_STR}")
     endif()
   endif()

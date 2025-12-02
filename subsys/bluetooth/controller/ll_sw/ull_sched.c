@@ -465,12 +465,12 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 		/* Using a local variable to address the Coverity rule:
 		 * Incorrect expression  (ASSERT_SIDE_EFFECT)
-		 * Argument "ret_cb" of LL_ASSERT() has a side effect
+		 * Argument "ret_cb" of LL_ASSERT_ERR() has a side effect
 		 * because the variable is volatile.  The containing function
 		 * might work differently in a non-debug build.
 		 */
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
+		LL_ASSERT_ERR(success);
 
 		/* There is a possibility that tickers expire while we
 		 * iterate through the active list of tickers, start over with
@@ -478,7 +478,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		 */
 		if ((ticker_id_prev != TICKER_NULL) &&
 		    (*ticks_anchor != ticks_anchor_prev)) {
-			LL_ASSERT(retry);
+			LL_ASSERT_ERR(retry);
 			retry--;
 
 			ticker_id = ticker_id_prev = TICKER_NULL;

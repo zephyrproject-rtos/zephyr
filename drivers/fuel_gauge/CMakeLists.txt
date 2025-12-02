@@ -11,10 +11,12 @@ add_subdirectory_ifdef(CONFIG_BQ27Z746		bq27z746)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_AXP2101	axp2101)
 add_subdirectory_ifdef(CONFIG_LC709203F		lc709203f)
 add_subdirectory_ifdef(CONFIG_SY24561  sy24561)
+add_subdirectory_ifdef(CONFIG_BQ40Z50		  bq40z50)
+add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_LTC2959	ltc2959)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE fuel_gauge_syscall_handlers.c)
 
-if (CONFIG_EMUL AND CONFIG_USERSPACE)
+if(CONFIG_EMUL AND CONFIG_USERSPACE)
   zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/emul_fuel_gauge.h)
   zephyr_library_sources(emul_fuel_gauge_syscall_handlers.c)
 endif()

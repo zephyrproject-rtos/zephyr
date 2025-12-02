@@ -12,11 +12,10 @@
 
 / {
 	model = "Nordic NRF5340 BSIM NRF5340 Network";
-	compatible = "bsim,nrf5340-bsim-nrf5340-cpunet","bsim,nrf53";
+	compatible = "bsim,nrf5340-bsim-nrf5340-cpunet", "bsim,nrf53";
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
-		/delete-property/ sram-0;
 		/delete-property/ sram-1;
 		/delete-property/ wdt-0;
 		/delete-property/ i2c-0;
@@ -33,7 +32,6 @@
 	};
 
 	soc {
-		/delete-node/ memory@20000000;
 		/delete-node/ memory@21000000;
 		/delete-node/ watchdog@4100b000;
 		/delete-node/ i2c@41013000;
@@ -57,6 +55,7 @@
 
 &flash1 {
 	reg = <0x01000000 DT_SIZE_K(256)>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -67,6 +66,11 @@
 			reg = <0x00000000 DT_SIZE_K(256)>;
 		};
 	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(512)>;
 };
 
 &gpiote {
@@ -92,4 +96,4 @@
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
  * buffer won't be used.
  */
- #include <nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>

@@ -14,6 +14,8 @@ testing:
     - net
     - bluetooth
 supported:
+  - gpio
   - pinctrl
   - uart
+  - dma
 vendor: bflb

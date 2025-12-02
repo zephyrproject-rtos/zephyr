@@ -32,6 +32,8 @@
 &m2_wifi_sdio {
 	nxp_wifi {
 		compatible = "nxp,wifi";
+		oob-gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };

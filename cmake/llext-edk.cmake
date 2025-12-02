@@ -147,7 +147,7 @@ endfunction()
 # read in computed build configuration
 import_kconfig(CONFIG ${PROJECT_BINARY_DIR}/.config)
 
-if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+if(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
   message(FATAL_ERROR
     "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
 endif()
@@ -211,7 +211,7 @@ list(APPEND base_flags ${llext_edk_cflags} ${imacros})
 
 file(MAKE_DIRECTORY ${llext_edk_inc})
 foreach(dir ${INTERFACE_INCLUDE_DIRECTORIES})
-    if (NOT EXISTS ${dir})
+    if(NOT EXISTS ${dir})
         continue()
     endif()
 

@@ -572,7 +572,7 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,   \
+	DEVICE_DT_INST_DEFINE(n, adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,    \
 			      &adc_ambiq_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
 			      &adc_ambiq_driver_api_##n);
 

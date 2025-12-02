@@ -56,11 +56,11 @@ BUILD_ASSERT(sizeof(static_array9) == 16);
 static void test_pow2_ceil_x(unsigned long test_value,
 			     unsigned long expected_result)
 {
-	volatile unsigned int x = test_value;
-	unsigned int result = Z_POW2_CEIL(x);
+	volatile unsigned long x = test_value;
+	unsigned long result = Z_POW2_CEIL(x);
 
 	zassert_equal(result, expected_result,
-		      "ZPOW2_CEIL(%lu) returned %ld, expected %lu",
+		      "ZPOW2_CEIL(%lu) returned %lu, expected %lu",
 		      test_value, result, expected_result);
 }
 

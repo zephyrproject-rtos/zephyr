@@ -6,7 +6,7 @@
 
 config NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION
 	bool "Wait DNS server addition before considering connection to be up"
-	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
+	depends on (MODEM_HL7800 || MODEM_HL78XX) && !DNS_SERVER_IP_ADDRESSES
 	help
 	  Make sure we get DNS server addresses from the network
 	  before considering the connection to be up.
@@ -50,3 +50,8 @@ config NET_SAMPLE_COMMON_TUNNEL_MY_ADDR
 	depends on NET_L2_IPIP
 	help
 	  The value depends on your network setup.
+
+# Generic way to allocate enough sockets for the application
+config ZVFS_OPEN_ADD_SIZE_NET_SAMPLE
+	int "Amount of sockets needed by the networking sample"
+	default 0

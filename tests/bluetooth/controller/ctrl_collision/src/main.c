@@ -117,33 +117,32 @@ static void collision_setup(void *data)
 	ull_dle_update_eff(&conn);
 }
 
-#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                               \
-	do {                                                                    \
-		zassert_equal(_conn.phy_pref_rx, _rx,                              \
-			      "Preferred RX PHY mismatch %d (actual) != %d (expected)", \
-			      _conn.phy_pref_rx, _rx);                                 \
-		zassert_equal(_conn.phy_pref_tx, _tx,                              \
-			      "Preferred TX PHY mismatch %d (actual) != %d (expected)", \
-			      _conn.phy_pref_tx, _tx);                                 \
+#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                                                      \
+	do {                                                                                       \
+		zassert_equal(_conn.phy_pref_rx, _rx,                                              \
+			      "Preferred RX PHY mismatch %u (actual) != %u (expected)",            \
+			      _conn.phy_pref_rx, ((unsigned int)(_rx)));                           \
+		zassert_equal(_conn.phy_pref_tx, _tx,                                              \
+			      "Preferred TX PHY mismatch %u (actual) != %u (expected)",            \
+			      _conn.phy_pref_tx, ((unsigned int)(_tx)));                           \
 	} while (0)
 
-#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                    \
-	do {                                                                    \
-		zassert_equal(_conn.lll.phy_rx, _rx,                               \
-			      "Current RX PHY mismatch %d (actual) != %d (expected)",   \
-			      _conn.lll.phy_rx, _rx);                                  \
-		zassert_equal(_conn.lll.phy_tx, _tx,                               \
-			      "Current TX PHY mismatch %d (actual) != %d (expected)",   \
-			      _conn.lll.phy_tx, _tx);                                  \
-		zassert_equal(_conn.lll.phy_rx, _rx,                               \
-			      "Current Flags mismatch %d (actual) != %d (expected)",    \
-			      _conn.lll.phy_flags, _flags);                            \
+#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                                           \
+	do {                                                                                       \
+		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
+			      "Current RX PHY mismatch %u (actual) != %u (expected)",              \
+			      _conn.lll.phy_rx, ((unsigned int)(_rx)));                            \
+		zassert_equal(_conn.lll.phy_tx, _tx,                                               \
+			      "Current TX PHY mismatch %u (actual) != %u (expected)",              \
+			      _conn.lll.phy_tx, ((unsigned int)(_tx)));                            \
+		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
+			      "Current Flags mismatch %u (actual) != %u (expected)",               \
+			      _conn.lll.phy_flags, ((unsigned int)(_flags)));                      \
 	} while (0)
 
-
-static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
+static bool is_instant_reached(struct ll_conn *llconn, uint16_t instant)
 {
-	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
+	return ((event_counter(llconn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
 ZTEST(collision, test_phy_update_central_loc_collision)

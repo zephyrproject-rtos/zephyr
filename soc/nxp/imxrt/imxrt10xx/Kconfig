@@ -89,7 +89,7 @@ if PM
 config DCDC_TARGET_LOW_POWER_VOLTAGE
 	int "Target DCDC voltage in mV for low power mode"
 	default 1075
-	range 800 1575
+	range 925 1300
 	help
 	  When entering suspend-to-idle drops to this target SOC voltage.
 	  If you are experiencing issues with low power mode stability,
@@ -98,7 +98,7 @@ config DCDC_TARGET_LOW_POWER_VOLTAGE
 config DCDC_TARGET_NORMAL_VOLTAGE
 	int "Target DCDC voltage in mV for normal mode"
 	default 1275
-	range 800 1575
+	range 925 1300
 	help
 	  When exiting suspend-to-idle raises to this SOC voltage.
 	  Increment or decrement in steps of 25 mV.

@@ -1005,6 +1005,10 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct bt_mesh_key key;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 
@@ -1042,6 +1046,10 @@ static int iv_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct iv_val iv;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("IV deleted");
 
@@ -1073,6 +1081,10 @@ static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 {
 	struct seq_val seq;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
@@ -1112,6 +1124,10 @@ static int dev_key_cand_set(const char *name, size_t len_rd, settings_read_cb re
 {
 	int err;
 	struct bt_mesh_key key;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");

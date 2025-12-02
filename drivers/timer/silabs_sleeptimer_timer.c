@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 /* Maximum time interval between timer interrupts (in hw_cycles) */
 #define MAX_TIMEOUT_CYC (UINT32_MAX >> 1)
 
-#define DT_RTC DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_stimer)
+#define DT_RTC DT_CHOSEN(silabs_sleeptimer)
 
 /* Ensure interrupt names don't expand to register interface struct pointers */
 #undef RTCC

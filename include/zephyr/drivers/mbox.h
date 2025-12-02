@@ -27,7 +27,7 @@ extern "C" {
  * @brief Interfaces for mailbox (MBOX) devices.
  * @defgroup mbox_interface MBOX
  * @since 1.0
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  *

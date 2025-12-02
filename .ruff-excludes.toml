@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 
 # This list is generated, it contains all python scripts that existed before ruff was introduced,
 # remove entries for files that pass CI compliance testing.
@@ -25,26 +26,8 @@
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./arch/xtensa/core/gen_vectors.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./arch/xtensa/core/gen_zsr.py" = [
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-]
-"./arch/xtensa/core/xtensa_intgen.py" = [
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./doc/_scripts/gen_devicetree_rest.py" = [
-    "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
 ]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -155,13 +138,11 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
 "./scripts/build/check_init_priorities_test.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/build/elf_parser.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -232,7 +213,6 @@
 ]
 "./scripts/build/gen_offset_header.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/build/gen_relocate_app.py" = [
@@ -313,7 +293,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
@@ -416,8 +395,8 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/gen_driver_kconfig_dts.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -431,10 +410,12 @@
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
     "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/python-devicetree/src/devicetree/grutils.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -448,7 +429,7 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/python-devicetree/tests/test_edtlib.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
@@ -498,7 +479,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
 "./scripts/get_maintainer.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
@@ -527,7 +507,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
 "./scripts/kconfig/kconfigfunctions.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
@@ -562,7 +541,6 @@
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
-    "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
 "./scripts/make_bugs_pickle.py" = [
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
@@ -714,14 +692,7 @@
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
-"./scripts/set_assignees.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/snippets.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -729,141 +700,83 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/tests/twister/conftest.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister/pytest_integration/test_harness_pytest.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/tests/twister/test_cmakecache.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_config_parser.py" = [
     "B017",     # https://docs.astral.sh/ruff/rules/assert-raises-exception
     "B033",     # https://docs.astral.sh/ruff/rules/duplicate-value
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_data/mixins/test_to_ignore.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
 ]
 "./scripts/tests/twister/test_environment.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
-]
-"./scripts/tests/twister/test_errors.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/tests/twister/test_handlers.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP012",    # https://docs.astral.sh/ruff/rules/unnecessary-encode-utf8
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_hardwaremap.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/tests/twister/test_harness.py" = [
     "B017",     # https://docs.astral.sh/ruff/rules/assert-raises-exception
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_jobserver.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
-]
-"./scripts/tests/twister/test_log_helper.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_platform.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
-]
-"./scripts/tests/twister/test_quarantine.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_runner.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/tests/twister/test_scl.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP025",    # https://docs.astral.sh/ruff/rules/unicode-kind-prefix
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_testinstance.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_testplan.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "W191",     # https://docs.astral.sh/ruff/rules/tab-indentation
 ]
 "./scripts/tests/twister/test_testsuite.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_twister.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/conftest.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_addon.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_config.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_coverage.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_data/tests/pytest/pytest/test_sample.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -873,67 +786,56 @@
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/tests/twister_blackbox/test_disable.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_error.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E721",     # https://docs.astral.sh/ruff/rules/type-comparison
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_filter.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_footprint.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_hardwaremap.py" = [
     "B007",     # https://docs.astral.sh/ruff/rules/unused-loop-control-variable
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_outfile.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_output.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_platform.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_printouts.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_quarantine.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_report.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
@@ -943,35 +845,28 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_runner.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_shuffle.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_testlist.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_testplan.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E721",     # https://docs.astral.sh/ruff/rules/type-comparison
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/test_tooling.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tracing/parse_ctf.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -1001,7 +896,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/utils/migrate_mcumgr_kconfigs.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/utils/ntc_thermistor_table.py" = [
@@ -1013,8 +907,8 @@
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/west_commands/fetchers/__init__.py" = [
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
@@ -1026,7 +920,6 @@
 ]
 "./scripts/west_commands/fetchers/http.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
 "./scripts/west_commands/run_common.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
@@ -1048,6 +941,7 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "SIM300",   # https://docs.astral.sh/ruff/rules/yoda-conditions
+    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
 ]
 "./scripts/west_commands/sign.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -1091,7 +985,7 @@
 ]
 "./scripts/west_commands/tests/test_nrf.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
+    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/west_commands/tests/test_nxp_s32dbg.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -1186,17 +1080,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./tests/drivers/can/host/pytest/can_shell.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
-"./tests/drivers/can/host/pytest/test_can.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1263,23 +1146,7 @@ exclude = [
     "./arch/x86/gen_idt.py",
     "./arch/x86/gen_mmu.py",
     "./arch/x86/zefi/zefi.py",
-    "./arch/xtensa/core/gen_vectors.py",
-    "./arch/xtensa/core/gen_zsr.py",
-    "./arch/xtensa/core/xtensa_intgen.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
-    "./doc/_extensions/zephyr/api_overview.py",
-    "./doc/_extensions/zephyr/application.py",
-    "./doc/_extensions/zephyr/domain/__init__.py",
-    "./doc/_extensions/zephyr/doxybridge.py",
-    "./doc/_extensions/zephyr/doxyrunner.py",
-    "./doc/_extensions/zephyr/doxytooltip/__init__.py",
-    "./doc/_extensions/zephyr/dtcompatible-role.py",
-    "./doc/_extensions/zephyr/external_content.py",
-    "./doc/_extensions/zephyr/gh_utils.py",
-    "./doc/_extensions/zephyr/html_redirects.py",
-    "./doc/_extensions/zephyr/kconfig/__init__.py",
-    "./doc/_extensions/zephyr/link-roles.py",
-    "./doc/_scripts/gen_boards_catalog.py",
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",
@@ -1375,7 +1242,6 @@ exclude = [
     "./scripts/github_helpers.py",
     "./scripts/gitlint/zephyr_commit_rules.py",
     "./scripts/kconfig/guiconfig.py",
-    "./scripts/kconfig/hardenconfig.py",
     "./scripts/kconfig/kconfig.py",
     "./scripts/kconfig/kconfigfunctions.py",
     "./scripts/kconfig/kconfiglib.py",
@@ -1439,7 +1305,6 @@ exclude = [
     "./scripts/release/bug_bash.py",
     "./scripts/release/list_backports.py",
     "./scripts/release/list_devicetree_bindings_changes.py",
-    "./scripts/set_assignees.py",
     "./scripts/snippets.py",
     "./scripts/tests/twister/conftest.py",
     "./scripts/tests/twister/pytest_integration/test_harness_pytest.py",
@@ -1590,13 +1455,11 @@ exclude = [
     "./soc/nuvoton/npcx/common/ecst/ecst.py",
     "./soc/nuvoton/npcx/common/ecst/ecst_args.py",
     "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py",
+    "./tests/bluetooth/classic/gap_s/pytest/test_gap_s.py",
     "./tests/bluetooth/classic/sdp_s/pytest/test_sdp.py",
     "./tests/boot/with_mcumgr/pytest/test_downgrade_prevention.py",
     "./tests/boot/with_mcumgr/pytest/test_upgrade.py",
     "./tests/boot/with_mcumgr/pytest/west_sign_wrapper.py",
-    "./tests/drivers/can/host/pytest/can_shell.py",
-    "./tests/drivers/can/host/pytest/conftest.py",
-    "./tests/drivers/can/host/pytest/test_can.py",
     "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py",
     "./tests/kernel/timer/timer_behavior/pytest/test_timer.py",
     "./tests/lib/devicetree/memory_region_flags/pytest/test_memory_region_flags.py",

@@ -900,7 +900,7 @@ static int isds_2536030320001_init(const struct device *dev)
 #define ISDS_2536030320001_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \
 		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, ISDS_2536030320001_SPI_OPERATION, 0),   \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, ISDS_2536030320001_SPI_OPERATION),      \
 		 },                                                                                \
 	 ISDS_2536030320001_CONFIG_COMMON(inst)}
 

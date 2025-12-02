@@ -1,14 +1,20 @@
 sample:
   name: DAC driver sample
+common:
+  tags: DAC
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - Generating sawtooth signal at DAC channel ([0-9]*).
 tests:
   sample.drivers.dac:
-    tags: DAC
     depends_on: dac
     filter: CONFIG_DAC_SAMPLE_RUN
     integration_platforms:
       - nucleo_l152re
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - Generating sawtooth signal at DAC channel ([0-9]*).
+  sample.drivers.dac.shields:
+    platform_allow:
+      - adafruit_feather_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_feather_rp2040/rp2040:SHIELD="adafruit_ad5693r"

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
+ * Copyright (c) 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,33 +18,13 @@
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "No LPTMR instance enabled in devicetree");
 
-/* Prescaler mapping */
-#define LPTMR_PRESCALER_2     kLPTMR_Prescale_Glitch_0
-#define LPTMR_PRESCALER_4     kLPTMR_Prescale_Glitch_1
-#define LPTMR_PRESCALER_8     kLPTMR_Prescale_Glitch_2
-#define LPTMR_PRESCALER_16    kLPTMR_Prescale_Glitch_3
-#define LPTMR_PRESCALER_32    kLPTMR_Prescale_Glitch_4
-#define LPTMR_PRESCALER_64    kLPTMR_Prescale_Glitch_5
-#define LPTMR_PRESCALER_128   kLPTMR_Prescale_Glitch_6
-#define LPTMR_PRESCALER_256   kLPTMR_Prescale_Glitch_7
-#define LPTMR_PRESCALER_512   kLPTMR_Prescale_Glitch_8
-#define LPTMR_PRESCALER_1024  kLPTMR_Prescale_Glitch_9
-#define LPTMR_PRESCALER_2048  kLPTMR_Prescale_Glitch_10
-#define LPTMR_PRESCALER_4096  kLPTMR_Prescale_Glitch_11
-#define LPTMR_PRESCALER_8192  kLPTMR_Prescale_Glitch_12
-#define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
-#define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
-#define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
-
 /* Prescaler clock mapping */
 #define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
 
 /* Devicetree properties */
 #define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
-#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP(0, clk_source));
-#define LPTMR_PRESCALER TO_LPTMR_PRESCALER(DT_INST_PROP(0, prescaler));
-#define LPTMR_BYPASS_PRESCALER DT_INST_PROP(0, prescaler) == 1
+#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP_OR(0, clk_source, 0))
+#define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
 #define LPTMR_IRQN DT_INST_IRQN(0)
 #define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
 
@@ -100,18 +81,12 @@ static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
 
-
 	LPTMR_GetDefaultConfig(&config);
 	config.timerMode = kLPTMR_TimerModeTimeCounter;
 	config.enableFreeRunning = false;
 	config.prescalerClockSource = LPTMR_CLK_SOURCE;
-
-#if LPTMR_BYPASS_PRESCALER
-	config.bypassPrescaler = true;
-#else /* LPTMR_BYPASS_PRESCALER */
-	config.bypassPrescaler = false;
-	config.value = LPTMR_PRESCALER;
-#endif /* !LPTMR_BYPASS_PRESCALER */
+	config.bypassPrescaler = (LPTMR_PRESCALER == 0);
+	config.value = (LPTMR_PRESCALER == 0) ? 0 : (LPTMR_PRESCALER - 1);
 
 	LPTMR_Init(LPTMR_BASE, &config);
 

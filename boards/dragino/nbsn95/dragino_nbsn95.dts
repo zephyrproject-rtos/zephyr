@@ -21,6 +21,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led {
 			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";

@@ -861,7 +861,7 @@ static int pinnacle_init(const struct device *dev)
 #define PINNACLE_SPI_OP (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_WORD_SET(8))
 #define PINNACLE_CONFIG_BUS_SPI(inst)                                                              \
 	.bus = {                                                                                   \
-		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP, 0U),                            \
+		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP),                                \
 		.is_ready = pinnacle_is_ready_spi,                                                 \
 		.write = pinnacle_write_spi,                                                       \
 		.seq_write = pinnacle_seq_write_spi,                                               \

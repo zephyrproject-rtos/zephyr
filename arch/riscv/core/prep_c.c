@@ -36,9 +36,7 @@ void soc_interrupt_init(void);
 
 FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
 
 	arch_bss_zero();
 	arch_data_copy();

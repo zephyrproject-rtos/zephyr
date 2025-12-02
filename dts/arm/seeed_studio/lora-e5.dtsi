@@ -18,6 +18,7 @@
 
 &subghzspi {
 	status = "okay";
+
 	lora: radio@0 {
 		status = "okay";
 		tx-enable-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;

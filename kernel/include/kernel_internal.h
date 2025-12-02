@@ -16,6 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
+#include <kthread.h>
 #include <string.h>
 
 #ifndef _ASMLANGUAGE
@@ -111,9 +112,6 @@ extern int z_stack_adjust_initialized;
 extern struct k_thread z_main_thread;
 
 
-#ifdef CONFIG_MULTITHREADING
-extern struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
-#endif /* CONFIG_MULTITHREADING */
 K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				    CONFIG_ISR_STACK_SIZE);
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);

@@ -94,7 +94,7 @@ ZTEST(public, test_int_disconnect_loc)
 	uint64_t err;
 	int nr_free_ctx;
 	struct node_tx *tx;
-	struct ll_conn conn;
+	struct ll_conn llconn;
 
 	struct pdu_data_llctrl_version_ind local_version_ind = {
 		.version_number = LL_VERSION_NUMBER,
@@ -102,28 +102,28 @@ ZTEST(public, test_int_disconnect_loc)
 		.sub_version_number = CONFIG_BT_CTLR_SUBVERSION_NUMBER,
 	};
 
-	test_setup(&conn);
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_setup(&llconn);
+	test_set_role(&llconn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(&llconn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(&llconn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt() - 1);
 
-	event_prepare(&conn);
-	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
-	lt_rx_q_is_empty(&conn);
-	event_done(&conn);
+	event_prepare(&llconn);
+	lt_rx(LL_VERSION_IND, &llconn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(&llconn);
+	event_done(&llconn);
 
 	/*
 	 * Now we disconnect before getting a response
 	 */
-	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
+	ull_cp_state_set(&llconn, ULL_CP_DISCONNECTED);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
@@ -133,8 +133,8 @@ ZTEST(public, test_int_disconnect_loc)
 	/*
 	 * nothing should happen when running a new event
 	 */
-	event_prepare(&conn);
-	event_done(&conn);
+	event_prepare(&llconn);
+	event_done(&llconn);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
@@ -142,7 +142,7 @@ ZTEST(public, test_int_disconnect_loc)
 	/*
 	 * all buffers should still be empty
 	 */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(&llconn);
 	ut_rx_q_is_empty();
 }
 
@@ -154,23 +154,23 @@ ZTEST(public, test_int_disconnect_rem)
 		.company_id = 0xABCD,
 		.sub_version_number = 0x1234,
 	};
-	struct ll_conn conn;
+	struct ll_conn llconn;
 
-	test_setup(&conn);
+	test_setup(&llconn);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(&llconn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(&llconn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(&llconn);
 
 	/* Rx */
-	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+	lt_tx(LL_VERSION_IND, &llconn, &remote_version_ind);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
@@ -178,15 +178,15 @@ ZTEST(public, test_int_disconnect_rem)
 	/* Disconnect before we reply */
 
 	/* Done */
-	event_done(&conn);
+	event_done(&llconn);
 
-	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
+	ull_cp_state_set(&llconn, ULL_CP_DISCONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(&llconn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(&llconn);
 
 	nr_free_ctx = llcp_ctx_buffers_free();
 	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
@@ -400,57 +400,57 @@ ZTEST(internal, test_int_mem_tx)
 					CONFIG_BT_CTLR_LLCP_CONN * \
 					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	struct ll_conn conn;
+	struct ll_conn llconn;
 	struct node_tx *txl[TX_BUFFER_POOL_SIZE];
 	struct proc_ctx *ctx;
 
 	ull_cp_init();
-	ull_llcp_init(&conn);
+	ull_llcp_init(&llconn);
 
 	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
 
 	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
+		peek = llcp_tx_alloc_peek(&llconn, ctx);
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = llcp_tx_alloc(&conn, ctx);
+		txl[i] = llcp_tx_alloc(&llconn, ctx);
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = llcp_tx_alloc_peek(&conn, ctx);
+	peek = llcp_tx_alloc_peek(&llconn, ctx);
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
 	/* Release all */
 	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
+		ull_cp_release_tx(&llconn, txl[i]);
 	}
 
 	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
+		peek = llcp_tx_alloc_peek(&llconn, ctx);
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = llcp_tx_alloc(&conn, ctx);
+		txl[i] = llcp_tx_alloc(&llconn, ctx);
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = llcp_tx_alloc_peek(&conn, ctx);
+	peek = llcp_tx_alloc_peek(&llconn, ctx);
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
 	/* Release all */
 	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
+		ull_cp_release_tx(&llconn, txl[i]);
 	}
 }
 
@@ -475,85 +475,85 @@ ZTEST(internal, test_int_create_proc)
 
 ZTEST(internal, test_int_llcp_init)
 {
-	struct ll_conn conn;
+	struct ll_conn llconn;
 
 	ull_cp_init();
 
-	ull_llcp_init(&conn);
+	ull_llcp_init(&llconn);
 
-	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
+	memset(&llconn.llcp, 0xAA, sizeof(llconn.llcp));
 
-	ull_llcp_init(&conn);
+	ull_llcp_init(&llconn);
 
-	zassert_equal(conn.llcp.local.pause, 0);
-	zassert_equal(conn.llcp.remote.pause, 0);
+	zassert_equal(llconn.llcp.local.pause, 0);
+	zassert_equal(llconn.llcp.remote.pause, 0);
 }
 
 ZTEST(internal, test_int_local_pending_requests)
 {
-	struct ll_conn conn;
+	struct ll_conn llconn;
 	struct proc_ctx *peek_ctx;
 	struct proc_ctx *dequeue_ctx;
 	struct proc_ctx ctx;
 
 	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_llcp_init(&conn);
+	ull_tx_q_init(&llconn.tx_q);
+	ull_llcp_init(&llconn);
 
-	peek_ctx = llcp_lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&llconn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = llcp_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&llconn);
 	zassert_is_null(dequeue_ctx, NULL);
 
-	llcp_lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
+	llcp_lr_enqueue(&llconn, &ctx);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&llconn.llcp.local.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	peek_ctx = llcp_lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&llconn);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	dequeue_ctx = llcp_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&llconn);
 	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
 
-	peek_ctx = llcp_lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&llconn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = llcp_lr_dequeue(&conn);
+	dequeue_ctx = llcp_lr_dequeue(&llconn);
 	zassert_is_null(dequeue_ctx, NULL);
 }
 
 ZTEST(internal, test_int_remote_pending_requests)
 {
-	struct ll_conn conn;
+	struct ll_conn llconn;
 	struct proc_ctx *peek_ctx;
 	struct proc_ctx *dequeue_ctx;
 	struct proc_ctx ctx;
 
 	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_llcp_init(&conn);
+	ull_tx_q_init(&llconn.tx_q);
+	ull_llcp_init(&llconn);
 
-	peek_ctx = llcp_rr_peek(&conn);
+	peek_ctx = llcp_rr_peek(&llconn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = llcp_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&llconn);
 	zassert_is_null(dequeue_ctx, NULL);
 
-	llcp_rr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
+	llcp_rr_enqueue(&llconn, &ctx);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&llconn.llcp.remote.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	peek_ctx = llcp_rr_peek(&conn);
+	peek_ctx = llcp_rr_peek(&llconn);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	dequeue_ctx = llcp_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&llconn);
 	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
 
-	peek_ctx = llcp_rr_peek(&conn);
+	peek_ctx = llcp_rr_peek(&llconn);
 	zassert_is_null(peek_ctx, NULL);
 
-	dequeue_ctx = llcp_rr_dequeue(&conn);
+	dequeue_ctx = llcp_rr_dequeue(&llconn);
 	zassert_is_null(dequeue_ctx, NULL);
 }
 

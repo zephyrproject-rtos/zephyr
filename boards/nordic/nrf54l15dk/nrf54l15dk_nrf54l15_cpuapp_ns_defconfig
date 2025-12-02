@@ -32,4 +32,4 @@ CONFIG_TFM_LOG_LEVEL_SILENCE=n
 # from the non secure application directly. This needs to be set
 # otherwise nrfx will try to configure them, resulting in a bus
 # fault.
-CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG=y
+CONFIG_NRF_SKIP_CLOCK_CONFIG=y

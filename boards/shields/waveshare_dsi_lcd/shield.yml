@@ -1,0 +1,7 @@
+shield:
+  name: waveshare_7inch_dsi_lcd_c
+  full_name: Waveshare 7inch DSI LCD (C)
+  vendor: waveshare
+  supported_features:
+    - display
+    - input

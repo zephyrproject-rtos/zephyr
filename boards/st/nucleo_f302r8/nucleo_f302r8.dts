@@ -94,12 +94,14 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
 	pinctrl-names = "default";

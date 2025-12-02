@@ -73,9 +73,6 @@ RSSI filtering.
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/mtu_update` in
-the Zephyr tree.
-
 See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 If the devices are close enough, the central should connect to the peripheral

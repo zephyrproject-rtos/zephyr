@@ -18,7 +18,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(current_amp, CONFIG_SENSOR_LOG_LEVEL);
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(gain_extended_range)
+#define INST_HAS_EXTENDED_RANGE 1
+#endif
+
 struct current_sense_amplifier_data {
+#ifdef INST_HAS_EXTENDED_RANGE
+	const struct adc_channel_cfg *sample_channel_cfg;
+	struct adc_channel_cfg channel_cfg_extended_range;
+	int16_t adc_max;
+#endif /* INST_HAS_EXTENDED_RANGE */
 	struct adc_sequence sequence;
 	int16_t raw;
 };
@@ -37,6 +46,32 @@ static int fetch(const struct device *dev, enum sensor_channel chan)
 	if (ret != 0) {
 		LOG_ERR("adc_read: %d", ret);
 	}
+#ifdef INST_HAS_EXTENDED_RANGE
+	data->sample_channel_cfg = &config->port.channel_cfg;
+
+	/* Initial measurement hit the limits, and an alternate gain has been defined */
+	if ((data->raw == data->adc_max) && (config->gain_extended_range != 0xFF)) {
+		int ret2;
+
+		/* Reconfigure channel for the extended range setup.
+		 * Updating configurations should not fail since they were validated in `init`.
+		 */
+		ret = adc_channel_setup(config->port.dev, &data->channel_cfg_extended_range);
+		__ASSERT_NO_MSG(ret == 0);
+		/* Sample again at the higher range/lower resolution */
+		ret = adc_read_dt(&config->port, &data->sequence);
+		if (ret != 0) {
+			LOG_ERR("adc_read: %d", ret);
+		}
+
+		/* Put channel back to original configuration */
+		ret2 = adc_channel_setup_dt(&config->port);
+		__ASSERT_NO_MSG(ret2 == 0);
+
+		/* Sample was measured with the extended range configuration */
+		data->sample_channel_cfg = &data->channel_cfg_extended_range;
+	}
+#endif /* INST_HAS_EXTENDED_RANGE */
 
 	return ret;
 }
@@ -45,8 +80,8 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 {
 	const struct current_sense_amplifier_dt_spec *config = dev->config;
 	struct current_sense_amplifier_data *data = dev->data;
-	int32_t raw_val = data->raw;
-	int32_t i_ma;
+	int32_t v_uv = data->raw;
+	int32_t i_ua;
 	int ret;
 
 	__ASSERT_NO_MSG(val != NULL);
@@ -55,26 +90,26 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 		return -ENOTSUP;
 	}
 
-	if (abs(raw_val) < config->noise_threshold) {
+	if (abs(data->raw) < config->noise_threshold) {
 		return sensor_value_from_micro(val, 0);
 	}
 
-	ret = adc_raw_to_millivolts_dt(&config->port, &raw_val);
+#ifdef INST_HAS_EXTENDED_RANGE
+	ret = adc_raw_to_x_dt_chan(adc_raw_to_microvolts, &config->port, data->sample_channel_cfg,
+				   &v_uv);
+#else
+	ret = adc_raw_to_microvolts_dt(&config->port, &v_uv);
+#endif
 	if (ret != 0) {
 		LOG_ERR("raw_to_mv: %d", ret);
 		return ret;
 	}
 
-	i_ma = raw_val;
-	current_sense_amplifier_scale_dt(config, &i_ma);
+	i_ua = current_sense_amplifier_scale_ua_dt(config, v_uv);
+	LOG_DBG("%d/%d, %d uV, current:%d uA", data->raw, (1 << data->sequence.resolution) - 1,
+		v_uv, i_ua);
 
-	LOG_DBG("%d/%d, %dmV, current:%dmA", data->raw,
-		(1 << data->sequence.resolution) - 1, raw_val, i_ma);
-
-	val->val1 = i_ma / 1000;
-	val->val2 = (i_ma % 1000) * 1000;
-
-	return 0;
+	return sensor_value_from_micro(val, i_ua);
 }
 
 static DEVICE_API(sensor, current_api) = {
@@ -143,6 +178,22 @@ static int current_init(const struct device *dev)
 		}
 	}
 #endif
+
+#ifdef INST_HAS_EXTENDED_RANGE
+	if (config->gain_extended_range != 0xFF) {
+		memcpy(&data->channel_cfg_extended_range, &config->port.channel_cfg,
+		       sizeof(data->channel_cfg_extended_range));
+		data->channel_cfg_extended_range.gain = config->gain_extended_range;
+		data->adc_max = (1 << config->port.resolution) - 1;
+
+		/* Test setup of configuration to catch invalid values */
+		ret = adc_channel_setup(config->port.dev, &data->channel_cfg_extended_range);
+		if (ret != 0) {
+			LOG_ERR("ext_setup: %d", ret);
+			return ret;
+		}
+	}
+#endif /* INST_HAS_EXTENDED_RANGE */
 
 	ret = adc_channel_setup_dt(&config->port);
 	if (ret != 0) {

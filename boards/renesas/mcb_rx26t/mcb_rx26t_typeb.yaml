@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mcb_rx26t@typeb
+name: Renesas MCB-RX26T type B
+type: mcu
+arch: rx
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - serial
+  - timer
+ram: 64
+flash: 512

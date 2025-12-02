@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
+#include <soc_common.h>
 
 
 #endif /* !_ASMLANGUAGE */

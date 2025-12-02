@@ -7,7 +7,7 @@ include_guard(GLOBAL)
 # are invoked by CMake code and, on Windows, standard I/O encoding defaults
 # to the current code page if not connected to a terminal, which is often
 # not what we want.
-if (WIN32)
+if(WIN32)
   set(ENV{PYTHONIOENCODING} "utf-8")
 endif()
 

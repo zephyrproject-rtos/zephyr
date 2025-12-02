@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Sateesh Kotapati
+# Copyright (c) 2025 Glassboard
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SILABS_XG22
@@ -18,6 +19,12 @@ config SOC_SERIES_EFR32MG22
 	select SOC_SILABS_XG22
 	help
 	  Silicon Labs EFR32MG22 (Mighty Gecko) Series MCU
+
+config SOC_SERIES_BGM22
+	bool
+	select SOC_SILABS_XG22
+	help
+	  Silicon Labs BGM220 Series MCU modules
 
 config SOC_EFR32BG22C224F512IM40
 	bool
@@ -71,9 +78,22 @@ config SOC_EFR32MG22E224F512IM32
 	bool
 	select SOC_SERIES_EFR32MG22
 
+config SOC_BGM220PC22HNA
+	bool
+	select SOC_SERIES_BGM22
+
+config SOC_BGM220PC22WGA
+	bool
+	select SOC_SERIES_BGM22
+
+config SOC_BGM220SC22HNA
+	bool
+	select SOC_SERIES_BGM22
+
 config SOC_SERIES
 	default "efr32bg22" if SOC_SERIES_EFR32BG22
 	default "efr32mg22" if SOC_SERIES_EFR32MG22
+	default "bgm22" if SOC_SERIES_BGM22
 
 config SOC
 	default "efr32bg22c224f512im40" if SOC_EFR32BG22C224F512IM40
@@ -89,3 +109,6 @@ config SOC
 	default "efr32mg22c224f512gn32" if SOC_EFR32MG22C224F512GN32
 	default "efr32mg22e224f512im40" if SOC_EFR32MG22E224F512IM40
 	default "efr32mg22e224f512im32" if SOC_EFR32MG22E224F512IM32
+	default "bgm220pc22hna" if SOC_BGM220PC22HNA
+	default "bgm220pc22wga" if SOC_BGM220PC22WGA
+	default "bgm220sc22hna" if SOC_BGM220SC22HNA

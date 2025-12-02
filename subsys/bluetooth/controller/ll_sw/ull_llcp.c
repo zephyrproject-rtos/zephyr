@@ -109,7 +109,7 @@ static struct proc_ctx *proc_ctx_acquire(struct llcp_mem_pool *owner)
 void llcp_proc_ctx_release(struct proc_ctx *ctx)
 {
 	/* We need to have an owner otherwise the memory allocated would leak */
-	LL_ASSERT(ctx->owner);
+	LL_ASSERT_DBG(ctx->owner);
 
 	/* Release the memory back to the owner */
 	mem_release(ctx, &ctx->owner->free);
@@ -297,7 +297,7 @@ void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask re
 
 void llcp_rx_node_retain(struct proc_ctx *ctx)
 {
-	LL_ASSERT(ctx->node_ref.rx);
+	LL_ASSERT_DBG(ctx->node_ref.rx);
 
 	/* Only retain if not already retained */
 	if (ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN) {
@@ -311,7 +311,7 @@ void llcp_rx_node_retain(struct proc_ctx *ctx)
 
 void llcp_rx_node_release(struct proc_ctx *ctx)
 {
-	LL_ASSERT(ctx->node_ref.rx);
+	LL_ASSERT_DBG(ctx->node_ref.rx);
 
 	/* Only release if retained */
 	if (ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
@@ -472,7 +472,7 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 {
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	if (conn) {
-		LL_ASSERT(conn->llcp.tx_buffer_alloc > 0);
+		LL_ASSERT_DBG(conn->llcp.tx_buffer_alloc > 0);
 		if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
 			common_tx_buffer_alloc--;
 		}
@@ -511,7 +511,7 @@ int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *err
 		struct proc_ctx *ctx;
 
 		ctx = llcp_lr_peek(conn);
-		LL_ASSERT(ctx);
+		LL_ASSERT_DBG(ctx);
 
 		if (ctx->proc == PROC_TERMINATE) {
 			/* Active procedure is ACL Termination */
@@ -1026,7 +1026,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	} else {
-		LL_ASSERT(0); /* Unknown procedure */
+		LL_ASSERT_DBG(0); /* Unknown procedure */
 	}
 
 	llcp_lr_enqueue(conn, ctx);
@@ -1051,7 +1051,7 @@ uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 	uint8_t phy;
 
 	/* Exactly one of the sync and adv_sync pointers should be non-null */
-	LL_ASSERT((!adv_sync && sync) || (adv_sync && !sync));
+	LL_ASSERT_DBG((!adv_sync && sync) || (adv_sync && !sync));
 
 	if (!feature_peer_periodic_sync_recv(conn)) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
@@ -1080,7 +1080,7 @@ uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 			rl_idx = ull_filter_rl_find(addr_type, sync->peer_id_addr, NULL);
 
 			/* A resolved address must be present in the resolve list */
-			LL_ASSERT(rl_idx < ll_rl_size_get());
+			LL_ASSERT_DBG(rl_idx < ll_rl_size_get());
 
 			/* Generate RPAs if required */
 			ull_filter_rpa_update(false);
@@ -1387,14 +1387,44 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
 	return false;
 }
 
+bool ull_cp_cc_is_active(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_rp_cc_is_active(ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_lp_cc_is_active(ctx);
+		}
+	}
+
+	return false;
+}
+
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-bool ull_cp_cc_cancel(struct ll_conn *conn)
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+	if (ctx != NULL && ctx->proc == PROC_CIS_CREATE &&
+	    ctx->data.cis_create.cis_handle == cis->lll.handle) {
 		return llcp_lp_cc_cancel(conn, ctx);
+	} else {
+		/* Look through queue */
+		ctx = llcp_lr_peek_cc(conn, cis->lll.handle);
+		if (ctx != NULL) {
+			/* Set error - LLCP statemachine will handle the rest later */
+			ctx->data.cis_create.error = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+			return true;
+		}
 	}
 
 	return false;
@@ -1423,6 +1453,29 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
+
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_rp_cc_acl_disconnect(conn, ctx);
+			llcp_rr_check_done(conn, ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_lp_cc_acl_disconnect(conn, ctx);
+			llcp_lr_check_done(conn, ctx);
+		}
+	}
+}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -1437,11 +1490,23 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 	return false;
 }
 
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
+	uint16_t cis_handle;
 
-	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+	if (cis) {
+		cis_handle = cis->lll.handle;
+	} else {
+		cis_handle = LLL_HANDLE_INVALID;
+	}
+
+	ctx = llcp_lr_peek_cc(conn, cis_handle);
+
+	if (ctx != NULL && cis != NULL && ctx->data.cis_create.error != BT_HCI_ERR_SUCCESS) {
+		/* Cis Create for this CIS enqueued, but has been cancelled */
+		ctx = NULL;
+	}
 
 	return (ctx != NULL);
 }
@@ -1999,7 +2064,7 @@ void ull_cp_rx(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU as a new remote request */
-				LL_ASSERT(pdu_valid);
+				LL_ASSERT_DBG(pdu_valid);
 				llcp_rr_new(conn, link, rx, true);
 			} else {
 				/* Local active procedure

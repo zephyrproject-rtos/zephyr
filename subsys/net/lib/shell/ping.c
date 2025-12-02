@@ -456,7 +456,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	    net_addr_pton(AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
 		ping_ctx.addr6.sin6_family = AF_INET6;
 
-		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_ICMPV6_ECHO_REPLY, 0,
+		ret = net_icmp_init_ctx(&ping_ctx.icmp, AF_INET6, NET_ICMPV6_ECHO_REPLY, 0,
 					handle_ipv6_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv6");
@@ -466,7 +466,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 		   net_addr_pton(AF_INET, host, &ping_ctx.addr4.sin_addr) == 0) {
 		ping_ctx.addr4.sin_family = AF_INET;
 
-		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_ICMPV4_ECHO_REPLY, 0,
+		ret = net_icmp_init_ctx(&ping_ctx.icmp, AF_INET, NET_ICMPV4_ECHO_REPLY, 0,
 					handle_ipv4_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv4");

@@ -28,6 +28,7 @@ tests:
       - esp8684_devkitm
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
       - sltb010a/efr32bg22c224f512im40
       - xg24_rb4187c/efr32mg24b220f1536im48
       - xg27_dk2602a/efr32bg27c140f768im40

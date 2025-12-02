@@ -72,7 +72,7 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	default:
 		k_sem_give(&data->device_sem);
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	k_sem_give(&data->device_sem);
@@ -98,7 +98,7 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 		break;
 	default:
 		LOG_ERR("Unsupported hash algorithm: %d", algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_stm32_hash_get_unused_session_index(dev);

@@ -269,7 +269,7 @@ int nsos_adapt_socket(int family_mid, int type_mid, int proto_mid)
 		return ret;
 	}
 
-	ret = socket(family, type, proto);
+	ret = socket(family, type | SOCK_CLOEXEC, proto);
 	if (ret < 0) {
 		return -nsi_errno_to_mid(errno);
 	}

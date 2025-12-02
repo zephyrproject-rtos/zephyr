@@ -34,6 +34,8 @@
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		peripheral@50000000 {
@@ -65,7 +67,7 @@
 		 * so we give it the 'gpiote' label for use when building
 		 * code for this target.
 		 */
-		 gpiote: gpiote0: gpiote@5000d000 {
+		gpiote: gpiote0: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;

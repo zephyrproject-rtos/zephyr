@@ -7,6 +7,6 @@
 &enet {
 
 	ptp {
-		status = "ok";
+		status = "okay";
 	};
 };

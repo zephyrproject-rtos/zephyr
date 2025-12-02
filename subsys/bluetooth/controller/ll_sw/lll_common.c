@@ -77,7 +77,7 @@ void lll_resume(void *param)
 	next = param;
 	err = lll_prepare_resolve(next->is_abort_cb, next->abort_cb, next->prepare_cb,
 				  &next->prepare_param, next->is_resume, 1U);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)

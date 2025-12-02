@@ -129,7 +129,7 @@
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM21";
-				zephyr,memory-attr = <( DT_MEM_DMA | DT_MEM_CACHEABLE )>;
+				zephyr,memory-attr = <(DT_MEM_DMA | DT_MEM_CACHEABLE)>;
 			};
 		};
 
@@ -162,7 +162,7 @@
 			#memory-region-cells = <0>;
 			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>;
 			zephyr,memory-region = "DMA_RAM3x_APP";
-			zephyr,memory-attr = <( DT_MEM_DMA )>;
+			zephyr,memory-attr = <DT_MEM_DMA>;
 		};
 
 		cpurad_dma_region: memory@2fc07000 {
@@ -172,7 +172,7 @@
 			#memory-region-cells = <0>;
 			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
 			zephyr,memory-region = "DMA_RAM3x_RAD";
-			zephyr,memory-attr = <( DT_MEM_DMA )>;
+			zephyr,memory-attr = <DT_MEM_DMA>;
 		};
 	};
 };

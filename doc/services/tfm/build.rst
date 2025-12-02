@@ -89,11 +89,27 @@ flags.
      and it will no longer be possible to update your devices in the field!
 
 After the built-in signing script has run, it creates a ``tfm_merged.hex``
-file that contains all three binaries: bl2, tfm_s, and the zephyr app. This
-hex file can then be flashed to your development board or run in QEMU.
+(and ``tfm_merged.bin``) file that contains all three binaries: bl2, tfm_s,
+and the zephyr app. These files can then be flashed to your development board
+or run in QEMU.
 
 .. _PSA Certified Level 1:
   https://www.psacertified.org/security-certification/psa-certified-level-1/
+.. _PSA Certified Firmware Update API:
+  https://arm-software.github.io/psa-api/fwu/
+
+Output Files
+************
+
+Upon completion of the Zephyr TF-M build, the following output files exist:
+
+.. csv-table:: TF-M Output Files
+  :header: Filename, Created From, Bootloader Flags, Usage
+
+  ``tfm_s_signed.{hex/bin}``, "TF-M Secure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 2)
+  ``zephyr_ns_signed.{hex/bin}``, "Zephyr Nonsecure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 2)
+  ``tfm_s_zephyr_ns_signed.{hex/bin}``, "TF-M Secure, Zephyr Nonsecure", Signed, OTA Upgrades (:kconfig:option:`CONFIG_TFM_MCUBOOT_IMAGE_NUMBER` == 1)
+  ``tfm_merged.{hex/bin}``, "Bootloader, TF-M Secure, Zephyr Nonsecure", "Signed, Confirmed", "Production Programming, flashed by ``west flash``"
 
 Custom CMake arguments
 ======================

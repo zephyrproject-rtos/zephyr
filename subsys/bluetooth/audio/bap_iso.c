@@ -26,6 +26,7 @@
 #include "bap_iso.h"
 #include "audio_internal.h"
 #include "bap_endpoint.h"
+#include "bap_internal.h"
 
 LOG_MODULE_REGISTER(bt_bap_iso, CONFIG_BT_BAP_ISO_LOG_LEVEL);
 
@@ -177,7 +178,7 @@ void bt_bap_setup_iso_data_path(struct bt_bap_stream *stream)
 	struct bt_bap_ep *ep = stream->ep;
 	struct bt_bap_iso *bap_iso = ep->iso;
 	const bool is_unicast_client =
-		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
 	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
 	struct bt_iso_chan_path path = {0};
 	uint8_t dir;
@@ -216,7 +217,7 @@ void bt_bap_remove_iso_data_path(struct bt_bap_stream *stream)
 	struct bt_bap_ep *ep = stream->ep;
 	struct bt_bap_iso *bap_iso = ep->iso;
 	const bool is_unicast_client =
-		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+		IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
 	struct bt_bap_iso_dir *iso_dir = bap_iso_get_iso_dir(is_unicast_client, bap_iso, ep->dir);
 	uint8_t dir;
 	int err;
@@ -235,11 +236,12 @@ void bt_bap_remove_iso_data_path(struct bt_bap_stream *stream)
 
 static bool is_unicast_client_ep(struct bt_bap_ep *ep)
 {
-	return IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_ep_is_unicast_client(ep);
+	return IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep);
 }
 
 void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 {
+	const struct bt_bap_ep *paired_ep;
 	struct bt_bap_iso_dir *iso_dir;
 
 	__ASSERT_NO_MSG(ep != NULL);
@@ -255,6 +257,15 @@ void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 	iso_dir->ep = ep;
 
 	ep->iso = bt_bap_iso_ref(iso);
+
+	paired_ep = bt_bap_iso_get_paired_ep(ep);
+	if (paired_ep != NULL && paired_ep->stream != NULL && paired_ep->stream->conn != NULL &&
+	    ep->stream != NULL && ep->stream->conn != NULL) {
+		__ASSERT(paired_ep->stream->conn == ep->stream->conn,
+			 "Cannot bind ep %p with conn %p to iso %p with paired_ep %p with "
+			 "different conn %p",
+			 ep, ep->stream->conn, iso, paired_ep, paired_ep->stream->conn);
+	}
 }
 
 void bt_bap_iso_unbind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)

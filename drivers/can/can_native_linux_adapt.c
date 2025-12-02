@@ -47,7 +47,7 @@ int linux_socketcan_iface_open(const char *if_name)
 	struct ifreq ifr;
 	int fd, opt, ret = -EINVAL;
 
-	fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+	fd = socket(PF_CAN, SOCK_RAW | SOCK_CLOEXEC, CAN_RAW);
 	if (fd < 0) {
 		return -errno;
 	}

@@ -24,10 +24,11 @@
 #define TEST_RES_OBJLNK 7
 #define TEST_RES_OPAQUE 8
 #define TEST_RES_TIME 9
+#define TEST_RES_MULTI_OPT 10
 
-#define TEST_OBJ_RES_MAX_ID 10
+#define TEST_OBJ_RES_MAX_ID 11
 
-#define TEST_MAX_PAYLOAD_BUFFER_LENGTH 40
+#define TEST_MAX_PAYLOAD_BUFFER_LENGTH 52
 
 static struct lwm2m_engine_obj test_obj;
 
@@ -46,7 +47,8 @@ static struct lwm2m_engine_obj_field test_fields[] = {
 	OBJ_FIELD_DATA(TEST_RES_BOOL, RW, BOOL),
 	OBJ_FIELD_DATA(TEST_RES_OBJLNK, RW, OBJLNK),
 	OBJ_FIELD_DATA(TEST_RES_OPAQUE, RW, OPAQUE),
-	OBJ_FIELD_DATA(TEST_RES_TIME, RW, TIME)
+	OBJ_FIELD_DATA(TEST_RES_TIME, RW, TIME),
+	OBJ_FIELD_DATA(TEST_RES_MULTI_OPT, RW, S32)
 };
 
 static struct lwm2m_engine_obj_inst test_inst;
@@ -66,6 +68,7 @@ static bool test_bool;
 static struct lwm2m_objlnk test_objlnk;
 static uint8_t test_opaque[TEST_OPAQUE_MAX_SIZE];
 static time_t test_time;
+static int32_t test_multi_opt;
 
 static struct lwm2m_engine_obj_inst *test_obj_create(uint16_t obj_inst_id)
 {
@@ -93,6 +96,8 @@ static struct lwm2m_engine_obj_inst *test_obj_create(uint16_t obj_inst_id)
 			  &test_opaque, sizeof(test_opaque));
 	INIT_OBJ_RES_DATA(TEST_RES_TIME, test_res, i, test_res_inst, j,
 			  &test_time, sizeof(test_time));
+	INIT_OBJ_RES_MULTI_DATA(TEST_RES_MULTI_OPT, test_res, i, test_res_inst, j, 1, true,
+			  &test_multi_opt, sizeof(test_multi_opt));
 
 	test_inst.resources = test_res;
 	test_inst.resource_count = i;
@@ -953,6 +958,124 @@ ZTEST(net_content_senml_cbor_nomem, test_put_time_nomem)
 
 	ret = do_read_op_senml_cbor(&test_msg);
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
+}
+
+ZTEST(net_content_senml_cbor, test_put_composite)
+{
+	int ret;
+	struct lwm2m_obj_path_list lwm2m_obj_path_list_buf[1];
+	sys_slist_t lwm2m_path_list;
+	sys_slist_t lwm2m_path_free_list;
+
+	struct test_payload_buffer expected_payload = {
+		.data = {
+			0x83,
+			0xA4,
+			0x21, 0x69, '/', '6', '5', '5', '3', '5', '/', '0', '/',
+			0x22, 0x1A, 0x68, 0xFA, 0x2F, 0x04,
+			0x00, 0x61, '2',
+			0x02, 0x0A,
+			0xA3, 0x00, 0x61, '2', 0x06, 0x18, 0x3C, 0x02, 0x0B,
+			0xA3, 0x00, 0x61, '2', 0x06, 0x18, 0x78, 0x02, 0x0C
+		},
+		.len = 42
+	};
+
+	struct lwm2m_time_series_elem test_time_series_cache[3];
+	struct lwm2m_cache_read_info cache_temp_info = {
+		.entry_size = 3,
+		.entry_limit = 3
+	};
+
+	test_msg.path.res_id = TEST_RES_S32;
+	test_msg.cache_info = &cache_temp_info;
+
+	ret = lwm2m_enable_cache(&test_msg.path, test_time_series_cache,
+				 ARRAY_SIZE(test_time_series_cache));
+	zassert_equal(ret, 0, "Failed to enable cache");
+
+	struct lwm2m_time_series_elem test_time_series_temp;
+	struct lwm2m_time_series_resource *cache_entry =
+		lwm2m_cache_entry_get_by_object(&test_msg.path);
+
+	zassert_not_null(cache_entry, "Failed to get cache entry");
+
+	for (int i = 0; i < ARRAY_SIZE(test_time_series_cache); i++) {
+		test_time_series_temp.t = 1761226500 + i * 60;
+		test_time_series_temp.i32 = i + 10;
+		zassert_true(lwm2m_cache_write(cache_entry, &test_time_series_temp));
+	}
+
+	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list,
+				    lwm2m_obj_path_list_buf, 1);
+
+	lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list, &test_msg.path);
+
+	ret = do_send_op_senml_cbor(&test_msg, &lwm2m_path_list);
+	zassert_true(ret >= 0, "Error reported");
+
+	zassert_mem_equal(test_msg.msg_data + TEST_PAYLOAD_OFFSET, expected_payload.data,
+			  expected_payload.len, "Invalid payload format");
+}
+
+ZTEST(net_content_senml_cbor, test_put_composite_res_inst)
+{
+	int ret;
+	struct lwm2m_obj_path_list lwm2m_obj_path_list_buf[1];
+	sys_slist_t lwm2m_path_list;
+	sys_slist_t lwm2m_path_free_list;
+
+	struct test_payload_buffer expected_payload = {
+		.data = {
+			0x83,
+			0xA4,
+			0x21, 0x69, '/', '6', '5', '5', '3', '5', '/', '0', '/',
+			0x22, 0x1A, 0x68, 0xFA, 0x2F, 0x04,
+			0x00, 0x64, '1', '0', '/', '0',
+			0x02, 0x0A,
+			0xA3, 0x00, 0x64, '1', '0', '/', '0', 0x06, 0x18, 0x3C, 0x02, 0x0B,
+			0xA3, 0x00, 0x64, '1', '0', '/', '0', 0x06, 0x18, 0x78, 0x02, 0x0C
+		},
+		.len = 51
+	};
+
+	struct lwm2m_time_series_elem test_time_series_cache[3];
+	struct lwm2m_cache_read_info cache_temp_info = {
+		.entry_size = 3,
+		.entry_limit = 3
+	};
+
+	test_msg.path.res_id = TEST_RES_MULTI_OPT;
+	test_msg.path.res_inst_id = 0;
+	test_msg.path.level = 4;
+	test_msg.cache_info = &cache_temp_info;
+
+	ret = lwm2m_enable_cache(&test_msg.path, test_time_series_cache,
+				 ARRAY_SIZE(test_time_series_cache));
+	zassert_equal(ret, 0, "Failed to enable cache");
+
+	struct lwm2m_time_series_elem test_time_series_temp;
+	struct lwm2m_time_series_resource *cache_entry =
+		lwm2m_cache_entry_get_by_object(&test_msg.path);
+
+	zassert_not_null(cache_entry, "Failed to get cache entry");
+
+	for (int i = 0; i < ARRAY_SIZE(test_time_series_cache); i++) {
+		test_time_series_temp.t = 1761226500 + i * 60;
+		test_time_series_temp.i32 = i + 10;
+		zassert_true(lwm2m_cache_write(cache_entry, &test_time_series_temp));
+	}
+
+	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list,
+				    lwm2m_obj_path_list_buf, 1);
+
+	lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list, &test_msg.path);
+
+	ret = do_send_op_senml_cbor(&test_msg, &lwm2m_path_list);
+	zassert_true(ret >= 0, "Error reported");
+
+	zassert_mem_equal(test_msg.msg_data + TEST_PAYLOAD_OFFSET, expected_payload.data,
+			  expected_payload.len, "Invalid payload format");
 }
 
 ZTEST(net_content_senml_cbor, test_get_s32)

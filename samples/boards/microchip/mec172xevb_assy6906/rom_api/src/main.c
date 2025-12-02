@@ -441,7 +441,7 @@ static int test_zephyr_hash_chunk_block_size(const struct hash_tp *htbl, size_t 
 			/* SHA algorithms block sizes are powers of 2 */
 			updatesz = msgsz & ~(blocksz - 1u);
 			printf("  Update size is %d\n", updatesz);
-			zhash_pkt.in_buf = (uint8_t *)msgptr;
+			zhash_pkt.in_buf = msgptr;
 			zhash_pkt.in_len = updatesz;
 			zhash_pkt.out_buf = digest;
 			zhash_pkt.ctx = &zhash_ctx;
@@ -459,7 +459,7 @@ static int test_zephyr_hash_chunk_block_size(const struct hash_tp *htbl, size_t 
 
 		printf("  Final size is %u\n", msgsz);
 
-		zhash_pkt.in_buf = (uint8_t *)msgptr;
+		zhash_pkt.in_buf = msgptr;
 		zhash_pkt.in_len = msgsz;
 		zhash_pkt.out_buf = digest;
 		zhash_pkt.ctx = &zhash_ctx;
@@ -536,7 +536,7 @@ static int test_zephyr_hash_chunk(const struct hash_tp *htbl, size_t nentries, s
 		while (chunksz && ((msgsz - total_updatesz) > chunksz)) {
 			chunk_cnt++;
 
-			zhash_pkt.in_buf = (uint8_t *)msgptr;
+			zhash_pkt.in_buf = msgptr;
 			zhash_pkt.in_len = updatesz;
 			zhash_pkt.out_buf = digest;
 			zhash_pkt.ctx = &zhash_ctx;
@@ -553,7 +553,7 @@ static int test_zephyr_hash_chunk(const struct hash_tp *htbl, size_t nentries, s
 		}
 
 		remsz = msgsz - total_updatesz;
-		zhash_pkt.in_buf = (uint8_t *)msgptr;
+		zhash_pkt.in_buf = msgptr;
 		zhash_pkt.in_len = remsz;
 		zhash_pkt.out_buf = digest;
 		zhash_pkt.ctx = &zhash_ctx;

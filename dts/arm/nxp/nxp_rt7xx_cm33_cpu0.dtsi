@@ -4,17 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
-#include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "nxp_rt7xx_common.dtsi"
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
+	aliases {
+		die-temp0 = &pmc_tmpsns;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -61,134 +59,36 @@
 	};
 
 	soc {
-		sram: memory@10000000 {
-			ranges = <0x0 0x10000000 0x780000
-				0x20000000 0x30000000 0x780000>;
-		};
-
-		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
-		};
-
-		xspi0: memory-controller@50184000 {
+		xspi0: spi@50184000 {
 			reg = <0x50184000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
 		};
 
-		xspi1: memory-controller@50185000 {
+		xspi1: spi@50185000 {
 			reg = <0x50185000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
 		};
-
-		xspi2: memory-controller@50411000 {
-			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
-		};
-
-	};
-
-	pinctrl: pinctrl {
-		compatible = "nxp,rt-iocon-pinctrl";
 	};
 
 	/* USB PLL */
 	usbclk: usbpll-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
-	};
-};
-
-
-&sram {
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	/* RT7XX SRAM partitions are shared between code and data. Boards can override
-	 *  the reg properties of either sram0 or sram_code nodes to change the balance
-	 *  of SRAM allocation.
-	 *
-	 * The SRAM region [0x000000-0x017FFF] is reserved for ROM bootloader execution.
-	 * Can be reused after boot.
-	 * The SRAM region [0x018000-0x17FFFF] is reserved for Non-cached shared memory
-	 * or application data.
-	 * The SRAM region [0x180000-0x1FFFFF] is reserved for CPU0 application, last
-	 * 2MB non-cacheable data for NPU/GPU/Display etc.
-	 * The SRAM region [0x200000-0x400000] is reserved for HiFi4 application.
-	 */
-
-	sram4rom: memory@20000000{
-		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(96)>;
-	};
-
-	/* This partition is shared with code in RAM */
-	sram_shared_code: memory@20018000{
-		compatible = "mmio-sram";
-		reg = <0x20018000 DT_SIZE_K(1024+512-96)>;
-	};
-
-	sram0: memory@20180000 {
-		compatible = "mmio-sram";
-		reg = <0x20180000 DT_SIZE_K(512)>;
-	};
-
-	sram1: memory@20200000 {
-		compatible =  "mmio-sram";
-		reg = <0x20200000 DT_SIZE_K(2048)>;
 	};
 };
 
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	/*
 	 * Note that the offsets here are relative to the base address.
 	 * The base addresses differ between non-secure (0x40000000)
 	 * and secure modes (0x50000000).
 	 */
 
-	lpadc0: adc@20c000 {
-		compatible = "nxp,lpc-lpadc";
-		reg = <0x20c000 0x304>;
-		interrupts = <15 0>;
-		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
-		voltage-ref= <1>;
-		calibration-average = <128>;
-		power-level = <0>;
-		offset-value-a = <10>;
-		offset-value-b = <10>;
-		#io-channel-cells = <1>;
-		clocks = <&clkctl3 MCUX_LPADC1_CLK>;
-	};
-
 	rstctl0: reset-controller@0 {
 		compatible = "nxp,rstctl";
 		reg = <0x0 0x1000>;
-		#reset-cells = <1>;
-	};
-
-	rstctl2: reset-controller@67000 {
-		compatible = "nxp,rstctl";
-		reg = <0x67000 0x1000>;
-		#reset-cells = <1>;
-	};
-
-	rstctl3: reset-controller@60000 {
-		compatible = "nxp,rstctl";
-		reg = <0x60000 0x1000>;
-		#reset-cells = <1>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		sysrststat: hwinfo@60000 {
-			compatible = "nxp,rstctl-hwinfo";
-			reg = <0x60000 0x4>;
-		};
-	};
-
-	rstctl4: reset-controller@a0000 {
-		compatible = "nxp,rstctl";
-		reg = <0xa0000 0x1000>;
 		#reset-cells = <1>;
 	};
 
@@ -205,24 +105,6 @@
 	clkctl0: clock-controller@1000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl2: clock-controller@65000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x65000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl3: clock-controller@61000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x61000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl4: clock-controller@a1000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0xa1000 0x1000>;
 		#clock-cells = <1>;
 	};
 
@@ -294,9 +176,9 @@
 		dma-requests = <105>;
 		reg = <0x140000 0x1000>;
 		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
-			<63 0>, <64 0>, <65 0>, <66 0>,
-			<67 0>, <68 0>, <69 0>, <70 0>,
-			<71 0>, <72 0>, <73 0>, <74 0>;
+			     <63 0>, <64 0>, <65 0>, <66 0>,
+			     <67 0>, <68 0>, <69 0>, <70 0>,
+			     <71 0>, <72 0>, <73 0>, <74 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -309,9 +191,9 @@
 		dma-requests = <105>;
 		reg = <0x160000 0x1000>;
 		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
-			<79 0>, <80 0>, <81 0>, <82 0>,
-			<83 0>, <84 0>, <85 0>, <86 0>,
-			<87 0>, <88 0>, <89 0>, <90 0>;
+			     <79 0>, <80 0>, <81 0>, <82 0>,
+			     <83 0>, <84 0>, <85 0>, <86 0>,
+			     <87 0>, <88 0>, <89 0>, <90 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -323,47 +205,18 @@
 		#pinmux-cells = <2>;
 	};
 
-	syscon2: syscon@66000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x66000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	syscon3: syscon@62000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x62000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	syscon4: syscon@a2000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0xa2000 0x1000>;
-		#clock-cells = <1>;
-	};
-
 	iocon: pinctrl@4000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x4000 0x1000>;
 		status = "okay";
 	};
 
-	iocon1: pinctrl@64000 {
-		compatible = "nxp,lpc-iocon";
-		reg = <0x64000 0x1000>;
-		status = "okay";
-	};
-
-	iocon2: pinctrl@a5000 {
-		compatible = "nxp,lpc-iocon";
-		reg = <0xa5000 0x1000>;
-		status = "okay";
-	};
-
 	gpio0: gpio@100000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x100000 0x1000>;
-		interrupts = <91 0>,<92 0>;
+		reg = <0x100000 0x1000>, <0x4000 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <91 0>, <92 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio0>;
@@ -372,8 +225,9 @@
 	gpio1: gpio@102000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x102000 0x1000>;
-		interrupts = <93 0>,<94 0>;
+		reg = <0x102000 0x1000>, <0x4080 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <93 0>, <94 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio1>;
@@ -382,8 +236,9 @@
 	gpio2: gpio@104000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x104000 0x1000>;
-		interrupts = <95 0>,<96 0>;
+		reg = <0x104000 0x1000>, <0x4100 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <95 0>, <96 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio2>;
@@ -392,8 +247,9 @@
 	gpio3: gpio@106000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x106000 0x1000>;
-		interrupts = <97 0>,<98 0>;
+		reg = <0x106000 0x1000>, <0x4180 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <97 0>, <98 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio3>;
@@ -402,8 +258,9 @@
 	gpio4: gpio@108000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x108000 0x1000>;
-		interrupts = <99 0>,<100 0>;
+		reg = <0x108000 0x1000>, <0xa5000 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <99 0>, <100 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio4>;
@@ -412,8 +269,9 @@
 	gpio5: gpio@10a000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x10a000 0x1000>;
-		interrupts = <101 0>,<102 0>;
+		reg = <0x10a000 0x1000>, <0xa5080 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <101 0>, <102 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio5>;
@@ -422,8 +280,9 @@
 	gpio6: gpio@10c000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x10c000 0x1000>;
-		interrupts = <103 0>,<104 0>;
+		reg = <0x10c000 0x1000>, <0xa5100 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <103 0>, <104 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio6>;
@@ -432,8 +291,9 @@
 	gpio7: gpio@10e000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x10e000 0x1000>;
-		interrupts = <105 0>,<106 0>;
+		reg = <0x10e000 0x1000>, <0xa5180 0x80>;
+		reg-names = "gpio", "iopctl_pio";
+		interrupts = <105 0>, <106 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio7>;
@@ -985,6 +845,36 @@
 		};
 	};
 
+	/* MU0: MUA, CPU0 to HiFi1 */
+	mbox0_a: mbox@200000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x200000 0x1000>;
+		interrupts = <29 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU1: MUA, CPU0 to CPU1 */
+	mbox1_a: mbox@202000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x202000 0x1000>;
+		interrupts = <30 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU4: MUA, CPU0 to HiFi4 */
+	mbox4_a: mbox@189000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x189000 0x1000>;
+		interrupts = <31 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
 	/* LPFlexcomm14/16 only support LPSPI function  */
 	lpspi14: spi@484000 {
 		compatible = "nxp,lpspi";
@@ -997,7 +887,6 @@
 		rx-fifo-size = <8>;
 		status = "disabled";
 	};
-
 
 	/* LPFlexcomm15 only support LPI2C function. */
 	lpi2c15: i2c@213000 {
@@ -1057,8 +946,8 @@
 		clocks = <&clkctl4 MCUX_USDHC1_CLK>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	usdhc1: memory-controller@413000 {
@@ -1069,8 +958,8 @@
 		clocks = <&clkctl4 MCUX_USDHC2_CLK>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	mrt0: timer@2d000 {
@@ -1145,7 +1034,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x152000 0x1000>;
+		reg = <0x152000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI0_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <115 0>;
@@ -1162,7 +1051,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x153000 0x1000>;
+		reg = <0x153000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI1_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <116 0>;
@@ -1179,7 +1068,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x154000 0x1000>;
+		reg = <0x154000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI2_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <117 0>;
@@ -1215,8 +1104,8 @@
 		reg = <0x417000 0x1000>;
 		interrupts = <58 0>;
 		clocks = <&clkctl4 MCUX_MIPI_DSI_DPHY_CLK>,
-				 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
-				 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
+			 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
+			 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
 		clock-names = "dphy", "esc", "pixel";
 		ulps-control;
 		status = "disabled";
@@ -1229,36 +1118,35 @@
 		status = "disabled";
 	};
 
-	mbox4: mailbox@189000 {
-		#mbox-cells = <1>;
-
-		compatible = "nxp,mbox-imx-mu";
-		reg = <0x189000 0x1000>;
-
-		interrupts = <31 0>;
-		rx-channels = <4>;
-
+	pmc_tmpsns: pmc-tmpsns {
+		compatible = "nxp,pmc-tmpsns";
 		status = "disabled";
 	};
-};
-
-&systick {
-	/*
-	 * RT700 cm33_cpu0 relies by default on the OS Timer for system
-	 * clock implementation, so the SysTick node is not to be enabled.
-	 */
-	status = "disabled";
 };
 
 &xspi0 {
 	compatible = "nxp,xspi";
 	status = "disabled";
-	interrupts = <42 0>;
+	interrupts = <118 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clocks = <&clkctl0 MCUX_XSPI_CLK>;
+	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
 };
 
-&nvic {
-	arm,num-irq-priority-bits = <3>;
+&xspi1 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <119 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+};
+
+&xspi2 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <120 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
 };

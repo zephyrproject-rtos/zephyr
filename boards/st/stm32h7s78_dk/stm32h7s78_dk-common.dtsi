@@ -1,0 +1,335 @@
+/*
+ * Copyright (c) 2024-2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7rs/stm32h7s7X8.dtsi>
+#include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+		zephyr,display = &ltdc;
+		zephyr,touch = &display_ctp;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_1 {
+			gpios = <&gpioo 1 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+
+		orange_led: led_2 {
+			gpios = <&gpioo 5 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+
+		red_led: led_3 {
+			gpios = <&gpiom 2 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+
+		blue_led: led_4 {
+			gpios = <&gpiom 3 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+		spi-flash0 = &mx66uw1g45;
+	};
+
+	ext_flash_mem: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(128)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	hse-bypass; /* X3 is a 24MHz oscillator on PH0 */
+	status = "okay";
+};
+
+&pll {
+	div-m = <12>;
+	mul-n = <250>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <12>;
+	mul-n = <25>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(250)>;
+	dcpre = <1>;
+	hpre = <1>;
+	ppre1 = <2>;
+	ppre2 = <2>;
+	ppre4 = <2>;
+	ppre5 = <2>;
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pd0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&spi4 {
+	pinctrl-0 = <&spi4_nss_pe4 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	display_ctp: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		status = "okay";
+	};
+};
+
+&xspi1 {
+	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
+		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
+		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1 &xspim_p1_io2_pp2
+		     &xspim_p1_io3_pp3 &xspim_p1_io4_pp4 &xspim_p1_io5_pp5
+		     &xspim_p1_io6_pp6 &xspim_p1_io7_pp7 &xspim_p1_io8_pp8
+		     &xspim_p1_io9_pp9 &xspim_p1_io10_pp10 &xspim_p1_io11_pp11
+		     &xspim_p1_io12_pp12 &xspim_p1_io13_pp13 &xspim_p1_io14_pp14
+		     &xspim_p1_io15_pp15>;
+
+	pinctrl-names = "default";
+	status = "okay";
+
+	memc: aps256xxn-obr@0 {
+		compatible = "st,stm32-xspi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		max-frequency = <DT_FREQ_M(200)>;
+		fixed-latency;
+		io-x16-mode;
+		read-latency = <4>;
+		write-latency = <1>;
+		burst-length = <0>;
+		st,csbound = <11>;
+		status = "okay";
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
+		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
+		     &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11
+		     &xspim_p2_dqs0_pn0>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	ext_flash_ctrl: xspi-nor-flash@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
+
+		ext_flash: mx66uw1g45: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(128)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+usb2: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb2 {};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pf9 &ltdc_r1_pf10 &ltdc_r2_pf0 &ltdc_r3_pb4
+		     &ltdc_r4_pb3 &ltdc_r5_pa15 &ltdc_r6_pg1 &ltdc_r7_pg0
+		     &ltdc_g0_pf7 &ltdc_g1_pf15 &ltdc_g2_pa1 &ltdc_g3_pa0
+		     &ltdc_g4_pb13 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pb15
+		     &ltdc_b0_pf11 &ltdc_b1_pg14 &ltdc_b2_pa12 &ltdc_b3_pa11
+		     &ltdc_b4_pa10 &ltdc_b5_pa9 &ltdc_b6_pa8 &ltdc_b7_pa6
+		     &ltdc_de_pb14 &ltdc_clk_pg13 &ltdc_hsync_pg2 &ltdc_vsync_pe11>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <4>;
+		vsync-len = <4>;
+		hback-porch = <8>;
+		vback-porch = <8>;
+		hfront-porch = <8>;
+		vfront-porch = <8>;
+	};
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};

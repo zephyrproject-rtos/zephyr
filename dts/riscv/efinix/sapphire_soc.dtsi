@@ -25,6 +25,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			clock-frequency = <100000000>;
 			compatible = "efinix,vexriscv-sapphire", "riscv";
@@ -101,6 +102,5 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
-
 	};
 };

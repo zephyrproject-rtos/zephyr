@@ -622,7 +622,7 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			      &adc_cc23x0_init,					\
+			      adc_cc23x0_init,					\
 			      PM_DEVICE_DT_INST_GET(n),				\
 			      &adc_cc23x0_data_##n,				\
 			      &adc_cc23x0_config_##n,				\

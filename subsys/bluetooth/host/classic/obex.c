@@ -28,11 +28,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_obex);
 
+#define OBEX_SERVER(node) CONTAINER_OF(node, struct bt_obex_server, _node)
+
 static struct net_buf *obex_alloc_buf(struct bt_obex *obex)
 {
 	struct net_buf *buf;
 
-	if (!obex->_transport_ops || !obex->_transport_ops->alloc_buf) {
+	if (obex == NULL || obex->_transport_ops == NULL ||
+	    obex->_transport_ops->alloc_buf == NULL) {
 		LOG_WRN("Buffer allocation is unsupported");
 		return NULL;
 	}
@@ -44,15 +47,15 @@ static struct net_buf *obex_alloc_buf(struct bt_obex *obex)
 	return buf;
 }
 
-static int obex_send(struct bt_obex *obex, struct net_buf *buf)
+static int obex_send(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
 {
-	if (!obex->_transport_ops || !obex->_transport_ops->send) {
+	if (obex == NULL || obex->_transport_ops == NULL || obex->_transport_ops->send == NULL) {
 		LOG_WRN("OBEX sending is unsupported");
 		return -EIO;
 	}
 
-	if (buf->len > obex->tx.mopl) {
-		LOG_WRN("Data length too long (%d > %d)", buf->len, obex->tx.mopl);
+	if (buf->len > mopl) {
+		LOG_WRN("Data length too long (%d > %d)", buf->len, mopl);
 		return -EMSGSIZE;
 	}
 
@@ -63,7 +66,8 @@ static int obex_transport_disconn(struct bt_obex *obex)
 {
 	int err;
 
-	if (!obex->_transport_ops || !obex->_transport_ops->disconnect) {
+	if (obex == NULL || obex->_transport_ops == NULL ||
+	    obex->_transport_ops->disconnect == NULL) {
 		LOG_WRN("OBEX transport disconn is unsupported");
 		return -EIO;
 	}
@@ -75,12 +79,75 @@ static int obex_transport_disconn(struct bt_obex *obex)
 	return -EINVAL;
 }
 
-struct server_handler {
-	uint8_t opcode;
-	int (*handler)(struct bt_obex *obex, uint16_t len, struct net_buf *buf);
+struct bt_obex_has_header {
+	uint8_t id;
+	bool found;
 };
 
-static int obex_server_connect(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static bool bt_obex_has_header_cb(struct bt_obex_hdr *hdr, void *user_data)
+{
+	struct bt_obex_has_header *data;
+
+	data = user_data;
+
+	if (hdr->id == data->id) {
+		data->found = true;
+		return false;
+	}
+	return true;
+}
+
+static bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
+{
+	struct bt_obex_has_header data;
+	int err;
+
+	if (buf == NULL) {
+		LOG_WRN("Invalid parameter");
+		return false;
+	}
+
+	data.id = id;
+	data.found = false;
+
+	err = bt_obex_header_parse(buf, bt_obex_has_header_cb, &data);
+	if (err != 0) {
+		return false;
+	}
+
+	return data.found;
+}
+
+int bt_obex_make_uuid(union bt_obex_uuid *uuid, const uint8_t *data, uint16_t len)
+{
+	switch (len) {
+	case BT_UUID_SIZE_16:
+		uuid->uuid.type = BT_UUID_TYPE_16;
+		uuid->u16.val = sys_get_be16(data);
+		break;
+	case BT_UUID_SIZE_32:
+		uuid->uuid.type = BT_UUID_TYPE_32;
+		uuid->u32.val = sys_get_be32(data);
+		break;
+	case BT_UUID_SIZE_128:
+		uuid->uuid.type = BT_UUID_TYPE_128;
+		sys_memcpy_swap(uuid->u128.val, data, len);
+		break;
+	default:
+		LOG_WRN("Unsupported UUID len %u", len);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+struct server_handler {
+	uint8_t opcode;
+	uint16_t min_len;
+	int (*handler)(struct bt_obex_server *server, uint16_t len, struct net_buf *buf);
+};
+
+static int obex_server_connect(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_conn_req_hdr *hdr;
 	struct bt_obex_conn_rsp_hdr *rsp_conn_hdr;
@@ -90,6 +157,8 @@ static int obex_server_connect(struct bt_obex *obex, uint16_t len, struct net_bu
 	uint16_t mopl;
 	uint8_t rsp_code;
 	int err;
+	uint16_t target_len;
+	const uint8_t *target_data;
 
 	LOG_DBG("");
 
@@ -99,19 +168,19 @@ static int obex_server_connect(struct bt_obex *obex, uint16_t len, struct net_bu
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_DISCONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTED) {
 		LOG_WRN("Invalid state, connect refused");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->connect) {
+	if (server->ops->connect == NULL) {
 		LOG_WRN("Conn req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_CONNECT)) {
+	if (!atomic_cas(&server->_opcode, 0, BT_OBEX_OPCODE_CONNECT)) {
 		LOG_WRN("Unexpected conn request");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
@@ -121,22 +190,47 @@ static int obex_server_connect(struct bt_obex *obex, uint16_t len, struct net_bu
 	flags = net_buf_pull_u8(buf);
 	mopl = net_buf_pull_be16(buf);
 
-	LOG_DBG("version %u, flags %u, mopl %u", version, flags, mopl);
+	atomic_set_bit_to(&server->_flags, BT_OBEX_HAS_TARGET,
+			  bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TARGET));
 
-	if (mopl < BT_OBEX_MIN_MTU) {
-		LOG_WRN("Invalid MTU length (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+	err = bt_obex_get_header_target(buf, &target_len, &target_data);
+	if (err != 0 && atomic_test_bit(&server->_flags, BT_OBEX_HAS_TARGET)) {
+		LOG_WRN("Invalid target header");
 		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
 		goto failed;
 	}
 
-	obex->tx.mopl = mopl;
+	if (err == 0) {
+		err = bt_obex_make_uuid(&server->_target, target_data, target_len);
+		if (err != 0) {
+			LOG_WRN("Invalid UUID header");
+			rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
+			goto failed;
+		}
+	}
 
-	atomic_set(&obex->_state, BT_OBEX_CONNECTING);
-	obex->server_ops->connect(obex, version, mopl, buf);
+	LOG_DBG("version %u, flags %u, mopl %u", version, flags, mopl);
+
+	if (mopl < BT_OBEX_MIN_MTU) {
+		LOG_WRN("Invalid MOPL (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
+		goto failed;
+	}
+
+	if (mopl > server->obex->tx.mtu) {
+		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, server->obex->tx.mtu);
+		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
+		goto failed;
+	}
+
+	server->tx.mopl = mopl;
+
+	atomic_set(&server->_state, BT_OBEX_CONNECTING);
+	server->ops->connect(server, version, mopl, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -150,7 +244,7 @@ failed:
 	rsp_conn_hdr->version = BT_OBEX_VERSION;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -158,7 +252,7 @@ failed:
 	return err;
 }
 
-static int obex_server_disconn(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_disconn(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
 	uint8_t rsp_code;
@@ -172,30 +266,30 @@ static int obex_server_disconn(struct bt_obex *obex, uint16_t len, struct net_bu
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->disconnect) {
+	if (server->ops->disconnect == NULL) {
 		LOG_WRN("Conn req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
+	if (!atomic_cas(&server->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
 		LOG_WRN("Unexpected disconn request");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	atomic_set(&obex->_state, BT_OBEX_DISCONNECTING);
-	obex->server_ops->disconnect(obex, buf);
+	atomic_set(&server->_state, BT_OBEX_DISCONNECTING);
+	server->ops->disconnect(server, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -205,7 +299,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -213,7 +307,7 @@ failed:
 	return err;
 }
 
-static int obex_server_put_common(struct bt_obex *obex, bool final, uint16_t len,
+static int obex_server_put_common(struct bt_obex_server *server, bool final, uint16_t len,
 				  struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
@@ -230,21 +324,21 @@ static int obex_server_put_common(struct bt_obex *obex, bool final, uint16_t len
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->put) {
+	if (server->ops->put == NULL) {
 		LOG_WRN("Put req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
 	req_code = final ? BT_OBEX_OPCODE_PUT_F : BT_OBEX_OPCODE_PUT;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
-		opcode = atomic_get(&obex->_opcode);
+	if (!atomic_cas(&server->_opcode, 0, req_code)) {
+		opcode = atomic_get(&server->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 			LOG_WRN("Unexpected put request");
 			rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
@@ -258,15 +352,15 @@ static int obex_server_put_common(struct bt_obex *obex, bool final, uint16_t len
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&server->_opcode, opcode, req_code);
 		}
 	}
 
-	obex->server_ops->put(obex, final, buf);
+	server->ops->put(server, final, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -276,7 +370,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -284,17 +378,17 @@ failed:
 	return err;
 }
 
-static int obex_server_put(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_put(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
-	return obex_server_put_common(obex, false, len, buf);
+	return obex_server_put_common(server, false, len, buf);
 }
 
-static int obex_server_put_final(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_put_final(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
-	return obex_server_put_common(obex, true, len, buf);
+	return obex_server_put_common(server, true, len, buf);
 }
 
-static int obex_server_get_common(struct bt_obex *obex, bool final, uint16_t len,
+static int obex_server_get_common(struct bt_obex_server *server, bool final, uint16_t len,
 				  struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
@@ -311,21 +405,21 @@ static int obex_server_get_common(struct bt_obex *obex, bool final, uint16_t len
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->get) {
+	if (server->ops->get == NULL) {
 		LOG_WRN("Get req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
 	req_code = final ? BT_OBEX_OPCODE_GET_F : BT_OBEX_OPCODE_GET;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
-		opcode = atomic_get(&obex->_opcode);
+	if (!atomic_cas(&server->_opcode, 0, req_code)) {
+		opcode = atomic_get(&server->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 			LOG_WRN("Unexpected get request");
 			rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
@@ -339,15 +433,15 @@ static int obex_server_get_common(struct bt_obex *obex, bool final, uint16_t len
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&server->_opcode, opcode, req_code);
 		}
 	}
 
-	obex->server_ops->get(obex, final, buf);
+	server->ops->get(server, final, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -357,7 +451,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -365,17 +459,17 @@ failed:
 	return err;
 }
 
-static int obex_server_get(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_get(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
-	return obex_server_get_common(obex, false, len, buf);
+	return obex_server_get_common(server, false, len, buf);
 }
 
-static int obex_server_get_final(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_get_final(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
-	return obex_server_get_common(obex, true, len, buf);
+	return obex_server_get_common(server, true, len, buf);
 }
 
-static int obex_server_setpath(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_setpath(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
 	struct bt_obex_setpath_req_hdr *req_hdr;
@@ -390,30 +484,30 @@ static int obex_server_setpath(struct bt_obex *obex, uint16_t len, struct net_bu
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->setpath) {
+	if (server->ops->setpath == NULL) {
 		LOG_WRN("Setpath req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_SETPATH)) {
+	if (!atomic_cas(&server->_opcode, 0, BT_OBEX_OPCODE_SETPATH)) {
 		LOG_WRN("Unexpected setpath request");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
 	req_hdr = net_buf_pull_mem(buf, sizeof(*req_hdr));
-	obex->server_ops->setpath(obex, req_hdr->flags, buf);
+	server->ops->setpath(server, req_hdr->flags, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -423,7 +517,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -431,7 +525,7 @@ failed:
 	return err;
 }
 
-static int obex_server_action_common(struct bt_obex *obex, bool final, uint16_t len,
+static int obex_server_action_common(struct bt_obex_server *server, bool final, uint16_t len,
 				     struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
@@ -448,21 +542,21 @@ static int obex_server_action_common(struct bt_obex *obex, bool final, uint16_t 
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->action) {
+	if (server->ops->action == NULL) {
 		LOG_WRN("Action req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
 	req_code = final ? BT_OBEX_OPCODE_ACTION_F : BT_OBEX_OPCODE_ACTION;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
-		opcode = atomic_get(&obex->_opcode);
+	if (!atomic_cas(&server->_opcode, 0, req_code)) {
+		opcode = atomic_get(&server->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 			LOG_WRN("Unexpected action request");
 			rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
@@ -476,15 +570,15 @@ static int obex_server_action_common(struct bt_obex *obex, bool final, uint16_t 
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&server->_opcode, opcode, req_code);
 		}
 	}
 
-	obex->server_ops->action(obex, final, buf);
+	server->ops->action(server, final, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -494,7 +588,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -502,17 +596,18 @@ failed:
 	return err;
 }
 
-static int obex_server_action(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_action(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
-	return obex_server_action_common(obex, false, len, buf);
+	return obex_server_action_common(server, false, len, buf);
 }
 
-static int obex_server_action_final(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_action_final(struct bt_obex_server *server, uint16_t len,
+				    struct net_buf *buf)
 {
-	return obex_server_action_common(obex, true, len, buf);
+	return obex_server_action_common(server, true, len, buf);
 }
 
-static int obex_server_session(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_session(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
 	uint8_t rsp_code;
@@ -526,7 +621,7 @@ static int obex_server_session(struct bt_obex *obex, uint16_t len, struct net_bu
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
@@ -536,7 +631,7 @@ static int obex_server_session(struct bt_obex *obex, uint16_t len, struct net_bu
 	rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -546,7 +641,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -554,7 +649,7 @@ failed:
 	return err;
 }
 
-static int obex_server_abort(struct bt_obex *obex, uint16_t len, struct net_buf *buf)
+static int obex_server_abort(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
 	uint8_t rsp_code;
@@ -568,25 +663,25 @@ static int obex_server_abort(struct bt_obex *obex, uint16_t len, struct net_buf 
 		goto failed;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
 		goto failed;
 	}
 
-	if (!obex->server_ops->abort) {
+	if (server->ops->abort == NULL) {
 		LOG_WRN("Abort req handling not implemented");
 		rsp_code = BT_OBEX_RSP_CODE_NOT_IMPL;
 		goto failed;
 	}
 
-	atomic_set(&obex->_opcode, BT_OBEX_OPCODE_ABORT);
+	atomic_set(&server->_opcode, BT_OBEX_OPCODE_ABORT);
 
-	obex->server_ops->abort(obex, buf);
+	server->ops->abort(server, buf);
 	return 0;
 
 failed:
-	buf = obex_alloc_buf(obex);
+	buf = obex_alloc_buf(server->obex);
 	if (!buf) {
 		LOG_WRN("Cannot allocate buffer");
 		return -ENOBUFS;
@@ -596,7 +691,7 @@ failed:
 	rsp_hdr->code = rsp_code;
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
 		net_buf_unref(buf);
 	}
@@ -605,25 +700,79 @@ failed:
 }
 
 struct server_handler server_handler[] = {
-	{BT_OBEX_OPCODE_CONNECT, obex_server_connect},
-	{BT_OBEX_OPCODE_DISCONN, obex_server_disconn},
-	{BT_OBEX_OPCODE_PUT, obex_server_put},
-	{BT_OBEX_OPCODE_PUT_F, obex_server_put_final},
-	{BT_OBEX_OPCODE_GET, obex_server_get},
-	{BT_OBEX_OPCODE_GET_F, obex_server_get_final},
-	{BT_OBEX_OPCODE_SETPATH, obex_server_setpath},
-	{BT_OBEX_OPCODE_ACTION, obex_server_action},
-	{BT_OBEX_OPCODE_ACTION_F, obex_server_action_final},
-	{BT_OBEX_OPCODE_SESSION, obex_server_session},
-	{BT_OBEX_OPCODE_ABORT, obex_server_abort},
+	{BT_OBEX_OPCODE_CONNECT, sizeof(struct bt_obex_conn_req_hdr), obex_server_connect},
+	{BT_OBEX_OPCODE_DISCONN, 0, obex_server_disconn},
+	{BT_OBEX_OPCODE_PUT, 0, obex_server_put},
+	{BT_OBEX_OPCODE_PUT_F, 0, obex_server_put_final},
+	{BT_OBEX_OPCODE_GET, 0, obex_server_get},
+	{BT_OBEX_OPCODE_GET_F, 0, obex_server_get_final},
+	{BT_OBEX_OPCODE_SETPATH, sizeof(struct bt_obex_setpath_req_hdr), obex_server_setpath},
+	{BT_OBEX_OPCODE_ACTION, 0, obex_server_action},
+	{BT_OBEX_OPCODE_ACTION_F, 0, obex_server_action_final},
+	{BT_OBEX_OPCODE_SESSION, 0, obex_server_session},
+	{BT_OBEX_OPCODE_ABORT, 0, obex_server_abort},
 };
+
+static struct bt_obex_server *obex_get_server_from_conn_id(struct bt_obex *obex, uint32_t conn_id)
+{
+	struct bt_obex_server *server, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_servers, server, next, _node) {
+		if (server->_conn_id == conn_id) {
+			return server;
+		}
+	}
+	return NULL;
+}
+
+static struct bt_obex_server *obex_get_server_from_uuid(struct bt_obex *obex, struct bt_uuid *uuid)
+{
+	struct bt_obex_server *server, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_servers, server, next, _node) {
+		if (server->uuid != NULL && bt_uuid_cmp(&server->uuid->uuid, uuid) == 0) {
+			return server;
+		}
+	}
+	return NULL;
+}
+
+static struct bt_obex_server *obex_get_server_with_state(struct bt_obex *obex,
+							 enum bt_obex_state state)
+{
+	struct bt_obex_server *server, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_servers, server, next, _node) {
+		if (server->uuid == NULL && atomic_get(&server->_state) == state) {
+			return server;
+		}
+	}
+	return NULL;
+}
+
+static uint16_t obex_server_get_hdr_len(uint8_t opcode)
+{
+	ARRAY_FOR_EACH(server_handler, i) {
+		if (server_handler[i].opcode == opcode) {
+			return server_handler[i].min_len;
+		}
+	}
+
+	return 0;
+}
 
 static int obex_server_recv(struct bt_obex *obex, struct net_buf *buf)
 {
-	struct bt_obex_req_hdr *hdr;
+	struct bt_obex_req_hdr *hdr = NULL;
 	struct bt_obex_rsp_hdr *rsp_hdr;
+	struct bt_obex_server *server = NULL;
+	uint32_t conn_id;
 	uint16_t len;
+	uint16_t target_len;
+	const uint8_t *target_data;
+	uint16_t min_hdr_len;
 	int err;
+	enum bt_obex_rsp_code rsp_code = BT_OBEX_RSP_CODE_BAD_REQ;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_WRN("Too small header size (%d < %d)", buf->len, sizeof(*hdr));
@@ -632,30 +781,95 @@ static int obex_server_recv(struct bt_obex *obex, struct net_buf *buf)
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = sys_be16_to_cpu(hdr->len);
+	min_hdr_len = obex_server_get_hdr_len(hdr->code);
 
-	for (size_t i = 0; i < ARRAY_SIZE(server_handler); i++) {
+	if (min_hdr_len > buf->len) {
+		LOG_WRN("Malformed request (%d > %d)", min_hdr_len, buf->len);
+		goto failed;
+	}
+
+	if (hdr->code == BT_OBEX_OPCODE_CONNECT) {
+		struct net_buf_simple_state state;
+
+		net_buf_simple_save(&buf->b, &state);
+		net_buf_pull(buf, min_hdr_len);
+		err = bt_obex_get_header_target(buf, &target_len, &target_data);
+		net_buf_simple_restore(&buf->b, &state);
+		if (err == 0) {
+			union bt_obex_uuid u;
+
+			err = bt_obex_make_uuid(&u, target_data, target_len);
+			if (err != 0) {
+				LOG_WRN("Unsupported target header len %u", target_len);
+				goto failed;
+			}
+
+			server = obex_get_server_from_uuid(obex, &u.uuid);
+		}
+
+		if (server == NULL) {
+			server = obex_get_server_with_state(obex, BT_OBEX_DISCONNECTED);
+		}
+	} else {
+		struct net_buf_simple_state state;
+
+		net_buf_simple_save(&buf->b, &state);
+		net_buf_pull(buf, min_hdr_len);
+		err = bt_obex_get_header_conn_id(buf, &conn_id);
+		net_buf_simple_restore(&buf->b, &state);
+		if (err == 0) {
+			server = obex_get_server_from_conn_id(obex, conn_id);
+		} else if (atomic_ptr_get(&obex->_active_server) != NULL) {
+			server = atomic_ptr_get(&obex->_active_server);
+		} else if (sys_slist_len(&obex->_servers) == 1) {
+			/* Only if the count of servers is 1, use it as default. */
+			server = OBEX_SERVER(sys_slist_peek_head(&obex->_servers));
+		}
+	}
+
+	if (server == NULL) {
+		LOG_WRN("No server found from %p", obex);
+		rsp_code = BT_OBEX_RSP_CODE_NOT_FOUND;
+		goto failed;
+	}
+
+	ARRAY_FOR_EACH(server_handler, i) {
 		if (server_handler[i].opcode == hdr->code) {
-			err = server_handler[i].handler(obex, len - sizeof(*hdr), buf);
-			if (err) {
+			err = server_handler[i].handler(server, len - sizeof(*hdr), buf);
+			if (err != 0) {
+				atomic_ptr_clear(&obex->_active_server);
 				LOG_WRN("Handler err %d", err);
+			} else {
+				/* Save the server */
+				atomic_ptr_set(&obex->_active_server, server);
 			}
 			return err;
 		}
 	}
 
 failed:
-	LOG_WRN("Unsupported request");
+	LOG_WRN("Failed to process request");
 	buf = obex_alloc_buf(obex);
 	if (!buf) {
+		LOG_ERR("Failed to allocate buf");
 		return -ENOBUFS;
 	}
 
 	rsp_hdr = (void *)net_buf_add(buf, sizeof(*rsp_hdr));
-	rsp_hdr->code = BT_OBEX_RSP_CODE_BAD_REQ;
+	rsp_hdr->code = rsp_code;
+	if (hdr != NULL && hdr->code == BT_OBEX_OPCODE_CONNECT) {
+		struct bt_obex_conn_rsp_hdr *conn_rsp_hdr;
+
+		conn_rsp_hdr = (void *)net_buf_add(buf, sizeof(*conn_rsp_hdr));
+		conn_rsp_hdr->flags = 0;
+		conn_rsp_hdr->mopl = sys_cpu_to_be16(obex->rx.mtu);
+		conn_rsp_hdr->version = BT_OBEX_VERSION;
+	}
 	rsp_hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(obex, BT_OBEX_MIN_MTU, buf);
 	if (err) {
+		LOG_ERR("Failed to send obex rep err %d", err);
 		net_buf_unref(buf);
 	}
 
@@ -664,10 +878,11 @@ failed:
 
 struct client_handler {
 	uint8_t opcode;
-	int (*handler)(struct bt_obex *obex, uint8_t rsp_code, uint16_t len, struct net_buf *buf);
+	int (*handler)(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
+		       struct net_buf *buf);
 };
 
-static int obex_client_connect(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			       struct net_buf *buf)
 {
 	struct bt_obex_conn_rsp_hdr *rsp_conn_hdr;
@@ -677,64 +892,124 @@ static int obex_client_connect(struct bt_obex *obex, uint8_t rsp_code, uint16_t 
 
 	LOG_DBG("");
 
-	atomic_clear(&obex->_opcode);
+	atomic_clear(&client->_opcode);
+	atomic_ptr_clear(&client->obex->_active_client);
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTING) {
-		return -EINVAL;
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTING) {
+		LOG_WRN("Invalid connection state %u", (uint8_t)atomic_get(&client->_state));
+		goto failed;
 	}
 
 	if ((len != buf->len) || (buf->len < sizeof(*rsp_conn_hdr))) {
 		LOG_WRN("Invalid packet size");
 		goto failed;
-	} else {
-		version = net_buf_pull_u8(buf);
-		flags = net_buf_pull_u8(buf);
-		mopl = net_buf_pull_be16(buf);
-
-		LOG_DBG("version %u, flags %u, mopl %u", version, flags, mopl);
-
-		if (mopl < BT_OBEX_MIN_MTU) {
-			LOG_WRN("Invalid MTU length (%d < %d)", mopl, BT_OBEX_MIN_MTU);
-			goto failed;
-		}
-		obex->tx.mopl = mopl;
 	}
 
-	atomic_set(&obex->_state,
+	version = net_buf_pull_u8(buf);
+	flags = net_buf_pull_u8(buf);
+	mopl = net_buf_pull_be16(buf);
+
+	LOG_DBG("version %u, flags %u, mopl %u", version, flags, mopl);
+
+	if (atomic_test_bit(&client->_flags, BT_OBEX_HAS_TARGET) &&
+	    rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
+		union bt_obex_uuid u;
+		int err;
+		uint16_t who_len;
+		const uint8_t *who_data;
+
+		if (bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO) !=
+		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
+			LOG_WRN("Missing required who or connect id headers");
+			goto failed;
+		}
+
+		if (atomic_test_bit(&client->_flags, BT_OBEX_HAS_TARGET) !=
+		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO)) {
+			LOG_WRN("Missing required who header");
+			goto failed;
+		}
+
+		err = bt_obex_get_header_conn_id(buf, &client->_conn_id);
+		if (err != 0) {
+			LOG_WRN("Invalid connection id header");
+			goto failed;
+		}
+
+		err = bt_obex_get_header_who(buf, &who_len, &who_data);
+		if (err != 0) {
+			LOG_WRN("Invalid who header");
+			goto failed;
+		}
+
+		err = bt_obex_make_uuid(&u, who_data, who_len);
+		if (err != 0) {
+			LOG_WRN("Unsupported who header len %u", who_len);
+			goto failed;
+		}
+
+		if (bt_uuid_cmp(&u.uuid, &client->_target.uuid) != 0) {
+			LOG_WRN("Who header is mismatched with target");
+			goto failed;
+		}
+	}
+
+	if (mopl < BT_OBEX_MIN_MTU) {
+		LOG_WRN("Invalid MOPL (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+		goto failed;
+	}
+
+	if (mopl > client->obex->tx.mtu) {
+		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, client->obex->tx.mtu);
+		goto failed;
+	}
+
+	client->tx.mopl = mopl;
+
+	atomic_set(&client->_state,
 		   rsp_code == BT_OBEX_RSP_CODE_SUCCESS ? BT_OBEX_CONNECTED : BT_OBEX_DISCONNECTED);
 
-	if (obex->client_ops->connect) {
-		obex->client_ops->connect(obex, rsp_code, version, mopl, buf);
+	if (atomic_get(&client->_state) == BT_OBEX_DISCONNECTED) {
+		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
+	}
+
+	if (client->ops->connect) {
+		client->ops->connect(client, rsp_code, version, mopl, buf);
 	}
 	return 0;
 
 failed:
 	LOG_WRN("Disconnect transport");
 
-	return obex_transport_disconn(obex);
+	return obex_transport_disconn(client->obex);
 }
 
-static int obex_client_disconn(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_disconn(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			       struct net_buf *buf)
 {
 	LOG_DBG("");
 
-	atomic_clear(&obex->_opcode);
+	atomic_clear(&client->_opcode);
+	atomic_ptr_clear(&client->obex->_active_client);
 
-	if (atomic_get(&obex->_state) != BT_OBEX_DISCONNECTING) {
+	if (atomic_get(&client->_state) != BT_OBEX_DISCONNECTING) {
 		return -EINVAL;
 	}
 
-	atomic_set(&obex->_state,
+	atomic_set(&client->_state,
 		   rsp_code == BT_OBEX_RSP_CODE_SUCCESS ? BT_OBEX_DISCONNECTED : BT_OBEX_CONNECTED);
 
-	if (obex->client_ops->disconnect) {
-		obex->client_ops->disconnect(obex, rsp_code, buf);
+	if (atomic_get(&client->_state) == BT_OBEX_DISCONNECTED) {
+		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
+	}
+
+	if (client->ops->disconnect) {
+		client->ops->disconnect(client, rsp_code, buf);
 	}
 	return 0;
 }
 
-static int obex_client_put_common(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_put_common(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				  struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -744,37 +1019,38 @@ static int obex_client_put_common(struct bt_obex *obex, uint8_t rsp_code, uint16
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops->put) {
+	if (client->ops->put == NULL) {
 		LOG_WRN("Put rsp handling not implemented");
 		return -ENOTSUP;
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 	}
 
-	obex->client_ops->put(obex, rsp_code, buf);
+	client->ops->put(client, rsp_code, buf);
 	return 0;
 }
 
-static int obex_client_put(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_put(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			   struct net_buf *buf)
 {
-	return obex_client_put_common(obex, rsp_code, len, buf);
+	return obex_client_put_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_put_final(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_put_final(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				 struct net_buf *buf)
 {
-	return obex_client_put_common(obex, rsp_code, len, buf);
+	return obex_client_put_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_get_common(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_get_common(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				  struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -784,37 +1060,38 @@ static int obex_client_get_common(struct bt_obex *obex, uint8_t rsp_code, uint16
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops->get) {
+	if (client->ops->get == NULL) {
 		LOG_WRN("Get rsp handling not implemented");
 		return -ENOTSUP;
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 	}
 
-	obex->client_ops->get(obex, rsp_code, buf);
+	client->ops->get(client, rsp_code, buf);
 	return 0;
 }
 
-static int obex_client_get(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_get(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			   struct net_buf *buf)
 {
-	return obex_client_get_common(obex, rsp_code, len, buf);
+	return obex_client_get_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_get_final(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_get_final(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				 struct net_buf *buf)
 {
-	return obex_client_get_common(obex, rsp_code, len, buf);
+	return obex_client_get_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_setpath(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_setpath(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			       struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -824,25 +1101,26 @@ static int obex_client_setpath(struct bt_obex *obex, uint8_t rsp_code, uint16_t 
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops->setpath) {
+	if (client->ops->setpath == NULL) {
 		LOG_WRN("Setpath rsp handling not implemented");
 		return -ENOTSUP;
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 	}
 
-	obex->client_ops->setpath(obex, rsp_code, buf);
+	client->ops->setpath(client, rsp_code, buf);
 	return 0;
 }
 
-static int obex_client_action_common(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_action_common(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				     struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -852,37 +1130,38 @@ static int obex_client_action_common(struct bt_obex *obex, uint8_t rsp_code, uin
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops->action) {
+	if (client->ops->action == NULL) {
 		LOG_WRN("Setpath rsp handling not implemented");
 		return -ENOTSUP;
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 	}
 
-	obex->client_ops->action(obex, rsp_code, buf);
+	client->ops->action(client, rsp_code, buf);
 	return 0;
 }
 
-static int obex_client_action(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_action(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			      struct net_buf *buf)
 {
-	return obex_client_action_common(obex, rsp_code, len, buf);
+	return obex_client_action_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_action_final(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_action_final(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 				    struct net_buf *buf)
 {
-	return obex_client_action_common(obex, rsp_code, len, buf);
+	return obex_client_action_common(client, rsp_code, len, buf);
 }
 
-static int obex_client_session(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_session(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			       struct net_buf *buf)
 {
 	return -ENOTSUP;
@@ -890,7 +1169,7 @@ static int obex_client_session(struct bt_obex *obex, uint8_t rsp_code, uint16_t 
 
 static struct client_handler *obex_client_find_handler(uint8_t opcode);
 
-static int obex_client_abort(struct bt_obex *obex, uint8_t rsp_code, uint16_t len,
+static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			     struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -900,7 +1179,7 @@ static int obex_client_abort(struct bt_obex *obex, uint8_t rsp_code, uint16_t le
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
@@ -909,9 +1188,9 @@ static int obex_client_abort(struct bt_obex *obex, uint8_t rsp_code, uint16_t le
 		struct client_handler *handler;
 		int err = -EINVAL;
 
-		handler = obex_client_find_handler(atomic_get(&obex->_pre_opcode));
+		handler = obex_client_find_handler(atomic_get(&client->_pre_opcode));
 		if (handler) {
-			err = handler->handler(obex, rsp_code, len, buf);
+			err = handler->handler(client, rsp_code, len, buf);
 			if (err) {
 				LOG_WRN("Handler err %d", err);
 			}
@@ -919,22 +1198,31 @@ static int obex_client_abort(struct bt_obex *obex, uint8_t rsp_code, uint16_t le
 		return err;
 	}
 
-	if (!obex->client_ops->abort) {
+	if (client->ops->abort == NULL) {
 		LOG_WRN("Abort rsp handling not implemented");
 		return -ENOTSUP;
 	}
 
-	atomic_clear(&obex->_opcode);
+	atomic_clear(&client->_opcode);
+	atomic_ptr_clear(&client->obex->_active_client);
 
 	if (rsp_code != BT_OBEX_RSP_CODE_SUCCESS) {
 		LOG_WRN("Disconnect transport");
 
-		return obex_transport_disconn(obex);
+		return obex_transport_disconn(client->obex);
 	}
 
-	obex->client_ops->abort(obex, rsp_code, buf);
+	client->ops->abort(client, rsp_code, buf);
 	return 0;
 }
+
+#define BT_OBEX_REQUEST_CODE_START 0x00
+#define BT_OBEX_REQUEST_CODE_END   0x0f
+#define BT_OBEX_REQUEST_CODE_F_BIT BIT(7)
+#define IN_OBEX_REQUEST_RANGE(code)                                                                \
+	((code) >= BT_OBEX_REQUEST_CODE_START && (code) <= BT_OBEX_REQUEST_CODE_END)
+#define IS_OBEX_REQUEST(code) (IN_OBEX_REQUEST_RANGE((code) & ~(BT_OBEX_REQUEST_CODE_F_BIT)) ||    \
+	((code) == BT_OBEX_OPCODE_ABORT))
 
 struct client_handler client_handler[] = {
 	{BT_OBEX_OPCODE_CONNECT, obex_client_connect},
@@ -952,7 +1240,7 @@ struct client_handler client_handler[] = {
 
 static struct client_handler *obex_client_find_handler(uint8_t opcode)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(client_handler); i++) {
+	ARRAY_FOR_EACH(client_handler, i) {
 		if (client_handler[i].opcode == opcode) {
 			return &client_handler[i];
 		}
@@ -964,6 +1252,7 @@ static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 {
 	struct client_handler *handler;
 	struct bt_obex_rsp_hdr *hdr;
+	struct bt_obex_client *client = atomic_ptr_get(&obex->_active_client);
 	uint16_t len;
 	int err;
 
@@ -972,11 +1261,16 @@ static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 		return -EINVAL;
 	}
 
+	if (client == NULL) {
+		LOG_WRN("No executing OBEX request");
+		return -EINVAL;
+	}
+
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = sys_be16_to_cpu(hdr->len);
-	handler = obex_client_find_handler(atomic_get(&obex->_opcode));
+	handler = obex_client_find_handler(atomic_get(&client->_opcode));
 	if (handler) {
-		err = handler->handler(obex, hdr->code, len - sizeof(*hdr), buf);
+		err = handler->handler(client, hdr->code, len - sizeof(*hdr), buf);
 		if (err) {
 			LOG_WRN("Handler err %d", err);
 		}
@@ -989,7 +1283,7 @@ static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 
 int bt_obex_transport_connected(struct bt_obex *obex)
 {
-	if (!obex) {
+	if (obex == NULL) {
 		return -EINVAL;
 	}
 
@@ -1003,24 +1297,32 @@ int bt_obex_transport_connected(struct bt_obex *obex)
 		return -EINVAL;
 	}
 
-	atomic_clear(&obex->_opcode);
-	atomic_clear(&obex->_pre_opcode);
-	atomic_set(&obex->_state, BT_OBEX_DISCONNECTED);
+	atomic_ptr_clear(&obex->_active_client);
 
 	return 0;
 }
 
 int bt_obex_transport_disconnected(struct bt_obex *obex)
 {
-	if (obex) {
-		atomic_clear(&obex->_opcode);
-		atomic_clear(&obex->_pre_opcode);
-		atomic_set(&obex->_state, BT_OBEX_DISCONNECTED);
-		obex->_transport_ops = NULL;
-		return 0;
+	struct bt_obex_client *client, *cnext;
+	struct bt_obex_server *server, *snext;
+
+	obex->_transport_ops = NULL;
+	atomic_ptr_clear(&obex->_active_client);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_clients, client, cnext, _node) {
+		atomic_clear(&client->_opcode);
+		atomic_clear(&client->_pre_opcode);
+		atomic_set(&client->_state, BT_OBEX_DISCONNECTED);
 	}
 
-	return -EINVAL;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_servers, server, snext, _node) {
+		atomic_clear(&server->_opcode);
+		atomic_set(&server->_state, BT_OBEX_DISCONNECTED);
+	}
+
+	sys_slist_init(&obex->_clients);
+	return 0;
 }
 
 int bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_ops *ops)
@@ -1036,40 +1338,109 @@ int bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_o
 
 int bt_obex_recv(struct bt_obex *obex, struct net_buf *buf)
 {
-	if (!obex || !buf) {
+	struct bt_obex_comm_hdr *hdr;
+
+	if (obex == NULL || buf == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (obex->server_ops) {
-		return obex_server_recv(obex, buf);
-	} else if (obex->client_ops) {
+	if (buf->len < sizeof(*hdr)) {
+		LOG_WRN("Malformed packet");
+		return -EINVAL;
+	}
+
+	hdr = (struct bt_obex_comm_hdr *)buf->data;
+	if (!IS_OBEX_REQUEST(hdr->code)) {
 		return obex_client_recv(obex, buf);
 	}
 
-	LOG_WRN("Unknown role of OBEX %p", obex);
-	return -EINVAL;
+	return obex_server_recv(obex, buf);
 }
 
-int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
+int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_128 *uuid)
+{
+	if (server == NULL || server->obex == NULL) {
+		LOG_ERR("Invalid parameter");
+		return -EINVAL;
+	}
+
+	if (server->ops == NULL || server->ops->connect == NULL ||
+	    server->ops->disconnect == NULL) {
+		LOG_ERR("Invalid OBEX role");
+		return -EINVAL;
+	}
+
+	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTED) {
+		LOG_ERR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
+		return -EINPROGRESS;
+	}
+
+	if (sys_slist_find(&server->obex->_servers, &server->_node, NULL)) {
+		LOG_ERR("server %p has been registered", server);
+		return -EALREADY;
+	}
+
+	if (!sys_slist_is_empty(&server->obex->_servers) && server->uuid == NULL) {
+		LOG_ERR("UUID of server %p should not be NULL", server);
+		return -EINVAL;
+	}
+
+	server->rx.mopl = BT_OBEX_MIN_MTU;
+	/* Set MOPL of TX to MTU by default to avoid the OBEX connect rsp cannot be sent. */
+	server->tx.mopl = BT_OBEX_MIN_MTU;
+
+	server->uuid = uuid;
+
+	sys_slist_append(&server->obex->_servers, &server->_node);
+
+	return 0;
+}
+
+int bt_obex_server_unregister(struct bt_obex_server *server)
+{
+	if (server == NULL || server->obex == NULL) {
+		LOG_ERR("Invalid parameter");
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find(&server->obex->_servers, &server->_node, NULL)) {
+		LOG_ERR("server %p has not been registered", server);
+		return -EALREADY;
+	}
+
+	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTED) {
+		LOG_ERR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
+		return -EINPROGRESS;
+	}
+
+	sys_slist_find_and_remove(&server->obex->_servers, &server->_node);
+
+	return 0;
+}
+
+int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf *buf)
 {
 	struct bt_obex_conn_req_hdr *req_hdr;
 	struct bt_obex_req_hdr *hdr;
 	int err;
 	bool allocated = false;
+	uint16_t target_len;
+	const uint8_t *target_data;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL || client->ops->connect == NULL ||
+	    client->ops->disconnect == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (mopl > obex->rx.mtu) {
-		mopl = obex->rx.mtu;
+	if (mopl > client->obex->rx.mtu) {
+		mopl = client->obex->rx.mtu;
 	}
 
 	if (mopl < BT_OBEX_MIN_MTU) {
@@ -1077,20 +1448,46 @@ int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_DISCONNECTED) {
-		LOG_WRN("Invalid state, connect is %s",
-			atomic_get(&obex->_state) == BT_OBEX_CONNECTING ? "ongoing"
-									: "established");
+	if (atomic_get(&client->_state) != BT_OBEX_DISCONNECTED) {
+		LOG_WRN("Invalid state, connect is %u", (uint8_t)atomic_get(&client->_state));
 		return -EINPROGRESS;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_CONNECT)) {
+	if (!sys_slist_is_empty(&client->obex->_clients) &&
+	    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TARGET)) {
+		LOG_ERR("The Header target should be added");
+		return -EINVAL;
+	}
+
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
+	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_CONNECT)) {
 		LOG_WRN("Operation inprogress");
 		return -EBUSY;
 	}
 
-	if (!buf) {
-		buf = obex_alloc_buf(obex);
+	atomic_set_bit_to(&client->_flags, BT_OBEX_HAS_TARGET,
+			  bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TARGET));
+
+	if (atomic_test_bit(&client->_flags, BT_OBEX_HAS_TARGET)) {
+		err = bt_obex_get_header_target(buf, &target_len, &target_data);
+		if (err != 0) {
+			LOG_ERR("Invalid target header");
+			return err;
+		}
+
+		err = bt_obex_make_uuid(&client->_target, target_data, target_len);
+		if (err != 0) {
+			LOG_WRN("Unsupported target header len %u", target_len);
+			return err;
+		}
+	}
+
+	if (buf == NULL) {
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1098,8 +1495,14 @@ int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
 		allocated = true;
 	}
 
-	obex->rx.mopl = mopl;
-	atomic_set(&obex->_state, BT_OBEX_CONNECTING);
+	client->rx.mopl = mopl;
+	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
+	client->tx.mopl = BT_OBEX_MIN_MTU;
+	atomic_set(&client->_state, BT_OBEX_CONNECTING);
+
+	if (!sys_slist_find(&client->obex->_clients, &client->_node, NULL)) {
+		sys_slist_append(&client->obex->_clients, &client->_node);
+	}
 
 	req_hdr = net_buf_push(buf, sizeof(*req_hdr));
 	req_hdr->flags = 0;
@@ -1109,10 +1512,12 @@ int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
 	hdr->code = BT_OBEX_OPCODE_CONNECT;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_state, BT_OBEX_DISCONNECTED);
-		atomic_clear(&obex->_opcode);
+		atomic_set(&client->_state, BT_OBEX_DISCONNECTED);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
+		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1121,26 +1526,30 @@ int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, struct net_buf *buf)
+int bt_obex_connect_rsp(struct bt_obex_server *server, uint8_t rsp_code, uint16_t mopl,
+			struct net_buf *buf)
 {
 	struct bt_obex_conn_rsp_hdr *rsp_hdr;
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	atomic_val_t old_state;
+	uint16_t who_len;
+	const uint8_t *who_data;
+
 	bool allocated = false;
 
-	if (!obex || (rsp_code == BT_OBEX_RSP_CODE_CONTINUE)) {
+	if (server == NULL || server->obex == NULL || (rsp_code == BT_OBEX_RSP_CODE_CONTINUE)) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (mopl > obex->rx.mtu) {
-		mopl = obex->rx.mtu;
+	if (mopl > server->obex->rx.mtu) {
+		mopl = server->obex->rx.mtu;
 	}
 
 	if (mopl < BT_OBEX_MIN_MTU) {
@@ -1148,18 +1557,59 @@ int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, s
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTING) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTING) {
 		LOG_WRN("Invalid state");
 		return -ENOTCONN;
 	}
 
-	if (atomic_get(&obex->_opcode) != BT_OBEX_OPCODE_CONNECT) {
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_CONNECT) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
 	}
 
+	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
+		if (bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO) !=
+		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
+			LOG_ERR("Missing required who or connect id headers");
+			return -EINVAL;
+		}
+
+		if (atomic_test_bit(&server->_flags, BT_OBEX_HAS_TARGET) !=
+		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO)) {
+			LOG_ERR("Missing required who header");
+			return -EINVAL;
+		}
+
+		if (atomic_test_bit(&server->_flags, BT_OBEX_HAS_TARGET)) {
+			union bt_obex_uuid u;
+
+			err = bt_obex_get_header_conn_id(buf, &server->_conn_id);
+			if (err != 0) {
+				LOG_ERR("Invalid connection id header");
+				return err;
+			}
+
+			err = bt_obex_get_header_who(buf, &who_len, &who_data);
+			if (err != 0) {
+				LOG_ERR("Invalid who header");
+				return err;
+			}
+
+			err = bt_obex_make_uuid(&u, who_data, who_len);
+			if (err != 0) {
+				LOG_WRN("Unsupported who header len %u", who_len);
+				return err;
+			}
+
+			if (bt_uuid_cmp(&u.uuid, &server->_target.uuid) != 0) {
+				LOG_WRN("Who header is mismatched with target");
+				return -EINVAL;
+			}
+		}
+	}
+
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1167,11 +1617,11 @@ int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, s
 		allocated = true;
 	}
 
-	obex->rx.mopl = mopl;
+	server->rx.mopl = mopl;
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
-		old_state = atomic_set(&obex->_state, BT_OBEX_CONNECTED);
+		old_state = atomic_set(&server->_state, BT_OBEX_CONNECTED);
 	} else {
-		old_state = atomic_set(&obex->_state, BT_OBEX_DISCONNECTED);
+		old_state = atomic_set(&server->_state, BT_OBEX_DISCONNECTED);
 	}
 
 	rsp_hdr = net_buf_push(buf, sizeof(*rsp_hdr));
@@ -1182,47 +1632,53 @@ int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, s
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_state, old_state);
+		atomic_set(&server->_state, old_state);
 
 		if (allocated) {
 			net_buf_unref(buf);
 		}
 	} else {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
 	}
 	return err;
 }
 
-int bt_obex_disconnect(struct bt_obex *obex, struct net_buf *buf)
+int bt_obex_disconnect(struct bt_obex_client *client, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
 	int err;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
+	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
 		LOG_WRN("Operation inprogress");
 		return -EBUSY;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1234,48 +1690,49 @@ int bt_obex_disconnect(struct bt_obex *obex, struct net_buf *buf)
 	hdr->code = BT_OBEX_OPCODE_DISCONN;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
 		}
 	} else {
-		atomic_set(&obex->_state, BT_OBEX_DISCONNECTING);
+		atomic_set(&client->_state, BT_OBEX_DISCONNECTING);
 	}
 	return err;
 }
 
-int bt_obex_disconnect_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_disconnect_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	atomic_val_t old_state;
 	bool allocated = false;
 
-	if (!obex || (rsp_code == BT_OBEX_RSP_CODE_CONTINUE)) {
+	if (server == NULL || server->obex == NULL || (rsp_code == BT_OBEX_RSP_CODE_CONTINUE)) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_DISCONNECTING) {
+	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTING) {
 		LOG_WRN("Invalid state");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_opcode) != BT_OBEX_OPCODE_DISCONN) {
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_DISCONN) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1284,53 +1741,62 @@ int bt_obex_disconnect_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_bu
 	}
 
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
-		old_state = atomic_set(&obex->_state, BT_OBEX_DISCONNECTED);
+		old_state = atomic_set(&server->_state, BT_OBEX_DISCONNECTED);
 	} else {
-		old_state = atomic_set(&obex->_state, BT_OBEX_CONNECTED);
+		old_state = atomic_set(&server->_state, BT_OBEX_CONNECTED);
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_state, old_state);
+		atomic_set(&server->_state, old_state);
 
 		if (allocated) {
 			net_buf_unref(buf);
 		}
 	} else {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
 	}
 	return err;
 }
 
-int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf)
+int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
+	struct bt_obex_client *active_client;
 	int err;
 	uint8_t req_code;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
+	active_client = atomic_ptr_get(&client->obex->_active_client);
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
+	    (active_client != client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1338,10 +1804,10 @@ int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&client->_opcode);
 
 	req_code = final ? BT_OBEX_OPCODE_PUT_F : BT_OBEX_OPCODE_PUT;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
+	if (!atomic_cas(&client->_opcode, 0, req_code)) {
 		if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 			LOG_WRN("Operation inprogress");
 			return -EBUSY;
@@ -1353,7 +1819,7 @@ int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf)
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&client->_opcode, opcode, req_code);
 		}
 	}
 
@@ -1361,9 +1827,10 @@ int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf)
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_opcode, opcode);
+		atomic_set(&client->_opcode, opcode);
+		atomic_ptr_set(&client->obex->_active_client, active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1372,30 +1839,30 @@ int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1403,7 +1870,7 @@ int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
@@ -1418,10 +1885,11 @@ int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (!err) {
 		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&obex->_opcode);
+			atomic_clear(&server->_opcode);
+			atomic_ptr_clear(&server->obex->_active_server);
 		}
 	} else {
 		if (allocated) {
@@ -1431,31 +1899,39 @@ int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf)
+int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
+	struct bt_obex_client *active_client;
 	int err;
 	uint8_t req_code;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
+	active_client = atomic_ptr_get(&client->obex->_active_client);
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
+	    (active_client != client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1463,10 +1939,10 @@ int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&client->_opcode);
 
 	req_code = final ? BT_OBEX_OPCODE_GET_F : BT_OBEX_OPCODE_GET;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
+	if (!atomic_cas(&client->_opcode, 0, req_code)) {
 		if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 			LOG_WRN("Operation inprogress");
 			return -EBUSY;
@@ -1478,7 +1954,7 @@ int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf)
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&client->_opcode, opcode, req_code);
 		}
 	}
 
@@ -1486,9 +1962,10 @@ int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf)
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_opcode, opcode);
+		atomic_set(&client->_opcode, opcode);
+		atomic_ptr_set(&client->obex->_active_client, active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1497,30 +1974,30 @@ int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_get_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1528,7 +2005,7 @@ int bt_obex_get_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
@@ -1543,10 +2020,11 @@ int bt_obex_get_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (!err) {
 		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&obex->_opcode);
+			atomic_clear(&server->_opcode);
+			atomic_ptr_clear(&server->obex->_active_server);
 		}
 	} else {
 		if (allocated) {
@@ -1575,41 +2053,48 @@ static bool obex_op_support_abort(uint8_t opcode)
 	return false;
 }
 
-int bt_obex_abort(struct bt_obex *obex, struct net_buf *buf)
+int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
+	struct bt_obex_client *active_client;
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
-	if (!atomic_get(&obex->_opcode)) {
+	active_client = atomic_ptr_get(&client->obex->_active_client);
+	if (active_client != client) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
+	if (!atomic_get(&client->_opcode)) {
 		LOG_WRN("No operation is inprogress");
 		return -EINVAL;
-	} else if (atomic_get(&obex->_opcode) == BT_OBEX_OPCODE_ABORT) {
+	} else if (atomic_get(&client->_opcode) == BT_OBEX_OPCODE_ABORT) {
 		LOG_WRN("Abort is inprogress");
 		return -EINPROGRESS;
-	} else if (!obex_op_support_abort((uint8_t)atomic_get(&obex->_opcode))) {
-		LOG_WRN("Opcode %02x cannot be aborted", (uint8_t)atomic_get(&obex->_opcode));
+	} else if (!obex_op_support_abort((uint8_t)atomic_get(&client->_opcode))) {
+		LOG_WRN("Opcode %02x cannot be aborted", (uint8_t)atomic_get(&client->_opcode));
 		return -ENOTSUP;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1617,54 +2102,55 @@ int bt_obex_abort(struct bt_obex *obex, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_set(&obex->_opcode, BT_OBEX_OPCODE_ABORT);
-	atomic_clear(&obex->_pre_opcode);
+	opcode = atomic_set(&client->_opcode, BT_OBEX_OPCODE_ABORT);
+	atomic_clear(&client->_pre_opcode);
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = BT_OBEX_OPCODE_ABORT;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_opcode, opcode);
+		atomic_set(&client->_opcode, opcode);
+		atomic_ptr_set(&client->obex->_active_client, active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
 		}
 	} else {
-		atomic_set(&obex->_pre_opcode, opcode);
+		atomic_set(&client->_pre_opcode, opcode);
 	}
 	return err;
 }
 
-int bt_obex_abort_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	bool allocated = false;
 
-	if (!obex) {
+	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_opcode) != BT_OBEX_OPCODE_ABORT) {
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_ABORT) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1676,9 +2162,10 @@ int bt_obex_abort_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *bu
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (!err) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
 	} else {
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1687,35 +2174,40 @@ int bt_obex_abort_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *bu
 	return err;
 }
 
-int bt_obex_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf)
+int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
 	struct bt_obex_setpath_req_hdr *req_hdr;
 	int err;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
-	if (!atomic_cas(&obex->_opcode, 0, BT_OBEX_OPCODE_SETPATH)) {
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
+	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_SETPATH)) {
 		LOG_WRN("Operation inprogress");
 		return -EINPROGRESS;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1730,9 +2222,10 @@ int bt_obex_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf)
 	hdr->code = BT_OBEX_OPCODE_SETPATH;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&client->_opcode);
+		atomic_ptr_clear(&client->obex->_active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1741,34 +2234,34 @@ int bt_obex_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_setpath_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	bool allocated = false;
 
-	if (!obex) {
+	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_opcode) != BT_OBEX_OPCODE_SETPATH) {
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_SETPATH) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1780,9 +2273,10 @@ int bt_obex_setpath_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (!err) {
-		atomic_clear(&obex->_opcode);
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
 	} else {
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1791,31 +2285,39 @@ int bt_obex_setpath_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *
 	return err;
 }
 
-int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf)
+int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
+	struct bt_obex_client *active_client;
 	int err;
 	uint8_t req_code;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->client_ops) {
+	if (client->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&client->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -ENOTCONN;
 	}
 
+	active_client = atomic_ptr_get(&client->obex->_active_client);
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
+	    (active_client != client)) {
+		LOG_WRN("One OBEX request is executing");
+		return -EBUSY;
+	}
+
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(client->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1823,10 +2325,10 @@ int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&client->_opcode);
 
 	req_code = final ? BT_OBEX_OPCODE_ACTION_F : BT_OBEX_OPCODE_ACTION;
-	if (!atomic_cas(&obex->_opcode, 0, req_code)) {
+	if (!atomic_cas(&client->_opcode, 0, req_code)) {
 		if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 			LOG_WRN("Operation inprogress");
 			return -EBUSY;
@@ -1838,7 +2340,7 @@ int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf)
 		}
 
 		if (opcode != req_code) {
-			atomic_cas(&obex->_opcode, opcode, req_code);
+			atomic_cas(&client->_opcode, opcode, req_code);
 		}
 	}
 
@@ -1846,9 +2348,10 @@ int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf)
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err) {
-		atomic_set(&obex->_opcode, opcode);
+		atomic_set(&client->_opcode, opcode);
+		atomic_ptr_set(&client->obex->_active_client, active_client);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -1857,30 +2360,30 @@ int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf)
 	return err;
 }
 
-int bt_obex_action_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
 
-	if (!obex) {
+	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
-	if (!obex->server_ops) {
+	if (server->ops == NULL) {
 		LOG_WRN("Invalid OBEX role");
 		return -EINVAL;
 	}
 
-	if (atomic_get(&obex->_state) != BT_OBEX_CONNECTED) {
+	if (atomic_get(&server->_state) != BT_OBEX_CONNECTED) {
 		LOG_WRN("Invalid state, connect is not established");
 		return -EINVAL;
 	}
 
 	if (!buf) {
-		buf = obex_alloc_buf(obex);
+		buf = obex_alloc_buf(server->obex);
 		if (!buf) {
 			LOG_WRN("No buffers");
 			return -ENOBUFS;
@@ -1888,7 +2391,7 @@ int bt_obex_action_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *b
 		allocated = true;
 	}
 
-	opcode = atomic_get(&obex->_opcode);
+	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 		LOG_WRN("Invalid response");
 		return -EINVAL;
@@ -1903,10 +2406,11 @@ int bt_obex_action_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *b
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(obex, buf);
+	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (!err) {
 		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&obex->_opcode);
+			atomic_clear(&server->_opcode);
+			atomic_ptr_clear(&server->obex->_active_server);
 		}
 	} else {
 		if (allocated) {
@@ -2683,6 +3187,7 @@ static bool bt_obex_find_header_cb(struct bt_obex_hdr *hdr, void *user_data)
 	if (hdr->id == data->hdr.id) {
 		data->hdr.data = hdr->data;
 		data->hdr.len = hdr->len;
+		data->found = true;
 		return false;
 	}
 	return true;

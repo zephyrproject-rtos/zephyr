@@ -32,7 +32,6 @@
 			   <ST_MORPHO_L_36 0 &gpioc 1 0>,
 			   <ST_MORPHO_L_37 0 &gpioc 3 0>,
 			   <ST_MORPHO_L_38 0 &gpioc 0 0>,
-
 			   <ST_MORPHO_R_2 0 &gpioa 9 0>,
 			   <ST_MORPHO_R_3 0 &gpiob 6 0>,
 			   <ST_MORPHO_R_4 0 &gpioa 12 0>,

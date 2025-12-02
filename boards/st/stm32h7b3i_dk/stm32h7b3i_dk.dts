@@ -60,15 +60,15 @@
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
 		/* Frame buffer memory cache will cause screen flickering. */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	octo_nor: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	transceiver0: can-phy0 {
@@ -83,21 +83,21 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <3  0 &gpiod 12  0>,  /* I2C4_SCL */
-			   <4  0 &gpiod 13  0>,  /* I2C4_SDA */
-			   <5  0 &gpioa  0  0>,  /* RESET# */
-			   <6  0 &gpioa  7  0>,  /* PWDN_EN */
-			   <12 0 &gpiob  7  0>,  /* DCMI_VSYNC */
-			   <14 0 &gpioa  4  0>,  /* DCMI_HSYNC */
-			   <16 0 &gpioa  6  0>,  /* DCMI_PIXCK */
-			   <20 0 &gpiob  9  0>,  /* DCMI_D7 */
-			   <21 0 &gpiob  8  0>,  /* DCMI_D6 */
-			   <22 0 &gpiod  3  0>,  /* DCMI_D5 */
-			   <23 0 &gpioc 11  0>,  /* DCMI_D4 */
-			   <24 0 &gpioc  9  0>,  /* DCMI_D3 */
-			   <25 0 &gpiog 10  0>,  /* DCMI_D2 */
-			   <26 0 &gpioc  7  0>,  /* DCMI_D1 */
-			   <27 0 &gpioc  6  0>;  /* DCMI_D0 */
+		gpio-map = <3 0 &gpiod 12 0>,  /* I2C4_SCL */
+			   <4 0 &gpiod 13 0>,  /* I2C4_SDA */
+			   <5 0 &gpioa 0 0>,  /* RESET# */
+			   <6 0 &gpioa 7 0>,  /* PWDN_EN */
+			   <12 0 &gpiob 7 0>,  /* DCMI_VSYNC */
+			   <14 0 &gpioa 4 0>,  /* DCMI_HSYNC */
+			   <16 0 &gpioa 6 0>,  /* DCMI_PIXCK */
+			   <20 0 &gpiob 9 0>,  /* DCMI_D7 */
+			   <21 0 &gpiob 8 0>,  /* DCMI_D6 */
+			   <22 0 &gpiod 3 0>,  /* DCMI_D5 */
+			   <23 0 &gpioc 11 0>,  /* DCMI_D4 */
+			   <24 0 &gpioc 9 0>,  /* DCMI_D3 */
+			   <25 0 &gpiog 10 0>,  /* DCMI_D2 */
+			   <26 0 &gpioc 7 0>,  /* DCMI_D1 */
+			   <27 0 &gpioc 6 0>;  /* DCMI_D0 */
 	};
 
 	aliases {
@@ -163,7 +163,7 @@
 	status = "okay";
 };
 
-&i2c4 {
+st_cam_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -217,13 +217,13 @@
 		bank@1 {
 			reg = <1>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_9
-						STM32_FMC_SDRAM_NR_12
-						STM32_FMC_SDRAM_MWID_16
-						STM32_FMC_SDRAM_NB_4
-						STM32_FMC_SDRAM_CAS_2
-						STM32_FMC_SDRAM_SDCLK_PERIOD_3
-						STM32_FMC_SDRAM_RBURST_ENABLE
-						STM32_FMC_SDRAM_RPIPE_2>;
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_3
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_2>;
 			st,sdram-timing = <2 7 4 7 2 2 2>;
 		};
 	};
@@ -309,6 +309,9 @@
 	};
 };
 
-st_cam_i2c: &i2c4 {};
-
-st_cam_dvp: &dcmi {};
+st_cam_dvp: &dcmi {
+	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+		     &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pg10 &dcmi_d3_pc9
+		     &dcmi_d4_pc11 &dcmi_d5_pd3 &dcmi_d6_pb8 &dcmi_d7_pb9>;
+	pinctrl-names = "default";
+};

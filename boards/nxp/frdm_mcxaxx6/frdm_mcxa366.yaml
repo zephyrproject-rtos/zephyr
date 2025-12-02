@@ -1,0 +1,28 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxa366
+name: NXP FRDM MCXA366
+type: mcu
+arch: arm
+ram: 240
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - flash
+  - adc
+  - i2c
+  - spi
+  - watchdog
+  - counter
+  - dma
+  - i3c
+  - opamp
+vendor: nxp

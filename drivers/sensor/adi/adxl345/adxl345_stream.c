@@ -62,8 +62,10 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	data->sqe = iodev_sqe;
 }
 
-static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = (const struct device *)arg;
 	const struct adxl345_dev_config *cfg = dev->config;
 
@@ -102,8 +104,11 @@ static void adxl345_fifo_flush_rtio(const struct device *dev)
 	rtio_submit(data->rtio_ctx, 0);
 }
 
-static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg)
+static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
+				 int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
@@ -117,8 +122,11 @@ static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *s
 
 }
 
-static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sqe *sqe,
+					    int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
@@ -231,8 +239,11 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	}
 }
 
-static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				       int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
@@ -298,11 +309,9 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	enum sensor_stream_data_opt data_opt;
-
-	if (fifo_wmark_cfg != NULL) {
-		data_opt = fifo_wmark_cfg->opt;
-	}
+	/* fifo_wmark_cfg is guaranteed to be non-NULL here since fifo_full_irq is true */
+	__ASSERT_NO_MSG(fifo_wmark_cfg != NULL);
+	enum sensor_stream_data_opt data_opt = fifo_wmark_cfg->opt;
 
 	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
 		uint8_t *buf;

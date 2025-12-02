@@ -79,11 +79,14 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa = "rv32imafcp";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			clic: clic@e0800000 {
 				compatible = "nuclei,eclic";
 				reg = <0xe0800000 0x10000>;
@@ -135,19 +138,19 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>,
-				<&clk_wifipll BL61X_WIFIPLL_320MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_240MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
-				<&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
-				<&clk_root>, <&clk_bclk>, <&clk_flash>;
+				 <&clk_wifipll BL61X_WIFIPLL_320MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
-				"wifipll_320",
-				"wifipll_240",
-				"wifipll_480",
-				"wifipll_360",
-				"aupll_div1", "aupll_div2",
-				"root", "bclk", "flash";
+				      "wifipll_320",
+				      "wifipll_240",
+				      "wifipll_480",
+				      "wifipll_360",
+				      "aupll_div1", "aupll_div2",
+				      "root", "bclk", "flash";
 		};
 
 		uart0: uart@2000a000 {
@@ -177,9 +180,26 @@
 			interrupt-parent = <&clic>;
 		};
 
+		dma0: dma@2000c000 {
+			compatible = "bflb,dma";
+			reg = <0x2000c000 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <4>;
+
+			interrupts = <31 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		retram: memory@20010000 {
 			compatible = "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		memc: memc@20052000 {
+			compatible = "bflb,bl61x-psram";
+			reg = <0x20052000 DT_SIZE_K(4)>;
+			clock-divider = <1>;
+			status = "okay";
 		};
 
 		efuse: efuse@20056000 {
@@ -198,6 +218,13 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x63010000 DT_SIZE_K(160)>;
 			zephyr,memory-region = "ITCM";
+		};
+
+		psram: memory@a8000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xa8000000 DT_SIZE_M(128)>;
+			zephyr,memory-region = "PSRAM";
+			status = "disabled";
 		};
 	};
 };

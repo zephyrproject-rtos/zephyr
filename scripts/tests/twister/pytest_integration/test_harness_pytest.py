@@ -2,16 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import pytest
 import textwrap
-
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
+import pytest
 from twisterlib.harness import Pytest
-from twisterlib.testsuite import TestSuite
-from twisterlib.testinstance import TestInstance
 from twisterlib.platform import Platform
+from twisterlib.testinstance import TestInstance
+from twisterlib.testsuite import TestSuite
 
 
 @pytest.fixture
@@ -95,6 +94,17 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     assert pytest_args_from_cmd[1] in command
     assert pytest_args_from_yaml in command
     assert command.index(pytest_args_from_yaml) < command.index(pytest_args_from_cmd[1])
+
+
+def test_pytest_command_required_build_args(testinstance: TestInstance):
+    """ Test that required build dirs are passed to pytest harness """
+    pytest_harness = Pytest()
+    required_builds = ['/req/build/dir', 'another/req/dir']
+    testinstance.required_build_dirs = required_builds
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    for req_dir in required_builds:
+        assert f'--required-build={req_dir}' in command
 
 
 @pytest.mark.parametrize(

@@ -73,11 +73,6 @@ bool stm32_bdma_is_irq_happened(BDMA_TypeDef *dma, uint32_t id);
 void stm32_bdma_enable_channel(BDMA_TypeDef *dma, uint32_t id);
 int stm32_bdma_disable_channel(BDMA_TypeDef *dma, uint32_t id);
 
-#if !defined(CONFIG_DMAMUX_STM32)
-void stm32_dma_config_channel_function(BDMA_TypeDef *dma, uint32_t id,
-						uint32_t slot);
-#endif
-
 #ifdef CONFIG_DMAMUX_STM32
 /* bdma_stm32_ api functions are exported to the bdmamux_stm32 */
 #define BDMA_STM32_EXPORT_API

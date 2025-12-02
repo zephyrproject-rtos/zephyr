@@ -131,7 +131,7 @@ extern "C" {
  * node containing it.
  */
 #define DT_FIXED_PARTITION_ADDR(node_id)                                                           \
-	(DT_REG_ADDR(DT_MEM_FROM_FIXED_PARTITION(node_id)) + DT_REG_ADDR(node_id))
+	(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id)))
 
 /**
  * @brief Test if fixed-subpartitions compatible node exists
@@ -160,7 +160,7 @@ extern "C" {
  */
 #define DT_MTD_FROM_FIXED_SUBPARTITION(node_id)                                                    \
 	COND_CODE_1(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(node_id)),                       \
-		    (DT_PARENT(DT_MEM_FROM_FIXED_SUBPARTITION(node_id))), (DT_GPARENT(node_id)))
+	     (DT_PARENT(DT_MEM_FROM_FIXED_SUBPARTITION(node_id))), (DT_GPARENT(DT_PARENT(node_id))))
 
 /**
  * @brief Get the absolute address of a fixed subpartition
@@ -207,7 +207,7 @@ extern "C" {
  * node containing it.
  */
 #define DT_FIXED_SUBPARTITION_ADDR(node_id)                                                        \
-	(DT_REG_ADDR(DT_MEM_FROM_FIXED_SUBPARTITION(node_id)) + DT_REG_ADDR(node_id))
+	(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(DT_PARENT(node_id))))
 
 /**
  * @}

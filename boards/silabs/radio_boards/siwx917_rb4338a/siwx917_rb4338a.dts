@@ -113,7 +113,7 @@
 	};
 };
 
-&sysrtc0  {
+&sysrtc0 {
 	status = "okay";
 };
 

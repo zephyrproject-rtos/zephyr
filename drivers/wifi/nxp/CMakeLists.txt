@@ -1,7 +1,7 @@
 # Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_WIFI_NXP)
+if(CONFIG_WIFI_NXP)
 
 zephyr_library_sources_ifdef(CONFIG_NXP_WIFI_AUTO_INIT nxp_wifi_drv.c)
 

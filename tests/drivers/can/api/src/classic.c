@@ -1120,8 +1120,6 @@ ZTEST_USER(can_classic, test_recover)
 	can_mode_t cap;
 	int err;
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
-
 	err = can_get_capabilities(can_dev, &cap);
 	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
 
@@ -1337,8 +1335,6 @@ ZTEST_USER(can_classic, test_recover_while_stopped)
 {
 	can_mode_t cap;
 	int err;
-
-	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
 
 	err = can_get_capabilities(can_dev, &cap);
 	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);

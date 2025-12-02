@@ -20,7 +20,7 @@
 	};
 };
 
-&mt25ql512ab1 {
+&mt25ql512ab {
 	partitions {
 		fs_partition: partition@0 {
 			reg = <0x0 DT_SIZE_M(64)>;

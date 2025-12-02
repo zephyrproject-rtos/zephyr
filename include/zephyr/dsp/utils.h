@@ -116,7 +116,7 @@ extern "C" {
  * @return The converted Q7 fixed-point value.
  */
 #define Z_SHIFT_F32_TO_Q7(src, m)                                                                  \
-	((q7_t)Z_CLAMP((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
+	((q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
 
 /**
  * @brief Convert a floating-point (float32_t) value to a Q15 fixed-point value with a right shift.
@@ -126,7 +126,7 @@ extern "C" {
  * @return The converted Q15 fixed-point value.
  */
 #define Z_SHIFT_F32_TO_Q15(src, m)                                                                 \
-	((q15_t)Z_CLAMP((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
+	((q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
 
 /**
  * @brief Convert a floating-point (float32_t) value to a Q31 fixed-point value with a right shift.
@@ -136,7 +136,7 @@ extern "C" {
  * @return The converted Q31 fixed-point value.
  */
 #define Z_SHIFT_F32_TO_Q31(src, m)                                                                 \
-	((q31_t)Z_CLAMP((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
+	((q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q7 fixed-point value with a right shift.
@@ -146,7 +146,7 @@ extern "C" {
  * @return The converted Q7 fixed-point value.
  */
 #define Z_SHIFT_F64_TO_Q7(src, m)                                                                  \
-	((q7_t)Z_CLAMP((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
+	((q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q15 fixed-point value with a right shift.
@@ -156,7 +156,7 @@ extern "C" {
  * @return The converted Q15 fixed-point value.
  */
 #define Z_SHIFT_F64_TO_Q15(src, m)                                                                 \
-	((q15_t)Z_CLAMP((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
+	((q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q31 fixed-point value with a right shift.
@@ -166,7 +166,7 @@ extern "C" {
  * @return The converted Q31 fixed-point value.
  */
 #define Z_SHIFT_F64_TO_Q31(src, m)                                                                 \
-	((q31_t)Z_CLAMP((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
+	((q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
 
 /**
  * @}

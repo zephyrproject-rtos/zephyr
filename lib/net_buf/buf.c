@@ -87,7 +87,6 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 void net_buf_reset(struct net_buf *buf)
 {
-	__ASSERT_NO_MSG(buf->flags == 0U);
 	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	net_buf_simple_reset(&buf->b);
@@ -355,7 +354,7 @@ success:
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	atomic_dec(&pool->avail_count);
 	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
-	pool->max_used = MAX(pool->max_used,
+	pool->max_used = max(pool->max_used,
 			     pool->buf_count - atomic_get(&pool->avail_count));
 #endif
 	return buf;
@@ -631,7 +630,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	size_t to_copy;
 	size_t copied;
 
-	len = MIN(len, dst_len);
+	len = min(len, dst_len);
 
 	frag = src;
 
@@ -644,7 +643,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0;
 	while (frag && len > 0) {
-		to_copy = MIN(len, frag->len - offset);
+		to_copy = min(len, frag->len - offset);
 		memcpy((uint8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
@@ -674,7 +673,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	size_t max_size;
 
 	do {
-		uint16_t count = MIN(len, net_buf_tailroom(frag));
+		uint16_t count = min(len, net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, value8, count);
 		len -= count;
@@ -696,7 +695,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			pool = net_buf_pool_get(buf->pool_id);
 			max_size = pool->alloc->max_alloc_size;
 			frag = net_buf_alloc_len(pool,
-						 max_size ? MIN(len, max_size) : len,
+						 max_size ? min(len, max_size) : len,
 						 timeout);
 		}
 
@@ -730,7 +729,7 @@ size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *
 
 	while (buf && len > 0) {
 		bptr = buf->data + offset;
-		to_compare = MIN(len, buf->len - offset);
+		to_compare = min(len, buf->len - offset);
 
 		for (size_t i = 0; i < to_compare; ++i) {
 			if (dptr[compared] != bptr[i]) {

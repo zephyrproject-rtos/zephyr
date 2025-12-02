@@ -831,9 +831,13 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 	if (format_bitmask & OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM) {
 		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM
 			      (prior_output == true ? " %s%s%s" : "%s%s%s"), CONFIG_BOARD,
 			      (sizeof(CONFIG_BOARD_REVISION) > 1 ? "@" : ""),
 			      CONFIG_BOARD_REVISION);
+#else
+			      (prior_output == true ? " %s" : "%s"), CONFIG_BOARD_TARGET);
+#endif
 
 		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
 			goto fail;

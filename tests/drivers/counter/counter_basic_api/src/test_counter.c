@@ -94,7 +94,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_STIMER
-	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+	DEVICE_DT_GET(DT_CHOSEN(silabs_sleeptimer)),
 #endif
 #ifdef CONFIG_COUNTER_NXP_PIT
 	DEVS_FOR_DT_COMPAT(nxp_pit_channel)
@@ -104,6 +104,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_counter)
+#endif
+#ifdef CONFIG_COUNTER_RTC_ESP32
+	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
@@ -129,6 +132,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_FTM
 	DEVS_FOR_DT_COMPAT(nxp_ftm)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_STM
+	DEVS_FOR_DT_COMPAT(nxp_stm)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
@@ -143,6 +149,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_RA_AGT
 	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
+#endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
+	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
+#endif
+#ifdef CONFIG_COUNTER_INFINEON_TCPWM
+	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
 #endif
 };
 
@@ -738,8 +750,8 @@ static void test_valid_function_without_alarm(const struct device *dev)
 		ticks_expected = counter_us_to_ticks(dev, wait_for_us);
 	}
 
-	/* Set 10% or 2 ticks tolerance, whichever is greater */
-	ticks_tol = ticks_expected / 10;
+	/* Set percentage or 2 ticks tolerance, whichever is greater */
+	ticks_tol = (ticks_expected * CONFIG_TEST_DRIVER_COUNTER_TOLERANCE) / 100;
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
 	err = counter_start(dev);
@@ -813,6 +825,9 @@ static void test_late_alarm_instance(const struct device *dev)
 		.user_data = NULL
 	};
 
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = MAX(tick_us, 1);
+
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
 	zassert_equal(0, err, "%s: Unexpected error", dev->name);
@@ -863,6 +878,9 @@ static void test_late_alarm_error_instance(const struct device *dev)
 		.flags = COUNTER_ALARM_CFG_ABSOLUTE,
 		.user_data = NULL
 	};
+
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = MAX(tick_us, 1);
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
@@ -1126,6 +1144,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

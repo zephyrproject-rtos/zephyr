@@ -4,9 +4,7 @@ tests:
       - drivers
       - pwm
       - userspace
-    filter: dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
-      or dt_compat_enabled("intel,blinky-pwm") or dt_compat_enabled("nordic,nrf-pwm")
+    filter: dt_alias_exists("pwm-test")
     depends_on: pwm
   drivers.pwm.pwm_flexio:
     tags:
@@ -26,9 +24,8 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
-    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
+     and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.pwm_fast:
     tags:
@@ -38,6 +35,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+    filter: dt_alias_exists("pwm-test")
   drivers.pwm.mcxn947_cpu0_sctimer:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxn947_mcxn947_cpu0_sctimer.overlay"
     platform_allow:
@@ -45,11 +43,13 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0/qspi
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0/qspi
+    filter: dt_alias_exists("pwm-test")
   drivers.pwm.native_sim:
     platform_allow:
       - native_sim
     integration_platforms:
       - native_sim
+    filter: dt_alias_exists("pwm-test")
   drivers.pwm.mcxw7x_flexio_pwm:
     tags:
       - drivers
@@ -59,7 +59,31 @@ tests:
     platform_allow:
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
-    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
+     and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
+  drivers.pwm.mchp_tcc0:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tcc1:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tcc2:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tcc3:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tcc4:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")

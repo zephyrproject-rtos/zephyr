@@ -391,6 +391,16 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 		if (!atomic_test_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
 			return false;
 		}
+	} else if (k_work_is_pending(&ext_adv->work) &&
+		   !atomic_test_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+		/* This can happen if we try to schedule a send while a previous send is still
+		 * pending in the work queue. There is nothing wrong with resubmitting the same
+		 * work to the work queue, but in this case won't have a change to try a work from
+		 * another advertising set which can be ready for sending.
+		 *
+		 * If, however, ADV_FLAG_PROXY is set, we want to stop the proxy advertising.
+		 */
+		return false;
 	}
 
 	bt_mesh_wq_submit(&ext_adv->work);

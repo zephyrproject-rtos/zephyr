@@ -116,7 +116,7 @@
 #endif
 
 /* Must have fields regardless of features. */
-#define _BSA_PADDING_COMMON		(sizeof(uintptr_t) * 12U)
+#define _BSA_PADDING_COMMON		(sizeof(uintptr_t) * 13U)
 
 /* Raw size by adding up all the above. */
 #define _BSA_PADDING_BASE_SIZE		\
@@ -152,6 +152,31 @@
  * are saved after the BSA.
  */
 struct xtensa_irq_base_save_area {
+#if XCHAL_HAVE_THREADPTR
+	uintptr_t threadptr;
+#endif
+
+#if XCHAL_HAVE_S32C1I
+	uintptr_t scompare1;
+#endif
+
+	uintptr_t exccause;
+	uintptr_t excvaddr;
+
+#if XCHAL_HAVE_LOOPS
+	uintptr_t lcount;
+	uintptr_t lend;
+	uintptr_t lbeg;
+#endif
+
+	uintptr_t sar;
+	uintptr_t ps;
+	uintptr_t pc;
+	uintptr_t a0;
+	uintptr_t scratch;
+	uintptr_t a2;
+	uintptr_t a3;
+
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	uintptr_t fcr;
 	uintptr_t fsr;
@@ -184,30 +209,6 @@ struct xtensa_irq_base_save_area {
 
 	uint8_t  hifi[XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN];
 #endif
-
-#if XCHAL_HAVE_THREADPTR
-	uintptr_t threadptr;
-#endif
-
-#if XCHAL_HAVE_S32C1I
-	uintptr_t scompare1;
-#endif
-
-	uintptr_t exccause;
-
-#if XCHAL_HAVE_LOOPS
-	uintptr_t lcount;
-	uintptr_t lend;
-	uintptr_t lbeg;
-#endif
-
-	uintptr_t sar;
-	uintptr_t ps;
-	uintptr_t pc;
-	uintptr_t a0;
-	uintptr_t scratch;
-	uintptr_t a2;
-	uintptr_t a3;
 
 	uintptr_t padding[_BSA_PADDING_NEEDED / sizeof(uintptr_t)];
 

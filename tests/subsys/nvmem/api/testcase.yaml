@@ -1,0 +1,13 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - nvmem
+tests:
+  nvmem.api.eeprom:
+    extra_configs:
+      - CONFIG_EEPROM=y
+    extra_dtc_overlay_files:
+      - eeprom.overlay

@@ -35,9 +35,9 @@
 		sdmmc2: sdmmc@40011c00 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40011c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 7U)>,
-				<&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
-			resets = <&rctl STM32_RESET(APB2, 7U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 7)>,
+				 <&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <103 0>;
 			status = "disabled";
 		};

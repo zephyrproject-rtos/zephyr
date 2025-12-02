@@ -10,3 +10,11 @@ config ENTROPY_NXP_ELE_TRNG
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the ELE true random number generator (TRNG)
+
+config ENTROPY_NXP_ELS_TRNG
+	bool "NXP ELS TRNG driver"
+	default y
+	depends on DT_HAS_NXP_ELS_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the ELS true random number generator (TRNG)

@@ -17,6 +17,17 @@ tests:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_ZPERF_SERVER=n
+  sample.net.zperf.async_tx.stm32:
+    filter: dt_compat_enabled("st,stm32-ethernet") and CONFIG_ETH_STM32_HAL_API_V2
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "coming up"
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_ETH_STM32_HAL_TX_ASYNC=y
   sample.net.zperf_st:
     harness: console
     harness_config:
@@ -26,6 +37,7 @@ tests:
     platform_allow:
       - nucleo_h563zi
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_f429zi
       - nucleo_f746zg
       - stm32h573i_dk

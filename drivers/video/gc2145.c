@@ -38,6 +38,8 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_SYNC_MODE_DEF        0x03
 #define GC2145_REG_SYNC_MODE_COL_SWITCH 0x10
 #define GC2145_REG_SYNC_MODE_ROW_SWITCH 0x20
+#define GC2145_REG_BYPASS_MODE          0x89
+#define GC2145_REG_BYPASS_MODE_SWITCH   BIT(5)
 #define GC2145_REG_CHIP_ID		GC2145_REG16_BE(0xF0)
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
@@ -168,7 +170,7 @@ static const struct video_reg8 default_regs[] = {
 	{GC2145_REG_OUTPUT_FMT, GC2145_REG_OUTPUT_FMT_RGB565},
 	{GC2145_REG_SYNC_MODE, GC2145_REG_SYNC_MODE_DEF},
 	{0x88, 0x03},
-	{0x89, 0x03},
+	{GC2145_REG_BYPASS_MODE, 0x03},
 	{0x85, 0x08},
 	{0x8a, 0x00},
 	{0x8b, 0x00},
@@ -768,13 +770,22 @@ struct gc2145_ctrls {
 struct gc2145_data {
 	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
+	struct video_rect crop;
+	uint16_t format_width;
+	uint16_t format_height;
+	uint8_t ratio;
 };
 
-#define GC2145_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = format, .width_min = width, .width_max = width,                     \
-		.height_min = height, .height_max = height, .width_step = 0, .height_step = 0,     \
+#define GC2145_VIDEO_FORMAT_CAP_HL(width_l, width_h, height_l, height_h, format, step_w, step_h) \
+	{										\
+		.pixelformat = (format),						\
+		.width_min = (width_l), .width_max = (width_h),				\
+		.height_min = (height_l), .height_max = (height_h),			\
+		.width_step = (step_w), .height_step = (step_h),			\
 	}
+
+#define GC2145_VIDEO_FORMAT_CAP(width, height, format)	\
+	GC2145_VIDEO_FORMAT_CAP_HL((width), (width), (height), (height), (format), 0, 0)
 
 #define RESOLUTION_QVGA_W	320
 #define RESOLUTION_QVGA_H	240
@@ -785,6 +796,13 @@ struct gc2145_data {
 #define RESOLUTION_UXGA_W	1600
 #define RESOLUTION_UXGA_H	1200
 
+#define RESOLUTION_MAX_W	RESOLUTION_UXGA_W
+#define RESOLUTION_MAX_H	RESOLUTION_UXGA_H
+
+/* Min not defined - smallest seen implementation is for QQVGA */
+#define RESOLUTION_MIN_W	160
+#define RESOLUTION_MIN_H	120
+
 static const struct video_format_cap fmts[] = {
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_RGB565),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_RGB565),
@@ -792,6 +810,11 @@ static const struct video_format_cap fmts[] = {
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
+	/* Add catchall resolution  */
+	GC2145_VIDEO_FORMAT_CAP_HL(RESOLUTION_MIN_W, RESOLUTION_MAX_W, RESOLUTION_MIN_H,
+				   RESOLUTION_MAX_H, VIDEO_PIX_FMT_RGB565, 1, 1),
+	GC2145_VIDEO_FORMAT_CAP_HL(RESOLUTION_MIN_W, RESOLUTION_MAX_W, RESOLUTION_MIN_H,
+				   RESOLUTION_MAX_H, VIDEO_PIX_FMT_YUYV, 1, 1),
 	{0},
 };
 
@@ -814,6 +837,7 @@ static int gc2145_soft_reset(const struct device *dev)
 static int gc2145_set_output_format(const struct device *dev, int output_format)
 {
 	const struct gc2145_config *cfg = dev->config;
+	uint8_t bypass_switch = 0;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
@@ -825,6 +849,14 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	/* Map format to sensor format */
 	if (output_format == VIDEO_PIX_FMT_RGB565) {
 		output_format = GC2145_REG_OUTPUT_FMT_RGB565;
+
+		/*
+		 * For RGB565 format on CSI, it is necessary to set switch bit in order to
+		 * have proper RGB565 CSI format (aka _LE) generated
+		 */
+		if (cfg->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+			bypass_switch = GC2145_REG_BYPASS_MODE_SWITCH;
+		}
 	} else if (output_format == VIDEO_PIX_FMT_YUYV) {
 		output_format = GC2145_REG_OUTPUT_FMT_YCBYCR;
 	} else {
@@ -838,49 +870,83 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 		return ret;
 	}
 
+	if (cfg->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+		ret = video_modify_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_BYPASS_MODE),
+					   GC2145_REG_BYPASS_MODE_SWITCH, bypass_switch);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	k_sleep(K_MSEC(30));
 
 	return 0;
 }
 
+static int gc2145_set_crop_registers(const struct gc2145_config *cfg, uint32_t x, uint32_t y,
+				     uint32_t w, uint32_t h)
+{
+	int ret;
+
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_ROW_START, y);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_COL_START, x);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_HEIGHT, h);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_WIDTH, w);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable crop */
+	return video_write_cci_reg(&cfg->i2c, GC2145_REG_CROP_ENABLE, GC2145_CROP_SET_ENABLE);
+}
+
 static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h)
 {
 	const struct gc2145_config *cfg = dev->config;
+	struct gc2145_data *drv_data = dev->data;
 	int ret;
 
 	uint16_t win_w;
 	uint16_t win_h;
-	uint16_t c_ratio;
-	uint16_t r_ratio;
-	uint16_t x;
-	uint16_t y;
 	uint16_t win_x;
 	uint16_t win_y;
 
-	/* Add the subsampling factor depending on resolution */
-	switch (w) {
-	case RESOLUTION_QVGA_W:
-		c_ratio = 3;
-		r_ratio = 3;
-		break;
-	case RESOLUTION_VGA_W:
-		c_ratio = 2;
-		r_ratio = 2;
-		break;
-	case RESOLUTION_UXGA_W:
-		c_ratio = 1;
-		r_ratio = 1;
-		break;
-	default:
-		LOG_ERR("Unsupported resolution %d %d", w, h);
+	/* If we are called from set_format, then we compute ratio and initialize crop */
+	drv_data->ratio = MIN(RESOLUTION_UXGA_W / w, RESOLUTION_UXGA_H / h);
+
+	/* make sure we don't end up with ratio of 0 */
+	if (drv_data->ratio == 0) {
 		return -EIO;
-	};
+	}
+
+	/* Restrict ratio to 3 for faster refresh ? */
+	if (drv_data->ratio > 3) {
+		drv_data->ratio = 3;
+	}
+
+	/* remember the width and height passed in */
+	drv_data->format_width = w;
+	drv_data->format_height = h;
+
+	/* Default to crop rectangle being same size as passed in resolution */
+	drv_data->crop.left = 0;
+	drv_data->crop.top = 0;
+	drv_data->crop.width = w;
+	drv_data->crop.height = h;
 
 	/* Calculates the window boundaries to obtain the desired resolution */
-	win_w = w * c_ratio;
-	win_h = h * r_ratio;
-	x = (((win_w / c_ratio) - w) / 2);
-	y = (((win_h / r_ratio) - h) / 2);
+
+	win_w = w * drv_data->ratio;
+	win_h = h * drv_data->ratio;
 	win_x = ((UXGA_HSIZE - win_w) / 2);
 	win_y = ((UXGA_VSIZE - win_h) / 2);
 
@@ -909,31 +975,14 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	}
 
 	/* Set cropping window next. */
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_ROW_START, y);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_COL_START, x);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_HEIGHT, h);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_WIDTH, w);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Enable crop */
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_CROP_ENABLE, GC2145_CROP_SET_ENABLE);
+	ret = gc2145_set_crop_registers(cfg, 0, 0, w, h);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set Sub-sampling ratio and mode */
-	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE, ((r_ratio << 4) | c_ratio));
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE,
+				  (drv_data->ratio << 4) | drv_data->ratio);
 	if (ret < 0) {
 		return ret;
 	}
@@ -950,6 +999,51 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	 * give some time time to apply the changes before the next instruction.
 	 */
 	k_sleep(K_MSEC(30));
+
+	return 0;
+}
+
+static int gc2145_set_crop(const struct device *dev, struct video_selection *sel)
+{
+	/* set the crop rectangle */
+	int ret;
+	const struct gc2145_config *cfg = dev->config;
+	struct gc2145_data *drv_data = dev->data;
+
+	/* Verify the passed in rectangle is valid */
+	if (((sel->rect.left + sel->rect.width) > drv_data->format_width) ||
+	    ((sel->rect.top + sel->rect.height) > drv_data->format_height)) {
+		LOG_ERR("Crop rectangle is invalid(%u %u) %ux%u > %ux%u",
+			sel->rect.left, sel->rect.top, sel->rect.width, sel->rect.height,
+			drv_data->format_width, drv_data->format_height);
+		return -EINVAL;
+	}
+
+	/* if rectangle passed in is same as current, simply return */
+	if ((drv_data->crop.left == sel->rect.left) && (drv_data->crop.top == sel->rect.top) &&
+	    (drv_data->crop.width == sel->rect.width) &&
+	    (drv_data->crop.height == sel->rect.height)) {
+		return 0;
+	}
+
+	/* save out the updated crop window registers */
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				  GC2145_REG_RESET_P0_REGS);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gc2145_set_crop_registers(cfg, sel->rect.left, sel->rect.top,
+					sel->rect.width, sel->rect.height);
+	if (ret < 0) {
+		return ret;
+	}
+
+	drv_data->crop = sel->rect;
+
+	/* enqueue/dequeue depend on this being set as well as the crop */
+	drv_data->fmt.width = drv_data->crop.width;
+	drv_data->fmt.height = drv_data->crop.height;
 
 	return 0;
 }
@@ -1047,7 +1141,7 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
 	const struct gc2145_config *cfg = dev->config;
-	size_t res = ARRAY_SIZE(fmts);
+	size_t idx;
 	int ret;
 
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
@@ -1056,16 +1150,10 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Check if camera is capable of handling given format */
-	for (int i = 0; i < ARRAY_SIZE(fmts) - 1; i++) {
-		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
-		    fmts[i].pixelformat == fmt->pixelformat) {
-			res = i;
-			break;
-		}
-	}
-	if (res == ARRAY_SIZE(fmts)) {
+	ret = video_format_caps_index(fmts, fmt, &idx);
+	if (ret < 0) {
 		LOG_ERR("Image format not supported");
-		return -ENOTSUP;
+		return ret;
 	}
 
 	/* Set output format */
@@ -1171,12 +1259,53 @@ static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 	}
 }
 
+static int gc2145_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -EINVAL;
+	}
+
+	if (sel->target != VIDEO_SEL_TGT_CROP) {
+		return -EINVAL;
+	}
+
+	return gc2145_set_crop(dev, sel);
+}
+
+static int gc2145_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	struct gc2145_data *drv_data = dev->data;
+
+	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -EINVAL;
+	}
+
+	switch (sel->target) {
+	case VIDEO_SEL_TGT_CROP:
+		sel->rect = drv_data->crop;
+		break;
+
+	case VIDEO_SEL_TGT_NATIVE_SIZE:
+		sel->rect.top = 0;
+		sel->rect.left = 0;
+		sel->rect.width = drv_data->format_width;
+		sel->rect.height = drv_data->format_height;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
 	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
+	.set_selection = gc2145_set_selection,
+	.get_selection = gc2145_get_selection,
 };
 
 static int gc2145_init_controls(const struct device *dev)

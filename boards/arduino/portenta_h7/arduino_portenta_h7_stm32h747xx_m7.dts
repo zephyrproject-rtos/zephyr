@@ -8,7 +8,6 @@
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include "arduino_portenta_h7-common.dtsi"
-#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 / {
 	model = "Arduino Portenta H7 board";
@@ -43,7 +42,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -95,27 +94,33 @@
 		pmic_regulators: regulators {
 			status = "okay";
 			compatible = "nxp,pf1550-regulator";
+
 			pf1550_sw1: BUCK1 {
 				regulator-init-microvolt = <3000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_sw2: BUCK2 {
 				regulator-init-microvolt = <3300000>;
 				regulator-boot-on;
 			};
+
 			pf1550_sw3: BUCK3 {
 				regulator-init-microvolt = <3300000>;
 				regulator-init-microamp = <2000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo1: LDO1 {
 				regulator-init-microvolt = <1000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo2: LDO2 {
 				regulator-init-microvolt = <1800000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo3: LDO3 {
 				regulator-init-microvolt = <1200000>;
 				regulator-boot-on;
@@ -141,9 +146,30 @@
 	status = "disabled";
 };
 
-&usbotg_hs {
+zephyr_udc0: &usbotg_hs {
 	status = "okay";
+	pinctrl-0 = <&usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_ck_pa5
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_nxt_ph4
+		     &usb_otg_hs_ulpi_dir_pi11>;
+	pinctrl-names = "default";
+	phys = <&otghs_ulpi_phy>;
+	maximum-speed = "high-speed";
+	/* Include the USB1ULPIEN | USB1OTGHSULPIEN clock enable bit */
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	num-bidir-endpoints = <4>;
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &flash0 {
 	partitions {
@@ -156,6 +182,7 @@
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
+
 		/*
 		 * The flash starting at 0x00010000 and ending at
 		 * 0x0001ffff (sectors 16-31) is reserved for use
@@ -165,6 +192,7 @@
 			label = "image-scratch";
 			reg = <0x00010000 0x00030000>;
 		};
+
 		/* The arduino default bootloader occupies the address space 0x0 - 0x40000.
 		 * This way regardless of the user's choice to use the mcuboot bootloader,
 		 * applications will be located at 0x40000 which will be loaded by the
@@ -174,6 +202,7 @@
 			label = "image-0";
 			reg = <0x00040000 0x00060000>;
 		};
+
 		slot1_partition: partition@A0000 {
 			label = "image-1";
 			reg = <0x000A0000 0x00060000>;

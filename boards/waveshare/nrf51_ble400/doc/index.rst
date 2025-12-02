@@ -32,7 +32,7 @@ Features
 ========
 
 - 2.4 GHz multiprotocol RF transceiver
-- ARM® Cortex™-M0 32 bit processor
+- ARM® Cortex |reg|-M0 32 bit processor
 - 128 bit AES HW encryption
 - 256kB flash & 32kB RAM
 - Programmable Peripheral Interconnect (PPI)

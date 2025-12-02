@@ -41,4 +41,34 @@
 				 <RZN_PINMUX(PORT_04, 0, 3)>; /* GTIOCB */
 		};
 	};
+
+	/omit-if-no-ref/ i2c1_default: i2c1_default {
+		i2c1-pinmux {
+			pinmux = <RZN_PINMUX(PORT_05, 2, 8)>, /* SCL */
+				 <RZN_PINMUX(PORT_05, 3, 9)>; /* SDA */
+		};
+	};
+
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZN_PINMUX(PORT_18, 4, 3)>, /* CK2 */
+				 <RZN_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
+				 <RZN_PINMUX(PORT_18, 6, 5)>, /* MISO2 */
+				 <RZN_PINMUX(PORT_21, 1, 6)>; /* SSL20 */
+		};
+	};
+
+	/omit-if-no-ref/ xspi0_default: xspi0_default {
+		xspi0-pinmux {
+			pinmux = <RZN_PINMUX(PORT_14, 6, 0)>, /* XSPI0_CKP */
+				 <RZN_PINMUX(PORT_14, 5, 0)>, /* XSPI0_CKN */
+				 <RZN_PINMUX(PORT_15, 7, 0)>, /* XSPI0_CS0 */
+				 <RZN_PINMUX(PORT_14, 7, 0)>, /* XSPI0_IO0 */
+				 <RZN_PINMUX(PORT_15, 0, 0)>, /* XSPI0_IO1 */
+				 <RZN_PINMUX(PORT_15, 1, 0)>, /* XSPI0_IO2 */
+				 <RZN_PINMUX(PORT_15, 2, 0)>, /* XSPI0_IO3 */
+				 <RZN_PINMUX(PORT_16, 1, 0)>, /* XSPI0_RESET0 */
+				 <RZN_PINMUX(PORT_16, 3, 1)>; /* XSPI0_RSTO0 */
+		};
+	};
 };

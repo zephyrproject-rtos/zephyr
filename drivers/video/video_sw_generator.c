@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 struct sw_ctrls {
 	struct video_ctrl hflip;
+	struct video_ctrl test_pattern;
 };
 
 struct video_sw_generator_data {
@@ -69,6 +70,11 @@ static const struct video_format_cap fmts[] = {
 	{0},
 };
 
+static const char *const test_pattern_menu[] = {
+	"Color bars",
+	NULL,
+};
+
 static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -81,7 +87,10 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 	return 0;
@@ -365,9 +374,6 @@ static int video_sw_generator_get_caps(const struct device *dev, struct video_ca
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 
-	/* SW generator produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
-
 	return 0;
 }
 
@@ -454,6 +460,13 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 static int video_sw_generator_init_controls(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+	int ret;
+
+	ret = video_init_menu_ctrl(&data->ctrls.test_pattern, dev, VIDEO_CID_TEST_PATTERN,
+				   0, test_pattern_menu);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return video_init_ctrl(&data->ctrls.hflip, dev, VIDEO_CID_HFLIP,
 			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
@@ -477,6 +490,7 @@ static int video_sw_generator_init(const struct device *dev)
 		.fmt.height = 160,                                                                 \
 		.fmt.pitch = 320 * 2,                                                              \
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
+		.fmt.size = 320 * 2 * 160,                                                         \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \

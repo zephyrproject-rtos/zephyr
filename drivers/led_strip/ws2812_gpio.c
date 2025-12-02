@@ -140,6 +140,7 @@ static int ws2812_gpio_update_rgb(const struct device *dev,
 	/* Convert from RGB to on-wire format (e.g. GRB, GRBW, RGB, etc) */
 	for (i = 0; i < num_pixels; i++) {
 		uint8_t j;
+		const struct led_rgb current_pixel = pixels[i];
 
 		for (j = 0; j < config->num_colors; j++) {
 			switch (config->color_mapping[j]) {
@@ -148,13 +149,13 @@ static int ws2812_gpio_update_rgb(const struct device *dev,
 				*ptr++ = 0;
 				break;
 			case LED_COLOR_ID_RED:
-				*ptr++ = pixels[i].r;
+				*ptr++ = current_pixel.r;
 				break;
 			case LED_COLOR_ID_GREEN:
-				*ptr++ = pixels[i].g;
+				*ptr++ = current_pixel.g;
 				break;
 			case LED_COLOR_ID_BLUE:
-				*ptr++ = pixels[i].b;
+				*ptr++ = current_pixel.b;
 				break;
 			default:
 				return -EINVAL;
@@ -223,6 +224,10 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 									\
 		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);	\
 	}								\
+									\
+	BUILD_ASSERT(WS2812_NUM_COLORS(idx) <= sizeof(struct led_rgb),  \
+		"Too many channels in color-mapping; "			\
+		"currently not supported by the ws2812_gpio driver");	\
 									\
 	WS2812_COLOR_MAPPING(idx);					\
 									\

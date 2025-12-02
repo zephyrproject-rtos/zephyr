@@ -1,4 +1,4 @@
-# Copyright 2020 NXP
+# Copyright 2020, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 # MCUX TPM PWM
@@ -11,3 +11,13 @@ config PWM_MCUX_TPM
 	select PINCTRL
 	help
 	  Enable the MCUX TPM PWM driver.
+
+config PWM_CAPTURE_MCUX_TPM_FILTER_VALUE
+	int "MCUX TPM PWM capture filter value"
+	depends on PWM_MCUX_TPM && PWM_CAPTURE
+	range 0 15
+	default 0
+	help
+	  PWM capture filter value for channels.
+	  The filter is disabled when the value is zero, otherwise
+	  the filter is configured as (CHxFVAL * 4) clock cycles.

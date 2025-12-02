@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include "esp32c6_common.dtsi"
+#include "esp32c6_common.dtsi"
 
 /* 8MB flash */
 &flash0 {

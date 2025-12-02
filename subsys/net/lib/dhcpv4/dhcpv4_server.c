@@ -879,7 +879,7 @@ out:
 
 static int dhcpv4_server_probing_init(struct dhcpv4_server_ctx *ctx)
 {
-	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx,
+	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx, AF_INET,
 				 NET_ICMPV4_ECHO_REPLY, 0,
 				 echo_reply_handler);
 }
@@ -1771,7 +1771,7 @@ int net_dhcpv4_server_foreach_lease(struct net_if *iface,
 			}
 		}
 
-		return 0;
+		goto out;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(server_ctx); i++) {

@@ -74,11 +74,11 @@ BUILD_ASSERT(!IS_ENABLED(STM32_SYSCLK_SRC_HSE) || STM32_WB0_CLKSYS_PRESCALER != 
 		 * the RC64M generator is imprecise. In this configuration, MR_BLE is broken.
 		 * The CPU and MR_BLE must be running at 32MHz for MR_BLE to work with HSI.
 		 */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ,
+		BUILD_ASSERT(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_32MHZ,
 			"System clock frequency must be at least 32MHz to use LSI");
 #	else
 		/* In PLL or Direct HSE mode, the clock is stable, so 16MHz can be used. */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_16MHZ,
+		BUILD_ASSERT(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_16MHZ,
 			"System clock frequency must be at least 16MHz to use LSI");
 #	endif /* STM32_SYSCLK_SRC_HSI */
 
@@ -711,7 +711,7 @@ int stm32_clock_control_init(const struct device *dev)
 	 *  - 0 wait states otherwise (CLK_SYS <= 32MHz)
 	 */
 	LL_FLASH_SetLatency(
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ)
+	(STM32_HCLK_FREQUENCY >= CLOCK_FREQ_32MHZ)
 			? LL_FLASH_LATENCY_1
 			: LL_FLASH_LATENCY_0
 	);
@@ -755,7 +755,7 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
 	LL_RCC_SetRC64MPLLPrescaler(
 		kconfig_to_ll_prescaler(STM32_WB0_CLKSYS_PRESCALER));
 
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	SystemCoreClock = STM32_HCLK_FREQUENCY;
 
 #if defined(STM32_LSI_ENABLED)
 	/* Enable MR_BLE clock for LSI measurement.

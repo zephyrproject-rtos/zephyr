@@ -24,6 +24,9 @@
 #include <zephyr/arch/xtensa/cache.h>
 #endif
 
+#include <stddef.h>
+#include <stdbool.h>
+
 #if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
 
 /**

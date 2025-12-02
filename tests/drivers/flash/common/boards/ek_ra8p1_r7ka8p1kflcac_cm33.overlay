@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&code_mram_cm33 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@38000 {
+			label = "storage";
+			reg = <0x38000 DT_SIZE_K(32)>;
+		};
+	};
+};

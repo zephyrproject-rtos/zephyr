@@ -54,6 +54,7 @@ typedef int (*stream_flash_callback_t)(uint8_t *buf, size_t len, size_t offset);
  * with them through the below API.
  */
 struct stream_flash_ctx {
+	/** @cond INTERNAL_HIDDEN */
 	uint8_t *buf; /* Write buffer */
 	size_t buf_len; /* Length of write buffer */
 	size_t buf_bytes; /* Number of bytes currently stored in write buf */
@@ -74,6 +75,7 @@ struct stream_flash_ctx {
 #endif
 	size_t write_block_size;	/* Offset/size device write alignment */
 	uint8_t erase_value;
+	/** @endcond */
 };
 
 /**

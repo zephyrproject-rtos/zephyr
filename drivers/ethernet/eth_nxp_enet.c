@@ -799,14 +799,11 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 			return ret;
 		}
 
-		ENET_Reset(data->base);
-		ENET_Down(data->base);
-		clock_control_off(config->clock_dev, (clock_control_subsys_t)config->clock_subsys);
+		ENET_EnableSleepMode(data->base, true);
 	} else if (action == PM_DEVICE_ACTION_RESUME) {
 		LOG_DBG("Resuming");
 
-		clock_control_on(config->clock_dev, (clock_control_subsys_t)config->clock_subsys);
-		eth_nxp_enet_init(dev);
+		ENET_EnableSleepMode(data->base, false);
 		net_if_resume(data->iface);
 	} else {
 		return -ENOTSUP;

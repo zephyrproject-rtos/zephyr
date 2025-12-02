@@ -47,7 +47,7 @@
 			lxt = "enable";
 			hirc48m = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
-					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
+				       NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <DT_FREQ_M(72)>;
 			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD0>;
 

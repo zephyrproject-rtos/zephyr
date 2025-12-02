@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5  &usart1_rts_pa12 &usart1_cts_pa11>;
+	dmas = <&dmamux1 2 25 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 1 24 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	hw-flow-control;
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

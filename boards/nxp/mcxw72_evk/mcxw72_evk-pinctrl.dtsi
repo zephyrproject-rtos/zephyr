@@ -25,7 +25,7 @@
 	pinmux_tpm0: pinmux_tpm0 {
 		group0 {
 			pinmux = <TPM0_CH0_PTA21>, <TPM0_CH1_PTA20>,
-				<TPM0_CH2_PTA19>, <TPM0_CH3_PTA18>;
+				 <TPM0_CH2_PTA19>, <TPM0_CH3_PTA18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -53,8 +53,8 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_A6_PTD2>,
-				<ADC0_B6_PTD3>,
-				<ADC0_B5_PTD1>;
+				 <ADC0_B6_PTD3>,
+				 <ADC0_B5_PTD1>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -63,7 +63,7 @@
 	pinmux_lpi2c0: pinmux_lpi2c0 {
 		group0 {
 			pinmux = <LPI2C0_SCL_PTA19>,
-				<LPI2C0_SDA_PTA18>;
+				 <LPI2C0_SDA_PTA18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			drive-open-drain;
@@ -73,7 +73,7 @@
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
 			pinmux = <LPI2C1_SCL_PTB5>,
-				<LPI2C1_SDA_PTB4>;
+				 <LPI2C1_SDA_PTB4>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			drive-open-drain;

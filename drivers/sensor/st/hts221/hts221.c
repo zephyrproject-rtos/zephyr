@@ -240,8 +240,7 @@ int hts221_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),		\
 		.stmemsc_cfg = {						\
 			.spi = SPI_DT_SPEC_INST_GET(inst,			\
-						    HTS221_SPI_OPERATION,	\
-						    0),				\
+						    HTS221_SPI_OPERATION)	\
 		},								\
 		HTS221_CONFIG_COMMON(inst)					\
 	}

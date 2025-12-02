@@ -1,0 +1,22 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_HAS_THEAD_CMO
+	bool
+	help
+	  The Xuantie core supports XTHeadCmo extension.
+
+config RISCV_CUSTOM_CSR_THEAD_CMO
+	bool
+	depends on CPU_HAS_THEAD_CMO
+	default y if CACHE_MANAGEMENT
+	help
+	  This option enables the cache operation for XuanTie family of CPUs.
+
+config RISCV_CUSTOM_CSR_THEAD_CMO_E907
+	bool
+	depends on CPU_HAS_THEAD_CMO
+	depends on DT_HAS_XUANTIE_E907_ENABLED
+	default y if CACHE_MANAGEMENT
+	help
+	  This option enables the additional cache operation for XuanTie E907 cores.

@@ -87,7 +87,26 @@ void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r)
 
 int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 {
-	for (int i = 0; i < SAMPLE_NO; i++) {
+	int sample_no = SAMPLE_NO;
+
+#if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+	static ZTEST_DMEM int offset = -1;
+
+	if (offset < 0) {
+		do {
+			++offset;
+			if (offset > CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET) {
+				TC_PRINT("Allowed data offset exceeded\n");
+				return -TC_FAIL;
+			}
+		} while (rx_block[2 * offset] != val_l);
+	}
+
+	rx_block += 2 * offset;
+	sample_no -= offset;
+#endif
+
+	for (int i = 0; i < sample_no; i++) {
 		if (rx_block[2 * i] != val_l) {
 			TC_PRINT("Error: data_l mismatch at position "
 				 "%d, expected %d, actual %d\n",

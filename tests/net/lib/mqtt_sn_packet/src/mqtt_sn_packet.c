@@ -536,7 +536,7 @@ static ZTEST(mqtt_sn_packet, test_mqtt_packet_encode)
 				"Expected data");
 		LOG_HEXDUMP_DBG(msg.data, msg.len, "Encoded data");
 		zassert_equal(msg.len, encode_tests[i].expectedsz,
-			      "Unexpected data size %zu (%zu)", msg.len,
+			      "Unexpected data size %u (%zu)", msg.len,
 			      encode_tests[i].expectedsz);
 		zassert_mem_equal(encode_tests[i].expected, msg.data, msg.len,
 				  "Bad encoded message");

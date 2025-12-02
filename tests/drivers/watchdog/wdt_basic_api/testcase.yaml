@@ -28,13 +28,15 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
       - frdm_mcxw71
-      - apollo510_evb
-      - apollo510_eb
+      - frdm_mcxw72/mcxw727c/cpu0
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+      - frdm_mcxw23
+      - mcxw23_evk
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -88,7 +90,6 @@ tests:
       - nucleo_wl55jc
       - b_u585i_iot02a
       - nucleo_u575zi_q
-      - nucleo_h753zi
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
@@ -152,3 +153,13 @@ tests:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"
+  drivers.watchdog.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
+  drivers.watchdog.nxp_mcxw2xx_bypass_first_32k:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="bypass_first_32k.overlay"
+    platform_allow:
+      - frdm_mcxw23
+      - mcxw23_evk

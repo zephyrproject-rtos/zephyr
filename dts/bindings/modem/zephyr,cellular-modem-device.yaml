@@ -1,0 +1,19 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties for Zephyr cellular modems
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    description: GPIO for modem power control
+
+  mdm-reset-gpios:
+    type: phandle-array
+    description: GPIO for modem reset
+
+  mdm-wake-gpios:
+    type: phandle-array
+    description: GPIO for modem wake

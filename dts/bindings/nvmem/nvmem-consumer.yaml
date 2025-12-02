@@ -1,0 +1,14 @@
+# Copyright (c) 2024, Andriy Gelman <andriy.gelman@gmail.com>
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  nvmem-cell-names:
+    type: string-array
+    description:
+      Names for each nvmem-cells specified.
+
+  nvmem-cells:
+    type: phandle-array
+    description:
+      List of phandles to the nvmem data cells.

@@ -778,15 +778,30 @@ static void remove_map(struct arm_mmu_ptables *ptables, const char *name,
 
 static void invalidate_tlb_all(void)
 {
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vmalle1is; dsb ish; isb"
+	: : : "memory");
+#else
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
+#endif
 }
 
 static inline void invalidate_tlb_page(uintptr_t virt)
 {
-	/* to be refined */
-	invalidate_tlb_all();
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#else
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#endif
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -855,21 +870,6 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 	}
 }
 
-static inline void inv_dcache_after_map_helper(void *virt, size_t size, uint32_t attrs)
-{
-	/*
-	 * DC IVAC instruction requires write access permission to the VA,
-	 * otherwise it can generate a permission fault
-	 */
-	if ((attrs & MT_RW) != MT_RW) {
-		return;
-	}
-
-	if (MT_TYPE(attrs) == MT_NORMAL || MT_TYPE(attrs) == MT_NORMAL_WT) {
-		sys_cache_data_invd_range(virt, size);
-	}
-}
-
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
@@ -909,20 +909,6 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	}
 
 	invalidate_tlb_all();
-
-	for (index = 0U; index < ARRAY_SIZE(mmu_zephyr_ranges); index++) {
-		size_t size;
-
-		range = &mmu_zephyr_ranges[index];
-		size = POINTER_TO_UINT(range->end) - POINTER_TO_UINT(range->start);
-		inv_dcache_after_map_helper(range->start, size, range->attrs);
-	}
-
-	for (index = 0U; index < mmu_config.num_regions; index++) {
-		region = &mmu_config.mmu_regions[index];
-		inv_dcache_after_map_helper(UINT_TO_POINTER(region->base_va), region->size,
-					    region->attrs);
-	}
 }
 
 /* Translation table control register settings */
@@ -1117,20 +1103,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
-		uint32_t mem_flags = flags & K_MEM_CACHE_MASK;
-
 		sync_domains((uintptr_t)virt, size, "mem_map");
 		invalidate_tlb_all();
-
-		switch (mem_flags) {
-		case K_MEM_CACHE_WB:
-		case K_MEM_CACHE_WT:
-			mem_flags = (mem_flags == K_MEM_CACHE_WB) ? MT_NORMAL : MT_NORMAL_WT;
-			mem_flags |= (flags & K_MEM_PERM_RW) ? MT_RW : 0;
-			inv_dcache_after_map_helper(virt, size, mem_flags);
-		default:
-			break;
-		}
 	}
 }
 
@@ -1246,7 +1220,6 @@ static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 	__ASSERT(ret == 0, "add_map() returned %d", ret);
 	invalidate_tlb_all();
 
-	inv_dcache_after_map_helper(UINT_TO_POINTER(virt), size, attrs);
 	return ret;
 }
 

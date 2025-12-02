@@ -17,6 +17,19 @@
 		};
 	};
 
+	sci9_default: sci9_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 9)>;
+			drive-strength = "medium";
+		};
+
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 8)>;
+		};
+	};
+
 	sci1_default: sci1_default {
 		group1 {
 			/* SDA SCL */
@@ -49,6 +62,14 @@
 		};
 	};
 
+	pwm12_default: pwm12_default {
+		group1 {
+			/* GTIOC12A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 5, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
 	iic1_default: iic1_default {
 		group1 {
 			/* SCL1 SDA1*/
@@ -58,11 +79,34 @@
 		};
 	};
 
-	canfd0_default: canfd0_default {
+	ceu_default: ceu_default {
 		group1 {
-			/* CRX0 CTX0 */
-			psels = <RA_PSEL(RA_PSEL_CANFD, 2, 2)>,
-				<RA_PSEL(RA_PSEL_CANFD, 2, 3)>;
+			psels = <RA_PSEL(RA_PSEL_CEU, 4, 0)>, /* VIO_D0 */
+				<RA_PSEL(RA_PSEL_CEU, 9, 2)>, /* VIO_D1 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 5)>, /* VIO_D2 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 6)>, /* VIO_D3 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 0)>, /* VIO_D4 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 1)>, /* VIO_D5 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 2)>, /* VIO_D6 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 3)>, /* VIO_D7 */
+				<RA_PSEL(RA_PSEL_CEU, 11, 4)>, /* VIO_CLK */
+				<RA_PSEL(RA_PSEL_CEU, 11, 3)>, /* VIO_HD */
+				<RA_PSEL(RA_PSEL_CEU, 11, 2)>; /* VIO_VD */
+		};
+	};
+
+	usbhs_default: usbhs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>; /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>, /* USB_DM */
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>, /* USB_DP */
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;	 /* VBUS */
 			drive-strength = "high";
 		};
 	};

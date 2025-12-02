@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas RZ SPIBSC NOR FLASH supporting the JEDEC CFI interface
+
+    Representation of a serial flash on a quadspi bus:
+
+      at25ql128a: qspi-nor-flash@20000000 {
+        compatible = "renesas,rz-qspi-spibsc";
+        reg = <0x20000000 DT_SIZE_M(16)>; /* 128 Mbits */
+        write-block-size = <1>;
+        erase-block-size = <4096>;
+        status = "okay";
+      };
+
+compatible: "renesas,rz-qspi-spibsc"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+    description: Flash Memory base address and size in bytes
+
+  erase-block-size:
+    type: int
+    default: 4096
+    description: Address alignment required by flash erase operations
+
+  write-block-size:
+    type: int
+    default: 1
+    description: Address alignment required by flash write operations

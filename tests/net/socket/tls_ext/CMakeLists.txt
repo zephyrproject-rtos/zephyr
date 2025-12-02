@@ -6,7 +6,7 @@ project(tls_socket_api_extension)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
-if (${CONFIG_TLS_CREDENTIALS})
+if(${CONFIG_TLS_CREDENTIALS})
   generate_inc_file_for_target(
     app
     ${ZEPHYR_BASE}/samples/net/sockets/echo_server/src/ca.der

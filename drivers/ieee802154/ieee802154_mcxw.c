@@ -1253,6 +1253,12 @@ static int mcxw_init(const struct device *dev)
 	msg.msgType = gPlmeEnableEncryption_c;
 	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 
+	/* Disable poll optimization */
+	msg.msgType = gPlmeSetReq_c;
+	msg.msgData.setReq.PibAttribute = gPhyPibRxTimePoll_c;
+	msg.msgData.setReq.PibAttributeValue = 0;
+	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+
 	mcxw_radio->state = RADIO_STATE_DISABLED;
 	mcxw_radio->energy_scan_done = NULL;
 

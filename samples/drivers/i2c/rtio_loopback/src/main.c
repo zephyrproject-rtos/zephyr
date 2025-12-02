@@ -281,7 +281,8 @@ static int sample_rtio_write_read(void)
 	return 0;
 }
 
-static void rtio_write_read_done_callback(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+static void rtio_write_read_done_callback(struct rtio *r, const struct rtio_sqe *sqe,
+					  int result, void *arg0)
 {
 	struct k_sem *sem = arg0;
 	struct rtio_cqe *wr_rd_cqe;

@@ -1,0 +1,49 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/* Define memory regions for IPC */
+	sram1_ipc0: memory@20200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20200000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC0";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	sram1_ipc1: memory@20204000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20204000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC1";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram1_ipc0>;
+			mboxes = <&mbox1_b 0>, <&mbox1_b 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram1_ipc1>;
+			mboxes = <&mbox1_b 2>, <&mbox1_b 3>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		};
+	};
+};

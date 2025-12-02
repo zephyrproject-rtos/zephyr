@@ -51,6 +51,17 @@ struct ll_conn_iso_stream {
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 	uint64_t pkt_seq_num:39;
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+
+	/* node rx type with dummy uint8_t to ensure room for terminate
+	 * reason.
+	 * HCI will reference the value using the pdu member of
+	 * struct node_rx_pdu.
+	 */
+	struct {
+		struct node_rx_pdu rx;
+		/* Dummy declaration to ensure space allocated to hold one pdu byte */
+		uint8_t dummy_reason;
+	} node_rx_terminate;
 };
 
 struct ll_conn_iso_group {

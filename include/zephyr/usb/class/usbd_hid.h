@@ -213,6 +213,38 @@ int hid_device_submit_report(const struct device *dev,
 			     const uint16_t size, const uint8_t *const report);
 
 /**
+ * @brief Set input report polling period
+ *
+ * Similar to devicetree property in-polling-period-us, but it allows setting
+ * different polling periods at runtime.
+ *
+ * @kconfig_dep{CONFIG_USBD_HID_SET_POLLING_PERIOD}
+ *
+ * @param[in] dev       Pointer to HID device
+ * @param[in] period_us Polling period in microseconds
+ *
+ * @return 0 on success, negative errno code on failure.
+ * @retval -ENOTSUP If API is not enabled.
+ */
+int hid_device_set_in_polling(const struct device *dev, const unsigned int period_us);
+
+/**
+ * @brief Set output report polling period
+ *
+ * Similar to devicetree property out-polling-period-us, but it allows setting
+ * different polling periods at runtime.
+ *
+ * @kconfig_dep{CONFIG_USBD_HID_SET_POLLING_PERIOD}
+ *
+ * @param[in] dev       Pointer to HID device
+ * @param[in] period_us Polling period in microseconds
+ *
+ * @return 0 on success, negative errno code on failure.
+ * @retval -ENOTSUP If API is not enabled.
+ */
+int hid_device_set_out_polling(const struct device *dev, const unsigned int period_us);
+
+/**
  * @}
  */
 

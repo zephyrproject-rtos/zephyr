@@ -128,7 +128,7 @@ if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
     puncover
     ${PUNCOVER}
     --elf_file       ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
-    --gcc_tools_base ${CROSS_COMPILE}
+    --gcc-tools-base ${CROSS_COMPILE}
     --src_root       ${ZEPHYR_BASE}
     --build_dir      ${CMAKE_BINARY_DIR}
     ${PUNCOVER_ARGS}

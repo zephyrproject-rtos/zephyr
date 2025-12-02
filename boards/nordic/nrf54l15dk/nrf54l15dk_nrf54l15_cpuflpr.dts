@@ -8,6 +8,8 @@
 #include <nordic/nrf54l15_cpuflpr.dtsi>
 #include "nrf54l15dk_common.dtsi"
 
+/delete-node/ &cpuflpr_sram;
+
 / {
 	model = "Nordic nRF54L15 DK nRF54L15 FLPR MCU";
 	compatible = "nordic,nrf54l15dk_nrf54l15-cpuflpr";
@@ -19,13 +21,16 @@
 		zephyr,flash = &cpuflpr_rram;
 		zephyr,sram = &cpuflpr_sram;
 	};
-};
 
-&cpuflpr_sram {
-	status = "okay";
-	/* size must be increased due to booting from SRAM */
-	reg = <0x20028000 DT_SIZE_K(96)>;
-	ranges = <0x0 0x20028000 0x18000>;
+	cpuflpr_sram: memory@20028000 {
+		compatible = "mmio-sram";
+		/* Size must be increased due to booting from SRAM */
+		reg = <0x20028000 DT_SIZE_K(96)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x20028000 0x18000>;
+		status = "okay";
+	};
 };
 
 &cpuflpr_rram {

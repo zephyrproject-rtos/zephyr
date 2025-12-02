@@ -664,6 +664,8 @@ The shell module supports the following meta keys:
      - Moves in history to next entry.
    * - :kbd:`Ctrl+p`
      - Moves in history to previous entry.
+   * - :kbd:`Ctrl+t`
+     - Toggles logs output on the shell when :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` is set.
    * - :kbd:`Ctrl+u`
      - Clears the currently typed command.
    * - :kbd:`Ctrl+w`

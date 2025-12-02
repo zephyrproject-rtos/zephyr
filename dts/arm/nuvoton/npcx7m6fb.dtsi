@@ -36,7 +36,7 @@
 	status = "okay";
 
 	int_flash: w25q80@0 {
-		compatible ="nuvoton,npcx-fiu-nor";
+		compatible = "nuvoton,npcx-fiu-nor";
 		size = <DT_SIZE_M(1 * 8)>;
 		reg = <0>;
 		status = "okay";

@@ -381,6 +381,18 @@ void board_early_init_hook(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*
@@ -410,7 +422,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c1))
 	/* Enable 1MHz clock. */
 	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
 
@@ -424,7 +436,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kI3C1FCLK_to_I3C1FCLKSTC);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sc_timer), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sc_timer))
 	/* attach FRO HF to SCT */
 	CLOCK_SetClkDiv(kCLOCK_DivSctClk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_SCT);

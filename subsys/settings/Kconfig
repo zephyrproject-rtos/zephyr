@@ -52,6 +52,7 @@ choice SETTINGS_BACKEND
 config SETTINGS_ZMS
 	bool "ZMS (Zephyr Memory Storage)"
 	depends on ZMS
+	depends on FLASH_MAP
 	select SYS_HASH_FUNC32
 	help
 	  Use ZMS as settings storage backend.

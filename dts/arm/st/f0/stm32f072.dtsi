@@ -14,7 +14,7 @@
 			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <30 0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			status = "disabled";
 		};
 
@@ -27,7 +27,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_PLLCLK USB_SEL(1)>;
 			status = "disabled";
 		};

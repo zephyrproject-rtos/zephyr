@@ -89,7 +89,7 @@ ZTEST(os_mgmt_info_limited, test_info_1_kernel_name)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal((sizeof(response_kernel_name) - 1), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (sizeof(response_kernel_name) - 1), output.len);
 
 	zassert_mem_equal(response_kernel_name, output.value, output.len,
@@ -160,7 +160,7 @@ ZTEST(os_mgmt_info_limited, test_info_2_all)
 
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
-	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %d\n", output.len);
+	zassert_equal(output.len, 0, "Expected to receive 0 bytes but got %zu\n", output.len);
 	zassert_equal(rc, MGMT_ERR_EMSGSIZE, "Expected to receive EMSGSIZE error but got %d\n",
 		      rc);
 }

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tcc4;
+	};
+};
+
+&tcc4 {
+	compatible = "microchip,tcc-g1-pwm";
+	status = "okay";
+	#pwm-cells = < 0x3 >;
+	pinctrl-0 = < &tcc4_pwm_default >;
+	pinctrl-names = "default";
+	prescaler = < 0x1 >;
+};
+
+&tcc0 {
+	status = "disabled";
+};
+
+&pinctrl {
+	tcc4_pwm_default: tcc4_pwm_default {
+		group1 {
+			pinmux = <PB30F_TCC4_WO0>;
+		};
+	};
+};

@@ -12,4 +12,5 @@ tests:
     tags: sdhc
     integration_platforms:
       - mimxrt1064_evk
-    build_only: true # Ambiq need insert sd card
+    platform_exclude:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0

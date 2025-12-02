@@ -6,7 +6,7 @@ menuconfig ST7567
 	default y
 	depends on DT_HAS_SITRONIX_ST7567_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SITRONIX_ST7567),i2c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SITRONIX_ST7567),spi)
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_SITRONIX_ST7567),mipi-dbi)
 	help
 	  Enable driver for ST7567 display controller.
 

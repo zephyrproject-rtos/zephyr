@@ -11,6 +11,7 @@
 			pinmux = <PA22G_TCC0_WO2>;
 		};
 	};
+
 	pwm1_default: pwm1_default {
 		group1 {
 			pinmux = <PA18F_TCC1_WO2>,

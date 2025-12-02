@@ -8,4 +8,5 @@ config SOC_XILINX_ZYNQMP_RPU
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 	select CPU_HAS_ARM_MPU
+	select ARM_MPU
 	select VFP_DP_D16

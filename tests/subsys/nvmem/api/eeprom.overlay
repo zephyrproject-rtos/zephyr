@@ -1,0 +1,35 @@
+/**
+ * Copyright (c) 2025, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		nvmem0 = &eeprom0;
+	};
+
+	test_consumer0: test-consumer0 {
+		compatible = "vnd,nvmem-consumer";
+		nvmem-cells = <&cell0>, <&cell10>;
+		nvmem-cell-names = "cell0", "cell10";
+	};
+};
+
+&eeprom0 {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cell0: cell@0 {
+			reg = <0x0 0x10>;
+			#nvmem-cell-cells = <0>;
+		};
+
+		cell10: cell@10 {
+			reg = <0x10 0x10>;
+			read-only;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};

@@ -19,7 +19,7 @@
 		/delete-node/ cpu@1;
 	};
 
-	aliases{
+	aliases {
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
@@ -32,6 +32,7 @@
 		accel0 = &mma8652fc;
 		sdhc0 = &sdif;
 		mcuboot-button0 = &user_button_1;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -48,16 +49,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "User SW3";
 			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -67,6 +71,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: red_pwm_led {
 			pwms = <&sc_timer 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Red PWM LED";
@@ -119,6 +124,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_sdif_default>;
 	pinctrl-names = "default";
+
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
@@ -224,5 +230,13 @@ i2s1: &flexcomm7 {
 };
 
 &mrt_channel0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };

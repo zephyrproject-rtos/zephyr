@@ -46,3 +46,9 @@ sy24561@5 {
 	reg = <0x5>;
 	status = "okay";
 };
+
+bq40z50@6 {
+	compatible = "ti,bq40z50";
+	reg = <0x6>;
+	status = "okay";
+};

@@ -112,7 +112,7 @@ static inline void max_utilization_update(struct mpsc_pbuf_buffer *buffer)
 		return;
 	}
 
-	buffer->max_usage = MAX(buffer->max_usage, get_usage(buffer));
+	buffer->max_usage = max(buffer->max_usage, get_usage(buffer));
 }
 
 static inline bool is_valid(union mpsc_pbuf_generic *item)

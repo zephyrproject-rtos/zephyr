@@ -21,6 +21,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
 
+#include <stm32_bitops.h>
 #include <stm32_ll_i3c.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -115,6 +116,7 @@ struct i3c_stm32_config {
 	I3C_TypeDef *i3c;                      /* Pointer to I3C module base addr */
 	irq_config_func_t irq_config_func;     /* IRQ config function */
 	const struct stm32_pclken *pclken;     /* Pointer to peripheral clock configuration */
+	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg; /* Pointer to pin control configuration */
 };
 
@@ -444,6 +446,16 @@ static int i3c_stm32_activate(const struct device *dev)
 	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
 		return -EIO;
 	}
+
+	if (config->pclk_len > 1) {
+		/* Enable I3C clock source */
+		ret = clock_control_configure(clk, (clock_control_subsys_t)&config->pclken[1],
+					      NULL);
+		if (ret < 0) {
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
@@ -568,9 +580,14 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	uint32_t i3c_clock = 0;
 	uint32_t i2c_bus_freq = data->drv_data.ctrl_config.scl.i2c;
 	uint32_t i3c_bus_freq = data->drv_data.ctrl_config.scl.i3c;
+	/* Set kern_clk_idx = 1, if independent kernel clock is used */
+	uint32_t kern_clk_idx = (cfg->pclk_len > 1) ? 1 : 0;
+	int ret;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0], &i3c_clock) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+	ret = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[kern_clk_idx],
+				     &i3c_clock);
+	if (ret < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken[%d])", kern_clk_idx);
 		return -EIO;
 	}
 
@@ -579,7 +596,6 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	uint8_t scll_pp = 0;
 	uint8_t sclh_i3c = 0;
 	uint32_t clk_wave = 0;
-	int ret;
 
 	LOG_DBG("I3C Clock = %u, I2C Bus Freq = %u, I3C Bus Freq = %u", i3c_clock, i2c_bus_freq,
 		i3c_bus_freq);
@@ -1075,14 +1091,14 @@ static int i3c_stm32_do_daa(const struct device *dev)
 
 	if (data->msg_state == STM32_I3C_MSG_ERR) {
 		i3c_stm32_clear_err(dev, false);
-		/* Enable TXFNF interrupt in case an error occurred before it was enabled by RXFNE
-		 */
-		LL_I3C_EnableIT_TXFNF(i3c);
 		ret = -EIO;
 		goto i3c_stm32_do_daa_ending;
 	}
 
 i3c_stm32_do_daa_ending:
+	/* We enable TX interrupt again in any case */
+	LL_I3C_EnableIT_TXFNF(i3c);
+
 	k_mutex_unlock(&data->bus_mutex);
 
 	return ret;
@@ -1192,13 +1208,13 @@ static int i3c_stm32_transfer_begin(const struct device *dev)
 
 	/* Prepare all control words for all messages on the transfer */
 	for (size_t i = 0; i < curr_msg->num_msgs; i++) {
-		WRITE_REG(data->control_fifo[i],
-			  ((curr_msg->target_addr << I3C_CR_ADD_Pos) |
-			   i3c_stm32_curr_msg_control_get_len(dev) |
-			   i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
-			   i3c_stm32_curr_msg_control_get_end(dev)) &
-				  (I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
-				   I3C_CR_MEND));
+		stm32_reg_write(&data->control_fifo[i],
+				((curr_msg->target_addr << I3C_CR_ADD_Pos) |
+				 i3c_stm32_curr_msg_control_get_len(dev) |
+				 i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
+				 i3c_stm32_curr_msg_control_get_end(dev)) &
+				(I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
+				 I3C_CR_MEND));
 
 		i3c_stm32_curr_msg_control_next(dev);
 	}
@@ -1278,7 +1294,7 @@ static int i3c_stm32_i3c_transfer(const struct device *dev, struct i3c_device_de
 #ifdef CONFIG_I3C_STM32_DMA
 	/* Fill the num_xfer for each message from the status FIFO */
 	for (size_t i = 0; i < num_msgs; i++) {
-		msgs[i].num_xfer = READ_BIT(data->status_fifo[i], I3C_SR_XDCNT);
+		msgs[i].num_xfer = stm32_reg_read_bits(&data->status_fifo[i], I3C_SR_XDCNT);
 	}
 
 	k_heap_free(&stm32_i3c_fifo_heap, data->control_fifo);
@@ -1606,6 +1622,11 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 		bcr = (data->pid >> 8) & 0xFF;
 		dcr = data->pid & 0xFF;
 		data->pid >>= 16;
+
+		/* Disable TXFNF interrupt, the RXFNE interrupt will enable it once all PID bytes
+		 * are received for next I3C target, or in i3c_stm32_do_daa after frame complete
+		 */
+		LL_I3C_DisableIT_TXFNF(i3c);
 
 		/* Find the device in the device list */
 		ret = i3c_dev_list_daa_addr_helper(&data->drv_data.attached_dev.addr_slots,
@@ -2169,8 +2190,6 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #define STM32_I3C_IRQ_HANDLER_DECL(index)                                                          \
 	static void i3c_stm32_irq_config_func_##index(const struct device *dev)
 
-#define STM32_I3C_IRQ_HANDLER_FUNCTION(index) .irq_config_func = i3c_stm32_irq_config_func_##index,
-
 #define STM32_I3C_IRQ_HANDLER(index)                                                               \
 	static void i3c_stm32_irq_config_func_##index(const struct device *dev)                    \
 	{                                                                                          \
@@ -2189,7 +2208,9 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
                                                                                                    \
 	static const struct i3c_stm32_config i3c_stm32_cfg_##index = {                             \
 		.i3c = (I3C_TypeDef *)DT_INST_REG_ADDR(index),                                     \
-		STM32_I3C_IRQ_HANDLER_FUNCTION(index).pclken = pclken_##index,                     \
+		.irq_config_func = i3c_stm32_irq_config_func_##index,                              \
+		.pclken = pclken_##index,                                                          \
+		.pclk_len = DT_INST_NUM_CLOCKS(index),                                             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.drv_cfg.dev_list.i3c = i3c_stm32_dev_arr_##index,                                 \
 		.drv_cfg.dev_list.num_i3c = ARRAY_SIZE(i3c_stm32_dev_arr_##index),                 \

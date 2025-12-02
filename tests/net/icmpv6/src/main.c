@@ -182,12 +182,12 @@ ZTEST(icmpv6_fn, test_icmpv6)
 	struct net_pkt *pkt;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx1, NET_ICMPV6_ECHO_REPLY,
+	ret = net_icmp_init_ctx(&ctx1, AF_INET6, NET_ICMPV6_ECHO_REPLY,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
-	ret = net_icmp_init_ctx(&ctx2, NET_ICMPV6_ECHO_REQUEST,
+	ret = net_icmp_init_ctx(&ctx2, AF_INET6, NET_ICMPV6_ECHO_REQUEST,
 				0, handle_test_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REQUEST), ret);

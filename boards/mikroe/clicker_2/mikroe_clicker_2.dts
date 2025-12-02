@@ -23,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		ld1: led_1 {
 			gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		ld2: led_2 {
 			gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -35,11 +37,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: key_0 {
 			label = "Key PE0";
 			gpios = <&gpioe 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: key_1 {
 			label = "Key K1";
 			gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
@@ -143,7 +147,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
-	status ="okay";
+	status = "okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";

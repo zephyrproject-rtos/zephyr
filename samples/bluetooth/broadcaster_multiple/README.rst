@@ -27,9 +27,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/broadcaster_multiple` in the Zephyr tree.
-
 To test this sample use the Observer sample with Extended Scanning enabled,
 found under
 :zephyr_file:`samples/bluetooth/observer` in the Zephyr tree.

@@ -26,14 +26,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0_green: led_0_green {
 			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 			label = "LED0";
 		};
+
 		led_1_green: led_1_green {
 			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led_2_green: led_2_green {
 			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
 			label = "LED2";

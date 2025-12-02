@@ -21,15 +21,11 @@
 	chosen {
 		zephyr,ipc_shm = &sram0_shared;
 	};
+};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sram0_shared: memory@20070000 {
-			/* Last 64 kB of sram0 */
-			reg = <0x20070000 0x10000>;
-		};
+&sram0 {
+	sram0_shared: sram@70000 {
+		/* Last 64 kB of sram0 */
+		reg = <0x70000 0x10000>;
 	};
 };

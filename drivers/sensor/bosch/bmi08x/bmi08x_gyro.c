@@ -6,15 +6,23 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bmi08x_gyro
 #include "bmi08x.h"
+#include "bmi08x_bus.h"
+#include "bmi08x_gyro_async.h"
+#include "bmi08x_gyro_stream.h"
+#include "bmi08x_gyro_decoder.h"
 
 LOG_MODULE_REGISTER(BMI08X_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -178,6 +186,7 @@ static int bmi08x_gyr_range_set(const struct device *dev, uint16_t range)
 	}
 
 	bmi08x->scale = BMI08X_GYR_SCALE(range);
+	bmi08x->range = reg_val;
 
 	return ret;
 }
@@ -335,6 +344,10 @@ static DEVICE_API(sensor, bmi08x_api) = {
 #ifdef CONFIG_BMI08X_GYRO_TRIGGER
 	.trigger_set = bmi08x_trigger_set_gyr,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bmi08x_gyro_async_submit,
+	.get_decoder = bmi08x_gyro_decoder_get,
+#endif
 	.sample_fetch = bmi08x_sample_fetch,
 	.channel_get = bmi08x_channel_get,
 };
@@ -416,12 +429,20 @@ int bmi08x_gyro_init(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_BMI08X_GYRO_STREAM)
+	ret = bmi08x_gyro_stream_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to init stream: %d", ret);
+		return ret;
+	}
+#endif
+
 	return ret;
 }
 
 #define BMI08X_CONFIG_SPI(inst)                                                                    \
 	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
-		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 2),
+		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
@@ -444,17 +465,45 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
 
 #define BMI08X_CREATE_INST(inst)                                                                   \
                                                                                                    \
-	static struct bmi08x_gyro_data bmi08x_drv_##inst;                                          \
+	IF_ENABLED(CONFIG_BMI08X_GYRO_STREAM,							   \
+		   (BUILD_ASSERT(DT_INST_PROP_OR(inst, fifo_watermark, 0) > 0 &&		   \
+				 DT_INST_PROP_OR(inst, fifo_watermark, 0) < 100,		   \
+				 "FIFO Watermark must be defined for streaming mode, and be "	   \
+				 "within 1 and 99. Please define fifo-watermark accordingly or "   \
+				 "disable CONFIG_BMI08X_GYRO_STREAM")));			   \
+												   \
+	RTIO_DEFINE(bmi08x_gyro_rtio_ctx_##inst, 16, 16);                                          \
+                                                                                                   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
+		    (I2C_DT_IODEV_DEFINE(bmi08x_gyro_rtio_bus_##inst,				   \
+					 DT_DRV_INST(inst))),					   \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
+		    (SPI_DT_IODEV_DEFINE(bmi08x_gyro_rtio_bus_##inst,				   \
+					 DT_DRV_INST(inst),					   \
+					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)),\
+		    ())));									   \
+                                                                                                   \
+	static struct bmi08x_gyro_data bmi08x_drv_##inst = {					   \
+		IF_ENABLED(CONFIG_BMI08X_GYRO_STREAM,						   \
+			   (.stream.fifo_wm = DT_INST_PROP_OR(inst, fifo_watermark, 0),))	   \
+	};											   \
                                                                                                    \
 	static const struct bmi08x_gyro_config bmi08x_config_##inst = {                            \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
 			    (BMI08X_CONFIG_I2C(inst)))                                             \
 			.api = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
 					   (&bmi08x_i2c_api)),                                     \
-		IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER,                                             \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
+			.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),		   \
 			.gyro_hz = DT_INST_ENUM_IDX(inst, gyro_hz),                                \
-		BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs = DT_INST_PROP(inst, gyro_fs),              \
+		BMI08X_GYRO_TRIGGER_PINS(inst)							   \
+		.gyro_fs = DT_INST_PROP(inst, gyro_fs),						   \
+		.rtio_bus = {									   \
+			.ctx = &bmi08x_gyro_rtio_ctx_##inst,					   \
+			.iodev = &bmi08x_gyro_rtio_bus_##inst,					   \
+			.type = COND_CODE_1(DT_INST_ON_BUS(inst, i2c),				   \
+					    (BMI08X_RTIO_BUS_TYPE_I2C),				   \
+					    (BMI08X_RTIO_BUS_TYPE_SPI)),			   \
+		},										   \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                     \

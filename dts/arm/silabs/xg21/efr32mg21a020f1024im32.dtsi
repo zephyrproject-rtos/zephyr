@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Steven Lemaire
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +10,13 @@
 
 / {
 	soc {
-		compatible = "silabs,efr32mg21a020f1024im32", "silabs,efr32mg21", "silabs,efr32", "simple-bus";
+		compatible = "silabs,efr32mg21a020f1024im32", "silabs,efr32mg21", "silabs,xg21",
+			     "silabs,efr32", "simple-bus";
 	};
 };
 
 &flash0 {
-	reg = <0 DT_SIZE_K(1024)>;
+	reg = <0x00000000 DT_SIZE_K(1024)>;
 };
 
 &sram0 {

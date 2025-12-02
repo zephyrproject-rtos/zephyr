@@ -30,7 +30,7 @@ if(NOT DEFINED CONFIG_LPC55XXX_SRAM_CLOCKS)
 zephyr_compile_definitions(DONT_ENABLE_DISABLED_RAMBANKS=1)
 endif()
 
-if (CONFIG_SOC_LPC55S69_CPU0)
+if(CONFIG_SOC_LPC55S69_CPU0)
   zephyr_sources_ifdef(CONFIG_PM power.c)
 endif()
 

@@ -39,7 +39,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 		return -rc;
 	}
 
-	strncpy(entry->d_name, de.name, MIN(sizeof(entry->d_name), sizeof(de.name)));
+	strncpy(entry->d_name, de.name, min(sizeof(entry->d_name), sizeof(de.name)));
 	entry->d_name[sizeof(entry->d_name) - 1] = '\0';
 
 	if (entry->d_name[0] == '\0') {

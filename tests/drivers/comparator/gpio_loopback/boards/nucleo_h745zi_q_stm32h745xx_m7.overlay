@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * IMPORTANT: D33 (PB0) shall be connected to D27 (PB2) by a jumper wire
+ */
+
+/ {
+	aliases {
+		test-comp = &comp1_ch1;
+	};
+
+	zephyr,user {
+		/* connected also to green led and will toggle it */
+		test-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&comp1_ch1 {
+	status = "okay";
+	pinctrl-0 = <&comp1_inp_pb2 &comp1_out_pe12>;
+	pinctrl-names = "default";
+	positive-input = "IN1";
+	negative-input = "1_4VREFINT";
+	invert-output = "NONINVERTED";
+};

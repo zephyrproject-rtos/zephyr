@@ -61,6 +61,7 @@ struct mc_ksz8081_config {
 #define KSZ8081_DO_AUTONEG_FLAG BIT(0)
 #define KSZ8081_SILENCE_DEBUG_LOGS BIT(1)
 #define KSZ8081_LINK_STATE_VALID BIT(2)
+#define KSZ8081_INITIALIZED BIT(3)
 
 #define USING_INTERRUPT_GPIO							\
 		UTIL_OR(DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios),		\
@@ -183,7 +184,11 @@ static void phy_mc_ksz8081_interrupt_handler(const struct device *port, struct g
 					     gpio_port_pins_t pins)
 {
 	struct mc_ksz8081_data *data = CONTAINER_OF(cb, struct mc_ksz8081_data, gpio_callback);
-	int ret = k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+	int ret = -ESRCH;
+
+	if (data->flags & KSZ8081_INITIALIZED) {
+		ret = k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+	}
 
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule monitor_work from ISR");
@@ -474,6 +479,7 @@ done:
 static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	__maybe_unused const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
 	int ret;
 
@@ -670,21 +676,17 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	data->dev = dev;
 
-	k_busy_wait(100000);
-
 	ret = k_mutex_init(&data->mutex);
 	if (ret) {
 		return ret;
 	}
 
 	mdio_bus_enable(config->mdio_dev);
-	k_busy_wait(100000);
 
 	ret = ksz8081_init_reset_gpios(dev);
 	if (ret) {
 		return ret;
 	}
-	k_busy_wait(100000);
 
 	/* Reset PHY */
 	ret = phy_mc_ksz8081_reset(dev);
@@ -692,18 +694,20 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 		return ret;
 	}
 
+	k_work_init_delayable(&data->phy_monitor_work,
+				phy_mc_ksz8081_monitor_work_handler);
+
+	/* Advertise default speeds */
+	phy_mc_ksz8081_cfg_link(dev, config->default_speeds, 0);
+
 	ret = ksz8081_init_int_gpios(dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	k_busy_wait(100000);
-	k_work_init_delayable(&data->phy_monitor_work,
-				phy_mc_ksz8081_monitor_work_handler);
+	data->flags |= KSZ8081_INITIALIZED;
 
-	/* Advertise default speeds */
-	k_busy_wait(100000);
-	phy_mc_ksz8081_cfg_link(dev, config->default_speeds, 0);
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
 	return 0;
 }

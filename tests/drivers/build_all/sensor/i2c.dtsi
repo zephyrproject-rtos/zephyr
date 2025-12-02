@@ -41,6 +41,8 @@ test_i2c_adt7420: adt7420@0 {
 test_i2c_adxl345: adxl345@1 {
 	compatible = "adi,adxl345";
 	reg = <0x1>;
+	int1-gpios = <&test_gpio 0 0>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_adxl372: adxl372@2 {
@@ -166,6 +168,7 @@ test_i2c_isl29035: isl29035@14 {
 test_i2c_max30101: max30101@15 {
 	compatible = "maxim,max30101";
 	reg = <0x15>;
+	acq-mode = "multi-led";
 };
 
 test_i2c_max44009: max44009@16 {
@@ -590,6 +593,7 @@ test_i2c_fdc2x1x: fdc2x1x@54 {
 	sd-gpios = <&test_gpio 0 0>;
 	deglitch = <5>;
 	fref = <43360>;
+
 	channel_0 {
 		rcount = <7499>;
 		settlecount = <48>;
@@ -784,6 +788,7 @@ test_i2c_bmi08x_accel: bmi08x@6d {
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_bmi08x_gyro: bmi08x@6e {
@@ -794,6 +799,7 @@ test_i2c_bmi08x_gyro: bmi08x@6e {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_ist8310: ist8310@6f {
@@ -1404,4 +1410,38 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	tap-axis-enable = <0 0 1>;
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina7xx: ina7xx@bc {
+	compatible = "ti,ina7xx";
+	reg = <0xbc>;
+	inatype = <2>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
+
+test_i2c_als31300: als31300@bd {
+	compatible = "allegro,als31300";
+	reg = <0xbd>;
+};
+
+test_i2c_hdc302x: hdc302x@be {
+	compatible = "ti,hdc302x";
+	reg = <0xbe>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6046: veml6046@bf {
+	compatible = "vishay,veml6046";
+	reg = <0xbf>;
+};
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xc0>;
+	sensor-type = <4>;
 };

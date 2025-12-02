@@ -393,6 +393,8 @@
 			/* WUI maps for eSPI signals */
 			espi-rst-wui = <&wui_espi_rst>;
 
+			support-npckn-v1;
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#vw-cells = <3>;
@@ -428,10 +430,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
-				<&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				 <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */
@@ -441,6 +443,7 @@
 			interrupts = <35 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			smb-wui = <&wui_smb1>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -450,6 +453,7 @@
 			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			smb-wui = <&wui_smb2>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -459,6 +463,7 @@
 			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 2>;
 			smb-wui = <&wui_smb3>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -468,6 +473,7 @@
 			interrupts = <38 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 3>;
 			smb-wui = <&wui_smb4>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -477,6 +483,7 @@
 			interrupts = <39 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			smb-wui = <&wui_smb5>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -486,6 +493,7 @@
 			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 5>;
 			smb-wui = <&wui_smb6>;
+			dma-driven;
 			status = "disabled";
 		};
 
@@ -533,13 +541,13 @@
 			/* PS2 Channels - Please use them as PS2 node */
 			ps2_channel2: io_ps2_channel2 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x01>;
+				channel = <0x02>;
 				status = "disabled";
 			};
 
 			ps2_channel3: io_ps2_channel3 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x02>;
+				channel = <0x03>;
 				status = "disabled";
 			};
 		};
@@ -551,6 +559,7 @@
 			#size-cells = <0>;
 			reg = <0x40020000 0x1000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+			support-npckn-v1;
 		};
 
 		peci0: peci@400d4000 {
@@ -570,6 +579,23 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL1 0>;
 			wui-maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
 				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
+			status = "disabled";
+		};
+
+		gdma0: dma@40011000 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011000 0x40>;
+			chan-offset = <0x20>;
+			support-npckn-v1;
+
+			interrupts = <22 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 7>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

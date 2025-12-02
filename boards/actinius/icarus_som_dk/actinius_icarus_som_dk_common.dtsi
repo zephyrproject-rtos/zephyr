@@ -65,7 +65,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &gpiote {
@@ -100,9 +100,9 @@ neopixel_spi: &spi1 {
 		spi-max-frequency = <4000000>;
 
 		chain-length = <1>;
-		color-mapping =	<LED_COLOR_ID_GREEN
-				LED_COLOR_ID_RED
-				LED_COLOR_ID_BLUE>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
 		spi-one-frame = <0x70>;
 		spi-zero-frame = <0x40>;
 	};
@@ -117,11 +117,12 @@ neopixel_spi: &spi1 {
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>,
-			<&gpio0 28 GPIO_ACTIVE_HIGH>;
+			    <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -134,6 +135,7 @@ neopixel_spi: &spi1 {
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

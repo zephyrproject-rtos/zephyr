@@ -766,14 +766,15 @@ void net_icmpv4_init(void)
 	static struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REQUEST, 0, icmpv4_handle_echo_request);
+	ret = net_icmp_init_ctx(&ctx, AF_INET, NET_ICMPV4_ECHO_REQUEST, 0,
+				icmpv4_handle_echo_request);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV4_ECHO_REQUEST),
 			ret);
 	}
 
 #if defined(CONFIG_NET_IPV4_PMTU)
-	ret = net_icmp_init_ctx(&dst_unreach_ctx, NET_ICMPV4_DST_UNREACH, 0,
+	ret = net_icmp_init_ctx(&dst_unreach_ctx, AF_INET, NET_ICMPV4_DST_UNREACH, 0,
 				icmpv4_handle_dst_unreach);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV4_DST_UNREACH),

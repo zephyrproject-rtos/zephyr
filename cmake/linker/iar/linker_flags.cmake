@@ -23,6 +23,7 @@ set_property(TARGET linker PROPERTY optimization_speed --entry_list_in_address_o
 set_property(TARGET linker PROPERTY optimization_size --entry_list_in_address_order)
 set_property(TARGET linker PROPERTY optimization_size_aggressive --entry_list_in_address_order)
 
+set_linker_property(TARGET linker PROPERTY undefined "--keep=")
 
 string(APPEND CMAKE_C_LINK_FLAGS --no-wrap-diagnostics)
 

@@ -18,6 +18,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
+#include <stm32_ll_cortex.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -33,6 +35,14 @@
 #include <stm32_hsem.h>
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT))
+/* subsecond counting is not supported by some STM32L1x MCUs (Cat.1) & by STM32F1x/2x SoC series */
+#define HW_SUBSECOND_SUPPORT 0
+#else
+#define HW_SUBSECOND_SUPPORT 1
+#endif
 
 /* Seconds from 1970-01-01T00:00:00 to 2000-01-01T00:00:00 */
 #define T_TIME_OFFSET 946684800
@@ -82,6 +92,9 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_ASYNCPRE (RTCCLK_FREQ - 1)
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
+/* Timeout in microseconds used to wait for flags */
+#define RTC_TIMEOUT 1000
+
 /* Adjust the second sync prescaler to get 1Hz on ck_spre */
 #define RTC_SYNCPRE ((RTCCLK_FREQ / (1 + RTC_ASYNCPRE)) - 1)
 
@@ -93,7 +106,10 @@ typedef uint64_t tick_t;
 
 struct rtc_stm32_config {
 	struct counter_config_info counter_info;
-	LL_RTC_InitTypeDef ll_rtc_config;
+	uint32_t async_prescaler;
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	uint32_t sync_prescaler;
+#endif  /* !CONFIG_SOC_SERIES_STM32F1X */
 	const struct stm32_pclken *pclken;
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	uint32_t hse_prescaler;
@@ -108,16 +124,6 @@ struct rtc_stm32_data {
 	bool irq_on_late;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 };
-
-static inline ErrorStatus ll_func_init_alarm(RTC_TypeDef *rtc, uint32_t format,
-					     LL_RTC_AlarmTypeDef *alarmStruct)
-{
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
-	return LL_RTC_ALARM_Init(rtc, format, alarmStruct);
-#else
-	return LL_RTC_ALMA_Init(rtc, format, alarmStruct);
-#endif
-}
 
 static inline void ll_func_clear_alarm_flag(RTC_TypeDef *rtc)
 {
@@ -186,6 +192,169 @@ static inline void ll_func_disable_alarm(RTC_TypeDef *rtc)
 
 static void rtc_stm32_irq_config(const struct device *dev);
 
+/* When no error occurs, this function disables the RTC write protection and should be balanced
+ * with a call to rtc_stm32_exit_init_mode (which enables RTC write protection).
+ * In case of error, the write protection is enabled when leaving this function, so nothing more
+ * needs to be made.
+ */
+static int rtc_stm32_enter_init_mode(void)
+{
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	/* Wait for RTC to be ready */
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(RTC), RTC_TIMEOUT, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+	LL_RTC_DisableWriteProtection(RTC);
+#else
+	LL_RTC_DisableWriteProtection(RTC);
+
+	/* Check if the Initialization mode is set */
+	if (LL_RTC_IsActiveFlag_INIT(RTC) == 0U) {
+		/* Set the Initialization mode */
+		LL_RTC_EnableInitMode(RTC);
+		if (!WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, NULL)) {
+			LL_RTC_DisableInitMode(RTC);
+			LL_RTC_EnableWriteProtection(RTC);
+			return -ETIMEDOUT;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+static int rtc_stm32_exit_init_mode(void)
+{
+	int status = 0;
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_RTC_EnableWriteProtection(RTC);
+
+	/* Wait for RTC to be ready */
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(RTC), RTC_TIMEOUT, NULL)) {
+		status = -ETIMEDOUT;
+	}
+#else
+	LL_RTC_DisableInitMode(RTC);
+
+	LL_RTC_EnableWriteProtection(RTC);
+#endif
+
+	return status;
+}
+
+#if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
+static int rtc_stm32_wait_for_synchro(void)
+{
+	int status = 0;
+
+	/* Clear RSF flag */
+	LL_RTC_ClearFlag_RS(RTC);
+
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RS(RTC), RTC_TIMEOUT, NULL)) {
+		status = -ETIMEDOUT;
+	}
+
+	return status;
+}
+
+static int rtc_stm32_deinit(void)
+{
+	int ret;
+
+	/* Set Initialization mode */
+	ret = rtc_stm32_enter_init_mode();
+	if (ret < 0) {
+		LOG_ERR("Failed to enter RTC init mode");
+		return ret;
+	}
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	stm32_reg_write(&RTC->CNTL, 0U);
+	stm32_reg_write(&RTC->CNTH, 0U);
+	stm32_reg_write(&RTC->PRLH, 0U);
+	stm32_reg_write(&RTC->PRLL, 0x8000U);
+	stm32_reg_write(&RTC->CRH, 0U);
+	stm32_reg_write(&RTC->CRL, 0x20U);
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+	stm32_reg_write(&RTC->CR, 0U);
+	stm32_reg_write(&RTC->TR, 0U);
+#ifdef RTC_WUTR_WUT
+	stm32_reg_write(&RTC->WUTR, RTC_WUTR_WUT);
+#endif /* RTC_WUTR_WUT */
+	stm32_reg_write(&RTC->DR, RTC_DR_WDU_0 | RTC_DR_MU_0 | RTC_DR_DU_0);
+	stm32_reg_write(&RTC->PRER, RTC_PRER_PREDIV_A | 0xFFU);
+	stm32_reg_write(&RTC->ALRMAR, 0U);
+#ifdef RTC_CR_ALRBE
+	stm32_reg_write(&RTC->ALRMBR, 0U);
+#endif /* RTC_CR_ALRBE */
+
+#if HW_SUBSECOND_SUPPORT
+	stm32_reg_write(&RTC->CALR, 0U);
+	stm32_reg_write(&RTC->SHIFTR, 0U);
+	stm32_reg_write(&RTC->ALRMASSR, 0U);
+#ifdef RTC_CR_ALRBE
+	stm32_reg_write(&RTC->ALRMBSSR, 0U);
+#endif /* RTC_CR_ALRBE */
+#endif /* HW_SUBSECOND_SUPPORT */
+
+#if defined(RTC_PRIVCFGR_PRIV)
+	stm32_reg_write(&RTC->PRIVCFGR, 0U);
+#endif /* RTC_PRIVCFGR_PRIV */
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+	stm32_reg_write(&RTC->SECCFGR,  0U);
+#endif /* (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U) */
+
+	/* Reset I(C)SR register and exit initialization mode */
+#ifdef RTC_ICSR_INIT
+	stm32_reg_write(&RTC->ICSR, 0U);
+#else
+	stm32_reg_write(&RTC->ISR, 0U);
+#endif
+
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
+	/* Exit Initialization mode */
+	ret = rtc_stm32_exit_init_mode();
+	if (ret < 0) {
+		LOG_ERR("Failed to exit RTC init mode");
+		return ret;
+	}
+
+	return rtc_stm32_wait_for_synchro();
+}
+#endif
+
+static int rtc_stm32_configure(const struct device *dev)
+{
+	const struct rtc_stm32_config *cfg = dev->config;
+	int ret;
+
+	/* Set Initialization mode */
+	ret = rtc_stm32_enter_init_mode();
+	if (ret < 0) {
+		LOG_ERR("Failed to enter RTC init mode");
+		return ret;
+	}
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
+	LL_RTC_SetOutputSource(BKP, LL_RTC_CALIB_OUTPUT_NONE);
+#else
+	LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
+	LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
+	LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
+#endif
+
+	/* Exit Initialization mode */
+	ret = rtc_stm32_exit_init_mode();
+	if (ret < 0) {
+		LOG_ERR("Failed to exit RTC init mode");
+	}
+
+	return ret;
+}
 
 static int rtc_stm32_start(const struct device *dev)
 {
@@ -195,7 +364,7 @@ static int rtc_stm32_start(const struct device *dev)
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("RTC clock enabling failed\n");
+		LOG_ERR("RTC clock enabling failed");
 		return -EIO;
 	}
 #else
@@ -220,7 +389,7 @@ static int rtc_stm32_stop(const struct device *dev)
 
 	/* Disable RTC bus clock */
 	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("RTC clock disabling failed\n");
+		LOG_ERR("RTC clock disabling failed");
 		return -EIO;
 	}
 #else
@@ -342,14 +511,14 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 #else
 	uint32_t remain;
 #endif
-	LL_RTC_AlarmTypeDef rtc_alarm;
 	struct rtc_stm32_data *data = dev->data;
+	int ret = 0;
 
 	tick_t now = rtc_stm32_read(dev);
 	tick_t ticks = alarm_cfg->ticks;
 
 	if (data->callback != NULL) {
-		LOG_DBG("Alarm busy\n");
+		LOG_DBG("Alarm busy");
 		return -EBUSY;
 	}
 
@@ -369,8 +538,14 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	} else {
 		alarm_val_s = (time_t)(ticks / counter_get_frequency(dev));
 	}
+
+	gmtime_r(&alarm_val_s, &alarm_tm);
+
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	alarm_val_ss = ticks % counter_get_frequency(dev);
+	LOG_DBG("Set Alarm: %llu", ticks);
+#else /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+	LOG_DBG("Set Alarm: %d", ticks);
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 #else
@@ -386,54 +561,57 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	remain--;
 #endif
 
-#if !defined(COUNTER_NO_DATE)
-#ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	LOG_DBG("Set Alarm: %d\n", ticks);
-#else /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-	LOG_DBG("Set Alarm: %llu\n", ticks);
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-
-	gmtime_r(&alarm_val_s, &alarm_tm);
-
-	/* Apply ALARM_A */
-	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
-	rtc_alarm.AlarmTime.Hours = alarm_tm.tm_hour;
-	rtc_alarm.AlarmTime.Minutes = alarm_tm.tm_min;
-	rtc_alarm.AlarmTime.Seconds = alarm_tm.tm_sec;
-
-	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_NONE;
-	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
-	rtc_alarm.AlarmDateWeekDay = alarm_tm.tm_mday;
-#else
-	rtc_alarm.AlarmTime.Hours = remain / 3600;
-	remain -= rtc_alarm.AlarmTime.Hours * 3600;
-	rtc_alarm.AlarmTime.Minutes = remain / 60;
-	remain -= rtc_alarm.AlarmTime.Minutes * 60;
-	rtc_alarm.AlarmTime.Seconds = remain;
-#endif
-
 	stm32_backup_domain_enable_access();
 
+#if !defined(COUNTER_NO_DATE)
 	LL_RTC_DisableWriteProtection(RTC);
-	ll_func_disable_alarm(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
 
-	if (ll_func_init_alarm(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
-		stm32_backup_domain_disable_access();
-		return -EIO;
+	ll_func_disable_alarm(RTC);
+
+	/* Configure the Alarm registers */
+	LL_RTC_ALMA_DisableWeekday(RTC);
+	LL_RTC_ALMA_SetDay(RTC, __LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_mday));
+	LL_RTC_ALMA_ConfigTime(RTC, LL_RTC_TIME_FORMAT_AM_OR_24,
+				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_hour),
+				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_min),
+				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_sec));
+	LL_RTC_ALMA_SetMask(RTC, LL_RTC_ALMA_MASK_NONE);
+
+	LL_RTC_EnableWriteProtection(RTC);
+#else
+	/* Set Initialization mode */
+	ret = rtc_stm32_enter_init_mode();
+	if (ret < 0) {
+		goto out_disable_bkup_access;
 	}
 
+	/* Set the alarm */
+	LL_RTC_ALARM_Set(RTC, remain);
+
+	ret = rtc_stm32_exit_init_mode();
+	if (ret < 0) {
+		goto out_disable_bkup_access;
+	}
+#endif
+
 	LL_RTC_DisableWriteProtection(RTC);
+#if HW_SUBSECOND_SUPPORT
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	/* Care about all bits of the subsecond register */
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 0xF);
 	LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCPRE - alarm_val_ss);
+#else
+	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+#endif /* HW_SUBSECOND_SUPPORT */
 	ll_func_enable_alarm(RTC);
 	ll_func_clear_alarm_flag(RTC);
 	ll_func_enable_interrupt_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
+#if defined(COUNTER_NO_DATE)
+out_disable_bkup_access:
+#endif
 	stm32_backup_domain_disable_access();
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -454,7 +632,7 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
-	return 0;
+	return ret;
 }
 
 
@@ -566,7 +744,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed\n");
+		LOG_ERR("clock op failed");
 		return -EIO;
 	}
 
@@ -575,11 +753,16 @@ static int rtc_stm32_init(const struct device *dev)
 
 	stm32_backup_domain_enable_access();
 
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	/* Must be configured before selecting the RTC clock source */
+	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
+#endif
+
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk,
 				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
-		LOG_ERR("clock configure failed\n");
+		LOG_ERR("clock configure failed");
 		goto out_disable_bkup_access;
 	}
 
@@ -590,30 +773,16 @@ static int rtc_stm32_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
-
-/* STM32C0 LL driver does not clear the CR register in LL_RTC_DeInit so it will loop forever waiting
- * for a flag that will never be set when shadow registers are bypassed (BYPSHAD enabled).
- */
-#if defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X)
-	if (LL_RTC_IsShadowRegBypassEnabled(RTC)) {
-		LL_RTC_DisableWriteProtection(RTC);
-		LL_RTC_DisableShadowRegBypass(RTC);
-		LL_RTC_EnableWriteProtection(RTC);
-	}
-#endif /* defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X) */
-
-	if (LL_RTC_DeInit(RTC) != SUCCESS) {
+	ret = rtc_stm32_deinit();
+	if (ret < 0) {
+		LOG_ERR("Failed to deinit RTC");
 		goto out_disable_bkup_access;
 	}
 #endif
 
-#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
-	/* Must be configured before selecting the RTC clock source */
-	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
-#endif
-
-	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)
-			      &cfg->ll_rtc_config)) != SUCCESS) {
+	ret = rtc_stm32_configure(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to init RTC");
 		goto out_disable_bkup_access;
 	}
 
@@ -632,8 +801,6 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 #endif
-
-	ret = 0;
 
 out_disable_bkup_access:
 	stm32_backup_domain_disable_access();
@@ -680,30 +847,20 @@ static const struct rtc_stm32_config rtc_config = {
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
-	.ll_rtc_config = {
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI ||                                      \
 	DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE
-		.AsynchPrescaler = DT_INST_PROP_OR(0, async_prescaler, RTC_ASYNCPRE),
+	.async_prescaler = DT_INST_PROP_OR(0, async_prescaler, RTC_ASYNCPRE),
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
-		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-		.SynchPrescaler = DT_INST_PROP_OR(0, sync_prescaler, RTC_SYNCPRE),
-#else  /* !CONFIG_SOC_SERIES_STM32F1X */
-		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
+	.sync_prescaler = DT_INST_PROP_OR(0, sync_prescaler, RTC_SYNCPRE),
 #endif /* !CONFIG_SOC_SERIES_STM32F1X */
 #elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
-		.AsynchPrescaler =
-			DT_INST_PROP_OR(0, async_prescaler, _HSE_ASYNC_PRESCALER - 1),
+	.async_prescaler = DT_INST_PROP_OR(0, async_prescaler, _HSE_ASYNC_PRESCALER - 1),
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
-		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-		.SynchPrescaler =
-			DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_SYNC_PRESCALER - 1),
-#else  /* CONFIG_SOC_SERIES_STM32F1X */
-		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
+	.sync_prescaler = DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_SYNC_PRESCALER - 1),
 #endif /* !CONFIG_SOC_SERIES_STM32F1X */
 #else
 #error Invalid RTC SRC
 #endif
-	},
 	.pclken = rtc_clk,
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	.hse_prescaler = DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_PRESCALER),
@@ -721,7 +878,7 @@ static int rtc_stm32_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_RESUME:
 		/* Enable RTC bus clock */
 		if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-			LOG_ERR("clock op failed\n");
+			LOG_ERR("clock op failed");
 			return -EIO;
 		}
 		break;

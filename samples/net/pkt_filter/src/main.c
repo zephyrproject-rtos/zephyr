@@ -26,27 +26,38 @@ static NPF_IFACE_MATCH(match_iface_vlan1, NULL);
 static NPF_IFACE_MATCH(match_iface_vlan2, NULL);
 static NPF_IFACE_MATCH(match_iface_eth, NULL);
 
-/* Allow all traffic to Ethernet interface, drop VLAN traffic except
- * couple of exceptions for IPv4 and IPv6
- */
-static NPF_RULE(eth_iface_rule, NET_OK, match_iface_eth);
-
+/* Match ethernet packets for the precision time protocol (PTP) */
+static NPF_ETH_TYPE_MATCH(match_ptype_ptp, NET_ETH_PTYPE_PTP);
+/* Match ethernet packets for the virtual local area network (VLAN) */
+static NPF_ETH_TYPE_MATCH(match_ptype_vlan, NET_ETH_PTYPE_VLAN);
 /* Match max size rule */
-static NPF_SIZE_MAX(maxsize_200, 200);
-static NPF_ETH_VLAN_TYPE_MATCH(ipv4_packet1, NET_ETH_PTYPE_IP);
-static NPF_RULE(small_ipv4_pkt, NET_OK, ipv4_packet1, maxsize_200,
-		match_iface_vlan1);
-
+static NPF_SIZE_MAX(match_smaller_200, 200);
 /* Match min size rule */
-static NPF_SIZE_MIN(minsize_100, 100);
-static NPF_ETH_VLAN_TYPE_MATCH(ipv4_packet2, NET_ETH_PTYPE_IP);
-static NPF_RULE(large_ipv4_pkt, NET_OK, ipv4_packet2, minsize_100,
-		match_iface_vlan2);
+static NPF_SIZE_MIN(match_bigger_100, 100);
+/* Match virtual internet protocol traffic */
+static NPF_ETH_VLAN_TYPE_MATCH(match_ipv4_vlan, NET_ETH_PTYPE_IP);
+/* Match virtual address resolution protocol (ARP) traffic */
+static NPF_ETH_VLAN_TYPE_MATCH(match_arp_vlan, NET_ETH_PTYPE_ARP);
 
-/* Allow ARP for VLAN interface */
-static NPF_ETH_VLAN_TYPE_MATCH(arp_packet, NET_ETH_PTYPE_ARP);
-static NPF_RULE(arp_pkt_vlan1, NET_OK, arp_packet, match_iface_vlan1);
-static NPF_RULE(arp_pkt_vlan2, NET_OK, arp_packet, match_iface_vlan2);
+/* Allow all traffic to Ethernet interface */
+static NPF_RULE(eth_iface_rule, NET_OK, match_iface_eth);
+/* Maximal priority for ptp traffic */
+static NPF_PRIORITY(eth_priority_ptp, NET_PRIORITY_NC, match_iface_eth, match_ptype_ptp);
+/* Prioritize VLAN traffic on Ethernet interface */
+static NPF_PRIORITY(eth_priority_vlan, NET_PRIORITY_EE, match_iface_eth, match_ptype_vlan);
+/* Deprioritize all other traffic */
+static NPF_PRIORITY(eth_priority_default, NET_PRIORITY_BK, match_iface_eth);
+
+/* Allow only small ipv4 packets to the first VLAN interface */
+static NPF_RULE(small_ipv4_pkt, NET_OK, match_iface_vlan1, match_ipv4_vlan, match_smaller_200);
+/* Allow only ipv4 packets of minimum size to the second VLAN interface */
+static NPF_RULE(large_ipv4_pkt, NET_OK, match_iface_vlan2, match_ipv4_vlan, match_bigger_100);
+/* Allow ARP for both VLAN interfaces */
+static NPF_RULE(arp_pkt_vlan1, NET_OK, match_iface_vlan1, match_arp_vlan);
+static NPF_RULE(arp_pkt_vlan2, NET_OK, match_iface_vlan2, match_arp_vlan);
+/* But give ARP the lowest priority */
+static NPF_PRIORITY(arp_priority_vlan1, NET_PRIORITY_BK, match_iface_vlan1, match_arp_vlan);
+static NPF_PRIORITY(arp_priority_vlan2, NET_PRIORITY_BK, match_iface_vlan2, match_arp_vlan);
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -106,7 +117,15 @@ static void init_app(void)
 	 * optional interfaces (if VLAN is enabled).
 	 * We allow all traffic to the Ethernet interface, but have
 	 * filters for the VLAN interfaces.
+	 *
+	 * First append the priority rules, so that they get evaluated before
+	 * deciding on the final verdict for the packet.
 	 */
+	npf_append_recv_rule(&eth_priority_default);
+	npf_append_recv_rule(&eth_priority_ptp);
+	npf_append_recv_rule(&eth_priority_vlan);
+	npf_append_recv_rule(&arp_priority_vlan1);
+	npf_append_recv_rule(&arp_priority_vlan2);
 
 	/* We allow small IPv4 packets to the VLAN interface 1 */
 	npf_append_recv_rule(&small_ipv4_pkt);
@@ -117,10 +136,8 @@ static void init_app(void)
 	/* We allow all traffic to the Ethernet interface */
 	npf_append_recv_rule(&eth_iface_rule);
 
-	/* We allow ARP traffic to the VLAN 1 interface */
+	/* We allow ARP traffic to both VLAN interfaces */
 	npf_append_recv_rule(&arp_pkt_vlan1);
-
-	/* We allow ARP traffic to the VLAN 2 interface */
 	npf_append_recv_rule(&arp_pkt_vlan2);
 
 	/* The remaining packets that do not match are dropped */

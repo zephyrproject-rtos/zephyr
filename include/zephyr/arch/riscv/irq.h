@@ -83,6 +83,15 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 	z_riscv_irq_vector_set(irq_p); \
 }
 
+#ifdef CONFIG_PM
+extern void arch_isr_direct_pm(void);
+#define ARCH_ISR_DIRECT_PM() arch_isr_direct_pm()
+#else
+#define ARCH_ISR_DIRECT_PM()                                                                       \
+	do {                                                                                       \
+	} while (false)
+#endif
+
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 

@@ -441,7 +441,7 @@
 			status = "okay";
 		};
 
-		wdt: watchog@400e1850 {
+		wdt: watchdog@400e1850 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1850 0xc>;
 			interrupts = <4 0>;

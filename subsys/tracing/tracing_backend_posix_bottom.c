@@ -12,7 +12,12 @@ void *tracing_backend_posix_init_bottom(const char *file_name)
 {
 	FILE *f;
 
+#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 7)
+	f = fopen(file_name, "wbe"); /* Set O_CLOEXEC flag which is supported in glibc >= 2.7 */
+#else
 	f = fopen(file_name, "wb");
+#endif
+
 	if (f == NULL) {
 		nsi_print_error_and_exit("%s: Could not open CTF backend file %s\n",
 					 __func__, file_name);

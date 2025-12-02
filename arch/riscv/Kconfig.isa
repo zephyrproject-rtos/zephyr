@@ -13,7 +13,7 @@ config RISCV_ISA_RV32E
 
 config RISCV_ISA_RV64I
 	bool
-	default y if 64BIT
+	select 64BIT
 	help
 	  RV64I Base Integer Instruction Set - 64bit
 
@@ -45,6 +45,7 @@ config RISCV_ISA_EXT_A
 
 config RISCV_ISA_EXT_F
 	bool
+	select CPU_HAS_FPU
 	help
 	  (F) - Standard Extension for Single-Precision Floating-Point
 
@@ -56,6 +57,7 @@ config RISCV_ISA_EXT_F
 config RISCV_ISA_EXT_D
 	bool
 	depends on RISCV_ISA_EXT_F
+	select CPU_HAS_FPU_DOUBLE_PRECISION
 	help
 	  (D) - Standard Extension for Double-Precision Floating-Point
 

@@ -301,6 +301,9 @@ SECTIONS {
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
+
+#include <snippets-text-sections.ld>
+
 #include <zephyr/linker/kobject-text.ld>
     MMU_PAGE_ALIGN
     __text_region_end = .;

@@ -176,7 +176,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_hdr_init(lll_sync, sync);
 
 		err = util_aa_le32(lll_sync->access_addr);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 
 		lll_sync->data_chan_id = lll_chan_id(lll_sync->access_addr);
 		chm_last = lll_sync->chm_first;
@@ -940,11 +940,11 @@ void ull_adv_sync_chm_complete(struct node_rx_pdu *rx)
 	adv = HDR_LLL2ULL(lll_sync->adv);
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	err = ull_adv_sync_remove_from_acad(lll_sync, pdu_prev, pdu,
 					    PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 }
@@ -981,7 +981,7 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 	mfy.param = adv;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
@@ -1013,11 +1013,12 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
 	*(uint8_t *)ext_hdr = ext_hdr_flags;
 	dptr = ext_hdr->data;
 
-	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA | ULL_ADV_PDU_HDR_FIELD_TARGETA |
+	LL_ASSERT_DBG(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA |
+					 ULL_ADV_PDU_HDR_FIELD_TARGETA |
 #if !defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)
-				     ULL_ADV_PDU_HDR_FIELD_ADI |
+					 ULL_ADV_PDU_HDR_FIELD_ADI |
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
-				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
+					 ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX) &&
@@ -1174,8 +1175,8 @@ static void ull_adv_sync_add_to_header(struct pdu_adv *pdu,
 	/* Push back any adv data - overflow will be returned via ad_overflow */
 	if (pdu->len > hdr->ext_hdr_len + 1U) {
 		if (pdu->len > PDU_AC_EXT_PAYLOAD_SIZE_MAX - delta) {
-			LL_ASSERT(ad_overflow);
-			LL_ASSERT(overflow_len);
+			LL_ASSERT_DBG(ad_overflow);
+			LL_ASSERT_DBG(overflow_len);
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 			*overflow_len = delta - (PDU_AC_EXT_PAYLOAD_SIZE_MAX - pdu->len);
 			memcpy(ad_overflow,
@@ -1375,7 +1376,7 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 	const uint8_t *source_dptr;
 	uint8_t *target_dptr;
 
-	LL_ASSERT(target_pdu != source_pdu);
+	LL_ASSERT_DBG(target_pdu != source_pdu);
 
 	/* Initialize PDU header */
 	target_pdu->type = source_pdu->type;
@@ -1861,7 +1862,8 @@ static uint8_t ull_adv_sync_add_adi(struct lll_adv_sync *lll_sync,
 		last_pdu = pdu;
 
 		/* We should always have enough available overflow space to fit an ADI */
-		LL_ASSERT(total_overflow_len + sizeof(struct pdu_adv_adi) <= sizeof(ad_overflow));
+		LL_ASSERT_DBG((total_overflow_len + sizeof(struct pdu_adv_adi)) <=
+			      sizeof(ad_overflow));
 
 		ull_adv_sync_add_to_header(pdu, &add_fields,
 					   &ad_overflow[total_overflow_len], &overflow_len);
@@ -2054,7 +2056,7 @@ uint8_t ull_adv_sync_remove_from_acad(struct lll_adv_sync *lll_sync,
 
 		ad_len += 1U;
 
-		LL_ASSERT(ad_len <= len);
+		LL_ASSERT_DBG(ad_len <= len);
 
 		ad += ad_len;
 		len -= ad_len;
@@ -2180,7 +2182,8 @@ uint8_t ull_adv_sync_add_cteinfo(struct lll_adv_sync *lll_sync,
 		last_pdu = pdu;
 
 		/* We should always have enough available overflow space to fit CTEInfo */
-		LL_ASSERT(total_overflow_len + sizeof(struct pdu_cte_info) <= sizeof(ad_overflow));
+		LL_ASSERT_DBG((total_overflow_len + sizeof(struct pdu_cte_info)) <=
+			      sizeof(ad_overflow));
 
 		ull_adv_sync_add_to_header(pdu, &add_fields,
 					   &ad_overflow[total_overflow_len], &overflow_len);
@@ -2720,11 +2723,11 @@ static void mfy_sync_offset_get(void *param)
 		}
 
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
+		LL_ASSERT_ERR(success);
 
-		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+		LL_ASSERT_ERR((ticks_current == ticks_previous) || retry--);
 
-		LL_ASSERT(id != TICKER_NULL);
+		LL_ASSERT_ERR(id != TICKER_NULL);
 	} while (id != ticker_id);
 
 	/* Reduced a tick for negative remainder and return positive remainder
@@ -2861,14 +2864,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) && \
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (lll->iso) {
 		struct lll_adv_iso *lll_iso = lll->iso;
 
-		LL_ASSERT(context->other_expire_info);
+		LL_ASSERT_DBG(context->other_expire_info);
 
 		/* Check: No need for remainder in this case? */
 		lll_iso->ticks_sync_pdu_offset = context->other_expire_info->ticks_to_expire;
@@ -2887,7 +2890,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) && \
 	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
@@ -2903,7 +2906,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_disable_mark_get()));
 }
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */

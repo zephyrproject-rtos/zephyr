@@ -4,6 +4,7 @@ common:
   tags:
     - adc
   depends_on: adc
+  filter: dt_alias_exists("adc0")
   harness: console
   timeout: 10
   harness_config:
@@ -19,19 +20,23 @@ tests:
       - cy8cproto_062_4343w
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
-      - raytac_an54l15q_db/nrf54l15/cpuapp
       - ucans32k1sic
       - s32k148_evb
       - frdm_mcxc242
-      - stm32f3_disco
+      - slwrb4180a
+      - xg27_rb4194a
+      - xg29_rb4412a
+      - raytac_an54lq_db_15/nrf54l15/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.drivers.adc.adc_sequence.8bit:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:

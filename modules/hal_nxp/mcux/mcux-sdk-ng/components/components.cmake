@@ -6,7 +6,12 @@ if(CONFIG_WIFI_NXP)
   set(CONFIG_MCUX_COMPONENT_component.wifi_bt_module.tx_pwr_limits ON)
 endif()
 
-if(CONFIG_NXP_FW_LOADER)
+if(CONFIG_NXP_WIFI_FW_DEBUG)
+  set(CONFIG_MCUX_COMPONENT_component.mflash_offchip ON)
+  set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
+endif()
+
+if(CONFIG_NXP_FW_LOADER AND NOT CONFIG_BUILD_WITH_TFM)
   set(CONFIG_MCUX_COMPONENT_driver.conn_fwloader ON)
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()
@@ -30,14 +35,14 @@ if(CONFIG_NXP_RF_IMU)
     set(CONFIG_MCUX_COMPONENT_driver.gdma ON)
     set(CONFIG_MCUX_COMPONENT_component.wireless_imu_adapter ON)
     set(CONFIG_MCUX_PRJSEG_component.osa_interface.osa_macro_used ON)
-  elseif(CONFIG_SOC_FAMILY_MCXW)
+  elseif(CONFIG_SOC_SERIES_MCXW7XX)
     set(CONFIG_MCUX_COMPONENT_component.lists ON)
     set(CONFIG_MCUX_COMPONENT_component.rpmsg_adapter ON)
     zephyr_compile_definitions(HAL_RPMSG_SELECT_ROLE=0U)
   endif()
 endif()
 
-if(CONFIG_SOC_FAMILY_MCXW AND CONFIG_IEEE802154)
+if(CONFIG_SOC_SERIES_MCXW7XX AND CONFIG_IEEE802154)
   set(CONFIG_MCUX_COMPONENT_driver.spc ON)
   set(CONFIG_MCUX_COMPONENT_component.lists ON)
   set(CONFIG_USE_component_osa_zephyr ON)
@@ -51,7 +56,7 @@ if(CONFIG_USE_component_osa_zephyr)
 endif()
 
 # Component definitions
-if(CONFIG_NXP_RF_IMU AND CONFIG_SOC_FAMILY_MCXW)
+if(CONFIG_NXP_RF_IMU AND CONFIG_SOC_SERIES_MCXW7XX)
   zephyr_compile_definitions(HAL_RPMSG_SELECT_ROLE=0U)
 endif()
 
@@ -81,6 +86,12 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/components/imu_adapter
 
 if(${MCUX_DEVICE} MATCHES "RW61")
   add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/rdrw612bga
+    ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
+    )
+endif()
+
+if(${MCUX_DEVICE} MATCHES "MIMXRT1062")
+  add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/evkcmimxrt1060
     ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
     )
 endif()

@@ -36,7 +36,7 @@
 			label = "User LED2";
 		};
 
-		green_led_3: led_2 {
+		red_led_3: led_2 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
 			label = "User LED3";
 		};
@@ -135,7 +135,6 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
-
 &dac1 {
 	pinctrl-0 = <&dac_out1_pa10>;
 	pinctrl-names = "default";
@@ -151,7 +150,6 @@ stm32_lp_tick_source: &lptim1 {
 		pinctrl-names = "default";
 	};
 };
-
 
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1 &adc_in0_pb13>;

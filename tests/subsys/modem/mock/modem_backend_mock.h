@@ -19,6 +19,9 @@ struct modem_backend_mock_transaction {
 	/* Data which will be put in response to get data */
 	const uint8_t *put;
 	size_t put_size;
+
+	/* Next transaction in chain */
+	const struct modem_backend_mock_transaction *next;
 };
 
 struct modem_backend_mock {
@@ -61,5 +64,7 @@ void modem_backend_mock_prime(struct modem_backend_mock *mock,
 
 void modem_backend_mock_bridge(struct modem_backend_mock *mock_a,
 			       struct modem_backend_mock *mock_b);
+
+void modem_backend_mock_wait_for_transaction(struct modem_backend_mock *mock);
 
 #endif /* ZEPHYR_DRIVERS_MODEM_MODEM_PIPE_MOCK */

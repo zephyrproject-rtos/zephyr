@@ -26,4 +26,5 @@
 };
 
 lscon_96b_spi0: &spi1 {};
+
 lscon_96b_uart0: &uart0 {};

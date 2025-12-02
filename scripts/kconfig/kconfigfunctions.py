@@ -192,6 +192,28 @@ def _node_reg_addr(node, index, unit):
     return node.regs[int(index)].addr >> _dt_units_to_scale(unit)
 
 
+def _node_reg_addr_by_name(node, name, unit):
+    if not node:
+        return 0
+
+    if not node.regs:
+        return 0
+
+    index = None
+    for i, reg in enumerate(node.regs):
+        if reg.name == name:
+            index = i
+            break
+
+    if index is None:
+        return 0
+
+    if node.regs[index].addr is None:
+        return 0
+
+    return node.regs[index].addr >> _dt_units_to_scale(unit)
+
+
 def _node_reg_size(node, index, unit):
     if not node:
         return 0
@@ -420,6 +442,32 @@ def _dt_node_reg_addr(kconf, path, index=0, unit=None):
     return _node_reg_addr(node, index, unit)
 
 
+def _dt_node_reg_addr_by_name(kconf, path, name, unit=None):
+    """
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look to see if that node has a register with the
+    given 'name' and return the address value of that reg, if not we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
+    """
+    if doc_mode or edt is None:
+        return 0
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return 0
+
+    return _node_reg_addr_by_name(node, name, unit)
+
+
 def _dt_node_reg_size(kconf, path, index=0, unit=None):
     """
     This function takes a 'path' and looks for an EDT node at that path. If it
@@ -459,6 +507,17 @@ def dt_node_reg(kconf, name, path, index=0, unit=None):
         return str(_dt_node_reg_addr(kconf, path, index, unit))
     if name == "dt_node_reg_addr_hex":
         return hex(_dt_node_reg_addr(kconf, path, index, unit))
+
+
+def dt_node_reg_by_name(kconf, name, path, reg_name, unit=None):
+    """
+    This function just routes to the proper function and converts
+    the result to either a string int or string hex value.
+    """
+
+    if name == "dt_node_reg_addr_by_name_hex":
+        return hex(_dt_node_reg_addr_by_name(kconf, path, reg_name, unit))
+
 
 def dt_nodelabel_reg(kconf, name, label, index=0, unit=None):
     """
@@ -547,13 +606,7 @@ def dt_nodelabel_int_prop(kconf, _, label, prop):
     except edtlib.EDTError:
         return "0"
 
-    if not node or node.props[prop].type != "int":
-        return "0"
-
-    if not node.props[prop].val:
-        return "0"
-
-    return str(node.props[prop].val)
+    return str(_node_int_prop(node, prop))
 
 def dt_chosen_bool_prop(kconf, _, chosen, prop):
     """
@@ -1104,6 +1157,7 @@ functions = {
         "dt_chosen_reg_size_hex": (dt_chosen_reg, 1, 3),
         "dt_node_reg_addr_int": (dt_node_reg, 1, 3),
         "dt_node_reg_addr_hex": (dt_node_reg, 1, 3),
+        "dt_node_reg_addr_by_name_hex": (dt_node_reg_by_name, 2, 3),
         "dt_node_reg_size_int": (dt_node_reg, 1, 3),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_nodelabel_reg_addr_int": (dt_nodelabel_reg, 1, 3),

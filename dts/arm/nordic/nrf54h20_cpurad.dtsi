@@ -7,12 +7,19 @@
 #include <nordic/nrf54h20.dtsi>
 
 cpu: &cpurad {};
+
 systick: &cpurad_systick {};
+
 nvic: &cpurad_nvic {};
+
 cpuppr_vevif: &cpuppr_vevif_tx {};
+
 cpuflpr_vevif: &cpuflpr_vevif_tx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
+
 wdt010: &cpurad_wdt010 {};
+
 wdt011: &cpurad_wdt011 {};
 
 /delete-node/ &cpuapp;
@@ -21,6 +28,7 @@ wdt011: &cpurad_wdt011 {};
 /delete-node/ &cpuapp_ram0;
 /delete-node/ &cpuppr;
 /delete-node/ &cpuflpr;
+/delete-node/ &s2ram;
 
 / {
 	soc {
@@ -100,18 +108,6 @@ wdt011: &cpurad_wdt011 {};
 	status = "okay";
 };
 
-&fll16m  {
-	status = "okay";
-};
-
-&hsfll120  {
-	status = "okay";
-};
-
-&lfclk  {
-	status = "okay";
-};
-
 &gdpwr {
 	status = "okay";
 };
@@ -133,29 +129,5 @@ wdt011: &cpurad_wdt011 {};
 };
 
 &gdpwr_slow_main {
-	status = "okay";
-};
-
-&gpio_pad_group0 {
-	status = "okay";
-};
-
-&gpio_pad_group1 {
-	status = "okay";
-};
-
-&gpio_pad_group2 {
-	status = "okay";
-};
-
-&gpio_pad_group6 {
-	status = "okay";
-};
-
-&gpio_pad_group7 {
-	status = "okay";
-};
-
-&gpio_pad_group9 {
 	status = "okay";
 };

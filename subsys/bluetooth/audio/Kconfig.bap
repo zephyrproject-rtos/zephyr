@@ -16,8 +16,8 @@ config BT_BAP_UNICAST_SERVER
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
 	depends on BT_BONDABLE
-	select BT_PAC_SRC if BT_ASCS_ASE_SNK
-	select BT_PAC_SNK if BT_ASCS_ASE_SRC
+	select BT_PAC_SNK if BT_ASCS_ASE_SNK
+	select BT_PAC_SRC if BT_ASCS_ASE_SRC
 	help
 	  This option enables support for Bluetooth Unicast Audio Server
 	  using Isochronous channels.

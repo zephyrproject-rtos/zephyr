@@ -12,6 +12,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
+/* Retrieve the main system clock from DTS. */
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 #if defined(CONFIG_SOC_SERIES_STM32C0X)
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -38,9 +41,10 @@
 #include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
 #include <zephyr/dt-bindings/clock/stm32l1_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#include <zephyr/dt-bindings/clock/stm32l5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -102,10 +106,6 @@
 #else
 #define STM32_FLASH_PRESCALER	STM32_CORE_PRESCALER
 #endif
-
-#define STM32_ADC_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc_prescaler)
-#define STM32_ADC12_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc12_prescaler)
-#define STM32_ADC34_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc34_prescaler)
 
 #define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
 
@@ -172,6 +172,11 @@
 #define STM32_TIMG_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timg_prescaler)
 #endif /* rcc node compatible st_stm32n6_rcc and okay */
 
+/** clock 48MHz node related symbols */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk48), st_stm32_clock_mux, okay)
+#define STM32_CK48_ENABLED	1
+#endif
+
 /** PLL node related symbols */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f2_pll_clock, okay) || \
@@ -218,6 +223,30 @@
 #define STM32_PLLI2S_Q_DIVISOR		DT_PROP_OR(DT_NODELABEL(plli2s), div_q, 1)
 #define STM32_PLLI2S_R_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(plli2s), div_r)
 #define STM32_PLLI2S_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(plli2s), div_r, 1)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai), st_stm32fx_pllsai_clock, okay)
+#define STM32_PLLSAI_ENABLED	1
+#define STM32_PLLSAI_M_DIVISOR		DT_PROP(DT_NODELABEL(pllsai), div_m)
+#define STM32_PLLSAI_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pllsai), mul_n)
+#define STM32_PLLSAI_P_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), div_p)
+#define STM32_PLLSAI_P_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai), div_p, 1)
+#define STM32_PLLSAI_Q_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), div_q)
+#define STM32_PLLSAI_DIVQ_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), div_divq)
+#if (STM32_PLLSAI_Q_ENABLED && !STM32_PLLSAI_DIVQ_ENABLED) || \
+	(!STM32_PLLSAI_Q_ENABLED && STM32_PLLSAI_DIVQ_ENABLED)
+#error "On STM32F4/STM32F7, both div_q and div_divq must be present if one of them is present"
+#endif
+#define STM32_PLLSAI_Q_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai), div_q, 1)
+#define STM32_PLLSAI_DIVQ_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai), div_divq, 1)
+#define STM32_PLLSAI_R_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), div_r)
+#define STM32_PLLSAI_DIVR_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), div_divr)
+#if (STM32_PLLSAI_R_ENABLED && !STM32_PLLSAI_DIVR_ENABLED) || \
+	(!STM32_PLLSAI_R_ENABLED && STM32_PLLSAI_DIVR_ENABLED)
+#error "On STM32F4/STM32F7, both div_r and div_divr must be present if one of them is present"
+#endif
+#define STM32_PLLSAI_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai), div_r, 1)
+#define STM32_PLLSAI_DIVR_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai), div_divr, 1)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pllsai_clock, okay)
@@ -435,6 +464,19 @@
 
 #endif
 
+/** PLLSAI clock source */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pllsai), okay) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai), clocks)
+#define DT_PLLSAI_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pllsai))
+#if DT_SAME_NODE(DT_PLLSAI_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
+#define STM32_PLLSAI_SRC_HSI	1
+#endif
+#if DT_SAME_NODE(DT_PLLSAI_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
+#define STM32_PLLSAI_SRC_HSE	1
+#endif
+
+#endif
+
 /** PLLSAI1 clock source */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pllsai1), okay) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai1), clocks)
@@ -465,6 +507,20 @@
 #define STM32_PLLSAI2_SRC_HSE	1
 #endif
 
+#endif
+
+/* On STM32F4 series - PLL and PLLSAI share the same source */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) && \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai), st_stm32fx_pllsai_clock, okay) && \
+	!DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI_CLOCKS_CTRL)
+#error "On STM32F4 series, PLL and PLLSAI must have the same source"
+#endif
+
+/* On STM32F7 series - PLL and PLLSAI share the same source */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f7_pll_clock, okay) && \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai), st_stm32fx_pllsai_clock, okay) && \
+	!DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI_CLOCKS_CTRL)
+#error "On STM32F7 series, PLL and PLLSAI must have the same source"
 #endif
 
 /* On STM32L4 series - PLL / PLLSAI1 and PLLSAI2 shared same source */
@@ -512,6 +568,10 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay)
 #define STM32_MSI_ENABLED	1
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !STM32_LSE_ENABLED
+#error "On STM32L4 series, MSI PLL mode requires LSE to be enabled"
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay) || \
@@ -797,7 +857,7 @@ struct stm32_pclken {
  * @param clock Clock bit field value.
  */
 #define STM32_DT_CLKSEL_MASK_GET(clock) \
-	(((clock) >> STM32_DT_CLKSEL_MASK_SHIFT) & STM32_DT_CLKSEL_MASK_MASK)
+	BIT_MASK((((clock) >> STM32_DT_CLKSEL_WIDTH_SHIFT) & STM32_DT_CLKSEL_WIDTH_MASK) + 1)
 
 /**
  * @brief Obtain value field from clock source selection configuration.

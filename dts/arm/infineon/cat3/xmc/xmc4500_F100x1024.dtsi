@@ -27,15 +27,18 @@
 
 &flash0 {
 	reg = <0x8000000 DT_SIZE_M(1)>;
+
 	pages_layout: pages_layout {
 		pages_layout_16k: pages_layout_16k {
 			pages-count = <8>;
 			pages-size = <DT_SIZE_K(16)>;
 		};
+
 		pages_layout_128k: pages_layout_128k {
 			pages-count = <1>;
 			pages-size = <DT_SIZE_K(128)>;
 		};
+
 		pages_layout_256k: pages_layout_256k {
 			pages-count = <3>;
 			pages-size = <DT_SIZE_K(256)>;

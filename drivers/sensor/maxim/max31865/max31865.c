@@ -313,7 +313,7 @@ static DEVICE_API(sensor, max31865_api_funcs) = {
 	static struct max31865_data max31865_data_##inst;                                          \
                                                                                                    \
 	static const struct max31865_config max31865_config_##inst = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_MODE_CPHA | SPI_WORD_SET(8), 0),             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_MODE_CPHA | SPI_WORD_SET(8)),                \
 		.resistance_at_zero = DT_INST_PROP(inst, resistance_at_zero),                      \
 		.resistance_reference = DT_INST_PROP(inst, resistance_reference),                  \
 		.conversion_mode = false,                                                          \

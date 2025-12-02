@@ -178,7 +178,7 @@
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0
-			&lpuart1_cts_pa6 &lpuart1_rts_pb12>;
+		     &lpuart1_cts_pa6 &lpuart1_rts_pb12>;
 	hw-flow-control;
 	pinctrl-names = "default";
 	current-speed = <115200>;

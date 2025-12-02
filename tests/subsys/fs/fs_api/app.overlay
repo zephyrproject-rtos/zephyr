@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+
+/ {
+	test_disk: disk {
+		compatible = "zephyr,fstab,fatfs";
+		mount-point = "/TEST:";
+	};
+};

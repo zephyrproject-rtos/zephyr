@@ -118,3 +118,15 @@ choice FLASH_LOG_LEVEL_CHOICE
 endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+config FLASH_MCUX_XSPI
+	bool "MCUX XSPI flash driver"
+	default y
+	depends on DT_HAS_NXP_XSPI_NOR_ENABLED
+	select MEMC
+	select MEMC_MCUX_XSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the mcux xspi flash driver.

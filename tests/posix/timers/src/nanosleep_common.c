@@ -66,10 +66,10 @@ void common_lower_bound_check(int selection, clockid_t clock_id, int flags, cons
 
 	zassert_equal(r, 0, "actual: %d expected: %d", r, 0);
 	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
-	zassert_equal(req.tv_sec, s, "actual: %d expected: %d", req.tv_sec, s);
-	zassert_equal(req.tv_nsec, ns, "actual: %d expected: %d", req.tv_nsec, ns);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+	zassert_equal(req.tv_sec, s, "actual: %lld expected: %d", (long long)req.tv_sec, s);
+	zassert_equal(req.tv_nsec, ns, "actual: %lld expected: %d", (long long)req.tv_nsec, ns);
+	zassert_equal(rem.tv_sec, 0, "actual: %lld expected: %d", (long long)rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %lld expected: %d", (long long)rem.tv_nsec, 0);
 
 	switch (selection) {
 	case SELECT_NANOSLEEP:

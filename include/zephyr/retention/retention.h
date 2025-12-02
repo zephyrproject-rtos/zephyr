@@ -32,22 +32,6 @@ extern "C" {
  * @{
  */
 
-typedef ssize_t (*retention_size_api)(const struct device *dev);
-typedef int (*retention_is_valid_api)(const struct device *dev);
-typedef int (*retention_read_api)(const struct device *dev, off_t offset, uint8_t *buffer,
-				  size_t size);
-typedef int (*retention_write_api)(const struct device *dev, off_t offset,
-				   const uint8_t *buffer, size_t size);
-typedef int (*retention_clear_api)(const struct device *dev);
-
-struct retention_api {
-	retention_size_api size;
-	retention_is_valid_api is_valid;
-	retention_read_api read;
-	retention_write_api write;
-	retention_clear_api clear;
-};
-
 /**
  * @brief		Returns the size of the retention area.
  *

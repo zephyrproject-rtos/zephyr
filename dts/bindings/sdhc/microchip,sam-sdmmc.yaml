@@ -1,0 +1,71 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip SAM SDMMC SD host controller
+
+compatible: "microchip,sama7g5-sdmmc"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  assigned-clock-rates:
+    type: int
+    required: true
+    description: |
+      The frequency of input GCLK rate.
+
+  non-removable:
+    type: boolean
+    description: |
+      Indicates a non-removable device such as an e.MMC card.
+      The SDMMC_CD signal will be bypassed, force card detect is enableded.
+
+  bus-width:
+    type: int
+    default: 4
+    enum:
+      - 1
+      - 4
+      - 8
+    description: |
+      Not all SDMMC instances have 8-bit data lines, but all have 4-bit data lines.
+      By default 4-bit data line is enabled and can be adjusted based on the SDMMC
+      instance or hardware board design.
+
+  no-1-8-v:
+    type: boolean
+    description: |
+      The SD/MMC bus on the board doesn't support the 1.8V voltage,
+      Which disables UHS-I, HS200 and HS400 support.
+
+  rstn-power-en:
+    type: boolean
+    description: |
+      Indicates that the SDMMC_RSTN signal is present on the board.
+
+  auto-cmd12:
+    type: boolean
+    description: |
+      Enable auto command CMD12.
+
+  auto-cmd23:
+    type: boolean
+    description: |
+      Enable auto command CMD23.

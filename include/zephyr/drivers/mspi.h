@@ -30,7 +30,7 @@ extern "C" {
  *        controllers.
  * @defgroup mspi_interface MSPI
  * @since 3.7
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -126,6 +126,8 @@ enum mspi_bus_event {
 	MSPI_BUS_RESET              = 0,
 	MSPI_BUS_ERROR              = 1,
 	MSPI_BUS_XFER_COMPLETE      = 2,
+	/** @brief When a request or xfer has timed out */
+	MSPI_BUS_TIMEOUT            = 3,
 	MSPI_BUS_EVENT_MAX,
 };
 
@@ -139,6 +141,7 @@ enum mspi_bus_event_cb_mask {
 	MSPI_BUS_RESET_CB           = BIT(0),
 	MSPI_BUS_ERROR_CB           = BIT(1),
 	MSPI_BUS_XFER_COMPLETE_CB   = BIT(2),
+	MSPI_BUS_TIMEOUT_CB         = BIT(3),
 };
 
 /**
@@ -815,56 +818,6 @@ static inline int mspi_register_callback(const struct device *controller,
 #endif
 
 #include <zephyr/drivers/mspi/devicetree.h>
-
-/**
- * @addtogroup mspi_util
- * @{
- */
-#include <zephyr/sys/util_macro.h>
-
-/**
- * @brief Declare the optional XIP config in peripheral driver.
- */
-#define MSPI_XIP_CFG_STRUCT_DECLARE(_name)                                                        \
-	IF_ENABLED(CONFIG_MSPI_XIP, (struct mspi_xip_cfg _name;))
-
-/**
- * @brief Declare the optional XIP base address in peripheral driver.
- */
-#define MSPI_XIP_BASE_ADDR_DECLARE(_name)                                                         \
-	IF_ENABLED(CONFIG_MSPI_XIP, (uint32_t _name;))
-
-/**
- * @brief Declare the optional scramble config in peripheral driver.
- */
-#define MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(_name)                                                   \
-	IF_ENABLED(CONFIG_MSPI_SCRAMBLE, (struct mspi_scramble_cfg _name;))
-
-/**
- * @brief Declare the optional timing config in peripheral driver.
- */
-#define MSPI_TIMING_CFG_STRUCT_DECLARE(_name)                                                     \
-	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_cfg _name;))
-
-/**
- * @brief Declare the optional timing parameter in peripheral driver.
- */
-#define MSPI_TIMING_PARAM_DECLARE(_name)                                                          \
-	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_param _name;))
-
-/**
- * @brief Initialize the optional config structure in peripheral driver.
- */
-#define MSPI_OPTIONAL_CFG_STRUCT_INIT(code, _name, _object)                                       \
-	IF_ENABLED(code, (._name = _object,))
-
-/**
- * @brief Initialize the optional XIP base address in peripheral driver.
- */
-#define MSPI_XIP_BASE_ADDR_INIT(_name, _bus)                                                      \
-	IF_ENABLED(CONFIG_MSPI_XIP, (._name = DT_REG_ADDR_BY_IDX(_bus, 1),))
-
-/** @} */
 
 /**
  * @addtogroup mspi_util

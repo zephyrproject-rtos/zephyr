@@ -16,6 +16,14 @@
 
 #include <soc.h>
 
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we)
+#define USES_RX_FIFO_RX_WE 1
+#endif
+
+BUILD_ASSERT(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we) ==
+		     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we),
+	     "rx-fifo-rx-we property must be set for all or none of the instances");
+
 #define UART_EV_TX		BIT(0)
 #define UART_EV_RX		BIT(1)
 
@@ -36,7 +44,6 @@ struct uart_litex_device_config {
 
 struct uart_litex_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct k_timer timer;
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
@@ -74,15 +81,16 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 
 	if (!litex_read8(config->rxempty_addr)) {
 		*c = litex_read8(config->rxtx_addr);
-
+#ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
 		litex_write8(UART_EV_RX, config->ev_pending_addr);
+#endif
 		return 0;
-	} else {
-		return -1;
 	}
+
+	return -1;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -94,20 +102,10 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 static void uart_litex_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
-	struct uart_litex_data *data = dev->data;
 
 	uint8_t enable = litex_read8(config->ev_enable_addr);
 
 	litex_write8(enable | UART_EV_TX, config->ev_enable_addr);
-
-	if (!litex_read8(config->txfull_addr)) {
-		/*
-		 * TX done event already generated an edge interrupt. Generate a
-		 * soft interrupt and have it call the callback function in
-		 * timer isr context.
-		 */
-		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
-	}
 }
 
 /**
@@ -182,11 +180,7 @@ static int uart_litex_irq_rx_ready(const struct device *dev)
 
 	pending = litex_read8(config->ev_pending_addr);
 
-	if (pending & UART_EV_RX) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return (pending & UART_EV_RX) > 0;
 }
 
 /**
@@ -204,13 +198,26 @@ static int uart_litex_fifo_fill(const struct device *dev,
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
 
-	litex_write8(UART_EV_RX, config->ev_pending_addr);
 	for (i = 0; i < size && !litex_read8(config->txfull_addr); i++) {
 		litex_write8(tx_data[i], config->rxtx_addr);
 	}
-	while (!litex_read8(config->txfull_addr)) {
-		litex_write8(0, config->rxtx_addr);
+
+#ifndef USES_RX_FIFO_RX_WE
+	/* LiteX uses EventSourceLevel for the UART since 22.09.2025,
+	 * where TX event is level triggered and pending is self-flushing,
+	 * so this is not needed anymore for new designs. When the dt property
+	 * rx-fifo-rx-we is set, we assume the design is new enough.
+	 */
+	if (litex_read8(config->txfull_addr)) {
+		/* only flush TX event if TX is really full */
+		litex_write8(UART_EV_TX, config->ev_pending_addr);
+
+		/* fallback if we maybe missed the TX interrupt */
+		while (!litex_read8(config->txfull_addr)) {
+			litex_write8(0, config->rxtx_addr);
+		}
 	}
+#endif
 
 	return i;
 }
@@ -232,11 +239,12 @@ static int uart_litex_fifo_read(const struct device *dev,
 
 	for (i = 0; i < size && !litex_read8(config->rxempty_addr); i++) {
 		rx_data[i] = litex_read8(config->rxtx_addr);
-
+#ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
 		litex_write8(UART_EV_RX, config->ev_pending_addr);
+#endif
 	}
 
 	return i;
@@ -274,16 +282,14 @@ static void uart_litex_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	struct uart_litex_data *data;
+	struct uart_litex_data *data = dev->data;
 
-	data = dev->data;
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
 
 static void uart_litex_irq_handler(const struct device *dev)
 {
-	const struct uart_litex_device_config *config = dev->config;
 	struct uart_litex_data *data = dev->data;
 	unsigned int key = irq_lock();
 
@@ -291,19 +297,7 @@ static void uart_litex_irq_handler(const struct device *dev)
 		data->callback(dev, data->cb_data);
 	}
 
-	/* Clear RX events, TX events still needed to enqueue the next transfer */
-	if (litex_read8(config->rxempty_addr)) {
-		litex_write8(UART_EV_RX, config->ev_pending_addr);
-	}
-
 	irq_unlock(key);
-}
-
-static void uart_litex_tx_soft_isr(struct k_timer *timer)
-{
-	const struct device *dev = k_timer_user_data_get(timer);
-
-	uart_litex_irq_handler(dev);
 }
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -332,14 +326,9 @@ static int uart_litex_init(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	litex_write8(UART_EV_TX | UART_EV_RX, config->ev_pending_addr);
+	litex_write8(0, config->ev_enable_addr);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct uart_litex_data *data = dev->data;
-
-	k_timer_init(&data->timer, &uart_litex_tx_soft_isr, NULL);
-	k_timer_user_data_set(&data->timer, (void *)dev);
-
 	config->config_func(dev);
 #endif
 

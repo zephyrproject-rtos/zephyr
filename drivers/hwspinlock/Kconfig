@@ -10,9 +10,13 @@ menuconfig HWSPINLOCK
 
 if HWSPINLOCK
 
+module = HWSPINLOCK
+module-str = hwspinlock
+source "subsys/logging/Kconfig.template.log_config"
+
 config HWSPINLOCK_INIT_PRIORITY
 	int "HW spinlock init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
 	  HW spinlock driver device initialization priority.
 

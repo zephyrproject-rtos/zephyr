@@ -12,6 +12,8 @@
 		/delete-property/ sw1;
 		/delete-property/ sw2;
 		/delete-property/ sw3;
+		/delete-property/ mcuboot-led0;
+		/delete-property/ mcuboot-button0;
 	};
 	/delete-node/ buttons;
 };

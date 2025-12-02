@@ -79,3 +79,21 @@ family:
             cpuclusters:
               - name: cm85
               - name: cm33
+      - name: ra8t2
+        socs:
+          - name: r7ka8t2lfecac
+            cpuclusters:
+              - name: cm85
+              - name: cm33
+      - name: ra8d2
+        socs:
+          - name: r7ka8d2kflcac
+            cpuclusters:
+              - name: cm85
+              - name: cm33
+      - name: ra8m2
+        socs:
+          - name: r7ka8m2jflcac
+            cpuclusters:
+              - name: cm85
+              - name: cm33

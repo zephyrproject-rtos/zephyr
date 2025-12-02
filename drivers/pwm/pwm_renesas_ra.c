@@ -554,6 +554,10 @@ static int pwm_renesas_ra_init(const struct device *dev)
 #ifdef CONFIG_PWM_CAPTURE
 #define PWM_RA_IRQ_CONFIG_INIT(index)                                                              \
 	do {                                                                                       \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)));                \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)));                 \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),                               \
 			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),                          \
@@ -600,6 +604,8 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
 		.gtior_setting.gtior = (0x0U),                                                     \
+		.gtioca_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
+		.gtiocb_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
 	};                                                                                         \
 	static struct pwm_renesas_ra_data pwm_renesas_ra_data_##index = {                          \
 		.fsp_cfg =                                                                         \

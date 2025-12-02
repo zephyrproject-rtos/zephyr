@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #include <clic.h>
 #include <bflb_soc.h>
@@ -94,4 +95,6 @@ GLB_JTAG_SWAP_SET_POS);
 
 	/* init bor for all platform */
 	system_bor_init();
+
+	sys_cache_data_flush_and_invd_all();
 }

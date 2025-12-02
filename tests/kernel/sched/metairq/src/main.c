@@ -30,7 +30,7 @@
 #endif
 
 
-#define STACKSIZE 1024
+#define STACKSIZE 1024 + CONFIG_TEST_EXTRA_STACK_SIZE
 #define DEFINE_PARTICIPANT_THREAD(id)                                       \
 		K_THREAD_STACK_DEFINE(thread_##id##_stack_area, STACKSIZE); \
 		struct k_thread thread_##id##_thread_data;                  \

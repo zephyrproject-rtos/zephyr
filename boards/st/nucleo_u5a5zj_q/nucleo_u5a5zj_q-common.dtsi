@@ -41,6 +41,7 @@
 
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		/* NOTE: disabled by default, PWM reuses LED pins */
 		status = "disabled";
 
 		pwm_led_1: green_led_1 {

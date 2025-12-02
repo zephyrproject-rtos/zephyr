@@ -47,7 +47,7 @@
 
 	ddr1: memory@9cc01000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9cc01000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
 	};
 };

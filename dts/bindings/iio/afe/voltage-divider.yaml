@@ -45,3 +45,8 @@ properties:
       `power-gpios`. In most cases the switched voltage rail will
       require some non-zero time to settle to its final value. The
       default value of 100us should be sufficient in most situations.
+
+  skip-calibration:
+    type: boolean
+    description: |
+      Skip ADC calibration before taking a measurement.

@@ -39,7 +39,7 @@
 		compatible = "gpio-leds";
 
 		ir_led: led_0 {
-			gpios =  <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			label = "Infrared LED";
 		};
 	};
@@ -69,7 +69,6 @@
 	pinctrl-names = "default";
 	sda-gpios = <&gpio0 25 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
-
 };
 
 &i2c1 {
@@ -80,7 +79,6 @@
 	sda-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio1 0 GPIO_OPEN_DRAIN>;
 };
-
 
 &timer0 {
 	status = "okay";
@@ -124,9 +122,9 @@
 		spi-max-frequency = <WS2812C_SPI_FREQ>;
 
 		chain-length = <1>;
-		color-mapping =	<LED_COLOR_ID_GREEN>,
-			<LED_COLOR_ID_RED>,
-			<LED_COLOR_ID_BLUE>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
 		spi-one-frame = <WS2812C_ONE_FRAME>;
 		spi-zero-frame = <WS2812C_ZERO_FRAME>;
 	};

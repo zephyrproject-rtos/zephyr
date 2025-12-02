@@ -17,6 +17,14 @@ config UART_MAX32
 	  processors.
 	  Say y if you wish to use serial port on MAX32 MCU.
 
+config UART_MAX32_TX_AE_WORKAROUND
+	bool
+	default y if SOC_MAX32690
+	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
+	help
+		This option enables a small workaround for almost-empty interrupts
+		not firing on TX of small amounts
+
 if UART_MAX32
 
 config UART_TX_CACHE_LEN

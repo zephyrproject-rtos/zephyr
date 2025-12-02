@@ -7,12 +7,15 @@ config CORTEX_M_SYSTICK
 	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
 
 config NUM_IRQS
+	default 80 if SOC_MCXA153
+	default 89 if SOC_MCXA156
+	default 122 if (SOC_MCXA346 || SOC_MCXA266 || SOC_MCXA366)
 	default 88
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER
 	default 16000 if MCUX_LPTMR_TIMER
-	default 96000000 if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE

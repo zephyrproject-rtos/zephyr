@@ -32,6 +32,6 @@
 /** @brief RCC_CSR register offset */
 #define CSR_REG		0x34
 
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CSR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CSR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L1_CLOCK_H_ */

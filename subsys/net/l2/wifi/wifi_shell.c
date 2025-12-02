@@ -3555,6 +3555,113 @@ static int cmd_wifi_set_bss_max_idle_period(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				      struct wifi_bgscan_params *params)
+{
+	int err;
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"type", required_argument, 0, 't'},
+		{"short-interval", required_argument, 0, 's'},
+		{"rss-threshold", required_argument, 0, 'r'},
+		{"long-interval", required_argument, 0, 'l'},
+		{"btm-queries", required_argument, 0, 'b'},
+		{"iface", required_argument, 0, 'i'},
+		{0, 0, 0, 0}};
+	unsigned long uval;
+	long val;
+
+	while ((opt = getopt_long(argc, argv, "t:s:r:l:b:i:", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 't':
+			if (strcmp("simple", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_SIMPLE;
+			} else if (strcmp("learn", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_LEARN;
+			} else if (strcmp("none", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_NONE;
+			} else {
+				PR_ERROR("Invalid type %s\n", state->optarg);
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+			break;
+		case 's':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid short interval %s\n", state->optarg);
+				return err;
+			}
+			params->short_interval = uval;
+			break;
+		case 'l':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid long interval %s\n", state->optarg);
+				return err;
+			}
+			params->long_interval = uval;
+			break;
+		case 'b':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid BTM queries %s\n", state->optarg);
+				return err;
+			}
+			params->btm_queries = uval;
+			break;
+		case 'r':
+			val = shell_strtol(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid RSSI threshold %s\n", state->optarg);
+				return err;
+			}
+			params->rssi_threshold = val;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_set_bgscan(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_bgscan_params bgscan_params = {
+		.type = WIFI_BGSCAN_NONE,
+		.short_interval = 30,
+		.long_interval = 300,
+		.rssi_threshold = 0,
+		.btm_queries = 0,
+	};
+	int ret;
+
+	if (wifi_bgscan_args_to_params(sh, argc, argv, &bgscan_params) != 0) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_BGSCAN, iface, &bgscan_params,
+		       sizeof(struct wifi_bgscan_params));
+	if (ret != 0) {
+		PR_WARNING("Setting background scanning parameters failed: %s\n", strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
+
 static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 					 struct wifi_config_params *params)
 {
@@ -3737,7 +3844,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		" The total number of '0, 1, ..., x' is session_num\n"
 		"[-i, --iface=<interface index>] : Interface index.\n",
 		cmd_wifi_btwt_setup,
-		13, 2),
+		13, 12),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
@@ -4097,6 +4204,19 @@ SHELL_SUBCMD_ADD((wifi), bss_max_idle_period, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_set_bss_max_idle_period,
 		 2, 2);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+SHELL_SUBCMD_ADD((wifi), bgscan, NULL,
+		 "Configure background scanning.\n"
+		 "<-t, --type simple/learn/none> : The scanning type, use none to disable.\n"
+		 "[-s, --short-interval <val>] : Short scan interval (default: 30).\n"
+		 "[-l, --long-interval <val>] : Long scan interval (default: 300).\n"
+		 "[-r, --rssi-threshold <val>] : Signal strength threshold (default: disabled).\n"
+		 "[-b, --btm-queries <val>] : BTM queries before scanning (default: disabled).\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_set_bgscan,
+		 2, 6);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN */
 
 SHELL_SUBCMD_ADD((wifi), config, NULL,
 		 "Configure STA parameters.\n"

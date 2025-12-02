@@ -14,7 +14,9 @@ supported:
   - watchdog
   - entropy
   - pwm
+  - sdhc
   - dma
   - input
   - video
+  - crypto
 vendor: espressif

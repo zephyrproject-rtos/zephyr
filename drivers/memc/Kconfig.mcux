@@ -1,4 +1,4 @@
-# Copyright 2020-2023 NXP
+# Copyright 2020-2023, 2025 NXP
 # Copyright (c) 2021 Basalte bv
 # Copyright (c) 2023, ithinx GmbH
 # Copyright (c) 2023, Tonies GmbH
@@ -56,6 +56,29 @@ config MEMC_MCUX_FLEXSPI_INIT_XIP
 	  used for the FLEXSPI are compatible with those needed for XIP from
 	  the flash device.
 
+config FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL
+	bool "Force using the FLEXSPI Target Clock Delay Line Override Value"
+	help
+	  Enable this setting to force using a specific raw value for the OVRDVAL
+	  field in the DLLCR registers.
+
+	  This option gives more granularity than the 'data-valid-time' field in
+	  the dts. The unit of 'data-valid-time' is nanoseconds while the unit of
+	  OVRDVAL are raw delay cells.
+
+	  Normally the 'data-valid-time' on any 'nxp,imx-flexspi-device' device
+	  will set the OVRDVAL and OVRDEN fields in the DLLCR register
+	  but works only when the 'rx-clock-source' is configured to '#0 External
+	  input from DQS pad' and the frequency <= 100MHz.
+
+config FLASH_MCUX_FLEXSPI_OVRDVAL
+	int "FLEXSPI Target Clock Delay Line Override Value"
+	range 0 63
+	default 27
+	depends on FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL
+	help
+	  Raw value to be stored in the DDLCR->OVRDVAL field.
+
 config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
@@ -66,3 +89,28 @@ choice MEMC_LOG_LEVEL_CHOICE
 endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+if DT_HAS_NXP_XSPI_PSRAM_ENABLED
+
+config MEMC_MCUX_XSPI_INIT_XIP
+	bool "Initialize XSPI when using device for XIP"
+	help
+	  Initialize the XSPI device even when using it for XIP. If this
+	  Kconfig is enabled, the user must ensure that the pin control
+	  state used does not reconfigure the pins used to interface with
+	  the flash device used for XIP, and that the configuration settings
+	  used for the XSPI are compatible with those needed for XIP from
+	  the flash device.
+
+config MEMC_MCUX_XSPI_PSRAM
+	bool "MCUX XSPI psram driver"
+	default y
+	select MEMC_MCUX_XSPI
+	help
+	  Enable the mcux xspi psram driver.
+
+config MEMC_MCUX_XSPI
+	bool
+	select PINCTRL
+
+endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED

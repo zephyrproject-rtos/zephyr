@@ -186,7 +186,7 @@ class Blobs(WestCommand):
                     self.wrn('Skip fetching this blob.')
                     continue
 
-                with open(blob['license-abspath']) as license_file:
+                with open(blob['license-abspath'], encoding="utf-8") as license_file:
                     license_content = license_file.read()
                     print(license_content)
 

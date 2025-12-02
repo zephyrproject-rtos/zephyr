@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV6_IID_STABLE)
 #include <zephyr/random/random.h>
-#include <mbedtls/md.h>
+#include <psa/crypto.h>
 #endif /* CONFIG_NET_IPV6_IID_STABLE */
 
 #include <zephyr/net/net_core.h>
@@ -475,7 +475,7 @@ static inline bool is_src_non_tentative_itself(const uint8_t *src)
 	return false;
 }
 
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
+enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
@@ -537,7 +537,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	if (!is_loopback) {
+	if (!net_pkt_is_loopback(pkt)) {
 		if (net_ipv6_is_addr_loopback_raw(hdr->dst) ||
 		    net_ipv6_is_addr_loopback_raw(hdr->src)) {
 			NET_DBG("DROP: ::1 packet");
@@ -631,7 +631,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if ((IS_ENABLED(CONFIG_NET_ROUTING) || IS_ENABLED(CONFIG_NET_ROUTE_MCAST)) &&
-	    !is_loopback && is_src_non_tentative_itself(hdr->src)) {
+	    !net_pkt_is_loopback(pkt) && is_src_non_tentative_itself(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mine");
 		goto drop;
 	}
@@ -875,10 +875,12 @@ static int gen_stable_iid(uint8_t if_index,
 			  size_t stable_iid_len)
 {
 #if defined(CONFIG_NET_IPV6_IID_STABLE)
-	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	mbedtls_md_context_t ctx;
+	psa_key_id_t key_id;
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_mac_operation_t mac_op = PSA_MAC_OPERATION_INIT;
+	psa_status_t status;
 	uint8_t digest[32];
-	int ret;
+	size_t digest_len;
 	static bool once;
 	static uint8_t secret_key[16]; /* Min 128 bits, RFC 7217 ch 5 */
 	struct {
@@ -909,28 +911,30 @@ static int gen_stable_iid(uint8_t if_index,
 		once = true;
 	}
 
-	mbedtls_md_init(&ctx);
-	ret = mbedtls_md_setup(&ctx, md_info, true);
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "setup", ret);
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_HMAC);
+	psa_set_key_algorithm(&key_attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	status = psa_import_key(&key_attr, secret_key, sizeof(secret_key), &key_id);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "import key", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_starts(&ctx, secret_key, sizeof(secret_key));
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "start", ret);
+	status = psa_mac_sign_setup(&mac_op, key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "setup", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_update(&ctx, (uint8_t *)&buf, sizeof(buf));
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "update", ret);
+	status = psa_mac_update(&mac_op, (uint8_t *)&buf, sizeof(buf));
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "update", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_finish(&ctx, digest);
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "finish", ret);
+	status = psa_mac_sign_finish(&mac_op, digest, sizeof(digest), &digest_len);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "finish", status);
 		goto err;
 	}
 
@@ -940,14 +944,14 @@ static int gen_stable_iid(uint8_t if_index,
 	if (unlikely(check_reserved(stable_iid, stable_iid_len))) {
 		LOG_HEXDUMP_DBG(stable_iid, stable_iid_len,
 				"Generated IID is reserved");
-		ret = -EINVAL;
 		goto err;
 	}
 
 err:
-	mbedtls_md_free(&ctx);
+	psa_mac_abort(&mac_op);
+	psa_destroy_key(key_id);
 
-	return ret;
+	return (status == PSA_SUCCESS) ? 0 : -EIO;
 #else
 	return -ENOTSUP;
 #endif

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC_SPI
+	bool "Use Trinamic Stepper Controller with SPI"
+	select SPI
+	help
+	  A Trinamic Stepper Controller with SPI is enabled
+
+config STEPPER_ADI_TMC_UART
+	bool "Use Trinamic Stepper Controller with single wire UART"
+	select UART
+	help
+	  A Trinamic Stepper Controller with single wire UART is enabled

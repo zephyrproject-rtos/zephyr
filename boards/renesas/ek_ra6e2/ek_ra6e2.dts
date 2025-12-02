@@ -24,18 +24,22 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport2 7 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&ioport1 13 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -44,11 +48,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: s2 {
 			gpios = <&ioport3 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
@@ -68,6 +74,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart0: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -126,6 +133,7 @@
 
 &canfd_global {
 	status = "okay";
+
 	canfd0 {
 		pinctrl-0 = <&canfd0_default>;
 		pinctrl-names = "default";
@@ -170,7 +178,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &flash1 {
@@ -202,4 +210,8 @@
 		write-block-size = <1>;
 		erase-block-size = <4096>;
 	};
+};
+
+&crc {
+	status = "okay";
 };

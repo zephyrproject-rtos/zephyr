@@ -23,7 +23,6 @@
 		/delete-node/ cpu@1;
 		/delete-node/ cpu@2;
 	};
-
 };
 
 /delete-node/ &psci;

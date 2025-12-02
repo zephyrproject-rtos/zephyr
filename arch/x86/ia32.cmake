@@ -6,7 +6,7 @@ get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OP
 #Any -Os is (or may be) wraped in $<COMPILE_LANGUAGE> guards
 list(FILTER zephyr_COMPILE_OPTIONS INCLUDE REGEX "-Os")
 list(LENGTH zephyr_COMPILE_OPTIONS have_os)
-if (${have_os} GREATER 0)
+if(${have_os} GREATER 0)
   zephyr_cc_option(-mpreferred-stack-boundary=2)
 else()
   zephyr_compile_definitions(PERF_OPT)

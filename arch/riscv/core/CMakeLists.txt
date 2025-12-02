@@ -13,11 +13,11 @@ zephyr_library_sources(
   thread.c
 )
 
-if ((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
+if((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
   zephyr_library_sources(smp.c)
-endif ()
+endif()
 
-if (CONFIG_SMP)
+if(CONFIG_SMP)
   zephyr_library_sources(ipi.c)
 
   zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_CLINT ipi_clint.c)

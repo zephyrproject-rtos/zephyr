@@ -32,7 +32,7 @@ ZTEST_F(eventfd, test_set_flags)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_ok(ret);
-	zassert_equal(val, 3, "val == %d", val);
+	zassert_equal(val, 3, "val == %lld", val);
 
 
 	/* Set nonblocking without reopening. */
@@ -53,7 +53,7 @@ ZTEST_F(eventfd, test_set_flags)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_ok(ret);
-	zassert_equal(val, 19, "val == %d", val);
+	zassert_equal(val, 19, "val == %lld", val);
 
 
 	/* Set back to blocking. */
@@ -74,7 +74,7 @@ ZTEST_F(eventfd, test_set_flags)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_ok(ret);
-	zassert_equal(val, 10, "val == %d", val);
+	zassert_equal(val, 10, "val == %lld", val);
 
 
 	/* Test setting internal in-use-flag. Should fail. */
@@ -88,5 +88,5 @@ ZTEST_F(eventfd, test_set_flags)
 
 	ret = eventfd_read(fixture->fd, &val);
 	zassert_ok(ret);
-	zassert_equal(val, 97, "val == %d", val);
+	zassert_equal(val, 97, "val == %lld", val);
 }

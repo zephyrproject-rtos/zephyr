@@ -19,6 +19,7 @@
 	nxp,swap-bytes;
 	/* Raise the timer0 ratio to enable longer reset delay */
 	nxp,timer0-ratio = <15>;
+
 	/*
 	 * Settings to connect this display:
 	 * Populate the following resistors:
@@ -46,7 +47,7 @@
 		compatible = "sitronix,st7796s";
 		status = "okay";
 		reg = <0>;
-		mipi-max-frequency = <23000000>;
+		mipi-max-frequency = <DT_FREQ_M(23)>;
 		duplex = <SPI_HALF_DUPLEX>;
 		height = <320>;
 		width = <480>;
@@ -67,6 +68,7 @@
 
 &flexcomm2 {
 	status = "okay";
+
 	ft7401: ft7401@38 {
 		/*
 		 * Settings to connect this touch controller:

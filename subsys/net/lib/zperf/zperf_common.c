@@ -304,7 +304,7 @@ static int zperf_init(void)
 #define MAX_NAME_LEN sizeof("zperf_work_q[xxx]")
 		char name[MAX_NAME_LEN];
 
-		snprintk(name, sizeof(name), "zperf_work_q[%d]", i);
+		snprintk(name, sizeof(name), "zperf_work_q[%zd]", i);
 		cfg.name = name;
 
 		k_work_queue_init(zperf_work_q[i].queue);

@@ -20,6 +20,15 @@ tests:
       - DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_spixf_nor.overlay
     integration_platforms:
       - apard32690/max32690/m4
+  drivers.flash.common.max32_flash1:
+    platform_allow:
+      - apard32690/max32690/m4
+      - max32690evkit/max32690/m4
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/max32690_flash1_storage_partition.overlay
+    integration_platforms:
+      - apard32690/max32690/m4
+      - max32690evkit/max32690/m4
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
@@ -51,6 +60,7 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -59,10 +69,13 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+    harness_config:
+      fixture: external_flash
+  drivers.flash.common.no_explicit_erase.nrf54h:
+    platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
-      - ophelia4ev/nrf54l15/cpuapp
-      - apollo510_evb
-      - apollo510_eb
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -156,12 +169,13 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-  drivers.flash.common.disable_spi_nor:
-    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+  drivers.flash.common.test_storage_partition:
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - beagleconnect_freedom/cc1352p7
     extra_args:
-      - CONFIG_SPI_NOR=n
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
     platform_allow:
       - ek_ra8m1
@@ -174,6 +188,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io.overlay
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.ra_qspi_nor:
     filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
     platform_allow:
@@ -184,3 +200,38 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"
+  drivers.flash.common.mspi_single_io.4B_addr_soft_reset:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io_4B_addr_sreset.overlay
+    harness_config:
+      fixture: gpio_loopback
+  drivers.flash.common.mspi_low_frequency:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_freq_256k.overlay
+    harness_config:
+      fixture: gpio_loopback
+  drivers.flash.common.it8xxx2_indirect:
+    build_only: true
+    platform_allow:
+      - it8xxx2_evb
+      - it82xx2_evb
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it8xxx2_indirect.overlay"
+  drivers.flash.common.it515xx_m1k:
+    build_only: true
+    platform_allow:
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it515xx_m1k.overlay"
+  drivers.flash.common.mspi_single_io_low_frequency:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/mx25uw63_single_io.overlay;boards/mx25uw63_freq_1M.overlay"
+    harness_config:
+      fixture: gpio_loopback

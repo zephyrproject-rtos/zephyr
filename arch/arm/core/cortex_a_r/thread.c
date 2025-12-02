@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2021 Lexmark International, Inc.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +15,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/llext/symbol.h>
-#include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
 #include <cmsis_core.h>
@@ -36,6 +37,34 @@
  * The full EXC_RETURN value will be e.g. 0xFFFFFFBC.
  */
 #define DEFAULT_EXC_RETURN 0xFD;
+
+#ifdef CONFIG_USERSPACE
+static void setup_priv_stack(struct k_thread *thread)
+{
+	/* Set up privileged stack before entering user mode */
+	thread->arch.priv_stack_start = (uint32_t)z_priv_stack_find(thread->stack_obj);
+
+	/* CONFIG_PRIVILEGED_STACK_SIZE does not account for MPU_GUARD_ALIGN_AND_SIZE or
+	 * MPU_GUARD_ALIGN_AND_SIZE_FLOAT. Therefore, we must compute priv_stack_end here before
+	 * adjusting priv_stack_start for the mpu guard alignment
+	 */
+	thread->arch.priv_stack_end = thread->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/* Stack guard area reserved at the bottom of the thread's
+	 * privileged stack. Adjust the available (writable) stack
+	 * buffer area accordingly.
+	 */
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	thread->arch.priv_stack_start +=
+		((thread->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
+		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
+#else
+	thread->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+#endif /* CONFIG_MPU_STACK_GUARD */
+}
+#endif
 
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
@@ -80,7 +109,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
 #if defined(CONFIG_USERSPACE)
+	thread->arch.priv_stack_start = 0;
 	if ((thread->base.user_options & K_USER) != 0) {
+		setup_priv_stack(thread);
+		iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, thread->arch.priv_stack_end);
 		iframe->pc = (uint32_t)arch_user_mode_enter;
 	} else {
 		iframe->pc = (uint32_t)z_thread_entry;
@@ -121,9 +153,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
 	}
-#endif
-#if defined(CONFIG_USERSPACE)
-	thread->arch.priv_stack_start = 0;
 #endif
 #endif
 	/*
@@ -196,10 +225,8 @@ static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
+	uint32_t sp_is_priv = 1;
 
-	/* Set up privileged stack before entering user mode */
-	_current->arch.priv_stack_start =
-		(uint32_t)z_priv_stack_find(_current->stack_obj);
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_THREAD_STACK_INFO)
 	/* We're dropping to user mode which means the guard area is no
@@ -216,29 +243,29 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
 	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_THREAD_STACK_INFO */
-
-	/* Stack guard area reserved at the bottom of the thread's
-	 * privileged stack. Adjust the available (writable) stack
-	 * buffer area accordingly.
-	 */
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	_current->arch.priv_stack_start +=
-		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
-		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
-#else
-	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
-	_current->arch.priv_stack_end =
-		_current->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
-#endif
+	/* 2 ways how arch_user_mode_enter is called:
+	 * - called as part of context switch from z_arm_pendsv, in this case privileged stack is
+	 *   already setup and stack pointer points to privileged stack.
+	 * - called directly from k_thread_user_mode_enter, in this case privileged stack is not
+	 *   setup and stack pointer points to user stack.
+	 *
+	 * When called from k_thread_user_mode_enter, we need to check and setup the privileged
+	 * stack and then instruct z_arm_userspace_enter to change the PSP to the privileged stack.
+	 * Note that we do not change the PSP in this function to avoid any conflict with compiler's
+	 * sequence which has already pushed stuff on the user stack.
+	 */
+	if (0 == _current->arch.priv_stack_start) {
+		setup_priv_stack(_current);
+		sp_is_priv = 0;
+	}
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
 			     _current->stack_info.size -
-			     _current->stack_info.delta);
+			     _current->stack_info.delta,
+			     sp_is_priv);
 	CODE_UNREACHABLE;
 }
 

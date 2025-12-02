@@ -36,6 +36,10 @@
 	status = "okay";
 };
 
+&mfd {
+	status = "okay";
+};
+
 &smbus0 {
 	status = "okay";
 };

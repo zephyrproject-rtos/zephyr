@@ -11,6 +11,6 @@ project(logging_multidomain_remote)
 
 target_sources(app PRIVATE src/main.c)
 
-if (CONFIG_IPC_SERVICE)
+if(CONFIG_IPC_SERVICE)
   target_sources(app PRIVATE src/ipc_service.c)
 endif()

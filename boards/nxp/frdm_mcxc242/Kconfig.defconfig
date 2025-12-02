@@ -13,4 +13,7 @@ config USB_CDC_ACM_RINGBUF_SIZE
 
 endif #USB_CDC_ACM
 
+config WDT_DISABLE_AT_BOOT
+	default y
+
 endif #BOARD_FRDM_MCXC242

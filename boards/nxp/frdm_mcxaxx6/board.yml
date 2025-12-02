@@ -1,0 +1,16 @@
+boards:
+  - name: frdm_mcxa266
+    full_name: FRDM-MCXA266
+    vendor: nxp
+    socs:
+      - name: mcxa266
+  - name: frdm_mcxa346
+    full_name: FRDM-MCXA346
+    vendor: nxp
+    socs:
+      - name: mcxa346
+  - name: frdm_mcxa366
+    full_name: FRDM-MCXA366
+    vendor: nxp
+    socs:
+      - name: mcxa366

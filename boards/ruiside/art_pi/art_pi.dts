@@ -1,0 +1,376 @@
+/*
+ * Copyright (c) 2025 Dejiang He <2995560796@qq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h750Xb.dtsi>
+#include <st/h7/stm32h750xbhx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+
+/ {
+	model = "Ruiside Electronic ART-Pi board";
+	compatible = "ruiside,art-pi";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,uart-mcumgr = &uart4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &w25q64_qspi;
+		zephyr,display = &ltdc;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,touch = &gt911;
+	};
+
+	sdram1: memory@c0000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		device_type = "memory";
+		reg = <0xC0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 8MB QSPI Flash */
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_1 {
+			gpios = <&gpioc 15 GPIO_ACTIVE_LOW>;
+			label = "USER LED1";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			label = "USER LED2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &blue_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>; /* 25/5 */
+	mul-n = <192>; /* 5*192=960 */
+	div-p = <2>; /* 960/2=480MHz */
+	div-q = <4>; /* 960/4=240MHz */
+	div-r = <4>; /* 960/4=240MHz */
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>; /* 25/5 */
+	mul-n = <160>; /* 5*160=800 */
+	div-p = <4>; /* 800/4=200MHz */
+	div-q = <4>; /* 800/4=200MHz */
+	div-r = <4>; /* 800/4=200MHz */
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <5>; /* 25/5 */
+	mul-n = <100>; /* 5*100=500 */
+	div-p = <2>; /* 500/2=250MHz */
+	div-q = <20>; /* 500/20=25MHz */
+	div-r = <20>; /* 500/20=25MHz */
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>; /* 25/5*192/2 = 480 */
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>; /* 480/1 = 480MHz  CPU Clocks */
+	hpre = <2>; /* 480/2 = 240MHz */
+	d1ppre = <2>; /* 240/2 = 120MHz APB3 Clocks */
+	d2ppre1 = <2>; /* 240/2 = 120MHz APB1 Clocks */
+	d2ppre2 = <2>; /* 240/2 = 120MHz APB2 Clocks */
+	d3ppre = <2>; /* 240/2 = 120MHz APB4 Clocks */
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Flash has 128KB sector size */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pi9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	label = "debug";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pb13 &uart5_rx_pb12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	label = "rs485";
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	label = "rs232";
+};
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
+		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(0)>;
+	bus-width = <4>;
+	cd-gpios = <&gpiod 5 (GPIO_PULL_UP|GPIO_ACTIVE_HIGH)>;
+	disk-name = "SD";
+	resets;
+	reset-names = "sdmmc1_reset";
+	clk-div = <4>;
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pi15 &ltdc_r1_pj0 &ltdc_r2_pj1 &ltdc_r3_pj2
+		     &ltdc_r4_pj3 &ltdc_r5_pj4 &ltdc_r6_pj5 &ltdc_r7_pj6
+		     &ltdc_g0_pj7 &ltdc_g1_pj8 &ltdc_g2_pj9 &ltdc_g3_pj10
+		     &ltdc_g4_pj11 &ltdc_g5_pk0 &ltdc_g6_pk1 &ltdc_g7_pk2
+		     &ltdc_b0_pj12 &ltdc_b1_pj13 &ltdc_b2_pj14 &ltdc_b3_pj15
+		     &ltdc_b4_pk3 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
+		     &ltdc_hsync_pi12 &ltdc_vsync_pi13 &ltdc_de_pk7 &ltdc_clk_pi14>;
+	pinctrl-names = "default";
+	bl-ctrl-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&sdram1>;
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB3, 3)>,<&rcc STM32_SRC_PLL3_R NO_SEL>;
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	def-back-color-red = <0X00>;
+	def-back-color-green = <0X00>;
+	def-back-color-blue = <0X00>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <1>;
+		pixelclk-active = <1>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <4>;
+		hback-porch = <8>;
+		hfront-porch = <8>;
+		vsync-len = <4>;
+		vback-porch = <8>;
+		vfront-porch = <8>;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+
+	gt911: touchscreen@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9 &quadspi_bk1_io2_pf7
+		     &quadspi_bk1_io3_pf6 &quadspi_clk_pf10 &quadspi_bk1_ncs_pg6>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	w25q64_qspi: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64Mbit */
+		qspi-max-frequency = <100000000>;
+		cs-high-time = <2>;
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_4_4";
+		reset-cmd;
+		reset-cmd-wait = <2000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_K(2048)>; /* 2MB */
+			};
+
+			slot1_partition: partition@200000 {
+				label = "image-1";
+				reg = <0x00200000 DT_SIZE_K(2048)>; /* 2MB */
+			};
+
+			storage_partition: partition@400000 {
+				label = "storage";
+				reg = <0x00400000 DT_SIZE_K(4096)>; /* 4MB */
+			};
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pg9 &spi1_mosi_pb5>;
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	w25q128_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		size = <DT_SIZE_M(128)>; /* 128Mbit */
+		status = "okay";
+		jedec-id = [ef 40 18];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			spi_storage_partition: partition@0 {
+				label = "storage_spi";
+				reg = <0x00000000 DT_SIZE_M(16)>; /* 16MB */
+			};
+		};
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_sdclk_pg8 &fmc_sdnwe_ph5
+		     &fmc_sdcke0_pc3 &fmc_sdne0_pc2 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14 &fmc_a9_pf15
+		     &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2 &fmc_a14_pg4 &fmc_a15_pg5
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7
+		     &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12
+		     &fmc_d10_pe13 &fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		     &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdram {
+		status = "okay";
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x230>;
+		refresh-rate = <0x395>;
+
+		bank@0 {
+			reg = <0>;
+			st,sdram-control = <STM32_FMC_SDRAM_NC_9
+					    STM32_FMC_SDRAM_NR_13
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_3
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_1>;
+			st,sdram-timing = <2 9 6 8 2 2 3>;
+		};
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	maximum-speed = "full-speed";
+	ram-size = <1280>;
+	num-bidir-endpoints = <8>;
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	local-mac-address = [00 80 E1 2A 75 01];
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg14>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		default-speeds = "10BASE Full-Duplex","100BASE Full-Duplex";
+	};
+};
+
+&rng {
+	status = "okay";
+};

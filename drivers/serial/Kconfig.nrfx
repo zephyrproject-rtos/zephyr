@@ -25,15 +25,6 @@ config UART_NRFX_UART
 config UART_NRFX_UARTE
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
-	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
-
-config UART_NRFX_UARTE_USE_CLOCK_CONTROL
-	def_bool y
-	depends on UART_NRFX_UARTE
-	depends on $(dt_nodelabel_enabled,uart120)
-	depends on !SOC_NRF54H20_CPUFLPR && !SOC_NRF54H20_CPUPPR
-	select CLOCK_CONTROL
 
 config UART_NRFX_UARTE_NO_IRQ
 	bool "Polling without interrupt"
@@ -43,23 +34,9 @@ config UART_NRFX_UARTE_NO_IRQ
 	  When enabled, then interrupt handler is not used at all and it is possible
 	  to get to the lowest power state after uart_poll_out if receiver is not used.
 
-config UART_NRFX_UARTE_LEGACY_SHIM
-	bool "Legacy UARTE shim"
-	depends on UART_NRFX_UARTE
-	default y
-	help
-	  Disabling this option is deprecated.
-
-config DEPRECATED_UART_NRFX_UARTE_LEGACY_SHIM
-	bool
-	default y if !UART_NRFX_UARTE_LEGACY_SHIM
-	depends on UART_NRFX_UARTE
-	select DEPRECATED
-
 config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	depends on !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
 	default y
 	help
@@ -72,7 +49,6 @@ config UART_NRFX_UARTE_ENHANCED_RX
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	default 8
 	help
 	  For UARTE, TX cache buffer is used when provided TX buffer is not located
@@ -81,6 +57,7 @@ config UART_ASYNC_TX_CACHE_SIZE
 
 config UART_NRFX_UARTE_DIRECT_ISR
 	bool "Use direct ISR"
+	default y if !MULTITHREADING
 
 config UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
 	bool

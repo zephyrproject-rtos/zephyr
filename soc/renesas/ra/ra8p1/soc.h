@@ -12,5 +12,6 @@
 #define ZEPHYR_SOC_RENESAS_RA8P1_SOC_H_
 
 #include <bsp_api.h>
+#include <cold_start.h>
 
 #endif /* ZEPHYR_SOC_RENESAS_RA8P1_SOC_H_ */

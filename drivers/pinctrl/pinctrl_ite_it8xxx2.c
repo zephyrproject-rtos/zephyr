@@ -14,6 +14,9 @@
 
 LOG_MODULE_REGISTER(pinctrl_ite_it8xxx2, LOG_LEVEL_ERR);
 
+#define PINCTRL_ALT_FUNC5_IS_DEFINED                                                             \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(DT_DRV_COMPAT, func5_gcr) &&                            \
+		DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(DT_DRV_COMPAT, func5_en_mask)
 #define GPIO_GROUP_MEMBERS  8
 
 struct pinctrl_it8xxx2_gpio {
@@ -33,6 +36,14 @@ struct pinctrl_it8xxx2_gpio {
 	uintptr_t func4_gcr[GPIO_GROUP_MEMBERS];
 	/* function 4 enable mask */
 	uint8_t func4_en_mask[GPIO_GROUP_MEMBERS];
+
+#if PINCTRL_ALT_FUNC5_IS_DEFINED
+	struct {
+		uintptr_t gcr[GPIO_GROUP_MEMBERS];
+		uint8_t en_mask[GPIO_GROUP_MEMBERS];
+	} func5;
+#endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
+
 	/* Input voltage selection */
 	uintptr_t volt_sel[GPIO_GROUP_MEMBERS];
 	/* Input voltage selection mask */
@@ -150,6 +161,9 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	volatile uint8_t *reg_gpcr = (uint8_t *)gpio->reg_gpcr + pin;
 	volatile uint8_t *reg_func3_gcr = (uint8_t *)(gpio->func3_gcr[pin]);
 	volatile uint8_t *reg_func4_gcr = (uint8_t *)(gpio->func4_gcr[pin]);
+#if PINCTRL_ALT_FUNC5_IS_DEFINED
+	volatile uint8_t *reg_func5_gcr = (uint8_t *)(gpio->func5.gcr[pin]);
+#endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
 	volatile uint8_t *reg_func3_ext = (uint8_t *)(gpio->func3_ext[pin]);
 
 	/* Handle PIN configuration. */
@@ -213,9 +227,19 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		 */
 		*reg_func4_gcr |= gpio->func4_en_mask[pin];
 		break;
+	case IT8XXX2_ALT_FUNC_5:
+#if PINCTRL_ALT_FUNC5_IS_DEFINED
+		if (reg_func5_gcr) {
+			*reg_func5_gcr |= gpio->func5.en_mask[pin];
+		}
+#endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
+		break;
 	case IT8XXX2_ALT_DEFAULT:
 		*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
 		*reg_func4_gcr &= ~gpio->func4_en_mask[pin];
+#if PINCTRL_ALT_FUNC5_IS_DEFINED
+		*reg_func5_gcr &= ~gpio->func5.en_mask[pin];
+#endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
 		return 0;
 	default:
 		LOG_ERR("This function is not supported.");
@@ -392,7 +416,17 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define INIT_UNION_CONFIG(inst)                                                        \
+#if PINCTRL_ALT_FUNC5_IS_DEFINED
+#define DECLARE_GPIO_ALT_FUNC5(inst)                                                               \
+	.func5 = {                                                                                 \
+		.gcr = DT_INST_PROP_OR(inst, func5_gcr, {0}),                                      \
+		.en_mask = DT_INST_PROP_OR(inst, func5_en_mask, {0}),                              \
+	},
+#else
+#define DECLARE_GPIO_ALT_FUNC5(inst)
+#endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
+
+#define INIT_UNION_CONFIG(inst)                                                                    \
 	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                    \
 		(.gpio = {                                                             \
 			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),      \
@@ -405,6 +439,7 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 			 .func4_en_mask = DT_INST_PROP(inst, func4_en_mask),           \
 			 .volt_sel = DT_INST_PROP(inst, volt_sel),                     \
 			 .volt_sel_mask = DT_INST_PROP(inst, volt_sel_mask),           \
+			 DECLARE_GPIO_ALT_FUNC5(inst) \
 		}),                                                                    \
 		(.ksi_kso = {                                                          \
 			 .reg_gctrl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),     \

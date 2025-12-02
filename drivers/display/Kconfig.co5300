@@ -1,11 +1,10 @@
-# Copyright (c) 2025 Ambiq Micro Inc.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config CO5300
 	bool "CO5300 display driver"
 	default y
+	select MIPI_DSI
 	depends on DT_HAS_CHIPONE_CO5300_ENABLED
-	select MIPI_DSI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPONE_CO5300),mipi-dsi)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPONE_CO5300),spi)
 	help
-	  Enable driver for CO5300 display driver.
+	  Enable driver for CO5300 display controller

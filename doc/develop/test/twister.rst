@@ -233,7 +233,7 @@ env:
 .. _twister_tests_long_version:
 
 Tests
-******
+*****
 
 Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
 files in the application's project directory. This test application
@@ -561,6 +561,7 @@ harness: <string>
     - ctest
     - shell
     - power
+    - display_capture
 
     See :ref:`twister_harnesses` for more information.
 
@@ -665,7 +666,11 @@ filter: <expression>
             }
 
     Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
-    can be done. Existence of "dt_*" entries indicates devicetree is needed.
+    can be done.
+
+    Existence of "dt_*" entries indicates devicetree is needed. Refer to :ref:`twister_dt_filter_expressions`
+    for detailed description of the different DT expressions available.
+
     Existence of "CONFIG*" entries indicates kconfig is needed.
     If there are no other types of entries in the expression a filtration can be done without creating a complete build system.
     If there are entries of other types a full cmake is required.
@@ -746,6 +751,43 @@ required_snippets: <list of needed snippets>
               - cdc-acm-console
               - user-snippet-example
 
+required_applications: <list of required applications> (default empty)
+    Specify a list of test applications that must be built before current test can run.
+    It enables sharing of built applications between test scenarios, allowing tests
+    to access build artifacts from other applications.
+
+    Each required application entry supports:
+    - ``name``: Test scenario identifier (required)
+    - ``platform``: Target platform (optional, defaults to current test's platform)
+
+    Required applications must be available in the source tree (specified with ``-T``
+    and/or ``-s`` options). When reusing build directories (e.g., with ``--no-clean``),
+    Twister can find required applications in the current build directory.
+
+    How it works:
+
+    - Twister builds the required applications first
+    - The main test application waits for required applications to complete
+    - Build directories of required applications are made available to the test harness
+    - For pytest harness, build directories are passed via ``--required-build`` arguments
+      and accessible through the ``required_build_dirs`` fixture
+
+    Example configuration:
+
+    .. code-block:: yaml
+
+        tests:
+          sample.required_app_demo:
+            harness: pytest
+            required_applications:
+              - name: sample.shared_app
+              - name: sample.basic.helloworld
+                platform: native_sim
+          sample.shared_app:
+            build_only: true
+
+    Limitations: Not supported with ``--subset`` or ``--runtime-artifact-cleanup`` options.
+
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
     When enabled, twister will suppress warnings about unexpected multiple runs
@@ -766,6 +808,119 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+.. _twister_dt_filter_expressions:
+
+Devicetree Filtering Expressions
+================================
+
+Expressions starting with "dt_*" are used to filter boards based on specific
+devicetree properties, such as compatibles, aliases, node labels, node
+properties, chosen nodes, etc. when selecting test scenarios.
+
+.. note::
+
+   The source code for these expressions can be found at
+   :zephyr_file:`scripts/pylib/twister/expr_parser.py`.
+
+Expressions
+-----------
+
+``dt_compat_enabled(compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified compatible string (``compat``) is enabled.
+
+**Parameters:**
+   - ``compat``: The compatible string to match.
+
+``dt_alias_exists(alias)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified alias exists and is enabled.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+
+``dt_enabled_alias_with_parent_compat(alias, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if the DT has an enabled alias node whose parent has the specified compatible string.
+   Useful for nodes like ``gpio-leds`` child nodes, which may not have their own compatible.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_label_with_parent_compat_enabled(label, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and its parent has the
+   specified compatible string.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_chosen_enabled(chosen)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT chosen property with the specified name exists and the node assigned to it
+   is enabled.
+
+**Parameters:**
+   - ``chosen``: The name of the chosen property.
+
+``dt_nodelabel_enabled(label)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists and is enabled.
+
+**Parameters:**
+   - ``label``: The node label to match.
+
+``dt_nodelabel_prop_enabled(label, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and has the specified property
+   with a non-empty value.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``prop``: The node's property to check.
+
+``dt_node_has_prop(node_id, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node (specified by alias or path) has the specified property, regardless of its
+   status. Useful for nodes that do not have a status, like ``zephyr,user`` node.
+
+**Parameters:**
+   - ``node_id``: The node alias (defined in ``aliases`` node) or node path to match.
+   - ``prop``: The node's property to check.
+
+Usage
+-----
+
+These expressions are used in Twister’s test scenarios filtering logic to select boards that match
+specific DT conditions. For example:
+
+.. code-block:: yaml
+
+   tests:
+     - test: my_test
+       filter: dt_compat_enabled("my-compat-string")
+
+The test scenario ``my_test`` will only build for boards where a DT node with ``my-compat-string``
+is enabled.
 
 .. _twister_harnesses:
 
@@ -1030,6 +1185,193 @@ The harness executes the following steps:
 - **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
 - **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
 
+.. _twister_display_capture_harness:
+
+Display capture
+===============
+
+The ``display_capture`` harness is used to verify display driver functionality by capturing and
+analyzing display output using a camera. It integrates with pytest to perform automated visual
+testing using video fingerprints.
+
+.. figure:: figures/twister_display_capture_success.webp
+   :align: center
+   :alt: A window showing a camera preview of a device display with colored blocks in the corners,
+         with a text overlay indicating a successful test match.
+
+   Window being displayed for a "compare" run where fingerprint is a 90% match with the reference.
+
+Hardware setup
+--------------
+
+The display capture harness requires:
+
+- UVC compatible camera with at least 2 megapixels (e.g., 1080p resolution)
+- Light-blocking enclosure or black curtain to ensure consistent lighting
+- PC host with camera connection for capturing display output
+- DUT connected to the same PC for flashing and serial console access
+
+Configuration
+-------------
+
+The harness uses a YAML configuration file that defines camera settings, test parameters, and video
+signature analysis options. A typical configuration is shown below:
+
+.. code-block:: yaml
+   :caption: display_config.yaml
+
+    case_config:
+      device_id: 0
+      res_x: 1280
+      res_y: 720
+      fps: 30
+      run_time: 20
+    tests:
+      timeout: 30
+      prompt: "screen starts"
+      expect: ["tests.drivers.display.check.shield"]
+    plugins:
+      - name: signature
+        module: plugins.signature_plugin
+        class: VideoSignaturePlugin
+        status: enable
+        config:
+          operations: "compare"  # or "generate"
+          metadata:
+            name: "tests.drivers.display.check.shield"
+            platform: "frdm_mcxn947"
+          directory: "./fingerprints"
+          duration: 100
+          method: "combined"
+          threshold: 0.65
+          phash_weight: 0.35
+          dhash_weight: 0.25
+          histogram_weight: 0.2
+          edge_ratio_weight: 0.1
+          gradient_hist_weight: 0.1
+
+- ``case_config`` - This section defines to the general camera settings and duration of the test.
+
+  - ``device_id`` - The camera device ID (defaults to 0). Any valid OpenCV camera identifier, which
+    can be:
+
+    - An integer for local cameras (use 0 for the first camera, 1 for the second, etc).
+    - A device path string such as ``/dev/video0`` on Linux.
+    - An IP video stream URL such as ``rtsp://192.168.1.100:8554/stream`` for network cameras.
+
+  - ``res_x`` - The horizontal resolution of the camera (integer, defaults to 1280).
+  - ``res_y`` - The vertical resolution of the camera (integer, defaults to 720).
+  - ``fps`` - The frames per second of the camera (integer, defaults to 30).
+  - ``run_time`` - The duration of the test in seconds (integer, defaults to 20).
+
+- ``test`` - This section contains the test configuration for device interaction.
+
+  - ``timeout`` - Maximum time in seconds to wait for the prompt to appear on the device UART
+    output (integer, defaults to 30).
+  - ``prompt`` - The string pattern to wait for in the device UART output before starting the
+    display capture. This can be a regular expression (string, defaults to ``uart:~$``).
+  - ``expect`` - A list of expected test result strings that must match the results returned by
+    the application. The test passes if the captured results match this list (list of strings,
+    defaults to ``['PASS']``).
+
+- ``plugins`` - This section contains the configuration for the plugins processing the camera
+  frames. Only the ``VideoSignaturePlugin`` plugin is currently supported, and it takes the
+  following configuration options:
+
+  - ``operations`` - The operation to perform when running the test (string). Must be set to either
+    ``generate`` to capture fingerprints or ``compare`` to compare the captured fingerprints with
+    the reference fingerprints.
+  - ``metadata`` - Metadata information for fingerprint identification (optional).
+
+    - ``name`` - Test case name identifier (string).
+    - ``platform`` - Target platform identifier (string).
+
+  - ``directory`` - The directory where the fingerprints are stored (string, defaults to
+    ``./fingerprints``).
+  - ``duration`` - The number of frames to analyze (integer). More frames takes longer but generate
+    more accurate fingerprints).
+  - ``method`` - The method used to generate display fingerprints (string, defaults to
+    ``combined``). Must be set to either of the following values: ``phash``, ``dhash``,
+    ``histogram``, or ``combined``.
+
+    ``phash`` (Perceptual Hash)
+      Captures overall visual structure and layout. Best for detecting major rendering issues, e.g.
+      UI elements being positioned incorrectly.
+    ``dhash`` (Difference Hash)
+      Detects brightness patterns and gradients. Sensitive to contrast changes, e.g. brightness or
+      contrast problems.
+    ``histogram`` (Color Histogram)
+      Analyzes color distribution. Fast at detecting obvious color problems, e.g. color swap bugs.
+    ``combined`` (recommended method)
+      Weights all methods together ( see :samp:`{method}_weight` option below ) for robust
+      comparison. Provides balanced detection of both major and subtle visual issues.
+
+  - ``threshold`` - The similarity score above which it is considered that there is a match between
+    the reference and the captured fingerprints (optional float, defaults to 0.65).
+  - ``phash_weight`` - The weight for the phash method (optional float, defaults to 0.35)
+  - ``dhash_weight`` - The weight for the dhash method (optional float, defaults to 0.25)
+  - ``histogram_weight`` - The weight for the histogram method (optional float, defaults to 0.2)
+  - ``gradient_hist_weight`` - The weight for the gradient histogram method (optional float, defaults to 0.1)
+  - ``edge_ratio_weight`` - The weight for the edge ratio method (optional float, defaults to 0.1)
+
+The configuration file path is specified in the test's ``testcase.yaml`` via the
+``display_capture_config`` harness configuration option using the :envvar:`DISPLAY_TEST_DIR`
+environment variable:
+
+.. code-block:: yaml
+
+    harness: display_capture
+    harness_config:
+      pytest_dut_scope: session
+      fixture: fixture_display
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+
+Workflow
+--------
+
+First, generate **reference fingerprints** for a known-good display output:
+
+.. code-block:: bash
+
+    # Build and flash the display test
+    west build -b <board> tests/drivers/display/display_check
+    west flash
+
+    # Configure for fingerprint generation mode by setting the 'operations' field to 'generate'
+    # in the configuration file.
+
+    # Generate fingerprints
+    export DISPLAY_TEST_DIR=<path-to-config-directory>
+    scripts/twister --device-testing --hardware-map map.yml \
+        -T tests/drivers/display/display_check/
+
+Fingerprints are stored in the directory specified in the ``directory`` field of the configuration
+file, and organized by test name and platform as defined in the ``metadata`` field of the
+configuration file.
+
+Once the fingerprints have been generated, you can run the test(s) again, this time in **comparison
+mode**:
+
+.. code-block:: bash
+
+    # Set the 'operations' field to 'compare' in the configuration file.
+
+    export DISPLAY_TEST_DIR=<path-to-fingerprints-parent-directory>
+    scripts/twister --device-testing --hardware-map map.yml \
+        -T tests/drivers/display/display_check/
+
+The harness compares captured video against reference fingerprints using the configured signature
+methods and thresholds. If the similarity score between reference and captured fingerprints exceeds
+the configured ``threshold``, the test passes.
+
+.. note::
+
+   - The test name in the DUT's ``testcase.yaml`` must match the ``name`` field in the fingerprint's
+     metadata configuration.
+   - Multiple fingerprints can be stored in one directory for comprehensive validation, though this
+     increases comparison time.
+   - Fingerprints are specific to both the test scenario and platform.
+
 .. _twister_bsim_harness:
 
 Bsim
@@ -1198,7 +1540,7 @@ reports for each run with detailed FAIL/PASS results.
 
 
 Executing tests on a single device
-===================================
+==================================
 
 To use this feature on a single connected device, run twister with
 the following new options:
@@ -1471,7 +1813,7 @@ Would result in calling ``./custom_flash_script.py
 --flag "complex, argument"``.
 
 Fixtures
-+++++++++
+--------
 
 Some tests require additional setup or special wiring specific to the test.
 Running the tests without this setup or test fixture may fail. A test scenario can
@@ -1509,7 +1851,7 @@ fixture name by a ``:``. Only the fixture name is matched against the fixtures
 requested by test scenarios.
 
 Notes
-+++++
+-----
 
 It may be useful to annotate board descriptions in the hardware map file
 with additional information.  Use the ``notes`` keyword to do this.  For
@@ -1532,7 +1874,7 @@ example:
       serial: null
 
 Overriding Board Identifier
-+++++++++++++++++++++++++++
+---------------------------
 
 When (re-)generated the hardware map file will contain an ``id`` keyword
 that serves as the argument to ``--board-id`` when flashing.  In some
@@ -1551,7 +1893,7 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
       serial: null
 
 Using Single Board For Multiple Variants
-++++++++++++++++++++++++++++++++++++++++
+----------------------------------------
 
   The ``platform`` attribute can be a list of names or a string
   with names separated by spaces. This allows to run tests for
@@ -1570,7 +1912,7 @@ Using Single Board For Multiple Variants
       serial: /dev/ttyACM1
 
 Quarantine
-++++++++++
+----------
 
 Twister allows user to provide configuration files defining a list of tests or
 platforms to be put under quarantine. Such tests will be skipped and marked

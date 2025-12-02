@@ -23,18 +23,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led2: led2 {
 			gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
+
 		led4: led4 {
 			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 			label = "LED4";
 		};
+
 		led5: led5 {
 			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 			label = "LED5";
@@ -43,21 +47,25 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		wakeup_key: wakeup_key {
 			label = "WAKEUP_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
+
 		tamper_key: tamper_key {
 			label = "TAMPER_KEY";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_key1: user_key1 {
 			label = "USER_KEY1";
 			gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_key2: user_key2 {
 			label = "USER_KEY2";
 			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;

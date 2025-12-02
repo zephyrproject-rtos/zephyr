@@ -261,7 +261,7 @@ ZTEST(posix_fs_file_test, test_fs_unlink)
 ZTEST(posix_fs_file_test, test_fs_fd_leak)
 {
 	const int reps =
-	    MAX(CONFIG_POSIX_OPEN_MAX, CONFIG_ZVFS_OPEN_MAX) + 5;
+	    MAX(CONFIG_POSIX_OPEN_MAX, ZVFS_OPEN_SIZE) + 5;
 
 	for (int i = 0; i < reps; i++) {
 		if (i > 0) {

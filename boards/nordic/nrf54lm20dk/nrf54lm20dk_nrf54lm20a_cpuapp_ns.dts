@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include "nrf54lm20a_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp-ns";
+	model = "Nordic nRF54LM20 DK nRF54LM20A Application MCU Non-Secure";
+
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &sram0_ns;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+/ {
+	/*
+	 * Default SRAM planning when building for nRF54LM20A with ARM TrustZone-M support
+	 * - Lowest 208 kB SRAM allocated to Secure image (sram0_s).
+	 * - Upper 208 kB SRAM allocated to Non-Secure image (sram0_ns).
+	 *
+	 * nRF54LM20A has 512 kB of volatile memory (SRAM), but 96kB is allocated for the FLPR MCU.
+	 * This static layout needs to be the same with the upstream TF-M layout in the
+	 * header flash_layout.h of the relevant platform. Any updates in the layout
+	 * needs to happen both in the flash_layout.h and in this file at the same time.
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+			reg = <0x20000000 DT_SIZE_K(208)>;
+		};
+
+		sram0_ns: image_ns@20034000 {
+			/* Non-Secure image memory */
+			reg = <0x20034000 DT_SIZE_K(208)>;
+		};
+	};
+};
+
+&bt_hci_controller {
+	status = "disabled";
+};
+
+&uart30 {
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54lm20a_ns_partition.dtsi>

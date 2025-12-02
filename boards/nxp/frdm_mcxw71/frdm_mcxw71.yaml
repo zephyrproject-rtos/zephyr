@@ -1,3 +1,9 @@
+#
+# Copyright 2018, 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 identifier: frdm_mcxw71
 name: NXP FRDM_MCXW71
 type: mcu
@@ -11,6 +17,7 @@ supported:
   - adc
   - can
   - counter
+  - dma
   - flash
   - flexio
   - gpio
@@ -21,3 +28,6 @@ supported:
   - spi
   - uart
   - watchdog
+  - netif:openthread
+  - rtc
+vendor: nxp

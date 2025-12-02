@@ -18,9 +18,11 @@
 /* Read-only driver configuration */
 struct npu_stm32_cfg {
 	/* Clock configuration. */
-	struct stm32_pclken pclken;
+	struct stm32_pclken pclken_npu;
+	struct stm32_pclken pclken_cacheaxi;
 	/* Reset configuration */
-	const struct reset_dt_spec reset;
+	const struct reset_dt_spec reset_npu;
+	const struct reset_dt_spec reset_cacheaxi;
 };
 
 static void npu_risaf_config(void)
@@ -43,16 +45,21 @@ static int npu_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_npu) != 0) {
 		return -EIO;
 	}
 
-	if (!device_is_ready(cfg->reset.dev)) {
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_cacheaxi) != 0) {
+		return -EIO;
+	}
+
+	if (!device_is_ready(cfg->reset_npu.dev)) {
 		return -ENODEV;
 	}
 
 	/* Reset timer to default state using RCC */
-	(void)reset_line_toggle_dt(&cfg->reset);
+	(void)reset_line_toggle_dt(&cfg->reset_npu);
+	(void)reset_line_toggle_dt(&cfg->reset_cacheaxi);
 
 	npu_risaf_config();
 
@@ -61,11 +68,16 @@ static int npu_stm32_init(const struct device *dev)
 
 
 static const struct npu_stm32_cfg npu_stm32_cfg = {
-	.pclken = {
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(npu), bits),
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(npu), bus),
+	.pclken_npu = {
+		.enr = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), npu, bits),
+		.bus = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), npu, bus),
 	},
-	.reset = RESET_DT_SPEC_GET(DT_NODELABEL(npu)),
+	.pclken_cacheaxi = {
+		.enr = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), cacheaxi, bits),
+		.bus = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), cacheaxi, bus),
+	},
+	.reset_npu = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 0),
+	.reset_cacheaxi = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 1),
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(npu), npu_stm32_init, NULL,

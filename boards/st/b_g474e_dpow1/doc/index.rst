@@ -6,7 +6,7 @@ The B-G474E-DPOW1 Discovery kit is a digital power solution and a complete
 demonstration and development platform for the STMicroelectronics STM32G474RET6
 microcontroller. Leveraging the new HRTimer-oriented features, 96 Kbytes of
 embedded RAM, math accelerator functions and USB-PD 3.0 offered by STM32G474RET6,
-the B-G474E-DPOW1 Discovery kit, based on the USB 2.0 FS Type-C™ connector
+the B-G474E-DPOW1 Discovery kit, based on the USB 2.0 FS USB Type-C |reg| connector
 interface, helps the user to prototype applications with digital power such as a
 buck-boost converter, RGB power LED lighting or a class-D audio amplifier. The
 B-G474E-DPOW1 Discovery kit does not require any separate probe, as it integrates
@@ -14,7 +14,7 @@ the STLINK-V3E debugger and programmer.
 
 - STM32G474RET6 Arm® Cortex®-M4 core-based microcontroller, featuring 512 Kbytes
   of Flash memory and 128 Kbytes of SRAM, in LQFP64 package
-- USB Type-C™ with USB 2.0 FS interface compatible with USB-PD 3.0
+- USB Type-C |reg| with USB 2.0 FS interface compatible with USB-PD 3.0
 - RGB power LED for a bright lighting
 - Digital power buck-boost converter with internal or external Input voltage and
   with onboard resistor loads
@@ -24,10 +24,10 @@ the STLINK-V3E debugger and programmer.
 - 4-direction joystick with a selection button
 - Reset push-button
 - Board connectors:
-    - USB Type-C™
+    - USB Type-C |reg|
     - USB Micro-B
     - 2 x 32-pin header, 2.54 mm pitch, daughterboard extension connector for breadboard connection
-- Flexible power-supply options: ST-LINK USB VBUS or USB Type-C™ VBUS or external source
+- Flexible power-supply options: ST-LINK USB VBUS or USB Type-C |reg| VBUS or external source
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability: mass storage,
   Virtual COM port, and debug port
 

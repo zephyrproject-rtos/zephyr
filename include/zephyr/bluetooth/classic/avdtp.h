@@ -144,6 +144,12 @@ struct bt_avdtp_sep {
 	struct k_sem sem_lock;
 	/** avdtp session */
 	struct bt_avdtp *session;
+	/** endpoint becomes idle */
+	int (*endpoint_released)(struct bt_avdtp_sep *sep);
+	/** delay worker for disconnecting l2cap media channel */
+	struct k_work_delayable _delay_work;
+	/** delay_work_state */
+	uint8_t _delay_work_state;
 	/** SEP state */
 	uint8_t state;
 	/* Internally used list node */

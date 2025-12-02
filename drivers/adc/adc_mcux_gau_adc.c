@@ -377,7 +377,7 @@ static DEVICE_API(adc, mcux_gau_adc_driver_api) = {
 										\
 	static struct mcux_gau_adc_data mcux_gau_adc_data_##n = {0};		\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, mcux_gau_adc_init, NULL,			\
 			      &mcux_gau_adc_data_##n, &mcux_gau_adc_config_##n,	\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 			      &mcux_gau_adc_driver_api);			\

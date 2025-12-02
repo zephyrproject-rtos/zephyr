@@ -44,14 +44,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioa 1 0>;
 			label = "User LD1";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioa 2 0>;
 			label = "User LD2";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpiod 5 0>;
 			label = "User LD3";
@@ -65,10 +68,12 @@
 			label = "red_led";
 			pwms = <&ftm0 6 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			label = "green_led";
 			pwms = <&ftm0 7 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			label = "blue_led";
 			pwms = <&ftm0 5 15625000 PWM_POLARITY_INVERTED>;
@@ -77,11 +82,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpiob 17 GPIO_ACTIVE_LOW>;
@@ -132,6 +139,7 @@
 	status = "okay";
 	voltage-reference = <2>;
 };
+
 arduino_i2c: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
@@ -144,7 +152,6 @@ arduino_i2c: &i2c0 {
 		int2-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
 	};
 };
-
 
 arduino_spi: &spi0 {
 	status = "okay";
@@ -218,18 +225,20 @@ zephyr_uhc0: &usbh {
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(182)>;
 		};
+
 		slot1_partition: partition@3D800 {
 			label = "image-1";
 			reg = <0x0003D800 DT_SIZE_K(182)>;
 		};
+
 		storage_partition: partition@6B000 {
 			label = "storage";
 			reg = <0x0006B000 DT_SIZE_K(84)>;
 		};
-
 	};
 };

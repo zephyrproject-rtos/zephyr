@@ -6,10 +6,6 @@ The STM32 Nucleo-64 development board, featuring the STM32C092RC MCU,
 supports both Arduino and ST morpho connectivity,
 and includes a CAN FD interface with an onboard transceiver.
 
-.. image:: img/st_nucleo_c092rc.webp
-   :align: center
-   :alt: Nucleo C092RC development board
-
 More information about the board can be found at the `Nucleo C092RC website`_.
 
 Hardware

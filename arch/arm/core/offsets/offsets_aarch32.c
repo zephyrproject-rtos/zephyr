@@ -50,8 +50,9 @@ GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
 #endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
+
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 #endif
 #endif

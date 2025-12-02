@@ -5,7 +5,7 @@ description: Simcom A76XX modem
 
 compatible: "simcom,a76xx"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:

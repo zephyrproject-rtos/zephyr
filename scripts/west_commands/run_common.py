@@ -142,10 +142,13 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help=argparse.SUPPRESS)
     group.add_argument('-r', '--runner',
                        help='override default runner from --build-dir')
-    group.add_argument('--skip-rebuild', action='store_true',
-                       help='do not refresh cmake dependencies first')
     group.add_argument('--domain', action='append',
                        help='execute runner only for given domain')
+    rebuild_group = group.add_mutually_exclusive_group()
+    rebuild_group.add_argument('--skip-rebuild', action='store_true',
+                       help='(deprecated) do not invoke cmake')
+    rebuild_group.add_argument('--rebuild', action=argparse.BooleanOptionalAction,
+                       help='manually specify to reinvoke cmake or not')
 
     group = parser.add_argument_group(
         'runner configuration',
@@ -239,13 +242,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     for module in zephyr_module.parse_modules(ZEPHYR_BASE, command.manifest):
         runners_ext = module.meta.get("runners", [])
         for runner in runners_ext:
+            module_name = module.meta.get("name", "runners_ext") + "." + Path(runner["file"]).stem
+
             import_from_path(
-                module.meta.get("name", "runners_ext"), Path(module.project) / runner["file"]
+                module_name, Path(module.project) / runner["file"]
             )
 
     build_dir = get_build_dir(user_args)
-    if not user_args.skip_rebuild:
-        rebuild(command, build_dir, user_args)
+    rebuild(command, build_dir, user_args)
 
     domains = get_domains_to_process(build_dir, user_args, domain_file)
 
@@ -567,7 +571,25 @@ def load_cmake_cache(build_dir, args):
     except FileNotFoundError:
         log.die(f'no CMake cache found (expected one at {cache_file})')
 
+def skip_rebuild(command, args):
+    if args.rebuild is not None:
+        return not args.rebuild
+
+    if args.skip_rebuild:
+        log.wrn("--skip-rebuild is deprecated. Please use --no-rebuild instead")
+        return True
+
+    rebuild_config = config.getboolean(command.name, 'rebuild', fallback=None)
+
+    if rebuild_config is not None:
+        return not rebuild_config
+
+    return False
+
 def rebuild(command, build_dir, args):
+    if skip_rebuild(command, args):
+        return
+
     _banner(f'west {command.name}: rebuilding')
     try:
         zcmake.run_build(build_dir)
@@ -723,7 +745,7 @@ def dump_context(command, args, unknown_args):
         get_all_domain = True
 
     # Re-build unless asked not to, to make sure the output is up to date.
-    if build_dir and not args.skip_rebuild:
+    if build_dir:
         rebuild(command, build_dir, args)
 
     domains = get_domains_to_process(build_dir, args, None, get_all_domain)

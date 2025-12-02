@@ -96,7 +96,18 @@ def read_log_file(args):
                 sys.exit(1)
             logdata = logfile.read()
 
+        # RTT logs add header information to the logdata, the actual log comes
+        # after newline following "Process:" line in logdata
+        if b"Process:" in logdata:
+            process_idx = logdata.find(b"Process:")
+            newline_idx = logdata.find(b"\n", process_idx)
+            if newline_idx != -1:
+                # Keep only the data after this newline
+                logdata = logdata[newline_idx + 1 :]
+                logger.debug("Found 'Process:' in the RTT header, trimmed data")
+
     return logdata
+
 
 def main():
     """Main function of log parser"""

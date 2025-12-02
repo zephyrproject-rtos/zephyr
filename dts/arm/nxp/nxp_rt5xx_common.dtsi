@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
@@ -45,6 +46,7 @@
 				min-residency-us = <0>;
 				exit-latency-us = <0>;
 			};
+
 			/* This is the setting for Deep-sleep Mode */
 			suspend: suspend {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
@@ -58,9 +60,9 @@
 				 * during deep sleep mode.
 				 */
 				deep-sleep-config = <0xC800>,
-							<0x80000004>,
-							<0xFFFFFFFF>,
-							<0>;
+						    <0x80000004>,
+						    <0xFFFFFFFF>,
+						    <0>;
 			};
 		};
 	};
@@ -90,10 +92,10 @@
 	};
 
 	sram1: memory@40140000 {
-		compatible =  "zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -108,6 +110,7 @@
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	/*
 	 * Note that the offsets here are relative to the base address
 	 * defined in either nxp_rt5xx_ns.dtsi or nxp_rt5xx.dtsi. The base
@@ -133,6 +136,7 @@
 	iocon: iocon@4000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x4000 0x1000>;
+
 		pinctrl: pinctrl {
 			compatible = "nxp,rt-iocon-pinctrl";
 		};
@@ -227,7 +231,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<35 2>, <36 2>, <37 2>, <38 2>;
+			     <35 2>, <36 2>, <37 2>, <38 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
@@ -429,8 +433,8 @@
 	};
 
 	dmic0: dmic@121000 {
-		#address-cells=<1>;
-		#size-cells=<0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		compatible = "nxp,dmic";
 		reg = <0x121000 0x1000>;
 		interrupts = <25 0>;
@@ -498,6 +502,7 @@
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
 		status = "disabled";
+
 		rtc_highres: rtc_highres {
 			compatible = "nxp,lpc-rtc-highres";
 			status = "disabled";
@@ -545,8 +550,8 @@
 		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	usdhc1: usdhc@137000 {
@@ -557,8 +562,8 @@
 		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	lpadc0: adc@13a000 {
@@ -566,7 +571,7 @@
 		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -651,8 +656,8 @@
 		reg = <0x31000 0x1000>;
 		interrupts = <71 0>;
 		clocks = <&clkctl1 MCUX_MIPI_DSI_DPHY_CLK>,
-			<&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
-			<&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
+			 <&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
+			 <&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
 		clock-names = "dphy", "esc", "pixel";
 		status = "disabled";
 	};
@@ -670,7 +675,7 @@
 		#size-cells = <0>;
 	};
 
-	mbox:mbox@110000 {
+	mbox: mbox@110000 {
 		compatible = "nxp,mbox-imx-mu";
 		reg = <0x110000 0x100>;
 		interrupts = <34 0>;
@@ -695,16 +700,19 @@
 			reg = <0>;
 			status = "disabled";
 		};
+
 		mrt_channel1: mrt_channel@1 {
 			compatible = "nxp,mrt-channel";
 			reg = <1>;
 			status = "disabled";
 		};
+
 		mrt_channel2: mrt_channel@2 {
 			compatible = "nxp,mrt-channel";
 			reg = <2>;
 			status = "disabled";
 		};
+
 		mrt_channel3: mrt_channel@3 {
 			compatible = "nxp,mrt-channel";
 			reg = <3>;

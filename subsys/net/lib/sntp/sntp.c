@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
 #include <zephyr/net/sntp.h>
+#include <zephyr/sys/clock.h>
 #include "sntp_pkt.h"
 #include <limits.h>
 
@@ -185,15 +186,21 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 static int sntp_query_send(struct sntp_ctx *ctx)
 {
 	struct sntp_pkt tx_pkt = { 0 };
-	int64_t ts_us = 0;
+	struct timespec ts;
+	int ret;
+
+	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* prepare request pkt */
 	tx_pkt.li = 0;
 	tx_pkt.vn = SNTP_VERSION_NUMBER;
 	tx_pkt.mode = SNTP_MODE_CLIENT;
-	ts_us = k_ticks_to_us_near64(k_uptime_ticks());
-	ctx->expected_orig_ts.seconds = ts_us / USEC_PER_SEC;
-	ctx->expected_orig_ts.fraction = (ts_us % USEC_PER_SEC) * (UINT32_MAX / USEC_PER_SEC);
+	ctx->expected_orig_ts.seconds = (uint32_t)(ts.tv_sec + OFFSET_1970_JAN_1);
+	ctx->expected_orig_ts.fraction =
+		(uint32_t)((uint64_t)ts.tv_nsec * UINT32_MAX / NSEC_PER_SEC);
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts.seconds);
 	tx_pkt.tx_tm_f = htonl(ctx->expected_orig_ts.fraction);
 

@@ -217,7 +217,7 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 {
 	size_t  bytes_to_copy;
 
-	bytes_to_copy = MIN(dest_size, src_size);
+	bytes_to_copy = min(dest_size, src_size);
 	memcpy(dest, src, bytes_to_copy);
 
 	return bytes_to_copy;
@@ -1212,6 +1212,10 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 #else
 	dummy_thread->resource_pool = NULL;
 #endif /* K_HEAP_MEM_POOL_SIZE */
+
+#ifdef CONFIG_USE_SWITCH
+	dummy_thread->switch_handle = NULL;
+#endif /* CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	dummy_thread->base.slice_ticks = 0;

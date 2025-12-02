@@ -24,18 +24,16 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash-controller = &is25wp128;
-		zephyr,flash = &is25wp128;
+		zephyr,flash = &ocram_m4_itcm;
 		nxp,m4-partition = &slot1_partition;
 		zephyr,ipc = &mailbox_b;
 	};
-
 
 	sdram0: memory@80000000 {
 		/* Winbond W9825G6KH-5I */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
-
 };
 
 &lpuart1 {

@@ -17,3 +17,43 @@
 		#gpio-cells = <2>;
 	};
 };
+
+&run0 {
+	exit-latency-us = <2>; /* 1.5us */
+	min-residency-us = <5000>;
+};
+
+&run1 {
+	exit-latency-us = <3>; /* 2.1us */
+	min-residency-us = <5000>;
+};
+
+&run2 {
+	exit-latency-us = <3>; /* 2.5us */
+	min-residency-us = <5000>;
+};
+
+&stop0 {
+	exit-latency-us = <13>; /* 12.5us */
+	min-residency-us = <7500>;
+};
+
+&stop1 {
+	exit-latency-us = <15>; /* 14.6us */
+	min-residency-us = <7500>;
+};
+
+&stop2 {
+	exit-latency-us = <14>; /* 13.5us */
+	min-residency-us = <7500>;
+};
+
+&stdby0 {
+	exit-latency-us = <16>; /* 15.7us */
+	min-residency-us = <10000>;
+};
+
+&stdby1 {
+	exit-latency-us = <16>; /* 15.7us */
+	min-residency-us = <10000>;
+};

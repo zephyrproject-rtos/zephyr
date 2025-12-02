@@ -92,13 +92,12 @@ __maybe_unused static void ssi_rt_isr(void *p_args)
 {
 	const struct device *dev = (struct device *)p_args;
 	struct renesas_ra_ssie_data *dev_data = (struct renesas_ra_ssie_data *)dev->data;
-	R_SSI0_Type *p_ssi_reg = dev_data->fsp_ctrl.p_reg;
 
-	if (p_ssi_reg->SSIFSR_b.TDE && dev_data->active_dir == I2S_DIR_TX) {
+	if (dev_data->active_dir == I2S_DIR_TX) {
 		ssi_txi_isr();
 	}
 
-	if (p_ssi_reg->SSIFSR_b.RDF && dev_data->active_dir == I2S_DIR_RX) {
+	if (dev_data->active_dir == I2S_DIR_RX) {
 		ssi_rxi_isr();
 	}
 }

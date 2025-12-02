@@ -20,17 +20,19 @@
 		sw0 = &user_button_1;
 		ambient-temp0 = &p3t1755;
 		rtc = &rtc1;
+		sram-ext = &psram;
 	};
 
 	chosen {
 		zephyr,flash = &sram_code;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram3;
 		zephyr,console = &flexcomm19_lpuart19;
 		zephyr,shell-uart = &flexcomm19_lpuart19;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			status = "okay";
 			gpios = <&gpio8 6 GPIO_ACTIVE_HIGH>;
@@ -40,9 +42,10 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW6";
-			gpios = <&gpio8 5 (GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio8 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
@@ -69,7 +72,7 @@
 	wakeup-source;
 };
 
-&flexcomm19{
+&flexcomm19 {
 	status = "okay";
 };
 
@@ -107,4 +110,28 @@
 
 &rtc1 {
 	status = "okay";
+};
+
+&mbox1_b {
+	status = "okay";
+};
+
+&xspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi2>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+
+	psram: memory-controller@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		device-name = "w958d6nbkx4l";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-differential-clk;
+		sample-clk-source = <3>;
+	};
 };

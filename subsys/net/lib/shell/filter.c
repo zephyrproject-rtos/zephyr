@@ -56,9 +56,33 @@ static void rule_cb(struct npf_rule *rule, enum npf_rule_type type, void *user_d
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
+	uint8_t tc;
+	int thread_prio;
 
-	PR("[%2d]  %-10s  %-7s  %-5d",
-	   (*count) + 1, rule_type2str(type), verdict2str(rule->result), rule->nb_tests);
+	PR("[%2d]  %-10s  %-8s  ",
+	   (*count) + 1, rule_type2str(type), verdict2str(rule->result));
+
+	if (rule->result == NET_CONTINUE && type == NPF_RULE_TYPE_SEND) {
+		tc = net_tx_priority2tc(rule->priority);
+		if (net_tc_tx_is_immediate(tc, rule->priority)) {
+			PR("%8d  %5d         SKIP  ", rule->priority, tc);
+		} else {
+			thread_prio =  net_tc_tx_thread_priority(tc);
+			PR("%8d  %5d  %11d  ", rule->priority, tc, thread_prio);
+		}
+	} else if (rule->result == NET_CONTINUE) {
+		tc = net_rx_priority2tc(rule->priority);
+		if (net_tc_rx_is_immediate(tc, rule->priority)) {
+			PR("%8d  %5d         SKIP  ", rule->priority, tc);
+		} else {
+			thread_prio =  net_tc_rx_thread_priority(tc);
+			PR("%8d  %5d  %11d  ", rule->priority, tc, thread_prio);
+		}
+	} else {
+		PR("     N/A    N/A          N/A  ");
+	}
+
+	PR("%-5d", rule->nb_tests);
 
 	for (int i = 0; i < rule->nb_tests; i++) {
 		/* Allocate room for storing two full IPv4/6 addresses */
@@ -89,7 +113,7 @@ static int cmd_net_filter(const struct shell *sh, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	PR("Rule  %-10s  Verdict  Tests\n", "Type");
+	PR("Rule  %-10s  Verdict   Pkt-Prio  Queue  Thread-Prio  Tests\n", "Type");
 
 	user_data.sh = sh;
 	user_data.user_data = &count;

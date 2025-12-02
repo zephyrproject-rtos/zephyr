@@ -49,8 +49,8 @@
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
 			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
-			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "okay";
 			current-speed = <115200>;
 			pinctrl-0 = <&uart3_default>;
@@ -76,7 +76,7 @@
 
 		button0: btn_0 {
 			label = "BTN0";
-			gpios = <&gpio3 8 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio3 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};

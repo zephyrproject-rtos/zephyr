@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <stm32h7rsxx_ll_bus.h>
 #include <stm32h7rsxx_ll_utils.h>
@@ -465,9 +466,10 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev, off_t of
 #ifdef DUAL_BANK
 	off_t temp_offset = offset + (CONFIG_FLASH_BASE_ADDRESS & 0xffffff);
 
-	bool bank_swap;
 	/* Check whether bank1/2 are swapped */
-	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) == FLASH_OPTCR_SWAP_BANK);
+	bool bank_swap = stm32_reg_read_bits(&FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) ==
+			 FLASH_OPTCR_SWAP_BANK;
+
 	sector.sector_index = offset / FLASH_SECTOR_SIZE;
 	if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
 		sector.bank = 1;

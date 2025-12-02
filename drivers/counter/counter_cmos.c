@@ -19,8 +19,8 @@
 
 /* The "CMOS" device is accessed via an address latch and data port. */
 
-#define X86_CMOS_ADDR (DT_INST_REG_ADDR_BY_IDX(0, 0))
-#define X86_CMOS_DATA (DT_INST_REG_ADDR_BY_IDX(0, 1))
+#define X86_CMOS_ADDR (DT_REG_ADDR_BY_IDX(DT_INST_PARENT(0), 0))
+#define X86_CMOS_DATA (DT_REG_ADDR_BY_IDX(DT_INST_PARENT(0), 1))
 
 /*
  * A snapshot of the RTC state, or at least the state we're
@@ -204,4 +204,5 @@ static DEVICE_API(counter, api) = {
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &info, POST_KERNEL,
-		      CONFIG_COUNTER_INIT_PRIORITY, &api);
+		      UTIL_INC(CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY),
+		      &api);

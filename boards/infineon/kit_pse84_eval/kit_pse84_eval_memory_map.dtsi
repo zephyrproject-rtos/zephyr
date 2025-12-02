@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Default SRAM(1MB) assignment
+	 * - Lowest 4kb reserved for the Extended boot
+	 * - 4kb shared between CM33 secure project and secure enclave
+	 * - 212 kB allocated to CM33 Secure code
+	 * - 132 kB allocated to CM33 Secure data
+	 * - 404 kB allocated to CM33 Non-Secure code
+	 * - 256 kB allocated to the CM33 Non-Secure data
+	 * - 4 kB allocated to shared memory for each core (cm33_s, cm33 and cm55)
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		extended_boot_sram_reserved: memory@34000000 {
+			reg = <0x34000000 DT_SIZE_K(4)>;
+		};
+
+		m33s_shared: memory@34001000 {
+			reg = <0x34001000 DT_SIZE_K(4)>;
+		};
+
+		m33s_code: memory@34002000 {
+			reg = <0x34002000 DT_SIZE_K(212)>;
+		};
+
+		m33s_data: memory@34037000 {
+			reg = <0x34037000 DT_SIZE_K(132)>;
+		};
+
+		m33_code: memory@24058000 {
+			reg = <0x24058000 DT_SIZE_K(404)>;
+		};
+
+		m33_data: memory@240bd000 {
+			reg = <0x240bd000 DT_SIZE_K(256)>;
+		};
+
+		m33s_allocatable_shared: memory@340fd000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SHARED_MEMORY_SEC";
+			reg = <0x340fd000 DT_SIZE_K(4)>;
+		};
+
+		m33_allocatable_shared: memory@240fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SHARED_MEMORY";
+			reg = <0x240fe000 DT_SIZE_K(4)>;
+		};
+
+		m55_allocatable_shared: memory@240ff000 {
+			reg = <0x240ff000 DT_SIZE_K(4)>;
+		};
+
+		m55_data: memory@26100000 {
+			reg = <0x26100000 DT_SIZE_K(256)>;
+		};
+	};
+
+	/* Default Flash memory(16MB) assignment
+	 * - Lowest 1mb reserved for Storage
+	 * - 2mb for each of the cores(cm33_s, cm33 and cm55)
+
+	 */
+	flash_controller: flash_controller@40250000 {
+		compatible = "infineon,cat1-qspi-flash-mtb-hal";
+		reg = <0x40250000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash0@8000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x08000000 DT_SIZE_M(16)>;
+			write-block-size = <256>;
+			erase-block-size = <65536>;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "fixed-partitions";
+
+				storage: storage@0 {
+					label = "storage";
+					reg = <0 DT_SIZE_M(1)>;
+				};
+
+				m33s_header: m33s_header@60100000 {
+					reg = <0x60100000 0x400>;
+				};
+
+				m33s_xip: m33s_xip@70100400 {
+					reg = <0x70100400 DT_SIZE_M(2)>;
+				};
+
+				m33_xip: m33_xip@8300000 {
+					reg = <0x8300000 DT_SIZE_M(2)>;
+				};
+
+				m55_xip: m33_xip@60500000 {
+					reg = <0x60500000 DT_SIZE_M(2)>;
+				};
+			};
+		};
+	};
+};

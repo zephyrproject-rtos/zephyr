@@ -1,0 +1,43 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ I2C controller
+
+compatible: "renesas,rz-iic"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    required: true
+    type: int
+
+  interrupts:
+    required: true
+
+  rise-time-ns:
+    type: int
+    default: 120
+    description: |
+      Number of nanoseconds the SCL signal takes to rise; t(r) in the I2C specification.
+
+  fall-time-ns:
+    type: int
+    default: 120
+    description: |
+      Number of nanoseconds the SCL signal takes to fall; t(f) in the I2C specification.
+
+  duty-cycle-percent:
+    type: int
+    default: 50
+
+  noise-filter-stages:
+    type: int
+    default: 1
+    enum:
+      - 1
+    description: |
+      Set the noise filter stages. Currently, only single-stage filter is supported.

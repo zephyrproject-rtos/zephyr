@@ -27,18 +27,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Red LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			label = "Red LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Green LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 			label = "Green LED 3";
@@ -47,6 +51,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -54,21 +59,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 3";
@@ -188,7 +197,6 @@ arduino_spi: &spi0 {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -198,18 +206,22 @@ arduino_spi: &spi0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0xd000>;
 		};
+
 		slot1_partition: partition@19000 {
 			label = "image-1";
 			reg = <0x00019000 0xd000>;
 		};
+
 		scratch_partition: partition@26000 {
 			label = "image-scratch";
 			reg = <0x00026000 0x3000>;
 		};
+
 		storage_partition: partition@29000 {
 			label = "storage";
 			reg = <0x00029000 0x00007000>;

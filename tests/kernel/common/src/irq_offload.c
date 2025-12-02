@@ -111,7 +111,7 @@ static void offload_thread_fn(void *p0, void *p1, void *p2)
  */
 ZTEST(common_1cpu, test_nested_irq_offload)
 {
-	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD_NESTED)) {
+	if (arch_num_cpus() > 1 || !IS_ENABLED(CONFIG_IRQ_OFFLOAD_NESTED)) {
 		ztest_test_skip();
 	}
 

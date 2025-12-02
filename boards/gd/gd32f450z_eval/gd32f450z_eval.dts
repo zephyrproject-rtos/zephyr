@@ -23,14 +23,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&gpiog 3 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -39,16 +42,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		wakeup_key: wakeup_key {
 			label = "WAKEUP_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
+
 		tamper_key: tamper_key {
 			label = "TAMPER_KEY";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_key: user_key {
 			label = "USER_KEY";
 			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
@@ -141,7 +147,7 @@
 	cs-gpios = <&gpiog 9 GPIO_ACTIVE_LOW>;
 
 	nor_flash: gd25q16@0 {
-		compatible ="jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		size = <0x1000000>;
 		reg = <0>;
 		spi-max-frequency = <4000000>;

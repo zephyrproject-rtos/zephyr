@@ -29,3 +29,6 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - netif:eth
+  - netif:openthread
+vendor: nxp

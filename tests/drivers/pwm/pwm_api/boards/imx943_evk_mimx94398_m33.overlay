@@ -9,6 +9,6 @@
 		/*
 		 * Check signal from the connector J44 Pin10(M1_LED_TP1) via logic analyzer.
 		 */
-		pwm-1 = &flexio1_pwm;
+		pwm-test = &flexio1_pwm;
 	};
 };

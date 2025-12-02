@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 
 #include <fsl_port.h>
 #include <fsl_common.h>
+#include <soc_common.h>
 
 #define PORT_MUX_GPIO kPORT_MuxAlt0 /* GPIO setting for the Port Mux Register */
 

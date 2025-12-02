@@ -1,19 +1,17 @@
 /*
  * Copyright (c) 2025 Christoph Jans
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
-#include <silabs/xg23/xg23.dtsi>
+#include <silabs/xg23/efm32pg23.dtsi>
 
 / {
 	soc {
-		compatible = "silabs,efm32pg23b310f512im48",
-					"silabs,efm32pg23",
-					"silabs,xg23",
-					"silabs,efm32",
-					"simple-bus";
+		compatible = "silabs,efm32pg23b310f512im48", "silabs,efm32pg23", "silabs,xg23",
+			     "silabs,efm32", "simple-bus";
 	};
 };
 

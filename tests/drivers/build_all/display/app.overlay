@@ -273,6 +273,104 @@
 				phase-length = <0x0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_ssd1357: ssd1357@16 {
+				compatible = "solomon,ssd1357";
+				mipi-max-frequency = <10000000>;
+				reg = <16>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				multiplex-ratio = <0x0>;
+				phase-length = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				precharge-time = <0x0>;
+				start-line = <0>;
+				precharge-voltage = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_gooddisplay_epaper_gdew029i6fd: uc8151d@17 {
+				compatible = "ultrachip,uc8151d";
+				reg = <17>;
+				mipi-max-frequency = <4000000>;
+				status = "okay";
+				width = <128>;
+				height = <296>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				full {
+					/* Override CDI / VCOM for full refresh */
+					cdi = <0x17>;
+					vdcs = <0x08>;
+				};
+
+				partial {
+					/* Exercise CDI override path for partial refresh */
+					cdi = <0x17>;
+				};
+			};
+
+			test_mipi_dbi_st7305: st7305@18 {
+				compatible = "sitronix,st7305";
+				mipi-max-frequency = <10000000>;
+				reg = <18>;
+				width = <168>;
+				height = <384>;
+				start-line = <0>;
+				start-column = <48>;
+				nvm-load = [17 02];
+				gate-voltages = [11 04];
+				vsh = [41 41 41 41];
+				vsl = [19 19 19 19];
+				vshn = [41 41 41 41];
+				vsln = [19 19 19 19];
+				osc-settings = <0xA6>;
+				framerate = <0x5>;
+				multiplex-ratio = <0x64>;
+				source-voltage = <0x0>;
+				remap-value = <0x40>;
+				panel-settings = <0x29>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_st7306: st7306@19 {
+				compatible = "sitronix,st7306";
+				mipi-max-frequency = <10000000>;
+				reg = <19>;
+				width = <312>;
+				height = <400>;
+				start-line = <0>;
+				start-column = <216>;
+				nvm-load = [17 02];
+				gate-voltages = [11 04];
+				vsh = [41 41 41 41];
+				vsl = [19 19 19 19];
+				vshn = [41 41 41 41];
+				vsln = [19 19 19 19];
+				osc-settings = <0x80>;
+				framerate = <0x05>;
+				multiplex-ratio = <0x64>;
+				source-voltage = <0x0>;
+				remap-value = <0x4>;
+				panel-settings = <0x29>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_st7567: st7567@20 {
+				compatible = "sitronix,st7567";
+				mipi-max-frequency = <1000000>;
+				reg = <20>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -388,6 +486,44 @@
 					vsync-len = <8>;
 					vfront-porch = <9>;
 				};
+			};
+
+			hx8379c: hx8379c@6 {
+				status = "okay";
+				compatible = "himax,hx8379c";
+				reg = <0x6>;
+				width = <480>;
+				height = <480>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					hsync-active = <1>;
+					vsync-active = <1>;
+					de-active = <0>;
+					pixelclk-active = <0>;
+					hsync-len = <2>;
+					hback-porch = <1>;
+					hfront-porch = <1>;
+					vsync-len = <1>;
+					vback-porch = <13>;
+					vfront-porch = <50>;
+				};
+			};
+
+			test_co5300: co5300@7 {
+				status = "okay";
+				compatible = "raydium,rm67162";
+				reg = <0x7>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				te-gpios = <&test_gpio 0 0>;
+				data-lanes = <1>;
+				width = <466>;
+				height = <466>;
+				pixel-format = <0>;
 			};
 		};
 

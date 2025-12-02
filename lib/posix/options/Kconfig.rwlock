@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_READER_WRITER_LOCKS
+menuconfig POSIX_RW_LOCKS
 	bool "POSIX reader-writer locks"
 	help
 	  Select 'y' here to enable POSIX reader-writer locks.
@@ -10,7 +10,7 @@ menuconfig POSIX_READER_WRITER_LOCKS
 	  For more information please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
-if POSIX_READER_WRITER_LOCKS
+if POSIX_RW_LOCKS
 
 config MAX_PTHREAD_RWLOCK_COUNT
 	int "Maximum number of POSIX reader-writer locks"
@@ -24,4 +24,11 @@ module = PTHREAD_RWLOCK
 module-str = POSIX Reader-Writer Locks
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # POSIX_READER_WRITER_LOCKS
+endif # POSIX_RW_LOCKS
+
+config POSIX_READER_WRITER_LOCKS
+	bool "POSIX reader-writer locks [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_RW_LOCKS
+	help
+	  This option is deprecated. Use POSIX_RW_LOCKS instead.

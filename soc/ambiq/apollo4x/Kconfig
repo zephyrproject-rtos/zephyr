@@ -12,6 +12,7 @@ config SOC_SERIES_APOLLO4X
 	select HAS_SWO
 	select AMBIQ_HAL
 	select HAS_PM
+	select PINCTRL
 	select SOC_EARLY_INIT_HOOK
 
 config SOC_AMBIQ_DMA_BUFF_LOCATION

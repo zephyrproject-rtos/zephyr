@@ -24,14 +24,13 @@
 
 		gpio-reserved-ranges = <7 1>;
 
-		gpio-line-names =
-			"M0",
-			"M1",
-			"DEC0",
-			"DEC1",
-			"TOFF",
-			"STP",
-			"DIR";
+		gpio-line-names = "M0",
+				  "M1",
+				  "DEC0",
+				  "DEC1",
+				  "TOFF",
+				  "STP",
+				  "DIR";
 	};
 };
 
@@ -43,7 +42,7 @@
 		dir-gpios = <&mikrobus_header 0 0>;
 		step-gpios = <&mikrobus_header 6 0>;
 		sleep-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
-		en-gpios  = <&mikrobus_header 2 0>;
+		en-gpios = <&mikrobus_header 2 0>;
 		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 		m0-gpios = <&pca9538a_mikroe_stepper_19_click 0 0>;
 		m1-gpios = <&pca9538a_mikroe_stepper_19_click 1 0>;

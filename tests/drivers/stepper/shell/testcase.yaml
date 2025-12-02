@@ -9,7 +9,3 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
-  drivers.stepper.shell_async:
-    platform_allow:
-      - native_sim
-      - native_sim/native/64

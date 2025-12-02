@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  sensor-type:
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    description: |
+      PDMS sensor product variant (pressure measurement range).
+      0 - order code 2513130810105, range = -1 to + 1 kPa
+      1 - order code 2513130810205, range = -10 to + 10 kPa
+      2 - order code 2513130835205, range = -35 to + 35 kPa
+      3 - order code 2513130810305, range = 0 to 100 kPa
+      4 - order code 2513130810405, range = -100 to 1000 kPa
+
+  crc:
+    type: boolean
+    description: |
+      Enable CRC over the chosen interface.
+      When using I2C the correct address with CRC must
+      be chosen as well.

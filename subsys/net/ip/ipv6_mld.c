@@ -471,7 +471,7 @@ void net_ipv6_mld_init(void)
 	static struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY, 0, handle_mld_query);
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_MLD_QUERY, 0, handle_mld_query);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_MLD_QUERY),
 			ret);

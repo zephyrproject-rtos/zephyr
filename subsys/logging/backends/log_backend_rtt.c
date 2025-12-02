@@ -33,7 +33,7 @@
 #define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
 #endif
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 static const uint8_t LOG_HEX_SEP[10] = "##ZLOGV1##";
 #endif
 
@@ -90,7 +90,6 @@ static inline bool is_panic_mode(void)
 
 static int data_out_drop_mode(uint8_t *data, size_t length, void *ctx)
 {
-	(void) ctx;
 	uint8_t *pos;
 
 	if (is_sync_mode()) {
@@ -207,6 +206,8 @@ static void on_write(int retry_cnt)
 
 static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	int ret = 0;
 	/* This function is also called in drop mode for synchronous operation
 	 * in that case retry is undesired */
@@ -238,6 +239,8 @@ static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 
 static int data_out_overwrite_mode(uint8_t *data, size_t length, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	if (!is_sync_mode()) {
 		RTT_LOCK();
 		SEGGER_RTT_WriteWithOverwriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
@@ -259,7 +262,7 @@ static const log_output_func_t logging_func =
 
 static int data_out(uint8_t *data, size_t length, void *ctx)
 {
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 	for (size_t i = 0; i < length; i++) {
 		char c[2];
 		uint8_t x[2];
@@ -294,7 +297,7 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 		log_backend_rtt_cfg();
 	}
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 	logging_func((uint8_t *)LOG_HEX_SEP, sizeof(LOG_HEX_SEP), NULL);
 #endif
 
@@ -304,6 +307,8 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 
 static void panic(struct log_backend const *const backend)
 {
+	ARG_UNUSED(backend);
+
 	panic_mode = true;
 	log_backend_std_panic(&log_output_rtt);
 }
@@ -322,6 +327,8 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 static void process(const struct log_backend *const backend,
 		union log_msg_generic *msg)
 {
+	ARG_UNUSED(backend);
+
 	uint32_t flags = log_backend_std_get_flags();
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
@@ -331,6 +338,8 @@ static void process(const struct log_backend *const backend,
 
 static int format_set(const struct log_backend *const backend, uint32_t log_type)
 {
+	ARG_UNUSED(backend);
+
 	log_format_current = log_type;
 	return 0;
 }

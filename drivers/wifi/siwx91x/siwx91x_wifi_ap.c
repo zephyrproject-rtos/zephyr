@@ -3,21 +3,25 @@
  * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nwp.h>
+#include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 
 #include "sl_rsi_utility.h"
 #include "sl_net.h"
 
+#define SIWX91X_AP_BEACON_INTERVAL_MS 100
+
 LOG_MODULE_DECLARE(siwx91x_wifi);
 
 static int siwx91x_nwp_reboot_if_required(const struct device *dev, uint8_t oper_mode)
 {
+	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	struct siwx91x_dev *sidev = dev->data;
 	int ret;
 
 	if (sidev->reboot_needed) {
-		ret = siwx91x_nwp_mode_switch(oper_mode, sidev->hidden_ssid, sidev->max_num_sta);
+		ret = siwx91x_nwp_mode_switch(siwx91x_cfg->nwp_dev, oper_mode, sidev->hidden_ssid,
+					      sidev->max_num_sta);
 		if (ret < 0) {
 			LOG_ERR("Failed to reboot the device: %d", ret);
 			return ret;
@@ -134,13 +138,13 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg = {
 		.credential_id       = SL_NET_DEFAULT_WIFI_AP_CREDENTIAL_ID,
 		.keepalive_type      = SL_SI91X_AP_NULL_BASED_KEEP_ALIVE,
+		.beacon_interval     = SIWX91X_AP_BEACON_INTERVAL_MS,
 		.rate_protocol       = SL_WIFI_RATE_PROTOCOL_AUTO,
 		.encryption          = SL_WIFI_DEFAULT_ENCRYPTION,
 		.channel.bandwidth   = SL_WIFI_BANDWIDTH_20MHz,
 		.maximum_clients     = sidev->max_num_sta,
 		.tdi_flags           = SL_WIFI_TDI_NONE,
 		.client_idle_timeout = 0xFF,
-		.beacon_interval     = 100,
 		.dtim_beacon_count   = 3,
 		.beacon_stop         = 0,
 		.options             = 0,
@@ -230,6 +234,11 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 		siwx91x_ap_cfg.channel.channel = params->channel;
 	}
 
+	if (params->channel == 14) {
+		/* Disable HT on channel 14 */
+		siwx91x_ap_cfg.is_11n_enabled = 0;
+	}
+
 	ret = sl_wifi_start_ap(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE, &siwx91x_ap_cfg);
 	if (ret) {
 		LOG_ERR("Failed to enable AP mode: 0x%x", ret);
@@ -314,6 +323,8 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg;
+	uint32_t idle_timeout;
+	uint32_t max_sec;
 
 	__ASSERT(params, "params cannot be NULL");
 
@@ -330,7 +341,19 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 	sli_get_saved_ap_configuration(&siwx91x_ap_cfg);
 	siwx91x_ap_cfg.channel.bandwidth = SL_WIFI_BANDWIDTH_20MHz;
 	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
-		siwx91x_ap_cfg.client_idle_timeout = params->max_inactivity * 1000;
+		/*
+		 * Firmware requires idle timeout as a count of 32-beacon intervals
+		 * The actual timeout applied by the FW will be slightly higher than requested
+		 */
+		idle_timeout = DIV_ROUND_UP(params->max_inactivity * MSEC_PER_SEC,
+					    SIWX91X_AP_BEACON_INTERVAL_MS * 32);
+		if (idle_timeout > UINT8_MAX) {
+			max_sec = (SIWX91X_AP_BEACON_INTERVAL_MS * 32 * UINT8_MAX) / 1000;
+			LOG_WRN("requested inactivity %u exceeds FW limit %u, clamping to %u",
+				params->max_inactivity, max_sec, max_sec);
+			idle_timeout = UINT8_MAX;
+		}
+		siwx91x_ap_cfg.client_idle_timeout = idle_timeout;
 	}
 
 	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {

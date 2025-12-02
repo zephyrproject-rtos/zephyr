@@ -1,0 +1,17 @@
+# STM32 JPEG HW codec driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_STM32_JPEG
+	bool "STM32 JPEG HW codec driver"
+	default y
+	depends on DT_HAS_ST_STM32_JPEG_ENABLED
+	depends on VIDEO_ENCODER_JPEG
+	select RESET
+	select USE_STM32_HAL_JPEG
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
+	help
+	  Enable driver for STM32 JPEG HW Codec peripheral

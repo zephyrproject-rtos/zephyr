@@ -188,7 +188,12 @@ static int pwm_siwx91x_pm_action(const struct device *dev, enum pm_device_action
 	uint32_t pwm_frequency;
 	int ret;
 
-	if (action == PM_DEVICE_ACTION_RESUME) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret) {
 			return ret;
@@ -214,9 +219,10 @@ static int pwm_siwx91x_pm_action(const struct device *dev, enum pm_device_action
 		if (ret) {
 			return -EINVAL;
 		}
-	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		return 0;
-	} else {
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
 		return -ENOTSUP;
 	}
 

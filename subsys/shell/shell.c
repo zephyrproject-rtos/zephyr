@@ -158,15 +158,6 @@ static void tab_item_print(const struct shell *sh, const char *option,
 	z_shell_op_cursor_horiz_move(sh, diff);
 }
 
-static void history_init(const struct shell *sh)
-{
-	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		return;
-	}
-
-	z_shell_history_init(sh->history);
-}
-
 static void history_purge(const struct shell *sh)
 {
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
@@ -346,7 +337,7 @@ static void find_completion_candidates(const struct shell *sh,
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
 		if (is_candidate) {
-			*longest = Z_MAX(strlen(candidate->syntax), *longest);
+			*longest = max(strlen(candidate->syntax), *longest);
 			if (*cnt == 0) {
 				*first_idx = idx;
 			}
@@ -812,6 +803,21 @@ static int execute(const struct shell *sh)
 			&argv[cmd_with_handler_lvl], &help_entry);
 }
 
+static void toggle_logs_output(const struct shell *sh)
+{
+	const struct shell_log_backend *backend = sh->log_backend;
+
+	if (!IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		return;
+	}
+
+	if (backend->control_block->state == SHELL_LOG_BACKEND_ENABLED) {
+		z_shell_log_backend_disable(backend);
+	} else if (backend->control_block->state == SHELL_LOG_BACKEND_DISABLED) {
+		z_shell_log_backend_enable(backend, (void *)sh, sh->ctx->log_level);
+	}
+}
+
 static void tab_handle(const struct shell *sh)
 {
 	const char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
@@ -926,6 +932,10 @@ static void ctrl_metakeys_handle(const struct shell *sh, char data)
 		history_handle(sh, true);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_T: /* CTRL + T */
+		toggle_logs_output(sh);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		z_shell_op_cursor_home_move(sh);
 		cmd_buffer_clear(sh);
@@ -989,7 +999,18 @@ static void state_collect(const struct shell *sh)
 							sizeof(buf), &count);
 			if (count) {
 				z_flag_cmd_ctx_set(sh, true);
+				/** Unlock the shell mutex before calling the bypass function,
+				 * allowing shell APIs (e.g. shell_print()) to be used inside it.
+				 * Since these APIs require the mutex to be unlocked,
+				 * we temporarily leave the shell context and transfer control
+				 * to the bypass function.
+				 */
+				z_shell_unlock(sh);
 				bypass(sh, buf, count);
+				/* After returning, we're back in the shell context — re-acquire
+				 * the shell mutex on the shell thread.
+				 */
+				z_shell_lock(sh);
 				z_flag_cmd_ctx_set(sh, false);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {
@@ -1213,8 +1234,6 @@ static int instance_init(const struct shell *sh,
 	if (CONFIG_SHELL_CMD_ROOT[0]) {
 		sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
 	}
-
-	history_init(sh);
 
 	k_event_init(&sh->ctx->signal_event);
 	k_sem_init(&sh->ctx->lock_sem, 1, 1);
@@ -1840,7 +1859,7 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 #if defined(CONFIG_SHELL_METAKEYS)
 	shell_print(sh,
 		"\nShell supports following meta-keys:\n"
-		"  Ctrl + (a key from: abcdefklnpuw)\n"
+		"  Ctrl + (a key from: abcdefklnptuw)\n"
 		"  Alt  + (a key from: bf)\n"
 		"Please refer to shell documentation for more details.");
 #endif

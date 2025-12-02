@@ -3,7 +3,8 @@
 
 zephyr_library_sources(soc.c irq.c mbox.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8195 cpuclk.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8195 ${CONFIG_SOC}/cpuclk.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_MT8188 ${CONFIG_SOC}/cpuclk.c)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_SOC}/linker.ld CACHE INTERNAL "")
 

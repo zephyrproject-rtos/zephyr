@@ -603,8 +603,11 @@ static int bmp581_init(const struct device *dev)
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 
-static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
+				   int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg;
 	struct rtio_cqe *cqe;
 	int err = 0;

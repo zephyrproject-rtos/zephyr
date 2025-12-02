@@ -27,6 +27,7 @@ Roles
 - ``:zephyr:code-sample:`` - References a code sample.
 - ``:zephyr:code-sample-category:`` - References a code sample category.
 - ``:zephyr:board:`` - References a board.
+- ``:zephyr:board-catalog:`` - References the board catalog page, optionally with filter parameters.
 
 """
 
@@ -220,14 +221,18 @@ class ConvertCodeSampleNode(SphinxTransform):
             json_ld = nodes.raw(
                 "",
                 f"""<script type="application/ld+json">
-                {json.dumps({
-                    "@context": "http://schema.org",
-                    "@type": "SoftwareSourceCode",
-                    "name": node['name'],
-                    "description": node.children[0].astext(),
-                    "codeSampleType": "full",
-                    "codeRepository": gh_link_get_url(self.app, self.env.docname)
-                })}
+                {
+                    json.dumps(
+                        {
+                            "@context": "http://schema.org",
+                            "@type": "SoftwareSourceCode",
+                            "name": node['name'],
+                            "description": node.children[0].astext(),
+                            "codeSampleType": "full",
+                            "codeRepository": gh_link_get_url(self.app, self.env.docname),
+                        }
+                    )
+                }
                 </script>""",
                 format="html",
             )
@@ -749,9 +754,21 @@ class BoardCatalogDirective(SphinxDirective):
 
     def run(self):
         if self.env.app.builder.format == "html":
-            self.env.domaindata["zephyr"]["has_board_catalog"][self.env.docname] = True
-
             domain_data = self.env.domaindata["zephyr"]
+
+            # Check if a board catalog already exists
+            existing_catalog = domain_data["board_catalog_docname"]
+            if existing_catalog is not None:
+                logger.error(
+                    f"Only one board catalog is allowed per documentation build. "
+                    f"Found in both {existing_catalog} and {self.env.docname}.",
+                    location=(self.env.docname, self.lineno),
+                )
+                return []
+
+            # Cache the docname containing the board catalog
+            domain_data["board_catalog_docname"] = self.env.docname
+
             renderer = SphinxRenderer([TEMPLATES_DIR])
             rendered = renderer.render(
                 "board-catalog.html",
@@ -1138,6 +1155,7 @@ class ZephyrDomain(Domain):
         "code-sample": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
+        "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
     }
 
     directives = {
@@ -1162,8 +1180,15 @@ class ZephyrDomain(Domain):
         "code-samples-categories-tree": Node("samples"),
         # keep track of documents containing special directives
         "has_code_sample_listing": {},  # docname -> bool
-        "has_board_catalog": {},  # docname -> bool
+        "board_catalog_docname": None,  # docname of the one page containing the board catalog
         "has_board": {},  # docname -> bool
+        # board catalog data (populated by load_board_catalog_into_domain)
+        "boards": {},
+        "shields": {},
+        "vendors": {},
+        "socs": {},
+        "archs": {},
+        "runners": {},
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -1182,8 +1207,14 @@ class ZephyrDomain(Domain):
         # TODO clean up the anytree as well
 
         self.data["has_code_sample_listing"].pop(docname, None)
-        self.data["has_board_catalog"].pop(docname, None)
+        if self.data["board_catalog_docname"] == docname:
+            self.data["board_catalog_docname"] = None
         self.data["has_board"].pop(docname, None)
+
+        # Clear board docnames for boards documented in this docname
+        for board_data in self.data.get("boards", {}).values():
+            if board_data.get("docname") == docname:
+                board_data.pop("docname", None)
 
     def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
@@ -1213,10 +1244,11 @@ class ZephyrDomain(Domain):
             self.data["has_code_sample_listing"][docname] = otherdata[
                 "has_code_sample_listing"
             ].get(docname, False)
-            self.data["has_board_catalog"][docname] = otherdata["has_board_catalog"].get(
-                docname, False
-            )
             self.data["has_board"][docname] = otherdata["has_board"].get(docname, False)
+
+        # Merge board catalog docname - there should only be one
+        if otherdata["board_catalog_docname"] is not None:
+            self.data["board_catalog_docname"] = otherdata["board_catalog_docname"]
 
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
@@ -1266,6 +1298,23 @@ class ZephyrDomain(Domain):
             elem = self.data["code-samples-categories"].get(target)
         elif type == "board":
             elem = self.data["boards"].get(target)
+        elif type == "board-catalog":
+            catalog_docname = self.data["board_catalog_docname"]
+            if catalog_docname is None:
+                return None
+
+            anchor = target if target.startswith("#") else ""
+            if not node.get("refexplicit"):
+                contnode = [nodes.Text("Board Catalog")]
+
+            return make_refnode(
+                builder,
+                fromdocname,
+                catalog_docname,
+                anchor.lstrip("#") if anchor else None,
+                contnode,
+                None,
+            )
         else:
             return
 
@@ -1366,7 +1415,7 @@ def install_static_assets_as_needed(
         app.add_css_file("css/codesample-livesearch.css")
         app.add_js_file("js/codesample-livesearch.js")
 
-    if app.env.domaindata["zephyr"]["has_board_catalog"].get(pagename, False):
+    if app.env.domaindata["zephyr"]["board_catalog_docname"] == pagename:
         app.add_css_file("css/board-catalog.css")
         app.add_js_file("js/board-catalog.js")
 
@@ -1382,7 +1431,15 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
         ),
         hw_features_vendor_filter=app.config.zephyr_hw_features_vendor_filter,
     )
-    app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
+
+    # Preserve existing docnames when reloading the catalog
+    existing_boards = app.env.domaindata.get("zephyr", {}).get("boards", {})
+    new_boards = board_catalog["boards"]
+    for board_name, board_data in new_boards.items():
+        if board_name in existing_boards and "docname" in existing_boards[board_name]:
+            board_data["docname"] = existing_boards[board_name]["docname"]
+
+    app.env.domaindata["zephyr"]["boards"] = new_boards
     app.env.domaindata["zephyr"]["shields"] = board_catalog["shields"]
     app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
     app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]

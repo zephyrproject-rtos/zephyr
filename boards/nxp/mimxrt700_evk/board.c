@@ -8,6 +8,9 @@
 #include "fsl_clock.h"
 #include <soc.h>
 #include <fsl_glikey.h>
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
+#include "fsl_romapi_otp.h"
+#endif
 
 /*!< System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
@@ -147,6 +150,9 @@ void board_early_init_hook(void)
 	CLOCK_EnableAudioPllPfdClkForDomain(kCLOCK_Pfd1, kCLOCK_AllDomainEnable);
 	CLOCK_EnableAudioPllPfdClkForDomain(kCLOCK_Pfd3, kCLOCK_AllDomainEnable);
 
+	/* Enable clock for Hifi4 access RAM arbiter1 (for SRAM start from 0x2058000000) */
+	CLOCK_EnableClock(kCLOCK_Hifi4AccessRamArbiter1);
+
 #if CONFIG_FLASH_MCUX_XSPI_XIP
 	/* Call function xspi_setup_clock() to set user configured clock for XSPI. */
 	xspi_setup_clock(XSPI0, 3U, 1U); /* Main PLL PDF1 DIV1. */
@@ -172,33 +178,40 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO2_DIV3_to_SENSE_BASE);
 	CLOCK_SetClkDiv(kCLOCK_DivSenseMainClk, 1);
 	CLOCK_AttachClk(kSENSE_BASE_to_SENSE_MAIN);
+
+	CLOCK_EnableClock(kCLOCK_SenseAccessRamArbiter0);
 #endif /* CONFIG_SOC_MIMXRT798S_CM33_CPU0 */
 
 	BOARD_InitAHBSC();
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(edma0), okay)
+#if defined(CONFIG_SECOND_CORE_MCUX)
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	CLOCK_EnableClock(kCLOCK_Dma0);
 	RESET_ClearPeripheralReset(kDMA0_RST_SHIFT_RSTn);
 	edma_enable_all_request(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(edma1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma1))
 	CLOCK_EnableClock(kCLOCK_Dma1);
 	RESET_ClearPeripheralReset(kDMA1_RST_SHIFT_RSTn);
 	edma_enable_all_request(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(iocon), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon))
 	RESET_ClearPeripheralReset(kIOPCTL0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Iopctl0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(iocon1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1))
 	RESET_ClearPeripheralReset(kIOPCTL1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Iopctl1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(iocon2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2))
 	RESET_ClearPeripheralReset(kIOPCTL2_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Iopctl2);
 #endif
@@ -208,201 +221,203 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivFcclk0Clk, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm0))
 	SET_UP_FLEXCOMM_CLOCK(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
 	SET_UP_FLEXCOMM_CLOCK(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
 	SET_UP_FLEXCOMM_CLOCK(2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm3))
 	SET_UP_FLEXCOMM_CLOCK(3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))
 	SET_UP_FLEXCOMM_CLOCK(4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm5))
 	SET_UP_FLEXCOMM_CLOCK(5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm6), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm6))
 	SET_UP_FLEXCOMM_CLOCK(6);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm7), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm7))
 	SET_UP_FLEXCOMM_CLOCK(7);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm8), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm8))
 	SET_UP_FLEXCOMM_CLOCK(8);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm9), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm9))
 	SET_UP_FLEXCOMM_CLOCK(9);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm10), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm10))
 	SET_UP_FLEXCOMM_CLOCK(10);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm11), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm11))
 	SET_UP_FLEXCOMM_CLOCK(11);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm12), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm12))
 	SET_UP_FLEXCOMM_CLOCK(12);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm13), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm13))
 	SET_UP_FLEXCOMM_CLOCK(13);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi14), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi14))
 	CLOCK_AttachClk(kFRO1_DIV1_to_LPSPI14);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi14Clk, 3U);
 	CLOCK_EnableClock(kCLOCK_LPSpi14);
 	RESET_ClearPeripheralReset(kLPSPI14_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c15), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
+	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
+	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
 	RESET_ClearPeripheralReset(kLPI2C15_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi16), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi16))
 	CLOCK_AttachClk(kFRO0_DIV1_to_LPSPI16);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi16Clk, 1U);
 	CLOCK_EnableClock(kCLOCK_LPSpi16);
 	RESET_ClearPeripheralReset(kLPSPI16_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm17), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm17))
 	CLOCK_AttachClk(kSENSE_BASE_to_FLEXCOMM17);
 	CLOCK_SetClkDiv(kCLOCK_DivLPFlexComm17Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm18), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm18))
 	CLOCK_AttachClk(kSENSE_BASE_to_FLEXCOMM18);
 	CLOCK_SetClkDiv(kCLOCK_DivLPFlexComm18Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm19), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm19))
 	CLOCK_AttachClk(kSENSE_BASE_to_FLEXCOMM19);
 	CLOCK_SetClkDiv(kCLOCK_DivLPFlexComm19Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm20), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm20))
 	CLOCK_AttachClk(kSENSE_BASE_to_FLEXCOMM20);
 	CLOCK_SetClkDiv(kCLOCK_DivLPFlexComm20Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
 	CLOCK_AttachClk(kFRO0_DIV1_to_FLEXIO);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	RESET_ClearPeripheralReset(kGPIO0_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 	RESET_ClearPeripheralReset(kGPIO1_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 	RESET_ClearPeripheralReset(kGPIO2_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 	RESET_ClearPeripheralReset(kGPIO3_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 	RESET_ClearPeripheralReset(kGPIO4_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 	RESET_ClearPeripheralReset(kGPIO5_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio6), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio6))
 	CLOCK_EnableClock(kCLOCK_Gpio6);
 	RESET_ClearPeripheralReset(kGPIO6_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio7), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio7))
 	CLOCK_EnableClock(kCLOCK_Gpio7);
 	RESET_ClearPeripheralReset(kGPIO7_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio8), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio8))
 	CLOCK_EnableClock(kCLOCK_Gpio8);
 	RESET_ClearPeripheralReset(kGPIO8_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio9), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio9))
 	CLOCK_EnableClock(kCLOCK_Gpio9);
 	RESET_ClearPeripheralReset(kGPIO9_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio10), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio10))
 	CLOCK_EnableClock(kCLOCK_Gpio10);
 	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	SET_UP_CTIMER_CLOCK(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
 	SET_UP_CTIMER_CLOCK(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
 	SET_UP_CTIMER_CLOCK(2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
 	SET_UP_CTIMER_CLOCK(3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
 	SET_UP_CTIMER_CLOCK(4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer5))
 	SET_UP_CTIMER_CLOCK(5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer6), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer6))
 	SET_UP_CTIMER_CLOCK(6);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer7), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer7))
 	SET_UP_CTIMER_CLOCK(7);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_AttachClk(kFRO1_DIV1_to_SENSE_MAIN);
 	CLOCK_AttachClk(kSENSE_BASE_to_ADC);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
 #endif
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu0), okay) || \
-		DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu1), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer_cpu0)) || \
+		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer_cpu1)))
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
@@ -434,7 +449,7 @@ void board_early_init_hook(void)
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
 	/*Make sure USDHC ram buffer has power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_SDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_SDHC0_SRAM);
@@ -454,7 +469,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kLPOSC_to_WWDT0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0))
 	/* SAI clock 368.64 / 15 = 24.576MHz */
 	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
 	CLOCK_AttachClk(kAUDIO_VDD2_to_SAI012);
@@ -462,7 +477,7 @@ void board_early_init_hook(void)
 	RESET_ClearPeripheralReset(kSAI0_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sc_timer), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sc_timer))
 	CLOCK_AttachClk(kFRO0_DIV6_to_SCT);
 #endif
 
@@ -522,15 +537,64 @@ void board_early_init_hook(void)
 	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 #endif
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(i3c2), okay) || \
-		DT_NODE_HAS_STATUS(DT_NODELABEL(i3c3), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c2)) || \
+		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c3)))
 	CLOCK_AttachClk(kSENSE_BASE_to_I3C23);
 	CLOCK_SetClkDiv(kCLOCK_DivI3c23Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(acmp), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp))
 	CLOCK_EnableClock(kCLOCK_Acmp0);
 	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
+	POWER_DisablePD(kPDRUNCFG_PD_PMC_TEMPSNS);
+	POWER_ApplyPD();
+	otp_init(SystemCoreClock);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(co5300_zc143ac72mipi), okay)
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+	POWER_ApplyPD();
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+
+	CLOCK_InitMainPfd(kCLOCK_Pfd2, 17);
+	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 2U);
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi0))
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI0);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI0);
+	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi1))
+	xspi_setup_clock(XSPI1, 1U, 1U); /* Audio PLL PDF1 DIV1. */
+
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI1);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI1);
+	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi2))
+#if CONFIG_SOC_MIMXRT798S_CM33_CPU0
+	CLOCK_AttachClk(kMAIN_PLL_PFD3_to_XSPI2);
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
+	CLOCK_AttachClk(kFRO1_DIV1_to_COMMON_BASE);
+	CLOCK_AttachClk(kCOMMON_BASE_to_XSPI2);
+#endif
+	CLOCK_SetClkDiv(kCLOCK_DivXspi2Clk, 1U);
+
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI2);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI2);
+	POWER_ApplyPD();
 #endif
 }
 
@@ -612,4 +676,46 @@ static void edma_enable_all_request(uint8_t instance)
 		*reg |= 0xFFFFFFFF;
 	}
 }
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
+/**
+ * @brief Kickoff secondary core (CPU1).
+ *
+ * Kick the secondary core out of reset and wait for it to indicate boot. The
+ * core image was already copied to RAM in soc_early_init_hook()
+ *
+ * @return 0
+ */
+static int second_core_boot(void)
+{
+	/* Get the boot address for the second core */
+	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_NODELABEL(sram_code)));
+
+	PMC0->PDRUNCFG2 &= ~0x3FFC0000;
+	PMC0->PDRUNCFG3 &= ~0x3FFC0000;
+
+	/* RT700 specific CPU1 boot sequence */
+	/* Glikey write enable, GLIKEY4 */
+	GlikeyWriteEnable(GLIKEY4, 1U);
+
+	/* Boot source for Core 1 from RAM. */
+	SYSCON3->CPU1_NSVTOR = ((uint32_t)(void *)boot_address >> 7U);
+	SYSCON3->CPU1_SVTOR = ((uint32_t)(void *)boot_address >> 7U);
+
+	GlikeyClearConfig(GLIKEY4);
+
+	/* Enable cpu1 clock. */
+	CLOCK_EnableClock(kCLOCK_Cpu1);
+
+	/* Clear reset*/
+	RESET_ClearPeripheralReset(kCPU1_RST_SHIFT_RSTn);
+
+	/* Release cpu wait*/
+	SYSCON3->CPU_STATUS &= ~SYSCON3_CPU_STATUS_CPU_WAIT_MASK;
+
+	return 0;
+}
+
+SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

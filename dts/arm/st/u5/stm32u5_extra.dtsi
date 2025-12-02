@@ -35,7 +35,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x420c8c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 28)>,
-					<&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2L, 28)>;
 			interrupts = <79 0>;
 			status = "disabled";
@@ -61,8 +61,8 @@
 			interrupts = <120 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 8)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21)>;
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

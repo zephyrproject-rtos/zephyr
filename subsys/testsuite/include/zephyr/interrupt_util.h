@@ -165,11 +165,20 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_HAZARD3_INTC)
+#include <hardware/irq.h>
+#endif
+
 #if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
 static inline void trigger_irq(int irq)
 {
 	riscv_clic_irq_set_pending(irq);
+}
+#elif defined(CONFIG_HAZARD3_INTC)
+static inline void trigger_irq(int irq)
+{
+	irq_set_pending(irq);
 }
 #else
 static inline void trigger_irq(int irq)
@@ -185,19 +194,19 @@ static inline void trigger_irq(int irq)
 #if XCHAL_NUM_INTERRUPTS > 32
 	switch (irq >> 5) {
 	case 0:
-		z_xt_set_intset(1 << irq);
+		z_xt_set_intset(1 << (irq & 0x1f));
 		break;
 	case 1:
-		z_xt_set_intset1(1 << irq);
+		z_xt_set_intset1(1 << (irq & 0x1f));
 		break;
 #if XCHAL_NUM_INTERRUPTS > 64
 	case 2:
-		z_xt_set_intset2(1 << irq);
+		z_xt_set_intset2(1 << (irq & 0x1f));
 		break;
 #endif
 #if XCHAL_NUM_INTERRUPTS > 96
 	case 3:
-		z_xt_set_intset3(1 << irq);
+		z_xt_set_intset3(1 << (irq & 0x1f));
 		break;
 #endif
 	default:

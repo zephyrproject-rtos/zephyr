@@ -105,4 +105,12 @@ config LOG_BACKEND_RTT_FORCE_PRINTK
 	default y if LOG_BACKEND_RTT_BUFFER = 0 && RTT_CONSOLE
 	select LOG_PRINTK
 
+if LOG_BACKEND_RTT_OUTPUT_DICTIONARY
+
+config LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX
+	bool "Whether to output the dictionary log hex encoded (y) or as a raw binary (n)"
+	default y
+
+endif # LOG_BACKEND_RTT_OUTPUT_DICTIONARY
+
 endif # LOG_BACKEND_RTT

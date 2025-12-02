@@ -22,7 +22,7 @@
 #define DB_VAL   0xDEADBEEF
 
 static struct k_thread user_thread;
-static K_THREAD_STACK_DEFINE(user_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(user_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 #include <zephyr/internal/syscall_handler.h>
 #include "test_syscalls.h"

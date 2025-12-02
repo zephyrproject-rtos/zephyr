@@ -22,3 +22,16 @@ properties:
 
   pinctrl-names:
     required: true
+
+  rx-gpios:
+    description: |
+      Select the wake up pin for uart rx,
+      please check include/zephyr/dt-bindings/gpio/realtek-gpio.h
+      For example:
+      rx-gpios = <RTS5912_GPIO113 GPIO_ACTIVE_HIGH>;
+    type: phandle-array
+
+  uart-dev:
+    type: phandle
+    description: |
+      Get the device of the UART device

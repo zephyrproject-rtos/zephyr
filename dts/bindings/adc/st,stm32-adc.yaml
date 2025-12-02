@@ -1,5 +1,6 @@
 # Copyright (c) 2018, Endre Karlson
 # Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2025 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 ADC
@@ -14,6 +15,22 @@ properties:
 
   clocks:
     required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "adcx"
+      - "adc_ker"
+      - "adc_pre"
+    description: |
+      Expected names are the following:
+      - "adcx" for the enabling the register clock (mandatory)
+      - "adc_ker" for configuring the kernel clock (if applicable)
+      - "adc_pre" for configuring the prescaler (if applicable)
+      Kernel clock and prescaler may be shared between several ADC instances.
+      In that case, the same kernel clock/prescaler Device Tree configuration
+      must be used on all instances that share the kernel clock/prescaler
+      to avoid conflicts.
 
   interrupts:
     required: true
@@ -32,7 +49,7 @@ properties:
       - "SYNC": derived from the bus clock.
       - "ASYNC" : independent and asynchronous with the bus clock
       One of the two values may not apply to some series. Refer to the RefMan.
-      If an asynchronous clock is selected, a domain clock in the clock property
+      If an asynchronous clock is selected, a kernel clock in the "clocks" property
       has to be defined explicitly.
 
   st,adc-prescaler:
@@ -57,9 +74,8 @@ properties:
       st,adc-clock-source.
       Some of the values may not apply to some series, and may depend on the
       selected clock source. Refer to the RefMan.
-      On STM32F3x (except STM32F37x), this configures only the synchronous
-      prescaler (see properties adcXX-prescaler in st,stm32f3-rcc bindings to
-      set asynchronous prescaler).
+      On STM32F3x, this configures only the synchronous prescaler
+      (use the "clocks" property to set asynchronous prescaler).
 
   vref-mv:
     type: int
@@ -97,25 +113,55 @@ properties:
     type: string
     required: true
     enum:
-      - "NOT_FULLY_CONFIGURABLE"
-      - "FULLY_CONFIGURABLE"
+      - "fixed"
+      - "programmable"
     description: |
       Type of ADC sequencer:
-      - "NOT_FULLY_CONFIGURABLE": Not fully configurable sequencer
-      - "FULLY_CONFIGURABLE": Fully configurable sequencer
+      - "fixed": Channels of a sequence are sampled from lowest to highest.
+      - "programmable": Channels of a sequence can be sampled in any order.
 
   st,adc-oversampler:
     type: string
     required: true
     enum:
-      - "OVERSAMPLER_NONE"
-      - "OVERSAMPLER_MINIMAL"
-      - "OVERSAMPLER_EXTENDED"
+      - "none"
+      - "minimal"
+      - "extended"
     description: |
       Type of ADC oversampler:
-      - "OVERSAMPLER_NONE": No oversampler
-      - "OVERSAMPLER_MINIMAL": Oversampler with 8 possible oversampling values (2, 4, 8, ..., 256)
-      - "OVERSAMPLER_EXTENDED": Oversampler with 1024 possible oversampling values (1..1024)
+      - "none": No oversampler
+      - "minimal": Oversampler with 8 possible oversampling values (2, 4, 8, ..., 256)
+      - "extended": Oversampler with 1024 possible oversampling values (1..1024)
+
+  st,adc-internal-regulator:
+    type: string
+    required: true
+    enum:
+      - "none"
+      - "startup-sw-delay"
+      - "startup-hw-status"
+    description: |
+      Presence and type of ADC internal regulator if any.
+      - "none": No internal regulator.
+      - "startup-sw-delay": Internal regulator is present and its startup time is checked with a
+        software delay.
+      - "startup-hw-status": Internal regulator is present and its startup time is checked with a
+        status flag in a register.
+
+  st,adc-has-deep-powerdown:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance has a deep power down feature.
+
+  st,adc-has-channel-preselection:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance has a channel preselection register.
+
+  st,adc-has-differential-support:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance supports differential channel inputs.
 
 io-channel-cells:
   - input

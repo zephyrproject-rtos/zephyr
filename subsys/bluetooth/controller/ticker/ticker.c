@@ -1448,7 +1448,7 @@ void ticker_worker(void *param)
 				timeout_func = ticker->ext_data->ext_timeout_func;
 				expire_info = ticker->ext_data->other_expire_info;
 				if (ticker->ext_data->expire_info_id != TICKER_NULL) {
-					LL_ASSERT(expire_info && !expire_info->outdated);
+					LL_ASSERT_DBG(expire_info && !expire_info->outdated);
 				}
 
 				ext_context.context = ticker->context;
@@ -2327,7 +2327,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
-	LL_ASSERT(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
+	LL_ASSERT_DBG(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
 #else
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (start->lazy != TICKER_LAZY_MUST_EXPIRE_KEEP) {
@@ -2492,7 +2492,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		}
 
 		/* Ensure that resched ticker is expired */
-		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
+		LL_ASSERT_DBG(ticker_resched->ticks_to_expire == 0U);
 
 		/* Use ticker's reserved time ticks_slot, else for unreserved
 		 * tickers use the reschedule margin as ticks_slot.
@@ -2500,7 +2500,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		if (ticker_resched->ticks_slot) {
 			ticks_slot = ticker_resched->ticks_slot;
 		} else {
-			LL_ASSERT(TICKER_HAS_SLOT_WINDOW(ticker_resched));
+			LL_ASSERT_DBG(TICKER_HAS_SLOT_WINDOW(ticker_resched));
 
 			ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
 		}
@@ -3181,7 +3181,7 @@ ticker_job_compare_update(struct ticker_instance *instance,
 		uint32_t ticks_elapsed;
 		uint32_t ticks_diff;
 
-		LL_ASSERT(i);
+		LL_ASSERT_ERR(i);
 		i--;
 
 		cc = instance->ticks_current;

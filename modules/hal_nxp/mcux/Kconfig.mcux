@@ -8,7 +8,8 @@ config HAS_MCUX
 	bool
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
 		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_NXP_RW || \
-		SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || SOC_FAMILY_MCXW || SOC_FAMILY_MCXC
+		SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || SOC_FAMILY_MCXW || SOC_FAMILY_MCXC || \
+		SOC_FAMILY_MCXE
 
 if	HAS_MCUX
 
@@ -34,12 +35,6 @@ config HAS_MCUX_SRC
 	help
 	  Set if the system reset controller (SRC) module is present in the
 	  SoC.
-
-config HAS_MCUX_SRC_V2
-	bool
-	help
-	  Set if version 2 of the system reset controller (SRC) module is
-	  present in the SoC.
 
 config HAS_MCUX_RDC
 	bool

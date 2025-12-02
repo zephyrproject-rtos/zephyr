@@ -20,3 +20,28 @@ config I2C_NPCX_PORT_INIT_PRIORITY
 	help
 	  Initialization priority for the I2C port on an NPCX device, must be
 	  set to a lower priority than the controller one (I2C_INIT_PRIORITY).
+
+config I2C_NPCX_FIFO_DRIVEN
+	bool
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_I2C_CTRL),dma-driven,False)
+	depends on I2C_NPCX
+	help
+	  For I2C peripherals that support FIFO mode, data transfers shall be performed
+	  using FIFO‑driven transactions.
+
+config I2C_NPCX_DMA_DRIVEN
+	bool
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_I2C_CTRL),dma-driven,True)
+	depends on I2C_NPCX
+	help
+	  For I2C peripherals that support DMA mode, data transfers shall be performed
+	  using DMA‑driven transactions.
+
+config I2C_NPCX_INVALID_STOP_WORKAROUND
+	bool
+	default y
+	depends on NPCX_SOC_VARIANT_NPCXN
+	help
+	  Workaround for invalid STOP condition issue in NPCXn variant I2C controllers.

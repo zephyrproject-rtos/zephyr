@@ -9,8 +9,6 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 
-void bt_le_adv_resume(void);
-
 struct bt_le_ext_adv *bt_le_adv_lookup_legacy(void);
 
 void bt_le_adv_delete_legacy(void);

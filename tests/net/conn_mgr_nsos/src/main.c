@@ -12,6 +12,8 @@
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 
+#include <zephyr/net/socket.h>
+
 K_SEM_DEFINE(l4_connected, 0, 1);
 K_SEM_DEFINE(l4_disconnected, 0, 1);
 
@@ -125,10 +127,69 @@ ZTEST(conn_mgr_nsos, test_conn_mgr_nsos)
 		0, conn_mgr_if_set_opt(iface, 0, &conn_delay_default, sizeof(conn_delay_default)));
 }
 
+ZTEST(conn_mgr_nsos, test_conn_mgr_nsos_idle)
+{
+	struct net_if *iface = net_if_get_default();
+	struct sockaddr_in v4addr;
+	int sock, rc;
+
+	/* 2 second idle timeout */
+	conn_mgr_if_set_idle_timeout(iface, 2);
+
+	/* Trigger the connection */
+	zassert_equal(0, conn_mgr_if_connect(iface));
+	zassert_equal(0, k_sem_take(&l4_connected, K_SECONDS(2)));
+
+	/* Connection should terminate after 2 seconds due to inactivity */
+	zassert_equal(-EAGAIN, k_sem_take(&l4_disconnected, K_MSEC(1900)));
+	zassert_equal(0, k_sem_take(&l4_disconnected, K_MSEC(500)));
+
+	/* Connect again */
+	zassert_equal(0, conn_mgr_if_connect(iface));
+	zassert_equal(0, k_sem_take(&l4_connected, K_SECONDS(2)));
+
+	/* Send data after a second (to localhost) */
+	rc = zsock_inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
+	zassert_equal(1, rc);
+	v4addr.sin_family = AF_INET;
+	v4addr.sin_port = htons(1234);
+
+	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	rc = zsock_sendto(sock, "TEST", 4, 0, (const struct sockaddr *)&v4addr, sizeof(v4addr));
+	zassert_equal(4, rc);
+
+	/* Should have reset the idle timeout */
+	zassert_equal(-EAGAIN, k_sem_take(&l4_disconnected, K_MSEC(1900)));
+	zassert_equal(0, k_sem_take(&l4_disconnected, K_MSEC(500)));
+
+	/* Set the interface to persistent */
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_PERSISTENT, true);
+
+	/* Trigger the connection */
+	zassert_equal(0, conn_mgr_if_connect(iface));
+	zassert_equal(0, k_sem_take(&l4_connected, K_SECONDS(2)));
+
+	/* Interface should disconnect due to idle */
+	zassert_equal(0, k_sem_take(&l4_disconnected, K_MSEC(2100)));
+	/* But it should also come back up automatically */
+	zassert_equal(0, k_sem_take(&l4_connected, K_SECONDS(2)));
+
+	/* Clear the persistent flag, times out and doesn't reconnect */
+	conn_mgr_if_set_flag(iface, CONN_MGR_IF_PERSISTENT, false);
+	zassert_equal(0, k_sem_take(&l4_disconnected, K_MSEC(2100)));
+	zassert_equal(-EAGAIN, k_sem_take(&l4_connected, K_MSEC(2100)));
+
+	/* Cleanup socket */
+	zsock_close(sock);
+}
+
 static void test_init(void *state)
 {
+	struct net_if *iface = net_if_get_default();
+
 	k_sem_take(&l4_connected, K_NO_WAIT);
 	k_sem_take(&l4_disconnected, K_NO_WAIT);
+	conn_mgr_if_set_idle_timeout(iface, CONN_MGR_IF_NO_TIMEOUT);
 }
 
 static void test_after(void *fixture)

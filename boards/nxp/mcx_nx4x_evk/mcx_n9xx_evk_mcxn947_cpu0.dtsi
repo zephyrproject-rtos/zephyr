@@ -1,0 +1,28 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common dts file to enable supported features for CPU 0.
+ * This file is included by both the default variant
+ * which is run from internal flash and the QSPI variant.
+ */
+/dts-v1/;
+
+#include "mcx_n9xx_evk.dtsi"
+#include "mcx_nx4x_evk_cpu0.dtsi"
+
+/ {
+	aliases{
+		pwm-0 = &flexpwm1_pwm0;
+	};
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+};
+
+&lpcmp2 {
+	status = "okay";
+};

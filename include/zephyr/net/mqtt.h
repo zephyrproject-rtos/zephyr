@@ -763,9 +763,7 @@ struct mqtt_sec_config {
 	uint32_t alpn_protocol_name_count;
 #endif
 
-	/** Peer hostname for ceritificate verification.
-	 *  May be NULL to skip hostname verification.
-	 */
+	/** Peer hostname for certificate verification. */
 	const char *hostname;
 
 	/** Indicates the preference for copying certificates to the heap. */

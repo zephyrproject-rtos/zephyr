@@ -78,7 +78,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_nrf54l15
+   :board: xiao_nrf54l15/nrf54l15/cpuapp
    :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) connecting to the UCB CDC ACM serial port.
@@ -87,7 +87,7 @@ Reset the board and you should see the following message in the terminal:
 
 .. code-block:: console
 
-   Hello World! xiao_nrf54l15
+   Hello World! xiao_nrf54l15/nrf54l15/cpuapp
 
 
 .. _Seeed Studio XIAO nRF54L15:

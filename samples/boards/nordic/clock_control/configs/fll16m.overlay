@@ -9,3 +9,7 @@
 		sample-clock = &fll16m;
 	};
 };
+
+&fll16m {
+	status = "okay";
+};

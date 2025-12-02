@@ -7,7 +7,7 @@ zephyr_library_sources(
   lll/lll.c
   lll/lll_clock.c
   )
-if (CONFIG_BT_BROADCASTER)
+if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     lll/lll_adv.c
     )

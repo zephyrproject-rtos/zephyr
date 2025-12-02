@@ -126,16 +126,19 @@ static int sdhc_ra_card_busy(const struct device *dev)
 }
 
 static int sdhi_command_send_wait(sdhi_instance_ctrl_t *p_ctrl, uint32_t command, uint32_t argument,
-				  uint32_t timeout)
+				  uint32_t timeout_ms)
 {
 	/* Verify the device is not busy. */
 	r_sdhi_wait_for_device(p_ctrl);
+
+	/* Convert timeout to us */
+	uint32_t timeout_us = timeout_ms * 1000U;
 
 	/* Send the command. */
 	r_sdhi_command_send_no_wait(p_ctrl, command, argument);
 
 	/* Wait for end of response, error or timeout */
-	return r_sdhi_wait_for_event(p_ctrl, SDHI_PRV_RESPONSE_BIT, timeout);
+	return r_sdhi_wait_for_event(p_ctrl, SDHI_PRV_RESPONSE_BIT, timeout_us);
 }
 
 static int sdhc_ra_send_cmd(struct sdhc_ra_priv *priv, struct sdmmc_ra_command *ra_cmd, int retries)
@@ -605,6 +608,11 @@ static DEVICE_API(sdhc, sdhc_api) = {
 			EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
 			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_CARD(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel)));                        \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \

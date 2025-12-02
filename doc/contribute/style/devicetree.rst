@@ -4,6 +4,7 @@ Devicetree Style Guidelines
 ###########################
 
   * Indent with tabs.
+  * Tab size is 8 characters.
   * Follow the Devicetree specification conventions and rules.
   * If the Linux kernel rules in
     `Devicetree Sources (DTS) Coding Style <https://docs.kernel.org/devicetree/bindings/dts-coding-style.html>`_

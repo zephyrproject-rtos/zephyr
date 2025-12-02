@@ -1,0 +1,28 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/mcx/MCXE31BMPB-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTD5_EIRQ13>;
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart_5: pinmux_lpuart_5 {
+		group1 {
+			pinmux = <PTE14_LPUART5_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE3_LPUART5_RX>;
+			input-enable;
+		};
+	};
+};

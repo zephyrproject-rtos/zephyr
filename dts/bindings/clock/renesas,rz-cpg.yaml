@@ -1,7 +1,21 @@
-# Copyright (c) 2024 Renesas Electronics Corporation24
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: RZ Clock Pulse Generator
+description: |
+  Renesas RZ Clock Pulse Generator
+
+  Usage example:
+
+    #include <zephyr/dt-bindings/clock/renesas_rz[agv]_clock.h>
+
+    scif0: serial@xxx {
+        ...
+        channel = <0>;
+        /* Cell encodes HWIP, channel, clock source and division */
+        clocks = <&cpg RZ_CLOCK_SCIF(0)>;
+        ...
+    }
+
 compatible: "renesas,rz-cpg"
 
 include: [base.yaml, clock-controller.yaml]

@@ -20,7 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_UTILS wifi_utils.c)
 
 # Linker section placement for wifi_nm_instance iterable structure
 zephyr_linker_sources_ifdef(CONFIG_WIFI_NM DATA_SECTIONS wifi_nm.ld)
-if (CONFIG_WIFI_NM)
+if(CONFIG_WIFI_NM)
 zephyr_iterable_section(NAME wifi_nm_instance GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
@@ -28,6 +28,8 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE AND CONFIG_NET_L2_WIFI_SHELL)
   # Wi-Fi Enterprise test certificates handling
   set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
   set(gen_dir ${gen_inc_dir}/wifi_enterprise_test_certs)
+  zephyr_get(WIFI_TEST_CERTS_DIR SYSBUILD GLOBAL)
+  message(DEBUG "WIFI_TEST_CERTS_DIR is set to ${WIFI_TEST_CERTS_DIR}")
   if(NOT DEFINED WIFI_TEST_CERTS_DIR)
     set(WIFI_TEST_CERTS_DIR ${ZEPHYR_BASE}/samples/net/wifi/test_certs/rsa3k)
   endif()

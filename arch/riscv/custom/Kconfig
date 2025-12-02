@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
+
+rsource "andes/Kconfig"
+
+endif # DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
+
+if DT_HAS_XUANTIE_E907_ENABLED
+
+rsource "thead/Kconfig"
+rsource "thead/Kconfig.core"
+
+endif # DT_HAS_XUANTIE_E907_ENABLED

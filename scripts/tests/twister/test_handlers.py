@@ -8,35 +8,32 @@ Tests for handlers.py classes' methods
 """
 
 import itertools
-from unittest import mock
 import os
-import pytest
 import signal
 import subprocess
 import sys
-
 from contextlib import nullcontext
 from importlib import reload
-from serial import SerialException
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
+from unittest import mock
 
+import pytest
 import twisterlib.harness
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-
+from serial import SerialException
 from twisterlib.error import TwisterException
-from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
-    Handler,
     BinaryHandler,
     DeviceHandler,
+    Handler,
     QEMUHandler,
-    SimulationHandler
+    SimulationHandler,
 )
-from twisterlib.hardwaremap import (
-    DUT
-)
+from twisterlib.hardwaremap import DUT
+from twisterlib.statuses import TwisterStatus
+
+from . import ZEPHYR_BASE
+
 
 @pytest.fixture
 def mocked_instance(tmp_path):
@@ -1068,12 +1065,12 @@ TESTDATA_13 = [
          '--', '--dummy']
     ),
     (
-        '--dummy1,--dummy2',
+        '--dummy1,--dummy2,"--dummy, 3"',
         None,
         None,
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--', '--dummy1', '--dummy2']
+         '--', '--dummy1', '--dummy2', '--dummy, 3']
     ),
 
     (
@@ -1187,7 +1184,7 @@ def test_devicehandler_create_command(
 ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.options = mock.Mock(west_flash=self_west_flash,
-                                flash_command=self_flash_command)
+                                flash_command=self_flash_command, verbose=0)
     handler.generator_cmd = 'generator_cmd'
 
     expected = [handler.build_dir if val == '$build_dir' else \
@@ -1453,7 +1450,8 @@ def test_devicehandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=None,
-        west_runner=None
+        west_runner=None,
+        verbose=0
     )
     handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
@@ -2027,7 +2025,8 @@ def test_qemuhandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=handler_options_west_flash,
-        west_runner=None
+        west_runner=None,
+        verbose=0,
     )
     handler.run_custom_script = mock.Mock(return_value=None)
     handler.make_device_available = mock.Mock(return_value=None)

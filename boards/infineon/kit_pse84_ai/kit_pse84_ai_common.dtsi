@@ -1,0 +1,216 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "kit_pse84_ai_common-pinctrl.dtsi"
+
+/ {
+	aliases {
+		sw0 = &user_bt;
+		watchdog0 = &watchdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt10 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_1: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt10 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_red: led_red {
+			label = "LED_RED";
+			gpios = <&gpio_prt20 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: led_green {
+			label = "LED_GREEN";
+			gpios = <&gpio_prt20 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: led_blue {
+			label = "LED_BLUE";
+			gpios = <&gpio_prt20 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt: button_0 {
+			label = "SW_1";
+			gpios = <&gpio_prt7 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart-pdl";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16bit_0>;
+
+	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <2>;
+	clock-div = <1>;
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt16 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+&gpio_prt13 {
+	status = "okay";
+};
+
+&gpio_prt14 {
+	status = "okay";
+};
+
+&gpio_prt20 {
+	status = "okay";
+};
+
+&clk_iho {
+	status = "okay";
+	clock-frequency = <50000000>;
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&path_mux4 {
+	status = "okay";
+};
+
+&path_mux5 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	clocks = <&path_mux0>;
+	status = "okay";
+};
+
+&clk_hf1 {
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf2 {
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf3 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf4 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf5 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf6 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf7 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_4>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf8 {
+	clocks = <&path_mux3>;
+	status = "okay";
+};
+
+&clk_hf9 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_5>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf10 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_4>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&clk_hf11 {
+	clocks = <&path_mux0>;
+	status = "okay";
+};
+
+&clk_hf12 {
+	clocks = <&path_mux1>;
+	status = "okay";
+};
+
+&clk_hf13 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_4>;
+	clocks = <&path_mux2>;
+	status = "okay";
+};
+
+&dpll_hp {
+	status = "okay";
+};

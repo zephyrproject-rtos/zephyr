@@ -1,9 +1,15 @@
 # Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config TFLM_ETHOSU_TAINT_BLOBS
+config TAINT_BLOBS_TFLM
 	bool
 	default y
 	select TAINT_BLOBS
+
+config TAINT_BLOBS_TFLM_ETHOSU
+	bool "Choose Vela-compiled model targeting Ethos-U"
+	default y
+	depends on ETHOS_U_ARM || ETHOS_U_NUMAKER || ETHOS_U_RENESAS
+	select TAINT_BLOBS_TFLM
 
 source "Kconfig.zephyr"

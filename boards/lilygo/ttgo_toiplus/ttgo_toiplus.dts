@@ -34,7 +34,7 @@
 		compatible = "gpio-leds";
 
 		green_led: led_0 {
-			gpios =  <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 			label = "Green - LED0";
 		};
 	};

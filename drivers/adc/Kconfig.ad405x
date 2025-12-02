@@ -11,8 +11,16 @@ config ADC_AD405X
 	help
 	  Enable ADC driver for ADI AD405X.
 
+config AD405X_STREAM
+	bool "Use FIFO to stream data"
+	depends on ADC_AD405X
+	select AD405X_TRIGGER
+	depends on SPI_RTIO
+	help
+	  Use this configuration option to enable streaming ADC data via RTIO.
+
 config AD405X_TRIGGER
 	bool "AD405X interrupts"
-	default n
+	depends on ADC_AD405X
 	help
 	  Enable interrupts for ADI AD405X.

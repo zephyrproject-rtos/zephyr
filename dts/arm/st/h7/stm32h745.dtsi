@@ -19,6 +19,7 @@
 				/* maximum erase time for a 128K sector */
 				max-erase-time = <4000>;
 			};
+
 			flash1: flash@8100000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <32>;
@@ -29,11 +30,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		ltdc: display-controller@50001000 {
@@ -41,8 +42,8 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
-			resets = <&rctl STM32_RESET(APB3, 3U)>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3)>;
+			resets = <&rctl STM32_RESET(APB3, 3)>;
 			status = "disabled";
 		};
 
@@ -54,7 +55,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -68,7 +69,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -82,16 +83,18 @@
 			};
 		};
 	};
+
 	/*
-	* The RAM memories placed here can be used by both cores M4/M7
-	* For more information see reference manual and datasheet to STM32H745
-	* (RM0399 Rev 3)
-	*/
+	 * The RAM memories placed here can be used by both cores M4/M7
+	 * For more information see reference manual and datasheet to STM32H745
+	 * (RM0399 Rev 3)
+	 */
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {
 		reg = <0x24000000 DT_SIZE_K(512)>;
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */

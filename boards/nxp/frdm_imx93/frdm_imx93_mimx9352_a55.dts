@@ -1,0 +1,196 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx93_a55.dtsi>
+#include "frdm_imx93-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM-IMX93 A55";
+	compatible = "fsl,mimx93";
+
+	aliases {
+		led0 = &led_r;
+		led1 = &led_g;
+		sw0 = &btn_1;
+		watchdog0 = &wdog4;
+	};
+
+	chosen {
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+		zephyr,sram = &dram;
+		zephyr,canbus = &flexcan2;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(1)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_r: led_r {
+			label = "LED_R";
+			gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_g: led_g {
+			label = "LED_G";
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_b: led_b {
+			label = "LED_B";
+			gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		btn_1: btn_1 {
+			label = "BTN1";
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn_2: btn_2 {
+			label = "BTN2";
+			gpios = <&gpio_exp0 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1051", "can-transceiver-gpio";
+		standby-gpios = <&gpio_exp0 23 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
+};
+
+&lpuart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_exp1: pcal6408@20 {
+		compatible = "nxp,pcal6408";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		reset-gpios = <&gpio_exp0 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+&lpi2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_exp0: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	status = "okay";
+};
+
+&wdog4 {
+	status = "okay";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc1_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	sdmmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "disabled";
+	};
+};
+
+&usdhc2 {
+	pinctrl-0 = <&pinmux_usdhc2>;
+	pinctrl-1 = <&pinmux_usdhc2_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc2_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	pwr-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+	power-delay-ms = <20>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "disabled";
+	};
+};
+
+&tpm2 {
+	status = "okay";
+};
+
+display_i2c: &lpi2c1 {};

@@ -112,7 +112,7 @@ int gnss_dump_nav_data(char *str, uint16_t strsize, const struct navigation_data
 		       nav_data->speed / 1000, nav_data->speed % 1000,
 		       alt_sign, abs(nav_data->altitude) / 1000, abs(nav_data->altitude) % 1000);
 
-	return (strsize < ret) ? -ENOMEM : 0;
+	return (ret < 0 || ret >= strsize) ? -ENOMEM : 0;
 }
 
 int gnss_dump_time(char *str, uint16_t strsize, const struct gnss_time *utc)
@@ -124,7 +124,7 @@ int gnss_dump_time(char *str, uint16_t strsize, const struct gnss_time *utc)
 	ret = snprintk(str, strsize, fmt, utc->hour, utc->minute, utc->millisecond,
 		       utc->month_day, utc->month, utc->century_year);
 
-	return (strsize < ret) ? -ENOMEM : 0;
+	return (ret < 0 || ret >= strsize) ? -ENOMEM : 0;
 }
 
 #if CONFIG_GNSS_SATELLITES
@@ -138,7 +138,7 @@ int gnss_dump_satellite(char *str, uint16_t strsize, const struct gnss_satellite
 		       satellite->azimuth, gnss_system_to_str(satellite->system),
 		       satellite->is_tracked);
 
-	return (strsize < ret) ? -ENOMEM : 0;
+	return (ret < 0 || ret >= strsize) ? -ENOMEM : 0;
 }
 #endif
 

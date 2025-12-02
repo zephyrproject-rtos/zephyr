@@ -14,6 +14,10 @@ properties:
     type: int
     const: 1
 
+  label:
+    type: string
+    description: Name of the UMP (MIDI 2.0) endpoint
+
 child-binding:
   description: |
     MIDI2 Group terminal block.
@@ -21,6 +25,10 @@ child-binding:
     device exchange Universal MIDI Packets with the host.
 
   properties:
+    label:
+      type: string
+      description: Name of the corresponding UMP Function block
+
     reg:
       type: array
       required: true
@@ -49,3 +57,9 @@ child-binding:
       - "output-only"
       description: |
         Type (data direction) of Group Terminals in this Block.
+
+    serial-31250bps:
+      type: boolean
+      description: |
+        This represent a physical MIDI1 serial port, which is limited
+        to a transmission speed of 31.25kb/s.

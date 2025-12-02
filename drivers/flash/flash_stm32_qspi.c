@@ -15,6 +15,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <string.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -282,15 +283,14 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 
 	cmd->Instruction = dev_data->qspi_write_cmd;
 #if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
-	/* Microchip qspi-NOR flash, does not follow the standard rules */
-	if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+	/* Microchip QSPI-NOR flash uses the PP_1_1_4 opcode for the PP_1_4_4 operation */
+	if (cmd->Instruction == SPI_NOR_CMD_PP_1_4_4) {
+		cmd->Instruction = SPI_NOR_CMD_PP_1_1_4;
 	}
-#else
-	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
+	cmd->AddressMode = ((dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_1_4)
 				? QSPI_ADDRESS_1_LINE
 				: QSPI_ADDRESS_4_LINES);
-#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
@@ -455,17 +455,12 @@ static int qspi_write_unprotect(const struct device *dev)
 			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-		ret = qspi_send_cmd(dev, &cmd_write_en);
-
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	ret = qspi_send_cmd(dev, &cmd_write_en);
+	if (ret != 0) {
+		return ret;
 	}
 
-	return ret;
+	return qspi_send_cmd(dev, &cmd_unprotect);
 }
 
 /*
@@ -491,7 +486,8 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	 * flash mode is disabled during the reading to obtain the SFDP from a single flash memory
 	 * only.
 	 */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_DISABLE);
+	stm32_reg_modify_bits(&dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM,
+			      QSPI_DUALFLASH_DISABLE);
 	LOG_DBG("Dual flash mode disabled while reading SFDP");
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
@@ -527,7 +523,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 end:
 #if STM32_QSPI_DOUBLE_FLASH
 	/* Re-enable the dual flash mode */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
+	stm32_reg_modify_bits(&dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
 #endif /* dual_flash */
 
 	return ret;
@@ -584,7 +580,8 @@ static bool stm32_qspi_is_memory_mapped(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
+	return stm32_reg_read_bits(&dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) ==
+	       QUADSPI_CCR_FMODE;
 }
 
 static int stm32_qspi_abort(const struct device *dev)
@@ -1602,7 +1599,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
-	HAL_DMA_Init(&hdma);
+	if (HAL_DMA_Init(&hdma) != HAL_OK) {
+		return -EIO;
+	}
 
 #endif /* STM32_QSPI_USE_DMA */
 
@@ -1649,7 +1648,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
-	HAL_QSPI_Init(&dev_data->hqspi);
+	if (HAL_QSPI_Init(&dev_data->hqspi) != HAL_OK) {
+		return -EIO;
+	}
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
 	defined(QUADSPI_CR_FSEL)
@@ -1659,8 +1660,10 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
-	HAL_QSPI_SetFlashID(&dev_data->hqspi,
-			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+	if (HAL_QSPI_SetFlashID(&dev_data->hqspi,
+				(qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos) != HAL_OK) {
+		return -EIO;
+	}
 #endif
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
@@ -1740,12 +1743,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	ret = qspi_write_unprotect(dev);
-	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
-		return -ENODEV;
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
 	}
-	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);

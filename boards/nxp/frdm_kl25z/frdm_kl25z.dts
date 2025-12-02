@@ -29,14 +29,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpiob 18 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiob 19 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
@@ -45,11 +48,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW0";
 			gpios = <&gpioa 16 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User SW1";
 			gpios = <&gpioa 17 GPIO_ACTIVE_LOW>;
@@ -93,7 +98,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &adc0 {
@@ -108,7 +113,7 @@
 	pinctrl-names = "default";
 
 	mma8451q: mma8451q@1d {
-		compatible = "nxp,fxos8700","nxp,mma8451q";
+		compatible = "nxp,fxos8700", "nxp,mma8451q";
 		reg = <0x1d>;
 		int1-gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;

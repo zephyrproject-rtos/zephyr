@@ -15,5 +15,6 @@
 #define SCG_K4_FIRC_CLK    7U
 #define SCG_K4_RTCOSC_CLK  8U
 #define SCG_K4_FLEXIO_CLK  9U
+#define SCG_K4_EDMA_CLK	   10U
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SCG_K4_H_ */

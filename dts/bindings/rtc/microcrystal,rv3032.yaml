@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Dipak Shetty
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micro Crystal RV3032 RTC
+
+compatible: "microcrystal,rv3032"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  clkout-frequency:
+    type: int
+    description: |
+      Frequency of the CLKOUT signal in Hertz (Hz).
+      Supported frequencies:
+      - XTAL mode: 32768, 1024, 64, 1 Hz (crystal-derived, may be affected by
+        temperature compensation and aging correction)
+      - HF mode: Any value from 8192 to 67108864 Hz in 8192 Hz steps
+        (formula: frequency = (HFD + 1) × 8192 Hz where HFD = 0-8191)
+        HF mode frequencies are not affected by compensation.
+
+      If this property is omitted, the CLKOUT pin remains LOW (disabled).
+
+      The driver will configure the RTC to use:
+      1. Use XTAL mode for frequencies: 1, 64, 1024, 32768 Hz
+      2. Use HF mode for other frequencies (must be multiples of 8192 Hz)
+
+  backup-switch-mode:
+    type: string
+    required: true
+    enum:
+      - disabled
+      - direct
+      - level
+    description: |
+      Automatic backup switchover function selection:
+        - disabled: The switchover function is disabled - only one power supply available (VDD)
+        - direct: Direct Switching Mode (DSM): when VDD < VBACKUP, switchover occurs from VDD to
+          VBACKUP without requiring VDD to drop below VTH:LSM (2.0 V)
+        - level: Level Switching Mode (LSM): when VDD < VTH:LSM (2.0 V) AND VBACKUP > VTH:LSM,
+          switchover occurs from VDD to VBACKUP
+
+  trickle-resistor-ohms:
+    type: int
+    enum:
+      - 600
+      - 2000
+      - 7000
+      - 12000
+    description: |
+      Trickle charger series resistance (TCR).
+      Ignored if 'trickle-charger-mode' is not present (TCM=00).
+      Note: 600 ohms corresponds to TCR=00 (0.6kΩ) in RV3032.
+
+
+  trickle-charger-mode:
+    type: int
+    enum: [1750, 3000, 4500]
+    description: |
+      Trickle Charger Mode (TCM).
+        - If this property is not present, the trickle charger is disabled (TCM=00).
+        - 1750: TCM=01. In DSM (backup-switch-mode="direct"), VDD is used as the source.
+                In LSM (backup-switch-mode="level"), an internal ~1.75 V is used.
+        - 3000: TCM=10. Internal charge-pump ~3.0 V, only valid in LSM.
+        - 4500: TCM=11. Internal charge-pump ~4.5 V, only valid in LSM.
+      Note: In LSM, the 1.75/3.0/4.5 V levels are only generated when VDD > VTH:LSM
+      (typ. 2.0 V, max 2.2 V).
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the RV3032 INT interrupt output. This signal is open-drain, active low.

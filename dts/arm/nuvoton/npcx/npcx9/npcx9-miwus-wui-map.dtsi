@@ -23,6 +23,7 @@
 		wui_smb0_2: wui0-4-3 {
 			miwus = <&miwu0 3 3>; /* SMB0/2 */
 		};
+
 		wui_smb1_3: wui0-4-4 {
 			miwus = <&miwu0 3 4>; /* SMB1/3 */
 		};
@@ -38,9 +39,11 @@
 		wui_i3c_sda: wui2-6-0 {
 			miwus = <&miwu2 5 0>; /* I3C_SDA */
 		};
+
 		wui_iob6: wui2-6-6 {
 			miwus = <&miwu2 5 6>; /* GPIOB6 */
 		};
+
 		wui_lct: wui2-6-7 {
 			miwus = <&miwu2 5 7>; /* LCT Event */
 		};
@@ -49,6 +52,7 @@
 		wui_cr_sin3: wui2-7-4 {
 			miwus = <&miwu2 6 4>; /* CR_SIN3 */
 		};
+
 		wui_cr_sin4: wui2-7-5 {
 			miwus = <&miwu2 6 5>; /* CR_SIN4 */
 		};

@@ -9,7 +9,7 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf52833.dtsi>
-/* We resuse the pinctrl definitions directly from the real board : */
+/* We reuse the pinctrl definitions directly from the real board : */
 #include <../boards/nordic/nrf52833dk/nrf52833dk_nrf52833-pinctrl.dtsi>
 
 / {
@@ -87,6 +87,7 @@
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_K(512)>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

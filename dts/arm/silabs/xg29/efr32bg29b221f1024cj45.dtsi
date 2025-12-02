@@ -15,17 +15,17 @@
 	};
 };
 
-&sram0 {
-	reg = <0x20000000 DT_SIZE_K(192)>;
+&dcdc {
+	regulator-boot-on;
+	regulator-init-microvolt = <1800000>;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BOOST>;
+	status = "okay";
 };
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1024)>;
 };
 
-&dcdc {
-	regulator-boot-on;
-	regulator-initial-mode = <SILABS_DCDC_MODE_BOOST>;
-	regulator-init-microvolt = <1800000>;
-	status = "okay";
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192)>;
 };

@@ -43,6 +43,7 @@ source "drivers/audio/Kconfig.tlv320aic3110"
 source "drivers/audio/Kconfig.tlv320dac"
 source "drivers/audio/Kconfig.wm8904"
 source "drivers/audio/Kconfig.wm8962"
+source "drivers/audio/Kconfig.da7212"
 
 endif # AUDIO_CODEC
 
@@ -67,6 +68,7 @@ source "drivers/audio/Kconfig.mpxxdtyy"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
 source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_ambiq_pdm"
+source "drivers/audio/Kconfig.dmic_nxp_micfil"
 
 endif # AUDIO_DMIC
 

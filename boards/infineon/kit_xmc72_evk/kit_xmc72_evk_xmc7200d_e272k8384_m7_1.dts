@@ -12,7 +12,6 @@
 #include "kit_xmc72_evk_common.dtsi"
 
 / {
-
 	model = "Infineon Evaluation board for XMC7200D-E272K8384 M7";
 	compatible = "infineon,kit_xmc72_evk", "infineon,XMC7200";
 

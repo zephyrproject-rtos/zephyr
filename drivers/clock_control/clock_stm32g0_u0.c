@@ -68,6 +68,41 @@ void config_pll_sysclock(void)
 
 #endif /* defined(STM32_PLL_ENABLED) */
 
+#if defined(STM32_CK48_ENABLED)
+/**
+ * @brief calculate the CK48 frequency depending on its clock source
+ */
+__unused
+uint32_t get_ck48_frequency(void)
+{
+	switch (LL_RCC_GetRNGClockSource(LL_RCC_RNG_CLKSOURCE)) {
+	case LL_RCC_RNG_CLKSOURCE_PLLQ:
+		/* Get the PLL48CK source : HSE or HSI */
+		uint32_t pll_source = (LL_RCC_PLL_GetMainSource() == LL_RCC_PLLSOURCE_HSE)
+					      ? HSE_VALUE
+					      : HSI_VALUE;
+
+		/* Get the PLL48CK Q freq. No HAL macro for that */
+		return __LL_RCC_CALC_PLLCLK_Q_FREQ(pll_source, LL_RCC_PLL_GetM(), LL_RCC_PLL_GetN(),
+						   LL_RCC_PLL_GetQ());
+	case LL_RCC_RNG_CLKSOURCE_MSI:
+		return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, LL_RCC_MSI_GetRange());
+#if defined(USB_DRD_FS)
+	case LL_RCC_RNG_CLKSOURCE_HSI48:
+		return MHZ(48);
+#endif
+	case LL_RCC_RNG_CLKSOURCE_NONE:
+		/* Clock source not configured */
+		return 0;
+	default:
+		__ASSERT(0, "Invalid source");
+		break;
+	}
+
+	return 0;
+}
+#endif
+
 /**
  * @brief Activate default clocks
  */

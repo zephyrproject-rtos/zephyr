@@ -27,7 +27,7 @@
 		zephyr,memory-region = "SRAMU";
 	};
 
-	soc{
+	soc {
 		/* Remove ftfe, it doesn't exist on KE17Z */
 		/delete-node/ ftfe;
 

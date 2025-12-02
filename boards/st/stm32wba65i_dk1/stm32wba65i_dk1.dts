@@ -1,0 +1,187 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wba/stm32wba65Xi.dtsi>
+#include <st/wba/stm32wba65rivx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32WBA65I Discovery kit board";
+	compatible = "st,stm32wba65i-dk1";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,bt-c2h-uart = &usart1;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		green_led_1: led_0 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_LOW>;
+			label = "User LD6";
+		};
+
+		red_led_2: led_1 {
+			gpios = <&gpiod 9 GPIO_ACTIVE_LOW>;
+			label = "User LD5";
+		};
+
+		blue_led_3: led_2 {
+			/* Not functional w/o a 0Ohm resistor on MB2143 R42 */
+			gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&adc4 6>;
+		keyup-threshold-mv = <3300>;
+
+		select_key {
+			press-thresholds-mv = <0>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left_key {
+			press-thresholds-mv = <670>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down_key {
+			press-thresholds-mv = <1320>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up_key {
+			press-thresholds-mv = <2010>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right_key {
+			press-thresholds-mv = <2650>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &red_led_2;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-div2;
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(16)>;
+	ahb-prescaler = <1>;
+	ahb5-prescaler = <2>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <2>;
+	apb7-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	prescaler = <32768>;
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 14)>,
+		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
+	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
+	pinctrl-1 = <&analog_pb12 &analog_pa8>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa12 &spi1_sck_pb4
+		     &spi1_miso_pb3 &spi1_mosi_pa15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in6_pa3>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@6 {
+		reg = <0x6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB7, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@1c0000 {
+			label = "storage";
+			reg = <0x001c0000 DT_SIZE_K(256)>;
+		};
+	};
+};

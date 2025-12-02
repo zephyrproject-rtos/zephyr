@@ -11,7 +11,7 @@ the STM32H573I-DK Discovery board:
 
 - STM32H573IIK3Q microcontroller featuring 2 Mbytes of Flash memory and 640 Kbytes of SRAM in 176-pin BGA package
 - 1.54-inch 240x240 pixels TFT-LCD with LED  backlight and touch panel
-- USB Type-C |trade| Host and device with USB power-delivery controller
+- USB Type-C |reg| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
@@ -244,8 +244,8 @@ by executing the following commands:
    $ pyocd pack --update
    $ pyocd pack --install stm32h5
 
-Flashing an application to STM32H573I-DK Discovery
---------------------------------------------------
+Application in SoC Flash
+========================
 
 Connect the STM32H573I-DK Discovery to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
@@ -271,7 +271,7 @@ You should see the following message on the console:
    Hello World! stm32h573i_dk
 
 Debugging
-=========
+---------
 
 Waiting for OpenOCD support, debugging could be performed with pyOCD which
 requires to enable "pack" support with the following pyOCD command:
@@ -289,6 +289,97 @@ example for the :zephyr:code-sample:`hello_world` application.
    :board: stm32h573i_dk
    :maybe-skip-config:
    :goals: debug
+
+Application in External Flash
+=============================
+
+Since an external NOR is available on the board, you may want to use it to store
+a large user application, and run it from there. In that case, the MCUboot bootloader
+is needed to chainload the application. A dedicated board variant, ``ext_flash_app``, was created
+for this usecase.
+
+:ref:`sysbuild` makes it possible to build and flash all necessary images needed to run a user application
+from external Flash.
+
+The following example shows how to build :zephyr:code-sample:`hello_world` with Sysbuild enabled:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: stm32h573i_dk/stm32h573xx/ext_flash_app
+   :goals: build
+   :west-args: --sysbuild
+
+By default, Sysbuild creates MCUboot and user application images.
+
+For more information, refer to the :ref:`sysbuild` documentation.
+
+Flashing
+--------
+
+Both MCUboot and user application images can be flashed by running:
+
+.. code-block:: console
+
+   west flash
+
+You should see the following message in the serial host program:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-192-g96576b341ee1 ***
+   *** Using Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   I: Starting bootloader
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Boot source: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Bootloader chainload address offset: 0x0
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.3.0-rc2-37-g6cc7bdb58a92 ***
+   Hello World! stm32h573i_dk/stm32h573xx/ext_flash_app
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   west flash --domain hello_world
+
+With the default configuration, the board uses MCUboot's Swap-using-offset mode.
+To get more information about the different MCUboot operating modes and how to
+perform application upgrade, refer to `MCUboot design`_.
+To learn more about how to secure the application images stored in external Flash,
+refer to `MCUboot Encryption`_.
+
+Debugging
+---------
+
+You can debug the application in external flash using ``west`` and ``GDB``.
+
+After flashing MCUboot and the app, execute the following command:
+
+.. code-block:: console
+
+   west debugserver
+
+Then, open another terminal (don't forget to activate Zephyr's environment) and execute:
+
+.. code-block:: console
+
+   west attach
+
+By default, user application symbols are loaded. To debug MCUboot application,
+launch:
+
+.. code-block:: console
+
+   west attach --domain mcuboot
 
 .. _STM32H573I-DK Discovery website:
    https://www.st.com/en/evaluation-tools/stm32h573i-dk.html
@@ -310,3 +401,9 @@ example for the :zephyr:code-sample:`hello_world` application.
 
 .. _STMicroelectronics OpenOCD Github:
    https://github.com/STMicroelectronics/OpenOCD/tree/openocd-cubeide-r6
+
+.. _MCUboot design:
+   https://docs.mcuboot.com/design.html
+
+.. _MCUboot Encryption:
+   https://docs.mcuboot.com/encrypted_images.html

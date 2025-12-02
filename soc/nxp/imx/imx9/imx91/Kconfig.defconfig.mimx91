@@ -1,7 +1,7 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MIMX9131
+if SOC_MIMX9131 || SOC_MIMX9111
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash

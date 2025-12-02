@@ -33,3 +33,11 @@ tests:
       - CONFIG_SHELL_VT100_COLORS=n
     harness_config:
       shell_commands: *kernel_commands
+  sample.pytest.required_app_demo:
+    required_applications:
+      - name: sample.pytest.shell
+      - name: sample.harness.shell
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest_shared_app/test_shared_app.py"

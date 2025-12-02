@@ -12,23 +12,22 @@ config UDC_DWC2
 	help
 	  DWC2 USB device controller driver.
 
+if UDC_DWC2
+
 config UDC_DWC2_DMA
 	bool "DWC2 USB DMA support"
 	default y
-	depends on UDC_DWC2
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
 
 config UDC_DWC2_HIBERNATION
 	bool "DWC2 USB Hibernation support"
 	default y
-	depends on UDC_DWC2
 	help
 	  Enable Hibernation if DWC2 USB controller supports hibernation.
 
 config UDC_DWC2_PTI
 	bool "DWC2 USB Periodic Transfer Interrupt"
-	depends on UDC_DWC2
 	help
 	  Ignore frame number when scheduling isochronous endpoints. Use this
 	  when isochronous transfers should finish only after receiving token
@@ -38,24 +37,24 @@ config UDC_DWC2_PTI
 
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
-	depends on UDC_DWC2
+	default 1024 if SOC_SERIES_ESP32S3
 	default 512
 	help
 	  DWC2 driver internal thread stack size.
 
 config UDC_DWC2_THREAD_PRIORITY
 	int "UDC DWC2 driver thread priority"
-	depends on UDC_DWC2
 	default 8
 	help
 	  DWC2 driver thread priority.
 
 config UDC_DWC2_USBHS_VBUS_READY_TIMEOUT
 	int "UDC DWC2 USBHS VBUS ready event timeout in ms"
-	depends on UDC_DWC2
-	depends on NRFS_HAS_VBUS_DETECTOR_SERVICE
+	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX || SOC_SERIES_NRF92X
 	default 0
 	help
 	  UDC DWC2 USBHS VBUS ready event timeout. If the VBUS is not ready
 	  and the Nordic USBHS controller is used, the udc_enable() is
 	  blocked for this amount of time. Set it to zero to wait forever.
+
+endif # UDC_DWC2

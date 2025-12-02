@@ -6,11 +6,12 @@
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/pwm/pwm_ifx_cat1.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
 
 / {
 	aliases {
 		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
 	};
 
 	pwmleds {
@@ -19,20 +20,46 @@
 			pwms = <&pwm0_0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "PWM MB1";
 		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm1_5 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM MB2";
+		};
 	};
 };
 
-&pwm0_0 {
+&tcpwm0_0 {
 	status = "okay";
-	pinctrl-0 = <&p1_1_pwm0_0>;
-	pinctrl-names = "default";
-	divider-type = <CY_SYSCLK_DIV_16_BIT>;
+	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
 	divider-sel = <1>;
 	divider-val = <9599>;
+
+	pwm0_0: pwm0_0 {
+		status = "okay";
+		pinctrl-0 = <&p1_1_pwm0_0>;
+		pinctrl-names = "default";
+	};
+};
+
+&tcpwm1_5 {
+	status = "okay";
+	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
+	divider-sel = <1>;
+	divider-val = <9599>;
+
+	pwm1_5: pwm1_5 {
+		status = "okay";
+		pinctrl-0 = <&p5_2_pwm1_5>;
+		pinctrl-names = "default";
+	};
 };
 
 &pinctrl {
 	p1_1_pwm0_0: p1_1_pwm0_0 {
+		drive-push-pull;
+	};
+
+	p5_2_pwm1_5: p5_2_pwm1_5 {
 		drive-push-pull;
 	};
 };

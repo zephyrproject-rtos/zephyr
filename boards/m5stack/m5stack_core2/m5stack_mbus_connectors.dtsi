@@ -35,15 +35,19 @@
 			   <23 0 &gpio0 0 0>,	/* GPIO */
 			   /* 24 NC */
 			   <25 0 &gpio1 3 0>;	/* GPIO */
-			   /* 26 NC */
-			   /* 27 5V */
-			   /* 28 NC */
-			   /* 29 BAT */
+		/* 26 NC */
+		/* 27 5V */
+		/* 28 NC */
+		/* 29 BAT */
 	};
 };
 
 m5stack_mbus_i2c0: &i2c0 {};
+
 m5stack_mbus_i2c1: &i2c1 {};
+
 m5stack_mbus_uart0: &uart1 {};
+
 m5stack_mbus_uart1: &uart2 {};
+
 m5stack_mbus_spi: &spi3 {};

@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <freq.h>
 
-/{
+/ {
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -20,6 +20,59 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&run0 &run1 &run2
+					    &stop0 &stop1 &stop2
+					    &stdby0 &stdby1>;
+		};
+
+		power-states {
+			run0: runsleep0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <1>;
+			};
+
+			run1: runsleep1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <2>;
+			};
+
+			run2: runsleep2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <3>;
+			};
+
+			stop0: stop0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+			};
+
+			stop1: stop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+			};
+
+			stop2: stop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+			};
+
+			stdby0: standby0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <1>;
+			};
+
+			stdby1: standby1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <2>;
+			};
 		};
 	};
 

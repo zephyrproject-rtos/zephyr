@@ -6,4 +6,5 @@
 config COUNTER_CMOS
 	bool "Counter driver for x86 CMOS/RTC clock"
 	default y if !RTC
+	select MFD
 	depends on DT_HAS_MOTOROLA_MC146818_ENABLED

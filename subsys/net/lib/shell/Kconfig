@@ -150,6 +150,14 @@ config NET_SHELL_WEBSOCKET_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WEBSOCKET_CLIENT
 
+config NET_SHELL_QBV_SUPPORTED
+	bool "Qbv Shell"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_QBV && NET_L2_ETHERNET_MGMT)
+	help
+	  Enable Qbv Shell.
+	  The Qbv shell currently supports set/enable operations.
+
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"
 	default y

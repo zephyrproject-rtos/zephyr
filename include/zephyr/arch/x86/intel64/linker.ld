@@ -95,6 +95,8 @@ SECTIONS
 	*(.text)
 	*(.text.*)
 
+	#include <snippets-text-sections.ld>
+
 	#include <zephyr/linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM

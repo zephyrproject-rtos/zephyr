@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -127,7 +128,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
-				erase-block-size = <2048>;
+				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <8>;
 			};
 		};
@@ -301,47 +302,47 @@
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 		};
 
-		ftm0: ftm@40038000{
+		ftm0: ftm@40038000 {
 			compatible = "nxp,ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm1: ftm@40039000{
+		ftm1: ftm@40039000 {
 			compatible = "nxp,ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm2: ftm@4003a000{
+		ftm2: ftm@4003a000 {
 			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		ftm3: ftm@400b9000{
+		ftm3: ftm@400b9000 {
 			compatible = "nxp,ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-					 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
 			prescaler = <16>;
 			status = "disabled";
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <39 0>;

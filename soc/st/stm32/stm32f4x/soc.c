@@ -26,7 +26,9 @@ extern void stm32_power_init(void);
 void soc_early_init_hook(void)
 {
 	/* Enable ART Flash I/D-cache and prefetch */
+#if defined(CONFIG_STM32_FLASH_PREFETCH)
 	LL_FLASH_EnablePrefetch();
+#endif
 	LL_FLASH_EnableInstCache();
 	LL_FLASH_EnableDataCache();
 

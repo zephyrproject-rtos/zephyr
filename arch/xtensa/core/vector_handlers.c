@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "xtensa/corebits.h"
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
@@ -15,12 +15,6 @@
 #include <zephyr/offsets.h>
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
-
-#ifdef CONFIG_XTENSA_GEN_HANDLERS
-#include <xtensa_handlers.h>
-#else
-#include <_soc_inthandlers.h>
-#endif
 
 #include <kernel_internal.h>
 #include <xtensa_internal.h>
@@ -227,14 +221,11 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
-static void print_fatal_exception(void *print_stack, int cause,
-				  bool is_dblexc, uint32_t depc)
+static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t depc)
 {
 	void *pc;
-	uint32_t ps, vaddr;
+	uint32_t ps;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)print_stack;
-
-	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 	if (is_dblexc) {
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION (DOUBLE)");
@@ -242,23 +233,23 @@ static void print_fatal_exception(void *print_stack, int cause,
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %d (%s)",
-		arch_curr_cpu()->id, cause,
-		xtensa_exccause(cause));
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
+		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
+		xtensa_exccause(bsa->exccause));
 
 	/* Don't print information if the BSA area is invalid as any elements
 	 * obtained via de-referencing the pointer are probably also invalid.
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
+		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
 		return;
 	}
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
 
-	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)vaddr);
+	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)bsa->excvaddr);
 
 	if (is_dblexc) {
 		EXCEPTION_DUMP(" **  DEPC %p", (void *)depc);
@@ -266,10 +257,13 @@ static void print_fatal_exception(void *print_stack, int cause,
 
 	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
 	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
-		get_bits(0, 4, ps), get_bits(4, 1, ps),
-		get_bits(5, 1, ps), get_bits(6, 2, ps),
-		get_bits(18, 1, ps),
-		get_bits(8, 4, ps), get_bits(16, 2, ps));
+		       get_bits(XCHAL_PS_INTLEVEL_SHIFT, XCHAL_PS_INTLEVEL_BITS, ps),
+		       get_bits(XCHAL_PS_EXCM_SHIFT, XCHAL_PS_EXCM_BITS, ps),
+		       get_bits(XCHAL_PS_UM_SHIFT, XCHAL_PS_UM_BITS, ps),
+		       get_bits(XCHAL_PS_RING_SHIFT, XCHAL_PS_RING_BITS, ps),
+		       get_bits(XCHAL_PS_WOE_SHIFT, XCHAL_PS_WOE_BITS, ps),
+		       get_bits(XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS, ps),
+		       get_bits(XCHAL_PS_CALLINC_SHIFT, XCHAL_PS_CALLINC_BITS, ps));
 }
 
 static ALWAYS_INLINE void usage_stop(void)
@@ -371,123 +365,36 @@ void arch_ipi_lazy_coprocessors_save(void)
 #endif
 }
 
-/* The wrapper code lives here instead of in the python script that
- * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
- * ugly.
- *
- * This may be unused depending on number of interrupt levels
- * supported by the SoC.
- */
 
 #if XCHAL_NUM_INTERRUPTS <= 32
-#define DEF_INT_C_HANDLER(l)                                    \
-__unused void *xtensa_int##l##_c(void *interrupted_stack)       \
-{                                                               \
-	uint32_t irqs, intenable, m;                            \
-	usage_stop();                                           \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
-	irqs &= intenable;                                      \
-	while ((m = _xtensa_handle_one_int##l(0, irqs))) {      \
-		irqs ^= m;                                      \
-		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
-	}                                                       \
-	return return_to(interrupted_stack);                    \
-}
-#endif /* XCHAL_NUM_INTERRUPTS <= 32 */
-
-#if XCHAL_NUM_INTERRUPTS > 32 && XCHAL_NUM_INTERRUPTS <= 64
-#define DEF_INT_C_HANDLER(l)                                     \
-__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
-{                                                                \
-	uint32_t irqs, intenable, m;                             \
-	usage_stop();                                            \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
-	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
-	}                                                        \
-	return return_to(interrupted_stack);                     \
-}
-#endif /* XCHAL_NUM_INTERRUPTS > 32 && XCHAL_NUM_INTERRUPTS <= 64 */
-
-#if XCHAL_NUM_INTERRUPTS > 64 && XCHAL_NUM_INTERRUPTS <= 96
-#define DEF_INT_C_HANDLER(l)                                     \
-__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
-{                                                                \
-	uint32_t irqs, intenable, m;                             \
-	usage_stop();                                            \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
-	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(2, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear2 %0" : : "r"(m)); \
-	}                                                        \
-	return return_to(interrupted_stack);                     \
-}
-#endif /* XCHAL_NUM_INTERRUPTS > 64 && XCHAL_NUM_INTERRUPTS <= 96 */
-
-#if XCHAL_NUM_INTERRUPTS > 96
-#define DEF_INT_C_HANDLER(l)                                     \
-__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
-{                                                                \
-	uint32_t irqs, intenable, m;                             \
-	usage_stop();                                            \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
-	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(2, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear2 %0" : : "r"(m)); \
-	}                                                        \
-	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irqs));      \
-	__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable)); \
-	irqs &= intenable;                                       \
-	while ((m = _xtensa_handle_one_int##l(3, irqs))) {       \
-		irqs ^= m;                                       \
-		__asm__ volatile("wsr.intclear3 %0" : : "r"(m)); \
-	}                                                        \
-	return return_to(interrupted_stack);                     \
-}
-#endif /* XCHAL_NUM_INTERRUPTS > 96 */
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 64
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 96
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 128
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK3,                                                       \
+	}
+#else
+#error "xtensa supports up to 128 interrupts"
+#endif
 
 #if XCHAL_HAVE_NMI
 #define MAX_INTR_LEVEL XCHAL_NMILEVEL
@@ -497,6 +404,102 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)        \
 #error Xtensa core with no interrupt support is used
 #define MAX_INTR_LEVEL 0
 #endif
+
+#define GRP_COUNT (ROUND_UP(XCHAL_NUM_INTERRUPTS, 32) / 32)
+
+static const uint32_t xtensa_lvl_mask[MAX_INTR_LEVEL][GRP_COUNT] = {
+#if MAX_INTR_LEVEL >= 1
+	DECLARE_IRQ(1),
+#endif
+#if MAX_INTR_LEVEL >= 2
+	DECLARE_IRQ(2),
+#endif
+#if MAX_INTR_LEVEL >= 3
+	DECLARE_IRQ(3),
+#endif
+#if MAX_INTR_LEVEL >= 4
+	DECLARE_IRQ(4),
+#endif
+#if MAX_INTR_LEVEL >= 5
+	DECLARE_IRQ(5),
+#endif
+#if MAX_INTR_LEVEL >= 6
+	DECLARE_IRQ(6),
+#endif
+#if MAX_INTR_LEVEL >= 7
+	DECLARE_IRQ(7),
+#endif
+};
+
+/* Handles all interrupts for given IRQ Level.
+ * - Supports up to 128 interrupts (max supported by Xtensa)
+ * - Supports all IRQ levels
+ * - Uses __builtin_ctz that for most xtensa configurations will be optimized using nsau instruction
+ */
+__unused static void xtensa_handle_irq_lvl(int irq_lvl)
+{
+	int irq;
+	uint32_t irq_mask;
+	uint32_t intenable;
+#if XCHAL_NUM_INTERRUPTS > 0
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][0];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+		__asm__ volatile("wsr.intclear %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 32
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][1];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 32].isr(_sw_isr_table[irq + 32].arg);
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+
+#if XCHAL_NUM_INTERRUPTS > 64
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][2];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 64].isr(_sw_isr_table[irq + 64].arg);
+		__asm__ volatile("wsr.intclear2 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][3];
+
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 96].isr(_sw_isr_table[irq + 96].arg);
+		__asm__ volatile("wsr.intclear3 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+}
+
+#define DEF_INT_C_HANDLER(l)                                                                       \
+	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
+	{                                                                                          \
+		usage_stop();                                                                      \
+		xtensa_handle_irq_lvl(l);                                                          \
+		return return_to(interrupted_stack);                                               \
+	}
 
 #if MAX_INTR_LEVEL >= 2
 DEF_INT_C_HANDLER(2)
@@ -542,12 +545,11 @@ void *xtensa_excint1_c(void *esf)
 
 #ifdef CONFIG_XTENSA_MMU
 	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
-	cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
 
 	is_dblexc = (depc != 0U);
-#else /* CONFIG_XTENSA_MMU */
-	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 #endif /* CONFIG_XTENSA_MMU */
+
+	cause = bsa->exccause;
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
@@ -629,6 +631,16 @@ void *xtensa_excint1_c(void *esf)
 		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_DTLB_MULTIHIT:
+		xtensa_exc_dtlb_multihit_handle();
+		break;
+	case EXCCAUSE_LOAD_STORE_RING:
+		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
+			break;
+		}
+		__fallthrough;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
@@ -659,7 +671,6 @@ void *xtensa_excint1_c(void *esf)
 		if (cause == EXCCAUSE_ILLEGAL) {
 			if (pc == (void *)&xtensa_arch_except_epc) {
 				cause = 63;
-				__asm__ volatile("wsr.exccause %0" : : "r"(cause));
 				reason = bsa->a2;
 			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
 				cause = 64; /* kernel oops */
@@ -672,11 +683,13 @@ void *xtensa_excint1_c(void *esf)
 				 */
 				print_stack = (void *)bsa->a3;
 			}
+
+			bsa->exccause = cause;
 		}
 
 skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
-			print_fatal_exception(print_stack, cause, is_dblexc, depc);
+			print_fatal_exception(print_stack, is_dblexc, depc);
 		}
 #ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
 		extern void z_gdb_isr(struct arch_esf *esf);

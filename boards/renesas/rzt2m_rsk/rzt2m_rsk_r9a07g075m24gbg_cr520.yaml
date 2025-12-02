@@ -14,4 +14,9 @@ supported:
   - gpio
   - pwm
   - adc
+  - i2c
+  - counter
+  - dma
+  - spi
+  - watchdog
 vendor: renesas

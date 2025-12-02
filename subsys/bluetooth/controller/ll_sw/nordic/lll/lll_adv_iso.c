@@ -115,7 +115,7 @@ static void prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	p = param;
 
@@ -135,7 +135,7 @@ static void create_prepare_bh(void *param)
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, create_prepare_cb, 0U,
 			  param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static void prepare_bh(void *param)
@@ -144,7 +144,7 @@ static void prepare_bh(void *param)
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0U, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int create_prepare_cb(struct lll_prepare_param *p)
@@ -269,7 +269,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		stream_handle = lll->stream_handle[bis_idx];
 		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		stream = ull_adv_iso_lll_stream_get(stream_handle);
-		LL_ASSERT(stream);
+		LL_ASSERT_DBG(stream);
 
 		do {
 			link = memq_peek(stream->memq_tx.head,
@@ -448,7 +448,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	/* Calculate ahead the next subevent channel index */
 	if (false) {
@@ -470,7 +470,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
 
 	} else {
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	return 0;
@@ -582,7 +582,7 @@ static void isr_tx_common(void *param,
 	} else {
 		bis = 0U;
 
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	if (!is_ctrl) {
@@ -649,7 +649,7 @@ static void isr_tx_common(void *param,
 			stream_handle = lll->stream_handle[bis_idx];
 			handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 			stream = ull_adv_iso_lll_stream_get(stream_handle);
-			LL_ASSERT(stream);
+			LL_ASSERT_DBG(stream);
 
 			do {
 				struct node_tx_iso *tx;
@@ -727,7 +727,7 @@ static void isr_tx_common(void *param,
 			/* FIXME: memq_peek_n function does not support indices > UINT8_MAX,
 			 *        add assertion check to honor this limitation.
 			 */
-			LL_ASSERT(payload_index <= UINT8_MAX);
+			LL_ASSERT_DBG(payload_index <= UINT8_MAX);
 		} else {
 			payload_index  = lll->bn_curr - 1U; /* 3 bits */
 		}
@@ -742,7 +742,7 @@ static void isr_tx_common(void *param,
 
 		stream_handle = lll->stream_handle[lll->bis_curr - 1U];
 		stream = ull_adv_iso_lll_stream_get(stream_handle);
-		LL_ASSERT(stream);
+		LL_ASSERT_DBG(stream);
 
 		link = memq_peek_n(stream->memq_tx.head, stream->memq_tx.tail,
 				   payload_index, (void **)&tx);
@@ -869,7 +869,12 @@ static void isr_tx_common(void *param,
 	}
 
 	/* assert if radio packet ptr is not set and radio started tx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT_ERR(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -917,7 +922,7 @@ static void isr_tx_common(void *param,
 #endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
 
 	} else {
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1033,7 +1038,7 @@ static void isr_done_term(void *param)
 	lll_isr_status_reset();
 
 	lll = param;
-	LL_ASSERT(lll->ctrl_expire);
+	LL_ASSERT_DBG(lll->ctrl_expire);
 
 	elapsed_event = lll->latency_event + 1U;
 	if (lll->ctrl_expire > elapsed_event) {
@@ -1070,7 +1075,7 @@ static void isr_done_term(void *param)
 				 * Advertising PDU.
 				 */
 				rx = ull_pdu_rx_alloc();
-				LL_ASSERT(rx);
+				LL_ASSERT_ERR(rx);
 
 				rx->hdr.type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
 				rx->rx_ftr.param = lll;

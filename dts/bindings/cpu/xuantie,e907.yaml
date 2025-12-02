@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xuantie E907 Core CPU
+
+compatible: "xuantie,e907"
+
+include: riscv,cpus.yaml
+
+properties:
+  hardware-exec-breakpoint-count:
+    type: int
+    description: Number of hardware break points

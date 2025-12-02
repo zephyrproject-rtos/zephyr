@@ -9,13 +9,14 @@
 #include <nxp/nxp_mcxa153.dtsi>
 #include "frdm_mcxa153-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <freq.h>
 
 / {
 	model = "NXP FRDM_MCXA153 board";
 	compatible = "nxp,mcxa153", "nxp,mcx";
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -70,6 +71,58 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio3 30 0>,  /* AN */
+			   <1 0 &gpio3 1 0>,   /* RST */
+			   <2 0 &gpio1 3 0>,   /* CS */
+			   <3 0 &gpio1 1 0>,   /* SCK */
+			   <4 0 &gpio1 2 0>,   /* MISO */
+			   <5 0 &gpio1 0 0>,   /* MOSI */
+			   <6 0 &gpio3 12 0>,  /* PWM */
+			   <7 0 &gpio2 5 0>,   /* INT */
+			   <8 0 &gpio3 14 0>,  /* RX */
+			   <9 0 &gpio3 15 0>,  /* TX */
+			   <10 0 &gpio3 27 0>, /* GPIO, Not a SCL  */
+			   <11 0 &gpio3 28 0>; /* GPIO, Not a SDA  */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio2 0 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio3 31 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio3 30 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio1 4 0>,   /* GPIO, Not a RX */
+			   <ARDUINO_HEADER_R3_D1 0 &gpio1 5 0>,   /* GPIO, Not a TX */
+			   <ARDUINO_HEADER_R3_D2 0 &gpio2 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio3 0 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio2 5 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio3 12 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio3 13 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio3 15 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio3 14 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio2 6 0>,  /* CS */
+			   <ARDUINO_HEADER_R3_D11 0 &gpio2 13 0>, /* MOSI */
+			   <ARDUINO_HEADER_R3_D12 0 &gpio2 16 0>, /* MISO */
+			   <ARDUINO_HEADER_R3_D13 0 &gpio2 12 0>, /* SCK */
+			   <ARDUINO_HEADER_R3_D14 0 &gpio1 8 0>,  /* SDA */
+			   <ARDUINO_HEADER_R3_D15 0 &gpio1 9 0>;  /* SCL */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <96000000>;
 };
 
 &ctimer0 {
@@ -91,14 +144,17 @@
 			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(40)>;
 		};
+
 		slot1_partition: partition@12000 {
 			label = "image-1";
 			reg = <0x00012000 DT_SIZE_K(40)>;
 		};
+
 		storage_partition: partition@1C000 {
 			label = "storage";
 			reg = <0x0001C000 DT_SIZE_K(16)>;
@@ -162,11 +218,23 @@
 	pinctrl-names = "default";
 };
 
+arduino_i2c: &lpi2c0 {};
+
 &lpspi0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
 };
+
+mikrobus_spi: &lpspi0 {};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+arduino_spi: &lpspi1 {};
 
 &lptmr0 {
 	status = "okay";
@@ -185,6 +253,8 @@
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
 };
+
+mikrobus_serial: &lpuart2 {};
 
 /*
  * Uses OS timer as the kernel timer

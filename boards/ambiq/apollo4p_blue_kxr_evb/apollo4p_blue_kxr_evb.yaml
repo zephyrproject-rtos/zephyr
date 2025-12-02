@@ -8,19 +8,16 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - uart
+  - watchdog
   - adc
-  - ble
-  - clock_control
   - counter
   - gpio
-  - hwinfo
-  - i2c
-  - pwm
-  - rtc
   - spi
-  - uart
+  - i2c
+  - clock_control
+  - ble
   - usbd
-  - watchdog
 testing:
   ignore_tags:
     - net

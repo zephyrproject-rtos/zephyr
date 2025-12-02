@@ -1,5 +1,5 @@
 /**
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * @file nxp_wifi_drv.c
@@ -20,6 +20,9 @@
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
+#ifndef CONFIG_NXP_RW610
+#include <fsl_gpc.h>
+#endif
 #endif
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
@@ -73,7 +76,7 @@ extern struct interface g_uap;
 extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 #endif
 
-#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_NXP_RW610)
+#ifdef CONFIG_PM_DEVICE
 extern int is_hs_handshake_done;
 extern int wlan_host_sleep_state;
 extern bool skip_hs_handshake;
@@ -391,6 +394,77 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	return 0;
 }
 
+static int nxp_wifi_cpu_reset(uint8_t enable)
+{
+	int err = 0;
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios) &&    \
+	DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+
+	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
+	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+
+	if (!gpio_is_ready_dt(&sdio_reset)) {
+		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
+				sdio_reset.pin);
+		return -EIO;
+	}
+
+	/* Configure sdio_reset as output  */
+	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
+				sdio_reset.port->name, sdio_reset.pin);
+		return err;
+	}
+
+	if (!gpio_is_ready_dt(&pwr_gpios)) {
+		LOG_ERR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
+				pwr_gpios.pin);
+		return -EIO;
+	}
+
+	/* Configure wlan-power-io as an output  */
+	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure pwr_gpios %s pin %d", err,
+				pwr_gpios.port->name, pwr_gpios.pin);
+		return err;
+	}
+
+	if (enable) {
+		/* Set SDIO reset pin as high  */
+		err = gpio_pin_set_dt(&sdio_reset, 1);
+		if (err) {
+			return err;
+		}
+		/* wait for reset done */
+		k_sleep(K_MSEC(100));
+
+		/* Set power gpio pin as high  */
+		err = gpio_pin_set_dt(&pwr_gpios, 1);
+		if (err) {
+			return err;
+		}
+	} else {
+		/* Set SDIO reset pin as low */
+		err = gpio_pin_set_dt(&sdio_reset, 0);
+		if (err) {
+			return err;
+		}
+
+		/* Set power gpio pin as low */
+		err = gpio_pin_set_dt(&pwr_gpios, 0);
+		if (err) {
+			return err;
+		}
+	}
+	/* wait for reset done */
+	k_sleep(K_MSEC(100));
+#endif
+
+	return err;
+}
+
 static int nxp_wifi_wlan_init(void)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
@@ -404,7 +478,9 @@ static int nxp_wifi_wlan_init(void)
 		k_event_init(&s_nxp_wifi_SyncEvent);
 	}
 
-	if (status == NXP_WIFI_RET_SUCCESS) {
+	ret = nxp_wifi_cpu_reset(true);
+
+	if ((status == NXP_WIFI_RET_SUCCESS) && (ret == 0)) {
 		ret = wlan_init(wlan_fw_bin, wlan_fw_bin_len);
 		if (ret != WM_SUCCESS) {
 			status = NXP_WIFI_RET_FAIL;
@@ -2014,6 +2090,18 @@ extern void WL_MCI_WAKEUP0_DriverIRQHandler(void);
 extern void WL_MCI_WAKEUP_DONE0_DriverIRQHandler(void);
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+#ifndef CONFIG_NXP_RW610
+struct gpio_callback wakeup_callback;
+
+static void gpio_wakeup_callback(const struct device *port, struct gpio_callback *cb,
+				 gpio_port_pins_t pins)
+{
+	/* TODO: Reserved for future use. */
+}
+#endif
+#endif
+
 static int nxp_wifi_dev_init(const struct device *dev)
 {
 	struct nxp_wifi_dev *nxp_wifi = &nxp_wifi0;
@@ -2024,14 +2112,50 @@ static int nxp_wifi_dev_init(const struct device *dev)
 
 #ifdef CONFIG_NXP_RW610
 	IRQ_CONNECT(IMU_IRQ_N, IMU_IRQ_P, WL_MCI_WAKEUP0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_IRQ_N);
 	IRQ_CONNECT(IMU_WAKEUP_IRQ_N, IMU_WAKEUP_IRQ_P, WL_MCI_WAKEUP_DONE0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_WAKEUP_IRQ_N);
 #if (DT_INST_PROP(0, wakeup_source))
-	EnableDeepSleepIRQ(IMU_IRQ_N);
-#endif
-#endif
+	NXP_ENABLE_WAKEUP_SIGNAL(IMU_IRQ_N);
+#endif /* DT_INST_PROP */
+#else
+#ifdef CONFIG_PM_DEVICE
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_gpios)
+	int err = 0;
+	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_gpios);
 
+	if (!gpio_is_ready_dt(&wakeup)) {
+		LOG_ERR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
+			wakeup.pin);
+		return -EIO;
+	}
+
+	/* Configure wakeup gpio as input  */
+	err = gpio_pin_configure_dt(&wakeup, GPIO_INPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure wakeup %s pin %d", err,
+			wakeup.port->name, wakeup.pin);
+		return err;
+	}
+
+	err = gpio_pin_set_dt(&wakeup, 0);
+	if (err) {
+		return err;
+	}
+
+	/* Configure wakeup gpio interrupt */
+	err = gpio_pin_interrupt_configure_dt(&wakeup, GPIO_INT_EDGE_FALLING);
+	if (err) {
+		return err;
+	}
+
+	/* Set wakeup gpio callback function */
+	gpio_init_callback(&wakeup_callback, gpio_wakeup_callback, BIT(wakeup.pin));
+	err = gpio_add_callback_dt(&wakeup, &wakeup_callback);
+	if (err) {
+		return err;
+	}
+#endif
+#endif
+#endif
 	return 0;
 }
 
@@ -2070,7 +2194,8 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 	return 0;
 }
 
-#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_NXP_RW610)
+#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_NXP_RW610
 void device_pm_dump_wakeup_source(void)
 {
 	if (POWER_GetWakeupStatus(IMU_IRQ_N)) {
@@ -2083,6 +2208,20 @@ void device_pm_dump_wakeup_source(void)
 		LOG_INF("Wakeup by RTC");
 		POWER_ClearWakeupStatus(32);
 	}
+}
+#endif
+
+static bool nxp_wifi_wlan_wakeup(void)
+{
+#ifdef CONFIG_NXP_RW610
+	return POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn);
+#elif CONFIG_NXP_IW610 || CONFIG_NXP_IW61X
+	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_0_15_IRQn);
+#elif CONFIG_NXP_IW416
+	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_16_31_IRQn);
+#else
+	return false;
+#endif
 }
 
 static int device_wlan_pm_action(const struct device *dev, enum pm_device_action pm_action)
@@ -2128,17 +2267,19 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 			/* If we are not woken up by WLAN, skip posting host sleep exit event.
 			 * And skip host sleep handshake next time we are about to sleep.
 			 */
-			if (POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn)) {
+			if (nxp_wifi_wlan_wakeup()) {
 				ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
 				if (ret != 0) {
 					return -EFAULT;
 				}
 				wlan_hs_hanshake_cfg(false);
 			} else {
+				LOG_INF("Wakeup by other sources");
 				wlan_hs_hanshake_cfg(true);
 			}
-
+#ifdef CONFIG_NXP_RW610
 			device_pm_dump_wakeup_source();
+#endif
 			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
 				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
 				wlan_hs_hanshake_cfg(false);

@@ -338,7 +338,7 @@ struct zsock_addrinfo {
  *
  * This is achieved by tagging data structure definitions that implement the
  * underlying object associated with a network socket file descriptor with
- * '__net_socket`. All pointers to instances of these will be known to the
+ * `__net_socket`. All pointers to instances of these will be known to the
  * kernel as kernel objects with type K_OBJ_NET_SOCKET.
  *
  * This API is intended for threads that need to grant access to the object

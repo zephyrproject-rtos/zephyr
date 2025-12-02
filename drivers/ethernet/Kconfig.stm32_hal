@@ -26,7 +26,12 @@ choice ETH_STM32_HAL_API_VERSION
 
 config ETH_STM32_HAL_API_V2
 	bool "Use official STM32Cube HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32N6X
+	depends on SOC_SERIES_STM32F4X \
+		   || SOC_SERIES_STM32F7X \
+		   || SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
+		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32N6X
 	select USE_STM32_HAL_ETH_EX if SOC_SERIES_STM32N6X
 	help
 	  Use the official STM32Cube HAL driver instead of the legacy one.
@@ -81,12 +86,23 @@ config ETH_STM32_HW_CHECKSUM
 	  performances.
 	  See reference manual for more information on this feature.
 
+config ETH_STM32_HAL_TX_ASYNC
+	bool "Use TX async mode"
+	depends on ETH_STM32_HAL_API_V2
+	help
+	  Enable TX transmission asynchronous mode to enhance throughput
+	  performances.
+
 menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
 	default y
 	depends on PTP_CLOCK || NET_L2_PTP
 	depends on ETH_STM32_HAL_API_V2
-	depends on SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
+	depends on SOC_SERIES_STM32F7X \
+		   || SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
+		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32N6X
 	help
 	  Enable STM32 PTP clock support.
 

@@ -18,7 +18,8 @@ config SOC_SERIES_CC23X0
 	select DYNAMIC_THREAD_ALLOC
 	select THREAD_STACK_INFO
 	select BUILD_OUTPUT_HEX
-	select BUILD_NO_GAP_FILL
+	select HAS_PM
+	select PM_DEVICE if PM
 
 menu "Bootloader Configuration"
 depends on SOC_SERIES_CC23X0

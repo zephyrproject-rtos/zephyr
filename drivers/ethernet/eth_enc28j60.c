@@ -914,7 +914,7 @@ static int eth_enc28j60_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct eth_enc28j60_config eth_enc28j60_config_##inst = {                     \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
 		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \

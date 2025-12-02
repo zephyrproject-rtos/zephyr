@@ -203,9 +203,9 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 		/* Calculate GLTK */
 		err = bt_crypto_h7(BIG1, bcode, igltk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 		err = bt_crypto_h6(igltk, BIG2, sync_iso->gltk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 
 		lll->enc = 1U;
 	} else {
@@ -309,7 +309,8 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 	mfy.param = &sync_iso->lll;
 
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
+
 	k_sem_take(&sem, K_FOREVER);
 	sync_iso->flush_sem = NULL;
 
@@ -390,7 +391,7 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 
 		stream_handle = lll->stream_handle[lll->stream_count];
 		stream = ull_sync_iso_stream_get(stream_handle);
-		LL_ASSERT(stream);
+		LL_ASSERT_DBG(stream);
 
 		dp = stream->dp;
 		if (dp) {
@@ -489,20 +490,22 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	if (lll->pto) {
 		uint8_t nse;
+		uint8_t ptc;
 
 		nse = lll->irc * lll->bn; /* 4 bits * 3 bits, total 7 bits */
 		if (nse >= lll->nse) {
 			return;
 		}
 
-		lll->ptc = lll->nse - nse;
+		ptc = lll->nse - nse;
 
 		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
 		 *        running buffer offset related to nse.
 		 *        Fix ptc and ptc_curr definitions, until then we keep an assertion check
 		 *        here.
 		 */
-		LL_ASSERT(lll->ptc <= BIT_MASK(4));
+		LL_ASSERT_DBG(ptc <= BIT_MASK(4));
+		lll->ptc = ptc;
 	} else {
 		lll->ptc = 0U;
 	}
@@ -532,7 +535,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 		/* Calculate GSK */
 		err = bt_crypto_h8(sync_iso->gltk, bi->gskd, BIG3, gsk);
-		LL_ASSERT(!err);
+		LL_ASSERT_DBG(!err);
 
 		/* Prepare the CCM parameters */
 		ccm_rx = &lll->ccm_rx;
@@ -584,6 +587,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
 	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
+	LL_ASSERT_DBG(stream);
+
 	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
 		sync_iso_offset_us += (stream->bis_index - 1U) *
 				      lll->sub_interval *
@@ -705,8 +710,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso,
 			   ticker_start_op_cb, (void *)__LINE__);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 
 void ull_sync_iso_estab_done(struct node_rx_event_done *done)
@@ -843,9 +848,9 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 					      lazy, force,
 					      ticker_update_op_cb,
 					      sync_iso);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY) ||
-			  ((void *)sync_iso == ull_disable_mark_get()));
+		LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+			      (ticker_status == TICKER_STATUS_BUSY) ||
+			      ((void *)sync_iso == ull_disable_mark_get()));
 	}
 }
 
@@ -995,7 +1000,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync_iso->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -1008,7 +1013,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
 			     &mfy_lll_prepare);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
@@ -1017,13 +1022,13 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_disable_mark_get()));
 }
 
 static void ticker_stop_op_cb(uint32_t status, void *param)
@@ -1032,13 +1037,13 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0U, 0U, &link, NULL, sync_iso_disable};
 	uint32_t ret;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 			     TICKER_USER_ID_ULL_HIGH, 0U, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void sync_iso_disable(void *param)
@@ -1059,14 +1064,14 @@ static void sync_iso_disable(void *param)
 		/* Setup disabled callback to be called when ref count
 		 * returns to zero.
 		 */
-		LL_ASSERT(!hdr->disabled_cb);
+		LL_ASSERT_ERR(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0U, &mfy);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	} else {
 		/* No pending LLL events */
 		disabled_cb(&sync_iso->lll);
@@ -1103,7 +1108,7 @@ static void disabled_cb(void *param)
 
 	/* Generate BIG sync lost */
 	rx = (void *)&sync_iso->node_rx_lost;
-	LL_ASSERT(rx->hdr.link);
+	LL_ASSERT_DBG(rx->hdr.link);
 	link = rx->hdr.link;
 	rx->hdr.link = NULL;
 
@@ -1113,7 +1118,7 @@ static void disabled_cb(void *param)
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0U, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_func)
@@ -1133,6 +1138,6 @@ static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_f
 			  sync_iso_handle_to_index(handle),
 			  fp_op_func, fp_op_func ? (void *)sync_iso : NULL);
 
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }

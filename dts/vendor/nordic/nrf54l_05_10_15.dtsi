@@ -82,11 +82,13 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		/* intentionally empty because UICR is hardware fixed to Secure */
 #else
+
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
 #endif
+
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -101,11 +103,13 @@
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 #else
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
@@ -311,8 +315,6 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			uart20: uart@c6000 {
@@ -322,8 +324,6 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			i2c21: i2c@c7000 {
@@ -354,8 +354,6 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			uart21: uart@c7000 {
@@ -365,8 +363,6 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			i2c22: i2c@c8000 {
@@ -677,6 +673,7 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 			/* intentionally empty because WDT30 is hardware fixed to Secure */
 #else
+
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
@@ -754,7 +751,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;

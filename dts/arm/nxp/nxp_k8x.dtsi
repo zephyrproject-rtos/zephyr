@@ -106,7 +106,7 @@
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x1000>;
 			clocks = <&sim KINETIS_SIM_SIM_SOPT7 0 0xF>,
-				<&sim KINETIS_SIM_SIM_SOPT7 7 0x80>;
+				 <&sim KINETIS_SIM_SIM_SOPT7 7 0x80>;
 			interrupts = <39 0>;
 			dmas = <&edma0 0 40>;
 			dma-names = "adc0";
@@ -432,17 +432,16 @@
 			dma-requests = <64>;
 			nxp,mem2mem;
 			reg = <0x40008000 0x1000>,
-				<0x40021000 0x1000>;
+			      <0x40021000 0x1000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>,
-				<16 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>;
 			clocks = <&sim KINETIS_SIM_DMA_CLK 0x1040 0x00000002>,
-				<&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
+				 <&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
 			status = "disabled";
 		};
-
 	};
 };
 

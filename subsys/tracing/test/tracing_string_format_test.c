@@ -15,7 +15,7 @@ void sys_trace_k_thread_switched_out(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
@@ -23,7 +23,7 @@ void sys_trace_k_thread_switched_in(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
@@ -243,14 +243,13 @@ void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret)
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }
 
-void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, struct k_mutex *mutex,
-				    k_timeout_t timeout)
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout)
 {
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }
 
-void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, struct k_mutex *mutex,
-				   k_timeout_t timeout, int ret)
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout,
+				   int ret)
 {
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }
@@ -552,4 +551,36 @@ void sys_trace_k_thread_foreach_unlocked_enter(k_thread_user_cb_t user_cb, void 
 void sys_trace_k_thread_foreach_unlocked_exit(k_thread_user_cb_t user_cb, void *data)
 {
 	TRACING_STRING("%s: %p (%p) exit\n", __func__, user_cb, data);
+}
+
+void sys_trace_k_event_init(struct k_event *event)
+{
+	TRACING_STRING("%s: %p init\n", __func__, event);
+}
+
+void sys_trace_k_event_post_enter(struct k_event *event, uint32_t events, uint32_t events_mask)
+{
+	TRACING_STRING("%s: %p post enter\n", __func__, event);
+}
+
+void sys_trace_k_event_post_exit(struct k_event *event, uint32_t events, uint32_t events_mask)
+{
+	TRACING_STRING("%s: %p post exit\n", __func__, event);
+}
+
+void sys_trace_k_event_wait_enter(struct k_event *event, uint32_t events, unsigned int options,
+				  k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p wait enter\n", __func__, event);
+}
+
+void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, unsigned int options,
+				     k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p wait blocking\n", __func__, event);
+}
+
+void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_t ret)
+{
+	TRACING_STRING("%s: %p wait exit\n", __func__, event);
 }

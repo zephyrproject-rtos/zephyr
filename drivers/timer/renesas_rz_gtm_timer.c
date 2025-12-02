@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,16 +51,17 @@ static uint32_t cyc_per_tick;
 #define CYC_PER_TICK cyc_per_tick
 
 static void ostm_irq_handler(timer_callback_args_t *arg);
-void gtm_int_isr(void);
+void gtm_int_isr(IRQn_Type const irq);
+
 const struct device *g_os_timer_dev = DEVICE_DT_INST_GET(0);
 extern unsigned int z_clock_hw_cycles_per_sec;
 
 struct rz_os_timer_config {
-	timer_cfg_t *fsp_cfg;
 	const timer_api_t *fsp_api;
 };
 
 struct rz_os_timer_data {
+	timer_cfg_t *fsp_cfg;
 	timer_ctrl_t *fsp_ctrl;
 	struct k_spinlock lock;
 	uint32_t last_cycle;
@@ -68,11 +69,19 @@ struct rz_os_timer_data {
 	uint32_t last_elapsed;
 };
 
+void rz_os_timer_gtm_isr(const struct device *dev)
+{
+	struct rz_os_timer_data *data = dev->data;
+
+	gtm_int_isr(data->fsp_cfg->cycle_end_irq);
+}
+
 static void ostm_irq_handler(timer_callback_args_t *arg)
 {
 	ARG_UNUSED(arg);
 
 	struct rz_os_timer_data *data = (struct rz_os_timer_data *)g_os_timer_dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	uint32_t delta_cycles = sys_clock_cycle_get_32() - data->last_cycle;
 	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
@@ -90,6 +99,7 @@ static void ostm_irq_handler(timer_callback_args_t *arg)
 	} else {
 		irq_disable(DT_IRQN(TIMER_NODE));
 	}
+	k_spin_unlock(&data->lock, key);
 
 	/* Announce to the kernel */
 	sys_clock_announce(delta_ticks);
@@ -133,10 +143,12 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	struct rz_os_timer_data *data = (struct rz_os_timer_data *)g_os_timer_dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint32_t delta_cycles = sys_clock_cycle_get_32() - data->last_cycle;
 	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	data->last_elapsed = delta_ticks;
+	k_spin_unlock(&data->lock, key);
 
 	return delta_ticks;
 }
@@ -154,13 +166,17 @@ uint32_t sys_clock_cycle_get_32(void)
 	struct rz_os_timer_config *config = (struct rz_os_timer_config *)g_os_timer_dev->config;
 	struct rz_os_timer_data *data = (struct rz_os_timer_data *)g_os_timer_dev->data;
 	timer_status_t timer_status;
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	config->fsp_api->statusGet(data->fsp_ctrl, &timer_status);
-	k_spin_unlock(&data->lock, key);
 
 	return timer_status.counter;
 }
+
+#ifdef CONFIG_CPU_CORTEX_M
+#define RZ_GTM_GET_IRQ_FLAGS(irq_name) 0
+#else /* Cortex-A/R */
+#define RZ_GTM_GET_IRQ_FLAGS(irq_name) DT_IRQ_BY_NAME(TIMER_NODE, irq_name, flags)
+#endif
 
 static int sys_clock_driver_init(void)
 {
@@ -168,16 +184,16 @@ static int sys_clock_driver_init(void)
 	struct rz_os_timer_config *config = (struct rz_os_timer_config *)g_os_timer_dev->config;
 	struct rz_os_timer_data *data = (struct rz_os_timer_data *)g_os_timer_dev->data;
 
-	IRQ_CONNECT(DT_IRQN(TIMER_NODE), DT_IRQ(TIMER_NODE, priority), gtm_int_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_IRQN(TIMER_NODE), DT_IRQ(TIMER_NODE, priority), rz_os_timer_gtm_isr,
+		    DEVICE_DT_INST_GET(0), RZ_GTM_GET_IRQ_FLAGS(overflow));
 
 	data->last_tick = 0;
 	data->last_cycle = 0;
 	z_clock_hw_cycles_per_sec = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_P0CLK);
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	cycles_max = CYCLES_MAX_5;
-	config->fsp_cfg->period_counts = CYC_PER_TICK;
-	ret = config->fsp_api->open(data->fsp_ctrl, config->fsp_cfg);
+	data->fsp_cfg->period_counts = CYC_PER_TICK;
+	ret = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (ret != FSP_SUCCESS) {
 		LOG_ERR("timer initialize failed");
 		return -EIO;
@@ -212,11 +228,11 @@ static int sys_clock_driver_init(void)
 	static gtm_instance_ctrl_t g_timer0_ctrl;                                                  \
                                                                                                    \
 	static struct rz_os_timer_data g_rz_os_timer_data = {                                      \
+		.fsp_cfg = &g_timer0_cfg,                                                          \
 		.fsp_ctrl = (timer_ctrl_t *)&g_timer0_ctrl,                                        \
 	};                                                                                         \
                                                                                                    \
 	struct rz_os_timer_config g_rz_os_timer_config = {                                         \
-		.fsp_cfg = &g_timer0_cfg,                                                          \
 		.fsp_api = &g_timer_on_gtm,                                                        \
 	};                                                                                         \
                                                                                                    \

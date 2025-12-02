@@ -19,6 +19,12 @@ config HAPTICS_INIT_PRIORITY
 	help
 	  Haptic driver initialization priority.
 
+config HAPTICS_SHELL
+	bool "Haptics shell"
+	depends on SHELL
+	help
+	  Enable Haptics-related shell commands.
+
 source "drivers/haptics/Kconfig.drv2605"
 
 endif # HAPTICS

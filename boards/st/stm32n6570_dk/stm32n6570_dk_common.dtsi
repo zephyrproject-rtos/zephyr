@@ -29,20 +29,26 @@
 
 	aliases {
 		led0 = &green_led_1;
+		sw0 = &user_button;
 	};
 
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&gt911>;
 		display = <&ltdc>;
-		invert-y;
 	};
 
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(32)>;
+		/*
+		 * Prevent access to the last 32bytes of the memory-mapped device
+		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
+		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
+		 * wrap request includes the last address of the memory
+		 */
+		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	leds: leds {
@@ -59,13 +65,41 @@
 		};
 	};
 
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	csi_connector: connector_csi {
 		compatible = "raspberrypi,csi-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <CSI_IO0  0 &gpioc 8  0>,
-			   <CSI_IO1  0 &gpiod 2  0>;
+		gpio-map = <CSI_IO0 0 &gpioc 8 0>,
+			   <CSI_IO1 0 &gpiod 2 0>;
+	};
+};
+
+&gpioc {
+	csi_gpio0_hog: csi-gpio0-hog {
+		gpio-hog;
+		gpios = <8 GPIO_ACTIVE_HIGH>;
+		/* NOTE: keep CSI pins free unless the camera connector is used */
+		status = "disabled";
+	};
+};
+
+&gpiod {
+	csi_gpio1_hog: csi-gpio1-hog {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		/* NOTE: keep CSI pins free unless the camera connector is used */
+		status = "disabled";
 	};
 };
 
@@ -80,7 +114,7 @@
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
-		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
@@ -156,6 +190,12 @@
 	status = "okay";
 };
 
+&ic10 {
+	pll-src = <4>;
+	ic-div = <32>;
+	status = "okay";
+};
+
 &ic11 {
 	pll-src = <1>;
 	ic-div = <3>;
@@ -202,6 +242,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
 	vref-mv = <1800>;
@@ -239,11 +280,11 @@ csi_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(AHB5, 7)>,
 		 <&rcc STM32_SRC_IC4 SDMMC2_SEL(2)>;
 	pinctrl-0 = <&sdmmc2_d0_pc4 &sdmmc2_d1_pc5
-			&sdmmc2_d2_pc0 &sdmmc2_d3_pe4
-			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
+		     &sdmmc2_d2_pc0 &sdmmc2_d3_pe4
+		     &sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
-	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpion 12 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 	disk-name = "SD";
 };
@@ -296,6 +337,20 @@ csi_i2c: &i2c1 {
 	};
 };
 
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_ph9 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+
+	clocks = <&rcc STM32_CLOCK(APB1, 24)>,
+		 <&rcc STM32_SRC_IC10 I3C1_SEL(2)>;
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
+};
+
 zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
@@ -325,6 +380,7 @@ zephyr_udc0: &usbotg_hs1 {
 		read-latency = <4>;
 		write-latency = <1>;
 		burst-length = <0>;
+		st,csbound = <11>;
 		status = "okay";
 	};
 };
@@ -360,7 +416,7 @@ zephyr_udc0: &usbotg_hs1 {
 			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(256)>;
+				reg = <0x00000000 DT_SIZE_K(64)>;
 			};
 
 			slot0_partition: partition@10000 {
@@ -388,7 +444,7 @@ zephyr_udc0: &usbotg_hs1 {
  */
 &eth1_rgmii_gtx_clk_pf0 {
 	st,io-delay-path = "output";
-	st,io-delay-ps = <2000>;
+	st,io-delay-ps = <1000>;
 };
 
 &mac {
@@ -437,12 +493,12 @@ zephyr_udc0: &usbotg_hs1 {
 	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
 		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
 	pinctrl-0 = <&ltdc_r0_pg0 &ltdc_r1_pd9 &ltdc_r2_pd15 &ltdc_r3_pb4
-			&ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
-			&ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
-			&ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
-			&ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
-			&ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
-			&ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
+		     &ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
+		     &ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
+		     &ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
+		     &ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
+		     &ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
+		     &ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioq 6 GPIO_ACTIVE_HIGH>;
@@ -475,13 +531,15 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 csi_interface: &dcmipp {
-	ports {
-		port@0 {
-			csi_ep_in: endpoint { };
-		};
-
-		port@1 {
-			csi_capture_port: endpoint@1 { };
-		};
+	port {
+		csi_ep_in: endpoint {};
 	};
+};
+
+zephyr_h264enc: &venc {
+	status = "okay";
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
 };

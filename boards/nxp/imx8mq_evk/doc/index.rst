@@ -179,8 +179,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS build zephyr-v2.6.99-30942-g6ee70bd22058 *****
    Hello World! imx8mq_evk
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-applications-processor:MCIMX8M-EVK

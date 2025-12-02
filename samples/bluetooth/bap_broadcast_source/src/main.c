@@ -310,7 +310,7 @@ K_THREAD_DEFINE(encoder, LC3_ENCODER_STACK_SIZE, init_lc3_thread, NULL, NULL, NU
 /* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
-K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
 static bool terminal_enabled;
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
@@ -337,7 +337,7 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 	__ASSERT(size <= USB_MAX_STEREO_FRAME_SIZE, "%u was not <= %d", size,
 		 USB_MAX_STEREO_FRAME_SIZE);
 
-	ret = k_mem_slab_alloc(&usb_in_buf_pool, &buf, K_NO_WAIT);
+	ret = k_mem_slab_alloc(&usb_out_buf_pool, &buf, K_NO_WAIT);
 	if (ret != 0) {
 		printk("Failed to allocate buffer: %d\n", ret);
 	}
@@ -354,7 +354,7 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 	int16_t *pcm;
 
 	if (!terminal_enabled || buf == NULL || size == 0U) {
-		k_mem_slab_free(&usb_in_buf_pool, buf);
+		k_mem_slab_free(&usb_out_buf_pool, buf);
 		return;
 	}
 
@@ -388,7 +388,7 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 		printk("USB Data received (count = %d)\n", count);
 	}
 
-	k_mem_slab_free(&usb_in_buf_pool, buf);
+	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
 #endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 #endif /* defined(CONFIG_LIBLC3) */

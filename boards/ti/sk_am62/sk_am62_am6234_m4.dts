@@ -16,6 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 		zephyr,sram1 = &ddr1;
 	};
@@ -40,8 +41,14 @@
 
 	ddr1: memory@9cc01000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9cc01000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
 	};
 };
 
@@ -49,6 +56,7 @@
 	mcu_uart0_rx_default: mcu_uart0_rx_default {
 		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>;
 	};
+
 	mcu_uart0_tx_default: mcu_uart0_tx_default {
 		pinmux = <K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_0)>;
 	};

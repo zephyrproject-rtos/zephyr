@@ -225,7 +225,7 @@ static void isr_ecb(const void *arg)
 	}
 
 	else {
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 }
 

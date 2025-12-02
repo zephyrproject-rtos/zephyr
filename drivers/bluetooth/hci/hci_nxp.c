@@ -12,6 +12,7 @@
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -50,6 +51,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_OCF                0x59U
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH       2U
 #define HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH       8U
+#define HCI_BT_MAC_ADDR_CRC_SEED                        0xFFFFFFFFU
 #define HCI_SET_MAC_ADDR_CMD                            0x0022U
 #define BT_USER_BD                                      254
 #define BD_ADDR_OUI                                     0x37U, 0x60U, 0x00U
@@ -178,6 +180,7 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	uint8_t addrOUI[BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
 	uint8_t uid[16] = {0};
 	uint8_t uuidLen;
+	uint32_t unique_val_crc = 0;
 	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {
 		BT_USER_BD,
 		0x06U
@@ -188,12 +191,20 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	 */
 	if (bt_addr_eq(public_addr, BT_ADDR_ANY) || bt_addr_eq(public_addr, BT_ADDR_NONE)) {
 		PLATFORM_GetMCUUid(uid, &uuidLen);
-		/* Set 3 LSB of MAC address from UUID */
-		if (uuidLen > BD_ADDR_UUID_PART_SIZE) {
-			memcpy((void *)bleDeviceAddress,
-			       (void *)(uid + uuidLen - (BD_ADDR_UUID_PART_SIZE + 1)),
-			       BD_ADDR_UUID_PART_SIZE);
+
+		if (uuidLen > 0) {
+			/* Calculate a 32-bit IEEE CRC over the entire unique ID (uid)
+			 * Initial CRC value is 0xFFFFFFFFU for maximum randomization
+			 */
+			unique_val_crc = crc32_ieee_update(HCI_BT_MAC_ADDR_CRC_SEED, uid, uuidLen);
+			/* Copy the lower 3 bytes (24 bits) of the CRC result */
+			memcpy((void *)bleDeviceAddress, (const void *)&unique_val_crc,
+					BD_ADDR_UUID_PART_SIZE);
+		} else {
+			LOG_ERR("UUID is empty, cannot generate address.");
+			return -EFAULT;
 		}
+
 		/* Set 3 MSB of MAC address from OUI */
 		memcpy((void *)(bleDeviceAddress + BD_ADDR_UUID_PART_SIZE), (void *)addrOUI,
 		       BD_ADDR_OUI_PART_SIZE);

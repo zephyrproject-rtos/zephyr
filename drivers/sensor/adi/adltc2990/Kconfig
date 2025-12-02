@@ -1,6 +1,6 @@
 # ADLTC2990 Quad I2C Voltage, Current and Temperature sensor configuration options
 
-# Copyright(c) 2023 Carl Zeiss Meditec AG
+# Copyright (c) 2023 Carl Zeiss Meditec AG
 # SPDX-License-Identifier: Apache-2.0
 
 config ADLTC2990

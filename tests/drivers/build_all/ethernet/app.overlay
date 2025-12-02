@@ -79,6 +79,7 @@
 					compatible = "adi,adin2111-phy";
 					status = "okay";
 				};
+
 				ethernet-phy@7 {
 					reg = <0x7>;
 					compatible = "davicom,dm8806-phy";
@@ -94,6 +95,13 @@
 					compatible = "ti,dp83867";
 					status = "okay";
 					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+				};
+
+				ethernet-phy@9 {
+					reg = <0x9>;
+					compatible = "microchip,ksz9131";
+					status = "okay";
 					int-gpios = <&test_gpio 0 0>;
 				};
 			};

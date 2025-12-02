@@ -13,4 +13,5 @@ supported:
   - usbd
   - watchdog
   - counter
+  - crc
 vendor: renesas

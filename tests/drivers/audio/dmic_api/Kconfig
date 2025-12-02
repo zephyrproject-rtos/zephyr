@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_BIT_WIDTH
+	int "Sample bit width"
+	default 32 if DT_HAS_NXP_MICFIL_ENABLED
+	default 16
+	help
+	  PCM sample bit width.
+
+config SAMPLE_PDM_CHANNELS
+	int "Number of DMIC channels"
+	default 4 if DT_HAS_NXP_MICFIL_ENABLED || DT_HAS_NXP_DMIC_ENABLED
+	default 2
+	help
+	  Count of DMIC channels to capture and process.

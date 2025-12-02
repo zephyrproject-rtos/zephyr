@@ -10,7 +10,7 @@ gitpython>=3.1.41
 plotly
 
 # helper for developers - check git commit messages
-gitlint
+gitlint-core
 
 # helper for developers
 junit2html
@@ -19,7 +19,7 @@ junit2html
 lpc_checksum
 
 # used by NXP platform to generate/flash firmware images
-spsdk == 2.6.0
+spsdk >= 3.0.0
 
 # used by scripts/build/gen_cfb_font_header.py - helper script for user
 Pillow>=10.3.0

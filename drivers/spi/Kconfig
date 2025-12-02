@@ -90,6 +90,15 @@ config SPI_STATS
 	help
 	  Enable SPI device statistics.
 
+config SPI_SHELL_MAX_DEVICE_SLOTS
+	int "Number of empty device slots in the SPI shell"
+	depends on SPI_SHELL
+	default 16
+	help
+	  The number of empty device slots in the SPI shell. Increase it, if you
+	  are using many SPI devices and see "ERROR: not enough space" error
+	  messages when using SPI shell.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
@@ -137,6 +146,7 @@ source "drivers/spi/Kconfig.rpi_pico"
 source "drivers/spi/Kconfig.rv32m1_lpspi"
 source "drivers/spi/Kconfig.sam"
 source "drivers/spi/Kconfig.sam0"
+source "drivers/spi/Kconfig.sc18is606"
 source "drivers/spi/Kconfig.sedi"
 source "drivers/spi/Kconfig.sifive"
 source "drivers/spi/Kconfig.silabs_eusart"

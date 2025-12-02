@@ -6,6 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 8
+flash: 64
 supported:
   - watchdog
   - adc

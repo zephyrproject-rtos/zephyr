@@ -420,6 +420,7 @@ static int display_init(const struct device *dev)
 	{                                                                                          \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, line, irq)] =                                 \
 			BSP_PRV_IELS_ENUM(EVENT_GLCDC_LINE_DETECT);                                \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(BSP_PRV_IELS_ENUM(EVENT_GLCDC_LINE_DETECT));      \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, line, irq),                                    \
 			    DT_INST_IRQ_BY_NAME(id, line, priority), renesas_ra_glcdc_isr,         \
 			    DEVICE_DT_INST_GET(id), 0);                                            \

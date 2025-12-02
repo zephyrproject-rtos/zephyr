@@ -265,7 +265,7 @@ for brevity, in real drivers they must be handled.
            /* Disable the device. In this case, we use the enable pin */
            (void)gpio_pin_set_dt(&config->enable_pin, 0);
 
-           /* Release devices currenty not needed by device */
+           /* Release devices currently not needed by device */
            (void)pm_device_runtime_put(config->enable_pin.port);
            (void)pm_device_runtime_put(config->int_pin.port);
 
@@ -304,7 +304,7 @@ for brevity, in real drivers they must be handled.
            (void)gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
            /*
-            * Release devices currenty not needed by device. In this case, we
+            * Release devices currently not needed by device. In this case, we
             * are releasing the bus and the enable pin.
             *
             * The device driver would keep the bus ACTIVE while the device is

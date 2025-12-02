@@ -41,6 +41,9 @@ static void *entry(void *arg)
 {
 	static char alert_msg_buf[42];
 
+	/* Give the shell time to initialize and print its prompt before we print */
+	sleep(1);
+
 	setenv("BOARD", CONFIG_BOARD, 1);
 	setenv("BUILD_VERSION", VERSION_BUILD, 1);
 	setenv("ALERT", "", 1);

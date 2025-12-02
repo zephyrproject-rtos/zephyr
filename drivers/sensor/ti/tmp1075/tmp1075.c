@@ -46,6 +46,23 @@ static int tmp1075_reg_write(const struct tmp1075_config *cfg, uint8_t reg, uint
 	return i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 }
 
+static inline uint32_t tmp1075_conv_time_ms(uint8_t cr_idx)
+{
+	switch (cr_idx) {
+	case 0: /* 00: 27.5 ms */
+		return 28;
+	case 1: /* 01: 55 ms */
+		return 55;
+	case 2: /* 10: 110 ms */
+		return 110;
+	case 3: /* 11: 220 ms */
+		return 220;
+	default:
+		__ASSERT_NO_MSG(false);
+		return 0;
+	}
+}
+
 #if CONFIG_TMP1075_ALERT_INTERRUPTS
 static int set_threshold_attribute(const struct device *dev, uint8_t reg, int16_t value,
 				   const char *error_msg)
@@ -138,6 +155,21 @@ static int tmp1075_sample_fetch(const struct device *dev, enum sensor_channel ch
 	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
+
+	if (cfg->shutdown_mode || cfg->one_shot) {
+		/* Initiate a single temperature conversion */
+		uint16_t config_reg = drv_data->config_reg;
+
+		TMP1075_SET_ONE_SHOT_CONVERSION(config_reg, 1);
+
+		if (tmp1075_reg_write(cfg, TMP1075_REG_CONFIG, config_reg) < 0) {
+			LOG_ERR("Failed to initiate one-shot conversion");
+			return -EIO;
+		}
+
+		/* Wait for conversion to complete */
+		k_sleep(K_MSEC(tmp1075_conv_time_ms(cfg->cr)));
+	}
 
 	if (tmp1075_reg_read(cfg, TMP1075_REG_TEMPERATURE, &val) < 0) {
 		return -EIO;

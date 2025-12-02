@@ -12,7 +12,7 @@
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 #include <adi_tmc_spi.h>
-#include "adi_tmc5xxx_common.h"
+#include <adi_tmc5xxx_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
@@ -767,7 +767,7 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 		DT_INST_FOREACH_CHILD(inst, TMC50XX_SHAFT_CONFIG)				\
 		(DT_INST_PROP(inst, lock_gconf) << TMC50XX_LOCK_GCONF_SHIFT)),			\
 		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8)), 0),	\
+					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8))),	\
 		.clock_frequency = DT_INST_PROP(inst, clock_frequency),};			\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_CONFIG_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DATA_DEFINE);				\

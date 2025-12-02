@@ -11,10 +11,10 @@
 
 	log_uarts: log_uarts {
 		compatible = "zephyr,log-uart";
-		uarts = <&euart0 &euart1>;
+		uarts = <&emul_uart0 &emul_uart1>;
 	};
 
-	euart0: uart-emul0 {
+	emul_uart0: uart-emul0 {
 		compatible = "zephyr,uart-emul";
 		status = "okay";
 		current-speed = <0>;
@@ -22,7 +22,7 @@
 		tx-fifo-size = <256>;
 	};
 
-	euart1: uart-emul1 {
+	emul_uart1: uart-emul1 {
 		compatible = "zephyr,uart-emul";
 		status = "okay";
 		current-speed = <0>;

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Device-tree nodes specific to 128-pin package variants */
+
+#include <microchip/pic32c/pic32cx_sg/common/pic32cx_sg.dtsi>
+
+&pinctrl {
+	portc: gpio@41008100 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41008100 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+
+	portd: gpio@41008180 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41008180 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+};

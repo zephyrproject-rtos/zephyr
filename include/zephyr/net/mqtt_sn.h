@@ -248,6 +248,20 @@ int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct sockadd
 #endif
 
 /**
+ * Structure for storing will update state.
+ */
+struct mqtt_sn_will_update {
+	/** An update message needs to be send */
+	bool in_progress;
+
+	/** Number of retries for failed update attempts */
+	uint8_t retries;
+
+	/** Timestamp of the last update attempt */
+	int64_t last_attempt;
+};
+
+/**
  * Structure describing an MQTT-SN client.
  */
 struct mqtt_sn_client {
@@ -314,6 +328,12 @@ struct mqtt_sn_client {
 
 	/** Radius of the next GWINFO transmission */
 	int64_t radius_gwinfo;
+
+	/** State for will topic updates */
+	struct mqtt_sn_will_update will_topic_update;
+
+	/** State for will message updates */
+	struct mqtt_sn_will_update will_message_update;
 
 	/** Delayable work structure for processing MQTT-SN events */
 	struct k_work_delayable process_work;
@@ -463,6 +483,69 @@ int mqtt_sn_input(struct mqtt_sn_client *client);
  */
 int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
 			   struct mqtt_sn_data *topic_name);
+
+/**
+ * @brief Predefine topic.
+ *
+ * Can be called before mqtt_sn_connect, because predefined topics are never cleared. If you call it
+ * afterwards, it has to be called before calling mqtt_sn_input for the first time after the
+ * connect, to prevent race conditions where incoming publications use predefined topics which were
+ * not defined, yet.
+ *
+ * @param[in] client The MQTT-SN client to define the topic on.
+ * @param[in] topic_id Topic identifier.
+ * @param[in] topic_name The name of the topic.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
+			    struct mqtt_sn_data *topic_name);
+
+/**
+ * @brief Define a short topic.
+ *
+ * Can be called before mqtt_sn_connect, because short topics are never cleared.
+ *
+ * @param[in] client The MQTT-SN client to define the topic on.
+ * @param[in] topic_name The name of the topic. Must be exactly 2 bytes long.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_define_short_topic(struct mqtt_sn_client *client, struct mqtt_sn_data *topic_name);
+
+/**
+ * @brief Send a will topic update to the server.
+ *
+ * Call this to send the will topic stored in client->will_topic to the server.
+ * Should be used if you changed the value after connecting. The variables
+ * client->will_retain and client->will_qos will also be sent as part of the
+ * update.
+ *
+ * @warning Since there is no message ID in the will topic update message,
+ *          this can't be done without race conditions. Contribute to newer
+ *          versions of the specification if you want this to be changed.
+ *
+ * @param[in] client The MQTT-SN client to use for sending the update.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_update_will_topic(struct mqtt_sn_client *client);
+
+/**
+ * @brief Send a will message update to the server.
+ *
+ * Call this to send the will message stored in client->will_msg to the server.
+ * Should be used if you changed the value after connecting.
+ *
+ * @warning Since there is no message ID in the will message update message,
+ *          this can't be done without race conditions. Contribute to newer
+ *          versions of the specification if you want this to be changed.
+ *
+ * @param[in] client The MQTT-SN client to use for sending the update.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_update_will_message(struct mqtt_sn_client *client);
 
 #ifdef __cplusplus
 }

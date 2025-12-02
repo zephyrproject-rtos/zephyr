@@ -7,7 +7,7 @@
 #define SDRAM_BASE_ADDR 0x80000000
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */

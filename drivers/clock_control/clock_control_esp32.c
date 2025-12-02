@@ -514,9 +514,6 @@ static void esp32_clock_perip_init(void)
 	DPORT_SET_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_RTC_SLOW);
 #endif
 
-	/* Enable RNG clock. */
-	periph_module_enable(PERIPH_RNG_MODULE);
-
 #if defined(CONFIG_SOC_SERIES_ESP32C2) || \
 	defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)

@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pic32cz_ca80_cult
+name: PIC32CZ CA80 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 8192
+ram: 1024
+supported:
+  - gpio
+vendor: microchip

@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-UART node
 
 compatible: "nuvoton,npcx-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -24,3 +24,7 @@ properties:
 
         For example the WUI mapping on NPCX7 UART1 would be
            uart-rx = <&wui_cr_sin1>;
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8

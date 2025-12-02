@@ -5,24 +5,6 @@
  *
  */
 
-&st_cam_i2c {
-	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
-	pinctrl-names = "default";
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-};
-
-&st_cam_dvp {
-	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
-		&dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pg10 &dcmi_d3_pc9
-		&dcmi_d4_pc11 &dcmi_d5_pd3 &dcmi_d6_pb8 &dcmi_d7_pb9>;
-	pinctrl-names = "default";
-};
-
 &dma1 {
-	status = "okay";
-};
-
-&dmamux1 {
 	status = "okay";
 };

@@ -12,6 +12,7 @@
 
 / {
 	model = "Renesas Spider CA55";
+
 	chosen {
 		zephyr,sram = &ram;
 		zephyr,console = &hscif0;
@@ -33,12 +34,13 @@
 
 &mmc0 {
 	pinctrl-0 = <&mmc_clk &mmc_cmd &mmc_ds
-		&mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3
-		&mmc_data4 &mmc_data5 &mmc_data6 &mmc_data7>;
+		     &mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3
+		     &mmc_data4 &mmc_data5 &mmc_data6 &mmc_data7>;
 	pinctrl-1 = <&mmc_clk &mmc_cmd &mmc_ds
-		&mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3
-		&mmc_data4 &mmc_data5 &mmc_data6 &mmc_data7>;
+		     &mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3
+		     &mmc_data4 &mmc_data5 &mmc_data6 &mmc_data7>;
 	pinctrl-names = "default", "uhs";
+
 	disk {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";

@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1a: led_1a {
 			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1A";
 		};
+
 		led1b: led_1b {
 			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 			label = "Red LED 1B";
@@ -40,11 +42,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1 (SW1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		tm0: tm_0 {
 			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Test mode (TM)";
@@ -109,11 +113,12 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12: lis2dh12@18 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
-				<&gpio1 12 GPIO_ACTIVE_HIGH>;
+			    <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
 	};
 
@@ -138,16 +143,19 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
 		};
+
 		/* 396K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
 			reg = <0x00018000 0x00063000>;
 		};
+
 		/* 396K */
 		slot1_partition: partition@7b000 {
 			label = "image-1";
 			reg = <0x0007b000 0x00063000>;
 		};
+
 		/* 8K */
 		scratch_partition: partition@de000 {
 			label = "image-scratch";

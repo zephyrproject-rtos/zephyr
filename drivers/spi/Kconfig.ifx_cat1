@@ -12,3 +12,31 @@ config SPI_INFINEON_CAT1
 	select GPIO
 	help
 	  This option enables the SPI driver for Infineon CAT1 family.
+
+config SPI_PDL_INFINEON_CAT1
+	bool "Infineon CAT1 SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_SPI_PDL_ENABLED
+	select USE_INFINEON_SPI
+	select PINCTRL
+	select GPIO
+	help
+	  This option enables the SPI driver for Infineon CAT1 family.
+
+if USE_INFINEON_SPI
+
+config IFX_CAT1_SPI_DMA
+	bool "Infineon CAT1 SPI Interrupt Support"
+	select DMA
+	help
+		Enable DMA during usage of SPI driver.
+
+config IFX_CAT1_SPI_DMA_TX_AUTO_TRIGGER
+	bool "Infineon CAT1 SPI Tx DMA channel trigger mechanism"
+	default y
+	depends on IFX_CAT1_SPI_DMA
+	select DMA
+	help
+		Automatically trigger SPI Tx DMA after config
+
+endif # USE_INFINEON_SPI

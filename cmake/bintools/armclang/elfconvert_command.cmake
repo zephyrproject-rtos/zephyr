@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 # Handle stripping
-if (STRIP_DEBUG OR STRIP_ALL)
+if(STRIP_DEBUG OR STRIP_ALL)
   set(obj_copy_target_output "--elf")
   if(STRIP_ALL)
     set(obj_copy_strip "--strip=all")

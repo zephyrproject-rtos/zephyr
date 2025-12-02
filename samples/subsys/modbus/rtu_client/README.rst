@@ -34,9 +34,6 @@ Alternatively UART RX,TX signals of two boards can be connected crosswise.
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/subsys/modbus/rtu_client` in the Zephyr tree.
-
 The following commands build and flash RTU client sample.
 
 .. zephyr-app-commands::

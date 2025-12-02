@@ -14,6 +14,8 @@
  * initialization is performed.
  */
 
+#include "kernel_arch_func.h"
+
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
@@ -33,9 +35,7 @@ __weak void z_arm64_mm_init(bool is_primary_core) { }
  */
 FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);

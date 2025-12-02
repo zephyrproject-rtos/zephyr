@@ -31,6 +31,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		/* green led */
 		led0: led_0 {
 			gpios = <&gpio0 7 0>;
@@ -41,6 +42,7 @@
 	buttons {
 		/* Push button switch 0 KEY1 */
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;

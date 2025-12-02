@@ -25,11 +25,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		usbotg_hs: usb@40040000 {
@@ -40,7 +40,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -51,8 +51,8 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
-			resets = <&rctl STM32_RESET(APB3, 3U)>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3)>;
+			resets = <&rctl STM32_RESET(APB3, 3)>;
 			status = "disabled";
 		};
 
@@ -61,8 +61,8 @@
 			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 14)>,
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -73,8 +73,8 @@
 			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK(AHB3, 19U)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 19)>,
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -85,10 +85,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB4, 5U)>,
+			clocks = <&rcc STM32_CLOCK(APB4, 5)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI6_SEL(0)>;
-			dmas = <&dmamux2 0 12 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
-				&dmamux2 1 11 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dmas = <&dmamux2 0 12 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+			       <&dmamux2 1 11 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <86 0>;
 			status = "disabled";
@@ -105,15 +105,16 @@
 			reg = <0x58006800 0x400>;
 			interrupts = <147 0>;
 			interrupt-names = "digi_temp";
-			clocks = <&rcc STM32_CLOCK(APB4, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB4, 26)>;
 			status = "disabled";
 		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */
 	sram0: memory@24000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24000000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM0";
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM2 in CD domain */
@@ -167,7 +168,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>; /* max addressable area */
 		zephyr,memory-region = "EXTMEM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_EXTMEM)>;
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

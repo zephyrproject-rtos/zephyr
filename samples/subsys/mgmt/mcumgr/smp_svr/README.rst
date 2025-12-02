@@ -75,7 +75,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: nrf52dk/nrf52832
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-bt.conf"
+         :gen-args: -DEXTRA_CONF_FILE="bt.conf"
          :compact:
 
    .. group-tab:: Serial
@@ -88,7 +88,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf"
+         :gen-args: -DEXTRA_CONF_FILE="serial.conf;fs.conf;shell-mgmt.conf"
          :compact:
 
    .. group-tab:: USB CDC_ACM
@@ -101,7 +101,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: nrf52840dk/nrf52840
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
+         :gen-args: -DEXTRA_CONF_FILE="cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
          :compact:
 
    .. group-tab:: Shell
@@ -114,7 +114,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-shell.conf"
+         :gen-args: -DEXTRA_CONF_FILE="shell.conf"
          :compact:
 
    .. group-tab:: UDP
@@ -131,7 +131,18 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: frdm_k64f
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf"
+         :gen-args: -DEXTRA_CONF_FILE="udp.conf"
+         :compact:
+
+      To build UDP sample with 802154 Subg networking:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: beagleconnect_freedom
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
          :compact:
 
 Flashing the sample image

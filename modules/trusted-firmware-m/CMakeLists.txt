@@ -15,7 +15,7 @@ set(TFM_VALID_PARTITIONS
   TFM_PARTITION_FIRMWARE_UPDATE
   )
 
-if (CONFIG_BUILD_WITH_TFM)
+if(CONFIG_BUILD_WITH_TFM)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
 
@@ -27,24 +27,24 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   # Treat any warning as error
-  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+  if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_WARNINGS_ARE_ERRORS:BOOL=ON)
   endif()
 
-  if (CONFIG_TFM_SFN)
+  if(CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
   endif()
-  if (CONFIG_TFM_REGRESSION_S)
+  if(CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
     list(APPEND TFM_CMAKE_ARGS -DTFM_S_REG_TEST:BOOL=ON)
   endif()
-  if (CONFIG_TFM_REGRESSION_NS)
+  if(CONFIG_TFM_REGRESSION_NS)
     list(APPEND TFM_CMAKE_ARGS -DTEST_NS=ON)
     list(APPEND TFM_CMAKE_ARGS -DTFM_NS_REG_TEST:BOOL=ON)
   endif()
-  if (CONFIG_TFM_BL2)
+  if(CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_S=${CONFIG_TFM_IMAGE_VERSION_S})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
@@ -53,10 +53,10 @@ if (CONFIG_BUILD_WITH_TFM)
     # TF-M's config/check_config.cmake requires MCUBOOT_BUILTIN_KEY=OFF for RSA
     # and MCUBOOT_USE_PSA_CRYPTO for EC-P. The others are dependencies needed
     # for either the build or the boot to succeed.
-    if (${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
+    if(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=ON)
-    elseif (${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
+    elseif(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_USE_PSA_CRYPTO=ON)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=ON)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=OFF)
@@ -67,96 +67,98 @@ if (CONFIG_BUILD_WITH_TFM)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_KEY_${SUFFIX}=${CONFIG_TFM_KEY_FILE_${SUFFIX}})
     endforeach()
 
+    # Supply path to MCUboot for TF-M build
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
-  if (CONFIG_TFM_ISOLATION_LEVEL)
+  if(CONFIG_TFM_ISOLATION_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_ISOLATION_LEVEL=${CONFIG_TFM_ISOLATION_LEVEL})
   endif()
-  if (CONFIG_TFM_ITS_NUM_ASSETS_OVERRIDE)
+  if(CONFIG_TFM_ITS_NUM_ASSETS_OVERRIDE)
     list(APPEND TFM_CMAKE_ARGS -DITS_NUM_ASSETS=${CONFIG_TFM_ITS_NUM_ASSETS})
   endif()
-  if (CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE)
+  if(CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE)
     list(APPEND TFM_CMAKE_ARGS -DITS_MAX_ASSET_SIZE=${CONFIG_TFM_ITS_MAX_ASSET_SIZE})
   endif()
-  if (CONFIG_TFM_PROFILE)
+  if(CONFIG_TFM_PROFILE)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PROFILE=${CONFIG_TFM_PROFILE})
   endif()
-  if (CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
+  if(CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
     set(TFM_CMAKE_BUILD_TYPE "Release")
-  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
+  elseif(CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
     set(TFM_CMAKE_BUILD_TYPE "MinSizeRel")
-  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG)
+  elseif(CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG)
     set(TFM_CMAKE_BUILD_TYPE "Debug")
-  else ()
+  else()
     set(TFM_CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
-  if (DEFINED CONFIG_TFM_MCUBOOT_IMAGE_NUMBER)
+  if(DEFINED CONFIG_TFM_MCUBOOT_IMAGE_NUMBER)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
-  if (CONFIG_TFM_DUMMY_PROVISIONING)
+  if(CONFIG_TFM_DUMMY_PROVISIONING)
     list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=ON)
   else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=OFF)
   endif()
 
-  if (CONFIG_TFM_EXCEPTION_INFO_DUMP)
+  if(CONFIG_TFM_EXCEPTION_INFO_DUMP)
     list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=ON)
   else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=OFF)
   endif()
 
-  if (CONFIG_TFM_BL2)
-    if (CONFIG_TFM_BL2_LOG_LEVEL_DEBUG)
+  if(CONFIG_TFM_BL2)
+    if(CONFIG_TFM_BL2_LOG_LEVEL_DEBUG)
       set(TFM_BL2_LOG_LEVEL "DEBUG")
-    elseif (CONFIG_TFM_BL2_LOG_LEVEL_INFO)
+    elseif(CONFIG_TFM_BL2_LOG_LEVEL_INFO)
       set(TFM_BL2_LOG_LEVEL "INFO")
-    elseif (CONFIG_TFM_BL2_LOG_LEVEL_WARNING)
+    elseif(CONFIG_TFM_BL2_LOG_LEVEL_WARNING)
       set(TFM_BL2_LOG_LEVEL "WARNING")
-    elseif (CONFIG_TFM_BL2_LOG_LEVEL_ERROR)
+    elseif(CONFIG_TFM_BL2_LOG_LEVEL_ERROR)
       set(TFM_BL2_LOG_LEVEL "ERROR")
-    elseif (CONFIG_TFM_BL2_LOG_LEVEL_OFF OR CONFIG_TFM_LOG_LEVEL_SILENCE)
+    elseif(CONFIG_TFM_BL2_LOG_LEVEL_OFF OR CONFIG_TFM_LOG_LEVEL_SILENCE)
       set(TFM_BL2_LOG_LEVEL "OFF")
     endif()
 
-    if (DEFINED TFM_BL2_LOG_LEVEL)
+    if(DEFINED TFM_BL2_LOG_LEVEL)
       # BL2 uses MCUBOOT_LOG_LEVEL configuration
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_LOG_LEVEL=${TFM_BL2_LOG_LEVEL})
     endif()
   endif()
 
-  if (CONFIG_TFM_PARTITION_LOG_LEVEL_DEBUG)
+  if(CONFIG_TFM_PARTITION_LOG_LEVEL_DEBUG)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_DEBUG")
-  elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_INFO)
+  elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_INFO)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_INFO")
-  elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_ERROR)
+  elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_ERROR)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_ERROR")
-  elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
+  elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_SILENCE")
   endif()
 
-  if (DEFINED TFM_PARTITION_LOG_LEVEL)
+  if(DEFINED TFM_PARTITION_LOG_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL})
   endif()
 
-  if (CONFIG_TFM_SPM_LOG_LEVEL_DEBUG)
+  if(CONFIG_TFM_SPM_LOG_LEVEL_DEBUG)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_DEBUG")
-  elseif (CONFIG_TFM_SPM_LOG_LEVEL_INFO)
+  elseif(CONFIG_TFM_SPM_LOG_LEVEL_INFO)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_INFO")
-  elseif (CONFIG_TFM_SPM_LOG_LEVEL_ERROR)
+  elseif(CONFIG_TFM_SPM_LOG_LEVEL_ERROR)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_ERROR")
-  elseif (CONFIG_TFM_SPM_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
+  elseif(CONFIG_TFM_SPM_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_SILENCE")
   endif()
 
-  if (DEFINED TFM_SPM_LOG_LEVEL)
+  if(DEFINED TFM_SPM_LOG_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_SPM_LOG_LEVEL=${TFM_SPM_LOG_LEVEL})
   endif()
 
   # Enable TFM partitions as specified in Kconfig
   foreach(partition ${TFM_VALID_PARTITIONS})
-    if (CONFIG_${partition})
+    if(CONFIG_${partition})
       # list(APPEND TFM_ENABLED_PARTITIONS_ARG ${partition})
       set(val "ON")
     else()
@@ -183,7 +185,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_S_ELF_FILE ${TFM_BINARY_DIR}/bin/tfm_s.elf)
   set(TFM_S_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s.bin)
   set(TFM_S_HEX_FILE ${TFM_BINARY_DIR}/bin/tfm_s.hex)
-  set(TFM_NS_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns.bin)
+  set(TFM_NS_BIN_FILE ${CMAKE_BINARY_DIR}/tfm_ns/bin/tfm_ns.bin)
   set(TFM_NS_HEX_FILE ${CMAKE_BINARY_DIR}/tfm_ns/bin/tfm_ns.hex)
   set(TFM_S_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s_signed.bin)
   set(TFM_NS_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns_signed.bin)
@@ -233,7 +235,7 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
-  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
+  if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
     # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
     # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
     # been manually downloaded by the user before starting the build.
@@ -251,14 +253,9 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
   endif()
 
-  if(CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS)
+  if(CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS OR CONFIG_BOARD_MAX32658EVKIT_MAX32658_NS)
     # Supply path to hal_adi for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DHAL_ADI_PATH=${ZEPHYR_ADI_MODULE_DIR})
-  endif()
-
-  if(CONFIG_TFM_BL2 AND CONFIG_TFM_MCUBOOT_PATH_LOCAL)
-    # Supply path to MCUboot for TF-M build
-    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
   endif()
 
   if(CONFIG_TFM_MCUBOOT_DATA_SHARING)
@@ -277,8 +274,14 @@ if (CONFIG_BUILD_WITH_TFM)
 
   list(APPEND TFM_CMAKE_ARGS -DTFM_TESTS_REVISION_CHECKS=OFF)
 
-  if(CONFIG_TFM_ETHOS_DRIVER_PATH_LOCAL)
-    list(APPEND TFM_CMAKE_ARGS -DETHOS_DRIVER_PATH=${CONFIG_TFM_ETHOS_DRIVER_PATH_LOCAL})
+  if(CONFIG_SOC_SERIES_MPS3 OR CONFIG_SOC_SERIES_MPS4)
+    list(APPEND TFM_CMAKE_ARGS -DETHOS_DRIVER_PATH=${ZEPHYR_HAL_ETHOS_U_MODULE_DIR})
+  endif()
+
+  if(CONFIG_TFM_STM32_FLASH_LAYOUT_BEGIN_OFFSET)
+    list(APPEND TFM_CMAKE_ARGS
+      -DSTM32_FLASH_LAYOUT_BEGIN_OFFSET=${CONFIG_TFM_STM32_FLASH_LAYOUT_BEGIN_OFFSET}
+    )
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
@@ -316,8 +319,8 @@ if (CONFIG_BUILD_WITH_TFM)
     # number of parallel jobs to 1.
     set(PARALLEL_JOBS -j 1)
   else()
-	# Leave PARALLEL_JOBS unset and use the default number of
-	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
+    # Leave PARALLEL_JOBS unset and use the default number of
+    # threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
 
   set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
@@ -389,7 +392,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
 
   # Non-Secure interface to request system reboot
-  if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+  if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
     zephyr_library_sources(src/reboot.c)
   endif()
 
@@ -423,7 +426,7 @@ if (CONFIG_BUILD_WITH_TFM)
   # To ensure that generated include files are created before they are used.
   add_dependencies(zephyr_interface tfm)
 
-  if (CONFIG_TFM_BL2)
+  if(CONFIG_TFM_BL2)
     set(PREPROCESSED_FILE_S "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
     set(PREPROCESSED_FILE_S_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s_ns.o")
     set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
@@ -444,115 +447,247 @@ if (CONFIG_BUILD_WITH_TFM)
     set(HEX_ADDR_ARGS_NS "--hex-addr=${TFM_HEX_BASE_ADDRESS_NS}")
   endif()
 
-  function(tfm_sign OUT_ARG SUFFIX PAD INPUT_FILE OUTPUT_FILE)
-    if(PAD)
-      set(pad_args --pad --pad-header)
+  if(CONFIG_TFM_BL2)
+    set(image_alignment 1)
+    set(flash_write_block_size 1)
+    set(flash_erase_block_size 1)
+
+    dt_chosen(chosen_flash PROPERTY "zephyr,flash")
+    if(DEFINED chosen_flash AND chosen_flash)
+      dt_prop(flash_write_block_size PATH ${chosen_flash} PROPERTY write-block-size)
+      dt_prop(flash_erase_block_size PATH ${chosen_flash} PROPERTY erase-block-size)
+    else()
+      message(WARNING
+        "The 'zephyr,flash' chosen property is not defined!
+        Using flash_write_block_size and flash_erase_block_size default values
+        that may differ from TF-M board definitions resulting in invalid signatures."
+        )
     endif()
+
+    # The alignment is determined by the minimal amount of bytes necessary to
+    # be written in the flash sector. Ex., assuming that the sector erase
+    # operation is 1KiB and, on that sector, the minimum amount of bytes that
+    # must be written is 8 bytes then the alignment is 8.
+    #
+    # Current MCUboot maximum alignment is 32 bytes.
+    if(flash_write_block_size GREATER 0)
+      if(flash_write_block_size GREATER 32)
+        message(WARNING
+          "imgtool max alignment is 32 and current value is ${flash_write_block_size}.
+          Keep default image alignment of 1."
+          )
+      else()
+        set(image_alignment ${flash_write_block_size})
+      endif()
+    endif()
+
+    # Calculate the maximum number of sectors necessary to store the image.
+    dt_nodelabel(s_partition_node NODELABEL "slot0_partition" REQUIRED)
+    dt_nodelabel(ns_partition_node NODELABEL "slot0_ns_partition" REQUIRED)
+    dt_reg_size(s_partition_size PATH ${s_partition_node})
+    dt_reg_size(ns_partition_size PATH ${ns_partition_node})
+    math(EXPR S_MAX_SECTORS "${s_partition_size} / ${flash_erase_block_size}")
+    math(EXPR NS_MAX_SECTORS "${ns_partition_size} / ${flash_erase_block_size}")
+    if(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
+      math(EXPR S_NS_MAX_SECTORS "${S_MAX_SECTORS} + ${NS_MAX_SECTORS}")
+    else()
+      if(${S_MAX_SECTORS} GREATER ${NS_MAX_SECTORS})
+        set(S_NS_MAX_SECTORS ${S_MAX_SECTORS})
+      else()
+        set(S_NS_MAX_SECTORS ${NS_MAX_SECTORS})
+      endif()
+    endif()
+  endif()
+
+  function(tfm_sign OUT_ARG)
+    set(options HEADER TRAILER CONFIRM)
+    set(oneValueArgs SUFFIX MAX_SECTORS INPUT_FILE OUTPUT_FILE)
+    set(multiValueArgs "")
+
+    cmake_parse_arguments(
+      TFM_SIGN_ARG
+      "${options}"
+      "${oneValueArgs}"
+      "${multiValueArgs}"
+      ${ARGN}
+    )
+
+    if(NOT DEFINED TFM_SIGN_ARG_SUFFIX OR
+      NOT DEFINED TFM_SIGN_ARG_INPUT_FILE OR
+      NOT DEFINED TFM_SIGN_ARG_OUTPUT_FILE)
+        message(FATAL_ERROR "SUFFIX, INPUT_FILE and OUTPUT_FILE are required arguments")
+    endif()
+
+    set(pad_args "")
+    if(TFM_SIGN_ARG_HEADER AND TFM_SIGN_ARG_TRAILER)
+      set(pad_args --pad --pad-header)
+    elseif(TFM_SIGN_ARG_HEADER)
+      set(pad_args --pad-header)
+    elseif(TFM_SIGN_ARG_TRAILER)
+      set(pad_args --pad)
+    endif()
+
+    set(confirm "")
+    if(TFM_SIGN_ARG_CONFIRM)
+      set(confirm --confirm)
+    endif()
+
     # Secure + Non-secure images are signed the same way as a secure only
     # build, but with a different layout file.
-    set(layout_file ${PREPROCESSED_FILE_${SUFFIX}})
-    if(SUFFIX STREQUAL "S_NS")
-      set(SUFFIX "S")
+    set(layout_file ${PREPROCESSED_FILE_${TFM_SIGN_ARG_SUFFIX}})
+    if(TFM_SIGN_ARG_SUFFIX STREQUAL "S_NS")
+      set(TFM_SIGN_ARG_SUFFIX "S")
     endif()
-    set (${OUT_ARG}
+
+    set(${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
       ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
       --layout ${layout_file}
-      -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
+      -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
-      --align 1
-      -v ${CONFIG_TFM_IMAGE_VERSION_${SUFFIX}}
+      --align ${image_alignment}
+      --max-sectors ${TFM_SIGN_ARG_MAX_SECTORS}
+      -v ${CONFIG_TFM_IMAGE_VERSION_${TFM_SIGN_ARG_SUFFIX}}
       ${pad_args}
-      ${HEX_ADDR_ARGS_${SUFFIX}}
-      ${ADD_${SUFFIX}_IMAGE_MIN_VER}
+      ${confirm}
+      ${HEX_ADDR_ARGS_${TFM_SIGN_ARG_SUFFIX}}
+      ${ADD_${TFM_SIGN_ARG_SUFFIX}_IMAGE_MIN_VER}
       -s ${CONFIG_TFM_IMAGE_SECURITY_COUNTER}
       --measured-boot-record
       -H ${CONFIG_ROM_START_OFFSET}
-      ${INPUT_FILE}
-      ${OUTPUT_FILE}
+      ${TFM_SIGN_ARG_INPUT_FILE}
+      ${TFM_SIGN_ARG_OUTPUT_FILE}
       PARENT_SCOPE)
   endfunction()
 
-  set(MERGED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
-  set(S_NS_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
-  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
-  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
-  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
+  set(MERGED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
+  set(MERGED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.bin)
+  set(S_NS_SIGNED_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed_signed.hex)
+  set(S_NS_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(S_NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.bin)
+  set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
+  set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
+  set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
+  set(S_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.bin)
 
-  if (CONFIG_TFM_USE_NS_APP)
+  if(CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
-    set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    set(NS_HEX_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    set(NS_BIN_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_BIN_FILE>)
   else()
     # Use the Zephyr binary as the Non-Secure application firmware image
-    set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    set(NS_HEX_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    set(NS_BIN_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME})
   endif()
 
-  if (NOT CONFIG_TFM_BL2)
+  if(NOT CONFIG_TFM_BL2)
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_APP_FILE}
+        ${NS_HEX_APP_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${MERGED_FILE}
+      ${MERGED_HEX_FILE}
     )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
-    tfm_sign(sign_cmd S_NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
+    tfm_sign(sign_cmd_s_ns_confirm_hex SUFFIX "S_NS"
+      HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
+    tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
+      HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_FILE}
+        -o ${S_NS_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_APP_FILE}
+        ${NS_HEX_APP_FILE}
 
-      COMMAND ${sign_cmd}
+      COMMAND ${sign_cmd_s_ns_confirm_hex}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_NS_SIGNED_FILE}
+        ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
+
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${MERGED_HEX_FILE} ${MERGED_BIN_FILE}
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${sign_cmd_s_ns_hex}
+
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${S_NS_SIGNED_HEX_FILE} ${S_NS_SIGNED_BIN_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_NS_FILE}
-      ${S_NS_SIGNED_FILE}
-      ${MERGED_FILE}
+      ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
+      ${S_NS_HEX_FILE}
+      ${S_NS_SIGNED_HEX_FILE}
+      ${S_NS_SIGNED_BIN_FILE}
+      ${MERGED_HEX_FILE}
+      ${MERGED_BIN_FILE}
     )
 
   else()
-    if (CONFIG_TFM_USE_NS_APP)
-      tfm_sign(sign_cmd_ns NS TRUE ${NS_APP_FILE} ${NS_SIGNED_FILE})
+    if(CONFIG_TFM_USE_NS_APP)
+      tfm_sign(sign_cmd_ns_hex SUFFIX "NS"
+        HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_HEX_APP_FILE}
+        OUTPUT_FILE ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin SUFFIX "NS"
+        HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_BIN_APP_FILE}
+        OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
     else()
-      tfm_sign(sign_cmd_ns NS FALSE ${NS_APP_FILE} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns_hex SUFFIX "NS"
+        TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_HEX_APP_FILE}
+        OUTPUT_FILE ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin SUFFIX "NS"
+        MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_BIN_APP_FILE}
+        OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
     endif()
 
-    tfm_sign(sign_cmd_s S TRUE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_FILE})
+    tfm_sign(sign_cmd_s_hex SUFFIX "S"
+      HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+      OUTPUT_FILE ${S_SIGNED_HEX_FILE})
+    tfm_sign(sign_cmd_s_bin SUFFIX "S"
+      HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
+      OUTPUT_FILE ${S_SIGNED_BIN_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${sign_cmd_ns}
-      COMMAND ${sign_cmd_s}
+      COMMAND ${sign_cmd_ns_hex}
+      COMMAND ${sign_cmd_ns_bin}
+      COMMAND ${sign_cmd_s_hex}
+      COMMAND ${sign_cmd_s_bin}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_SIGNED_FILE}
-        ${NS_SIGNED_FILE}
+        ${S_SIGNED_HEX_FILE}
+        ${NS_SIGNED_HEX_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_SIGNED_FILE}
-      ${NS_SIGNED_FILE}
-      ${MERGED_FILE}
+      ${S_SIGNED_HEX_FILE}
+      ${S_SIGNED_BIN_FILE}
+      ${NS_SIGNED_HEX_FILE}
+      ${NS_SIGNED_BIN_FILE}
+      ${MERGED_HEX_FILE}
     )
   endif()
 

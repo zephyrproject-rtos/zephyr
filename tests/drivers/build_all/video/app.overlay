@@ -132,6 +132,18 @@
 				reg = <0x8>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_hm01b0: hm01b0@24 {
+				compatible = "himax,hm01b0";
+				reg = <0x24>;
+				status = "okay";
+				data-bits = <0x4>;
+				port {
+					hm01b0_ep_out: endpoint {
+						remote-endpoint-label = "";
+					};
+				};
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {

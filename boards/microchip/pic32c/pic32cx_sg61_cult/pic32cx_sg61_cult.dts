@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cx_sg/pic32cx_sg61/pic32cx1025sg61128.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CX SG61 Curiosity Ultra";
+	compatible = "pic32cxsg61,cultra", "microchip,pic32cx1025sg61128", "microchip,pic32cx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&portc 21 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+
+		led2: led_2 {
+			gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x4000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&porta{
+	status="okay";
+};
+
+&portb{
+	status="okay";
+};
+
+&portc{
+	status="okay";
+};

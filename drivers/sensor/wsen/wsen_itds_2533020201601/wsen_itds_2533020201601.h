@@ -10,9 +10,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 
-#include <weplatform.h>
+#include <platform.h>
 
-#include "WSEN_ITDS_2533020201601_hal.h"
+#include <WSEN_ITDS_2533020201601.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

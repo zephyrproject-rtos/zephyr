@@ -11,7 +11,7 @@ tests:
       - bbc_microbit
     integration_platforms:
       - bbc_microbit
-    extra_args: EXTRA_CONF_FILE=prj_minimal.conf
+    extra_args: CONF_FILE=prj_minimal.conf
     tags: bluetooth
   sample.bluetooth.central_hr.bt_ll_sw_split.extended:
     harness: bluetooth
@@ -59,6 +59,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONFIG_BT_EXT_ADV=y
-      - CONFIG_BT_AUTO_PHY_UPDATE=n
+      - CONFIG_BT_AUTO_PHY_CENTRAL_NONE=y
     tags: bluetooth
     sysbuild: true

@@ -86,6 +86,8 @@ source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.numaker"
 
+source "drivers/clock_control/Kconfig.nxp_mc_cgm"
+
 source "drivers/clock_control/Kconfig.nxp_s32"
 
 source "drivers/clock_control/Kconfig.agilex5"
@@ -95,6 +97,8 @@ source "drivers/clock_control/Kconfig.renesas_ra_cgc"
 source "drivers/clock_control/Kconfig.renesas_rx_cgc"
 
 source "drivers/clock_control/Kconfig.renesas_rz_cpg"
+
+source "drivers/clock_control/Kconfig.renesas_rz_cgc"
 
 source "drivers/clock_control/Kconfig.max32"
 
@@ -115,5 +119,9 @@ source "drivers/clock_control/Kconfig.wch_rcc"
 source "drivers/clock_control/Kconfig.it51xxx"
 
 source "drivers/clock_control/Kconfig.mchp"
+
+source "drivers/clock_control/Kconfig.sf32lb_hxt48"
+
+source "drivers/clock_control/Kconfig.sf32lb_rcc"
 
 endif # CLOCK_CONTROL

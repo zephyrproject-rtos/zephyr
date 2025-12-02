@@ -29,6 +29,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_0 {
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
@@ -47,6 +48,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Push Button 0";
@@ -64,6 +66,7 @@
 		pinmux = <UART_RX_PAD45>;
 		input-enable;
 	};
+
 	uart_tx_default: uart_tx_default {
 		pinmux = <UART_TX_PAD44>;
 		output-enable;

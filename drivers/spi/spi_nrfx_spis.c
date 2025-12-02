@@ -20,14 +20,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#if NRF_DT_INST_ANY_IS_FAST
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast SPIM PM actions can only be
- * called from a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-
 /*
  * Current factors requiring use of DT_NODELABEL:
  *
@@ -39,28 +31,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 #define SPIS_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIS(idx), prop)
-#define SPIS_IS_FAST(idx) NRF_DT_IS_FAST(SPIS(idx))
-
-#define SPIS_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIS(prefix##idx)),		\
-		   (SPIS_PROP(idx, cross_domain_pins_supported)),	\
-		   (0))
-
-#if NRFX_FOREACH_PRESENT(SPIS, SPIS_PINS_CROSS_DOMAIN, (||), (0))
-#include <hal/nrf_gpio.h>
-/* Certain SPIM instances support usage of cross domain pins in form of dedicated pins on
- * a port different from the default one.
- */
-#define SPIS_CROSS_DOMAIN_SUPPORTED 1
-#endif
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
-#include <nrf_sys_event.h>
-/* To use cross domain pins, constant latency mode needs to be applied, which is
- * handled via nrf_sys_event requests.
- */
-#define SPIS_CROSS_DOMAIN_PINS_HANDLE 1
-#endif
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
@@ -81,37 +51,7 @@ struct spi_nrfx_config {
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
 	void *mem_reg;
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	bool cross_domain;
-	int8_t default_port;
-#endif
 };
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-static bool spis_has_cross_domain_connection(const struct spi_nrfx_config *config)
-{
-	const struct pinctrl_dev_config *pcfg = config->pcfg;
-	const struct pinctrl_state *state;
-	int ret;
-
-	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
-	if (ret < 0) {
-		LOG_ERR("Unable to read pin state");
-		return false;
-	}
-
-	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
-		uint32_t pin = NRF_GET_PIN(state->pins[i]);
-
-		if ((pin != NRF_PIN_DISCONNECTED) &&
-		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -432,20 +372,6 @@ static void spi_nrfx_suspend(const struct device *dev)
 		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
-#if SPIS_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_release_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
-
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
@@ -454,20 +380,6 @@ static void spi_nrfx_resume(const struct device *dev)
 	const struct spi_nrfx_config *dev_config = dev->config;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
-#if SPIS_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_request_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
 
 	if (dev_config->wake_gpio.port == NULL) {
 		nrf_spis_enable(dev_config->spis.p_reg);
@@ -587,18 +499,11 @@ static int spi_nrfx_init(const struct device *dev)
 		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 		.mem_reg = DMM_DEV_TO_REG(SPIS(idx)),			       \
-		IF_ENABLED(SPIS_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),       \
-			(.cross_domain = true,				       \
-			 .default_port =				       \
-				DT_PROP_OR(DT_PHANDLE(SPIS(idx),	       \
-					default_gpio_port), port, -1),))       \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
-	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
-		COND_CODE_1(SPIS_IS_FAST(idx), (0),			       \
-			    (PM_DEVICE_ISR_SAFE)));			       \
+	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action, PM_DEVICE_ISR_SAFE);\
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
 			    PM_DEVICE_DT_GET(SPIS(idx)),		       \

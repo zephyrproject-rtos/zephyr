@@ -110,6 +110,7 @@ struct i2c_stm32_data {
 		unsigned int is_arlo;
 		unsigned int is_nack;
 		unsigned int is_err;
+		bool continue_in_next;
 		struct i2c_msg *msg;
 		unsigned int len;
 		uint8_t *buf;

@@ -273,6 +273,17 @@ struct net_route_entry_mcast *
 net_route_mcast_lookup(struct in6_addr *group);
 
 /**
+ * @brief Lookup a multicast routing entry on a given interface.
+ *
+ * @param group IPv6 multicast group address
+ * @param iface Network interface to check
+ *
+ * @return Routing entry corresponding to this multicast group and interface.
+ */
+struct net_route_entry_mcast *
+net_route_mcast_lookup_by_iface(struct in6_addr *group, struct net_if *iface);
+
+/**
  * @brief Add an interface to multicast routing entry.
  *
  * @param entry Multicast routing entry.

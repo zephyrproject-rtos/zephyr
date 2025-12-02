@@ -11,6 +11,7 @@ include: raspberrypi,pico-clock.yaml
 properties:
   startup-delay-multiplier:
     type: int
-    default: 1
+    default: 6
     description: |
-      Startup delay multiplier. The default value matches the Pico SDK.
+      Startup delay multiplier. The default value matches the Pico SDK used
+      as the basis for hal_rpi_pico (currently v2.1.1).

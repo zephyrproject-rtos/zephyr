@@ -295,8 +295,10 @@ static int phy_ti_dp83867_reset(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
 	}
-
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 done:
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+
 	/* POR release time (minimum specified is T4=195us) */
 	k_busy_wait(PHY_TI_DP83867_POR_DELAY);
 
@@ -313,7 +315,7 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
-	uint32_t val;
+	__maybe_unused uint32_t val;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
 		LOG_ERR("Disabling auto-negotiation is not supported by this driver");

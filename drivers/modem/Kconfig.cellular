@@ -10,6 +10,7 @@ config MODEM_CELLULAR
 	select MODEM_PIPE
 	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
+	select UART_USE_RUNTIME_CONFIGURE
 	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
 	select NET_L2_PPP_PAP
@@ -38,6 +39,15 @@ config MODEM_CELLULAR
 	  features.
 
 if MODEM_CELLULAR
+
+config MODEM_CELLULAR_INIT_PRIORITY
+	int "Cellular modem driver initialization priority"
+	default 79
+	range 0 99
+	help
+	  Driver initialization priority for cellular modem drivers.
+	  Defaults to less than GNSS_INIT_PRIORITY, as LTE modems often
+	  integrate a GNSS modem.
 
 config MODEM_CELLULAR_APN
 	string "Static APN"
@@ -73,6 +83,10 @@ config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
 	range 0 1000
 	default 100 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 	default 300
+
+config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
+	int "Delay between de-asserting the reset pin and pulsing the power pin"
+	default 500
 
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 

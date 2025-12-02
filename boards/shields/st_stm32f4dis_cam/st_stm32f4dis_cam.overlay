@@ -10,14 +10,6 @@
 	};
 };
 
-&dma2 {
-	status = "okay";
-};
-
-&dmamux1 {
-	status = "okay";
-};
-
 &st_cam_i2c {
 	ov9655: camera@30 {
 		compatible = "ovti,ov9655";
@@ -32,23 +24,8 @@
 	};
 };
 
-#define MCO1_SEL_SYSCLK 1
-
-#define MCO1_PRE_DIV_4 2
-
-&mco1 {
-	status = "okay";
-	clocks = <&rcc STM32_SRC_SYSCLK MCO1_SEL(MCO1_SEL_SYSCLK)>;
-	prescaler = <MCO1_PRE(MCO1_PRE_DIV_4)>;
-	pinctrl-0 = <&rcc_mco_pa8>;
-	pinctrl-names = "default";
-};
-
 &st_cam_dvp {
 	status = "okay";
-
-	/* DMA config is already hardcoded within the DCMI driver */
-	dmas = <&dma2 5 0 0>;
 
 	port {
 		dcmi_ep_in: endpoint {

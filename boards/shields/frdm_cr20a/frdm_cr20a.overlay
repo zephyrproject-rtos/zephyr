@@ -20,7 +20,7 @@
 		reg = <0x0>;
 		spi-max-frequency = <4000000>;
 		irqb-gpios = <&arduino_header ARDUINO_HEADER_R3_D2
-				(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			      (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};

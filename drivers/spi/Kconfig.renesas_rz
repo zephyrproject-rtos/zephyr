@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_RENESAS_RZ_RSPI
@@ -19,9 +19,35 @@ config SPI_RENESAS_RZ_RSPI_INTERRUPT
 
 config SPI_RENESAS_RZ_RSPI_DMAC
 	bool "RZ SPI DMA Support"
-	select USE_RZ_FSP_DMA
+	select USE_RZ_FSP_DMAC_B
 	help
 	  Enable the SPI DMA mode for SPI instances
+
+endif # SPI_RENESAS_RZ_RSPI
+
+config SPI_RENESAS_RZ
+	bool "Renesas RZ SPI"
+	default y
+	depends on DT_HAS_RENESAS_RZ_SPI_ENABLED
+	select USE_RZ_FSP_SPI
+	select PINCTRL
+	help
+	  Enable Renesas RZ SPI Driver.
+
+if SPI_RENESAS_RZ
+
+config SPI_RENESAS_RZ_INTERRUPT
+	bool "RZ SPI Interrupt Support"
+	help
+	  Enable Interrupt support for the SPI.
+
+config SPI_USE_HW_SS
+	bool "RZ SPI Hardware Peripheral Select support"
+	default y
+	help
+	  Use Hardware Peripheral Select instead of Software Peripheral Select.
+
+endif # SPI_RENESAS_RZ
 
 if SPI_RTIO
 config SPI_RTIO_SQ_SIZE
@@ -40,5 +66,3 @@ config SPI_RTIO_CQ_SIZE
 	default 8 # Sensible default that covers most common spi transactions
 
 endif # SPI_RTIO
-
-endif # SPI_RENESAS_RZ_RSPI

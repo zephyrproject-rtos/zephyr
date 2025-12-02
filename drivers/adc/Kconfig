@@ -50,6 +50,24 @@ config ADC_INIT_PRIORITY
 	help
 	  ADC driver device initialization priority.
 
+config ADC_STREAM
+	bool "ADC stream support"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	help
+	  This option enables the stream API calls.
+
+config ADC_DEFAULT_RTIO
+	bool "Default RTIO support"
+	select RTIO
+	select RTIO_WORKQ
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	help
+	  This option enables the default RTIO handler for ADC devices that do not
+	  implement stream functionality.
+
 module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
@@ -114,11 +132,13 @@ source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"
 
-source "drivers/adc/Kconfig.gecko"
-
-source "drivers/adc/Kconfig.siwx91x"
+source "drivers/adc/Kconfig.silabs"
 
 source "drivers/adc/Kconfig.ifx_cat1"
+
+source "drivers/adc/Kconfig.ifx_hppass_sar"
+
+source "drivers/adc/Kconfig.ifx_autanalog_sar"
 
 source "drivers/adc/Kconfig.smartbond"
 
@@ -155,6 +175,8 @@ source "drivers/adc/Kconfig.ad7124"
 source "drivers/adc/Kconfig.ad405x"
 
 source "drivers/adc/Kconfig.ad4130"
+
+source "drivers/adc/Kconfig.ad4170"
 
 source "drivers/adc/Kconfig.rts5912"
 

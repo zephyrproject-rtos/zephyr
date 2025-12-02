@@ -48,22 +48,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioa 6 0>,	/* AN  */
-				<1 0 &gpioa 2 0>,	/* RST */
-				<2 0 &gpioa 3 0>,	/* CS   */
-				<3 0 &gpiob 3 0>,	/* SCK  */
-				<4 0 &gpiob 4 0>,	/* MISO */
-				<5 0 &gpiob 5 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpioe 9 0>,	/* PWM  */
-				<7 0 &gpioa 1 0>,	/* INT  */
-				<8 0 &gpiod 9 0>,	/* RX   */
-				<9 0 &gpiod 8 0>,	/* TX   */
-				<10 0 &gpiob 6 0>,	/* SCL  */
-				<11 0 &gpiob 7 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpioa 6 0>,	/* AN  */
+			   <1 0 &gpioa 2 0>,	/* RST */
+			   <2 0 &gpioa 3 0>,	/* CS   */
+			   <3 0 &gpiob 3 0>,	/* SCK  */
+			   <4 0 &gpiob 4 0>,	/* MISO */
+			   <5 0 &gpiob 5 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpioe 9 0>,	/* PWM  */
+			   <7 0 &gpioa 1 0>,	/* INT  */
+			   <8 0 &gpiod 9 0>,	/* RX   */
+			   <9 0 &gpiod 8 0>,	/* TX   */
+			   <10 0 &gpiob 6 0>,	/* SCL  */
+			   <11 0 &gpiob 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	mikrobus_2_header: mikrobus-connector-2 {
@@ -71,22 +71,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioa 4 0>,	/* AN  */
-				<1 0 &gpioe 1 0>,	/* RST */
-				<2 0 &gpioe 0 0>,	/* CS   */
-				<3 0 &gpiob 3 0>,	/* SCK  */
-				<4 0 &gpiob 4 0>,	/* MISO */
-				<5 0 &gpiob 5 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpiod 15 0>,	/* PWM  */
-				<7 0 &gpiob 9 0>,	/* INT  */
-				<8 0 &gpiod 6 0>,	/* RX   */
-				<9 0 &gpiod 5 0>,	/* TX   */
-				<10 0 &gpiob 6 0>,	/* SCL  */
-				<11 0 &gpiob 7 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpioa 4 0>,	/* AN  */
+			   <1 0 &gpioe 1 0>,	/* RST */
+			   <2 0 &gpioe 0 0>,	/* CS   */
+			   <3 0 &gpiob 3 0>,	/* SCK  */
+			   <4 0 &gpiob 4 0>,	/* MISO */
+			   <5 0 &gpiob 5 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpiod 15 0>,	/* PWM  */
+			   <7 0 &gpiob 9 0>,	/* INT  */
+			   <8 0 &gpiod 6 0>,	/* RX   */
+			   <9 0 &gpiod 5 0>,	/* TX   */
+			   <10 0 &gpiob 6 0>,	/* SCL  */
+			   <11 0 &gpiob 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	mikrobus_3_header: mikrobus-connector-3 {
@@ -94,22 +94,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioa 7 0>,	/* AN  */
-				<1 0 &gpiod 8 0>,	/* RST */
-				<2 0 &gpiod 11 0>,	/* CS   */
-				<3 0 &gpioc 10 0>,	/* SCK  */
-				<4 0 &gpioc 11 0>,	/* MISO */
-				<5 0 &gpioc 12 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpiod 13 0>,	/* PWM  */
-				<7 0 &gpioc 8 0>,	/* INT  */
-				<8 0 &gpioc 7 0>,	/* RX   */
-				<9 0 &gpioc 6 0>,	/* TX   */
-				<10 0 &gpiob 6 0>,	/* SCL  */
-				<11 0 &gpiob 7 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpioa 7 0>,	/* AN  */
+			   <1 0 &gpiod 8 0>,	/* RST */
+			   <2 0 &gpiod 11 0>,	/* CS   */
+			   <3 0 &gpioc 10 0>,	/* SCK  */
+			   <4 0 &gpioc 11 0>,	/* MISO */
+			   <5 0 &gpioc 12 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpiod 13 0>,	/* PWM  */
+			   <7 0 &gpioc 8 0>,	/* INT  */
+			   <8 0 &gpioc 7 0>,	/* RX   */
+			   <9 0 &gpioc 6 0>,	/* TX   */
+			   <10 0 &gpiob 6 0>,	/* SCL  */
+			   <11 0 &gpiob 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	mikrobus_4_header: mikrobus-connector-4 {
@@ -117,57 +117,57 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioa 5 0>,	/* AN  */
-				<1 0 &gpiod 0 0>,	/* RST */
-				<2 0 &gpiod 1 0>,	/* CS   */
-				<3 0 &gpioc 10 0>,	/* SCK  */
-				<4 0 &gpioc 11 0>,	/* MISO */
-				<5 0 &gpioc 12 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpiod 14 0>,	/* PWM  */
-				<7 0 &gpioa 14 0>,	/* INT  */
-				<8 0 &gpioa 10 0>,	/* RX   */
-				<9 0 &gpioa 9 0>,	/* TX   */
-				<10 0 &gpiob 6 0>,	/* SCL  */
-				<11 0 &gpiob 7 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpioa 5 0>,	/* AN  */
+			   <1 0 &gpiod 0 0>,	/* RST */
+			   <2 0 &gpiod 1 0>,	/* CS   */
+			   <3 0 &gpioc 10 0>,	/* SCK  */
+			   <4 0 &gpioc 11 0>,	/* MISO */
+			   <5 0 &gpioc 12 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpiod 14 0>,	/* PWM  */
+			   <7 0 &gpioa 14 0>,	/* INT  */
+			   <8 0 &gpioa 10 0>,	/* RX   */
+			   <9 0 &gpioa 9 0>,	/* TX   */
+			   <10 0 &gpiob 6 0>,	/* SCL  */
+			   <11 0 &gpiob 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	edge_header: connector {
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioc 5 0>,	/* ,PC5 */
-				<1 0 &gpiob 0 0>,	/* ,PB0 */
-				<2 0 &gpioe 7 0>,	/* ,PE7 */
-				<3 0 &gpioe 8 0>,	/* ,PE8 */
-				<4 0 &gpioe 11 0>,	/* ,PE11 */
-				<5 0 &gpioc 4 0>,	/* ,PC4 */
-				<6 0 &gpioe 13 0>,	/* ,PE13 */
-				<7 0 &gpioe 14 0>,	/* ,PE14 */
-				<8 0 &gpiob 10 0>,	/* ,PB10 */
-				<9 0 &gpiob 11 0>,	/* ,PB11 */
-				<10 0 &gpiob 12 0>,	/* ,PB12 */
-				<11 0 &gpiob 13 0>,	/* ,PB13 */
-				<12 0 &gpiob 6 0>,	/* ,PB6 # I2C1 */
-				<13 0 &gpiob 7 0>,	/* ,PB7 # I2C1 */
-				<14 0 &gpioc 10 0>,	/* ,PC10 # SPI3 */
-				<15 0 &gpioc 11 0>,	/* ,PC11 # SPI3 */
-				<16 0 &gpioc 12 0>,	/* ,PC12 # SPI3 */
-				<17 0 &gpiod 10 0>,	/* ,PD10 # SPI3 */
-				<18 0 &gpioa 15 0>,	/* ,PA15 */
-				<19 0 &gpioc 13 0>,	/* ,PC13 */
-				<20 0 &gpioe 6 0>,	/* ,PE6 */
-				<21 0 &gpioe 5 0>,	/* ,PE5 */
-				<22 0 &gpiod 2 0>,	/* ,PD2 */
-				<23 0 &gpiod 3 0>,	/* ,PD3 */
-				<24 0 &gpiod 4 0>,	/* ,PD4 */
-				<25 0 &gpiod 7 0>,	/* ,PD7 */
-				<26 0 &gpioe 2 0>,	/* ,PE2 */
-				<27 0 &gpioe 3 0>,	/* ,PE3 */
-				<28 0 &gpioe 4 0>;	/* ,PE4 */
+		gpio-map = <0 0 &gpioc 5 0>,	/* ,PC5 */
+			   <1 0 &gpiob 0 0>,	/* ,PB0 */
+			   <2 0 &gpioe 7 0>,	/* ,PE7 */
+			   <3 0 &gpioe 8 0>,	/* ,PE8 */
+			   <4 0 &gpioe 11 0>,	/* ,PE11 */
+			   <5 0 &gpioc 4 0>,	/* ,PC4 */
+			   <6 0 &gpioe 13 0>,	/* ,PE13 */
+			   <7 0 &gpioe 14 0>,	/* ,PE14 */
+			   <8 0 &gpiob 10 0>,	/* ,PB10 */
+			   <9 0 &gpiob 11 0>,	/* ,PB11 */
+			   <10 0 &gpiob 12 0>,	/* ,PB12 */
+			   <11 0 &gpiob 13 0>,	/* ,PB13 */
+			   <12 0 &gpiob 6 0>,	/* ,PB6 # I2C1 */
+			   <13 0 &gpiob 7 0>,	/* ,PB7 # I2C1 */
+			   <14 0 &gpioc 10 0>,	/* ,PC10 # SPI3 */
+			   <15 0 &gpioc 11 0>,	/* ,PC11 # SPI3 */
+			   <16 0 &gpioc 12 0>,	/* ,PC12 # SPI3 */
+			   <17 0 &gpiod 10 0>,	/* ,PD10 # SPI3 */
+			   <18 0 &gpioa 15 0>,	/* ,PA15 */
+			   <19 0 &gpioc 13 0>,	/* ,PC13 */
+			   <20 0 &gpioe 6 0>,	/* ,PE6 */
+			   <21 0 &gpioe 5 0>,	/* ,PE5 */
+			   <22 0 &gpiod 2 0>,	/* ,PD2 */
+			   <23 0 &gpiod 3 0>,	/* ,PD3 */
+			   <24 0 &gpiod 4 0>,	/* ,PD4 */
+			   <25 0 &gpiod 7 0>,	/* ,PD7 */
+			   <26 0 &gpioe 2 0>,	/* ,PE2 */
+			   <27 0 &gpioe 3 0>,	/* ,PE3 */
+			   <28 0 &gpioe 4 0>;	/* ,PE4 */
 	};
 
 	aliases {
@@ -279,10 +279,9 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	pinctrl-names = "default";
 
-	cs-gpios =
-		<&gpiod 11 GPIO_ACTIVE_LOW>,    // CS0
-		<&gpiod 1 GPIO_ACTIVE_LOW>,     // CS1
-		<&gpioa 13 GPIO_ACTIVE_LOW>;    // CS2
+	cs-gpios = <&gpiod 11 GPIO_ACTIVE_LOW>,    // CS0
+		   <&gpiod 1 GPIO_ACTIVE_LOW>,     // CS1
+		   <&gpioa 13 GPIO_ACTIVE_LOW>;    // CS2
 };
 
 /* Flash chip 1 (extra flash connected to CS2) */
@@ -308,7 +307,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
-	status ="okay";
+	status = "okay";
 	pinctrl-0 = <&adc1_in4_pa4 &adc1_in5_pa5>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
@@ -316,7 +315,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc2 {
-	status ="okay";
+	status = "okay";
 	pinctrl-0 = <&adc2_in6_pa6 &adc2_in7_pa7>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";

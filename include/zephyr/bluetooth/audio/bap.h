@@ -1967,16 +1967,23 @@ struct bt_bap_unicast_client_cb {
 /**
  * @brief Register unicast client callbacks.
  *
- * Only one callback structure can be registered, and attempting to
- * registering more than one will result in an error.
- *
- * @param cb  Unicast client callback structure.
+ * @param cb  Unicast client callback structure to register.
  *
  * @retval 0 Success
  * @retval -EINVAL @p cb is NULL.
  * @retval -EEXIST @p cb is already registered.
  */
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb);
+
+/**
+ * @brief Unregister unicast client callbacks.
+ *
+ * @param cb  Unicast client callback structure to unregister.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
 
 /**
  * @brief Discover remote capabilities and endpoints
@@ -2661,8 +2668,6 @@ int bt_bap_scan_delegator_unregister(void);
  *
  * @param src_id    The source id used to identify the receive state.
  * @param pa_state  The Periodic Advertising sync state to set.
- *                  BT_BAP_PA_STATE_NOT_SYNCED and BT_BAP_PA_STATE_SYNCED is
- *                  not necessary to provide, as they are handled internally.
  *
  * @return int    Error value. 0 on success, errno on fail.
  */
@@ -2687,6 +2692,14 @@ struct bt_bap_scan_delegator_add_src_param {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/**
+	 * @brief Periodic Advertising sync state
+	 *
+	 * This will typically be either @ref BT_BAP_PA_STATE_NOT_SYNCED or
+	 * @ref BT_BAP_PA_STATE_SYNCED.
+	 */
+	enum bt_bap_pa_state pa_state;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;

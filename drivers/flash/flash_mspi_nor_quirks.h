@@ -9,6 +9,13 @@
 
 /* Flash chip specific quirks */
 struct flash_mspi_nor_quirks {
+	/* Called at the beginning of the flash chip initialization,
+	 * right after reset if any is performed. Can be used to alter
+	 * structures that define communication with the chip, like
+	 * `cmd_info`, `switch_info`, and `erase_types`, which are set
+	 * to default values at this point.
+	 */
+	int (*pre_init)(const struct device *dev);
 	/* Called after switching to default IO mode. */
 	int (*post_switch_mode)(const struct device *dev);
 };
@@ -63,46 +70,24 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 		return 0;
 	}
 
-	/* Wait for previous write to finish */
-	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
-		dev_data->packet.data_buf  = &status;
-		dev_data->packet.num_bytes = sizeof(status);
-		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
-		if (rc < 0) {
-			return rc;
-		}
-	} while (status & SPI_NOR_WIP_BIT);
-
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands_single.write_en);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
-			     &dev_data->xfer);
+	rc = cmd_wren(dev);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Write status and config registers */
-	const struct flash_mspi_nor_cmd cmd_status = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WRSR,
-		.cmd_length = 1,
-	};
-
-	flash_mspi_command_set(dev, &cmd_status);
+	set_up_xfer(dev, MSPI_TX);
 	dev_data->packet.data_buf  = mxicy_mx25r_hp_payload;
 	dev_data->packet.num_bytes = sizeof(mxicy_mx25r_hp_payload);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+	rc = perform_xfer(dev, SPI_NOR_CMD_WRSR, false);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Wait for write to end and verify status register */
 	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
-		dev_data->packet.data_buf  = &status;
-		dev_data->packet.num_bytes = sizeof(status);
-		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+		rc = cmd_rdsr(dev, SPI_NOR_CMD_RDSR, &status);
 		if (rc < 0) {
 			return rc;
 		}
@@ -113,10 +98,10 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Verify configuration registers */
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->config);
-	dev_data->packet.data_buf  = config;
+	set_up_xfer(dev, MSPI_RX);
 	dev_data->packet.num_bytes = sizeof(config);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+	dev_data->packet.data_buf  = config;
+	rc = perform_xfer(dev, SPI_NOR_CMD_RDCR, false);
 	if (rc < 0) {
 		return rc;
 	}
@@ -138,45 +123,89 @@ struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25r = {
 
 #if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u)
 
-#define MXICY_MX25R_OE_MASK BIT(0)
-
-static uint8_t mxicy_mx25u_oe_payload = MXICY_MX25R_OE_MASK;
-
 static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
+	uint8_t opi_enable;
 	int rc;
 
 	if (io_mode != MSPI_IO_MODE_OCTAL) {
 		return 0;
 	}
 
+	/*
+	 * TODO - replace this with a generic routine that uses information
+	 *        from SFDP header FF87 (Status, Control and Configuration
+	 *        Register Map)
+	 */
+
+	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_DUAL) {
+		opi_enable = BIT(1);
+	} else {
+		opi_enable = BIT(0);
+	}
+
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands_single.write_en);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
-			     &dev_data->xfer);
+	rc = cmd_wren(dev);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Write config register 2 */
-	const struct flash_mspi_nor_cmd cmd_status = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WR_CFGREG2,
-		.cmd_length = 1,
-		.addr_length = 4,
-	};
+	set_up_xfer(dev, MSPI_TX);
+	dev_data->xfer.addr_length = 4;
+	dev_data->packet.address   = 0;
+	dev_data->packet.data_buf  = &opi_enable;
+	dev_data->packet.num_bytes = sizeof(opi_enable);
+	return perform_xfer(dev, SPI_NOR_CMD_WR_CFGREG2, false);
+}
 
-	flash_mspi_command_set(dev, &cmd_status);
-	dev_data->packet.data_buf  = &mxicy_mx25u_oe_payload;
-	dev_data->packet.num_bytes = sizeof(mxicy_mx25u_oe_payload);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
-	return rc;
+static int mxicy_mx25u_pre_init(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	static const uint8_t dummy_cycles[8] = {
+		20, 18, 16, 14, 12, 10, 8, 6
+	};
+	uint8_t cfg_reg;
+	int rc;
+
+	if (dev_config->mspi_nor_cfg.io_mode != MSPI_IO_MODE_OCTAL) {
+		return 0;
+	}
+
+	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_SINGLE) {
+		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_INVERSE;
+	}
+
+	/*
+	 * TODO - replace this with a generic routine that uses information
+	 *        from SFDP header FF87 (Status, Control and Configuration
+	 *        Register Map)
+	 */
+
+	/* Read configured number of dummy cycles for memory reading commands. */
+	set_up_xfer(dev, MSPI_RX);
+	dev_data->xfer.addr_length = 4;
+	dev_data->packet.address   = 0x300;
+	dev_data->packet.data_buf  = &cfg_reg;
+	dev_data->packet.num_bytes = sizeof(cfg_reg);
+	rc = perform_xfer(dev, SPI_NOR_CMD_RD_CFGREG2, false);
+	if (rc < 0) {
+		LOG_ERR("Failed to read Dummy Cycle from CFGREG2");
+		return rc;
+	}
+
+	dev_data->cmd_info.read_mode_bit_cycles = 0;
+	dev_data->cmd_info.read_dummy_cycles = dummy_cycles[cfg_reg & 0x7];
+
+	return 0;
 }
 
 struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
+	.pre_init = mxicy_mx25u_pre_init,
 	.post_switch_mode = mxicy_mx25u_post_switch_mode,
 };
 

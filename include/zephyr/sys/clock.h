@@ -387,7 +387,7 @@ struct timespec;
 
 /* Convert a POSIX clock (cast to int) to a sys_clock identifier */
 int sys_clock_from_clockid(int clock_id);
-/** @endcond INTERNAL_HIDDEN */
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Get the offset @ref SYS_CLOCK_REALTIME with respect to @ref SYS_CLOCK_MONOTONIC

@@ -18,7 +18,7 @@ int sys_heap_array_save(struct sys_heap *heap)
 	if (i < CONFIG_SYS_HEAP_ARRAY_SIZE) {
 		heaps[i++] = heap;
 	} else {
-		return -EINVAL;
+		return -ENOMEM;
 	}
 
 	return 0;

@@ -45,16 +45,19 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		/* 88K */
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x16000>;
 		};
+
 		/* 88K */
 		slot1_partition: partition@22000 {
 			label = "image-1";
 			reg = <0x00022000 0x16000>;
 		};
+
 		/* 32K */
 		storage_partition: partition@38000 {
 			label = "storage";

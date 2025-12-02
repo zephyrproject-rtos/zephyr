@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
@@ -677,7 +678,7 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 			LOG_INF("Maximum neighbors added to list, Skipping.");
 		}
 	} else {
-		LOG_INF("Failed to Parse Neighbor Report - Skipping entry\n");
+		LOG_INF("Failed to Parse Neighbor Report - Skipping entry");
 	}
 }
 #endif
@@ -1037,7 +1038,7 @@ static int wifi_set_twt(uint64_t mgmt_request, struct net_if *iface,
 	}
 #else
 	NET_WARN("Check for valid IP address been disabled. "
-		 "Device might be unreachable or might not receive traffic.\n");
+		 "Device might be unreachable or might not receive traffic.");
 #endif /* CONFIG_WIFI_MGMT_TWT_CHECK_IP */
 
 	if (info.link_mode < WIFI_6) {
@@ -1449,6 +1450,31 @@ static int wifi_set_bss_max_idle_period(uint64_t mgmt_request, struct net_if *if
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD,
 				  wifi_set_bss_max_idle_period);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+static int wifi_set_bgscan(uint64_t mgmt_request, struct net_if *iface, void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_bgscan_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_bgscan == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (data == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->set_bgscan(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN, wifi_set_bgscan);
+#endif
+
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					   struct wifi_raw_scan_result *raw_scan_result)
@@ -1527,53 +1553,25 @@ BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_SSID) != 1,
 	     "CONFIG_WIFI_CREDENTIALS_STATIC_SSID required");
 #endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
 
+/**
+ * Disable -Wcast-qual in this function, the buffers passed in the params argument are mutable.
+ */
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 				    struct wifi_connect_req_params *params)
 {
-	char *ssid = NULL;
-	char *psk = NULL;
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	char *key_passwd = NULL;
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
-	int ret;
-
 	/* SSID */
-	ssid = (char *)k_malloc(creds->header.ssid_len + 1);
-	if (!ssid) {
-		LOG_ERR("Failed to allocate memory for SSID\n");
-		ret = -ENOMEM;
-		goto err_out;
+	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN) {
+		LOG_ERR("SSID string truncated");
+		return -EINVAL;
 	}
 
-	memset(ssid, 0, creds->header.ssid_len + 1);
-	ret = snprintf(ssid, creds->header.ssid_len + 1, "%s", creds->header.ssid);
-	if (ret > creds->header.ssid_len) {
-		LOG_ERR("SSID string truncated\n");
-		ret = -EINVAL;
-		goto err_out;
-	}
-
-	params->ssid = ssid;
+	memcpy((uint8_t *)params->ssid, creds->header.ssid, creds->header.ssid_len);
 	params->ssid_length = creds->header.ssid_len;
 
 	/* PSK (optional) */
-	if (creds->password_len > 0) {
-		psk = (char *)k_malloc(creds->password_len + 1);
-		if (!psk) {
-			LOG_ERR("Failed to allocate memory for PSK\n");
-			ret = -ENOMEM;
-			goto err_out;
-		}
-
-		memset(psk, 0, creds->password_len + 1);
-		ret = snprintf(psk, creds->password_len + 1, "%s", creds->password);
-		if (ret > creds->password_len) {
-			LOG_ERR("PSK string truncated\n");
-			ret = -EINVAL;
-			goto err_out;
-		}
-
-		params->psk = psk;
+	if (creds->password_len > 0 && creds->password_len <= WIFI_PSK_MAX_LEN) {
+		memcpy((uint8_t *)params->psk, creds->password, creds->password_len);
 		params->psk_length = creds->password_len;
 	}
 
@@ -1583,21 +1581,12 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
 		if (creds->header.key_passwd_length > 0) {
-			key_passwd = (char *)k_malloc(creds->header.key_passwd_length + 1);
-			if (!key_passwd) {
-				LOG_ERR("Failed to allocate memory for key_passwd\n");
-				ret = -ENOMEM;
-				goto err_out;
+			if (creds->header.key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+				LOG_ERR("key_passwd string truncated");
+				return -EINVAL;
 			}
-			memset(key_passwd, 0, creds->header.key_passwd_length + 1);
-			ret = snprintf(key_passwd, creds->header.key_passwd_length + 1, "%s",
-				       creds->header.key_passwd);
-			if (ret > creds->header.key_passwd_length) {
-				LOG_ERR("key_passwd string truncated\n");
-				ret = -EINVAL;
-				goto err_out;
-			}
-			params->key_passwd = key_passwd;
+			memcpy((uint8_t *)params->key_passwd, creds->header.key_passwd,
+			       creds->header.key_passwd_length);
 			params->key_passwd_length = creds->header.key_passwd_length;
 		}
 	}
@@ -1632,26 +1621,8 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 	}
 
 	return 0;
-err_out:
-	if (ssid) {
-		k_free(ssid);
-		ssid = NULL;
-	}
-
-	if (psk) {
-		k_free(psk);
-		psk = NULL;
-	}
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	if (key_passwd) {
-		k_free(key_passwd);
-		key_passwd = NULL;
-	}
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
-
-	return ret;
 }
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 
 static inline const char *wpa_supp_security_txt(enum wifi_security_type security)
 {
@@ -1674,38 +1645,55 @@ static int add_network_from_credentials_struct_personal(struct wifi_credentials_
 							struct net_if *iface)
 {
 	int ret = 0;
-	struct wifi_connect_req_params cnx_params = {0};
+	uint8_t ssid[WIFI_SSID_MAX_LEN + 1] = {0};
+	uint8_t psk[WIFI_PSK_MAX_LEN + 1] = {0};
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	uint8_t key_passwd[WIFI_ENT_PSWD_MAX_LEN + 1] = {0};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
-	if (__stored_creds_to_params(creds, &cnx_params)) {
+	struct wifi_connect_req_params cnx_params = {
+		.ssid = ssid,
+		.psk = psk,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+		.key_passwd = key_passwd,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+	};
+
+	if (__stored_creds_to_params(creds, &cnx_params) != 0) {
 		ret = -ENOEXEC;
 		goto out;
 	}
 
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
-		     sizeof(struct wifi_connect_req_params))) {
-		LOG_ERR("Connection request failed\n");
+	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+		       sizeof(struct wifi_connect_req_params));
+	if (ret < 0) {
+		LOG_ERR("Connection request failed (%d)", ret);
 
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto out;
 	}
 
 	LOG_INF("Connection requested");
 
 out:
-	if (cnx_params.psk) {
-		k_free((void *)cnx_params.psk);
-	}
-
-	if (cnx_params.ssid) {
-		k_free((void *)cnx_params.ssid);
-	}
-
 	return ret;
 }
 
+struct add_stored_network_arg {
+	struct net_if *iface;
+	bool connected;
+};
+
 static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 {
+	struct add_stored_network_arg *arg = cb_arg;
 	int ret = 0;
 	struct wifi_credentials_personal creds;
+
+	if (arg->connected) {
+		/* Already connected */
+		return;
+	}
 
 	/* load stored data */
 	ret = wifi_credentials_get_by_ssid_personal_struct(ssid, ssid_len, &creds);
@@ -1716,7 +1704,11 @@ static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 		return;
 	}
 
-	add_network_from_credentials_struct_personal(&creds, (struct net_if *)cb_arg);
+	ret = add_network_from_credentials_struct_personal(&creds, arg->iface);
+	if (ret == 0) {
+		/* Indicate that we are connected */
+		arg->connected = true;
+	}
 }
 
 static int add_static_network_config(struct net_if *iface)
@@ -1770,6 +1762,9 @@ static int add_static_network_config(struct net_if *iface)
 static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, void *data,
 				  size_t len)
 {
+	struct add_stored_network_arg cb_arg = {
+		.iface = iface,
+	};
 	int ret = 0;
 
 	ret = add_static_network_config(iface);
@@ -1777,7 +1772,7 @@ static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, v
 		return ret;
 	}
 
-	wifi_credentials_for_each_ssid(add_stored_network, iface);
+	wifi_credentials_for_each_ssid(add_stored_network, &cb_arg);
 
 	return ret;
 };

@@ -445,7 +445,7 @@ static DEVICE_API(adc, tla202x_driver_api) = {
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
 			   (.acq_lock = Z_SEM_INITIALIZER(inst_##t##_##n##_data.acq_lock, 0, 1),)) \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &tla202x_init, NULL, &inst_##t##_##n##_data,                      \
+	DEVICE_DT_INST_DEFINE(n, tla202x_init, NULL, &inst_##t##_##n##_data,                       \
 			      &inst_##t##_##n##_config, POST_KERNEL,                               \
 			      CONFIG_ADC_TLA202X_INIT_PRIORITY, &tla202x_driver_api);
 

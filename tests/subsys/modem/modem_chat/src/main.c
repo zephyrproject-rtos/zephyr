@@ -635,8 +635,10 @@ ZTEST(modem_chat, test_script_chat_timeout_cmd)
 	int ret;
 	bool called;
 
+	zassert_false(modem_chat_is_running(&cmd));
 	zassert_ok(modem_chat_run_script_async(&cmd, &script_timeout_cmd),
 		   "Failed to start script");
+	zassert_true(modem_chat_is_running(&cmd));
 	k_msleep(100);
 
 	/*
@@ -672,6 +674,7 @@ ZTEST(modem_chat, test_script_chat_timeout_cmd)
 	 */
 	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
 	k_msleep(100);
+	zassert_false(modem_chat_is_running(&cmd));
 
 	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT);
 	zassert_true(called == true, "Script callback should have been called");

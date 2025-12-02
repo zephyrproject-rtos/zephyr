@@ -1,6 +1,4 @@
-# MCUXpresso SDK LPUART
-
-# Copyright (c) 2017, NXP
+# Copyright 2017, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_MCUX_LPUART
@@ -10,15 +8,24 @@ config UART_MCUX_LPUART
 	depends on CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC
-	select DMA if UART_ASYNC_API
 	select PINCTRL
 	help
 	  Enable the MCUX LPUART driver.
 
+if UART_MCUX_LPUART
+
 config UART_MCUX_LPUART_ISR_SUPPORT
 	bool
-	depends on UART_MCUX_LPUART
 	default y if UART_INTERRUPT_DRIVEN || PM || UART_ASYNC_API
 	help
 	  Enable UART interrupt service routine.
+
+config UART_NXP_LPUART_ASYNC_API_SUPPORT
+	bool
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPUART),dmas)
+	select SERIAL_SUPPORT_ASYNC
+	select DMA if UART_ASYNC_API
+	help
+	  Indicates if LPUART has async api support by having dmas enabled for it
+
+endif

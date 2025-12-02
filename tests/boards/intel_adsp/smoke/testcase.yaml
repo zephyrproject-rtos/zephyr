@@ -1,5 +1,25 @@
 tests:
   boards.intel_adsp.smoke:
-    platform_allow: intel_adsp/cavs25
+    extra_configs:
+      - CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE=n
+    platform_allow:
+      - intel_adsp/cavs25
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace20_lnl
+      - intel_adsp/ace30/ptl
     integration_platforms:
       - intel_adsp/cavs25
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace30/ptl
+  boards.intel_adsp.smoke.ipc_old:
+    extra_configs:
+      - CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE=y
+    platform_allow:
+      - intel_adsp/cavs25
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace20_lnl
+      - intel_adsp/ace30/ptl
+    integration_platforms:
+      - intel_adsp/cavs25
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace30/ptl

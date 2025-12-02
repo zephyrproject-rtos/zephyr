@@ -57,6 +57,7 @@ config ARM64
 	select ARCH_HAS_DEMAND_MAPPING
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
+	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU
 	help
 	  ARM64 (AArch64) architecture
 
@@ -135,6 +136,7 @@ config XTENSA
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	help
 	  Xtensa architecture
 
@@ -240,7 +242,7 @@ config XIP
 	  option increases both the code and data footprint of the image.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -263,7 +265,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 

@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #include <bflb_soc.h>
 #include <glb_reg.h>
@@ -107,76 +108,6 @@ void system_BOD_init(void)
 	sys_write32(tmp, HBN_BASE + HBN_BOR_CFG_OFFSET);
 }
 
-static void clean_dcache(void)
-{
-	__asm__ volatile (
-		"fence\n"
-		/* th.dcache.call*/
-		".insn 0x10000B\n"
-		"fence\n"
-	);
-}
-
-static void clean_icache(void)
-{
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-		/* th.icache.iall */
-		".insn 0x100000B\n"
-		"fence\n"
-		"fence.i\n"
-	);
-}
-
-static void enable_icache(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-		/* th.icache.iall */
-		".insn 0x100000B\n"
-	);
-	__asm__ volatile(
-		"csrr %0, 0x7C1"
-		: "=r"(tmp));
-	tmp |= (1 << 0);
-	__asm__ volatile(
-		"csrw 0x7C1, %0"
-		:
-		: "r"(tmp));
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-	);
-}
-
-static void enable_dcache(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-		/* th.dcache.iall */
-		".insn 0x20000B\n"
-	);
-	__asm__ volatile(
-		"csrr %0, 0x7C1"
-		: "=r"(tmp));
-	tmp |= (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
-	__asm__ volatile(
-		"csrw 0x7C1, %0"
-		:
-		: "r"(tmp));
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-	);
-}
-
 static void enable_branchpred(bool yes)
 {
 	uint32_t tmp;
@@ -249,6 +180,17 @@ static void disable_interrupt_autostacking(void)
 		: "r"(tmp));
 }
 
+void arch_cache_init(void)
+{
+	enable_thead_isa_ext();
+	set_thead_enforce_aligned(false);
+	sys_cache_data_enable();
+	enable_branchpred(true);
+	sys_cache_instr_enable();
+	disable_interrupt_autostacking();
+	sys_cache_data_flush_and_invd_all();
+	sys_cache_instr_invd_all();
+}
 
 void soc_early_init_hook(void)
 {
@@ -262,18 +204,6 @@ void soc_early_init_hook(void)
 	/* turn off USB power */
 	sys_write32((1 << 5), PDS_BASE + PDS_USB_CTL_OFFSET);
 	sys_write32(0, PDS_BASE + PDS_USB_PHY_CTRL_OFFSET);
-
-	enable_thead_isa_ext();
-	set_thead_enforce_aligned(false);
-	enable_dcache();
-	/* branch prediction can cause major slowdowns (250ms -> 2 seconds)
-	 * in some applications
-	 */
-	enable_branchpred(true);
-	enable_icache();
-	disable_interrupt_autostacking();
-	clean_dcache();
-	clean_icache();
 
 	/* reset uart signals */
 	sys_write32(0xffffffffU, GLB_BASE + GLB_UART_CFG1_OFFSET);

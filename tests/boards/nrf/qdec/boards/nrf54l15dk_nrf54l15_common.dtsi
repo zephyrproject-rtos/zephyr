@@ -4,35 +4,38 @@
  */
 
 /* Required loopbacks
- * P1.8 <-> P1.9
- * P1.10 >-> P1.11
- * P2.8 <-> P2.9
- * P2.10 <-> P1.14
+ * P1.8  <-> P1.9
+ * P1.10 <-> P1.11
+ * P1.12 <-> P1.13
+ * P1.14 <-> P2.10
  */
 
 / {
-	aliases {
-		qdec0 = &qdec20;
-		qdec1 = &qdec21;
-		qenca = &phase_a;
-		qencb = &phase_b;
-		qenca1 = &phase_a1;
-		qencb1 = &phase_b1;
-	};
-
 	encoder-emulate {
 		compatible = "gpio-leds";
-		phase_a: phase_a {
+		phase_a0: phase_a0 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		};
-		phase_b: phase_b {
+		phase_b0: phase_b0 {
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		};
 		phase_a1: phase_a1 {
-			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 		phase_b1: phase_b1 {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec20>;
+			qenc-emul-gpios = <&phase_a0 &phase_b0>;
+		};
+		loopback1 {
+			qdec = <&qdec21>;
+			qenc-emul-gpios = <&phase_a1 &phase_b1>;
 		};
 	};
 };
@@ -55,15 +58,15 @@
 
 	qdec_21_pinctrl: qdec_21_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 2, 8)>,
-				<NRF_PSEL(QDEC_B, 2, 10)>;
+			psels = <NRF_PSEL(QDEC_A, 1, 12)>,
+				<NRF_PSEL(QDEC_B, 1, 14)>;
 		};
 	};
 
 	qdec_21_sleep_pinctrl: qdec_21_sleep_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 2, 8)>,
-				<NRF_PSEL(QDEC_B, 2, 10)>;
+			psels = <NRF_PSEL(QDEC_A, 1, 12)>,
+				<NRF_PSEL(QDEC_B, 1, 14)>;
 			low-power-enable;
 		};
 	};

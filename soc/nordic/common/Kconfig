@@ -21,6 +21,15 @@ config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
 
+config SOC_NRF_FORCE_CONSTLAT
+	bool "Force constant latency mode in system ON"
+	depends on NRF_SYS_EVENT && !RISCV
+	help
+	  In constant latency mode the CPU wakeup latency and the PPI task response
+	  will be constant and kept at a minimum. This is secured by forcing a set
+	  of base resources on while in sleep. The advantage of having a constant
+	  and predictable latency will be at the cost of having increased power consumption.
+
 config MRAM_LATENCY
 	bool "MRAM latency manager"
 	depends on NRFS_HAS_MRAM_SERVICE
@@ -47,6 +56,23 @@ module-str = mram_latency
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # MRAM_LATENCY
+
+if HAS_NORDIC_DMM
+
+config DMM_HEAP_CHUNKS
+	int "Number of chunks in the DMM heap"
+	default 32
+	help
+	  DMM is using a simplified heap which is using 32 bit mask to allocate
+	  required buffer which consists of contiguous chunks. If there are many
+	  small buffers used with DMM it is possible that allocation will fail.
+	  Number of chunks is a trade-off between performance and granularity.
+	  Must be multiply of 32.
+
+config DMM_STATS
+	bool "Usage statistics"
+
+endif # HAS_NORDIC_DMM
 
 rsource "vpr/Kconfig"
 rsource "uicr/Kconfig"

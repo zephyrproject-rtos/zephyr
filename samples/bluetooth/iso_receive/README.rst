@@ -21,8 +21,7 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/iso_receive` in
-the Zephyr tree. Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
 
 Use the sample found under :zephyr_file:`samples/bluetooth/iso_broadcast` on

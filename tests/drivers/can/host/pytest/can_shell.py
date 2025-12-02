@@ -6,25 +6,30 @@
 Zephyr CAN shell module support for providing a python-can bus interface for testing.
 """
 
-import re
 import logging
-from typing import Optional, Tuple
+import re
 
 from can import BusABC, CanProtocol, Message
 from can.exceptions import CanInitializationError, CanOperationError
 from can.typechecking import CanFilters
-
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 
-class CanShellBus(BusABC): # pylint: disable=abstract-method
+
+class CanShellBus(BusABC):  # pylint: disable=abstract-method
     """
     A CAN interface using the Zephyr CAN shell module.
     """
 
-    def __init__(self, dut: DeviceAdapter, shell: Shell, channel: str,
-                 can_filters: Optional[CanFilters] = None, **kwargs) -> None:
+    def __init__(
+        self,
+        dut: DeviceAdapter,
+        shell: Shell,
+        channel: str,
+        can_filters: CanFilters | None = None,
+        **kwargs,
+    ) -> None:
         self._dut = dut
         self._shell = shell
         self._device = channel
@@ -76,7 +81,7 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
     def _stop(self):
         self._shell.exec_command(f'can stop {self._device}')
 
-    def send(self, msg: Message, timeout: Optional[float] = None) -> None:
+    def send(self, msg: Message, timeout: float | None = None) -> None:
         logger.debug('sending: %s', msg)
 
         cmd = f'can send {self._device}'
@@ -146,7 +151,7 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
         for filter_id in self._filter_ids[:]:
             self._remove_filter(filter_id)
 
-    def _apply_filters(self, filters: Optional[CanFilters]) -> None:
+    def _apply_filters(self, filters: CanFilters | None) -> None:
         self._remove_all_filters()
 
         if filters:
@@ -155,19 +160,23 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
             # Accept all frames if no hardware filters provided
             filters = [
                 {'can_id': 0x0, 'can_mask': 0x0},
-                {'can_id': 0x0, 'can_mask': 0x0, 'extended': True}
+                {'can_id': 0x0, 'can_mask': 0x0, 'extended': True},
             ]
             self._is_filtered = False
 
         for can_filter in filters:
             can_id = can_filter['can_id']
             can_mask = can_filter['can_mask']
-            extended = can_filter['extended'] if 'extended' in can_filter else False
+            extended = can_filter.get('extended', False)
             self._add_filter(can_id, can_mask, extended)
 
-    def _recv_internal(self, timeout: Optional[float]) -> Tuple[Optional[Message], bool]:
-        frame_regex = r'.*' + re.escape(self._device) + \
-            r'\s+(?P<brs>\S)(?P<esi>\S)\s+(?P<can_id>\d+)\s+\[(?P<dlc>\d+)\]\s*(?P<data>[a-z0-9 ]*)'
+    def _recv_internal(self, timeout: float | None) -> tuple[Message | None, bool]:
+        frame_regex = (
+            r'.*'
+            + re.escape(self._device)
+            + r'\s+(?P<brs>\S)(?P<esi>\S)\s+(?P<can_id>\d+)\s+'
+            + r'\[(?P<dlc>\d+)\]\s*(?P<data>[a-z0-9 ]*)'
+        )
         lines = self._dut.readlines_until(regex=frame_regex, timeout=timeout)
         msg = None
 
@@ -182,10 +191,17 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
                 brs = m.group('brs') == 'B'
                 esi = m.group('esi') == 'P'
                 data = bytearray.fromhex(m.group('data'))
-                msg = Message(arbitration_id=can_id,is_extended_id=ext,
-                              data=data, dlc=dlc,
-                              is_fd=fd, bitrate_switch=brs, error_state_indicator=esi,
-                              channel=self._device, check=True)
+                msg = Message(
+                    arbitration_id=can_id,
+                    is_extended_id=ext,
+                    data=data,
+                    dlc=dlc,
+                    is_fd=fd,
+                    bitrate_switch=brs,
+                    error_state_indicator=esi,
+                    channel=self._device,
+                    check=True,
+                )
                 logger.debug('received: %s', msg)
 
         return msg, self._is_filtered

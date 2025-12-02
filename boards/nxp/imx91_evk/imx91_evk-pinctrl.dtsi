@@ -10,7 +10,7 @@
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
-				<&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
+				 <&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x5";
@@ -20,7 +20,7 @@
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <&iomuxc1_uart2_rxd_lpuart_rx_lpuart2_rx>,
-				<&iomuxc1_uart2_txd_lpuart_tx_lpuart2_tx>;
+				 <&iomuxc1_uart2_txd_lpuart_tx_lpuart2_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x5";
@@ -30,7 +30,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <&iomuxc1_i2c1_scl_lpi2c_scl_lpi2c1_scl>,
-				<&iomuxc1_i2c1_sda_lpi2c_sda_lpi2c1_sda>;
+				 <&iomuxc1_i2c1_sda_lpi2c_sda_lpi2c1_sda>;
 			drive-strength = "x5";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -41,7 +41,7 @@
 	i2c2_default: i2c2_default {
 		group0 {
 			pinmux = <&iomuxc1_i2c2_scl_lpi2c_scl_lpi2c2_scl>,
-				<&iomuxc1_i2c2_sda_lpi2c_sda_lpi2c2_sda>;
+				 <&iomuxc1_i2c2_sda_lpi2c_sda_lpi2c2_sda>;
 			drive-strength = "x5";
 			drive-open-drain;
 			slew-rate = "fast";

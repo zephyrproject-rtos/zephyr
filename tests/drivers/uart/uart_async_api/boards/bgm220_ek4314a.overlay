@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Need to connect PB1 (L7) and PB2(L8) of the MikroE connector
+ */
+
+dut: &euart0 {
+	compatible = "silabs,eusart-uart";
+	dmas = <&dma0 DMA_REQSEL_EUART0TXFL>,
+	       <&dma0 DMA_REQSEL_EUART0RXFL>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&euart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};

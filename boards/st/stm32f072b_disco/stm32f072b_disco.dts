@@ -57,6 +57,7 @@
 
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		/* NOTE: disabled by default; TIM3_CH1 shares LD3 pin PC6 */
 		status = "disabled";
 
 		red_pwm_led: red_pwm_led {

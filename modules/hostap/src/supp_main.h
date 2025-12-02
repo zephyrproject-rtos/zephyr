@@ -58,8 +58,6 @@ struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname);
 struct hapd_interfaces *zephyr_get_default_hapd_context(void);
 #endif
 
-struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname);
-
 struct wpa_supplicant_event_msg {
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	int hostapd;

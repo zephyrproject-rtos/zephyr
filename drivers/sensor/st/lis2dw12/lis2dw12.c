@@ -665,8 +665,7 @@ static int lis2dw12_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&lis2dw12_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LIS2DW12_SPI_OPERATION,	\
-					   0),				\
+					   LIS2DW12_SPI_OPERATION)	\
 		},							\
 		LIS2DW12_CONFIG_COMMON(inst)				\
 	}

@@ -73,6 +73,9 @@ function(zephyr_mcuboot_tasks)
                             "APPLICATION_CONFIG_DIR=\"${APPLICATION_CONFIG_DIR}\" "
                             "and WEST_TOPDIR=\"${WEST_TOPDIR}\")")
       endif()
+
+      # Add key file as CMake dependency so a file change will rerun the build
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${${file}})
     endforeach()
   endif()
 
@@ -139,7 +142,11 @@ function(zephyr_mcuboot_tasks)
     dt_reg_addr(slot1_partition_address PATH ${slot1_partition})
 
     dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
-    set(imgtool_args --align ${write_block_size} --load-addr ${chosen_ram_address} ${imgtool_args})
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      set(imgtool_args --align 1 --load-addr ${chosen_ram_address} ${imgtool_args})
+    else() # CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
+      set(imgtool_args --align ${write_block_size} --load-addr ${chosen_ram_address} ${imgtool_args})
+    endif()
     set(imgtool_args_alt_slot ${imgtool_args} --hex-addr ${slot1_partition_address})
     set(imgtool_args ${imgtool_args} --hex-addr ${slot0_partition_address})
   elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
@@ -215,7 +222,7 @@ function(zephyr_mcuboot_tasks)
     endif()
 
     if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD OR CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-      list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
+      list(APPEND byproducts ${output}.slot1.signed.bin)
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
                    ${imgtool_sign} ${imgtool_args_alt_slot} ${output}.bin
                    ${output}.slot1.signed.bin)

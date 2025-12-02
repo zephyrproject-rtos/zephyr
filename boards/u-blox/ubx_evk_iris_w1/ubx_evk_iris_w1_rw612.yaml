@@ -12,13 +12,18 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 960
-flash: 65536
+flash: 8192
 supported:
+  - counter
+  - dma
+  - dmic
+  - flash
   - gpio
   - i2c
+  - i2s
   - spi
-  - dma
   - watchdog
   - pwm
   - hwinfo
+  - usb_device
 vendor: u-blox

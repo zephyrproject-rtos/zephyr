@@ -32,6 +32,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0_green: pwm_led_0 {
 			pwms = <&pwm6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User D7 green";
@@ -109,8 +110,7 @@
 		     &kso02_gp17 /* KSO02 PIN17 */
 		     &kso03_gp16 /* KSO03 PIN16 */
 		     &kso04_gp15 /* KSO04 PIN15 */
-		     &kso05_gp14 /* KSO05 PIN14 */
-		     >;
+		     &kso05_gp14 /* KSO05 PIN14 */ >;
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <6>;

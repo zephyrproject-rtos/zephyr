@@ -1,6 +1,7 @@
 zephyr_sources_ifdef(CONFIG_MIPI_DSI mipi_dsi.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_MCUX dsi_mcux.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_MCUX_2L dsi_mcux_2l.c)
+zephyr_sources_ifdef(CONFIG_MIPI_DSI_NXP_DWC dsi_nxp_dwc.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_STM32 dsi_stm32.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_TEST dsi_test.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_RENESAS_RA dsi_renesas_ra.c)

@@ -25,7 +25,10 @@ tests:
   sample.zbus.benchmark_async_msg_sub:
     tags: zbus
     min_ram: 16
-    filter: CONFIG_SYS_CLOCK_EXISTS and not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_SIM)
+    filter: >-
+      CONFIG_SYS_CLOCK_EXISTS and
+      not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_SIM) and
+      not CONFIG_SMP
     harness: console
     harness_config:
       type: multi_line
@@ -46,7 +49,10 @@ tests:
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
-    filter: CONFIG_SYS_CLOCK_EXISTS and not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_SIM)
+    filter: >-
+      CONFIG_SYS_CLOCK_EXISTS and
+      not (CONFIG_ARCH_POSIX and not CONFIG_BOARD_NATIVE_SIM) and
+      not CONFIG_SMP
     harness: console
     harness_config:
       type: multi_line

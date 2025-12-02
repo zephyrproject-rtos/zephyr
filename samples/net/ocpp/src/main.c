@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
@@ -12,7 +13,6 @@
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/ocpp.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/random/random.h>
 #include <zephyr/zbus/zbus.h>
 

@@ -5,6 +5,7 @@
  */
 
 #include <st/g4/stm32g4.dtsi>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	soc {
@@ -16,7 +17,7 @@
 			reg-names = "m_can", "message_ram";
 			interrupts = <86 0>, <87 0>;
 			interrupt-names = "int0", "int1";
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
@@ -26,7 +27,7 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 20U)>;
+			resets = <&rctl STM32_RESET(APB2, 20)>;
 			interrupts = <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -36,6 +37,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -57,24 +64,28 @@
 		adc3: adc@50000400 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000400 0x100>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			clock-names = "adcx";
 			interrupts = <47 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
-			resets = <&rctl STM32_RESET(APB1L, 20U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1L, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -85,7 +96,7 @@
 			#size-cells = <0>;
 			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <95 0>;
-			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 			status = "disabled";
 		};
 	};

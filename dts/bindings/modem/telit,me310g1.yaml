@@ -2,7 +2,7 @@ description: Telit ME310G1 Modem
 
 compatible: "telit,me310g1"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:

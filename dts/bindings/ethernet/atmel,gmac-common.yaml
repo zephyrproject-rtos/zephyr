@@ -46,3 +46,12 @@ properties:
 
   phy-connection-type:
     default: "rmii"
+
+  ref-clk-source:
+    type: string
+    default: "internal"
+    description: |
+      Specifies the source for the ethernet MAC reference clock.
+    enum:
+      - "internal"
+      - "external"

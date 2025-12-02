@@ -462,17 +462,85 @@ static int skip_field(struct json_obj *obj, struct json_obj_key_value *kv)
 	return 0;
 }
 
+/**
+ * @brief Unescape a JSON string, can work in-place if src == dst
+ * @param src Source string with escape sequences
+ * @param dst Destination buffer for unescaped string (can be same as src)
+ * @param src_len Length of source string
+ * @param dst_size Size of destination buffer
+ * @return int Number of bytes written to destination, or -EINVAL on error
+ */
+static int json_unescape_string(const char *src, char *dst, size_t src_len, size_t dst_size)
+{
+	const char *src_end = src + src_len;
+	char *dst_start = dst;
+	char *dst_end = dst_start + dst_size - 1; /* Point to last available byte (for null) */
+
+	while (src < src_end && dst < dst_end) {
+		if (*src == '\\') {
+			src++;
+			if (src >= src_end) {
+				return -EINVAL;
+			}
+
+			switch (*src) {
+			case '"':
+				*dst++ = '"';
+				break;
+			case '\\':
+				*dst++ = '\\';
+				break;
+			case '/':
+				*dst++ = '/';
+				break;
+			case 'b':
+				*dst++ = '\b';
+				break;
+			case 'f':
+				*dst++ = '\f';
+				break;
+			case 'n':
+				*dst++ = '\n';
+				break;
+			case 'r':
+				*dst++ = '\r';
+				break;
+			case 't':
+				*dst++ = '\t';
+				break;
+			default:
+				/* Unknown escape sequence, copy as-is */
+				*dst++ = '\\';
+				*dst++ = *src;
+				break;
+			}
+			src++;
+		} else {
+			*dst++ = *src++;
+		}
+	}
+
+	*dst = '\0';
+	return dst - dst_start;
+}
+
 static int decode_string_buf(const struct json_token *token, char *str, size_t size)
 {
-	size_t len = token->end - token->start;
+	size_t escaped_len = token->end - token->start;
+	int ret;
 
-	/* buffer 'str' must be large enough to fit string and null-terminator */
-	if (size <= len) {
+	/* Safe approach: never copy more than (size - 1) bytes to leave room for null */
+	size_t safe_len = (escaped_len < size) ? escaped_len : (size - 1);
+
+	ret = json_unescape_string(token->start, str, safe_len, size);
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
-	memcpy(str, token->start, len);
-	str[len] = '\0';
+	/* Check if we had to truncate due to the original escaped string being too long */
+	if (escaped_len >= size) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -949,6 +1017,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_OBJ_ARRAY:
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
+	case JSON_TOK_ENCODED_OBJ:
 		return sizeof(char *);
 	case JSON_TOK_INT:
 	case JSON_TOK_UINT:

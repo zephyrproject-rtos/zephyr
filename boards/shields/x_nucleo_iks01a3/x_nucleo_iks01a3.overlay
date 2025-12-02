@@ -16,7 +16,6 @@
 };
 
 &arduino_i2c {
-
 	hts221_x_nucleo_iks01a3: hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
@@ -25,31 +24,31 @@
 	lps22hh_x_nucleo_iks01a3: lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
-		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
 	};
 
 	stts751_x_nucleo_iks01a3: stts751@4a {
 		compatible = "st,stts751";
 		reg = <0x4a>;
-		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_A4 GPIO_ACTIVE_LOW>;
+		drdy-gpios = <&arduino_header ARDUINO_HEADER_R3_A4 GPIO_ACTIVE_LOW>;
 	};
 
 	lis2mdl_1e_x_nucleo_iks01a3: lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
-		irq-gpios =  <&arduino_header ARDUINO_HEADER_R3_A2 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A2 GPIO_ACTIVE_HIGH>;
 	};
 
 	lis2dw12_19_x_nucleo_iks01a3: lis2dw12@19 {
 		compatible = "st,lis2dw12";
 		reg = <0x19>;
-		irq-gpios =  <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
 	};
 
 	lsm6dso_6b_x_nucleo_iks01a3: lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
-		irq-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		int-pin = <2>;
 	};
 };

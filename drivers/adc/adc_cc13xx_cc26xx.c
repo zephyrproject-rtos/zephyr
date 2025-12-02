@@ -295,7 +295,7 @@ static DEVICE_API(adc, cc13xx_cc26xx_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),	 \
 	};									 \
 	DEVICE_DT_INST_DEFINE(index,						 \
-		&adc_cc13xx_cc26xx_init, NULL,					 \
+		adc_cc13xx_cc26xx_init, NULL,					 \
 		&adc_cc13xx_cc26xx_data_##index,				 \
 		&adc_cc13xx_cc26xx_cfg_##index, POST_KERNEL,			 \
 		CONFIG_ADC_INIT_PRIORITY,					 \
