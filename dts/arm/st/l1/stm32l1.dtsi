@@ -116,6 +116,7 @@
 				compatible = "st,stm32f4-nv-flash", "st,stm32-nv-flash",
 					     "soc-nv-flash";
 
+				erase-block-size = <256>;
 				write-block-size = <4>;
 				/* maximum erase time(ms) for a 128B half-page
 				 */
