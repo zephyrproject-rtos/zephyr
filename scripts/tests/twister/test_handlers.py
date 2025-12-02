@@ -32,6 +32,7 @@ from twisterlib.handlers import (
 from twisterlib.hardwaremap import DUT
 from twisterlib.statuses import TwisterStatus
 
+# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
