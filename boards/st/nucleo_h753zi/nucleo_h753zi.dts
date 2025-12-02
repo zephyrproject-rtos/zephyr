@@ -258,16 +258,16 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x00020000 DT_SIZE_K(256)>;
 		};
 
-		/* backup slot: 256KB */
+		/* backup slot: 384KB */
 		slot1_partition: partition@60000 {
 			label = "image-1";
-			reg = <0x00060000 DT_SIZE_K(256)>;
+			reg = <0x00060000 DT_SIZE_K(384)>;
 		};
 
 		/* storage: 256KB for settings */
-		storage_partition: partition@a0000 {
+		storage_partition: partition@c0000 {
 			label = "storage";
-			reg = <0x000a0000 DT_SIZE_K(256)>;
+			reg = <0x000c0000 DT_SIZE_K(256)>;
 		};
 	};
 };

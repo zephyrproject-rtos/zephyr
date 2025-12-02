@@ -203,27 +203,23 @@ stm32_lp_tick_source: &lptim1 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(32)>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
 
-		slot0_partition: partition@8000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00008000 DT_SIZE_K(104)>;
+			reg = <0x0000c000 DT_SIZE_K(98)>;
 		};
 
-		slot1_partition: partition@22000 {
+		slot1_partition: partition@24800 {
 			label = "image-1";
-			reg = <0x00022000 DT_SIZE_K(104)>;
+			reg = <0x00024800 DT_SIZE_K(100)>;
 		};
 
-		/*
-		 * Set 16kB of storage (8x2kB pages) at the end of the 256kB of
-		 * flash.
-		 */
-		storage_partition: partition@3c000 {
+		storage_partition: partition@3d800 {
 			label = "storage";
-			reg = <0x0003c000 DT_SIZE_K(16)>;
+			reg = <0x0003d800 DT_SIZE_K(10)>;
 		};
 	};
 };
