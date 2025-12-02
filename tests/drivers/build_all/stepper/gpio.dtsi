@@ -12,8 +12,8 @@ adi_tmc2209: adi_tmc2209 {
 	compatible = "adi,tmc2209";
 	status = "okay";
 	micro-step-res = <1>;
-	msx-gpios = <&test_gpio 0 0>,
-		    <&test_gpio 0 0>;
+	m0-gpios = <&test_gpio 0 0>;
+	m1-gpios = <&test_gpio 0 0>;
 	en-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
 	dir-gpios = <&test_gpio 0 0>;
