@@ -367,6 +367,12 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 };
 
+&pit64b1 {
+	top-alarm;
+	prescaler-period = <15>;
+	status = "okay";
+};
+
 &pwm {
 	pinctrl-0 = <&pinctrl_mikrobus_pwm_default>;
 	pinctrl-names = "default";
