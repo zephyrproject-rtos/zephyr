@@ -20,6 +20,6 @@ dut: &sercom0 {
 
 &sercom4 {
 	/* configure DMA channels for async operation */
-	dmas = <&dmac 10 0x0A>, <&dmac 11 0x0B>;
+	dmas = <&dmac 10 0x0a>, <&dmac 11 0x0b>;
 	dma-names = "rx", "tx";
 };
