@@ -22,6 +22,14 @@ config I2C_SHELL
 	  The I2C shell supports scanning, bus recovery, I2C read and write
 	  operations.
 
+config I2C_SHELL_BUFFER_SIZE
+	int "I2C shell buffer size"
+	default 16
+	help
+	  Size of the buffer used by some I2C commands, will determine the
+	  maximum size for read/write operations. Note that this is allocated
+	  on the stack.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
