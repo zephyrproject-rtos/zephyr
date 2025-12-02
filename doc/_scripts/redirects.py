@@ -529,6 +529,7 @@ REDIRECTS = (
     ('samples/subsys/video/video', 'samples/drivers/video/video'),
     ('services/file_system/index', 'services/storage/file_system/index'),
     ('services/modbus/index', 'connectivity/modbus/index'),
+    ('services/modem/index', 'services/connectivity/modem/index'),
     ('services/nvmem/index', 'services/storage/nvmem/index'),
     ('services/portability/posix', 'services/portability/posix/index'),
     ('services/retention/blinfo', 'services/storage/retention/blinfo'),
