@@ -10,5 +10,7 @@ add_subdirectory_ifdef(CONFIG_DAI_NXP_MICFIL nxp/micfil)
 add_subdirectory_ifdef(CONFIG_DAI_NXP_SAI nxp/sai)
 # zephyr-keep-sorted-stop
 
-zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/dai.h)
-zephyr_library_sources_ifdef(CONFIG_USERSPACE dai_handlers.c)
+if(CONFIG_DAI_USERSPACE)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/dai.h)
+  zephyr_library_sources(dai_handlers.c)
+endif()

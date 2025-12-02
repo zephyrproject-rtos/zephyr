@@ -19,6 +19,12 @@ config DAI_INIT_PRIORITY
 	help
 		Device driver initialization priority.
 
+config DAI_USERSPACE
+	bool "DAI user-space support"
+	depends on USERSPACE
+	help
+		Expose the DAI interface to user-space threads via syscalls.
+
 module = DAI
 module-str = dai
 source "subsys/logging/Kconfig.template.log_config"
