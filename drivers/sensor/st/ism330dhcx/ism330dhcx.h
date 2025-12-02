@@ -98,6 +98,8 @@ struct ism330dhcx_data {
 	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
 	const struct sensor_trigger *trig_drdy_temp;
+	sensor_trigger_handler_with_data_t handler_fifo_wtm;
+	const struct sensor_trigger *trig_fifo_wtm;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);
@@ -124,6 +126,9 @@ int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
 int ism330dhcx_trigger_set(const struct device *dev,
 			   const struct sensor_trigger *trig,
 			   sensor_trigger_handler_t handler);
+int ism330dhcx_trigger_set_with_data(const struct device *dev,
+			   const struct sensor_trigger *trig,
+			   sensor_trigger_handler_with_data_t handler);
 
 int ism330dhcx_init_interrupt(const struct device *dev);
 #endif
