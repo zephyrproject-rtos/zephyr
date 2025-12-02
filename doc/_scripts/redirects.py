@@ -329,6 +329,7 @@ REDIRECTS = (
     ('services/file_system/index', 'services/storage/file_system/index'),
     ('services/misc', 'services/index'),
     ('services/modbus/index', 'services/connectivity/modbus/index'),
+    ('services/modem/index', 'services/connectivity/modem/index'),
     ('services/retention/blinfo', 'services/storage/retention/blinfo'),
     ('services/retention/index', 'services/storage/retention/index'),
     ('services/settings/index', 'services/storage/settings/index'),
