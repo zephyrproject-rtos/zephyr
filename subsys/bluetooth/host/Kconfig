@@ -426,7 +426,7 @@ config BT_AUTO_PHY_UPDATE
 	  behavior can be accomplished by enabling BT_AUTO_PHY_PERIPHERAL_2M and
 	  BT_AUTO_PHY_CENTRAL_2M.
 
-choice
+choice BT_AUTO_PHY_PERIPHERAL
 	prompt "Auto PHY update for peripheral role"
 	depends on BT_PERIPHERAL
 	default BT_AUTO_PHY_PERIPHERAL_2M if BT_AUTO_PHY_UPDATE
@@ -446,7 +446,7 @@ config BT_AUTO_PHY_PERIPHERAL_CODED
 
 endchoice # BT_AUTO_PHY_PERIPHERAL
 
-choice
+choice BT_AUTO_PHY_CENTRAL
 	prompt "Auto PHY update for central role"
 	depends on BT_CENTRAL
 	default BT_AUTO_PHY_CENTRAL_2M
