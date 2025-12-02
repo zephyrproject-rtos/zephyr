@@ -27,7 +27,7 @@ Requirements Management provides a structured approach to capturing, organizing,
 of stakeholders through a system's lifecycle.
 The documentation provided in the `project's docs
 <https://docs.zephyrproject.org/latest/index.html>`__
-already emphazises implementation details, from kernel functionality, to API configuration options and specific module behaviour. While this is essential for developers,
+already emphasizes implementation details, from kernel functionality, to API configuration options and specific module behavior. While this is essential for developers,
 relying solely on low-level documentation can lead to fragmented understanding, limited traceability, and difficulty scaling or certifying a final system using Zephyr RTOS.
 
 To enhance this understanding and add value for non-coding roles like product owners, software architects, quality management, safety management and assessors,
@@ -58,7 +58,7 @@ For this a two level structure of requirements has been created on top of the ex
 capabilities of the Zephyr RTOS as a whole, and Software Requirements to break down the System Requirements' expectations into detailed specifications for individual components within the RTOS.
 
 System Requirements
-  System requirements describe the behaviour of the Zephyr RTOS (= the system here).
+  System requirements describe the behavior of the Zephyr RTOS (= the system here).
   They describe the functionality and constraints of the Zephyr RTOS from a high-level perspective,
   without going into details of the functionality itself.
   The purpose of the system requirements is to get an overview of the currently implemented features
