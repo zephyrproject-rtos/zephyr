@@ -7,7 +7,7 @@ Introduction
 ************
 
 The safety committee leads the effort to gather requirements that reflect the **actual** state of
-the implementation, following the `route 3s <https://docs.zephyrproject.org/latest/safety/safety_overview.html#general-safety-scope>`_
+the implementation, following the :ref:`route 3s <general_safety_scope>`
 approach of the project's safety effort. The goal is **NOT** to create new requirements to request
 additional features for the project.
 
@@ -15,7 +15,7 @@ The requirements are gathered in the separate repository:
 `Requirement repository
 <https://github.com/zephyrproject-rtos/reqmgmt>`__
 
-The current rendered version of the Requirement Repository's content can be found at `Zephyr Project Requirements <https://zephyrproject-rtos.github.io/reqmgmt/>`_.
+The current rendered version of the Requirement Repository's content can be found at `Zephyr Project Requirements <https://zephyrproject-rtos.github.io/reqmgmt/>`__.
 
 Objections of Requirements Management in the Zephyr Project
 ***********************************************************
@@ -33,14 +33,13 @@ relying solely on low-level documentation can lead to fragmented understanding, 
 To enhance this understanding and add value for non-coding roles like product owners, software architects, quality management, safety management and assessors,
 the Zephyr Project needs to have higher level requirements that describe overall functionality, structure and implementation constraints.
 
-
 Guideline to Requirements Management
 ************************************
 
 Below are the guidelines for the requirements repository and the expectations regarding suitable requirement structure and syntax when adding requirements to the repository.
 
 Note: these are the guidelines to create requirements in the requirements repository, which is not written using .rst like the docs published to the Zephyr users.
-To learn more about the guidelines to create the docs, please refer to `Documentation Guideline https://docs.zephyrproject.org/latest/contribute/documentation/guidelines.html`__
+To learn more about the guidelines to create the docs, please refer to :ref:`doc_guidelines`
 
 Scope
 =====
@@ -85,8 +84,7 @@ Requirements Management Toolchain
 
 Requirement Repository:
 ~~~~~~~~~~~~~~~~~~~~~~~
-The `Requirement repository
-<https://github.com/zephyrproject-rtos/reqmgmt>`__
+The `Requirement repository <https://github.com/zephyrproject-rtos/reqmgmt>`__
 represents Zephyr's structured appraoch to requirements management, currently focusing on the creation of requirements within the scope of
 its targeted safety certification, but not limited to this scope.
 To work with this repository, follow the normal GitHub workflow of branching and pull requests.
@@ -96,19 +94,20 @@ roles to get merged: Zephyr Safety Manager, Zephyr Safety Chair or Zephyr Safety
 Requirement Tooling:
 ~~~~~~~~~~~~~~~~~~~~
 For authoring, linking and rendering a browsable .html version of the Zephyr Project's requirements we are using the
-tool `strictDoc <https://strictdoc.readthedocs.io/en/stable/>`_
+tool `strictDoc`_
 StrictDoc is a lightweight, open-source tool for writing, browsing, and exporting structured requirements.
 It supports hierarchical requirements, traceability, and HTML export for easy review.
 Requirements are written in StrictDoc's own markdown syntax.
 For those that prefer editing in a wisiwig fashion, the .html exports of StrictDoc can also be edited using StrictDoc's local server.
 
-To set up your Toolchain, jump to the `Getting started with Requirements management`_ section.
+To set up your Toolchain, jump to the :ref:`getting_started_with_safety_requirements` section.
+
 
 Verification of Requirements:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 New and changed requirements (what is in the PRs to the Requirements Repository) need to be verified by a review. The review comments can be captured directly in the
-comments during the PR review. A requirements review has to consider both technical correctness and the formal need that requirements need be be created following certain criteria.
-More details regarding the checklist and the formal expectations can be found in the Safety `Requirements Checklist <https://docs.zephyrproject.org/latest/safety/safety_requirements_checklist.html>`_
+comments during the PR review. A requirements review has to consider both technical correctness and the formal need that requirements need be created following certain criteria.
+More details regarding the checklist and the formal expectations can be found in the :ref:`safety_requirements_checklist`
 In the tests of the Zephyrproject adherence of the implementation to the functionality described in the requirements must be evaluated.
 
 Glossary of Requirements Grammar Elements
@@ -150,7 +149,7 @@ All requirements must use the defined grammar:
 Requirement UID (Unique identifier) Handling
 --------------------------------------------
 
-The tool used to manage requirements, `strictDoc <https://strictdoc.readthedocs.io/en/stable/>`_, is
+The tool used to manage requirements, `strictDoc`_, is
 responsible for handling the Unique Identifier (UID) associated with each requirement. To manage
 UIDs, follow these steps:
 
@@ -167,7 +166,7 @@ the steps above.
 Consistency
 -----------
 
-Consistency reagrding language and choice of words shall be maintained accross all requirements.
+Consistency reagrding language and choice of words shall be maintained across all requirements.
 (See: `Syntax`_)
 
 It also is recommended to take a look at the already existing requirements in the `Requirement repository
@@ -200,6 +199,7 @@ Characteristics of a good requirement
 * Necessary
 * Implementation-free (abstract)
 
+
 Characteristics of a set of requirements
 ----------------------------------------
 
@@ -216,3 +216,5 @@ Syntax
     unfamiliar with requirements writing.
 
   * Other formats are accepted as long as the characteristics of a requirement from above are met.
+
+.. _strictDoc: https://strictdoc.readthedocs.io/en/stable/
