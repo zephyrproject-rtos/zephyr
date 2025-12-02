@@ -58,7 +58,7 @@ class HardwareAdapter(DeviceAdapter):
         command = [
             self.west,
             'flash',
-            '--skip-rebuild',
+            '--no-rebuild',
             '--build-dir', str(self.device_config.build_dir),
         ]
 
