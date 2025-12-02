@@ -49,6 +49,6 @@
 	};
 
 	vref: vref {
-		vrefint-cal-addr = <0x1FF07A2A>;
+		vrefint-cal-addr = <0x1ff07a2a>;
 	};
 };
