@@ -29,7 +29,7 @@
 			compatible = "st,stm32u5-mipi-dsi", "st,stm32-mipi-dsi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40016C00 0x1000>;
+			reg = <0x40016c00 0x1000>;
 			clock-names = "dsiclk", "dsisrc", "refclk", "pixelclk";
 			clocks = <&rcc STM32_CLOCK(APB2, 27U)>,
 				 <&rcc STM32_SRC_DSIPHY DSI_SEL(1)>,

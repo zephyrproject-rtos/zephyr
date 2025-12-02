@@ -125,9 +125,9 @@
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM3 in CD domain */
-	sram2: memory@240A0000 {
+	sram2: memory@240a0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x240A0000 DT_SIZE_K(384)>;
+		reg = <0x240a0000 DT_SIZE_K(384)>;
 		zephyr,memory-region = "SRAM2";
 	};
 
