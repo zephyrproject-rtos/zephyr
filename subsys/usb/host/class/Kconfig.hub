@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_HUB_CLASS
+	bool "USB Host Hub Class Driver"
+	help
+	  Enable USB Host Hub Class driver support.
+	  This allows connecting USB hubs and managing downstream devices.
+
+if USBH_HUB_CLASS
+
+config USBH_HUB_INSTANCES_COUNT
+	int "Maximum Hub count"
+	default 7
+	range 1 16
+	help
+	  Maximum number of hub devices supported in the entire USB topology.
+
+config USBH_HUB_MAX_LEVELS
+	int "Maximum Hub chain depth"
+	default 5
+	range 1 5
+	help
+	  Maximum number of non-root hubs allowed in a single communication path
+	  between the host and any device. USB specification allows up to five
+	  non-root hubs per path, which means the deepest path can include 5 hubs.
+
+config USBH_HUB_PORT_RESET_TIMES
+	int "Hub port reset retry count"
+	default 2
+	range 1 10
+	help
+	  Maximum number of port reset retries before giving up.
+
+config USBH_HUB_CONFIG_WAIT_MS
+	int "Hub configuration wait interval (ms)"
+	default 100
+	range 50 1000
+	help
+	  Polling interval when waiting for hub to be configured.
+	  Typical hub configuration completes within 100ms.
+
+config USBH_HUB_ENUM_RETRY_DELAY_MS
+	int "Enumeration retry delay (ms)"
+	default 500
+	range 100 3000
+	help
+	  Delay before retrying device enumeration after failure.
+
+config USBH_HUB_CHILD_PROBE_DELAY_MS
+	int "Child hub probe delay (ms)"
+	default 50
+	range 10 500
+	help
+	  Delay to wait for child hub initialization.
+
+config USBH_HUB_ERROR_RECOVERY_DELAY_MS
+	int "Error recovery delay (ms)"
+	default 1000
+	range 500 5000
+	help
+	  Delay before retrying after serious errors.
+	  Longer delays help avoid flooding the bus.
+
+module = USBH_HUB
+module-str = usbh hub
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_HUB_CLASS
