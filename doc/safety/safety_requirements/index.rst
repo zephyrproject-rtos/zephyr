@@ -12,4 +12,5 @@ follows a suitable approach.
    :glob:
 
    safety_requirements.rst
+   safety_requirements_checklist.rst
 
