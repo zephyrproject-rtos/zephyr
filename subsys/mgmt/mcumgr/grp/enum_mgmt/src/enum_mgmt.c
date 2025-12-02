@@ -351,7 +351,7 @@ static int enum_mgmt_details(struct smp_streamer *ctxt)
 	if (entries > 0) {
 		/* Return details on selected groups only */
 #ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_HEAP
-		uint16_t *entry_list = malloc(sizeof(uint16_t) * entries);
+		uint16_t *entry_list = k_malloc(sizeof(uint16_t) * entries);
 #else
 		uint16_t entry_list[CONFIG_MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK_ENTRIES];
 #endif
@@ -375,7 +375,7 @@ static int enum_mgmt_details(struct smp_streamer *ctxt)
 
 		if (!ok) {
 #ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_HEAP
-			free(entry_list);
+			k_free(entry_list);
 #endif
 
 			return MGMT_ERR_EINVAL;
@@ -392,7 +392,7 @@ static int enum_mgmt_details(struct smp_streamer *ctxt)
 
 cleanup:
 #ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_HEAP
-		free(entry_list);
+		k_free(entry_list);
 #endif
 
 		if (!ok) {
