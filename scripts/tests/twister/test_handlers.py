@@ -14,6 +14,7 @@ import subprocess
 import sys
 from contextlib import nullcontext
 from importlib import reload
+from pathlib import Path
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
 from unittest import mock
@@ -32,7 +33,7 @@ from twisterlib.handlers import (
 from twisterlib.hardwaremap import DUT
 from twisterlib.statuses import TwisterStatus
 
-from . import ZEPHYR_BASE
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE", str(Path(__file__).parents[3]))
 
 
 @pytest.fixture

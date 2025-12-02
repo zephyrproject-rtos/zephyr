@@ -279,7 +279,19 @@ doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
 
 # -- Options for html_redirect plugin -------------------------------------
 
-html_redirect_pages = redirects.REDIRECTS
+def _redirect_target_exists(docname: str) -> bool:
+    """Return True if the redirect destination docname resolves to an .rst file."""
+    doc_root = Path(__file__).resolve().parent
+    rst_path = doc_root / f"{docname}.rst"
+    if rst_path.exists():
+        return True
+    index_path = doc_root / docname / "index.rst"
+    return index_path.exists()
+
+
+html_redirect_pages = tuple(
+    (old, new) for (old, new) in redirects.REDIRECTS if _redirect_target_exists(new)
+)
 
 # -- Options for zephyr.link-roles ----------------------------------------
 

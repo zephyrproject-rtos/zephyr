@@ -65,5 +65,6 @@ source "drivers/display/Kconfig.st7701"
 source "drivers/display/Kconfig.waveshare_dsi_lcd"
 source "drivers/display/Kconfig.lpm013m126"
 source "drivers/display/Kconfig.co5300"
+source "drivers/display/Kconfig.ls014b7dd01"
 
 endif # DISPLAY

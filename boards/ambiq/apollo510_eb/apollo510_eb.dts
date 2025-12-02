@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 #include <ambiq/ambiq_apollo510.dtsi>
 #include "apollo510_eb-pinctrl.dtsi"
@@ -26,6 +32,7 @@
 		watchdog0 = &wdt0;
 		rtc = &rtc0;
 		sdhc0 = &sdio0;
+		sdhc1 = &sdio1;
 		eeprom-0 = &i2c_eeprom;
 	};
 
@@ -38,7 +45,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20280000 0x100000>;
 		zephyr,memory-region = "SRAM_NO_CACHE";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	regulator_mspi1_device: regulator-mspi1-device-pwr {
@@ -78,6 +85,7 @@
 		scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		status = "okay";
+
 		i2c_eeprom: eeprom@50 {
 			compatible = "fujitsu,mb85rcxx";
 			reg = <0x50>;
@@ -108,6 +116,7 @@
 	txdelay = <0>;
 	rxdelay = <0>;
 	status = "okay";
+
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -124,8 +133,8 @@
 };
 
 zephyr_udc0: &usb {
-	vddusb33-gpios = <&gpio64_95 27 (GPIO_PULL_UP)>;
-	vddusb0p9-gpios = <&gpio64_95 26 (GPIO_PULL_UP)>;
+	vddusb33-gpios = <&gpio64_95 27 GPIO_PULL_UP>;
+	vddusb0p9-gpios = <&gpio64_95 26 GPIO_PULL_UP>;
 	status = "okay";
 };
 
@@ -151,7 +160,7 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&mspi0_default>;
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
-	pinctrl-names = "default","sleep","psram";
+	pinctrl-names = "default", "sleep", "psram";
 	status = "okay";
 	zephyr,pm-device-runtime-auto;
 
@@ -193,7 +202,7 @@ zephyr_udc0: &usb {
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_psram>;
 	pinctrl-3 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","psram","flash";
+	pinctrl-names = "default", "sleep", "psram", "flash";
 	status = "okay";
 	zephyr,pm-device-runtime-auto;
 
@@ -256,7 +265,7 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&mspi3_default>;
 	pinctrl-1 = <&mspi3_sleep>;
 	pinctrl-2 = <&mspi3_psram>;
-	pinctrl-names = "default","sleep","psram";
+	pinctrl-names = "default", "sleep", "psram";
 	status = "okay";
 	zephyr,pm-device-runtime-auto;
 

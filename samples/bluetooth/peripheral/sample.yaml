@@ -34,3 +34,10 @@ tests:
       - xg27_dk2602a/efr32bg27c140f768im40
       - xg29_rb4412a/efr32mg29b140f1024im40
     build_only: true
+  sample.bluetooth.peripheral.console:
+    tags: bluetooth
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Indicate VND attr"

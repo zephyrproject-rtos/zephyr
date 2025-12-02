@@ -513,7 +513,7 @@ LVGL
 ====
 
 * The PIXEL_FORMAT_MONO10 and PIXEL_FORMAT_MONO01 formats were swapped
-  in :zephyr_file:`modules/lvgl/lvgl_display_mono.c`, which caused
+  in :zephyr_file:`modules/lvgl/lvgl_display.c`, which caused
   black and white to be inverted when using LVGL with monochrome displays.
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.

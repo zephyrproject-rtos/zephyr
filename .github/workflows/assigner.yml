@@ -1,4 +1,4 @@
-name: Pull Request/Issue Assigner
+name: Pull Request Assigner
 
 on:
   pull_request_target:
@@ -20,38 +20,27 @@ permissions:
 
 jobs:
   assignment:
-    name: Pull Request/Issue Assignment
+    name: Pull Request Assignment
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     permissions:
+      pull-requests: write # to add assignees to pull requests
       issues: write        # to add assignees to issues
 
     steps:
     - name: Check out source code
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      with:
-        fetch-depth: 0
-        persist-credentials: false
 
     - name: Set up Python
-      uses: zephyrproject-rtos/action-python-env@ace91a63fd503cd618ff1eb83fbcf302dabd7d44 # main
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
         python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: Fetch west.yml from pull request
-      if: >
-        github.event_name == 'pull_request_target'
+    - name: Install Python packages
       run: |
-        git fetch origin pull/${{ github.event.pull_request.number }}/merge
-        git show FETCH_HEAD:west.yml > pr_west.yml
-
-    - name: west setup
-      if: >
-        github.event_name == 'pull_request_target'
-      run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-        west init -l . || true
+        pip install -r scripts/requirements-actions.txt --require-hashes
 
     - name: Run assignment script
       env:
@@ -62,7 +51,7 @@ jobs:
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml"
+            FLAGS+=" -P ${{ github.event.pull_request.number }}"
         elif [ "${{ github.event_name }}" = "issues" ]; then
           FLAGS+=" -I ${{ github.event.issue.number }}"
         elif [ "${{ github.event_name }}" = "schedule" ]; then

@@ -54,11 +54,16 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+static struct spi_dt_spec spi_bus =
+	SPI_DT_SPEC_INST_GET(0,
+			     SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));
+#else
 static struct spi_dt_spec spi_bus =
 	SPI_DT_SPEC_INST_GET(0,
 			     SPI_OP_MODE_MASTER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
-				     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8));
-
+			     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8));
+#endif
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
@@ -104,7 +109,17 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 
 static int spi_send_packet(uint8_t *data, uint16_t len)
 {
-	int ret;
+	int ret = 0;
+
+#if (CONFIG_SOC_SERIES_APOLLO5X)
+	/* Wait for SPI bus to be available */
+	k_sem_take(&sem_spi_available, K_FOREVER);
+	/* Send the SPI packet to controller */
+	ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
+
+	/* Free the SPI bus */
+	k_sem_give(&sem_spi_available);
+#else
 	uint16_t fail_count = 0;
 
 	do {
@@ -126,7 +141,7 @@ static int spi_send_packet(uint8_t *data, uint16_t len)
 			break;
 		}
 	} while (fail_count++ < SPI_BUSY_TX_ATTEMPTS);
-
+#endif
 	return ret;
 }
 
@@ -288,6 +303,46 @@ static struct net_buf *bt_hci_acl_recv(uint8_t *data, size_t len)
 	return buf;
 }
 
+static struct net_buf *bt_hci_iso_recv(uint8_t *data, size_t len)
+{
+	struct bt_hci_iso_hdr hdr = {0};
+	struct net_buf *buf;
+	size_t buf_tailroom;
+
+	if (len < sizeof(hdr)) {
+		LOG_ERR("Not enough data for ISO header");
+		return NULL;
+	}
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	if (buf) {
+		memcpy((void *)&hdr, data, sizeof(hdr));
+		data += sizeof(hdr);
+		len -= sizeof(hdr);
+	} else {
+		LOG_ERR("No available ISO buffers!");
+		return NULL;
+	}
+
+	if (len != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
+		LOG_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	net_buf_add_mem(buf, &hdr, sizeof(hdr));
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < len) {
+		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	net_buf_add_mem(buf, data, len);
+
+	return buf;
+}
+
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
@@ -305,7 +360,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&sem_irq, K_FOREVER);
 
 		do {
-			/* Recevive the HCI packet via SPI */
+			/* Receive the HCI packet via SPI */
 			ret = spi_receive_packet(&rxmsg[0], &len);
 			if (ret) {
 				break;
@@ -325,6 +380,10 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 				break;
 			case BT_HCI_H4_ACL:
 				buf = bt_hci_acl_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
+						      (len - PACKET_TYPE_SIZE));
+				break;
+			case BT_HCI_H4_ISO:
+				buf = bt_hci_iso_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
 			default:
@@ -350,9 +409,30 @@ static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 		return -EINVAL;
 	}
 
+	/* Get the H4 type byte and determine buffer type */
+	uint8_t h4_type = net_buf_pull_u8(buf);
+	enum bt_buf_type buf_type = bt_buf_type_from_h4(h4_type, BT_BUF_OUT);
+
+	switch (buf_type) {
+	case BT_BUF_ACL_OUT:
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
+		break;
+	case BT_BUF_CMD:
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
+		break;
+	case BT_BUF_ISO_OUT:
+		net_buf_push_u8(buf, BT_HCI_H4_ISO);
+		break;
+	default:
+		LOG_ERR("Unsupported type: 0x%02x", h4_type);
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
+
 	/* Send the SPI packet */
 	ret = spi_send_packet(buf->data, buf->len);
 	if (ret != 0) {
+		LOG_ERR("SPI send failed: %d", ret);
 		return ret;
 	}
 
@@ -379,6 +459,9 @@ static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
 	ret = bt_apollo_controller_init(spi_send_packet);
 	if (ret == 0) {
 		hci->recv = recv;
+		LOG_INF("BT controller initialized successfully");
+	} else {
+		LOG_ERR("BT controller initialization failed: %d", ret);
 	}
 
 	return ret;

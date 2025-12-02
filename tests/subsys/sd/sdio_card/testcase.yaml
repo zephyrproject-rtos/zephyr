@@ -1,0 +1,16 @@
+common:
+  depends_on: sdhc
+  tags:
+    - drivers
+    - sdhc
+tests:
+  sd.sdio_card:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc1")
+    tags: sdhc
+    min_ram: 32
+    platform_allow:
+      - apollo510_eb
+    build_only: true # Ambiq boards require physical SDIO card connection

@@ -51,6 +51,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_DA1453X     hci_da1453x.c)
 zephyr_library_sources_ifdef(CONFIG_BT_DA1469X     hci_da1469x.c)
 zephyr_library_sources_ifdef(CONFIG_BT_NXP         hci_nxp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_H4_NXP_CTLR hci_nxp_setup.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AMBIQ_HCI_IPC apollox_ipc_support.c)
 
 if(CONFIG_BT_USERCHAN)
   zephyr_library_sources(userchan.c)

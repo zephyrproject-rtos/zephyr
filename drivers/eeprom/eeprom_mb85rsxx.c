@@ -51,6 +51,8 @@ LOG_MODULE_REGISTER(mb85rsxx, CONFIG_EEPROM_LOG_LEVEL);
 
 struct eeprom_mb85rsxx_config {
 	struct spi_dt_spec spi;
+	struct gpio_dt_spec wp_gpio;
+	struct gpio_dt_spec hold_gpio;
 	size_t size;
 	bool readonly;
 };
@@ -262,9 +264,7 @@ static int eeprom_mb85rsxx_rdid(const struct device *dev)
 
 	/* Validate Manufacturer ID and Product ID */
 	if (id[0] != EEPROM_MB85RSXX_MAN_ID
-		|| id[1] != EEPROM_MB85RSXX_CON_CODE
-		|| (id[2] & EEPROM_MB85RSXX_PROD_MASK) != EEPROM_MB85RSXX_PROD_ID
-		|| id[3] != EEPROM_MB85RSXX_PROD_ID2) {
+		|| id[1] != EEPROM_MB85RSXX_CON_CODE) {
 		LOG_ERR("invalid device ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
 		return -EIO;
 	}
@@ -284,6 +284,34 @@ static int eeprom_mb85rsxx_init(const struct device *dev)
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI bus not ready");
 		return -EINVAL;
+	}
+
+	if (config->wp_gpio.port) {
+		if (!gpio_is_ready_dt(&config->wp_gpio)) {
+			LOG_ERR("wp gpio device not ready");
+			return -EINVAL;
+		}
+
+		err = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_INACTIVE);
+
+		if (err) {
+			LOG_ERR("failed to configure WP GPIO pin (err %d)", err);
+			return err;
+		}
+	}
+
+	if (config->hold_gpio.port) {
+		if (!gpio_is_ready_dt(&config->hold_gpio)) {
+			LOG_ERR("wp gpio device not ready");
+			return -EINVAL;
+		}
+
+		err = gpio_pin_configure_dt(&config->hold_gpio, GPIO_OUTPUT_INACTIVE);
+
+		if (err) {
+			LOG_ERR("failed to configure WP GPIO pin (err %d)", err);
+			return err;
+		}
 	}
 
 	err = eeprom_mb85rsxx_rdid(dev);
@@ -306,7 +334,11 @@ static DEVICE_API(eeprom, mb85rsxx_driver_api) = {
                                                                                                    \
 	static const struct eeprom_mb85rsxx_config eeprom_mb85rsxx_config_##inst = {             \
 		.spi = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),            \
+			inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),         \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, wp_gpios),                                  \
+			   (.wp_gpio = GPIO_DT_SPEC_INST_GET(inst, wp_gpios),))                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, hold_gpios),                                \
+			   (.hold_gpio = GPIO_DT_SPEC_INST_GET(inst, hold_gpios),))                \
 		.size = DT_INST_PROP(inst, size),                                                  \
 		.readonly = DT_INST_PROP(inst, read_only),                                         \
 	};                                                                                         \

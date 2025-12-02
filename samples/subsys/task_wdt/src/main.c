@@ -10,6 +10,7 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/task_wdt/task_wdt.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/clock.h>
 #include <stdbool.h>
 
 /*
@@ -54,6 +55,9 @@ static void task_wdt_callback(int channel_id, void *user_data)
 	 */
 
 	printk("Resetting device...\n");
+
+	/* Give the console time to flush before reset. */
+	k_busy_wait(50 * USEC_PER_MSEC);
 
 	sys_reboot(SYS_REBOOT_COLD);
 }

@@ -981,7 +981,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
-			data->dev_cfg.freq      = io_mode;
+			data->dev_cfg.io_mode   = io_mode;
 			data->dev_cfg.data_rate = data_rate;
 			data->dev_cfg.ce_num    = ce_num;
 
@@ -1498,8 +1498,7 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 static void mspi_ambiq_isr(const struct device *dev)
 {
 	struct mspi_ambiq_data *data = dev->data;
-
-	uint32_t status;
+	uint32_t                status;
 
 	am_hal_mspi_interrupt_status_get(data->mspiHandle, &status, false);
 	am_hal_mspi_interrupt_clear(data->mspiHandle, status);
@@ -1645,53 +1644,7 @@ static int mspi_pio_transceive(const struct device          *controller,
 		}
 
 	} else {
-
-		ret = am_hal_mspi_interrupt_enable(data->mspiHandle, AM_HAL_MSPI_INT_DMACMP);
-		if (ret) {
-			LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
-				     "%u, failed to enable interrupt. code:%d",
-				     __LINE__, ret);
-			ret = -EHOSTDOWN;
-			goto pio_err;
-		}
-
-		while (ctx->packets_left > 0) {
-			packet_idx            = ctx->xfer.num_packet - ctx->packets_left;
-			packet                = &ctx->xfer.packets[packet_idx];
-			trans.eDirection      = packet->dir;
-			trans.ui16DeviceInstr = (uint16_t)packet->cmd;
-			trans.ui32DeviceAddr  = packet->address;
-			trans.ui32NumBytes    = packet->num_bytes;
-			trans.pui32Buffer     = (uint32_t *)packet->data_buf;
-
-			if (ctx->callback && packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
-				ctx->callback_ctx->mspi_evt.evt_type = MSPI_BUS_XFER_COMPLETE;
-				ctx->callback_ctx->mspi_evt.evt_data.controller = controller;
-				ctx->callback_ctx->mspi_evt.evt_data.dev_id     = data->ctx.owner;
-				ctx->callback_ctx->mspi_evt.evt_data.packet     = packet;
-				ctx->callback_ctx->mspi_evt.evt_data.packet_idx = packet_idx;
-				ctx->callback_ctx->mspi_evt.evt_data.status     = ~0;
-			}
-
-			am_hal_mspi_callback_t callback = NULL;
-
-			if (packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
-				callback = (am_hal_mspi_callback_t)ctx->callback;
-			}
-
-			ret = am_hal_mspi_nonblocking_transfer(data->mspiHandle, &trans, MSPI_PIO,
-							       callback,
-							       (void *)ctx->callback_ctx);
-			ctx->packets_left--;
-			if (ret) {
-				if (ret == AM_HAL_STATUS_OUT_OF_RANGE) {
-					ret = -ENOMEM;
-				} else {
-					ret = -EIO;
-				}
-				goto pio_err;
-			}
-		}
+		ret = -ENOTSUP;
 	}
 
 pio_err:

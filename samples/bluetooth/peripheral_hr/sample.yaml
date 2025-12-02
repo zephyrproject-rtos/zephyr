@@ -109,3 +109,10 @@ tests:
     depends_on: arduino_serial
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z
+  sample.bluetooth.peripheral_hr.console:
+    tags: bluetooth
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Advertising successfully started"

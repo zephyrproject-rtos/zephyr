@@ -7,6 +7,7 @@
 This test file contains foundational testcases for Twister tool
 """
 
+import os
 from pathlib import Path
 from unittest import mock
 
@@ -15,7 +16,7 @@ import scl
 from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
-from . import ZEPHYR_BASE
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE", str(Path(__file__).parents[3]))
 
 
 def test_yamlload():

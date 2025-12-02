@@ -104,6 +104,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - pinnacle_100_dvk
       - mg100
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - nrf52840dk/nrf52840
   # In mcuboot_flags test serial.conf is used for convenience as it is the simplest
@@ -117,6 +119,8 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.serial-console:
@@ -163,6 +167,8 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - nrf52840dk/nrf52840
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -181,6 +187,8 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load:

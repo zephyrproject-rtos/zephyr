@@ -122,6 +122,13 @@ config LV_Z_VDB_ZEPHYR_REGION_NAME
 	help
 	  Name of the Zephyr memory-region where LVGL rendering buffers are placed.
 
+config LV_Z_LARGE_CONST_SECTION
+	string "Section name for large constant assets"
+	default ""
+	help
+		Specify the linker section for large, constant LVGL assets like
+		fonts and images. This is used to place them in special memory.
+
 config LV_Z_MONOCHROME_CONVERSION_BUFFER
 	bool "Use intermediate conversion buffer for monochrome displays"
 	default y

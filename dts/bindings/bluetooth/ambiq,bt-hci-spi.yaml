@@ -3,7 +3,7 @@
 
 description: |
     Bluetooth module that uses Ambiq's Bluetooth Host Controller Interface SPI
-    driver (e.g. Apollo4 Blue Plus).
+    driver (e.g. Apollo4 Blue Plus and Apollo510 Blue).
 
 compatible: "ambiq,bt-hci-spi"
 
@@ -32,6 +32,11 @@ properties:
       controller. The host needs to enable XO32MHz when receiving low to high
       edge interrupts and disable XO32MHz when receiving high to low edge
       interrupts.
+
+  cm-gpios:
+    type: phandle-array
+    description: |
+      This cm gpio is used to control em9305 enter firmware update mode.
 
   bt-hci-name:
     default: "ambiq hci"

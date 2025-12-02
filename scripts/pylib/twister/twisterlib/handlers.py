@@ -517,6 +517,8 @@ class DeviceHandler(Handler):
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
+            if not d.connected:
+                continue
             duts_found.append(d)
 
         if not duts_found:

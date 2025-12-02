@@ -20,6 +20,8 @@ supported:
   - hwinfo
   - usbd
   - sdhc
+  - mspi
+  - mipi_dsi
 testing:
   ignore_tags:
     - net

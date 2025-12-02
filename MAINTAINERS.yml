@@ -5423,6 +5423,12 @@ West:
   labels:
     - "area: CMSIS_6"
 
+"West project: coremark":
+  status: odd fixes
+  files: []
+  labels:
+    - "area: Benchmark"
+
 "West project: edtt":
   status: maintained
   maintainers:

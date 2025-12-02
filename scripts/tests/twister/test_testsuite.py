@@ -9,6 +9,7 @@ Tests for testinstance class
 import mmap
 import os
 from contextlib import nullcontext
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -25,7 +26,7 @@ from twisterlib.testsuite import (
     scan_testsuite_path,
 )
 
-from . import ZEPHYR_BASE
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE", str(Path(__file__).parents[3]))
 
 TESTDATA_1 = [
     (

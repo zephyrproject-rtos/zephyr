@@ -21,3 +21,6 @@ mypy
 junitparser>=3.0.0
 
 python-dotenv
+
+protobuf
+grpcio-tools

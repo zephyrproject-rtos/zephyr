@@ -12,9 +12,11 @@ tests:
       regex:
         - "MSPI Timing Scan is successful."
     platform_allow:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     integration_platforms:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     depends_on: mspi
@@ -24,6 +26,8 @@ tests:
       - CONFIG_FLASH_MSPI_XIP_READ=y
       - CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE=8192
       - CONFIG_MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE=131072
+    extra_args:
+      - platform:apollo4p_evb/apollo4p:SHIELD=ap4_evb_disp_shield_rev2
 
   sample.drivers.mspi.timing_scan.memc:
     tags:
@@ -36,9 +40,11 @@ tests:
       regex:
         - "MSPI Timing Scan is successful."
     platform_allow:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     integration_platforms:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     depends_on: mspi
@@ -47,3 +53,5 @@ tests:
       - platform:apollo510_evb/apollo510:CONFIG_MEMC_MSPI_APS51216BA=y
       - platform:apollo510_eb/apollo510:CONFIG_MEMC_MSPI_APS25616N=y
       - CONFIG_MEMC_INIT_PRIORITY=50
+    extra_args:
+      - platform:apollo4p_evb/apollo4p:SHIELD=ap4_evb_disp_shield_rev2

@@ -64,7 +64,7 @@ Modules
 Optional Modules
 ================
 
-The following modules have been made optional and are not downloaded with `west update` by default
+The following modules have been made optional and are not downloaded with ``west update`` by default
 anymore:
 
 * ``canopennode`` (:github:`64139`)
@@ -293,9 +293,9 @@ Display
 
 * ILI9XXX based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
-  manage interfacing with the display. Note that the `cmd-data-gpios` pin has
+  manage interfacing with the display. Note that the ``cmd-data-gpios`` pin has
   changed polarity with this update, to align better with the new
-  `dc-gpios` name. For an example, see below:
+  ``dc-gpios`` name. For an example, see below:
 
   .. code-block:: devicetree
 
@@ -392,7 +392,7 @@ Interrupt Controller
 
 * The function signature of the ``isr_t`` callback function passed to the ``shared_irq``
   interrupt controller driver API via :c:func:`shared_irq_isr_register()` has changed.
-  The callback now takes an additional `irq_number` parameter. Out-of-tree users of
+  The callback now takes an additional ``irq_number`` parameter. Out-of-tree users of
   this API will need to be updated.
 
   (:github:`66427`)
@@ -469,14 +469,14 @@ Bluetooth
   Any pointer to a UUID must be prefixed with ``const``, otherwise there will be a compilation
   warning. For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
   ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
-* The :c:func:`bt_l2cap_chan_send` API no longer allocates buffers from the same pool as its `buf`
+* The :c:func:`bt_l2cap_chan_send` API no longer allocates buffers from the same pool as its ``buf``
   parameter when segmenting SDUs into PDUs. In order to reproduce the previous behavior, the
-  application should register the `alloc_seg` channel callback and allocate from the same pool as
-  `buf`.
+  application should register the ``alloc_seg`` channel callback and allocate from the same pool as
+  ``buf``.
 * The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
   enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
   BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` at buffer allocation time to do so.
-* `BT_ISO_TIMESTAMP_NONE` has been removed and the `ts` parameter of :c:func:`bt_iso_chan_send` has
+* ``BT_ISO_TIMESTAMP_NONE`` has been removed and the ``ts`` parameter of :c:func:`bt_iso_chan_send` has
   as well. :c:func:`bt_iso_chan_send` now always sends without timestamp. To send with a timestamp,
   :c:func:`bt_iso_chan_send_ts` can be used.
 * The ``CONFIG_BT_HCI_RESERVE`` and ``CONFIG_BT_HCI_RAW_RESERVE`` Kconfig options were removed. All
@@ -528,10 +528,10 @@ Bluetooth Audio
     E.g. ``bt_audio_codec_config_freq`` is now ``bt_audio_codec_cfg_freq``,
     ``bt_audio_codec_capability_type`` is now ``bt_audio_codec_cap_type``,
     ``bt_audio_codec_config_type`` is now ``bt_audio_codec_cfg_type``, etc. (:github:`67024`)
-  * The `ts` parameter of :c:func:`bt_bap_stream_send` has been removed.
+  * The ``ts`` parameter of :c:func:`bt_bap_stream_send` has been removed.
     :c:func:`bt_bap_stream_send` now always sends without timestamp.
     To send with a timestamp, :c:func:`bt_bap_stream_send_ts` can be used.
-  * The `ts` parameter of :c:func:`bt_cap_stream_send` has been removed.
+  * The ``ts`` parameter of :c:func:`bt_cap_stream_send` has been removed.
     :c:func:`bt_cap_stream_send` now always sends without timestamp.
     To send with a timestamp, :c:func:`bt_cap_stream_send_ts` can be used.
 

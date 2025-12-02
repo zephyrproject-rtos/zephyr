@@ -6,7 +6,8 @@ sample:
                matrix manipulation and list processing (find and sort).
 tests:
   sample.benchmark.coremark:
-    platform_allow: apollo510_evb
+    platform_allow:
+      - apollo510_evb
     integration_platforms:
       - apollo510_evb
     harness: console

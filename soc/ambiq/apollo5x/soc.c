@@ -20,9 +20,50 @@
 #include "icache_prefill.h"
 #endif
 
+#include <zephyr/dt-bindings/power/ambiq_power.h>
+
 #include <soc.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+static am_hal_pwrctrl_mcu_mode_e ambiq_perf_mode_to_hal(uint32_t mode)
+{
+	switch (mode) {
+	case AMBIQ_POWER_MODE_LOW_POWER:
+		return AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER;
+	case AMBIQ_POWER_MODE_HIGH_PERFORMANCE_2:
+		/* fall through */
+	case AMBIQ_POWER_MODE_HIGH_PERFORMANCE:
+		return AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE;
+	default:
+		return AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER;
+	}
+}
+
+int apollo5x_set_performance_mode(uint32_t mode)
+{
+	uint32_t status;
+	am_hal_pwrctrl_mcu_mode_e current_mode;
+	am_hal_pwrctrl_mcu_mode_e target_mode = ambiq_perf_mode_to_hal(mode);
+
+	status = am_hal_pwrctrl_mcu_mode_status(&current_mode);
+	if (status != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to read MCU mode: 0x%x", status);
+		return -EIO;
+	}
+
+	if (current_mode == target_mode) {
+		return 0;
+	}
+
+	status = am_hal_pwrctrl_mcu_mode_select(target_mode);
+	if (status != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to switch MCU mode (%d): 0x%x", mode, status);
+		return -EIO;
+	}
+
+	return 0;
+}
 
 #define SCRATCH0_OEM_RCV_RETRY_MAGIC 0xA86
 
@@ -41,7 +82,7 @@ void soc_early_init_hook(void)
 	}
 
 	/* Internal timer15 for SPOT manager */
-	IRQ_CONNECT(82, 0, hal_internal_timer_isr, 0, 0);
+	IRQ_CONNECT(TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A, 0, hal_internal_timer_isr, 0, 0);
 
 	/* Initialize for low power in the power control block */
 	am_hal_pwrctrl_low_power_init();
@@ -74,11 +115,12 @@ void soc_early_init_hook(void)
 	icache_prefill();
 
 	/* Use LFRC instead of XT */
+	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC, 0);
 	am_hal_rtc_osc_select(AM_HAL_RTC_OSC_LFRC);
 
 	/* Configure XTAL for deepsleep */
 	am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_XTAL_PWDN_DEEPSLEEP, 0);
-
+	MCUCTRL->XTALCTRL = 0;
 	am_hal_rtc_osc_disable();
 
 	VCOMP->PWDKEY = VCOMP_PWDKEY_PWDKEY_Key;
@@ -99,9 +141,9 @@ void soc_early_init_hook(void)
 
 	am_hal_pwrctrl_mcu_memory_config_t McuMemCfg = {
 		.eROMMode = AM_HAL_PWRCTRL_ROM_AUTO,
-		.eDTCMCfg = AM_HAL_PWRCTRL_ITCM32K_DTCM128K,
+		.eDTCMCfg       = AM_HAL_PWRCTRL_ITCM32K_DTCM128K,
 		.eRetainDTCM = AM_HAL_PWRCTRL_MEMRETCFG_TCMPWDSLP_RETAIN,
-		.eNVMCfg = AM_HAL_PWRCTRL_NVM0_ONLY,
+		.eNVMCfg        = AM_HAL_PWRCTRL_NVM0_ONLY,
 		.bKeepNVMOnInDeepSleep = false};
 
 	am_hal_pwrctrl_mcu_memory_config(&McuMemCfg);

@@ -16,23 +16,31 @@ tests:
     platform_allow:
       - native_sim
       - apollo3p_evb
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     integration_platforms:
       - native_sim
       - apollo3p_evb
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
+    extra_args:
+      - platform:apollo4p_evb/apollo4p:SHIELD=ap4_evb_disp_shield_rev2
   drivers.mspi.flash.xip_read:
     filter: dt_compat_enabled("mspi-is25xX0xx")
     platform_allow:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     integration_platforms:
+      - apollo4p_evb
       - apollo510_eb
       - apollo510_evb
     extra_configs:
       - CONFIG_FLASH_MSPI_XIP_READ=y
+    extra_args:
+      - platform:apollo4p_evb/apollo4p:SHIELD=ap4_evb_disp_shield_rev2
   drivers.mspi.flash.mspi_dw_system_workqueue:
     filter: dt_alias_exists("mspi0") and dt_compat_enabled("jedec,mspi-nor")
       and CONFIG_MSPI_DW
@@ -42,7 +50,7 @@ tests:
       - CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE=y
   drivers.mspi.flash.mspi_nor_no_multithreading:
     filter: dt_alias_exists("mspi0") and CONFIG_FLASH_MSPI_NOR
-    integration_platforms:
+    platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_configs:
       - CONFIG_MULTITHREADING=n

@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+#include "apollo4p_blue_kxr_evb_connector.dtsi"
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -201,7 +202,7 @@
 		};
 	};
 
-	pwm2_default: pwm2_default{
+	pwm2_default: pwm2_default {
 		group1 {
 			pinmux = <CT30_P30>;
 			drive-open-drain;

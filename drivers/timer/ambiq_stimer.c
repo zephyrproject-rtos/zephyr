@@ -141,7 +141,24 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-	uint32_t delta = ticks * CYC_PER_TICK;
+	uint32_t delta;
+	uint64_t delta_cycles = (uint64_t)ticks * (uint64_t)CYC_PER_TICK;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	uint32_t now = am_hal_stimer_counter_get();
+
+	update_tick_counter_with_now(now);
+
+	if (delta_cycles > g_remainder) {
+		delta_cycles -= g_remainder;
+	} else {
+		delta_cycles = MIN_DELAY;
+	}
+#endif
+	if (delta_cycles > (uint64_t)MAX_CYCLES) {
+		delta_cycles = MAX_CYCLES;
+	}
+	delta = (uint32_t)MIN(delta_cycles, (uint64_t)UINT32_MAX);
 
 	if (delta <= MIN_DELAY) {
 		/*If the delta value is smaller than MIN_DELAY, trigger a interrupt immediately*/
@@ -182,7 +199,9 @@ static int stimer_init(void)
 	uint32_t oldCfg;
 
 	oldCfg = am_hal_stimer_config(TIMER_CLKSRC | AM_HAL_STIMER_CFG_FREEZE);
-
+	am_hal_stimer_counter_clear();
+	am_hal_stimer_int_disable(0xFFFFFFFF);
+	am_hal_stimer_int_clear(0xFFFFFFFF);
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | CTIMER_STCFG_CLKSEL_Msk)) |
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |

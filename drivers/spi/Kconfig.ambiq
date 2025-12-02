@@ -11,6 +11,7 @@ menuconfig SPI_AMBIQ_SPIC
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
 	select GPIO
+	select PINCTRL
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_SPIC
 	help
@@ -32,6 +33,7 @@ config SPI_AMBIQ_SPID
 	default y
 	depends on DT_HAS_AMBIQ_SPID_ENABLED
 	select GPIO
+	select PINCTRL
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_SPID
 	help
@@ -67,6 +69,7 @@ config SPI_AMBIQ_DCIF
 	default y
 	depends on DT_HAS_AMBIQ_SPI_DCIF_ENABLED
 	select GPIO
+	select PINCTRL
 	select AMBIQ_HAL
 	select AMBIQ_COMPONENT_USE_NEMADC
 	help

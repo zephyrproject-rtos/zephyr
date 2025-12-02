@@ -5,6 +5,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <apollo510/am_apollo510.h>
+#include <zephyr/dt-bindings/power/ambiq_power.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -41,6 +42,22 @@
 			compatible = "fixed-clock";
 			clock-frequency = <0>;
 			#clock-cells = <0>;
+		};
+	};
+
+	performance-states {
+		compatible = "zephyr,pstates";
+
+		pstate_hp: pstate_hp {
+			compatible = "ambiq,pstate";
+			load-threshold = <80>;
+			ambiq,perf-mode = <AMBIQ_POWER_MODE_HIGH_PERFORMANCE>;
+		};
+
+		pstate_lp: pstate_lp {
+			compatible = "ambiq,pstate";
+			load-threshold = <0>;
+			ambiq,perf-mode = <AMBIQ_POWER_MODE_LOW_POWER>;
 		};
 	};
 
@@ -101,7 +118,6 @@
 			write-block-size = <16>;
 		};
 	};
-
 
 	/* TCM */
 	itcm: itcm@ITCM_BASE_NAME {
@@ -762,6 +778,15 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
+		dc_jdi: jdi@DC_BASE_NAME {
+			compatible = "ambiq,jdi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <DC_REG_BASE DC_REG_SIZE>;
+			interrupts = <29 0>;/* DC interrupt */
+			status = "disabled";
+		};
+
 		dc_spi: spi@DC_BASE_NAME {
 			compatible = "ambiq,spi-dcif";
 			#address-cells = <1>;
@@ -779,6 +804,25 @@
 			vsync = <1>;
 		};
 
+		mipi_dbi: mipi_dbi@DC_BASE_NAME {
+			compatible = "ambiq,mipi-dbi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <DC_REG_BASE DC_REG_SIZE>;
+			interrupts = <29 0>;/* DC interrupt */
+			status = "disabled";
+
+			clock-frequency = <192000000>;
+			hactive = <480>;/*Its value should be an integer multiple of 4.*/
+			hfp = <1>;
+			hbp = <1>;
+			hsync = <1>;
+			vactive = <800>;
+			vfp = <1>;
+			vbp = <1>;
+			vsync = <1>;
+		};
+
 		mipi_dsi: mipi_dsi@DSI_BASE_NAME {
 			compatible = "ambiq,mipi-dsi";
 			#address-cells = <1>;
@@ -788,6 +832,7 @@
 			phy-clock = <384000000>;
 			interrupts = <29 0>;/* DC interrupt */
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		pinctrl: pin-controller@GPIO_BASE_NAME {

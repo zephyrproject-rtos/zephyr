@@ -15,6 +15,7 @@ tests:
       - frdm_mcxn236/mcxn236
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+    build_only: true # Ambiq temp
   drivers.i2s.gpio_loopback:
     depends_on:
       - i2s

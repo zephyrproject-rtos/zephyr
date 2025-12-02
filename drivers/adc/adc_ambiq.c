@@ -14,6 +14,7 @@
 #include <zephyr/cache.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 /* ambiq-sdk includes */
@@ -50,6 +51,7 @@ struct adc_ambiq_data {
 	am_hal_adc_dma_config_t dma_cfg;
 	am_hal_adc_sample_t *sample_buf;
 	bool dma_mode;
+	const struct device *dev;
 };
 
 static int adc_ambiq_set_resolution(am_hal_adc_slot_prec_e *prec, uint8_t adc_resolution)
@@ -176,6 +178,8 @@ static void adc_ambiq_isr(const struct device *dev)
 			*data->buffer++ = Sample.ui32Sample;
 		}
 		am_hal_adc_disable(data->adcHandle);
+		/* Clear the ADC interrupt.*/
+		am_hal_adc_interrupt_clear(data->adcHandle, AM_HAL_ADC_INT_CNVCMP);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 
@@ -189,9 +193,6 @@ static void adc_ambiq_isr(const struct device *dev)
 			k_sem_give(&data->dma_done_sem);
 		}
 	}
-
-	/* Clear the ADC interrupt.*/
-	am_hal_adc_interrupt_clear(data->adcHandle, ui32IntMask);
 }
 
 static int adc_ambiq_check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
@@ -333,7 +334,6 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 	} else {
 		error = adc_context_wait_for_completion(&data->ctx);
 	}
-	pm_device_runtime_put(dev);
 
 	return error;
 }
@@ -353,6 +353,9 @@ static int adc_ambiq_read(const struct device *dev, const struct adc_sequence *s
 	}
 
 	error = adc_ambiq_start_read(dev, sequence);
+	if (error < 0) {
+		pm_device_runtime_put(dev);
+	}
 
 	adc_context_release(&data->ctx, error);
 
@@ -446,8 +449,19 @@ static int adc_ambiq_init(const struct device *dev)
 	cfg->irq_config_func();
 	adc_context_unlock_unconditionally(&data->ctx);
 
+	data->dev = dev;
+
 	return 0;
 }
+
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	struct adc_ambiq_data *data = CONTAINER_OF(ctx, struct adc_ambiq_data, ctx);
+
+	/* All sampling is truly complete, safe to put device to sleep */
+	pm_device_runtime_put(data->dev);
+}
+
 
 #ifdef CONFIG_ADC_ASYNC
 static int adc_ambiq_read_async(const struct device *dev, const struct adc_sequence *sequence,
@@ -465,6 +479,9 @@ static int adc_ambiq_read_async(const struct device *dev, const struct adc_seque
 	}
 
 	error = adc_ambiq_start_read(dev, sequence);
+	if (error < 0) {
+		pm_device_runtime_put(dev);
+	}
 
 	adc_context_release(&data->ctx, error);
 

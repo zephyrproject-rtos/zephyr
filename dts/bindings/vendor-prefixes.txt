@@ -482,6 +482,7 @@ nokia	Nokia
 nordic	Nordic Semiconductor
 norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
+novatek	Novatek Microelectronics Corp.
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
 nutsboard	NutsBoard

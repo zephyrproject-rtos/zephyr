@@ -1,0 +1,26 @@
+# JDI (Japan Display Interface) drivers
+
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig JDI
+	bool "JDI (Japan Display Interface) drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable JDI (Japan Display Interface) drivers
+
+if JDI
+
+config JDI_INIT_PRIORITY
+	int "JDI devices init priority"
+	default 85
+	help
+	  JDI devices initialization priority.
+
+module = JDI
+module-str = jdi
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/jdi/Kconfig.ambiq"
+
+endif # JDI

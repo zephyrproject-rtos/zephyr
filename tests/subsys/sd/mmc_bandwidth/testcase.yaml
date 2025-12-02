@@ -1,0 +1,11 @@
+common:
+  depends_on: sdhc
+  tags:
+    - drivers
+    - sdhc
+tests:
+  sd.mmcbandwidth:
+    harness: ztest
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+    tags: sdhc
+    min_ram: 32

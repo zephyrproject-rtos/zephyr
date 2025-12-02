@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_APOLLO5_EB_DISPLAY_8080_CARD
+	def_bool $(shields_list_contains,apollo5_eb_display_8080_card)

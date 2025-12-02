@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for JDI hosts
+
+include: base.yaml
+
+bus: jdi
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  hck-bck-max-freq:
+    type: int
+    required: true
+    description: |
+      Maximum frequency for HCK/BCK signals in Hz
+
+  vck-gck-max-freq:
+    type: int
+    required: true
+    description: |
+      Maximum frequency for VCK/GCK signals in Hz

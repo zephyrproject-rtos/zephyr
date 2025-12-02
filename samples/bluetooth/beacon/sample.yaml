@@ -27,3 +27,10 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: bluetooth
+  sample.bluetooth.beacon.console:
+    tags: bluetooth
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Beacon started"

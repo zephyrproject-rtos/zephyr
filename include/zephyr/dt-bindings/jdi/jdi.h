@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_JDI_JDI_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_JDI_JDI_H_
+
+/**
+ * @addtogroup JDI_interface
+ * @{
+ */
+
+/**
+ * @name JDI Input Pixel formats.
+ * @{
+ */
+
+#define JDI_PIXFMT_LUT8     0x00U
+#define JDI_PIXFMT_RGBA5551 0x01U
+#define JDI_PIXFMT_ABGR8888 0x02U
+#define JDI_PIXFMT_BGR888   0x03U
+#define JDI_PIXFMT_RGB332   0x04U
+#define JDI_PIXFMT_RGB565   0x05U
+#define JDI_PIXFMT_BGRA8888 0x06U
+#define JDI_PIXFMT_L8       0x07U
+
+#define JDI_PIXFMT_BGRA4444 0x0AU
+#define JDI_PIXFMT_RGB888   0x0BU
+#define JDI_PIXFMT_ABGR4444 0x0CU
+#define JDI_PIXFMT_RGBA8888 0x0DU
+#define JDI_PIXFMT_ARGB8888 0x0EU
+#define JDI_PIXFMT_BGRA5551 0x0FU
+#define JDI_PIXFMT_ARGB1555 0x10U
+
+#define JDI_PIXFMT_RGBA4444 0x15U
+#define JDI_PIXFMT_BGR565   0x16U
+#define JDI_PIXFMT_AL88     0x17U
+#define JDI_PIXFMT_ARGB4444 0x18U
+#define JDI_PIXFMT_AL44     0x19U
+#define JDI_PIXFMT_RGBA2222 0x1AU
+#define JDI_PIXFMT_BGRA2222 0x1BU
+#define JDI_PIXFMT_ARGB2222 0x1CU
+#define JDI_PIXFMT_ABGR2222 0x1DU
+#define JDI_PIXFMT_A8       0x1EU
+#define JDI_PIXFMT_ABGR1555 0x1FU
+
+/** @} */
+
+/**
+ * @}
+ */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_JDI_JDI_H_ */

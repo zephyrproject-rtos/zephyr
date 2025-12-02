@@ -154,6 +154,7 @@
 #define ADXL362_DEVICE_AD               0xAD
 #define ADXL362_DEVICE_MST              0x1D
 #define ADXL362_PART_ID                 0xF2
+#define ADXL363_PART_ID                 0xF3
 
 /* ADXL362 Reset settings */
 #define ADXL362_RESET_KEY               0x52

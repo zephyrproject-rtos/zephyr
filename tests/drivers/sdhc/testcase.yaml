@@ -14,3 +14,4 @@ tests:
       - mimxrt1064_evk
     platform_exclude:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    build_only: true # Ambiq need insert sd card

@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Novatek NT35510 display controller with MIPI DBI Type-B (Intel 8080) interface support.
+
+compatible: "novatek,nt35510"
+
+include: ["mipi-dbi-device.yaml", "display-controller.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Set high to reset the display.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      Backlight control GPIO pin.
+
+  rotation:
+    type: int
+    description: |
+      Display rotation in degrees. Valid values are 0, 90, 180, 270.
+
+  pixel-format:
+    type: int
+    description: |
+      Pixel format. Zephyr/dt-bindings/display/panel.h

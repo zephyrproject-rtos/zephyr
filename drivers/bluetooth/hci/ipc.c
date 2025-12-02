@@ -381,10 +381,22 @@ static int bt_ipc_close(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HCI_SETUP)
+int __weak bt_ipc_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(params);
+	return 0;
+}
+#endif /* defined(CONFIG_BT_HCI_SETUP) */
+
 static DEVICE_API(bt_hci, drv) = {
 	.open		= bt_ipc_open,
 	.close		= bt_ipc_close,
 	.send		= bt_ipc_send,
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup      = bt_ipc_setup,
+#endif /* defined(CONFIG_BT_HCI_SETUP) */
 };
 
 #define IPC_DEVICE_INIT(inst) \

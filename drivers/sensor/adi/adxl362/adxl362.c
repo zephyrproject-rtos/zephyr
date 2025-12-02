@@ -786,7 +786,7 @@ static int adxl362_init(const struct device *dev)
 	k_sleep(K_MSEC(5));
 
 	(void)adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
-	if (value != ADXL362_PART_ID) {
+	if ((value != ADXL362_PART_ID) && (value != ADXL363_PART_ID)) {
 		LOG_ERR("wrong part_id: %d", value);
 		return -ENODEV;
 	}

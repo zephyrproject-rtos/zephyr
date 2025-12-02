@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+#include <zephyr/dt-bindings/jdi/jdi.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &ls014b7dd01;
+	};
+};
+
+&pinctrl {
+	/* Node with pin configuration for default state */
+	/omit-if-no-ref/dc_jdi_default: dc_jdi_default {
+		group1 {
+			pinmux = <DISP_ENB_P209>,
+				<DISP_XRST_P210>,
+				<DISP_R1_P211>,
+				<DISP_R2_P212>,
+				<DISP_G1_P213>,
+				<DISP_G2_P214>,
+				<DISP_B1_P215>,
+				<DISP_B2_P216>,
+				<DISP_HST_P217>,
+				<DISP_VST_P218>,
+				<DISP_HCK_P219>,
+				<DISP_VCK_P220>;
+			drive-strength = "0.5";
+			drive-push-pull;
+		};
+	};
+	/omit-if-no-ref/pwm_default: pwm_default {
+		group1 {
+			pinmux = <CT221_P221>,<CT223_P223>;
+			drive-strength = "0.5";
+			drive-push-pull;
+		};
+	};
+};
+
+&timer7 {
+	clk-source = "CLK_SELECT_HFRC_DIV16";
+	counter {
+		status = "disabled";
+	};
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&dc_jdi {
+	status = "okay";
+	pinctrl-0 = <&dc_jdi_default>;
+	pinctrl-names = "default";
+
+	hck-bck-max-freq = <758000>;
+	vck-gck-max-freq = <500000>;
+
+	xrst-intb-delay = <1>;
+	xrst-intb-width = <566>;
+	vst-gsp-delay = <73>;
+	vst-gsp-width = <576>;
+	vck-gck-delay = <217>;
+	vck-gck-width = <288>;
+	vck-gck-closing-pulses = <6>;
+	hst-bsp-delay = <2>;
+	hst-bsp-width = <4>;
+	hck-bck-data-start = <1>;
+	enb-gen-delay = <99>;
+	enb-gen-width = <90>;
+
+	ls014b7dd01: ls014b7dd01@0 {
+		status = "okay";
+		compatible = "sharp,ls014b7dd01";
+		reg = <0x0>;
+		input-pixel-format = <JDI_PIXFMT_RGB565>;
+		mode-flags = <0>;
+		width = <280>;	/*Its value should be an integer multiple of 4.*/
+		height = <280>;
+		pwms = <&pwm0 0 16666667 PWM_POLARITY_NORMAL>,
+			<&pwm0 1 16666667 PWM_POLARITY_NORMAL>;
+		pwm-names = "va", "vcom";
+	};
+};

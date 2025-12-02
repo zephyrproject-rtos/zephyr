@@ -18,6 +18,7 @@ supported:
   - clock_control
   - ble
   - usbd
+  - rtc
 testing:
   ignore_tags:
     - net

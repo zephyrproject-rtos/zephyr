@@ -76,7 +76,8 @@ class ZephyrAppCommandsDirective(Directive):
         snippets = self.options.get('snippets', None)
         build_dir_append = self.options.get('build-dir', '').strip('/')
         build_dir_fmt = self.options.get('build-dir-fmt', None)
-        goals = self.options.get('goals').split()
+        goals_opt = self.options.get('goals')
+        goals = goals_opt.split() if goals_opt else ['build']
         skip_config = 'maybe-skip-config' in self.options
         compact = 'compact' in self.options
         west_args = self.options.get('west-args', None)

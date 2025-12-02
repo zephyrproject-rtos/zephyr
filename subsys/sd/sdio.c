@@ -754,6 +754,37 @@ int sdio_enable_func(struct sdio_func *func)
 }
 
 /**
+ * @brief Enable SDIO function interrupt
+ *
+ * Enables SDIO card function interrupt. @ref sdio_enable_interrupt must be called to
+ * enable the function's interrupt to avoid DATA1 stays high in data tranzaction.
+ * @param func: function to enable
+ * @retval 0 interrupt was enabled successfully
+ * @retval -ETIMEDOUT: card I/O timed out
+ * @retval -EIO: I/O error
+ */
+int sdio_enable_interrupt(struct sdio_func *func)
+{
+	int ret;
+	uint8_t reg;
+
+	/* Read interrupt register value */
+	ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		SDIO_CCCR_INT_EN, 0, &reg);
+	if (ret) {
+		return ret;
+	}
+	reg |= BIT(func->num) | 0x1;
+	ret = sdio_io_rw_direct(func->card, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
+		SDIO_CCCR_INT_EN, reg, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Set block size of SDIO function
  *
  * Set desired block size for SDIO function, used by block transfers

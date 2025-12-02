@@ -24,3 +24,5 @@ endif()
 if(CONFIG_BT_ZEPHYR_NUS)
   add_subdirectory(nus)
 endif()
+
+zephyr_sources_ifdef(CONFIG_BT_AMOTA amota.c)

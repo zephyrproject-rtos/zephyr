@@ -229,6 +229,7 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 
 	key = irq_lock();
 
+#if defined(CONFIG_PM_DEVICE)
 	/* If an interrupt transmission is in progress, the pm constraint is already managed by the
 	 * call of uart_ambiq_irq_tx_[en|dis]able
 	 */
@@ -237,6 +238,7 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 
 		am_hal_uart_interrupt_enable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
 	}
+#endif
 
 	/* Send a character */
 	am_hal_uart_fifo_write(data->uart_handler, &c, 1, NULL);
@@ -485,6 +487,7 @@ static int uart_ambiq_init(const struct device *dev)
 	const struct uart_ambiq_config *config = dev->config;
 	struct uart_ambiq_data *data = dev->data;
 	int ret = 0;
+	uint32_t status;
 
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_uart_initialize(config->inst_idx, &data->uart_handler)) {
@@ -492,9 +495,14 @@ static int uart_ambiq_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	ret = am_hal_uart_power_control(data->uart_handler, AM_HAL_SYSCTRL_WAKE, false);
+	status = am_hal_uart_power_control(data->uart_handler, AM_HAL_SYSCTRL_WAKE, false);
+	if (status != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Fail to power UART: 0x%x\n", status);
+		ret = -EIO;
+		goto end;
+	}
 
-	ret |= uart_ambiq_configure(dev, &data->uart_cfg);
+	ret = uart_ambiq_configure(dev, &data->uart_cfg);
 	if (ret < 0) {
 		LOG_ERR("Fail to config UART\n");
 		goto end;

@@ -48,6 +48,18 @@ int sdio_init_func(struct sd_card *card, struct sdio_func *func,
 int sdio_enable_func(struct sdio_func *func);
 
 /**
+ * @brief Enable SDIO function interrupt
+ *
+ * Enables SDIO card function interrupt. @ref sdio_enable_interrupt must be called to
+ * enable the function's interrupt to avoid DATA1 stays high in data tranzaction.
+ * @param func: function to enable
+ * @retval 0 interrupt was enabled successfully
+ * @retval -ETIMEDOUT: card I/O timed out
+ * @retval -EIO: I/O error
+ */
+int sdio_enable_interrupt(struct sdio_func *func);
+
+/**
  * @brief Set block size of SDIO function
  *
  * Set desired block size for SDIO function, used by block transfers

@@ -386,7 +386,7 @@
 
 		group2 {
 			pinmux = <MNCE0_0_P199>;   /* CE */
-			drive-strength = "1.0";
+			drive-strength = "0.75";
 		};
 	};
 

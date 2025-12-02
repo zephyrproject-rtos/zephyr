@@ -43,6 +43,19 @@ struct apollo5_pinctrl_soc_pin {
 
 typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
 
+/* TODO Need to add this assert but not allowed in initializer expansion */
+#define APOLLO5_GET_PIN_DRIVE_STRENGTH_ASSERT(n)                                      \
+	BUILD_ASSERT(!(DT_NODE_HAS_PROP(n, drive_strength) &&                         \
+		       DT_NODE_HAS_PROP(n, drive_strength_hs)),                         \
+		      "Only one of drive-strength or drive-strength-hs may be present")
+
+#define APOLLO5_GET_PIN_DRIVE_STRENGTH(n)                                             \
+	(COND_CODE_1(DT_NODE_HAS_PROP(n, drive_strength),                             \
+		     (DT_ENUM_IDX(n, drive_strength)),                                  \
+		     (COND_CODE_1(DT_NODE_HAS_PROP(n, drive_strength_hs),               \
+				  (DT_ENUM_IDX(n, drive_strength_hs)),                   \
+				  (0)))))
+
 /**
  * @brief Utility macro to initialize each pin.
  *
@@ -55,7 +68,7 @@ typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
 		APOLLO5_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),                           \
 		APOLLO5_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),                      \
 		DT_PROP(node_id, input_enable),                                                    \
-		DT_ENUM_IDX(node_id, drive_strength),                                              \
+		APOLLO5_GET_PIN_DRIVE_STRENGTH(node_id),                                           \
 		DT_PROP(node_id, drive_push_pull),                                                 \
 		DT_PROP(node_id, drive_open_drain),                                                \
 		DT_PROP(node_id, bias_high_impedance),                                             \

@@ -14,12 +14,14 @@ supported:
   - gpio
   - sdhc
   - dsi
-  - pdm
+  - dmic
   - i2s
   - mspi
   - flash
   - nvs
   - zms
+  - pm
+  - pwm
 testing:
   ignore_tags:
     - net

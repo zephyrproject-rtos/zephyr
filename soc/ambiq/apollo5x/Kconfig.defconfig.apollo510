@@ -7,4 +7,10 @@ if SOC_APOLLO510
 config NUM_IRQS
 	default 134
 
+config HAS_CPU_FREQ
+	def_bool y
+
+config SOC_AMBIQ_DCACHE_SIZE
+	default 65536
+
 endif # SOC_APOLLO510

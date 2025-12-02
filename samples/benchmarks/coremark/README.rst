@@ -24,6 +24,7 @@ The sample supports the following development kits:
 | nrf5340dk_nrf5340   |     Yes     |
 | nrf9160dk_nrf9160   |     Yes     |
 | apollo510_evb       |     Yes     |
+| apollo510L_eb       |     Yes     |
 +---------------------+-------------+
 
 One button and one led are required to run the sample on the board, that is not listed here.

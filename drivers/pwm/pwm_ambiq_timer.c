@@ -10,9 +10,9 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
-#include <am_mcu_apollo.h>
-
 #include <zephyr/logging/log.h>
+/* ambiq-sdk includes */
+#include <soc.h>
 
 LOG_MODULE_REGISTER(ambiq_timer_pwm, CONFIG_PWM_LOG_LEVEL);
 
@@ -36,52 +36,34 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 
 	switch (clock_sel) {
 	case 0:
-		ret = 24000000;
-		break;
 	case 1:
-		ret = 6000000;
-		break;
 	case 2:
-		ret = 1500000;
-		break;
 	case 3:
-		ret = 375000;
-		break;
 	case 4:
-		ret = 93750;
-		break;
 	case 5:
-		ret = 1000;
+		ret = 96000000 / (4 << (clock_sel * 2));
 		break;
 	case 6:
+		ret = 1000;
+		break;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X) ||                                                         \
+	defined(CONFIG_SOC_APOLLO510)
+	case 7:
 		ret = 500;
 		break;
-	case 7:
+	case 8:
 		ret = 31;
 		break;
-	case 8:
+	case 9:
 		ret = 1;
 		break;
-	case 9:
-		ret = 256;
-		break;
 	case 10:
-		ret = 32768;
-		break;
 	case 11:
-		ret = 16384;
-		break;
 	case 12:
-		ret = 8192;
-		break;
 	case 13:
-		ret = 4096;
-		break;
 	case 14:
-		ret = 2048;
-		break;
 	case 15:
-		ret = 1024;
+		ret = 32768 / (1 << (clock_sel - 10));
 		break;
 	case 16:
 		ret = 256;
@@ -89,6 +71,27 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 	case 17:
 		ret = 100;
 		break;
+#endif /* CONFIG_SOC_SERIES_APOLLO4X || CONFIG_SOC_APOLLO510/B */
+
+#if defined(CONFIG_SOC_APOLLO510)
+	case 18:
+		ret = 512;
+		break;
+	case 19:
+	case 20:
+	case 21:
+	case 22:
+	case 23:
+	case 24:
+		ret = 125000000 / (8 << (clock_sel - 19));
+		break;
+	case 25:
+	case 26:
+	case 27:
+		ret = 48000000 / (1 << (clock_sel - 25));
+		break;
+#endif /* CONFIG_SOC_APOLLO510/B */
+
 	default:
 		ret = 24000000;
 		break;
@@ -106,6 +109,19 @@ static int ambiq_timer_pwm_set_cycles(const struct device *dev, uint32_t channel
 	if (period_cycles == 0) {
 		LOG_ERR("period_cycles can not be set to zero");
 		return -ENOTSUP;
+	}
+
+	if (channel > 1) {
+		LOG_ERR("A timer has at most 2 channels");
+		return -ENOTSUP;
+	}
+
+	if ((channel == 1) && (config->pincfg->states->pin_cnt == 2)) {
+		am_hal_timer_output_config(config->pincfg->states->pins[1].pin_num,
+					   AM_HAL_TIMER_OUTPUT_TMR0_OUT1 + config->timer_num * 2);
+	} else {
+		am_hal_timer_output_config(config->pincfg->states->pins[0].pin_num,
+					   AM_HAL_TIMER_OUTPUT_TMR0_OUT0 + config->timer_num * 2);
 	}
 
 	if (flags & PWM_POLARITY_INVERTED) {
@@ -126,7 +142,7 @@ static int ambiq_timer_pwm_set_cycles(const struct device *dev, uint32_t channel
 	am_hal_timer_clear(config->timer_num);
 	am_hal_timer_compare0_set(config->timer_num, period_cycles);
 	am_hal_timer_compare1_set(config->timer_num, pulse_cycles);
-
+	am_hal_timer_enable(config->timer_num);
 	return 0;
 }
 
@@ -134,6 +150,11 @@ static int ambiq_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 					      uint64_t *cycles)
 {
 	struct pwm_ambiq_timer_data *data = dev->data;
+
+	if (channel > 1) {
+		LOG_ERR("A timer has at most 2 channels");
+		return -ENOTSUP;
+	}
 
 	/* cycles of the timer clock */
 	*cycles = (uint64_t)data->cycles;
@@ -160,15 +181,9 @@ static int ambiq_timer_pwm_init(const struct device *dev)
 	pwm_timer_config.eInputClock = config->clock_sel;
 	data->cycles = get_clock_cycles(config->clock_sel);
 
-	am_hal_timer_output_config(config->pincfg->states->pins->pin_num,
-				   AM_HAL_TIMER_OUTPUT_TMR0_OUT0 + config->timer_num * 2);
-
 	am_hal_timer_config(config->timer_num, &pwm_timer_config);
-
-	am_hal_timer_clear(config->timer_num);
-	am_hal_timer_compare0_set(config->timer_num, 0);
-	am_hal_timer_compare1_set(config->timer_num, 1);
-
+	am_hal_timer_clear_stop(config->timer_num);
+	am_hal_timer_disable(config->timer_num);
 	return 0;
 }
 

@@ -20,10 +20,14 @@ config PDM_AMBIQ_HANDLE_CACHE
 	help
 	  Disable this if cache has been handled in upper layers.
 
-config PDM_AMBIQ_BUFFER_ALIGNMENT
-	int "Set the PDM DMA TCB buffer alignment"
-	default DCACHE_LINE_SIZE if DCACHE
+config PDM_AMBIQ_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
 	help
-	  PDM buffer should be 32bytes aligned when placed in cacheable region.
+	Set the number of RX blocks (queue length) used for buffering incoming PDM data.
+	Increasing this value can help prevent data loss in high-throughput scenarios,
+	but will use more memory. Decreasing it reduces memory usage but may risk
+	overruns if the system cannot process data quickly enough. Typical values
+	range from 2 to 8 depending on application requirements.
 
 endif

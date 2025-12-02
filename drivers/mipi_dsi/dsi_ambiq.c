@@ -13,7 +13,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
-
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <am_mcu_apollo.h>
 #include <nema_dc_regs.h>
 #include <nema_dc_hal.h>
@@ -79,6 +80,8 @@ static int mipi_dsi_ambiq_attach(const struct device *dev, uint8_t channel,
 		ui32FreqTrim = config->phy_clock / 24000000;
 	}
 
+	(void)pm_device_runtime_get(dev);
+
 	if (am_hal_dsi_para_config(mdev->data_lanes, config->dbi_width, ui32FreqTrim, true) != 0) {
 		LOG_ERR("DSI config failed!\n");
 		return -EFAULT;
@@ -122,6 +125,8 @@ static int mipi_dsi_ambiq_attach(const struct device *dev, uint8_t channel,
 
 	nemadc_configure(&data->dc_config);
 
+	(void)pm_device_runtime_put(dev);
+
 	data->dc_layer.resx = data->dc_config.ui16ResX;
 	data->dc_layer.resy = data->dc_config.ui16ResY;
 	data->dc_layer.buscfg = 0;
@@ -146,6 +151,8 @@ static ssize_t mipi_dsi_ambiq_transfer(const struct device *dev, uint8_t channel
 	ssize_t len = 0;
 	uint8_t *pointer;
 	int ret = 0;
+
+	(void)pm_device_runtime_get(dev);
 
 	switch (msg->type) {
 	case MIPI_DSI_DCS_READ:
@@ -212,8 +219,10 @@ static ssize_t mipi_dsi_ambiq_transfer(const struct device *dev, uint8_t channel
 		break;
 	default:
 		LOG_ERR("Unsupported message type (%d)", msg->type);
-		return -ENOTSUP;
+		break;
 	}
+
+	(void)pm_device_runtime_put(dev);
 
 	if (ret < 0) {
 		LOG_ERR("Failed with error code %d", ret);
@@ -245,42 +254,100 @@ static int mipi_dsi_ambiq_init(const struct device *dev)
 	am_hal_dsi_register_external_vdd18_callback(mipi_dsi_external_vdd18_switch);
 #endif
 
-	am_hal_dsi_init();
-
-	am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISP);
-
-	if (nemadc_init() != 0) {
-		LOG_ERR("DC init failed!\n");
+	ret = am_hal_dsi_init();
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("DSI init failed!\n");
 		return -EFAULT;
 	}
 
+	am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISP);
+
+	ret = nemadc_init();
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("DC init failed!\n");
+		return -EFAULT;
+	}
+#ifdef CONFIG_PM_DEVICE
+	/*
+	 * To work around software limitations, it causes logic abnormal
+	 * if we don't update HAL when PM enabled.
+	 */
+	ret = am_hal_dsi_para_config(1, 16, AM_HAL_DSI_FREQ_TRIM_X20, true);
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("DSI config failed!\n");
+		return -EFAULT;
+	}
+#endif
 	config->irq_config_func(dev);
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int mipi_dsi_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		LOG_DBG("Suspending MIPI-DSI device");
+		ret = am_hal_dsi_power_control(AM_HAL_SYSCTRL_DEEPSLEEP, true);
+		if (ret != AM_HAL_STATUS_SUCCESS) {
+			LOG_ERR("Failed to power down DSI : %d", ret);
+			return -EIO;
+		}
+		ret = nemadc_power_control(AM_HAL_SYSCTRL_DEEPSLEEP, true);
+		if (ret != AM_HAL_STATUS_SUCCESS) {
+			LOG_ERR("Failed to power down DC : %d", ret);
+			return -EIO;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		LOG_DBG("Resuming MIPI-DSI device");
+		ret = nemadc_power_control(AM_HAL_SYSCTRL_WAKE, true);
+		if (ret != AM_HAL_STATUS_SUCCESS) {
+			LOG_ERR("Failed to power on DC : %d", ret);
+			return -EIO;
+		}
+		ret = am_hal_dsi_power_control(AM_HAL_SYSCTRL_WAKE, true);
+		if (ret != AM_HAL_STATUS_SUCCESS) {
+			LOG_ERR("Failed to power on DSI : %d", ret);
+			return -EIO;
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 /*
  * Ambiq DC interrupt service routine
  */
 extern void am_disp_isr(void);
 
-#define AMBIQ_MIPI_DSI_DEVICE(id)                                                                  \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static void disp_##id##_irq_config_func(const struct device *dev)                          \
+#define AMBIQ_MIPI_DSI_DEVICE(n)                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void disp_##n##_irq_config_func(const struct device *dev)                           \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), am_disp_isr,              \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), am_disp_isr,                \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
-	static struct mipi_dsi_ambiq_data ambiq_dsi_data_##id;                                     \
-	static const struct mipi_dsi_ambiq_config ambiq_dsi_config_##id = {                        \
-		.dbi_width = DT_INST_PROP(id, dbi_width),                                          \
-		.phy_clock = DT_INST_PROP(id, phy_clock),                                          \
-		.disp_te = DT_INST_PROP(id, disp_te),                                              \
-		.te_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-		.irq_config_func = disp_##id##_irq_config_func,                                    \
+	static struct mipi_dsi_ambiq_data ambiq_dsi_data_##n;                                      \
+	static const struct mipi_dsi_ambiq_config ambiq_dsi_config_##n = {                         \
+		.dbi_width = DT_INST_PROP(n, dbi_width),                                           \
+		.phy_clock = DT_INST_PROP(n, phy_clock),                                           \
+		.disp_te = DT_INST_PROP(n, disp_te),                                               \
+		.te_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.irq_config_func = disp_##n##_irq_config_func,                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &mipi_dsi_ambiq_init, NULL, &ambiq_dsi_data_##id,                \
-			      &ambiq_dsi_config_##id, POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY,  \
-			      &dsi_ambiq_api);
+	PM_DEVICE_DT_INST_DEFINE(n, mipi_dsi_ambiq_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(n, &mipi_dsi_ambiq_init, PM_DEVICE_DT_INST_GET(n),                   \
+			      &ambiq_dsi_data_##n, &ambiq_dsi_config_##n, POST_KERNEL,             \
+			      CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_ambiq_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_MIPI_DSI_DEVICE)

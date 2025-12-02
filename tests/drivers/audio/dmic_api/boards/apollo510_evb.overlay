@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic-dev = &pdm0;
+	};
+};
+
+&pdm0 {
+	status = "okay";
+};

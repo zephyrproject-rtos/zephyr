@@ -22,6 +22,7 @@ tests:
     harness: ztest
     platform_allow:
       - apollo3p_evb
+      - apollo4p_evb
       - apollo510_evb
     extra_configs:
       - CONFIG_MSPI_AMBIQ_CONTROLLER=y

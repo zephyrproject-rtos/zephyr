@@ -75,6 +75,7 @@ child-binding:
           An array of pins sharing the same group properties. Each
           element of the array is an integer constructed from the
           pin number and the alternative function of the pin.
+
       drive-strength:
         type: string
         enum:
@@ -82,10 +83,25 @@ child-binding:
           - "0.5"
           - "0.75"
           - "1.0"
-        default: "0.1"
         description: |
-          The drive strength of a pin, relative to full-driver strength.
+          The drive strength of a normal pad pin, relative to full-driver strength.
           The default value is 0.1, which is the reset value.
+
+      drive-strength-hs:
+        type: string
+        enum:
+          - "0.12"
+          - "0.25"
+          - "0.37"
+          - "0.5"
+          - "0.63"
+          - "0.75"
+          - "0.88"
+          - "1.0"
+        description: |
+          The drive strength of a high speed pad pin, relative to full-driver strength.
+          The default value is 0.1, which is the reset value.
+
       ambiq,pull-up-ohms:
         type: int
         enum:

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	/delete-node/ sram0;
+	/delete-node/ sram_no_cache;
+};
+
+&rtc0 {
+	status = "okay";
+};
+
+&stimer0 {
+	clk-source = <6>;
+};

@@ -1,0 +1,229 @@
+/*
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &co5300;
+	};
+
+	aliases {
+		psram0 = &aps256n;
+		flash0 = &is25wx064;
+	};
+};
+
+&pinctrl {
+	/* Node with pin configuration for default state */
+	/omit-if-no-ref/dc_te_default: dc_te_default {
+		group1 {
+			/* Mappings: DISP_TE -> GPIO33*/
+			pinmux = <DISP_TE_P33>;
+		};
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <240000000>;	/*The frequency should be a multiple of 12MHz.*/
+	/*disp-te;*/
+	pinctrl-0 = <&dc_te_default>;
+	pinctrl-names = "default";
+	/*apollo510_evb designed with a loadswitch to control power Vdd18.*/
+	vdd18-gpios = <&gpio96_127 8 (GPIO_PULL_DOWN)>;
+
+	co5300: co5300@0 {
+		status = "okay";
+		compatible = "chipone,co5300";
+		reset-gpios = <&gpio0_31 29 (GPIO_PULL_UP)>;
+		reg = <0x0>;
+		data-lanes = <1>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		rotation = <0>;
+		mode-flags = <0>;
+		width = <228>;	/*Its value should be an integer multiple of 4.*/
+		hfp = <4>;	/*Please use this recommended value.*/
+		hbp = <10>;	/*Please use this recommended value.*/
+		hsync = <10>;	/*Please use this recommended value.*/
+		height = <228>;	/**/
+		vfp = <10>;	/*Please use this recommended value.*/
+		vbp = <50>;	/*Please use this recommended value.*/
+		vsync = <10>;	/*Please use this recommended value.*/
+	};
+};
+
+&mspi_aps256n {
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-1 = <&mspi0_sleep>;
+	pinctrl-2 = <&mspi0_psram>;
+	pinctrl-names = "default","sleep","psram";
+	status = "okay";
+
+	ce-gpios = <&gpio32_63 25 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = ".ambiq_dma_buff";
+	cmdq-buffer-size = <256>;
+
+	ambiq,apmemory;
+	dqs-support;
+
+	aps256n: aps_z8@0 {
+		compatible = "ambiq,mspi-device", "mspi-aps-z8";
+		size = <DT_SIZE_M(256)>;
+		reg = <0>;
+		status = "okay";
+		mspi-max-frequency = <48000000>;
+		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
+		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+		mspi-hardware-ce-num = <0>;
+		mspi-dqs-enable;
+		read-command = <0x20>;
+		write-command = <0xA0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <3>;
+		tx-dummy = <3>;
+		xip-config = <1 0 DT_SIZE_M(32) 0>;
+		ce-break-config = <1024 2>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <3 3 1 0 0 0 16>;
+		zephyr,pm-device-runtime-auto;
+	};
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-1 = <&mspi1_sleep>;
+	pinctrl-2 = <&mspi1_flash>;
+	pinctrl-names = "default","sleep","flash";
+	status = "okay";
+
+	ce-gpios = <&gpio32_63 24 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = ".ambiq_dma_buff";
+	cmdq-buffer-size = <256>;
+
+	dqs-support;
+
+	is25wx064: is25wx064@0 {
+		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		status = "okay";
+		mspi-max-frequency = <96000000>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL_1_8_8";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-dqs-enable;
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xCC>;
+		write-command = <0x8E>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <16>;
+		tx-dummy = <0>;
+		xip-config = <1 0 DT_SIZE_M(8) 0>;
+		ce-break-config = <0 0>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <0 16 1 0 0 5 20>;
+	};
+};
+
+&pinctrl {
+	mspi0_sleep: mspi0_sleep{
+		group1 {
+			pinmux = <GPIO_P64>,
+				 <GPIO_P65>,
+				 <GPIO_P66>,
+				 <GPIO_P67>,
+				 <GPIO_P68>,
+				 <GPIO_P69>,
+				 <GPIO_P70>,
+				 <GPIO_P71>,
+				 <GPIO_P72>,
+				 <GPIO_P73>,
+				 <GPIO_P37>,
+				 <GPIO_P38>,
+				 <GPIO_P39>,
+				 <GPIO_P40>,
+				 <GPIO_P41>,
+				 <GPIO_P42>,
+				 <GPIO_P43>,
+				 <GPIO_P44>,
+				 <GPIO_P45>,
+				 <GPIO_P57>;
+		};
+	};
+	mspi0_psram: mspi0_psram{
+		group1 {
+			pinmux = <MSPI0_0_P64>,
+				 <MSPI0_1_P65>,
+				 <MSPI0_2_P66>,
+				 <MSPI0_3_P67>,
+				 <MSPI0_4_P68>,
+				 <MSPI0_5_P69>,
+				 <MSPI0_6_P70>,
+				 <MSPI0_7_P71>,
+				 <MSPI0_8_P72>,
+				 <MSPI0_9_P73>,
+				 <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>,
+				 <MSPI1_8_P45>;
+			drive-strength = "1.0";
+		};
+		group2 {
+			pinmux = <NCE57_P57>;
+			drive-strength = "0.5";
+			ambiq,nce-src = <32>;
+		};
+	};
+	mspi1_sleep: mspi1_sleep{
+		group1 {
+			pinmux = <GPIO_P37>,
+				 <GPIO_P38>,
+				 <GPIO_P39>,
+				 <GPIO_P40>,
+				 <GPIO_P41>,
+				 <GPIO_P42>,
+				 <GPIO_P43>,
+				 <GPIO_P44>,
+				 <GPIO_P45>,
+				 <GPIO_P46>,
+				 <GPIO_P56>;
+		};
+	};
+	mspi1_flash: mspi1_flash{
+		group1 {
+			pinmux = <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>,
+				 <MSPI1_8_P45>,
+				 <MSPI1_9_P46>;
+			drive-strength = "1.0";
+		};
+		group3 {
+			pinmux = <NCE56_P56>;
+			drive-strength = "0.5";
+			ambiq,nce-src = <34>;
+		};
+	};
+};

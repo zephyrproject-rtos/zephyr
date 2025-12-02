@@ -10,9 +10,9 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
-#include <am_mcu_apollo.h>
-
 #include <zephyr/logging/log.h>
+/* ambiq-sdk includes */
+#include <soc.h>
 
 LOG_MODULE_REGISTER(ambiq_ctimer_pwm, CONFIG_PWM_LOG_LEVEL);
 
@@ -67,10 +67,8 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 		ret = 32;
 		break;
 	case 12:
-		ret = 1000;
-		break;
 	case 13:
-		ret = 116;
+		ret = 1;
 		break;
 	case 14:
 		ret = 100;

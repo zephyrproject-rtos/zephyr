@@ -69,6 +69,8 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - apollo510_evb
+      - apollo510_eb
     harness_config:
       fixture: external_flash
   drivers.flash.common.no_explicit_erase.nrf54h:

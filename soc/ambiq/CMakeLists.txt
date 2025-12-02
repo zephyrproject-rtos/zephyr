@@ -6,6 +6,8 @@ add_subdirectory(${SOC_SERIES})
 
 zephyr_include_directories(.)
 
+zephyr_sources_ifdef(CONFIG_PM_DEVICE_RUNTIME_DISABLE_CONSOLE pm_runtime_console.c)
+
 if(CONFIG_SOC_AMBIQ_BT_SUPPORTED)
   if(CONFIG_SOC_APOLLO4P)
     if(CONFIG_AMBIQ_COMPONENT_USE_BT)

@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &nt35510;
+	};
+};
+
+&pinctrl {
+	/* Node with pin configuration for MIPI DBI Type-B interface */
+	/omit-if-no-ref/mipi_dbi_default: mipi_dbi_default {
+		group1 {
+			/* Bus controls & data pins D0-D15 */
+			pinmux = <DBIB_CSX_P209>,
+				 <DBIB_DCX_P210>,
+				 <DBIB_WRX_P211>,
+				 <DBIB_RDX_P212>,
+				 <DBIB_D0_P213>,
+				 <DBIB_D1_P214>,
+				 <DBIB_D2_P215>,
+				 <DBIB_D3_P216>,
+				 <DBIB_D4_P217>,
+				 <DBIB_D5_P218>,
+				 <DBIB_D6_P219>,
+				 <DBIB_D7_P220>,
+				 <DBIB_D8_P148>,
+				 <DBIB_D9_P149>,
+				 <DBIB_D10_P150>,
+				 <DBIB_D11_P151>,
+				 <DBIB_D12_P152>,
+				 <DBIB_D13_P153>,
+				 <DBIB_D14_P154>,
+				 <DBIB_D15_P155>;
+			drive-strength = "0.5";
+		};
+	};
+};
+
+&mipi_dbi {
+	status = "okay";
+	pinctrl-0 = <&mipi_dbi_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <30303030>;	/*unit Hz*/
+	hactive = <480>;	/*its value depends on display size*/
+	hfp = <1>;	/*Please use this recommended value.*/
+	hbp = <1>;	/*Please use this recommended value.*/
+	hsync = <1>;	/*Please use this recommended value.*/
+	vactive = <800>;	/*its value depends on display size*/
+	vfp = <1>;	/*Please use this recommended value.*/
+	vbp = <1>;	/*Please use this recommended value.*/
+	vsync = <1>;	/*Please use this recommended value.*/
+
+	nt35510: nt35510@0 {
+		status = "okay";
+		compatible = "novatek,nt35510";
+		reg = <0>;
+
+		/* Display properties */
+		width = <480>;
+		height = <800>;
+		rotation = <0>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+		/* MIPI DBI Type-B configuration */
+		mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
+		mipi-max-frequency = <30303030>; /* unused */
+		te-mode = "MIPI_DBI_TE_NO_EDGE"; /* unused */
+		te-delay = <0>; /* unused */
+
+		bl-gpios = <&gpio0_31 19 GPIO_PULL_DOWN>; /* Backlight */
+		reset-gpios = <&gpio128_159 8 GPIO_PULL_DOWN>; /* RST */
+	};
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio128_159 {
+	status = "okay";
+};

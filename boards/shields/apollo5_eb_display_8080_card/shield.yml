@@ -1,0 +1,6 @@
+shields:
+  - name: apollo5_eb_display_8080_card
+    full_name: MIPI-DBI Display Shield for Apollo510 Engineering Board
+    vendor: ambiq
+    supported_features:
+      - display

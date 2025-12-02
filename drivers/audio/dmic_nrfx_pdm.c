@@ -674,6 +674,7 @@ static void init_clock_manager(const struct device *dev)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
+
 	drv_data->audiopll_dev = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
 #elif CONFIG_CLOCK_CONTROL_NRF
 	clock_control_subsys_t subsys;

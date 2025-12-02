@@ -98,9 +98,9 @@ static inline int clk_enable_arm_pl011(const struct device *dev, uint32_t clk)
 /*
  * Conditionally define power management (PM) macros.
  */
-#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 
-/* For Apollo 3x and 5x, enable PM by defining macros that create and retrieve the PM device */
+/* For Apollo 3x, 4x and 5x, enable PM by defining macros that create and retrieve the PM device */
 #define PM_INST_DEFINE(n) PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);
 #define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
 

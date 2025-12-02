@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sharp LS014B7DD01 display
+
+compatible: "sharp,ls014b7dd01"
+
+include: ["display-controller.yaml", "pinctrl-device.yaml", "jdi-device.yaml"]
+
+properties:
+  pwms:
+    type: phandle-array
+    description: |
+      PWM specifiers for VA and VCOM signals. Two PWM channels are required:
+      - VA (voltage A) signal
+      - VCOM (common voltage) signal
+
+  pwm-names:
+    type: string-array
+    description: |
+      PWM signal names. Must contain "va" and "vcom" in that order.

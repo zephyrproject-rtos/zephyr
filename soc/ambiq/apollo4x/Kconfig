@@ -15,15 +15,5 @@ config SOC_SERIES_APOLLO4X
 	select PINCTRL
 	select SOC_EARLY_INIT_HOOK
 
-config SOC_AMBIQ_DMA_BUFF_LOCATION
-	hex "Byte offset to SRAM_BASE_ADDRESS"
-	default 0x50000
-	help
-	  This option specifies the cacheable DMA buffers' start address
-
-config SOC_AMBIQ_DMA_BUFF_ALIGNMENT
-	int "Byte alignment of the DMA buffer"
-	default DCACHE_LINE_SIZE if DCACHE
-	default 1
-	help
-	  This option specifies the DMA buffers' alignment
+config SOC_APOLLO4P_BLUE
+	select SOC_AMBIQ_BT_SUPPORTED

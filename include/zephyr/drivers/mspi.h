@@ -870,6 +870,56 @@ static inline int mspi_register_callback(const struct device *controller,
 /** @} */
 
 /**
+ * @addtogroup mspi_util
+ * @{
+ */
+#include <zephyr/sys/util_macro.h>
+
+/**
+ * @brief Declare the optional XIP config in peripheral driver.
+ */
+#define MSPI_XIP_CFG_STRUCT_DECLARE(_name)                                                        \
+	IF_ENABLED(CONFIG_MSPI_XIP, (struct mspi_xip_cfg _name;))
+
+/**
+ * @brief Declare the optional XIP base address in peripheral driver.
+ */
+#define MSPI_XIP_BASE_ADDR_DECLARE(_name)                                                         \
+	IF_ENABLED(CONFIG_MSPI_XIP, (uint32_t _name;))
+
+/**
+ * @brief Declare the optional scramble config in peripheral driver.
+ */
+#define MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(_name)                                                   \
+	IF_ENABLED(CONFIG_MSPI_SCRAMBLE, (struct mspi_scramble_cfg _name;))
+
+/**
+ * @brief Declare the optional timing config in peripheral driver.
+ */
+#define MSPI_TIMING_CFG_STRUCT_DECLARE(_name)                                                     \
+	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_cfg _name;))
+
+/**
+ * @brief Declare the optional timing parameter in peripheral driver.
+ */
+#define MSPI_TIMING_PARAM_DECLARE(_name)                                                          \
+	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_param _name;))
+
+/**
+ * @brief Initialize the optional config structure in peripheral driver.
+ */
+#define MSPI_OPTIONAL_CFG_STRUCT_INIT(code, _name, _object)                                       \
+	IF_ENABLED(code, (._name = _object,))
+
+/**
+ * @brief Initialize the optional XIP base address in peripheral driver.
+ */
+#define MSPI_XIP_BASE_ADDR_INIT(_name, _bus)                                                      \
+	IF_ENABLED(CONFIG_MSPI_XIP, (._name = DT_REG_ADDR_BY_IDX(_bus, 1),))
+
+/** @} */
+
+/**
  * @}
  */
 #include <zephyr/syscalls/mspi.h>

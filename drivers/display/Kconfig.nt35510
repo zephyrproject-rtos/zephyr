@@ -1,11 +1,13 @@
 # Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
+# Copyright (c) 2025 Ambiq Micro Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config NT35510
 	bool "NT35510 display driver"
 	default y
-	depends on DT_HAS_FRIDA_NT35510_ENABLED
-	select MIPI_DSI
+	depends on DT_HAS_FRIDA_NT35510_ENABLED || DT_HAS_NOVATEK_NT35510_ENABLED
+	select MIPI_DSI if $(dt_compat_on_bus,$(DT_COMPAT_FRIDA_NT35510),mipi-dsi)
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_NOVATEK_NT35510),mipi-dbi)
 	help
 	  Enable driver for NT35510 display driver.
 

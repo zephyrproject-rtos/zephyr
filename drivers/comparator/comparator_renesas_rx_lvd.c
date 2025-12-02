@@ -158,6 +158,7 @@ static int renesas_rx_pin_set_cmpa(const struct device *dev)
 	if (config->channel == 0) {
 		if (DT_NODE_HAS_PROP(LVD0_NODE, pinctrl_0)) {
 			PINCTRL_DT_DEFINE(LVD0_NODE);
+
 			pcfg = PINCTRL_DT_DEV_CONFIG_GET(LVD0_NODE);
 		} else {
 			LOG_ERR("No pinctrl-0 property found in the device tree");
@@ -166,6 +167,7 @@ static int renesas_rx_pin_set_cmpa(const struct device *dev)
 	} else {
 		if (DT_NODE_HAS_PROP(LVD1_NODE, pinctrl_0)) {
 			PINCTRL_DT_DEFINE(LVD1_NODE);
+
 			pcfg = PINCTRL_DT_DEV_CONFIG_GET(LVD1_NODE);
 		} else {
 			LOG_ERR("No pinctrl_0 property found in the device tree");

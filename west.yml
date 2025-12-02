@@ -40,7 +40,7 @@ manifest:
     - name: ambiqhal_ambiq
       remote: github_ambiqmicro
       path: modules/hal/ambiq
-      revision: 07ea333e6f1298dfcea986b4b21fdf9a006db32c
+      revision: 6ffdd9f8a411dea2af77e05e01e745b9b12fc118
       groups:
         - hal
     - name: babblesim_base
@@ -221,7 +221,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: c2279acd1e06aa17926cc8bd89812be691dd005f
+      revision: 6d6ab91d5cc71c872353af1957d19f3d930df0fd
       path: modules/hal/nxp
       groups:
         - hal
@@ -326,10 +326,10 @@ manifest:
     - name: lvgl
       remote: github_ambiqmicro
       repo-path: LVGL
-      revision: 7fa075871f2dd746978d0d69bf1623fb689e1219
+      revision: 11332c818b495bf85d1a0ce567ede4f36fcfa549
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 85440ef5fffa95d0e9971e9163719189cf34d979
+      revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
       path: modules/crypto/mbedtls
       groups:
         - crypto

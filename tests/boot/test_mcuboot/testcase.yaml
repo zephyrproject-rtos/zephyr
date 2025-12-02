@@ -58,6 +58,8 @@ tests:
       - stm32h573i_dk
       - stm32h573i_dk/stm32h573xx/ext_flash_app
       - sam_e54_xpro
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
@@ -67,6 +69,8 @@ tests:
       - stm32h750b_dk/stm32h750xx/ext_flash_app
       - stm32h573i_dk
       - stm32h573i_dk/stm32h573xx/ext_flash_app
+      - apollo510_evb
+      - apollo510_eb
     extra_configs:
       - CONFIG_ASSERT=y
   bootloader.mcuboot.swap_using_move:
@@ -78,6 +82,8 @@ tests:
       - stm32h750b_dk/stm32h750xx/ext_flash_app
       - stm32h573i_dk
       - stm32h573i_dk/stm32h573xx/ext_flash_app
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - frdm_k64f
       - nrf5340dk/nrf5340/cpuapp

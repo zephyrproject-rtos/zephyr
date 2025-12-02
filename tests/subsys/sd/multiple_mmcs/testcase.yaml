@@ -1,0 +1,23 @@
+common:
+  depends_on: sdhc
+  tags:
+    - drivers
+    - sdhc
+    - kernel
+tests:
+  sd.multiple_mmc:
+    harness: ztest
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("zephyr,mmc-disk")
+            and dt_alias_exists("sdhc1")
+    tags: sdhc
+    min_ram: 32
+    platform_allow:
+      - apollo510_eb
+  sd.multiple_mmc.build_only:
+    harness: ztest
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("zephyr,mmc-disk")
+            and dt_alias_exists("sdhc1")
+    tags: sdhc
+    min_ram: 32
+    platform_allow: apollo510_evb
+    build_only: true # Only support in Apollo EB board

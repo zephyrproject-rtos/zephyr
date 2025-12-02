@@ -10,7 +10,11 @@
 #define RTC_ALARM_FIELDS                                                                           \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR)
 
+#if CONFIG_SOC_FAMILY_AMBIQ
+static const struct device *rtc = DEVICE_DT_GET(DT_NODELABEL(rtc0));
+#else
 static const struct device *rtc = DEVICE_DT_GET(DT_NODELABEL(rtc));
+#endif
 
 static k_tid_t my_tid;
 
@@ -54,10 +58,38 @@ static const struct rtc_time alarm_time = {
 	.tm_nsec = 0,
 };
 
+#if CONFIG_SOC_FAMILY_AMBIQ
+void normalize_rtc_time(struct rtc_time *t)
+{
+	if (t->tm_sec >= 60) {
+		t->tm_min += t->tm_sec / 60;
+		t->tm_sec %= 60;
+	}
+	if (t->tm_min >= 60) {
+		t->tm_hour += t->tm_min / 60;
+		t->tm_min %= 60;
+	}
+	if (t->tm_hour >= 24) {
+		t->tm_mday += t->tm_hour / 24;
+		t->tm_hour %= 24;
+	}
+}
+#endif
+
 static void wakeup_cb(const struct device *dev, uint16_t id, void *user_data)
 {
 	printk("Wake up by alarm.\n");
+#if CONFIG_SOC_FAMILY_AMBIQ
+	struct rtc_time next_time;
+	uint16_t mask = RTC_ALARM_FIELDS;
+
+	rtc_get_time(dev, &next_time);
+	next_time.tm_sec += 5;
+	normalize_rtc_time(&next_time);
+	rtc_alarm_set_time(dev, id, mask, &next_time);
+#else
 	k_thread_abort(my_tid);
+#endif
 }
 
 int main(void)
@@ -87,8 +119,12 @@ int main(void)
 
 	k_thread_join(my_tid, K_FOREVER);
 
+#if CONFIG_SOC_FAMILY_AMBIQ
+	k_sleep(K_FOREVER);
+#else
 	while (1) {
 		arch_nop();
 	}
+#endif
 	return 0;
 }

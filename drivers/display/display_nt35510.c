@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
+ * Copyright (c) 2025 Ambiq Micro Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -7,13 +8,14 @@
  * https://github.com/STMicroelectronics/stm32-nt35510/blob/main/nt35510.c
  */
 
-#define DT_DRV_COMPAT frida_nt35510
+/* Support both frida,nt35510 (MIPI-DSI) and novatek,nt35510 (MIPI-DBI) */
 
 #include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
@@ -50,13 +52,18 @@ LOG_MODULE_REGISTER(nt35510, CONFIG_DISPLAY_LOG_LEVEL);
 #define NT35510_800X480_VFP   NT35510_480X800_HFP   /* Vertical front porch       */
 
 struct nt35510_config {
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(frida_nt35510, mipi_dsi))
 	const struct device *mipi_dsi;
+	uint8_t data_lanes;
+	uint8_t channel;
+#elif (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(novatek_nt35510, mipi_dbi))
+	const struct device *mipi_dbi;
+	const struct mipi_dbi_config dbi_config;
+#endif
 	const struct gpio_dt_spec reset;
 	const struct gpio_dt_spec backlight;
-	uint8_t data_lanes;
 	uint16_t width;
 	uint16_t height;
-	uint8_t channel;
 	uint16_t rotation;
 };
 
@@ -65,6 +72,8 @@ struct nt35510_data {
 	enum display_orientation orientation;
 	uint16_t xres;
 	uint16_t yres;
+	uint16_t xstart;
+	uint16_t ystart;
 };
 
 struct nt35510_init_cmd {
@@ -124,6 +133,17 @@ static const struct nt35510_init_cmd init_cmds[] = {
 	/* Frida LCD MFR specific */
 	{.reg = 0xba, .cmd_len = 1, .cmd = {0x01}}};
 
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(novatek_nt35510, mipi_dbi))
+static const struct nt35510_init_cmd portrait_cmds[] = {
+	{.reg = NT35510_CMD_MADCTL, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = NT35510_CMD_CASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x01, 0xE0}},
+	{.reg = NT35510_CMD_RASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x03, 0x20}}};
+
+static const struct nt35510_init_cmd landscape_cmds[] = {
+	{.reg = NT35510_CMD_MADCTL, .cmd_len = 1, .cmd = {0x60}},
+	{.reg = NT35510_CMD_CASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x03, 0x20}},
+	{.reg = NT35510_CMD_RASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x01, 0xE0}}};
+#else
 static const struct nt35510_init_cmd portrait_cmds[] = {
 	{.reg = NT35510_CMD_MADCTL, .cmd_len = 1, .cmd = {0x00}},
 	{.reg = NT35510_CMD_CASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x01, 0xdf}},
@@ -133,6 +153,7 @@ static const struct nt35510_init_cmd landscape_cmds[] = {
 	{.reg = NT35510_CMD_MADCTL, .cmd_len = 1, .cmd = {0x60}},
 	{.reg = NT35510_CMD_CASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x03, 0x1f}},
 	{.reg = NT35510_CMD_RASET, .cmd_len = 4, .cmd = {0x00, 0x00, 0x01, 0xdf}}};
+#endif
 
 static const struct nt35510_init_cmd turn_on_cmds[] = {
 	/* Content Adaptive Backlight Control section start */
@@ -158,11 +179,19 @@ static int nt35510_write_reg(const struct device *dev, uint8_t reg, const uint8_
 	int ret;
 	const struct nt35510_config *cfg = dev->config;
 
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(frida_nt35510, mipi_dsi))
 	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, reg, buf, len);
 	if (ret < 0) {
 		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
 		return ret;
 	}
+#elif (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(novatek_nt35510, mipi_dbi))
+	ret = mipi_dbi_command_write(cfg->mipi_dbi, &cfg->dbi_config, reg, buf, len);
+	if (ret < 0) {
+		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
+		return ret;
+	}
+#endif
 	return 0;
 }
 
@@ -266,6 +295,56 @@ static int nt35510_set_brightness(const struct device *dev, const uint8_t bright
 	return nt35510_write_reg(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &brightness, 1);
 }
 
+static int nt35510_write(const struct device *dev, uint16_t x, uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
+{
+	const struct nt35510_config *cfg = dev->config;
+	struct nt35510_data *data = dev->data;
+	uint8_t cmd[4];
+	int ret;
+
+	/* Set column address */
+	if (data->xstart != x || data->xres != desc->width) {
+		data->xstart = x;
+		data->xres = desc->width;
+
+		cmd[0] = data->xstart >> 8U;
+		cmd[1] = data->xstart & 0xFFU;
+		cmd[2] = (data->xstart + data->xres) >> 8U;
+		cmd[3] = (data->xstart + data->xres) & 0xFFU;
+		ret = nt35510_write_reg(dev, MIPI_DCS_SET_COLUMN_ADDRESS, cmd, 4);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	/* Set page address */
+	if (data->ystart != y || data->yres != desc->height) {
+		data->ystart = y;
+		data->yres = desc->height;
+
+		cmd[0] = data->ystart >> 8U;
+		cmd[1] = data->ystart & 0xFFU;
+		cmd[2] = (data->ystart + data->yres) >> 8U;
+		cmd[3] = (data->ystart + data->yres) & 0xFFU;
+		ret = nt35510_write_reg(dev, MIPI_DCS_SET_PAGE_ADDRESS, cmd, 4);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(frida_nt35510, mipi_dsi))
+	/* Send memory write command for DSI */
+	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, MIPI_DCS_WRITE_MEMORY_START, buf,
+				 desc->buf_size);
+#elif (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(novatek_nt35510, mipi_dbi))
+	/* Send memory write command for DBI */
+	ret = mipi_dbi_write_display(cfg->mipi_dbi, &cfg->dbi_config, buf,
+				     (struct display_buffer_descriptor *)desc, data->pixel_format);
+#endif
+
+	return ret;
+}
+
 static void nt35510_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -278,6 +357,9 @@ static void nt35510_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = data->orientation;
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(novatek_nt35510, mipi_dbi))
+	capabilities->screen_info = SCREEN_INFO_MONO_VTILED;
+#endif
 }
 
 static int nt35510_set_pixel_format(const struct device *dev,
@@ -295,6 +377,7 @@ static int nt35510_set_pixel_format(const struct device *dev,
 
 static int nt35510_check_id(const struct device *dev)
 {
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(frida_nt35510, mipi_dsi))
 	const struct nt35510_config *cfg = dev->config;
 	uint8_t id = 0;
 	int ret;
@@ -309,6 +392,7 @@ static int nt35510_check_id(const struct device *dev)
 		LOG_ERR("ID 0x%x, expected: 0x%x)", id, NT35510_ID);
 		return -EINVAL;
 	}
+#endif
 	return 0;
 }
 
@@ -316,7 +400,6 @@ static int nt35510_init(const struct device *dev)
 {
 	const struct nt35510_config *cfg = dev->config;
 	struct nt35510_data *data = dev->data;
-	struct mipi_dsi_device mdev;
 	int ret;
 
 	if (cfg->reset.port) {
@@ -357,7 +440,9 @@ static int nt35510_init(const struct device *dev)
 		data->orientation = DISPLAY_ORIENTATION_ROTATED_270;
 	}
 
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(frida_nt35510, mipi_dsi))
 	/* Attach to MIPI-DSI host */
+	struct mipi_dsi_device mdev;
 	mdev.data_lanes = cfg->data_lanes;
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
@@ -381,7 +466,7 @@ static int nt35510_init(const struct device *dev)
 		LOG_ERR("MIPI-DSI attach failed! (%d)", ret);
 		return ret;
 	}
-
+#endif
 	ret = nt35510_check_id(dev);
 	if (ret) {
 		LOG_ERR("Panel ID check failed! (%d)", ret);
@@ -396,7 +481,7 @@ static int nt35510_init(const struct device *dev)
 
 	ret = nt35510_config(dev);
 	if (ret) {
-		LOG_ERR("DSI init sequence failed! (%d)", ret);
+		LOG_ERR("Display init sequence failed! (%d)", ret);
 		return ret;
 	}
 
@@ -413,27 +498,78 @@ static int nt35510_init(const struct device *dev)
 static DEVICE_API(display, nt35510_api) = {
 	.blanking_on = nt35510_blanking_on,
 	.blanking_off = nt35510_blanking_off,
+	.write = nt35510_write,
 	.set_brightness = nt35510_set_brightness,
 	.get_capabilities = nt35510_get_capabilities,
 	.set_pixel_format = nt35510_set_pixel_format,
 };
 
-#define NT35510_DEFINE(n)                                                                          \
-	static const struct nt35510_config nt35510_config_##n = {                                  \
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                            \
-		.backlight = GPIO_DT_SPEC_INST_GET_OR(n, bl_gpios, {0}),                           \
-		.data_lanes = DT_INST_PROP_BY_IDX(n, data_lanes, 0),                               \
-		.width = DT_INST_PROP(n, width),                                                   \
-		.height = DT_INST_PROP(n, height),                                                 \
-		.channel = DT_INST_REG_ADDR(n),                                                    \
-		.rotation = DT_INST_PROP(n, rotation),                                             \
+/* Define for frida,nt35510 (MIPI-DSI) */
+#define FRIDA_NT35510_DEFINE(node_id)                                                              \
+	static const struct nt35510_config frida_nt35510_config_##node_id = {                      \
+		.mipi_dsi = DEVICE_DT_GET(DT_BUS(node_id)),                                        \
+		.data_lanes = DT_PROP_BY_IDX(node_id, data_lanes, 0),                              \
+		.channel = DT_REG_ADDR(node_id),                                                   \
+		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
+		.backlight = GPIO_DT_SPEC_GET_OR(node_id, bl_gpios, {0}),                          \
+		.width = DT_PROP(node_id, width),                                                  \
+		.height = DT_PROP(node_id, height),                                                \
+		.rotation = DT_PROP(node_id, rotation),                                            \
 	};                                                                                         \
                                                                                                    \
-	static struct nt35510_data nt35510_data_##n = {                                            \
-		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+	static struct nt35510_data frida_nt35510_data_##node_id = {                                \
+		.pixel_format = DT_PROP(node_id, pixel_format),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,      \
-			      POST_KERNEL, CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
+	DEVICE_DT_DEFINE(node_id, &nt35510_init, NULL, &frida_nt35510_data_##node_id,              \
+			 &frida_nt35510_config_##node_id, POST_KERNEL,                             \
+			 CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
 
-DT_INST_FOREACH_STATUS_OKAY(NT35510_DEFINE)
+/* Define for novatek,nt35510 (MIPI-DBI) */
+/* mapping pixel-format to pixfmt */
+#define NT35510_GET_PANEL_PIXFMT(node_id)                                                          \
+	(DT_PROP(node_id, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888                              \
+		 ? (DT_PROP(node_id, pixel_format) != PANEL_PIXEL_FORMAT_ARGB_8888                 \
+			    ? (DT_PROP(node_id, pixel_format) != PANEL_PIXEL_FORMAT_RGB_565        \
+				       ? (DT_PROP(node_id, pixel_format) !=                        \
+							  PANEL_PIXEL_FORMAT_BGR_565               \
+						  ? 0                                              \
+						  : PIXEL_FORMAT_BGR_565)                          \
+				       : PIXEL_FORMAT_RGB_565)                                     \
+			    : PIXEL_FORMAT_ARGB_8888)                                              \
+		 : PIXEL_FORMAT_RGB_888)
+
+#define NT35510_GET_MIPI_DBI_PIXFMT(node_id)                                                       \
+	(DT_PROP(node_id, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888                              \
+		 ? (DT_PROP(node_id, pixel_format) != PANEL_PIXEL_FORMAT_RGB_565                   \
+			    ? 0                                                                    \
+			    : MIPI_DBI_MODE_RGB565)                                                \
+		 : MIPI_DBI_MODE_RGB888_1)
+
+#define NOVATEK_NT35510_DEFINE(node_id)                                                            \
+	static const struct nt35510_config novatek_nt35510_config_##node_id = {                    \
+		.mipi_dbi = DEVICE_DT_GET(DT_BUS(node_id)),                                        \
+		.dbi_config.mode = NT35510_GET_MIPI_DBI_PIXFMT(node_id) |                          \
+				   (DT_ENUM_IDX(node_id, mipi_mode) + 1),                          \
+		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
+		.backlight = GPIO_DT_SPEC_GET_OR(node_id, bl_gpios, {0}),                          \
+		.width = DT_PROP(node_id, width),                                                  \
+		.height = DT_PROP(node_id, height),                                                \
+		.rotation = DT_PROP(node_id, rotation),                                            \
+	};                                                                                         \
+                                                                                                   \
+	static struct nt35510_data novatek_nt35510_data_##node_id = {                              \
+		.pixel_format = NT35510_GET_PANEL_PIXFMT(node_id),                                 \
+		.xres = DT_PROP(node_id, width),                                                   \
+		.yres = DT_PROP(node_id, height),                                                  \
+		.xstart = 0,                                                                       \
+		.ystart = 0,                                                                       \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(node_id, &nt35510_init, NULL, &novatek_nt35510_data_##node_id,            \
+			 &novatek_nt35510_config_##node_id, POST_KERNEL,                           \
+			 CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
+
+/* Instantiate devices for frida,nt35510 */
+DT_FOREACH_STATUS_OKAY(frida_nt35510, FRIDA_NT35510_DEFINE)
+
+/* Instantiate devices for novatek,nt35510 */
+DT_FOREACH_STATUS_OKAY(novatek_nt35510, NOVATEK_NT35510_DEFINE)

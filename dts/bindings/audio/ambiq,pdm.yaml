@@ -19,13 +19,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  pdm-buffer-location:
-    type: string
-    description: |
-      Define PDM DMA buffer location section
-
-  pdm-buffer-size:
-    type: int
-    description: |
-      Define the PDM DMA buffer size in (4-byte) words

@@ -94,6 +94,21 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/renesas/dave2d/lv_draw_dave2d_triangle.c
     ${LVGL_DIR}/src/draw/renesas/dave2d/lv_draw_dave2d_utils.c
 
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_arc.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_border.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_box_shadow.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_buffer.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_fill.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_img.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_letter.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_line.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_mask_rect.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_private.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_triangle.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_vector_font.c
+    ${LVGL_DIR}/src/draw/ambiq/lv_draw_ambiq_vector.c
+
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend.c
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_al88.c
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_argb8888.c
@@ -310,6 +325,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/stdlib/builtin/lv_tlsf.c
     ${LVGL_DIR}/src/stdlib/clib/lv_string_clib.c
     ${LVGL_DIR}/src/stdlib/clib/lv_sprintf_clib.c
+    ${LVGL_DIR}/src/stdlib/clib/lv_mem_core_clib.c
 
     ${LVGL_DIR}/src/stdlib/lv_mem.c
 
@@ -324,7 +340,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/widgets/3dtexture/lv_3dtexture.c
     ${LVGL_DIR}/src/widgets/animimage/lv_animimage.c
     ${LVGL_DIR}/src/widgets/arc/lv_arc.c
-    ${LVGL_DIR}/src/widgets/arclabel/lv_arclabel.c
+    # ${LVGL_DIR}/src/widgets/arclabel/lv_arclabel.c
     ${LVGL_DIR}/src/widgets/bar/lv_bar.c
     ${LVGL_DIR}/src/widgets/button/lv_button.c
     ${LVGL_DIR}/src/widgets/buttonmatrix/lv_buttonmatrix.c
@@ -372,12 +388,6 @@ zephyr_library_sources(
 
     lvgl.c
     lvgl_display.c
-    lvgl_display_mono.c
-    lvgl_display_8bit.c
-    lvgl_display_16bit.c
-    lvgl_display_24bit.c
-    lvgl_display_32bit.c
-    lvgl_display_mono.c
     lvgl_zephyr_osal.c
 )
 

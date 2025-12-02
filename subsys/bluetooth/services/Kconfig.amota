@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2023 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_AMOTA
+	bool "AMOTA service"
+	help
+	  Enable Ambiq GATT AMOTA BLE service.
+
+if BT_AMOTA
+
+module = BT_AMOTA
+module-str = amota
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_AMOTA

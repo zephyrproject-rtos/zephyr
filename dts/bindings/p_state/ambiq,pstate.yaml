@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq CPU performance state
+
+compatible: "ambiq,pstate"
+
+include: zephyr,pstate.yaml
+
+properties:
+  ambiq,perf-mode:
+    type: int
+    required: true
+    description: |
+      MCU performance mode to use in this P-state. Use one of the
+      macros defined in ``dt-bindings/power/ambiq_power.h``.

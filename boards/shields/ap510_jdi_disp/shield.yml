@@ -1,0 +1,6 @@
+shields:
+  - name: ap510_jdi_disp
+    full_name: JDI Display Shield for Apollo510 Engineering Board
+    vendor: ambiq
+    supported_features:
+      - display

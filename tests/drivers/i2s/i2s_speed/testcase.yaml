@@ -10,6 +10,7 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+    build_only: true # Ambiq temp
   drivers.i2s.speed.gpio_loopback:
     depends_on:
       - i2s

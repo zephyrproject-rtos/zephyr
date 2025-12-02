@@ -11,6 +11,8 @@ config SOC_SERIES_APOLLO5X
 config SOC_APOLLO510
 	bool
 	select SOC_SERIES_APOLLO5X
+	help
+	  Apollo510
 
 config SOC_SERIES
 	default "apollo5x" if SOC_SERIES_APOLLO5X

@@ -492,7 +492,7 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 {
 	const struct flash_mspi_is25xX0xx_config *cfg  = flash->config;
 	struct flash_mspi_is25xX0xx_data         *data = flash->data;
-	int                                       ret;
+	int                                       ret  = 0;
 
 	acquire(flash);
 

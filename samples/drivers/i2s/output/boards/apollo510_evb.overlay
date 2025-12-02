@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &i2s0;
+	};
+};
+
+&i2s0 {
+	status = "okay";
+};

@@ -1,0 +1,16 @@
+shields:
+  - name: ap4_evb_disp_shield_rev1
+    full_name: Display Shield Rev1 for Apollo4p Evaluation Board
+    vendor: ambiq
+    supported_features:
+      - memc
+      - flash
+      - display
+
+  - name: ap4_evb_disp_shield_rev2
+    full_name: Display Shield Rev2 for Apollo4p Evaluation Board
+    vendor: ambiq
+    supported_features:
+      - memc
+      - flash
+      - display

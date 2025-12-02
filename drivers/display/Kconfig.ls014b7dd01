@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LS014B7DD01
+	bool "Sharp LS014B7DD01 display driver"
+	default y
+	depends on DT_HAS_SHARP_LS014B7DD01_ENABLED
+	select JDI
+	help
+	  Enable driver for Sharp LS014B7DD01 display.

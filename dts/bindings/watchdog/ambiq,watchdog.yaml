@@ -14,6 +14,21 @@ properties:
   clock-frequency:
     type: int
     required: true
+    description: |
+      WDT Clock Divider Selections.
+      For Apollo3 and Apollo4:
+      1 - AM_HAL_WDT_LFRC_CLK_1HZ
+      16 - AM_HAL_WDT_LFRC_CLK_16HZ
+      128 - AM_HAL_WDT_LFRC_CLK_128HZ
+      For Apollo510:
+      1 - AM_HAL_WDT_LFRC_DIV1K
+      16 - AM_HAL_WDT_LFRC_DIV64
+      128 - AM_HAL_WDT_LFRC_DIV8
+      32768 - AM_HAL_WDT_XTAL_HS
+      16384 - AM_HAL_WDT_XTAL_HS_DIV2
+      For Apollo510L:
+      14 - AM_HAL_WDT_LFRC_DIV64
+      112 - AM_HAL_WDT_LFRC_DIV8
 
   interrupts:
     required: true

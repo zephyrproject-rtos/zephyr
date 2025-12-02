@@ -624,7 +624,7 @@
 
 		mspi0: mspi@40060000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x40060000 0x400>,<0x14000000 0x4000000>;
+			reg = <0x40060000 0x400>, <0x14000000 0x4000000>;
 			clock-frequency = <48000000>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
@@ -634,7 +634,7 @@
 
 		mspi1: mspi@40061000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x40061000 0x400>,<0x18000000 0x4000000>;
+			reg = <0x40061000 0x400>, <0x18000000 0x4000000>;
 			clock-frequency = <48000000>;
 			interrupts = <21 0>;
 			#address-cells = <1>;
@@ -644,7 +644,7 @@
 
 		mspi2: mspi@40062000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x40062000 0x400>,<0x1C000000 0x4000000>;
+			reg = <0x40062000 0x400>, <0x1C000000 0x4000000>;
 			clock-frequency = <48000000>;
 			interrupts = <22 0>;
 			#address-cells = <1>;
@@ -677,6 +677,17 @@
 			interrupts = <27 0>;
 			num-bidir-endpoints = <6>;
 			maximum-speed = "full-speed";
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi_dsi@400a8000 {
+			compatible = "ambiq,mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400A8000 0x100>;
+			dbi-width = <16>;
+			phy-clock = <384000000>;
+			interrupts = <29 0>;/* DC interrupt */
 			status = "disabled";
 		};
 

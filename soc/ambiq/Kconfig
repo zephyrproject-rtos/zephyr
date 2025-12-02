@@ -4,6 +4,58 @@
 
 if SOC_FAMILY_AMBIQ
 
+config SOC_AMBIQ_BT_SUPPORTED
+	bool
+
+config PM_DEVICE_RUNTIME_DISABLE_CONSOLE
+	bool "Keep console UART active"
+	depends on UART_CONSOLE
+	depends on PM_DEVICE_RUNTIME
+	default y
+	help
+	  Leave the zephyr_console UART out of runtime power management.
+	  Enable this in samples/tests that log from interrupt context while
+	  CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE is set.
+
+config SOC_AMBIQ_HAS_PUF
+	bool "Ambiq PUF support"
+	help
+	  This option enables the Ambiq PUF support.
+	  It is required for the true random number generator.
+
+config SOC_AMBIQ_DMA_BUFF_LOCATION
+	hex "Byte offset to SRAM_BASE_ADDRESS"
+	default 0x50000
+	help
+	  This option specifies the cacheable/desigated DMA buffers' start address.
+
+config SOC_AMBIQ_DMA_BUFF_ALIGNMENT
+	int "Byte alignment of the DMA buffer"
+	default DCACHE_LINE_SIZE if DCACHE
+	default 1
+	help
+	  This option specifies the DMA buffers' alignment.
+
+config SOC_AMBIQ_DCACHE_SIZE
+	int
+	help
+	  This describes the DCache size if present in the SoC.
+
+config SOC_AMBIQ_HAS_CLKMGR
+	bool "Ambiq clock manager support"
+	help
+	  This option enables the Ambiq clock manager support.
+
+config SOC_AMBIQ_HAS_CRM
+	bool "Ambiq Clock and Reset Management (CRM) support"
+	help
+	  This option enables the Ambiq Clock and Reset Management (CRM) support.
+
+config SOC_AMBIQ_HAS_RSS
+	bool "Ambiq Radio subsystem manager support"
+	help
+	  This option enables the radio subsystem manager functions.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_AMBIQ

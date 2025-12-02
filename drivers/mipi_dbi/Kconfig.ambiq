@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_AMBIQ
+	bool "Ambiq MIPI DBI Type-B (Intel 8080) driver"
+	default y
+	depends on DT_HAS_AMBIQ_MIPI_DBI_ENABLED
+	depends on MIPI_DBI
+	depends on GPIO
+	select AMBIQ_COMPONENT_USE_NEMADC
+	help
+	  Enable MIPI DBI Type-B (Intel 8080) parallel interface driver

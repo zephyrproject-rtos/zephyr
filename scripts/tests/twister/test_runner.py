@@ -14,6 +14,7 @@ import subprocess
 import sys
 from collections import deque
 from contextlib import nullcontext
+from pathlib import Path
 from typing import List
 from unittest import mock
 
@@ -25,7 +26,7 @@ from twisterlib.harness import Pytest
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
 from twisterlib.statuses import TwisterStatus
 
-from . import ZEPHYR_BASE
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE", str(Path(__file__).parents[3]))
 
 
 @pytest.fixture

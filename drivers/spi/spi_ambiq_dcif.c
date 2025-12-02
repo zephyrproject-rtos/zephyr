@@ -371,8 +371,8 @@ extern void am_disp_isr(void);
 	static struct spi_ambiq_data spi_ambiq_data_##id = {                                       \
 		.dc_config = {.ui16ResX = DT_INST_PROP_OR(id, hactive, 0),                         \
 			      .ui32FrontPorchX = DT_INST_PROP_OR(id, hfp, 1),                      \
-			      .ui32BackPorchX = DT_INST_PROP_OR(inst, hbp, 1),                     \
-			      .ui32BlankingX = DT_INST_PROP_OR(inst, hsync, 1),                    \
+			      .ui32BackPorchX = DT_INST_PROP_OR(id, hbp, 1),                       \
+			      .ui32BlankingX = DT_INST_PROP_OR(id, hsync, 1),                      \
 			      .ui16ResY = DT_INST_PROP_OR(id, vactive, 0),                         \
 			      .ui32FrontPorchY = DT_INST_PROP_OR(id, vfp, 1),                      \
 			      .ui32BackPorchY = DT_INST_PROP_OR(id, vbp, 1),                       \

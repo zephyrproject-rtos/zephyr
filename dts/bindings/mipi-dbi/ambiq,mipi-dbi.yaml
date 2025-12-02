@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MIPI-DBI Type-B (Intel 8080) parallel interface controller for Ambiq microcontrollers.
+  This driver implements the Intel 8080 parallel bus interface.
+
+compatible: "ambiq,mipi-dbi"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  hactive:
+    type: int
+    description: |
+      Horizontal active.
+
+  hfp:
+    type: int
+    description: |
+      Horizontal front porch.
+
+  hbp:
+    type: int
+    description: |
+      Horizontal back porch.
+
+  hsync:
+    type: int
+    description: |
+      Horizontal sync length.
+
+  vactive:
+    type: int
+    description: |
+      Vertical active.
+
+  vfp:
+    type: int
+    description: |
+      Vertical front porch.
+
+  vbp:
+    type: int
+    description: |
+      Vertical back porch.
+
+  vsync:
+    type: int
+    description: |
+      Vertical sync length.

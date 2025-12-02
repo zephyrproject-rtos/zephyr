@@ -1,0 +1,81 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq JDI (Japan Display Interface) Host
+
+compatible: "ambiq,jdi"
+
+include: [jdi-host.yaml, pinctrl-device.yaml]
+
+properties:
+  xrst-intb-delay:
+    type: int
+    required: true
+    description: |
+      Delay inserted prior of XRST or INTB in multiples of format_clk.
+
+  xrst-intb-width:
+    type: int
+    required: true
+    description: |
+      Width of High state of XRST or INTB in multiples of format_clk.
+
+  vst-gsp-delay:
+    type: int
+    required: true
+    description: |
+      Delay inserted prior of VST or GSP in multiples of format_clk.
+
+  vst-gsp-width:
+    type: int
+    required: true
+    description: |
+      Width of High state of VST or GSP in multiples of format_clk.
+
+  vck-gck-delay:
+    type: int
+    required: true
+    description: |
+      Delay inserted prior of VCK or GCK in multiples of format_clk.
+
+  vck-gck-width:
+    type: int
+    required: true
+    description: |
+      Width of High state of VCK or GCK in multiples of format_clk.
+
+  vck-gck-closing-pulses:
+    type: int
+    required: true
+    description: |
+      Number of VCK or GCK pulses without ENB or GEN signal at the end of frame.
+
+  hst-bsp-delay:
+    type: int
+    required: true
+    description: |
+      Delay inserted prior of HST or BSP in multiples of format_clk.
+
+  hst-bsp-width:
+    type: int
+    required: true
+    description: |
+      Width of High state of HST or BSP in multiples of format_clk.
+
+  hck-bck-data-start:
+    type: int
+    required: true
+    description: |
+      The HCK or BCK cycle the pixel data should start at.
+
+  enb-gen-delay:
+    type: int
+    required: true
+    description: |
+      Delay inserted prior of ENB or GEN in multiples of format_clk.
+
+  enb-gen-width:
+    type: int
+    required: true
+    description: |
+      Width of High state of ENB or GEN in multiples of format_clk.

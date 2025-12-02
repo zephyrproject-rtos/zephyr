@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if MEMC
+
+if MEMC_MSPI_APS_Z8
+
+choice "MSPI APS Z8 Part selection"
+        default MEMC_MSPI_APS25616N
+endchoice
+
+endif # MEMC_MSPI_APS_Z8
+
+endif # MEMC

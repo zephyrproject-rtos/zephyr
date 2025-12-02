@@ -1,3 +1,6 @@
+.. Copyright (c) 2025 NXP
+.. SPDX-License-Identifier: Apache-2.0
+
 Support Resources for Zephyr
 ============================
 - `NXP Zephyr Downstream Software Development Kit`_

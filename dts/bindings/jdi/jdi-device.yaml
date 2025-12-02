@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for JDI devices
+
+include: base.yaml
+
+on-bus: jdi
+
+properties:
+  reg:
+    required: true
+
+  input-pixel-format:
+    type: int
+    required: true
+    description: |
+      Input pixel format. Available formats in dt-bindings/jdi/jdi.h.
+
+  mode-flags:
+    type: int
+    description: |
+      Supported mode. Available mode in zephyr/drivers/jdi.h.

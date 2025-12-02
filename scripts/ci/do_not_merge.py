@@ -29,8 +29,6 @@ def parse_args(argv):
     )
 
     parser.add_argument("-p", "--pull-request", required=True, type=int, help="The PR number")
-    parser.add_argument("-o", "--org", default="zephyrproject-rtos", help="Github organization")
-    parser.add_argument("-r", "--repo", default="zephyr", help="Github repository")
 
     return parser.parse_args(argv)
 
@@ -65,12 +63,10 @@ def main(argv):
     auth = github.Auth.Token(os.environ.get('GITHUB_TOKEN', None))
     gh = github.Github(auth=auth)
 
-    print_rate_limit(gh, args.org)
+    print_rate_limit(gh, "AmbiqMicro")
 
-    repo = gh.get_repo(f"{args.org}/{args.repo}")
+    repo = gh.get_repo("AmbiqMicro/ambiqzephyr")
     pr = repo.get_pull(args.pull_request)
-
-    workflow_delay(repo, pr)
 
     print(f"pr: {pr.html_url}")
 

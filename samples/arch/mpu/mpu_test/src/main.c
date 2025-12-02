@@ -128,7 +128,7 @@ static int cmd_mtest(const struct shell *sh, size_t argc, char *argv[])
 	uint32_t val;
 
 	val = (uint32_t)strtol(argv[1], NULL, 16);
-	mem = (uint32_t *) val;
+	mem = (uint32_t *) (FLASH_MEM + val);
 
 	if (argc == 2) {
 		PR_SHELL(sh, "The value is: 0x%x\n", *mem);

@@ -48,6 +48,7 @@ zephyr_library_sources_ifdef(CONFIG_ILI9806E_DSI		display_ili9806e_dsi.c)
 zephyr_library_sources_ifdef(CONFIG_ST7701 display_st7701.c)
 zephyr_library_sources_ifdef(CONFIG_LPM013M126 display_lpm013m126.c)
 zephyr_library_sources_ifdef(CONFIG_CO5300 display_co5300.c)
+zephyr_library_sources_ifdef(CONFIG_LS014B7DD01	display_ls014b7dd01.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
