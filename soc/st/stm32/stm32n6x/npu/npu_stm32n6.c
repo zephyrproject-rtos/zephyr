@@ -25,17 +25,6 @@ struct npu_stm32_cfg {
 	const struct reset_dt_spec reset_cacheaxi;
 };
 
-static void npu_risaf_config(void)
-{
-	RIMC_MasterConfig_t RIMC_master = {0};
-
-	RIMC_master.MasterCID = RIF_CID_1;
-	RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_NPU, &RIMC_master);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_NPU,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
-
 static int npu_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -60,8 +49,6 @@ static int npu_stm32_init(const struct device *dev)
 	/* Reset timer to default state using RCC */
 	(void)reset_line_toggle_dt(&cfg->reset_npu);
 	(void)reset_line_toggle_dt(&cfg->reset_cacheaxi);
-
-	npu_risaf_config();
 
 	return 0;
 }
