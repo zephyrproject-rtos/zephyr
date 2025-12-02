@@ -1134,10 +1134,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
 
+	force = 0U;
+	force_lll = 0U;
 	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* Reset supervision countdown */
-	if (done->extra.crc_valid && !done->extra.is_aborted) {
+	if ((done->extra.crc_valid != 0U) && (done->extra.is_aborted == 0U)) {
 		conn->supervision_expire = 0U;
 	}
 
@@ -1145,6 +1147,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 	else if (conn->connect_expire) {
 		if (conn->connect_expire > elapsed_event) {
 			conn->connect_expire -= elapsed_event;
+
+			force = 1U;
+			force_lll = 1U;
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
 
@@ -1175,8 +1180,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* check supervision timeout */
-	force = 0U;
-	force_lll = 0U;
 	if (conn->supervision_expire) {
 		if (conn->supervision_expire > elapsed_event) {
 			conn->supervision_expire -= elapsed_event;
@@ -1188,10 +1191,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 			 * supervision timeout.
 			 */
 			if (conn->supervision_expire <= 6U) {
-				force_lll = 1U;
-
 				force = 1U;
+				force_lll = 1U;
 			}
+
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
@@ -1199,6 +1202,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			else if (lll->role) {
 				if (latency_event) {
 					force = 1U;
+					force_lll = 1U;
 				} else {
 					force = conn->periph.force & 0x01;
 
@@ -1206,10 +1210,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 					conn->periph.force >>= 1U;
 					if (force) {
 						conn->periph.force |= BIT(31);
+
+						force_lll = 1U;
 					}
 				}
 			}
 #endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
