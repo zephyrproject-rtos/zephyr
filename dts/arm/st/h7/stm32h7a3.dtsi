@@ -184,7 +184,7 @@
 	};
 
 	vref: vref {
-		vrefint-cal-addr = <0x08FFF810>;
+		vrefint-cal-addr = <0x08fff810>;
 		io-channels = <&adc2 19>;
 	};
 
