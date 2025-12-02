@@ -25,7 +25,6 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     # Include device configuration data block for RT1050 EVK from NXP's HAL.
     # This configuration block may need modification if another SDRAM chip
     # is used on your custom board.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
     zephyr_library_sources(${RT1062_BOARD_DIR}/dcd/dcd.c)
   endif()
 endif()
