@@ -76,12 +76,20 @@ int nrf_sys_event_release_global_constlat(void)
 
 int nrf_sys_event_request_global_constlat(void)
 {
-	return nrfx_power_constlat_mode_request();
+	int err;
+
+	err = nrfx_power_constlat_mode_request();
+
+	return (err == 0 || err == -EALREADY) ? 0 : -EAGAIN;
 }
 
 int nrf_sys_event_release_global_constlat(void)
 {
-	return nrfx_power_constlat_mode_free();
+	int err;
+
+	err = nrfx_power_constlat_mode_free();
+
+	return (err == 0 || err == -EBUSY) ? 0 : -EAGAIN;
 }
 
 #endif
