@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Carl Zeiss AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig S9706
+	bool "S9706 Digital Color Sensor"
+	default y
+	depends on DT_HAS_HAMAMATSU_S9706_ENABLED
+	select GPIO
+	help
+	  Enable driver for the S9706 digital color sensor
+
+if S9706
+
+config S9706_DEFAULT_RANGE
+	bool "S9706: Default range setting"
+	default y
+	depends on S9706
+	help
+	  When selected, the driver will enable the full sensor by default.
+	  Otherwise, only the center part will be used.
+
+endif # S9706
