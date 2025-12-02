@@ -10,8 +10,11 @@ common:
 tests:
   drivers.comparator.gpio_loopback.silabs_acmp:
     platform_allow:
+      - slwrb4180a
+      - xg23_rb4210a
       - xg24_dk2601b
       - xg24_rb4187c
+      - xg28_rb4401c
       - xg29_rb4412a
       - bg29_rb4420a
   drivers.comparator.gpio_loopback.mcux_acmp:
