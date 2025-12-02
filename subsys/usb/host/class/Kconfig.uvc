@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config USBH_VIDEO_CLASS
@@ -8,6 +9,57 @@ config USBH_VIDEO_CLASS
 	  USB Host Video Class (UVC) implementation.
 
 if USBH_VIDEO_CLASS
+
+config USBH_UVC_INSTANCES_COUNT
+	int "Number of HOST UVC instances"
+	default 4
+	help
+	  Number of instances of this USB class
+
+config USBH_VIDEO_NUM_BUFS
+	int "Max number of buffers the UVC class can allocate"
+	default 16
+	help
+	  Control the number of buffer UVC can allocate in parallel.
+	  The default is a compromise to allow enough concurrent buffers
+	  but not too much memory usage.
+
+config USBH_VIDEO_MAX_STREAM_INTERFACE
+	int "Max number of USB Video stream interface"
+	range 1 255
+	default 32
+	help
+	  Max number of Video stream interface listed on descriptors. The default
+	  value is selected arbitrarily to fit most situations without requiring
+	  too much RAM.
+
+config USBH_VIDEO_MAX_FORMATS
+	int "Max number of format descriptors"
+	range 1 254
+	default 8
+	help
+	  The table of format descriptors are generated at runtime. This options plans the
+	  storage at build time to allow enough descriptors to be generated. The default value
+	  aims a compromise between enough descriptors for most devices, but not too much memory
+	  being used. TThe maximum count for each format type (e.g., MJPEG, uncompressed), not the
+	  total number of all formats.
+
+config USBH_VIDEO_MAX_CAPS
+	int "Max number of format capability entries"
+	range 1 512
+	default 40
+	help
+	  Maximum number of video format capabilities
+
+config USBH_VIDEO_MULTIPLE_PRIME_COUNT
+	int "Number of concurrent USB transfers to initiate when starting stream"
+	range 1 16
+	default 1
+	help
+	  Number of concurrent USB isochronous transfers initiated when video
+	  streaming starts. Higher values improve throughput but use more resources.
+	  Lower values (1-2) suit low frame rates, higher values (4-8) suit high
+	  frame rates.
 
 module = USBH_UVC
 module-str = usbh uvc
