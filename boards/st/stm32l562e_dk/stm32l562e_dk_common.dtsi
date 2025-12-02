@@ -98,7 +98,7 @@
 					height = <240>;
 					x-offset = <0>;
 					y-offset = <0>;
-					vcom = <0x1F>;
+					vcom = <0x1f>;
 					gctrl = <0x35>;
 					vdvs = <0x20>;
 					mdac = <0x00>;
