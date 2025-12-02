@@ -220,9 +220,9 @@ static int esp32_mbox_init(const struct device *dev)
 	data->other_core_id = (data->this_core_id == 0) ? 1 : 0;
 
 	LOG_DBG("Size of MBOX shared memory: %d", data->shm_size);
-	LOG_DBG("Address of PRO_CPU MBOX shared memory: %p", data->shm.pro_cpu_shm);
-	LOG_DBG("Address of APP_CPU MBOX shared memory: %p", data->shm.app_cpu_shm);
-	LOG_DBG("Address of MBOX control structure: %p", data->control);
+	LOG_DBG("Address of PRO_CPU MBOX shared memory: %p", (volatile void *)data->shm.pro_cpu_shm);
+	LOG_DBG("Address of APP_CPU MBOX shared memory: %p", (volatile void *)data->shm.app_cpu_shm);
+	LOG_DBG("Address of MBOX control structure: %p", (volatile void *)data->control);
 
 	/* pro_cpu is responsible to initialize the lock of shared memory */
 	if (data->this_core_id == 0) {
