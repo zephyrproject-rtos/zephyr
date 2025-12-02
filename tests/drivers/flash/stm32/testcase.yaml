@@ -65,3 +65,10 @@ tests:
     filter: dt_compat_enabled("st,stm32h7-flash-controller") and
             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
             CONFIG_SOC_SERIES_STM32H7X
+  drivers.flash.stm32.l5:
+    platform_allow:
+      - nucleo_u575zi_q
+    extra_configs:
+      - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
+    filter: dt_compat_enabled("st,stm32l5-flash-controller") and
+      dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
