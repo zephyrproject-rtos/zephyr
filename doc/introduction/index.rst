@@ -49,6 +49,9 @@ as described in :ref:`Zephyr_Licensing`.
 Distinguishing Features
 ***********************
 
+.. raw:: html
+   :file: diagram.html
+
 Zephyr offers a large and ever growing number of features including:
 
 **Extensive suite of Kernel services**

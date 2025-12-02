@@ -1,0 +1,339 @@
+<style>
+        /* Scoped styles for the diagram to prevent leaking into global doc styles */
+        .z-diagram-root {
+                --z-color-app: #f59e0b;
+                a --z-bg-app: #fffbeb;
+
+                --z-color-os: #0284c7;
+                --z-bg-os: #f0f9ff;
+                --z-border-os: #bae6fd;
+
+                --z-color-driver: #059669;
+                --z-bg-driver: #ecfdf5;
+                --z-border-driver: #a7f3d0;
+
+                --z-color-kernel: #7c3aed;
+                --z-bg-kernel: #f5f3ff;
+                --z-border-kernel: #ddd6fe;
+
+                --z-color-hw: #475569;
+                --z-bg-hw: #f1f5f9;
+                --z-border-hw: #cbd5e1;
+
+                --z-text-subtle: #64748b;
+                --z-radius: 8px;
+                --z-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                max-width: 900px;
+                margin: 40px auto;
+                padding: 20px;
+                box-sizing: border-box;
+        }
+
+        /* The main grid layout: Label on left, Content on right */
+        .z-layer-row {
+                display: grid;
+                grid-template-columns: 140px 1fr;
+                gap: 20px;
+                align-items: stretch;
+                /* Stretch to fill height */
+                margin-bottom: 20px;
+        }
+
+        /* The label text on the left */
+        .z-layer-label {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                text-align: right;
+                font-weight: 600;
+                color: var(--z-text-subtle);
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                padding-right: 10px;
+                border-right: 2px solid #e2e8f0;
+                /* decorative line connecting labels */
+        }
+
+        /* The main colored boxes */
+        .z-box {
+                border-radius: var(--z-radius);
+                padding: 20px;
+                position: relative;
+                box-shadow: var(--z-shadow);
+                border: 1px solid transparent;
+                transition: transform 0.2s ease;
+        }
+
+        .z-box-link {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                border-radius: var(--z-radius);
+        }
+
+        /* Specific Layer Styling */
+        .z-box.app {
+                background-color: var(--z-bg-app);
+                border-color: #fcd34d;
+                color: #92400e;
+                text-align: center;
+                font-weight: 700;
+        }
+
+        .z-box.os {
+                background-color: var(--z-bg-os);
+                border-color: var(--z-border-os);
+        }
+
+        .z-box.drivers {
+                background-color: var(--z-bg-driver);
+                border-color: var(--z-border-driver);
+        }
+
+        .z-box.kernel {
+                background-color: var(--z-bg-kernel);
+                border-color: var(--z-border-kernel);
+        }
+
+        /* Removed the hover transform on the main container since it now contains clickable items */
+
+        .z-box.hw {
+                background-color: var(--z-bg-hw);
+                border-color: var(--z-border-hw);
+                color: var(--z-color-hw);
+                text-align: center;
+                font-style: italic;
+                font-weight: 500;
+        }
+
+        /* Titles inside the boxes */
+        .z-section-title {
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 12px;
+                color: var(--z-text-subtle);
+                font-weight: 700;
+                text-align: center;
+                display: block;
+        }
+
+        /* Grids for internal items (Services & Peripherals) */
+        .z-item-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+        }
+
+        /* Individual Links/Items */
+        .z-item {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                text-decoration: none;
+                color: #334155;
+                text-align: center;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+                position: relative;
+                z-index: 2;
+        }
+
+        .z-item:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                border-color: var(--z-color-os);
+                color: var(--z-color-os);
+                font-weight: 500;
+        }
+
+        /* Drivers specific overrides */
+        .z-item.driver-item {
+                font-size: 0.8rem;
+                min-height: 30px;
+                border-color: #d1fae5;
+        }
+
+        .z-item.driver-item:hover {
+                border-color: var(--z-color-driver);
+                color: var(--z-color-driver);
+        }
+
+        /* Kernel specific overrides */
+        .z-item.kernel-item {
+                border-color: #e9d5ff;
+        }
+
+        .z-item.kernel-item:hover {
+                border-color: var(--z-color-kernel);
+                color: var(--z-color-kernel);
+        }
+
+        .z-item.dots {
+                background: rgba(255, 255, 255, 0.5);
+                color: #94a3b8;
+                font-weight: bold;
+                letter-spacing: 2px;
+                cursor: default;
+        }
+
+        .z-item.dots:hover {
+                transform: none;
+                box-shadow: none;
+                border-color: #e2e8f0;
+                color: #94a3b8;
+        }
+
+        /* Responsive Breakpoint */
+        @media (max-width: 700px) {
+                .z-layer-row {
+                        grid-template-columns: 1fr;
+                        /* Stack vertically */
+                        gap: 5px;
+                }
+
+                .z-layer-label {
+                        justify-content: flex-start;
+                        text-align: left;
+                        border-right: none;
+                        border-bottom: 2px solid #e2e8f0;
+                        padding-bottom: 5px;
+                        margin-bottom: 5px;
+                }
+
+                .z-item-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                }
+        }
+</style>
+
+<div class="z-diagram-root">
+
+        <!-- Layer 1: User App -->
+        <div class="z-layer-row">
+                <div>&nbsp;</div>
+                <div class="z-box app">
+                        <a href="../develop/application/index.html">User Application</a>
+                </div>
+        </div>
+
+        <!-- Layer 2: OS Services -->
+        <div class="z-layer-row">
+                <div class="z-layer-label">OS Services</div>
+                <div class="z-box os">
+                        <a href="../services/index.html" class="z-box-link" aria-label="Zephyr OS Services"></a>
+                        <span class="z-section-title"
+                                style="color: var(--z-color-os);">Zephyr OS
+                                Services</span>
+                        <div class="z-item-grid">
+                                <a href="../services/system.html"
+                                        class="z-item">System</a>
+                                <a href="../services/connectivity/index.html"
+                                        class="z-item">Connectivity</a>
+                                <a href="../services/observability.html"
+                                        class="z-item">Observability</a>
+                                <a href="../services/io.html" class="z-item">Input /
+                                        Output</a>
+                                <a href="../services/storage/index.html"
+                                        class="z-item">Storage</a>
+                                <a href="../services/power_management.html"
+                                        class="z-item">Power Mgmt</a>
+                                <a href="../services/messaging.html" class="z-item">IPC &
+                                        Messaging</a>
+                                <a href="../services/security.html"
+                                        class="z-item">Security</a>
+                                <a href="../services/algorithms.html"
+                                        class="z-item">Algorithms</a>
+                                <a href="../services/portability/index.html"
+                                        class="z-item">Portability</a>
+                                <a href="../services/application_services.html"
+                                        class="z-item">App Services</a>
+                        </div>
+                </div>
+        </div>
+
+        <!-- Layer 3: Hardware Abstraction -->
+        <div class="z-layer-row">
+                <div class="z-layer-label">Hardware<br>Abstraction</div>
+                <div class="z-box drivers">
+                        <a href="../hardware/peripherals/index.html" class="z-box-link"
+                                aria-label="Peripherals API"></a>
+                        <span class="z-section-title"
+                                style="color: var(--z-color-driver);">Peripherals
+                                API</span>
+                        <div class="z-item-grid">
+                                <a href="../hardware/peripherals/index.html#analog"
+                                        class="z-item driver-item">Analog</a>
+                                <a href="../hardware/peripherals/audio/index.html"
+                                        class="z-item driver-item">Audio</a>
+                                <a href="../hardware/peripherals/index.html#communication"
+                                        class="z-item driver-item">Comms</a>
+                                <a href="../hardware/peripherals/index.html#display"
+                                        class="z-item driver-item">Display</a>
+                                <a href="../hardware/peripherals/index.html#gpio-input"
+                                        class="z-item driver-item">GPIO & Input</a>
+                                <a href="../hardware/peripherals/index.html#memory-storage"
+                                        class="z-item driver-item">Mem & Storage</a>
+                                <a href="../hardware/peripherals/index.html#power"
+                                        class="z-item driver-item">Power</a>
+                                <a href="../hardware/peripherals/index.html#sensors"
+                                        class="z-item driver-item">Sensors</a>
+                                <a href="../hardware/peripherals/index.html#motion-actuation"
+                                        class="z-item driver-item">Motion</a>
+                                <a href="../hardware/peripherals/index.html#system-diagnostics"
+                                        class="z-item driver-item">Diagnostics</a>
+                                <a href="../hardware/peripherals/index.html#timing"
+                                        class="z-item driver-item">Timing</a>
+                        </div>
+                </div>
+        </div>
+
+        <!-- Layer 4: Kernel -->
+        <div class="z-layer-row">
+                <div class="z-layer-label">Kernel Core</div>
+                <div class="z-box kernel">
+                        <a href="../kernel/services/index.html" class="z-box-link"
+                                aria-label="Zephyr Kernel Services"></a>
+                        <span class="z-section-title"
+                                style="color: var(--z-color-kernel);">Kernel
+                                Services</span>
+                        <div class="z-item-grid">
+                                <a href="../kernel/services/scheduling/index.html"
+                                        class="z-item kernel-item">Scheduler</a>
+                                <a href="../kernel/services/threads/index.html"
+                                        class="z-item kernel-item">Threads</a>
+                                <a href="../kernel/services/threads/workqueues.html"
+                                        class="z-item kernel-item">Workqueues</a>
+                                <a href="../kernel/services/synchronization/index.html"
+                                        class="z-item kernel-item">Synchronization</a>
+                                <a href="../kernel/data_structures/index.html"
+                                        class="z-item kernel-item">Data Structures</a>
+                                <a href="../kernel/memory_management/index.html"
+                                        class="z-item kernel-item">Memory Mgmt</a>
+                                <a href="../kernel/services/interrupts.html"
+                                        class="z-item kernel-item">Interrupts</a>
+                                <div class="z-item kernel-item dots">...</div>
+                        </div>
+                </div>
+        </div>
+
+        <!-- Layer 5: Hardware -->
+        <div class="z-layer-row">
+                <div class="z-layer-label">Physical Layer</div>
+                <div class="z-box hw">
+                        Hardware (SoC, Board, Peripherals)
+                </div>
+        </div>
+
+</div>
