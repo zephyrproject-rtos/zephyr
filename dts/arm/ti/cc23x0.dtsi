@@ -127,7 +127,7 @@
 		};
 
 		spi0: spi@40030000 {
-			compatible = "ti,cc23x0-spi";
+			compatible = "ti,cc23x0-cc27xx-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40030000 0x164>;

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		/* 892928 Bytes (0xda000) per slot for application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x000da000>;
+		};
+	};
+};
+
+&mx25r80 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x00000000 0x000da000>;
+		};
+	};
+};

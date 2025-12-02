@@ -406,7 +406,7 @@ tests:
     platform_allow:
       - lp_em_cc2340r5
     extra_configs:
-      - CONFIG_SPI_CC23X0_DMA_DRIVEN=y
+      - CONFIG_SPI_CC23X0_CC27XX_DMA_DRIVEN=y
       - CONFIG_SPI_ASYNC=n
   drivers.spi.cs_loopback.disable_lpspi_dma:
     extra_args: EXTRA_DTC_OVERLAY_FILE="overlay-cs-loopback-gpio.overlay"

@@ -158,8 +158,12 @@
 	pinctrl-0 = <&spi0_sck_default
 		     &spi0_mosi_default
 		     &spi0_miso_default
-		     &spi0_flash_cs>;
-	pinctrl-names = "default";
+		     &spi0_cs_default>;
+	pinctrl-1 = <&spi0_sck_sleep
+		     &spi0_mosi_sleep
+		     &spi0_miso_sleep
+		     &spi0_cs_sleep>;
+	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";

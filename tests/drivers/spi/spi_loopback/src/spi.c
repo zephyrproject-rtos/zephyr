@@ -489,6 +489,11 @@ ZTEST(spi_loopback, test_spi_complete_loop_mode_3)
 
 ZTEST(spi_loopback, test_spi_null_tx_buf)
 {
+	if (IS_ENABLED(CONFIG_SOC_SERIES_CC23X0) || IS_ENABLED(CONFIG_SOC_SERIES_CC27XX)) {
+		TC_PRINT("Skip null tx\n");
+		return;
+	}
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	static const uint8_t expected_nop_return_buf[BUF_SIZE] = { 0 };
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
@@ -594,7 +599,11 @@ ZTEST(spi_loopback, test_spi_rx_bigger_than_tx)
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, tx_buf_size,
 				  buffer_print_tx, buffer_print_rx);
 
-	static const uint8_t all_zeroes_buf[BUF_SIZE] = {0};
+	static uint8_t all_zeroes_buf[BUF_SIZE] = {0};
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_CC23X0) || IS_ENABLED(CONFIG_SOC_SERIES_CC27XX)) {
+		memset(all_zeroes_buf, 0xFF, BUF_SIZE);
+	}
 
 	spi_loopback_compare_bufs(all_zeroes_buf, buffer_rx + tx_buf_size, BUF_SIZE - tx_buf_size,
 				  buffer_print_tx, buffer_print_rx);

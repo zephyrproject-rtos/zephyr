@@ -1,9 +1,9 @@
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI SimpleLink CC23x0 SPI controller
+description: TI SimpleLink CC23x0_CC27xx SPI node
 
-compatible: "ti,cc23x0-spi"
+compatible: "ti,cc23x0-cc27xx-spi"
 
 include: [spi-controller.yaml, pinctrl-device.yaml, base.yaml]
 
@@ -19,6 +19,14 @@ properties:
 
   pinctrl-names:
     required: true
+
+  clock-id:
+    type: int
+    required: true
+    description: |
+      CLKCTL peripheral clock gate ID for this SPI instance.
+      Use CLKCTL_SPI0 (0x400) for SPI instance 0 or CLKCTL_SPI1 (0x800)
+      for SPI instance 1.
 
   dmas:
     description: |
