@@ -15,6 +15,7 @@ supported:
   - can
   - gpio
   - rtc
+  - dma
   - watchdog
   - adc
 vendor: nxp
