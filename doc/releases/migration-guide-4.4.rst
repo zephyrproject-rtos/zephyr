@@ -157,6 +157,14 @@ JWT
   the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
   that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
 
+Tracing
+========
+
+* CTF: Changed uint8_t id to uint16_t id in the CTF metadata event header. This
+  doubles the space used for event IDs but allows 65,535 events instead of 255.
+
+  With this change, existing CTF traces with 8-bit IDs won't be compatible.
+
 Modules
 *******
 
