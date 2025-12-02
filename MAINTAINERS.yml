@@ -2937,6 +2937,7 @@ Infineon Platforms:
     - drivers/*/*ifx*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
+    - drivers/wifi/infineon/
     - dts/arm/infineon/
     - dts/bindings/*/*infineon*
     - soc/infineon/
