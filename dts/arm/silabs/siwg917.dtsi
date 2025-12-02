@@ -206,6 +206,7 @@
 				ngpios = <16>;
 				gpio-reserved-ranges = <0 6>;
 				silabs,pads = [ff ff ff ff ff ff 01 02 03 04 05 06 07 ff ff 08];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -216,6 +217,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				silabs,pads = [ff ff ff ff ff ff ff ff ff 00 00 00 00 00 00 09];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -226,6 +228,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				silabs,pads = [09 09 09 ff ff ff ff ff ff ff ff ff ff ff 0a 0b];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -236,6 +239,7 @@
 				#gpio-cells = <2>;
 				ngpios = <10>;
 				silabs,pads = [0c 0d 0e 0f 10 11 12 13 14 15 ff ff ff ff ff ff];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 		};
@@ -260,6 +264,7 @@
 				ngpios = <12>;
 				gpio-reserved-ranges = <3 1>;
 				silabs,pads = [16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 ff ff ff ff];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 		};
