@@ -149,6 +149,8 @@ Networking
 
 Other subsystems
 ****************
+* The DAP subsystem initialization and configuration has changed. Please take a look at
+  :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.
 
 Modules
 *******
