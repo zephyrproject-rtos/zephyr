@@ -50,7 +50,7 @@ static int soc_netc_clock_init(int clk_id)
 static int soc_init(void)
 {
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
-	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 #endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
 	int ret = 0;
 
@@ -114,7 +114,7 @@ static int soc_init(void)
 	cpu_cfg.cpu_id = CPU_IDX_M33P_S;
 	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
 
-	ret = scmi_cpu_sleep_mode_set(&cpu_cfg);
+	ret = scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 	if (ret) {
 		return ret;
 	}
