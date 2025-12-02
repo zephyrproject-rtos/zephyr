@@ -307,7 +307,12 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 #endif /* CONFIG_PSA_WANT_ALG_CBC_NO_PADDING */
 #if CONFIG_PSA_WANT_ALG_CCM
 	case CRYPTO_CIPHER_MODE_CCM:
-		session->psa_alg = PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, 8);
+		uint16_t tag_len = ctx->mode_params.ccm_info.tag_len;
+
+		if (tag_len > PSA_AEAD_TAG_MAX_SIZE) {
+			return -EINVAL;
+		}
+		session->psa_alg = PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, tag_len);
 		ctx->ops.ccm_crypt_hndlr = mbedtls_aead;
 		break;
 #endif /* CONFIG_PSA_WANT_ALG_CCM */
