@@ -470,11 +470,17 @@ void lll_conn_isr_rx(void *param)
 			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
+
 	/* Do not continue anymore if this event had continued despite an abort requested by same
 	 * connection instance when overlapping due to connection event length being larger than
 	 * the connection interval.
 	 */
 	is_done = is_done || (trx_busy_iteration != 0U);
+
+	/* Do not continue if forced, there could be an overlapping event that would like to
+	 * resume.
+	 */
+	is_done = is_done || (lll->forced != 0U);
 
 	if (is_done) {
 		radio_isr_set(isr_done, param);
