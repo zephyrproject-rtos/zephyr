@@ -344,775 +344,776 @@ typedef struct {
 
 static inline void ctf_top_thread_switched_out(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SWITCHED_OUT), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_OUT), thread_id, name);
 }
 
 static inline void ctf_top_thread_switched_in(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SWITCHED_IN), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_IN), thread_id, name);
 }
 
 static inline void ctf_top_thread_priority_set(uint32_t thread_id, int8_t prio,
 					       ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_PRIORITY_SET), thread_id, name, prio);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_PRIORITY_SET), thread_id, name, prio);
 }
 
 static inline void ctf_top_thread_sleep_enter(uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SLEEP_ENTER), timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_ENTER), timeout);
 }
 
 static inline void ctf_top_thread_sleep_exit(uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SLEEP_EXIT), timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_EXIT), timeout, ret);
 }
 
 static inline void ctf_top_thread_create(uint32_t thread_id, int8_t prio, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_CREATE), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_CREATE), thread_id, name);
 }
 
 static inline void ctf_top_thread_abort(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_ABORT), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_ABORT), thread_id, name);
 }
 
 static inline void ctf_top_thread_suspend(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SUSPEND), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SUSPEND), thread_id, name);
 }
 
 static inline void ctf_top_thread_resume(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_RESUME), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_RESUME), thread_id, name);
 }
 
 static inline void ctf_top_thread_ready(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_READY), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_READY), thread_id, name);
 }
 
 static inline void ctf_top_thread_pend(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_PENDING), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_PENDING), thread_id, name);
 }
 
 static inline void ctf_top_thread_info(uint32_t thread_id, ctf_bounded_string_t name,
 				       uint32_t stack_base, uint32_t stack_size)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_INFO), thread_id, name, stack_base,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_INFO), thread_id, name, stack_base,
 		  stack_size);
 }
 
 static inline void ctf_top_thread_name_set(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_NAME_SET), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_NAME_SET), thread_id, name);
 }
 
 static inline void ctf_top_thread_user_mode_enter(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_USER_MODE_ENTER), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_USER_MODE_ENTER), thread_id, name);
 }
 
 static inline void ctf_top_thread_wakeup(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_WAKEUP), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_WAKEUP), thread_id, name);
 }
 
 /* Thread Extended Functions */
 static inline void ctf_top_thread_foreach_enter(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_FOREACH_ENTER));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_FOREACH_ENTER));
 }
 
 static inline void ctf_top_thread_foreach_exit(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_FOREACH_EXIT));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_FOREACH_EXIT));
 }
 
 static inline void ctf_top_thread_foreach_unlocked_enter(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_FOREACH_UNLOCKED_ENTER));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_FOREACH_UNLOCKED_ENTER));
 }
 
 static inline void ctf_top_thread_foreach_unlocked_exit(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_FOREACH_UNLOCKED_EXIT));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_FOREACH_UNLOCKED_EXIT));
 }
 
 static inline void ctf_top_thread_heap_assign(uint32_t thread_id, uint32_t heap_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_HEAP_ASSIGN), thread_id, heap_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_HEAP_ASSIGN), thread_id, heap_id);
 }
 
 static inline void ctf_top_thread_join_enter(uint32_t thread_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_JOIN_ENTER), thread_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_JOIN_ENTER), thread_id, timeout);
 }
 
 static inline void ctf_top_thread_join_blocking(uint32_t thread_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_JOIN_BLOCKING), thread_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_JOIN_BLOCKING), thread_id, timeout);
 }
 
 static inline void ctf_top_thread_join_exit(uint32_t thread_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_JOIN_EXIT), thread_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_JOIN_EXIT), thread_id, timeout, ret);
 }
 
 static inline void ctf_top_thread_msleep_enter(int32_t ms)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_MSLEEP_ENTER), ms);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_MSLEEP_ENTER), ms);
 }
 
 static inline void ctf_top_thread_msleep_exit(int32_t ms, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_MSLEEP_EXIT), ms, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_MSLEEP_EXIT), ms, ret);
 }
 
 static inline void ctf_top_thread_usleep_enter(int32_t us)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_USLEEP_ENTER), us);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_USLEEP_ENTER), us);
 }
 
 static inline void ctf_top_thread_usleep_exit(int32_t us, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_USLEEP_EXIT), us, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_USLEEP_EXIT), us, ret);
 }
 
 static inline void ctf_top_thread_busy_wait_enter(uint32_t usec_to_wait)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_BUSY_WAIT_ENTER), usec_to_wait);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_BUSY_WAIT_ENTER), usec_to_wait);
 }
 
 static inline void ctf_top_thread_busy_wait_exit(uint32_t usec_to_wait)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_BUSY_WAIT_EXIT), usec_to_wait);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_BUSY_WAIT_EXIT), usec_to_wait);
 }
 
 static inline void ctf_top_thread_yield(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_YIELD));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_YIELD));
 }
 
 static inline void ctf_top_thread_suspend_exit(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SUSPEND_EXIT), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SUSPEND_EXIT), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_lock(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_LOCK));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_LOCK));
 }
 
 static inline void ctf_top_thread_sched_unlock(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_UNLOCK));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_UNLOCK));
 }
 
 static inline void ctf_top_thread_sched_wakeup(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_WAKEUP), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_WAKEUP), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_abort(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_ABORT), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_ABORT), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_priority_set(uint32_t thread_id, int8_t prio,
 						     ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_PRIORITY_SET), thread_id, prio, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_PRIORITY_SET), thread_id, prio,
+		  name);
 }
 
 static inline void ctf_top_thread_sched_ready(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_READY), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_READY), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_pend(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_PEND), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_PEND), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_resume(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_RESUME), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_RESUME), thread_id, name);
 }
 
 static inline void ctf_top_thread_sched_suspend(uint32_t thread_id, ctf_bounded_string_t name)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SCHED_SUSPEND), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SCHED_SUSPEND), thread_id, name);
 }
 
 static inline void ctf_top_isr_enter(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ISR_ENTER));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ISR_ENTER));
 }
 
 static inline void ctf_top_isr_exit(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ISR_EXIT));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ISR_EXIT));
 }
 
 static inline void ctf_top_isr_exit_to_scheduler(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ISR_EXIT_TO_SCHEDULER));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ISR_EXIT_TO_SCHEDULER));
 }
 
 static inline void ctf_top_idle(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_IDLE));
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_IDLE));
 }
 
 static inline void ctf_top_void(uint32_t id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ID_START_CALL), id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ID_START_CALL), id);
 }
 
 static inline void ctf_top_end_call(uint32_t id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ID_END_CALL), id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ID_END_CALL), id);
 }
 /* Memory Slabs */
 static inline void ctf_top_mem_slab_init(uint32_t slab_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_INIT), slab_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_INIT), slab_id, ret);
 }
 
 static inline void ctf_top_mem_slab_alloc_enter(uint32_t slab_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_ENTER), slab_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_ALLOC_ENTER), slab_id, timeout);
 }
 
 static inline void ctf_top_mem_slab_alloc_blocking(uint32_t slab_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_BLOCKING), slab_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_ALLOC_BLOCKING), slab_id, timeout);
 }
 
 static inline void ctf_top_mem_slab_alloc_exit(uint32_t slab_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_EXIT), slab_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_ALLOC_EXIT), slab_id, timeout, ret);
 }
 
 static inline void ctf_top_mem_slab_free_enter(uint32_t slab_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_FREE_ENTER), slab_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_FREE_ENTER), slab_id);
 }
 
 static inline void ctf_top_mem_slab_free_exit(uint32_t slab_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_FREE_EXIT), slab_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MEM_SLAB_FREE_EXIT), slab_id);
 }
 
 /* Message Queues*/
 static inline void ctf_top_msgq_init(uint32_t msgq_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_INIT), msgq_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_INIT), msgq_id);
 }
 
 static inline void ctf_top_msgq_alloc_init_enter(uint32_t msgq_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_ALLOC_INIT_ENTER), msgq_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_ALLOC_INIT_ENTER), msgq_id);
 }
 static inline void ctf_top_msgq_alloc_init_exit(uint32_t msgq_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_ALLOC_INIT_EXIT), msgq_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_ALLOC_INIT_EXIT), msgq_id, ret);
 }
 
 static inline void ctf_top_msgq_put_enter(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_ENTER), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_ENTER), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_put_blocking(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_BLOCKING), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_BLOCKING), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_put_exit(uint32_t msgq_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_EXIT), msgq_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_EXIT), msgq_id, timeout, ret);
 }
 
 static inline void ctf_top_msgq_get_enter(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_ENTER), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_GET_ENTER), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_get_blocking(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_BLOCKING), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_GET_BLOCKING), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_get_exit(uint32_t msgq_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_EXIT), msgq_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_GET_EXIT), msgq_id, timeout, ret);
 }
 
 static inline void ctf_top_msgq_peek(uint32_t msgq_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PEEK), msgq_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PEEK), msgq_id, ret);
 }
 
 static inline void ctf_top_msgq_purge(uint32_t msgq_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PURGE), msgq_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PURGE), msgq_id);
 }
 
 static inline void ctf_top_msgq_put_front_enter(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_ENTER), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_FRONT_ENTER), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_put_front_exit(uint32_t msgq_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_EXIT), msgq_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_FRONT_EXIT), msgq_id, timeout, ret);
 }
 
 static inline void ctf_top_msgq_put_front_blocking(uint32_t msgq_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_BLOCKING), msgq_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_PUT_FRONT_BLOCKING), msgq_id, timeout);
 }
 
 static inline void ctf_top_msgq_cleanup_enter(uint32_t msgq_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_CLEANUP_ENTER), msgq_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_CLEANUP_ENTER), msgq_id);
 }
 
 static inline void ctf_top_msgq_cleanup_exit(uint32_t msgq_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_CLEANUP_EXIT), msgq_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MSGQ_CLEANUP_EXIT), msgq_id, ret);
 }
 
 /* Condition Variables */
 static inline void ctf_top_condvar_init(uint32_t condvar_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_INIT), condvar_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_INIT), condvar_id, ret);
 }
 static inline void ctf_top_condvar_signal_enter(uint32_t condvar_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_ENTER), condvar_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_SIGNAL_ENTER), condvar_id);
 }
 static inline void ctf_top_condvar_signal_blocking(uint32_t condvar_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_BLOCKING), condvar_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_SIGNAL_BLOCKING), condvar_id, timeout);
 }
 static inline void ctf_top_condvar_signal_exit(uint32_t condvar_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_EXIT), condvar_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_SIGNAL_EXIT), condvar_id, ret);
 }
 static inline void ctf_top_condvar_broadcast_enter(uint32_t condvar_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_BROADCAST_ENTER), condvar_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_BROADCAST_ENTER), condvar_id);
 }
 static inline void ctf_top_condvar_broadcast_exit(uint32_t condvar_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_BROADCAST_EXIT), condvar_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_BROADCAST_EXIT), condvar_id, ret);
 }
 static inline void ctf_top_condvar_wait_enter(uint32_t condvar_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_WAIT_ENTER), condvar_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_WAIT_ENTER), condvar_id, timeout);
 }
 static inline void ctf_top_condvar_wait_exit(uint32_t condvar_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_WAIT_EXIT), condvar_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_CONDVAR_WAIT_EXIT), condvar_id, timeout, ret);
 }
 
 /* Work Queue */
 static inline void ctf_top_work_init(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_INIT), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_INIT), work_id);
 }
 
 static inline void ctf_top_work_submit_to_queue_enter(uint32_t queue_id, uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_ENTER), queue_id, work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_ENTER), queue_id, work_id);
 }
 
 static inline void ctf_top_work_submit_to_queue_exit(uint32_t queue_id, uint32_t work_id,
 						     int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_EXIT), queue_id, work_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_EXIT), queue_id, work_id,
 		  ret);
 }
 
 static inline void ctf_top_work_submit_enter(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_ENTER), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SUBMIT_ENTER), work_id);
 }
 
 static inline void ctf_top_work_submit_exit(uint32_t work_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_EXIT), work_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SUBMIT_EXIT), work_id, ret);
 }
 
 static inline void ctf_top_work_flush_enter(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_ENTER), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_FLUSH_ENTER), work_id);
 }
 
 static inline void ctf_top_work_flush_blocking(uint32_t work_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_BLOCKING), work_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_FLUSH_BLOCKING), work_id, timeout);
 }
 
 static inline void ctf_top_work_flush_exit(uint32_t work_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_EXIT), work_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_FLUSH_EXIT), work_id, ret);
 }
 
 static inline void ctf_top_work_cancel_enter(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_ENTER), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_ENTER), work_id);
 }
 
 static inline void ctf_top_work_cancel_exit(uint32_t work_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_EXIT), work_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_EXIT), work_id, ret);
 }
 
 static inline void ctf_top_work_cancel_sync_enter(uint32_t work_id, uint32_t sync_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_ENTER), work_id, sync_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_SYNC_ENTER), work_id, sync_id);
 }
 
 static inline void ctf_top_work_cancel_sync_blocking(uint32_t work_id, uint32_t sync_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_BLOCKING), work_id, sync_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_SYNC_BLOCKING), work_id, sync_id);
 }
 
 static inline void ctf_top_work_cancel_sync_exit(uint32_t work_id, uint32_t sync_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_EXIT), work_id, sync_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_SYNC_EXIT), work_id, sync_id, ret);
 }
 
 /* Work Queue Management */
 static inline void ctf_top_work_queue_init(uint32_t queue_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_INIT), queue_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_INIT), queue_id);
 }
 
 static inline void ctf_top_work_queue_start_enter(uint32_t queue_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_START_ENTER), queue_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_START_ENTER), queue_id);
 }
 
 static inline void ctf_top_work_queue_start_exit(uint32_t queue_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_START_EXIT), queue_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_START_EXIT), queue_id);
 }
 
 static inline void ctf_top_work_queue_stop_enter(uint32_t queue_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_ENTER), queue_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_STOP_ENTER), queue_id, timeout);
 }
 
 static inline void ctf_top_work_queue_stop_blocking(uint32_t queue_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_BLOCKING), queue_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_STOP_BLOCKING), queue_id, timeout);
 }
 
 static inline void ctf_top_work_queue_stop_exit(uint32_t queue_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_EXIT), queue_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_STOP_EXIT), queue_id, timeout, ret);
 }
 
 static inline void ctf_top_work_queue_drain_enter(uint32_t queue_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_DRAIN_ENTER), queue_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_DRAIN_ENTER), queue_id);
 }
 
 static inline void ctf_top_work_queue_drain_exit(uint32_t queue_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_DRAIN_EXIT), queue_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_DRAIN_EXIT), queue_id, ret);
 }
 
 static inline void ctf_top_work_queue_unplug_enter(uint32_t queue_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_UNPLUG_ENTER), queue_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_UNPLUG_ENTER), queue_id);
 }
 
 static inline void ctf_top_work_queue_unplug_exit(uint32_t queue_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_UNPLUG_EXIT), queue_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_QUEUE_UNPLUG_EXIT), queue_id, ret);
 }
 
 /* Delayable Work */
 static inline void ctf_top_work_delayable_init(uint32_t dwork_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_DELAYABLE_INIT), dwork_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_DELAYABLE_INIT), dwork_id);
 }
 
 static inline void ctf_top_work_schedule_for_queue_enter(uint32_t queue_id, uint32_t dwork_id,
 							 uint32_t delay)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_ENTER), queue_id, dwork_id,
-		  delay);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_ENTER), queue_id,
+		  dwork_id, delay);
 }
 
 static inline void ctf_top_work_schedule_for_queue_exit(uint32_t queue_id, uint32_t dwork_id,
 							uint32_t delay, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_EXIT), queue_id, dwork_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_EXIT), queue_id, dwork_id,
 		  delay, ret);
 }
 
 static inline void ctf_top_work_schedule_enter(uint32_t dwork_id, uint32_t delay)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_ENTER), dwork_id, delay);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SCHEDULE_ENTER), dwork_id, delay);
 }
 
 static inline void ctf_top_work_schedule_exit(uint32_t dwork_id, uint32_t delay, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_EXIT), dwork_id, delay, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_SCHEDULE_EXIT), dwork_id, delay, ret);
 }
 
 static inline void ctf_top_work_reschedule_for_queue_enter(uint32_t queue_id, uint32_t dwork_id,
 							   uint32_t delay)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_ENTER), queue_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_ENTER), queue_id,
 		  dwork_id, delay);
 }
 
 static inline void ctf_top_work_reschedule_for_queue_exit(uint32_t queue_id, uint32_t dwork_id,
 							  uint32_t delay, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_EXIT), queue_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_EXIT), queue_id,
 		  dwork_id, delay, ret);
 }
 
 static inline void ctf_top_work_reschedule_enter(uint32_t dwork_id, uint32_t delay)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_ENTER), dwork_id, delay);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_RESCHEDULE_ENTER), dwork_id, delay);
 }
 
 static inline void ctf_top_work_reschedule_exit(uint32_t dwork_id, uint32_t delay, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_EXIT), dwork_id, delay, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_RESCHEDULE_EXIT), dwork_id, delay, ret);
 }
 
 static inline void ctf_top_work_flush_delayable_enter(uint32_t dwork_id, uint32_t sync_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_ENTER), dwork_id, sync_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_ENTER), dwork_id, sync_id);
 }
 
 static inline void ctf_top_work_flush_delayable_exit(uint32_t dwork_id, uint32_t sync_id,
 						     int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_EXIT), dwork_id, sync_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_EXIT), dwork_id, sync_id,
 		  ret);
 }
 
 static inline void ctf_top_work_cancel_delayable_enter(uint32_t dwork_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_ENTER), dwork_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_ENTER), dwork_id);
 }
 
 static inline void ctf_top_work_cancel_delayable_exit(uint32_t dwork_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_EXIT), dwork_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_EXIT), dwork_id, ret);
 }
 
 static inline void ctf_top_work_cancel_delayable_sync_enter(uint32_t dwork_id, uint32_t sync_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_ENTER), dwork_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_ENTER), dwork_id,
 		  sync_id);
 }
 
 static inline void ctf_top_work_cancel_delayable_sync_exit(uint32_t dwork_id, uint32_t sync_id,
 							   int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_EXIT), dwork_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_EXIT), dwork_id,
 		  sync_id, ret);
 }
 
 /* Poll Work */
 static inline void ctf_top_work_poll_init_enter(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_INIT_ENTER), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_INIT_ENTER), work_id);
 }
 
 static inline void ctf_top_work_poll_init_exit(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_INIT_EXIT), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_INIT_EXIT), work_id);
 }
 
 static inline void ctf_top_work_poll_submit_to_queue_enter(uint32_t work_q_id, uint32_t work_id,
 							   uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_ENTER), work_q_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_ENTER), work_q_id,
 		  work_id, timeout);
 }
 
 static inline void ctf_top_work_poll_submit_to_queue_blocking(uint32_t work_q_id, uint32_t work_id,
 							      uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_BLOCKING), work_q_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_BLOCKING), work_q_id,
 		  work_id, timeout);
 }
 
 static inline void ctf_top_work_poll_submit_to_queue_exit(uint32_t work_q_id, uint32_t work_id,
 							  uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_EXIT), work_q_id,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_EXIT), work_q_id,
 		  work_id, timeout, ret);
 }
 
 static inline void ctf_top_work_poll_submit_enter(uint32_t work_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_ENTER), work_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_SUBMIT_ENTER), work_id, timeout);
 }
 
 static inline void ctf_top_work_poll_submit_exit(uint32_t work_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_EXIT), work_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_SUBMIT_EXIT), work_id, timeout, ret);
 }
 
 static inline void ctf_top_work_poll_cancel_enter(uint32_t work_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_CANCEL_ENTER), work_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_CANCEL_ENTER), work_id);
 }
 
 static inline void ctf_top_work_poll_cancel_exit(uint32_t work_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_CANCEL_EXIT), work_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_WORK_POLL_CANCEL_EXIT), work_id, ret);
 }
 
 /* Poll API */
 static inline void ctf_top_poll_event_init(uint32_t event_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_EVENT_INIT), event_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_EVENT_INIT), event_id);
 }
 
 static inline void ctf_top_poll_enter(uint32_t events_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_ENTER), events_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_ENTER), events_id);
 }
 
 static inline void ctf_top_poll_exit(uint32_t events_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_EXIT), events_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_EXIT), events_id, ret);
 }
 
 static inline void ctf_top_poll_signal_init(uint32_t signal_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_INIT), signal_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_SIGNAL_INIT), signal_id);
 }
 
 static inline void ctf_top_poll_signal_reset(uint32_t signal_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_RESET), signal_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_SIGNAL_RESET), signal_id);
 }
 
 static inline void ctf_top_poll_signal_check(uint32_t signal_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_CHECK), signal_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_SIGNAL_CHECK), signal_id);
 }
 
 static inline void ctf_top_poll_signal_raise(uint32_t signal_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_RAISE), signal_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_POLL_SIGNAL_RAISE), signal_id, ret);
 }
 
 /* Semaphore */
 static inline void ctf_top_semaphore_init(uint32_t sem_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_INIT), sem_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_INIT), sem_id, ret);
 }
 
 static inline void ctf_top_semaphore_reset(uint32_t sem_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_RESET), sem_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_RESET), sem_id);
 }
 
 static inline void ctf_top_semaphore_take_enter(uint32_t sem_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_TAKE_ENTER), sem_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_TAKE_ENTER), sem_id, timeout);
 }
 
 static inline void ctf_top_semaphore_take_blocking(uint32_t sem_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_TAKE_BLOCKING), sem_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_TAKE_BLOCKING), sem_id, timeout);
 }
 
 static inline void ctf_top_semaphore_take_exit(uint32_t sem_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_TAKE_EXIT), sem_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_TAKE_EXIT), sem_id, timeout, ret);
 }
 
 static inline void ctf_top_semaphore_give_enter(uint32_t sem_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_GIVE_ENTER), sem_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_GIVE_ENTER), sem_id);
 }
 
 static inline void ctf_top_semaphore_give_exit(uint32_t sem_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_GIVE_EXIT), sem_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SEMAPHORE_GIVE_EXIT), sem_id);
 }
 
 /* Mutex */
 static inline void ctf_top_mutex_init(uint32_t mutex_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_INIT), mutex_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_INIT), mutex_id, ret);
 }
 
 static inline void ctf_top_mutex_lock_enter(uint32_t mutex_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_LOCK_ENTER), mutex_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_LOCK_ENTER), mutex_id, timeout);
 }
 
 static inline void ctf_top_mutex_lock_blocking(uint32_t mutex_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_LOCK_BLOCKING), mutex_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_LOCK_BLOCKING), mutex_id, timeout);
 }
 
 static inline void ctf_top_mutex_lock_exit(uint32_t mutex_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_LOCK_EXIT), mutex_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_LOCK_EXIT), mutex_id, timeout, ret);
 }
 
 static inline void ctf_top_mutex_unlock_enter(uint32_t mutex_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_ENTER), mutex_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_UNLOCK_ENTER), mutex_id);
 }
 
 static inline void ctf_top_mutex_unlock_exit(uint32_t mutex_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id, ret);
 }
 
 /* Timer */
 static inline void ctf_top_timer_init(uint32_t timer)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_INIT), timer);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_INIT), timer);
 }
 
 static inline void ctf_top_timer_start(uint32_t timer, uint32_t duration, uint32_t period)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_START), timer, duration, period);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_START), timer, duration, period);
 }
 
 static inline void ctf_top_timer_stop(uint32_t timer)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STOP), timer);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STOP), timer);
 }
 
 static inline void ctf_top_timer_status_sync_enter(uint32_t timer)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_ENTER), timer);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STATUS_SYNC_ENTER), timer);
 }
 
 static inline void ctf_top_timer_status_sync_blocking(uint32_t timer, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING), timer, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING), timer, timeout);
 }
 
 static inline void ctf_top_timer_status_sync_exit(uint32_t timer, uint32_t result)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_EXIT), timer, result);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STATUS_SYNC_EXIT), timer, result);
 }
 
 /* Network socket */
@@ -1122,505 +1123,506 @@ typedef struct {
 
 static inline void ctf_top_socket_init(int32_t sock, uint32_t family, uint32_t type, uint32_t proto)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_INIT), sock, family, type, proto);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_INIT), sock, family, type, proto);
 }
 
 static inline void ctf_top_socket_close_enter(int32_t sock)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CLOSE_ENTER), sock);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_CLOSE_ENTER), sock);
 }
 
 static inline void ctf_top_socket_close_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CLOSE_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_CLOSE_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_shutdown_enter(int32_t sock, int32_t how)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SHUTDOWN_ENTER), sock, how);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SHUTDOWN_ENTER), sock, how);
 }
 
 static inline void ctf_top_socket_shutdown_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SHUTDOWN_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SHUTDOWN_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_bind_enter(int32_t sock, ctf_net_bounded_string_t addr,
 					     uint32_t addrlen, uint16_t port)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_BIND_ENTER), sock, addr, addrlen, port);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_BIND_ENTER), sock, addr, addrlen, port);
 }
 
 static inline void ctf_top_socket_bind_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_BIND_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_BIND_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_connect_enter(int32_t sock, ctf_net_bounded_string_t addr,
 						uint32_t addrlen)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CONNECT_ENTER), sock, addr, addrlen);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_CONNECT_ENTER), sock, addr, addrlen);
 }
 
 static inline void ctf_top_socket_connect_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_CONNECT_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_CONNECT_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_listen_enter(int32_t sock, uint32_t backlog)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_LISTEN_ENTER), sock, backlog);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_LISTEN_ENTER), sock, backlog);
 }
 
 static inline void ctf_top_socket_listen_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_LISTEN_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_LISTEN_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_accept_enter(int32_t sock)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_ACCEPT_ENTER), sock);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_ACCEPT_ENTER), sock);
 }
 
 static inline void ctf_top_socket_accept_exit(int32_t sock, ctf_net_bounded_string_t addr,
 					      uint32_t addrlen, uint16_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_ACCEPT_EXIT), sock, addr, addrlen, port,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_ACCEPT_EXIT), sock, addr, addrlen, port,
 		  ret);
 }
 
 static inline void ctf_top_socket_sendto_enter(int32_t sock, uint32_t len, uint32_t flags,
 					       ctf_net_bounded_string_t addr, uint32_t addrlen)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDTO_ENTER), sock, len, flags, addr,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SENDTO_ENTER), sock, len, flags, addr,
 		  addrlen);
 }
 
 static inline void ctf_top_socket_sendto_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDTO_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SENDTO_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_sendmsg_enter(int32_t sock, uint32_t flags, uint32_t msg,
 						ctf_net_bounded_string_t addr, uint32_t len)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDMSG_ENTER), sock, flags, msg, addr,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SENDMSG_ENTER), sock, flags, msg, addr,
 		  len);
 }
 
 static inline void ctf_top_socket_sendmsg_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SENDMSG_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SENDMSG_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_recvfrom_enter(int32_t sock, uint32_t max_len, uint32_t flags,
 						 uint32_t addr, uint32_t addrlen)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVFROM_ENTER), sock, max_len, flags, addr,
-		  addrlen);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_RECVFROM_ENTER), sock, max_len, flags,
+		  addr, addrlen);
 }
 
 static inline void ctf_top_socket_recvfrom_exit(int32_t sock, ctf_net_bounded_string_t addr,
 						uint32_t addrlen, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVFROM_EXIT), sock, addr, addrlen, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_RECVFROM_EXIT), sock, addr, addrlen, ret);
 }
 
 static inline void ctf_top_socket_recvmsg_enter(int32_t sock, uint32_t msg, uint32_t max_len,
 						uint32_t flags)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVMSG_ENTER), sock, msg, max_len, flags);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_RECVMSG_ENTER), sock, msg, max_len, flags);
 }
 
 static inline void ctf_top_socket_recvmsg_exit(int32_t sock, uint32_t len,
 					       ctf_net_bounded_string_t addr, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_RECVMSG_EXIT), sock, len, addr, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_RECVMSG_EXIT), sock, len, addr, ret);
 }
 
 static inline void ctf_top_socket_fcntl_enter(int32_t sock, uint32_t cmd, uint32_t flags)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_FCNTL_ENTER), sock, cmd, flags);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_FCNTL_ENTER), sock, cmd, flags);
 }
 
 static inline void ctf_top_socket_fcntl_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_FCNTL_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_FCNTL_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_ioctl_enter(int32_t sock, uint32_t req)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_IOCTL_ENTER), sock, req);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_IOCTL_ENTER), sock, req);
 }
 
 static inline void ctf_top_socket_ioctl_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_IOCTL_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_IOCTL_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_poll_enter(uint32_t fds, uint32_t nfds, int32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_ENTER), fds, nfds, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_POLL_ENTER), fds, nfds, timeout);
 }
 
 static inline void ctf_top_socket_poll_value(int32_t fd, uint16_t flag)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_VALUE), fd, flag);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_POLL_VALUE), fd, flag);
 }
 
 static inline void ctf_top_socket_poll_exit(uint32_t fds, int nfds, int ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_POLL_EXIT), fds, nfds, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_POLL_EXIT), fds, nfds, ret);
 }
 
 static inline void ctf_top_socket_getsockopt_enter(int32_t sock, uint32_t level, uint32_t optname)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKOPT_ENTER), sock, level, optname);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETSOCKOPT_ENTER), sock, level, optname);
 }
 
 static inline void ctf_top_socket_getsockopt_exit(int32_t sock, uint32_t level, uint32_t optname,
 						  uint32_t optval, uint32_t optlen, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKOPT_EXIT), sock, level, optname,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETSOCKOPT_EXIT), sock, level, optname,
 		  optval, optlen, ret);
 }
 
 static inline void ctf_top_socket_setsockopt_enter(int32_t sock, uint32_t level, uint32_t optname,
 						   uint32_t optval, uint32_t optlen)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SETSOCKOPT_ENTER), sock, level, optname,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SETSOCKOPT_ENTER), sock, level, optname,
 		  optval, optlen);
 }
 
 static inline void ctf_top_socket_setsockopt_exit(int32_t sock, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SETSOCKOPT_EXIT), sock, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SETSOCKOPT_EXIT), sock, ret);
 }
 
 static inline void ctf_top_socket_getpeername_enter(int32_t sock)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETPEERNAME_ENTER), sock);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETPEERNAME_ENTER), sock);
 }
 
 static inline void ctf_top_socket_getpeername_exit(int32_t sock, ctf_net_bounded_string_t addr,
 						   uint32_t addrlen, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETPEERNAME_EXIT), sock, addr, addrlen,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETPEERNAME_EXIT), sock, addr, addrlen,
 		  ret);
 }
 
 static inline void ctf_top_socket_getsockname_enter(int32_t sock)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKNAME_ENTER), sock);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETSOCKNAME_ENTER), sock);
 }
 
 static inline void ctf_top_socket_getsockname_exit(int32_t sock, ctf_net_bounded_string_t addr,
 						   uint32_t addrlen, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_GETSOCKNAME_EXIT), sock, addr, addrlen,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_GETSOCKNAME_EXIT), sock, addr, addrlen,
 		  ret);
 }
 
 static inline void ctf_top_socket_socketpair_enter(uint32_t family, uint32_t type, uint32_t proto,
 						   uint32_t sv)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_ENTER), family, type, proto, sv);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SOCKETPAIR_ENTER), family, type, proto,
+		  sv);
 }
 
 static inline void ctf_top_socket_socketpair_exit(int32_t sock_A, int32_t sock_B, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
 }
 
 static inline void ctf_top_net_recv_data_enter(int32_t if_index, uint32_t iface, uint32_t pkt,
 					       uint32_t len)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_ENTER), if_index, iface, pkt, len);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_RECV_DATA_ENTER), if_index, iface, pkt, len);
 }
 
 static inline void ctf_top_net_recv_data_exit(int32_t if_index, uint32_t iface, uint32_t pkt,
 					      int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_EXIT), if_index, iface, pkt, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_RECV_DATA_EXIT), if_index, iface, pkt, ret);
 }
 
 static inline void ctf_top_net_send_data_enter(int32_t if_index, uint32_t iface, uint32_t pkt,
 					       uint32_t len)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_SEND_DATA_ENTER), if_index, iface, pkt, len);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_SEND_DATA_ENTER), if_index, iface, pkt, len);
 }
 
 static inline void ctf_top_net_send_data_exit(int32_t if_index, uint32_t iface, uint32_t pkt,
 					      int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_SEND_DATA_EXIT), if_index, iface, pkt, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_SEND_DATA_EXIT), if_index, iface, pkt, ret);
 }
 
 static inline void ctf_top_net_rx_time(int32_t if_index, uint32_t iface, uint32_t pkt,
 				       uint32_t priority, uint32_t tc, uint32_t duration)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RX_TIME), if_index, iface, pkt, priority, tc,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_RX_TIME), if_index, iface, pkt, priority, tc,
 		  duration);
 }
 
 static inline void ctf_top_net_tx_time(int32_t if_index, uint32_t iface, uint32_t pkt,
 				       uint32_t priority, uint32_t tc, uint32_t duration)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_TX_TIME), if_index, iface, pkt, priority, tc,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NET_TX_TIME), if_index, iface, pkt, priority, tc,
 		  duration);
 }
 
 static inline void ctf_named_event(ctf_bounded_string_t name, uint32_t arg0, uint32_t arg1)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NAMED_EVENT), name, arg0, arg1);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_NAMED_EVENT), name, arg0, arg1);
 }
 
 /* GPIO */
 static inline void ctf_top_gpio_pin_interrupt_configure_enter(uint32_t port, uint32_t pin,
 							      uint32_t flags)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_CONFIGURE_INTERRUPT_ENTER), port, pin,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_CONFIGURE_INTERRUPT_ENTER), port, pin,
 		  flags);
 }
 
 static inline void ctf_top_gpio_pin_interrupt_configure_exit(uint32_t port, uint32_t pin,
 							     int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_CONFIGURE_INTERRUPT_EXIT), port, pin,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_CONFIGURE_INTERRUPT_EXIT), port, pin,
 		  ret);
 }
 
 static inline void ctf_top_gpio_pin_configure_enter(uint32_t port, uint32_t pin, uint32_t flags)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_CONFIGURE_ENTER), port, pin, flags);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_CONFIGURE_ENTER), port, pin, flags);
 }
 
 static inline void ctf_top_gpio_pin_configure_exit(uint32_t port, uint32_t pin, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_CONFIGURE_EXIT), port, pin, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_CONFIGURE_EXIT), port, pin, ret);
 }
 
 static inline void ctf_top_gpio_port_get_direction_enter(uint32_t port, uint32_t map,
 							 uint32_t inputs, uint32_t outputs)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_GET_DIRECTION_ENTER), port, map, inputs,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_GET_DIRECTION_ENTER), port, map, inputs,
 		  outputs);
 }
 
 static inline void ctf_top_gpio_port_get_direction_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_GET_DIRECTION_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_GET_DIRECTION_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_pin_get_config_enter(uint32_t port, uint32_t pin, uint32_t flags)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_GET_CONFIG_ENTER), port, pin, flags);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_GET_CONFIG_ENTER), port, pin, flags);
 }
 
 static inline void ctf_top_gpio_pin_get_config_exit(uint32_t port, uint32_t pin, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PIN_GET_CONFIG_EXIT), port, pin, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PIN_GET_CONFIG_EXIT), port, pin, ret);
 }
 
 static inline void ctf_top_gpio_port_get_raw_enter(uint32_t port, uint32_t value)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_GET_RAW_ENTER), port, value);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_GET_RAW_ENTER), port, value);
 }
 
 static inline void ctf_top_gpio_port_get_raw_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_GET_RAW_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_GET_RAW_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_port_set_masked_raw_enter(uint32_t port, uint32_t mask,
 							  uint32_t value)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_SET_MASKED_RAW_ENTER), port, mask,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_SET_MASKED_RAW_ENTER), port, mask,
 		  value);
 }
 
 static inline void ctf_top_gpio_port_set_masked_raw_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_SET_MASKED_RAW_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_SET_MASKED_RAW_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_port_set_bits_raw_enter(uint32_t port, uint32_t pins)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_SET_BITS_RAW_ENTER), port, pins);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_SET_BITS_RAW_ENTER), port, pins);
 }
 
 static inline void ctf_top_gpio_port_set_bits_raw_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_SET_BITS_RAW_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_SET_BITS_RAW_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_port_clear_bits_raw_enter(uint32_t port, uint32_t pins)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_CLEAR_BITS_RAW_ENTER), port, pins);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_CLEAR_BITS_RAW_ENTER), port, pins);
 }
 
 static inline void ctf_top_gpio_port_clear_bits_raw_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_CLEAR_BITS_RAW_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_CLEAR_BITS_RAW_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_port_toggle_bits_enter(uint32_t port, uint32_t pins)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_TOGGLE_BITS_ENTER), port, pins);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_TOGGLE_BITS_ENTER), port, pins);
 }
 
 static inline void ctf_top_gpio_port_toggle_bits_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_PORT_TOGGLE_BITS_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_PORT_TOGGLE_BITS_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_init_callback_enter(uint32_t callback, uint32_t handler,
 						    uint32_t pin_mask)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_INIT_CALLBACK_ENTER), callback, handler,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_INIT_CALLBACK_ENTER), callback, handler,
 		  pin_mask);
 }
 
 static inline void ctf_top_gpio_init_callback_exit(uint32_t callback)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_INIT_CALLBACK_EXIT), callback);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_INIT_CALLBACK_EXIT), callback);
 }
 
 static inline void ctf_top_gpio_add_callback_enter(uint32_t port, uint32_t callback)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_ADD_CALLBACK_ENTER), port, callback);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_ADD_CALLBACK_ENTER), port, callback);
 }
 
 static inline void ctf_top_gpio_add_callback_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_ADD_CALLBACK_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_ADD_CALLBACK_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_remove_callback_enter(uint32_t port, uint32_t callback)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_REMOVE_CALLBACK_ENTER), port, callback);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_REMOVE_CALLBACK_ENTER), port, callback);
 }
 
 static inline void ctf_top_gpio_remove_callback_exit(uint32_t port, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_REMOVE_CALLBACK_EXIT), port, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_REMOVE_CALLBACK_EXIT), port, ret);
 }
 
 static inline void ctf_top_gpio_get_pending_int_enter(uint32_t dev)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_GET_PENDING_INT_ENTER), dev);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_GET_PENDING_INT_ENTER), dev);
 }
 
 static inline void ctf_top_gpio_get_pending_int_exit(uint32_t dev, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_GET_PENDING_INT_EXIT), dev, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_GET_PENDING_INT_EXIT), dev, ret);
 }
 
 static inline void ctf_top_gpio_fire_callbacks_enter(uint32_t list, uint32_t port, uint32_t pins)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_FIRE_CALLBACKS_ENTER), list, port, pins);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_FIRE_CALLBACKS_ENTER), list, port, pins);
 }
 
 static inline void ctf_top_gpio_fire_callback(uint32_t port, uint32_t cb)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_FIRE_CALLBACK), port, cb);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_GPIO_FIRE_CALLBACK), port, cb);
 }
 
 /* Mailbox */
 static inline void ctf_top_mbox_init(uint32_t mbox_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_INIT), mbox_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_INIT), mbox_id);
 }
 
 static inline void ctf_top_mbox_message_put_enter(uint32_t mbox_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_ENTER), mbox_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_MESSAGE_PUT_ENTER), mbox_id, timeout);
 }
 
 static inline void ctf_top_mbox_message_put_blocking(uint32_t mbox_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_BLOCKING), mbox_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_MESSAGE_PUT_BLOCKING), mbox_id, timeout);
 }
 
 static inline void ctf_top_mbox_message_put_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_EXIT), mbox_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_MESSAGE_PUT_EXIT), mbox_id, timeout, ret);
 }
 
 static inline void ctf_top_mbox_put_enter(uint32_t mbox_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_PUT_ENTER), mbox_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_PUT_ENTER), mbox_id, timeout);
 }
 
 static inline void ctf_top_mbox_put_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_PUT_EXIT), mbox_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_PUT_EXIT), mbox_id, timeout, ret);
 }
 
 static inline void ctf_top_mbox_async_put_enter(uint32_t mbox_id, uint32_t sem_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_ASYNC_PUT_ENTER), mbox_id, sem_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_ASYNC_PUT_ENTER), mbox_id, sem_id);
 }
 
 static inline void ctf_top_mbox_async_put_exit(uint32_t mbox_id, uint32_t sem_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_ASYNC_PUT_EXIT), mbox_id, sem_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_ASYNC_PUT_EXIT), mbox_id, sem_id);
 }
 
 static inline void ctf_top_mbox_get_enter(uint32_t mbox_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_ENTER), mbox_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_GET_ENTER), mbox_id, timeout);
 }
 
 static inline void ctf_top_mbox_get_blocking(uint32_t mbox_id, uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_BLOCKING), mbox_id, timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_GET_BLOCKING), mbox_id, timeout);
 }
 
 static inline void ctf_top_mbox_get_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_EXIT), mbox_id, timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_GET_EXIT), mbox_id, timeout, ret);
 }
 
 static inline void ctf_top_mbox_data_get(uint32_t msg_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_DATA_GET), msg_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_MBOX_DATA_GET), msg_id);
 }
 
 /* Event */
 static inline void ctf_top_event_init(uint32_t event_id)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_INIT), event_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_INIT), event_id);
 }
 
 static inline void ctf_top_event_post_enter(uint32_t event_id, uint32_t events,
 					    uint32_t events_mask)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_POST_ENTER), event_id, events, events_mask);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_POST_ENTER), event_id, events, events_mask);
 }
 
 static inline void ctf_top_event_post_exit(uint32_t event_id, uint32_t events, uint32_t events_mask)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_POST_EXIT), event_id, events, events_mask);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_POST_EXIT), event_id, events, events_mask);
 }
 
 static inline void ctf_top_event_wait_enter(uint32_t event_id, uint32_t events, uint32_t options,
 					    uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_ENTER), event_id, events, options,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_WAIT_ENTER), event_id, events, options,
 		  timeout);
 }
 
 static inline void ctf_top_event_wait_blocking(uint32_t event_id, uint32_t events, uint32_t options,
 					       uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_BLOCKING), event_id, events, options,
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_WAIT_BLOCKING), event_id, events, options,
 		  timeout);
 }
 
 static inline void ctf_top_event_wait_exit(uint32_t event_id, uint32_t events, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_EXIT), event_id, events, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_WAIT_EXIT), event_id, events, ret);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
