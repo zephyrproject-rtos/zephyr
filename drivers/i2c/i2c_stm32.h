@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
-#define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
+#define ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
 
 #include <zephyr/drivers/i2c/stm32.h>
 #include <zephyr/kernel.h>
@@ -213,4 +213,4 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
 #define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */
+#endif	/* ZEPHYR_DRIVERS_I2C_I2C_STM32_H_ */

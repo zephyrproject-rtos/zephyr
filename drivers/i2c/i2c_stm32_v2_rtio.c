@@ -24,7 +24,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio);
 
-#include "i2c_ll_stm32.h"
+#include "i2c_stm32.h"
 #include "i2c-priv.h"
 
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)

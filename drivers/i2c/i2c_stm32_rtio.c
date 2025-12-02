@@ -23,7 +23,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 
-#include "i2c_ll_stm32.h"
+#include "i2c_stm32.h"
 #include "i2c-priv.h"
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)

@@ -28,9 +28,9 @@
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32);
+LOG_MODULE_REGISTER(i2c_stm32);
 
-#include "i2c_ll_stm32.h"
+#include "i2c_stm32.h"
 #include "i2c-priv.h"
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
