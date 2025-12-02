@@ -8,8 +8,9 @@ for ensuring the creation, verification and configuration management of requirem
 follows a suitable approach.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :glob:
 
    safety_requirements.rst
    safety_requirements_checklist.rst
+   getting_started/index

@@ -6,7 +6,7 @@ Safety Requirements Checklist
 Introduction
 ************
 
-The requirements that are created, modified or updated need to be suitable. This means they need to be unambiguous, uniquely idendifiable, feasible, testable etc.
+The requirements that are created, modified or updated need to be suitable. This means they need to be unambiguous, uniquely identifiable, feasible, testable etc.
 To ensure this, each requirement needs to be reviewed in its pull request, if it fulfills the basic requirements to be a requirement.
 This checklist shall serve as the minimum that needs to be considered when doing a review of a requirement PR.
 
@@ -19,7 +19,7 @@ Review Instructions
 *******************
 
 This checklist lists the topics and questions that shall be considered when approving requirements during a review.
-The review outcome must be documented in the PR review, in a way that it is clear that this checklist has been used and the actually outcome of the review regarding
+The review outcome must be documented in the PR review, in a way that it is clear that this checklist has been used and the actual outcome of the review regarding
 open questions, findings or approval.
 This checklist shall be applied at least once for new or changed requirements within the scope of a safety assessment before the safety scope is released.
 
@@ -33,7 +33,7 @@ The review can be done on two levels - regarding a single requirement or as a gr
 Review checkpoints for each and every requirement
 *************************************************
 
-Each new or changed requirement needsto be analysed, to make sure it is suitable and to identify if it is affecting the safety of Zephyr in any kind.
+Each new or changed requirement needs to be analysed, to make sure it is suitable and to identify if it is affecting the safety of Zephyr in any kind.
 
 .. list-table:: Checkpoints for requirements review
    :widths: 20 80 80 120
@@ -54,28 +54,44 @@ Each new or changed requirement needsto be analysed, to make sure it is suitable
 
    * - VerReq_1_1
      - Is this requirement atomic?
-     - The requirement really must only describe one thing that needs to be fulfilled. Otherwise things like safety analysis, unique linking to architectural components and implementation and verifibility can be impaired.
-     - Statements like **The signal a shall switch on and off the yellow LED and the error state shall be indicated by switching on the red LED** are not atomic. This needs to go into two requirements: **REQ1: The signal a shall switch on and off the yellow LED.**and **REQ2: The error state shall be indicated by switching on the red LED.** This also can be suplemented by a **REQ3(variant a): Yellow LED and the red Error LED must be separate** or **REQ3(varianb b): Yellow LED and red Error LED can be combined in case of TBD**.
+     - The requirement really must only describe one thing that needs to be fulfilled. Otherwise things like safety analysis,
+       unique linking to architectural components and implementation and verifiability can be impaired.
+     - Statements like **The signal a shall switch on and off the yellow LED and the error state shall be indicated by switching on the red LED**
+       are not atomic. This needs to go into two requirements - **REQ1: The signal a shall switch on and off the yellow LED.** and **REQ2: The error state shall be indicated by switching on the red LED.**
+       This also can be supplemented by a **REQ3(variant a): Yellow LED and the red Error LED must be separate** or
+       **REQ3(variant b): Yellow LED and red Error LED can be combined in case of TBD**.
 
    * - VerReq_1_2
-     - Is the requirements internally consistent?
+     - Is the requirement internally consistent?
      - The requirement itself must be fully consistent within itself.
-     - Statements like **The system shall use a preemtive RTOS to guarantee deterministic task scheduling. The system also need to ensure that all tasks, including low-priority background logging tasks, complete without preemption to preserve data integrity.** are contradicting. Stuff like this must be avoided. If both options shall be available, you must define the conditions for these options and how to configure the options.
+     - Statements like **The system shall use a preemtpive RTOS to guarantee deterministic task scheduling.
+       The system also need to ensure that all tasks, including low-priority background logging tasks, complete without preemption to preserve data integrity.** are contradicting.
+       Stuff like this must be avoided. If both options shall be available, you must define the conditions for these options and how to configure the options.
 
    * - VerReq_1_3
      - Is the requirement feasible, achievable and verifiable?
-     - Requirements are not a fantasy wish-list, they need to be able to reach with reasonable matter (although what is reasonable can differ between projects for sure). So generally this means something that sounds good on paper but is technically impossible, internally contradictory, or violates fundamental constraints of the system. Verifiable here means that you need to be able to verify, either by test, (code-) review, analysis or other means that this requirement has been met.
-     - A bad example is e.g. **The RTOS shall guarantee zero‑latency interrupt handling for all devices under all conditions.**, which is physically impossible, as no hardware can respond in litterally zero time. Better would be something more concrete like **The RTOS shall guarantee an interrupt latency of ≤ 5 µs on the target HW architecture at 80 MHz under maximum system load.**
+     - Requirements are not a fantasy wish-list, they need to be able to reach with reasonable matter (although what is reasonable can differ
+       between projects for sure). So generally this means something that sounds good on paper but is technically impossible,
+       internally contradictory, or violates fundamental constraints of the system. Verifiable here means that you need to be able to verify, either by test, (code-) review, analysis or other means that this requirement has been met.
+     - A bad example is e.g. **The RTOS shall guarantee zero‑latency interrupt handling for all devices under all conditions.**,
+       which is physically impossible, as no hardware can respond in literally zero time.
+       Better would be something more concrete like
+       **The RTOS shall guarantee an interrupt latency of ≤ 5 µs on the target HW architecture at 80 MHz under maximum system load.**
 
    * - VerReq_1_4
      - Is the requirement complete?
      - Is all information that needs to be defined to clearly state the intention of the requirement available?
-     - The statement must either clearly state all needed data and information or give a reliable reference to where to find that data. This means that referenced data sources have to be under control of the requirement author or stakeholder, references that might change over time, like internet URLs to external sources are not suitable.
+     - The statement must either clearly state all needed data and information or give a reliable reference to where to find that data.
+       This means that referenced data sources have to be under control of the requirement author or stakeholder,
+       references that might change over time, like internet URLs to external sources are not suitable.
 
    * - VerReq_1_5
      - Is the requirement's definition free from any implementation?
-     - Requirements must describe the "what" not the "how" something is done. There are corner cases where the requirement intentionally restricts the implementation variants, usually for some desgin reasons, these reasons then must be stated in the requirement rational or comment (whatever is used)
-     - Avoid statements like **The RTOS shall use a priority-based preemptive scheduler implemented with a round-robin algorithm for tasks of equal priority**, consider instead to focus on the functional needs **The RTOS shall support task scheduling that ensures higher-priority tasks can preempt lower-priority tasks, and tasks of equal priority are scheduled in a manner that prevents starvation.**
+     - Requirements must describe the "what" not the "how" something is done. There are corner cases where the requirement intentionally restricts the implementation variants,
+       usually for some design reasons, these reasons then must be stated in the requirement rational or comment (whatever is used)
+     - Avoid statements like **The RTOS shall use a priority-based preemptive scheduler implemented with a round-robin algorithm for tasks of equal priority**,
+       consider instead to focus on the functional needs
+       **The RTOS shall support task scheduling that ensures higher-priority tasks can preempt lower-priority tasks, and tasks of equal priority are scheduled in a manner that prevents starvation.**
 
    * - VerReq_1_6
      - Is the (safety/security) criticality of the requirements defined?
@@ -93,7 +109,10 @@ Each new or changed requirement needsto be analysed, to make sure it is suitable
      - Are all terms used in this requirement clear to the intended audience?
      - This targets both accuracy and comprehensibility of the requirement. It needs to be clear, what is meant by the terms used in this requirement. Terms that have
        a special meaning for the project need to be clearly defined in a glossary or along with the requirement.
-     - The statement **The RTOS shall support IPC mechanisms such as mailboxes and semaphores for task synchronization** could be problematic, as the audience (testers, managers, POs etc.) might not be familiar with IPC or even what is meant by mailbox or semaphores in the context of an RTOS. If there is no glossary that explains these terms to all stakeholders, consider phrasing this requirement more like **The RTOS shall provide mechanisms that allow tasks to exchange data and coordinate their execution, such as message-passing and signaling features.**
+     - The statement **The RTOS shall support IPC mechanisms such as mailboxes and semaphores for task synchronization** could be problematic,
+       as the audience (testers, managers, POs etc.) might not be familiar with IPC or even what is meant by mailbox or semaphores in the context of an RTOS.
+       If there is no glossary that explains these terms to all stakeholders, consider phrasing this requirement more like
+       **The RTOS shall provide mechanisms that allow tasks to exchange data and coordinate their execution, such as message-passing and signaling features.**
 
 Review checkpoints looking at a group of requirements
 *****************************************************
@@ -109,13 +128,18 @@ Review checkpoints looking at a group of requirements
 
    * - VerReq_2_0
      - Are the requirements appropriately grouped and structured?
-     - Usually a suitable requirements structure follows a hierarchical order and within the hierarchical layers the requirements are grouped e.g. regarding their functionality, criticality, parent requirement's source etc.
-     - An unsuitably grouped requirement is e.g. in the wrong section, or in a wrong hierarchy level (e.g. in systems requirements although the requirement defines a specific property of a kernel component and therefore has to be on software component level), sections also might be overloaded and need more structuring in sub-sections.
+     - Usually a suitable requirements structure follows a hierarchical order and within the hierarchical layers the requirements are grouped
+       e.g. regarding their functionality, criticality, parent requirement's source etc.
+     - An unsuitably grouped requirement is e.g. in the wrong section, or in a wrong hierarchy level
+       (e.g. in systems requirements although the requirement defines a specific property of a kernel component and therefore has to be on software component level),
+       sections also might be overloaded and need more structuring in sub-sections.
 
    * - VerReq_2_1
      - Is each requirement externally consistent?
-     - he requirements must not conflict or contradict each other.
-     - Consider having two requirements: **Requirement A: The RTOS shall support a maximum of 10 concurrent tasks. Requirement B: The RTOS shall support up to 20 concurrent tasks for high-performance applications.** - These two requirements clearly contradict each other, but might both be correct for the persons writing each one of them. Usually havinig requirements like this needs communication between the authors of the requirements, and a possible solution might be the following: **The RTOS shall support up to 20 concurrent tasks, with a default configuration of 10 tasks for standard applications.**
+     - The requirements must not conflict or contradict each other.
+     - Consider having two requirements: **Requirement A: The RTOS shall support a maximum of 10 concurrent tasks. Requirement B: The RTOS shall support up to 20 concurrent tasks for high-performance applications.** -
+       These two requirements clearly contradict each other, but might both be correct for the persons writing each one of them. Usually having requirements like this needs communication between the authors of the requirements,
+       and a possible solution might be the following: **The RTOS shall support up to 20 concurrent tasks, with a default configuration of 10 tasks for standard applications.**
 
    * - VerReq_2_2
      - Is each requirement suitably traceable?
@@ -124,5 +148,5 @@ Review checkpoints looking at a group of requirements
 
    * - VerReq_2_3
      - Is the requirement unique?
-     - Requirements must not be dublicated. If you need a requirement to clearify things in multiple locations, make sure one is the "main requirement" and the others are just linked information.
+     - Requirements must not be duplicated. If you need a requirement to clarify things in multiple locations, make sure one is the "main requirement" and the others are just linked information.
      - This is self explanatory, two same or similar requirements must be avoided.
