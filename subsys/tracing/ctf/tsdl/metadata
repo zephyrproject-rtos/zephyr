@@ -9,7 +9,7 @@ typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := 
 
 struct event_header {
 	uint32_t timestamp;
-	uint8_t id;
+	uint16_t id;
 };
 
 trace {
