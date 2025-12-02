@@ -142,9 +142,23 @@ config I2S_TEST_FRAME_CLK_INV_UNSUPPORTED
 	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
 	  When set to 'n', test will do the transmission.
 
+config I2S_TEST_BLOCK_SIZE_4_UNSUPPORTED
+	bool "Block_size of 4 bytes is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
 config I2S_TEST_BLOCK_SIZE_6_UNSUPPORTED
-	bool "Block_size of 6 is not supported by the driver"
+	bool "Block_size of 6 bytes is not supported by the driver"
 	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_BLOCK_SIZE_8_UNSUPPORTED
+	bool "Block_size of 8 bytes is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_TDM_ENABLED
 	help
 	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
 	  When set to 'n', test will do the transmission.

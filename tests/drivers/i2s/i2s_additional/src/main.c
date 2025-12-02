@@ -748,15 +748,53 @@ ZTEST(i2s_additional, test_05b_format_frame_clk_inv)
 #endif
 }
 
+/** @brief Test I2S transfer with block_size set to 4.
+ */
+ZTEST(i2s_additional, test_06a_block_size_4)
+{
+	struct i2s_config i2s_cfg = default_i2s_cfg;
+
+	i2s_cfg.block_size = 4;
+	i2s_cfg.word_size = 8;
+
+#if defined(CONFIG_I2S_TEST_BLOCK_SIZE_4_UNSUPPORTED)
+	int ret;
+
+	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
+	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);
+#else
+	i2s_dir_both_transfer_long(&i2s_cfg);
+#endif
+}
+
 /** @brief Test I2S transfer with block_size set to 6.
  */
-ZTEST(i2s_additional, test_06_block_size_6)
+ZTEST(i2s_additional, test_06b_block_size_6)
 {
 	struct i2s_config i2s_cfg = default_i2s_cfg;
 
 	i2s_cfg.block_size = 6;
 
 #if defined(CONFIG_I2S_TEST_BLOCK_SIZE_6_UNSUPPORTED)
+	int ret;
+
+	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
+	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);
+#else
+	i2s_dir_both_transfer_long(&i2s_cfg);
+#endif
+}
+
+/** @brief Test I2S transfer with block_size set to 8.
+ */
+ZTEST(i2s_additional, test_06c_block_size_8)
+{
+	struct i2s_config i2s_cfg = default_i2s_cfg;
+
+	i2s_cfg.block_size = 8;
+	i2s_cfg.word_size = 8;
+
+#if defined(CONFIG_I2S_TEST_BLOCK_SIZE_8_UNSUPPORTED)
 	int ret;
 
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
