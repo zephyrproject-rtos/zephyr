@@ -88,6 +88,24 @@ choice MEMC_LOG_LEVEL_CHOICE
 	default MEMC_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
 endchoice
 
+config MEMC_NXP_CACHE64_INIT
+	bool "NXP CACHE64 POLSEL init for FlexSPI/XSPI"
+	default y
+	depends on DT_HAS_NXP_CACHE64_ENABLED
+	help
+	  Initialize CACHE64 policy selector (POLSEL) from Devicetree and optionally
+	  enable write buffer and cache. No system cache maintenance API is provided.
+
+config MEMC_NXP_CACHE64_INIT_PRIORITY
+	int "NXP CACHE64 init priority (POST_KERNEL)"
+	default 10
+	depends on MEMC_NXP_CACHE64_INIT
+	help
+	  Initialization priority for the CACHE64 POLSEL setup. This driver must
+	  run after the FlexSPI NOR flash driver, which typically uses
+	  CONFIG_FLASH_INIT_PRIORITY (often 80). Choose a value greater than the
+	  flash init priority to ensure FlexSPI reset does not wipe cache settings.
+
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
 if DT_HAS_NXP_XSPI_PSRAM_ENABLED
