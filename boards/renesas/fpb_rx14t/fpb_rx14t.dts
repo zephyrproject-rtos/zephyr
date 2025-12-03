@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include "fpb_rx14t-pinctrl.dtsi"
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Renesas FPB-RX14T";
@@ -37,9 +38,20 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button {
+			label = "sw1";
+			gpios = <&ioport1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
+		sw0 = &sw1;
 	};
 };
 
@@ -56,11 +68,19 @@
 	clocks = <&hoco>;
 };
 
+&ioport1 {
+	status = "okay";
+};
+
 &ioport3 {
 	status = "okay";
 };
 
 &ioport9 {
+	status = "okay";
+};
+
+&port_irq0 {
 	status = "okay";
 };
 
