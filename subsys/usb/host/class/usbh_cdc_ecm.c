@@ -300,29 +300,19 @@ static int usbh_cdc_ecm_comm_rx_cb(struct usb_device *const udev, struct uhc_tra
 		} else {
 			net_if_carrier_off(priv->iface);
 		}
+		LOG_DBG("comm rx xfer callback get network %s",
+			sys_le16_to_cpu(notif->wValue) ? "connected" : "disconnected");
 		break;
 	case USB_CDC_CONNECTION_SPEED_CHANGE:
 		if (xfer->buf->len != (sizeof(struct cdc_notification_packet) + 8)) {
 			ret = -EBADMSG;
 			goto cleanup;
 		}
-
 		link_speeds = (uint32_t *)(notif + 1);
-
-		for (size_t i = 0; i < 2; i++) {
-			link_speeds[i] = sys_le32_to_cpu(link_speeds[i]);
-			switch (i) {
-			case 0:
-				priv->download_speed = link_speeds[i];
-				break;
-			case 1:
-				priv->upload_speed = link_speeds[i];
-				break;
-			default:
-				ret = -EBADMSG;
-				goto cleanup;
-			}
-		}
+		priv->download_speed = sys_le32_to_cpu(link_speeds[0]);
+		priv->upload_speed = sys_le32_to_cpu(link_speeds[1]);
+		LOG_DBG("comm rx xfer callback get connection speed UL %d bps / DL %d bps",
+			priv->upload_speed, priv->download_speed);
 		break;
 	default:
 		break;
