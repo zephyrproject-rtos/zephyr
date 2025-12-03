@@ -13,4 +13,11 @@
 				 <RZA2M_PINMUX(PORT_09, 1, 4)>; /* RXD */
 		};
 	};
+
+	/omit-if-no-ref/ i2c3_default: i2c3_default {
+		i2c3-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_D, 6, 1)>,	/* RIIC3SCL */
+				 <RZA2M_PINMUX(PORT_D, 7, 1)>;	/* RIIC3SDA */
+		};
+	};
 };
