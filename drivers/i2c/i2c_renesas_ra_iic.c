@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 
 #include "r_iic_master.h"
 #include <errno.h>
@@ -27,6 +28,8 @@ static const double RA_IIC_MASTER_DIV_TIME_NS = 1000000000;
 struct i2c_ra_iic_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *clock_dev;
+	const struct clock_control_ra_subsys_cfg clock_subsys;
 	uint32_t noise_filter_stage;
 	double rise_time_s;
 	double fall_time_s;
@@ -44,7 +47,7 @@ struct i2c_ra_iic_data {
 };
 
 /* IIC master clock setting calculation function. */
-static void calc_iic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
+static int calc_iic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
 					  iic_master_clock_settings_t *clk_cfg);
 
 /* FSP interruption handlers. */
@@ -278,6 +281,11 @@ static int i2c_ra_iic_init(const struct device *dev)
 		return ret;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	k_mutex_init(&data->bus_mutex);
 	k_sem_init(&data->complete_sem, 0, 1);
 
@@ -285,8 +293,12 @@ static int i2c_ra_iic_init(const struct device *dev)
 	case I2C_MASTER_RATE_STANDARD:
 	case I2C_MASTER_RATE_FAST:
 	case I2C_MASTER_RATE_FASTPLUS:
-		calc_iic_master_clock_setting(dev, data->fsp_config.rate,
-					      &data->iic_master_ext_cfg.clock_settings);
+		ret = calc_iic_master_clock_setting(dev, data->fsp_config.rate,
+						    &data->iic_master_ext_cfg.clock_settings);
+		if (ret != 0) {
+			LOG_ERR("Failed to calculate I2C clock settings");
+			break;
+		}
 		data->iic_master_ext_cfg.timeout_mode = IIC_MASTER_TIMEOUT_MODE_SHORT;
 		data->iic_master_ext_cfg.timeout_scl_low = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED;
 
@@ -295,6 +307,10 @@ static int i2c_ra_iic_init(const struct device *dev)
 	default:
 		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, data->fsp_config.rate);
 		return -ENOTSUP;
+	}
+
+	if (ret != 0) {
+		return ret;
 	}
 
 	fsp_err = R_IIC_MASTER_Open(&data->ctrl, &data->fsp_config);
@@ -307,14 +323,13 @@ static int i2c_ra_iic_init(const struct device *dev)
 }
 
 static void calc_iic_master_bitrate(const struct i2c_ra_iic_config *config, uint32_t total_brl_brh,
-				    uint32_t brh, uint32_t divider,
+				    uint32_t brh, uint32_t divider, uint32_t peripheral_clock,
 				    struct ra_iic_master_bitrate *result)
 {
 	const uint32_t noise_filter_stage = config->noise_filter_stage;
 	const double rise_time_s = config->rise_time_s;
 	const double fall_time_s = config->fall_time_s;
 	const uint32_t requested_duty = config->duty_cycle_percent;
-	const uint32_t peripheral_clock = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_PCLKB);
 	uint32_t constant_add;
 	uint32_t divided_pclk;
 
@@ -352,8 +367,8 @@ static void calc_iic_master_bitrate(const struct i2c_ra_iic_config *config, uint
 		result->divider, result->brh, result->brl, result->duty_error_percent);
 }
 
-static void calc_iic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
-					  iic_master_clock_settings_t *clk_cfg)
+static int calc_iic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
+					 iic_master_clock_settings_t *clk_cfg)
 {
 	const struct i2c_ra_iic_config *config = dev->config;
 	struct ra_iic_master_bitrate bitrate = {};
@@ -361,9 +376,10 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 	const double fall_time_s = config->fall_time_s;
 	const uint32_t noise_filter_stage = config->noise_filter_stage;
 	const uint32_t requested_duty = config->duty_cycle_percent;
-	const uint32_t peripheral_clock = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_PCLKB);
+	uint32_t peripheral_clock;
 	uint32_t min_brh, min_brl_brh, total_brl_brh;
 	uint32_t divided_pclk, constant_add, requested_bitrate;
+	int ret;
 
 	switch (fsp_i2c_rate) {
 	case I2C_MASTER_RATE_STANDARD:
@@ -373,14 +389,21 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 		break;
 	default:
 		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, fsp_i2c_rate);
-		return;
+		return -EINVAL;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev,
+				     (clock_control_subsys_t)&config->clock_subsys,
+				     &peripheral_clock);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Start with maximum possible bitrate. */
 	min_brh = noise_filter_stage + 1;
 	min_brl_brh = 2 * min_brh;
 
-	calc_iic_master_bitrate(config, min_brl_brh, min_brh, 0, &bitrate);
+	calc_iic_master_bitrate(config, min_brl_brh, min_brh, 0, peripheral_clock, &bitrate);
 
 	/* Start with the smallest divider because it gives the most resolution. */
 	constant_add = 3 + noise_filter_stage;
@@ -415,7 +438,7 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 
 		/* Calculate the actual bitrate and duty cycle. */
 		calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-					&temp_bitrate);
+					peripheral_clock, &temp_bitrate);
 
 		/* Adjust duty cycle down if it helps. */
 		while (temp_bitrate.duty > requested_duty) {
@@ -427,7 +450,7 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 			}
 
 			calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-						&new_bitrate);
+						peripheral_clock, &new_bitrate);
 
 			if (new_bitrate.duty_error_percent < temp_bitrate.duty_error_percent) {
 				temp_bitrate = new_bitrate;
@@ -447,7 +470,7 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 			}
 
 			calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-						&new_bitrate);
+						peripheral_clock, &new_bitrate);
 
 			if (new_bitrate.duty_error_percent < temp_bitrate.duty_error_percent) {
 				temp_bitrate = new_bitrate;
@@ -469,6 +492,8 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 
 	LOG_DBG("%s: [input] rate[%u] [output] brl[%u] brh[%u] cks[%u]\n", __func__, fsp_i2c_rate,
 		clk_cfg->brl_value, clk_cfg->brh_value, clk_cfg->cks_value);
+
+	return 0;
 }
 
 static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
@@ -523,6 +548,12 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
                                                                                                    \
 	static const struct i2c_ra_iic_config i2c_ra_iic_config_##index = {                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
+		.clock_subsys =                                                                    \
+			{                                                                          \
+				.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_IDX(index, 0, mstp),      \
+				.stop_bit = DT_INST_CLOCKS_CELL_BY_IDX(index, 0, stop_bit),        \
+			},                                                                         \
 		.irq_config_func = i2c_ra_iic_irq_config_func##index,                              \
 		.noise_filter_stage = 1, /* Cannot be configured. */                               \
 		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RA_IIC_MASTER_DIV_TIME_NS,      \
