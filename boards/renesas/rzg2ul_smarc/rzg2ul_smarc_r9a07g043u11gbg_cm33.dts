@@ -23,3 +23,9 @@
 		reg = <0x60010000 DT_SIZE_M(46)>;
 	};
 };
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
