@@ -113,6 +113,35 @@ static void i2c_rz_riic_master_tmoi_isr(const struct device *dev)
 	riic_master_tmoi_isr((void *)data->riic_master_ext_cfg->tmoi_irq);
 }
 
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
+
+#ifdef CONFIG_CPU_CORTEX_M33
+#define RZ_INTM33SEL_ADDR_OFFSET 0x200
+#define RZ_INTC_INTSEL_BASE      RZ_INTC_BASE + RZ_INTM33SEL_ADDR_OFFSET
+#else /* CONFIG_CPU_CORTEX_R8 */
+#define RZ_INTR8SEL_ADDR_OFFSET 0x140
+#define RZ_INTC_INTSEL_BASE     RZ_INTC_BASE + RZ_INTR8SEL_ADDR_OFFSET
+#endif
+
+#define OFFSET(y)                   ((y) - 353 - COND_CODE_1(CONFIG_GIC, (GIC_SPI_INT_BASE), (0)))
+#define REG_INTSEL_READ(y)          sys_read32(RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_WRITE(y, v)      sys_write32((v), RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_SPIk_SEL_MASK(y) (BIT_MASK(10) << ((OFFSET(y) % 3) * 10))
+
+/**
+ * @brief Connect an @p irq number with an @p event
+ */
+static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
+{
+	uint32_t reg_val = REG_INTSEL_READ(irq);
+
+	reg_val &= ~REG_INTSEL_SPIk_SEL_MASK(irq);
+	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
+	REG_INTSEL_WRITE(irq, reg_val);
+}
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+
 #elif defined(CONFIG_I2C_RENESAS_RZ_IIC)
 void iic_master_rxi_isr(void);
 void iic_master_txi_isr(void);
@@ -562,7 +591,20 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	} while (0)
 
 #if defined(CONFIG_I2C_RENESAS_RZ_RIIC)
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define I2C_RZ_CONNECT_IRQ_SELECT(index)                                                           \
+	do {                                                                                       \
+		intc_connect_irq_event(DT_INST_IRQ_BY_NAME(index, txi, irq),                       \
+				       CONCAT(RIIC, DT_INST_PROP(index, channel), _TI_IRQSELn));   \
+		intc_connect_irq_event(DT_INST_IRQ_BY_NAME(index, rxi, irq),                       \
+				       CONCAT(RIIC, DT_INST_PROP(index, channel), _RI_IRQSELn));   \
+	} while (0)
+#else
+#define I2C_RZ_CONNECT_IRQ_SELECT(index)
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+
 #define I2C_RZ_CONFIG_FUNC(index)                                                                  \
+	I2C_RZ_CONNECT_IRQ_SELECT(index);                                                          \
 	I2C_RZ_IRQ_CONNECT(index, rxi, i2c_rz_riic_master_rxi_isr);                                \
 	I2C_RZ_IRQ_CONNECT(index, txi, i2c_rz_riic_master_txi_isr);                                \
 	I2C_RZ_IRQ_CONNECT(index, tei, i2c_rz_riic_master_tei_isr);                                \
