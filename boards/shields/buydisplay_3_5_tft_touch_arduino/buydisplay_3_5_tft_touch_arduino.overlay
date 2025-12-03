@@ -49,8 +49,6 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		swapped-x-y;
-		inverted-x;
-		inverted-y;
 		screen-width = <320>;
 		screen-height = <480>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
