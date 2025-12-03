@@ -41,35 +41,47 @@ zephyr_compile_definitions(
 )
 
 zephyr_include_directories(
-  ${SISDK}/platform/common/inc
   ${SISDK}/platform/common/config
+  ${SISDK}/platform/common/inc
+  ${SISDK}/platform/emlib/inc
   ${SISDK}/platform/service/mem_pool/inc
-  # Wiseconnect do not provide generic RTE_Device_917.h. However, all the boards
-  # share more-or-less the same definitions. So we could take any of them.
-  # In addtion, this file is only required for the compilation, but none the
-  # symbols are normally used by Zephyr (it is required to compile CMSIS API
-  # which is not not used).
+  ${SISDK}/platform/service/sleeptimer/config
+  ${SISDK}/platform/service/sleeptimer/inc
+  # Wiseconnect do not provide generic RTE_Device_917.h. However, all the boards share more-or-less
+  # the same definitions. So we could take any of them. In addition, this file is only required for
+  # the compilation, but none the symbols are normally used by Zephyr (it is required to compile
+  # CMSIS API which is not not used).
   ${WISECONNECT}/components/board/silabs/config/brd4342a
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/core/config
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/inc
+  ${WISECONNECT}/components/common/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/common/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/config
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config/sl_i2s_config
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/core/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config/sl_i2s_config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/hal/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
+  ${WISECONNECT}/components/protocol/wifi/inc
+  ${WISECONNECT}/components/service/network_manager/inc
+  ${WISECONNECT}/components/sli_wifi_command_engine/inc
+  ${WISECONNECT}/resources/defaults
 )
 
 zephyr_library_sources(
@@ -179,18 +191,6 @@ if(CONFIG_SILABS_SIWX91X_NWP)
   zephyr_include_directories(
     # FIXME: find why this directory is not included when CMSIS_RTOS_V2=y
     ${ZEPHYR_BASE}/include/zephyr/portability
-    ${SISDK}/platform/emlib/inc
-    ${WISECONNECT}/resources/defaults
-    ${WISECONNECT}/components/common/inc
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/inc
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/inc
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/config
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/inc
-    ${WISECONNECT}/components/protocol/wifi/inc
-    ${WISECONNECT}/components/service/network_manager/inc
-    ${WISECONNECT}/components/sli_wifi_command_engine/inc
   )
   zephyr_library_sources(
     nwp_fw_version.c
@@ -219,11 +219,8 @@ endif() # CONFIG_SILABS_SIWX91X_NWP
 
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
-    ${SISDK}/platform/service/sleeptimer/inc
     ${SISDK}/platform/service/sleeptimer/src
-    ${SISDK}/platform/service/sleeptimer/config
   )
-
   zephyr_library_sources(
     ${SISDK}/platform/service/sleeptimer/src/sl_sleeptimer.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
@@ -251,9 +248,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sli_si91x_clock_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_temp_sensor.c
     ${SISDK}/platform/common/src/sl_slist.c
-  )
-  zephyr_include_directories(
-    ${SISDK}/platform/common/inc
   )
   zephyr_compile_definitions(
     SL_CODE_COMPONENT_POWER_MANAGER=power_manager
