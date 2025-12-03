@@ -5,6 +5,8 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <zephyr/llext/symbol.h>
 
 EXPORT_GROUP_SYMBOL(LIBC, strcpy);
@@ -15,6 +17,9 @@ EXPORT_GROUP_SYMBOL(LIBC, strncmp);
 EXPORT_GROUP_SYMBOL(LIBC, memcmp);
 EXPORT_GROUP_SYMBOL(LIBC, memcpy);
 EXPORT_GROUP_SYMBOL(LIBC, memset);
+EXPORT_GROUP_SYMBOL(LIBC, memmove);
+EXPORT_GROUP_SYMBOL(LIBC, strtoul);
+EXPORT_GROUP_SYMBOL(LIBC, sprintf);
 
 /* These symbols are used if CCAC is given the flag -Os */
 #ifdef __CCAC__
