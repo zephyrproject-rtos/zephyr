@@ -139,6 +139,10 @@ def pytest_addoption(parser: pytest.Parser):
         '--extra-test-args',
         help='Additional args passed to the test binary'
     )
+    twister_harness_group.addoption(
+        '--west-cmd',
+        help='west command flash(default) | debug'
+    )
 
 
 def pytest_configure(config: pytest.Config):
