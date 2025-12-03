@@ -24,7 +24,8 @@
 /* Note- clock identifiers in this file must be unique,
  * as the driver uses them in a switch case
  */
-
+#define MCUX_MC_CGM_PERIPHERAL_MASK        0xFF00UL
+#define MCUX_MC_CGM_INSTANCE_MASK          0xFFUL
 #define MCUX_MC_CGM_CLK_ID(high, low) ((high << 8) | (low))
 
 /* These IDs are used within SOC macros, and thus cannot be defined
