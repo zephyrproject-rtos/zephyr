@@ -323,7 +323,7 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 	const uint32_t flags = pb->common.flags;
 	uint32_t *rd_idx_loc = get_rd_idx_loc(pb, flags);
 	uint32_t *wr_idx_loc = get_wr_idx_loc(pb, flags);
-	uint32_t rd_idx = *rd_idx_loc + len + LEN_SZ;
+	uint16_t rd_idx = *rd_idx_loc + len + LEN_SZ;
 	uint8_t *data_loc = get_data_loc(pb, flags);
 
 	rd_idx = ROUND_UP(rd_idx, sizeof(uint32_t));
