@@ -1,0 +1,19 @@
+identifier: m5stack_nanoc6/esp32c6/lpcore
+name: M5Stack NanoC6 LP Core
+vendor: m5stack
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
