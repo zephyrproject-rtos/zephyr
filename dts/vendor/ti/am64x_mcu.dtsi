@@ -81,4 +81,12 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	mcu_rti0: watchdog@4880000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x4880000 0x100>;
+		clock-frequency = <DT_FREQ_M(3)>;
+		power-domains = <&mcu_rti0_pd>;
+		status = "disabled";
+	};
 };

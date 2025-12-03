@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <ti/am64x_r5.dtsi>
+#include <ti/am64x_r5f0_0.dtsi>
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
 
 / {
@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &ld26;
 		adc0 = &main_adc0;
+		watchdog0 = &main_rti8;
 	};
 
 	leds: leds {
@@ -181,6 +182,10 @@
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <4>;
 	};
+};
+
+&main_rti8 {
+	status = "okay";
 };
 
 &main_mbox6 {
