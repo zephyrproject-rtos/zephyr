@@ -84,3 +84,9 @@ properties:
       BAT pin falls below this value, the BAT to SYS path will be disengaged.
       There is a 150 mV hysterisis before the path will be re-enabled. Default
       matches the register reset value.
+
+  ntc-charger-control-disable:
+    type: boolean
+    description: |
+      Disable thermistor control over the charger. Alerts are still generated.
+      Clears the TS_EN bit in the control register.
