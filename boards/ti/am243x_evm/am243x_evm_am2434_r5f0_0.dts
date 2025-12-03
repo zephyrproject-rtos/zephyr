@@ -183,6 +183,10 @@
 	};
 };
 
+&main_rti8 {
+	status = "okay";
+};
+
 &main_mbox6 {
 	usr-id = <0>;
 	status = "okay";

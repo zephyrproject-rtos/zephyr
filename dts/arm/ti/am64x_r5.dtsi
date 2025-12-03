@@ -188,6 +188,11 @@
 	interrupt-parent = <&vim>;
 };
 
+&main_rti8 {
+	interrupts = <0 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
 &main_mbox0 {
 	interrupts = <0 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
