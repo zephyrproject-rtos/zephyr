@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,10 @@
 #include <zephyr/dt-bindings/clock/mchp_sam_d5x_e5x_clock.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -96,6 +100,20 @@
 		rstc: rstc@40000c00 {
 			compatible = "microchip,rstc-g1-reset";
 			reg = <0x40000c00 0x400>;
+		};
+
+		wdt: watchdog@40002000 {
+			compatible = "microchip,wdt-g1";
+			reg = <0x40002000 13>;
+			interrupts = <10 0>;
+			interrupt-names = "wdt-ew";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_WDT>;
+			clock-names = "mclk";
+			max-installable-timeout-count = <1>;
+			max-timeout-window = <0x4000>;	/* 16384 milliseconds */
+			max-timeout-window-mode = <0x8000>;/* 32768 milliseconds */
+			min-window-limit = <0x8>;/* 8 milliseconds */
+			status = "disabled";
 		};
 
 		rtc: rtc@40002400 {
