@@ -17,7 +17,7 @@
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/flash.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 
 #if CONFIG_SOC_FAMILY_AMBIQ
 

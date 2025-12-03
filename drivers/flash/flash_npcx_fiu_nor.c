@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/drivers/flash/npcx_flash_api_ex.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
@@ -18,7 +19,6 @@
 #endif
 
 #include "flash_npcx_fiu_qspi.h"
-#include "spi_nor.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
