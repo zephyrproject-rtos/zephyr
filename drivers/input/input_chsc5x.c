@@ -45,9 +45,9 @@ enum {
 #define CHSC5X_BASE_ADDR2         0x00
 #define CHSC5X_BASE_ADDR3         0x00
 #define CHSC5X_ADDRESS_MODE       0x00
-#define CHSC5X_ADDRESS_IC_TYPE    0x81
+#define CHSC5X_ADDRESS_IC_TYPE    0x80
 #define CHSC5X_ADDRESS_TOUCH_DATA 0x2C
-#define CHSC5X_SIZE_TOUCH_DATA    7
+#define CHSC5X_SIZE_TOUCH_DATA    8
 
 #define CHSC5X_OFFSET_EVENT_TYPE    0x00
 #define CHSC5X_OFFSET_FINGER_NUMBER 0x01
@@ -103,7 +103,6 @@ static void chsc5x_isr_handler(const struct device *dev, struct gpio_callback *c
 static int chsc5x_chip_init(const struct device *dev)
 {
 	const struct chsc5x_config *cfg = dev->config;
-	uint8_t ic_type;
 	int ret;
 	const uint8_t write_buffer[] = {
 		CHSC5X_BASE_ADDR1,
@@ -111,19 +110,21 @@ static int chsc5x_chip_init(const struct device *dev)
 		CHSC5X_BASE_ADDR3,
 		CHSC5X_ADDRESS_IC_TYPE,
 	};
+	uint8_t read_buffer[4];
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
 		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
-	ret = i2c_write_read_dt(&cfg->i2c, write_buffer, sizeof(write_buffer), &ic_type, 1);
+	ret = i2c_write_read_dt(&cfg->i2c, write_buffer, sizeof(write_buffer), read_buffer,
+				sizeof(read_buffer));
 	if (ret < 0) {
 		LOG_ERR("Could not read data: %i", ret);
 		return ret;
 	}
 
-	switch (ic_type) {
+	switch (read_buffer[0]) {
 	case CHSC5X_IC_TYPE_CHSC5472:
 	case CHSC5X_IC_TYPE_CHSC5448:
 	case CHSC5X_IC_TYPE_CHSC5448A:
@@ -134,7 +135,7 @@ static int chsc5x_chip_init(const struct device *dev)
 	case CHSC5X_IC_TYPE_CHSC1716:
 		break;
 	default:
-		LOG_ERR("CHSC5X wrong ic type: returned 0x%02x", ic_type);
+		LOG_ERR("CHSC5X wrong ic type: returned 0x%02x", read_buffer[0]);
 		return -ENODEV;
 	}
 
