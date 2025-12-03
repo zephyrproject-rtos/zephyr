@@ -7,6 +7,8 @@ compatible: "mspi-is25xX0xx"
 
 include: [mspi-device.yaml, "jedec,jesd216.yaml"]
 
+additional-property: true
+
 properties:
   reset-gpios:
     type: phandle-array
