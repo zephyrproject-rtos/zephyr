@@ -1,14 +1,9 @@
 # Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields for MIIPHY devices
-
-include: phy.yaml
+# Common default speeds property for MIIPHY devices
 
 properties:
-  reg:
-    required: true
-    description: PHY address
   default-speeds:
     type: string-array
     description: The selected speeds are used to configure the PHY during initialization
