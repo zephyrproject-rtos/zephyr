@@ -34,6 +34,9 @@ extern int sys_getopt_opterr;
 extern int sys_getopt_optind;
 extern int sys_getopt_optopt;
 
+/* Initialize local sys_getopt_state with this value */
+#define SYS_GETOPT_STATE_INITIALIZER	{0}
+
 #define sys_getopt_no_argument       0
 #define sys_getopt_required_argument 1
 #define sys_getopt_optional_argument 2
@@ -52,6 +55,9 @@ struct sys_getopt_option {
 	int val;
 };
 
+/* Function initializes getopt_state structure */
+void sys_getopt_init_r(struct sys_getopt_state *state);
+
 /* Function initializes getopt_state structure for current thread */
 void sys_getopt_init(void);
 
@@ -67,16 +73,19 @@ struct sys_getopt_state *sys_getopt_state_get(void);
  * @param[in] nargc	   Arguments count.
  * @param[in] nargv	   Arguments.
  * @param[in] ostr	   String containing the legitimate option characters.
+ * @param[inout] state	   Current argument parsing state.
  *
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
+int sys_getopt_r(int nargc, char *const nargv[], const char *ostr, struct sys_getopt_state *state);
+
 int sys_getopt(int nargc, char *const nargv[], const char *ostr);
 
 /**
  * @brief Parses the command-line arguments.
  *
- * The sys_getopt_long() function works like @ref sys_getopt() except
+ * The sys_getopt_long_r() function works like @ref sys_getopt_r() except
  * it also accepts long options, started with two dashes.
  *
  * @note This function is based on FreeBSD implementation but it does not
@@ -90,17 +99,22 @@ int sys_getopt(int nargc, char *const nargv[], const char *ostr);
  * @param[in] idx	   If idx is not NULL, it points to a variable
  *			   which is set to the index of the long option relative
  *			   to @p long_options.
+ * @param[inout] state	   Current argument parsing state.
  *
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
+int sys_getopt_long_r(int nargc, char *const *nargv, const char *options,
+		      const struct sys_getopt_option *long_options, int *idx,
+		      struct sys_getopt_state *state);
+
 int sys_getopt_long(int nargc, char *const *nargv, const char *options,
 		    const struct sys_getopt_option *long_options, int *idx);
 
 /**
  * @brief Parses the command-line arguments.
  *
- * The sys_getopt_long_only() function works like @ref sys_getopt_long(),
+ * The sys_getopt_long_only_r() function works like @ref sys_getopt_long_r(),
  * but '-' as well as "--" can indicate a long option. If an option that starts
  * with '-' (not "--") doesn't match a long option, but does match a short
  * option, it is parsed as a short option instead.
@@ -116,10 +130,15 @@ int sys_getopt_long(int nargc, char *const *nargv, const char *options,
  * @param[in] idx	   If idx is not NULL, it points to a variable
  *			   which is set to the index of the long option relative
  *			   to @p long_options.
+ * @param[inout] state	   Current argument parsing state.
  *
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
+int sys_getopt_long_only_r(int nargc, char *const *nargv, const char *options,
+			   const struct sys_getopt_option *long_options, int *idx,
+			   struct sys_getopt_state *state);
+
 int sys_getopt_long_only(int nargc, char *const *nargv, const char *options,
 			 const struct sys_getopt_option *long_options, int *idx);
 

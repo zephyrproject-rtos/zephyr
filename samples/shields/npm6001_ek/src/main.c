@@ -15,8 +15,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 
-#include <zephyr/sys/sys_getopt.h>
-
 struct regulators_map {
 	const char *name;
 	const struct device *dev;
@@ -312,27 +310,29 @@ static int cmd_gpio_configure(const struct shell *sh, size_t argc, char **argv)
 		{NULL, 0, NULL, 0},
 	};
 
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
+
 	high_drive = 0;
 	pull_down = 0;
 	cmos = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "p:d:", long_options,
-				      &long_index)) != -1) {
+	while ((opt = sys_getopt_long_r(argc, argv, "p:d:", long_options,
+					&long_index, &state)) != -1) {
 		switch (opt) {
 		case 0:
 			/* options setting a flag, do nothing */
 			break;
 		case 'p':
-			pin = atoi(sys_getopt_optarg);
+			pin = atoi(state.optarg);
 			break;
 		case 'd':
-			if (strcmp(sys_getopt_optarg, "in") == 0) {
+			if (strcmp(state.optarg, "in") == 0) {
 				flags |= GPIO_INPUT;
-			} else if (strcmp(sys_getopt_optarg, "out") == 0) {
+			} else if (strcmp(state.optarg, "out") == 0) {
 				flags |= GPIO_OUTPUT;
-			} else if (strcmp(sys_getopt_optarg, "outh") == 0) {
+			} else if (strcmp(state.optarg, "outh") == 0) {
 				flags |= GPIO_OUTPUT_HIGH;
-			} else if (strcmp(sys_getopt_optarg, "outl") == 0) {
+			} else if (strcmp(state.optarg, "outl") == 0) {
 				flags |= GPIO_OUTPUT_LOW;
 			}
 			break;

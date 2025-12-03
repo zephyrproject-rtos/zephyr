@@ -11,37 +11,52 @@
 char *optarg;
 int opterr, optind, optopt;
 
-void getopt_init(void)
+static struct sys_getopt_state	getopt_state = SYS_GETOPT_STATE_INITIALIZER;
+
+static void getopt_global_state_get(void)
 {
-	sys_getopt_init();
+	getopt_state.opterr = opterr;
+	getopt_state.optind = optind;
+	getopt_state.optopt = optopt;
+	getopt_state.optarg = optarg;
 }
 
-struct getopt_state *getopt_state_get(void)
+static void getopt_global_state_put(void)
 {
-	return sys_getopt_state_get();
+	opterr = getopt_state.opterr;
+	optind = getopt_state.optind;
+	optopt = getopt_state.optopt;
+	optarg = getopt_state.optarg;
 }
 
 int getopt(int argc, char *const argv[], const char *optstring)
 {
-	return sys_getopt(argc, argv, optstring);
-}
+	int ret;
 
-void z_getopt_global_state_update_shim(struct sys_getopt_state *state)
-{
-	opterr = state->opterr;
-	optind = state->optind;
-	optopt = state->optopt;
-	optarg = state->optarg;
+	getopt_global_state_get();
+	ret = sys_getopt_r(argc, argv, optstring, &getopt_state);
+	getopt_global_state_put();
+	return ret;
 }
 
 int getopt_long(int argc, char *const argv[], const char *shortopts,
 		const struct option *longopts, int *longind)
 {
-	return sys_getopt_long(argc, argv, shortopts, longopts, longind);
+	int ret;
+
+	getopt_global_state_get();
+	ret = sys_getopt_long_r(argc, argv, shortopts, longopts, longind, &getopt_state);
+	getopt_global_state_put();
+	return ret;
 }
 
 int getopt_long_only(int argc, char *const argv[], const char *shortopts,
 		     const struct option *longopts, int *longind)
 {
-	return sys_getopt_long_only(argc, argv, shortopts, longopts, longind);
+	int ret;
+
+	getopt_global_state_get();
+	ret = sys_getopt_long_only_r(argc, argv, shortopts, longopts, longind, &getopt_state);
+	getopt_global_state_put();
+	return ret;
 }

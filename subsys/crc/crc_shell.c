@@ -8,11 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -79,9 +74,9 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 	void *addr = (void *)-1;
 	enum crc_type type = CRC32_IEEE;
 
-	sys_getopt_optind = 1;
+	struct sys_getopt_state state = SYS_GETOPT_STATE_INITIALIZER;
 
-	while ((rv = sys_getopt(argc, argv, "fhlp:rs:t:")) != -1) {
+	while ((rv = sys_getopt_r(argc, argv, "fhlp:rs:t:", &state)) != -1) {
 		switch (rv) {
 		case 'f':
 			first = true;
@@ -93,9 +88,9 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 			last = true;
 			break;
 		case 'p':
-			poly = (size_t)strtoul(sys_getopt_optarg, NULL, 16);
+			poly = (size_t)strtoul(state.optarg, NULL, 16);
 			if (poly == 0 && errno == EINVAL) {
-				shell_error(sh, "invalid seed '%s'", sys_getopt_optarg);
+				shell_error(sh, "invalid seed '%s'", state.optarg);
 				return -EINVAL;
 			}
 			break;
@@ -103,16 +98,16 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 			reflect = true;
 			break;
 		case 's':
-			seed = (size_t)strtoul(sys_getopt_optarg, NULL, 16);
+			seed = (size_t)strtoul(state.optarg, NULL, 16);
 			if (seed == 0 && errno == EINVAL) {
-				shell_error(sh, "invalid seed '%s'", sys_getopt_optarg);
+				shell_error(sh, "invalid seed '%s'", state.optarg);
 				return -EINVAL;
 			}
 			break;
 		case 't':
-			type = string_to_crc_type(sys_getopt_optarg);
+			type = string_to_crc_type(state.optarg);
 			if (type == -1) {
-				shell_error(sh, "invalid type '%s'", sys_getopt_optarg);
+				shell_error(sh, "invalid type '%s'", state.optarg);
 				return -EINVAL;
 			}
 			break;
@@ -123,21 +118,21 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	if (sys_getopt_optind + 2 > argc) {
+	if (state.optind + 2 > argc) {
 		shell_error(sh, "'address' and 'size' arguments are mandatory");
 		usage(sh);
 		return -EINVAL;
 	}
 
-	addr = (void *)strtoul(argv[sys_getopt_optind], NULL, 16);
+	addr = (void *)strtoul(argv[state.optind], NULL, 16);
 	if (addr == 0 && errno == EINVAL) {
-		shell_error(sh, "invalid address '%s'", argv[sys_getopt_optind]);
+		shell_error(sh, "invalid address '%s'", argv[state.optind]);
 		return -EINVAL;
 	}
 
-	size = (size_t)strtoul(argv[sys_getopt_optind + 1], NULL, 0);
+	size = (size_t)strtoul(argv[state.optind + 1], NULL, 0);
 	if (size == 0 && errno == EINVAL) {
-		shell_error(sh, "invalid size '%s'", argv[sys_getopt_optind + 1]);
+		shell_error(sh, "invalid size '%s'", argv[state.optind + 1]);
 		return -EINVAL;
 	}
 
