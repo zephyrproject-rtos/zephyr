@@ -118,6 +118,11 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE`
+
 * NVMEM
 
   * Flash device support

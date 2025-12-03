@@ -163,6 +163,25 @@ Networking
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
 
+Modem
+*****
+
+Modem HL78XX
+============
+
+* The Kconfig options related to HL78XX startup timing have been renamed in
+  :kconfig:option:`CONFIG_MODEM_HL78XX_DEV_*` as follows:
+
+  - ``MODEM_HL78XX_DEV_POWER_PULSE_DURATION`` → ``MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS``
+  - ``MODEM_HL78XX_DEV_RESET_PULSE_DURATION`` → ``MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS``
+  - ``MODEM_HL78XX_DEV_STARTUP_TIME`` → ``MODEM_HL78XX_DEV_STARTUP_TIME_MS``
+  - ``MODEM_HL78XX_DEV_SHUTDOWN_TIME`` → ``MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS``
+
+* The default startup timing was changed from 1000 ms to 120 ms to improve
+  initialization reliability across all supported boards.
+
+  Applications depending on the previous defaults must update their configuration.
+
 Other subsystems
 ****************
 
