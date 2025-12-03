@@ -234,6 +234,20 @@
 	timg-prescaler = <2>;
 };
 
+&iocell {
+	status = "okay";
+
+	vddio2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+
+	vddio3 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
+
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
@@ -442,6 +456,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &bsec {
+	/* Required by "iocell" and "ethernet" drivers */
 	status = "okay";
 };
 

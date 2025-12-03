@@ -312,7 +312,17 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &bsec {
+	/* Required by "iocell" and "ethernet" drivers */
 	status = "okay";
+};
+
+&iocell {
+	status = "okay";
+
+	vddio3 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
 };
 
 csi_interface: &dcmipp {
