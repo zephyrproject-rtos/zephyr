@@ -19,7 +19,7 @@ config UART_MAX32
 
 config UART_MAX32_TX_AE_WORKAROUND
 	bool
-	default y if SOC_MAX32690
+	default y if SOC_MAX32690 || SOC_MAX32655
 	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
 	help
 		This option enables a small workaround for almost-empty interrupts
