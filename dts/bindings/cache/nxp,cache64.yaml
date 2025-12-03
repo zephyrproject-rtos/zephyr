@@ -44,34 +44,41 @@ properties:
   regions:
     type: array
     description: >
-      Array of region configurations. Each region is encoded as:
+      Array of region configurations in ascending order. Each entry encodes:
       <boundary_addr policy>
-      - boundary_addr: Top address in bytes (will be converted to device units)
-      - policy: 0=Non-cacheable, 1=Write-through, 2=Write-back
+        - boundary_addr: End address (exclusive) of this region, in bytes
+          (converted to device units). Boundaries must be strictly increasing
+          within the FlexSPI/XSPI physical address domain.
+        - policy: 0=Non-cacheable, 1=Write-through, 2=Write-back
 
-      Maximum 3 regions (CACHE64 hardware limit).
-      Boundaries are specified in the FlexSPI physical address domain.
-      The number of regions is determined by the array length (N boundaries = N+1 regions).
+      Up to 3 regions are supported (CACHE64 hardware limit).
 
-      Note: The last region extends to the end of addressable space. While its
-      boundary_addr is not used by the hardware for configuration, it should still
-      specify the actual end address for documentation and potential validation purposes.
+      Regions are defined between 0 and the first boundary, between consecutive
+      boundaries, and from the last boundary to the end of the address space.
+      Thus, N boundary entries normally define N+1 regions.
 
-      Example 1: Single boundary (2 regions)
-        regions = <0x01000000 2>;
-        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
-        - Region 1: 0x01000000-end        -> Non-cacheable (default)
+      To explicitly set the policy of the last region, add a final “sentinel”
+      entry whose boundary_addr equals the end of the address space. The driver
+      uses that entry policy for the last region, and does not program the
+      sentinel boundary to hardware.
 
-      Example 2: Two boundaries (3 regions), last region uses default policy
-        regions = <0x01000000 2>, <0x08000000 1>;
-        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
-        - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
-        - Region 2: 0x08000000-end        -> Non-cacheable (default)
+      Examples:
+        Example 1: One boundary (2 regions), last region uses default policy
+          regions = <0x01000000 2>;
+          - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+          - Region 1: 0x01000000-end        -> Non-cacheable (default)
 
-      Example 3: Explicitly configure all regions including the last one
-        regions = <0x01000000 2>, <0x08000000 1>, <0x10000000 2>;
-        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
-        - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
-        - Region 2: 0x08000000-0x0FFFFFFF -> Write-back (128MB)
+        Example 2: Two boundaries (3 regions), last region uses default policy
+          regions = <0x01000000 2>, <0x08000000 1>;
+          - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+          - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
+          - Region 2: 0x08000000-end        -> Non-cacheable (default)
+
+        Example 3: Explicitly set last region policy via sentinel
+          regions = <0x01000000 2>, <0x08000000 1>, <0x10000000 2>;
+          - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+          - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
+          - Region 2: 0x08000000-0x0FFFFFFF -> Write-back (128MB)
+          (0x10000000 marks end-of-space; its boundary value is not programmed)
 
     default: []
