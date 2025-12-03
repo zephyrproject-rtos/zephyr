@@ -352,11 +352,6 @@ void __weak rt5xx_clock_init(void)
 
 	CLOCK_EnableClock(kCLOCK_AxiSwitch);
 	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
-#if defined(CONFIG_MEMC) && DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), nxp_imx_flexspi, okay)
-	/* Enable write-through for FlexSPI1 space */
-	CACHE64_POLSEL0->REG1_TOP = 0x27FFFC00U;
-	CACHE64_POLSEL0->POLSEL = 0x11U;
-#endif
 #endif
 
 	/* Switch CLKOUT to FRO_DIV2 */
