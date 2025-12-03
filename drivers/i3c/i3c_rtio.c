@@ -176,6 +176,7 @@ int i3c_rtio_configure(struct i3c_rtio *ctx, enum i3c_config_type type, void *co
 	}
 
 	sqe->op = RTIO_OP_I3C_CONFIGURE;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->i3c_config.type = type;
 	sqe->i3c_config.config = config;
@@ -213,6 +214,7 @@ int i3c_rtio_ccc(struct i3c_rtio *ctx, struct i3c_ccc_payload *payload)
 	}
 
 	sqe->op = RTIO_OP_I3C_CCC;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->ccc_payload = payload;
 
@@ -249,6 +251,7 @@ int i3c_rtio_recover(struct i3c_rtio *ctx)
 	}
 
 	sqe->op = RTIO_OP_I3C_RECOVER;
+	sqe->flags = 0;
 	sqe->iodev = iodev;
 
 	rtio_submit(r, 1);
