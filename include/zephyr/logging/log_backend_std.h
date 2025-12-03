@@ -21,6 +21,11 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Retrieve the current flags of the standard logger backend interface
+ *
+ * @return A bitmask of the active flags defined at compilation time.
+ */
 static inline uint32_t log_backend_std_get_flags(void)
 {
 	uint32_t flags = 0;

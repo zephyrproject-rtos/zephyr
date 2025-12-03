@@ -61,10 +61,10 @@ struct sigevent;
 /* struct timespec must be defined in the libc time.h */
 #else
 #if !defined(_TIMESPEC_DECLARED) && !defined(__timespec_defined)
-typedef struct {
+struct timespec {
 	time_t tv_sec;
 	long tv_nsec;
-} timespec_t;
+};
 #define _TIMESPEC_DECLARED
 #define __timespec_defined
 #endif

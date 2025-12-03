@@ -95,11 +95,11 @@ static uint8_t mdns_server_ipv6_addr[] = {
 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xfb
 };
 
-static struct in6_addr ll_addr = {{{
+static struct net_in6_addr ll_addr = {{{
 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0, 0x9f, 0x74, 0x88, 0x9c, 0x1b, 0x44, 0x72, 0x39
 }}};
 
-static struct in6_addr sender_ll_addr = {{{
+static struct net_in6_addr sender_ll_addr = {{{
 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x9f, 0x74, 0x88, 0x9c, 0x1b, 0x44, 0x72, 0x39
 }}};
 
@@ -296,7 +296,7 @@ static void send_msg(const uint8_t *data, size_t len)
 	struct net_pkt *pkt;
 	int res;
 
-	pkt = net_pkt_alloc_with_buffer(iface1, NET_IPV6UDPH_LEN + len, AF_UNSPEC,
+	pkt = net_pkt_alloc_with_buffer(iface1, NET_IPV6UDPH_LEN + len, NET_AF_UNSPEC,
 					0, K_FOREVER);
 	zassert_not_null(pkt, "PKT is null");
 
@@ -346,7 +346,7 @@ static struct dns_sd_rec *alloc_ext_record(const char *instance, const char *ser
 				memcpy(services[i].text, txt, txt_len);
 			}
 
-			services[i].port = htons(port);
+			services[i].port = net_htons(port);
 			services[i].record->text_size = txt_len;
 
 			return services[i].record;

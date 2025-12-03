@@ -16,6 +16,7 @@
 #include "soc.h"
 #include <cy_sysint.h>
 #include <system_edge.h>
+#include <ifx_cycfg_init.h>
 #include "cy_pdl.h"
 
 #define CY_IPC_MAX_ENDPOINTS (8UL)
@@ -28,7 +29,7 @@
 #define MPU_SRAM1_SHARED_MEM_REG_ID   0x6
 #define MPU_SRAM1_SHARED_MEM_ATTR_IDX 0x6
 
-#define CM55_STARTUP_WAIT_MS 25u
+#define CM55_STARTUP_WAIT_MS 50u
 
 void config_noncacheable_region(void)
 {
@@ -92,7 +93,7 @@ void soc_early_init_hook(void)
 	SCB_EnableDCache();
 
 	/* Initializes the system */
-	SystemInit();
+	ifx_cycfg_init();
 
 	static cy_stc_ipc_pipe_ep_t systemIpcPipeEpArray[CY_IPC_MAX_ENDPOINTS];
 

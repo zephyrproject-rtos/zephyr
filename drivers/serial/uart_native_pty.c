@@ -5,13 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_posix_uart)
-#define DT_DRV_COMPAT zephyr_native_posix_uart
-#warning "zephyr,native-posix-uart is deprecated in favor of zephyr,native-pty-uart"
-#else
 #define DT_DRV_COMPAT zephyr_native_pty_uart
-#endif
 
 #include <stdbool.h>
 #include <zephyr/drivers/uart.h>

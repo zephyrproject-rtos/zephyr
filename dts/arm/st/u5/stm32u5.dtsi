@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -194,7 +195,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x46022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 1)>;
 			num-lines = <32>;
@@ -515,6 +516,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -538,6 +544,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -559,6 +570,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {
@@ -639,6 +655,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -656,6 +677,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40013400 {
@@ -672,6 +698,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {
@@ -815,6 +846,7 @@
 			reg = <0x42028000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(14, 0x00)
@@ -837,6 +869,7 @@
 			reg = <0x46021000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 5)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <113 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -884,10 +917,26 @@
 			status = "disabled";
 		};
 
+		vrefbuf: vrefbuf@46007400 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x46007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
+			resets = <&rctl STM32_RESET(APB3, 20)>;
+			ref-voltages = <1500000>, <1800000>, <2048000>, <2500000>;
+			status = "disabled";
+		};
+
 		pwr: power@46020800 {
-			compatible = "st,stm32-pwr";
+			compatible = "st,stm32-dualreg-pwr", "st,stm32-pwr";
 			reg = <0x46020800 0x400>; /* PWR register bank */
 			status = "disabled";
+
+			/*
+			 * After reset, the LDO regulator is selected as
+			 * it works in all hardware configurations; set
+			 * default in SoC DTSI to reduce churn in boards.
+			 */
+			power-supply = "ldo";
 
 			wkup-pins-nb = <8>; /* 8 system wake-up pins */
 			wkup-pin-srcs = <3>; /* 3 gpio sources associated with each wkup pin */
@@ -966,8 +1015,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x0BFA0710>;
-		ts-cal2-addr = <0x0BFA0742>;
+		ts-cal1-addr = <0x0bfa0710>;
+		ts-cal2-addr = <0x0bfa0742>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -978,7 +1027,7 @@
 
 	vref1: vref_1 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
@@ -987,7 +1036,7 @@
 
 	vref4: vref_4 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;

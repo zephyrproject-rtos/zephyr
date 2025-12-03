@@ -61,6 +61,7 @@
 #define NCT_DEBUG_PRINTS 0
 
 /* For pthread_setname_np() */
+#undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <stdbool.h>
 #include <stdlib.h>

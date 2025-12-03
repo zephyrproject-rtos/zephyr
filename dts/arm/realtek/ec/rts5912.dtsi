@@ -13,6 +13,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 
 / {
 	cpus {
@@ -31,7 +32,6 @@
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <100000000>;
 			};
-
 		};
 	};
 
@@ -167,6 +167,7 @@
 
 		espi0: espi0@400b1000 {
 			compatible = "realtek,rts5912-espi";
+			cs-gpios = <RTS5912_GPIO004 0>;
 			status = "disabled";
 
 			reg = <0x400b1000 0x200		/* espi target */
@@ -268,6 +269,14 @@
 			clocks = <&sccon RTS5912_SCCON_ADC ADC0_CLKPWR>;
 			interrupts = <221 0>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@40010400 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "realtek,rts5912-spi";
+			reg = <0x40010400 0x3C>;
 			status = "disabled";
 		};
 
@@ -530,6 +539,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_1: i2c@4000d200 {
@@ -541,6 +552,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_2: i2c@4000d400 {
@@ -552,6 +565,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_3: i2c@4000d600 {
@@ -563,6 +578,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_4: i2c@4000d800 {
@@ -574,6 +591,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_5: i2c@4000da00 {
@@ -585,6 +604,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_6: i2c@4000dc00 {
@@ -596,6 +617,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_7: i2c@4000de00 {
@@ -607,6 +630,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		sha0: crypto@40000000 {

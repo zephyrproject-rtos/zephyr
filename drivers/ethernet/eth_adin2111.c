@@ -317,7 +317,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 
 		if (ftr & ADIN2111_OA_DATA_FTR_EV) {
 			pkt = net_pkt_rx_alloc_with_buffer(iface, CONFIG_ETH_ADIN2111_BUFFER_SIZE,
-							   AF_UNSPEC, 0,
+							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
 				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
@@ -439,7 +439,7 @@ static int eth_adin2111_reg_read_generic(const struct device *dev,
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* spi header */
-	*(uint16_t *)buf = htons((ADIN2111_READ_TXN_CTRL | reg));
+	*(uint16_t *)buf = net_htons((ADIN2111_READ_TXN_CTRL | reg));
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 	buf[2] = crc8_ccitt(0, buf, ADIN2111_SPI_HEADER_SIZE);
 	/* TA */
@@ -471,7 +471,7 @@ static int eth_adin2111_reg_read_generic(const struct device *dev,
 	}
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
-	*val = ntohl((*(uint32_t *)(&buf[header_len])));
+	*val = net_ntohl((*(uint32_t *)(&buf[header_len])));
 
 	return ret;
 }
@@ -490,14 +490,14 @@ static int eth_adin2111_reg_write_generic(const struct device *dev,
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* spi header */
-	*(uint16_t *)buf = htons((ADIN2111_WRITE_TXN_CTRL | reg));
+	*(uint16_t *)buf = net_htons((ADIN2111_WRITE_TXN_CTRL | reg));
 	#if CONFIG_ETH_ADIN2111_SPI_CFG0
 	buf[2] = crc8_ccitt(0, buf, header_size);
 	++header_size;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* reg */
-	*(uint32_t *)(buf + header_size) = htonl(val);
+	*(uint32_t *)(buf + header_size) = net_htonl(val);
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 	buf[header_size + data_size] = crc8_ccitt(0, &buf[header_size], data_size);
 	++data_size;
@@ -576,7 +576,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	fsize -= ADIN2111_FRAME_HEADER_SIZE;
 
 	/* spi header */
-	*(uint16_t *)cmd_buf = htons((ADIN2111_READ_TXN_CTRL | rx_reg));
+	*(uint16_t *)cmd_buf = net_htons((ADIN2111_READ_TXN_CTRL | rx_reg));
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 	cmd_buf[2] = crc8_ccitt(0, cmd_buf, ADIN2111_SPI_HEADER_SIZE);
 	/* TA */
@@ -608,7 +608,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	/* remove CRC32 and pass to the stack */
 	fsize_real = fsize - sizeof(uint32_t);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, fsize_real, AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(iface, fsize_real, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);
@@ -838,7 +838,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 			eth_adin2111_lock(adin, K_FOREVER);
 		}
 
-		ret = eth_adin2111_send_oa_frame(cfg->adin, pkt, htons(cfg->port_idx));
+		ret = eth_adin2111_send_oa_frame(cfg->adin, pkt, net_htons(cfg->port_idx));
 
 		goto end_check;
 	}
@@ -887,14 +887,14 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	memset(ctx->buf, 0, burst_size + ADIN2111_WRITE_HEADER_SIZE);
 
 	/* spi header */
-	*(uint16_t *)ctx->buf = htons(ADIN2111_TXN_CTRL_TX_REG);
+	*(uint16_t *)ctx->buf = net_htons(ADIN2111_TXN_CTRL_TX_REG);
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 	ctx->buf[2] = crc8_ccitt(0, ctx->buf, header_size);
 	++header_size;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* frame header */
-	*(uint16_t *)(ctx->buf + header_size) = htons(cfg->port_idx);
+	*(uint16_t *)(ctx->buf + header_size) = net_htons(cfg->port_idx);
 
 	/* read pkt into tx buffer */
 	ret = net_pkt_read(pkt,

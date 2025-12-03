@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EK_RA8D2
+
+if DISPLAY
+
+config MEMC
+	default y
+
+config RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
+	default ".sdram"
+	depends on RENESAS_RA_GLCDC
+
+endif # DISPLAY
+
+if LVGL
+
+config LV_Z_VDB_CUSTOM_SECTION
+	default y
+
+endif # LVGL
+
+endif # BOARD_EK_RA8D2

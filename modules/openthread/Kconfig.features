@@ -421,7 +421,7 @@ config OPENTHREAD_UDP_FORWARD
 
 config OPENTHREAD_UPTIME
 	bool "Openthread uptime counter"
-	default y if OPENTHREAD_FTD
+	default y if OPENTHREAD_FTD || OPENTHREAD_MTD
 
 config OPENTHREAD_VERHOEFF_CHECKSUM
 	bool "Verhoeff checksum"

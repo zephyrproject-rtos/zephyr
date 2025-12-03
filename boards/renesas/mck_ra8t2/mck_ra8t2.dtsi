@@ -9,7 +9,6 @@
 #include "mck_ra8t2-pinctrl.dtsi"
 
 / {
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -88,6 +87,10 @@
 	};
 };
 
+&uclk {
+	status = "okay";
+};
+
 &sciclk {
 	status = "okay";
 };
@@ -110,4 +113,10 @@
 
 &ioportb {
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

@@ -1,10 +1,18 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config DMA_RENESAS_RZ
+config DMA_RENESAS_RZ_DMAC
 	bool "Renesas RZ DMAC"
 	default y
-	depends on DT_HAS_RENESAS_RZ_DMA_ENABLED
-	select USE_RZ_FSP_DMA
+	depends on DT_HAS_RENESAS_RZ_DMAC_ENABLED
+	select USE_RZ_FSP_DMAC
 	help
-	  Enable Renesas RZ DMA Driver.
+	  Enable Renesas RZ DMAC Driver.
+
+config DMA_RENESAS_RZ_DMAC_B
+	bool "Renesas RZ DMAC_B"
+	default y
+	depends on DT_HAS_RENESAS_RZ_DMAC_B_ENABLED
+	select USE_RZ_FSP_DMAC_B
+	help
+	  Enable Renesas RZ DMAC_B Driver.

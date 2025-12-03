@@ -21,7 +21,7 @@ tests:
   wifi.build.crypto_enterprise:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
-      - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
+      - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
       - CONFIG_EAP_TLS=y
       - CONFIG_EAP_TTLS=y
       - CONFIG_EAP_PEAP=y
@@ -40,7 +40,7 @@ tests:
   wifi.build.wpa3:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y
-      - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
+      - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
   wifi.build.ap:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config WSEN_PDMS_25131308XXX05
+	bool "WSEN-PDMS-25131308XXX05 differential pressure sensor"
+	default y
+	depends on DT_HAS_WE_WSEN_PDMS_25131308XXX05_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_PDMS_25131308XXX05),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_PDMS_25131308XXX05),spi)
+	select HAS_WESENSORS
+	help
+	  Enable driver for the WSEN-PDMS-25131308XXX05 I2C/SPI-based differential pressure sensor.

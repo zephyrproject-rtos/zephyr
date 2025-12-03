@@ -2,7 +2,7 @@
 
 Overview
 ********
-The PSOC™ Edge E84 Evaluation Kit enables applications to use the PSOC™ Edge E84 Series
+The PSOC™ Edge E84 Evaluation Kit (KIT_PSE84_EVAL) enables applications to use the PSOC™ Edge E84 Series
 Microcontroller (MCU) together with multiple on-board multimedia, Machine Learning (ML),
 and connectivity features including custom MIPI-DSI displays, audio interfaces,
 and AIROC™ Wi-Fi and Bluetooth® combo-based connectivity modules.
@@ -21,7 +21,7 @@ Hardware
 ********
 For more information about the PSOC™ Edge E84 MCUs and the PSOC™ Edge E84 Evaluation Kit:
 
-- `PSOC™ Edge Arm® Cortex® Multicore SoC Website`_
+- `PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website`_
 - `PSOC™ Edge E84 Evaluation Kit Website`_
 
 Kit Features:
@@ -78,11 +78,11 @@ building and running.
 Applications for the ``kit_pse84_eval/pse846gps2dbzc4a/m55``
 board target need to be built using sysbuild to include the required application for the other core.
 
-Enter the following command to compile ``hello_world`` for the FLPR core:
+Enter the following command to compile ``hello_world`` for the CM55 core:
 
 .. code-block:: console
 
-   west build -p -b kit_pse84_eval/pse846gps2dbzc4a/m55 --sysbuild
+   west build -p -b kit_pse84_eval/pse846gps2dbzc4a/m55 .\samples\hello_world --sysbuild
 
 Debugging
 =========
@@ -122,9 +122,9 @@ perform other standard GDB debugging on the PSOC E84 CM33 core.
 References
 **********
 
-- `PSOC™ Edge Arm® Cortex® Multicore SoC Website`_
+- `PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website`_
 
-.. _PSOC™ Edge Arm® Cortex® Multicore SoC Website:
+.. _PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website:
     https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/32-bit-psoc-edge-arm/psoc-edge-e84#Overview
 
 .. _PSOC™ Edge E84 Evaluation Kit Website:

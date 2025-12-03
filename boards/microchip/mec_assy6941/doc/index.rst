@@ -5,13 +5,16 @@ Overview
 
 The MEC5 Assembly 6941 EVB kit is a development platform to evaluate the Microchip
 MEC174x and MEC175x series microcontrollers. This board requires a CPU daughter card:
-DC 176WFBGA DC ASSY 6942 for MEC1743Q-LJ or MEC1753Q-LJ (176-pin package)
+DC 176WFBGA DC ASSY 6949 for MEC1743-QLJ or MEC1753-QLJ (176-pin package)
+DC 176WFBGA DC ASSY 6946 for MEC1743-QSZ, MEC1753-QSZ, or MEC1653B-NSZ (144-pin package)
 
 Hardware
 ********
 
-- MEC174xQ-LJ/SZ or MEC175xQ-LJ/SZ ARM Cortex-M4 Processor
+- MEC174x-QLJ/QSZ or MEC175x-QLJ/QSZ ARM Cortex-M4F Processor
 - 480 KB total SRAM (416 KB code, 64 KB data) and 128 KB boot ROM
+- MEC1653B-NSZ ARM Cortex-M4 Processor (No FPU)
+- 416 KB total SRAM (352 KB code, 64 KB data) and 128 KB boot ROM with PQC.
 - Keyboard interface
 - ADC & GPIO headers
 - Four DB9 UART connectors
@@ -29,10 +32,11 @@ Hardware
 - One external PCA9555 I/O port with jumper selectable I2C address.
 - One external LTC2489 delta-sigma ADC with jumper selectable I2C address.
 - Board power jumper selectable from +5V 2.1mm/5.5mm barrel connector or USB Micro A connector.
-- MEC175x has one I3C Host controller and one I3C secondary controller each with multiple ports.
+- MEC175x/MEC165xB have one I3C Host controller and one I3C secondary controller each with multiple ports.
 
 For more information about the MEC174x please see `MEC174x Data Brief`_
 For more information about the MEC175x please see `MEC175x Data Brief`_
+For more information about the MEC165xB please see `MEC165xB Data Brief`_
 
 Supported Features
 ==================
@@ -380,15 +384,23 @@ References
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/MEC174x/MEC174x_DataBrief.pdf
 .. _MEC175x Data Brief:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/MEC175x/MEC175x_DataBrief.pdf
+.. _MEC165xB Data Brief:
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/MEC165xB/MEC165xB_DataBrief.pdf
 .. _EVB Schematic:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/schematics/EVB_Assy6941.pdf
-.. _SOC Daughter Card Schematic:
+.. _SOC Daughter Card Schematic 6942:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/schematics/MEC174x_176WFBGA_DC_6942.pdf
+.. _SOC Daughter Card Schematic 6946:
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/schematics/MEC1743-1747_144WFBGA_SOLDER_DC-6946.pdf
+.. _SOC Daughter Card Schematic 6949:
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/schematics/JT_MEC1743-1747_176WFBGA_SOLDER_DC_6949.pdf
 .. _SPI Dongle Schematic:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/main/schematics/SPI_Flash_and_EEPROM_Dongle_Assy6791_Rev_B1p0.pdf
 .. _MEC174x SPI Image Gen:
     https://github.com/MicrochipTech/CPGZephyrDocs/tree/main/MEC174x/SPI_image_gen
 .. _MEC175x SPI Image Gen:
     https://github.com/MicrochipTech/CPGZephyrDocs/tree/main/MEC175x/SPI_image_gen
+.. _MEC165xB SPI Image Gen:
+    https://github.com/MicrochipTech/CPGZephyrDocs/tree/main/MEC165xB/SPI_image_gen
 .. _AdaFruit FT232H:
     https://www.adafruit.com/product/2264

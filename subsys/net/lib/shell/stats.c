@@ -646,14 +646,14 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 
 	print_net_pm_stats(sh, iface);
 }
-#endif /* CONFIG_NET_STATISTICS */
 
-#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 static void net_shell_print_statistics_all(struct net_shell_user_data *data)
 {
-	net_if_foreach(net_shell_print_statistics, data);
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_PER_INTERFACE)) {
+		net_if_foreach(net_shell_print_statistics, data);
+	}
 }
-#endif
+#endif /* CONFIG_NET_STATISTICS */
 
 int cmd_net_stats_all(const struct shell *sh, size_t argc, char *argv[])
 {

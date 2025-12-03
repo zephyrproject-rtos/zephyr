@@ -42,8 +42,19 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_2;
+		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -145,9 +156,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fdcan1 {
@@ -168,15 +179,22 @@
 	status = "okay";
 };
 
-&i2c3 {
-	pinctrl-0 = <&i2c3_scl_pa7 &i2c3_sda_pc1>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
 &rng {
 	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 		 <&rcc STM32_SRC_MSIK RNG_SEL(1)>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6
+		     &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+
+	/* Arduino D10 (SPI_NSS) is wired to PC9 which
+	 * doesn't support hardware NSS; the software
+	 * cs-gpios must be used instead.
+	 */
+	cs-gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
@@ -199,4 +217,15 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
+	};
 };

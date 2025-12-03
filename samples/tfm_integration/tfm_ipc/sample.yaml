@@ -35,6 +35,7 @@ tests:
       - mps2/an521/cpu0/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
     extra_configs:
       - CONFIG_TFM_BL2=n
     harness: console

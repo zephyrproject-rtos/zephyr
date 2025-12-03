@@ -47,6 +47,7 @@
 
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL */
@@ -77,11 +78,11 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pll2: pll2 {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL2 */
@@ -111,7 +112,6 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pclkblock: pclkblock@40203000 {
@@ -177,6 +177,8 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
 
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
@@ -184,8 +186,6 @@
 					sdclk = <1>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <2>;
-				status = "okay";
 			};
 
 			fclk: fclk {

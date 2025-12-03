@@ -133,6 +133,9 @@ config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 config BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
 	bool
 
+config BT_CTLR_SHORTER_CONNECTION_INTERVALS_SUPPORT
+	bool
+
 # Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool
@@ -1184,9 +1187,35 @@ config BT_CTLR_EXTENDED_FEAT_SET
 	  Enable support for Bluetooth 6.0 LL Extended Feature Set
 	  in the Controller.
 
+config BT_CTLR_SHORTER_CONNECTION_INTERVALS
+	bool "Shorter Connection Intervals"
+	depends on BT_CTLR_SHORTER_CONNECTION_INTERVALS_SUPPORT
+	depends on BT_CTLR_EXTENDED_FEAT_SET
+	depends on BT_CTLR_SUBRATING
+	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_SHORTER_CONNECTION_INTERVALS
+	help
+	  Enable support for Bluetooth 6.2 Shorter Connection Intervals
+	  in the controller.
+
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
 rsource "Kconfig.dtm"
+
+config BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT
+	bool
+
+config BT_CTLR_ASSERT_DEBUG
+	bool "Development asserts"
+	default y
+	help
+	  This option enables development asserts used for code coverage.
+
+	  The Controller will continue to function without memory leak or corruption with these
+	  assertion checks disabled. Example, run-time mis-aligned memory access etc. which do
+	  otherwise implicitly cause CPU fault during development testing. But these type of
+	  asserted are essentially required for debugging, code and unit test coverage during
+	  development cycle.
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"
@@ -1196,6 +1225,18 @@ config BT_CTLR_ASSERT_HANDLER
 	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
+
+config BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE
+	bool "Assertions optimized for code size"
+	depends on BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT
+	default y
+	help
+	  Optimize Controller assertion check for code size.
+
+	  Example, reduces assertion check code size for ARM Cortex-M CPUs by using the undefined
+	  instruction exception.
+	  `arm-none-eabi-addr2line` commandline can be used to get the source file and line number
+	  from the program counter value.
 
 config BT_CTLR_VS_SCAN_REQ_RX
 	bool "Use scan request reporting"

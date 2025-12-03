@@ -16,6 +16,7 @@
 
 / {
 	chosen {
+		silabs,sleeptimer = &rtcc0;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -442,8 +443,14 @@
 			status = "disabled";
 		};
 
-		rtcc0: stimer0: rtcc@58000000 {
-			compatible = "silabs,gecko-stimer";
+		buram: retained-memory@50080000 {
+			compatible = "silabs,buram";
+			reg = <0x50080000 0x80>;
+			status = "disabled";
+		};
+
+		rtcc0: rtcc@58000000 {
+			compatible = "silabs,rtcc";
 			reg = <0x58000000 0x4000>;
 			clock-frequency = <32768>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;

@@ -8,11 +8,6 @@ if SOC_FAMILY_INTEL_ADSP
 rsource "*/Kconfig.defconfig.series"
 
 # A workaround for HWMv2 to recover SOF arch/xtensa defaults overridden by arch/host.
-if SOF
-config CORE_COUNT
-	int
-	default MP_MAX_NUM_CPUS
-endif
 
 config XTENSA_RPO_CACHE
 	def_bool y
@@ -36,7 +31,7 @@ endif # XTENSA_RPO_CACHE
 config CONSOLE
 	def_bool y
 
-if CONSOLE
+if CONSOLE && !SIMULATOR_XTENSA
 config WINSTREAM_CONSOLE
 	def_bool y
 endif

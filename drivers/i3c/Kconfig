@@ -207,14 +207,16 @@ endif # I3C_CONTROLLER
 
 comment "Device Drivers"
 
-rsource "Kconfig.nxp"
+# zephyr-keep-sorted-start
 rsource "Kconfig.cdns"
-rsource "Kconfig.npcx"
 rsource "Kconfig.dw"
-rsource "Kconfig.max32"
-rsource "Kconfig.test"
-rsource "Kconfig.stm32"
 rsource "Kconfig.it51xxx"
+rsource "Kconfig.max32"
+rsource "Kconfig.npcx"
+rsource "Kconfig.nxp"
 rsource "Kconfig.renesas"
+rsource "Kconfig.stm32"
+rsource "Kconfig.test"
+# zephyr-keep-sorted-stop
 
 endif # I3C

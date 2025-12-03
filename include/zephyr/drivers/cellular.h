@@ -139,6 +139,8 @@ enum cellular_event {
 	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
 	/** Cellular network registration status changed */
 	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
+	/** Result of a communications link check to the modem */
+	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -152,6 +154,11 @@ struct cellular_evt_modem_info {
 /** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
 struct cellular_evt_registration_status {
 	enum cellular_registration_status status; /**< New registration status */
+};
+
+/** Payload for @ref CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT */
+struct cellular_evt_modem_comms_check_result {
+	bool success; /**< Communications to modem checked successfully */
 };
 
 /**
@@ -230,7 +237,7 @@ __subsystem struct cellular_driver_api {
  * @retval 0 if successful.
  * @retval -EINVAL if any provided cellular network configuration is invalid or unsupported.
  * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_configure_networks(const struct device *dev,
 					      const struct cellular_network *networks, uint8_t size)
@@ -253,7 +260,7 @@ static inline int cellular_configure_networks(const struct device *dev,
  *
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_get_supported_networks(const struct device *dev,
 						  const struct cellular_network **networks,
@@ -278,7 +285,7 @@ static inline int cellular_get_supported_networks(const struct device *dev,
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval -ENODATA if device is not in a state where signal can be polled
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_get_signal(const struct device *dev,
 				      const enum cellular_signal_type type, int16_t *value)
@@ -303,7 +310,7 @@ static inline int cellular_get_signal(const struct device *dev,
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval -ENODATA if modem does not provide info requested
- * @retval Negative errno-code from chat module otherwise.
+ * @retval <0 Negative errno-code from chat module otherwise.
  */
 static inline int cellular_get_modem_info(const struct device *dev,
 					  const enum cellular_modem_info_type type, char *info,
@@ -328,7 +335,7 @@ static inline int cellular_get_modem_info(const struct device *dev,
  * @retval 0 if successful.
  * @retval -ENOSYS if API is not supported by cellular network device.
  * @retval -ENODATA if modem does not provide info requested
- * @retval Negative errno-code from chat module otherwise.
+ * @retval <0 Negative errno-code from chat module otherwise.
  */
 static inline int cellular_get_registration_status(const struct device *dev,
 						   enum cellular_access_technology tech,
@@ -357,7 +364,7 @@ static inline int cellular_get_registration_status(const struct device *dev,
  * @retval -EINVAL if APN string invalid or too long.
  * @retval -EALREADY if APN identical to current one, nothing to do
  * @retval -EBUSY if modem is already dialled, APN cannot be changed
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_set_apn(const struct device *dev, const char *apn)
 {

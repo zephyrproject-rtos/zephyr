@@ -56,7 +56,7 @@ struct _thread_base {
 	 */
 	_wait_q_t *pended_on;
 
-	/* user facing 'thread options'; values defined in include/kernel.h */
+	/* user facing 'thread options'; values defined in include/zephyr/kernel.h */
 	uint8_t user_options;
 
 	/* thread state */
@@ -140,6 +140,13 @@ struct _thread_base {
 typedef struct _thread_base _thread_base_t;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+struct _thread_stack_usage {
+	size_t unused_threshold; /* Threshold below which to trigger hook */
+};
+#endif
+
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
 	/* Stack start - Represents the start address of the thread-writable
@@ -171,6 +178,10 @@ struct _thread_stack_info {
 		size_t sz;
 	} mapped;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+	struct _thread_stack_usage usage;
+#endif
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
@@ -178,8 +189,10 @@ typedef struct _thread_stack_info _thread_stack_info_t;
 
 #if defined(CONFIG_USERSPACE)
 struct _mem_domain_info {
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	/** memory domain queue node */
-	sys_dnode_t mem_domain_q_node;
+	sys_dnode_t thread_mem_domain_node;
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** memory domain of the thread */
 	struct k_mem_domain *mem_domain;
 };

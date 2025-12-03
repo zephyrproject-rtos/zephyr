@@ -28,14 +28,14 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "ipv4.h"
 #include "pmtu.h"
 
-BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE);
+BUILD_ASSERT(sizeof(struct net_in_addr) == NET_IPV4_ADDR_SIZE);
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
 
 int net_ipv4_create_full(struct net_pkt *pkt,
-			 const struct in_addr *src,
-			 const struct in_addr *dst,
+			 const struct net_in_addr *src,
+			 const struct net_in_addr *dst,
 			 uint8_t tos,
 			 uint16_t id,
 			 uint8_t flags,
@@ -88,8 +88,8 @@ int net_ipv4_create_full(struct net_pkt *pkt,
 }
 
 int net_ipv4_create(struct net_pkt *pkt,
-		    const struct in_addr *src,
-		    const struct in_addr *dst)
+		    const struct net_in_addr *src,
+		    const struct net_in_addr *dst)
 {
 	uint8_t tos = 0;
 	uint8_t flags = 0U;
@@ -126,7 +126,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 		}
 	}
 
-	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
+	ipv4_hdr->len   = net_htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
@@ -137,12 +137,12 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
-	    next_header_proto == IPPROTO_UDP) {
+	    next_header_proto == NET_IPPROTO_UDP) {
 		return net_udp_finalize(pkt, false);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
-		   next_header_proto == IPPROTO_TCP) {
+		   next_header_proto == NET_IPPROTO_TCP) {
 		return net_tcp_finalize(pkt, false);
-	} else if (next_header_proto == IPPROTO_ICMP) {
+	} else if (next_header_proto == NET_IPPROTO_ICMP) {
 		return net_icmpv4_finalize(pkt, false);
 	}
 
@@ -292,7 +292,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
-	pkt_len = ntohs(hdr->len);
+	pkt_len = net_ntohs(hdr->len);
 	if (real_len < pkt_len) {
 		NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
 			pkt_len, real_len);
@@ -326,7 +326,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if (net_ipv4_is_addr_unspecified_raw(hdr->src) &&
 	    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst) &&
-	    (hdr->proto != IPPROTO_IGMP)) {
+	    (hdr->proto != NET_IPPROTO_IGMP)) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
 	}
@@ -339,7 +339,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
-	net_pkt_set_family(pkt, PF_INET);
+	net_pkt_set_family(pkt, NET_PF_INET);
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
@@ -349,14 +349,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if ((!net_ipv4_is_my_addr_raw(hdr->dst) &&
 	     !net_ipv4_is_addr_mcast_raw(hdr->dst) &&
-	     !(hdr->proto == IPPROTO_UDP &&
+	     !(hdr->proto == NET_IPPROTO_UDP &&
 	       (net_ipv4_addr_cmp_raw(hdr->dst, net_ipv4_broadcast_address()->s4_addr) ||
 		/* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
 		(IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
 		 net_ipv4_addr_cmp_raw(hdr->dst,
 				       net_ipv4_unspecified_address()->s4_addr)) ||
 		net_dhcpv4_accept_unicast(pkt)))) ||
-	    (hdr->proto == IPPROTO_TCP &&
+	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
 		NET_DBG("DROP: not for me");
 		goto drop;
@@ -374,7 +374,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
 		/* Check if this is a fragmented packet, and if so, handle reassembly */
-		if ((ntohs(*((uint16_t *)&hdr->offset[0])) &
+		if ((net_ntohs(*((uint16_t *)&hdr->offset[0])) &
 		     (NET_IPV4_FRAGH_OFFSET_MASK | NET_IPV4_MORE_FRAG_MASK)) != 0) {
 			return net_ipv4_handle_fragment_hdr(pkt, hdr);
 		}
@@ -393,27 +393,27 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	}
 
 	switch (hdr->proto) {
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMP:
 		verdict = net_icmpv4_input(pkt, hdr);
 		if (verdict == NET_DROP) {
 			goto drop;
 		}
 		return verdict;
 #if defined(CONFIG_NET_IPV4_IGMP)
-	case IPPROTO_IGMP:
+	case NET_IPPROTO_IGMP:
 		verdict = net_ipv4_igmp_input(pkt, hdr);
 		if (verdict == NET_DROP) {
 			goto drop;
 		}
 		return verdict;
 #endif
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		proto_hdr.tcp = net_tcp_input(pkt, &tcp_access);
 		if (proto_hdr.tcp) {
 			verdict = NET_OK;
 		}
 		break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		proto_hdr.udp = net_udp_input(pkt, &udp_access);
 		if (proto_hdr.udp) {
 			verdict = NET_OK;
@@ -421,16 +421,16 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		break;
 
 #if defined(CONFIG_NET_L2_IPIP)
-	case IPPROTO_IPV6:
-	case IPPROTO_IPIP: {
-		struct sockaddr_in remote_addr = { 0 };
+	case NET_IPPROTO_IPV6:
+	case NET_IPPROTO_IPIP: {
+		struct net_sockaddr_in remote_addr = { 0 };
 		struct net_if *tunnel_iface;
 
-		remote_addr.sin_family = AF_INET;
+		remote_addr.sin_family = NET_AF_INET;
 		net_ipv4_addr_copy_raw((uint8_t *)&remote_addr.sin_addr, hdr->src);
 
-		net_pkt_set_remote_address(pkt, (struct sockaddr *)&remote_addr,
-					   sizeof(struct sockaddr_in));
+		net_pkt_set_remote_address(pkt, (struct net_sockaddr *)&remote_addr,
+					   sizeof(struct net_sockaddr_in));
 
 		/* Get rid of the old IP header */
 		net_pkt_cursor_restore(pkt, &hdr_start);
@@ -463,16 +463,16 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
 		struct net_pmtu_entry *entry;
-		struct sockaddr_in dst = {
-			.sin_family = AF_INET,
+		struct net_sockaddr_in dst = {
+			.sin_family = NET_AF_INET,
 		};
 		int ret;
 
 		net_ipv4_addr_copy_raw((uint8_t *)&dst.sin_addr,
 				       NET_IPV4_HDR(pkt)->dst);
-		entry = net_pmtu_get_entry((struct sockaddr *)&dst);
+		entry = net_pmtu_get_entry((struct net_sockaddr *)&dst);
 		if (entry == NULL) {
-			ret = net_pmtu_update_mtu((struct sockaddr *)&dst,
+			ret = net_pmtu_update_mtu((struct net_sockaddr *)&dst,
 						  net_if_get_mtu(net_pkt_iface(pkt)));
 			if (ret < 0) {
 				NET_DBG("Cannot update PMTU for %s (%d)",

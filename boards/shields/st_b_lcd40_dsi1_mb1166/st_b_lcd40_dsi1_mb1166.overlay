@@ -7,14 +7,9 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 / {
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-		invert-y;
-	};
-
 	chosen {
 		zephyr,display = &zephyr_lcd_controller;
+		zephyr,touch = &ft5336;
 	};
 };
 
@@ -63,5 +58,8 @@
 		reg = <0x38>;
 		int-gpios = <&dsi_lcd_qsh_030 4 GPIO_ACTIVE_LOW>;
 		status = "okay";
+		inverted-y;
+		screen-width = <800>;
+		screen-height = <480>;
 	};
 };

@@ -51,12 +51,12 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #define SEM_WAIT_TIME K_SECONDS(1)
 #define TEST_DATA "dummy test data"
 
-static struct in6_addr send_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr send_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in6_addr recv_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr recv_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-static struct in_addr send_addr_4 = { { { 192, 0, 2, 1 } } };
-static struct in_addr recv_addr_4 = { { { 192, 0, 2, 2 } } };
+static struct net_in_addr send_addr_4 = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr recv_addr_4 = { { { 192, 0, 2, 2 } } };
 
 static struct net_if *sender, *receiver;
 
@@ -72,12 +72,12 @@ static struct test_icmp_context {
 static struct test_icmp_context offload_ctx;
 static struct net_if *offload_sender;
 
-static struct in6_addr offload_send_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr offload_send_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 						   0, 0, 0, 0, 0, 0, 0, 0x3 } } };
-static struct in6_addr offload_recv_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr offload_recv_addr_6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 						   0, 0, 0, 0, 0, 0, 0, 0x4 } } };
-static struct in_addr offload_send_addr_4 = { { { 192, 0, 2, 3 } } };
-static struct in_addr offload_recv_addr_4 = { { { 192, 0, 2, 4 } } };
+static struct net_in_addr offload_send_addr_4 = { { { 192, 0, 2, 3 } } };
+static struct net_in_addr offload_recv_addr_4 = { { { 192, 0, 2, 4 } } };
 #endif
 
 static void test_iface_init(struct net_if *iface)
@@ -148,10 +148,10 @@ NET_DEVICE_INIT(test_receiver_icmp, "test_receiver_icmp", NULL, NULL, &recv_ctx,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), NET_IPV6_MTU);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
-static int offload_dummy_get(sa_family_t family,
-				enum net_sock_type type,
-				enum net_ip_protocol ip_proto,
-				struct net_context **context)
+static int offload_dummy_get(net_sa_family_t family,
+			     enum net_sock_type type,
+			     enum net_ip_protocol ip_proto,
+			     struct net_context **context)
 {
 	return -1;
 }
@@ -173,7 +173,7 @@ static struct net_icmp_offload offload_data;
 
 #if defined(CONFIG_NET_IPV4)
 static int get_ipv4_reply(struct net_if *iface,
-			  struct sockaddr *dst,
+			  struct net_sockaddr *dst,
 			  struct net_icmp_ping_params *params,
 			  struct net_pkt **reply_pkt,
 			  struct net_ipv4_hdr **hdr_ipv4,
@@ -181,9 +181,9 @@ static int get_ipv4_reply(struct net_if *iface,
 {
 	struct net_ipv4_hdr *ipv4_hdr = NULL;
 	struct net_icmp_hdr *icmp_hdr;
-	const struct in_addr *dest4;
+	const struct net_in_addr *dest4;
 	struct net_pkt *reply;
-	struct in_addr *src4;
+	struct net_in_addr *src4;
 	int ret;
 
 	/* The code below should not be used in real life scenarios
@@ -194,7 +194,7 @@ static int get_ipv4_reply(struct net_if *iface,
 	reply = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr) +
 					  sizeof(struct net_icmp_hdr) +
 					  params->data_size,
-					  AF_INET, IPPROTO_ICMP,
+					  NET_AF_INET, NET_IPPROTO_ICMP,
 					  PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("No buffer");
@@ -232,7 +232,7 @@ static int get_ipv4_reply(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv4_finalize(reply, IPPROTO_ICMP);
+	net_ipv4_finalize(reply, NET_IPPROTO_ICMP);
 
 	*reply_pkt = reply;
 
@@ -240,7 +240,7 @@ static int get_ipv4_reply(struct net_if *iface,
 }
 #else
 static int get_ipv4_reply(struct net_if *iface,
-			  struct sockaddr *dst,
+			  struct net_sockaddr *dst,
 			  struct net_icmp_ping_params *params,
 			  struct net_pkt **reply_pkt,
 			  struct net_ipv4_hdr **hdr_ipv4,
@@ -252,7 +252,7 @@ static int get_ipv4_reply(struct net_if *iface,
 
 #if defined(CONFIG_NET_IPV6)
 static int get_ipv6_reply(struct net_if *iface,
-			  struct sockaddr *dst,
+			  struct net_sockaddr *dst,
 			  struct net_icmp_ping_params *params,
 			  struct net_pkt **reply_pkt,
 			  struct net_ipv6_hdr **hdr_ipv6,
@@ -260,15 +260,15 @@ static int get_ipv6_reply(struct net_if *iface,
 {
 	struct net_ipv6_hdr *ipv6_hdr = NULL;
 	struct net_icmp_hdr *icmp_hdr;
-	const struct in6_addr *dest6;
+	const struct net_in6_addr *dest6;
 	struct net_pkt *reply;
-	struct in6_addr *src6;
+	struct net_in6_addr *src6;
 	int ret;
 
 	reply = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv6_hdr) +
 					  sizeof(struct net_icmp_hdr) +
 					  params->data_size,
-					  AF_INET6, IPPROTO_ICMP,
+					  NET_AF_INET6, NET_IPPROTO_ICMP,
 					  PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("No buffer");
@@ -303,7 +303,7 @@ static int get_ipv6_reply(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv6_finalize(reply, IPPROTO_ICMP);
+	net_ipv6_finalize(reply, NET_IPPROTO_ICMP);
 
 	*reply_pkt = reply;
 
@@ -311,7 +311,7 @@ static int get_ipv6_reply(struct net_if *iface,
 }
 #else
 static int get_ipv6_reply(struct net_if *iface,
-			  struct sockaddr *dst,
+			  struct net_sockaddr *dst,
 			  struct net_icmp_ping_params *params,
 			  struct net_pkt **reply_pkt,
 			  struct net_ipv6_hdr **hdr_ipv6,
@@ -323,7 +323,7 @@ static int get_ipv6_reply(struct net_if *iface,
 
 static int offload_ping_handler(struct net_icmp_ctx *ctx,
 				struct net_if *iface,
-				struct sockaddr *dst,
+				struct net_sockaddr *dst,
 				struct net_icmp_ping_params *params,
 				void *user_data)
 {
@@ -349,7 +349,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 	 * Here we just simulate a reply as there is no need to actually
 	 * send anything anywhere.
 	 */
-	if (IS_ENABLED(CONFIG_NET_IPV4) && dst->sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && dst->sa_family == NET_AF_INET) {
 		ret = get_ipv4_reply(iface, dst, params, &reply,
 				     &ipv4_hdr, &icmp_hdr);
 		if (ret < 0) {
@@ -357,11 +357,11 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 			return ret;
 		}
 
-		ip_hdr.family = AF_INET;
+		ip_hdr.family = NET_AF_INET;
 		ip_hdr.ipv4 = ipv4_hdr;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == NET_AF_INET6) {
 		ret = get_ipv6_reply(iface, dst, params, &reply,
 				     &ipv6_hdr, &icmp_hdr);
 		if (ret < 0) {
@@ -369,7 +369,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 			return ret;
 		}
 
-		ip_hdr.family = AF_INET6;
+		ip_hdr.family = NET_AF_INET6;
 		ip_hdr.ipv6 = ipv6_hdr;
 	}
 
@@ -431,14 +431,14 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 {
 	struct test_icmp_context *test = user_data;
 
-	if (hdr->family == AF_INET) {
+	if (hdr->family == NET_AF_INET) {
 		struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 
 		NET_DBG("Received Echo reply from %s to %s",
 			net_sprint_ipv4_addr(&ip_hdr->src),
 			net_sprint_ipv4_addr(&ip_hdr->dst));
 
-	} else if (hdr->family == AF_INET6) {
+	} else if (hdr->family == NET_AF_INET6) {
 		struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 
 		NET_DBG("Received Echo Reply from %s to %s",
@@ -456,7 +456,7 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 
 ZTEST(icmp_tests, test_icmpv6_echo_request)
 {
-	struct sockaddr_in6 dst6 = { 0 };
+	struct net_sockaddr_in6 dst6 = { 0 };
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
 	int ret;
@@ -465,10 +465,10 @@ ZTEST(icmp_tests, test_icmpv6_echo_request)
 		return;
 	}
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst6.sin6_family = AF_INET6;
+	dst6.sin6_family = NET_AF_INET6;
 
 #if defined(CONFIG_NET_IPV6)
 	memcpy(&dst6.sin6_addr, &recv_addr_6, sizeof(recv_addr_6));
@@ -482,7 +482,7 @@ ZTEST(icmp_tests, test_icmpv6_echo_request)
 	params.data_size = sizeof(send_ctx.test_data);
 
 	ret = net_icmp_send_echo_request(&ctx, sender,
-					 (struct sockaddr *)&dst6,
+					 (struct net_sockaddr *)&dst6,
 					 &params,
 					 &send_ctx);
 	zassert_equal(ret, 0, "Cannot send ICMP Echo-Request (%d)", ret);
@@ -499,7 +499,7 @@ ZTEST(icmp_tests, test_icmpv6_echo_request)
 
 ZTEST(icmp_tests, test_icmpv4_echo_request)
 {
-	struct sockaddr_in dst4 = { 0 };
+	struct net_sockaddr_in dst4 = { 0 };
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
 	int ret;
@@ -508,10 +508,10 @@ ZTEST(icmp_tests, test_icmpv4_echo_request)
 		return;
 	}
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst4.sin_family = AF_INET;
+	dst4.sin_family = NET_AF_INET;
 
 #if defined(CONFIG_NET_IPV4)
 	memcpy(&dst4.sin_addr, &recv_addr_4, sizeof(recv_addr_4));
@@ -525,7 +525,7 @@ ZTEST(icmp_tests, test_icmpv4_echo_request)
 	params.data_size = sizeof(send_ctx.test_data);
 
 	ret = net_icmp_send_echo_request(&ctx, sender,
-					 (struct sockaddr *)&dst4,
+					 (struct net_sockaddr *)&dst4,
 					 &params,
 					 &send_ctx);
 	zassert_equal(ret, 0, "Cannot send ICMP Echo-Request (%d)", ret);
@@ -544,15 +544,15 @@ ZTEST(icmp_tests, test_icmpv4_echo_request)
 #if defined(CONFIG_NET_IPV4)
 ZTEST(icmp_tests, test_offload_icmpv4_echo_request)
 {
-	struct sockaddr_in dst4 = { 0 };
+	struct net_sockaddr_in dst4 = { 0 };
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst4.sin_family = AF_INET;
+	dst4.sin_family = NET_AF_INET;
 
 	memcpy(&dst4.sin_addr, &offload_recv_addr_4, sizeof(offload_recv_addr_4));
 
@@ -564,7 +564,7 @@ ZTEST(icmp_tests, test_offload_icmpv4_echo_request)
 	params.data_size = sizeof(offload_ctx.test_data);
 
 	ret = net_icmp_send_echo_request(&ctx, offload_sender,
-					 (struct sockaddr *)&dst4,
+					 (struct net_sockaddr *)&dst4,
 					 &params,
 					 &offload_ctx);
 	zassert_equal(ret, 0, "Cannot send ICMP Echo-Request (%d)", ret);
@@ -583,15 +583,15 @@ ZTEST(icmp_tests, test_offload_icmpv4_echo_request)
 #if defined(CONFIG_NET_IPV6)
 ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 {
-	struct sockaddr_in6 dst6 = { 0 };
+	struct net_sockaddr_in6 dst6 = { 0 };
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
-	dst6.sin6_family = AF_INET6;
+	dst6.sin6_family = NET_AF_INET6;
 
 	memcpy(&dst6.sin6_addr, &offload_recv_addr_6, sizeof(offload_recv_addr_6));
 
@@ -603,7 +603,7 @@ ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 	params.data_size = sizeof(offload_ctx.test_data);
 
 	ret = net_icmp_send_echo_request(&ctx, offload_sender,
-					 (struct sockaddr *)&dst6,
+					 (struct net_sockaddr *)&dst6,
 					 &params,
 					 &offload_ctx);
 	zassert_equal(ret, 0, "Cannot send ICMP Echo-Request (%d)", ret);
@@ -619,6 +619,120 @@ ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 }
 #endif
 #endif /* CONFIG_NET_OFFLOADING_SUPPORT */
+
+/* Need to have both IPv4/IPv6 for those */
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
+static K_SEM_DEFINE(test_req_sem, 0, 1);
+
+static int icmp_request_handler(struct net_icmp_ctx *ctx,
+				struct net_pkt *pkt,
+				struct net_icmp_ip_hdr *hdr,
+				struct net_icmp_hdr *icmp_hdr,
+				void *user_data)
+{
+	k_sem_give(&test_req_sem);
+
+	return 0;
+}
+
+ZTEST(icmp_tests, test_malformed_icmpv6_echo_request_on_ipv4)
+{
+	struct net_in_addr dst4 = { 0 };
+	const struct net_in_addr *src4;
+	struct net_icmp_ctx ctx;
+	struct net_if *iface;
+	struct net_pkt *pkt;
+	int ret;
+
+	k_sem_reset(&test_req_sem);
+
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_ECHO_REQUEST, 0,
+				icmp_request_handler);
+	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
+
+	memcpy(&dst4, &recv_addr_4, sizeof(recv_addr_4));
+
+	/* Prepare malformed NET_ICMPV6_ECHO_REQUEST on IPv4 packet */
+	iface = net_if_ipv4_select_src_iface_addr(&dst4, &src4);
+	zassert_not_null(iface, "NULL iface");
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_icmpv4_echo_req),
+					NET_AF_INET, NET_IPPROTO_ICMP, K_MSEC(100));
+	zassert_not_null(pkt, "NULL pkt");
+
+	if (net_ipv4_create(pkt, src4, &dst4) != 0 ||
+	    net_icmpv4_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to create ICMP packet");
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_ICMP);
+
+	if (net_try_send_data(pkt, K_NO_WAIT) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to send packet");
+	}
+
+	ret = k_sem_take(&test_req_sem, K_MSEC(100));
+	if (ret != -EAGAIN) {
+		(void)net_icmp_cleanup_ctx(&ctx);
+		zassert_true(false, "ICMP request shouldn't be processed");
+	}
+
+	ret = net_icmp_cleanup_ctx(&ctx);
+	zassert_equal(ret, 0, "Cannot cleanup ICMP (%d)", ret);
+}
+
+ZTEST(icmp_tests, test_malformed_icmpv4_echo_request_on_ipv6)
+{
+	struct net_in6_addr dst6 = { 0 };
+	const struct net_in6_addr *src6;
+	struct net_icmp_ctx ctx;
+	struct net_if *iface;
+	struct net_pkt *pkt;
+	int ret;
+
+	k_sem_reset(&test_req_sem);
+
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET, NET_ICMPV4_ECHO_REQUEST, 0,
+				icmp_request_handler);
+	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
+
+	memcpy(&dst6, &recv_addr_6, sizeof(recv_addr_6));
+
+	/* Prepare malformed NET_ICMPV4_ECHO_REQUEST on IPv6 packet */
+	iface = net_if_ipv6_select_src_iface_addr(&dst6, &src6);
+	zassert_not_null(iface, "NULL iface");
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_icmpv6_echo_req),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6, K_MSEC(100));
+	zassert_not_null(pkt, "NULL pkt");
+
+	if (net_ipv6_create(pkt, src6, &dst6) != 0 ||
+	    net_icmpv6_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to create ICMP packet");
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
+
+	if (net_try_send_data(pkt, K_NO_WAIT) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to send packet");
+	}
+
+	ret = k_sem_take(&test_req_sem, K_MSEC(100));
+	if (ret != -EAGAIN) {
+		(void)net_icmp_cleanup_ctx(&ctx);
+		zassert_true(false, "ICMP request shouldn't be processed");
+	}
+
+	ret = net_icmp_cleanup_ctx(&ctx);
+	zassert_equal(ret, 0, "Cannot cleanup ICMP (%d)", ret);
+}
+#endif /* defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6) */
 
 static void *setup(void)
 {

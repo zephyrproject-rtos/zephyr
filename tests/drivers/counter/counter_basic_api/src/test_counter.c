@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
- * Copyright 2024 NXP
+ * Copyright 2024, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_rtc)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_RTC_JDP
+	DEVS_FOR_DT_COMPAT(nxp_rtc_jdp)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_QTMR
 	DEVS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
@@ -94,7 +97,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_STIMER
-	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+	DEVICE_DT_GET(DT_CHOSEN(silabs_sleeptimer)),
 #endif
 #ifdef CONFIG_COUNTER_NXP_PIT
 	DEVS_FOR_DT_COMPAT(nxp_pit_channel)
@@ -132,6 +135,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_FTM
 	DEVS_FOR_DT_COMPAT(nxp_ftm)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_STM
+	DEVS_FOR_DT_COMPAT(nxp_stm)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
@@ -158,6 +164,9 @@ static const struct device *const devices[] = {
 static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_RTC_JDP
+	DEVS_FOR_DT_COMPAT(nxp_rtc_jdp)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)

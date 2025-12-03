@@ -69,31 +69,21 @@ config IEEE802154_L2_PKT_INCL_FCS
 	  packet, while others do not. Allow to configure this behavior based
 	  on the upper layer selected.
 
+# zephyr-keep-sorted-start
 source "drivers/ieee802154/Kconfig.b91"
-
-source "drivers/ieee802154/Kconfig.cc2520"
-
-source "drivers/ieee802154/Kconfig.kw41z"
-
-source "drivers/ieee802154/Kconfig.mcr20a"
-
-source "drivers/ieee802154/Kconfig.mcxw"
-
-source "drivers/ieee802154/Kconfig.nrf5"
-
 source "drivers/ieee802154/Kconfig.cc1200"
-
 source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
-
-source "drivers/ieee802154/Kconfig.rf2xx"
-
+source "drivers/ieee802154/Kconfig.cc2520"
 source "drivers/ieee802154/Kconfig.dw1000"
-
 source "drivers/ieee802154/Kconfig.esp32"
-
+source "drivers/ieee802154/Kconfig.kw41z"
+source "drivers/ieee802154/Kconfig.mcr20a"
+source "drivers/ieee802154/Kconfig.mcxw"
+source "drivers/ieee802154/Kconfig.nrf5"
+source "drivers/ieee802154/Kconfig.rf2xx"
 source "drivers/ieee802154/Kconfig.stm32wba"
-
 source "drivers/ieee802154/Kconfig.uart_pipe"
+# zephyr-keep-sorted-stop
 
 config IEEE802154_CSL_ENDPOINT
 	bool "Support for CSL Endpoint"

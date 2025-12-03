@@ -145,4 +145,20 @@ config ESPI_IT8XXX2_PORT_81_CYCLE
 	  This allows EC to accept 2 bytes of port 80 data written from the Host.
 	  (e.g. using iotools: iotools io_write16 0x80 0x1234)
 
+config ESPI_IT8XXX2_H2RAM_SHARED
+	bool "Shared access to h2ram_pool"
+	help
+	  Enabling this option exposes the eSPI driver h2ram_pool as a
+	  global symbol (non-static), allowing other modules to reuse
+	  this memory space.
+	  The configurations CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM and
+	  CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM have a gap in RAM space.
+	  By enabling CONFIG_ESPI_IT8XXX2_H2RAM_SHARED, this unused gap can be
+	  reused by other modules to reduce overall RAM usage.
+
+	  NOTE: A build-time assertion must ensure that the shared region size
+	  does not exceed the available space defined by
+	  CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM and
+	  CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM.
+
 endif #ESPI_IT8XXX2

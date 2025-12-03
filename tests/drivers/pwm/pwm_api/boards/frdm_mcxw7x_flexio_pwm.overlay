@@ -17,6 +17,7 @@
 
 &flexio {
 	status = "okay";
+
 	flexio_pwm: flexio_pwm {
 		status = "okay";
 		pinctrl-0 = <&pinmux_flexio_pwm>;

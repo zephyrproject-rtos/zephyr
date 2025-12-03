@@ -37,7 +37,8 @@
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		/* 128Mbit, but only half is available by HW design */
+		reg = <0xd0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -46,7 +47,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
@@ -176,6 +177,7 @@
 		     &quadspi_bk2_io0_ph2
 		     &quadspi_bk2_io1_ph3>;
 	dual-flash;
+	ssht-enable;
 	status = "okay";
 
 	mt25ql512ab1: qspi-nor-flash-1@0 {
@@ -273,7 +275,7 @@
 					    STM32_FMC_SDRAM_MWID_16
 					    STM32_FMC_SDRAM_NB_4
 					    STM32_FMC_SDRAM_CAS_2
-					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_3
 					    STM32_FMC_SDRAM_RBURST_ENABLE
 					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 7 4 7 2 2 2>;

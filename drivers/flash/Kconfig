@@ -108,6 +108,7 @@ if FLASH_SHELL
 config FLASH_SHELL_TEST_COMMANDS
 	bool "Flash read/write/erase test commands"
 	select CBPRINTF_FP_SUPPORT
+	select TIMING_FUNCTIONS
 	help
 	  Enable additional flash shell commands for performing
 	  read/write/erase tests with speed output.
@@ -170,6 +171,7 @@ source "drivers/flash/Kconfig.andes"
 source "drivers/flash/Kconfig.at25xv021a"
 source "drivers/flash/Kconfig.at45"
 source "drivers/flash/Kconfig.b91"
+source "drivers/flash/Kconfig.bflb"
 source "drivers/flash/Kconfig.cadence_nand"
 source "drivers/flash/Kconfig.cadence_qspi_nor"
 source "drivers/flash/Kconfig.cc13xx_cc26xx"
@@ -182,6 +184,7 @@ source "drivers/flash/Kconfig.it51xxx_m1k"
 source "drivers/flash/Kconfig.it8xxx2"
 source "drivers/flash/Kconfig.lpc"
 source "drivers/flash/Kconfig.max32"
+source "drivers/flash/Kconfig.mchp"
 source "drivers/flash/Kconfig.mcux"
 source "drivers/flash/Kconfig.mspi"
 source "drivers/flash/Kconfig.nor"
@@ -198,11 +201,13 @@ source "drivers/flash/Kconfig.renesas_ra"
 source "drivers/flash/Kconfig.renesas_ra_ospi"
 source "drivers/flash/Kconfig.renesas_ra_qspi"
 source "drivers/flash/Kconfig.renesas_rx"
+source "drivers/flash/Kconfig.renesas_rz_qspi"
 source "drivers/flash/Kconfig.rpi_pico"
 source "drivers/flash/Kconfig.rts5912"
 source "drivers/flash/Kconfig.rv32m1"
 source "drivers/flash/Kconfig.sam"
 source "drivers/flash/Kconfig.sam0"
+source "drivers/flash/Kconfig.sf32lb_mpi_qspi_nor"
 source "drivers/flash/Kconfig.si32"
 source "drivers/flash/Kconfig.silabs"
 source "drivers/flash/Kconfig.simulator"

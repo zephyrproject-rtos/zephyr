@@ -42,6 +42,7 @@ struct sci_b_i2c_data {
 	struct k_sem complete_sem;
 	i2c_master_event_t event;
 	uint32_t dev_config;
+	uint8_t merge_buf[I2C_MAX_MSG_LEN];
 
 #ifdef CONFIG_I2C_CALLBACK
 	uint16_t addr;
@@ -125,6 +126,9 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 	struct i2c_msg *current, *next;
 	fsp_err_t fsp_err;
 	int ret;
+	uint8_t *merge_buf = data->merge_buf;
+	struct i2c_msg tmp_msg;
+	uint16_t tmp_len;
 
 	if (!num_msgs) {
 		return 0;
@@ -134,12 +138,9 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 	if (num_msgs == 2) {
 		if (msgs[0].len == 1U && !(msgs[0].flags & I2C_MSG_READ) &&
 		    !(msgs[1].flags & I2C_MSG_READ)) {
-			uint16_t tmp_len = msgs[0].len + msgs[1].len;
+			tmp_len = msgs[0].len + msgs[1].len;
 
 			if (tmp_len <= I2C_MAX_MSG_LEN) {
-				static uint8_t merge_buf[I2C_MAX_MSG_LEN];
-				struct i2c_msg tmp_msg;
-
 				memcpy(&merge_buf[0], msgs[0].buf, msgs[0].len);
 				memcpy(&merge_buf[msgs[0].len], msgs[1].buf, msgs[1].len);
 				tmp_msg.buf = &merge_buf[0];

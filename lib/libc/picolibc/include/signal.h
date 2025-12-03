@@ -47,6 +47,11 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 #undef sigdelset
 #undef sigismember
 
+#if defined(_POSIX_REALTIME_SIGNALS)
+#define _SIGEVENT_DECLARED
+#define _SIGVAL_DECLARED
+#endif
+
 #endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
 
 #endif /* ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SIGNAL_H_ */

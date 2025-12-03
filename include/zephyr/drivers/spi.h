@@ -149,7 +149,7 @@ extern "C" {
  * @brief Get SPI word size in bits from a @ref spi_operation_t
  *
  * @param operation A @ref spi_operation_t from which to get the configured word size.
- * @retval The size (in bits) of a spi word for the operation.
+ * @return The size (in bits) of a spi word for the operation.
  */
 #define SPI_WORD_SIZE_GET(operation)					\
 	(((operation) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
@@ -158,7 +158,7 @@ extern "C" {
  * @brief Get a bitmask to set the word size in a @ref spi_operation_t
  *
  * @param word_size The size of a SPI data frame in bits.
- * @retval A bitmask to apply to a @ref spi_operation_t
+ * @return A bitmask to apply to a @ref spi_operation_t
  */
 #define SPI_WORD_SET(word_size)			\
 	((word_size) << SPI_WORD_SIZE_SHIFT)
@@ -339,7 +339,7 @@ struct spi_cs_control {
 	.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),					\
 	.delay = COND_CODE_1(IS_EMPTY(__VA_ARGS__),					\
 			(DIV_ROUND_UP(SPI_CS_CONTROL_MAX_DELAY(node_id), 1000)),	\
-			(__VA_ARGS__))
+			(__VA_ARGS__)),
 
 #define SPI_CS_CONTROL_INIT_NATIVE(node_id)						\
 	.setup_ns = DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0),			\
@@ -394,10 +394,10 @@ struct spi_cs_control {
 #define SPI_CS_CONTROL_INIT(node_id, ...)					\
 {										\
 	COND_CODE_0(IS_EMPTY(__VA_ARGS__), (SPI_DEPRECATE_DELAY_WARN), ())	\
-	.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 	COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 			(SPI_CS_CONTROL_INIT_GPIO(node_id, __VA_ARGS__)),	\
 			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))			\
+	.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 }
 
 /**
@@ -1365,6 +1365,19 @@ extern const struct rtio_iodev_api spi_iodev_api;
 	const struct spi_dt_spec _spi_dt_spec_##name =				\
 		SPI_DT_SPEC_GET(node_id, operation_, __VA_ARGS__);		\
 	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
+
+/**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>SPI_DT_IODEV_DEFINE(name, DT_DRV_INST(inst), operation)</tt>.
+ *
+ * @param name Symbolic name to use for defining the iodev
+ * @param inst Devicetree instance number
+ * @param operation_ SPI operational mode
+ */
+#define SPI_DT_INST_IODEV_DEFINE(name, inst, operation_, ...)			\
+	SPI_DT_IODEV_DEFINE(name, DT_DRV_INST(inst), operation_, __VA_ARGS__)
 
 /**
  * @brief Validate that SPI bus (and CS gpio if defined) is ready.

@@ -1030,6 +1030,32 @@ static inline int z_impl_adc_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
+/**
+ * @brief Set an asynchronous read request from a struct adc_dt_spec.
+ *
+ * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}
+ * is selected.
+ *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
+ * @param spec      ADC specification from Devicetree.
+ * @param sequence  Structure specifying requested sequence of samplings.
+ * @param async     Pointer to a valid and ready to be signaled struct
+ *                  k_poll_signal. (Note: if NULL this function will not notify
+ *                  the end of the transaction, and whether it went successfully
+ *                  or not).
+ *
+ * @return A value from adc_read().
+ * @see adc_read()
+ */
+static inline int adc_read_async_dt(const struct adc_dt_spec *spec,
+				    const struct adc_sequence *sequence,
+				    struct k_poll_signal *async)
+{
+	return adc_read_async(spec->dev, sequence, async);
+}
+
 #ifdef CONFIG_ADC_STREAM
 /**
  * @brief Get decoder APIs for that device.
@@ -1309,7 +1335,7 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
  *
  * @param spec ADC specification from devicetree
  *
- * @retval true if the ADC device is ready for use and false otherwise.
+ * @return true if the ADC device is ready for use and false otherwise.
  */
 static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 {

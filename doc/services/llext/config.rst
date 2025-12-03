@@ -126,6 +126,44 @@ LLEXT subsystem to optimize memory footprint in this case.
            information on this topic is available on GitHub issue `#75341
            <https://github.com/zephyrproject-rtos/zephyr/issues/75341>`_.
 
+.. _llext_symbol_groups:
+
+Symbol Groups
+-------------
+
+All LLEXT symbols belong to a group, with the inclusion of each group in the
+exported symbol table controlled by a corresponding Kconfig symbol. Exporting
+a symbol as part of a group is done with the :c:macro:`EXPORT_GROUP_SYMBOL`
+and :c:macro:`EXPORT_GROUP_SYMBOL_NAMED` macros. For example the following
+exports the symbol ``memcpy`` as part of the ``LIBC`` group:
+
+.. code:: c
+
+   EXPORT_GROUP_SYMBOL(LIBC, memcpy);
+
+Group names are arbitrary, but they must be all uppercase. For each group
+used in C code, there **MUST** be a corresponding Kconfig symbol of the form:
+
+.. code::
+
+   config LLEXT_EXPORT_SYMBOL_GROUP_{GROUP_NAME}
+      bool "Export all symbols from the {GROUP_NAME} group"
+
+The default group for symbols (those declared with :c:macro:`EXPORT_SYMBOL`
+or :c:macro:`EXPORT_SYMBOL_NAMED`) is the ``UNASSIGNED`` group. As per the
+above rules, the inclusion of this group is controlled by
+:kconfig:option:`CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED`.
+
+The groups currently defined by Zephyr are:
+
+.. csv-table:: Zephyr LLEXT symbol groups
+  :header: Group Name, Kconfig Symbol, Description
+
+  ``UNASSIGNED``, :kconfig:option:`CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED`, Symbols without an explicit group
+  ``SYSCALL``, :kconfig:option:`CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL`, Zephyr kernel system calls
+  ``LIBC``, :kconfig:option:`CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_LIBC`, C standard library functions (:c:func:`memcpy` etc)
+  ``DEVICE``, :kconfig:option:`CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_DEVICE`, Devicetree devices
+
 .. _llext_kconfig_slid:
 
 Using SLID for symbol lookups

@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -77,10 +78,10 @@ static int memc_stm32_init(const struct device *dev)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
 #if (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 1)
 	/* sdram-sram */
-	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_0);
+	stm32_reg_modify_bits(&FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_0);
 #elif (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 2)
 	/* sdramb2 */
-	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_1);
+	stm32_reg_modify_bits(&FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_1);
 #endif
 #endif
 

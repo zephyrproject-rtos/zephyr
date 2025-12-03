@@ -32,6 +32,7 @@ from twisterlib.handlers import (
 from twisterlib.hardwaremap import DUT
 from twisterlib.statuses import TwisterStatus
 
+# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -1140,7 +1141,7 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--runner', 'stm32cubeprogrammer', '--tool-opt=sn=12345',
+         '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
          'param1', 'param2']
     ),
     (

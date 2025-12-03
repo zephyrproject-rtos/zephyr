@@ -17,4 +17,8 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - dma
+  - i2c
+  - spi
+  - flash
 vendor: bflb

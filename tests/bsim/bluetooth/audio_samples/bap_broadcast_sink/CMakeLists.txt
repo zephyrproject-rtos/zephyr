@@ -14,15 +14,15 @@ target_sources(app PRIVATE
 
 zephyr_sources_ifdef(CONFIG_LIBLC3 ${bap_broadcast_sink_path}/src/lc3.c)
 
-if (CONFIG_USE_USB_AUDIO_OUTPUT)
+if(CONFIG_USE_USB_AUDIO_OUTPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
   target_sources(app PRIVATE ${bap_broadcast_sink_path}/src/usb.c)
 endif()
 
 
 target_sources(app PRIVATE
-	src/broadcast_sink_test.c
-	src/test_main.c
+  src/broadcast_sink_test.c
+  src/test_main.c
 )
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)

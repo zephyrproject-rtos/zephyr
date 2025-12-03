@@ -496,8 +496,6 @@ static int phy_ti_dp83825_init(const struct device *dev)
 		return ret;
 	}
 
-	mdio_bus_enable(config->mdio_dev);
-
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (config->reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);

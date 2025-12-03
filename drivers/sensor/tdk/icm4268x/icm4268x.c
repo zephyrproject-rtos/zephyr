@@ -339,7 +339,7 @@ void icm4268x_unlock(const struct device *dev)
 
 #define ICM4268X_RTIO_DEFINE(inst)                                                                 \
 	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \
-	RTIO_DEFINE(icm4268x_rtio_##inst, 8, 4);
+	RTIO_DEFINE(icm4268x_rtio_##inst, 32, 32);
 
 #define ICM42688_DT_CONFIG_INIT(inst)						\
 	{									\
@@ -374,8 +374,13 @@ void icm4268x_unlock(const struct device *dev)
 	IF_ENABLED(CONFIG_ICM4268X_STREAM, (ICM4268X_RTIO_DEFINE(inst)));                          \
 	static struct icm4268x_dev_data icm4268x_driver_##inst = {                                 \
 		.cfg = ICM42688_DT_CONFIG_INIT(inst),                                              \
-		IF_ENABLED(CONFIG_ICM4268X_STREAM, (.r = &icm4268x_rtio_##inst,                    \
-						    .spi_iodev = &icm4268x_spi_iodev_##inst,))     \
+		IF_ENABLED(CONFIG_ICM4268X_STREAM,						   \
+		(										   \
+			.bus.rtio = {								   \
+				.ctx = &icm4268x_rtio_##inst,					   \
+				.iodev = &icm4268x_spi_iodev_##inst,				   \
+			},									   \
+		))										   \
 	};
 
 /** The rest of the Device-tree configuration is validated in the YAML

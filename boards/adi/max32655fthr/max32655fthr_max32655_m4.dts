@@ -19,7 +19,8 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram2;
-		zephyr,flash = &code_partition;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
 	};
 
 	leds {
@@ -210,6 +211,7 @@
 			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(448)>;
 		};
+
 		storage_partition: partition@70000 {
 			label = "storage";
 			reg = <0x70000 DT_SIZE_K(64)>;

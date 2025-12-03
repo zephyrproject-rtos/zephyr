@@ -34,4 +34,13 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZA_PINMUX(PORT_01, 0, 2)>, /* CK */
+				 <RZA_PINMUX(PORT_02, 2, 6)>, /* MOSI */
+				 <RZA_PINMUX(PORT_02, 3, 6)>, /* MISO */
+				 <RZA_PINMUX(PORT_01, 3, 2)>; /* SSL */
+		};
+	};
 };

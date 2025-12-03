@@ -14,6 +14,20 @@
 
 #define VPR_CPU DT_INST(0, nordic_vpr)
 
+#ifdef CONFIG_EXCEPTION_DEBUG
+/*
+ * Explicit padding is needed for VPRs, because they use hardware stacking on part of arch_esf and
+ * ESF_SW_IRQ_SIZEOF needs to be calculated accordingly.
+ */
+#define ESF_CSF                                                                                    \
+	_callee_saved_t *csf;                                                                      \
+	unsigned long padding1;                                                                    \
+	unsigned long padding2;                                                                    \
+	unsigned long padding3;
+#else
+#define ESF_CSF
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 #if DT_PROP(VPR_CPU, nordic_bus_width) == 64
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
@@ -21,6 +35,7 @@
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		struct soc_esf soc_context;                                                        \
+		ESF_CSF;                                                                           \
                                                                                                    \
 		unsigned long t2;                                                                  \
 		unsigned long ra;                                                                  \
@@ -43,6 +58,7 @@
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		struct soc_esf soc_context;                                                        \
+		ESF_CSF;                                                                           \
                                                                                                    \
 		unsigned long ra;                                                                  \
 		unsigned long t2;                                                                  \
@@ -82,10 +98,13 @@
 
 /*
  * Size of the SW managed part of the ESF in case of interrupt
- *   sizeof(__padding) + ... + sizeof(soc_context)
+ * sizeof(s0) + sizeof(mstatus) + sizeof(soc_context) +...+ sizeof(ESF_CSF)
  */
-#define ESF_SW_IRQ_SIZEOF (0x10)
-
+#ifdef CONFIG_EXCEPTION_DEBUG
+#define ESF_SW_IRQ_SIZEOF      (0x20)
+#else
+#define ESF_SW_IRQ_SIZEOF      (0x10)
+#endif
 /*
  * VPR needs aligned(8) SP when doing HW stacking, if this condition is not fulfilled it will move
  * SP by additional 4 bytes when HW stacking is done. This will be indicated by LSB bit in stacked

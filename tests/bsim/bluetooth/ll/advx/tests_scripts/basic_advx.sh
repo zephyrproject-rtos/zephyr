@@ -13,10 +13,10 @@ EXECUTE_TIMEOUT=120
 cd ${BSIM_OUT_PATH}/bin
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_advx_prj_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=advx
+  -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=0 -testid=advx
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_advx_prj_conf\
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=scanx
+  -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=1 -testid=scanx
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=2 -sim_length=60e6 $@

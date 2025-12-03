@@ -297,7 +297,6 @@
 			reg = <0x40040000 0x1000>;
 			interrupts = <28 0>;
 			clock-frequency = <1000>;
-			prescaler = <1>;
 			prescale-glitch-filter = <1>;
 			clk-source = <1>;
 			resolution = <16>;
@@ -360,8 +359,8 @@
 			regulator-max-microvolt = <1207000>;
 			regulator-initial-mode = <NXP_VREF_MODE_STANDBY>;
 			regulator-allowed-modes = <NXP_VREF_MODE_STANDBY
-						NXP_VREF_MODE_LOW_POWER
-						NXP_VREF_MODE_HIGH_POWER>;
+						   NXP_VREF_MODE_LOW_POWER
+						   NXP_VREF_MODE_HIGH_POWER>;
 		};
 	};
 };

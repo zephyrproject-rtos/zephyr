@@ -8,3 +8,14 @@ config CLOCK_CONTROL_RENESAS_RA_CGC
 	depends on HAS_RENESAS_RA_FSP
 	help
 	  Enable support for Renesas RA CGC driver.
+
+if CLOCK_CONTROL_RENESAS_RA_CGC
+
+config CLOCK_CONTROL_RENESAS_RA_SUBCLK
+	bool "Renesas RA sub clock source"
+	default y
+	depends on DT_HAS_RENESAS_RA_CGC_SUBCLK_ENABLED
+	help
+	  Enable Renesas RA sub clock driver
+
+endif

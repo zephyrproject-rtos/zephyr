@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT st_stm32_sdio
 
+#include <stm32_bitops.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -517,7 +518,8 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			bus_width_reg_value = SDMMC_BUS_WIDE_1B;
 		}
 
-		MODIFY_REG(config->hsd->Instance->CLKCR, SDMMC_CLKCR_WIDBUS, bus_width_reg_value);
+		stm32_reg_modify_bits(&config->hsd->Instance->CLKCR, SDMMC_CLKCR_WIDBUS,
+				      bus_width_reg_value);
 		host_io->bus_width = ios->bus_width;
 	}
 

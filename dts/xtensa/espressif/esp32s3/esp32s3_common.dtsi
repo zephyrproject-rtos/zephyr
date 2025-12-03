@@ -161,6 +161,18 @@
 			#mbox-cells = <1>;
 		};
 
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
+		rtc_fast_ram: memory@600fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x600fe000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
 		intc: interrupt-controller@600c2000 {
 			#interrupt-cells = <3>;
 			#address-cells = <0>;
@@ -588,6 +600,20 @@
 				reg = <1>;
 				status = "disabled";
 			};
+		};
+
+		sha: sha@6003b000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x6003b000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@6003a000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x6003a000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
 		};
 	};
 };

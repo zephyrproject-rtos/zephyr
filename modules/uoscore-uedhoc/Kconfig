@@ -5,7 +5,6 @@ menuconfig UOSCORE
 	bool "UOSCORE library"
 	depends on ZCBOR
 	depends on ZCBOR_CANONICAL
-	depends on MBEDTLS
 	select UOSCORE_UEDHOC_CRYPTO_COMMON
 
 	help
@@ -22,7 +21,6 @@ menuconfig UEDHOC
 	bool "UEDHOC library"
 	depends on ZCBOR
 	depends on ZCBOR_CANONICAL
-	depends on MBEDTLS
 	select UOSCORE_UEDHOC_CRYPTO_COMMON
 	help
 	  This option enables the UEDHOC library.
@@ -38,7 +36,7 @@ if UOSCORE || UEDHOC
 
 config UOSCORE_UEDHOC_CRYPTO_COMMON
 	bool
-	imply MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_ECDSA
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT

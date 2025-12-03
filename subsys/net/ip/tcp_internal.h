@@ -1,8 +1,8 @@
 /** @file
  * @brief Transmission Control Protocol (TCP)
  *
- * - net_tcp_get() is called by net_context_get(AF_INET, SOCK_STREAM,
-     IPPROTO_TCP, ...) and creates struct tcp for the net_context
+ * - net_tcp_get() is called by net_context_get(NET_AF_INET, NET_SOCK_STREAM,
+     NET_IPPROTO_TCP, ...) and creates struct tcp for the net_context
  * - net_tcp_listen()/net_tcp_accept() listen/accept
  * - At the reception of SYN on the listening net_context, a new pair
  *   of net_context/struct tcp registers a new net_conn handle
@@ -141,8 +141,8 @@ static inline int net_tcp_get(struct net_context *context)
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_connect(struct net_context *context,
-		    const struct sockaddr *addr,
-		    struct sockaddr *laddr,
+		    const struct net_sockaddr *addr,
+		    struct net_sockaddr *laddr,
 		    uint16_t rport,
 		    uint16_t lport,
 		    k_timeout_t timeout,
@@ -150,8 +150,8 @@ int net_tcp_connect(struct net_context *context,
 		    void *user_data);
 #else
 static inline int net_tcp_connect(struct net_context *context,
-				  const struct sockaddr *addr,
-				  struct sockaddr *laddr,
+				  const struct net_sockaddr *addr,
+				  struct net_sockaddr *laddr,
 				  uint16_t rport, uint16_t lport,
 				  k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)
@@ -313,10 +313,10 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_queue(struct net_context *context, const void *data, size_t len,
-		  const struct msghdr *msg);
+		  const struct net_msghdr *msg);
 #else
 static inline int net_tcp_queue(struct net_context *context, const void *data,
-				size_t len, const struct msghdr *msg)
+				size_t len, const struct net_msghdr *msg)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(data);
@@ -354,15 +354,19 @@ static inline int net_tcp_update_recv_wnd(struct net_context *context,
  * @brief Close and delete the TCP connection for the net_context
  *
  * @param context Network context
+ * @param force_close If true, close the connection immediately. This is
+ * used e.g., when network interface goes down and we cannot wait for proper
+ * connection close procedure as we cannot send any packets anymore.
  *
  * @return 0 on success, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_put(struct net_context *context);
+int net_tcp_put(struct net_context *context, bool force_close);
 #else
-static inline int net_tcp_put(struct net_context *context)
+static inline int net_tcp_put(struct net_context *context, bool force_close)
 {
 	ARG_UNUSED(context);
+	ARG_UNUSED(force_close);
 
 	return -EPROTONOSUPPORT;
 }
@@ -466,14 +470,14 @@ static inline void net_tcp_reply_rst(struct net_pkt *pkt)
  * @param context Network context
  * @param local TCP connection local socket information is copied here
  * @param peer TCP connection peer socket information is copied here
- * @param addrlen Size of the sockaddr struct. Copied size is returned.
+ * @param addrlen Size of the net_sockaddr struct. Copied size is returned.
  *
  * @return <0 if there was an error, 0 if ok
  */
 int net_tcp_endpoint_copy(struct net_context *ctx,
-			  struct sockaddr *local,
-			  struct sockaddr *peer,
-			  socklen_t *addrlen);
+			  struct net_sockaddr *local,
+			  struct net_sockaddr *peer,
+			  net_socklen_t *addrlen);
 
 /**
  * @brief Notify TCP layer that connection has been accepted by the application
@@ -487,6 +491,24 @@ void net_tcp_conn_accepted(struct net_context *child_ctx);
 static inline void net_tcp_conn_accepted(struct net_context *child_ctx)
 {
 	ARG_UNUSED(child_ctx);
+}
+#endif
+
+/**
+ * @brief Close and unref all TCP context bound to an network interface.
+ *
+ * @details This releases all the TCP contexts that are bound to a specific
+ * network interface. It is not possible to send or receive data via those
+ * contexts after this call.
+ *
+ * @param iface The network interface to use to find out the bound contexts.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_close_all_for_iface(struct net_if *iface);
+#else
+static inline void net_tcp_close_all_for_iface(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
 }
 #endif
 

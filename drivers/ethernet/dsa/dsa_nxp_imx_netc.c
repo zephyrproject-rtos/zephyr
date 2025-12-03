@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "../eth.h"
 #include "fsl_netc_switch.h"
@@ -32,21 +33,36 @@ struct dsa_netc_config {
 	DEVICE_MMIO_NAMED_ROM(pfconfig);
 };
 
+#ifdef CONFIG_NET_QBV
+struct netc_qbv_config {
+	netc_tb_tgs_gcl_t tgs_config;
+	netc_tgs_gate_entry_t gcList[CONFIG_DSA_NXP_NETC_GCL_LEN];
+};
+#endif
+
 struct dsa_netc_data {
 	DEVICE_MMIO_NAMED_RAM(base);
 	DEVICE_MMIO_NAMED_RAM(pfconfig);
 	swt_config_t swt_config;
 	swt_handle_t swt_handle;
 	netc_cmd_bd_t *cmd_bd;
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	uint8_t cpu_port_idx;
 	struct k_fifo tx_ts_queue;
+#ifndef NETC_SWITCH_TAG_SUPPORT
+	struct k_sem tx_ts_sem;
 #endif
+#endif
+
+#ifdef CONFIG_NET_QBV
+	struct netc_qbv_config qbv_config[DSA_PORT_MAX_COUNT];
+#endif
+
 };
 
 static int dsa_netc_port_init(const struct device *dev)
 {
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 #endif
@@ -76,7 +92,7 @@ static int dsa_netc_port_init(const struct device *dev)
 	swt_config->bridgeCfg.dVFCfg.portMembership |= (1 << cfg->port_idx);
 	swt_config->ports[cfg->port_idx].bridgeCfg.enMacStationMove = true;
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	/* Enable ingress port filter on user ports */
 	if (eth_ctx->dsa_port == DSA_CPU_PORT) {
 		prv->cpu_port_idx = cfg->port_idx;
@@ -84,6 +100,14 @@ static int dsa_netc_port_init(const struct device *dev)
 	} else {
 		swt_config->ports[cfg->port_idx].commonCfg.ipfCfg.enIPFTable = true;
 	}
+#endif
+
+#ifdef CONFIG_NET_QBV
+	memset(&(prv->qbv_config[cfg->port_idx].tgs_config), 0, sizeof(netc_tb_tgs_gcl_t));
+	memset(prv->qbv_config[cfg->port_idx].gcList, 0,
+	       sizeof(netc_tgs_gate_entry_t) * CONFIG_DSA_NXP_NETC_GCL_LEN);
+	prv->qbv_config[cfg->port_idx].tgs_config.entryID = cfg->port_idx;
+	prv->qbv_config[cfg->port_idx].tgs_config.gcList = prv->qbv_config[cfg->port_idx].gcList;
 #endif
 
 	return 0;
@@ -98,7 +122,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 {
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 	swt_config_t *swt_config = &prv->swt_config;
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	uint32_t entry_id = 0;
 #endif
 	status_t result;
@@ -112,7 +136,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 		return -EIO;
 	}
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	/*
 	 * For gPTP, switch should work as time-aware bridge.
 	 * Trap gPTP frames to cpu port to perform gPTP protocol.
@@ -125,7 +149,9 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 		.cfge.fltfa = kNETC_IPFRedirectToMgmtPort,
 		.cfge.hr = kNETC_SoftwareDefHR0,
 		.cfge.timecape = 1,
+#ifdef NETC_SWITCH_TAG_SUPPORT
 		.cfge.rrt = 1,
+#endif
 	};
 
 	result = SWT_RxIPFAddTableEntry(&prv->swt_handle, &ipf_entry_cfg, &entry_id);
@@ -134,6 +160,9 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	}
 
 	k_fifo_init(&prv->tx_ts_queue);
+#ifndef NETC_SWITCH_TAG_SUPPORT
+	k_sem_init(&prv->tx_ts_sem, 1, 1);
+#endif
 #endif
 	return 0;
 }
@@ -163,7 +192,8 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 	}
 }
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef NETC_SWITCH_TAG_SUPPORT
 static int dsa_netc_port_txtstamp(const struct device *dev, struct net_pkt *pkt)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
@@ -208,12 +238,100 @@ static void dsa_netc_twostep_timestamp_handler(const struct dsa_switch_context *
 		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
 	}
 }
-#endif
+#else /* NETC_SWITCH_TAG_SUPPORT */
+static int dsa_netc_port_txtstamp(const struct device *dev, struct net_pkt *pkt)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 
+	/* Enqueue will be completed until updating TX timestamp ID after TX */
+	k_sem_take(&prv->tx_ts_sem, K_FOREVER);
+
+	/* Utilize cb for TX timestamp ID. Initialize it with 0xff. */
+	pkt->cb.cb[0] = 0xff;
+
+	k_fifo_put(&prv->tx_ts_queue, pkt);
+	net_pkt_ref(pkt);
+
+	return 0;
+}
+
+void dsa_netc_port_txtsid(const struct device *dev, uint16_t id)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct net_pkt *pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+
+	while (pkt != NULL) {
+		/* Find the latest enqueue pkt */
+		if (pkt->iface == net_if_lookup_by_dev(dev) && pkt->cb.cb[0] == 0xff) {
+			/* Update id using lower 7-bits */
+			pkt->cb.cb[0] = (uint8_t)(id & 0x7f);
+
+			/* Enqueue back */
+			k_fifo_put(&prv->tx_ts_queue, pkt);
+
+			/* Release tx_ts_sem for next timestamped pkt */
+			k_sem_give(&prv->tx_ts_sem);
+			return;
+		}
+
+		/* Try next */
+		k_fifo_put(&prv->tx_ts_queue, pkt);
+		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	}
+}
+
+void dsa_netc_port_twostep_timestamp(struct dsa_switch_context *dsa_switch_ctx, uint16_t ts_req_id,
+				     uint32_t timestamp)
+{
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct net_ptp_time ptp_time = {0};
+	struct net_pkt *pkt;
+	uint64_t time_ns;
+	uint32_t time_h;
+	uint32_t time_l;
+
+	pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	while (pkt != NULL) {
+		/* Find the matched lower 7-bits timestamp ID */
+		if (pkt->cb.cb[0] == (uint8_t)(ts_req_id & 0x7f)) {
+			/*
+			 * Packet timestamp is lower 32-bit ns value.
+			 * Need to reconstruct 64-bit ns value with ptp clock time.
+			 */
+			ptp_clock_get(net_eth_get_ptp_clock(net_pkt_iface(pkt)), &ptp_time);
+
+			time_ns = net_ptp_time_to_ns(&ptp_time);
+			time_h = time_ns >> 32;
+			time_l = time_ns & 0xffffffff;
+
+			/* Check if wrap happened. */
+			if (time_l <= timestamp) {
+				time_h--;
+			}
+
+			time_ns = (uint64_t)time_h << 32 | timestamp;
+
+			net_pkt_set_timestamp_ns(pkt, time_ns);
+			net_if_call_timestamp_cb(pkt);
+			net_pkt_unref(pkt);
+			return;
+		}
+
+		/* Try next */
+		k_fifo_put(&prv->tx_ts_queue, pkt);
+		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	}
+}
+#endif /* NETC_SWITCH_TAG_SUPPORT */
+#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
+
+#ifdef NETC_SWITCH_TAG_SUPPORT
 static struct dsa_tag_netc_data dsa_netc_tag_data = {
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	.twostep_timestamp_handler = dsa_netc_twostep_timestamp_handler,
-#endif
+#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
 };
 
 static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_ctx,
@@ -226,6 +344,7 @@ static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_c
 
 	return -EIO;
 }
+#endif /* NETC_SWITCH_TAG_SUPPORT */
 
 static int dsa_netc_switch_init(const struct device *dev)
 {
@@ -235,15 +354,193 @@ static int dsa_netc_switch_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_NET_QBV
+static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	status_t result;
+	uint32_t gate_num;
+	int i;
+	uint16_t row;
+	int ret = 0;
+
+	switch (config->qbv_param.type) {
+	case ETHERNET_QBV_PARAM_TYPE_STATUS:
+		result = SWT_TxPortTGSEnable(&prv->swt_handle, cfg->port_idx,
+					     config->qbv_param.enabled);
+		if (result != kStatus_Success) {
+			LOG_ERR("Couldn't enable/disable QBV");
+			ret = -ENOTSUP;
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_TIME:
+		prv->qbv_config[cfg->port_idx].tgs_config.baseTime =
+			config->qbv_param.base_time.second * NSEC_PER_SEC
+			+ (config->qbv_param.base_time.fract_nsecond >> 16);
+		prv->qbv_config[cfg->port_idx].tgs_config.cycleTime =
+			(uint32_t)(config->qbv_param.cycle_time.second * NSEC_PER_SEC
+			+ config->qbv_param.cycle_time.nanosecond);
+		prv->qbv_config[cfg->port_idx].tgs_config.extTime =
+			config->qbv_param.extension_time;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+		row = config->qbv_param.gate_control.row;
+		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
+		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+			LOG_ERR("The gate control list length exceeds the limit");
+			return -ENOTSUP;
+		}
+		prv->qbv_config[cfg->port_idx].gcList[row].interval =
+			config->qbv_param.gate_control.time_interval;
+		prv->qbv_config[cfg->port_idx].gcList[row].tcGateState = 0;
+		for (i = 0; i < gate_num; i++) {
+			prv->qbv_config[cfg->port_idx].gcList[row].tcGateState
+				|= config->qbv_param.gate_control.gate_status[i] << i;
+		}
+		if (prv->qbv_config[cfg->port_idx].tgs_config.numEntries > 0 &&
+		    (row + 1) == prv->qbv_config[cfg->port_idx].tgs_config.numEntries) {
+			result = SWT_TxTGSConfigAdminGcl(&prv->swt_handle,
+				&(prv->qbv_config[cfg->port_idx].tgs_config));
+			if (result != kStatus_Success) {
+				LOG_ERR("Fail to set gate control list, err code: 0x%x", result);
+				ret = -ENOTSUP;
+			}
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+		prv->qbv_config[cfg->port_idx].tgs_config.numEntries =
+			config->qbv_param.gate_control_list_len;
+		break;
+	default:
+		/* No validation needed */
+		break;
+	}
+
+	return ret;
+}
+
+static int dsa_netc_get_qbv(const struct device *dev, struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	uint32_t gate_num;
+	int i;
+	uint16_t row;
+	int ret = 0;
+
+	switch (config->qbv_param.type) {
+	case ETHERNET_QBV_PARAM_TYPE_STATUS:
+		config->qbv_param.enabled = ((prv->swt_handle.hw.ports[cfg->port_idx].port->PTGSCR
+			& NETC_PORT_PTGSCR_TGE_MASK) != 0);
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_TIME:
+		config->qbv_param.base_time.second =
+			prv->qbv_config[cfg->port_idx].tgs_config.baseTime / NSEC_PER_SEC;
+		config->qbv_param.base_time.fract_nsecond =
+			prv->qbv_config[cfg->port_idx].tgs_config.baseTime % NSEC_PER_SEC << 16;
+		config->qbv_param.cycle_time.second = (uint64_t)
+			(prv->qbv_config[cfg->port_idx].tgs_config.cycleTime / NSEC_PER_SEC);
+		config->qbv_param.cycle_time.nanosecond =
+			prv->qbv_config[cfg->port_idx].tgs_config.cycleTime % NSEC_PER_SEC;
+		config->qbv_param.extension_time =
+			prv->qbv_config[cfg->port_idx].tgs_config.extTime;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+		row = config->qbv_param.gate_control.row;
+		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
+		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+			LOG_ERR("The gate control list length exceeds the limit");
+			return -ENOTSUP;
+		}
+		config->qbv_param.gate_control.time_interval =
+			prv->qbv_config[cfg->port_idx].gcList[row].interval;
+		for (i = 0; i < gate_num; i++) {
+			config->qbv_param.gate_control.gate_status[i] =
+				((prv->qbv_config[cfg->port_idx].gcList[row].tcGateState
+				  & BIT(i)) != 0);
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+		config->qbv_param.gate_control_list_len =
+			prv->qbv_config[cfg->port_idx].tgs_config.numEntries;
+		break;
+	default:
+		/* No validation needed */
+		break;
+	}
+
+	return ret;
+}
+#endif
+
+static int dsa_netc_set_config(const struct device *dev, enum ethernet_config_type type,
+			const struct ethernet_config *config)
+{
+	int ret = 0;
+
+	switch (type) {
+#ifdef CONFIG_NET_QBV
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		ret = dsa_netc_set_qbv(dev, config);
+		break;
+#endif
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+static int dsa_netc_get_config(const struct device *dev, enum ethernet_config_type type,
+			struct ethernet_config *config)
+{
+	int ret = 0;
+
+	switch (type) {
+#ifdef CONFIG_NET_QBV
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		ret = dsa_netc_get_qbv(dev, config);
+		break;
+#endif
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+{
+	uint32_t caps = 0;
+
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_NET_QBV
+	caps |= ETHERNET_QBV;
+#endif
+
+	return caps;
+}
+
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
 	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
 	.switch_setup = dsa_netc_switch_setup,
 	.port_phylink_change = dsa_netc_port_phylink_change,
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	.port_txtstamp = dsa_netc_port_txtstamp,
 #endif
+#ifdef NETC_SWITCH_TAG_SUPPORT
 	.connect_tag_protocol = dsa_netc_connect_tag_protocol,
+#endif
+	.get_capabilities = dsa_port_get_capabilities,
+	.set_config = dsa_netc_set_config,
+	.get_config = dsa_netc_get_config,
 };
 
 #define DSA_NETC_PORT_INST_INIT(port, n)                                                    \

@@ -121,7 +121,7 @@ static int cmd_hostapd_cli(const struct shell *sh, size_t argc, const char *argv
 		}
 		iface_found = true;
 	} else {
-		iface = net_if_get_first_wifi();
+		iface = net_if_get_wifi_sap();
 		if (!iface) {
 			shell_error(sh, "No Wi-Fi interface found");
 			return -ENOENT;

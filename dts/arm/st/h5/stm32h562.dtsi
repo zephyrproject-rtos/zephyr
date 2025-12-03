@@ -8,7 +8,6 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 /* keep both header files for compatibility */
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
-#include <mem.h>
 
 / {
 	clocks {
@@ -298,6 +297,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>;
+			clock-names = "adcx";
 			interrupts = <69 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
@@ -372,6 +372,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -530,6 +535,15 @@
 			compatible = "st,stm32-fmc";
 			reg = <0x47000400 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB4, 16)>;
+			status = "disabled";
+		};
+
+		vrefbuf: vrefbuf@44007400 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x44007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
+			resets = <&rctl STM32_RESET(APB3, 20)>;
+			ref-voltages = <2500000>, <2048000>, <1800000>;
 			status = "disabled";
 		};
 	};

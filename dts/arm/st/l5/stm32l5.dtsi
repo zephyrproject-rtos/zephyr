@@ -20,6 +20,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -170,6 +171,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x4000f400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			num-lines = <64>;
@@ -266,7 +268,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 6>;
 			status = "disabled";
@@ -494,6 +496,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -634,6 +641,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -714,6 +726,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x42028000 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
+			clock-names = "adcx";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -733,6 +746,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
+			clock-names = "adcx";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -796,7 +810,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
 			dmas = <&dma1 1 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					     STM32_DMA_16BITS)>;
+				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -808,15 +822,15 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
 			dmas = <&dma1 2 38 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					     STM32_DMA_16BITS)>;
+				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 	};
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x0BFA05A8>;
-		ts-cal2-addr = <0x0BFA05CA>;
+		ts-cal1-addr = <0x0bfa05a8>;
+		ts-cal2-addr = <0x0bfa05ca>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -826,7 +840,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA05AA>;
+		vrefint-cal-addr = <0x0bfa05aa>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 0>;
 		status = "disabled";

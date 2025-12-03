@@ -32,7 +32,7 @@ else()
 endif()
 
 # Always set for 64-bit (long mode requires page tables), optional for 32-bit
-if (CONFIG_MMU)
+if(CONFIG_MMU)
   set(GEN_MMU ${ZEPHYR_BASE}/arch/x86/gen_mmu.py)
 
   if(DEFINED X86_EXTRA_GEN_MMU_ARGUMENTS)

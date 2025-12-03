@@ -171,7 +171,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bat
 
-            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf python Git.Git oss-winget.dtc wget 7zip.7zip
+            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
 
       #. Close the terminal window.
 
@@ -336,6 +336,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
                python -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
+
+         .. note::
+
+            Python's virtual environment activation in PowerShell requires
+            running a script itself, which needs to be allowed.
+
+            .. code-block:: powershell
+
+               Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
          .. tabs::
 
@@ -544,7 +553,7 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
-.. figure:: img/ReelBoard-Blinky.png
+.. figure:: img/ReelBoard-Blinky.webp
    :width: 400px
    :name: reelboard-blinky
 

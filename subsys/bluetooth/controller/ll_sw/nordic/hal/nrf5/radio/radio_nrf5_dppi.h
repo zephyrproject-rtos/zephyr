@@ -226,6 +226,17 @@ static inline void hal_trigger_aar_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
 	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
+
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Enable same DPPI in MCU  domain */
+	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_AAR_PPI));
+
+	/* Setup PPIB send subscribe */
+	nrf_ppib_subscribe_set(NRF_PPIB10, HAL_PPIB_SEND_TRIGGER_AAR_PPI, HAL_TRIGGER_AAR_PPI);
+
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_AAR_PPI, HAL_TRIGGER_AAR_PPI);
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 

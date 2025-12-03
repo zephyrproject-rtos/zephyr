@@ -51,6 +51,7 @@
 
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		/* NOTE: disabled by default; PWM conflicts with SPI1 pins */
 		status = "disabled";
 
 		/*

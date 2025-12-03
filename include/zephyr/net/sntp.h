@@ -66,8 +66,8 @@ struct sntp_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
-	      socklen_t addr_len);
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr,
+	      net_socklen_t addr_len);
 
 /**
  * @brief Perform SNTP query
@@ -112,7 +112,7 @@ void sntp_close(struct sntp_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init_async(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
 		    const struct net_socket_service_desc *service);
 
 /**
@@ -176,7 +176,7 @@ int sntp_simple(const char *server, uint32_t timeout,
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_simple_addr(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
+int sntp_simple_addr(struct net_sockaddr *addr, net_socklen_t addr_len, uint32_t timeout,
 		     struct sntp_time *ts);
 
 #ifdef __cplusplus

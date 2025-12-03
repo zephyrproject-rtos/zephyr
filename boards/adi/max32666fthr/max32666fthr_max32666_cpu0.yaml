@@ -20,6 +20,5 @@ supported:
   - pwm
   - w1
   - flash
-  - sdhc
 ram: 128
 flash: 1024

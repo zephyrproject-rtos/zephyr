@@ -292,9 +292,6 @@ void bt_mesh_device_setup(const struct bt_mesh_prov *prov, const struct bt_mesh_
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		LOG_INF("Loading stored settings");
-		if (IS_ENABLED(CONFIG_BT_MESH_USES_MBEDTLS_PSA)) {
-			settings_load_subtree("itsemul");
-		}
 		settings_load_subtree("bt");
 	}
 

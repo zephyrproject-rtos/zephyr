@@ -127,21 +127,30 @@ img_mgmt_state_flags(int query_slot)
 	int image = query_slot / 2;	/* We support max 2 images for now */
 	int active_slot = img_mgmt_active_slot(image);
 
-	/* In case when MCUboot is configured for DirectXIP slot may only be
-	 * active or pending. Slot is marked pending only when version in that slot
-	 * is higher than version of active slot.
+	/* In case when MCUboot is configured for FW loader/updater mode, slots
+	 * can be either active or non-active. There is no concept of pending
+	 * or confirmed slots.
+	 *
+	 * In case when MCUboot is configured for DirectXIP slot may only be
+	 * active or pending.
+	 * Slot is marked as pending when:
+	 * - version in that slot is higher than version of active slot.
+	 * - versions are equal but slot number is lower than the active slot.
 	 */
 	if (image == img_mgmt_active_image() && query_slot == active_slot) {
 		flags = IMG_MGMT_STATE_F_ACTIVE;
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	} else {
 		struct image_version sver;
 		struct image_version aver;
 		int rcs = img_mgmt_read_info(query_slot, &sver, NULL, NULL);
 		int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
-		if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &sver) < 0) {
+		if (rcs == 0 && rca == 0 && ((img_mgmt_vercmp(&aver, &sver) < 0) ||
+		    ((img_mgmt_vercmp(&aver, &sver) == 0) && (active_slot > query_slot)))) {
 			flags = IMG_MGMT_STATE_F_PENDING | IMG_MGMT_STATE_F_PERMANENT;
 		}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP */
 	}
 
 	return flags;
@@ -285,18 +294,37 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		if (active_slot_state == DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 		}
-	} else if (img_mgmt_vercmp(&aver, &over) < 0) {
+	} else if ((img_mgmt_vercmp(&aver, &over) < 0) ||
+		   ((img_mgmt_vercmp(&aver, &over) == 0) && (active_slot > other_slot))) {
+		/* Check if MCUboot will select the non-active slot during the next boot.
+		 * The logic is as follows:
+		 * - If both slots are valid, a slot with higher version is preferred.
+		 * - If both slots are valid and the versions are equal, a slot with lower number
+		 *   is preferred.
+		 */
 		if (other_slot_state == DIRECT_XIP_BOOT_FOREVER) {
 			return_slot = other_slot;
 		} else if (other_slot_state == DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 			return_slot = other_slot;
 		}
+	} else {
+		/* There is neither a preference nor a necessity to boot the other slot.
+		 * The active slot will be used again.
+		 */
 	}
 
 out:
 #else
-	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
+	if (rcs == 0 && rca == 0 &&
+	    ((img_mgmt_vercmp(&aver, &over) < 0) ||
+	     ((img_mgmt_vercmp(&aver, &over) == 0) && (active_slot > other_slot)))) {
+		/* Check if MCUboot will select the non-active slot during the next boot.
+		 * The logic is as follows:
+		 * - If both slots are valid, a slot with higher version is preferred.
+		 * - If both slots are valid and the versions are equal, a slot with lower number
+		 *   is preferred.
+		 */
 		return_slot = other_slot;
 	}
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */

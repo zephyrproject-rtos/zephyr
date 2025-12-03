@@ -47,6 +47,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &mailbox {
 	status = "okay";
 };

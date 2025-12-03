@@ -112,7 +112,7 @@ static int dai_nxp_micfil_get_config(const struct device *dev, struct dai_config
 }
 
 static int dai_nxp_micfil_set_config(const struct device *dev,
-		const struct dai_config *cfg, const void *bespoke_cfg)
+		const struct dai_config *cfg, const void *bespoke_cfg, size_t size)
 
 {
 	const struct micfil_bespoke_config *bespoke = bespoke_cfg;

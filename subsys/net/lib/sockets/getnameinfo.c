@@ -8,15 +8,15 @@
 #include <errno.h>
 #include <zephyr/net/socket.h>
 
-int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
-		      char *host, socklen_t hostlen,
-		      char *serv, socklen_t servlen, int flags)
+int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
+		      char *host, net_socklen_t hostlen,
+		      char *serv, net_socklen_t servlen, int flags)
 {
-	/* Both sockaddr_in & _in6 have same offsets for family and address. */
-	struct sockaddr_in *a = (struct sockaddr_in *)addr;
+	/* Both net_sockaddr_in & _in6 have same offsets for family and address. */
+	const struct net_sockaddr_in6 *a = (const struct net_sockaddr_in6 *)addr;
 
 	if (host != NULL) {
-		void *res = zsock_inet_ntop(a->sin_family, &a->sin_addr,
+		void *res = zsock_inet_ntop(a->sin6_family, &a->sin6_addr,
 					    host, hostlen);
 
 		if (res == NULL) {
@@ -25,7 +25,7 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 	}
 
 	if (serv != NULL) {
-		snprintk(serv, servlen, "%hu", ntohs(a->sin_port));
+		snprintk(serv, servlen, "%hu", net_ntohs(a->sin6_port));
 	}
 
 	return 0;

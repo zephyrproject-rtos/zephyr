@@ -12,4 +12,6 @@ toolchain:
 supported:
   - uart
   - gpio
+  - watchdog
+  - bluetooth
 vendor: sifli

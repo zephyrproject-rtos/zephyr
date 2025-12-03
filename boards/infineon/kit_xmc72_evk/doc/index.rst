@@ -34,7 +34,7 @@ For more information about XMC7200D and KIT_XMC72_EVK:
 Kit Features
 =============
 
-- Evaluation board for XMC7200D-E272K8384 in BGA package with 272 pins, dual-core Arm®Cortex® M7 CPUs running at 350-MHz and an Arm® Cortex® M0+ CPU running at 100-MHz
+- Evaluation board for XMC7200D-E272K8384 in BGA package with 272 pins, dual-core Arm®Cortex®-M7 CPUs running at 350-MHz and an Arm® Cortex®-M0+ CPU running at 100-MHz
 - Full-system approach on the board, featuring Gigabit Ethernet PHY and connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
 - M.2 interface connector for interfacing radio modules based on AIROC™ Wi-Fi & Bluetooth®combos (currently not - supported)
 - Headers compatible with Arduino for interfacing Arduino shields
@@ -128,7 +128,7 @@ References
 .. target-notes::
 
 .. _XMC7200D SoC Website:
-    https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-e272k8384aa/
+    https://www.infineon.com/evaluation-board/KIT-XMC72-EVK
 
 .. _kit_xmc72_evk Board Website:
     https://www.infineon.com/cms/en/product/evaluation-boards/kit_xmc72_evk

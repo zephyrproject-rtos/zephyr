@@ -14,8 +14,6 @@ Starts by advertising for CCP Call Control Clients to connect and set up calls.
 The profile works for both GAP Central and GAP Peripheral devices, but this sample only assumes the
 GAP Peripheral role.
 
-This sample can be found under :zephyr_file:`samples/bluetooth/ccp_call_control_server` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

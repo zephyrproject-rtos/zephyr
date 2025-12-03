@@ -152,10 +152,10 @@
 	sys_trace_k_condvar_broadcast_enter(condvar)
 #define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)                                      \
 	sys_trace_k_condvar_broadcast_exit(condvar, ret)
-#define sys_port_trace_k_condvar_wait_enter(condvar)                                               \
-	sys_trace_k_condvar_wait_enter(condvar, mutex, timeout)
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)                                           \
-	sys_trace_k_condvar_wait_exit(condvar, mutex, timeout, ret)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)                                      \
+	sys_trace_k_condvar_wait_enter(condvar, timeout)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)                                  \
+	sys_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 #define sys_port_trace_k_queue_init(queue) sys_trace_k_queue_init(queue)
 #define sys_port_trace_k_queue_cancel_wait(queue) sys_trace_k_queue_cancel_wait(queue)
@@ -530,10 +530,8 @@ void sys_trace_k_condvar_signal_blocking(struct k_condvar *condvar);
 void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret);
 void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar);
 void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret);
-void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, struct k_mutex *mutex,
-				    k_timeout_t timeout);
-void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, struct k_mutex *mutex,
-				   k_timeout_t timeout, int ret);
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout);
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout, int ret);
 
 void sys_trace_k_queue_init(struct k_queue *queue);
 void sys_trace_k_queue_cancel_wait(struct k_queue *queue);
@@ -783,5 +781,22 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_
 #define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb)
+
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
+#define sys_port_trace_rtio_submit_exit(rtio)
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
+#define sys_port_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
+#define sys_port_trace_rtio_cqe_submit_exit(rtio)
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
+#define sys_port_trace_rtio_cqe_release(rtio, cqe)
+#define sys_port_trace_rtio_cqe_consume_enter(rtio)
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
 
 #endif /* ZEPHYR_TRACE_TEST_H */

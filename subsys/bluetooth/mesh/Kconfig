@@ -72,7 +72,8 @@ if BT_MESH_ADV_LEGACY
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
-	default 1024 if BT_HOST_CRYPTO
+	default 1800 if BT_MESH_PROVISIONER
+	default 1536 if BT_MESH_PROXY
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -142,8 +143,8 @@ if BT_MESH_WORKQ_MESH
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROVISIONER
 	default 1536 if BT_MESH_PROXY
-	default 1024 if BT_HOST_CRYPTO
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -359,6 +360,18 @@ config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 config BT_MESH_OOB_AUTH_REQUIRED
 	bool "OOB authentication mandates to use HMAC SHA256"
 	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
+
+config BT_MESH_PROV_OOB_API_LEGACY
+	bool "Reduced maximum OOB authentication size support [DEPRECATED]"
+	select DEPRECATED
+	depends on BT_MESH_PROV
+	help
+	  By default, the maximum OOB authentication size is 32 bytes.
+	  Enable this option to use the legacy API which is only compatible with
+	  specification v1.1 and earlier. This limits OOB authentication to 8
+	  bytes maximum.
+	  This option is intended for backward compatibility.
+	  Not recommended for new designs due to reduced security.
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
@@ -1492,17 +1505,10 @@ config BT_MESH_SECURE_STORAGE
 	bool
 	depends on SECURE_STORAGE
 
-choice BT_MESH_CRYPTO_LIB
-	prompt "Crypto library:"
-	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_MBEDTLS_PSA
-	help
-	  Crypto library selection for mesh security.
-
-config BT_MESH_USES_MBEDTLS_PSA
-	bool "mbed TLS PSA"
-	select MBEDTLS
-	select MBEDTLS_PSA_CRYPTO_C
+config BT_MESH_CRYPTO_LIB
+	bool
+	default y
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
@@ -1517,18 +1523,9 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ECC_SECP_R1_256
 	select BT_MESH_SECURE_STORAGE if BT_SETTINGS
-	imply MBEDTLS_AES_ROM_TABLES
+	imply MBEDTLS_AES_ROM_TABLES if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
-	  Use Mbed TLS as PSA Crypto API provider.
-
-config BT_MESH_USES_TFM_PSA
-	bool "TF-M PSA"
-	depends on BUILD_WITH_TFM
-	help
-	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
-	  that support TF-M.
-
-endchoice
+	  Crypto library support for mesh security.
 
 menu "Beacons"
 

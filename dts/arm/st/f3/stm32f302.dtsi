@@ -85,6 +85,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -111,6 +116,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x50000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)

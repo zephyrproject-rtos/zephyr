@@ -119,6 +119,12 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 #define SOC_FLASH_NEED_CLEAR_CACHES 1
 #ifdef CONFIG_SOC_FAMILY_MCXW
+#ifdef CONFIG_SOC_SERIES_MCXW2XX
+static void clear_flash_caches(void)
+{
+	FLASH_CacheClear();
+}
+#else
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
@@ -128,6 +134,7 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*mcm_cpcr2 |= BIT(0);
 }
+#endif
 #elif CONFIG_SOC_FAMILY_MCXN
 static void clear_flash_caches(void)
 {

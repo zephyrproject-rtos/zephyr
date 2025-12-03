@@ -60,6 +60,27 @@ class Application:
         self.load_plugins()
         self.results = []
 
+    @staticmethod
+    def is_headless_error(exception):
+        """Check if exception is expected in headless environment.
+
+        Args:
+            exception: Exception to check
+
+        Returns:
+            True if this is an expected headless environment error
+        """
+        error_msg = str(exception).lower()
+        return any(
+            phrase in error_msg
+            for phrase in [
+                "not implemented",
+                "rebuild the library",
+                "gtk",
+                "cocoa support",
+            ]
+        )
+
     def load_plugins(self):
         for plugin_cfg in self.config["plugins"]:
             if plugin_cfg.get("status", "disable") == "disable":
@@ -85,7 +106,7 @@ class Application:
         try:
             start_time = time.time()
             self.camera.initialize()
-            for name, plugin in self.active_plugins.items():  # noqa: B007
+            for _, plugin in self.active_plugins.items():
                 plugin.initialize()
             while True:
                 ret, frame = self.camera.get_frame()
@@ -97,19 +118,7 @@ class Application:
                     if cv2.waitKey(1) == 27:  # ESC key
                         break
                 except Exception as e:
-                    error_msg = str(e).lower()
-                    if any(
-                        phrase in error_msg
-                        for phrase in [
-                            "not implemented",
-                            "rebuild the library",
-                            "gtk",
-                            "cocoa support",
-                        ]
-                    ):
-                        # Expected error in headless environment - continue
-                        pass
-                    else:
+                    if not Application.is_headless_error(e):
                         print(f"Error during waitKey: {e}")
 
                 results = {}
@@ -120,19 +129,7 @@ class Application:
                 try:
                     self.camera.show_frame(frame)
                 except Exception as e:
-                    error_msg = str(e).lower()
-                    if any(
-                        phrase in error_msg
-                        for phrase in [
-                            "not implemented",
-                            "rebuild the library",
-                            "gtk",
-                            "cocoa support",
-                        ]
-                    ):
-                        # Expected error in headless environment - continue
-                        pass
-                    else:
+                    if not Application.is_headless_error(e):
                         print(f"Error during show_frame: {e}")
 
                 frame_delay = 1 / self.case_config["fps"]

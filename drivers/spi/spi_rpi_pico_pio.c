@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 
 #define PIO_CYCLES     (4)
 #define PIO_FIFO_DEPTH (4)
+#define PIO_MAX_OFFSET (32)
 
 struct spi_pico_pio_dma_config {
 	const struct device *dev;
@@ -67,6 +68,8 @@ struct spi_pico_pio_data {
 	uint32_t tx_count;
 	uint32_t rx_count;
 	size_t pio_sm;
+	pio_program_t *pio_tx_program;
+	pio_program_t *pio_rx_program;
 	uint32_t pio_tx_offset;
 	uint32_t pio_rx_offset;
 	uint32_t pio_rx_wrap_target;
@@ -351,10 +354,24 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	}
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
+	if (data->pio_tx_program) {
+		pio_remove_program(pio, data->pio_tx_program, data->pio_tx_offset);
+		data->pio_tx_program = NULL;
+		data->pio_tx_offset = PIO_MAX_OFFSET;
+	}
+
+	if (data->pio_rx_program) {
+		pio_remove_program(pio, data->pio_rx_program, data->pio_rx_offset);
+		data->pio_rx_program = NULL;
+		data->pio_rx_offset = PIO_MAX_OFFSET;
+	}
+
 	clk = &dev_cfg->clk_gpio;
-	rc = pio_rpi_pico_allocate_sm(dev_cfg->piodev, &data->pio_sm);
-	if (rc < 0) {
-		return rc;
+	if (data->pio_sm == (size_t) -1) {
+		rc = pio_rpi_pico_allocate_sm(dev_cfg->piodev, &data->pio_sm);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	if (dev_cfg->sio_gpio.port) {
@@ -364,11 +381,12 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
 							     spi_cfg->frequency);
 
-		data->pio_tx_offset = pio_add_program(
-			pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx));
+		data->pio_tx_program =
+			(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx);
+		data->pio_tx_offset = pio_add_program(pio, data->pio_tx_program);
 
-		data->pio_rx_offset = pio_add_program(
-			pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx));
+		data->pio_rx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx);
+		data->pio_rx_offset = pio_add_program(pio, data->pio_rx_program);
 		data->pio_rx_wrap_target =
 			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
 		data->pio_rx_wrap =
@@ -408,23 +426,25 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		/* 4-wire mode */
 		const struct gpio_dt_spec *miso = miso = &dev_cfg->miso_gpio;
 		const struct gpio_dt_spec *mosi = &dev_cfg->mosi_gpio;
-		const pio_program_t *program;
 		uint32_t wrap_target;
 		uint32_t wrap;
 		int cycles;
 
 		if ((cpol == 0) && (cpha == 0)) {
-			program = RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_0);
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_0);
 			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_0_0);
 			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_0);
 			cycles = SPI_MODE_0_0_CYCLES;
 		} else if ((cpol == 1) && (cpha == 1)) {
-			program = RPI_PICO_PIO_GET_PROGRAM(spi_mode_1_1);
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_1_1);
 			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_1_1);
 			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_1_1);
 			cycles = SPI_MODE_1_1_CYCLES;
 		} else if ((cpol == 0) && (cpha == 1)) {
-			program = RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_1);
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_1);
 			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_0_1);
 			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_1);
 			cycles = SPI_MODE_0_1_CYCLES;
@@ -444,11 +464,11 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		float clock_div =
 			spi_pico_pio_clock_divisor(clock_freq, cycles, spi_cfg->frequency);
 
-		if (!pio_can_add_program(pio, program)) {
+		if (!pio_can_add_program(pio, data->pio_tx_program)) {
 			return -EBUSY;
 		}
 
-		data->pio_tx_offset = pio_add_program(pio, program);
+		data->pio_tx_offset = pio_add_program(pio, data->pio_tx_program);
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
@@ -1047,9 +1067,13 @@ int spi_pico_pio_init(const struct device *dev)
 		)                                                                              \
 	};                                                                                     \
 	static struct spi_pico_pio_data spi_pico_pio_data_##inst = {                           \
+		.pio_sm = (size_t) -1,                                                         \
+		.pio_tx_offset = PIO_MAX_OFFSET,                                               \
+		.pio_rx_offset = PIO_MAX_OFFSET,                                               \
 		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx),                      \
 		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                      \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)                    \
+	};                                                                                     \
 	SPI_DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,    \
 				&spi_pico_pio_config_##inst, POST_KERNEL,                      \
 				CONFIG_SPI_INIT_PRIORITY, &spi_pico_pio_api);                  \

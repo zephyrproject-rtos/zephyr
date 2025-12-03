@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(bt_le_oob_set_sc_data)
 
 # Suppress the format-zero-length error if GNUC is used
-if (CMAKE_C_COMPILER_ID MATCHES "GNU")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
 add_compile_options(-Wno-error=format-zero-length -Wno-format-zero-length)
 endif()
 

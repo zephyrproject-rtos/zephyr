@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 
 static int eswifi_off_bind(struct net_context *context,
-			   const struct sockaddr *addr,
+			   const struct net_sockaddr *addr,
 			   socklen_t addrlen)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
@@ -97,7 +97,7 @@ static void eswifi_off_connect_work(struct k_work *work)
 }
 
 static int eswifi_off_connect(struct net_context *context,
-			      const struct sockaddr *addr,
+			      const struct net_sockaddr *addr,
 			      socklen_t addrlen,
 			      net_context_connect_cb_t cb,
 			      int32_t timeout,
@@ -109,8 +109,8 @@ static int eswifi_off_connect(struct net_context *context,
 
 	LOG_DBG("timeout=%d", timeout);
 
-	if (addr->sa_family != AF_INET) {
-		LOG_ERR("Only AF_INET is supported!");
+	if (addr->sa_family != NET_AF_INET) {
+		LOG_ERR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -294,7 +294,7 @@ static int eswifi_off_send(struct net_pkt *pkt,
 }
 
 static int eswifi_off_sendto(struct net_pkt *pkt,
-			     const struct sockaddr *dst_addr,
+			     const struct net_sockaddr *dst_addr,
 			     socklen_t addrlen,
 			     net_context_send_cb_t cb,
 			     int32_t timeout,
@@ -484,19 +484,19 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 			return;
 		}
 
-		struct sockaddr_in *peer = net_sin(&socket->peer_addr);
+		struct net_sockaddr_in *peer = net_sin(&socket->peer_addr);
 
 		sin_addr = &peer->sin_addr;
 		memcpy(&sin_addr->s4_addr, ip, 4);
 		peer->sin_port = htons(port);
-		peer->sin_family = AF_INET;
+		peer->sin_family = NET_AF_INET;
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;
 
 		/* Save information about remote. */
 		socket->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 		memcpy(&socket->context->remote, &socket->peer_addr,
-		       sizeof(struct sockaddr));
+		       sizeof(struct net_sockaddr));
 
 		LOG_DBG("%u.%u.%u.%u connected to port %u",
 			ip[0], ip[1], ip[2], ip[3], port);
@@ -504,7 +504,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 		if (socket->accept_cb) {
 			socket->accept_cb(socket->context,
 					  &socket->peer_addr,
-					  sizeof(struct sockaddr_in), 0,
+					  sizeof(struct net_sockaddr_in), 0,
 					  socket->accept_data);
 		}
 

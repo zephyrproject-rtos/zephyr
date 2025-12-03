@@ -45,6 +45,11 @@ config USE_RA_FSP_I2C_IIC
 	help
 	  Enable Renesas RA I2C IIC Master driver
 
+config USE_RA_FSP_SCI_I2C
+	bool
+	help
+	  Enable RA FSP SCI I2C driver
+
 config USE_RA_FSP_SCI_B_I2C
 	bool
 	help
@@ -71,6 +76,21 @@ config USE_RA_FSP_MRAM
 	  Enable RA FSP MRAM driver
 
 if USE_RA_FSP_SCE
+
+config HAS_RENESAS_RA_RSIP_E11A
+	bool
+	help
+	  Includes RSIP-E11A implementation for SCE driver
+
+config HAS_RENESAS_RA_RSIP_E31A
+	bool
+	help
+	  Includes RSIP-E31A implementation for SCE driver
+
+config HAS_RENESAS_RA_RSIP_E50D
+	bool
+	help
+	  Includes RSIP-E50D implementation for SCE driver
 
 config HAS_RENESAS_RA_RSIP_E51A
 	bool
@@ -114,10 +134,20 @@ config USE_RA_FSP_SPI_B
 	help
 	  Enable RA FSP SPI-B driver
 
+config USE_RA_FSP_SCI_B_SPI
+	bool
+	help
+	  Enable RA FSP SCI-B SPI driver
+
 config USE_RA_FSP_FLASH_HP
 	bool
 	help
 	  Enable RA FSP FLASH HP driver
+
+config USE_RA_FSP_FLASH_LP
+	bool
+	help
+	  Enable RA FSP FLASH LP driver
 
 config USE_RA_FSP_GPT
 	bool
@@ -184,6 +214,11 @@ config USE_RA_FSP_ACMPHS
 	help
 	  Enable RA FSP ACMPHS driver
 
+config USE_RA_FSP_LVD
+	bool
+	help
+	  Enable RA FSP LVD driver
+
 config USE_RA_FSP_WDT
 	bool
 	help
@@ -248,6 +283,11 @@ config USE_RA_FSP_IPC
 	help
 	  Enable RA FSP IPC driver
 
+config USE_RA_FSP_RTC
+	bool
+	help
+	  Enable RA FSP RTC driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
@@ -292,10 +332,15 @@ config USE_RZ_FSP_EXT_IRQ
 	help
 	  Enable RZ FSP External IRQ driver
 
-config USE_RZ_FSP_DMA
+config USE_RZ_FSP_DMAC
 	bool
 	help
-	  Enable RZ FSP DMA driver
+	  Enable RZ FSP DMAC driver
+
+config USE_RZ_FSP_DMAC_B
+	bool
+	help
+	  Enable RZ FSP DMAC_B driver
 
 config USE_RZ_FSP_MHU
 	bool
@@ -337,10 +382,25 @@ config USE_RZ_FSP_CMTW
 	help
 	  Enable RZ FSP CMTW driver
 
+config USE_RZ_FSP_SPI
+	bool
+	help
+	  Enable RZ FSP SPI driver
+
 config USE_RZ_FSP_WDT
 	bool
 	help
 	  Enable RZ FSP WDT driver
+
+config USE_RZ_FSP_QSPI_XSPI
+	bool
+	help
+	  Enable RZ FSP QSPI XSPI driver
+
+config USE_RZ_FSP_QSPI_SPIBSC
+	bool
+	help
+	  Enable RZ FSP QSPI SPIBSC driver
 
 endif
 
@@ -400,5 +460,12 @@ config USE_RX_RDP_LVD
 	bool
 	help
 	  Enable RX RDP LVD driver
+
+config USE_RX_RDP_LPC
+	bool
+	default y
+	depends on PM
+	help
+	  Enable RX RDP LPC driver
 
 endif # HAS_RENESAS_RX_RDP

@@ -12,7 +12,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM
 - USB FS, Sink and Source power, 2.5 W power capability
 - 802.11 b/g/n compliant Wi-Fi® module from MXCHIP
-- Bluetooth Low Energy from STMicroelectronics
+- Bluetooth |reg| Low Energy from STMicroelectronics
 - MEMS sensors from STMicroelectronics
 
   - 2 digital microphones
@@ -38,7 +38,7 @@ Hardware
 ********
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm|reg| Cortex|reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 300 nA Standby mode and 19.5 uA/MHz run mode)

@@ -435,10 +435,6 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	const size_t num_sectors = size / SPI_NOR_SECTOR_SIZE;
-	const size_t num_blocks = size / SPI_NOR_BLOCK_SIZE;
-
-	int i;
 	unsigned int key = 0;
 
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
@@ -470,21 +466,40 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		flash_flexspi_nor_erase_chip(data);
 		flash_flexspi_nor_wait_bus_busy(data);
 		memc_flexspi_reset(&data->controller);
-	} else if ((0 == (offset % SPI_NOR_BLOCK_SIZE)) && (0 == (size % SPI_NOR_BLOCK_SIZE))) {
-		for (i = 0; i < num_blocks; i++) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_block(data, offset);
-			flash_flexspi_nor_wait_bus_busy(data);
-			memc_flexspi_reset(&data->controller);
-			offset += SPI_NOR_BLOCK_SIZE;
-		}
 	} else {
-		for (i = 0; i < num_sectors; i++) {
+		/* Increase erase efficiency: use block erase when possible,
+		 * sector erase for remainder.
+		 */
+		size_t remaining_size = size;
+		off_t current_offset = offset;
+		/* Step 1: Handle unaligned start - erase sectors until block aligned */
+		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
 			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, offset);
+			flash_flexspi_nor_erase_sector(data, current_offset);
 			flash_flexspi_nor_wait_bus_busy(data);
 			memc_flexspi_reset(&data->controller);
-			offset += SPI_NOR_SECTOR_SIZE;
+			current_offset += SPI_NOR_SECTOR_SIZE;
+			remaining_size -= SPI_NOR_SECTOR_SIZE;
+		}
+
+		/* Step 2: Erase whole blocks */
+		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
+			flash_flexspi_nor_write_enable(data);
+			flash_flexspi_nor_erase_block(data, current_offset);
+			flash_flexspi_nor_wait_bus_busy(data);
+			memc_flexspi_reset(&data->controller);
+			current_offset += SPI_NOR_BLOCK_SIZE;
+			remaining_size -= SPI_NOR_BLOCK_SIZE;
+		}
+
+		/* Step 3: Erase remaining sectors */
+		while (remaining_size > 0) {
+			flash_flexspi_nor_write_enable(data);
+			flash_flexspi_nor_erase_sector(data, current_offset);
+			flash_flexspi_nor_wait_bus_busy(data);
+			memc_flexspi_reset(&data->controller);
+			current_offset += SPI_NOR_SECTOR_SIZE;
+			remaining_size -= SPI_NOR_SECTOR_SIZE;
 		}
 	}
 

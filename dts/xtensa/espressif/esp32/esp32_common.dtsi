@@ -138,6 +138,18 @@
 			};
 		};
 
+		rtc_fast_ram: memory@3ff80000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ff80000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
 		icache0: icache0@400d0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x400d0000 DT_SIZE_K(11456)>;
@@ -553,6 +565,20 @@
 				reg = <1>;
 				status = "disabled";
 			};
+		};
+
+		sha: sha@3ff03000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x3ff03000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@3ff01000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x3ff01000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
 		};
 	};
 };

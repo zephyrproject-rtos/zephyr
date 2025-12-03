@@ -70,10 +70,6 @@
 	status = "okay";
 };
 
-&clk_hsi {
-	status = "disabled";
-};
-
 &clk_lsi {
 	status = "okay";
 };

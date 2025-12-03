@@ -26,11 +26,12 @@
 		i2s-tx = &sai0;
 		sdhc0 = &usdhc0;
 		rtc = &rtc0;
+		sram-ext = &psram0;
 	};
 
 	chosen {
-		zephyr,flash-controller = &mx25um51345g;
-		zephyr,flash = &mx25um51345g;
+		zephyr,flash-controller = &flash_controller0;
+		zephyr,flash = &ext_flash;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
@@ -94,6 +95,19 @@
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+	};
+
+	memc: memc@8000000 {
+		status = "okay";
+		reg = <0x08000000 DT_SIZE_M(32)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		psram: memory@8000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x08000000 DT_SIZE_M(32)>;
+			zephyr,memory-region = "PSRAM";
+		};
 	};
 };
 
@@ -325,44 +339,100 @@ zephyr_lcdif: &lcdif {};
 
 &xspi0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_xspi0>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
 
-	mx25um51345g: mx25um51345g@0 {
-		compatible = "nxp,xspi-mx25um51345g";
-		/* MX25UM51245G is 64MB, 512MBit flash part */
-		size = <DT_SIZE_M(64 * 8)>;
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(200)>;
+	flash_controller0: flash-controller@0 {
 		status = "okay";
-		jedec-id = [c2 81 3a];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <2>;
+		compatible = "nxp,xspi-nor";
+		device-name = "mx25um51345g";
+		/* MX25UM51245G is 64MB, 512Mbit flash part. */
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		sample-clk-source = <3>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		ext_flash: flash@38000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x38000000 DT_SIZE_M(64)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>;
 
-			/*
-			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
-			 */
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 DT_SIZE_M(7)>;
-			};
-			slot1_partition: partition@720000 {
-				label = "image-1";
-				reg = <0x00720000 DT_SIZE_M(7)>;
-			};
-			storage_partition: partition@E20000 {
-				label = "storage";
-				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
+
+				slot0_partition: partition@20000 {
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(7)>;
+				};
+
+				slot1_partition: partition@720000 {
+					label = "image-1";
+					reg = <0x00720000 DT_SIZE_M(7)>;
+				};
+
+				storage_partition: partition@E20000 {
+					label = "storage";
+					reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
 			};
 		};
+	};
+};
+
+&xspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi1>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+	/* Connect JP45 1-2 to use XSPI1. */
+
+	psram0: memory-controller@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		device-name = "w958d6nbkx5l";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-differential-clk;
+		sample-clk-source = <3>;
+	};
+};
+
+&xspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi2>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+
+	psram1: memory-controller@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		device-name = "w958d6nbkx4l";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-differential-clk;
+		sample-clk-source = <3>;
 	};
 };
 

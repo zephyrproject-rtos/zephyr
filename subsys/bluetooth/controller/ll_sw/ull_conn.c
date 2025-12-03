@@ -59,6 +59,7 @@
 
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_central_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
@@ -438,43 +439,44 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 
 			/* Sanity-check instance to make sure it's created but not connected */
 			if (cis->group && cis->lll.handle == handle && !cis->established) {
-				if (cis->group->state == CIG_STATE_CONFIGURABLE) {
-					/* Disallow if CIG is still in configurable state */
+				struct ll_conn_iso_group *cig = cis->group;
+
+				conn = ll_connected_get(cis->lll.acl_handle);
+
+				if (conn == NULL || !ull_lp_cc_is_enqueued(conn, cis)) {
+					/* Disallow if CIS is not created yet or terminated */
 					return BT_HCI_ERR_CMD_DISALLOWED;
+				}
 
-				} else if (cis->group->state == CIG_STATE_INITIATING) {
-					conn = ll_connected_get(cis->lll.acl_handle);
-					LL_ASSERT(conn != NULL);
+				/* CIS is not yet established - try to cancel procedure */
+				if (ull_cp_cc_cancel(conn, cis)) {
+					/* Successfully canceled - complete disconnect */
+					struct node_rx_pdu *node_terminate;
 
-					/* CIS is not yet established - try to cancel procedure */
-					if (ull_cp_cc_cancel(conn)) {
-						/* Successfully canceled - complete disconnect */
-						struct node_rx_pdu *node_terminate;
+					node_terminate = &cis->node_rx_terminate.rx;
 
-						node_terminate = ull_pdu_rx_alloc();
-						LL_ASSERT(node_terminate);
+					node_terminate->hdr.handle = handle;
+					node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
+					*((uint8_t *)node_terminate->pdu) =
+						BT_HCI_ERR_LOCALHOST_TERM_CONN;
 
-						node_terminate->hdr.handle = handle;
-						node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
-						*((uint8_t *)node_terminate->pdu) =
-							BT_HCI_ERR_LOCALHOST_TERM_CONN;
-
-						ll_rx_put_sched(node_terminate->hdr.link,
+					ll_rx_put_sched(node_terminate->hdr.link,
 							node_terminate);
 
-						/* We're no longer initiating a connection */
-						cis->group->state = CIG_STATE_CONFIGURABLE;
-
-						/* This is now a successful disconnection */
-						return BT_HCI_ERR_SUCCESS;
+					/* We're no longer initiating a connection */
+					if (ull_central_iso_all_cises_terminated(cig)) {
+						cig->state = CIG_STATE_INACTIVE;
 					}
 
-					/* Procedure could not be canceled in the current
-					 * state - let it run its course and enqueue a
-					 * terminate procedure.
-					 */
-					return ull_cp_cis_terminate(conn, cis, reason);
+					/* This is now a successful disconnection */
+					return BT_HCI_ERR_SUCCESS;
 				}
+
+				/* Procedure could not be canceled in the current
+				 * state - let it run its course and enqueue a
+				 * terminate procedure.
+				 */
+				return ull_cp_cis_terminate(conn, cis, reason);
 			}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 			/* Disallow if CIS is not connected */
@@ -900,7 +902,7 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_pdu *rx)
 		/* Setup connection in ULL disabled callback,
 		 * pass the node rx as disabled callback parameter.
 		 */
-		LL_ASSERT(!hdr->disabled_cb);
+		LL_ASSERT_ERR(!hdr->disabled_cb);
 		hdr->disabled_param = rx;
 		hdr->disabled_cb = conn_setup_adv_scan_disabled_cb;
 
@@ -976,7 +978,7 @@ void ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
 		  uint32_t remainder, uint16_t lazy)
 {
-	LL_ASSERT(conn->lll.handle != LLL_HANDLE_INVALID);
+	LL_ASSERT_DBG(conn->lll.handle != LLL_HANDLE_INVALID);
 
 	conn->llcp.prep.ticks_at_expire = ticks_at_expire;
 	conn->llcp.prep.remainder = remainder;
@@ -1410,9 +1412,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 					      lazy, force,
 					      ticker_update_conn_op_cb,
 					      conn_ll);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY) ||
-			  ((void *)conn_ll == ull_disable_mark_get()));
+		LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+			      (ticker_status == TICKER_STATUS_BUSY) ||
+			      ((void *)conn_ll == ull_disable_mark_get()));
 	}
 }
 
@@ -1479,7 +1481,7 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 		}
 
 		link = mem_acquire(&mem_link_tx.free);
-		LL_ASSERT(link);
+		LL_ASSERT_ERR(link);
 
 		/* Enqueue towards LLL */
 		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
@@ -1542,7 +1544,7 @@ void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
 	uint8_t idx;
 
 	idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
-	LL_ASSERT(lll_tx);
+	LL_ASSERT_ERR(lll_tx);
 
 	lll_tx->handle = handle;
 	lll_tx->node = tx;
@@ -1555,13 +1557,13 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 	struct pdu_data *pdu_tx;
 
 	pdu_tx = (void *)tx->pdu;
-	LL_ASSERT(pdu_tx->len);
+	LL_ASSERT_DBG(pdu_tx->len);
 
 	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
 		if (handle != LLL_HANDLE_INVALID) {
 			struct ll_conn *conn = ll_conn_get(handle);
 
-			LL_ASSERT(conn != NULL);
+			LL_ASSERT_DBG(conn != NULL);
 
 			ull_cp_tx_ack(conn, tx);
 		}
@@ -1571,7 +1573,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 			struct ll_conn *conn;
 
 			/* Tx Node not re-used, ensure link->next is non-NULL */
-			LL_ASSERT(link->next);
+			LL_ASSERT_DBG(link->next);
 
 			/* Pass conn as-is to ull_cp_release_tx(), NULL check is done there */
 			conn = ll_connected_get(handle);
@@ -1585,12 +1587,12 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 			return;
 		}
 
-		LL_ASSERT(!link->next);
+		LL_ASSERT_DBG(!link->next);
 
 	} else if (handle == LLL_HANDLE_INVALID) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
-		LL_ASSERT(handle != LLL_HANDLE_INVALID);
+		LL_ASSERT_DBG(handle != LLL_HANDLE_INVALID);
 	}
 
 	ll_tx_ack_put(handle, tx);
@@ -1784,29 +1786,33 @@ static void ticker_update_conn_op_cb(uint32_t status, void *param)
 	 * when disconnecting or connection update (race between ticker_update
 	 * and ticker_stop calls).
 	 */
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_update_mark_get() ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_update_mark_get()) ||
+		      (param == ull_disable_mark_get()));
 }
 
 static void ticker_stop_conn_op_cb(uint32_t status, void *param)
 {
 	void *p;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	p = ull_update_mark(param);
-	LL_ASSERT(p == param);
+	if (p != param) {
+		LL_ASSERT_DBG(false);
+	}
 }
 
 static void ticker_start_conn_op_cb(uint32_t status, void *param)
 {
 	void *p;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	p = ull_update_unmark(param);
-	LL_ASSERT(p == param);
+	if (p != param) {
+		LL_ASSERT_DBG(false);
+	}
 }
 
 static void conn_setup_adv_scan_disabled_cb(void *param)
@@ -1845,7 +1851,7 @@ static void conn_setup_adv_scan_disabled_cb(void *param)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
@@ -1856,7 +1862,7 @@ static inline void disable(uint16_t handle)
 	int err;
 
 	conn = ll_conn_get(handle);
-	LL_ASSERT(conn != NULL);
+	LL_ASSERT_DBG(conn != NULL);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
 					conn, &conn->lll);
@@ -1893,7 +1899,53 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 	struct lll_conn *lll = &conn->lll;
 	uint32_t ticker_status;
 
+	if ((IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) ||
+	     IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) &&
+	    ull_cp_cc_is_active(conn)) {
+		/* CIS creation procedure active, notify LLCP */
+		ull_cp_cc_acl_disconnect(conn);
+	}
+
+	/* Set LLCP state - flushes control procedures */
 	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	/* Find and clean non-established, allocated CISes associated with this ACL conn */
+	for (uint8_t handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST; handle++) {
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+
+		cis = ll_conn_iso_stream_get(handle);
+		cig = cis->group;
+		if (cig != NULL && cig->lll.num_cis != 0U &&
+		    cis->lll.acl_handle == conn->lll.handle) {
+			if (IS_PERIPHERAL(cig)) {
+				/* Remove data paths associated with this CIS for both directions.
+				 * Disable them one at a time to make sure both are removed, even if
+				 * only one is set.
+				 * Note: This only applies for peripherals, for centrals an explicit
+				 * command is required to clean up a CIG and associated CISes.
+				 * See e.g. BT Core v5.4, Vol 4, Part E, Section 7.8.100
+				 */
+				ll_remove_iso_path(handle, BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+				ll_remove_iso_path(handle, BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
+
+				ll_conn_iso_stream_release(cis);
+				cig->lll.num_cis--;
+
+				if (cig->lll.num_cis == 0U) {
+					/* No more streams in the group - release group */
+					ll_conn_iso_group_release(cig);
+				}
+			} else if (IS_CENTRAL(cig) && cig->state == CIG_STATE_INITIATING &&
+				   ull_central_iso_all_cises_terminated(cig)) {
+
+				/* We're no longer initiating a connection */
+				cig->state = CIG_STATE_INACTIVE;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 	/* Update tx buffer queue handling */
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
@@ -1909,9 +1961,9 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_CONN_BASE + lll->handle,
 				    ticker_stop_op_cb, conn);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY) ||
-		  ((void *)conn == ull_disable_mark_get()));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY) ||
+		      ((void *)conn == ull_disable_mark_get()));
 
 	/* Invalidate the connection context */
 	lll->handle = LLL_HANDLE_INVALID;
@@ -1968,7 +2020,7 @@ static void tx_ull_flush(struct ll_conn *conn)
 		memq_link_t *link;
 
 		link = mem_acquire(&mem_link_tx.free);
-		LL_ASSERT(link);
+		LL_ASSERT_ERR(link);
 
 		/* Enqueue towards LLL */
 		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
@@ -1987,7 +2039,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	 * when disconnecting (race with ticker_stop), say on HCI Reset.
 	 */
 	if (status != TICKER_STATUS_SUCCESS) {
-		LL_ASSERT(param == ull_disable_mark_get());
+		LL_ASSERT_ERR(param == ull_disable_mark_get());
 
 		return;
 	}
@@ -1996,7 +2048,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void conn_disable(void *param)
@@ -2017,14 +2069,14 @@ static void conn_disable(void *param)
 		/* Setup disabled callback to be called when ref count
 		 * returns to zero.
 		 */
-		LL_ASSERT(!hdr->disabled_cb);
+		LL_ASSERT_ERR(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	} else {
 		/* No pending LLL events */
 		disabled_cb(&conn->lll);
@@ -2040,7 +2092,7 @@ static void disabled_cb(void *param)
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void tx_lll_flush(void *param)
@@ -2066,7 +2118,7 @@ static void tx_lll_flush(void *param)
 		struct lll_tx *tx_buf;
 
 		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&tx_buf);
-		LL_ASSERT(tx_buf);
+		LL_ASSERT_ERR(tx_buf);
 
 		tx_buf->handle = LLL_HANDLE_INVALID;
 		tx_buf->node = tx;
@@ -2086,7 +2138,7 @@ static void tx_lll_flush(void *param)
 	 * populated before this mayfly function was scheduled.
 	 */
 	rx = (void *)&conn->llcp_terminate.node_rx;
-	LL_ASSERT(rx->hdr.link);
+	LL_ASSERT_DBG(rx->hdr.link);
 	link = rx->hdr.link;
 	rx->hdr.link = NULL;
 
@@ -2239,8 +2291,8 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 	uint32_t ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 						 ticker_id_conn, ticks_at_expire,
 						 ticker_stop_conn_op_cb, (void *)conn);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 	ticker_status = ticker_start(
 		TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH, ticker_id_conn, ticks_at_expire,
 		ticks_win_offset, HAL_TICKER_US_TO_TICKS(periodic_us),
@@ -2260,8 +2312,8 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 		ull_central_ticker_cb,
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CENTRAL */
 		conn, ticker_start_conn_op_cb, (void *)conn);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* enable ticker job, if disabled in this function */
@@ -2463,7 +2515,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 #endif /*CONFIG_BT_CENTRAL */
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -2825,7 +2877,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 		}
 	}
 
-	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(ret_cb == TICKER_STATUS_SUCCESS);
 
 	/* Reduced a tick for negative remainder and return positive remainder
 	 * value.
@@ -2867,7 +2919,7 @@ static void mfy_past_sender_offset_get(void *param)
 	if (adv_sync_handle != BT_HCI_ADV_HANDLE_INVALID) {
 		const struct ll_adv_sync_set *adv_sync = ull_adv_sync_get(adv_sync_handle);
 
-		LL_ASSERT(adv_sync);
+		LL_ASSERT_DBG(adv_sync);
 
 		ticker_offset_us = get_ticker_offset(TICKER_ID_ADV_SYNC_BASE + adv_sync_handle,
 						     &lazy);
@@ -2879,7 +2931,7 @@ static void mfy_past_sender_offset_get(void *param)
 		uint32_t interval_us = sync->interval * PERIODIC_INT_UNIT_US;
 		uint32_t window_widening_event_us;
 
-		LL_ASSERT(sync);
+		LL_ASSERT_DBG(sync);
 
 		ticker_offset_us = get_ticker_offset(TICKER_ID_SCAN_SYNC_BASE + sync_handle,
 						     &lazy);
@@ -2923,7 +2975,7 @@ void ull_conn_past_sender_offset_request(struct ll_conn *conn)
 	mfy.param = conn;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #define DT_DRV_COMPAT nordic_nrf_spis
+
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -20,49 +22,8 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#if NRF_DT_INST_ANY_IS_FAST
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast SPIM PM actions can only be
- * called from a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-
-/*
- * Current factors requiring use of DT_NODELABEL:
- *
- * - HAL design (requirement of drv_inst_idx in nrfx_spis_t)
- * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
- */
-#define SPIS_NODE(idx) \
-	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(spis##idx)), (spis##idx), (spi##idx))
-#define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
-#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
-#define SPIS_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIS(idx), prop)
-#define SPIS_IS_FAST(idx) NRF_DT_IS_FAST(SPIS(idx))
-
-#define SPIS_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIS(prefix##idx)),		\
-		   (SPIS_PROP(idx, cross_domain_pins_supported)),	\
-		   (0))
-
-#if NRFX_FOREACH_PRESENT(SPIS, SPIS_PINS_CROSS_DOMAIN, (||), (0))
-#include <hal/nrf_gpio.h>
-/* Certain SPIM instances support usage of cross domain pins in form of dedicated pins on
- * a port different from the default one.
- */
-#define SPIS_CROSS_DOMAIN_SUPPORTED 1
-#endif
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
-#include <nrf_sys_event.h>
-/* To use cross domain pins, constant latency mode needs to be applied, which is
- * handled via nrf_sys_event requests.
- */
-#define SPIS_CROSS_DOMAIN_PINS_HANDLE 1
-#endif
-
 struct spi_nrfx_data {
+	nrfx_spis_t spis;
 	struct spi_context ctx;
 	const struct device *dev;
 #ifdef CONFIG_MULTITHREADING
@@ -74,44 +35,13 @@ struct spi_nrfx_data {
 };
 
 struct spi_nrfx_config {
-	nrfx_spis_t spis;
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
 	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
 	void *mem_reg;
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	bool cross_domain;
-	int8_t default_port;
-#endif
 };
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-static bool spis_has_cross_domain_connection(const struct spi_nrfx_config *config)
-{
-	const struct pinctrl_dev_config *pcfg = config->pcfg;
-	const struct pinctrl_state *state;
-	int ret;
-
-	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
-	if (ret < 0) {
-		LOG_ERR("Unable to read pin state");
-		return false;
-	}
-
-	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
-		uint32_t pin = NRF_GET_PIN(state->pins[i]);
-
-		if ((pin != NRF_PIN_DISCONNECTED) &&
-		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -142,7 +72,6 @@ static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 
@@ -184,7 +113,7 @@ static int configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	nrf_spis_configure(dev_config->spis.p_reg,
+	nrf_spis_configure(dev_data->spis.p_reg,
 			   get_nrf_spis_mode(spi_cfg->operation),
 			   get_nrf_spis_bit_order(spi_cfg->operation));
 
@@ -197,7 +126,6 @@ static int prepare_for_transfer(const struct device *dev,
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
-	nrfx_err_t result;
 	uint8_t *dmm_tx_buf;
 	uint8_t *dmm_rx_buf;
 	int err;
@@ -223,11 +151,10 @@ static int prepare_for_transfer(const struct device *dev,
 		goto in_alloc_failed;
 	}
 
-	result = nrfx_spis_buffers_set(&dev_config->spis,
+	err = nrfx_spis_buffers_set(&dev_data->spis,
 				       dmm_tx_buf, tx_buf_len,
 				       dmm_rx_buf, rx_buf_len);
-	if (result != NRFX_SUCCESS) {
-		err = -EIO;
+	if (err != 0) {
 		goto buffers_set_failed;
 	}
 
@@ -315,7 +242,7 @@ static int transceive(const struct device *dev,
 		if (dev_config->wake_gpio.port) {
 			wait_for_wake(dev_data, dev_config);
 
-			nrf_spis_enable(dev_config->spis.p_reg);
+			nrf_spis_enable(dev_data->spis.p_reg);
 		}
 
 		error = prepare_for_transfer(dev,
@@ -345,7 +272,7 @@ static int transceive(const struct device *dev,
 		}
 
 		if (dev_config->wake_gpio.port) {
-			nrf_spis_disable(dev_config->spis.p_reg);
+			nrf_spis_disable(dev_data->spis.p_reg);
 		}
 	}
 
@@ -399,7 +326,7 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 	.release = spi_nrfx_release,
 };
 
-static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
+static void event_handler(const nrfx_spis_event_t *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
 	struct spi_nrfx_data *dev_data = dev->data;
@@ -427,24 +354,11 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 static void spi_nrfx_suspend(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	if (dev_config->wake_gpio.port == NULL) {
-		nrf_spis_disable(dev_config->spis.p_reg);
+		nrf_spis_disable(dev_data->spis.p_reg);
 	}
-
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
-#if SPIS_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_release_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
@@ -452,25 +366,12 @@ static void spi_nrfx_suspend(const struct device *dev)
 static void spi_nrfx_resume(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 
-#if SPIS_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spis_has_cross_domain_connection(dev_config)) {
-#if SPIS_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_request_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
-
 	if (dev_config->wake_gpio.port == NULL) {
-		nrf_spis_enable(dev_config->spis.p_reg);
+		nrf_spis_enable(dev_data->spis.p_reg);
 	}
 }
 
@@ -496,18 +397,17 @@ static int spi_nrfx_init(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
-	nrfx_err_t result;
 	int err;
 
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
 	 */
-	result = nrfx_spis_init(&dev_config->spis, &dev_config->config,
+	err = nrfx_spis_init(&dev_data->spis, &dev_config->config,
 				event_handler, (void *)dev);
 
-	if (result != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EBUSY;
+		return err;
 	}
 
 	/* When the WAKE line is used, the SPIS peripheral is enabled
@@ -518,7 +418,7 @@ static int spi_nrfx_init(const struct device *dev)
 	 * with the SPIS peripheral enabled, significantly reduces idle
 	 * power consumption.
 	 */
-	nrf_spis_disable(dev_config->spis.p_reg);
+	nrf_spis_disable(dev_data->spis.p_reg);
 
 	if (dev_config->wake_gpio.port) {
 		if (!gpio_is_ready_dt(&dev_config->wake_gpio)) {
@@ -551,91 +451,54 @@ static int spi_nrfx_init(const struct device *dev)
 	return pm_device_driver_init(dev, spi_nrfx_pm_action);
 }
 
-/* Macro determines PM actions interrupt safety level.
- *
- * Requesting/releasing SPIS device may be ISR safe, but it cannot be reliably known whether
- * managing its power domain is. It is then assumed that if power domains are used, device is
- * no longer ISR safe. This macro let's us check if we will be requesting/releasing
- * power domains and determines PM device ISR safety value.
- *
- * Additionally, fast SPIS devices are not ISR safe.
- */
-#define SPIS_PM_ISR_SAFE(idx)									\
-	COND_CODE_1(										\
-		UTIL_AND(									\
-			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),				\
-			UTIL_AND(								\
-				DT_NODE_HAS_PROP(SPIS(idx), power_domains),			\
-				DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(SPIS(idx), power_domains))	\
-			)									\
-		),										\
-		(0),										\
-		(COND_CODE_1(									\
-			SPIS_IS_FAST(idx),							\
-			(0),									\
-			(PM_DEVICE_ISR_SAFE)							\
-		))										\
-	)
-
-#define SPI_NRFX_SPIS_DEFINE(idx)					       \
-	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SPIS(idx));	       \
-	static void irq_connect##idx(void)				       \
-	{								       \
-		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
-			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
-	}								       \
-	static struct spi_nrfx_data spi_##idx##_data = {		       \
+#define SPI_NRFX_SPIS_DEFINE(inst)					       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(inst));      \
+	static struct spi_nrfx_data spi_##inst##_data = {		       \
+		.spis = NRFX_SPIS_INSTANCE(DT_INST_REG_ADDR(inst)),	       \
 		IF_ENABLED(CONFIG_MULTITHREADING,			       \
-			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##inst##_data, ctx),))      \
 		IF_ENABLED(CONFIG_MULTITHREADING,			       \
-			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
-		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##inst##_data, ctx),))      \
+		.dev  = DEVICE_DT_GET(DT_DRV_INST(inst)),		       \
 		IF_ENABLED(CONFIG_MULTITHREADING,			       \
 			(.wake_sem = Z_SEM_INITIALIZER(			       \
-				spi_##idx##_data.wake_sem, 0, 1),))	       \
+				spi_##inst##_data.wake_sem, 0, 1),))	       \
 	};								       \
-	PINCTRL_DT_DEFINE(SPIS(idx));					       \
-	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spis = {						       \
-			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
-			.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,	       \
-		},							       \
+	static void irq_connect##inst(void)				       \
+	{								       \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
+			nrfx_spis_irq_handler, &spi_##inst##_data.spis, 0);    \
+	}								       \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
+	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
 		.config = {						       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = SPIS_PROP(idx, overrun_character),	       \
-			.def       = SPIS_PROP(idx, def_char),		       \
+			.orc       = DT_INST_PROP(inst, overrun_character),    \
+			.def       = DT_INST_PROP(inst, def_char),	       \
 		},							       \
-		.irq_connect = irq_connect##idx,			       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
-		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
-		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
-		.mem_reg = DMM_DEV_TO_REG(SPIS(idx)),			       \
-		IF_ENABLED(SPIS_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),       \
-			(.cross_domain = true,				       \
-			 .default_port =				       \
-				DT_PROP_OR(DT_PHANDLE(SPIS(idx),	       \
-					default_gpio_port), port, -1),))       \
+		.irq_connect = irq_connect##inst,			       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
+		.max_buf_len = BIT_MASK(DT_INST_PROP(inst,		       \
+						     easydma_maxcnt_bits)),    \
+		.wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(inst),	       \
+						 wake_gpios, {0}),	       \
+		.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),		       \
 	};								       \
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
-		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(inst, wake_gpios) ||	       \
+		     !(DT_GPIO_FLAGS(DT_DRV_INST(inst), wake_gpios) &	       \
+		     GPIO_ACTIVE_LOW),					       \
 		     "WAKE line must be configured as active high");	       \
-	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
-				SPIS_PM_ISR_SAFE(idx));			       \
-	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
-			    spi_nrfx_init,				       \
-			    PM_DEVICE_DT_GET(SPIS(idx)),		       \
-			    &spi_##idx##_data,				       \
-			    &spi_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_SPI_INIT_PRIORITY,			       \
-			    &spi_nrfx_driver_api)
+	PM_DEVICE_DT_INST_DEFINE(inst, spi_nrfx_pm_action, PM_DEVICE_ISR_SAFE);\
+	SPI_DEVICE_DT_INST_DEFINE(inst,					       \
+				  spi_nrfx_init,			       \
+				  PM_DEVICE_DT_INST_GET(inst),		       \
+				  &spi_##inst##_data,			       \
+				  &spi_##inst##z_config,		       \
+				  POST_KERNEL,				       \
+				  CONFIG_SPI_INIT_PRIORITY,		       \
+				  &spi_nrfx_driver_api)
 
-/* Macro creates device instance if it is enabled in devicetree. */
-#define SPIS_DEVICE(periph, prefix, id, _) \
-	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIS##prefix##id, (SPI_NRFX_SPIS_DEFINE(prefix##id);))
-
-/* Macro iterates over nrfx_spis instances enabled in the nrfx_config.h. */
-NRFX_FOREACH_ENABLED(SPIS, SPIS_DEVICE, (), (), _)
+DT_INST_FOREACH_STATUS_OKAY(SPI_NRFX_SPIS_DEFINE)

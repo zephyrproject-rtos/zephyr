@@ -6,6 +6,7 @@ zephyr_sources(
   )
 
 zephyr_sources(mpu_regions.c)
+zephyr_linker_sources(SECTIONS sections.ld)
 
 zephyr_include_directories(.)
 

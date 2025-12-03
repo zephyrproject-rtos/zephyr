@@ -135,7 +135,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
 		bt_addr_le_copy(&ev.address, info.le.dst);
-		ev.interval = sys_cpu_to_le16(info.le.interval);
+		ev.interval = sys_cpu_to_le16(info.le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US);
 		ev.latency = sys_cpu_to_le16(info.le.latency);
 		ev.timeout = sys_cpu_to_le16(info.le.timeout);
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
@@ -601,6 +601,21 @@ static int tester_gap_ext_adv_idx_free_get(void)
 	return -ENOMEM;
 }
 
+static int tester_gap_ext_adv_idx_get(struct bt_le_ext_adv *ext_adv)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(ext_adv_sets); i++) {
+		if (ext_adv_sets[i] == ext_adv) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+
 int tester_gap_start_ext_adv(struct bt_le_ext_adv *ext_adv)
 {
 	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
@@ -644,6 +659,8 @@ int tester_gap_stop_ext_adv(struct bt_le_ext_adv *ext_adv)
 
 		return -EINVAL;
 	}
+
+	tester_gap_clear_adv_instance(ext_adv);
 
 	atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
 
@@ -749,6 +766,29 @@ static uint8_t set_bondable(const void *cmd, uint16_t cmd_len,
 	rp->current_settings = sys_cpu_to_le32(current_settings);
 	*rsp_len = sizeof(*rp);
 	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_clear_adv_instance(struct bt_le_ext_adv *ext_adv)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
+	if (ext_adv == NULL) {
+		LOG_ERR("Invalid ext_adv");
+		return -EINVAL;
+	}
+
+	int index = tester_gap_ext_adv_idx_get(ext_adv);
+
+	if (index < 0) {
+		LOG_ERR("Failed to get ext_adv index");
+		return -EINVAL;
+	}
+
+	ext_adv_sets[index] = NULL;
+
+	return 0;
 }
 
 int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
@@ -974,7 +1014,7 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_stop(gap_ext_adv);
+		err = tester_gap_stop_ext_adv(gap_ext_adv);
 	} else {
 		err = bt_le_adv_stop();
 	}
@@ -2444,6 +2484,7 @@ static int bt_iso_chan_get_index(struct bt_iso_chan *chan);
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 static struct bt_iso_big *iso_sync_receiver_big;
+static bt_addr_le_t iso_sync_receiver_addr;
 
 static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
 {
@@ -2479,7 +2520,7 @@ static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
 		return;
 	}
 
-	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	bt_addr_le_copy(&ev.address, &iso_sync_receiver_addr);
 	ev.latency = sys_cpu_to_le32(info.sync_receiver.latency);
 	ev.nse = info.max_subevent;
 	ev.bn = info.sync_receiver.bn;
@@ -2499,12 +2540,13 @@ static void iso_sync_receiver_big_stopped_cb(struct bt_iso_big *big, uint8_t rea
 		return;
 	}
 
-	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	bt_addr_le_copy(&ev.address, &iso_sync_receiver_addr);
 	ev.reason = reason;
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_LOST, &ev, sizeof(ev));
 
 	iso_sync_receiver_big = NULL;
+	bt_addr_le_copy(&iso_sync_receiver_addr, BT_ADDR_LE_NONE);
 }
 
 static struct bt_iso_big_cb iso_sync_receiver_big_cb = {
@@ -2726,6 +2768,9 @@ static uint8_t big_create_sync(const void *cmd, uint16_t cmd_len, void *rsp, uin
 		LOG_ERR("Unable to sync to BIG (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
+
+	/* PA may be terminated so just store addr here */
+	bt_addr_le_copy(&iso_sync_receiver_addr, &pa_sync->addr);
 
 	LOG_DBG("BIG syncing");
 

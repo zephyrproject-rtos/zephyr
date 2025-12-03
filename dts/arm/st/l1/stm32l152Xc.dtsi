@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/l1/stm32l152.dtsi>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
@@ -26,7 +25,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 3)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 3)>;
-			interrupts = <45 0>;
+			interrupts = <46 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
@@ -35,6 +34,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {

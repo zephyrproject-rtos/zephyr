@@ -128,12 +128,20 @@
 			#gpio-cells = <2>;
 		};
 
-		adc0: adc@42b70000 {
-			compatible = "infineon,adc-hppass-saradc";
-			reg = <0x42b70000 0x10000>;
-			interrupts = <109 4>;
-			status = "disabled";
-			#io-channel-cells = <1>;
+		hppass_analog0: analog@42b00000 {
+			reg = <0x42b00000 0x100000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			adc0: adc@70000 {
+				compatible = "infineon,hppass-sar-adc";
+				/* Offset within HPPASS analog region => 0x42b70000 physical */
+				reg = <0x00070000 0x10000>;
+				interrupts = <109 4>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
 		};
 
 		ipc0: ipc@421d0000 {
@@ -207,7 +215,7 @@
 			status = "disabled";
 		};
 
-		tcpwm0: tcpwm0@42a00000  {
+		tcpwm0: tcpwm0@42a00000 {
 			reg = <0x42a00000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -289,7 +297,7 @@
 			};
 		};
 
-		tcpwm1: tcpwm1@42a10000  {
+		tcpwm1: tcpwm1@42a10000 {
 			reg = <0x42a10000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -447,7 +455,7 @@
 			};
 		};
 
-		tcpwm2: tcpwm2@42a20000  {
+		tcpwm2: tcpwm2@42a20000 {
 			reg = <0x42a20000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;

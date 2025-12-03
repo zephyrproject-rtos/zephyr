@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <zephyr/toolchain/common.h>
-#include <nrf.h>
+#include <nrfx.h>
 #include <nrf_ironside/call.h>
 
 /**

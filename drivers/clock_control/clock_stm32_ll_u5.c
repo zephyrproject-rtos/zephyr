@@ -8,6 +8,7 @@
 
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -145,7 +146,8 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
-	    ((src_clk == STM32_SRC_PLL3_R) && IS_ENABLED(STM32_PLL3_R_ENABLED))) {
+	    ((src_clk == STM32_SRC_PLL3_R) && IS_ENABLED(STM32_PLL3_R_ENABLED)) ||
+	    (src_clk == STM32_SRC_DSIPHY)) {
 		return 0;
 	}
 
@@ -636,17 +638,17 @@ static int set_up_plls(void)
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
-		SET_BIT(RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2PEN);
+		stm32_reg_set_bits(&RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2PEN);
 	}
 
 	if (IS_ENABLED(STM32_PLL2_Q_ENABLED)) {
 		LL_RCC_PLL2_SetQ(STM32_PLL2_Q_DIVISOR);
-		SET_BIT(RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2QEN);
+		stm32_reg_set_bits(&RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2QEN);
 	}
 
 	if (IS_ENABLED(STM32_PLL2_R_ENABLED)) {
 		LL_RCC_PLL2_SetR(STM32_PLL2_R_DIVISOR);
-		SET_BIT(RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2REN);
+		stm32_reg_set_bits(&RCC->PLL2CFGR, RCC_PLL2CFGR_PLL2REN);
 	}
 
 	LL_RCC_PLL2_Enable();
@@ -688,17 +690,17 @@ static int set_up_plls(void)
 
 	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
-		SET_BIT(RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3PEN);
+		stm32_reg_set_bits(&RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3PEN);
 	}
 
 	if (IS_ENABLED(STM32_PLL3_Q_ENABLED)) {
 		LL_RCC_PLL3_SetQ(STM32_PLL3_Q_DIVISOR);
-		SET_BIT(RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3QEN);
+		stm32_reg_set_bits(&RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3QEN);
 	}
 
 	if (IS_ENABLED(STM32_PLL3_R_ENABLED)) {
 		LL_RCC_PLL3_SetR(STM32_PLL3_R_DIVISOR);
-		SET_BIT(RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3REN);
+		stm32_reg_set_bits(&RCC->PLL3CFGR, RCC_PLL3CFGR_PLL3REN);
 	}
 
 	LL_RCC_PLL3_Enable();
@@ -904,11 +906,12 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Disable unused clocks that are enabled (e.g. by bootloader or as wakeup source).
 	 * These will not be enabled, unless the MCU uses them for PM wakeup purposes.
 	 */
-	if (!IS_ENABLED(STM32_MSIS_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_MSISON) != 0U)) {
+	if (!IS_ENABLED(STM32_MSIS_ENABLED) &&
+	    (stm32_reg_read_bits(&RCC->CR, RCC_CR_MSISON) != 0U)) {
 		LL_RCC_MSIS_Disable();
 	}
 
-	if (!IS_ENABLED(STM32_HSI_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_HSION) != 0U)) {
+	if (!IS_ENABLED(STM32_HSI_ENABLED) && (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSION) != 0U)) {
 		LL_RCC_HSI_Disable();
 	}
 #endif

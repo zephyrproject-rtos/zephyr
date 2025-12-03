@@ -28,6 +28,7 @@ elseif(CONFIG_SOC_MCXN947_CPU1)
   board_runner_args(linkserver  "--device=MCXN947:MCX-N9XX-EVK")
   board_runner_args(linkserver  "--core=cm33_core1")
 elseif(CONFIG_SOC_MCXN547_CPU0)
+  board_runner_args(jlink "--device=MCXN547_M33_0" "--reset-after-load")
   board_runner_args(linkserver  "--device=MCXN547:MCX-N5XX-EVK")
 endif()
 

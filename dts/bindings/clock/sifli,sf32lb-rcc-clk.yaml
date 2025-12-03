@@ -65,5 +65,56 @@ properties:
     description: |
       Divider for PCLK2 (0-7). fPCLK2 = fHCLK / 2^PDIV2.
 
+  sifli,sys-clk-src:
+    type: string
+    enum: ["hrc48", "hxt48", "lpclk", "dll1"]
+    default: "hrc48"
+    description: |
+      Source used for the HPSYS system clock. When set to ``dll1`` the DLL1 child
+      node must be enabled. Defaults to ``hrc48`` if not provided (reset default).
+
+  sifli,peri-clk-src:
+    type: string
+    enum: ["hrc48", "hxt48"]
+    default: "hxt48"
+    description: |
+      Source used for the HPSYS peripheral clock domain. Defaults to ``hxt48`` if
+      not provided (reset default).
+
+  sifli,mpi1-clk-src:
+    type: string
+    enum: ["peri", "dll1", "dll2"]
+    default: "peri"
+    description: |
+      Source used for the MPI1/QSPI clock tree. Selecting ``dll1`` or ``dll2``
+      requires the corresponding DLL child node to be enabled. Defaults to
+      ``peri`` if not provided (reset default).
+
+  sifli,mpi2-clk-src:
+    type: string
+    enum: ["peri", "dll1", "dll2"]
+    default: "peri"
+    description: |
+      Source used for the MPI2/QSPI clock tree. Selecting ``dll1`` or ``dll2``
+      requires the corresponding DLL child node to be enabled. Defaults to
+      ``peri`` if not provided (reset default).
+
+  sifli,usb-clk-src:
+    type: string
+    enum: ["sysclk", "dll2"]
+    default: "sysclk"
+    description: |
+      Source used for the USB full-speed controller clock. Selecting ``dll2``
+      requires the DLL2 child node to be enabled. Defaults to ``sysclk`` if not
+      provided (reset default).
+
+  sifli,usb-div:
+    type: int
+    default: 4
+    description: |
+      Divider applied to the selected USB clock source. The divided clock must
+      be 60 MHz. For example, when ``clk_dll2`` runs at 240 MHz the divider must
+      be ``4`` (reset default).
+
 clock-cells:
   - id

@@ -73,7 +73,7 @@ struct hwspinlock_dt_spec {
  */
 #define HWSPINLOCK_CTX_INITIALIZER                                                                 \
 	{                                                                                          \
-		.lock = {0},                                                                       \
+		.lock = {},                                                                        \
 	}
 
 /**
@@ -337,7 +337,7 @@ static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ct
  *
  * @param dev HW spinlock device instance.
  *
- * @retval HW spinlock max ID.
+ * @return HW spinlock max ID.
  */
 static inline uint32_t hw_spinlock_get_max_id(const struct device *dev)
 {

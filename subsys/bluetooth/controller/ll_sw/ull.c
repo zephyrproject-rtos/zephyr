@@ -86,7 +86,15 @@
 #include "ll_test.h"
 #include "ll_settings.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "hal/debug.h"
+
+#define TEST_TICKER_NODES         (TICKER_NODES)
+#define TEST_TICKER_TICKS_SLOT_US 100000U
+#define TEST_TICKER_INTERVAL_US   (((TEST_TICKER_TICKS_SLOT_US) + \
+				    (HAL_TICKER_RESCHEDULE_MARGIN_US)) * \
+				   (TEST_TICKER_NODES))
 
 #if defined(CONFIG_BT_BROADCASTER)
 #define BT_ADV_TICKER_NODES ((TICKER_ID_ADV_LAST) - (TICKER_ID_ADV_STOP) + 1)
@@ -459,6 +467,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_SCAN_SYNC_ISO_SET 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#define BT_CTLR_CONN_ISO_STREAMS CONFIG_BT_CTLR_CONN_ISO_STREAMS
+#else
+#define BT_CTLR_CONN_ISO_STREAMS 0
+#endif
+
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
@@ -508,7 +522,7 @@ static struct {
 	(sizeof(memq_link_t) *                                                 \
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
 	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
-	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
+	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) + BT_CTLR_CONN_ISO_STREAMS +         \
 	  (IQ_REPORT_CNT)))
 static struct {
 	uint16_t quota_pdu; /* Number of un-utilized buffers */
@@ -548,6 +562,16 @@ static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 static void *mark_disable;
+
+#if defined(CONFIG_BT_CTLR_TEST)
+static struct k_sem sem_test_ticker;
+static uint32_t test_ticker_latency_ticks;
+static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
+			   uint16_t lazy, uint8_t force, void *context);
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext test_ticker_ext[TEST_TICKER_NODES];
+#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* CONFIG_BT_CTLR_TEST */
 
 static inline int init_reset(void);
 static void perform_lll_reset(void *param);
@@ -627,7 +651,7 @@ int ll_init(struct k_sem *sem_rx)
 			  hal_ticker_instance0_caller_id_get,
 			  hal_ticker_instance0_sched,
 			  hal_ticker_instance0_trigger_set);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	/* Initialize semaphore for ticker API blocking wait */
 	k_sem_init(&sem_ticker_api_cb, 0, 1);
@@ -774,6 +798,65 @@ int ll_init(struct k_sem *sem_rx)
 		return err;
 	}
 
+	k_sem_init(&sem_test_ticker, 0, TEST_TICKER_NODES);
+
+	const uint32_t ticks_now = ticker_ticks_now_get();
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		uint32_t ret;
+
+#if defined(CONFIG_BT_TICKER_EXT)
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		test_ticker_ext[ticker_id].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS((TEST_TICKER_INTERVAL_US) +
+						(TEST_TICKER_TICKS_SLOT_US));
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+		ret = ticker_start_ext(
+#else /* !CONFIG_BT_TICKER_EXT */
+		ret = ticker_start(
+#endif /* !CONFIG_BT_TICKER_EXT */
+			  TICKER_INSTANCE_ID_CTLR /* instance */
+			, TICKER_USER_ID_THREAD /* user */
+			, ticker_id /* ticker id */
+			, ticks_now /* anchor point */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_INTERVAL_US) /* first interval */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_INTERVAL_US) /* periodic interval */
+			, HAL_TICKER_REMAINDER(TEST_TICKER_INTERVAL_US) /* remainder */
+			, 0 /* lazy */
+			, HAL_TICKER_US_TO_TICKS(TEST_TICKER_TICKS_SLOT_US) /* slot */
+			, test_ticker_cb /* timeout callback function */
+			, (void *)(uint32_t)ticker_id /* context */
+			, 0 /* op func */
+			, 0 /* op context */
+#if defined(CONFIG_BT_TICKER_EXT)
+			, &test_ticker_ext[ticker_id]
+#endif /* CONFIG_BT_TICKER_EXT */
+			);
+		LL_ASSERT_ERR(ret == TICKER_STATUS_SUCCESS);
+	}
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		k_sem_take(&sem_test_ticker, K_FOREVER);
+	}
+
+	for (uint8_t ticker_id = 0U; ticker_id < TEST_TICKER_NODES; ticker_id++) {
+		uint32_t ret;
+
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_THREAD,
+				  ticker_id,
+				  NULL,
+				  NULL);
+		LL_ASSERT_ERR(ret == TICKER_STATUS_SUCCESS);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		printk("%s: Radio %u, LLL %u, ULL_HIGH %u, ULL_LOW %u, Latency %u.\n",
+		       __func__, lll_prof_radio_get(), lll_prof_lll_get(), lll_prof_ull_high_get(),
+		       lll_prof_ull_low_get(), HAL_TICKER_TICKS_TO_US(test_ticker_latency_ticks));
+	}
+
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 	lll_chan_sel_2_ut();
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
@@ -816,12 +899,12 @@ void ll_reset(void)
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	/* Reset adv iso sets */
 	err = ull_adv_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	/* Reset adv state */
 	err = ull_adv_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -829,43 +912,43 @@ void ll_reset(void)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* Reset sync iso sets */
 	err = ull_sync_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	/* Reset periodic sync sets */
 	err = ull_sync_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	/* Reset scan state */
 	err = ull_scan_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	err = ull_peripheral_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	err = ull_central_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	err = ull_conn_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	err = ull_iso_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_ISO */
 
 #if defined(CONFIG_BT_CONN)
 	/* Reset conn role */
 	err = ull_conn_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
@@ -912,7 +995,7 @@ void ll_reset(void)
 
 		retval = mayfly_enqueue(TICKER_USER_ID_THREAD,
 					TICKER_USER_ID_LLL, 0, &mfy);
-		LL_ASSERT(!retval);
+		LL_ASSERT_ERR(!retval);
 
 #if !defined(CONFIG_BT_CTLR_ZLI)
 		/* LLL reset must complete before returning - wait for
@@ -925,7 +1008,7 @@ void ll_reset(void)
 #if defined(CONFIG_BT_BROADCASTER)
 	/* Finalize after adv state LLL context reset */
 	err = ull_adv_reset_finalize();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_BROADCASTER */
 
 	/* Reset/End DTM Tx or Rx commands */
@@ -938,7 +1021,7 @@ void ll_reset(void)
 
 	/* Common to init and reset */
 	err = init_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 #if defined(CONFIG_BT_CTLR_DF)
 	/* Direction Finding has to be reset after ull init_reset call because
@@ -946,7 +1029,7 @@ void ll_reset(void)
 	 *  in common ull init_reset.
 	 */
 	err = ull_df_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif
 
 #if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
@@ -1101,7 +1184,7 @@ void ll_rx_dequeue(void)
 
 	link = memq_dequeue(memq_ll_rx.tail, &memq_ll_rx.head,
 			    (void **)&rx);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 	ll_rx_link_release(link);
 
@@ -1129,7 +1212,7 @@ void ll_rx_dequeue(void)
 		while (rx_curr) {
 			memq_link_t *link_free;
 
-			LL_ASSERT(loop);
+			LL_ASSERT_ERR(loop);
 			loop--;
 
 			link_free = rx_curr->hdr.link;
@@ -1154,7 +1237,7 @@ void ll_rx_dequeue(void)
 		struct lll_adv_aux *lll_aux;
 
 		adv = ull_adv_set_get(rx->hdr.handle);
-		LL_ASSERT(adv);
+		LL_ASSERT_DBG(adv);
 
 		lll_aux = adv->lll.aux;
 		if (lll_aux) {
@@ -1174,11 +1257,11 @@ void ll_rx_dequeue(void)
 			break;
 		}
 
-		LL_ASSERT(!lll_conn->link_tx_free);
+		LL_ASSERT_DBG(!lll_conn->link_tx_free);
 
 		memq_link_t *memq_link = memq_deinit(&lll_conn->memq_tx.head,
 						     &lll_conn->memq_tx.tail);
-		LL_ASSERT(memq_link);
+		LL_ASSERT_DBG(memq_link);
 
 		lll_conn->link_tx_free = memq_link;
 
@@ -1223,13 +1306,13 @@ void ll_rx_dequeue(void)
 				memq_link_t *memq_link;
 
 				conn_lll = lll->conn;
-				LL_ASSERT(conn_lll);
+				LL_ASSERT_DBG(conn_lll);
 				lll->conn = NULL;
 
-				LL_ASSERT(!conn_lll->link_tx_free);
+				LL_ASSERT_DBG(!conn_lll->link_tx_free);
 				memq_link = memq_deinit(&conn_lll->memq_tx.head,
 							&conn_lll->memq_tx.tail);
-				LL_ASSERT(memq_link);
+				LL_ASSERT_DBG(memq_link);
 				conn_lll->link_tx_free = memq_link;
 
 				conn = HDR_LLL2ULL(conn_lll);
@@ -1294,7 +1377,7 @@ void ll_rx_dequeue(void)
 			scan->is_enabled = 0U;
 #else /* !CONFIG_BT_CENTRAL */
 		} else {
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 #endif /* !CONFIG_BT_CENTRAL */
 		}
 
@@ -1416,11 +1499,11 @@ void ll_rx_dequeue(void)
 	 * code block.
 	 */
 	case NODE_RX_TYPE_NONE:
-		LL_ASSERT(rx->hdr.type != NODE_RX_TYPE_NONE);
+		LL_ASSERT_DBG(rx->hdr.type != NODE_RX_TYPE_NONE);
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -1432,11 +1515,11 @@ void ll_rx_dequeue(void)
 		struct ll_scan_set *scan;
 
 		adv = ull_adv_is_enabled_get(0);
-		LL_ASSERT(adv);
+		LL_ASSERT_DBG(adv);
 		adv->is_enabled = 0U;
 
 		scan = ull_scan_is_enabled_get(0);
-		LL_ASSERT(scan);
+		LL_ASSERT_DBG(scan);
 
 		scan->is_enabled = 0U;
 
@@ -1520,7 +1603,7 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_CENTRAL */
 
 			} else {
-				LL_ASSERT(!cc->status);
+				LL_ASSERT_DBG(!cc->status);
 			}
 		}
 
@@ -1607,7 +1690,7 @@ void ll_rx_mem_release(void **node_rx)
 		 * code block.
 		 */
 		case NODE_RX_TYPE_NONE:
-			LL_ASSERT(rx_free->hdr.type != NODE_RX_TYPE_NONE);
+			LL_ASSERT_DBG(rx_free->hdr.type != NODE_RX_TYPE_NONE);
 			ll_rx_link_quota_inc();
 			ll_rx_release(rx_free);
 			break;
@@ -1652,7 +1735,7 @@ void ll_rx_mem_release(void **node_rx)
 
 				break;
 			} else {
-				LL_ASSERT(status == BT_HCI_ERR_OP_CANCELLED_BY_HOST);
+				LL_ASSERT_DBG(status == BT_HCI_ERR_OP_CANCELLED_BY_HOST);
 
 				/* Fall through and release sync context */
 			}
@@ -1716,18 +1799,18 @@ void ll_rx_mem_release(void **node_rx)
 				memq_link_t *link;
 
 				conn = ll_conn_get(rx_free->hdr.handle);
-				LL_ASSERT(conn != NULL);
+				LL_ASSERT_DBG(conn != NULL);
 
-				LL_ASSERT(!conn->lll.link_tx_free);
+				LL_ASSERT_DBG(!conn->lll.link_tx_free);
 				link = memq_deinit(&conn->lll.memq_tx.head,
 						&conn->lll.memq_tx.tail);
-				LL_ASSERT(link);
+				LL_ASSERT_DBG(link);
 				conn->lll.link_tx_free = link;
 
 				ll_conn_release(conn);
 			} else if (IS_CIS_HANDLE(rx_free->hdr.handle)) {
-				ll_rx_link_quota_inc();
-				ll_rx_release(rx_free);
+				/* Notify ull_conn_iso */
+				ull_conn_iso_cis_terminate_done(rx_free);
 			}
 		}
 		break;
@@ -1735,7 +1818,7 @@ void ll_rx_mem_release(void **node_rx)
 
 		case NODE_RX_TYPE_EVENT_DONE:
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 	}
@@ -1747,7 +1830,7 @@ void ll_rx_mem_release(void **node_rx)
 
 static void ll_rx_link_quota_update(int8_t delta)
 {
-	LL_ASSERT(delta <= 0 || mem_link_rx.quota_pdu < RX_CNT);
+	LL_ASSERT_DBG(delta <= 0 || mem_link_rx.quota_pdu < RX_CNT);
 	mem_link_rx.quota_pdu += delta;
 }
 
@@ -1837,7 +1920,7 @@ void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx)
 	uint8_t idx;
 
 	idx = MFIFO_ENQUEUE_GET(tx_ack, (void **)&tx);
-	LL_ASSERT(tx);
+	LL_ASSERT_ERR(tx);
 
 	tx->handle = handle;
 	tx->node = node_tx;
@@ -1868,7 +1951,7 @@ void ll_radio_state_abort(void)
 
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 uint32_t ll_radio_state_is_idle(void)
@@ -1922,11 +2005,21 @@ void ull_ticker_status_give(uint32_t status, void *param)
 uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if ((ret == TICKER_STATUS_BUSY) || (*ret_cb != TICKER_STATUS_BUSY)) {
+		/* lll_prepare_done() will disable ULL_LOW execution context when inside a Radio
+		 * event. Hence, force enable ULL_LOW execution context here so that ticker
+		 * operation be processed.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+			mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_LOW, 1U);
+		}
+
 		/* Operation is either pending of completed via callback
 		 * prior to this function call. Take the semaphore and wait,
 		 * or take it to balance take/give counting.
 		 */
 		k_sem_take(&sem_ticker_api_cb, K_FOREVER);
+
 		return *ret_cb;
 	}
 
@@ -2053,7 +2146,7 @@ int ull_disable(void *lll)
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	err = k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
 	if (err != 0) {
@@ -2195,7 +2288,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		/* Assert if we exceed iterations processing the prepare queue
 		 */
-		LL_ASSERT(loop);
+		LL_ASSERT_ERR(loop);
 		loop--;
 
 		/* Let LLL invoke the `prepare` interface if radio not in active
@@ -2210,7 +2303,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			mfy.param = next;
 			ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0,
 					     &mfy);
-			LL_ASSERT(!ret);
+			LL_ASSERT_ERR(!ret);
 		}
 
 		MFIFO_DEQUEUE(prep);
@@ -2372,6 +2465,30 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 }
 #endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SYNC_PERIODIC */
 
+#if defined(CONFIG_BT_CTLR_TEST)
+static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
+			   uint16_t lazy, uint8_t force, void *context)
+{
+	uint32_t ticks_latency;
+	uint32_t ticks_now;
+
+	ticks_now = ticker_ticks_now_get();
+	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
+	if (ticks_latency > test_ticker_latency_ticks) {
+		test_ticker_latency_ticks = ticks_latency;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		printk("%s: %u/%u at %u + %u + %u us (ULL_LOW %u us)\n", __func__,
+		       (uint32_t)context, TEST_TICKER_NODES,
+		       HAL_TICKER_TICKS_TO_US(ticks_at_expire), HAL_TICKER_TICKS_TO_US(ticks_drift),
+		       HAL_TICKER_TICKS_TO_US(ticks_latency), lll_prof_ull_low_get());
+	}
+
+	k_sem_give(&sem_test_ticker);
+}
+#endif /* CONFIG_BT_CTLR_TEST */
+
 static inline int init_reset(void)
 {
 	memq_link_t *link;
@@ -2391,14 +2508,14 @@ static inline int init_reset(void)
 
 	/* Acquire a link to initialize ull rx memq */
 	link = mem_acquire(&mem_link_rx.free);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 	/* Initialize ull rx memq */
 	MEMQ_INIT(ull_rx, link);
 
 	/* Acquire a link to initialize ll rx memq */
 	link = mem_acquire(&mem_link_rx.free);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 	/* Initialize ll rx memq */
 	MEMQ_INIT(ll_rx, link);
@@ -2428,29 +2545,29 @@ static void perform_lll_reset(void *param)
 
 	/* Reset LLL */
 	err = lll_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	/* Reset adv state */
 	err = lll_adv_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
 	/* Reset scan state */
 	err = lll_scan_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
 	/* Reset conn role */
 	err = lll_conn_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_DF)
 	err = lll_df_reset();
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if !defined(CONFIG_BT_CTLR_ZLI)
@@ -2611,7 +2728,7 @@ static void rx_demux(void *param)
 
 		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail, (void **)&rx);
 		if (link) {
-			LL_ASSERT(rx);
+			LL_ASSERT_DBG(rx);
 
 #if defined(CONFIG_BT_CONN)
 			link_tx = ull_conn_ack_by_last_peek(rx->ack_last, &handle, &tx);
@@ -2910,7 +3027,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		conn = ll_conn_get(rx->handle);
-		LL_ASSERT(conn != NULL);
+		LL_ASSERT_DBG(conn != NULL);
 
 		if (ull_cp_cc_awaiting_established(conn)) {
 			ull_cp_cc_established(conn, BT_HCI_ERR_SUCCESS);
@@ -3021,7 +3138,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		rx_demux_rx_proprietary(link, rx, memq_ull_rx.tail,
 					&memq_ull_rx.head);
 #else
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 	}
 	break;
@@ -3037,7 +3154,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* Decrement prepare reference if ULL will not resume */
 	ull_hdr = done->param;
 	if (ull_hdr) {
-		LL_ASSERT(ull_ref_get(ull_hdr));
+		LL_ASSERT_DBG(ull_ref_get(ull_hdr));
 		ull_ref_dec(ull_hdr);
 	} else {
 		/* No reference count decrement, event placed back as resume event in the pipeline.
@@ -3127,14 +3244,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
 	/* Release done */
 	done->extra.type = 0U;
 	release = RXFIFO_RELEASE(done, link, done);
-	LL_ASSERT(release == done);
+	LL_ASSERT_DBG(release == done);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	/* dequeue prepare pipeline */
@@ -3218,7 +3335,7 @@ void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m
  */
 uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
 {
-	LL_ASSERT(time_now_us <= ULL_TIME_WRAPPING_POINT_US);
+	LL_ASSERT_DBG(time_now_us <= ULL_TIME_WRAPPING_POINT_US);
 
 	uint32_t result = ((uint64_t)time_now_us + ULL_TIME_SPAN_FULL_US + time_diff_us) %
 				((uint64_t)ULL_TIME_SPAN_FULL_US);

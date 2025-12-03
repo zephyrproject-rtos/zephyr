@@ -309,11 +309,9 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	enum sensor_stream_data_opt data_opt;
-
-	if (fifo_wmark_cfg != NULL) {
-		data_opt = fifo_wmark_cfg->opt;
-	}
+	/* fifo_wmark_cfg is guaranteed to be non-NULL here since fifo_full_irq is true */
+	__ASSERT_NO_MSG(fifo_wmark_cfg != NULL);
+	enum sensor_stream_data_opt data_opt = fifo_wmark_cfg->opt;
 
 	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
 		uint8_t *buf;

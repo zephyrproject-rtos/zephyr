@@ -15,4 +15,3 @@ testing:
   ignore_tags:
     - bluetooth
     - spi
-    - usb

@@ -18,7 +18,7 @@
  * @brief Interfaces for counters.
  * @defgroup counter_interface Counter
  * @since 1.14
- * @version 0.8.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -339,6 +339,22 @@ static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
 }
 
 /**
+ * @brief Function to convert ticks to nanoseconds.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ * @param[in]  ticks  Ticks.
+ *
+ * @return Converted nanoseconds.
+ */
+__syscall uint64_t counter_ticks_to_ns(const struct device *dev, uint32_t ticks);
+
+static inline uint64_t z_impl_counter_ticks_to_ns(const struct device *dev,
+					       uint32_t ticks)
+{
+	return ((uint64_t)ticks * NSEC_PER_SEC) / z_impl_counter_get_frequency(dev);
+}
+
+/**
  * @brief Function to retrieve maximum top value that can be set.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
@@ -361,7 +377,7 @@ static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 __syscall int counter_start(const struct device *dev);
 
@@ -398,7 +414,7 @@ static inline int z_impl_counter_stop(const struct device *dev)
  * @param ticks Pointer to where to store the current counter value
  *
  * @retval 0 If successful.
- * @retval Negative error code on failure getting the counter value
+ * @retval <0 Negative error code on failure getting the counter value
  */
 __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
@@ -417,7 +433,7 @@ static inline int z_impl_counter_get_value(const struct device *dev,
  * @param ticks Pointer to where to store the current counter value
  *
  * @retval 0 If successful.
- * @retval Negative error code on failure getting the counter value
+ * @retval <0 Negative error code on failure getting the counter value
  */
 __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 

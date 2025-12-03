@@ -5,6 +5,8 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+ram: 320
+flash: 1536
 supported:
   - arduino_gpio
   - arduino_serial

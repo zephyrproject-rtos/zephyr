@@ -45,6 +45,18 @@ static uint8_t ppp_frame_wrapped[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x7D, 
 
 static uint8_t ppp_frame_unwrapped[] = {0xC0, 0x21, 0x01, 0x01, 0x00, 0x04};
 
+/* Custom ACCM (Only 0-15 need to be escaped) */
+static uint32_t accm_custom1 = 0x0000ffff;
+static uint8_t ppp_frame_wrapped_accm1[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x16, 0x7D,
+					    0x21, 0x7D, 0x20, 0x7D, 0x24, 0x51, 0x21, 0x7E};
+
+/* Custom ACCM (Only 16-31 need to be escaped) */
+static uint32_t accm_custom2 = 0xffff0000;
+static uint8_t ppp_frame_wrapped_accm2[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x7D, 0x36,
+					    0x01, 0x00, 0x04, 0x51, 0x21, 0x7E};
+
+static uint8_t ppp_frame_unwrapped_accm[] = {0xC0, 0x21, 0x16, 0x01, 0x00, 0x04};
+
 static uint8_t ip_frame_wrapped[] = {
 	0x7E, 0xFF, 0x7D, 0x23, 0x7D, 0x20, 0x21, 0x45, 0x7D, 0x20, 0x7D, 0x20, 0x29, 0x87, 0x6E,
 	0x40, 0x7D, 0x20, 0xE8, 0x7D, 0x31, 0xC1, 0xE9, 0x7D, 0x23, 0xFB, 0x7D, 0x25, 0x20, 0x7D,
@@ -94,10 +106,14 @@ static enum net_verdict test_net_l2_recv(struct net_if *iface, struct net_pkt *p
 static struct net_l2 test_net_l2 = {
 	.recv = test_net_l2_recv,
 };
+static struct ppp_context test_net_l2_data = {
+	.lcp.peer_options.async_map = 0xffffffff,
+};
 
 /* This emulates the network interface device which will receive unwrapped network packets */
 static struct net_if_dev test_net_if_dev = {
 	.l2 = &test_net_l2,
+	.l2_data = &test_net_l2_data,
 	.link_addr.addr = {0x00, 0x00, 0x5E, 0x00, 0x53, 0x01},
 	.link_addr.len = NET_ETH_ADDR_LEN,
 	.link_addr.type = NET_LINK_DUMMY,
@@ -287,6 +303,9 @@ static void test_modem_ppp_before(void *f)
 		net_pkt_unref(received_packets[i]);
 	}
 
+	/* Reset ACCM */
+	test_net_l2_data.lcp.peer_options.async_map = 0xffffffff;
+
 	/* Reset packets received buffer */
 	received_packets_len = 0;
 
@@ -381,6 +400,68 @@ ZTEST(modem_ppp, test_ppp_frame_send)
 		     "Wrapped frame content is incorrect");
 }
 
+ZTEST(modem_ppp, test_ppp_frame_send_custom_accm1)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	/* Allocate net pkt */
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+
+	zassert_true(pkt != NULL, "Failed to allocate network packet");
+
+	/* Set network packet data */
+	net_pkt_cursor_init(pkt);
+	ret = net_pkt_write(pkt, ppp_frame_unwrapped_accm, sizeof(ppp_frame_unwrapped_accm));
+	zassert_true(ret == 0, "Failed to write data to allocated network packet");
+	net_pkt_set_ppp(pkt, true);
+
+	test_net_l2_data.lcp.peer_options.async_map = accm_custom1;
+
+	/* Send network packet */
+	zassert_true(test_net_send(pkt) == 0, "Failed to send PPP pkt");
+
+	/* Give modem ppp time to wrap and send frame */
+	k_msleep(1000);
+
+	/* Get any sent data */
+	ret = modem_backend_mock_get(&mock, buffer, sizeof(buffer));
+	zassert_true(ret == sizeof(ppp_frame_wrapped_accm1), "Wrapped frame length incorrect");
+	zassert_true(memcmp(buffer, ppp_frame_wrapped_accm1, ret) == 0,
+		     "Wrapped frame content is incorrect");
+}
+
+ZTEST(modem_ppp, test_ppp_frame_send_custom_accm2)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	/* Allocate net pkt */
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+
+	zassert_true(pkt != NULL, "Failed to allocate network packet");
+
+	/* Set network packet data */
+	net_pkt_cursor_init(pkt);
+	ret = net_pkt_write(pkt, ppp_frame_unwrapped_accm, sizeof(ppp_frame_unwrapped_accm));
+	zassert_true(ret == 0, "Failed to write data to allocated network packet");
+	net_pkt_set_ppp(pkt, true);
+
+	test_net_l2_data.lcp.peer_options.async_map = accm_custom2;
+
+	/* Send network packet */
+	zassert_true(test_net_send(pkt) == 0, "Failed to send PPP pkt");
+
+	/* Give modem ppp time to wrap and send frame */
+	k_msleep(1000);
+
+	/* Get any sent data */
+	ret = modem_backend_mock_get(&mock, buffer, sizeof(buffer));
+	zassert_true(ret == sizeof(ppp_frame_wrapped_accm2), "Wrapped frame length incorrect");
+	zassert_true(memcmp(buffer, ppp_frame_wrapped_accm2, ret) == 0,
+		     "Wrapped frame content is incorrect");
+}
+
 ZTEST(modem_ppp, test_ip_frame_receive)
 {
 	struct net_pkt *pkt;
@@ -421,7 +502,7 @@ ZTEST(modem_ppp, test_ip_frame_send)
 	net_pkt_cursor_init(pkt);
 	ret = net_pkt_write(pkt, ip_frame_unwrapped, sizeof(ip_frame_unwrapped));
 	zassert_true(ret == 0, "Failed to write data to allocated network packet");
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 
 	/* Send network packet */
 	test_net_send(pkt);
@@ -448,7 +529,7 @@ ZTEST(modem_ppp, test_ip_frame_send_multiple)
 		net_pkt_cursor_init(pkts[i]);
 		ret = net_pkt_write(pkts[i], ip_frame_unwrapped, sizeof(ip_frame_unwrapped));
 		zassert_true(ret == 0, "Failed to write data to allocated network packet");
-		net_pkt_set_family(pkts[i], AF_INET);
+		net_pkt_set_family(pkts[i], NET_AF_INET);
 	}
 
 	/* Send net pkts */
@@ -473,7 +554,7 @@ ZTEST(modem_ppp, test_ip_frame_send_large)
 					AF_UNSPEC, 0, K_NO_WAIT);
 
 	net_pkt_cursor_init(pkt);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	size = test_modem_ppp_fill_net_pkt(pkt, TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N);
 	zassert_true(size == TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N, "Failed to fill net pkt");
 	test_net_send(pkt);

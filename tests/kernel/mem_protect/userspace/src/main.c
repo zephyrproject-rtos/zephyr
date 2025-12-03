@@ -111,6 +111,18 @@ ZTEST_USER(userspace, test_is_usermode)
 }
 
 /**
+ * @brief Test to check if k_is_pre_kernel works from user mode
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST_USER(userspace, test_is_post_kernel)
+{
+	clear_fault();
+
+	zassert_false(k_is_pre_kernel(), "still pre-kernel in user mode");
+}
+
+/**
  * @brief Test to write to a control register
  *
  * @ingroup kernel_memprotect_tests

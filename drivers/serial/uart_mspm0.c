@@ -21,7 +21,6 @@
 
 struct uart_mspm0_config {
 	UART_Regs *regs;
-	uint32_t current_speed;
 	const struct mspm0_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -32,6 +31,8 @@ struct uart_mspm0_config {
 struct uart_mspm0_data {
 	/* UART clock structure */
 	DL_UART_Main_ClockConfig uart_clockconfig;
+	/* Baud Rate */
+	uint32_t current_speed;
 	/* UART config structure */
 	DL_UART_Main_Config uart_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -43,55 +44,6 @@ struct uart_mspm0_data {
 	DL_UART_IIDX pending_interrupt;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
-
-static int uart_mspm0_init(const struct device *dev)
-{
-	const struct uart_mspm0_config *config = dev->config;
-	struct uart_mspm0_data *data = dev->data;
-	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
-	uint32_t clock_rate;
-	int ret;
-
-	/* Reset power */
-	DL_UART_Main_reset(config->regs);
-	DL_UART_Main_enablePower(config->regs);
-	delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
-
-	/* Init UART pins */
-	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Set UART configs */
-	DL_UART_Main_setClockConfig(config->regs,
-				    &data->uart_clockconfig);
-	DL_UART_Main_init(config->regs, &data->uart_config);
-
-	/*
-	 * Configure baud rate by setting oversampling and baud rate divisor
-	 * from the device tree data current-speed
-	 */
-	ret = clock_control_get_rate(clk_dev,
-				(struct mspm0_sys_clock *)config->clock_subsys,
-				&clock_rate);
-	if (ret < 0) {
-		return ret;
-	}
-
-	DL_UART_Main_configBaudRate(config->regs,
-				    clock_rate,
-				    config->current_speed);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-	/* Enable UART */
-	DL_UART_Main_enable(config->regs);
-
-	return 0;
-}
 
 static int uart_mspm0_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -110,6 +62,213 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 
 	DL_UART_Main_transmitDataBlocking(config->regs, c);
 }
+
+static int uart_mspm0_install_configuration(const struct device *dev)
+{
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
+	const struct uart_mspm0_config *config = dev->config;
+	struct uart_mspm0_data *data = dev->data;
+	uint32_t clock_rate;
+	int ret;
+
+	/* Set UART configs */
+	DL_UART_Main_setClockConfig(config->regs,
+				    &data->uart_clockconfig);
+	DL_UART_Main_init(config->regs, &data->uart_config);
+
+	/*
+	 * Configure baud rate by setting oversampling and baud rate divisor
+	 * from the selected current-speed
+	 */
+	ret = clock_control_get_rate(clk_dev,
+				(struct mspm0_sys_clock *)config->clock_subsys,
+				&clock_rate);
+	if (ret < 0) {
+		return ret;
+	}
+
+	DL_UART_Main_configBaudRate(config->regs,
+				    clock_rate,
+				    data->current_speed);
+
+	return 0;
+}
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static const uint32_t uart_parity_to_mspm0[5] = {
+	DL_UART_MAIN_PARITY_NONE,
+	DL_UART_MAIN_PARITY_ODD,
+	DL_UART_MAIN_PARITY_EVEN,
+	DL_UART_MAIN_PARITY_STICK_ONE,
+	DL_UART_MAIN_PARITY_STICK_ZERO,
+};
+
+static const uint32_t uart_stop_bits_to_mspm0[4] = {
+	UINT32_MAX,
+	DL_UART_MAIN_STOP_BITS_ONE,
+	UINT32_MAX,
+	DL_UART_MAIN_STOP_BITS_TWO,
+};
+
+static const uint32_t uart_data_bits_to_mspm0[4] = {
+	DL_UART_MAIN_WORD_LENGTH_5_BITS,
+	DL_UART_MAIN_WORD_LENGTH_6_BITS,
+	DL_UART_MAIN_WORD_LENGTH_7_BITS,
+	DL_UART_MAIN_WORD_LENGTH_8_BITS,
+};
+
+static const uint32_t uart_flow_control_to_mspm0[2] = {
+	DL_UART_MAIN_FLOW_CONTROL_NONE,
+	DL_UART_MAIN_FLOW_CONTROL_RTS_CTS,
+};
+
+static int uart_mspm0_translate_in(const uint32_t value_array[],
+				   int value_array_length,
+				   uint8_t uart_cfg_value,
+				   uint32_t *mspm0_cfg_value)
+{
+	if (uart_cfg_value >= value_array_length) {
+		return -EINVAL;
+	}
+
+	if (value_array[uart_cfg_value] == UINT32_MAX) {
+		return -ENOSYS;
+	}
+
+	*mspm0_cfg_value = value_array[uart_cfg_value];
+
+	return 0;
+}
+
+static int uart_mspm0_translate_out(const uint32_t value_array[],
+				    int value_array_length,
+				    uint32_t mspm0_cfg_value,
+				    uint8_t *uart_cfg_value)
+{
+	int idx;
+
+	for (idx = 0; idx < value_array_length; idx++) {
+		if (value_array[idx] == mspm0_cfg_value) {
+			break;
+		}
+	}
+
+	if (idx == value_array_length ||
+	    value_array[idx] == UINT32_MAX) {
+		return -EINVAL;
+	}
+
+	*uart_cfg_value = (uint8_t)idx;
+
+	return 0;
+}
+
+static int uart_mspm0_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	const struct uart_mspm0_config *config = dev->config;
+	struct uart_mspm0_data *data = dev->data;
+	uint32_t value;
+	int ret;
+
+	DL_UART_Main_disable(config->regs);
+
+	data->current_speed = cfg->baudrate;
+
+	ret = uart_mspm0_translate_in(uart_parity_to_mspm0,
+				      ARRAY_SIZE(uart_parity_to_mspm0),
+				      cfg->parity,
+				      &value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->uart_config.parity = value;
+
+	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0,
+				      ARRAY_SIZE(uart_stop_bits_to_mspm0),
+				      cfg->stop_bits,
+				      &value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->uart_config.stopBits = value;
+
+	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0,
+				      ARRAY_SIZE(uart_data_bits_to_mspm0),
+				      cfg->data_bits,
+				      &value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->uart_config.wordLength = value;
+
+	ret = uart_mspm0_translate_in(uart_flow_control_to_mspm0,
+				      ARRAY_SIZE(uart_flow_control_to_mspm0),
+				      cfg->flow_ctrl,
+				      &value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->uart_config.flowControl = value;
+
+	ret = uart_mspm0_install_configuration(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	DL_UART_Main_enable(config->regs);
+
+	return 0;
+}
+
+static int uart_mspm0_config_get(const struct device *dev,
+				 struct uart_config *cfg)
+{
+	struct uart_mspm0_data *data = dev->data;
+	int ret;
+
+	cfg->baudrate = data->current_speed;
+
+	ret = uart_mspm0_translate_out(uart_parity_to_mspm0,
+				       ARRAY_SIZE(uart_parity_to_mspm0),
+				       data->uart_config.parity,
+				       &cfg->parity);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_out(uart_stop_bits_to_mspm0,
+				       ARRAY_SIZE(uart_stop_bits_to_mspm0),
+				       data->uart_config.stopBits,
+				       &cfg->stop_bits);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_out(uart_data_bits_to_mspm0,
+				       ARRAY_SIZE(uart_data_bits_to_mspm0),
+				       data->uart_config.wordLength,
+				       &cfg->data_bits);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_out(uart_flow_control_to_mspm0,
+				       ARRAY_SIZE(uart_flow_control_to_mspm0),
+				       data->uart_config.flowControl,
+				       &cfg->flow_ctrl);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_mspm0_err_check(const struct device *dev)
@@ -268,9 +427,44 @@ static void uart_mspm0_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+static int uart_mspm0_init(const struct device *dev)
+{
+	const struct uart_mspm0_config *config = dev->config;
+	int ret;
+
+	/* Reset power */
+	DL_UART_Main_reset(config->regs);
+	DL_UART_Main_enablePower(config->regs);
+	delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
+
+	/* Init UART pins */
+	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_install_configuration(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	config->irq_config_func(dev);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	/* Enable UART */
+	DL_UART_Main_enable(config->regs);
+
+	return 0;
+}
+
 static DEVICE_API(uart, uart_mspm0_driver_api) = {
 	.poll_in = uart_mspm0_poll_in,
 	.poll_out = uart_mspm0_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_mspm0_configure,
+	.config_get = uart_mspm0_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.err_check = uart_mspm0_err_check,
 	.fifo_fill = uart_mspm0_fifo_fill,
@@ -315,7 +509,6 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 												\
 	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			\
 		.regs = (UART_Regs *)DT_INST_REG_ADDR(index),					\
-		.current_speed = DT_INST_PROP(index, current_speed),				\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				\
 		.clock_subsys = &mspm0_uart_sys_clock##index,					\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					\
@@ -327,6 +520,7 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
 			.divideRatio = MSPM0_MAIN_CLK_DIV(index),				\
 		 },										\
+		.current_speed = DT_INST_PROP(index, current_speed),				\
 		.uart_config = {.mode = DL_UART_MAIN_MODE_NORMAL,				\
 				.direction = DL_UART_MAIN_DIRECTION_TX_RX,			\
 				.flowControl = (DT_INST_PROP(index, hw_flow_control)		\

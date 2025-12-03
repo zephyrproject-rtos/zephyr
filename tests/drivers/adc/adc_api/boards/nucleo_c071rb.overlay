@@ -12,7 +12,6 @@
 };
 
 &adc1 {
-
 	dmas = <&dmamux1 0 5 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
 		STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "dmamux";

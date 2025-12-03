@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -178,7 +179,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x58000800 0x400>;
 			num-lines = <64>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -248,7 +249,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 7>;
 			status = "disabled";
@@ -349,6 +350,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -424,6 +430,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x50040000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -557,8 +564,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FFF75A8>;
-		ts-cal2-addr = <0x1FFF75CA>;
+		ts-cal1-addr = <0x1fff75a8>;
+		ts-cal2-addr = <0x1fff75ca>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -568,7 +575,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-addr = <0x1fff75aa>;
 		vrefint-cal-mv = <3600>;
 		io-channels = <&adc1 0>;
 		status = "disabled";

@@ -7,7 +7,7 @@
 
 #include <zephyr/version.h>
 
-#include <nwp.h>
+#include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ap.h"
 #include "siwx91x_wifi_ps.h"
@@ -119,12 +119,15 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 			return -EINVAL;
 		}
 		status->twt_capable = false;
-		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
-		status->channel = sl_ap_cfg.channel.channel;
+		status->channel = wlan_info.channel_number;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
+		status->link_mode = WIFI_4;
+		if (status->channel == 14) {
+			status->link_mode = WIFI_1;
+		}
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
 		memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
 	} else {
@@ -207,7 +210,7 @@ static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 		mode->mode = cur_mode;
 	} else if (mode->oper == WIFI_MGMT_SET) {
 		if (cur_mode != mode->mode) {
-			ret = siwx91x_nwp_mode_switch(mode->mode, false, 0);
+			ret = siwx91x_nwp_mode_switch(siwx91x_cfg->nwp_dev, mode->mode, false, 0);
 			if (ret < 0) {
 				return ret;
 			}
@@ -394,6 +397,7 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_r
 
 static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
 {
+	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	const sli_si91x_set_region_ap_request_t *sdk_reg = NULL;
 	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
 	sl_wifi_region_code_t region_code;
@@ -411,13 +415,13 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 		}
 
 		if (region_code == SL_WIFI_DEFAULT_REGION) {
-			siwx91x_store_country_code(DEFAULT_COUNTRY_CODE);
+			siwx91x_store_country_code(siwx91x_cfg->nwp_dev, DEFAULT_COUNTRY_CODE);
 			LOG_INF("Country code not supported, using default region");
 		} else {
-			siwx91x_store_country_code(reg_domain->country_code);
+			siwx91x_store_country_code(siwx91x_cfg->nwp_dev, reg_domain->country_code);
 		}
 	} else if (reg_domain->oper == WIFI_MGMT_GET) {
-		country_code = siwx91x_get_country_code();
+		country_code = siwx91x_get_country_code(siwx91x_cfg->nwp_dev);
 		memcpy(reg_domain->country_code, country_code, WIFI_COUNTRY_CODE_LEN);
 		region_code = siwx91x_map_country_code_to_region(country_code);
 
@@ -532,6 +536,13 @@ int siwx91x_set_rts_threshold(const struct device *dev, unsigned int rts_thresho
 
 static int siwx91x_dev_init(const struct device *dev)
 {
+	const struct siwx91x_config *siwx91x_cfg = dev->config;
+
+	if (!device_is_ready(siwx91x_cfg->nwp_dev)) {
+		LOG_ERR("NWP device not ready");
+		return -ENODEV;
+	}
+
 	return 0;
 }
 
@@ -568,6 +579,7 @@ static const struct net_wifi_mgmt_offload siwx91x_api = {
 };
 
 static const struct siwx91x_config siwx91x_cfg = {
+	.nwp_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
 	.scan_tx_power = DT_INST_PROP(0, wifi_max_tx_pwr_scan),
 	.join_tx_power = DT_INST_PROP(0, wifi_max_tx_pwr_join),
 };

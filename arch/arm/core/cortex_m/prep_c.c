@@ -197,9 +197,7 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
 
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)

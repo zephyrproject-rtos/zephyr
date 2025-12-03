@@ -11,7 +11,6 @@
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>

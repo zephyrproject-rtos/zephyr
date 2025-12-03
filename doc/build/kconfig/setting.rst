@@ -161,10 +161,10 @@ used.
 #. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
 
-Furthermore, applications can have SoC overlay configuration that is applied to
-it, the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
-after the main project configuration has been applied and before any board overlay
-configuration files have been applied.
+Furthermore, applications can have SoC Kconfig fragments added to the configuration,
+the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
+after the main project configuration has been applied and before any board Kconfig
+fragments files have been applied.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the

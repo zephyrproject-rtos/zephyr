@@ -17,6 +17,9 @@
 #ifdef CONFIG_MCUMGR_GRP_STAT
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_DTLS
+#include <zephyr/mgmt/mcumgr/transport/smp_udp.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -64,6 +67,20 @@ int main(void)
 	rc = fs_mount(&littlefs_mnt);
 	if (rc < 0) {
 		LOG_ERR("Error mounting littlefs [%d]", rc);
+	}
+#endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_DTLS
+	rc = setup_udp_dtls();
+
+	if (rc == 0) {
+		rc = smp_udp_open();
+
+		if (rc != 0) {
+			LOG_ERR("UDP transport open failed: %d", rc);
+		}
+	} else {
+		LOG_ERR("TLS init failed, cannot start UDP transport");
 	}
 #endif
 

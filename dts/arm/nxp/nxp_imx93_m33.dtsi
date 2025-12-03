@@ -42,6 +42,14 @@
 			reg = <0x20000000 DT_SIZE_K(124)>;
 		};
 
+		mu1: mailbox@44220000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x44220000 DT_SIZE_K(4)>;
+			interrupts = <21 0>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		iomuxc: iomuxc@443c0000 {
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x443c0000 DT_SIZE_K(64)>;

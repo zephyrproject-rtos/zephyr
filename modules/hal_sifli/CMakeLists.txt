@@ -13,6 +13,10 @@ if(CONFIG_HAS_SIFLI_HAL)
   if(CONFIG_SOC_SERIES_SF32LB52X)
     zephyr_include_directories(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb52x)
   endif()
+  zephyr_include_directories_ifdef(
+    CONFIG_BT_SF32LB
+    zephyr_include_directories(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/zephyr/blobs)
+  )
 
   if(CONFIG_USE_SIFLI_HAL)
     zephyr_library_named(hal_sifli)
@@ -22,7 +26,11 @@ if(CONFIG_HAS_SIFLI_HAL)
       HAL_TICK_PER_SECOND=${CONFIG_SYS_CLOCK_TICKS_PER_SEC}
     )
 
-    zephyr_library_include_directories(${CMAKE_CURRENT_LIST_DIR})
+    if(CONFIG_USE_SIFLI_IPC_QUEUE)
+      zephyr_compile_definitions(USING_IPC_QUEUE)
+    endif()
+
+    zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
     zephyr_include_directories(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/include)
 
     zephyr_library_sources(
@@ -43,7 +51,9 @@ if(CONFIG_HAS_SIFLI_HAL)
       CONFIG_USE_SIFLI_HAL_ADC ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_adc.c
     )
     zephyr_library_sources_ifdef(
-      CONFIG_USE_SIFLI_HAL_AON ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_hpaon.c
+      CONFIG_USE_SIFLI_HAL_AON
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_hpaon.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_lpaon.c
     )
     zephyr_library_sources_ifdef(
       CONFIG_USE_SIFLI_HAL_ATIM ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_tim_ex.c
@@ -89,6 +99,9 @@ if(CONFIG_HAS_SIFLI_HAL)
     )
     zephyr_library_sources_ifdef(
       CONFIG_USE_SIFLI_HAL_LCD ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_lcdc.c
+    )
+    zephyr_library_sources_ifdef(
+      CONFIG_USE_SIFLI_HAL_LCPU_CONFIGURE ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_lcpu_config.c
     )
     zephyr_library_sources_ifdef(
       CONFIG_USE_SIFLI_HAL_LCPU_PATCH ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_patch.c
@@ -148,6 +161,33 @@ if(CONFIG_HAS_SIFLI_HAL)
     zephyr_library_sources_ifdef(
       CONFIG_USE_SIFLI_HAL_WDT ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_wdt.c
     )
+    if(CONFIG_USE_SIFLI_IPC_QUEUE)
+      zephyr_library_sources(
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/common/circular_buf.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/common/ipc_hw.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/common/ipc_queue.c
+      )
+      zephyr_include_directories(
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/common
+      )
+    endif()
+    if(CONFIG_SOC_SERIES_SF32LB52X)
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_SF32LB
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb52x/bf0_lcpu_init.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb52x/lcpu_config_type.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb52x/lcpu_install.c
+        ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb52x/bt_rf_fulcal.c
+      )
+      if(CONFIG_USE_SIFLI_IPC_QUEUE)
+        zephyr_library_sources(
+            ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/sf32lb52x/ipc_hw_port.c
+        )
+        zephyr_include_directories(
+          ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/sf32lb52x
+        )
+      endif()
+    endif()
 
     if(CONFIG_USE_SIFLI_HAL_AES OR CONFIG_USE_SIFLI_HAL_HASH)
       zephyr_library_sources(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_aes.c)
@@ -156,5 +196,6 @@ if(CONFIG_HAS_SIFLI_HAL)
     if(CONFIG_USE_SIFLI_HAL_SD OR CONFIG_USE_SIFLI_HAL_SDHCI)
       zephyr_library_sources(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_sd_ex.c)
     endif()
+
   endif()
 endif()

@@ -8,7 +8,4 @@ if SOC_NRF9280_CPUAPP
 config NUM_IRQS
 	default 471
 
-config NRF_REGTOOL_GENERATE_UICR
-	default y
-
 endif # SOC_NRF9280_CPUAPP

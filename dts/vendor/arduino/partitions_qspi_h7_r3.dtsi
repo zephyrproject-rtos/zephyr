@@ -20,34 +20,40 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Partition 1: WiFi firmware and certificates 1MB - 4kB */
+		/* Partition 1: Master Boot Record 4kB */
+		mbr_partition: partition@0 {
+			label = "mbr";
+			reg = <0x0 DT_SIZE_K(4)>;
+		};
+
+		/* Partition 2: WiFi firmware and certificates 1MB - 4kB */
 		wlan_partition: partition@1000 {
 			label = "wlan";
 			reg = <0x001000 DT_SIZE_K(1020)>;
 		};
 
-		/* Partition 2: OTA 5MB */
+		/* Partition 3: OTA 5MB */
 		ota_partition: partition@100000 {
 			label = "ota";
 			reg = <0x100000 DT_SIZE_M(5)>;
 		};
 
-		/* Partition 3: Provisioning KVStore 1MB */
+		/* Partition 4: Provisioning KVStore 1MB */
 		kvs_partition: partition@600000 {
 			label = "kvs";
 			reg = <0x600000 DT_SIZE_M(1)>;
 		};
 
-		/* Partition 4: User data 7MB */
+		/* Partition 5: User data 7MB */
 		storage_partition: partition@700000 {
 			label = "storage";
 			reg = <0x700000 DT_SIZE_M(7)>;
 		};
 
-		/* Partition 5: Binary FW image for the Airoc WLAN */
-		airoc_firmware: partition@e80000 {
+		/* Partition 6: Binary FW image for the Airoc WLAN */
+		airoc_firmware: partition@f80000 {
 			label = "4343WA1.bin";
-			reg = <0xe80000 DT_SIZE_K(512)>;
+			reg = <0xf80000 DT_SIZE_K(512)>;
 		};
 	};
 };

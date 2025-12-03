@@ -20,6 +20,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(160)>;
 		};
 
 		cpu@1 {
@@ -62,16 +63,23 @@
 			reg = <0x20400000 DT_SIZE_K(320)>;
 		};
 
-		/*
-		 * Last 48Kb is reserved by Secure BAF, application core cannot access it.
-		 *
-		 * Do not assign the compatible for this now, when Flash API is implemented,
-		 * need to check if "soc-nv-flash" can be used or a new binding need to be
-		 * created, based on it.
-		 */
-		flash0: flash@400000 {
-			reg = <0x00400000 DT_SIZE_K(4048)>;
-			status = "disabled";
+		c40fc: flash-controller@40268000 {
+			compatible = "nxp,c40-flash-controller";
+			reg = <0x40268000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Map child address 0x0..size onto CPU 0x0040_0000.. */
+			/* Last 48Kb is reserved by Secure BAF, app core cannot access it.*/
+			ranges = <0x0 0x00400000 DT_SIZE_K(4048)>; /* 4048 KiB Flash window */
+
+			flash0: flash@0 {
+				compatible = "nxp,c40-flash";
+				reg = <0x0 DT_SIZE_K(4048)>;
+				erase-block-size = <DT_SIZE_K(8)>;  /* 8 KiB sectors */
+				write-block-size = <8>;             /* 8-byte min program unit */
+				status = "disabled";
+			};
 		};
 
 		clock: clock-controller@402c8000 {

@@ -516,6 +516,10 @@ must be enabled separately and each resource needs their own storage.
   lwm2m_enable_cache(LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
           temperature_cache, ARRAY_SIZE(temperature_cache));
 
+Applications can inspect the available space in a cached resource with
+:c:func:`lwm2m_cache_free_slots_get`, which returns the number of samples that
+can still be stored or a negative errno value if the query fails.
+
 LwM2M engine have room for four resources that have cache enabled. Limit can be increased by
 changing :kconfig:option:`CONFIG_LWM2M_MAX_CACHED_RESOURCES`. This affects a static memory usage of
 engine.

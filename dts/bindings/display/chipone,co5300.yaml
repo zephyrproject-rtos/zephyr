@@ -1,0 +1,36 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: CO5300 display controller
+
+description: The Chipone CO5300 is a Circular Display Controller
+
+compatible: "chipone,co5300"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the controller causing a hard
+      reset.  The controller receives this as an active-low signal.
+
+  backlight-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The controller receives this as an active-high signal.
+
+  tear-effect-gpios:
+    type: phandle-array
+    description: |
+      The tearing effect pin is asserted by the controller at a display
+      VSYNC interval. This permits the controller to send new display
+      data during a VSYNC interval, removing tearing.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the controller causing a hard
+      reset. The controller receives this as an active-low signal.

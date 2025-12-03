@@ -299,12 +299,21 @@
 			#gpio-cells = <2>;
 		};
 
-		adc0: adc@42e80000 {
-			compatible = "infineon,autanalog-sar-adc";
-			reg = <0x42e80000 0xf20>;
+		autanalog: analog@42e00000 {
+			reg = <0x42e00000 0x100000>;
 			interrupts = <57 4>;
-			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			#io-channel-cells = <1>;
+			ranges;
+
+			adc0: adc0@80000 {
+				compatible = "infineon,autanalog-sar-adc";
+				/* Offset within AutAnalog subsystem */
+				reg = <0x80000 0xf20>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
 		};
 
 		ipc0: ipc@422a0000 {
@@ -1055,7 +1064,7 @@
 
 		dma0: dw@42270000 {
 			#dma-cells = <1>;
-			compatible = "infineon,cat1-dma-pdl";
+			compatible = "infineon,cat1-dma";
 			reg = <0x42270000 0x10000>;
 			dma-channels = <16>;
 			interrupts = <82 4>, /* CH0 */
@@ -1079,7 +1088,7 @@
 
 		dma1: dw@42280000 {
 			#dma-cells = <1>;
-			compatible = "infineon,cat1-dma-pdl";
+			compatible = "infineon,cat1-dma";
 			reg = <0x42280000 0x10000>;
 			dma-channels = <16>;
 			interrupts = <181 4>, /* CH0 */
@@ -1105,7 +1114,7 @@
 			compatible = "infineon,cat1-sdhc-sdio";
 			reg = <0x44810000 0x2000>;
 			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
-			<154 6>; /* Consolidated interrupt for mxsdhc */
+				     <154 6>; /* Consolidated interrupt for mxsdhc */
 			status = "disabled";
 		};
 
@@ -1113,7 +1122,7 @@
 			compatible = "infineon,cat1-sdhc-sdio";
 			reg = <0x44820000 0x2000>;
 			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
-			<156 6>; /* Consolidated interrupt for mxsdhc */
+				     <156 6>; /* Consolidated interrupt for mxsdhc */
 			status = "disabled";
 		};
 	};

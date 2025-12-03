@@ -45,11 +45,13 @@
 #endif
 #elif defined(CONFIG_GIC)
 /*
- * For the platforms that use the ARM GIC, use the SGI (software generated
- * interrupt) lines 14 and 15 for testing.
+ * For platforms that use Arm's GIC, use the SGI (software generated
+ * interrupt) lines 6 and 7 for testing.
+ * SGI 0-2 are used by Zephyr for SMP IPIs.
+ * SGI 8-15 are unaccessible from Non-Secure state.
  */
-#define IRQ0_LINE	14
-#define IRQ1_LINE	15
+#define IRQ0_LINE	6
+#define IRQ1_LINE	7
 
 /*
  * Choose lower prio for IRQ0 and higher priority for IRQ1

@@ -19,7 +19,7 @@ config FLASH_STM32_XSPI
 	select PINCTRL
 	select DMA if $(DT_STM32_XSPI_HAS_DMA)
 	select USE_STM32_HAL_DMA if $(DT_STM32_XSPI_HAS_DMA)
-	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32H5X && \
+	select USE_STM32_HAL_DMA_EX if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32N6X) && \
 					$(DT_STM32_XSPI_HAS_DMA)
 	help
 	  Enable XSPI-NOR support on the STM32 family of processors.

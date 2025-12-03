@@ -84,9 +84,7 @@ extern void arc_secureshield_init(void);
 
 FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
 
 #ifdef CONFIG_ISA_ARCV3
 	arc_cluster_scm_enable();

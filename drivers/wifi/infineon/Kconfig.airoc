@@ -254,6 +254,11 @@ config CYW955573M2IPA1_SM
 	bool "CYW955573M2IPA1_SM"
 	help
 	  Infineon CYW955573M2IPA1 (SM) module
+
+config CYW55513IUBG_SM
+	bool "CYW55513IUBG_SM"
+	help
+	  Infineon CYW55513IUBG (SM) module
 endchoice
 
 endif # AIROC_WIFI

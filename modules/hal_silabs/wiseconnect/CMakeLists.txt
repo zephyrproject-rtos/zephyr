@@ -10,6 +10,7 @@ set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 zephyr_compile_definitions(
   SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_3_5
   SL_SI91X_ENABLE_LITTLE_ENDIAN
+  SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_BASE_VER
@@ -154,7 +155,7 @@ if(CONFIG_BT_SILABS_SIWX91X)
   )
 endif() # CONFIG_BT_SILABS_SIWX91X
 
-if(CONFIG_WISECONNECT_NETWORK_STACK)
+if(CONFIG_SILABS_SIWX91X_NWP)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_OS
     SL_SI91X_SI917_RAM_MEM_CONFIG=2
@@ -177,6 +178,7 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/sli_wifi_command_engine/inc
   )
   zephyr_library_sources(
+    nwp_fw_version.c
     ${WISECONNECT_DIR}/components/common/src/sl_utility.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
@@ -198,9 +200,9 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
   )
   zephyr_include_directories(.)
-endif() # CONFIG_WISECONNECT_NETWORK_STACK
+endif() # CONFIG_SILABS_SIWX91X_NWP
 
-if(CONFIG_SOC_SILABS_SLEEPTIMER)
+if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
     ${SISDK_DIR}/platform/service/sleeptimer/inc
     ${SISDK_DIR}/platform/service/sleeptimer/src
@@ -216,7 +218,14 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
     SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
     SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
   )
-endif() # CONFIG_SOC_SILABS_SLEEPTIMER
+  zephyr_code_relocate(FILES
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
+    ${SISDK_DIR}/platform/service/sleeptimer/src/sl_sleeptimer.c
+    ${ZEPHYR_BASE}/arch/arm/core/cortex_m/isr_wrapper.c
+    LOCATION RAM
+  )
+endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
 if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(
@@ -246,9 +255,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
-  ${SISDK_DIR}/platform/service/sleeptimer/src/sl_sleeptimer.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
   ${ZEPHYR_BASE}/drivers/gpio/*.c

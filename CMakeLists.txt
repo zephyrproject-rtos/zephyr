@@ -311,8 +311,13 @@ compiler_simple_options(simple_options)
 toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
-  add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+  if(CONFIG_LTO_SINGLE_THREADED)
+    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto_st>)
+    add_link_options($<TARGET_PROPERTY:linker,lto_arguments_st>)
+  else()
+    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+    add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+  endif()
 endif()
 
 if(CONFIG_STD_C23)
@@ -409,7 +414,7 @@ if(CONFIG_COMPILER_FREESTANDING)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:compiler,freestanding>>)
 endif()
 
-if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
+if(CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
   # @Intent: Set compiler specific flag to disable printf-related optimizations
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
 endif()
@@ -737,6 +742,10 @@ zephyr_get(KERNEL_VERSION_CUSTOMIZATION SYSBUILD LOCAL)
 set_property(TARGET version_h PROPERTY KERNEL_VERSION_CUSTOMIZATION ${KERNEL_VERSION_CUSTOMIZATION})
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
+  # A generator expression is used to allow applications to add their own dependencies for the
+  # file version, this might typically be the git index file if the application is in a git
+  # repository. To add a dependency to the application version file, this can be used:
+  # set_property(TARGET app_version_h PROPERTY APP_VERSION_DEPENDS <FILE>)
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h
     COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
@@ -747,6 +756,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       ${build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
+      $<TARGET_PROPERTY:app_version_h,APP_VERSION_DEPENDS>
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(
@@ -1157,7 +1167,7 @@ endif()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-if (CONFIG_CODE_DATA_RELOCATION)
+if(CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
@@ -2134,7 +2144,7 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     )
 endif()
 
-if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+if(CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
   #slidgen must be the first post-build command to be executed
   #on the Zephyr ELF to ensure that all other commands, such as
   #binary file generation, are operating on a preparated ELF.
@@ -2200,7 +2210,7 @@ if(signing_script)
 endif()
 
 # Generate USB-C VIF policies in XML format
-if (CONFIG_BUILD_OUTPUT_VIF)
+if(CONFIG_BUILD_OUTPUT_VIF)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/vif.cmake)
 endif()
 
@@ -2251,7 +2261,7 @@ if(LOG_DICT_DB_NAME_ARG)
       --build-header ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
   )
 
-  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
+  if(NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
     # If not using a separate target for generating logging dictionary
     # database, add the generation to post build command to make sure
     # the database is actually being generated.

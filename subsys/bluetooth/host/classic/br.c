@@ -710,6 +710,40 @@ void bt_hci_role_change(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_mode_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t interval = sys_le16_to_cpu(evt->interval);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (!conn) {
+		LOG_ERR("Can't find conn for handle 0x%x", handle);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_ERR("Invalid state %d", conn->state);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (evt->status) {
+		LOG_ERR("Error %d, type %d", evt->status, conn->type);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	LOG_DBG("hdl 0x%x mode %d intervel %d", handle, evt->mode, interval);
+
+	conn->br.mode = evt->mode;
+	bt_conn_notify_mode_changed(conn, evt->mode, interval);
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
 static int read_ext_features(void)
 {
 	int i;

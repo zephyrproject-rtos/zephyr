@@ -11,8 +11,8 @@
 LOG_MODULE_REGISTER(dmic_sample);
 
 #define MAX_SAMPLE_RATE  16000
-#define SAMPLE_BIT_WIDTH 16
-#define BYTES_PER_SAMPLE sizeof(int16_t)
+#define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
+#define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT     1000
 

@@ -30,12 +30,29 @@ struct i2c_cc23x0_data {
 	struct k_sem lock;
 	struct k_sem complete;
 	volatile uint32_t error;
+	uint32_t cfg;
 };
 
 struct i2c_cc23x0_config {
 	uint32_t base;
 	const struct pinctrl_dev_config *pcfg;
 };
+
+static inline void i2c_cc23x0_pm_policy_state_lock_get(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void i2c_cc23x0_pm_policy_state_lock_put(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
 
 static int i2c_cc23x0_transmit(const struct device *dev, const uint8_t *buf, uint32_t len,
 			       uint16_t addr)
@@ -53,7 +70,7 @@ static int i2c_cc23x0_transmit(const struct device *dev, const uint8_t *buf, uin
 
 	/* Single transmission */
 	if (len == 1) {
-		I2CControllerPutData(base, *buf);
+		I2CControllerPutData(base, buf[0]);
 		I2CControllerCommand(base, I2C_CONTROLLER_CMD_SINGLE_SEND);
 		k_sem_take(&data->complete, K_FOREVER);
 		return data->error == I2C_MASTER_ERR_NONE ? 0 : -EIO;
@@ -103,18 +120,19 @@ static int i2c_cc23x0_receive(const struct device *dev, uint8_t *buf, uint32_t l
 	if (len == 0) {
 		return -EIO;
 	}
-	I2CControllerSetTargetAddr(base, addr, true);
 
+	I2CControllerSetTargetAddr(base, addr, true);
 	/* Single receive */
 	if (len == 1) {
+		buf[0] = I2CControllerGetData(base);
 		I2CControllerCommand(base, I2C_CONTROLLER_CMD_SINGLE_RECEIVE);
+
 		k_sem_take(&data->complete, K_FOREVER);
 
 		if (data->error != I2C_MASTER_ERR_NONE) {
 			return -EIO;
 		}
-
-		*buf = I2CControllerGetData(base);
+		buf[0] = I2CControllerGetData(base);
 		return 0;
 	}
 
@@ -127,7 +145,6 @@ static int i2c_cc23x0_receive(const struct device *dev, uint8_t *buf, uint32_t l
 	}
 
 	buf[0] = I2CControllerGetData(base);
-
 	for (int i = 1; i < len - 1; i++) {
 		I2CControllerCommand(base, I2C_CONTROLLER_CMD_BURST_RECEIVE_CONT);
 		k_sem_take(&data->complete, K_FOREVER);
@@ -159,6 +176,7 @@ static int i2c_cc23x0_transfer(const struct device *dev, struct i2c_msg *msgs, u
 			       uint16_t addr)
 {
 	struct i2c_cc23x0_data *data = dev->data;
+	const struct i2c_cc23x0_config *config = dev->config;
 	int ret = 0;
 
 	if (num_msgs == 0) {
@@ -166,6 +184,8 @@ static int i2c_cc23x0_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	i2c_cc23x0_pm_policy_state_lock_get();
 
 	for (int i = 0; i < num_msgs; i++) {
 		/* Not supported by hardware */
@@ -184,6 +204,13 @@ static int i2c_cc23x0_transfer(const struct device *dev, struct i2c_msg *msgs, u
 			break;
 		}
 	}
+
+	while (I2CControllerBusy(config->base)) {
+		;
+	}
+
+	i2c_cc23x0_pm_policy_state_lock_put();
+
 	k_sem_give(&data->lock);
 
 	return ret;
@@ -227,6 +254,33 @@ static int i2c_cc23x0_configure(const struct device *dev, uint32_t dev_config)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+
+static int i2c_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_cc23x0_config *config = dev->config;
+	struct i2c_cc23x0_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		I2CControllerDisable(config->base);
+		I2CControllerDisableInt(config->base);
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_I2C0);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_I2C0);
+		i2c_cc23x0_configure(dev, data->cfg | I2C_MODE_CONTROLLER);
+		I2CControllerEnableInt(config->base);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 static void i2c_cc23x0_isr(const struct device *dev)
 {
 	const struct i2c_cc23x0_config *config = dev->config;
@@ -237,8 +291,12 @@ static void i2c_cc23x0_isr(const struct device *dev)
 		I2CControllerClearInt(base);
 
 		data->error = I2CControllerError(base);
-
-		k_sem_give(&data->complete);
+		if (data->error) {
+			LOG_ERR("Error [%x]", data->error);
+		}
+		if (!I2CControllerBusy(config->base)) {
+			k_sem_give(&data->complete);
+		}
 	}
 }
 
@@ -290,8 +348,8 @@ static const struct i2c_driver_api i2c_cc23x0_driver_api = {.configure = i2c_cc2
 		.complete = Z_SEM_INITIALIZER(i2c_cc23x0_##id##_data.complete, 0, 1),              \
 		.error = I2C_MASTER_ERR_NONE};                                                     \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_cc23x0_init##id, NULL, &i2c_cc23x0_##id##_data,          \
-				  &i2c_cc23x0_##id##_config, POST_KERNEL,                          \
+	I2C_DEVICE_DT_INST_DEFINE(id, i2c_cc23x0_init##id, PM_DEVICE_DT_INST_GET(id),              \
+				  &i2c_cc23x0_##id##_data, &i2c_cc23x0_##id##_config, POST_KERNEL, \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_cc23x0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC23X0_I2C);

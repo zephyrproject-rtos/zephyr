@@ -52,8 +52,11 @@ config DYNAMIC_INTERRUPTS
 
 if LOG
 
+config LOG_BACKEND_XTENSA_SIM
+	default y if SIMULATOR_XTENSA
+
 config LOG_BACKEND_ADSP
-	default y
+	default y if !SIMULATOR_XTENSA
 
 endif # LOG
 

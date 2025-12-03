@@ -4,22 +4,22 @@ Overview
 ********
 
 The STM32N6570_DK Discovery kit is a complete demonstration and development platform
-for the Arm® Cortex®‑M55 core‑based STM32N657X0H3Q microcontroller.
+for the Arm |reg| Cortex |reg|‑M55 core‑based STM32N657X0H3Q microcontroller.
 
 The STM32N6570_DK Discovery kit includes a full range of hardware features that help
-the user evaluate many peripherals, such as USB Type-C®, Octo‑SPI flash memory and
-Hexadeca‑SPI PSRAM devices, Ethernet, camera module, LCD, microSD™, audio codec,
+the user evaluate many peripherals, such as USB Type-C |reg|, Octo‑SPI flash memory and
+Hexadeca‑SPI PSRAM devices, Ethernet, camera module, LCD, microSD |trade|, audio codec,
 digital microphones, ADC, flexible extension connectors, and user button.
 The four flexible extension connectors feature easy and unlimited expansion capabilities
 for specific applications such as wireless connectivity, analog applications, and sensors.
 
 The STM32N657X0H3Q microcontroller features one USB 2.0 high‑speed/full‑speed
 Device/Host/OTG controller, one USB 2.0 high‑speed/full‑speed Device/Host/OTG controller
-with UCPD (USB Type-C® Power Delivery), one Ethernet with TSN (time-sensitive networking),
+with UCPD (USB Type-C |reg| Power Delivery), one Ethernet with TSN (time-sensitive networking),
 four I2Cs, two I3Cs, six SPIs (of which four I2S‑capable), two SAIs, with four DMIC support,
 five USARTs, five UARTs (ISO78916 interface, LIN, IrDA, up to 12.5 Mbit/s), one LPUART,
 two SDMMCs (MMC version 4.0, CE-ATA version 1.0, and SD version 1.0.1), three CAN FD
-with TTCAN capability, JTAG and SWD debugging support, and Embedded Trace Macrocell™ (ETM).
+with TTCAN capability, JTAG and SWD debugging support, and Embedded Trace Macrocell |trade| (ETM).
 
 The STM32N6570_DK Discovery kit integrates an STLINK-V3EC embedded in-circuit debugger and
 programmer for the STM32 MCU, with a USB Virtual COM port bridge and the comprehensive MCU Package.
@@ -27,10 +27,10 @@ programmer for the STM32 MCU, with a USB Virtual COM port bridge and the compreh
 Hardware
 ********
 
-- STM32N657X0H3Q Arm® Cortex®‑M55‑based microcontroller featuring ST Neural-ART Accelerator,
+- STM32N657X0H3Q Arm |reg| Cortex |reg|‑M55‑based microcontroller featuring ST Neural-ART Accelerator |trade|,
   H264 encoder, NeoChrom 2.5D GPU, and 4.2 Mbytes of contiguous SRAM, in a VFBGA264 package
 - 5" LCD module with capacitive touch panel
-- USB Type-C® with USB 2.0 HS interface, dual‑role‑power (DRP)
+- USB Type-C |reg| with USB 2.0 HS interface, dual‑role‑power (DRP)
 - USB Type-A with USB 2.0 HS interface, host, 0.5 A max
 - 1‑Gbit Ethernet with TSN (time-sensitive networking) compliant with IEEE‑802.3‑2002
 - SAI audio codec
@@ -41,15 +41,15 @@ Hardware
 - User, tamper, and reset push-buttons
 - Board connectors:
 
-  - USB Type-C®
+  - USB Type-C |reg|
   - USB Type-A
   - Ethernet RJ45
   - Camera module
-  - microSD™ card
+  - microSD |trade| card
   - LCD
   - Stereo headset jack including analog microphone input
   - Audio MEMS daughterboard expansion connector
-  - ARDUINO® Uno R3 expansion connector
+  - ARDUINO |reg| Uno R3 expansion connector
   - STMod+ expansion connector
 
 - On-board STLINK-V3EC debugger/programmer with USB re-enumeration capability:
@@ -72,6 +72,13 @@ Video
 STM32N6570-DK features a CSI camera module with a high-resolution 5‑Mpx CMOS RGB image sensor.
 This camera outputs images in RAW Bayer format which require signal processing to be displayed with
 real life colors. This Image Signal Processing could be done with a dedicated `STM32 ISP module`_.
+
+NPU
+===
+
+STM32N6570-DK also embeds the ST Neural-ART Accelerator |trade| as NPU engineered for power-efficient edge
+AI applications, such as the `Zephyr computer vision application`_ which is available as a separate
+Zephyr application.
 
 USB
 ===
@@ -389,3 +396,6 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32 ISP module:
    https://github.com/stm32-hotspot/zephyr-stm32-mw-isp
+
+.. _Zephyr computer vision application:
+   https://github.com/stm32-hotspot/zephyr-stm32n6-ai-people-detection

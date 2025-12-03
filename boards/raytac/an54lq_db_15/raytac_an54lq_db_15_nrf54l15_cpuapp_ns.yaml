@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# Copyright (c) 2025 Raytac Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+name: Raytac-AN54LQ-DB-15-nRF54l15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 256
+flash: 1524
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - adc
+  - i2s
+vendor: raytac
+sysbuild: true

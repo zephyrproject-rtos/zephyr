@@ -121,7 +121,7 @@ static enum net_verdict ptp_recv(struct net_if *iface, uint16_t ptype,
 	ARG_UNUSED(iface);
 	ARG_UNUSED(ptype);
 
-	net_pkt_set_family(pkt, AF_UNSPEC);
+	net_pkt_set_family(pkt, NET_AF_UNSPEC);
 
 	return NET_CONTINUE;
 }

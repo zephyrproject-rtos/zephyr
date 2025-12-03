@@ -1,0 +1,77 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: PSOC C3 HPPASS SAR ADC
+
+description: |
+  Infineon PSOC C3 HPPASS SAR ADC
+
+  The HPPASS (High Performance Programmable Analog Sub-System) SAR ADC
+  provides high-resolution analog-to-digital conversion capabilities
+  for the PSOC C3 family of microcontrollers.
+
+  Each ADC channel corresponds to a dedicated analog input pin, except for
+  the last four sampler inputs which are muxed.  See the device datasheet for
+  pin assignments and mux options.
+
+  Dependency: This ADC node must be a child of the HPPASS analog subsystem
+  node ("infineon,hppass-analog"), which provides clock, power, and reference
+  resources.
+
+compatible: "infineon,hppass-sar-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the HPPASS SAR ADC registers
+
+  interrupts:
+    required: true
+    description: Interrupt configuration for the HPPASS SAR ADC
+
+  "#io-channel-cells":
+    const: 1
+    description: Number of cells in an io-channel specifier
+
+  clock-frequency:
+    type: int
+    description: |
+      ADC clock frequency in Hz. If not specified, the driver will use
+      the default clock configuration.
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: |
+      Internal reference voltage in millivolts.
+
+  offset-cal:
+    type: boolean
+    description:
+      Enables Self-Calibration for offset correction within the ADC.  If left disabled,
+      the factory calibration for offset correction will be used.
+
+  gain-cal:
+    type: boolean
+    description: |
+      Enables Self-Calibration for gain within the ADC. If left disabled,
+      the factory calibration for gain will be used.
+
+  linear-cal:
+    type: boolean
+    description: |
+      Enables Self-Calibration for linearity correction within the ADC. If left disabled,
+      the factory calibration for linearity will be used.
+
+  ref-internal-source:
+    type: boolean
+    description: |
+      Selects whether the ADC uses internal (true) or external (false) reference.
+      External reference recommended for best performance.
+
+io-channel-cells:
+  - input

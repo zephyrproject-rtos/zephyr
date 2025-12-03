@@ -1,0 +1,24 @@
+identifier: weact_esp32c6_mini/esp32c6/hpcore
+name: ESP32-C6-Mini HP Core
+vendor: weact
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+  - i2c
+  - i2s
+  - netif:openthread
+
+testing:
+  ignore_tags:
+    - bluetooth

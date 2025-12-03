@@ -55,7 +55,7 @@ void sys_winstream_write(struct sys_winstream *ws,
 	/* Make room in the buffer by advancing start first (note same
 	 * len-1 from above)
 	 */
-	len = MIN(len, ws->len);
+	len = min(len, ws->len);
 	if (seq != 0) {
 		uint32_t avail = (ws->len - 1) - idx_sub(ws, end, start);
 
@@ -71,7 +71,7 @@ void sys_winstream_write(struct sys_winstream *ws,
 		data += len0 - len;
 	}
 
-	suffix = MIN(len, ws->len - end);
+	suffix = min(len, ws->len - end);
 	MEMCPY(&ws->data[end], data, suffix);
 	if (len > suffix) {
 		MEMCPY(&ws->data[0], data + suffix, len - suffix);
@@ -109,8 +109,8 @@ uint32_t sys_winstream_read(struct sys_winstream *ws,
 
 		/* Copy data */
 		copy = idx_sub(ws, ws->end, behind);
-		len = MIN(buflen, behind);
-		suffix = MIN(len, ws->len - copy);
+		len = min(buflen, behind);
+		suffix = min(len, ws->len - copy);
 		MEMCPY(buf, &ws->data[copy], suffix);
 		if (len > suffix) {
 			MEMCPY(buf + suffix, &ws->data[0], len - suffix);

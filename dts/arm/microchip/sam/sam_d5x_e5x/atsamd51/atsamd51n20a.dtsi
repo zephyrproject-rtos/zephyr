@@ -5,5 +5,5 @@
  */
 
 #include <mem.h>
-#include <microchip/sam/sam_d5x_e5x/common/samd5xe5x.dtsi>
 #include <microchip/sam/sam_d5x_e5x/common/samd5xe5x_20.dtsi>
+#include <microchip/sam/sam_d5x_e5x/common/samd5xe5x_n.dtsi>

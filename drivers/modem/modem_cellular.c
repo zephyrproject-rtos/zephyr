@@ -84,6 +84,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS,
 	MODEM_CELLULAR_EVENT_SCRIPT_FAILED,
 	MODEM_CELLULAR_EVENT_CMUX_CONNECTED,
+	MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED,
 	MODEM_CELLULAR_EVENT_DLCI1_OPENED,
 	MODEM_CELLULAR_EVENT_DLCI2_OPENED,
 	MODEM_CELLULAR_EVENT_TIMEOUT,
@@ -186,6 +187,7 @@ struct modem_cellular_config {
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec wake_gpio;
+	struct gpio_dt_spec dtr_gpio;
 	uint16_t power_pulse_duration_ms;
 	uint16_t reset_pulse_duration_ms;
 	uint16_t startup_time_ms;
@@ -261,6 +263,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "script failed";
 	case MODEM_CELLULAR_EVENT_CMUX_CONNECTED:
 		return "cmux connected";
+	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
+		return "cmux disconnected";
 	case MODEM_CELLULAR_EVENT_DLCI1_OPENED:
 		return "dlci1 opened";
 	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
@@ -1388,11 +1392,15 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 {
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
+	struct cellular_evt_modem_comms_check_result result;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		result.success = evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS;
+
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
@@ -1454,6 +1462,7 @@ static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data *dat
 
 static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_data *data)
 {
+	modem_cmux_disconnect_async(&data->cmux);
 	modem_cellular_start_timer(data, K_MSEC(2000));
 	return 0;
 }
@@ -1465,6 +1474,9 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
+		modem_cellular_stop_timer(data);
+		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
@@ -1864,7 +1876,9 @@ static void modem_cellular_cmux_handler(struct modem_cmux *cmux, enum modem_cmux
 	case MODEM_CMUX_EVENT_CONNECTED:
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_CMUX_CONNECTED);
 		break;
-
+	case MODEM_CMUX_EVENT_DISCONNECTED:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED);
+		break;
 	default:
 		break;
 	}
@@ -2120,7 +2134,6 @@ static DEVICE_API(cellular, modem_cellular_api) = {
 	.set_callback = modem_cellular_set_callback,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
@@ -2144,7 +2157,6 @@ static int modem_cellular_pm_action(const struct device *dev, enum pm_device_act
 
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				   struct net_if *iface)
@@ -2185,6 +2197,7 @@ static int modem_cellular_init(const struct device *dev)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 	struct modem_cellular_config *config = (struct modem_cellular_config *)dev->config;
+	const struct gpio_dt_spec *dtr_gpio = NULL;
 
 	data->dev = dev;
 
@@ -2208,9 +2221,15 @@ static int modem_cellular_init(const struct device *dev)
 		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	}
 
+	if (modem_cellular_gpio_is_enabled(&config->dtr_gpio)) {
+		gpio_pin_configure_dt(&config->dtr_gpio, GPIO_OUTPUT_INACTIVE);
+		dtr_gpio = &config->dtr_gpio;
+	}
+
 	{
 		const struct modem_backend_uart_config uart_backend_config = {
 			.uart = config->uart,
+			.dtr_gpio = dtr_gpio,
 			.receive_buf = data->uart_backend_receive_buf,
 			.receive_buf_size = ARRAY_SIZE(data->uart_backend_receive_buf),
 			.transmit_buf = data->uart_backend_transmit_buf,
@@ -2298,13 +2317,7 @@ static int modem_cellular_init(const struct device *dev)
 
 	modem_cellular_init_apn(data);
 
-#ifndef CONFIG_PM_DEVICE
-	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-#else
-	pm_device_init_suspended(dev);
-#endif /* CONFIG_PM_DEVICE */
-
-	return 0;
+	return pm_device_driver_init(dev, modem_cellular_pm_action);
 }
 
 /*
@@ -2848,6 +2861,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf91_slm)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
@@ -2865,7 +2879,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_ini
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XPPP=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=2", ok_match));
 
@@ -2978,6 +2992,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
+		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
 		.startup_time_ms  = (startup_ms),                                                  \
@@ -2996,8 +3011,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
+			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \

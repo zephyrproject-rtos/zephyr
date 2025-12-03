@@ -5,9 +5,6 @@
 
 if BOARD_ODROID_GO_ESP32_PROCPU
 
-config DISK_DRIVER_SDMMC
-	default y if DISK_ACCESS
-
 config SPI
 	default y if DISK_DRIVER_SDMMC
 

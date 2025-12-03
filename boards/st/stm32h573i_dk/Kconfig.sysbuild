@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_NONE
+endchoice
+
+if BOARD_STM32H573I_DK_STM32H573XX_EXT_FLASH_APP
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_SWAP_USING_OFFSET
+endchoice
+
+endif # BOARD_STM32H573I_DK_STM32H573XX_EXT_FLASH_APP

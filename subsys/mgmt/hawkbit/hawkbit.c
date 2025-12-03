@@ -77,9 +77,9 @@ static bool hawkbit_initialized;
 #ifdef CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
 #define SERVER_ADDR_LEN CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
 #elif defined(CONFIG_NET_IPV6)
-#define SERVER_ADDR_LEN INET6_ADDRSTRLEN
+#define SERVER_ADDR_LEN NET_INET6_ADDRSTRLEN
 #else
-#define SERVER_ADDR_LEN INET_ADDRSTRLEN
+#define SERVER_ADDR_LEN NET_INET_ADDRSTRLEN
 #endif
 
 static struct hawkbit_config {
@@ -467,14 +467,14 @@ static bool start_http_client(int *hb_sock)
 	struct zsock_addrinfo *addr;
 	struct zsock_addrinfo hints = {0};
 	int resolve_attempts = 10;
-	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
+	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? NET_IPPROTO_TLS_1_2 : NET_IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET6;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
 	while (resolve_attempts--) {
@@ -491,7 +491,7 @@ static bool start_http_client(int *hb_sock)
 		return false;
 	}
 
-	*hb_sock = zsock_socket(addr->ai_family, SOCK_STREAM, protocol);
+	*hb_sock = zsock_socket(addr->ai_family, NET_SOCK_STREAM, protocol);
 	if (*hb_sock < 0) {
 		LOG_ERR("Failed to create TCP socket");
 		goto err;
@@ -502,13 +502,13 @@ static bool start_http_client(int *hb_sock)
 		HAWKBIT_CERT_TAG,
 	};
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
+	if (zsock_setsockopt(*hb_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_opt,
 			     sizeof(sec_tag_opt)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto err_sock;
 	}
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
+	if (zsock_setsockopt(*hb_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
 			     sizeof(HAWKBIT_SERVER_DOMAIN)) < 0) {
 		goto err_sock;
 	}
@@ -910,7 +910,8 @@ int hawkbit_init(void)
 
 	image_ok = boot_is_img_confirmed();
 	LOG_INF("Current image is%s confirmed", image_ok ? "" : " not");
-	if (!image_ok) {
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT) && !image_ok) {
 		ret = boot_write_img_confirmed();
 		if (ret < 0) {
 			LOG_ERR("Failed to confirm current image: %d", ret);
@@ -918,10 +919,13 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked current image as OK");
-		ret = boot_erase_img_bank(flash_img_get_upload_slot());
-		if (ret < 0) {
-			LOG_ERR("Failed to erase second slot: %d", ret);
-			return ret;
+
+		if (IS_ENABLED(CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM)) {
+			ret = boot_erase_img_bank(flash_img_get_upload_slot());
+			if (ret < 0) {
+				LOG_ERR("Failed to erase second slot: %d", ret);
+				return ret;
+			}
 		}
 
 		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);

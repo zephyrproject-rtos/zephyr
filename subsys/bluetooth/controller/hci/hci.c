@@ -39,6 +39,7 @@
 #include "ll_sw/pdu.h"
 
 #include "ll_sw/lll.h"
+#include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
@@ -3222,7 +3223,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 	phy_rx = lll->phy_rx;
 
 	/* Make sure the report is generated for connection on PHY UNCODED */
-	LL_ASSERT(phy_rx != PHY_CODED);
+	LL_ASSERT_DBG(phy_rx != PHY_CODED);
 #else
 	phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -4412,7 +4413,7 @@ static void le_cis_request(struct pdu_data *pdu_data,
 	 * event.
 	 */
 	node = pdu_data;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
 
 	req = node;
 	if (!(ll_feat_get() & BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS)) ||
@@ -4459,7 +4460,7 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	 * event.
 	 */
 	node = pdu_data;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
 
 	est = node;
 	sep->status = est->status;
@@ -4518,7 +4519,7 @@ static void le_per_adv_sync_transfer_received(struct pdu_data *pdu_data_rx,
 	 * event.
 	 */
 	node = pdu_data_rx;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_past_received));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_past_received));
 
 	se = node;
 	sep->status = se->rx_sync.status;
@@ -5273,9 +5274,9 @@ NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
  * the alias is defined here.
  */
 #if defined(CONFIG_CPU_CORTEX_M)
-typedef struct bt_hci_vs_fata_error_cpu_data_cortex_m bt_hci_vs_fatal_error_cpu_data;
+static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len);
 
-static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
+static void vs_err_fatal_cpu_data_fill(struct bt_hci_vs_fatal_error_cpu_data_cortex_m *cpu_data,
 				       const struct arch_esf *esf)
 {
 	cpu_data->a1 = sys_cpu_to_le32(esf->basic.a1);
@@ -5284,9 +5285,38 @@ static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
 	cpu_data->a4 = sys_cpu_to_le32(esf->basic.a4);
 	cpu_data->ip = sys_cpu_to_le32(esf->basic.ip);
 	cpu_data->lr = sys_cpu_to_le32(esf->basic.lr);
+	cpu_data->pc = sys_cpu_to_le32(esf->basic.pc);
 	cpu_data->xpsr = sys_cpu_to_le32(esf->basic.xpsr);
 }
-#endif /* CONFIG_CPU_CORTEX_M */
+
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
+{
+	/* Prepare vendor specific HCI Fatal Error event */
+	struct bt_hci_vs_fatal_error_stack_frame *sf;
+	struct bt_hci_vs_fatal_error_cpu_data_cortex_m *cpu_data;
+	struct net_buf *buf;
+
+	buf = vs_err_evt_create(BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME,
+				sizeof(*sf) + sizeof(*cpu_data));
+	if (buf != NULL) {
+		sf = net_buf_add(buf, (sizeof(*sf) + sizeof(*cpu_data)));
+		sf->reason = sys_cpu_to_le32(reason);
+		sf->cpu_type = BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M;
+
+		vs_err_fatal_cpu_data_fill((void *)sf->cpu_data, esf);
+	} else {
+		LOG_WRN("Can't create HCI Fatal Error event");
+	}
+
+	return buf;
+}
+
+#else /* !CONFIG_CPU_CORTEX_M */
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
+{
+	return NULL;
+}
+#endif /* !CONFIG_CPU_CORTEX_M */
 
 static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 {
@@ -5305,29 +5335,6 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 
 		me = net_buf_add(buf, sizeof(*me));
 		me->subevent = subevt;
-	}
-
-	return buf;
-}
-
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
-{
-	/* Prepare vendor specific HCI Fatal Error event */
-	struct bt_hci_vs_fatal_error_stack_frame *sf;
-	bt_hci_vs_fatal_error_cpu_data *cpu_data;
-	struct net_buf *buf;
-
-	buf = vs_err_evt_create(BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME,
-				sizeof(*sf) + sizeof(*cpu_data));
-	if (buf != NULL) {
-		sf = net_buf_add(buf, (sizeof(*sf) + sizeof(*cpu_data)));
-		sf->reason = sys_cpu_to_le32(reason);
-		sf->cpu_type = BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M;
-
-		vs_err_fatal_cpu_data_fill(
-			(bt_hci_vs_fatal_error_cpu_data *)sf->cpu_data, esf);
-	} else {
-		LOG_ERR("Can't create HCI Fatal Error event");
 	}
 
 	return buf;
@@ -5520,7 +5527,7 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 	phy_rx = lll->phy_rx;
 
 	/* Make sure the report is generated for connection on PHY UNCODED */
-	LL_ASSERT(phy_rx != PHY_CODED);
+	LL_ASSERT_DBG(phy_rx != PHY_CODED);
 #else
 	phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -6300,7 +6307,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 		/* Start Fragmentation */
 		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
-		 * Currently there are cases where ISO-AL calls LL_ASSERT.
+		 * Currently there are cases where ISO-AL calls LL_ASSERT_ERR.
 		 */
 		isoal_status_t isoal_status =
 			isoal_tx_sdu_fragment(stream->dp->source_hdl, &sdu_frag_tx);
@@ -6554,7 +6561,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 		return;
 	}
 
-	LL_ASSERT(adv->type == PDU_ADV_TYPE_DIRECT_IND);
+	LL_ASSERT_DBG(adv->type == PDU_ADV_TYPE_DIRECT_IND);
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (dup_scan &&
@@ -6624,7 +6631,7 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv,
 	uint32_t instant;
 	uint8_t chan;
 
-	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
+	LL_ASSERT_DBG(adv->type == PDU_ADV_TYPE_NONCONN_IND);
 
 	/* Filter based on currently active Scan Filter */
 	if (sf_curr < ARRAY_SIZE(scan_filters) &&
@@ -7093,7 +7100,7 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		*data_len_total -= data_len_frag;
 
 		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
-		LL_ASSERT(*evt_buf);
+		LL_ASSERT_ERR(*evt_buf);
 
 		net_buf_frag_add(buf, *evt_buf);
 
@@ -7630,7 +7637,7 @@ no_ext_hdr:
 	 * event.
 	 */
 	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
-	LL_ASSERT(evt_buf);
+	LL_ASSERT_ERR(evt_buf);
 
 	net_buf_frag_add(buf, evt_buf);
 
@@ -7726,7 +7733,7 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	 * event.
 	 */
 	node = pdu_data;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_sync));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_sync));
 
 	se = node;
 	sep->status = se->status;
@@ -8006,7 +8013,7 @@ no_ext_hdr:
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
 				evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
-				LL_ASSERT(evt_buf);
+				LL_ASSERT_ERR(evt_buf);
 
 				net_buf_frag_add(buf, evt_buf);
 
@@ -8062,7 +8069,7 @@ no_ext_hdr:
 		 */
 		if (!evt_buf) {
 			evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
-			LL_ASSERT(evt_buf);
+			LL_ASSERT_ERR(evt_buf);
 
 			net_buf_frag_add(buf, evt_buf);
 		}
@@ -8147,7 +8154,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	 * established event.
 	 */
 	node = pdu;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_sync_iso));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_sync_iso));
 
 	se = node;
 	sep->status = se->status;
@@ -8451,7 +8458,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	 * complete event.
 	 */
 	node = pdu_data;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_cc));
 
 	cc = node;
 	status = cc->status;
@@ -8588,7 +8595,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 	 * update complete event.
 	 */
 	node = pdu_data;
-	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cu));
+	LL_ASSERT_DBG(IS_PTR_ALIGNED(node, struct node_rx_cu));
 
 	cu = node;
 	sep->status = cu->status;
@@ -8845,7 +8852,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #elif defined(CONFIG_BT_CTLR_VS_SCAN_REQ_RX)
 		le_vs_scan_req_received(pdu_data, node_rx, buf);
 #else
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
@@ -8951,13 +8958,14 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		LOG_INF("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u).",
-			pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
-			pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
-			pdu_data->profile.radio, pdu_data->profile.radio_ticks,
-			pdu_data->profile.lll, pdu_data->profile.lll_ticks,
-			pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
-			pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks);
+		printk("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u) %u\n",
+		       pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
+		       pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
+		       pdu_data->profile.radio, pdu_data->profile.radio_ticks,
+		       pdu_data->profile.lll, pdu_data->profile.lll_ticks,
+		       pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
+		       pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks,
+		       EVENT_OVERHEAD_START_US);
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
@@ -8984,7 +8992,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		return;
 	}
 }
@@ -9212,7 +9220,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		return;
 	}
 }
@@ -9243,20 +9251,20 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 		memcpy(data, pdu_data->lldata, pdu_data->len);
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		if (hci_hbuf_total > 0) {
-			LL_ASSERT((hci_hbuf_sent - hci_hbuf_acked) <
+			LL_ASSERT_DBG((hci_hbuf_sent - hci_hbuf_acked) <
 				  hci_hbuf_total);
 			hci_hbuf_sent++;
 			/* Note: This requires linear handle values starting
 			 * from 0
 			 */
-			LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
+			LL_ASSERT_DBG(handle < ARRAY_SIZE(hci_hbuf_pend));
 			hci_hbuf_pend[handle]++;
 		}
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }

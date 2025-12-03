@@ -38,10 +38,10 @@ uint8_t hal_ticker_instance0_caller_id_get(uint8_t user_id)
 {
 	uint8_t caller_id;
 
-	LL_ASSERT(user_id < sizeof(caller_id_lut));
+	LL_ASSERT_DBG(user_id < sizeof(caller_id_lut));
 
 	caller_id = caller_id_lut[user_id];
-	LL_ASSERT(caller_id != TICKER_CALL_ID_NONE);
+	LL_ASSERT_DBG(caller_id != TICKER_CALL_ID_NONE);
 
 	return caller_id;
 }
@@ -73,7 +73,7 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 		break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -96,7 +96,7 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 		break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -119,7 +119,7 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 		break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -157,7 +157,7 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 		break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -181,13 +181,13 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 		break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }

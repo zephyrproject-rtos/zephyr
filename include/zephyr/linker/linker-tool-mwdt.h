@@ -39,7 +39,7 @@
 /**
  * The GROUP_ROM_LINK_IN() macro is located at the end of the section
  * description and tells the linker that this a read-only section
- * that is physically placed at the 'lregion` argument.
+ * that is physically placed at the `region` argument.
  *
  */
 #define GROUP_ROM_LINK_IN(vregion, lregion) > lregion

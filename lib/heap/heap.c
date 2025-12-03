@@ -17,7 +17,7 @@
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 {
 	h->allocated_bytes += num_bytes;
-	h->max_allocated_bytes = MAX(h->max_allocated_bytes, h->allocated_bytes);
+	h->max_allocated_bytes = max(h->max_allocated_bytes, h->allocated_bytes);
 }
 #endif
 
@@ -321,7 +321,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	rew = align & -align;
 	if (align != rew) {
 		align -= rew;
-		gap = MIN(rew, chunk_header_bytes(h));
+		gap = min(rew, chunk_header_bytes(h));
 	} else {
 		if (align <= chunk_header_bytes(h)) {
 			return sys_heap_alloc(heap, bytes);
@@ -482,7 +482,7 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, MIN(prev_size, bytes));
+		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
@@ -516,7 +516,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, MIN(prev_size, bytes));
+		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;

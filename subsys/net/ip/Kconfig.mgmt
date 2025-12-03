@@ -95,15 +95,23 @@ config NET_MGMT_EVENT_INFO
 	  and listeners will then be able to get it. Such information depends
 	  on the type of event.
 
+if NET_MGMT_EVENT_INFO
+config NET_MGMT_EVENT_INFO_DEFAULT_DATA_SIZE
+	int "Default size of event information data"
+	default 32
+	help
+	  The default size of the data which can be passed along with an event.
+
 config NET_MGMT_EVENT_MONITOR
 	bool "Monitor network events from net shell"
-	depends on NET_SHELL && NET_MGMT_EVENT_INFO
+	depends on NET_SHELL
 	help
 	  Allow user to monitor network events from net shell using
 	  "net events [on|off]" command. The monitoring is disabled by
 	  default. Note that you should probably increase the value of
 	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
 	  any events.
+endif # NET_MGMT_EVENT_INFO
 
 config NET_MGMT_EVENT_MONITOR_STACK_SIZE
 	int "Size of the stack allocated for the event_mon_stack thread"

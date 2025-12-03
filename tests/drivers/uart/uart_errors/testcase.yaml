@@ -16,6 +16,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - sam_e54_xpro
   drivers.uart.uart_errors.async:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:

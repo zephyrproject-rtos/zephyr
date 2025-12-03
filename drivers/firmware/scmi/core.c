@@ -13,7 +13,6 @@
 LOG_MODULE_REGISTER(scmi_core);
 
 #define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
-#define SCMI_CHAN_SEM_TIMEOUT_USEC 500
 
 int scmi_status_to_errno(int scmi_status)
 {
@@ -180,7 +179,7 @@ static int scmi_send_message_interrupt(struct scmi_protocol *proto,
 	}
 
 	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
+	ret = k_sem_take(&proto->tx->sem, K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
 	if (ret < 0) {
 		LOG_ERR("failed to wait for msg reply");
 		goto out_release_mutex;

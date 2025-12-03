@@ -28,7 +28,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -203,37 +202,4 @@
 
 &sha0 {
 	status = "okay";
-};
-
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x20000>;
-		};
-
-		slot0_partition: partition@20000 {
-			label = "image-0";
-			reg = <0x00020000 0x20000>;
-		};
-
-		slot1_partition: partition@40000 {
-			label = "image-1";
-			reg = <0x00040000 0x10000>;
-		};
-
-		scratch_partition: partition@50000 {
-			label = "image-scratch";
-			reg = <0x00050000 0x10000>;
-		};
-
-		storage_partition: partition@60000 {
-			label = "storage";
-			reg = <0x00060000 0x20000>;
-		};
-	};
 };

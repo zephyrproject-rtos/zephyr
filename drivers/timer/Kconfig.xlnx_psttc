@@ -4,17 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config XLNX_PSTTC_TIMER
-	bool "Xilinx PS ttc timer support"
+	bool "Xilinx PS Triple-Timer Counter support"
 	default y
 	depends on DT_HAS_XLNX_TTCPS_ENABLED
 	select TICKLESS_CAPABLE
 	help
-	  This module implements a kernel device driver for the Xilinx ZynqMP
-	  platform provides the standard "system clock driver" interfaces.
-	  If unchecked, no timer will be used.
+	  Enable the AMD Xilinx PS Triple Timer Counter (TTC) timer driver for
+	  Zynq UltraScale+ MPSoC (ZynqMP) and Versal platforms. This TTC-based
+	  timer driver provides the "standard system clock driver" interface.
+	  If disabled, the TTC will not be used as the system timer.
 
 config XLNX_PSTTC_TIMER_INDEX
-	int "Xilinx PS ttc timer index"
+	int "Xilinx PS Triple-Timer Counter index"
 	range 0 3
 	default 0
 	depends on XLNX_PSTTC_TIMER

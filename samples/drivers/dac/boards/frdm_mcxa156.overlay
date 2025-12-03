@@ -5,7 +5,6 @@
  */
 
 / {
-
 	/*
 	 * Please note on the FRDM-MCXA156 board, DAC0 output signal port is J2-9.
 	 */

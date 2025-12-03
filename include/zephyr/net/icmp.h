@@ -76,7 +76,7 @@ typedef int (*net_icmp_handler_t)(struct net_icmp_ctx *ctx,
  */
 typedef int (*net_icmp_offload_ping_handler_t)(struct net_icmp_ctx *ctx,
 					       struct net_if *iface,
-					       struct sockaddr *dst,
+					       struct net_sockaddr *dst,
 					       struct net_icmp_ping_params *params,
 					       void *user_data);
 
@@ -95,6 +95,9 @@ struct net_icmp_ctx {
 
 	/** Opaque user supplied data */
 	void *user_data;
+
+	/** Address family the handler is registered for */
+	uint8_t family;
 
 	/** ICMP type of the response we are waiting */
 	uint8_t type;
@@ -115,8 +118,8 @@ struct net_icmp_ip_hdr {
 		struct net_ipv6_hdr *ipv6;
 	};
 
-	/** Is the header IPv4 or IPv6 one. Value of either AF_INET or AF_INET6 */
-	sa_family_t family;
+	/** Is the header IPv4 or IPv6 one. Value of either NET_AF_INET or NET_AF_INET6 */
+	net_sa_family_t family;
 };
 
 /**
@@ -160,12 +163,13 @@ struct net_icmp_ping_params {
  *        system.
  *
  * @param ctx ICMP context used in this request.
+ * @param family Address family the context is using.
  * @param type Type of ICMP message we are handling.
  * @param code Code of ICMP message we are handling.
  * @param handler Callback function that is called when a response is received.
  */
-int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
-		      net_icmp_handler_t handler);
+int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t family, uint8_t type,
+		      uint8_t code, net_icmp_handler_t handler);
 
 /**
  * @brief Cleanup the ICMP context structure. This will unregister the ICMP handler
@@ -190,7 +194,7 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx);
  */
 int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct net_if *iface,
-			       struct sockaddr *dst,
+			       struct net_sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
 
@@ -214,7 +218,7 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
  */
 int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 				       struct net_if *iface,
-				       struct sockaddr *dst,
+				       struct net_sockaddr *dst,
 				       struct net_icmp_ping_params *params,
 				       void *user_data);
 

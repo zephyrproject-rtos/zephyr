@@ -11,6 +11,8 @@
 #include <zephyr/toolchain.h>
 #if defined(CONFIG_ARM_MMU) && defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arm_mem.h>
+#elif defined(CONFIG_ARM_AARCH32_MMU)
+#include <zephyr/arch/arm/mmu/arm_mem.h>
 #endif /* CONFIG_ARM_MMU && CONFIG_ARM64 */
 
 #include <zephyr/kernel/internal/mm.h>
@@ -286,7 +288,7 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags);
  * @param[in]  addr Region base address
  * @param[in]  size Region size
  * @param[in]  align What to align the address and size to
- * @retval offset between aligned_addr and addr
+ * @return offset between aligned_addr and addr
  */
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 			  uintptr_t addr, size_t size, size_t align);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,10 @@
 #include <zephyr/drivers/flash.h>
 #include <soc.h>
 
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+#include <zephyr/drivers/ipm.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
 
@@ -49,10 +53,56 @@ struct flash_esp32_dev_config {
 	spi_dev_t *controller;
 };
 
+#ifdef CONFIG_ESP_FLASH_ASYNC
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_WORK
+K_THREAD_STACK_DEFINE(esp_flash_workqueue_stack, CONFIG_ESP_FLASH_ASYNC_WORK_STACK_SIZE);
+static struct k_work_q esp_flash_workqueue;
+#endif
+
+enum flash_op {
+	FLASH_OP_NONE,
+	FLASH_OP_READ,
+	FLASH_OP_WRITE,
+	FLASH_OP_ERASE
+};
+
+typedef void (*flash_done_cb_t)(void *);
+
+struct flash_req {
+	enum flash_op op;
+	off_t addr;
+	size_t len;
+	void *buf;
+	int result;
+};
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+enum host_remote_cmd {
+	CMD_NONE,
+	CMD_REQUEST,
+	CMD_RESPONSE
+};
+#endif
+#endif /* CONFIG_ESP_FLASH_ASYNC */
+
 struct flash_esp32_dev_data {
 #ifdef CONFIG_MULTITHREADING
-	struct k_sem sem;
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	const struct device *dev;
+	struct k_mutex lock;
+	struct flash_req req;
+	struct k_work work;
+	struct k_sem sync;
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+	const struct device *ipm;
+	struct k_work remote_work;
+	struct flash_req remote_req;
+	struct k_sem remote_sync;
 #endif
+#endif
+	struct k_sem sem;
+#endif /* CONFIG_MULTITHREADING */
 };
 
 static const struct flash_parameters flash_esp32_parameters = {
@@ -60,7 +110,7 @@ static const struct flash_parameters flash_esp32_parameters = {
 	.erase_value = 0xff,
 };
 
-#ifdef CONFIG_MULTITHREADING
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
 	struct flash_esp32_dev_data *data = dev->data;
@@ -74,12 +124,12 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 	k_sem_give(&data->sem);
 }
-#else
+#else /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
 
 #define flash_esp32_sem_take(dev) do {} while (0)
 #define flash_esp32_sem_give(dev) do {} while (0)
 
-#endif /* CONFIG_MULTITHREADING */
+#endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -87,6 +137,7 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 #include <stdint.h>
 #include <string.h>
 
+#ifdef CONFIG_ESP_FLASH_HOST
 #ifndef CONFIG_MCUBOOT
 static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length)
 {
@@ -374,11 +425,9 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	}
 #else
 	flash_esp32_sem_take(dev);
-
 	ret = flash_esp32_read_check_enc(address, buffer, length);
-
 	flash_esp32_sem_give(dev);
-#endif
+#endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
 		LOG_ERR("Flash read error: %d", ret);
@@ -388,9 +437,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	return 0;
 }
 
-static int flash_esp32_write(const struct device *dev,
-			     off_t address,
-			     const void *buffer,
+static int flash_esp32_write(const struct device *dev, off_t address, const void *buffer,
 			     size_t length)
 {
 	int ret = 0;
@@ -423,10 +470,10 @@ static int flash_esp32_write(const struct device *dev,
 	}
 #else
 	ret = flash_esp32_write_check_enc(address, buffer, length);
-#endif
+#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
 
 	flash_esp32_sem_give(dev);
-#endif
+#endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
 		LOG_ERR("Flash write error: %d", ret);
@@ -480,16 +527,168 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	}
 #else
 	ret = esp_flash_erase_region(NULL, start, len);
-#endif
+#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
 
 	flash_esp32_sem_give(dev);
-#endif
+#endif /* CONFIG_MCUBOOT */
+
 	if (ret != 0) {
 		LOG_ERR("Flash erase error: %d", ret);
 		return -EIO;
 	}
 	return 0;
 }
+#endif /* CONFIG_ESP_FLASH_HOST */
+
+#ifdef CONFIG_ESP_FLASH_ASYNC
+static IRAM_ATTR int flash_esp32_read_async(const struct device *dev, off_t address,
+					    void *buffer, size_t length)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+	struct flash_req *req = &data->req;
+
+	if (k_is_in_isr()) {
+		return -EINVAL;
+	}
+	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+		return -ETIMEDOUT;
+	}
+	req->op = FLASH_OP_READ;
+	req->addr = address;
+	req->len = length;
+	req->buf = buffer;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sync, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return req->result;
+}
+
+static IRAM_ATTR int flash_esp32_write_async(const struct device *dev, off_t address,
+					     const void *buffer, size_t length)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+	struct flash_req *req = &data->req;
+
+	if (k_is_in_isr()) {
+		return -EINVAL;
+	}
+	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+		return -ETIMEDOUT;
+	}
+	req->op = FLASH_OP_WRITE;
+	req->addr = address;
+	req->len = length;
+	req->buf = (void *)buffer;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sync, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return req->result;
+}
+
+static IRAM_ATTR int flash_esp32_erase_async(const struct device *dev, off_t start, size_t length)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+	struct flash_req *req = &data->req;
+
+	if (k_is_in_isr()) {
+		return -EINVAL;
+	}
+	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+		return -ETIMEDOUT;
+	}
+	req->op = FLASH_OP_ERASE;
+	req->addr = start;
+	req->len = length;
+	req->buf = NULL;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sync, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return req->result;
+}
+
+#ifdef CONFIG_ESP_FLASH_HOST
+static void flash_process_request(const struct device *dev, struct flash_req *req)
+{
+	switch (req->op) {
+	case FLASH_OP_READ:
+		req->result = flash_esp32_read(dev, req->addr, req->buf, req->len);
+		break;
+	case FLASH_OP_WRITE:
+		req->result = flash_esp32_write(dev, req->addr, req->buf, req->len);
+		break;
+	case FLASH_OP_ERASE:
+		req->result = flash_esp32_erase(dev, req->addr, req->len);
+		break;
+	default:
+		req->result = -EINVAL;
+		break;
+	}
+}
+#endif
+
+static IRAM_ATTR void flash_worker(struct k_work *work)
+{
+	struct flash_esp32_dev_data *data = CONTAINER_OF(work, struct flash_esp32_dev_data, work);
+
+#ifdef CONFIG_ESP_FLASH_HOST
+	if (data->req.op) {
+		flash_process_request(data->dev, &data->req);
+		data->req.op = FLASH_OP_NONE;
+		k_sem_give(&data->sync);
+	}
+#else /* CONFIG_ESP_FLASH_REMOTE */
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+	/* remote cpu -> host cpu request */
+	ipm_send(data->ipm, -1, CMD_REQUEST, &data->req, sizeof(struct flash_req));
+#else
+	ARG_UNUSED(data);
+#endif
+#endif
+}
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+#ifdef CONFIG_ESP_FLASH_HOST
+static IRAM_ATTR void flash_remote_worker(struct k_work *work)
+{
+	struct flash_esp32_dev_data *data = CONTAINER_OF(work, struct flash_esp32_dev_data,
+							remote_work);
+	if (data->remote_req.op) {
+		/* TODO: without waiting here the subsequent IPM operations would fail */
+		k_sleep(K_USEC(1));
+		flash_process_request(data->dev, &data->remote_req);
+		data->remote_req.op = FLASH_OP_NONE;
+		/* host cpu -> remote cpu response */
+		ipm_send(data->ipm, -1, CMD_RESPONSE, &data->remote_req, sizeof(struct flash_req));
+	}
+}
+#endif
+
+static void flash_cpu01_receive_cb(const struct device *ipm, void *user_data, uint32_t id,
+				volatile void *shm)
+{
+	struct flash_esp32_dev_data *data = (struct flash_esp32_dev_data *) user_data;
+	struct flash_req *req = (struct flash_req *) shm;
+
+#ifdef CONFIG_ESP_FLASH_HOST
+	if (id == CMD_REQUEST) {
+		data->remote_req = *req;
+		k_work_submit(&data->remote_work);
+	}
+#else
+	if (id == CMD_RESPONSE) {
+		data->req.result = req->result;
+		k_sem_give(&data->sync);
+	}
+#endif
+}
+#endif
+#endif /* CONFIG_ESP_FLASH_ASYNC */
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_esp32_pages_layout = {
@@ -504,10 +703,9 @@ void flash_esp32_page_layout(const struct device *dev,
 	*layout = &flash_esp32_pages_layout;
 	*layout_size = 1;
 }
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#endif
 
-static const struct flash_parameters *
-flash_esp32_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_esp32_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -517,18 +715,56 @@ flash_esp32_get_parameters(const struct device *dev)
 static int flash_esp32_init(const struct device *dev)
 {
 #ifdef CONFIG_MULTITHREADING
-	struct flash_esp32_dev_data *const dev_data = dev->data;
+	struct flash_esp32_dev_data *const data = dev->data;
 
-	k_sem_init(&dev_data->sem, 1, 1);
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	k_mutex_init(&data->lock);
+	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->sync, 0, 1);
+	k_work_init(&data->work, flash_worker);
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_WORK
+	k_work_queue_init(&esp_flash_workqueue);
+	k_work_queue_start(&esp_flash_workqueue, esp_flash_workqueue_stack,
+			   K_THREAD_STACK_SIZEOF(esp_flash_workqueue_stack),
+			   CONFIG_ESP_FLASH_ASYNC_WORK_PRIORITY, NULL);
+	k_work_submit_to_queue(&esp_flash_workqueue, &data->work);
+#endif
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_IPM
+	data->ipm = DEVICE_DT_GET(DT_NODELABEL(ipm0));
+
+	if (data->ipm) {
+		ipm_register_callback(data->ipm, flash_cpu01_receive_cb, data);
+	} else {
+		LOG_ERR("Failed to get ipm0 device");
+		return -ENODEV;
+	}
+#ifdef CONFIG_ESP_FLASH_HOST
+	k_sem_init(&data->remote_sync, 0, 1);
+	k_work_init(&data->remote_work, flash_remote_worker);
+#endif
+#endif
+
+#else /* CONFIG_ESP_FLASH_ASYNC */
+
+	k_sem_init(&data->sem, 1, 1);
+
+#endif /* CONFIG_ESP_FLASH_ASYNC */
 #endif /* CONFIG_MULTITHREADING */
-
 	return 0;
 }
 
 static DEVICE_API(flash, flash_esp32_driver_api) = {
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	.read = flash_esp32_read_async,
+	.write = flash_esp32_write_async,
+	.erase = flash_esp32_erase_async,
+#else
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,
+#endif
 	.get_parameters = flash_esp32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_esp32_page_layout,

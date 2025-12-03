@@ -1,5 +1,5 @@
 /*
- * Copyright 2024  NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -103,7 +103,9 @@ void board_early_init_hook(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	/* < Set up PLL1 */
 	const pll_setup_t pll1_Setup = {
 		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(3U) |
@@ -111,12 +113,13 @@ void board_early_init_hook(void)
 		.pllndiv = SCG_SPLLNDIV_NDIV(25U),
 		.pllpdiv = SCG_SPLLPDIV_PDIV(10U),
 		.pllmdiv = SCG_SPLLMDIV_MDIV(256U),
-		.pllRate = 24576000U};
+		.pllRate = 24576000U
+	};
 
 	/* Configure PLL1 to the desired values */
 	CLOCK_SetPLL1Freq(&pll1_Setup);
-	/* Set PLL1 CLK0 divider to value 1 */
-	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+	/* Set PLL1 CLK0 divider to value 2, then the clock is 12288000Hz. */
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 2U);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm0))
@@ -176,10 +179,6 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	CLOCK_EnableClock(kCLOCK_Gpio4);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
-	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
@@ -312,12 +311,12 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Smartdma);
 	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
-	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	/* Drive CLKOUT from FRO12M, divided by 2 to yield 6MHz clock
 	 * The camera will use this clock signal to generate
 	 * PCLK, HSYNC, and VSYNC
 	 */
-	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
-	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+	CLOCK_AttachClk(kFRO12M_to_CLKOUT);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 2U);
 #endif
 #endif
 
@@ -337,6 +336,12 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSai1Clk, 1u);
 	CLOCK_AttachClk(kPLL1_CLK0_to_SAI1);
 	CLOCK_EnableClock(kCLOCK_Sai1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_SetClkDiv(kCLOCK_DivMicfilFClk, 1U);
+	CLOCK_AttachClk(kPLL1_CLK0_to_MICFILF);
+	CLOCK_EnableClock(kCLOCK_Micfil);
 #endif
 
 	/* Set SystemCoreClock variable. */

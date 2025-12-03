@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <project>
-  <qdid>347313</qdid>
+  <qdid>376799</qdid>
   <name>Zephyr Host</name>
   <pics>
     <profile>
@@ -318,10 +318,6 @@
         <row>14</row>
       </item>
       <item>
-        <table>37b</table>
-        <row>8</row>
-      </item>
-      <item>
         <table>30a</table>
         <row>16</row>
       </item>
@@ -380,10 +376,6 @@
       <item>
         <table>14a</table>
         <row>10</row>
-      </item>
-      <item>
-        <table>27b</table>
-        <row>8</row>
       </item>
       <item>
         <table>27b</table>
@@ -751,23 +743,11 @@
       </item>
       <item>
         <table>25</table>
-        <row>2</row>
-      </item>
-      <item>
-        <table>25</table>
         <row>3</row>
       </item>
       <item>
         <table>25</table>
         <row>4</row>
-      </item>
-      <item>
-        <table>25</table>
-        <row>5</row>
-      </item>
-      <item>
-        <table>25</table>
-        <row>6</row>
       </item>
       <item>
         <table>25</table>
@@ -968,14 +948,6 @@
       <item>
         <table>35</table>
         <row>4</row>
-      </item>
-      <item>
-        <table>35</table>
-        <row>5</row>
-      </item>
-      <item>
-        <table>35</table>
-        <row>6</row>
       </item>
       <item>
         <table>35</table>
@@ -1312,10 +1284,6 @@
         <row>3a</row>
       </item>
       <item>
-        <table>9</table>
-        <row>10</row>
-      </item>
-      <item>
         <table>10</table>
         <row>6</row>
       </item>
@@ -1490,10 +1458,6 @@
       <item>
         <table>3</table>
         <row>12</row>
-      </item>
-      <item>
-        <table>3</table>
-        <row>13</row>
       </item>
       <item>
         <table>3</table>
@@ -1681,10 +1645,6 @@
       </item>
       <item>
         <table>7</table>
-        <row>3</row>
-      </item>
-      <item>
-        <table>7</table>
         <row>4</row>
       </item>
       <item>
@@ -1781,14 +1741,6 @@
       <item>
         <table>5</table>
         <row>4</row>
-      </item>
-      <item>
-        <table>6</table>
-        <row>1</row>
-      </item>
-      <item>
-        <table>6</table>
-        <row>2</row>
       </item>
     </profile>
     <profile>

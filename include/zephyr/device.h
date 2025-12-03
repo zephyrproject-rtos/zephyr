@@ -112,8 +112,9 @@ typedef int16_t device_handle_t;
 
 /* By default, device identifiers are obtained using the dependency ordinal.
  * When LLEXT_EXPORT_DEV_IDS_BY_HASH is defined, the main Zephyr binary exports
- * DT identifiers via EXPORT_SYMBOL_NAMED as hashed versions of their paths.
- * When matching extensions are built, that is what they need to look for.
+ * DT identifiers via EXPORT_GROUP_SYMBOL_NAMED as hashed versions of their
+ * paths. When matching extensions are built, that is what they need to look
+ * for.
  *
  * The ordinal or hash used in this name can be mapped to the path by
  * examining zephyr/include/generated/zephyr/devicetree_generated.h.
@@ -127,11 +128,13 @@ typedef int16_t device_handle_t;
 #if defined(CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH)
 /* Export device identifiers by hash */
 #define Z_DEVICE_EXPORT(node_id)					       \
-	EXPORT_SYMBOL_NAMED(DEVICE_DT_NAME_GET(node_id),		       \
-			    DEVICE_NAME_GET(Z_DEVICE_DT_HASH(node_id)))
-#elif defined(CONFIG_LLEXT_EXPORT_DEVICES)
+	EXPORT_GROUP_SYMBOL_NAMED(DEVICE,				       \
+				  DEVICE_DT_NAME_GET(node_id),		       \
+				  DEVICE_NAME_GET(Z_DEVICE_DT_HASH(node_id)))
+#else
 /* Export device identifiers using the builtin name */
-#define Z_DEVICE_EXPORT(node_id) EXPORT_SYMBOL(DEVICE_DT_NAME_GET(node_id))
+#define Z_DEVICE_EXPORT(node_id)					       \
+	EXPORT_GROUP_SYMBOL(DEVICE, DEVICE_DT_NAME_GET(node_id))
 #endif
 
 /**
@@ -213,8 +216,8 @@ typedef int16_t device_handle_t;
  * The device is declared with extern visibility, so a pointer to a global
  * device object can be obtained with `DEVICE_DT_GET(node_id)` from any source
  * file that includes `<zephyr/device.h>` (even from extensions, when
- * @kconfig{CONFIG_LLEXT_EXPORT_DEVICES} is enabled). Before using the
- * pointer, the referenced object should be checked using device_is_ready().
+ * @kconfig{CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_DEVICE} is enabled). Before using
+ * the pointer, the referenced object should be checked using device_is_ready().
  *
  * Note: deinit_fn will only be used if CONFIG_DEVICE_DEINIT_SUPPORT is enabled.
  *
@@ -1306,8 +1309,8 @@ device_get_dt_nodelabels(const struct device *dev)
                                                                                 \
 	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio);               \
                                                                                 \
-	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES,                                 \
-		(IF_ENABLED(DT_NODE_EXISTS(node_id),                            \
+	IF_ENABLED(CONFIG_LLEXT,                                                \
+		   (IF_ENABLED(DT_NODE_EXISTS(node_id),                         \
 				(Z_DEVICE_EXPORT(node_id);))))
 
 /**

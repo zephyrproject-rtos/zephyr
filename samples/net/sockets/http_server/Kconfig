@@ -17,7 +17,7 @@ config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
 config NET_SAMPLE_HTTPS_SERVICE
 	bool "Enable https service"
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
-	imply MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 
 if NET_SAMPLE_HTTPS_SERVICE
 
@@ -76,4 +76,5 @@ if USB_DEVICE_STACK_NEXT
 	source "samples/subsys/usb/common/Kconfig.sample_usbd"
 endif
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

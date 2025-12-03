@@ -80,7 +80,13 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp);
 
 static struct bt_a2dp *a2dp_get_connection(struct bt_conn *conn)
 {
-	struct bt_a2dp *a2dp = &connection[bt_conn_index(conn)];
+	struct bt_a2dp *a2dp;
+	size_t index;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(connection), "Conn index is out of bounds");
+
+	a2dp = &connection[index];
 
 	if (a2dp->session.br_chan.chan.conn == NULL) {
 		/* Clean the memory area before returning */

@@ -100,11 +100,11 @@
  *
  * The GROUP_ROM_LINK_IN() macro is located at the end of the section
  * description and tells the linker that this a read-only section
- * that is physically placed at the 'lregion` argument.
+ * that is physically placed at the `lregion` argument.
  *
- * If CONFIG_XIP is active, the 'lregion' area is flash memory.
+ * If CONFIG_XIP is active, the `lregion` area is flash memory.
  *
- * If CONFIG_MMU is active, the vregion argument will be used to
+ * If CONFIG_MMU is active, the `vregion` argument will be used to
  * determine where this is located in the virtual memory map, otherwise
  * it is ignored.
  *

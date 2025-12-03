@@ -71,22 +71,22 @@ enum ipv4_acd_state {
 };
 
 static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
-					    struct in_addr *sender_ip,
-					    struct in_addr *target_ip)
+					    struct net_in_addr *sender_ip,
+					    struct net_in_addr *target_ip)
 {
 	struct net_pkt *pkt, *arp;
 	int ret;
 
-	/* We provide AF_UNSPEC to the allocator: this packet does not
+	/* We provide NET_AF_UNSPEC to the allocator: this packet does not
 	 * need space for any IPv4 header.
 	 */
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_arp_hdr),
-					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
+					NET_AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
 
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ipv4_acd(pkt, true);
 
 	ret = net_arp_prepare(pkt, target_ip, sender_ip, &arp);
@@ -101,7 +101,7 @@ static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
 static void ipv4_acd_send_probe(struct net_if_addr *ifaddr)
 {
 	struct net_if *iface = net_if_get_by_index(ifaddr->ifindex);
-	struct in_addr unspecified = { 0 };
+	struct net_in_addr unspecified = { 0 };
 	struct net_pkt *pkt;
 
 	pkt = ipv4_acd_prepare_arp(iface, &unspecified, &ifaddr->address.in_addr);
@@ -306,7 +306,7 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 					  (uint8_t *)&ifaddr->address.in_addr) &&
 				 (memcmp(&arp_hdr->src_hwaddr, ll_addr->addr, ll_addr->len) != 0) &&
 				 (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
-						(uint8_t *)&(struct in_addr)INADDR_ANY_INIT)))) {
+					(uint8_t *)&(struct net_in_addr)NET_INADDR_ANY_INIT)))) {
 			NET_DBG("Conflict detected from %s for %s",
 				net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
 						   arp_hdr->hwlen),
@@ -368,7 +368,7 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 				net_mgmt_event_notify_with_info(
 					NET_EVENT_IPV4_ACD_CONFLICT, iface,
 					&ifaddr->address.in_addr,
-					sizeof(struct in_addr));
+					sizeof(struct net_in_addr));
 			}
 
 			break;

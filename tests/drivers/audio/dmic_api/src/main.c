@@ -15,21 +15,11 @@
 
 static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic_dev));
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nxp_dmic)
-#define PDM_CHANNELS 4 /* Two L/R pairs of channels */
-#define SAMPLE_BIT_WIDTH 16
-#define BYTES_PER_SAMPLE sizeof(int16_t)
-#define SLAB_ALIGN 4
+#define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
+#define PDM_CHANNELS     CONFIG_SAMPLE_PDM_CHANNELS
+#define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
+#define SLAB_ALIGN       4
 #define MAX_SAMPLE_RATE  48000
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm)
-#define PDM_CHANNELS 2
-#define SAMPLE_BIT_WIDTH 16
-#define BYTES_PER_SAMPLE sizeof(int16_t)
-#define SLAB_ALIGN 4
-#define MAX_SAMPLE_RATE  48000
-#else
-#error "Unsupported DMIC device"
-#endif
 
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT 1000

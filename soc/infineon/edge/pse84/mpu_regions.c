@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 /* We are expected to give *CONFIG_SIZE* in KB, but REGION_ATTR
  * expects bytes, so we multiply by 1024 to convert.

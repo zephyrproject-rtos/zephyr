@@ -19,6 +19,7 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - mps2/an383
+      - mps2/an385
       - mps2/an386
       - mps2/an500
       - panb611evb/nrf54l15/cpuapp
@@ -26,14 +27,16 @@ tests:
       - panb611evb/nrf54l15/cpuflpr
       - panb611evb/nrf54l15/cpuflpr/xip
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
-      - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+      - frdm_mcxw23
+      - mcxw23_evk
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -155,3 +158,14 @@ tests:
     platform_allow:
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
+  drivers.watchdog.nxp_mcxw2xx_bypass_first_32k:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="bypass_first_32k.overlay"
+    platform_allow:
+      - frdm_mcxw23
+      - mcxw23_evk
+  drivers.watchdog.pm_enabled:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y

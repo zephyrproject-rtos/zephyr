@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	chosen {
-		zephyr,flash-controller = &flc1;
-		zephyr,flash = &flash1;
-	};
-};
-
 &flash1 {
 	status = "okay";
 

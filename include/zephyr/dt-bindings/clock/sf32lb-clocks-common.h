@@ -28,7 +28,7 @@
  * @param bit Configuration bit
  */
 #define SF32LB_CLOCK_CONFIG(offset, bit) \
-	((((offset) & SF32LB_CLOCK_OFFSET_MSK) << SF32LB_CLOCK_OFFSET_POS) | \
-	 (((bit) & SF32LB_CLOCK_BIT_MSK) << SF32LB_CLOCK_BIT_POS))
+	((((offset) << SF32LB_CLOCK_OFFSET_POS) & SF32LB_CLOCK_OFFSET_MSK) | \
+	 (((bit) << SF32LB_CLOCK_BIT_POS) & SF32LB_CLOCK_BIT_MSK))
 
 #endif /* _INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_SF32LB_CLOCKS_COMMON_H_ */

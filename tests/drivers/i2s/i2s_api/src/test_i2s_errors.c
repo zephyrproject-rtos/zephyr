@@ -76,6 +76,9 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_STOP);
 	zassert_equal(err, 0, "I2S_TRIGGER_STOP unexpected error: %d", err);
 
+	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	zassert_equal(err, 0, "I2S_TRIGGER_DROP unexpected error: %d", err);
+
 	zassert_not_equal(
 		config_err, 0,
 		"I2S configuration should not be possible in states other than I2S_STATE_READY");

@@ -93,7 +93,7 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   return()
 endif()
 
-if (DEFINED ZEPHYR_BASE)
+if(DEFINED ZEPHYR_BASE)
   include_boilerplate("Zephyr base (cached)")
   return()
 endif()
@@ -110,7 +110,7 @@ get_filename_component(CURRENT_ZEPHYR_DIR ${CMAKE_CURRENT_LIST_FILE}/${ZEPHYR_RE
 get_filename_component(CURRENT_WORKSPACE_DIR ${CMAKE_CURRENT_LIST_FILE}/${WORKSPACE_RELATIVE_DIR} ABSOLUTE)
 
 string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_ZEPHYR_DIR}/" COMMON_INDEX)
-if (COMMON_INDEX EQUAL 0)
+if(COMMON_INDEX EQUAL 0)
   # Project is in Zephyr repository.
   # We are in Zephyr repository.
   set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
@@ -127,7 +127,7 @@ endif()
 
 if(NOT IS_INCLUDED)
   string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_WORKSPACE_DIR}/" COMMON_INDEX)
-  if (COMMON_INDEX EQUAL 0)
+  if(COMMON_INDEX EQUAL 0)
     # Project is in Zephyr workspace.
     # This means this Zephyr is likely the correct one, but there could be an alternative installed along-side
     # Thus, check if there is an even better candidate.

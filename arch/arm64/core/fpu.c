@@ -15,6 +15,8 @@
 /* to be found in fpu.S */
 extern void z_arm64_fpu_save(struct z_arm64_fp_context *saved_fp_context);
 extern void z_arm64_fpu_restore(struct z_arm64_fp_context *saved_fp_context);
+extern void z_arm64_sve_save(struct z_arm64_fp_context *saved_fp_context);
+extern void z_arm64_sve_restore(struct z_arm64_fp_context *saved_fp_context);
 
 #define FPU_DEBUG 0
 
@@ -53,7 +55,7 @@ static void DBG(char *msg, struct k_thread *th)
 	if (th == NULL) {
 		th = _current;
 	}
-	v = *(unsigned char *)&th->arch.saved_fp_context;
+	v = *(unsigned char *)&th->arch.saved_fp_context.neon;
 	*p++ = ' ';
 	*p++ = ((v >> 4) < 10) ? ((v >> 4) + '0') : ((v >> 4) - 10 + 'a');
 	*p++ = ((v & 15) < 10) ? ((v & 15) + '0') : ((v & 15) - 10 + 'a');
@@ -91,6 +93,46 @@ static inline void DBG_PC(char *msg, uintptr_t pc) { }
 
 #endif /* FPU_DEBUG */
 
+#ifdef CONFIG_ARM64_SVE
+
+/* Get current SVE vector length */
+static inline uint32_t z_arm64_sve_get_vl(void)
+{
+	uint32_t vl;
+
+	__asm__("rdvl %0, #1" : "=r"(vl));
+	return vl;
+}
+
+#define USE_SVE(t) ((t) && (t)->arch.saved_fp_context.sve.simd_mode == SIMD_SVE)
+
+/* Convert NEON V registers to SVE Z registers in place */
+static void convert_Vx_to_Zx(struct z_arm64_fp_context *context)
+{
+	uint32_t vl = z_arm64_sve_get_vl();
+
+	if (CONFIG_ARM64_SVE_VL_MAX <= 16 || vl <= 16) {
+		return;
+	}
+
+	/*
+	 * Since it's a union, we need to extend each 128-bit NEON register
+	 * to the full SVE vector length, working backwards to avoid overwriting
+	 * data we still need to copy.
+	 */
+	for (int i = 31; i >= 0; i--) {
+		/* Copy the 128-bit NEON value to the low 128 bits of the Z register */
+		*(__int128 *)&context->sve.z_regs[i * vl] = context->neon.v_regs[i];
+
+		/* Zero the upper part of the Z register (beyond 128 bits) */
+		memset(&context->sve.z_regs[i * vl + 16], 0, vl - 16);
+	}
+}
+
+#else
+#define USE_SVE(t) false
+#endif
+
 /*
  * Flush FPU content and disable access.
  * This is called locally and also from flush_fpu_ipi_handler().
@@ -105,19 +147,30 @@ void arch_flush_local_fpu(void)
 		uint64_t cpacr = read_cpacr_el1();
 
 		/* turn on FPU access */
-		write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
+		cpacr |= CPACR_EL1_FPEN;
+		if (USE_SVE(owner)) {
+			cpacr |= CPACR_EL1_ZEN;
+		}
+		write_cpacr_el1(cpacr);
 		barrier_isync_fence_full();
 
 		/* save current owner's content */
-		z_arm64_fpu_save(&owner->arch.saved_fp_context);
+		if (USE_SVE(owner)) {
+			z_arm64_sve_save(&owner->arch.saved_fp_context);
+		} else {
+			z_arm64_fpu_save(&owner->arch.saved_fp_context);
+		}
+
 		/* make sure content made it to memory before releasing */
 		barrier_dsync_fence_full();
+
 		/* release ownership */
 		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
 		DBG("disable", owner);
 
 		/* disable FPU access */
-		write_cpacr_el1(cpacr & ~CPACR_EL1_FPEN_NOTRAP);
+		cpacr &= ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN);
+		write_cpacr_el1(cpacr);
 		barrier_isync_fence_full();
 	}
 }
@@ -173,7 +226,7 @@ void z_arm64_fpu_enter_exc(void)
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
 	/* always deny FPU access whenever an exception is entered */
-	write_cpacr_el1(read_cpacr_el1() & ~CPACR_EL1_FPEN_NOTRAP);
+	write_cpacr_el1(read_cpacr_el1() & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
 	barrier_isync_fence_full();
 }
 
@@ -253,29 +306,48 @@ static bool simulate_str_q_insn(struct arch_esf *esf)
  * don't get interrupted that is. To ensure that we mask interrupts to
  * the triggering exception context.
  */
-void z_arm64_fpu_trap(struct arch_esf *esf)
+void z_arm64_fpu_trap(struct arch_esf *esf, uint32_t exception_class)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
 	/* check if a quick simulation can do it */
-	if (simulate_str_q_insn(esf)) {
+	if (!(IS_ENABLED(CONFIG_ARM64_SVE) && exception_class == 0x19) &&
+	    simulate_str_q_insn(esf)) {
 		return;
 	}
 
 	DBG_PC("trap entry", esf->elr);
 
+	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
+	uint64_t cpacr = read_cpacr_el1();
+
 	/* turn on FPU access */
-	write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
+	cpacr |= CPACR_EL1_FPEN;
+	if (USE_SVE(owner)) {
+		cpacr |= CPACR_EL1_ZEN;
+	}
+	write_cpacr_el1(cpacr);
 	barrier_isync_fence_full();
 
 	/* save current owner's content  if any */
-	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
-
 	if (owner) {
-		z_arm64_fpu_save(&owner->arch.saved_fp_context);
+		if (USE_SVE(owner)) {
+			z_arm64_sve_save(&owner->arch.saved_fp_context);
+			DBG("sve_save", owner);
+		} else {
+			z_arm64_fpu_save(&owner->arch.saved_fp_context);
+			DBG("fpu_save", owner);
+		}
 		barrier_dsync_fence_full();
 		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
-		DBG("save", owner);
+	}
+
+	if (IS_ENABLED(CONFIG_ARM64_SVE) && exception_class == 0x19 &&
+	    !(cpacr & CPACR_EL1_ZEN)) {
+		/* SVE trap - also enable SVE access */
+		cpacr |= CPACR_EL1_ZEN;
+		write_cpacr_el1(cpacr);
+		barrier_isync_fence_full();
 	}
 
 	if (arch_exception_depth() > 1) {
@@ -300,9 +372,45 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 	/* become new owner */
 	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
 
+#ifdef CONFIG_ARM64_SVE
+	if (exception_class == 0x19) {
+		/* SVE trap */
+		if (_current->arch.saved_fp_context.sve.simd_mode == SIMD_NEON) {
+			/* upgrade from Neon to SVE before loading regs */
+			convert_Vx_to_Zx(&_current->arch.saved_fp_context);
+		}
+		_current->arch.saved_fp_context.sve.simd_mode = SIMD_SVE;
+	} else if (_current->arch.saved_fp_context.sve.simd_mode != SIMD_SVE) {
+		/* not SVE trap and context is not SVE either */
+		if ((cpacr & CPACR_EL1_ZEN) != 0) {
+			/* disable SVE access leaving only FP */
+			cpacr &= ~CPACR_EL1_ZEN;
+			write_cpacr_el1(cpacr);
+			barrier_isync_fence_full();
+		}
+		_current->arch.saved_fp_context.sve.simd_mode = SIMD_NEON;
+	} else if ((cpacr & CPACR_EL1_ZEN) == 0) {
+		/*
+		 * Not SVE trap but context is SVE and CPACR_EL1_ZEN not set.
+		 * This is an edge case that happens when previous owner
+		 * didn't use SVE and we are not using SVE right now either
+		 * although we did in the past. We're about to restore an
+		 * SVE context so make sure SVE access is enabled.
+		 */
+		cpacr |= CPACR_EL1_ZEN;
+		write_cpacr_el1(cpacr);
+		barrier_isync_fence_full();
+	}
+#endif
+
 	/* restore our content */
-	z_arm64_fpu_restore(&_current->arch.saved_fp_context);
-	DBG("restore", NULL);
+	if (USE_SVE(_current)) {
+		z_arm64_sve_restore(&_current->arch.saved_fp_context);
+		DBG("sve_restore", NULL);
+	} else {
+		z_arm64_fpu_restore(&_current->arch.saved_fp_context);
+		DBG("fpu_restore", NULL);
+	}
 }
 
 /*
@@ -323,10 +431,14 @@ static void fpu_access_update(unsigned int exc_update_level)
 		/* We're about to execute non-exception code */
 		if (atomic_ptr_get(&_current_cpu->arch.fpu_owner) == _current) {
 			/* turn on FPU access */
-			write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
+			cpacr |= CPACR_EL1_FPEN;
+			if (USE_SVE(_current)) {
+				cpacr |= CPACR_EL1_ZEN;
+			}
+			write_cpacr_el1(cpacr);
 		} else {
 			/* deny FPU access */
-			write_cpacr_el1(cpacr & ~CPACR_EL1_FPEN_NOTRAP);
+			write_cpacr_el1(cpacr & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
 		}
 	} else {
 		/*
@@ -334,7 +446,7 @@ static void fpu_access_update(unsigned int exc_update_level)
 		 * access as we want to make sure IRQs are disabled before
 		 * granting it access (see z_arm64_fpu_trap() documentation).
 		 */
-		write_cpacr_el1(cpacr & ~CPACR_EL1_FPEN_NOTRAP);
+		write_cpacr_el1(cpacr & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
 	}
 	barrier_isync_fence_full();
 }

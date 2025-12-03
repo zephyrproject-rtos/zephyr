@@ -26,74 +26,92 @@ In the final link these definitions supersede the ones in the
 driver-specific object file.
 """
 
-import sys
 import argparse
 import os
 import pickle
+import sys
 
 from elf_parser import ZephyrElf
 
 # This is needed to load edt.pickle files.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..',
-                                'dts', 'python-devicetree', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'dts', 'python-devicetree', 'src'))
+
 
 def parse_args():
     global args
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-k", "--kernel", required=True,
-                        help="Input zephyr ELF binary")
-    parser.add_argument("--dynamic-deps", action="store_true",
-                        help="Indicates if device dependencies are dynamic")
-    parser.add_argument("-d", "--num-dynamic-devices", required=False, default=0,
-                        type=int, help="Input number of dynamic devices allowed")
-    parser.add_argument("-o", "--output-source", required=True,
-                        help="Output source file")
-    parser.add_argument("-g", "--output-graphviz",
-                        help="Output file for graphviz dependency graph")
-    parser.add_argument("-z", "--zephyr-base",
-                        help="Path to current Zephyr base. If this argument \
+    parser.add_argument("-k", "--kernel", required=True, help="Input zephyr ELF binary")
+    parser.add_argument(
+        "--dynamic-deps", action="store_true", help="Indicates if device dependencies are dynamic"
+    )
+    parser.add_argument(
+        "-d",
+        "--num-dynamic-devices",
+        required=False,
+        default=0,
+        type=int,
+        help="Input number of dynamic devices allowed",
+    )
+    parser.add_argument("-o", "--output-source", required=True, help="Output source file")
+    parser.add_argument("-g", "--output-graphviz", help="Output file for graphviz dependency graph")
+    parser.add_argument(
+        "-z",
+        "--zephyr-base",
+        help="Path to current Zephyr base. If this argument \
                         is not provided the environment will be checked for \
-                        the ZEPHYR_BASE environment variable.")
-    parser.add_argument("-s", "--start-symbol", required=True,
-                        help="Symbol name of the section which contains the \
+                        the ZEPHYR_BASE environment variable.",
+    )
+    parser.add_argument(
+        "-s",
+        "--start-symbol",
+        required=True,
+        help="Symbol name of the section which contains the \
                         devices. The symbol name must point to the first \
-                        device in that section.")
+                        device in that section.",
+    )
 
     args = parser.parse_args()
 
     ZEPHYR_BASE = args.zephyr_base or os.getenv("ZEPHYR_BASE")
 
     if ZEPHYR_BASE is None:
-        sys.exit("-z / --zephyr-base not provided. Please provide "
-                 "--zephyr-base or set ZEPHYR_BASE in environment")
+        sys.exit(
+            "-z / --zephyr-base not provided. Please provide "
+            "--zephyr-base or set ZEPHYR_BASE in environment"
+        )
 
     sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
+
 
 def c_handle_comment(dev, handles):
     def dev_path_str(dev):
         return dev.edt_node and dev.edt_node.path or dev.sym.name
+
     lines = [
         '',
-        '/* {:d} : {:s}:'.format(dev.handle, (dev_path_str(dev))),
+        f'/* {dev.handle:d} : {dev_path_str(dev):s}:',
     ]
     if len(handles["depends"]) > 0:
         lines.append(' * Direct Dependencies:')
         for dep in handles["depends"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(dep)))
+            lines.append(f' *    - {dev_path_str(dep):s}')
     if len(handles["injected"]) > 0:
         lines.append(' * Injected Dependencies:')
         for dep in handles["injected"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(dep)))
+            lines.append(f' *    - {dev_path_str(dep):s}')
     if len(handles["supports"]) > 0:
         lines.append(' * Supported:')
         for sup in handles["supports"]:
-            lines.append(' *    - {:s}'.format(dev_path_str(sup)))
+            lines.append(f' *    - {dev_path_str(sup):s}')
     lines.append(' */')
     return lines
+
 
 def c_handle_array(dev, handles, dynamic_deps, extra_support_handles=0):
     handles = [
@@ -106,17 +124,17 @@ def c_handle_array(dev, handles, dynamic_deps, extra_support_handles=0):
         'Z_DEVICE_DEPS_ENDS',
     ]
     ctype = (
-        '{:s}Z_DECL_ALIGN(device_handle_t) '
-        '__attribute__((__section__(".__device_deps_pass2")))'
+        '{:s}Z_DECL_ALIGN(device_handle_t) __attribute__((__section__(".__device_deps_pass2")))'
     ).format('const ' if not dynamic_deps else '')
     return [
         # The `extern` line pretends this was first declared in some .h
         # file to silence "should it be static?" warnings in some
         # compilers and static analyzers.
-        'extern {:s} {:s}[{:d}];'.format(ctype, dev.ordinals.sym.name, len(handles)),
+        f'extern {ctype:s} {dev.ordinals.sym.name:s}[{len(handles):d}];',
         ctype,
         '{:s}[] = {{ {:s} }};'.format(dev.ordinals.sym.name, ', '.join(handles)),
     ]
+
 
 def main():
     parse_args()
@@ -158,11 +176,10 @@ def main():
             }
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
             lines = c_handle_comment(dev, sorted_handles)
-            lines.extend(
-                c_handle_array(dev, sorted_handles, args.dynamic_deps, extra_sups)
-            )
+            lines.extend(c_handle_array(dev, sorted_handles, args.dynamic_deps, extra_sups))
             lines.extend([''])
             fp.write('\n'.join(lines))
+
 
 if __name__ == "__main__":
     main()

@@ -65,18 +65,18 @@
 		     &sd0_data0_uhs &sd0_data1_uhs &sd0_data2_uhs &sd0_data3_uhs>;
 	pinctrl-names = "default", "uhs";
 
-	disk {
-		compatible = "zephyr,sdmmc-disk";
-		disk-name = "SD";
-		status = "okay";
-	};
-
 	vmmc-supply = <&vcc_sd0>;
 	vqmmc-supply = <&vccq_sd0>;
 
 	bus-width = <4>;
 	mmc-sdr104-support;
 	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 &scif2 {

@@ -18,7 +18,4 @@ Requirements
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/bluetooth/hci_usb` in the
-Zephyr tree.
-
 See :zephyr:code-sample-category:`bluetooth` samples for details.

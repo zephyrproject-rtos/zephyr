@@ -157,7 +157,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 
 	hexdump(buf, len, "%zd byte(s)", len);
 
-	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, NET_AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of buffers");

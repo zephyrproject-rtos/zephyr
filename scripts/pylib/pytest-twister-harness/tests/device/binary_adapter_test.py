@@ -17,7 +17,7 @@ from twister_harness.device.binary_adapter import (
     NativeSimulatorAdapter,
     UnitSimulatorAdapter,
 )
-from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
+from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig
 
 
@@ -71,7 +71,7 @@ def test_if_binary_adapter_finishes_after_timeout_while_there_is_no_data_from_su
     device.base_timeout = 0.3
     device.command = ['python3', script_path, '--long-sleep', '--sleep=5']
     device.launch()
-    with pytest.raises(TwisterHarnessTimeoutException, match='Read from device timeout occurred'):
+    with pytest.raises(AssertionError, match='Did not find line "Returns with code" within 0.3 seconds'):
         device.readlines_until(regex='Returns with code')
     device.close()
     assert device._process is None

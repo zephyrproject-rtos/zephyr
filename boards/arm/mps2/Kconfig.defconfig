@@ -14,6 +14,9 @@ endif # SERIAL
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 
+config ISR_STACK_SIZE
+	default 4096
+
 if COVERAGE_GCOV
 
 config MAIN_STACK_SIZE
@@ -25,15 +28,12 @@ config IDLE_STACK_SIZE
 config PRIVILEGED_STACK_SIZE
 	default 4096
 
-config ISR_STACK_SIZE
-	default 4096
-
 config TEST_EXTRA_STACK_SIZE
 	default 4096
 
 endif # COVERAGE_GCOV
 
-endif
+endif # BOARD_MPS2_AN383 || BOARD_MPS2_AN385 || BOARD_MPS2_AN386 || BOARD_MPS2_AN500
 
 if BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1
 
@@ -46,6 +46,10 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 
 endchoice
 
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.
 config BUILD_WITH_TFM
@@ -57,5 +61,12 @@ config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
+
+endif # BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1
+
+if QEMU_TARGET
+
+config ISR_STACK_SIZE
+	default 4096
 
 endif

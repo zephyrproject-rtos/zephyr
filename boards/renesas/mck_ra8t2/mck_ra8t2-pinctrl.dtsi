@@ -40,6 +40,15 @@
 		};
 	};
 
+	usbfs_default: usbfs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>, /* USB_DM */
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>, /* USB_DP */
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;	 /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
 	sdhc0_default: sdhc0_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_SDHI, 13, 7)>, /* SDCD */

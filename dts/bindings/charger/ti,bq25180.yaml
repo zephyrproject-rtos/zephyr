@@ -5,7 +5,7 @@ description: |
   BQ25180 I2C Controlled, 1-Cell, 1-A Linear Battery Charger with Power Path
   and Ship Mode.
 
-  The device has a single child node for the charger. For example:
+  The device has a single node for the charger. For example:
 
   bq25180@6a {
     compatible = "ti,bq25180";
@@ -16,29 +16,4 @@ description: |
 
 compatible: "ti,bq25180"
 
-include: [battery.yaml, i2c-device.yaml]
-
-
-properties:
-  constant-charge-current-max-microamp:
-    type: int
-    default: 0
-    description: |
-      Charge current set at init time in uA, available range is 5 mA to 800 mA.
-      The value specified will be rounded down to the closest implemented
-      value. If set to 0 (default) skip setting the charge current value at
-      driver initialization.
-
-  constant-charge-voltage-max-microvolt:
-    type: int
-    default: 4200000
-    description: |
-      The maximum voltage that the battery will be charged at, defaults to
-      4.2V, matching the device default reset configuration.
-
-  precharge-voltage-threshold-microvolt:
-    type: int
-    default: 3000000
-    description: |
-      Threshold at which voltage to switch to constant current charge.
-      Must be either 3.0V or 2.8V
+include: ti,bq2518x-common.yaml

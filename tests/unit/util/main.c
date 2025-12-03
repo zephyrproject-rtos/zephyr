@@ -165,6 +165,37 @@ ZTEST(util, test_COND_CODE_0) {
 	zassert_true((y3 == 1));
 }
 
+ZTEST(util, test_COND_CASE_1) {
+	/* Intentionally undefined symbols used to verify that only the selected
+	 * branch expands.
+	 */
+	int val;
+
+	#define CASE_TRUE 1
+	#define CASE_FALSE 0
+
+	val = COND_CASE_1(CASE_TRUE, (42),
+			  CASE_TRUE, (COND_CASE_1_SHOULD_NOT_REACH_SECOND_TRUE_CASE),
+			  (0));
+	zexpect_equal(val, 42);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_FIRST_CASE),
+			  CASE_TRUE, (7),
+			  (11));
+	zexpect_equal(val, 7);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_SECOND_CASE),
+			  CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_THIRD_CASE),
+			  (5));
+	zexpect_equal(val, 5);
+
+	val = COND_CASE_1((9));
+	zexpect_equal(val, 9);
+
+	#undef CASE_TRUE
+	#undef CASE_FALSE
+}
+
 #undef ZERO
 #undef SEVEN
 #undef A_BUILD_ERROR
@@ -534,20 +565,25 @@ ZTEST(util, test_nested_FOR_EACH) {
 	zassert_equal(a2, 2);
 }
 
+#define TWO 2 /* to showcase that GET_ARG_N and GET_ARGS_LESS_N also work with macros */
+
 ZTEST(util, test_GET_ARG_N) {
 	int a = GET_ARG_N(1, 10, 100, 1000);
 	int b = GET_ARG_N(2, 10, 100, 1000);
 	int c = GET_ARG_N(3, 10, 100, 1000);
+	int d = GET_ARG_N(TWO, 10, 100, 1000);
 
 	zassert_equal(a, 10);
 	zassert_equal(b, 100);
 	zassert_equal(c, 1000);
+	zassert_equal(d, 100);
 }
 
 ZTEST(util, test_GET_ARGS_LESS_N) {
 	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
 	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
 	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
+	uint8_t d[] = { GET_ARGS_LESS_N(TWO, 1, 2, 3) };
 
 	zassert_equal(sizeof(a), 3);
 
@@ -557,6 +593,9 @@ ZTEST(util, test_GET_ARGS_LESS_N) {
 
 	zassert_equal(sizeof(c), 1);
 	zassert_equal(c[0], 3);
+
+	zassert_equal(sizeof(d), 1);
+	zassert_equal(d[0], 3);
 }
 
 ZTEST(util, test_mixing_GET_ARG_and_FOR_EACH) {

@@ -3,8 +3,15 @@
 
 if SOC_SERIES_SF32LB52X
 
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_by_name_hex,$(DT_CHOSEN_FLASH_PARENT),nor)
 
 config USE_DT_CODE_PARTITION
 	default y
@@ -12,7 +19,13 @@ config USE_DT_CODE_PARTITION
 config CACHE_MANAGEMENT
 	default y
 
-config NUM_IRQS
+configdefault MAIN_STACK_SIZE
+	default 2048 if MBEDTLS_INIT
+
+configdefault NUM_IRQS
 	default 100
+
+configdefault BT_BUF_ACL_TX_COUNT
+	default 8 if BT
 
 endif # SOC_SERIES_SF32LB52X

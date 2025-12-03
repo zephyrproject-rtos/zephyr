@@ -20,7 +20,7 @@ uint32_t ring_buf_area_claim(struct ring_buf *buf, struct ring_buf_index *ring,
 		head_offset -= buf->size;
 	}
 	wrap_size = buf->size - head_offset;
-	size = MIN(size, wrap_size);
+	size = min(size, wrap_size);
 
 	*data = &buf->buffer[head_offset];
 	ring->head += size;

@@ -115,8 +115,13 @@ class GdbStub_ARM_CortexM(GdbStub):
 
     def handle_register_single_write_packet(self, pkt):
         pkt_str = pkt.decode("ascii")
-        reg = int(pkt_str[1:pkt_str.index('=')], 16)
-        self.registers[reg] = int.from_bytes(binascii.unhexlify(pkt[3:]), byteorder = 'little')
+        separator_index = pkt_str.index('=')
+
+        if separator_index < 0:
+            raise ValueError(f"Malformed register write packet: {pkt_str}")
+
+        reg = int(pkt_str[1:separator_index], 16)
+        self.registers[reg] = int.from_bytes(binascii.unhexlify(pkt[(separator_index + 1):]), byteorder = 'little')
         self.put_gdb_packet(b'+')
 
     def arch_supports_thread_operations(self):

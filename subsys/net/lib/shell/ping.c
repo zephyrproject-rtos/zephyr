@@ -25,9 +25,9 @@ static struct ping_context {
 	struct k_work_delayable work;
 	struct net_icmp_ctx icmp;
 	union {
-		struct sockaddr_in addr4;
-		struct sockaddr_in6 addr6;
-		struct sockaddr addr;
+		struct net_sockaddr_in addr4;
+		struct net_sockaddr_in6 addr6;
+		struct net_sockaddr addr;
 	};
 	struct net_if *iface;
 	const struct shell *sh;
@@ -89,18 +89,18 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		 "rssi=%d "
 #endif
 		 "%s\n",
-		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
+		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
 		 net_sprint_ipv6_addr(&ip_hdr->dst),
-		 ntohs(icmp_echo->sequence),
+		 net_ntohs(icmp_echo->sequence),
 		 ip_hdr->hop_limit,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi_dbm(pkt),
 #endif
 		 time_buf);
 
-	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
 		ping_done(&ping_ctx);
 	}
 
@@ -166,15 +166,15 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 
 	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 		 "%s\n",
-		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
+		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
-		 ntohs(icmp_echo->sequence),
+		 net_ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
 		 time_buf);
 
-	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
 		ping_done(&ping_ctx);
 	}
 
@@ -299,7 +299,7 @@ static void ping_bypass(const struct shell *sh, uint8_t *data, size_t len)
 	}
 }
 
-static struct net_if *ping_select_iface(int id, struct sockaddr *target)
+static struct net_if *ping_select_iface(int id, struct net_sockaddr *target)
 {
 	struct net_if *iface = net_if_get_by_index(id);
 
@@ -307,7 +307,7 @@ static struct net_if *ping_select_iface(int id, struct sockaddr *target)
 		goto out;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && target->sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && target->sa_family == NET_AF_INET) {
 		iface = net_if_ipv4_select_src_iface(&net_sin(target)->sin_addr);
 		if (iface != NULL) {
 			goto out;
@@ -317,7 +317,7 @@ static struct net_if *ping_select_iface(int id, struct sockaddr *target)
 		goto out;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && target->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && target->sa_family == NET_AF_INET6) {
 		struct net_nbr *nbr;
 #if defined(CONFIG_NET_ROUTE)
 		struct net_route_entry *route;
@@ -453,20 +453,20 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	ping_ctx.payload_size = payload_size;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_addr_pton(AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
-		ping_ctx.addr6.sin6_family = AF_INET6;
+	    net_addr_pton(NET_AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
+		ping_ctx.addr6.sin6_family = NET_AF_INET6;
 
-		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_ICMPV6_ECHO_REPLY, 0,
+		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY, 0,
 					handle_ipv6_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv6");
 			return 0;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_addr_pton(AF_INET, host, &ping_ctx.addr4.sin_addr) == 0) {
-		ping_ctx.addr4.sin_family = AF_INET;
+		   net_addr_pton(NET_AF_INET, host, &ping_ctx.addr4.sin_addr) == 0) {
+		ping_ctx.addr4.sin_family = NET_AF_INET;
 
-		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_ICMPV4_ECHO_REPLY, 0,
+		ret = net_icmp_init_ctx(&ping_ctx.icmp, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0,
 					handle_ipv4_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv4");

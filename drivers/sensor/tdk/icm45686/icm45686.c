@@ -425,6 +425,7 @@ static int icm45686_init(const struct device *dev)
 				.lpf = DT_INST_PROP_OR(inst, gyro_lpf, 0),			   \
 			},									   \
 			.fifo_watermark = DT_INST_PROP_OR(inst, fifo_watermark, 0),		   \
+			.fifo_watermark_equals = DT_INST_PROP(inst, fifo_watermark_equals),	   \
 		},										   \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 	};											   \

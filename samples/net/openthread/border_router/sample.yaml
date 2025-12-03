@@ -13,6 +13,7 @@ tests:
     extra_args:
       # Disabling monolithic since CI environment doesn't use blobs
       - CONFIG_NXP_MONOLITHIC_NBU=n
+      - CONFIG_NXP_MONOLITHIC_WIFI=n
       - EXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-nxp.conf"
     platform_allow:
       - frdm_rw612

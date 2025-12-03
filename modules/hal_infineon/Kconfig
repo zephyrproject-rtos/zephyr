@@ -9,15 +9,37 @@ config ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 
 if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY
 
+config USE_INFINEON_LEGACY_HAL
+	bool
+	help
+	  Use Legacy HAL driver instead of PDL based drivers.  This allows devices to use HAL based
+	  drivers until fully transitioned to the PDL.  The old HAL drivers will be removed when all
+	  devices have been transitioned.
+
 config USE_INFINEON_ADC
 	bool
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_HPPASS_SAR_ADC
+	bool
+	help
+	  Enable Infineon HPPASS SAR ADC PDL library support
+
+config USE_INFINEON_HPPASS_ANALOG
+	bool
+	help
+	  Enable Infineon HPPASS Analog PDL library support
+
+config USE_INFINEON_AUTANALOG_SAR_ADC
+	bool
+	help
+	  Enable AutAnalog SAR ADC HAL module driver for Infineon devices
+
 config USE_INFINEON_DMA
 	bool
 	help
-	  Enable ADC HAL module driver for Infineon devices
+	  Enable DMA HAL module driver for Infineon devices
 
 config USE_INFINEON_I2C
 	bool

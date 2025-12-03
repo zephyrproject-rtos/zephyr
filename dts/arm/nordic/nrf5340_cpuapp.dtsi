@@ -6,7 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 
 / {
 	cpus {
@@ -54,13 +54,16 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		peripheral@50000000 {
 			reg = <0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x50000000 0x10000000>;
+			ranges = <0x0 0x50000000 0x10000000>,
+				 <0x10000000 0x10000000 0x10000000>;
 
 			/* Common nRF5340 Application MCU
 			 * peripheral description

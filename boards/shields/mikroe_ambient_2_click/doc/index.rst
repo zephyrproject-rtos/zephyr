@@ -29,7 +29,7 @@ Requirements
 
 
 This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interfac e. See :ref:`shields` for more
+``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interface. See :ref:`shields` for more
 details.
 
 Programming

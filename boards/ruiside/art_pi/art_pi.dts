@@ -28,11 +28,11 @@
 	};
 
 	sdram1: memory@c0000000 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
 		reg = <0xC0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	ext_memory: memory@90000000 {
@@ -123,6 +123,10 @@
 	d3ppre = <2>; /* 240/2 = 120MHz APB4 Clocks */
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -169,7 +173,7 @@
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(0)>;
 	bus-width = <4>;
-	cd-gpios = <&gpiod 5 (GPIO_PULL_UP|GPIO_ACTIVE_HIGH)>;
+	cd-gpios = <&gpiod 5 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 	disk-name = "SD";
 	resets;
 	reset-names = "sdmmc1_reset";
@@ -188,7 +192,7 @@
 	bl-ctrl-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&sdram1>;
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK(APB3, 3)>,<&rcc STM32_SRC_PLL3_R NO_SEL>;
+	clocks = <&rcc STM32_CLOCK(APB3, 3)>, <&rcc STM32_SRC_PLL3_R NO_SEL>;
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
@@ -367,7 +371,7 @@ zephyr_udc0: &usbotg_fs {
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
-		default-speeds = "10BASE Full-Duplex","100BASE Full-Duplex";
+		default-speeds = "10BASE Full-Duplex", "100BASE Full-Duplex";
 	};
 };
 

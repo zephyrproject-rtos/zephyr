@@ -538,7 +538,6 @@ int bt_le_scan_user_remove(enum bt_le_scan_user flag)
 	return scan_update();
 }
 
-#if defined(CONFIG_BT_CENTRAL)
 static void check_pending_conn(const bt_addr_le_t *id_addr,
 			       const bt_addr_le_t *addr, uint8_t adv_props)
 {
@@ -593,7 +592,6 @@ failed:
 		LOG_WRN("Error while updating the scanner (%d)", err);
 	}
 }
-#endif /* CONFIG_BT_CENTRAL */
 
 /* Convert Legacy adv report evt_type field to adv props */
 static uint8_t get_adv_props_legacy(uint8_t evt_type)
@@ -632,13 +630,14 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	struct bt_le_scan_cb *listener, *next;
 	struct net_buf_simple_state state;
 	bt_addr_le_t id_addr;
+	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
 	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
 		info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-	    atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN) &&
-	    (info->adv_props & BT_HCI_LE_ADV_PROP_DIRECT)) {
+	    explicit_scan && (info->adv_props & BT_HCI_LE_ADV_PROP_DIRECT)) {
 		LOG_DBG("Dropped direct adv report");
 		return;
 	}
@@ -650,6 +649,13 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	} else {
 		bt_addr_le_copy(&id_addr,
 				bt_lookup_id_addr(BT_ID_DEFAULT, addr));
+	}
+
+	/* For connection-purpose scanning,
+	 * skip app callbacks but allow pending-conn check logic.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && !explicit_scan && conn_scan) {
+		goto check_pending_conn;
 	}
 
 	if (scan_dev_found_cb) {
@@ -677,9 +683,10 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	/* Clear pointer to this stack frame before returning to calling function */
 	info->addr = NULL;
 
-#if defined(CONFIG_BT_CENTRAL)
-	check_pending_conn(&id_addr, addr, info->adv_props);
-#endif /* CONFIG_BT_CENTRAL */
+check_pending_conn:
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		check_pending_conn(&id_addr, addr, info->adv_props);
+	}
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -805,6 +812,8 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
+	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
 	LOG_DBG("Adv number of reports %u", num_reports);
 
@@ -817,19 +826,23 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		bool more_to_come;
 		bool is_new_advertiser;
 
-		if (!atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN)) {
+		if (!explicit_scan) {
 			/* The application has not requested explicit scan, so it is not expecting
 			 * advertising reports. Discard, and reset the reassembler if not inactive
 			 * This is done in the loop as this flag can change between each iteration,
 			 * and it is not uncommon that scanning is disabled in the callback called
-			 * from le_adv_recv
+			 * from le_adv_recv.
+			 *
+			 * However, if scanning is running for connection purposes,
+			 * the report shall still be processed to allow pending connections.
 			 */
-
 			if (reassembling_advertiser.state != FRAG_ADV_INACTIVE) {
 				reset_reassembling_advertiser();
 			}
 
-			break;
+			if (!conn_scan) {
+				break;
+			}
 		}
 
 		if (buf->len < sizeof(*evt)) {
@@ -1669,18 +1682,23 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 	struct bt_hci_evt_le_advertising_info *evt;
+	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
 	LOG_DBG("Adv number of reports %u",  num_reports);
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
 
-		if (!atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN)) {
+		if (!explicit_scan && !conn_scan) {
 			/* The application has not requested explicit scan, so it is not expecting
 			 * advertising reports. Discard.
 			 * This is done in the loop as this flag can change between each iteration,
 			 * and it is not uncommon that scanning is disabled in the callback called
-			 * from le_adv_recv
+			 * from le_adv_recv.
+			 *
+			 * However, if scanning is running for connection purposes,
+			 * the report shall still be processed to allow pending connections.
 			 */
 
 			break;
@@ -1841,11 +1859,10 @@ void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 {
-	ptrdiff_t index = per_adv_sync - per_adv_sync_pool;
-
-	__ASSERT(index >= 0 && ARRAY_SIZE(per_adv_sync_pool) > index,
+	__ASSERT(IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync),
 		 "Invalid per_adv_sync pointer");
-	return (uint8_t)index;
+
+	return (uint8_t)ARRAY_INDEX(per_adv_sync_pool, per_adv_sync);
 }
 
 struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index)

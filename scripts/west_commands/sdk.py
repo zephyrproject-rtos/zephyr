@@ -210,10 +210,11 @@ class Sdk(WestCommand):
         if args.version:
             version = args.version
         else:
-            if os.environ["ZEPHYR_BASE"]:
-                zephyr_base = Path(os.environ["ZEPHYR_BASE"])
+            zephyr_base_env = os.environ.get("ZEPHYR_BASE")
+            if zephyr_base_env:
+                zephyr_base = Path(zephyr_base_env)
             else:
-                zephyr_base = Path(__file__).parents[2]
+                zephyr_base = Path(__file__).resolve().parents[2]
 
             sdk_version_file = zephyr_base / "SDK_VERSION"
 
@@ -246,6 +247,9 @@ class Sdk(WestCommand):
             params = {"page": page, "per_page": 100}
             resp = requests.get(url, headers=req_headers, params=params)
             if resp.status_code != 200:
+                rate_limit_log = "API rate limit exceeded"
+                if rate_limit_log in resp.text:
+                    self.inf(f"fetch_releases {rate_limit_log}. Try executing install script with --personal-access-token argument or use a .netrc file")
                 raise Exception(f"Failed to fetch: {resp.status_code}, {resp.text}")
 
             data = resp.json()

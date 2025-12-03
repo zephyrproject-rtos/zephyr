@@ -73,8 +73,8 @@ bool npf_eth_type_match(struct npf_test *test, struct net_pkt *pkt)
 
 	/* note: type_match->type is assumed to be in network order already */
 	NET_DBG("proto type 0x%04x pkt 0x%04x",
-		ntohs(test_eth_type->type),
-		ntohs(eth_hdr->type));
+		net_ntohs(test_eth_type->type),
+		net_ntohs(eth_hdr->type));
 
 	return eth_hdr->type == test_eth_type->type;
 }
@@ -93,8 +93,8 @@ bool npf_eth_vlan_type_match(struct npf_test *test, struct net_pkt *pkt)
 
 	/* note: type_match->type is assumed to be in network order already */
 	NET_DBG("proto type 0x%04x pkt 0x%04x",
-		ntohs(test_eth_type->type),
-		ntohs(eth_hdr->type));
+		net_ntohs(test_eth_type->type),
+		net_ntohs(eth_hdr->type));
 
 	return eth_hdr->type == test_eth_type->type;
 }

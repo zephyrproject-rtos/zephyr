@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Thomas Boje
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v307/ch32v307.dtsi>

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&code_mram_cm85 {
+	reg = <0x2000000 DT_SIZE_K(950)>;
+};
+
+&code_mram_cm33 {
+	reg = <0x20ed800 DT_SIZE_K(74)>;
+};

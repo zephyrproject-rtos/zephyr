@@ -86,6 +86,10 @@ indent_size = 8
 [COMMIT_EDITMSG]
 max_line_length = 75
 
+# Patches
+[{*.patch,*.diff}]
+trim_trailing_whitespace = false
+
 # Kconfig
 [Kconfig*]
 indent_style = tab

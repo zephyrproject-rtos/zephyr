@@ -36,10 +36,10 @@
 /** @brief Device clk sources selection helpers */
 
 /* WB05/WB09 only */
-#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 13, CFGR_REG)
+#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 13, 13, CFGR_REG)
 /* WB06/WB07 only */
-#define SPI2_I2S2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 22, CFGR_REG)
-/* `mask` is only 0x1 for WB06/WB07, but a single definition with mask=0x3 is acceptable */
-#define SPI3_I2S3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 22, CFGR_REG)
+#define SPI2_I2S2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 22, 22, CFGR_REG)
+/* `msb` is only 22 for WB06/WB07, but a single definition with msb=23 is acceptable */
+#define SPI3_I2S3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 23, 22, CFGR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_ */

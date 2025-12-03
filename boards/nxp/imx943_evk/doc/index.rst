@@ -77,7 +77,7 @@ The two switch ports could be verified via :zephyr:code-sample:`dsa` on M33 core
 or on A55 Core, for example for A55 Core:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dsa
+   :zephyr-app: samples/net/ethernet/dsa
    :host-os: unix
    :board: imx943_evk/mimx94398/a55
    :goals: flash
@@ -85,7 +85,7 @@ or on A55 Core, for example for A55 Core:
 Or for M33 Core:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dsa
+   :zephyr-app: samples/net/ethernet/dsa
    :host-os: unix
    :board: imx943_evk/mimx94398/m33/ddr
    :goals: build
@@ -375,9 +375,9 @@ For DDR target
 
 Note:
 
-a. Please connect two additional usb2serial converter between Host PC and board's
-auduino interface with dupont cable for M70 in M70 MIX and M71 in M71 MIX.
-Connection as below,
+a. Please connect two additional USB-to-Serial converters between the Host PC and the board's
+Arduino interface using Dupont cables. For M70 in M7MIX0 and M71 in M7MIX1,
+make the connections as shown below.
 
 .. code-block:: text
 
@@ -393,7 +393,28 @@ Connection as below,
   |         |       |                 |--GND----------------GND(J43-14)-|         |
   +---------+       +-----------------+                                 +---------+
 
-b. There will be 4 serial ports identified when connect USB cable to debug port.
+b. For debugging system via JTAG interface, please connect one additional
+USB-to-Serial converter between the Host PC and the board's Arduino interface
+using Dupont cables. For M33S in NETCMIX,
+(LPUART8's pads reused by JTAG's pads, so change to use another UART3,
+then UART3 and JTAG can be used at the same time.)
+make the connections as shown below,
+
+.. code-block:: text
+
+  +---------+  USB  +-----------------+                                           +---------+
+  | Host PC |<----->| USB-to-Serial c |--TX-->RX(J44-10, M1_LED_TP1, LPUART3_RX)--|  board  |
+  |         |       |                 |--RX<--TX(J51-18, M1_PWM_CX, LPUART3_TX)---|         |
+  |         |       |                 |--GND--GND(J45-12)-------------------------|         |
+  |         |       +-----------------+                                           |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  +---------+                                                                     +---------+
+
+c. There will be 4 serial ports identified when connect USB cable to debug port.
 The first serial port will be UART8 for M33. As there is multiplexing between JTAG
 and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UART8.
 

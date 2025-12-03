@@ -51,7 +51,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x46230000 DT_SIZE_K(1)>;
 			num-lines = <77>;
 			interrupts = <17 0>, <18 0>, <19 0>, <20 0>,
@@ -66,6 +66,14 @@
 				      <4 1>, <5 1>, <6 1>, <7 1>,
 				      <8 1>, <9 1>, <10 1>, <11 1>,
 				      <12 1>, <13 1>, <14 1>, <15 1>;
+		};
+
+		mailbox: ipcc1@40490000 {
+			compatible = "st,stm32-ipcc-mailbox";
+			reg = <0x40490000 0x400>;
+			interrupts = <171 0>, <172 0>;
+			interrupt-names = "rxo", "txf";
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@44240000 {

@@ -126,8 +126,8 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 		&net_udp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
 struct ud {
-	const struct sockaddr *remote_addr;
-	const struct sockaddr *local_addr;
+	const struct net_sockaddr *remote_addr;
+	const struct net_sockaddr *local_addr;
 	uint16_t remote_port;
 	uint16_t local_port;
 	char *test;
@@ -211,8 +211,8 @@ uint8_t ipv6_hop_by_hop_ext_hdr[] = {
 #define TIMEOUT K_MSEC(200)
 
 static bool send_ipv6_udp_msg(struct net_if *iface,
-			      struct in6_addr *src,
-			      struct in6_addr *dst,
+			      struct net_in6_addr *src,
+			      struct net_in6_addr *dst,
 			      uint16_t src_port,
 			      uint16_t dst_port,
 			      struct ud *ud,
@@ -221,18 +221,18 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_alloc_with_buffer(iface, 0, AF_INET6,
-					IPPROTO_UDP, K_SECONDS(1));
+	pkt = net_pkt_alloc_with_buffer(iface, 0, NET_AF_INET6,
+					NET_IPPROTO_UDP, K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
 	if (net_ipv6_create(pkt, src, dst) ||
-	    net_udp_create(pkt, htons(src_port), htons(dst_port))) {
+	    net_udp_create(pkt, net_htons(src_port), net_htons(dst_port))) {
 		printk("Cannot create IPv6 UDP pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -260,8 +260,8 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 }
 
 static bool send_ipv6_udp_long_msg(struct net_if *iface,
-				   struct in6_addr *src,
-				   struct in6_addr *dst,
+				   struct net_in6_addr *src,
+				   struct net_in6_addr *dst,
 				   uint16_t src_port,
 				   uint16_t dst_port,
 				   struct ud *ud,
@@ -272,8 +272,8 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface,
 					sizeof(ipv6_hop_by_hop_ext_hdr) +
-					sizeof(payload), AF_INET6,
-					IPPROTO_UDP, K_SECONDS(1));
+					sizeof(payload), NET_AF_INET6,
+					NET_IPPROTO_UDP, K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
 	if (net_ipv6_create(pkt, src, dst)) {
@@ -290,7 +290,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hop_by_hop_ext_hdr));
 	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
 
-	if (net_udp_create(pkt, htons(src_port), htons(dst_port))) {
+	if (net_udp_create(pkt, net_htons(src_port), net_htons(dst_port))) {
 		printk("Cannot create IPv6  pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}
@@ -301,7 +301,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -328,8 +328,8 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 }
 
 static bool send_ipv4_udp_msg(struct net_if *iface,
-			      struct in_addr *src,
-			      struct in_addr *dst,
+			      struct net_in_addr *src,
+			      struct net_in_addr *dst,
 			      uint16_t src_port,
 			      uint16_t dst_port,
 			      struct ud *ud,
@@ -338,18 +338,18 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_alloc_with_buffer(iface, 0, AF_INET,
-					IPPROTO_UDP, K_SECONDS(1));
+	pkt = net_pkt_alloc_with_buffer(iface, 0, NET_AF_INET,
+					NET_IPPROTO_UDP, K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
 	if (net_ipv4_create(pkt, src, dst) ||
-	    net_udp_create(pkt, htons(src_port), htons(dst_port))) {
+	    net_udp_create(pkt, net_htons(src_port), net_htons(dst_port))) {
 		printk("Cannot create IPv4 UDP pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv4_finalize(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -376,27 +376,27 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	return !fail;
 }
 
-static void set_port(sa_family_t family, struct sockaddr *raddr,
-		     struct sockaddr *laddr, uint16_t rport,
+static void set_port(net_sa_family_t family, struct net_sockaddr *raddr,
+		     struct net_sockaddr *laddr, uint16_t rport,
 		     uint16_t lport)
 {
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		if (raddr) {
-			((struct sockaddr_in6 *)raddr)->
-				sin6_port = htons(rport);
+			((struct net_sockaddr_in6 *)raddr)->
+				sin6_port = net_htons(rport);
 		}
 		if (laddr) {
-			((struct sockaddr_in6 *)laddr)->
-				sin6_port = htons(lport);
+			((struct net_sockaddr_in6 *)laddr)->
+				sin6_port = net_htons(lport);
 		}
-	} else if (family == AF_INET) {
+	} else if (family == NET_AF_INET) {
 		if (raddr) {
-			((struct sockaddr_in *)raddr)->
-				sin_port = htons(rport);
+			((struct net_sockaddr_in *)raddr)->
+				sin_port = net_htons(rport);
 		}
 		if (laddr) {
-			((struct sockaddr_in *)laddr)->
-				sin_port = htons(lport);
+			((struct net_sockaddr_in *)laddr)->
+				sin_port = net_htons(lport);
 		}
 	}
 }
@@ -419,45 +419,45 @@ ZTEST(udp_fn_tests, test_udp)
 	int ret, i = 0;
 	bool st;
 
-	struct sockaddr_in6 any_addr6;
-	const struct in6_addr in6addr_anyaddr = IN6ADDR_ANY_INIT;
+	struct net_sockaddr_in6 any_addr6;
+	const struct net_in6_addr in6addr_anyaddr = NET_IN6ADDR_ANY_INIT;
 
-	struct sockaddr_in6 my_addr6;
-	struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_sockaddr_in6 my_addr6;
+	struct net_in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-	struct sockaddr_in6 peer_addr6;
-	struct in6_addr in6addr_peer = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_sockaddr_in6 peer_addr6;
+	struct net_in6_addr in6addr_peer = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0x4e, 0x11, 0, 0, 0x2 } } };
 
-	struct sockaddr_in any_addr4;
-	const struct in_addr in4addr_any = { { { 0 } } };
+	struct net_sockaddr_in any_addr4;
+	const struct net_in_addr in4addr_any = { { { 0 } } };
 
-	struct sockaddr_in my_addr4;
-	struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
+	struct net_sockaddr_in my_addr4;
+	struct net_in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 
-	struct sockaddr_in peer_addr4;
-	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
+	struct net_sockaddr_in peer_addr4;
+	struct net_in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_anyaddr);
-	any_addr6.sin6_family = AF_INET6;
+	any_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
-	my_addr6.sin6_family = AF_INET6;
+	my_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&peer_addr6.sin6_addr, &in6addr_peer);
-	peer_addr6.sin6_family = AF_INET6;
+	peer_addr6.sin6_family = NET_AF_INET6;
 
 	net_ipaddr_copy(&any_addr4.sin_addr, &in4addr_any);
-	any_addr4.sin_family = AF_INET;
+	any_addr4.sin_family = NET_AF_INET;
 
 	net_ipaddr_copy(&my_addr4.sin_addr, &in4addr_my);
-	my_addr4.sin_family = AF_INET;
+	my_addr4.sin_family = NET_AF_INET;
 
 	net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
-	peer_addr4.sin_family = AF_INET;
+	peer_addr4.sin_family = NET_AF_INET;
 
 	k_sem_init(&recv_lock, 0, UINT_MAX);
 
@@ -479,19 +479,19 @@ ZTEST(udp_fn_tests, test_udp)
 	({								\
 		static struct ud user_data;				\
 									\
-		user_data.remote_addr = (struct sockaddr *)raddr;	\
-		user_data.local_addr =  (struct sockaddr *)laddr;	\
+		user_data.remote_addr = (struct net_sockaddr *)raddr;	\
+		user_data.local_addr =  (struct net_sockaddr *)laddr;	\
 		user_data.remote_port = rport;				\
 		user_data.local_port = lport;				\
 		user_data.test = "DST="#raddr"-SRC="#laddr"-RP="#rport	\
 			"-LP="#lport;					\
 									\
-		set_port(family, (struct sockaddr *)raddr,		\
-			 (struct sockaddr *)laddr, rport, lport);	\
+		set_port(family, (struct net_sockaddr *)raddr,		\
+			 (struct net_sockaddr *)laddr, rport, lport);	\
 									\
 		ret = net_udp_register(family,				\
-				       (struct sockaddr *)raddr,	\
-				       (struct sockaddr *)laddr,	\
+				       (struct net_sockaddr *)raddr,	\
+				       (struct net_sockaddr *)laddr,	\
 				       rport, lport,			\
 				       NULL, test_ok, &user_data,	\
 				       &handlers[i]);			\
@@ -505,9 +505,9 @@ ZTEST(udp_fn_tests, test_udp)
 	})
 
 #define REGISTER_FAIL(raddr, laddr, rport, lport)			\
-	ret = net_udp_register(AF_INET,					\
-			       (struct sockaddr *)raddr,		\
-			       (struct sockaddr *)laddr,		\
+	ret = net_udp_register(NET_AF_INET,					\
+			       (struct net_sockaddr *)raddr,		\
+			       (struct net_sockaddr *)laddr,		\
 			       rport, lport,				\
 			       NULL, test_fail, INT_TO_POINTER(0),	\
 			       NULL);					\
@@ -570,7 +570,7 @@ ZTEST(udp_fn_tests, test_udp)
 		zassert_true(0, "exiting");				\
 	}
 
-	ud = REGISTER(AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
+	ud = REGISTER(NET_AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_LONG_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
@@ -579,21 +579,21 @@ ZTEST(udp_fn_tests, test_udp)
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(AF_INET, &any_addr4, &any_addr4, 1234, 4242);
+	ud = REGISTER(NET_AF_INET, &any_addr4, &any_addr4, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4325);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4325);
 	UNREGISTER(ud);
 
-	ud = REGISTER(AF_INET6, &any_addr6, NULL, 1234, 4242);
+	ud = REGISTER(NET_AF_INET6, &any_addr6, NULL, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(AF_INET6, NULL, &any_addr6, 1234, 4242);
+	ud = REGISTER(NET_AF_INET6, NULL, &any_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_LONG_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
@@ -602,19 +602,19 @@ ZTEST(udp_fn_tests, test_udp)
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(AF_INET6, &peer_addr6, &my_addr6, 1234, 4242);
+	ud = REGISTER(NET_AF_INET6, &peer_addr6, &my_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 4243);
 
-	ud = REGISTER(AF_INET, &peer_addr4, &my_addr4, 1234, 4242);
+	ud = REGISTER(NET_AF_INET, &peer_addr4, &my_addr4, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4243);
 
-	ud = REGISTER(AF_UNSPEC, NULL, NULL, 1234, 42423);
+	ud = REGISTER(NET_AF_UNSPEC, NULL, NULL, 1234, 42423);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42423);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 42423);
 
-	ud = REGISTER(AF_UNSPEC, NULL, NULL, 1234, 0);
+	ud = REGISTER(NET_AF_UNSPEC, NULL, NULL, 1234, 0);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42422);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 42422);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42422);
@@ -623,14 +623,14 @@ ZTEST(udp_fn_tests, test_udp)
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 12345, 42421);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 12345, 42421);
 
-	ud = REGISTER(AF_UNSPEC, NULL, NULL, 0, 0);
+	ud = REGISTER(NET_AF_UNSPEC, NULL, NULL, 0, 0);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 12345, 42421);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 12345, 42421);
 	TEST_IPV6_LONG_OK(ud, &in6addr_peer, &in6addr_my, 12345, 42421);
 
 	/* Remote addr same as local addr, these two will never match */
-	REGISTER(AF_INET6, &my_addr6, NULL, 1234, 4242);
-	REGISTER(AF_INET, &my_addr4, NULL, 1234, 4242);
+	REGISTER(NET_AF_INET6, &my_addr6, NULL, 1234, 4242);
+	REGISTER(NET_AF_INET, &my_addr4, NULL, 1234, 4242);
 
 	/* IPv4 remote addr and IPv6 remote addr, impossible combination */
 	REGISTER_FAIL(&my_addr4, &my_addr6, 1234, 4242);

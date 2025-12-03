@@ -67,6 +67,7 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_PRESS] = "press",
 	[SENSOR_CHAN_PROX] = "prox",
 	[SENSOR_CHAN_HUMIDITY] = "humidity",
+	[SENSOR_CHAN_AMBIENT_LIGHT] = "ambient_light",
 	[SENSOR_CHAN_LIGHT] = "light",
 	[SENSOR_CHAN_IR] = "ir",
 	[SENSOR_CHAN_RED] = "red",
@@ -115,6 +116,7 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
 	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
 	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
+	[SENSOR_CHAN_ENCODER_COUNT] = "encoder_count",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
@@ -217,6 +219,8 @@ static const struct {
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_STATIONARY, stationary, NULL),
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FIFO_WATERMARK, fifo_wm, NULL),
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FIFO_FULL, fifo_full, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_TILT, tilt, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_OVERFLOW, overflow, NULL),
 };
 
 /**

@@ -305,7 +305,7 @@ void log_frontend_stmesp_demux_reset(void);
 
 /** @brief Get maximum buffer utilization.
  *
- * @retval Non-negative Maximum buffer utilization.
+ * @retval >=0 Maximum buffer utilization.
  * @retval -ENOTSUP Feature not enabled.
  */
 int log_frontend_stmesp_demux_max_utilization(void);

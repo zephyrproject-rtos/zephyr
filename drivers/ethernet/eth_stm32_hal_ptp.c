@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
 bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+	if (net_ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
 		return false;
 	}
 

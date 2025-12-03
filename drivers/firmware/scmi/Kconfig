@@ -64,6 +64,13 @@ config ARM_SCMI_TRANSPORT_INIT_PRIORITY
 	help
 	  SCMI transport driver device initialization priority.
 
+config ARM_SCMI_CHAN_SEM_TIMEOUT_USEC
+	int "ARM SCMI channel semaphore timeout"
+	default 500
+	help
+	  Maximum number of microseconds to wait for a reply from the
+	  scmi platform.
+
 source "drivers/firmware/scmi/nxp/Kconfig"
 
 endif # ARM_SCMI

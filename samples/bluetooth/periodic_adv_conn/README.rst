@@ -24,9 +24,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/periodic_adv_conn` in
-the Zephyr tree.
-
 Use the sample found under :zephyr_file:`samples/bluetooth/periodic_sync_conn` in the
 Zephyr tree that will synchronize and respond to this sample.
 

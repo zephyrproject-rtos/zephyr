@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    TI INA226 Bidirectional Current and Power Monitor.
-    The <zephyr/dt-bindings/sensor/ina226.h> file should be included in the
-    DeviceTree as it provides macros that can be used for initializing the
-    configuration registers.
+  TI INA226 Bidirectional Current and Power Monitor.
+  The <zephyr/dt-bindings/sensor/ina226.h> file should be included in the
+  DeviceTree as it provides macros that can be used for initializing the
+  configuration registers.
 
 compatible: "ti,ina226"
 
@@ -47,6 +47,7 @@ properties:
       - "Shunt Voltage, Triggered"
       - "Bus Voltage, Triggered"
       - "Shunt and Bus, Triggered"
+      - "Power-Down (or Shutdown)_2"
       - "Shunt Voltage, Continuous"
       - "Bus Voltage, Continuous"
       - "Shunt and Bus, Continuous"

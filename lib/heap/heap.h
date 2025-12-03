@@ -245,7 +245,7 @@ static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes, 
 	size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
 			   chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 
-	return (chunksz_t)MIN(chunks + oddments, h->end_chunk);
+	return (chunksz_t)min(chunks + oddments, h->end_chunk);
 }
 
 static inline chunksz_t min_chunk_size(struct z_heap *h)

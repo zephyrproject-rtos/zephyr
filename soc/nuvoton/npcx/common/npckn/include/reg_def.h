@@ -1490,20 +1490,15 @@ struct ps2_reg {
 #define NPCX_PSCON_IDB                   FIELD(4, 3)
 #define NPCX_PSCON_WPUED                 7
 
-#define NPCX_PSOSIG_WDAT0                0
-#define NPCX_PSOSIG_WDAT1                1
-#define NPCX_PSOSIG_WDAT2                2
-#define NPCX_PSOSIG_CLK0                 3
-#define NPCX_PSOSIG_CLK1                 4
-#define NPCX_PSOSIG_CLK2                 5
-#define NPCX_PSOSIG_WDAT3                6
-#define NPCX_PSOSIG_CLK3                 7
-#define NPCX_PSOSIG_CLK(n)               (((n) < 3) ? ((n) + 3) : 7)
-#define NPCX_PSOSIG_WDAT(n)              (((n) < 3) ? ((n) + 0) : 6)
-#define NPCX_PSOSIG_CLK_MASK_ALL \
-					 (BIT(NPCX_PSOSIG_CLK0) | \
-					  BIT(NPCX_PSOSIG_CLK1) | \
-					  BIT(NPCX_PSOSIG_CLK2) | \
+#define NPCX_PSOSIG_WDAT2                1
+#define NPCX_PSOSIG_WDAT3                2
+#define NPCX_PSOSIG_CLK2                 4
+#define NPCX_PSOSIG_CLK3                 5
+#define NPCX_PSOSIG_CLK(n)               (((n) == 2) ? NPCX_PSOSIG_CLK2 : \
+						       NPCX_PSOSIG_CLK3)
+#define NPCX_PSOSIG_WDAT(n)              (((n) == 2) ? NPCX_PSOSIG_WDAT2 : \
+						       NPCX_PSOSIG_WDAT3)
+#define NPCX_PSOSIG_CLK_MASK_ALL         (BIT(NPCX_PSOSIG_CLK2) | \
 					  BIT(NPCX_PSOSIG_CLK3))
 
 #define NPCX_PSIEN_SOTIE                 0
@@ -1858,10 +1853,6 @@ struct lct_reg {
 	volatile uint8_t reserved5;
 	/* 0x00C: LCT Weeks */
 	volatile uint8_t LCTWEEK;
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_lct_v2)
-	/* 0x00D: LCT Weeks MSB */
-	volatile uint8_t LCTWEEKM;
-#endif
 };
 
 #define NPCX_LCTCONT_LCTEN        0

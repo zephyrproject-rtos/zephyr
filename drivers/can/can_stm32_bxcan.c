@@ -1104,72 +1104,69 @@ static DEVICE_API(can, can_api_funcs) = {
 };
 
 #ifdef CONFIG_SOC_SERIES_STM32F0X
-#define CAN_STM32_IRQ_INST(inst)                                     \
-static void config_can_##inst##_irq(CAN_TypeDef *can)                \
-{                                                                    \
-	IRQ_CONNECT(DT_INST_IRQN(inst),                              \
-		    DT_INST_IRQ(inst, priority),                     \
-		    can_stm32_isr, DEVICE_DT_INST_GET(inst), 0);     \
-	irq_enable(DT_INST_IRQN(inst));                              \
-	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 | \
-		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;                  \
-	if (IS_ENABLED(CONFIG_CAN_STATS)) {                          \
-		can->IER |= CAN_IER_LECIE;                           \
-	}                                                            \
-}
-#else
-#define CAN_STM32_IRQ_INST(inst)                                     \
-static void config_can_##inst##_irq(CAN_TypeDef *can)                \
-{                                                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx0, irq),             \
-		    DT_INST_IRQ_BY_NAME(inst, rx0, priority),        \
-		    can_stm32_rx_isr, DEVICE_DT_INST_GET(inst), 0);  \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, rx0, irq));             \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx, irq),              \
-		    DT_INST_IRQ_BY_NAME(inst, tx, priority),         \
-		    can_stm32_tx_isr, DEVICE_DT_INST_GET(inst), 0);  \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, tx, irq));              \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, sce, irq),             \
-		    DT_INST_IRQ_BY_NAME(inst, sce, priority),        \
-		    can_stm32_state_change_isr,                      \
-		    DEVICE_DT_INST_GET(inst), 0);                    \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, sce, irq));             \
-	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 | \
-		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;                  \
-	if (IS_ENABLED(CONFIG_CAN_STATS)) {                          \
-		can->IER |= CAN_IER_LECIE;                           \
-	}                                                            \
-}
+#define CAN_STM32_IRQ_INST(inst)							\
+	static void config_can_##inst##_irq(CAN_TypeDef *can)				\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(inst),						\
+			    DT_INST_IRQ(inst, priority),				\
+			    can_stm32_isr, DEVICE_DT_INST_GET(inst), 0);		\
+		irq_enable(DT_INST_IRQN(inst));						\
+		can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |		\
+			    CAN_IER_FMPIE1 | CAN_IER_BOFIE;				\
+		if (IS_ENABLED(CONFIG_CAN_STATS)) {					\
+			can->IER |= CAN_IER_LECIE;					\
+		}									\
+	}
+#else /* CONFIG_SOC_SERIES_STM32F0X */
+#define CAN_STM32_IRQ_INST(inst)							\
+	static void config_can_##inst##_irq(CAN_TypeDef *can)				\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx0, irq),			\
+			    DT_INST_IRQ_BY_NAME(inst, rx0, priority),			\
+			    can_stm32_rx_isr, DEVICE_DT_INST_GET(inst), 0);		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rx0, irq));			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx, irq),				\
+			    DT_INST_IRQ_BY_NAME(inst, tx, priority),			\
+			    can_stm32_tx_isr, DEVICE_DT_INST_GET(inst), 0);		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, tx, irq));				\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, sce, irq),			\
+			    DT_INST_IRQ_BY_NAME(inst, sce, priority),			\
+			    can_stm32_state_change_isr,					\
+			    DEVICE_DT_INST_GET(inst), 0);				\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, sce, irq));			\
+		can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |		\
+			    CAN_IER_FMPIE1 | CAN_IER_BOFIE;				\
+		if (IS_ENABLED(CONFIG_CAN_STATS)) {					\
+			can->IER |= CAN_IER_LECIE;					\
+		}									\
+	}
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
 
-#define CAN_STM32_CONFIG_INST(inst)                                      \
-PINCTRL_DT_INST_DEFINE(inst);                                            \
-static const struct can_stm32_config can_stm32_cfg_##inst = {            \
-	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),       \
-	.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),                    \
-	.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,               \
-		master_can_reg, DT_INST_REG_ADDR(inst)),                 \
-	.pclken = {                                                      \
-		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
-		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \
-	},                                                               \
-	.config_irq = config_can_##inst##_irq,                           \
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
-};
+#define CAN_STM32_CONFIG_INST(inst)							\
+	PINCTRL_DT_INST_DEFINE(inst);							\
+	static const struct can_stm32_config can_stm32_cfg_##inst = {			\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),		\
+		.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),				\
+		.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,			\
+					master_can_reg, DT_INST_REG_ADDR(inst)),	\
+		.pclken = STM32_DT_INST_CLOCK_INFO(inst),				\
+		.config_irq = config_can_##inst##_irq,					\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
+	};
 
 #define CAN_STM32_DATA_INST(inst) \
-static struct can_stm32_data can_stm32_dev_data_##inst;
+	static struct can_stm32_data can_stm32_dev_data_##inst;
 
-#define CAN_STM32_DEFINE_INST(inst)                                      \
-CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32_init, NULL,                    \
-			  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
-			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,         \
-			  &can_api_funcs);
+#define CAN_STM32_DEFINE_INST(inst)							\
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32_init, NULL,				\
+				  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst,	\
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,		\
+				  &can_api_funcs);
 
-#define CAN_STM32_INST(inst)      \
-CAN_STM32_IRQ_INST(inst)          \
-CAN_STM32_CONFIG_INST(inst)       \
-CAN_STM32_DATA_INST(inst)         \
-CAN_STM32_DEFINE_INST(inst)
+#define CAN_STM32_INST(inst)		\
+	CAN_STM32_IRQ_INST(inst)	\
+	CAN_STM32_CONFIG_INST(inst)	\
+	CAN_STM32_DATA_INST(inst)	\
+	CAN_STM32_DEFINE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32_INST)

@@ -61,8 +61,8 @@ int lvgl_encoder_input_init(const struct device *dev)
 
 #define LVGL_ENCODER_INPUT_DEFINE(inst)                                                            \
 	ASSERT_PROPERTIES(inst);                                                                   \
-	LVGL_INPUT_DEFINE(inst, encoder, CONFIG_LV_Z_ENCODER_INPUT_MSGQ_COUNT,                     \
-			  lvgl_encoder_process_event);                                             \
+	LVGL_INPUT_INST_DEFINE(inst, encoder, CONFIG_LV_Z_ENCODER_INPUT_MSGQ_COUNT,                \
+			       lvgl_encoder_process_event);                                        \
 	static const struct lvgl_encoder_input_config lvgl_encoder_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, encoder),                 \
 		.common_config.display_dev =                                                       \

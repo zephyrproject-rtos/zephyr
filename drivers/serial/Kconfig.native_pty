@@ -4,7 +4,7 @@
 config UART_NATIVE_PTY
 	bool "PTY based UART driver for native_sim"
 	default y
-	depends on (DT_HAS_ZEPHYR_NATIVE_PTY_UART_ENABLED || DT_HAS_ZEPHYR_NATIVE_POSIX_UART_ENABLED)
+	depends on DT_HAS_ZEPHYR_NATIVE_PTY_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_ASYNC
 	select SERIAL_SUPPORT_INTERRUPT
@@ -14,19 +14,11 @@ config UART_NATIVE_PTY
 	  to either connect to the terminal from which the executable was run, or into
 	  one dedicated pseudoterminal for that UART.
 
-config UART_NATIVE_POSIX
-	bool "UART driver for native_sim (deprecated)"
-	select SERIAL_HAS_DRIVER
-	select DEPRECATED
-	select UART_NATIVE_PTY
-	help
-	  Deprecated option, use UART_NATIVE_PTY instead
 
-if (UART_NATIVE_PTY || UART_NATIVE_POSIX)
+if UART_NATIVE_PTY
 
 choice UART_NATIVE_PTY_0
 	prompt "Native PTY Port 0 connection"
-	default UART_NATIVE_PTY_0_ON_STDINOUT if NATIVE_UART_0_ON_STDINOUT
 	default UART_NATIVE_PTY_0_ON_OWN_PTY
 
 config UART_NATIVE_PTY_0_ON_OWN_PTY
@@ -52,40 +44,9 @@ config UART_NATIVE_PTY_0_ON_STDINOUT
 
 endchoice
 
-choice NATIVE_UART_0
-	prompt "Native UART Port 0 connection (deprecated)"
-	default NATIVE_UART_0_ON_OWN_PTY
-
-config NATIVE_UART_0_ON_OWN_PTY
-	bool "Connect the UART to its own pseudo terminal (deprecated)"
-	help
-	  Deprecated, use UART_NATIVE_PTY_0_ON_OWN_PTY instead.
-
-config NATIVE_UART_0_ON_STDINOUT
-	bool "Connect the UART to the invoking shell stdin/stdout (deprecated)"
-	select DEPRECATED
-	help
-	  Deprecated, use UART_NATIVE_PTY_0_ON_STDINOUT instead.
-
-endchoice
-
-config UART_NATIVE_WAIT_PTS_READY_ENABLE
-	bool "Support waiting for pseudo terminal client readiness (deprecated)"
-	select DEPRECATED
-	help
-	  This option is deprecated and does not do anything anymore. (The command line
-	  option --wait_uart is always available).
-
-config UART_NATIVE_POSIX_PORT_1_ENABLE
-	bool "Second UART port (deprecated)"
-	select DEPRECATED
-	help
-	  This option does not do anything anymore. Use DTS to instantiate as many
-	  "zephyr,native-pty-uart" compatible nodes as you want.
-
 config UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD
 	string "Default command to attach a PTY UART to a new terminal"
-	default NATIVE_UART_AUTOATTACH_DEFAULT_CMD
+	default "xterm -e screen %s &"
 	help
 	  If the native executable is called with the --attach_uart
 	  command line option, this will be the default command which will be
@@ -93,15 +54,9 @@ config UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD
 	  Note that this command must have one, and only one, '%s' as
 	  placeholder for the pseudoterminal device name (e.g. /dev/pts/35)
 	  This is only applicable if the UART_0 is configured to use its own
-	  PTY with NATIVE_UART_0_ON_OWN_PTY.
+	  PTY with UART_NATIVE_PTY_0_ON_OWN_PTY.
 	  The 2nd UART will not be affected by this option.
 	  If you are using GNOME, then you can use this command string
 	  'gnome-terminal -- screen %s'
 
-config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
-	string "Default command to attach the UART to a new terminal (deprecated)"
-	default "xterm -e screen %s &"
-	help
-	  Deprecated. Use UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD instead
-
-endif # UART_NATIVE_PTY || UART_NATIVE_POSIX
+endif # UART_NATIVE_PTY

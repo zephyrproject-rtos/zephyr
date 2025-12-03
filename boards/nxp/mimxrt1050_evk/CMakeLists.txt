@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if (CONFIG_DISPLAY)
+if(CONFIG_DISPLAY)
 message(WARNING "
 CONFIG_DISPLAY: Running this firmware on a board without a display may damage the board
 ")
@@ -18,8 +18,8 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     set(FLASH_CONF evkbimxrt1050_flexspi_nor_qspi_config.c)
   else()
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT1050-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration or device configuration data blocks")
+      "the MIMXRT1050-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration or device configuration data blocks")
     # Default EVK configuration uses hyperflash, so use that file
     set(FLASH_CONF evkbimxrt1050_flexspi_nor_config.c)
   endif()

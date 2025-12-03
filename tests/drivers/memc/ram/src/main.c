@@ -15,7 +15,7 @@
 #define BUF_SIZE_SDRAM	64U
 #define BUF_SIZE_SRAM	64U
 
-#define BUF_DEF(label, size) static uint32_t buf_##label[size]		\
+#define BUF_DEF(label, size) static uint32_t buf_##label[(size) / sizeof(uint32_t)] \
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(label)))
 
 /**
@@ -23,16 +23,19 @@
  *
  * @param mem RAM memory location to be tested.
  */
-static void test_ram_rw(uint32_t *mem, size_t size)
+static void test_ram_rw(uint32_t *mem, size_t size_byte)
 {
+	size_t size_32b = size_byte / sizeof(uint32_t);
+
 	/* fill memory with number range (0, BUF_SIZE - 1) */
-	for (size_t i = 0U; i < size / sizeof(uint32_t); i++) {
+	for (size_t i = 0U; i < size_32b; i++) {
 		mem[i] = i;
 	}
 
 	/* check that memory contains written range */
-	for (size_t i = 0U; i < size / sizeof(uint32_t); i++) {
-		zassert_equal(mem[i], i, "Unexpected content on byte %zd", i);
+	for (size_t i = 0U; i < size_32b; i++) {
+		zassert_equal(mem[i], i, "Unexpected content @%p: 0x%x != 0x%zx",
+			      mem + i, mem[i], i);
 	}
 }
 
@@ -71,7 +74,7 @@ ZTEST(test_ram, test_sdram1)
 ZTEST(test_ram, test_ram0)
 {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
-	test_ram_rw(buf_ram0, RAM_SIZE_SRAM);
+	test_ram_rw(buf_ram0, RAM_SIZE);
 #else
 	ztest_test_skip();
 #endif

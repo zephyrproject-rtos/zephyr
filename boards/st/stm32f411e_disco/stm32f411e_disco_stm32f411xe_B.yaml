@@ -5,6 +5,8 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+ram: 128
+flash: 512
 supported:
   - counter
 vendor: st

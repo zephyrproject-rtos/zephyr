@@ -126,7 +126,9 @@ static void icm45686_complete_handler(struct rtio *ctx,
 {
 	const struct device *dev = (const struct device *)arg;
 	struct icm45686_data *data = dev->data;
+	const struct icm45686_config *cfg = dev->config;
 	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+	const bool wm_gt_ths = !cfg->settings.fifo_watermark_equals;
 	uint8_t int_status = data->stream.data.int_status;
 	int err;
 
@@ -157,7 +159,7 @@ static void icm45686_complete_handler(struct rtio *ctx,
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
-				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true);
+				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths);
 		LOG_WRN("Flushing FIFO: %d", int_status);
 
 		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
@@ -372,6 +374,7 @@ void icm45686_stream_submit(const struct device *dev,
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 	struct icm45686_data *data = dev->data;
 	const struct icm45686_config *cfg = dev->config;
+	const bool wm_gt_ths = !cfg->settings.fifo_watermark_equals;
 	uint8_t val = 0;
 	int err;
 
@@ -470,10 +473,18 @@ void icm45686_stream_submit(const struct device *dev,
 
 		if (data->stream.settings.enabled.fifo_ths ||
 		    data->stream.settings.enabled.fifo_full) {
+			/** AN-000364: When operating in FIFO streaming mode, if FIFO threshold
+			 * interrupt is triggered with M number of FIFO frames accumulated in the
+			 * FIFO buffer, the host should only read the first M-1 number of FIFO
+			 * frames.
+			 *
+			 * To avoid the case where M == 1 and M-- would be 0,
+			 * M + 1 threshold is used so M count is read.
+			 */
 			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths ?
-					    cfg->settings.fifo_watermark : 0;
+					    cfg->settings.fifo_watermark + 1 : 0;
 
-			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true) |
+			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
 			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
 			if (err) {
@@ -562,18 +573,17 @@ int icm45686_stream_init(const struct device *dev)
 		}
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
 	/** I3C devices use IBI only if no GPIO INT pin is defined. */
-	} else if (data->rtio.type == ICM45686_BUS_I3C) {
-		const struct i3c_iodev_data *iodev_data = data->rtio.iodev->data;
+	} else if (data->bus.rtio.type == ICM45686_BUS_I3C) {
+		const struct i3c_iodev_data *iodev_data = data->bus.rtio.iodev->data;
 
-		data->rtio.i3c.desc = i3c_device_find(iodev_data->bus,
-						      &data->rtio.i3c.id);
-		if (data->rtio.i3c.desc == NULL) {
+		data->bus.rtio.i3c.desc = i3c_device_find(iodev_data->bus, &data->bus.rtio.i3c.id);
+		if (data->bus.rtio.i3c.desc == NULL) {
 			LOG_ERR("Failed to find I3C device");
 			return -ENODEV;
 		}
-		data->rtio.i3c.desc->ibi_cb = icm45686_ibi_cb;
+		data->bus.rtio.i3c.desc->ibi_cb = icm45686_ibi_cb;
 
-		err = i3c_ibi_enable(data->rtio.i3c.desc);
+		err = i3c_ibi_enable(data->bus.rtio.i3c.desc);
 		if (err) {
 			LOG_ERR("Failed to enable IBI: %d", err);
 			return err;

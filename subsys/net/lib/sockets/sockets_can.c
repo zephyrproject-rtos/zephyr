@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -186,14 +185,14 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	}
 }
 
-static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
-			 socklen_t addrlen)
+static int zcan_bind_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
+			 net_socklen_t addrlen)
 {
-	struct sockaddr_can *can_addr = (struct sockaddr_can *)addr;
+	struct net_sockaddr_can *can_addr = (struct net_sockaddr_can *)addr;
 	struct net_if *iface;
 	int ret;
 
-	if (addrlen != sizeof(struct sockaddr_can)) {
+	if (addrlen != sizeof(struct net_sockaddr_can)) {
 		return -EINVAL;
 	}
 
@@ -223,10 +222,10 @@ static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 }
 
 ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			int flags, const struct sockaddr *dest_addr,
-			socklen_t addrlen)
+			int flags, const struct net_sockaddr *dest_addr,
+			net_socklen_t addrlen)
 {
-	struct sockaddr_can can_addr;
+	struct net_sockaddr_can can_addr;
 	struct can_frame zframe;
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
@@ -245,16 +244,16 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	if (addrlen == 0) {
-		addrlen = sizeof(struct sockaddr_can);
+		addrlen = sizeof(struct net_sockaddr_can);
 	}
 
 	if (dest_addr == NULL) {
 		memset(&can_addr, 0, sizeof(can_addr));
 
 		can_addr.can_ifindex = -1;
-		can_addr.can_family = AF_CAN;
+		can_addr.can_family = NET_AF_CAN;
 
-		dest_addr = (struct sockaddr *)&can_addr;
+		dest_addr = (struct net_sockaddr *)&can_addr;
 	}
 
 	NET_ASSERT(len == sizeof(struct socketcan_frame));
@@ -274,8 +273,8 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 size_t max_len, int flags,
-				 struct sockaddr *src_addr,
-				 socklen_t *addrlen)
+				 struct net_sockaddr *src_addr,
+				 net_socklen_t *addrlen)
 {
 	struct can_frame zframe;
 	size_t recv_len = 0;
@@ -345,7 +344,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 }
 
 static int zcan_getsockopt_ctx(struct net_context *ctx, int level, int optname,
-			       void *optval, socklen_t *optlen)
+			       void *optval, net_socklen_t *optlen)
 {
 	if (!optval || !optlen) {
 		errno = EINVAL;
@@ -357,7 +356,7 @@ static int zcan_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 }
 
 static int zcan_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			       const void *optval, socklen_t optlen)
+			       const void *optval, net_socklen_t optlen)
 {
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
@@ -466,15 +465,15 @@ static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 /*
  * TODO: A CAN socket can be bound to a network device using SO_BINDTODEVICE.
  */
-static int can_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
-			       socklen_t addrlen)
+static int can_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
+			       net_socklen_t addrlen)
 {
 	return zcan_bind_ctx(obj, addr, addrlen);
 }
 
 /* The connect() function is no longer necessary. */
-static int can_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
-				  socklen_t addrlen)
+static int can_sock_connect_vmeth(void *obj, const struct net_sockaddr *addr,
+				  net_socklen_t addrlen)
 {
 	return 0;
 }
@@ -489,32 +488,32 @@ static int can_sock_listen_vmeth(void *obj, int backlog)
 	return 0;
 }
 
-static int can_sock_accept_vmeth(void *obj, struct sockaddr *addr,
-				 socklen_t *addrlen)
+static int can_sock_accept_vmeth(void *obj, struct net_sockaddr *addr,
+				 net_socklen_t *addrlen)
 {
 	return 0;
 }
 
 static ssize_t can_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 				     int flags,
-				     const struct sockaddr *dest_addr,
-				     socklen_t addrlen)
+				     const struct net_sockaddr *dest_addr,
+				     net_socklen_t addrlen)
 {
 	return zcan_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
 static ssize_t can_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-				       int flags, struct sockaddr *src_addr,
-				       socklen_t *addrlen)
+				       int flags, struct net_sockaddr *src_addr,
+				       net_socklen_t *addrlen)
 {
 	return zcan_recvfrom_ctx(obj, buf, max_len, flags,
 				 src_addr, addrlen);
 }
 
 static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
-				     void *optval, socklen_t *optlen)
+				     void *optval, net_socklen_t *optlen)
 {
-	if (level == SOL_CAN_RAW) {
+	if (level == NET_SOL_CAN_RAW) {
 		const struct canbus_api *api;
 		struct net_if *iface;
 		const struct device *dev;
@@ -622,21 +621,21 @@ static void can_unregister_filters(struct net_if *iface,
 }
 
 static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
-				     const void *optval, socklen_t optlen)
+				     const void *optval, net_socklen_t optlen)
 {
 	const struct canbus_api *api;
 	struct net_if *iface;
 	const struct device *dev;
 	int ret;
 
-	if (level != SOL_CAN_RAW) {
+	if (level != NET_SOL_CAN_RAW) {
 		return zcan_setsockopt_ctx(obj, level, optname, optval, optlen);
 	}
 
 	/* The application must use CAN_filter and then we convert
 	 * it to zcan_filter as the CANBUS drivers expects that.
 	 */
-	if (optname == CAN_RAW_FILTER && optlen != sizeof(struct socketcan_filter)) {
+	if (optname == NET_CAN_RAW_FILTER && optlen != sizeof(struct socketcan_filter)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -655,7 +654,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		return -1;
 	}
 
-	if (optname == CAN_RAW_FILTER) {
+	if (optname == NET_CAN_RAW_FILTER) {
 		int count, i;
 
 		if (optlen % sizeof(struct socketcan_filter) != 0) {
@@ -727,12 +726,12 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 
 static bool can_is_supported(int family, int type, int proto)
 {
-	if (type != SOCK_RAW || proto != CAN_RAW) {
+	if (type != NET_SOCK_RAW || proto != NET_CAN_RAW) {
 		return false;
 	}
 
 	return true;
 }
 
-NET_SOCKET_REGISTER(af_can, NET_SOCKET_DEFAULT_PRIO, AF_CAN, can_is_supported,
+NET_SOCKET_REGISTER(af_can, NET_SOCKET_DEFAULT_PRIO, NET_AF_CAN, can_is_supported,
 		    zcan_socket);

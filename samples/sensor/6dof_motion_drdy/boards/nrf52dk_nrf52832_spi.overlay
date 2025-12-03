@@ -20,6 +20,7 @@
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+
 	icm42670p: icm42670p@0 {
 		compatible = "invensense,icm42670p";
 		reg = <0>;

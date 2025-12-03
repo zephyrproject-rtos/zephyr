@@ -8,6 +8,6 @@ target_sources(app PRIVATE
   src/main.c
 )
 
-if (CONFIG_USE_USB_AUDIO_INPUT)
+if(CONFIG_USE_USB_AUDIO_INPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()

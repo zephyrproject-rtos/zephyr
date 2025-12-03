@@ -48,7 +48,9 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 			 + CFG_BLE_MBLOCK_COUNT_MARGIN)
 
 #define BLE_DYN_ALLOC_SIZE \
-	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
+	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, \
+			       MBLOCK_COUNT, \
+			       (CFG_BLE_EATT_BEARER_PER_LINK * CFG_BLE_NUM_LINK)))
 
 /* GATT buffer size (in bytes)*/
 #define BLE_GATT_BUF_SIZE \
@@ -131,7 +133,7 @@ void register_radio_event(void)
 	/* Getting next radio event time if any */
 	cmd_status = ll_intf_le_get_remaining_time_for_next_event(&next_radio_event_us);
 	UNUSED(cmd_status);
-	__ASSERT(cmd_staus, "Unable to retrieve next radio event");
+	__ASSERT(cmd_status, "Unable to retrieve next radio event");
 
 	if (next_radio_event_us == LL_DP_SLP_NO_WAKEUP) {
 		/* No next radio event scheduled */
@@ -376,7 +378,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	err = receive_data(dev, data, (size_t)length - 1,
+	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
 	k_sem_give(&hci_sem);

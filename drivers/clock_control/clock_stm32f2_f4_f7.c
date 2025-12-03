@@ -7,6 +7,7 @@
 
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -97,7 +98,7 @@ __unused
 void config_pll_sysclock(void)
 {
 #if defined(STM32_SRC_PLL_R) && STM32_PLL_R_ENABLED && defined(RCC_PLLCFGR_PLLR)
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLR, pllr(STM32_PLL_R_DIVISOR));
+	stm32_reg_modify_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLR, pllr(STM32_PLL_R_DIVISOR));
 #endif
 	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
 				    pllm(STM32_PLL_M_DIVISOR),

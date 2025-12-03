@@ -63,19 +63,10 @@
 
 	ext_memory: memory@70000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x70000000 DT_SIZE_M(64)>;
+		reg = <0x70000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
-};
-
-&clk_lsi {
-	status = "disabled";
-};
-
-&clk_hsi48 {
-	status = "disabled";
 };
 
 &clk_hse {
@@ -121,6 +112,10 @@
 	ppre2 = <2>;
 	ppre4 = <2>;
 	ppre5 = <2>;
+};
+
+&pwr {
+	power-supply = "ldo";
 };
 
 &usart1 {
@@ -173,6 +168,31 @@
 	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 	status = "okay";
+};
+
+&mac {
+	pinctrl-0 = <&eth_rmii_rxd0_pg4
+		     &eth_rmii_rxd1_pg5
+		     &eth_rmii_ref_clk_pb6
+		     &eth_rmii_crs_dv_pa7
+		     &eth_rmii_tx_en_pg11
+		     &eth_rmii_txd0_pg13
+		     &eth_rmii_txd1_pg12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pg6>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
 };
 
 &flash0 {

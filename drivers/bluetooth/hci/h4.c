@@ -338,7 +338,7 @@ static inline void read_payload(const struct device *dev)
 		LOG_DBG("Allocated rx.buf %p", h4->rx.buf);
 
 		buf_tailroom = net_buf_tailroom(h4->rx.buf);
-		if (buf_tailroom < h4->rx.remaining) {
+		if (buf_tailroom < (h4->rx.remaining + h4->rx.hdr_len)) {
 			LOG_ERR("Not enough space in buffer %u/%zu", h4->rx.remaining,
 				buf_tailroom);
 			h4->rx.discard = h4->rx.remaining;

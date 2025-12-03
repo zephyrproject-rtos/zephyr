@@ -6,6 +6,10 @@
 
 #include <zephyr/device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Update the hardware port settings on a uart bridge
  *
@@ -17,3 +21,7 @@
  */
 void uart_bridge_settings_update(const struct device *dev,
 				 const struct device *bridge_dev);
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dht0 = &adafruit_sht4x;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_sht4x: sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		repeatability = <2>; /* High repeatability */
+		reg = <0x44>;
+	};
+};

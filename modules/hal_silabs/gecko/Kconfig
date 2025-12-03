@@ -12,4 +12,108 @@ config SILABS_GECKO_RAIL_MULTIPROTOCOL
 	  coexistence and arbitration between multiple wireless protocols (for
 	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
 
+config SOC_GECKO_CMU
+	bool
+	help
+	  Set if the clock management unit (CMU) HAL module is used.
+
+config SOC_GECKO_BURTC
+	bool
+	help
+	  Set if the Back-Up Real Time Counter (BURTC) HAL module is used.
+
+config SOC_GECKO_CORE
+	bool
+	default y
+	help
+	  Set if the Core interrupt handling (CORE) HAL module is used.
+
+config SOC_GECKO_ADC
+	bool
+	help
+	  Set if the Analog to Digital Converter (ADC) HAL module is used.
+
+config SOC_GECKO_CRYOTIMER
+	bool
+	help
+	  Set if the Ultra Low Energy Timer/Counter (CRYOTIMER) HAL module is used.
+
+config SOC_GECKO_EMU
+	bool
+	help
+	  Set if the Energy Management Unit (EMU) HAL module is used.
+
+config SOC_GECKO_GPIO
+	bool
+	help
+	  Set if the General Purpose Input/Output (GPIO) HAL module is used.
+
+config SOC_GECKO_I2C
+	bool
+	help
+	  Set if the Inter-Integrated Circuit Interface (I2C) HAL module is used.
+
+config SOC_GECKO_LETIMER
+	bool
+	help
+	  Set if the Low Energy Timer (LETIMER) HAL module is used.
+
+config SOC_GECKO_LEUART
+	bool
+	help
+	  Set if the Low Energy Universal Asynchronous Receiver/Transmitter (LEUART)
+	  HAL module is used.
+
+config SOC_GECKO_MSC
+	bool
+	help
+	  Set if the Memory System Controller (MSC) HAL module is used.
+
+config SOC_GECKO_PRS
+	bool
+	help
+	  Set if the Peripheral Reflex System (PRS) HAL module is used.
+
+config SOC_GECKO_RMU
+	bool
+	help
+	  Set if the Reset Management Unit (RMU) HAL module is used.
+
+config SOC_GECKO_RTC
+	bool
+	help
+	  Set if the Real Time Counter (RTC) HAL module is used.
+
+config SOC_GECKO_RTCC
+	bool
+	help
+	  Set if the Real Time Counter and Calendar (RTCC) HAL module is used.
+
+config SOC_GECKO_TIMER
+	bool
+	help
+	  Set if the Timer/Counter (TIMER) HAL module is used.
+
+config SOC_GECKO_USART
+	bool
+	help
+	  Set if the Universal Synchronous Asynchronous Receiver/Transmitter (USART)
+	  HAL module is used.
+
+config SOC_GECKO_EUSART
+	bool
+	help
+	  Set if the Extended Universal Synchronous Asynchronous Receiver/Transmitter (EUSART)
+	  HAL module is used.
+
+config SOC_GECKO_WDOG
+	bool
+	help
+	  Set if the Watchdog Timer (WDOG) HAL module is used.
+
+config SOC_GECKO_TRNG
+	bool
+	help
+	  Set if the SoC has a True Random Number Generator (TRNG) module.
+
 endmenu

@@ -8,8 +8,13 @@ config NUM_IRQS
 	default 77 if SOC_MCXW727C
 	default 75
 
+config MCUX_LPTMR_TIMER
+	default y if PM
+
+DT_LPTMR_PATH := $(dt_nodelabel_path,lptmr0)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 96000000 if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_LPTMR_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config MCUX_FLASH_K4_API
 	default y

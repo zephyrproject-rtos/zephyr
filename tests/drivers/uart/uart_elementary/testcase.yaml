@@ -25,7 +25,12 @@ tests:
       - esp32h2_devkitm
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
+      - bgm220_ek4314a
+      - slwrb4180b
+      - xg23_rb4210a
+      - xg24_rb4186c
       - xg24_rb4187c
+      - bg27_rb4110b
       - bg29_rb4420a
       - xg29_rb4412a
       - b_u585i_iot02a
@@ -107,3 +112,4 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
     extra_configs:
       - CONFIG_NRF_SYS_EVENT=y
+      - CONFIG_SOC_NRF_FORCE_CONSTLAT=y

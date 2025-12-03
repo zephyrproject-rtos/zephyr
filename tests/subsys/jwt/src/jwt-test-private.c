@@ -4,7 +4,7 @@
  *
  */
 
-#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(CONFIG_JWT_SIGN_RSA_LEGACY)
+#if defined(CONFIG_JWT_SIGN_RSA_PSA)
 
 /* To generate the key in the correct format use the following command:
  * $ openssl genrsa 2048 | openssl rsa -outform DER | xxd -i

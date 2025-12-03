@@ -9,3 +9,12 @@ config GNSS_EMUL
 	select TIMEOUT_64BIT
 	help
 	  Enable emulated GNSS driver.
+
+config GNSS_EMUL_MANUAL_UPDATE
+	bool "Internal state manually updated through gnss_emul_set_data"
+	depends on GNSS_EMUL
+	help
+	  The internal state of the GNSS emulator (location, time, etc)
+	  must be updated through gnss_emul_set_data, instead of automatically
+	  transitioning to hardcoded states at hardcoded times. Once the current
+	  time is set, the published time automatically increments.

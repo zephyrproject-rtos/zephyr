@@ -95,6 +95,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &usart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;

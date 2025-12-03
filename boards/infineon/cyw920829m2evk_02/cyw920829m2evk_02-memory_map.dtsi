@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/misc/ifx_cyw20829.h>
+
+/ {
+	sram0: memory@20000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "mmio-sram";
+		reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_sahb: sram_sahb@20000000 {
+			reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;  /* SAHB address */
+		};
+
+		sram_cbus: sram_cbus@4000000 {
+			reg = <SRAM0_CBUS_BASE SRAM0_SIZE>;  /* CBUS address */
+		};
+	};
+
+	/* sram_bootstrap address calculation:
+	 * sram_sahb + sram_size (256k) - bootstrap size
+	 * (e.g. 0x20000000 + 0x40000 - 16K (0x4000) = 0x2003C000)
+	 */
+	sram_bootstrap: memory@2003c000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "BOOTSTRAP_RAM";
+		reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_bootstrap_sahb: sram_bootstrap_sahb@2003c000 {
+			reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;  /* SAHB address */
+		};
+
+		sram_bootstrap_cbus: sram_bootstrap_cbus@403c000 {
+			reg = <BOOTSTRAP_CBUS_BASE BOOTSTRAP_SIZE>;  /* CBUS address */
+		};
+	};
+};
+
+/* Flash Memory Partitioning is defined here.
+ *
+ * Note that the flash memory is located in different locations for different
+ * parts in the family.  For the following parts, flash is located inside the
+ * SOC package but still accessed via the qspi interface.
+ *     - CYW20829B1340
+ *     - CYW20829B1240
+ *     - CYW89829B0232
+ *     - CYW89829B1232
+ *
+ * For other parts in the family, flash is external to the part.  For the
+ * CYW920829M2EVK_02 board, the flash is located on the processor board
+ * (CYW920829M2IPA2) these parts.
+ */
+&flash0 {
+	bootstrap_region: bootstrap_region@0 {
+		reg = <0 BOOTSTRAP_SIZE>;
+	};
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x20000>;
+			read-only;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 0x60000>;
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x80000 0x60000>;
+		};
+
+		storage_partition: storage_partition@E0000 {
+			compatible = "soc-nv-flash";
+			reg = <0xE0000 DT_SIZE_K(64)>;
+		};
+	};
+};

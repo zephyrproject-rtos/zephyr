@@ -115,6 +115,30 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
+  drivers.spi.stm32_spi_rtio.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-rtio.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_c071rb
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_f767zi
+      - nucleo_g474re
+      - nucleo_h743zi
+      - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_l152re
+      - nucleo_wba55cg
+      - nucleo_wb55rg
+      - nucleo_wl55jc
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    integration_platforms:
+      - stm32h573i_dk
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-interrupt.conf"
     platform_allow:
@@ -350,3 +374,49 @@ tests:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt1050_evk/mimxrt1052/hyperflash
+  drivers.spi.loopback.renesas_sci_b_spi:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.spi.loopback.renesas_sci_b_spi.no_async:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.spi.loopback.renesas_sci_b_spi_ra8x2:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    integration_platforms:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.loopback.renesas_sci_b_spi_ra8x2.no_async:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    integration_platforms:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"

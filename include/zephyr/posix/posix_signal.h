@@ -43,12 +43,12 @@ typedef int uid_t;
 #define __uid_t_defined
 #endif
 
-#if !defined(_TIME_T_DECLARED) && !defined(__time_t_defined)
-typedef long time_t;
-#define _TIME_T_DECLARED
-#define __time_t_defined
-#endif
+/* time_t must be defined by the libc time.h */
+#include <time.h>
 
+#if __STDC_VERSION__ >= 201112L
+/* struct timespec must be defined in the libc time.h */
+#else
 #if !defined(_TIMESPEC_DECLARED) && !defined(__timespec_defined)
 struct timespec {
 	time_t tv_sec;
@@ -56,6 +56,7 @@ struct timespec {
 };
 #define _TIMESPEC_DECLARED
 #define __timespec_defined
+#endif
 #endif
 
 /* sig_atomic_t must be defined by the libc signal.h */
@@ -97,17 +98,26 @@ typedef struct {
 
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 
-union sigval; /* forward declaration (to preserve spec order) */
+/* slightly out of order w.r.t. the specification */
+#if !defined(_SIGVAL_DECLARED) && !defined(__sigval_defined)
+union sigval {
+	int sival_int;
+	void *sival_ptr;
+};
+#define _SIGVAL_DECLARED
+#define __sigval_defined
+#endif
 
 #if !defined(_SIGEVENT_DECLARED) && !defined(__sigevent_defined)
-typedef struct {
+struct sigevent {
 #if defined(_POSIX_THREADS) || defined(__DOXYGEN__)
-	pthread_attr_t *sigev_thread_attr;
+	pthread_attr_t *sigev_notify_attributes;
+	void (*sigev_notify_function)(union sigval value);
 #endif
 	union sigval sigev_value;
 	int sigev_notify;
 	int sigev_signo;
-} sigevent_t;
+};
 #define _SIGEVENT_DECLARED
 #define __sigevent_defined
 #endif
@@ -120,16 +130,27 @@ typedef struct {
 
 #endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */
 
-#if !defined(_SIGVAL_DECLARED) && !defined(__sigval_defined)
-union sigval {
-	int sival_int;
-	void *sival_ptr;
-};
-#define _SIGVAL_DECLARED
-#define __sigval_defined
-#endif
-
 /* SIGRTMIN and SIGRTMAX defined above */
+
+#if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
+typedef struct {
+	void *si_addr;
+#if defined(_XOPEN_STREAMS) || defined(__DOXYGEN__)
+	long si_band;
+#endif
+	union sigval si_value;
+	pid_t si_pid;
+	uid_t si_uid;
+	int si_signo;
+	int si_code;
+#if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
+	int si_errno;
+#endif
+	int si_status;
+} siginfo_t;
+#define _SIGINFO_T_DECLARED
+#define __siginfo_t_defined
+#endif
 
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 
@@ -198,26 +219,6 @@ typedef struct {
 #endif
 
 #endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */
-
-#if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
-typedef struct {
-	void *si_addr;
-#if defined(_XOPEN_STREAMS) || defined(__DOXYGEN__)
-	long si_band;
-#endif
-	union sigval si_value;
-	pid_t si_pid;
-	uid_t si_uid;
-	int si_signo;
-	int si_code;
-#if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
-	int si_errno;
-#endif
-	int si_status;
-} siginfo_t;
-#define _SIGINFO_T_DECLARED
-#define __siginfo_t_defined
-#endif
 
 /* Siginfo codes are defined below */
 

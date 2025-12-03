@@ -74,6 +74,7 @@
 	};
 };
 
+/* Add the STM32C09xCx package-specific wake-up pins */
 &pwr {
 	wkup-pin@2 {
 		reg = <0x2>;
@@ -167,6 +168,7 @@
 	st,adc-clock-source = "ASYNC";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;

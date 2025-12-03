@@ -9,3 +9,7 @@
 		sample-clock = &hsfll120;
 	};
 };
+
+&hsfll120 {
+	status = "okay";
+};

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Qualification xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" DN="Q347313" DesignName="Zephyr Host" PathType="NewDesignNoDns" TCRL="88" xmlns="http://qualification.bluetooth.com">
+<Qualification xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" DN="Q376799" DesignName="Zephyr Host" PathType="NewDesignNoDns" TCRL="88" xmlns="http://qualification.bluetooth.com">
   <References />
   <Products>
-    <Product Name="Zephyr Host" Description="host" Model="main" Website="" PublishDate="2025-07-31T00:00:00" />
+    <Product Name="Zephyr Host" Description="host" Model="main" Website="" PublishDate="2025-11-12T00:00:00" />
   </Products>
   <Layers>
     <Layer Layer="GAP">
@@ -54,7 +54,6 @@
         <Feature>GAP 31/10</Feature>
         <Feature>GAP 32/1</Feature>
         <Feature>GAP 32/2</Feature>
-        <Feature>GAP 35/2</Feature>
         <Feature>GAP 37/1</Feature>
         <Feature>GAP 5/4</Feature>
         <Feature>GAP 8a/1</Feature>
@@ -84,7 +83,6 @@
         <Feature>GAP 21/5</Feature>
         <Feature>GAP 23/2</Feature>
         <Feature>GAP 25/1</Feature>
-        <Feature>GAP 25/6</Feature>
         <Feature>GAP 27/7</Feature>
         <Feature>GAP 28/2</Feature>
         <Feature>GAP 33/4</Feature>
@@ -150,7 +148,6 @@
         <Feature>GAP 20A/19</Feature>
         <Feature>GAP 30a/16</Feature>
         <Feature>GAP 14a/10</Feature>
-        <Feature>GAP 27b/8</Feature>
         <Feature>GAP 27b/3</Feature>
         <Feature>GAP 27b/6</Feature>
         <Feature>GAP 25/11</Feature>
@@ -217,7 +214,6 @@
         <Feature>GAP 33/5</Feature>
         <Feature>GAP 34/3</Feature>
         <Feature>GAP 35/3</Feature>
-        <Feature>GAP 35/5</Feature>
         <Feature>GAP 35/8</Feature>
         <Feature>GAP 36/2</Feature>
         <Feature>GAP 36/5</Feature>
@@ -240,7 +236,6 @@
         <Feature>GAP 30a/6</Feature>
         <Feature>GAP 27c/2</Feature>
         <Feature>GAP 14a/6</Feature>
-        <Feature>GAP 37b/8</Feature>
         <Feature>GAP 25/14</Feature>
         <Feature>GAP 14a/3</Feature>
         <Feature>GAP 27c/3</Feature>
@@ -252,14 +247,11 @@
         <Feature>GAP 20/5</Feature>
         <Feature>GAP 20A/7</Feature>
         <Feature>GAP 23/3</Feature>
-        <Feature>GAP 25/2</Feature>
-        <Feature>GAP 25/5</Feature>
         <Feature>GAP 26/3</Feature>
         <Feature>GAP 27/5</Feature>
         <Feature>GAP 27a/1</Feature>
         <Feature>GAP 27a/3</Feature>
         <Feature>GAP 31/3</Feature>
-        <Feature>GAP 35/6</Feature>
         <Feature>GAP 37a/2</Feature>
         <Feature>GAP 6/1</Feature>
         <Feature>GAP 8a/11</Feature>
@@ -369,7 +361,6 @@
         <Feature>GATT 9/7</Feature>
         <Feature>GATT 10/8</Feature>
         <Feature>GATT 3/30</Feature>
-        <Feature>GATT 3/13</Feature>
         <Feature>GATT 3/17</Feature>
         <Feature>GATT 4/16</Feature>
         <Feature>GATT 4/2</Feature>
@@ -393,7 +384,6 @@
         <Feature>GATT 4/13</Feature>
         <Feature>GATT 4/18</Feature>
         <Feature>GATT 4/3</Feature>
-        <Feature>GATT 7/3</Feature>
         <Feature>GATT 4a/1</Feature>
         <Feature>GATT 1/1</Feature>
         <Feature>GATT 3/29</Feature>
@@ -428,7 +418,6 @@
         <Feature>GATT 4/20</Feature>
         <Feature>GATT 4/23</Feature>
         <Feature>GATT 4/26</Feature>
-        <Feature>GATT 9/10</Feature>
         <Feature>GATT 3a/1</Feature>
         <Feature>GATT 9/12</Feature>
         <Feature>GATT 1a/1</Feature>
@@ -448,12 +437,10 @@
         <Feature>SM 2/2</Feature>
         <Feature>SM 5/1</Feature>
         <Feature>SM 5/4</Feature>
-        <Feature>SM 6/2</Feature>
         <Feature>SM 1/1</Feature>
         <Feature>SM 2/1</Feature>
         <Feature>SM 4/1</Feature>
         <Feature>SM 5/3</Feature>
-        <Feature>SM 6/1</Feature>
         <Feature>SM 7b/1</Feature>
         <Feature>SM 4/3</Feature>
         <Feature>SM 7b/3</Feature>

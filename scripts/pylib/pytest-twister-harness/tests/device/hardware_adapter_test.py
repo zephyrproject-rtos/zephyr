@@ -112,7 +112,7 @@ def test_if_get_command_returns_proper_string_7(patched_which, device: HardwareA
     assert isinstance(device.command, list)
     assert device.command == [
         'west', 'flash', '--skip-rebuild', '--build-dir', 'build', '--runner', 'stm32cubeprogrammer',
-        '--tool-opt=sn=p_id'
+        '--dev-id', 'p_id'
     ]
 
 

@@ -1,4 +1,8 @@
+# Device Tree binding for Maxim MAX30101
+#
 # Copyright (c) 2018, NXP
+# Copyright (c) 2025, CATIE
+#
 # SPDX-License-Identifier: Apache-2.0
 
 description: MAX30101 heart rate sensor
@@ -6,3 +10,132 @@ description: MAX30101 heart rate sensor
 compatible: "maxim,max30101"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Active low interrupt signal. It is an open drain signal, so it
+      require either hardware or software pull-up.
+  fifo-rollover-en:
+    type: boolean
+    description: |
+      Controls the behavior of the FIFO when the FIFO becomes completely
+      filled with data. If set, the FIFO address rolls over to zero and the
+      FIFO continues to fill with new data. If not set, then the FIFO is
+      not updated until FIFO_DATA is read or the WRITE/READ pointer
+      positions are changed.
+  fifo-watermark:
+    type: int
+    default: 0
+    enum:
+      - 0 # Each 32 samples @ 0 empty space
+      - 1 # Each 31 samples @ 1 empty space
+      - 2 # Each 30 samples @ 2 empty space
+      - 3 # Each 29 samples @ 3 empty space
+      - 4 # Each 28 samples @ 4 empty space
+      - 5 # Each 27 samples @ 5 empty space
+      - 6 # Each 26 samples @ 6 empty space
+      - 7 # Each 25 samples @ 7 empty space
+      - 8 # Each 24 samples @ 8 empty space
+      - 9 # Each 23 samples @ 9 empty space
+      - 10 # Each 22 samples @ 10 empty space
+      - 11 # Each 21 samples @ 11 empty space
+      - 12 # Each 20 samples @ 12 empty space
+      - 13 # Each 19 samples @ 13 empty space
+      - 14 # Each 18 samples @ 14 empty space
+      - 15 # Each 17 samples @ 15 empty space
+    description: |
+      Configure the trigger for the FIFO_WATERMARK interrupt (e.g. if set to 2,
+      then the flag is set when the 30th word is written to the FIFO).
+      Default set to 0, same as after Power Reset. Range: 0 - 15.
+  acq-mode:
+    type: string
+    required: true
+    enum:
+      - "multi-led" # Multi-LED mode, leds according configuration of slots
+      - "heart-rate" # Heart rate (HR) mode, only red led
+      - "spo2" # SpO2 mode, red and ir led
+    description: |
+      Set the operation mode of the MAX30101.
+  smp-ave:
+    type: int
+    default: 1
+    enum:
+      - 1 # 1 sample (no averaging)
+      - 2 # 2 samples
+      - 4 # 4 samples
+      - 8 # 8 samples
+      - 16 # 16 samples
+      - 32 # 32 samples
+    description: |
+      To reduce the amount of data throughput, adjacent samples (in each
+      individual channel) can be averaged and decimated on the chip.
+      Default set to 1 for no averaging, same as after Power Reset.
+  adc-rge:
+    type: int
+    default: 8192
+    enum:
+      - 2048 # 7.81 pA/LSB
+      - 4096 # 15.63 pA/LSB
+      - 8192 # 31.25 pA/LSB
+      - 16384 # 62.5 pA/LSB
+    description: |
+      Set the ADC's full-scale range at 18 bits resolution.
+      Default set to 8192, compromise between precision and consumption.
+  smp-sr:
+    type: int
+    default: 50
+    enum:
+      - 50 # 50 Hz
+      - 100 # 100 Hz
+      - 200 # 200 Hz
+      - 400 # 400 Hz
+      - 800 # 800 Hz
+      - 1000 # 1000 Hz
+      - 1600 # 1600 Hz
+      - 3200 # 3200 Hz
+    description: |
+      Set the effective sampling rate with one sample consisting of one
+      pulse/conversion per active LED channel. In SpO2 mode, these means
+      one IR pulse/conversion and one red pulse/conversion per sample
+      period. Only one RED pulse/conversion in HR mode.
+      Default set to 50 Hz, same as after Power Reset.
+  led-pw:
+    type: int
+    default: 69
+    enum:
+      - 69 # 69 us | 15 bits resolution
+      - 118 # 118 us | 16 bits resolution
+      - 215 # 215 us | 17 bits resolution
+      - 411 # 411 us | 18 bits resolution
+    description: |
+      Set the pulse width for each LED to control the integration time
+      of the ADC in us. The ADC resolution is directly related to the
+      integration time.
+      Default set to 69 us, same as after Power Reset.
+  led-pa:
+    type: uint8-array
+    default: [0xff, 0xff, 0xff]
+    description: |
+      Set the pulse amplitude to control the LED current. The actual
+      measured LED current for each part can vary significantly due to the
+      trimming methodology.
+      [0]: Red LED
+      [1]: IR LED
+      [2]: Green LED
+      Default set to [0xff, 0xff, 0xff], activate any chosen LED channel.
+      Value range: 0x00 - 0xFF | 0.0 mA - 50.0 mA
+  led-slot:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Set which LED are active in each time slot for Multi-LED mode only.
+      0: None (Disabled)
+      1: Red LED
+      2: InfraRed LED
+      3: Green LED
+      Default set to [0, 0, 0, 0], no LED activated in multi-LED mode.
+      User needs to choose wich LED is active for each slot.
+      NOTE: If a LED is present on multiple slots, `sensor_channel_get`
+      will result in the averaging of the values.

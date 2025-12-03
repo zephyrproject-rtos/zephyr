@@ -1,9 +1,12 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 DMA
+title: Infineon CAT1 DMA
+
+description: |
+  DMA for Infineon CAT1 devices
 
 compatible: "infineon,cat1-dma"
 
@@ -21,6 +24,11 @@ properties:
 
   "#dma-cells":
     const: 1
+
+  enable-chaining:
+    type: boolean
+    description: |
+      This property can be used to enable descriptor chaining
 
 dma-cells:
   - channel

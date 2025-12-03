@@ -11,7 +11,6 @@
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -237,15 +236,15 @@ static void modem_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_event e
 /* Socket I/O helpers */
 static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, uint16_t len,
 				  void *user_data);
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, struct sockaddr *from,
-				socklen_t *fromlen);
-static int prepare_send_cmd(const struct modem_socket *sock, const struct sockaddr *dst_addr,
+static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
+				struct net_sockaddr *from, net_socklen_t *fromlen);
+static int prepare_send_cmd(const struct modem_socket *sock, const struct net_sockaddr *dst_addr,
 			    size_t buf_len, char *cmd_buf, size_t cmd_buf_size);
 static int send_data_buffer(struct hl78xx_socket_data *socket_data, const char *buf,
 			    const size_t buf_len, int *sock_written);
 
 /* Socket lifecycle */
-static int create_socket(struct modem_socket *sock, const struct sockaddr *addr,
+static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
 			 struct hl78xx_socket_data *data);
 static int socket_close(struct hl78xx_socket_data *socket_data, struct modem_socket *sock);
 static int socket_delete(struct hl78xx_socket_data *socket_data, struct modem_socket *sock);
@@ -256,7 +255,7 @@ static void socket_notify_data(int socket_id, int new_total, void *user_data);
  */
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
 static int map_credentials(struct hl78xx_socket_data *socket_data, const void *optval,
-			   socklen_t optlen);
+			   net_socklen_t optlen);
 static int hl78xx_configure_chipper_suit(struct hl78xx_socket_data *socket_data);
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
@@ -678,7 +677,7 @@ void hl78xx_on_cgdcontrdp(struct modem_chat *chat, char **argv, uint16_t argc, v
  */
 static bool parse_ip(bool is_ipv4, const char *ip_str, void *out_addr)
 {
-	int ret = net_addr_pton(is_ipv4 ? AF_INET : AF_INET6, ip_str, out_addr);
+	int ret = net_addr_pton(is_ipv4 ? NET_AF_INET : NET_AF_INET6, ip_str, out_addr);
 
 	LOG_DBG("Parsing %s address: %s -> %s", is_ipv4 ? "IPv4" : "IPv6", ip_str,
 		(ret < 0) ? "FAIL" : "OK");
@@ -728,7 +727,7 @@ static bool update_dns(struct hl78xx_socket_data *socket_data, bool is_ipv4, con
 			return false;
 		}
 
-		net_addr_ntop(AF_INET6, &socket_data->dns.v6, socket_data->dns.v6_string,
+		net_addr_ntop(NET_AF_INET6, &socket_data->dns.v6, socket_data->dns.v6_string,
 			      sizeof(socket_data->dns.v6_string));
 		LOG_DBG("Parsed IPv6 DNS: %s", socket_data->dns.v6_string);
 	}
@@ -1195,7 +1194,7 @@ void dns_work_cb(const struct device *dev, bool hard_reset)
 	struct hl78xx_socket_data *socket_data =
 		(struct hl78xx_socket_data *)data->offload_dev->data;
 	struct dns_resolve_context *dnsCtx;
-	struct sockaddr temp_addr;
+	struct net_sockaddr temp_addr;
 	bool valid_address = false;
 	bool retry = false;
 	const char *const dns_servers_str[DNS_SERVERS_COUNT] = {
@@ -1338,17 +1337,17 @@ int modem_handle_data_capture(size_t target_len, struct hl78xx_data *data)
 				      target_len, data);
 }
 
-static int extract_ip_family_and_port(const struct sockaddr *addr, int *af, uint16_t *port)
+static int extract_ip_family_and_port(const struct net_sockaddr *addr, int *af, uint16_t *port)
 {
 #if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
-		*port = ntohs(net_sin6(addr)->sin6_port);
+	if (addr->sa_family == NET_AF_INET6) {
+		*port = net_ntohs(net_sin6(addr)->sin6_port);
 		*af = MDM_HL78XX_SOCKET_AF_IPV6;
 	} else {
 #endif /* CONFIG_NET_IPV6 */
 #if defined(CONFIG_NET_IPV4)
-		if (addr->sa_family == AF_INET) {
-			*port = ntohs(net_sin(addr)->sin_port);
+		if (addr->sa_family == NET_AF_INET) {
+			*port = net_ntohs(net_sin(addr)->sin_port);
 			*af = MDM_HL78XX_SOCKET_AF_IPV4;
 		} else {
 #endif /* CONFIG_NET_IPV4 */
@@ -1364,7 +1363,7 @@ static int extract_ip_family_and_port(const struct sockaddr *addr, int *af, uint
 }
 
 static int format_ip_and_setup_tls(struct hl78xx_socket_data *socket_data,
-				   const struct sockaddr *addr, char *ip_str, size_t ip_str_len,
+				   const struct net_sockaddr *addr, char *ip_str, size_t ip_str_len,
 				   struct modem_socket *sock)
 {
 	int ret = modem_context_sprint_ip_addr(addr, ip_str, ip_str_len);
@@ -1374,7 +1373,7 @@ static int format_ip_and_setup_tls(struct hl78xx_socket_data *socket_data,
 		errno = ENOMEM;
 		return -1;
 	}
-	if (sock->ip_proto == IPPROTO_TCP) {
+	if (sock->ip_proto == NET_IPPROTO_TCP) {
 		/* Determine actual length of the formatted IP string (it may be
 		 * shorter than the provided buffer size). Copy at most
 		 * MDM_MAX_HOSTNAME_LEN - 1 bytes and ensure NUL-termination to
@@ -1417,7 +1416,7 @@ static int send_tcp_or_tls_config(struct modem_socket *sock, uint16_t dst_port, 
 	return 0;
 }
 
-static int send_udp_config(const struct sockaddr *addr, struct hl78xx_socket_data *socket_data,
+static int send_udp_config(const struct net_sockaddr *addr, struct hl78xx_socket_data *socket_data,
 			   struct modem_socket *sock)
 {
 	int ret = 0;
@@ -1443,7 +1442,7 @@ error:
 	return -1;
 }
 
-static int create_socket(struct modem_socket *sock, const struct sockaddr *addr,
+static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
 			 struct hl78xx_socket_data *data)
 {
 	LOG_DBG("entry fd=%d id=%d", sock->sock_fd, sock->id);
@@ -1461,15 +1460,15 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr,
 	if (format_ip_and_setup_tls(data, addr, ip_str, sizeof(ip_str), sock) < 0) {
 		return -1;
 	}
-	is_udp = (sock->ip_proto == IPPROTO_UDP);
+	is_udp = (sock->ip_proto == NET_IPPROTO_UDP);
 	if (is_udp) {
 		ret = send_udp_config(addr, data, sock);
 		LOG_DBG("send_udp_config returned %d", ret);
 		return ret;
 	}
-	mode = (sock->ip_proto == IPPROTO_TLS_1_2) ? 3 : 0;
+	mode = (sock->ip_proto == NET_IPPROTO_TLS_1_2) ? 3 : 0;
 	/* only TCP and TLS are supported */
-	if (sock->ip_proto != IPPROTO_TCP && sock->ip_proto != IPPROTO_TLS_1_2) {
+	if (sock->ip_proto != NET_IPPROTO_TCP && sock->ip_proto != NET_IPPROTO_TLS_1_2) {
 		LOG_ERR("Unsupported protocol: %d", sock->ip_proto);
 		errno = EPROTONOSUPPORT;
 		return -1;
@@ -1487,7 +1486,7 @@ static int socket_close(struct hl78xx_socket_data *socket_data, struct modem_soc
 	char buf[sizeof("AT+KTCPCLOSE=##\r")];
 	int ret = 0;
 
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		snprintk(buf, sizeof(buf), "AT+KUDPCLOSE=%d", sock->id);
 	} else {
 		snprintk(buf, sizeof(buf), "AT+KTCPCLOSE=%d", sock->id);
@@ -1506,7 +1505,7 @@ static int socket_delete(struct hl78xx_socket_data *socket_data, struct modem_so
 	char buf[sizeof("AT+KTCPDEL=##\r")];
 	int ret = 0;
 
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		/**
 		 * snprintk(buf, sizeof(buf), "AT+KUDPDEL=%d", sock->id);
 		 * No need to delete udp config here according to ref guide. The at UDPCLOSE
@@ -1579,7 +1578,7 @@ static int offload_close(void *obj)
 	return 0;
 }
 
-static int offload_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_bind(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct hl78xx_socket_data *socket_data = hl78xx_socket_data_from_sock(sock);
@@ -1606,7 +1605,7 @@ static int offload_bind(void *obj, const struct sockaddr *addr, socklen_t addrle
 	return 0;
 }
 
-static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct hl78xx_socket_data *socket_data = hl78xx_socket_data_from_sock(sock);
@@ -1637,7 +1636,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	}
 	memcpy(&sock->dst, addr, sizeof(*addr));
 	/* skip socket connect if UDP */
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		errno = 0;
 		return 0;
 	}
@@ -1709,7 +1708,7 @@ static void prepare_read_command(struct hl78xx_socket_data *socket_data, char *s
 				 size_t bufsize, struct modem_socket *sock, size_t read_size)
 {
 	snprintk(sendbuf, bufsize, "AT+K%sRCV=%d,%zd%s",
-		 sock->ip_proto == IPPROTO_UDP ? "UDP" : "TCP", sock->id, read_size,
+		 sock->ip_proto == NET_IPPROTO_UDP ? "UDP" : "TCP", sock->id, read_size,
 		 socket_data->mdata_global->chat.delimiter);
 }
 
@@ -1754,7 +1753,7 @@ static int hl78xx_perform_receive_transaction(struct hl78xx_socket_data *socket_
 
 static void setup_socket_data(struct hl78xx_socket_data *socket_data, struct modem_socket *sock,
 			      struct socket_read_data *sock_data, void *buf, size_t len,
-			      struct sockaddr *from, uint16_t read_size)
+			      struct net_sockaddr *from, uint16_t read_size)
 {
 	memset(sock_data, 0, sizeof(*sock_data));
 	sock_data->recv_buf = buf;
@@ -1782,15 +1781,15 @@ static void check_tcp_state_if_needed(struct hl78xx_socket_data *socket_data,
 	}
 	if (atomic_test_and_clear_bit(&socket_data->mdata_global->state_leftover,
 				      MODEM_SOCKET_DATA_LEFTOVER_STATE_BIT) &&
-	    sock && sock->ip_proto == IPPROTO_TCP) {
+	    sock && sock->ip_proto == NET_IPPROTO_TCP) {
 		modem_dynamic_cmd_send(socket_data->mdata_global, NULL, check_ktcp_stat,
 				       strlen(check_ktcp_stat), hl78xx_get_ktcp_state_match(), 1,
 				       true);
 	}
 }
 
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, struct sockaddr *from,
-				socklen_t *fromlen)
+static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
+				struct net_sockaddr *from, net_socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct hl78xx_socket_data *socket_data = hl78xx_socket_data_from_sock(sock);
@@ -1892,12 +1891,12 @@ int check_if_any_socket_connected(const struct device *dev)
  * Helpers used by sendto/recv paths, preparing commands and transmitting
  * data over the modem pipe.
  */
-static int prepare_send_cmd(const struct modem_socket *sock, const struct sockaddr *dst_addr,
+static int prepare_send_cmd(const struct modem_socket *sock, const struct net_sockaddr *dst_addr,
 			    size_t buf_len, char *cmd_buf, size_t cmd_buf_size)
 {
 	int ret = 0;
 
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		char ip_str[NET_IPV6_ADDR_LEN];
 		uint16_t dst_port = 0;
 
@@ -1952,7 +1951,7 @@ static int send_data_buffer(struct hl78xx_socket_data *socket_data, const char *
 	return 0;
 }
 
-static int validate_and_prepare(struct modem_socket *sock, const struct sockaddr **dst_addr,
+static int validate_and_prepare(struct modem_socket *sock, const struct net_sockaddr **dst_addr,
 				size_t *buf_len, char *cmd_buf, size_t cmd_buf_len)
 {
 	/* Validate args and prepare send command */
@@ -1964,7 +1963,7 @@ static int validate_and_prepare(struct modem_socket *sock, const struct sockaddr
 		errno = ENOTCONN;
 		return -1;
 	}
-	if (!*dst_addr && sock->ip_proto == IPPROTO_UDP) {
+	if (!*dst_addr && sock->ip_proto == NET_IPPROTO_UDP) {
 		*dst_addr = &sock->dst;
 	}
 	if (*buf_len > MDM_MAX_DATA_LENGTH) {
@@ -1999,7 +1998,8 @@ static int transmit_regular_data(struct hl78xx_socket_data *socket_data, const c
 
 /* send binary data via the +KUDPSND/+KTCPSND commands */
 static ssize_t send_socket_data(void *obj, struct hl78xx_socket_data *socket_data,
-				const struct sockaddr *dst_addr, const char *buf, size_t buf_len,
+				const struct net_sockaddr *dst_addr,
+				const char *buf, size_t buf_len,
 				k_timeout_t timeout)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -2045,7 +2045,7 @@ cleanup:
 /* ===== TLS implementation (conditional) ================================
  * TLS credential upload and chipper settings helper implementations.
  */
-static int handle_tls_sockopts(void *obj, int optname, const void *optval, socklen_t optlen)
+static int handle_tls_sockopts(void *obj, int optname, const void *optval, net_socklen_t optlen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -2056,11 +2056,11 @@ static int handle_tls_sockopts(void *obj, int optname, const void *optval, sockl
 	}
 
 	switch (optname) {
-	case TLS_SEC_TAG_LIST:
+	case ZSOCK_TLS_SEC_TAG_LIST:
 		ret = map_credentials(socket_data, optval, optlen);
 		return ret;
 
-	case TLS_HOSTNAME:
+	case ZSOCK_TLS_HOSTNAME:
 		if (optlen >= MDM_MAX_HOSTNAME_LEN) {
 			return -EINVAL;
 		}
@@ -2076,13 +2076,13 @@ static int handle_tls_sockopts(void *obj, int optname, const void *optval, sockl
 		LOG_DBG("TLS hostname set to: %s", socket_data->tls.hostname);
 		return 0;
 
-	case TLS_PEER_VERIFY:
+	case ZSOCK_TLS_PEER_VERIFY:
 		if (*(const uint32_t *)optval != TLS_PEER_VERIFY_REQUIRED) {
 			LOG_WRN("Disabling peer verification is not supported");
 		}
 		return 0;
 
-	case TLS_CERT_NOCOPY:
+	case ZSOCK_TLS_CERT_NOCOPY:
 		return 0; /* No-op, success */
 
 	default:
@@ -2092,14 +2092,14 @@ static int handle_tls_sockopts(void *obj, int optname, const void *optval, sockl
 }
 
 static int offload_setsockopt(void *obj, int level, int optname, const void *optval,
-			      socklen_t optlen)
+			      net_socklen_t optlen)
 {
 	int ret = 0;
 
 	if (!IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
 		return -EINVAL;
 	}
-	if (level == SOL_TLS) {
+	if (level == ZSOCK_SOL_TLS) {
 		ret = handle_tls_sockopts(obj, optname, optval, optlen);
 		if (ret < 0) {
 			hl78xx_set_errno_from_code(ret);
@@ -2113,7 +2113,7 @@ static int offload_setsockopt(void *obj, int level, int optname, const void *opt
 #endif /* CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS */
 
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-			      const struct sockaddr *to, socklen_t tolen)
+			      const struct net_sockaddr *to, net_socklen_t tolen)
 {
 	int ret = 0;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -2180,7 +2180,7 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 						pev_end);
 
 		if (ret == -1 && errno == ENOTSUP && (pfd->events & ZSOCK_POLLOUT) &&
-		    sock->ip_proto == IPPROTO_UDP) {
+		    sock->ip_proto == NET_IPPROTO_UDP) {
 			/* Not Implemented */
 			/*
 			 *	You can implement this later when needed
@@ -2196,10 +2196,10 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 		pev = va_arg(args, struct k_poll_event **);
 		return modem_socket_poll_update(obj, pfd, pev);
 
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		return 0;
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 		int flags = va_arg(args, int);
 
@@ -2226,11 +2226,14 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	ssize_t sent = 0;
 	struct iovec bkp_iovec = {0};
-	struct msghdr crafted_msg = {.msg_name = msg->msg_name, .msg_namelen = msg->msg_namelen};
+	struct net_msghdr crafted_msg = {
+		.msg_name = msg->msg_name,
+		.msg_namelen = msg->msg_namelen
+	};
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct hl78xx_socket_data *socket_data = hl78xx_socket_data_from_sock(sock);
 	size_t full_len = 0;
@@ -2395,12 +2398,12 @@ static ssize_t hl78xx_send_cert(struct hl78xx_socket_data *socket_data, const ch
 		return -EINVAL;
 	}
 
-	if (cert_type == TLS_CREDENTIAL_CA_CERTIFICATE ||
-	    cert_type == TLS_CREDENTIAL_SERVER_CERTIFICATE) {
+	if (cert_type == ZSOCK_TLS_CREDENTIAL_CA_CERTIFICATE ||
+	    cert_type == ZSOCK_TLS_CREDENTIAL_SERVER_CERTIFICATE) {
 		snprintk(send_buf, sizeof(send_buf), "AT+KCERTSTORE=%d,%d", (cert_type - 1),
 			 cert_len);
 
-	} else if (cert_type == TLS_CREDENTIAL_PRIVATE_KEY) {
+	} else if (cert_type == ZSOCK_TLS_CREDENTIAL_PRIVATE_KEY) {
 		snprintk(send_buf, sizeof(send_buf), "AT+KPRIVKSTORE=0,%d", cert_len);
 
 	} else {
@@ -2453,7 +2456,7 @@ cleanup:
 }
 
 static int map_credentials(struct hl78xx_socket_data *socket_data, const void *optval,
-			   socklen_t optlen)
+			   net_socklen_t optlen)
 {
 	const sec_tag_t *sec_tags = (const sec_tag_t *)optval;
 	int ret = 0;
@@ -2472,21 +2475,21 @@ static int map_credentials(struct hl78xx_socket_data *socket_data, const void *o
 		cert = credential_next_get(tag, NULL);
 		while (cert != NULL) {
 			switch (cert->type) {
-			case TLS_CREDENTIAL_CA_CERTIFICATE:
+			case ZSOCK_TLS_CREDENTIAL_CA_CERTIFICATE:
 				LOG_DBG("TLS_CREDENTIAL_CA_CERTIFICATE tag: %d", tag);
 				break;
 
-			case TLS_CREDENTIAL_SERVER_CERTIFICATE:
+			case ZSOCK_TLS_CREDENTIAL_SERVER_CERTIFICATE:
 				LOG_DBG("TLS_CREDENTIAL_SERVER_CERTIFICATE tag: %d", tag);
 				break;
 
-			case TLS_CREDENTIAL_PRIVATE_KEY:
+			case ZSOCK_TLS_CREDENTIAL_PRIVATE_KEY:
 				LOG_DBG("TLS_CREDENTIAL_PRIVATE_KEY tag: %d", tag);
 				break;
 
-			case TLS_CREDENTIAL_NONE:
-			case TLS_CREDENTIAL_PSK:
-			case TLS_CREDENTIAL_PSK_ID:
+			case ZSOCK_TLS_CREDENTIAL_NONE:
+			case ZSOCK_TLS_CREDENTIAL_PSK:
+			case ZSOCK_TLS_CREDENTIAL_PSK_ID:
 			default:
 				/* Not handled */
 				return -EINVAL;
@@ -2560,26 +2563,26 @@ static bool offload_is_supported(int family, int type, int proto)
 	bool fam_ok = false;
 
 #ifdef CONFIG_NET_IPV4
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		fam_ok = true;
 	}
 #endif
 #ifdef CONFIG_NET_IPV6
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		fam_ok = true;
 	}
 #endif
 	if (!fam_ok) {
 		return false;
 	}
-	if (!(type == SOCK_DGRAM || type == SOCK_STREAM)) {
+	if (!(type == NET_SOCK_DGRAM || type == NET_SOCK_STREAM)) {
 		return false;
 	}
-	if (proto == IPPROTO_TCP || proto == IPPROTO_UDP) {
+	if (proto == NET_IPPROTO_TCP || proto == NET_IPPROTO_UDP) {
 		return true;
 	}
 #if defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
-	if (proto == IPPROTO_TLS_1_2) {
+	if (proto == NET_IPPROTO_TLS_1_2) {
 		return true;
 	}
 #endif
@@ -2594,7 +2597,7 @@ static bool offload_is_supported(int family, int type, int proto)
 		inst, "hl78xx_dev", hl78xx_socket_init, NULL, &hl78xx_socket_data_##inst, NULL,    \
 		CONFIG_MODEM_HL78XX_OFFLOAD_INIT_PRIORITY, &api_funcs, MDM_MAX_DATA_LENGTH);       \
                                                                                                    \
-	NET_SOCKET_OFFLOAD_REGISTER(inst, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,          \
+	NET_SOCKET_OFFLOAD_REGISTER(inst, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,	   \
 				    offload_is_supported, offload_socket);
 
 #define MODEM_OFFLOAD_DEVICE_SWIR_HL78XX(inst) MODEM_HL78XX_DEFINE_OFFLOAD_INSTANCE(inst)

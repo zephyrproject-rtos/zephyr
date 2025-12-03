@@ -30,6 +30,6 @@ target_compile_options(app
 )
 
 set_property(
-	SOURCE ${ZEPHYR_BASE}/subsys/net/lib/wifi_credentials/wifi_credentials_backend_psa.c
-	PROPERTY COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/src/normalized_crypto.h"
+  SOURCE ${ZEPHYR_BASE}/subsys/net/lib/wifi_credentials/wifi_credentials_backend_psa.c
+  PROPERTY COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/src/normalized_crypto.h"
 )

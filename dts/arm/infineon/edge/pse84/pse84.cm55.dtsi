@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv8.1-m.dtsi>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -108,7 +109,7 @@
 	interrupts = <19 4>;
 };
 
-&adc0 {
+&autanalog {
 	interrupts = <36 4>;
 };
 
@@ -305,7 +306,7 @@
 };
 
 &dma0 {
-interrupts = <60 4>, /* CH0 */
+	interrupts = <60 4>, /* CH0 */
 		     <61 4>, /* CH1 */
 		     <62 4>, /* CH2 */
 		     <63 4>, /* CH3 */
@@ -324,7 +325,7 @@ interrupts = <60 4>, /* CH0 */
 };
 
 &dma1 {
-interrupts = <158 4>, /* CH0 */
+	interrupts = <158 4>, /* CH0 */
 		     <159 4>, /* CH1 */
 		     <160 4>, /* CH2 */
 		     <161 4>, /* CH3 */
@@ -344,12 +345,12 @@ interrupts = <158 4>, /* CH0 */
 
 &sdhc0 {
 	interrupts = <132 4>, /* SDIO wakeup interrupt for mxsdhc */
-				 <131 6>; /* Consolidated interrupt for mxsdhc */
+		     <131 6>; /* Consolidated interrupt for mxsdhc */
 };
 
 &sdhc1 {
 	interrupts = <134 4>, /* SDIO wakeup interrupt for mxsdhc */
-				 <133 6>; /* Consolidated interrupt for mxsdhc */
+		     <133 6>; /* Consolidated interrupt for mxsdhc */
 };
 
 &nvic {

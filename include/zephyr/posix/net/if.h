@@ -12,6 +12,10 @@
 #define IF_NAMESIZE 1
 #endif
 
+#if !defined(IFNAMSIZ)
+#define IFNAMSIZ IF_NAMESIZE
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -11,7 +11,7 @@ amplifier (PA). This provides enough link budget for the entire spectrum of Blue
 including industrial IoT applications, smart home, asset tracking, beacons and sensors, and
 medical devices.
 
-The system features Dual Arm® Cortex® - M33s for powering the MCU and Bluetooth subsystem with
+The system features Dual Arm® Cortex®-M33s for powering the MCU and Bluetooth subsystem with
 programmable and reconfigurable analog and digital blocks. In addition, on the kit, there is a
 suite of on-board peripherals including six-axis inertial measurement unit (IMU), thermistor,
 analog mic, user programmable buttons (2), LEDs (2), and RGB LED. There is also extensive GPIO
@@ -74,7 +74,7 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: cyw920829m2evk_02
+   :board: cyw920829m2evk_02/cyw20829b0lkml
    :goals: build
 
 Programming and Debugging
@@ -124,7 +124,7 @@ to set the CMake variable ``OPENOCD``.
             west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd.exe
 
             # Do a pristine build once after setting CMake argument
-            west build -b cyw920829m2evk_02 -p always samples/basic/blinky
+            west build -b cyw920829m2evk_02/cyw20829b0lkml -p always samples/basic/blinky
 
             west flash
             west debug
@@ -137,7 +137,7 @@ to set the CMake variable ``OPENOCD``.
             west config build.cmake-args -- -DOPENOCD=path/to/infineon/openocd/bin/openocd
 
             # Do a pristine build once after setting CMake argument
-            west build -b cyw920829m2evk_02 -p always samples/basic/blinky
+            west build -b cyw920829m2evk_02/cyw20829b0lkml -p always samples/basic/blinky
 
             west flash
             west debug
@@ -171,7 +171,7 @@ Here is an example for building the :zephyr:code-sample:`blinky` sample applicat
 
 .. zephyr-app-commands::
    :goals: build
-   :board: cyw920829m2evk_02
+   :board: cyw920829m2evk_02/cyw20829b0lkml
    :zephyr-app: samples/basic/blinky
    :west-args: -p always
    :gen-args: -DCONFIG_INFINEON_SECURE_LCS=y -DCONFIG_INFINEON_SECURE_POLICY=\"policy/policy_secure.json\"
@@ -190,7 +190,7 @@ MCUBootApp building process for normal/secure silicon and its overall usage as a
 Place keys and policy-related folders in the cypress directory ``mcuboot/boot/cypress/``.
 
 Ensure the default memory map matches the memory map of the Zephyr application (refer to partitions
-of flash0 in :zephyr_file:`boards/infineon/cyw920829m2evk_02/cyw920829m2evk_02.dts`).
+of flash0 in :zephyr_file:`boards/infineon/cyw920829m2evk_02/cyw920829m2evk_02-memory_map.dtsi`).
 
 You can use ``west flash`` to flash MCUBootApp:
 
@@ -209,7 +209,7 @@ for MCUboot.
 
 .. zephyr-app-commands::
    :goals: build flash
-   :board: cyw920829m2evk_02
+   :board: cyw920829m2evk_02/cyw20829b0lkml
    :zephyr-app: samples/basic/blinky
    :west-args: -p always
    :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"/path/to/cypress/mcuboot/boot/cypress/keys/cypress-test-ec-p256.pem\"
@@ -222,7 +222,7 @@ image for MCUboot:
 
 .. zephyr-app-commands::
    :goals: build flash
-   :board: cyw920829m2evk_02
+   :board: cyw920829m2evk_02/cyw20829b0lkml
    :zephyr-app: samples/basic/blinky
    :west-args: -p always
    :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"/path/to/cypress/mcuboot/boot/cypress/keys/cypress-test-ec-p256.pem\" -DCONFIG_MCUBOOT_ENCRYPTION_KEY_FILE=\"/path/to/cypress/mcuboot/enc-ec256-pub.pem\"

@@ -8,6 +8,19 @@
 
 menu "IP stack"
 
+config NET_NAMESPACE_COMPAT_MODE
+	bool "Network namespace compatibility mode"
+	# Disable the compatibility mode for network tests. But if the tests
+	# uses POSIX APIs, then currently the compat mode is needed.
+	depends on !NET_TEST || POSIX_API
+	default y
+	help
+	  The networking APIs and code is now namespaced i.e., relevant network
+	  APIs now have either net_, NET_ or ZSOCK_ prefixes. This avoids
+	  circular dependency against a Posix subsystem which might define
+	  duplicate symbols. The compatibility mode will be deprecated in the
+	  future and eventually removed.
+
 # Hidden option enabled whenever an IP stack is available.
 config NET_IP
 	bool
@@ -294,6 +307,23 @@ config NET_TC_THREAD_PRIO_CUSTOM
 	  Customise net threads priority by each.
 
 if NET_TC_THREAD_PRIO_CUSTOM
+
+config NET_TC_TX_THREAD_PRIO_SPREAD
+	int "Transmit traffic class thread priority spread"
+	default 1
+	range 1 255
+	help
+	  Transmit traffic class threads priority will increase/decrease
+	  by this step. They will be separated by this many levels.
+
+config NET_TC_RX_THREAD_PRIO_SPREAD
+	int "Receive traffic class thread priority spread"
+	default 1
+	range 1 255
+	help
+	  Receive traffic class threads priority will increase/decrease
+	  by this step. They will be separated by this many levels.
+
 config NET_TC_TX_THREAD_BASE_PRIO
 	int "Transmit traffic class base thread priority"
 	default 0
@@ -508,6 +538,10 @@ config NET_MAX_CONTEXTS
 	  Each network context is used to describe a network 5-tuple that
 	  is used when listening or sending network traffic. This is very
 	  similar as one could call a network socket in some other systems.
+
+config ZVFS_OPEN_ADD_SIZE_NET
+	int "Number of network sockets to allocate"
+	default NET_MAX_CONTEXTS
 
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Net_buf TX pool / context"
@@ -783,6 +817,14 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
+config NET_LINK_ADDR_CUSTOM_LENGTH
+	int "Size of custom link layer address length"
+	default 0
+	help
+	  This option allows to define custom link layer address length
+	  if your link layer technology is not supported directly.
+	  As a default, custom link layer address length is not used.
+
 # If we are running network tests found in tests/net, then the NET_TEST is
 # set and in that case we default to Dummy L2 layer as typically the tests
 # use that by default.
@@ -859,7 +901,6 @@ config NET_PKT_TIMESTAMP
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
-	default y if NET_L2_PTP
 	depends on NET_PKT_TIMESTAMP
 	help
 	  Create a TX timestamp thread that will pass the timestamped network

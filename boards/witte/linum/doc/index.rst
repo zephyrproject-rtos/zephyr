@@ -314,7 +314,7 @@ flashed in the usual way (see :ref:`build_an_application` and
 .. note::
 
   For debugging or programming Linum you will need to use an external debug
-  debug or flash tool and connect it to the SWD Connnector. JLink or ST-Link
+  debug or flash tool and connect it to the SWD Connector. JLink or ST-Link
   probes are examples of out of the box compatible tools.
 
 Flashing

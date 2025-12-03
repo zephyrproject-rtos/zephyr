@@ -147,7 +147,7 @@ typedef void (*uart_irq_callback_user_data_t)(const struct device *dev,
  *
  * @defgroup uart_async Async UART API
  * @since 1.14
- * @version 0.8.0
+ * @version 1.0.0
  * @{
  */
 

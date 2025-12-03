@@ -390,13 +390,13 @@ struct lcp_options {
 /** IPv4 control protocol options */
 struct ipcp_options {
 	/** IPv4 address */
-	struct in_addr address;
+	struct net_in_addr address;
 
 	/** Primary DNS server address */
-	struct in_addr dns1_address;
+	struct net_in_addr dns1_address;
 
 	/** Secondary DNS server address */
-	struct in_addr dns2_address;
+	struct net_in_addr dns2_address;
 };
 
 /** IPv6 control protocol options */
@@ -596,6 +596,15 @@ enum net_event_ppp_cmd {
 struct net_if;
 
 /** @endcond */
+
+/**
+ * @brief Retrieve the PPP peers Asynchronous Control Character Map
+ *
+ * @param iface PPP network interface.
+ *
+ * @return uint32_t Current bitmask for the Asynchronous Control Character Map
+ */
+uint32_t ppp_peer_async_control_character_map(struct net_if *iface);
 
 /** Event emitted when PPP carrier is on */
 #define NET_EVENT_PPP_CARRIER_ON					\

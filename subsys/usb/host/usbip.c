@@ -151,7 +151,11 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 	if (xfer->err == 0 && cmd->submit.length != 0) {
-		ret.submit.actual_length = htonl(buf->len);
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			ret.submit.actual_length = htonl(buf->len);
+		} else {
+			ret.submit.actual_length = htonl(cmd->submit.length);
+		}
 	}
 
 
@@ -166,7 +170,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
-	if (ret.submit.actual_length != 0) {
+	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
 		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
 		if (err != buf->len) {
@@ -253,6 +257,12 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
+		if (cmd->submit.length > USBIP_MAX_PKT_SIZE) {
+			LOG_ERR("Buffer size %u too small, requested length %zu",
+				USBIP_MAX_PKT_SIZE, cmd->submit.length);
+			return -ENOMEM;
+		}
+
 		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
@@ -639,29 +649,29 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 static void usbip_thread_handler(void *const a, void *const b, void *const c)
 {
 	struct usbip_bus_ctx *const bus_ctx = a;
-	struct sockaddr_in srv;
+	struct net_sockaddr_in srv;
 	int listenfd;
 	int connfd;
 	int reuse = 1;
 
 	LOG_DBG("Started connection handling thread");
 
-	listenfd = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	listenfd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (listenfd < 0) {
 		LOG_ERR("socket() failed: %s", strerror(errno));
 		return;
 	}
 
-	if (zsock_setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+	if (zsock_setsockopt(listenfd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
 			     (const char *)&reuse, sizeof(reuse)) < 0) {
 		LOG_INF("setsockopt() failed: %s", strerror(errno));
 	}
 
-	srv.sin_family = AF_INET;
-	srv.sin_addr.s_addr = htonl(INADDR_ANY);
+	srv.sin_family = NET_AF_INET;
+	srv.sin_addr.s_addr = htonl(NET_INADDR_ANY);
 	srv.sin_port = htons(USBIP_PORT);
 
-	if (zsock_bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
+	if (zsock_bind(listenfd, (struct net_sockaddr *)&srv, sizeof(srv)) < 0) {
 		LOG_ERR("bind() failed: %s", strerror(errno));
 		return;
 	}
@@ -672,12 +682,12 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 	}
 
 	while (true) {
-		struct sockaddr_in client_addr;
+		struct net_sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
-		char addr_str[INET_ADDRSTRLEN];
+		char addr_str[NET_INET_ADDRSTRLEN];
 		int err;
 
-		connfd = zsock_accept(listenfd, (struct sockaddr *)&client_addr,
+		connfd = zsock_accept(listenfd, (struct net_sockaddr *)&client_addr,
 				      &client_addr_len);
 		if (connfd < 0) {
 			LOG_ERR("accept() failed: %d", errno);

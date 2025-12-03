@@ -16,13 +16,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(RM3100_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
-static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int err,
+				   void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct rm3100_data *data = dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 	struct rtio_cqe *cqe;
-	int err = 0;
 	struct rm3100_encoded_data *edata = sqe->userdata;
 
 	edata->header.events.drdy = ((edata->header.status != 0) &&
@@ -39,7 +39,9 @@ static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
 	do {
 		cqe = rtio_cqe_consume(ctx);
 		if (cqe != NULL) {
-			err = cqe->result;
+			if (err >= 0) {
+				err = cqe->result;
+			}
 			rtio_cqe_release(ctx, cqe);
 		}
 	} while (cqe != NULL);
@@ -179,13 +181,6 @@ static void rm3100_gpio_callback(const struct device *gpio_dev,
 	}
 
 	rm3100_stream_get_data(dev);
-}
-
-static inline bool settings_changed(const struct rm3100_stream *a,
-				    const struct rm3100_stream *b)
-{
-	return (a->settings.enabled.drdy != b->settings.enabled.drdy) ||
-	       (a->settings.opt.drdy != b->settings.opt.drdy);
 }
 
 void rm3100_stream_submit(const struct device *dev,

@@ -792,6 +792,108 @@ static void test_tester_net_key_remove(void)
 	PASS();
 }
 
+static const struct subnet_pair {
+	uint16_t idx1;
+	uint16_t idx2;
+} subnet_pairs[] = {
+	{ 0, 1 },
+	{ 0, 2 },
+	{ 0, 3 },
+	{ 2, 3 },
+};
+
+#define MAX_EXPECTED_PAIRS 4
+
+static const struct {
+	struct bt_mesh_brg_cfg_filter_netkey filter;
+	struct subnet_pair expected[MAX_EXPECTED_PAIRS];
+} subnet_duplicate_test_vector[] = {
+	{
+		.filter = { .filter = 0 },
+		.expected = { { 0, 1 }, { 0, 2 }, { 0, 3 }, { 2, 3 } }
+	},
+	{
+		.filter = { .filter = 1, .net_idx = 0 },
+		.expected = { { 0, 1 }, { 0, 2 }, { 0, 3 } }
+	},
+	{
+		.filter = { .filter = 2, .net_idx = 3 },
+		.expected = { { 0, 3 }, { 2, 3 } }
+	},
+	{
+		.filter = { .filter = 3, .net_idx = 2 },
+		.expected = { { 0, 2 }, { 2, 3 } }
+	}
+};
+
+static void check_subnet_list_get(struct bt_mesh_brg_cfg_filter_netkey filter, uint8_t start_idx,
+				  const struct subnet_pair *expected)
+{
+	uint32_t encoded_pair;
+	struct subnet_pair pair;
+	struct bt_mesh_brg_cfg_subnets_list rsp = {
+		.list = NET_BUF_SIMPLE(BT_MESH_RX_SDU_MAX),
+	};
+
+	net_buf_simple_init(rsp.list, 0);
+
+	/* Sleep here to avoid packet collision. */
+	k_sleep(K_MSEC(100));
+
+	LOG_INF("Getting subnet list, filter = (filter: %d, subnet: %d), start_idx = %d",
+		filter.filter, filter.net_idx, start_idx);
+	ASSERT_OK(bt_mesh_brg_cfg_cli_subnets_get(0, BRIDGE_ADDR, filter, start_idx, &rsp));
+
+	for (int j = start_idx; j < MAX_EXPECTED_PAIRS && rsp.list->len >= 3; j++) {
+		/* Assert if we got more pairs than expected. */
+		ASSERT_FALSE(expected[j].idx1 == 0 && expected[j].idx2 == 0);
+
+		encoded_pair = net_buf_simple_pull_le24(rsp.list);
+		pair.idx1 = encoded_pair & 0xfff;
+		pair.idx2 = encoded_pair >> 12;
+
+		LOG_DBG("Received pair (%d, %d)", pair.idx1, pair.idx2);
+
+		ASSERT_EQUAL(expected[j].idx1, pair.idx1);
+		ASSERT_EQUAL(expected[j].idx2, pair.idx2);
+	}
+
+	ASSERT_TRUE(rsp.list->len == 0);
+}
+
+static void test_tester_subnet_duplicate_filtering(void)
+{
+	remote_nodes = 3;
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&tester_prov, &comp);
+	tester_setup();
+
+	LOG_INF("Waiting for bridge to be provisioned.");
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+	tester_bridge_configure();
+
+	LOG_INF("Adding duplicate subnet pairs.");
+	for (int i = 0; i < remote_nodes; i++) {
+		for (int j = 0; j < ARRAY_SIZE(subnet_pairs); j++) {
+			bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, subnet_pairs[j].idx1,
+					 subnet_pairs[j].idx2, BT_MESH_BRG_CFG_DIR_TWOWAY);
+		}
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(subnet_duplicate_test_vector); i++) {
+		struct bt_mesh_brg_cfg_filter_netkey filter =
+			subnet_duplicate_test_vector[i].filter;
+		const struct subnet_pair *expected = subnet_duplicate_test_vector[i].expected;
+
+		for (int start_idx = 0; start_idx < MAX_EXPECTED_PAIRS; start_idx++) {
+			check_subnet_list_get(filter, start_idx, expected);
+		}
+	}
+
+	PASS();
+}
+
 #if CONFIG_BT_SETTINGS
 static void test_tester_persistence(void)
 {
@@ -1158,6 +1260,8 @@ static const struct bst_test_instance test_brg[] = {
 	TEST_CASE(tester, net_key_remove,
 		  "Tester node: tests removing net key from Subnet "
 		  "Bridge"),
+	TEST_CASE(tester, subnet_duplicate_filtering,
+		  "Tester node: tests that Bridged Subnets List does not contain duplicates"),
 #if CONFIG_BT_SETTINGS
 	TEST_CASE(tester, persistence, "Tester node: test persistence of subnet bridge states"),
 #endif

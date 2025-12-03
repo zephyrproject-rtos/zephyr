@@ -3,11 +3,7 @@
 
 if SHIELD_LINK_BOARD_ETH
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # SHIELD_LINK_BOARD_ETH

@@ -23,3 +23,6 @@ string
 	default "esp_wrover_kit/esp32/appcpu" if $(BOARD) = "esp_wrover_kit"
 	default "esp32_ethernet_kit/esp32/appcpu" if $(BOARD) = "esp32_ethernet_kit"
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
+	default "imx943_evk/mimx94398/m33" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_1"
+	default "imx943_evk/mimx94398/m33" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_0"
+	default "imx943_evk/mimx94398/m7_1" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m33"

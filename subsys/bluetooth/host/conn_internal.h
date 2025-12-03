@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Xiaomi Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,7 +108,7 @@ struct bt_conn_le {
 	bt_addr_le_t init_addr;
 	bt_addr_le_t resp_addr;
 
-	uint16_t interval;
+	uint32_t interval_us;
 	uint16_t interval_min;
 	uint16_t interval_max;
 
@@ -155,6 +156,11 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/* For power mode */
+	uint8_t mode;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 };
 
 struct bt_conn_sco {
@@ -283,7 +289,12 @@ struct bt_conn {
 	 * Details about the returned net_buf when it is not NULL:
 	 *   - If the net_buf->len <= *length, then the net_buf has been removed
 	 *     from the tx_queue of the connection and the caller is now the
-	 *     owner of the only reference to the net_buf.
+	 *     owner of the only reference to the net_buf. The caller now has to
+	 *     invoke get_and_clear_cb to get the callback and user-data for the
+	 *     net_buf and is responsible for invoking the callback eventually
+	 *     after the Controller gives a Number of Completed Packets Event
+	 *     for this PDU or when the connection is disconnected, in which
+	 *     case the callback must be invoked with the error code -ESHUTDOWN.
 	 *   - Otherwise, the net_buf is still on the tx_queue of the connection,
 	 *     and the callback has incremented the reference count to account
 	 *     for it having a reference still.
@@ -362,6 +373,38 @@ static inline void *closure_data(void *storage)
 {
 	return ((struct closure *)storage)->data;
 }
+
+#if defined(CONFIG_BT_CLASSIC)
+static inline bool bt_conn_is_br(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_BR;
+}
+#else
+#define bt_conn_is_br(conn) (false)
+#endif
+
+static inline bool bt_conn_is_le(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_LE;
+}
+
+#if defined(CONFIG_BT_ISO)
+static inline bool bt_conn_is_iso(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_ISO;
+}
+#else
+#define bt_conn_is_iso(conn) (false)
+#endif
+
+#if defined(CONFIG_BT_CLASSIC)
+static inline bool bt_conn_is_sco(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_SCO;
+}
+#else
+#define bt_conn_is_sco(conn) (false)
+#endif
 
 void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion);
 
@@ -442,8 +485,7 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 		return true;
 	case BT_CONN_INITIATING:
 		/* ISO connection handle assigned at connect state */
-		if (IS_ENABLED(CONFIG_BT_ISO) &&
-		    conn->type == BT_CONN_TYPE_ISO) {
+		if (bt_conn_is_iso(conn)) {
 			return true;
 		}
 	__fallthrough;
@@ -496,6 +538,9 @@ void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
 
 void bt_conn_notify_subrate_change(struct bt_conn *conn, struct bt_conn_le_subrate_changed params);
 
+void bt_conn_notify_conn_rate_change(struct bt_conn *conn, uint8_t status,
+				     const struct bt_conn_le_conn_rate_changed *params);
+
 void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
 					struct bt_conn_le_read_all_remote_feat_complete *params);
 
@@ -534,6 +579,11 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/* Notify higher layers that connection sniff mode changed */
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)

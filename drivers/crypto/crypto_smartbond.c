@@ -384,13 +384,13 @@ static int crypto_smartbond_hash_set_algo(enum hash_algo algo)
 						(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Pos));
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
 }
 
-static int crypto_smartbond_set_in_out_buf(uint8_t *in_buf, uint8_t *out_buf, int len)
+static int crypto_smartbond_set_in_out_buf(const uint8_t *in_buf, uint8_t *out_buf, int len)
 {
 	if (in_buf == NULL) {
 		return -EIO;

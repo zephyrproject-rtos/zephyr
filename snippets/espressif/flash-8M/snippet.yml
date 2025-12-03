@@ -7,16 +7,22 @@ name: flash-8M
 boards:
   /.*/esp32/.*/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: soc/esp32_flash_8M.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x1000_amp_8M.overlay
   /.*/esp32s2/.*/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: soc/esp32s2_flash_8M.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x1000_default_8M.overlay
   /.*/esp32s3/.*/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: soc/esp32s3_flash_8M.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x0_amp_8M.overlay
   /.*/esp32c3/.*/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: soc/esp32c3_flash_8M.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x0_default_8M.overlay
   /.*/esp32c6/.*/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: soc/esp32c6_flash_8M.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x0_default_8M.overlay
+  /.*/esp32h2/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x0_default_8M.overlay
+  /.*/esp32c2/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/flash_0x0_default_8M.overlay

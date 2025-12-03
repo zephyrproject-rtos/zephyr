@@ -425,8 +425,8 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
@@ -490,7 +490,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	if (sync->timeout_reload != 0U) {
 		uint16_t sync_handle = ull_sync_handle_get(sync);
 
-		LL_ASSERT(sync_handle <= UINT8_MAX);
+		LL_ASSERT_DBG(sync_handle <= UINT8_MAX);
 
 		/* Sync is not established yet, so stop sync ticker */
 		const int err =
@@ -585,7 +585,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		}
 
 #if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
-		LL_ASSERT(!aux->parent);
+		LL_ASSERT_DBG(!aux->parent);
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
 
@@ -1153,8 +1153,8 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 
 void ull_sync_setup_reset(struct ll_sync_set *sync)
@@ -1418,9 +1418,9 @@ void ull_sync_done(struct node_rx_event_done *done)
 					      ticks_drift_minus, 0, 0,
 					      lazy, force,
 					      ticker_update_op_cb, sync);
-			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY) ||
-				  ((void *)sync == ull_disable_mark_get()));
+			LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+				      (ticker_status == TICKER_STATUS_BUSY) ||
+				      ((void *)sync == ull_disable_mark_get()));
 		}
 	}
 }
@@ -1435,7 +1435,7 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 
 	/* Get reference to LLL context */
 	sync = ull_sync_set_get(sync_handle);
-	LL_ASSERT(sync);
+	LL_ASSERT_DBG(sync);
 	lll = &sync->lll;
 
 	/* Ignore if already in progress */
@@ -1612,7 +1612,7 @@ static struct ll_sync_set *ull_sync_create(uint8_t sid, uint16_t timeout, uint16
 	/* Make sure that the node_rx_sync_establ hasn't got anything assigned. It is used to
 	 * mark when sync establishment is in progress.
 	 */
-	LL_ASSERT(!sync->node_rx_sync_estab);
+	LL_ASSERT_DBG(!sync->node_rx_sync_estab);
 	sync->node_rx_sync_estab = node_rx;
 
 	/* Reporting initially enabled/disabled */
@@ -1659,7 +1659,7 @@ static struct ll_sync_set *ull_sync_create(uint8_t sid, uint16_t timeout, uint16
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll->df_cfg);
-	LL_ASSERT(!lll->node_cte_incomplete);
+	LL_ASSERT_DBG(!lll->node_cte_incomplete);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	/* Initialise ULL and LLL headers */
@@ -1677,8 +1677,8 @@ static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op
 	/* Stop Periodic Sync Ticker */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_op_cb, (void *)sync);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 
 	/* Mark sync context not sync established */
 	sync->timeout_reload = 0U;
@@ -1706,7 +1706,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -1720,7 +1720,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy_lll_prepare);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
@@ -1728,13 +1728,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+	LL_ASSERT_ERR((status == TICKER_STATUS_SUCCESS) ||
+		      (param == ull_disable_mark_get()));
 }
 
 static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param)
@@ -1743,13 +1743,13 @@ static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param)
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, sync_expire};
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 
 	mfy.param = param;
 
 	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 				0, &mfy);
-	LL_ASSERT(!retval);
+	LL_ASSERT_ERR(!retval);
 }
 
 static void sync_expire(void *param)
@@ -1789,7 +1789,7 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 	 * sync lost scenario, do not generate the sync lost node rx from here
 	 */
 	if (status != TICKER_STATUS_SUCCESS) {
-		LL_ASSERT(param == ull_disable_mark_get());
+		LL_ASSERT_DBG(param == ull_disable_mark_get());
 
 		return;
 	}
@@ -1798,7 +1798,7 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 
 	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 				0, &mfy);
-	LL_ASSERT(!retval);
+	LL_ASSERT_ERR(!retval);
 }
 
 static void sync_lost(void *param)
@@ -1900,8 +1900,8 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 	}
 
 	/* Make sure there are no fields that are not allowed for AUX_SYNC_IND and AUX_CHAIN_IND */
-	LL_ASSERT(!hdr->adv_addr);
-	LL_ASSERT(!hdr->tgt_addr);
+	LL_ASSERT_DBG(!hdr->adv_addr);
+	LL_ASSERT_DBG(!hdr->tgt_addr);
 
 	return (struct pdu_cte_info *)hdr->data;
 }
@@ -1956,7 +1956,7 @@ void ull_sync_transfer_received(struct ll_conn *conn, uint16_t service_data,
 	conn_evt_current = ull_conn_event_counter(conn);
 
 	/* LLCP should have ensured this holds */
-	LL_ASSERT(sync_conn_event_count != conn_evt_current);
+	LL_ASSERT_DBG(sync_conn_event_count != conn_evt_current);
 
 	ull_sync_setup_from_sync_transfer(conn, service_data, sync, si,
 					  conn_event_count - conn_evt_current,

@@ -420,6 +420,16 @@
 			reg-io-width = <1>;
 			status = "disabled";
 		};
+
+		lct0: lct@400d7000 {
+			compatible = "nuvoton,npcx-lct-v1";
+			reg = <0x400d7000 0x10>;
+			lct-wui = <&wui_lct>;
+			/* The maximum counter value is (16 weeks - 1 second) */
+			maximum-cnt-in-sec = <9676799>;
+			pwr-by-vsby;
+			status = "disabled";
+		};
 	};
 
 	soc-id {

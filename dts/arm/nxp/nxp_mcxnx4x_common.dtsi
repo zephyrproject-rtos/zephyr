@@ -595,7 +595,7 @@
 		compatible = "nxp,mcux-edma";
 		nxp,version = <4>;
 		dma-channels = <16>;
-		dma-requests = <117>;
+		dma-requests = <121>;
 
 		reg = <0x80000 0x1000>;
 		interrupts = <1 0>, <2 0>, <3 0>, <4 0>,
@@ -611,7 +611,7 @@
 		compatible = "nxp,mcux-edma";
 		nxp,version = <4>;
 		dma-channels = <16>;
-		dma-requests = <117>;
+		dma-requests = <121>;
 
 		reg = <0xa0000 0x1000>;
 		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
@@ -658,6 +658,79 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+	};
+
+	micfil: micfil@10c000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "nxp,micfil";
+		reg = <0x10c000 0x1000>;
+
+		interrupts = <48 0>;
+		clocks = <&syscon MCUX_MICFIL_CLK>;
+		quality-mode = <1>;
+		cic-decimation-rate = <0>;
+		fifo-watermark = <15>;
+		sample-rate = <16000>;
+
+		status = "disabled";
+
+		channel0: micfil-channel@0 {
+			reg = <0>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel1: micfil-channel@1 {
+			reg = <1>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel2: micfil-channel@2 {
+			reg = <2>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel3: micfil-channel@3 {
+			reg = <3>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel4: micfil-channel@4 {
+			reg = <4>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel5: micfil-channel@5 {
+			reg = <5>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel6: micfil-channel@6 {
+			reg = <6>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel7: micfil-channel@7 {
+			reg = <7>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
 	};
 
 	enet: ethernet@40100000 {
@@ -936,7 +1009,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -946,7 +1019,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <1>;
 		resolution = <32>;
 	};

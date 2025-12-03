@@ -14,7 +14,6 @@
 	compatible = "nxp,imx943_evk";
 
 	chosen {
-		/* TCM */
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
@@ -107,6 +106,13 @@
 	status = "okay";
 };
 
+&lpuart3 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};
+
 &lpuart8 {
 	status = "okay";
 	current-speed = <115200>;
@@ -136,4 +142,8 @@
 &switch_port3 {
 	zephyr,random-mac-address;
 	status = "disabled";
+};
+
+&gpt_hw_timer1 {
+	status = "okay";
 };

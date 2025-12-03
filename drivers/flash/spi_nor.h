@@ -47,6 +47,7 @@
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
 #define SPI_NOR_CMD_SE_4B       0x21    /* Sector erase 4 byte address*/
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
+#define SPI_NOR_CMD_BE_32K_4B   0x5C    /* Block erase 32KB 4 byte address*/
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_BE_4B       0xDC    /* Block erase 4 byte address*/
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
@@ -90,9 +91,10 @@
 #define SPI_NOR_OCMD_BULKE      0x609F  /* Octa Bulk Erase */
 
  /* Page, sector, and block size are standard, not configurable. */
- #define SPI_NOR_PAGE_SIZE    0x0100U
- #define SPI_NOR_SECTOR_SIZE  0x1000U
- #define SPI_NOR_BLOCK_SIZE   0x10000U
+#define SPI_NOR_PAGE_SIZE      0x0100U
+#define SPI_NOR_SECTOR_SIZE    0x1000U
+#define SPI_NOR_BLOCK_32K_SIZE 0x8000U
+#define SPI_NOR_BLOCK_SIZE     0x10000U
 
 /* Flash Auto-polling values */
 #define SPI_NOR_WREN_MATCH    0x02

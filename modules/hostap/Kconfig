@@ -24,6 +24,10 @@ config WIFI_NM_WPA_SUPPLICANT
 
 if WIFI_NM_WPA_SUPPLICANT
 
+config ZVFS_OPEN_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
+	int "Number of socket descriptors needed by hostap"
+	default 12
+
 config WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 	bool "Use Zephyr kernel heap for Wi-Fi driver"
 	default y
@@ -207,7 +211,7 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
-	imply MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO
 	select MBEDTLS_USE_PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_HMAC
@@ -233,7 +237,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_PEM_CERTIFICATE_FORMAT if MBEDTLS_BUILTIN
 	select MBEDTLS_SERVER_NAME_INDICATION if MBEDTLS_BUILTIN
 	select MBEDTLS_X509_CRL_PARSE_C
-	select MBEDTLS_TLS_VERSION_1_2
+	select MBEDTLS_SSL_PROTO_TLS1_2
 	select NOT_SECURE
 	select WIFI_CERTIFICATE_LIB
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -455,6 +459,27 @@ config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
 	  needs to get new IP address after roaming to new AP. Disable this to keep
 	  DHCP after roaming.
 
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN
+	bool "Background scanning (for legacy roaming), recommended if 802.11r is not supported"
+	depends on WIFI_NM_WPA_SUPPLICANT_WNM
+	depends on !WIFI_NM_WPA_SUPPLICANT_ROAMING
+
+if WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+	bool "Simple background scanning"
+	default y
+	help
+	  Periodic background scans based on signal strength.
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+	bool "Learning"
+	help
+	  Learn channels used by the network and try to avoid
+	  background scans on other channels (experimental).
+
+endif # WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
@@ -484,6 +509,15 @@ config NO_RANDOM_POOL
 	default y
 
 config WNM
+	bool
+
+config BGSCAN
+	bool
+
+config BGSCAN_SIMPLE
+	bool
+
+config BGSCAN_LEARN
 	bool
 
 config NO_WPA
