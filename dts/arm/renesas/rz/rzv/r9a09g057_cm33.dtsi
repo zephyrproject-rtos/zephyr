@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "renesas,r9a09g057-m33";
@@ -412,6 +413,123 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		i2c0: i2c@44400400 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44400400 DT_SIZE_K(1)>;
+			interrupts = <174 1>, <175 1>, <176 1>, <177 1>,
+				     <178 1>, <179 1>, <385 1>, <386 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c1: i2c@44400800 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44400800 DT_SIZE_K(1)>;
+			interrupts = <180 1>, <181 1>, <182 1>, <183 1>,
+				     <184 1>, <185 1>, <387 1>, <388 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c2: i2c@44400c00 {
+			compatible = "renesas,rz-riic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44400c00 DT_SIZE_K(1)>;
+			interrupts = <186 1>, <187 1>, <188 1>, <189 1>,
+				     <190 1>, <191 1>, <389 1>, <390 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c3: i2c@44401000 {
+			compatible = "renesas,rz-riic";
+			channel = <3>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44401000 DT_SIZE_K(1)>;
+			interrupts = <192 1>, <193 1>, <194 1>, <195 1>,
+				     <196 1>, <197 1>, <391 1>, <392 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c4: i2c@44401400 {
+			compatible = "renesas,rz-riic";
+			channel = <4>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44401400 DT_SIZE_K(1)>;
+			interrupts = <198 1>, <199 1>, <200 1>, <201 1>,
+				     <202 1>, <203 1>, <393 1>, <394 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c5: i2c@44401800 {
+			compatible = "renesas,rz-riic";
+			channel = <5>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44401800 DT_SIZE_K(1)>;
+			interrupts = <204 1>, <205 1>, <206 1>, <207 1>,
+				     <208 1>, <209 1>, <395 1>, <396 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c6: i2c@44401c00 {
+			compatible = "renesas,rz-riic";
+			channel = <6>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44401c00 DT_SIZE_K(1)>;
+			interrupts = <210 1>, <211 1>, <212 1>, <213 1>,
+				     <214 1>, <215 1>, <397 1>, <398 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c7: i2c@44402000 {
+			compatible = "renesas,rz-riic";
+			channel = <7>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44402000 DT_SIZE_K(1)>;
+			interrupts = <216 1>, <217 1>, <218 1>, <219 1>,
+				     <220 1>, <221 1>, <399 1>, <400 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
+		};
+
+		i2c8: i2c@41c01000 {
+			compatible = "renesas,rz-riic";
+			channel = <8>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41c01000 DT_SIZE_K(1)>;
+			interrupts = <222 1>, <223 1>, <224 1>, <225 1>,
+				     <226 1>, <227 1>, <401 1>, <402 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "txi", "rxi";
+			status = "disabled";
 		};
 
 		intc: intc@40400000 {
