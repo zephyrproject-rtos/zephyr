@@ -32,7 +32,7 @@ from twisterlib.handlers import (
 from twisterlib.hardwaremap import DUT
 from twisterlib.statuses import TwisterStatus
 
-from . import ZEPHYR_BASE
+from . import ZEPHYR_BASE  # pylint: disable=no-name-in-module
 
 
 @pytest.fixture
@@ -1441,6 +1441,7 @@ def test_devicehandler_handle(
         pre_script='dummy pre script',
         post_script='dummy post script',
         post_flash_script='dummy post flash script',
+        failure_script='dummy failure script',
         flash_timeout=60,
         flash_with_test=True
     )
@@ -1463,7 +1464,8 @@ def test_devicehandler_handle(
     handler.terminate = mock.Mock(side_effect=mock_terminate)
     handler._update_instance_info = mock.Mock()
     handler._final_handle_actions = mock.Mock()
-    handler.make_dut_available = mock.Mock()
+    handler.duts = [hardware]
+    handler.make_dut_available = mock.Mock(wraps=handler.make_dut_available)
     twisterlib.handlers.terminate_process = mock.Mock()
     handler.instance.platform.name = 'IPName'
 
@@ -1495,11 +1497,18 @@ def test_devicehandler_handle(
     if raise_create_serial:
         return
 
-    handler.run_custom_script.assert_has_calls([
+    expected_calls = [
         mock.call('dummy pre script', mock.ANY),
         mock.call('dummy post flash script', mock.ANY),
-        mock.call('dummy post script', mock.ANY)
-    ])
+        mock.call('dummy post script', mock.ANY),
+    ]
+
+    if raise_popen or raise_timeout or returncode:
+        expected_calls.append(
+            mock.call(['dummy', 'failure', 'script'], mock.ANY)
+        )
+
+    handler.run_custom_script.assert_has_calls(expected_calls)
 
     if expected_reason:
         assert handler.instance.reason == expected_reason
