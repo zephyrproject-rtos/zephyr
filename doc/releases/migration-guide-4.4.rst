@@ -55,6 +55,11 @@ Ethernet
     * Removed ``mac-eeprom`` property from :dtcompatible:`atmel,sam-gmac` and
       :dtcompatible:`atmel,sam0-gmac`
 
+* The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
+  the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
+  is needed. There you need to specify the fixed link parameters using the ``default-speeds``
+  property (:github:`100454`).
+
 MDIO
 ====
 
