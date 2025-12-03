@@ -9,6 +9,7 @@
  *
  */
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -342,6 +343,33 @@ ZTEST(sh, test_shell_fprintf)
 	 */
 	zassert_true(strstr(buf, expect),
 		     "Expected string to contain '%s', got '%s'", expect, buf);
+}
+
+static void test_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+			   void *user_data)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
+}
+
+ZTEST(sh, test_shell_set_bypass)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	uint8_t user_data;
+
+	zassert_not_null(sh, "Failed to get shell backend");
+
+	shell_set_bypass(sh, test_bypass_cb, &user_data);
+
+	zassert_equal_ptr(sh->ctx->bypass, test_bypass_cb, "Bypass callback not stored");
+	zassert_equal_ptr(sh->ctx->bypass_user_data, &user_data, "User data pointer not stored");
+
+	shell_set_bypass(sh, NULL, NULL);
+
+	zassert_is_null(sh->ctx->bypass, "Bypass callback not cleared");
+	zassert_is_null(sh->ctx->bypass_user_data, "User data pointer not cleared");
 }
 
 #define RAW_ARG "aaa \"\" bbb"
