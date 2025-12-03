@@ -309,6 +309,13 @@ zephyr_udc0: &usbotg_hs1 {
 	};
 };
 
+&iocell {
+	vddio3 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
+
 csi_interface: &dcmipp {
 	port {
 		csi_ep_in: endpoint {};
