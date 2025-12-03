@@ -37,19 +37,21 @@ static int dummy_display_write(const struct device *dev, const uint16_t x,
 			       const void *buf)
 {
 	const struct dummy_display_config *config = dev->config;
+	struct dummy_display_data *disp_data = dev->data;
+	uint8_t bytes_per_pixel;
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT(desc->pitch <= config->width,
-		"Pitch in descriptor is larger than screen size");
+	bytes_per_pixel = DISPLAY_BITS_PER_PIXEL(disp_data->current_pixel_format) / 8;
+
+	__ASSERT(desc->width * bytes_per_pixel <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(desc->height <= config->height,
 		"Height in descriptor is larger than screen size");
-	__ASSERT(x + desc->pitch <= config->width,
+	__ASSERT(x + desc->width <= config->width,
 		 "Writing outside screen boundaries in horizontal direction");
 	__ASSERT(y + desc->height <= config->height,
 		 "Writing outside screen boundaries in vertical direction");
 
-	if (desc->width > desc->pitch ||
-	    x + desc->pitch > config->width ||
+	if (desc->width * bytes_per_pixel > desc->pitch ||
+	    x + desc->width > config->width ||
 	    y + desc->height > config->height) {
 		return -EINVAL;
 	}

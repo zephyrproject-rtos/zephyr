@@ -247,11 +247,11 @@ static int api_write(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (desc->pitch < desc->width) {
+	if (desc->pitch < DIV_ROUND_UP(desc->width, 8U)) {
 		return -EINVAL;
 	}
 
-	uint16_t to_skip = desc->pitch - desc->width;
+	uint16_t to_skip = (desc->pitch * 8) - desc->width;
 	uint8_t mask = 0;
 	uint8_t data = 0;
 

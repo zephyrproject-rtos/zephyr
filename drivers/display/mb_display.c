@@ -83,7 +83,7 @@ static int update_content(struct mb_display *disp, const struct mb_image *img)
 		.buf_size = sizeof(struct mb_image),
 		.width    = MB_DISP_XRES,
 		.height   = MB_DISP_YRES,
-		.pitch    = 8,
+		.pitch    = 1,
 	};
 	struct mb_image tmp_img;
 	int ret;

@@ -260,7 +260,8 @@ static inline int mipi_dbi_command_read(const struct device *dev,
  * @param config MIPI DBI configuration
  * @param framebuf: framebuffer to write to display
  * @param desc: descriptor of framebuffer to write. Note that the pitch must
- *   be equal to width. "buf_size" field determines how many bytes will be
+ *   be equal to width * bytes_per_pixel (pitch is now in bytes per row).
+ *   "buf_size" field determines how many bytes will be
  *   written.
  * @param pixfmt: pixel format of framebuffer data
  * @retval 0 buffer write succeeded.

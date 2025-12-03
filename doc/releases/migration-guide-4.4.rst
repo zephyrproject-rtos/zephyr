@@ -340,6 +340,10 @@ Display
   :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
   respectively. (:github:`99276`)
 
+* The variale :c:member:`pitch` in :c:struct:`display_buffer_descriptor` changes from
+  number of pixels to number of bytes between consecutive rows in the data buffer.
+  (:github:`100749`).
+
 DMA
 ===
 

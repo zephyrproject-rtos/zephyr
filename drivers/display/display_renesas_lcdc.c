@@ -508,7 +508,7 @@ static int display_smartbond_read(const struct device *dev,
 		k_sem_take(&data->dma_sync_sem, K_FOREVER);
 
 		src += data->layer.stride;
-		dst += (desc->pitch * config->pixel_size);
+		dst += desc->pitch;
 	}
 
 	if (dma_stop(data->dma, data->dma_channel)) {
@@ -577,7 +577,7 @@ static int display_smartbond_write(const struct device *dev,
 		k_sem_take(&data->dma_sync_sem, K_FOREVER);
 
 		dst += data->layer.stride;
-		src += (desc->pitch * config->pixel_size);
+		src += desc->pitch;
 	}
 
 	if (dma_stop(data->dma, data->dma_channel)) {

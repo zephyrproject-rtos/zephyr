@@ -216,7 +216,38 @@ struct display_capabilities {
 	enum display_orientation current_orientation;
 };
 
-/** @brief Structure to describe display data buffer layout */
+/**
+ * @brief Structure to describe display data buffer layout
+ *
+ * @verbatim
+ *  Frame Buffer Memory Layout:
+ *
+ *   <----------------- pitch (bytes per row) ------------------>
+ *   <------ width * bytes_per_pixel ------>
+ *  +---------------------------------------+--------------------+
+ *  | Pixel | Pixel | Pixel | ... | Pixel   |   Padding/Unused   |  ^
+ *  | (0,0) | (1,0) | (2,0) |     |(w-1,0)  |                    |  |
+ *  +---------------------------------------+--------------------+  |
+ *  | Pixel | Pixel | Pixel | ... | Pixel   |   Padding/Unused   |  |
+ *  | (0,1) | (1,1) | (2,1) |     |(w-1,1)  |                    | height
+ *  +---------------------------------------+--------------------+ (rows)
+ *  | Pixel | Pixel | Pixel | ... | Pixel   |   Padding/Unused   |  |
+ *  | (0,2) | (1,2) | (2,2) |     |(w-1,2)  |                    |  |
+ *  +---------------------------------------+--------------------+  |
+ *  |  ...  |  ...  |  ...  | ... |  ...    |        ...         |  |
+ *  +---------------------------------------+--------------------+  |
+ *  | Pixel | Pixel | Pixel | ... | Pixel   |   Padding/Unused   |  |
+ *  |(0,h-1)|(1,h-1)|(2,h-1)|     |(w-1,h-1)|                    |  v
+ *  +---------------------------------------+---------------------+
+ *
+ *  width  = Number of pixels per row (visible width)
+ *  height = Number of rows (visible height)
+ *  pitch  = Number of bytes per row (including padding for alignment)
+ *
+ *  Note: pitch >= width * bytes_per_pixel
+ *        The difference is padding added for memory alignment requirements.
+ * @endverbatim
+ */
 struct display_buffer_descriptor {
 	/** Data buffer size in bytes */
 	uint32_t buf_size;
@@ -224,7 +255,7 @@ struct display_buffer_descriptor {
 	uint16_t width;
 	/** Data buffer column height in pixels */
 	uint16_t height;
-	/** Number of pixels between consecutive rows in the data buffer */
+	/** Number of bytes between consecutive rows in the data buffer */
 	uint16_t pitch;
 	/** Indicates that this is not the last write buffer of the frame */
 	bool frame_incomplete;

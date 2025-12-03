@@ -224,10 +224,10 @@ static int sdl_display_init(const struct device *dev)
 static void sdl_display_write_argb8888(void *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
-	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
-	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
+	memcpy(disp_buf, buf, desc->pitch * desc->height);
 }
 
 /*
@@ -245,13 +245,12 @@ static void sdl_display_write_rgb888(uint8_t *disp_buf,
 	uint32_t pixel;
 	const uint8_t *byte_ptr;
 
-	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			byte_ptr = (const uint8_t *)buf +
-				((h_idx * desc->pitch) + w_idx) * 3U;
+			byte_ptr = (const uint8_t *)buf + (h_idx * desc->pitch) + (w_idx * 3U);
 			pixel = *(byte_ptr + 2) << 16;		/* R */
 			pixel |= *(byte_ptr + 1) << 8;		/* G */
 			pixel |= *byte_ptr;			/* B */
@@ -278,13 +277,12 @@ static void sdl_display_write_al88(uint8_t *disp_buf,
 	uint32_t pixel;
 	const uint8_t *byte_ptr;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			byte_ptr = (const uint8_t *)buf +
-				((h_idx * desc->pitch) + w_idx) * 2U;
+			byte_ptr = (const uint8_t *)buf + (h_idx * desc->pitch) + (w_idx * 2U);
 			pixel = *(byte_ptr + 1) << 24;	/* A */
 			pixel |= *(byte_ptr) << 16;	/* R */
 			pixel |= *(byte_ptr) << 8;	/* G */
@@ -311,13 +309,13 @@ static void sdl_display_write_rgb565(uint8_t *disp_buf,
 	const uint16_t *pix_ptr;
 	uint16_t rgb565;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint16_t *)buf +
-				((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint16_t *)((const uint8_t *)buf +
+				(h_idx * desc->pitch)) + w_idx;
 			rgb565 = sys_le16_to_cpu(*pix_ptr);
 			pixel = (((rgb565 >> 11) & 0x1F) * 255 / 31) << 16;	/* R */
 			pixel |= (((rgb565 >> 5) & 0x3F) * 255 / 63) << 8;	/* G */
@@ -344,13 +342,13 @@ static void sdl_display_write_rgb565x(uint8_t *disp_buf,
 	const uint16_t *pix_ptr;
 	uint16_t rgb565;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint16_t *)buf +
-				((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint16_t *)((const uint8_t *)buf +
+				(h_idx * desc->pitch)) + w_idx;
 			/*
 			 * Perform be16_to_cpu here in order to swap it so that handling
 			 * is same as for rgb565
@@ -381,17 +379,17 @@ static void sdl_display_write_mono(uint8_t *disp_buf, const struct display_buffe
 	bool pixel;
 	const uint8_t *byte_ptr;
 
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
 			byte_ptr = buf;
 
 			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
-				byte_ptr += ((h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U)) + w_idx;
+				byte_ptr += ((h_idx / 8U) * desc->pitch) + w_idx;
 				pixel = !!(*byte_ptr & mono_pixel_order(h_idx % 8U));
 			} else {
-				byte_ptr += (h_idx * DIV_ROUND_UP(desc->pitch, 8U)) + (w_idx / 8U);
+				byte_ptr += (h_idx * desc->pitch) + (w_idx / 8U);
 				pixel = !!(*byte_ptr & mono_pixel_order(w_idx % 8U));
 			}
 
@@ -449,12 +447,16 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		},
 	};
 
+	uint16_t pitch_min = DIV_ROUND_UP(
+		desc->width * DISPLAY_BITS_PER_PIXEL(disp_data->current_pixel_format),
+		8);
+
 	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT(desc->pitch <= config->width,
-		"Pitch in descriptor is larger than screen size");
+	__ASSERT(pitch_min <= desc->pitch, "Pitch is too small");
+	__ASSERT(desc->width <= config->width,
+		"Width in descriptor is larger than screen size");
 	__ASSERT(desc->height <= config->height,
 		"Height in descriptor is larger than screen size");
 	__ASSERT(x + desc->width <= config->width,
@@ -462,7 +464,7 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	__ASSERT(y + desc->height <= config->height,
 		 "Writing outside screen boundaries in vertical direction");
 
-	if (desc->width > desc->pitch ||
+	if (pitch_min > desc->pitch ||
 	    x + desc->width > config->width ||
 	    y + desc->height > config->height) {
 		return -EINVAL;
@@ -511,9 +513,9 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 static void sdl_display_read_argb8888(const uint8_t *read_buf,
 				      const struct display_buffer_descriptor *desc, void *buf)
 {
-	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size, "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
-	memcpy(buf, read_buf, desc->pitch * 4U * desc->height);
+	memcpy(buf, read_buf, desc->pitch * desc->height);
 }
 
 /*
@@ -531,13 +533,13 @@ static void sdl_display_read_rgb888(const uint8_t *read_buf,
 	uint8_t *buf8;
 	const uint32_t *pix_ptr;
 
-	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size, "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
-		buf8 = ((uint8_t *)buf) + desc->pitch * 3U * h_idx;
+		buf8 = ((uint8_t *)buf) + desc->pitch * h_idx;
 
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->width) + w_idx);
 			pix_ptr = sys_le32_to_cpu(pix_ptr);
 			*buf8 = (*pix_ptr & 0xFF);		/* B */
 			buf8 += 1;
@@ -565,13 +567,13 @@ static void sdl_display_read_rgb565(const uint8_t *read_buf,
 	uint16_t *buf16;
 	const uint32_t *pix_ptr;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size, "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
-		buf16 = (void *)(((uint8_t *)buf) + desc->pitch * 2U * h_idx);
+		buf16 = (void *)(((uint8_t *)buf) + desc->pitch * h_idx);
 
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->width) + w_idx);
 			pix_ptr = sys_le32_to_cpu(pix_ptr);
 			pixel = (*pix_ptr & 0xF80000) >> 8;	/* R */
 			pixel |= (*pix_ptr & 0x00FC00) >> 5;	/* G */
@@ -598,13 +600,13 @@ static void sdl_display_read_rgb565x(const uint8_t *read_buf,
 	uint16_t *buf16;
 	const uint32_t *pix_ptr;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size, "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
-		buf16 = (void *)(((uint8_t *)buf) + desc->pitch * 2U * h_idx);
+		buf16 = (void *)(((uint8_t *)buf) + desc->pitch * h_idx);
 
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->width) + w_idx);
 			pix_ptr = sys_le32_to_cpu(pix_ptr);
 			pixel = (*pix_ptr & 0xF80000) >> 8;	/* R */
 			pixel |= (*pix_ptr & 0x00FC00) >> 5;	/* G */
@@ -637,19 +639,19 @@ static void sdl_display_read_mono(const uint8_t *read_buf,
 	const uint32_t *pix_ptr;
 	uint8_t *buf8;
 
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + h_idx * desc->pitch + w_idx;
+			pix_ptr = (const uint32_t *)read_buf + h_idx * desc->width + w_idx;
 			pix_ptr = sys_cpu_to_le32(pix_ptr);
 			buf8 = buf;
 
 			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
-				buf8 += (h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U) + (w_idx);
+				buf8 += (h_idx / 8U) * desc->pitch + (w_idx);
 				bits = mono_pixel_order(h_idx % 8U);
 			} else {
-				buf8 += (h_idx)*DIV_ROUND_UP(desc->pitch, 8U) + (w_idx / 8U);
+				buf8 += h_idx * desc->pitch + (w_idx / 8U);
 				bits = mono_pixel_order(w_idx % 8U);
 			}
 
@@ -685,7 +687,7 @@ static void sdl_display_read_l8(const uint8_t *read_buf,
 		buf8 = ((uint8_t *)buf) + desc->pitch * h_idx;
 
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->width) + w_idx);
 			pix_ptr = sys_le32_to_cpu(pix_ptr);
 			*buf8 = *pix_ptr & 0xFF;
 			buf8 += 1;
@@ -701,13 +703,13 @@ static void sdl_display_read_al88(const uint8_t *read_buf,
 	uint8_t *buf8;
 	const uint32_t *pix_ptr;
 
-	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size, "Read buffer is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
-		buf8 = ((uint8_t *)buf) + desc->pitch * 2U * h_idx;
+		buf8 = ((uint8_t *)buf) + desc->pitch * h_idx;
 
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->width) + w_idx);
 			pix_ptr = sys_le32_to_cpu(pix_ptr);
 			*buf8 = (*pix_ptr & 0xFF);
 			buf8 += 1;
@@ -726,10 +728,13 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 	LOG_DBG("Reading %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
+	__ASSERT(DIV_ROUND_UP(
+			desc->width * DISPLAY_BITS_PER_PIXEL(disp_data->current_pixel_format),
+			8)
+			<= desc->pitch, "Pitch is too small");
 
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
-	memset(disp_data->read_buf, 0, desc->pitch * desc->height * 4);
+	memset(disp_data->read_buf, 0, desc->width * desc->height * 4);
 
 	struct sdl_display_read_params read_params = {
 		.height = desc->height,
@@ -738,7 +743,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 		.y = y,
 		.renderer = disp_data->renderer,
 		.buf = disp_data->read_buf,
-		.pitch = desc->pitch,
+		.pitch = desc->width * 4U, /* SDL_PIXELFORMAT_ARGB8888 is used. */
 		.mutex = disp_data->mutex,
 		.texture = disp_data->texture,
 		.read_texture = disp_data->read_texture,

@@ -151,27 +151,28 @@ static int max7219_write(const struct device *dev, const uint16_t x, const uint1
 	/*
 	 * MAX7219 only supports PIXEL_FORMAT_MONO01. 1 bit stands for 1 pixel.
 	 */
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT(desc->pitch <= max_width, "Pitch in descriptor is larger than screen size");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size, "Input buffer too small");
+	__ASSERT(DIV_ROUND_UP(desc->width, 8U) <= desc->pitch, "Pitch is too small");
+	__ASSERT(desc->width <= max_width, "Width in descriptor is larger than screen size");
 	__ASSERT(desc->height <= max_height, "Height in descriptor is larger than screen size");
-	__ASSERT(x + desc->pitch <= max_width,
+	__ASSERT(x + desc->width <= max_width,
 		 "Writing outside screen boundaries in horizontal direction");
 	__ASSERT(y + desc->height <= max_height,
 		 "Writing outside screen boundaries in vertical direction");
 
-	if (desc->width > desc->pitch || (desc->pitch * desc->height) > (desc->buf_size * 8U)) {
+	if ((DIV_ROUND_UP(desc->width, 8U) > desc->pitch) ||
+	   ((desc->pitch * desc->height) > desc->buf_size)) {
 		return -EINVAL;
 	}
 
-	if ((x + desc->pitch) > max_width || (y + desc->height) > max_height) {
+	if ((x + desc->width) > max_width || (y + desc->height) > max_height) {
 		return -EINVAL;
 	}
 
 	const uint16_t end_x = x + desc->width;
 	const uint16_t end_y = y + desc->height;
 	const uint8_t *byte_buf = buf;
-	const uint16_t to_skip = desc->pitch - desc->width;
+	const uint16_t to_skip = desc->pitch * 8U - desc->width;
 	uint8_t mask = 0;
 	uint8_t data = 0;
 
@@ -311,7 +312,7 @@ static int max7219_init(const struct device *dev)
 		.buf_size = dev_config->num_cascading * MAX7219_DIGITS_PER_DEVICE,
 		.height = dev_config->num_cascading * MAX7219_DIGITS_PER_DEVICE,
 		.width = MAX7219_DIGITS_PER_DEVICE,
-		.pitch = MAX7219_DIGITS_PER_DEVICE,
+		.pitch = DIV_ROUND_UP(MAX7219_DIGITS_PER_DEVICE, 8U),
 	};
 
 	ret = max7219_write(dev, 0, 0, &desc, dev_data->digit_buf);

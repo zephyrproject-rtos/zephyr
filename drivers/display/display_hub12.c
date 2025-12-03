@@ -157,7 +157,7 @@ static int hub12_write(const struct device *dev, const uint16_t x, const uint16_
 		return -EINVAL;
 	}
 
-	if (desc->pitch != desc->width) {
+	if (desc->pitch != (desc->width / HUB12_PIXELS_PER_BYTE)) {
 		LOG_ERR("Unsupported pitch");
 		return -ENOTSUP;
 	}
@@ -173,7 +173,7 @@ static int hub12_write(const struct device *dev, const uint16_t x, const uint16_
 		memcpy(data->framebuffer, src, fb_size);
 	} else {
 		/* Partial update */
-		size_t src_pitch_bytes = desc->pitch / HUB12_PIXELS_PER_BYTE;
+		size_t src_pitch_bytes = desc->pitch;
 		size_t dest_pitch_bytes = config->width / HUB12_PIXELS_PER_BYTE;
 
 		for (uint16_t j = 0; j < desc->height; j++) {

@@ -71,12 +71,12 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 	bool vsync_wait = false;
 	fsp_err_t err;
 
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+	if (desc->pitch < (desc->width * data->pixel_size)) {
+		LOG_ERR("Pitch is too small");
 		return -EINVAL;
 	}
 
-	if ((desc->pitch * data->pixel_size * desc->height) > desc->buf_size) {
+	if ((desc->pitch * desc->height) > desc->buf_size) {
 		LOG_ERR("Input buffer too small");
 		return -EINVAL;
 	}
@@ -113,7 +113,7 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 		for (row = 0; row < desc->height; row++) {
 			(void)memcpy(dst, src, desc->width * data->pixel_size);
 			dst += (config->width * data->pixel_size);
-			src += (desc->pitch * data->pixel_size);
+			src += desc->pitch;
 		}
 #endif /* CONFIG_RENESAS_RA_GLCDC_FB_NUM == 0 */
 	}
@@ -166,7 +166,7 @@ static int ra_display_read(const struct device *dev, const uint16_t x, const uin
 	for (row = 0; row < desc->height; row++) {
 		(void)memcpy(dst, src, desc->width * data->pixel_size);
 		src += (config->width * data->pixel_size);
-		dst += (desc->pitch * data->pixel_size);
+		dst += desc->pitch;
 	}
 
 	return 0;

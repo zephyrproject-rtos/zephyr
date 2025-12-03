@@ -26,9 +26,9 @@ static void cfb_test_before(void *text_fixture)
 {
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = DIV_ROUND_UP(display_width, 8),
 		.width = display_width,
-		.buf_size = display_height * display_width / 8,
+		.buf_size = display_height * DIV_ROUND_UP(display_width, 8),
 	};
 
 	memset(read_buffer, 0, sizeof(read_buffer));
