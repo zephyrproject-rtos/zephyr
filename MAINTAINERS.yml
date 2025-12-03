@@ -1656,6 +1656,9 @@ Documentation Infrastructure:
     - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
     - samples/drivers/ethernet/
+    - subsys/usb/device/class/netusb/
+    - subsys/usb/device_next/class/usbd_cdc_ecm.c
+    - subsys/usb/device_next/class/usbd_cdc_ncm.c
   labels:
     - "area: Ethernet"
   tests:
