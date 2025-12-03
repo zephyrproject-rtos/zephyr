@@ -1141,6 +1141,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 	/* Reset supervision countdown */
 	if ((done->extra.crc_valid != 0U) && (done->extra.is_aborted == 0U)) {
 		conn->supervision_expire = 0U;
+
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->periph.latency_bust = 0U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	/* check connection failed to establish */
@@ -1215,6 +1221,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if ((IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 			     (lll->role == BT_HCI_ROLE_PERIPHERAL) && is_instant_pass_stopgap) ||
 			    (conn->supervision_expire <= CONN_ESTAB_COUNTDOWN)) {
+#if defined(CONFIG_BT_PERIPHERAL)
+				if ((lll->role == BT_HCI_ROLE_PERIPHERAL) &&
+				    (latency_event != lll->latency) &&
+				    (lll->forced != 0U)) {
+					if (conn->periph.latency_bust == 0U) {
+						conn->periph.latency_bust = latency_event + 1U;
+					}
+
+					lll->latency_event = conn->periph.latency_bust;
+				}
+#endif /* CONFIG_BT_PERIPHERAL */
+
 				force = 1U;
 				force_lll = 1U;
 			}
@@ -1223,8 +1241,16 @@ void ull_conn_done(struct node_rx_event_done *done)
 			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
 			 */
-			else if (lll->role) {
-				if (latency_event) {
+			else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+				if (latency_event != lll->latency) {
+					if ((lll->forced != 0U) &&
+					    (conn->periph.latency_bust == 0U)) {
+						conn->periph.latency_bust = latency_event + 1U;
+						lll->latency_event = conn->periph.latency_bust;
+					} else if (lll->forced != 0U) {
+						lll->latency_event = conn->periph.latency_bust;
+					}
+
 					force = 1U;
 					force_lll = 1U;
 				} else {
