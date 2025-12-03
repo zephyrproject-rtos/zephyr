@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -232,14 +233,18 @@
 		uart0: uart@400f2400 {
 			reg = <0x400f2400 0x400>;
 			interrupts = <40 1>;
-			girqs = <15 0>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 0)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 1)>;
+			ldn = <9>;
 			status = "disabled";
 		};
 
 		uart1: uart@400f2800 {
 			reg = <0x400f2800 0x400>;
 			interrupts = <41 1>;
-			girqs = <15 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 1)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 2)>;
+			ldn = <10>;
 			status = "disabled";
 		};
 
