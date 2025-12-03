@@ -429,8 +429,7 @@ int settings_commit_subtree(const char *subtree);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_save_subtree_or_single_without_modification(const char *name,
-							 bool save_if_subtree,
+int settings_save_subtree_or_single_without_modification(const char *name, bool save_if_subtree,
 							 bool save_if_single_setting);
 #endif
 
