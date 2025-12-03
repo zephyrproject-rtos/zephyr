@@ -263,6 +263,3 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     LOCATION RAM
   )
 endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR
-
-zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
-zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
