@@ -12,7 +12,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
 
-#define DT_DRV_COMPAT nordic_ironside_call
+#define DT_DRV_COMPAT nordic_ironside_ipc
 
 #define SHM_NODE     DT_INST_PHANDLE(0, memory_region)
 #define NUM_BUFS     (DT_REG_SIZE(SHM_NODE) / sizeof(struct ironside_call_buf))

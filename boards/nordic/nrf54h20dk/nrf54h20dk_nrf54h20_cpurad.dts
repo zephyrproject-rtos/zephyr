@@ -40,8 +40,8 @@
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpurad-cpusec, 6: cpurad-cpusys, 12: cpurad-cpuapp */
-	nordic,interrupt-mapping = <0x00001041 0>;
+	/* irq0: 0: cpurad-cpusec, 1: cpurad-cpusec, 6: cpurad-cpusys, 12: cpurad-cpuapp */
+	nordic,interrupt-mapping = <0x00001043 0>;
 };
 
 &cpuapp_bellboard {
