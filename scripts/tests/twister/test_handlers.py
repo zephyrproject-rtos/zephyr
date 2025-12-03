@@ -1048,21 +1048,21 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir']
     ),
     (
         [],
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir']
     ),
     (
         '--dummy',
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--', '--dummy']
     ),
     (
@@ -1070,7 +1070,7 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--', '--dummy1', '--dummy2', '--dummy, 3']
     ),
 
@@ -1079,7 +1079,7 @@ TESTDATA_13 = [
         'runner',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'runner', 'param1', 'param2']
     ),
 
@@ -1088,7 +1088,7 @@ TESTDATA_13 = [
         'pyocd',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'pyocd', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
     (
@@ -1096,7 +1096,7 @@ TESTDATA_13 = [
         'nrfjprog',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'nrfjprog', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
     (
@@ -1104,7 +1104,7 @@ TESTDATA_13 = [
         'openocd',
         'STM32 STLink',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
     ),
@@ -1113,7 +1113,7 @@ TESTDATA_13 = [
         'openocd',
         'STLINK-V3',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
     ),
@@ -1122,7 +1122,7 @@ TESTDATA_13 = [
         'openocd',
         'EDBG CMSIS-DAP',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
     ),
@@ -1131,7 +1131,7 @@ TESTDATA_13 = [
         'jlink',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'jlink', '--dev-id', 12345,
          'param1', 'param2']
     ),
@@ -1140,7 +1140,7 @@ TESTDATA_13 = [
         'stm32cubeprogrammer',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
          'param1', 'param2']
     ),
@@ -1185,6 +1185,7 @@ def test_devicehandler_create_command(
 ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.options = mock.Mock(west_flash=self_west_flash,
+                                west_cmd='flash',
                                 flash_command=self_flash_command, verbose=0)
     handler.generator_cmd = 'generator_cmd'
 
@@ -1195,7 +1196,8 @@ def test_devicehandler_create_command(
         product=hardware_product_name,
         probe_id=12345 if hardware_probe else None,
         id=12345 if not hardware_probe else None,
-        runner_params=['param1', 'param2']
+        runner_params=['param1', 'param2'],
+        west_cmd=None
     )
 
     command = handler._create_command(runner, hardware)
