@@ -445,11 +445,11 @@ static void set_regu_voltage(uint32_t hclk_freq, uint32_t wanted_scale)
 {
 	uint32_t minimal_scale, scale_to_apply;
 
-	if (hclk_freq < MHZ(25)) {
+	if (hclk_freq <= MHZ(25)) {
 		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE4;
-	} else if (hclk_freq < MHZ(55)) {
+	} else if (hclk_freq <= MHZ(55)) {
 		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE3;
-	} else if (hclk_freq < MHZ(110)) {
+	} else if (hclk_freq <= MHZ(110)) {
 		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE2;
 	} else {
 		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE1;
