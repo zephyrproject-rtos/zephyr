@@ -37,3 +37,5 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/li
 
 # Build the SoC P-state setter implementation for CPUFreq when selected
 zephyr_library_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_SOC cpu_freq_scale.c)
+
+zephyr_sources_ifdef(CONFIG_PM power.c)

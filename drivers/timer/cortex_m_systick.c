@@ -109,6 +109,11 @@ static cycle_t cycle_pre_idle;
 /* Idle timer value before entering the idle state. */
 static uint32_t idle_timer_pre_idle;
 
+/* Idle timer alarm ticks saved at entry so exit can determine if the
+ * alarm target crossed the top value (wrap) or not.
+ */
+static uint32_t idle_timer_alarm_ticks;
+
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
 
@@ -154,6 +159,8 @@ void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * difference in measurements after exiting the idle state.
 	 */
 	counter_get_value(idle_timer, &idle_timer_pre_idle);
+
+	idle_timer_alarm_ticks = cfg.ticks;
 }
 
 uint64_t z_cms_lptim_hook_on_lpm_exit(void)
@@ -161,18 +168,27 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	/**
 	 * Calculate how much time elapsed according to counter.
 	 */
-	uint32_t idle_timer_post, idle_timer_diff;
+	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
+	bool alarm_pending;
 
 	counter_get_value(idle_timer, &idle_timer_post);
+	alarm_pending = counter_get_pending_int(idle_timer) ? true : false;
+	idle_timer_top = counter_get_top_value(idle_timer);
 
 	/**
 	 * Check for counter timer overflow
 	 * (TODO: this doesn't work for downcounting timers!)
 	 */
-	if (idle_timer_pre_idle > idle_timer_post) {
-		idle_timer_diff =
-			(counter_get_top_value(idle_timer) - idle_timer_pre_idle) +
-			idle_timer_post + 1;
+	bool wrap_case = (idle_timer_pre_idle > idle_timer_post) ||
+			((idle_timer_pre_idle == idle_timer_post) && alarm_pending) ||
+			((idle_timer_pre_idle < idle_timer_post) && alarm_pending &&
+			 (idle_timer_alarm_ticks != 0) &&
+			 (uint64_t)idle_timer_pre_idle + idle_timer_alarm_ticks >= idle_timer_top);
+
+	if (wrap_case) {
+		idle_timer_diff = idle_timer_top + idle_timer_post + 1 - idle_timer_pre_idle;
+	} else if (idle_timer_pre_idle == idle_timer_post) {
+		idle_timer_diff = 0;
 	} else {
 		idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
 	}
