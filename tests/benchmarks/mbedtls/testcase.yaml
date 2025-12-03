@@ -6,6 +6,8 @@ common:
       - "Benchmark completed"
   timeout: 10
   tags: crypto
+  arch_exclude:
+    - posix
 tests:
   benchmark.crypto.mbedtls:
     filter: CONFIG_TEST_RANDOM_GENERATOR
