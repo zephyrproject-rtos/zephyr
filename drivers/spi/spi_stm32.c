@@ -811,7 +811,10 @@ static int spi_stm32_configure(const struct device *dev,
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	const uint32_t scaler[] = {
+	static const uint32_t scaler[] = {
+#ifdef LL_SPI_BAUDRATEPRESCALER_BYPASS
+		LL_SPI_BAUDRATEPRESCALER_BYPASS,
+#endif /* LL_SPI_BAUDRATEPRESCALER_BYPASS */
 		LL_SPI_BAUDRATEPRESCALER_DIV2,
 		LL_SPI_BAUDRATEPRESCALER_DIV4,
 		LL_SPI_BAUDRATEPRESCALER_DIV8,
@@ -824,6 +827,7 @@ static int spi_stm32_configure(const struct device *dev,
 	SPI_TypeDef *spi = cfg->spi;
 	uint32_t clock;
 	int br;
+	const int shift = (scaler[0] == LL_SPI_BAUDRATEPRESCALER_DIV2) ? 1 : 0;
 
 #ifndef CONFIG_SPI_RTIO
 	if (spi_context_configured(&data->ctx, config)) {
@@ -872,22 +876,30 @@ static int spi_stm32_configure(const struct device *dev,
 		}
 	}
 
-	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
-		uint32_t clk = clock >> br;
+	/* When the scaler table does not have the LL_SPI_BAUDRATEPRESCALER_BYPASS value, the n-th
+	 * value of the table corresponds to a prescaler of value 2^(n+1). So in this case, it is
+	 * necessary to add 1 (= shift variable) to the index.
+	 * When the scaler table has the LL_SPI_BAUDRATEPRESCALER_BYPASS value, the n-th
+	 * value of the table corresponds to a prescaler of value 2^n. So in this case, there is
+	 * nothing to add (shift = 0).
+	 */
+	for (br = 0; br < ARRAY_SIZE(scaler); ++br) {
+		uint32_t clk = clock >> (br + shift);
 
 		if (clk <= config->frequency) {
 			break;
 		}
 	}
 
-	if (br > ARRAY_SIZE(scaler)) {
+	if (br >= ARRAY_SIZE(scaler)) {
 		LOG_ERR("Unsupported frequency %uHz, max %uHz, min %uHz",
-			config->frequency, clock >> 1, clock >> ARRAY_SIZE(scaler));
+			config->frequency, clock >> shift,
+			clock >> (ARRAY_SIZE(scaler) - 1 + shift));
 		return -EINVAL;
 	}
 
 	LL_SPI_Disable(spi);
-	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
+	LL_SPI_SetBaudRatePrescaler(spi, scaler[br]);
 
 #if defined(SPI_CFG2_IOSWP)
 	if (cfg->ioswp) {
