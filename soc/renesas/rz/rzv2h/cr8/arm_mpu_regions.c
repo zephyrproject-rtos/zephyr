@@ -5,69 +5,62 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/arm/mpu/arm_mpu.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
-/* clang-format off */
+extern const uint32_t __rom_region_start;
+extern const uint32_t __rom_region_mpu_size_bits;
 
-#define MPUTYPE_READ_ONLY \
-	{ \
-		.rasr = (P_RO_U_RO_Msk \
-				| (7 << MPU_RASR_TEX_Pos) \
-				| MPU_RASR_C_Msk \
-				| MPU_RASR_B_Msk \
-				| MPU_RASR_XN_Msk) \
-	}
-
-#define MPUTYPE_READ_ONLY_PRIV \
-	{ \
-		.rasr = (P_RO_U_RO_Msk \
-				| (5 << MPU_RASR_TEX_Pos) \
-				| MPU_RASR_B_Msk) \
-	}
-
-#define MPUTYPE_PRIV_WBWACACHE_XN \
-	{ \
-		.rasr = (P_RW_U_NA_Msk \
-				| (5 << MPU_RASR_TEX_Pos) \
-				| MPU_RASR_B_Msk \
-				| MPU_RASR_XN_Msk) \
-	}
-
-#define MPUTYPE_PRIV_DEVICE \
-	{ \
-		.rasr = (P_RW_U_NA_Msk \
-				| (2 << MPU_RASR_TEX_Pos) \
-				| MPU_RASR_XN_Msk \
-				| MPU_RASR_B_Msk \
-				| MPU_RASR_S_Msk) \
-	}
-
-/* clang-format on */
-
-extern uint32_t _image_rom_end_order;
 static const struct arm_mpu_region mpu_regions[] = {
 
 	/* clang-format off */
+	/* Vectors is relocated to ITCM region */
+	MPU_REGION_ENTRY(
+		"itcm",
+		0x00000000,
+		REGION_128K,
+		{.rasr = P_RO_U_NA_Msk |
+			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE}),
 
-	MPU_REGION_ENTRY("SRAM",
-			0x00000000,
-			REGION_256M,
-		MPUTYPE_PRIV_WBWACACHE_XN),
+	MPU_REGION_ENTRY(
+		"dtcm",
+		0x00020000,
+		REGION_128K,
+		{.rasr = P_RW_U_RW_Msk |
+			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE |
+			 NOT_EXEC}),
 
-	MPU_REGION_ENTRY("SRAM",
-			0x00000000,
-			((uint32_t)&_image_rom_end_order),
-			MPUTYPE_READ_ONLY_PRIV),
+	/* Basic SRAM mapping is all data, R/W + XN */
+	MPU_REGION_ENTRY(
+		"sram",
+		CONFIG_SRAM_BASE_ADDRESS,
+		REGION_SRAM_SIZE,
+		{.rasr = P_RW_U_RW_Msk |
+			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |
+			 NOT_EXEC}),
 
-	MPU_REGION_ENTRY("REGISTERS",
-			0x10000000,
-			REGION_256M,
-			MPUTYPE_PRIV_DEVICE),
+	/* Add rom_region mapping for SRAM which is RO + executable */
+	MPU_REGION_ENTRY(
+		"rom_region",
+		(uint32_t)(&__rom_region_start),
+		(uint32_t)(&__rom_region_mpu_size_bits),
+		{.rasr = P_RO_U_RO_Msk |
+			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 
-	MPU_REGION_ENTRY("FLASH",
-			0x20000000,
-			REGION_256M,
-			MPUTYPE_READ_ONLY),
+	MPU_REGION_ENTRY(
+		"peripherals",
+		0x10000000,
+		REGION_256M,
+		{.rasr = P_RW_U_NA_Msk |
+			 DEVICE_SHAREABLE |
+			 NOT_EXEC}),
+
+	MPU_REGION_ENTRY(
+		"xspi",
+		0x20000000,
+		REGION_256M,
+		{.rasr = P_RO_U_RO_Msk |
+			 (4 << MPU_RASR_TEX_Pos) |
+			 MPU_RASR_B_Msk}),
 
 	/* clang-format on */
 };
