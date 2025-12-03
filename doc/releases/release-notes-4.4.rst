@@ -163,6 +163,11 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Ai-Thinker Co., Ltd.
+
+   * :zephyr:board:`ai_m61_32s_kit` (``ai_m61_32s_kit``)
+   * Rename ai_m62_12f and ai_wb2_12f to ai_m62_12f_kit and ai_wb2_12f_kit
+
 New Shields
 ***********
 
