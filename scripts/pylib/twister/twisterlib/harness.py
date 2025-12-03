@@ -475,6 +475,9 @@ class Pytest(Harness):
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
 
+        if west_cmd := options.west_cmd or hardware.west_cmd:
+            command.append(f'--west-cmd={west_cmd}')
+
         if hardware.runner_params:
             for param in hardware.runner_params:
                 command.append(f'--runner-params={param}')
