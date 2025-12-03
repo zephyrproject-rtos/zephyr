@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2025 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
+
+/ {
+	/*
+	 * Use addresses within DDR memory: 0x00000000 - 0x7FFFFFFF (2GB)
+	 * Reserve upper portion for test regions (end of DDR: 0x7FFF0000 - 0x7FFFFFFF)
+	 */
+	test_normal_region: memory@7fff0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 0x7fff0000 0x0 DT_SIZE_K(4)>;
+		zephyr,memory-region = "TEST_NORMAL";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL>;
+	};
+
+	test_normal_wt_region: memory@7fff1000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 0x7fff1000 0x0 DT_SIZE_K(4)>;
+		zephyr,memory-region = "TEST_NORMAL_WT";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_WT>;
+	};
+
+	test_normal_nc_region: memory@7fff2000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 0x7fff2000 0x0 DT_SIZE_K(4)>;
+		zephyr,memory-region = "TEST_NORMAL_NC";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
+	};
+
+	/* Use UART peripheral regions for DEVICE memory testing */
+	test_device_region: memory@f1920000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x0 0xf1920000 0x0 DT_SIZE_K(4)>;
+		zephyr,memory-region = "TEST_DEVICE";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_DEVICE>;
+	};
+
+	test_device_ngre_region: memory@f1930000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x0 0xf1930000 0x0 DT_SIZE_K(4)>;
+		zephyr,memory-region = "TEST_DEVICE_nGnRE";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_DEVICE_nGnRE>;
+	};
+};
