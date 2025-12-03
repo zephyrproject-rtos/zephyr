@@ -101,21 +101,6 @@ static int ad528x_wiper_reset(const struct device *dev, uint8_t channel)
 	return ad528x_write(dev, cmd, 0);
 }
 
-static int ad528x_shutdown(const struct device *dev, uint8_t channel)
-{
-	const struct ad528x_config *config = dev->config;
-	uint8_t cmd = 0;
-
-	if (channel > (config->rdac_nb-1)) {
-		return -EINVAL;
-	}
-
-	cmd = AD528X_RDAC_SELECT(channel);
-	cmd |= AD528X_RDAC_SHUTDN;
-
-	return ad528x_write(dev, cmd, 0);
-}
-
 static int ad528x_init(const struct device *dev)
 {
 	const struct ad528x_config *config = dev->config;
@@ -131,7 +116,6 @@ static DEVICE_API(digipot, ad528x_driver_api) = {
 	.set_position = ad528x_wiper_set,
 	.get_position = ad528x_wiper_get,
 	.reset_position = ad528x_wiper_reset,
-	.shutdown = ad528x_shutdown,
 };
 
 /* Helper that instantiates a driver for AD5280 (1 RDAC) */
