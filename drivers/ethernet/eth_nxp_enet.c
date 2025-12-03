@@ -89,7 +89,9 @@ struct nxp_enet_mac_config {
 	uint8_t phy_mode;
 	void (*irq_config_func)(void);
 	const struct device *phy_dev;
+#ifdef CONFIG_MDIO_NXP_ENET
 	const struct device *mdio;
+#endif
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	const struct device *ptp_clock;
 #endif
@@ -522,11 +524,14 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 
 	config->irq_config_func();
 
+#ifdef CONFIG_MDIO_NXP_ENET
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
+#endif
 }
 
-void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
-				enum nxp_enet_callback_reason event, void *data)
+void nxp_enet_driver_cb(const struct device *dev __maybe_unused, enum nxp_enet_driver dev_type,
+			enum nxp_enet_callback_reason event __maybe_unused,
+			void *data __maybe_unused)
 {
 	if (dev_type == NXP_ENET_MDIO) {
 		nxp_enet_mdio_callback(dev, event, data);
@@ -569,7 +574,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 
 static void eth_nxp_enet_isr(const struct device *dev)
 {
-	const struct nxp_enet_mac_config *config = dev->config;
+	const struct nxp_enet_mac_config *config __maybe_unused = dev->config;
 	struct nxp_enet_mac_data *data = dev->data;
 	unsigned int irq_lock_key = irq_lock();
 
@@ -585,9 +590,11 @@ static void eth_nxp_enet_isr(const struct device *dev)
 		ENET_TransmitIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
 	}
 
+#ifdef CONFIG_MDIO_NXP_ENET
 	if (eir & ENET_EIR_MII_MASK) {
 		nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT, NULL);
 	}
+#endif
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	ENET_TimeStampIRQHandler(data->base, &data->enet_handle);
@@ -760,8 +767,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 		  data->mac_addr,
 		  enet_module_clock_rate);
 
+#ifdef CONFIG_MDIO_NXP_ENET
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_MODULE_RESET, NULL);
-
+#endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	data->ptp.enet = &data->enet_handle;
 	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
@@ -887,6 +895,12 @@ static const struct ethernet_api api_funcs = {
 	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) ? NXP_ENET_RGMII_MODE :	\
 	NXP_ENET_INVALID_MII_MODE))
 
+#ifdef CONFIG_MDIO_NXP_ENET
+#define NXP_ENET_MDIO_DEV(n) .mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),
+#else
+#define NXP_ENET_MDIO_DEV(n)
+#endif
+
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
@@ -981,7 +995,7 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			}},								\
 			.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),			\
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
-			.mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),		\
+			NXP_ENET_MDIO_DEV(n)						\
 			NXP_ENET_PTP_DEV(n)						\
 			.mac_addr_source = NXP_ENET_MAC_ADDR_SOURCE(n),			\
 		};									\
