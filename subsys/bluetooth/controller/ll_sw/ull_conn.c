@@ -1165,11 +1165,11 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (!conn->supervision_expire) {
 			uint32_t conn_interval_us;
 
-			if (conn->lll.interval >= BT_HCI_LE_INTERVAL_MIN) {
-				conn_interval_us = conn->lll.interval *
+			if (lll->interval >= BT_HCI_LE_INTERVAL_MIN) {
+				conn_interval_us = lll->interval *
 						   CONN_INT_UNIT_US;
 			} else {
-				conn_interval_us = (conn->lll.interval + 1U) *
+				conn_interval_us = (lll->interval + 1U) *
 						   CONN_LOW_LAT_INT_UNIT_US;
 			}
 
@@ -1182,15 +1182,39 @@ void ull_conn_done(struct node_rx_event_done *done)
 	/* check supervision timeout */
 	if (conn->supervision_expire) {
 		if (conn->supervision_expire > elapsed_event) {
+			uint32_t supervision_reload;
+			uint32_t conn_interval_us;
+
 			conn->supervision_expire -= elapsed_event;
 
 			/* break latency */
 			lll->latency_event = 0U;
 
+			if (lll->interval >= BT_HCI_LE_INTERVAL_MIN) {
+				conn_interval_us = lll->interval *
+						   CONN_INT_UNIT_US;
+			} else {
+				conn_interval_us = (lll->interval + 1U) *
+						   CONN_LOW_LAT_INT_UNIT_US;
+			}
+
+			supervision_reload = RADIO_CONN_EVENTS(
+				(conn->supervision_timeout * 10U * USEC_PER_MSEC),
+				conn_interval_us);
+
+			/* Mitigate instant passed in case a control procedures with instant is
+			 * initiated.
+			 */
+			bool is_instant_pass_stopgap =
+				((supervision_reload - conn->supervision_expire) >=
+				 ((CONN_ESTAB_COUNTDOWN / 2U) - 1U));
+
 			/* Force both central and peripheral when close to
 			 * supervision timeout.
 			 */
-			if (conn->supervision_expire <= 6U) {
+			if ((IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+			     (lll->role == BT_HCI_ROLE_PERIPHERAL) && is_instant_pass_stopgap) ||
+			    (conn->supervision_expire <= CONN_ESTAB_COUNTDOWN)) {
 				force = 1U;
 				force_lll = 1U;
 			}
