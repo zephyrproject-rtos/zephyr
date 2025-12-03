@@ -58,10 +58,10 @@ typedef int (*digipot_shutdown_t)(const struct device *dev, uint8_t channel);
  *
  */
 __subsystem struct digipot_driver_api {
-    digipot_set_t set_position;
-    digipot_get_t get_position;
-    digipot_reset_t reset_position;
-    digipot_shutdown_t shutdown;
+	digipot_set_t set_position;
+	digipot_get_t get_position;
+	digipot_reset_t reset_position;
+	digipot_shutdown_t shutdown;
 };
 
 /**
