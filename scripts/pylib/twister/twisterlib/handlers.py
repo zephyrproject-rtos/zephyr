@@ -589,7 +589,16 @@ class DeviceHandler(Handler):
         command = ["west"]
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
-        command += ["flash", "--no-rebuild", "-d", self.build_dir]
+        if hardware.west_cmd:
+            # set environ in this process and notify west to use debug batch mode
+            if hardware.west_cmd == "debug":
+                os.environ["ZEPHYR_TWISTER_RUN_IN_DEBUG"] = 'y'
+            command += [hardware.west_cmd, "--no-rebuild", "-d", self.build_dir]
+        else:
+            # set environ in this process and notify west to use debug batch mode
+            if self.options.west_cmd == "debug":
+                os.environ["ZEPHYR_TWISTER_RUN_IN_DEBUG"] = 'y'
+            command += [self.options.west_cmd, "--no-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
         # There are three ways this option is used.
