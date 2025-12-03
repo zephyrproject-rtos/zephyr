@@ -34,4 +34,11 @@
 				 <RZT_PINMUX(PORT_09, 2, 5)>; /* GTIOCB */
 		};
 	};
+
+	/omit-if-no-ref/ i2c1_default: i2c1_default {
+		i2c1-pinmux {
+			pinmux = <RZT_PINMUX(PORT_09, 5, 4)>, /* SCL */
+				 <RZT_PINMUX(PORT_10, 0, 4)>; /* SDA */
+		};
+	};
 };

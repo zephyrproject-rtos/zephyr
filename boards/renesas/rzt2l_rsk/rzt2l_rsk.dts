@@ -69,6 +69,12 @@
 	};
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpio14 {
 	status = "okay";
 };

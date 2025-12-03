@@ -28,4 +28,11 @@
 				 <RZV_PINMUX(PORT_08, 5, 9)>; /* GTIOCB */
 		};
 	};
+
+	/omit-if-no-ref/ i2c2_pins: i2c2 {
+		i2c2-pinmux {
+			pinmux = <RZV_PINMUX(PORT_02, 1, 4)>, /* SCL */
+				 <RZV_PINMUX(PORT_02, 0, 4)>; /* SDA */
+		};
+	};
 };
