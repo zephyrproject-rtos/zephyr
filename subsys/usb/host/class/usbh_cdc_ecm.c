@@ -43,10 +43,12 @@ struct usbh_cdc_ecm_data {
 	uint8_t data_out_ep_addr;
 	uint16_t data_out_ep_mps;
 	uint8_t mac_str_desc_idx;
+	struct net_eth_addr eth_mac;
+	uint32_t upload_speed;
+	uint32_t download_speed;
 	uint16_t max_segment_size;
 	atomic_t eth_pkt_filter_bitmap;
 	struct net_if *iface;
-	enum ethernet_hw_caps caps;
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
@@ -296,7 +298,6 @@ static int usbh_cdc_ecm_comm_rx_cb(struct usb_device *const udev, struct uhc_tra
 		if (sys_le16_to_cpu(notif->wValue)) {
 			net_if_carrier_on(priv->iface);
 		} else {
-			usbh_cdc_ecm_stop_auto_rx(priv);
 			net_if_carrier_off(priv->iface);
 		}
 		break;
@@ -310,18 +311,16 @@ static int usbh_cdc_ecm_comm_rx_cb(struct usb_device *const udev, struct uhc_tra
 
 		for (size_t i = 0; i < 2; i++) {
 			link_speeds[i] = sys_le32_to_cpu(link_speeds[i]);
-			switch (link_speeds[i]) {
-			case 2500 * 1000000U:
-				priv->caps |= ETHERNET_LINK_2500BASE;
-			case 1000 * 1000000U:
-				priv->caps |= ETHERNET_LINK_1000BASE;
-			case 100 * 1000000U:
-				priv->caps |= ETHERNET_LINK_100BASE;
-			case 10 * 1000000U:
-				priv->caps |= ETHERNET_LINK_10BASE;
+			switch (i) {
+			case 0:
+				priv->download_speed = link_speeds[i];
+				break;
+			case 1:
+				priv->upload_speed = link_speeds[i];
 				break;
 			default:
-				break;
+				ret = -EBADMSG;
+				goto cleanup;
 			}
 		}
 		break;
@@ -379,6 +378,10 @@ static int usbh_cdc_ecm_data_rx_cb(struct usb_device *const udev, struct uhc_tra
 
 	if (xfer->err) {
 		LOG_ERR("data rx xfer callback error (%d)", ret);
+		goto cleanup;
+	}
+
+	if (!net_if_is_up(priv->iface) || !net_if_is_carrier_ok(priv->iface)) {
 		goto cleanup;
 	}
 
@@ -729,7 +732,6 @@ static int usbh_cdc_ecm_get_mac_address(struct usbh_cdc_ecm_data *const data,
 	uint8_t *mac_utf16le = NULL;
 	char mac_str[NET_ETH_ADDR_LEN * 2 + 1] = {0};
 	bool found_mac = false;
-	struct ethernet_req_params eth_req_params;
 	int ret;
 
 	if (!data->mac_str_desc_idx) {
@@ -780,9 +782,9 @@ static int usbh_cdc_ecm_get_mac_address(struct usbh_cdc_ecm_data *const data,
 			mac_str[j] = (char)sys_get_le16(&mac_utf16le[j * 2]);
 		}
 
-		if (hex2bin(mac_str, NET_ETH_ADDR_LEN * 2, eth_req_params.mac_address.addr,
-			    NET_ETH_ADDR_LEN) == NET_ETH_ADDR_LEN) {
-			if (net_eth_is_addr_valid(&eth_req_params.mac_address)) {
+		if (hex2bin(mac_str, NET_ETH_ADDR_LEN * 2, data->eth_mac.addr, NET_ETH_ADDR_LEN) ==
+		    NET_ETH_ADDR_LEN) {
+			if (net_eth_is_addr_valid(&data->eth_mac)) {
 				found_mac = true;
 				break;
 			}
@@ -792,12 +794,6 @@ static int usbh_cdc_ecm_get_mac_address(struct usbh_cdc_ecm_data *const data,
 	if (!found_mac) {
 		ret = -ENODEV;
 		goto cleanup;
-	}
-
-	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, data->iface, &eth_req_params,
-		       sizeof(eth_req_params));
-	if (ret) {
-		LOG_ERR("net management set mac address error (%d)", ret);
 	}
 
 cleanup:
@@ -839,7 +835,6 @@ static int usbh_cdc_ecm_probe(struct usbh_class_data *const c_data, struct usb_d
 	const void *const desc_beg = usbh_desc_get_cfg_beg(udev);
 	const void *const desc_end = usbh_desc_get_cfg_end(udev);
 	const struct usb_desc_header *desc;
-	struct net_linkaddr *linkaddr;
 	int ret;
 
 	desc = usbh_desc_get_by_iface(desc_beg, desc_end, iface);
@@ -877,6 +872,19 @@ static int usbh_cdc_ecm_probe(struct usbh_class_data *const c_data, struct usb_d
 		priv->data_if_num, priv->data_in_ep_addr, priv->data_out_ep_addr);
 	LOG_INF("device wMaxSegmentSize is %d", priv->max_segment_size);
 
+	ret = usbh_cdc_ecm_get_mac_address(priv, udev);
+	if (ret) {
+		LOG_ERR("get mac address error (%d)", ret);
+		return ret;
+	}
+
+	LOG_INF("device mac address %02x:%02x:%02x:%02x:%02x:%02x", priv->eth_mac.addr[0],
+		priv->eth_mac.addr[1], priv->eth_mac.addr[2], priv->eth_mac.addr[3],
+		priv->eth_mac.addr[4], priv->eth_mac.addr[5]);
+
+	net_if_set_link_addr(priv->iface, priv->eth_mac.addr, ARRAY_SIZE(priv->eth_mac.addr),
+			     NET_LINK_ETHERNET);
+
 	if (priv->data_alt_num) {
 		ret = usbh_device_interface_set(udev, priv->data_if_num, priv->data_alt_num, false);
 		if (ret) {
@@ -885,37 +893,13 @@ static int usbh_cdc_ecm_probe(struct usbh_class_data *const c_data, struct usb_d
 		}
 	}
 
-	priv->caps = 0;
 	(void)atomic_clear(&priv->eth_pkt_filter_bitmap);
-
-	ret = net_if_down(priv->iface);
-	if (ret && ret != -EALREADY) {
-		LOG_ERR("down network interface error (%d)", ret);
-		return ret;
-	}
-
-	ret = usbh_cdc_ecm_get_mac_address(priv, udev);
-	if (ret) {
-		LOG_ERR("get mac address error (%d)", ret);
-		return ret;
-	}
-
-	linkaddr = net_if_get_link_addr(priv->iface);
-	LOG_INF("device mac address %02x:%02x:%02x:%02x:%02x:%02x", linkaddr->addr[0],
-		linkaddr->addr[1], linkaddr->addr[2], linkaddr->addr[3], linkaddr->addr[4],
-		linkaddr->addr[5]);
 
 	ret = usbh_cdc_ecm_set_pkt_filter(priv, udev,
 					  PACKET_TYPE_BROADCAST | PACKET_TYPE_DIRECTED |
 						  PACKET_TYPE_ALL_MULTICAST);
 	if (ret) {
 		LOG_ERR("set packet filter error (%d)", ret);
-		return ret;
-	}
-
-	ret = net_if_up(priv->iface);
-	if (ret) {
-		LOG_ERR("bring up network interface error (%d)", ret);
 		return ret;
 	}
 
@@ -928,18 +912,11 @@ static int usbh_cdc_ecm_removed(struct usbh_class_data *const c_data)
 {
 	struct device *dev = c_data->priv;
 	struct usbh_cdc_ecm_data *priv = dev->data;
-	int ret;
 
 	net_if_carrier_off(priv->iface);
 
 	usbh_cdc_ecm_stop_auto_rx(priv);
 
-	ret = net_if_down(priv->iface);
-	if (ret && ret != -EALREADY) {
-		LOG_WRN("down network interface error (%d)", ret);
-	}
-
-	priv->caps = 0;
 	(void)atomic_clear(&priv->eth_pkt_filter_bitmap);
 
 	return 0;
@@ -975,15 +952,7 @@ static void eth_usbh_cdc_ecm_iface_init(struct net_if *iface)
 	priv->iface = iface;
 
 	ethernet_init(iface);
-	net_if_flag_clear(iface, NET_IF_UP);
 	net_if_carrier_off(iface);
-}
-
-static enum ethernet_hw_caps eth_usbh_cdc_ecm_get_capabilities(const struct device *dev)
-{
-	struct usbh_cdc_ecm_data *priv = dev->data;
-
-	return priv->caps | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -1043,7 +1012,6 @@ static int eth_usbh_cdc_ecm_send(const struct device *dev, struct net_pkt *pkt)
 
 static struct ethernet_api eth_usbh_cdc_ecm_api = {
 	.iface_api.init = eth_usbh_cdc_ecm_iface_init,
-	.get_capabilities = eth_usbh_cdc_ecm_get_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_usbh_cdc_ecm_get_stats,
 #endif
