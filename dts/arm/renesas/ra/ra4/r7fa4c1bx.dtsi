@@ -306,6 +306,7 @@
 			compatible = "renesas,ra-iic";
 			channel = <0>;
 			reg = <0x4009f000 0x100>;
+			clocks = <&pclkb MSTPB 9>;
 			status = "disabled";
 		};
 
@@ -313,6 +314,7 @@
 			compatible = "renesas,ra-iic";
 			channel = <1>;
 			reg = <0x4009f100 0x100>;
+			clocks = <&pclkb MSTPB 8>;
 			status = "disabled";
 		};
 
