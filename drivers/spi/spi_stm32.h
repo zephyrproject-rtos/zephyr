@@ -97,15 +97,19 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 /* checks that DMA Tx packet is fully transmitted over the SPI */
 static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 {
-#ifdef LL_SPI_SR_TXC
-	return LL_SPI_IsActiveFlag_TXC(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (LL_SPI_GetTransferSize(spi) == 0) {
+		return LL_SPI_IsActiveFlag_TXC(spi) == 0;
+	} else {
+		return LL_SPI_IsActiveFlag_EOT(spi) == 0;
+	}
 #else
 	/* the SPI Tx empty and busy flags are needed */
-	return (LL_SPI_IsActiveFlag_TXE(spi) &&
-		!LL_SPI_IsActiveFlag_BSY(spi));
+	return (!LL_SPI_IsActiveFlag_TXE(spi) ||
+		LL_SPI_IsActiveFlag_BSY(spi));
 #endif /* LL_SPI_SR_TXC */
 }
-#endif /* CONFIG_SPI_STM32_DMA */
+#endif /* st_stm32h7_spi */
 
 static inline uint32_t ll_func_tx_is_not_full(SPI_TypeDef *spi)
 {
