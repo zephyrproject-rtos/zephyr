@@ -60,7 +60,7 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 	LOG_DBG("set cycles period[%x] pulse[%x]", period, pulse);
 
 	if (pulse == 0) {
-		pwm_cc23x0_pm_policy_state_lock_get();
+		pwm_cc23x0_pm_policy_state_lock_put();
 	}
 
 	if ((config->base != LGPT3_BASE) && (pulse > 0xffff || period > 0xffff || pulse > period)) {
@@ -95,7 +95,7 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 	HWREG(config->base + LGPT_O_STARTCFG) = 0x1;
 
 	if (pulse > 0) {
-		pwm_cc23x0_pm_policy_state_lock_put();
+		pwm_cc23x0_pm_policy_state_lock_get();
 	}
 
 	return 0;
