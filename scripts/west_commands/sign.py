@@ -438,7 +438,11 @@ class RimageSigner(Signer):
     def generate_uuid_registry(self):
         'Runs the uuid-registry.h generator script'
 
-        generate_cmd = [sys.executable, str(self.sof_src_dir / 'scripts' / 'gen-uuid-reg.py'),
+        uuid_script_path = self.sof_src_dir / 'scripts' / 'gen-uuid-reg.py'
+        if not uuid_script_path.exists():
+            self.command.die(f"{uuid_script_path} does not exists.")
+
+        generate_cmd = [sys.executable, str(uuid_script_path),
                         str(self.sof_src_dir / 'uuid-registry.txt'),
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'uuid-registry.h')
                        ]
@@ -554,13 +558,46 @@ class RimageSigner(Signer):
         if not args.quiet:
             command.inf('Signing with tool {}'.format(tool_path))
 
-        try:
-            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
-            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
-        except ValueError: # sof is the manifest
-            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
+        sof_src_dir = None
+
+        # Try to find SOF directory via path to rimage config files
+        conf_dir = self.cmake_cache.get('RIMAGE_CONFIG_PATH')
+        if conf_dir:
+            # Config path is <sof top>/tools/rimage/config/
+            # So need to go up 3 levels to get SOF directory.
+            maybe_sof_dir = pathlib.Path(conf_dir).parent.parent.parent
+
+            # Make sure this is the actual SOF directory as
+            # RIMAGE_CONFIG_PATH may point to somewhere else.
+            versions_json_file = maybe_sof_dir / 'versions.json'
+            if versions_json_file.exists():
+                sof_src_dir = maybe_sof_dir
+
+        # Try to find SOF if it is included via manifest
+        if not sof_src_dir:
+            try:
+                sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
+                sof_src_dir = pathlib.Path(sof_proj[0].abspath)
+
+                # Since SOF is pulled in as a project, we assume it is
+                # the correct one as the manifest has to be modified
+                # manually.
+            except ValueError:
+                pass
+
+        # If SOF is the top level manifest via west init
+        if not sof_src_dir:
+            maybe_sof_dir = pathlib.Path(manifest.manifest_path()).parent
+
+            # Make sure this is the actual SOF directory
+            # as the top level manifest may not be SOF.
+            versions_json_file = maybe_sof_dir / 'versions.json'
+            if versions_json_file.exists():
+                sof_src_dir = maybe_sof_dir
 
         self.sof_src_dir = sof_src_dir
+        if not self.sof_src_dir:
+            command.die("Cannot find SOF directory.")
 
 
         command.inf('Signing for SOC target ' + target)
