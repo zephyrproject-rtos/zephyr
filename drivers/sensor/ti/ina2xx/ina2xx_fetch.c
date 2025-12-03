@@ -8,122 +8,121 @@
 
 static int ina2xx_fetch_bus_voltage(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->voltage;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->voltage;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->voltage, sizeof(data->voltage));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->voltage, sizeof(data->voltage));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE */
 }
 
 static int ina2xx_fetch_shunt_voltage(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->vshunt;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->vshunt;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->vshunt, sizeof(data->vshunt));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->vshunt, sizeof(data->vshunt));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE */
 }
 
 static int ina2xx_fetch_current(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_CURRENT)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->current;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_CURRENT
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->current;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->current, sizeof(data->current));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->current, sizeof(data->current));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_CURRENT */
 }
 
 static int ina2xx_fetch_power(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_POWER)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->power;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_POWER
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->power;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->power, sizeof(data->power));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->power, sizeof(data->power));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_POWER */
 }
 
 static int ina2xx_fetch_die_temp(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_DIE_TEMP)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->die_temp;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_DIE_TEMP
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->die_temp;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->die_temp,
-			sizeof(data->die_temp));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->die_temp, sizeof(data->die_temp));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_DIE_TEMP */
 }
 
 static int ina2xx_fetch_energy(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_ENERGY)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->energy;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_ENERGY
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->energy;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->energy, sizeof(data->energy));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->energy, sizeof(data->energy));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_ENERGY */
 }
 
 static int ina2xx_fetch_charge(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_CHARGE)) {
-		const struct ina2xx_config *config = dev->config;
-		const struct ina2xx_channel *ch = config->channels->charge;
-		struct ina2xx_data *data = dev->data;
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_CHARGE
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->charge;
+	struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
-		return ina2xx_reg_read(&config->bus, ch->reg, data->charge, sizeof(data->charge));
+	if (ch == NULL) {
+		return -ENOTSUP;
 	}
 
+	return ina2xx_reg_read(&config->bus, ch->reg, data->charge, sizeof(data->charge));
+#else
 	return -ENOTSUP;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_CHARGE */
 }
 
 static int ina2xx_fetch_all(const struct device *dev)
