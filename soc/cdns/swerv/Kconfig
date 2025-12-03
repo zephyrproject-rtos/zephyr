@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_CDNS_SWERV
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+
+if SOC_FAMILY_CDNS_SWERV
+
+rsource "*/Kconfig"
+
+config SOC_CDNS_SWERV_BOOT_MRAC
+	hex "Set MRAC CSR value at boot"
+	depends on SOC_S400
+	help
+	  Setup the MRAC CSR register for region access control
+	  on caching and side effect settings.
+
+endif # SOC_FAMILY_CDNS_SWERV
