@@ -135,11 +135,6 @@ static int pcf857x_port_get_raw(const struct device *dev, gpio_port_value_t *val
 		return -EWOULDBLOCK;
 	}
 
-	if ((~drv_data->pins_cfg.configured_as_outputs & (uint16_t)*value) != (uint16_t)*value) {
-		LOG_ERR("Pin(s) is/are configured as output which should be input.");
-		return -EOPNOTSUPP;
-	}
-
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	/**
