@@ -1,0 +1,6 @@
+board:
+  name: ai_m61_32s_kit
+  full_name: Ai-Thinker M61-32S development board
+  vendor: aithinker
+  socs:
+    - name: bl618m65q2i
