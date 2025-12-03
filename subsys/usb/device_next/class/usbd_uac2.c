@@ -926,6 +926,26 @@ static void *uac2_get_desc(struct usbd_class_data *const c_data,
 	return cfg->fs_descriptors;
 }
 
+static void uac2_disable(struct usbd_class_data *const c_data)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct uac2_ctx *ctx = dev->data;
+	const struct uac2_cfg *cfg = dev->config;
+	const bool microframes =
+		USBD_SUPPORTS_HIGH_SPEED && usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_HS;
+	atomic_val_t as_active;
+
+	as_active = atomic_clear(&ctx->as_active);
+
+	while (as_active) {
+		unsigned int as_idx = find_lsb_set(as_active) - 1;
+
+		ctx->ops->terminal_update_cb(dev, cfg->as_terminals[as_idx], 0, microframes,
+					     ctx->user_data);
+		as_active &= ~BIT(as_idx);
+	}
+}
+
 static int uac2_init(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
@@ -946,6 +966,7 @@ struct usbd_class_api uac2_api = {
 	.request = uac2_request,
 	.sof = uac2_sof,
 	.get_desc = uac2_get_desc,
+	.disable = uac2_disable,
 	.init = uac2_init,
 };
 
