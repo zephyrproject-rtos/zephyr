@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor_clock.h>
+#include <zephyr/dt-bindings/sensor/rm3100.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/check.h>
 #include "rm3100_stream.h"
@@ -67,6 +68,9 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct sensor_chan_spec *const channels = cfg->channels;
+	const size_t num_channels = cfg->count;
 	uint8_t *buf;
 	uint32_t buf_len;
 	uint32_t min_buf_len = sizeof(struct rm3100_encoded_data);
@@ -82,6 +86,13 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 
 	edata = (struct rm3100_encoded_data *)buf;
+
+	err = rm3100_encode(dev, channels, num_channels, buf);
+	if (err != 0) {
+		LOG_ERR("Failed to encode sensor data");
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
 
 	err = sensor_clock_get_cycles(&cycles);
 	CHECKIF(err) {
