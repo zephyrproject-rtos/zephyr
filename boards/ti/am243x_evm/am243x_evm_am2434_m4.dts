@@ -77,3 +77,7 @@
 	usr-id = <3>;
 	status = "okay";
 };
+
+&mcu_rti0 {
+	status = "okay";
+};
