@@ -101,6 +101,21 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - nucleo_f103rb
+  sample.drivers.watchdog.stm32_iwdg_ewi:
+    extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
+    filter: dt_compat_enabled("st,stm32-watchdog")
+    extra_configs:
+      - CONFIG_IWDG_STM32_EARLY_WAKEUP=y
+    platform_allow:
+      - nucleo_h563zi
+      - nucleo_h7s3l8
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_u575zi_q
+      - b_u585i_iot02a
+      - nucleo_wba55cg
+    integration_platforms:
+      - nucleo_wba55cg
   sample.drivers.watchdog.gd32_fwdgt:
     filter: dt_compat_enabled("gd,gd32-fwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_fwdgt.overlay
