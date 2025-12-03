@@ -186,10 +186,26 @@ static int udc_mcux_ctrl_feed_dout(const struct device *dev,
 
 static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_packet *setup)
 {
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	int err;
 	struct net_buf *buf;
 
 	LOG_DBG("setup packet");
+
+	buf = udc_buf_get_all(cfg_out);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(cfg_in);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	udc_ep_set_busy(cfg_out, false);
+	udc_ep_set_busy(cfg_in, false);
+
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT,
 			sizeof(struct usb_setup_packet));
 	if (buf == NULL) {
