@@ -2,82 +2,55 @@ common:
   tags:
     - bluetooth
     - bluetooth_audio
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+
 tests:
   bluetooth.audio.pacs.test_default:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=y
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=y
   bluetooth.audio.pacs.test_snk_pac_snk_loc_src_pac:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=y
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=n
   bluetooth.audio.pacs.test_snk_pac_snk_loc:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=y
       - CONFIG_BT_PAC_SRC=n
       - CONFIG_BT_PAC_SRC_LOC=n
   bluetooth.audio.pacs.test_snk_pac:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=n
       - CONFIG_BT_PAC_SRC=n
       - CONFIG_BT_PAC_SRC_LOC=n
   bluetooth.audio.pacs.test_snk_pac_src_pac_src_loc:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=n
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=y
   bluetooth.audio.pacs.test_snk_pac_src_pac:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=y
       - CONFIG_BT_PAC_SNK_LOC=n
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=n
   bluetooth.audio.pacs.test_src_pac_src_loc:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=n
       - CONFIG_BT_PAC_SNK_LOC=n
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=y
   bluetooth.audio.pacs.test_src_pac:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
     extra_configs:
       - CONFIG_BT_PAC_SNK=n
       - CONFIG_BT_PAC_SNK_LOC=n
