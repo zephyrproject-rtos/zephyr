@@ -2,13 +2,13 @@ common:
   tags:
     - bluetooth
     - bluetooth_audio
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
 
 tests:
-  bluetooth.audio.ascs.test_default:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
+  bluetooth.audio.ascs.test_default: {}
   bluetooth.audio.ascs.test_snk_only:
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
