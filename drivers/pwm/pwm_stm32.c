@@ -706,11 +706,11 @@ static int pwm_stm32_init(const struct device *dev)
 	 * compile and this checks explicitly for the api instead of the soc
 	 */
 	if (IS_TIM_BREAK_INSTANCE(timer)) {
-		/* enable outputs and counter */
-		LL_TIM_EnableAllOutputs(timer);
-
 		/* set the deadtime from the configuration */
 		LL_TIM_OC_SetDeadTime(timer, cfg->deadtime);
+
+		/* enable outputs and counter */
+		LL_TIM_EnableAllOutputs(timer);
 	} else if (cfg->deadtime != 0) {
 		LOG_ERR("Setting deadtime %d on a non-break timer %s",
 			cfg->deadtime, dev->name);
