@@ -1,0 +1,77 @@
+description: NXP CACHE64 controller and policy selector for FlexSPI/XSPI AHB windows
+compatible: nxp,cache64
+
+include: base.yaml
+
+properties:
+  reg:
+    description: >
+      Single MMIO region used as the base for both CACHE64_CTRL
+      and CACHE64_POLSEL registers.
+    required: true
+
+  windows:
+    type: array
+    description: >
+      Array of memory window configurations. Each window is encoded as:
+      <base_addr size [remap_base]>
+      - base_addr: Window base address in system memory map
+      - size: Window size in bytes
+      - remap_base: Optional remapped base address (use 0 if not remapped)
+
+      Some SoCs expose the same physical memory through multiple address
+      aliases (e.g., 0x18000000 and 0x38000000 for secure/non-secure access).
+      The remap_base is used on platforms with CACHE64_CTRL_ALIAS_REMAPPED_BASE_ADDR
+      feature to provide unified/contiguous address mapping.
+
+      Examples:
+        Single window, no remap:
+          windows = <0x18000000 0x08000000 0>;
+
+        Two windows, second one remapped:
+          windows = <0x18000000 0x08000000 0>,
+                    <0x38000000 0x04000000 0x10000000>;
+
+        Three windows with continuous remap:
+          windows = <0x60000000 0x02000000 0x00000000>,
+                    <0x70000000 0x02000000 0x02000000>,
+                    <0x80000000 0x04000000 0x04000000>;
+
+  enable-write-buffer:
+    type: boolean
+    description: Enable cache write buffer if supported
+
+  regions:
+    type: array
+    description: >
+      Array of region configurations. Each region is encoded as:
+      <boundary_addr policy>
+      - boundary_addr: Top address in bytes (will be converted to device units)
+      - policy: 0=Non-cacheable, 1=Write-through, 2=Write-back
+
+      Maximum 3 regions (CACHE64 hardware limit).
+      Boundaries are specified in the FlexSPI physical address domain.
+      The number of regions is determined by the array length (N boundaries = N+1 regions).
+
+      Note: The last region extends to the end of addressable space. While its
+      boundary_addr is not used by the hardware for configuration, it should still
+      specify the actual end address for documentation and potential validation purposes.
+
+      Example 1: Single boundary (2 regions)
+        regions = <0x01000000 2>;
+        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+        - Region 1: 0x01000000-end        -> Non-cacheable (default)
+
+      Example 2: Two boundaries (3 regions), last region uses default policy
+        regions = <0x01000000 2>, <0x08000000 1>;
+        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+        - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
+        - Region 2: 0x08000000-end        -> Non-cacheable (default)
+
+      Example 3: Explicitly configure all regions including the last one
+        regions = <0x01000000 2>, <0x08000000 1>, <0x10000000 2>;
+        - Region 0: 0x00000000-0x00FFFFFF -> Write-back (16MB)
+        - Region 1: 0x01000000-0x07FFFFFF -> Write-through (112MB)
+        - Region 2: 0x08000000-0x0FFFFFFF -> Write-back (128MB)
+
+    default: []
