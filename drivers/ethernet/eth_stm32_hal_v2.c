@@ -664,6 +664,9 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 			PHY_LINK_IS_SPEED_1000M(state->speed) ? ETH_SPEED_1000M :)
 		PHY_LINK_IS_SPEED_100M(state->speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	mac_config.PortSelect = PHY_LINK_IS_SPEED_1000M(state->speed) ? DISABLE : ENABLE;
+#endif
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
