@@ -77,3 +77,6 @@ sequence:
           "post_flash_timeout":
             type: int
             required: false
+      "west_cmd":
+        type: str
+        required: false

@@ -49,7 +49,8 @@ class DUT:
                  runner=None,
                  flash_timeout=60,
                  flash_with_test=False,
-                 flash_before=False):
+                 flash_before=False,
+                 west_cmd=""):
 
         self.serial = serial
         self.baud = serial_baud or 115200
@@ -76,6 +77,7 @@ class DUT:
         self.match = False
         self.flash_timeout = flash_timeout
         self.flash_with_test = flash_with_test
+        self.west_cmd = west_cmd
 
     @property
     def available(self):
@@ -298,6 +300,7 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            west_cmd = dut.get('west_cmd', "")
             if not connected:
                 continue
             for plat in platforms:
@@ -316,7 +319,8 @@ class HardwareMap:
                               post_flash_script=post_flash_script,
                               script_param=script_param,
                               flash_timeout=flash_timeout,
-                              flash_with_test=flash_with_test)
+                              flash_with_test=flash_with_test,
+                              west_cmd=west_cmd)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
                 self.duts.append(new_dut)
