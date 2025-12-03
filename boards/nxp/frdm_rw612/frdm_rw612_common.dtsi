@@ -353,3 +353,11 @@ zephyr_mipi_dbi_spi: &lcdic {
 nxp_pmod_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 };
+
+&cache64_ctrl0 {
+	status = "okay";
+};
+
+&cache64_ctrl1 {
+	status = "okay";
+};

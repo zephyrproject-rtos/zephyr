@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,6 +124,26 @@
 
 	flexspi2: spi@13c000 {
 		reg = <0x13c000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
+	};
+
+	cache64_ctrl0: cache@33000 {
+		compatible = "nxp,cache64";
+		reg = <0x33000 0x1000>;
+		/* 128MB at 0x18000000, no remap */
+		windows = <0x18000000 0x08000000 0>;
+		/* 0x0000_0000-0x03FF_FFFF: WB (16MB NOR XIP) */
+		regions = <0x4000000 1>;
+		enable-write-buffer;
+	};
+
+	cache64_ctrl1: cache@34000 {
+		compatible = "nxp,cache64";
+		reg = <0x34000 0x1000>;
+		/* 64MB at 0x38000000 */
+		windows = <0x38000000 0x08000000 0>;
+		/* 0x0000_0000-0x03FF_FFFF: WB (64MB PSRAM) */
+		regions = <0x4000000 2>;
+		enable-write-buffer;
 	};
 
 	clkctl0: clkctl@1000 {
