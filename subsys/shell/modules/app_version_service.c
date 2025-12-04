@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "app_version.h"
+#include <zephyr/app_version.h>
 #include <zephyr/shell/shell.h>
 
 static int cmd_app_version_string(const struct shell *sh)
