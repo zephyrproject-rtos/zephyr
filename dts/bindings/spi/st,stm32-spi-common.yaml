@@ -21,3 +21,7 @@ properties:
   ioswp:
     type: boolean
     description: Swap SPI MOSI and MISO pins
+
+  periph-use-soft-nss:
+    type: boolean
+    description: use soft NSS for this interface when in peripheral mode

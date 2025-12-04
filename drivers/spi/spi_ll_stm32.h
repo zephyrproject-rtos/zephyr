@@ -39,6 +39,7 @@ struct spi_stm32_config {
 	const struct stm32_pclken *pclken;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
+	bool peripheral_use_soft_nss: 1;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
