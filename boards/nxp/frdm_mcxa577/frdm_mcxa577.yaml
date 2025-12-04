@@ -16,4 +16,5 @@ toolchain:
 supported:
   - gpio
   - uart
+  - counter
 vendor: nxp

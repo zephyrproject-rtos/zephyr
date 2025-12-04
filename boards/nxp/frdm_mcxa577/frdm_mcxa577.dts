@@ -126,6 +126,14 @@
 	pinctrl-names = "default";
 };
 
+&ctimer0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
 &flash {
 	partitions {
 		compatible = "fixed-partitions";
