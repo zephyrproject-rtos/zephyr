@@ -266,7 +266,6 @@ ARM64 arch:
   status: odd fixes
   collaborators:
     - npitre
-    - povergoing
     - sgrrzhf
     - wearyzen
     - ithinuel
@@ -5485,8 +5484,6 @@ West:
   status: maintained
   maintainers:
     - stephanosio
-  collaborators:
-    - povergoing
   files:
     - modules/cmsis/
   labels:
