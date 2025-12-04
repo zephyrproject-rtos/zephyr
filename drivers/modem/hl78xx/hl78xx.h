@@ -158,7 +158,10 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_DEREGISTERED,
 	MODEM_HL78XX_EVENT_BUS_OPENED,
 	MODEM_HL78XX_EVENT_BUS_CLOSED,
+	/* Modem unexpected restart event */
+	MODEM_HL78XX_EVENT_MDM_RESTART,
 	MODEM_HL78XX_EVENT_SOCKET_READY,
+	MODEM_HL78XX_EVENT_COUNT
 };
 
 enum hl78xx_tcp_notif {
@@ -264,6 +267,12 @@ struct hl78xx_network_operator {
 	char operator[MDM_MODEL_LENGTH];
 	uint8_t format;
 };
+
+struct hl78xx_modem_boot_status {
+	bool is_booted_previously;
+	enum hl78xx_module_status status;
+};
+
 struct hl78xx_gprs_status {
 	bool is_active;
 	int8_t cid;
@@ -280,6 +289,7 @@ struct modem_status {
 	enum hl78xx_state state;
 	struct kband_syntax kbndcfg[HL78XX_RAT_COUNT];
 	struct hl78xx_gprs_status gprs[MDM_MAX_PDP_CONTEXTS];
+	struct hl78xx_modem_boot_status boot;
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct apn_state apn;
 	struct hl78xx_network_operator network_operator;

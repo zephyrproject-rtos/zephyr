@@ -31,6 +31,7 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 /* Wrapper helpers so other translation units don't need compile-time
  * visibility of the MODEM_CHAT_* macro-generated symbols.
  */
+const struct modem_chat_match *hl78xx_get_at_ready_match(void);
 const struct modem_chat_match *hl78xx_get_ok_match(void);
 const struct modem_chat_match *hl78xx_get_abort_matches(void);
 const struct modem_chat_match *hl78xx_get_unsol_matches(void);

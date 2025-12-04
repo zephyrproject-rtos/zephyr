@@ -74,6 +74,7 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
 			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
 /* clang-format off */
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
+			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
 			  MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", hl78xx_on_cxreg),
 #if defined(CONFIG_MODEM_HL78XX_12)
@@ -114,7 +115,6 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_periodic_chat_script, hl78xx_periodic_chat_scrip
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 4);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_at_ready_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KHWIOCFG=3,1,6", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4,0", hl78xx_ok_match),
