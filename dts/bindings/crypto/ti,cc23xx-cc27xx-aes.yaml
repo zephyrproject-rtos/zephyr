@@ -1,9 +1,9 @@
 # Copyright (c) Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC23X0 AES accelerator.
+description: TI CC23XX/CC27XX AES accelerator.
 
-compatible: "ti,cc23x0-aes"
+compatible: "ti,cc23xx-cc27xx-aes"
 
 include: base.yaml
 
