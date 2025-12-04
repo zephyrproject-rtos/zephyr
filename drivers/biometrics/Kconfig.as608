@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+config BIOMETRICS_AS608
+	bool "AS608 Optical Fingerprint Sensor"
+	default y
+	depends on DT_HAS_SYNOCHIP_AS608_ENABLED
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable driver for AS608 optical fingerprint sensor.
+
+if BIOMETRICS_AS608
+
+config AS608_TIMEOUT_MS
+	int "Default operation timeout in milliseconds"
+	default 5000
+	help
+	  Default timeout for enrollment and matching operations.
+
+endif # BIOMETRICS_AS608
