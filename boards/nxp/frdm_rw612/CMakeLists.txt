@@ -22,12 +22,3 @@ if(CONFIG_DT_HAS_NXP_ENET_MAC_ENABLED AND ${xtal32_status})
     "mutually exclusive on FRDM_RW612 due to shared PCB nets "
     "between the ethernet PHY and the external oscillator")
 endif()
-
-# Set TX power limit file to override the default one
-if(CONFIG_WIFI_NXP)
-  zephyr_include_directories(
-      tx_pwr_limits
-  )
-
-  zephyr_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
-endif()
