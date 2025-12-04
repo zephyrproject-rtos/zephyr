@@ -37,7 +37,7 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 
 	LOG_DBG("pkt on interface %p", ctx->iface);
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct can_frame),
-					   AF_CAN, 0, K_NO_WAIT);
+					   NET_AF_CAN, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain net_pkt");
 		return;
@@ -57,14 +57,14 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 }
 
 static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
-				 int optname, const void *optval, socklen_t optlen)
+				 int optname, const void *optval, net_socklen_t optlen)
 {
 	const struct net_canbus_config *cfg = dev->config;
 	struct net_canbus_context *context = dev->data;
 	struct net_context *ctx = obj;
 	int ret;
 
-	if (level != SOL_CAN_RAW && optname != CAN_RAW_FILTER) {
+	if (level != NET_SOL_CAN_RAW && optname != NET_CAN_RAW_FILTER) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -104,7 +104,7 @@ static int net_canbus_send(const struct device *dev, struct net_pkt *pkt)
 	const struct net_canbus_config *cfg = dev->config;
 	int ret;
 
-	if (net_pkt_family(pkt) != AF_CAN) {
+	if (net_pkt_family(pkt) != NET_AF_CAN) {
 		return -EPFNOSUPPORT;
 	}
 
