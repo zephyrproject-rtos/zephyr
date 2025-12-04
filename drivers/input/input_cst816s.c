@@ -138,20 +138,20 @@ static int cst816s_process(const struct device *dev)
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, &gesture, sizeof(gesture));
 	if (ret < 0) {
-		LOG_ERR("Could not read gesture-ID data");
+		LOG_ERR("Could not read gesture-ID data (%d)", ret);
 		return ret;
 	}
 #endif
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST816S_REG_XPOS_H, (uint8_t *)&x, sizeof(x));
 	if (ret < 0) {
-		LOG_ERR("Could not read x data");
+		LOG_ERR("Could not read x data (%d)", ret);
 		return ret;
 	}
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST816S_REG_YPOS_H, (uint8_t *)&y, sizeof(y));
 	if (ret < 0) {
-		LOG_ERR("Could not read y data");
+		LOG_ERR("Could not read y data (%d)", ret);
 		return ret;
 	}
 	col = sys_be16_to_cpu(x) & 0x0fff;
@@ -216,7 +216,7 @@ static void cst816s_chip_reset(const struct device *dev)
 	if (gpio_is_ready_dt(&config->rst_gpio)) {
 		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO pin");
+			LOG_ERR("Could not configure reset GPIO pin (%d)", ret);
 			return;
 		}
 		k_msleep(CST816S_RESET_DELAY);
@@ -240,20 +240,20 @@ static int cst816s_chip_init(const struct device *dev)
 	}
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, CST816S_REG_CHIP_ID, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERR("Failed reading chip id (%d)", ret);
 		return ret;
 	}
 
 	if ((chip_id != CST816S_CHIP_ID1) && (chip_id != CST816S_CHIP_ID2) &&
 	    (chip_id != CST816S_CHIP_ID3)) {
-		LOG_ERR("CST816S wrong chip id: returned 0x%x", chip_id);
+		LOG_ERR("Wrong chip id: returned 0x%x", chip_id);
 		return -ENODEV;
 	}
 
 	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_MOTION_MASK, CST816S_MOTION_EN_DCLICK,
 				     CST816S_MOTION_EN_DCLICK);
 	if (ret < 0) {
-		LOG_ERR("Could not enable double-click motion mask");
+		LOG_ERR("Could not enable double-click motion mask (%d)", ret);
 		return ret;
 	}
 
@@ -265,7 +265,7 @@ static int cst816s_chip_init(const struct device *dev)
 
 	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_IRQ_CTL, irq_mask, irq_mask);
 	if (ret < 0) {
-		LOG_ERR("Could not enable irq");
+		LOG_ERR("Could not enable irq (%d)", ret);
 		return ret;
 	}
 	return 0;
@@ -294,13 +294,13 @@ static int cst816s_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
+		LOG_ERR("Could not configure interrupt GPIO pin (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		LOG_ERR("Could not configure interrupt GPIO interrupt (%d)", ret);
 		return ret;
 	}
 
@@ -308,7 +308,7 @@ static int cst816s_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERR("Could not set gpio callback (%d)", ret);
 		return ret;
 	}
 #else
@@ -328,7 +328,7 @@ static int cst816s_apply_profile(const struct cst816s_config *cfg)
 	ret = i2c_burst_write_dt(&cfg->i2c, CST816S_REG_LP_AUTO_WAKEUP_TIME,
 				 (uint8_t *)&cfg->lp_profile, sizeof(cfg->lp_profile));
 	if (ret) {
-		LOG_WRN("Write power profile failed");
+		LOG_WRN("Write power profile failed (%d)", ret);
 		return ret;
 	}
 
@@ -346,7 +346,7 @@ static int cst816s_pm_action(const struct device *dev, enum pm_device_action act
 	cst816s_chip_reset(dev);
 	ret = cst816s_chip_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Chip init failed during PM action");
+		LOG_ERR("Chip init failed during PM action (%d)", ret);
 		return ret;
 	}
 
@@ -356,13 +356,13 @@ static int cst816s_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_TURN_ON:
 		ret = cst816s_apply_profile(cfg);
 		if (ret < 0) {
-			LOG_WRN("Could not apply suspend profile");
+			LOG_WRN("Could not apply suspend profile (%d)", ret);
 			return ret;
 		}
 
 		ret = i2c_reg_write_byte_dt(&cfg->i2c, CST816S_REG_DIS_AUTO_SLEEP, 0x00);
 		if (ret < 0) {
-			LOG_WRN("Could not enable auto sleep");
+			LOG_WRN("Could not enable auto sleep (%d)", ret);
 			return ret;
 		}
 		break;
@@ -371,7 +371,7 @@ static int cst816s_pm_action(const struct device *dev, enum pm_device_action act
 		ret = i2c_reg_write_byte_dt(&cfg->i2c, CST816S_REG_SLEEP_MODE,
 					    CST816S_POWER_MODE_SLEEP);
 		if (ret < 0) {
-			LOG_WRN("Could not enter deep sleep mode");
+			LOG_WRN("Could not enter deep sleep mode (%d)", ret);
 			return ret;
 		}
 		break;
