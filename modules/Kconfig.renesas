@@ -302,6 +302,16 @@ config USE_RZ_FSP_ADC
 	help
 	  Enable RZ FSP ADC driver
 
+config USE_RZ_FSP_ADC_C
+	bool
+	help
+	  Enable RZ FSP ADC-C driver
+
+config USE_RZ_FSP_ADC_E
+	bool
+	help
+	  Enable RZ FSP ADC-E driver
+
 config USE_RZ_FSP_IOPORT
 	bool
 	help

@@ -17,11 +17,47 @@ typedef adc_c_instance_ctrl_t adc_instance_ctrl_t;
 typedef adc_c_extended_cfg_t adc_extended_cfg_t;
 void adc_c_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_c_scan_end_isr
+#elif defined(CONFIG_ADC_RENESAS_RZ_ADC_E)
+#include "r_adc_e.h"
+typedef adc_e_channel_cfg_t adc_channel_cfg_t;
+typedef adc_e_instance_ctrl_t adc_instance_ctrl_t;
+typedef adc_e_extended_cfg_t adc_extended_cfg_t;
+void adc_e_scan_end_isr(void *irq);
+#define ADC_SCAN_END_ISR adc_e_scan_end_isr
 #else /* CONFIG_ADC_RENESAS_RZ */
 #include "r_adc.h"
 void adc_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_scan_end_isr
 #endif
+
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
+
+#ifdef CONFIG_CPU_CORTEX_M33
+#define RZ_INTM33SEL_ADDR_OFFSET 0x200
+#define RZ_INTC_INTSEL_BASE      RZ_INTC_BASE + RZ_INTM33SEL_ADDR_OFFSET
+#else /* CONFIG_CPU_CORTEX_R8 */
+#define RZ_INTR8SEL_ADDR_OFFSET 0x140
+#define RZ_INTC_INTSEL_BASE     RZ_INTC_BASE + RZ_INTR8SEL_ADDR_OFFSET
+#endif
+
+#define OFFSET(y)                   ((y) - 353 - COND_CODE_1(CONFIG_GIC, (GIC_SPI_INT_BASE), (0)))
+#define REG_INTSEL_READ(y)          sys_read32(RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_WRITE(y, v)      sys_write32((v), RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_SPIk_SEL_MASK(y) (BIT_MASK(10) << ((OFFSET(y) % 3) * 10))
+
+/**
+ * @brief Connect an @p irq number with an @p event
+ */
+static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
+{
+	uint32_t reg_val = REG_INTSEL_READ(irq);
+
+	reg_val &= ~REG_INTSEL_SPIk_SEL_MASK(irq);
+	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
+	REG_INTSEL_WRITE(irq, reg_val);
+}
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -62,6 +98,8 @@ struct adc_rz_data {
 	uint16_t *buf;
 	/** Mask with channels that will be sampled */
 	uint32_t channels;
+	/** Mask of channels that have been configured via setup API */
+	uint32_t configured_channels;
 	/** Buffer id */
 	uint16_t buf_id;
 };
@@ -79,12 +117,11 @@ struct adc_rz_data {
 static int adc_rz_channel_setup(const struct device *dev, const struct adc_channel_cfg *channel_cfg)
 {
 
-	fsp_err_t fsp_err = FSP_SUCCESS;
 	struct adc_rz_data *data = dev->data;
 	const struct adc_rz_config *config = dev->config;
 
 	if (!((config->channel_available_mask & BIT(channel_cfg->channel_id)) != 0)) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERR("Unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
@@ -100,20 +137,15 @@ static int adc_rz_channel_setup(const struct device *dev, const struct adc_chann
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Unsupported channel reference");
-		return -ENOTSUP;
+		return -EINVAL;
 	}
-	data->fsp_channel_cfg.scan_mask |= (1U << channel_cfg->channel_id);
-	/** Enable channels. */
-	fsp_err = config->fsp_api->scanCfg(&data->fsp_ctrl, &data->fsp_channel_cfg);
 
-	if (FSP_SUCCESS != fsp_err) {
-		return -ENOTSUP;
-	}
+	data->configured_channels |= (1U << channel_cfg->channel_id);
 
 	return 0;
 }
@@ -193,23 +225,52 @@ static int adc_rz_start_read(const struct device *dev, const struct adc_sequence
 {
 	const struct adc_rz_config *config = dev->config;
 	struct adc_rz_data *data = dev->data;
+	fsp_err_t fsp_err;
 	int err;
 
+	if (sequence->channels == 0) {
+		LOG_ERR("No channel to read");
+		return -EINVAL;
+	}
+
 	if (sequence->resolution > ADC_RZ_MAX_RESOLUTION || sequence->resolution == 0) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
-		return -ENOTSUP;
+		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		return -EINVAL;
+	}
+
+	if (sequence->oversampling != 0) {
+		LOG_ERR("Oversampling is not supported");
+		return -EINVAL;
 	}
 
 	if ((sequence->channels & ~config->channel_available_mask) != 0) {
-		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERR("Unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
+
+	/* Check if channels have been configured via channel_setup */
+	if ((sequence->channels & ~data->configured_channels) != 0) {
+		LOG_ERR("Attempted to read from unconfigured channels in mask: 0x%08x",
+			sequence->channels);
+		return -EINVAL;
+	}
+
 	err = adc_rz_check_buffer_size(dev, sequence);
 
 	if (err) {
 		LOG_ERR("buffer size too small");
 		return err;
 	}
+
+	data->fsp_channel_cfg.scan_mask = sequence->channels;
+
+	/* Enable channels selected by the sequence */
+	fsp_err = config->fsp_api->scanCfg(&data->fsp_ctrl, &data->fsp_channel_cfg);
+
+	if (FSP_SUCCESS != fsp_err) {
+		return -ENOTSUP;
+	}
+
 	data->buf_id = 0;
 	data->buf = sequence->buffer;
 	adc_context_start_read(&data->ctx, sequence);
@@ -348,6 +409,66 @@ static int adc_rz_init(const struct device *dev)
 
 #endif /* CONFIG_ADC_RENESAS_RZ_ADC_C */
 
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define ADC_RZ_CONNECT_IRQ_EVENT(idx)                                                              \
+	intc_connect_irq_event(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                             \
+			       CONCAT(ADC, DT_INST_PROP(idx, unit), _ADA_ADIREQ_N_IRQSELn))
+
+#else
+#define ADC_RZ_CONNECT_IRQ_EVENT(idx)
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+
+#if defined(CONFIG_ADC_RENESAS_RZ_ADC_E)
+#define ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
+	static const adc_extended_cfg_t g_adc##idx##_cfg_extend = {                                \
+		.add_average_count = ADC_E_ADD_OFF,                                                \
+		.clearing = ADC_E_CLEAR_AFTER_READ_ON,                                             \
+		.trigger_group_b = ADC_TRIGGER_SYNC_ELC,                                           \
+		.double_trigger_mode = ADC_E_DOUBLE_TRIGGER_DISABLED,                              \
+		.adc_start_trigger_a = ADC_E_ACTIVE_TRIGGER_DISABLED,                              \
+		.adc_start_trigger_b = ADC_E_ACTIVE_TRIGGER_DISABLED,                              \
+		.adc_start_trigger_c_enabled = 0,                                                  \
+		.adc_start_trigger_c = ADC_E_ACTIVE_TRIGGER_DISABLED,                              \
+		.adc_elc_ctrl = ADC_E_ELC_GROUP_A_SCAN,                                            \
+		.window_a_irq = FSP_INVALID_VECTOR,                                                \
+		.window_a_ipl = BSP_IRQ_DISABLED,                                                  \
+		.window_b_irq = FSP_INVALID_VECTOR,                                                \
+		.window_b_ipl = BSP_IRQ_DISABLED,                                                  \
+	};                                                                                         \
+	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
+		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
+		.fsp_api = &g_adc_on_adc_e,                                                        \
+	};
+
+#define ADC_RZ_FSP_CFG(idx)                                                                        \
+	.fsp_cfg =                                                                                 \
+		{                                                                                  \
+			.unit = DT_INST_PROP(idx, unit),                                           \
+			.mode = ADC_MODE_SINGLE_SCAN,                                              \
+			.resolution = ADC_RESOLUTION_12_BIT,                                       \
+			.alignment = (adc_alignment_t)ADC_ALIGNMENT_RIGHT,                         \
+			.trigger = ADC_TRIGGER_SOFTWARE,                                           \
+			.p_callback = NULL,                                                        \
+			.p_context = NULL,                                                         \
+			.p_extend = &g_adc##idx##_cfg_extend,                                      \
+			.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),                    \
+			.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),               \
+			.scan_end_b_irq = FSP_INVALID_VECTOR,                                      \
+			.scan_end_b_ipl = BSP_IRQ_DISABLED,                                        \
+			.scan_end_c_irq = FSP_INVALID_VECTOR,                                      \
+			.scan_end_c_ipl = BSP_IRQ_DISABLED,                                        \
+	},                                                                                         \
+	.fsp_channel_cfg = {                                                                       \
+		.scan_mask = 0,                                                                    \
+		.scan_mask_group_b = 0,                                                            \
+		.priority_group_a = ADC_E_GRPA_PRIORITY_OFF,                                       \
+		.add_mask = 0,                                                                     \
+		.scan_mask_group_c = 0,                                                            \
+		.p_window_cfg = NULL,                                                              \
+	}
+
+#endif /* CONFIG_ADC_RENESAS_RZ_ADC_E */
+
 #if defined(CONFIG_ADC_RENESAS_RZ)
 #define ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
 	static const adc_extended_cfg_t g_adc##idx##_cfg_extend = {                                \
@@ -396,25 +517,25 @@ static int adc_rz_init(const struct device *dev)
 		.sample_hold_mask = 0,                                                             \
 		.sample_hold_states = 24,                                                          \
 		.scan_mask_group_c = 0,                                                            \
+		.p_window_cfg = NULL,                                                              \
 	}
 
 #endif /* CONFIG_ADC_RENESAS_RZ */
 
-#ifdef CONFIG_CPU_CORTEX_M
-#define GET_IRQ_FLAGS(index) 0
-#else /* Cortex-A/R */
-#define GET_IRQ_FLAGS(index) DT_INST_IRQ_BY_IDX(index, 0, flags)
-#endif
+#define GET_IRQ_FLAGS(index, name)                                                                 \
+	COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ_BY_NAME(index, name, flags)), (0))
 
 #define ADC_RZ_IRQ_CONNECT(idx, irq_name, isr)                                                     \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, irq_name, irq),                               \
 			    DT_INST_IRQ_BY_NAME(idx, irq_name, priority), isr,                     \
-			    DEVICE_DT_INST_GET(idx), GET_IRQ_FLAGS(idx));                          \
+			    DEVICE_DT_INST_GET(idx), GET_IRQ_FLAGS(idx, irq_name));                \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, irq_name, irq));                               \
 	} while (0)
 
-#define ADC_RZ_CONFIG_FUNC(idx) ADC_RZ_IRQ_CONNECT(idx, scanend, adc_rz_isr);
+#define ADC_RZ_CONFIG_FUNC(idx)                                                                    \
+	ADC_RZ_IRQ_CONNECT(idx, scanend, adc_rz_isr);                                              \
+	ADC_RZ_CONNECT_IRQ_EVENT(idx);
 
 #define ADC_RZ_INIT(idx)                                                                           \
 	ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
@@ -444,5 +565,10 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_RZ_INIT);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT renesas_rz_adc_c
+
+DT_INST_FOREACH_STATUS_OKAY(ADC_RZ_INIT);
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_rz_adc_e
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RZ_INIT);

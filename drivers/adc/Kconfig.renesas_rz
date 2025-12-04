@@ -15,9 +15,17 @@ config ADC_RENESAS_RZ_ADC_C
 	bool "Renesas RZ ADC-C Driver"
 	default y
 	depends on DT_HAS_RENESAS_RZ_ADC_C_ENABLED
-	select USE_RZ_FSP_ADC
+	select USE_RZ_FSP_ADC_C
 	help
 	  Enable the RZ ADC-C driver.
+
+config ADC_RENESAS_RZ_ADC_E
+	bool "Renesas RZ ADC-E Driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_ADC_E_ENABLED
+	select USE_RZ_FSP_ADC_E
+	help
+	  Enable the RZ ADC-E driver.
 
 config ADC_RENESAS_RZA2M
 	bool "Renesas A2M ADC Driver"
