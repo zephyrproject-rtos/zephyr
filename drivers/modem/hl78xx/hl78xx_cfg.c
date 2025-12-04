@@ -214,6 +214,13 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 	if (ret < 0) {
 		goto error;
 	}
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+	ret = modem_dynamic_cmd_send(data, NULL, "AT+WDSS=2,1", strlen("AT+WDSS=2,1"),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		goto error;
+	}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	data->status.apn.state = APN_STATE_CONFIGURED;
 	return 0;
 error:
