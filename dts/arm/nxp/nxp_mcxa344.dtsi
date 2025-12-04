@@ -240,10 +240,9 @@
 			#dma-cells = <2>;
 			compatible = "nxp,mcux-edma";
 			nxp,version = <4>;
+			reg = <0x40080000 0x1000>;
 			dma-channels = <8>;
 			dma-requests = <86>;
-
-			reg = <0x40080000 0x1000>;
 			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
 				     <6 0>, <7 0>, <8 0>, <9 0>;
 			no-error-irq;
@@ -257,6 +256,7 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			clk-source = <0>;
+			nxp,max-mb = <32>;
 			status = "disabled";
 		};
 
