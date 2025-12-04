@@ -110,6 +110,12 @@ STM32
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
 
+Stepper
+=======
+
+* For :dtcompatible:`adi,tmc2209`, the property ``msx-gpios`` is now replaced by ``m0-gpios`` and
+  ``m1-gpios`` for consistency with other step/dir stepper drivers.
+
 USB
 ===
 
