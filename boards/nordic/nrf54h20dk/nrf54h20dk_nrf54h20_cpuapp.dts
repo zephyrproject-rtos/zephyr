@@ -180,6 +180,28 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
+&cpuapp_ram0 {
+	cpuapp_tcm_region: cpuapp_ram0@0 {
+		compatible = "zephyr,memory-region";
+		reg = <0x00000000 (DT_SIZE_K(32) - 256)>;
+		zephyr,memory-region = "APP_RAM0";
+	};
+
+	/* cache control functions - must be executed from local SRAM */
+	pm_ramfunc: cpuapp_s2ram@7f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00007f00 192>;
+		zephyr,memory-region = "PMLocalRamfunc";
+	};
+
+	/* run-time common S2RAM cpu context RAM */
+	pm_s2ram: cpuapp_s2ram@7fe0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00007fe0 32>;
+		zephyr,memory-region = "pm_s2ram_context";
+	};
+};
+
 ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
 
 boot_partition: &cpuapp_boot_partition {
@@ -332,28 +354,4 @@ zephyr_udc0: &usbhs {
 &adc {
 	memory-regions = <&cpuapp_dma_region>;
 	status = "okay";
-};
-
-/* Trim this RAM block for power management related features. */
-&cpuapp_ram0 {
-	reg = <0x22000000 (DT_SIZE_K(32) - 256)>;
-	ranges = <0x0 0x22000000 (0x8000 - 0x100)>;
-};
-
-/ {
-	soc {
-		/* cache control functions - must be executed from local SRAM */
-		pm_ramfunc: cpuapp_s2ram@22007f00 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x22007f00 192>;
-			zephyr,memory-region = "PMLocalRamfunc";
-		};
-
-		/* run-time common S2RAM cpu context RAM */
-		pm_s2ram: cpuapp_s2ram@22007fe0 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x22007fe0 32>;
-			zephyr,memory-region = "pm_s2ram_context";
-		};
-	};
 };
