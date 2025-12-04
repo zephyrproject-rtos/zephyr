@@ -88,3 +88,9 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
