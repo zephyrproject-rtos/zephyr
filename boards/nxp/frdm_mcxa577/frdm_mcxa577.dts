@@ -119,6 +119,10 @@
 	status = "okay";
 };
 
+&gpio5 {
+	status = "okay";
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
@@ -131,6 +135,10 @@
 };
 
 &lptmr0 {
+	status = "okay";
+};
+
+&edma0 {
 	status = "okay";
 };
 

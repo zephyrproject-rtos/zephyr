@@ -229,6 +229,24 @@ void board_early_init_hook(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
+	RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateDMA0);
+	/* Release DMA request */
+	for (uint8_t i = 0; i < 5; i++) {
+		AHBSC->SEC_GP_REG[i] = 0xFFFFFFFF;
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma1))
+	RESET_ReleasePeripheralReset(kDMA1_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateDMA1);
+	/* Release DMA request */
+	for (uint8_t i = 5; i < 10; i++) {
+		AHBSC->SEC_GP_REG[i] = 0xFFFFFFFF;
+	}
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
