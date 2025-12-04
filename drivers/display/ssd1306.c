@@ -81,11 +81,17 @@ static bool ssd1306_bus_ready_i2c(const struct device *dev)
 static int ssd1306_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t len, bool command)
 {
 	const struct ssd1306_config *config = dev->config;
+	uint8_t control_byte =
+		command ? SSD1306_CONTROL_ALL_BYTES_CMD : SSD1306_CONTROL_ALL_BYTES_DATA;
 
-	return i2c_burst_write_dt(&config->bus.i2c,
-				  command ? SSD1306_CONTROL_ALL_BYTES_CMD :
-				  SSD1306_CONTROL_ALL_BYTES_DATA,
-				  buf, len);
+	uint8_t tmp_buf[len + 1];
+
+	tmp_buf[0] = control_byte;
+	memcpy(&tmp_buf[1], buf, len);
+
+	int ret = i2c_write_dt(&config->bus.i2c, tmp_buf, len + 1);
+
+	return ret;
 }
 
 static const char *ssd1306_bus_name_i2c(const struct device *dev)
