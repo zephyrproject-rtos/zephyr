@@ -5575,7 +5575,6 @@ West:
     - bperseghetti
   collaborators:
     - PetervdPerk-NXP
-    - jgoppert
   files:
     - modules/hal_afbr/
   labels:
