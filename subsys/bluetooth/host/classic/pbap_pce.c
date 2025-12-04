@@ -36,23 +36,7 @@ LOG_MODULE_REGISTER(bt_pbap);
 
 struct bt_pbap_pce_cb *bt_pce;
 
-struct bt_pbap_goep {
-	struct bt_goep _goep;
-	struct bt_pbap_pce *_pbap;
-	struct bt_obex_client _client;
-	uint32_t conn_id;
-	/** @internal save authicathon_challenge nonce */
-	uint8_t auth_chal[16U];
-	/** @internal Flag for local device if authicate actively. */
-	bool local_auth;
-	/** @internal Flag for peer device if authicate actively. */
-	bool peer_auth;
-	/** @internal Save the current stats, @brief bt_pbap_state */
-	atomic_t _state;
-};
-
-#define PBAP_PWD_MAX_LENGTH 50U
-static struct bt_pbap_goep g_pbap_goep[CONFIG_BT_MAX_CONN];
+#define PBAP_PWD_MAX_LENGTH 16U
 
 NET_BUF_POOL_FIXED_DEFINE(bt_pbap_pce_pool, CONFIG_BT_MAX_CONN,
 			  BT_RFCOMM_BUF_SIZE(CONFIG_BT_GOEP_RFCOMM_MTU),
@@ -64,8 +48,11 @@ const uint8_t pbap_target_id[] = {0x79U, 0x61U, 0x35U, 0xf0U, 0xf0U, 0xc5U, 0x11
 const uint8_t phonebook_type[] = "x-bt/phonebook";
 const uint8_t vcardlisting_type[] = "x-bt/vcard-listing";
 const uint8_t vcardentry_type[] = "x-bt/vcard";
+#define PBAP_PCE_NAME_SUFFIX             ".vcf"
+#define PBAP_PCE_VCARDENTRY_NAME_PREFIX  "X-BT-UID:"
+#define bt_pbap_add_header_srm(buf)       bt_obex_add_header_srm(buf, 0x01)
 
-static int bt_pbap_generate_auth_challenage(const uint8_t *pwd, uint8_t *auth_chal_req);
+static int bt_pbap_generate_auth_challenge(const uint8_t *pwd, uint8_t *auth_chal_req);
 static int bt_pbap_generate_auth_response(const uint8_t *pwd, uint8_t *auth_chal_req,
 					  uint8_t *auth_chal_rsp);
 static int bt_pbap_verify_auth(uint8_t *auth_chal_req, uint8_t *auth_chal_rsp, const uint8_t *pwd);
@@ -97,69 +84,104 @@ static struct bt_sdp_attribute pbap_pce_attrs[] = {
 
 static struct bt_sdp_record pbap_pce_rec = BT_SDP_RECORD(pbap_pce_attrs);
 
-static struct bt_pbap_goep *bt_goep_alloc(struct bt_conn *conn, struct bt_pbap_pce *pbap_pce)
+static uint8_t pbap_ascii_to_unicode(const char *src, uint8_t *dest, uint8_t dest_size,
+				     bool big_endian)
 {
-	ARRAY_FOR_EACH_PTR(g_pbap_goep, pbap_goep) {
-		if (pbap_goep->_goep._acl == NULL && pbap_goep->_pbap == NULL) {
-			pbap_goep->_goep._acl = conn;
-			pbap_goep->_pbap = pbap_pce;
-			pbap_pce->goep = &pbap_goep->_goep;
-			pbap_goep->local_auth = false;
-			pbap_goep->peer_auth = false;
-			return pbap_goep;
+        uint8_t src_len;
+	uint8_t required_size;
+	uint8_t i;
+
+	if (src == NULL || dest == NULL) {
+		return 0;
+	}
+
+	src_len = strlen(src);
+	required_size = (src_len + 1U) * 2U;
+
+	if (dest_size < required_size) {
+                LOG_WRN("Buffer too small: required %u, available %u", required_size, dest_size);
+		return 0; // 缓冲区太小
+	}
+
+	if (big_endian) {
+		for (i = 0; i < src_len; i++) {
+			dest[i * 2U] = 0x00;
+			dest[i * 2U + 1U] = (uint8_t)src[i];
+		}
+	} else {
+		for (i = 0; i < src_len; i++) {
+			dest[i * 2U] = (uint8_t)src[i];
+			dest[i * 2U + 1U] = 0x00;
 		}
 	}
-	return NULL;
+
+	dest[src_len * 2] = 0x00;
+	dest[src_len * 2 + 1] = 0x00;
+
+	return required_size;
 }
 
-static void bt_pbap_goep_release(struct bt_pbap_goep *pbap_pce_goep)
+static bool endwith(char *str, char *suffix)
 {
-	pbap_pce_goep->_goep._acl = NULL;
-	pbap_pce_goep->_pbap = NULL;
-	return;
-}
+        uint8_t str_len;
+	uint8_t suffix_len;
 
-static uint16_t pbap_ascii_to_unicode(uint8_t *des, const uint8_t *src)
-{
-	uint32_t i = 0;
-
-	if ((src == NULL) || (des == NULL)) {
-		return -EINVAL;
-	}
-	while (src[i] != 0x00U) {
-		des[(i << 1U)] = 0x00U;
-		des[(i << 1U) + 1U] = src[i];
-		i++;
+	if (str == NULL || suffix == NULL) {
+		return false;
 	}
 
-	des[(i << 1U)] = 0x00U;
-	des[(i << 1U) + 1U] = 0x00U; /* terminate with 0x00, 0x00 */
-	return (i + 1) * 2;
+	str_len = (uint8_t)strlen(str);
+	suffix_len = (uint8_t)strlen(suffix);
+
+	if (str_len < suffix_len) {
+		return 0;
+	}
+
+	return strcmp(str + str_len - suffix_len, suffix) == 0;
 }
 
-static int bt_pbap_pce_init()
+static bool startwith(char *str, char *prefix)
+{
+        uint8_t str_len;
+        uint8_t prefix_len;
+
+	if (str == NULL || prefix == NULL) {
+		return false;
+	}
+
+        str_len    = strlen(str);
+        prefix_len = strlen(prefix);
+
+        if (prefix_len > str_len)
+        {
+                return false;
+        }
+
+        return strncmp(str, prefix, prefix_len) == 0;
+}
+
+int bt_pbap_pce_register(struct bt_pbap_pce_cb *cb)
 {
 	int err;
+
+	if (cb == NULL) {
+                LOG_ERR("Invalid callback parameter");
+		return -EINVAL;
+	}
+
+	if (bt_pce != NULL) {
+                LOG_ERR("PBAP PCE already registered");
+		return -EINVAL;
+	}
+
+	bt_pce = cb;
 
 	err = bt_sdp_register_service(&pbap_pce_rec);
 	if (err != 0) {
 		LOG_WRN("Fail to register SDP service");
 	}
+
 	return err;
-}
-
-int bt_pbap_pce_register(struct bt_pbap_pce_cb *cb)
-{
-	if (cb == NULL) {
-		return -EINVAL;
-	}
-	if (bt_pce != NULL) {
-		return -EALREADY;
-	}
-
-	bt_pce = cb;
-
-	return bt_pbap_pce_init();
 }
 
 static void pbap_goep_transport_connected(struct bt_conn *conn, struct bt_goep *goep)
@@ -167,14 +189,16 @@ static void pbap_goep_transport_connected(struct bt_conn *conn, struct bt_goep *
 	int err;
 	struct net_buf *buf;
 	struct bt_obex_tlv data;
-	struct bt_pbap_goep *pbap_goep = CONTAINER_OF(goep, struct bt_pbap_goep, _goep);
+	struct bt_pbap_pce *pbap_pce;
 
-	if (pbap_goep == NULL) {
-		LOG_ERR("Invalid pbap_pce");
+	if (goep == NULL) {
+		LOG_ERR("Invalid GOEP parameter");
 		return;
 	}
 
-	buf = bt_goep_create_pdu(&pbap_goep->_goep, &bt_pbap_pce_pool);
+	pbap_pce = CONTAINER_OF(goep, struct bt_pbap_pce, _goep);
+
+	buf = bt_goep_create_pdu(&pbap_pce->_goep, &bt_pbap_pce_pool);
 	if (buf == NULL) {
 		LOG_ERR("Fail to allocate tx buffer");
 		return;
@@ -187,60 +211,73 @@ static void pbap_goep_transport_connected(struct bt_conn *conn, struct bt_goep *
 		return;
 	}
 
-	if (pbap_goep->_pbap->pwd != NULL) {
-		err = bt_pbap_generate_auth_challenage(pbap_goep->_pbap->pwd,
-						 (uint8_t *)pbap_goep->auth_chal);
-                if (err != 0) {
-                        net_buf_unref(buf);
+        pbap_pce->local_auth = false;
+	if (pbap_pce->_pwd != NULL) {
+		err = bt_pbap_generate_auth_challenge(pbap_pce->_pwd,
+						      (uint8_t *)pbap_pce->_auth_challenge_nonce);
+		if (err != 0) {
+                        LOG_ERR("Failed to generate auth challenge (err %d)", err);
+			net_buf_unref(buf);
 			return;
-                }
+		}
 
 		data.type = BT_OBEX_CHALLENGE_TAG_NONCE;
-		data.data_len = 16U;
-		data.data = pbap_goep->auth_chal;
+		data.data_len = BT_OBEX_CHALLENGE_TAG_NONCE_LEN;
+		data.data = pbap_pce->_auth_challenge_nonce;
 		err = bt_obex_add_header_auth_challenge(buf, 1U, &data);
 		if (err != 0) {
 			LOG_WRN("Fail to add auth_challenge");
 			net_buf_unref(buf);
 			return;
 		}
-		pbap_goep->local_auth = true;
+
+		pbap_pce->local_auth = true;
 	}
 
-	if (pbap_goep->_pbap->peer_feature != 0) {
-		uint32_t value;
+	if (pbap_pce->_peer_feature != 0) {
+		uint32_t feature_value;
 
-		value = sys_get_be32((uint8_t *)&pbap_goep->_pbap->peer_feature);
+		feature_value = sys_get_be32((uint8_t *)&pbap_pce->_peer_feature);
 		data.type = BT_PBAP_APPL_PARAM_TAG_ID_SUPPORTED_FEATURES;
-		data.data_len = sizeof(value);
-		data.data = (uint8_t *)&value;
+		data.data_len = sizeof(feature_value);
+		data.data = (uint8_t *)&feature_value;
 		err = bt_obex_add_header_app_param(buf, 1U, &data);
 		if (err != 0) {
 			LOG_WRN("Fail to add support feature %d", err);
 			net_buf_unref(buf);
 			return;
 		}
+	} else {
+		pbap_pce->_peer_feature = PSE_ASSUMED_SUPPORT_FEATURE;
 	}
 
-	err = bt_obex_connect(&pbap_goep->_client, pbap_goep->_pbap->mpl, buf);
+	/** IPhone issue */
+	if (!pbap_pce->_goep._goep_v2 && pbap_pce->_mopl > pbap_pce->_goep.obex.rx.mtu - 1U) {
+                LOG_DBG("Adjusting MPL from %u to %u for GOEP v1",
+			pbap_pce->_mopl, pbap_pce->_goep.obex.rx.mtu - 1U);
+		pbap_pce->_mopl = pbap_pce->_goep.obex.rx.mtu - 1U;
+	}
+
+	err = bt_obex_connect(&pbap_pce->_client, pbap_pce->_mopl, buf);
 	if (err != 0) {
 		net_buf_unref(buf);
-		bt_pbap_goep_release(pbap_goep);
 		LOG_ERR("Fail to send conn req %d", err);
 	}
+
 	return;
 }
 
 static void pbap_goep_transport_disconnected(struct bt_goep *goep)
 {
-	LOG_INF("GOEP %p transport disconnected", goep);
-	struct bt_pbap_goep *pbap_goep;
-	pbap_goep = CONTAINER_OF(goep, struct bt_pbap_goep, _goep);
-	bt_pbap_goep_release(pbap_goep);
+	struct bt_pbap_pce *pbap_pce;
+
+	pbap_pce = CONTAINER_OF(goep, struct bt_pbap_pce, _goep);
+
 	if (bt_pce && bt_pce->disconnect) {
-		bt_pce->disconnect(pbap_goep->_pbap, BT_PBAP_RSP_CODE_OK);
+		bt_pce->disconnect(pbap_pce, BT_PBAP_RSP_CODE_OK);
 	}
-	atomic_set(&pbap_goep->_state, BT_PBAP_DISCONNECTED);
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_DISCONNECTED);
 }
 
 static struct bt_goep_transport_ops pbap_goep_transport_ops = {
@@ -250,171 +287,165 @@ static struct bt_goep_transport_ops pbap_goep_transport_ops = {
 
 static bool bt_pbap_find_tlv_param_cb(struct bt_obex_tlv *hdr, void *user_data)
 {
-	struct bt_obex_tlv *value;
+	struct bt_obex_tlv *tlv;
 
-	value = (struct bt_obex_tlv *)user_data;
+	tlv = (struct bt_obex_tlv *)user_data;
 
-	if (hdr->type == value->type) {
-		value->data = hdr->data;
-		value->data_len = hdr->data_len;
+	if (hdr->type == tlv->type) {
+		tlv->data = hdr->data;
+		tlv->data_len = hdr->data_len;
 		return false;
 	}
+
 	return true;
 }
 
-static void goep_client_connect(struct bt_obex_client *client, uint8_t rsp_code, uint8_t version,
-				uint16_t mopl, struct net_buf *buf)
+static void pbap_pce_connect(struct bt_obex_client *client, uint8_t rsp_code, uint8_t version,
+			     uint16_t mopl, struct net_buf *buf)
 {
 	int err;
 	uint16_t length = 0;
 	const uint8_t *auth;
 	uint8_t bt_auth_data[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN] = {0};
-	struct bt_obex_tlv bt_auth_challenge;
-	struct bt_obex_tlv bt_auth_response;
-	struct bt_pbap_goep *pbap_goep;
+	struct bt_obex_tlv bt_auth_challenge = {0};
+	struct bt_obex_tlv bt_auth_response = {0};
+	struct bt_pbap_pce *pbap_pce;
 	struct net_buf *tx_buf;
 
-	memset(&bt_auth_challenge, 0, sizeof(bt_auth_challenge));
-	memset(&bt_auth_response, 0, sizeof(bt_auth_response));
-
-	pbap_goep = CONTAINER_OF(client, struct bt_pbap_goep, _client);
-	if (pbap_goep == NULL) {
-		LOG_ERR("No available pbap_pce");
+	if (client == NULL) {
+		LOG_ERR("Invalid client parameter");
 		return;
 	}
 
-	err = bt_obex_get_header_conn_id(buf, &pbap_goep->conn_id);
+	pbap_pce = CONTAINER_OF(client, struct bt_pbap_pce, _client);
+
+	err = bt_obex_get_header_conn_id(buf, &pbap_pce->_conn_id);
 	if (err != 0) {
-		LOG_ERR("No available connection id");
-		goto failed;
+		LOG_ERR("Failed to get connection ID (err %d)", err);
+		goto disconnect;
 	}
 
 	if (rsp_code == BT_PBAP_RSP_CODE_UNAUTH) {
-		tx_buf = bt_goep_create_pdu(&pbap_goep->_goep, &bt_pbap_pce_pool);
+		tx_buf = bt_goep_create_pdu(&pbap_pce->_goep, &bt_pbap_pce_pool);
 		if (tx_buf == NULL) {
 			LOG_WRN("Fail to allocate tx buffer");
-			goto failed;
+			goto disconnect;
 		}
 
 		err = bt_obex_get_header_auth_challenge(buf, &length, &auth);
 		if (err != 0) {
 			LOG_WRN("No available auth challenge");
-			net_buf_unref(tx_buf);
-			goto failed;
+			goto disconnect;
 		}
-		pbap_goep->peer_auth = true;
 
 		bt_auth_challenge.type = BT_OBEX_CHALLENGE_TAG_NONCE;
-		bt_pbap_pce_tlv_parse(length, auth, bt_pbap_find_tlv_param_cb, &bt_auth_challenge);
+		bt_pbap_tlv_parse(length, auth, bt_pbap_find_tlv_param_cb, &bt_auth_challenge);
 
-		if (pbap_goep->_pbap->pwd == NULL) {
+		if (pbap_pce->_pwd == NULL) {
 			if (bt_pce->get_auth_info != NULL) {
-				bt_pce->get_auth_info(pbap_goep->_pbap);
+				bt_pce->get_auth_info(pbap_pce);
 			} else {
-				net_buf_unref(tx_buf);
 				LOG_WRN("No available authication info");
-				goto failed;
+				goto disconnect;
 			}
 
-			if (pbap_goep->_pbap->pwd == NULL || strlen(pbap_goep->_pbap->pwd) <= 0 ||
-			    strlen(pbap_goep->_pbap->pwd) > PBAP_PWD_MAX_LENGTH) {
-				net_buf_unref(tx_buf);
-				LOG_WRN("No available pwd");
-				goto failed;
+			if (pbap_pce->_pwd == NULL || strlen(pbap_pce->_pwd) == 0 ||
+			    strlen(pbap_pce->_pwd) > PBAP_PWD_MAX_LENGTH) {
+                                LOG_WRN("No available pwd");
+				goto disconnect;
 			}
 		}
 		bt_auth_response.data = bt_auth_data;
-		err = bt_pbap_generate_auth_response(pbap_goep->_pbap->pwd,
-					       (uint8_t *)bt_auth_challenge.data,
-					       (uint8_t *)bt_auth_response.data);
-                if (err != 0) {
-                        net_buf_unref(tx_buf);
-			goto failed;
-                }
+		err = bt_pbap_generate_auth_response(pbap_pce->_pwd,
+						     (uint8_t *)bt_auth_challenge.data,
+						     (uint8_t *)bt_auth_response.data);
+		if (err != 0) {
+			goto disconnect;
+		}
 
 		bt_auth_response.type = BT_OBEX_RESPONSE_TAG_REQ_DIGEST;
 		bt_auth_response.data_len = BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN;
-		err = bt_obex_add_header_auth_rsp(tx_buf, 1, &bt_auth_response);
+		err = bt_obex_add_header_auth_rsp(tx_buf, 1U, &bt_auth_response);
 		if (err != 0) {
 			LOG_WRN("Fail to add auth_challenge");
-			net_buf_unref(tx_buf);
-			goto failed;
+			goto disconnect;
 		}
 
-		if (pbap_goep->local_auth) {
-			bt_auth_challenge.data = pbap_goep->auth_chal;
+		if (pbap_pce->local_auth) {
+			bt_auth_challenge.data = pbap_pce->_auth_challenge_nonce;
 
 			err = bt_obex_add_header_auth_challenge(tx_buf, 1, &bt_auth_challenge);
 			if (err != 0) {
 				LOG_WRN("Fail to add auth_challenge");
-				net_buf_unref(tx_buf);
-				goto failed;
+				goto disconnect;
 			}
 		}
 
-		err = bt_obex_connect(&pbap_goep->_client, pbap_goep->_pbap->mpl, tx_buf);
+		err = bt_obex_connect(&pbap_pce->_client, pbap_pce->_mopl, tx_buf);
 		if (err != 0) {
-			net_buf_unref(tx_buf);
 			LOG_WRN("Fail to send conn req %d", err);
-			goto failed;
+			goto disconnect;
 		}
 	}
 
-	if (pbap_goep->local_auth && rsp_code == BT_PBAP_RSP_CODE_OK) {
+	if (pbap_pce->local_auth && rsp_code == BT_PBAP_RSP_CODE_OK) {
 		err = bt_obex_get_header_auth_rsp(buf, &length, &auth);
-		if (err) {
+		if (err != 0) {
 			LOG_WRN("No available auth_response");
+                        goto disconnect;
 		}
 		bt_auth_response.type = BT_OBEX_RESPONSE_TAG_REQ_DIGEST;
-		bt_pbap_pce_tlv_parse(length, auth, bt_pbap_find_tlv_param_cb, &bt_auth_response);
-		err = bt_pbap_verify_auth(pbap_goep->auth_chal, (uint8_t *)bt_auth_response.data,
-					  pbap_goep->_pbap->pwd);
+		bt_pbap_tlv_parse(length, auth, bt_pbap_find_tlv_param_cb, &bt_auth_response);
+		err = bt_pbap_verify_auth(pbap_pce->_auth_challenge_nonce,
+					  (uint8_t *)bt_auth_response.data, pbap_pce->_pwd);
 		if (err == 0) {
 			LOG_INF("auth success");
 		} else {
 			LOG_WRN("auth fail");
-			goto failed;
+			goto disconnect;
 		}
 	}
 
 	if (bt_pce != NULL && bt_pce->connect != NULL && rsp_code == BT_PBAP_RSP_CODE_OK) {
-		bt_pce->connect(pbap_goep->_pbap, mopl);
-		atomic_set(&pbap_goep->_state, BT_PBAP_CONNECTED);
-		atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
+		bt_pce->connect(pbap_pce, mopl);
+		atomic_set(&pbap_pce->_state, BT_PBAP_CONNECTED);
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
 	}
 	return;
 
-failed:
+disconnect:
 	net_buf_unref(buf);
-	err = bt_pbap_pce_disconnect(pbap_goep->_pbap, true);
-	if (err) {
+
+	err = bt_pbap_pce_disconnect(pbap_pce, true);
+	if (err != 0) {
 		LOG_WRN("Fail to send disconnect command");
 	}
 	return;
 }
 
-static void goep_client_disconnect(struct bt_obex_client *client, uint8_t rsp_code,
-				   struct net_buf *buf)
+static void pbap_pce_disconnect(struct bt_obex_client *client, uint8_t rsp_code,
+				struct net_buf *buf)
 {
-	LOG_INF("OBEX %p disconn rsq, rsp_code %s", client, bt_obex_rsp_code_to_str(rsp_code));
 	int err;
-	struct bt_pbap_goep *pbap_goep = CONTAINER_OF(client, struct bt_pbap_goep, _client);
+	struct bt_pbap_pce *pbap_pce;
 
-	if (!pbap_goep) {
-		LOG_WRN("No available pbap_pce");
+	if (client == NULL) {
+		LOG_ERR("Invalid client parameter");
 		return;
 	}
 
+        pbap_pce = CONTAINER_OF(client, struct bt_pbap_pce, _client);
+
 	if (rsp_code != BT_PBAP_RSP_CODE_OK) {
 		if (bt_pce && bt_pce->disconnect) {
-			bt_pce->disconnect(pbap_goep->_pbap, rsp_code);
+			bt_pce->disconnect(pbap_pce, rsp_code);
 		}
 		return;
 	} else {
-		if (pbap_goep->_goep._goep_v2) {
-			err = bt_goep_transport_l2cap_disconnect(&(pbap_goep->_goep));
+		if (pbap_pce->_goep._goep_v2) {
+			err = bt_goep_transport_l2cap_disconnect(&(pbap_pce->_goep));
 		} else {
-			err = bt_goep_transport_rfcomm_disconnect(&(pbap_goep->_goep));
+			err = bt_goep_transport_rfcomm_disconnect(&(pbap_pce->_goep));
 		}
 		if (err) {
 			LOG_WRN("Fail to disconnect pbap conn (err %d)", err);
@@ -424,300 +455,248 @@ static void goep_client_disconnect(struct bt_obex_client *client, uint8_t rsp_co
 	return;
 }
 
-static void goep_client_get(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
+static void pbap_pce_get(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
 {
-	LOG_INF("OBEX %p get rsq, rsp_code %s, data len %d", client,
-		bt_obex_rsp_code_to_str(rsp_code), buf->len);
-	struct bt_pbap_goep *pbap_goep = CONTAINER_OF(client, struct bt_pbap_goep, _client);
-	struct net_buf *tx_buf;
-	int err = 0;
+	struct bt_pbap_pce *pbap_pce;
+	uint8_t srm = 0x00;
 
-	if (!pbap_goep) {
+	pbap_pce = CONTAINER_OF(client, struct bt_pbap_pce, _client);
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return;
 	}
 
-	switch (atomic_get(&pbap_goep->_state)) {
+	if (pbap_pce->_goep._goep_v2) {
+		bt_obex_get_header_srm(buf, &srm);
+		if (srm != 0x01) {
+			LOG_WRN("Fail to get srm header");
+		}
+	}
+	switch (atomic_get(&pbap_pce->_state)) {
 	case BT_PBAP_PULL_PHONEBOOK:
 
 		if (bt_pce && bt_pce->pull_phonebook) {
-			bt_pce->pull_phonebook(pbap_goep->_pbap, rsp_code, buf);
+			bt_pce->pull_phonebook(pbap_pce, rsp_code, buf);
 		}
 		break;
 	case BT_PBAP_PULL_VCARDLISTING:
 		if (bt_pce && bt_pce->pull_vcardlisting) {
-			bt_pce->pull_vcardlisting(pbap_goep->_pbap, rsp_code, buf);
+			bt_pce->pull_vcardlisting(pbap_pce, rsp_code, buf);
 		}
 		break;
 	case BT_PBAP_PULL_VCARDENTRY:
 		if (bt_pce && bt_pce->pull_vcardentry) {
-			bt_pce->pull_vcardentry(pbap_goep->_pbap, rsp_code, buf);
+			bt_pce->pull_vcardentry(pbap_pce, rsp_code, buf);
 		}
 		break;
 	default:
 		break;
 	}
 
-	if (!pbap_goep->_goep._goep_v2 && rsp_code == BT_PBAP_RSP_CODE_CONTINUE) {
-		tx_buf = bt_goep_create_pdu(&(pbap_goep->_goep), &bt_pbap_pce_pool);
-		if (!tx_buf) {
-			LOG_WRN("Fail to allocate tx buffer");
-			atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
-			return;
-		}
-		switch (atomic_get(&pbap_goep->_state)) {
-		case BT_PBAP_PULL_PHONEBOOK:
-			err = bt_pbap_pce_pull_phonebook_create_cmd(pbap_goep->_pbap, tx_buf, NULL,
-								    false);
-			break;
-
-		case BT_PBAP_PULL_VCARDLISTING:
-			err = bt_pbap_pce_pull_vcardlisting_create_cmd(pbap_goep->_pbap, tx_buf,
-								       NULL, false);
-			break;
-
-		case BT_PBAP_PULL_VCARDENTRY:
-			err = bt_pbap_pce_pull_vcardentry_create_cmd(pbap_goep->_pbap, tx_buf, NULL,
-								     false);
-			break;
-		}
-
-		if (err) {
-			net_buf_unref(tx_buf);
-			atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
-			LOG_WRN("Fail create pull cmd  %d", err);
-			return;
-		}
-
-		err = bt_pbap_pce_send_cmd(pbap_goep->_pbap, tx_buf);
-		if (err) {
-			net_buf_unref(tx_buf);
-			atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
-			LOG_WRN("Fail to send command %d", err);
-		}
-		return;
-	}
-
 	if (rsp_code != BT_PBAP_RSP_CODE_CONTINUE) {
-		atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
 	}
 
 	return;
 }
 
-void goep_client_setpath(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
+static void pbap_pce_setpath(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
 {
-	LOG_INF("OBEX %p set path rsp_code %s", client, bt_obex_rsp_code_to_str(rsp_code));
 
-	struct bt_pbap_goep *pbap_goep = CONTAINER_OF(client, struct bt_pbap_goep, _client);
+	struct bt_pbap_pce *pbap_pce;
 
-	if (!pbap_goep) {
-		LOG_WRN("No available pbap_pce");
+	if (client == NULL) {
+		LOG_ERR("Invalid client parameter");
 		return;
 	}
 
+	pbap_pce = CONTAINER_OF(client, struct bt_pbap_pce, _client);
+
 	if (bt_pce && bt_pce->set_path) {
-		bt_pce->set_path(pbap_goep->_pbap, rsp_code);
+		bt_pce->set_path(pbap_pce, rsp_code);
 	}
-	atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
 }
 
-struct bt_obex_client_ops pbap_goep_client_ops = {
-	.connect = goep_client_connect,
-	.disconnect = goep_client_disconnect,
-	.get = goep_client_get,
-	.setpath = goep_client_setpath,
+struct bt_obex_client_ops pbap_pce_ops = {
+	.connect = pbap_pce_connect,
+	.disconnect = pbap_pce_disconnect,
+	.get = pbap_pce_get,
+	.setpath = pbap_pce_setpath,
 };
 
-int bt_pbap_pce_rfcomm_connect(struct bt_conn *conn, uint8_t channel, struct bt_pbap_pce *pbap_pce)
+static int bt_pbap_pce_connect(struct bt_conn *conn, uint8_t channel, uint16_t psm,
+			       struct bt_pbap_pce *pbap_pce)
 {
 	int err;
-	struct bt_pbap_goep *pbap_goep;
 
-	if (!conn) {
+	if (conn == NULL) {
 		LOG_WRN("Invalid connection");
 		return -ENOTCONN;
 	}
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	if (!bt_pce) {
+	if (bt_pce == NULL) {
 		LOG_WRN("No available bt_pce ");
 		return -EINVAL;
 	}
 
-	if (pbap_pce->pwd) {
-		if (strlen(pbap_pce->pwd) > PBAP_PWD_MAX_LENGTH) {
-			LOG_WRN("PWD length is to big");
-			return -EINVAL;
-		}
-	}
-
-	pbap_pce->acl = conn;
-
-	pbap_goep = bt_goep_alloc(conn, pbap_pce);
-	if (!pbap_goep) {
-		LOG_WRN("No available _goep");
+	if (pbap_pce->_pwd != NULL && strlen(pbap_pce->_pwd) > PBAP_PWD_MAX_LENGTH) {
+		LOG_ERR("Password length exceeds maximum");
 		return -EINVAL;
 	}
 
-	pbap_goep->_goep.transport_ops = &pbap_goep_transport_ops;
-	pbap_goep->_client.ops = &pbap_goep_client_ops;
-	pbap_goep->_client.obex = &pbap_goep->_goep.obex;
-	err = bt_goep_transport_rfcomm_connect(conn, &pbap_goep->_goep, channel);
-	if (err) {
-		LOG_WRN("Fail to connect to channel %d (err %d)", channel, err);
-		bt_pbap_goep_release(pbap_goep);
+	pbap_pce->_conn = conn;
+	pbap_pce->_goep.transport_ops = &pbap_goep_transport_ops;
+	pbap_pce->_client.ops = &pbap_pce_ops;
+	pbap_pce->_client.obex = &pbap_pce->_goep.obex;
+
+	if (channel != 0) {
+		err = bt_goep_transport_rfcomm_connect(conn, &pbap_pce->_goep, channel);
+		pbap_pce->_goep._goep_v2 = false;
 	} else {
-		LOG_INF("PBAP RFCOMM connection pending");
+		err = bt_goep_transport_l2cap_connect(conn, &pbap_pce->_goep, psm);
+		pbap_pce->_goep._goep_v2 = true;
 	}
-	atomic_set(&pbap_goep->_state, BT_PBAP_CONNECTING);
-	return err;
+
+	if (err != 0) {
+		LOG_ERR("Fail to connect (err %d)", err);
+                pbap_pce->_conn = NULL;
+		return err;
+	} else {
+		LOG_INF("PBAP connection pending");
+	}
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_CONNECTING);
+
+	return 0;
+}
+
+int bt_pbap_pce_rfcomm_connect(struct bt_conn *conn, uint8_t channel, struct bt_pbap_pce *pbap_pce)
+{
+	return bt_pbap_pce_connect(conn, channel, 0, pbap_pce);
 }
 
 int bt_pbap_pce_l2cap_connect(struct bt_conn *conn, uint16_t psm, struct bt_pbap_pce *pbap_pce)
 {
-	int err;
-	struct bt_pbap_goep *pbap_goep;
-
-	if (!conn) {
-		LOG_WRN("Invalid connection");
-		return -ENOTCONN;
-	}
-
-	if (!pbap_pce) {
-		LOG_WRN("No available pbap_pce");
-		return -EINVAL;
-	}
-
-	if (!bt_pce) {
-		LOG_WRN("No available bt_pce ");
-		return -EINVAL;
-	}
-
-	if (pbap_pce->pwd) {
-		if (strlen(pbap_pce->pwd) > PBAP_PWD_MAX_LENGTH) {
-			LOG_WRN("PWD length is to big");
-			return -EINVAL;
-		}
-	}
-
-	pbap_pce->acl = conn;
-
-	pbap_goep = bt_goep_alloc(conn, pbap_pce);
-	if (!pbap_goep) {
-		LOG_WRN("No available _goep");
-		return -EINVAL;
-	}
-
-	pbap_goep->_goep.transport_ops = &pbap_goep_transport_ops;
-	pbap_goep->_client.ops = &pbap_goep_client_ops;
-	pbap_goep->_client.obex = &pbap_goep->_goep.obex;
-
-	err = bt_goep_transport_l2cap_connect(conn, &pbap_goep->_goep, psm);
-	if (err) {
-		LOG_WRN("Fail to connect to psm %d (err %d)", psm, err);
-		bt_pbap_goep_release(pbap_goep);
-	} else {
-		LOG_INF("PBAP L2CAP connection pending");
-	}
-	atomic_set(&pbap_goep->_state, BT_PBAP_CONNECTING);
-	return err;
+	return bt_pbap_pce_connect(conn, 0, psm, pbap_pce);
 }
 
 int bt_pbap_pce_disconnect(struct bt_pbap_pce *pbap_pce, bool enforce)
 {
 	int err;
-	struct bt_pbap_goep *pbap_goep;
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	};
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
+
 	if (enforce) {
-		if (pbap_goep->_goep._goep_v2) {
-			err = bt_goep_transport_l2cap_disconnect(&(pbap_goep->_goep));
+		if (pbap_pce->_goep._goep_v2) {
+			err = bt_goep_transport_l2cap_disconnect(&pbap_pce->_goep);
 		} else {
-			err = bt_goep_transport_rfcomm_disconnect(&(pbap_goep->_goep));
+			err = bt_goep_transport_rfcomm_disconnect(&pbap_pce->_goep);
 		}
 		if (err) {
 			LOG_WRN("Fail to disconnect pbap conn (err %d)", err);
 		}
 	} else {
-		err = bt_obex_disconnect(&pbap_goep->_client, NULL);
+		err = bt_obex_disconnect(&pbap_pce->_client, NULL);
 		if (err) {
 			LOG_WRN("Fail to send disconn req %d", err);
 		}
 	}
 
 	if (!err) {
-		atomic_set(&pbap_goep->_state, BT_PBAP_DISCONNECTING);
+		atomic_set(&pbap_pce->_state, BT_PBAP_DISCONNECTING);
 	}
 	return err;
 }
 
-int bt_pbap_pce_pull_phonebook_create_cmd(struct bt_pbap_pce *pbap_pce, struct net_buf *buf,
-					  char *name, bool wait)
+int bt_pbap_pce_pull_phonebook(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char *name,
+			       bool wait)
 {
 	int err;
 	uint16_t length;
 	uint8_t unicode_trans[50] = {0};
-	struct bt_pbap_goep *pbap_goep;
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	err = bt_obex_add_header_conn_id(buf, pbap_goep->conn_id);
-	if (err) {
+	if (buf == NULL) {
+		LOG_WRN("No available buffer");
+		return -EINVAL;
+	}
+
+	if (name == NULL || strlen(name) == 0) {
+		LOG_ERR("Invalid name parameter");
+		return -EINVAL;
+	}
+
+	/* Validate name format */
+	if (!endwith(name, PBAP_PCE_NAME_SUFFIX)) {
+		LOG_ERR("Invalid phonebook name format (must end with .vcf): %s", name);
+		return -EINVAL;
+	}
+
+	if (atomic_get(&pbap_pce->_state) != BT_PBAP_IDEL) {
+		LOG_WRN("Operation inprogress");
+		return -EINPROGRESS;
+	}
+
+	err = bt_obex_add_header_conn_id(buf, pbap_pce->_conn_id);
+	if (err != 0) {
 		LOG_WRN("Fail to add header connectiond id %d", err);
 		return err;
 	}
 
-	if (pbap_pce->goep->_goep_v2) {
-		err = bt_obex_add_header_srm(buf, 0x01);
-		if (err) {
+	pbap_pce->_srmp = false;
+	if (pbap_pce->_goep._goep_v2) {
+		err = bt_pbap_add_header_srm(buf);
+		if (err != 0) {
 			LOG_WRN("Fail to add header srm id %d", err);
 			return err;
 		} else if (wait) {
-			err = bt_obex_add_header_srm_param(buf, 0x01);
-			if (err) {
+			err = bt_pbap_add_header_srm_param(buf);
+			if (err != 0) {
 				LOG_WRN("Fail to add header srm param id %d", err);
 				return err;
 			}
+			pbap_pce->_srmp = true;
 		}
 	}
 
-	if (atomic_get(&pbap_goep->_state) == BT_PBAP_IDEL) {
-		err = bt_obex_add_header_type(buf, (uint16_t)strlen(phonebook_type),
-					      phonebook_type);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
-
-		memset(unicode_trans, 0, sizeof(unicode_trans));
-		if (!name) {
-			LOG_WRN("No available name");
-			return -EINVAL;
-		}
-		length = pbap_ascii_to_unicode((uint8_t *)unicode_trans, (uint8_t *)name);
-		err = bt_obex_add_header_name(buf, length, unicode_trans);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
+	err = bt_obex_add_header_type(buf, (uint16_t)strlen(phonebook_type), phonebook_type);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
 	}
 
-	atomic_set(&pbap_goep->_state, BT_PBAP_PULL_PHONEBOOK);
+	length = pbap_ascii_to_unicode((uint8_t *)name, (uint8_t *)unicode_trans,
+				       sizeof(unicode_trans), true);
+	err = bt_obex_add_header_name(buf, length, unicode_trans);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
+	}
 
-	return err;
+	err = bt_obex_get(&pbap_pce->_client, true, buf);
+	if (err != 0) {
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
+		LOG_WRN("Fail to send get req %d", err);
+                return err;
+	}
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_PULL_PHONEBOOK);
+
+	return 0;
 }
 
 int bt_pbap_pce_set_path(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char *name)
@@ -725,22 +704,15 @@ int bt_pbap_pce_set_path(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char
 	int err;
 	uint16_t length;
 	uint8_t Flags;
-	char *path_name = NULL;
-	struct bt_pbap_goep *pbap_goep;
+	char *path_name;
 	uint8_t unicode_trans[50] = {0};
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
-	if (!pbap_goep) {
-		LOG_WRN("No available pbap_goep");
-		return -EINVAL;
-	}
-
-	if (atomic_get(&pbap_goep->_state) != BT_PBAP_IDEL) {
+	if (atomic_get(&pbap_pce->_state) != BT_PBAP_IDEL) {
 		LOG_WRN("Operation inprogress");
 		return -EINPROGRESS;
 	}
@@ -762,148 +734,215 @@ int bt_pbap_pce_set_path(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char
 		}
 	}
 
-	err = bt_obex_add_header_conn_id(buf, pbap_goep->conn_id);
+	err = bt_obex_add_header_conn_id(buf, pbap_pce->_conn_id);
 	if (err) {
 		LOG_WRN("Fail to add header connectiond id %d", err);
 		return err;
 	}
 
-	if (path_name) {
-		length = pbap_ascii_to_unicode((uint8_t *)unicode_trans, (uint8_t *)path_name);
+	if (path_name != NULL) {
+		length = pbap_ascii_to_unicode((uint8_t *)path_name, (uint8_t *)unicode_trans,
+					       sizeof(unicode_trans), true);
 		err = bt_obex_add_header_name(buf, length, unicode_trans);
-		if (err) {
+		if (err != 0) {
 			LOG_WRN("Fail to add header name %d", err);
 			return err;
 		}
 	}
 
-	err = bt_obex_setpath(&pbap_goep->_client, Flags, buf);
+	err = bt_obex_setpath(&pbap_pce->_client, Flags, buf);
 	if (err) {
 		LOG_WRN("Fail to add header srm id %d", err);
 		return err;
 	}
 
-	atomic_set(&pbap_goep->_state, B_PBAP_SET_PATH);
+	atomic_set(&pbap_pce->_state, B_PBAP_SET_PATH);
 
 	return err;
 }
 
-int bt_pbap_pce_pull_vcardlisting_create_cmd(struct bt_pbap_pce *pbap_pce, struct net_buf *buf,
-					     char *name, bool wait)
+int bt_pbap_pce_pull_vcardlisting(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char *name,
+				  bool wait)
 {
 	int err;
-	uint16_t length;
+	uint16_t length = 0;
 	uint8_t unicode_trans[50] = {0};
-	struct bt_pbap_goep *pbap_goep;
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	err = bt_obex_add_header_conn_id(buf, pbap_goep->conn_id);
-	if (err) {
+	if (buf == NULL) {
+		LOG_WRN("No available buffer");
+		return -EINVAL;
+	}
+
+	err = bt_obex_add_header_conn_id(buf, pbap_pce->_conn_id);
+	if (err != 0) {
 		LOG_WRN("Fail to add header connectiond id %d", err);
 		return err;
 	}
 
-	if (pbap_pce->goep->_goep_v2) {
-		err = bt_obex_add_header_srm(buf, 0x01);
+	pbap_pce->_srmp = false;
+	if (pbap_pce->_goep._goep_v2) {
+		err = bt_pbap_add_header_srm(buf);
 		if (err) {
 			LOG_WRN("Fail to add header srm id %d", err);
 			return err;
 		} else if (wait) {
-			err = bt_obex_add_header_srm_param(buf, 0x01);
+			err = bt_pbap_add_header_srm_param(buf);
 			if (err) {
 				LOG_WRN("Fail to add header srm param id %d", err);
 				return err;
 			}
+			pbap_pce->_srmp = true;
 		}
 	}
 
-	if (atomic_get(&pbap_goep->_state) == BT_PBAP_IDEL) {
-		err = bt_obex_add_header_type(buf, (uint16_t)strlen(vcardlisting_type),
-					      vcardlisting_type);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
-
-		memset(unicode_trans, 0, sizeof(unicode_trans));
-		length = 0;
-		if (name) {
-			length = pbap_ascii_to_unicode((uint8_t *)unicode_trans, (uint8_t *)name);
-		}
-
-		err = bt_obex_add_header_name(buf, length, unicode_trans);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
+	err = bt_obex_add_header_type(buf, (uint16_t)strlen(vcardlisting_type), vcardlisting_type);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
 	}
 
-	atomic_set(&pbap_goep->_state, BT_PBAP_PULL_VCARDLISTING);
+	if (name != NULL) {
+		length = pbap_ascii_to_unicode((uint8_t *)name, (uint8_t *)unicode_trans,
+					       sizeof(unicode_trans), true);
+	}
 
-	return err;
+	err = bt_obex_add_header_name(buf, length, unicode_trans);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
+	}
+
+	err = bt_obex_get(&pbap_pce->_client, true, buf);
+	if (err != 0) {
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
+		LOG_WRN("Fail to send get req %d", err);
+                return err;
+	}
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_PULL_VCARDLISTING);
+
+	return 0;
 }
 
-int bt_pbap_pce_pull_vcardentry_create_cmd(struct bt_pbap_pce *pbap_pce, struct net_buf *buf,
-					   char *name, bool wait)
+int bt_pbap_pce_pull_vcardentry(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, char *name,
+				bool wait)
 {
 	int err;
 	uint16_t length;
 	uint8_t unicode_trans[50] = {0};
-	struct bt_pbap_goep *pbap_goep;
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	err = bt_obex_add_header_conn_id(buf, pbap_goep->conn_id);
-	if (err) {
+
+	if (name == NULL) {
+		LOG_WRN("No available name");
+		return -EINVAL;
+	}
+
+	/* Validate name format */
+	if (!endwith(name, PBAP_PCE_NAME_SUFFIX) || !startwith(name, PBAP_PCE_VCARDENTRY_NAME_PREFIX)) {
+		LOG_ERR("Invalid phonebook name format (must end with .vcf): %s", name);
+		return -EINVAL;
+	}
+
+	if (atomic_get(&pbap_pce->_state) != BT_PBAP_IDEL) {
+		LOG_WRN("Operation inprogress");
+		return -EINPROGRESS;
+	}
+
+	err = bt_obex_add_header_conn_id(buf, pbap_pce->_conn_id);
+	if (err != 0) {
 		LOG_WRN("Fail to add header connectiond id %d", err);
 		return err;
 	}
 
-	if (pbap_pce->goep->_goep_v2) {
-		err = bt_obex_add_header_srm(buf, 0x01);
-		if (err) {
+	pbap_pce->_srmp = false;
+	if (pbap_pce->_goep._goep_v2) {
+		err = bt_pbap_add_header_srm(buf);
+		if (err != 0) {
 			LOG_WRN("Fail to add header srm id %d", err);
 			return err;
 		} else if (wait) {
-			err = bt_obex_add_header_srm_param(buf, 0x01);
+			err = bt_pbap_add_header_srm_param(buf);
 			if (err) {
 				LOG_WRN("Fail to add header srm param id %d", err);
 				return err;
 			}
+			pbap_pce->_srmp = true;
 		}
 	}
 
-	if (atomic_get(&pbap_goep->_state) == BT_PBAP_IDEL) {
-		err = bt_obex_add_header_type(buf, (uint16_t)strlen(vcardentry_type),
-					      vcardentry_type);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
-
-		memset(unicode_trans, 0, sizeof(unicode_trans));
-		if (!name) {
-			LOG_WRN("No available name");
-			return -EINVAL;
-		}
-		length = pbap_ascii_to_unicode((uint8_t *)unicode_trans, (uint8_t *)name);
-		err = bt_obex_add_header_name(buf, length, unicode_trans);
-		if (err) {
-			LOG_WRN("Fail to add header name %d", err);
-			return err;
-		}
+	err = bt_obex_add_header_type(buf, (uint16_t)strlen(vcardentry_type), vcardentry_type);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
 	}
 
-	atomic_set(&pbap_goep->_state, BT_PBAP_PULL_VCARDENTRY);
+	length = pbap_ascii_to_unicode((uint8_t *)name, (uint8_t *)unicode_trans,
+				       sizeof(unicode_trans), true);
+	err = bt_obex_add_header_name(buf, length, unicode_trans);
+	if (err != 0) {
+		LOG_WRN("Fail to add header name %d", err);
+		return err;
+	}
+
+	err = bt_obex_get(&pbap_pce->_client, true, buf);
+	if (err != 0) {
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
+		LOG_WRN("Fail to send get req %d", err);
+                return err;
+	}
+
+	atomic_set(&pbap_pce->_state, BT_PBAP_PULL_VCARDENTRY);
+
+	return 0;
+}
+
+int bt_pbap_pce_pull_continue(struct bt_pbap_pce *pbap_pce, struct net_buf *buf, bool wait)
+{
+	int err;
+	atomic_t state;
+
+	if (pbap_pce == NULL) {
+		LOG_WRN("No available pbap_pce");
+		return -EINVAL;
+	}
+
+	pbap_pce->_srmp = false;
+	if (pbap_pce->_goep._goep_v2 && wait) {
+		err = bt_pbap_add_header_srm(buf);
+		if (err) {
+			LOG_WRN("Fail to add header srm id %d", err);
+			return err;
+		}
+
+		err = bt_pbap_add_header_srm_param(buf);
+		if (err) {
+			LOG_WRN("Fail to add header srm param id %d", err);
+			return err;
+		}
+		pbap_pce->_srmp = true;
+	}
+
+	state = atomic_get(&pbap_pce->_state);
+	if (state != BT_PBAP_PULL_PHONEBOOK && state != BT_PBAP_PULL_VCARDLISTING &&
+	    state != BT_PBAP_PULL_VCARDENTRY) {
+		LOG_WRN("No pull operation progress");
+		return -EINVAL;
+	}
+
+	err = bt_obex_get(&pbap_pce->_client, true, buf);
+	if (err) {
+		LOG_WRN("Fail to send get continue req %d", err);
+	}
 
 	return err;
 }
@@ -912,74 +951,36 @@ int bt_pbap_pce_abort(struct bt_pbap_pce *pbap_pce)
 {
 	int err;
 	struct net_buf *buf;
-	struct bt_pbap_goep *pbap_goep;
 
-	if (!pbap_pce) {
+	if (pbap_pce == NULL) {
 		LOG_WRN("No available pbap_pce");
 		return -EINVAL;
 	}
 
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
 
-	buf = bt_goep_create_pdu(pbap_pce->goep, &bt_pbap_pce_pool);
+	buf = bt_pbap_pce_create_pdu(pbap_pce, &bt_pbap_pce_pool);
 	if (!buf) {
 		LOG_WRN("Fail to allocate GOEP buffer");
 		return -ENOMEM;
 	}
 
-	err = bt_obex_abort(&pbap_goep->_client, buf);
+	err = bt_obex_abort(&pbap_pce->_client, buf);
 	if (err) {
-		atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
+		atomic_set(&pbap_pce->_state, BT_PBAP_IDEL);
 		LOG_WRN("Fail to send abort req %d", err);
 	}
 	net_buf_unref(buf);
-	atomic_set(&pbap_goep->_state, BT_PBAP_ABORT);
+	atomic_set(&pbap_pce->_state, BT_PBAP_ABORT);
 	return err;
 }
 
-int bt_pbap_pce_send_cmd(struct bt_pbap_pce *pbap_pce, struct net_buf *buf)
+static int bt_pbap_generate_auth_challenge(const uint8_t *pwd, uint8_t *auth_chal_req)
 {
-	int err;
-	struct bt_pbap_goep *pbap_goep;
-	atomic_val_t state;
-
-	if (!pbap_pce) {
-		LOG_WRN("No available pbap_pce");
-		return -EINVAL;
-	}
-
-	if (!buf) {
-		LOG_WRN("No available buffer");
-		return -ENOMEM;
-	}
-	pbap_goep = CONTAINER_OF(pbap_pce->goep, struct bt_pbap_goep, _goep);
-	state = atomic_get(&pbap_goep->_state);
-	if (state != BT_PBAP_PULL_PHONEBOOK && state != BT_PBAP_PULL_VCARDLISTING &&
-	    state != BT_PBAP_PULL_VCARDENTRY) {
-		LOG_WRN("No create cmd");
-		return -EINVAL;
-	}
-
-	err = bt_obex_get(&pbap_goep->_client, true, buf);
-	if (err) {
-		atomic_set(&pbap_goep->_state, BT_PBAP_IDEL);
-		LOG_WRN("Fail to send get req %d", err);
-	}
-	return err;
-}
-
-struct net_buf *bt_pbap_create_pdu(struct bt_pbap_pce *pbap_pce, struct net_buf_pool *pool)
-{
-	return bt_goep_create_pdu(pbap_pce->goep, pool);
-}
-
-static int bt_pbap_generate_auth_challenage(const uint8_t *pwd, uint8_t *auth_chal_req)
-{
-	int64_t nowtime = k_uptime_get();
-	uint8_t h[PBAP_PWD_MAX_LENGTH + 1U + sizeof(nowtime)] = {0};
+	int64_t timestamp = k_uptime_get();
+	uint8_t hash_input[PBAP_PWD_MAX_LENGTH + 1U + sizeof(timestamp)] = {0};
 	size_t len;
 	uint16_t pwd_len;
-        int32_t status = PSA_SUCCESS;
+	int32_t status = PSA_SUCCESS;
 
 	if (pwd == NULL) {
 		LOG_WRN("no available password");
@@ -991,25 +992,38 @@ static int bt_pbap_generate_auth_challenage(const uint8_t *pwd, uint8_t *auth_ch
 		return -EINVAL;
 	}
 	pwd_len = strlen(pwd);
-	memcpy(h, &nowtime, sizeof(nowtime));
-	h[sizeof(nowtime)] = ':';
-	memcpy(h + sizeof(nowtime) + 1U, pwd, strlen(pwd));
-	status = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)h, sizeof(nowtime) + 1U + pwd_len,
-			 auth_chal_req, 16U, &len);
-        if (status != PSA_SUCCESS) {
-            LOG_WRN("Genarate auth challenage failed %d", status);
-            return status;
-        }
+	if (pwd_len == 0 || pwd_len > PBAP_PWD_MAX_LENGTH) {
+		LOG_ERR("Password is invalid");
+		return -EINVAL;
+	}
+
+	memcpy(hash_input, &timestamp, sizeof(timestamp));
+	hash_input[sizeof(timestamp)] = ':';
+	memcpy(hash_input + sizeof(timestamp) + 1U, pwd, strlen(pwd));
+	status = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)hash_input,
+				  sizeof(timestamp) + 1U + pwd_len, auth_chal_req, 16U, &len);
+	if (status != PSA_SUCCESS) {
+		LOG_WRN("Genarate auth challenage failed %d", status);
+		return status;
+	}
 	return 0;
+}
+
+struct net_buf *bt_pbap_pce_create_pdu(struct bt_pbap_pce *pbap_pce, struct net_buf_pool *pool)
+{
+	if (pool == NULL) {
+		return bt_goep_create_pdu(&pbap_pce->_goep, &bt_pbap_pce_pool);
+	}
+	return bt_goep_create_pdu(&(pbap_pce->_goep), pool);
 }
 
 static int bt_pbap_generate_auth_response(const uint8_t *pwd, uint8_t *auth_chal_req,
 					  uint8_t *auth_chal_rsp)
 {
-	uint8_t h[PBAP_PWD_MAX_LENGTH + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U] = {0};
+	uint8_t hash_input[PBAP_PWD_MAX_LENGTH + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U] = {0};
 	size_t len;
 	uint16_t pwd_len;
-        int32_t status = PSA_SUCCESS;
+	int32_t status = PSA_SUCCESS;
 
 	if (pwd == NULL) {
 		LOG_WRN("no available password");
@@ -1027,29 +1041,35 @@ static int bt_pbap_generate_auth_response(const uint8_t *pwd, uint8_t *auth_chal
 	}
 
 	pwd_len = strlen(pwd);
-	memcpy(h, auth_chal_req, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
-	h[BT_OBEX_CHALLENGE_TAG_NONCE_LEN] = ':';
-	memcpy(h + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U, pwd, pwd_len);
+	if (pwd_len == 0 || pwd_len > PBAP_PWD_MAX_LENGTH) {
+		LOG_ERR("Password is invalid");
+		return -EINVAL;
+	}
 
-	status = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)h,
-			 BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U + pwd_len, auth_chal_rsp,
-			 BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN, &len);
-        if (status != PSA_SUCCESS) {
-            LOG_WRN("Generate auth response failed %d", status);
-            return status;
-        }
+	memcpy(hash_input, auth_chal_req, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
+	hash_input[BT_OBEX_CHALLENGE_TAG_NONCE_LEN] = ':';
+	memcpy(hash_input + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U, pwd, pwd_len);
+
+	status = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)hash_input,
+				  BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U + pwd_len, auth_chal_rsp,
+				  BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN, &len);
+	if (status != PSA_SUCCESS) {
+		LOG_WRN("Generate auth response failed %d", status);
+		return status;
+	}
 	return 0;
 }
 
 static int bt_pbap_verify_auth(uint8_t *auth_chal_req, uint8_t *auth_chal_rsp, const uint8_t *pwd)
 {
 	uint8_t result[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN] = {0};
-        int32_t status = PSA_SUCCESS;
+	int32_t status = PSA_SUCCESS;
 
 	status = bt_pbap_generate_auth_response(pwd, auth_chal_req, (uint8_t *)&result);
-        if (status == PSA_SUCCESS) {
-                return memcmp(result, (const uint8_t *)auth_chal_rsp, BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
-        }
+	if (status == PSA_SUCCESS) {
+		return memcmp(result, (const uint8_t *)auth_chal_rsp,
+			      BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
+	}
 
-        return status;
+	return status;
 }

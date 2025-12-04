@@ -91,7 +91,7 @@ typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
 struct at_client {
 	char *buf;
 	uint8_t pos;
-	uint8_t buf_max_len;
+	uint16_t buf_max_len;
 	uint8_t state;
 	uint8_t cmd_state;
 	at_resp_cb_t resp;

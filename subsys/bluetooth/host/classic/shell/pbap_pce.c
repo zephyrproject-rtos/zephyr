@@ -118,34 +118,31 @@ void pbap_pull_phonebook(struct bt_pbap_pce *pbap, uint8_t rsp_code, struct net_
 	int err;
 	struct pbap_hdr body;
 
+	body.length = 0;
 	bt_shell_print("pbap_pull_phonebook");
 	if (rsp_code == BT_PBAP_RSP_CODE_CONTINUE) {
-		err = bt_pbap_pce_get_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
+		if (!pbap->_goep._goep_v2 || (pbap->_goep._goep_v2 && pbap->_srmp)) {
+			pbap_pce_app->tx_buf =
+				bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
+			if (pbap_pce_app->tx_buf == NULL) {
+				bt_shell_print("Fail to allocate tx buf");
+				return;
+			}
 
-		// pbap_pce_app->tx_buf  = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-		// if (!pbap_pce_app->tx_buf){
-		// 	bt_shell_print("Fail to allocate tx buf");
-		// 	return;
-		// }
-
-		// err = bt_pbap_pce_pull_phonebook_create_cmd(&pbap_pce_app->pbap_pce,
-		// pbap_pce_app->tx_buf, NULL, false); if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail create pull phonebook cmd  %d", err);
-		// 	return;
-		// }
-
-		// err = bt_pbap_pce_send_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf);
-		// if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail to send command %d",err);
-		// }
-
+			err = bt_pbap_pce_pull_continue(&pbap_pce_app->pbap_pce,
+							pbap_pce_app->tx_buf, pbap->_srmp);
+			if (err) {
+				net_buf_unref(pbap_pce_app->tx_buf);
+				bt_shell_print("Fail create pull continue cmd  %d", err);
+				return;
+			}
+		}
 	} else if (rsp_code == BT_PBAP_RSP_CODE_SUCCESS) {
-		err = bt_pbap_pce_get_end_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_end_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
@@ -153,7 +150,7 @@ void pbap_pull_phonebook(struct bt_pbap_pce *pbap, uint8_t rsp_code, struct net_
 	if (body.length && body.value) {
 
 		bt_shell_print("\n=========body=========\n");
-		bt_shell_print("%s\n", body.value);
+		bt_shell_print("%.*s\r\n", body.length, body.value);
 		bt_shell_print("=========body=========\n");
 	}
 	return;
@@ -163,44 +160,44 @@ void pbap_pull_vcardlisting(struct bt_pbap_pce *pbap, uint8_t rsp_code, struct n
 {
 	int err;
 	struct pbap_hdr body;
-	bt_shell_print("pbap_pull_vcardlisting callback");
 
+	body.length = 0;
+	bt_shell_print("pbap_pull_vcardlisting");
 	if (rsp_code == BT_PBAP_RSP_CODE_CONTINUE) {
-		err = bt_pbap_pce_get_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
+		if (!pbap->_goep._goep_v2 || (pbap->_goep._goep_v2 && pbap->_srmp)) {
+			pbap_pce_app->tx_buf =
+				bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
+			if (pbap_pce_app->tx_buf == NULL) {
+				bt_shell_print("Fail to allocate tx buf");
+				return;
+			}
 
-		// pbap_pce_app->tx_buf  = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-		// if (!pbap_pce_app->tx_buf){
-		// 	bt_shell_print("Fail to allocate tx buf");
-		// 	return;
-		// }
-		// err = bt_pbap_pce_pull_vcardlisting_create_cmd(&pbap_pce_app->pbap_pce,
-		// pbap_pce_app->tx_buf, NULL, false); if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail create pull vcardlisting cmd  %d", err);
-		// 	return;
-		// }
-
-		// err = bt_pbap_pce_send_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf);
-		// if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail to send command %d",err);
-		// }
-
+			err = bt_pbap_pce_pull_continue(&pbap_pce_app->pbap_pce,
+							pbap_pce_app->tx_buf, pbap->_srmp);
+			if (err) {
+				net_buf_unref(pbap_pce_app->tx_buf);
+				bt_shell_print("Fail create pull continue cmd  %d", err);
+				return;
+			}
+		}
 	} else if (rsp_code == BT_PBAP_RSP_CODE_SUCCESS) {
-		err = bt_pbap_pce_get_end_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_end_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
 	}
-	// if (body.length && body.value){
 
-	// 	bt_shell_print("\n=========body=========\n");
-	// 	// bt_shell_print("%s\n", body.value);
-	// 	bt_shell_print("=========body=========\n");
-	// }
+	if (body.length && body.value) {
+
+		bt_shell_print("\n=========body=========\n");
+		bt_shell_print("%.*s\r\n", body.length, body.value);
+		bt_shell_print("=========body=========\n");
+	}
+
 	return;
 }
 
@@ -208,44 +205,44 @@ void pbap_pull_vcardentry(struct bt_pbap_pce *pbap, uint8_t rsp_code, struct net
 {
 	int err;
 	struct pbap_hdr body;
-	bt_shell_print("pbap_pull_vcardentry callback");
+	bt_shell_print("pbap_pull_vcardentry");
+
 	if (rsp_code == BT_PBAP_RSP_CODE_CONTINUE) {
-		err = bt_pbap_pce_get_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
 
-		// pbap_pce_app->tx_buf  = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-		// if (!pbap_pce_app->tx_buf){
-		// 	bt_shell_print("Fail to allocate tx buf");
-		// 	return;
-		// }
+		if (!pbap->_goep._goep_v2 || (pbap->_goep._goep_v2 && pbap->_srmp)) {
+			pbap_pce_app->tx_buf =
+				bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
+			if (pbap_pce_app->tx_buf == NULL) {
+				bt_shell_print("Fail to allocate tx buf");
+				return;
+			}
 
-		// err = bt_pbap_pce_pull_vcardentry_create_cmd(&pbap_pce_app->pbap_pce,
-		// pbap_pce_app->tx_buf, NULL, false); if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail create pull vcardentry cmd  %d", err);
-		// 	return;
-		// }
-
-		// err = bt_pbap_pce_send_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf);
-		// if (err){
-		// 	net_buf_unref(pbap_pce_app->tx_buf);
-		// 	bt_shell_print("Fail to send command %d",err);
-		// }
+			err = bt_pbap_pce_pull_continue(&pbap_pce_app->pbap_pce,
+							pbap_pce_app->tx_buf, pbap->_srmp);
+			if (err) {
+				net_buf_unref(pbap_pce_app->tx_buf);
+				bt_shell_print("Fail create pull continue cmd  %d", err);
+				return;
+			}
+		}
 
 	} else if (rsp_code == BT_PBAP_RSP_CODE_SUCCESS) {
-		err = bt_pbap_pce_get_end_body(buf, &body.length, &body.value);
+		err = bt_pbap_get_end_body(buf, &body.length, &body.value);
 		if (err) {
 			bt_shell_print("Fail to get body or no body %d", err);
 		}
 	}
-	// if (body.length && body.value){
 
-	// 	bt_shell_print("\n=========body=========\n");
-	// 	// bt_shell_print("%s\n", body.value);
-	// 	bt_shell_print("=========body=========\n");
-	// }
+	if (body.length && body.value) {
+
+		bt_shell_print("\n=========body=========\n");
+		bt_shell_print("%.*s\r\n", body.length, body.value);
+		bt_shell_print("=========body=========\n");
+	}
 }
 
 void pbap_set_path(struct bt_pbap_pce *pbap, uint8_t rsp_code)
@@ -257,11 +254,11 @@ void pbap_set_path(struct bt_pbap_pce *pbap, uint8_t rsp_code)
 	}
 }
 
-void pbap_get_auth_info(struct bt_pbap_pce *pbap)
-{
-	memcpy(pwd, "0000", 4U);
-	pbap->pwd = pwd;
-}
+// void pbap_get_auth_info(struct bt_pbap_pce *pbap)
+// {
+// 	memcpy(pwd, "0000", 4U);
+// 	pbap->_pwd = pwd;
+// }
 
 struct bt_pbap_pce_cb cb = {
 	.connect = pbap_connected,
@@ -270,7 +267,7 @@ struct bt_pbap_pce_cb cb = {
 	.pull_vcardlisting = pbap_pull_vcardlisting,
 	.pull_vcardentry = pbap_pull_vcardentry,
 	.set_path = pbap_set_path,
-	.get_auth_info = pbap_get_auth_info,
+	// .get_auth_info = pbap_get_auth_info,
 };
 
 static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
@@ -281,36 +278,40 @@ static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_connect_rfcomm(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t channel = (uint8_t)strtoul(argv[1], NULL, 10);
+	uint8_t channel = (uint8_t)strtoul(argv[1], NULL, 16);
+	uint16_t mpl = (uint16_t)strtoul(argv[2], NULL, 16);
+
 	pbap_pce_app = g_pbap_pce_allocate(default_conn);
 	if (!pbap_pce_app) {
 		bt_shell_print("No available pbap");
 		return -EINVAL;
 	}
-	pbap_pce_app->pbap_pce.mpl = 600;
-	pbap_pce_app->pbap_pce.peer_feature = 0x3FF;
-	pbap_pce_app->pbap_pce.pwd = NULL;
-	if (argc > 2) {
-		memcpy(pwd, argv[2], strlen(argv[2]));
-		pbap_pce_app->pbap_pce.pwd = pwd;
+	pbap_pce_app->pbap_pce._mopl = mpl;
+	pbap_pce_app->pbap_pce._peer_feature = 0x3FF;
+	pbap_pce_app->pbap_pce._pwd = NULL;
+	if (argc > 3) {
+		memcpy(pwd, argv[2], strlen(argv[3]));
+		pbap_pce_app->pbap_pce._pwd = pwd;
 	}
 	return bt_pbap_pce_rfcomm_connect(default_conn, channel, &pbap_pce_app->pbap_pce);
 }
 
 static int cmd_connect_l2cap(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint16_t psm = (uint16_t)strtoul(argv[1], NULL, 10);
+	uint16_t psm = (uint16_t)strtoul(argv[1], NULL, 16);
+	uint16_t mpl = (uint16_t)strtoul(argv[2], NULL, 16);
+
 	pbap_pce_app = g_pbap_pce_allocate(default_conn);
 	if (!pbap_pce_app) {
 		bt_shell_print("No available pbap");
 		return -EINVAL;
 	}
-	pbap_pce_app->pbap_pce.mpl = 600;
-	pbap_pce_app->pbap_pce.peer_feature = 0x3FF;
-	pbap_pce_app->pbap_pce.pwd = NULL;
-	if (argc > 2) {
-		memcpy(pwd, argv[2], strlen(argv[2]));
-		pbap_pce_app->pbap_pce.pwd = pwd;
+	pbap_pce_app->pbap_pce._mopl = mpl;
+	pbap_pce_app->pbap_pce._peer_feature = 0x3FF;
+	pbap_pce_app->pbap_pce._pwd = NULL;
+	if (argc > 3) {
+		memcpy(pwd, argv[2], strlen(argv[3]));
+		pbap_pce_app->pbap_pce._pwd = pwd;
 	}
 	return bt_pbap_pce_l2cap_connect(default_conn, psm, &pbap_pce_app->pbap_pce);
 }
@@ -325,16 +326,19 @@ static int cmd_pull_pb(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	char *name = argv[1];
+	bool srmp = false;
 
-	pbap_pce_app->tx_buf = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-	appl_param_count = 0U;
-	if (!pbap_pce_app->tx_buf) {
+	if (argc > 2) {
+		srmp = (uint8_t)strtoul(argv[2], NULL, 16) == 0 ? false : true;
+	}
+
+	pbap_pce_app->tx_buf = bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
+	if (pbap_pce_app->tx_buf == NULL) {
 		bt_shell_print("Fail to allocate tx buf");
 		return -EINVAL;
 	}
 
-	err = bt_pbap_pce_pull_phonebook_create_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf,
-						    name, false);
+	err = bt_pbap_pce_pull_phonebook(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf, name, srmp);
 	if (err) {
 		bt_shell_print("Fail to create pull phonebook cmd %d", err);
 		net_buf_unref(pbap_pce_app->tx_buf);
@@ -346,16 +350,20 @@ static int cmd_pull_vcardlisting(const struct shell *sh, size_t argc, char *argv
 {
 	int err;
 	char *name = argv[1];
+	bool srmp = false;
 
-	pbap_pce_app->tx_buf = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-	appl_param_count = 0U;
+	if (argc > 2) {
+		srmp = (uint8_t)strtoul(argv[2], NULL, 16) == 0 ? false : true;
+	}
+
+	pbap_pce_app->tx_buf = bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
 	if (!pbap_pce_app->tx_buf) {
 		bt_shell_print("Fail to allocate tx buf");
 		return -EINVAL;
 	}
 
-	err = bt_pbap_pce_pull_vcardlisting_create_cmd(&pbap_pce_app->pbap_pce,
-						       pbap_pce_app->tx_buf, name, false);
+	err = bt_pbap_pce_pull_vcardlisting(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf, name,
+					    srmp);
 	if (err) {
 		bt_shell_print("Fail to create pull vcardlisting cmd %d", err);
 		net_buf_unref(pbap_pce_app->tx_buf);
@@ -367,16 +375,20 @@ static int cmd_pull_vcardentry(const struct shell *sh, size_t argc, char *argv[]
 {
 	int err;
 	char *name = argv[1];
+	bool srmp = false;
 
-	pbap_pce_app->tx_buf = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
-	appl_param_count = 0U;
+	if (argc > 2) {
+		srmp = (uint8_t)strtoul(argv[2], NULL, 16) == 0 ? false : true;
+	}
+
+	pbap_pce_app->tx_buf = bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
 	if (!pbap_pce_app->tx_buf) {
 		bt_shell_print("Fail to allocate tx buf");
 		return -EINVAL;
 	}
 
-	err = bt_pbap_pce_pull_vcardentry_create_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf,
-						     name, false);
+	err = bt_pbap_pce_pull_vcardentry(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf, name,
+					  srmp);
 	if (err) {
 		bt_shell_print("Fail to create pull vcardlistentry cmd %d", err);
 		net_buf_unref(pbap_pce_app->tx_buf);
@@ -389,7 +401,7 @@ static int cmd_set_path(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	char *name = argv[1];
 
-	pbap_pce_app->tx_buf = bt_pbap_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
+	pbap_pce_app->tx_buf = bt_pbap_pce_create_pdu(&pbap_pce_app->pbap_pce, &tx_pool);
 	if (!pbap_pce_app->tx_buf) {
 		bt_shell_print("Fail to allocate tx buf");
 		return -EINVAL;
@@ -399,29 +411,6 @@ static int cmd_set_path(const struct shell *sh, size_t argc, char *argv[])
 	if (err) {
 		bt_shell_print("Fail to send set path cmd %d", err);
 		net_buf_unref(pbap_pce_app->tx_buf);
-	}
-	return err;
-}
-
-static int cmd_cmd_send(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (appl_param_count > 0U) {
-		err = bt_pbap_pce_add_app_param(pbap_pce_app->tx_buf, (size_t)appl_param_count,
-						gpbap_appl_param);
-		appl_param_count = 0U;
-		if (err) {
-			shell_error(sh, "Fail to add header app_param");
-			net_buf_unref(pbap_pce_app->tx_buf);
-			return err;
-		}
-	}
-
-	err = bt_pbap_pce_send_cmd(&pbap_pce_app->pbap_pce, pbap_pce_app->tx_buf);
-	if (err) {
-		net_buf_unref(pbap_pce_app->tx_buf);
-		bt_shell_print("Fail to send command %d", err);
 	}
 	return err;
 }
@@ -438,131 +427,128 @@ static int cmd_common(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-static int cmd_add_appl_param(const struct shell *sh, size_t argc, char **argv)
-{
-	uint64_t value = 0;
-	if (argc < 2) {
-		shell_help(sh);
-		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
-		return SHELL_CMD_HELP_PRINTED;
-	}
+// static int cmd_add_appl_param(const struct shell *sh, size_t argc, char **argv)
+// {
+// 	uint64_t value = 0;
+// 	if (argc < 2) {
+// 		shell_help(sh);
+// 		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+// 		return SHELL_CMD_HELP_PRINTED;
+// 	}
 
-	if (appl_param_count > PBAP_APPL_PARAM_MAX_COUNT) {
-		shell_error(sh, "No space of TLV array, add app_param and clear tlvs");
-		return -EAGAIN;
-	}
+// 	if (appl_param_count > PBAP_APPL_PARAM_MAX_COUNT) {
+// 		shell_error(sh, "No space of TLV array, add app_param and clear tlvs");
+// 		return -EAGAIN;
+// 	}
 
-	if (!pbap_pce_app->tx_buf) {
-		bt_shell_print("No available tx buf");
-		return -EINVAL;
-	}
+// 	if (!pbap_pce_app->tx_buf) {
+// 		bt_shell_print("No available tx buf");
+// 		return -EINVAL;
+// 	}
 
-	uint8_t *tag = argv[0];
+// 	uint8_t *tag = argv[0];
 
-	if (!strcmp(tag, "ps")) {
-		gpbap_appl_param[appl_param_count].type =
-			BT_PBAP_APPL_PARAM_TAG_ID_PROPERTY_SELECTOR;
-		gpbap_appl_param[appl_param_count].data_len = 8U;
-		stringTonum_64(argv[1U], &value, 10);
-		sys_put_be64(value, &gpbap_appl_param_data[appl_param_count][0]);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "f")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_FORMAT;
-		gpbap_appl_param[appl_param_count].data_len = 1U;
-		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "mlc")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_MAX_LIST_COUNT;
-		gpbap_appl_param[appl_param_count].data_len = 2U;
-		sys_put_be16((uint16_t)strtoul(argv[1U], NULL, 10),
-			     &gpbap_appl_param_data[appl_param_count][0]);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "lso")) {
-		gpbap_appl_param[appl_param_count].type =
-			BT_PBAP_APPL_PARAM_TAG_ID_LIST_START_OFFSET;
-		gpbap_appl_param[appl_param_count].data_len = 2U;
-		sys_put_be16((uint16_t)strtoul(argv[1U], NULL, 10),
-			     &gpbap_appl_param_data[appl_param_count][0]);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "rnmc")) {
-		gpbap_appl_param[appl_param_count].type =
-			BT_PBAP_APPL_PARAM_TAG_ID_RESET_NEW_MISSED_CALLS;
-		gpbap_appl_param[appl_param_count].data_len = 1U;
-		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "vcs")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_VCARD_SELECTOR;
-		gpbap_appl_param[appl_param_count].data_len = 8U;
-		stringTonum_64(argv[1U], &value, 10);
-		sys_put_be64(value, &gpbap_appl_param_data[appl_param_count][0]);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "vcso")) {
-		gpbap_appl_param[appl_param_count].type =
-			BT_PBAP_APPL_PARAM_TAG_ID_VCARD_SELECTOR_OPERATOR;
-		gpbap_appl_param[appl_param_count].data_len = 1U;
-		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "o")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_ORDER;
-		gpbap_appl_param[appl_param_count].data_len = 1U;
-		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "sv")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_SEARCH_VALUE;
-		gpbap_appl_param[appl_param_count].data_len = strlen(argv[1]);
-		memcpy(&gpbap_appl_param_data[appl_param_count][0], argv[1], strlen(argv[1]));
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else if (!strcmp(tag, "sp")) {
-		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_SEARCH_PROPERTY;
-		gpbap_appl_param[appl_param_count].data_len = 1U;
-		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
-		gpbap_appl_param[appl_param_count].data =
-			&gpbap_appl_param_data[appl_param_count][0];
-	} else {
-		shell_error(sh, "No available appl param");
-		return -EINVAL;
-	}
-	appl_param_count++;
-	return 0;
-}
+// 	if (!strcmp(tag, "ps")) {
+// 		gpbap_appl_param[appl_param_count].type =
+// 			BT_PBAP_APPL_PARAM_TAG_ID_PROPERTY_SELECTOR;
+// 		gpbap_appl_param[appl_param_count].data_len = 8U;
+// 		stringTonum_64(argv[1U], &value, 10);
+// 		sys_put_be64(value, &gpbap_appl_param_data[appl_param_count][0]);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "f")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_FORMAT;
+// 		gpbap_appl_param[appl_param_count].data_len = 1U;
+// 		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "mlc")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_MAX_LIST_COUNT;
+// 		gpbap_appl_param[appl_param_count].data_len = 2U;
+// 		sys_put_be16((uint16_t)strtoul(argv[1U], NULL, 10),
+// 			     &gpbap_appl_param_data[appl_param_count][0]);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "lso")) {
+// 		gpbap_appl_param[appl_param_count].type =
+// 			BT_PBAP_APPL_PARAM_TAG_ID_LIST_START_OFFSET;
+// 		gpbap_appl_param[appl_param_count].data_len = 2U;
+// 		sys_put_be16((uint16_t)strtoul(argv[1U], NULL, 10),
+// 			     &gpbap_appl_param_data[appl_param_count][0]);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "rnmc")) {
+// 		gpbap_appl_param[appl_param_count].type =
+// 			BT_PBAP_APPL_PARAM_TAG_ID_RESET_NEW_MISSED_CALLS;
+// 		gpbap_appl_param[appl_param_count].data_len = 1U;
+// 		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "vcs")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_VCARD_SELECTOR;
+// 		gpbap_appl_param[appl_param_count].data_len = 8U;
+// 		stringTonum_64(argv[1U], &value, 10);
+// 		sys_put_be64(value, &gpbap_appl_param_data[appl_param_count][0]);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "vcso")) {
+// 		gpbap_appl_param[appl_param_count].type =
+// 			BT_PBAP_APPL_PARAM_TAG_ID_VCARD_SELECTOR_OPERATOR;
+// 		gpbap_appl_param[appl_param_count].data_len = 1U;
+// 		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "o")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_ORDER;
+// 		gpbap_appl_param[appl_param_count].data_len = 1U;
+// 		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "sv")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_SEARCH_VALUE;
+// 		gpbap_appl_param[appl_param_count].data_len = strlen(argv[1]);
+// 		memcpy(&gpbap_appl_param_data[appl_param_count][0], argv[1], strlen(argv[1]));
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else if (!strcmp(tag, "sp")) {
+// 		gpbap_appl_param[appl_param_count].type = BT_PBAP_APPL_PARAM_TAG_ID_SEARCH_PROPERTY;
+// 		gpbap_appl_param[appl_param_count].data_len = 1U;
+// 		gpbap_appl_param_data[appl_param_count][0] = strtoul(argv[1U], NULL, 10);
+// 		gpbap_appl_param[appl_param_count].data =
+// 			&gpbap_appl_param_data[appl_param_count][0];
+// 	} else {
+// 		shell_error(sh, "No available appl param");
+// 		return -EINVAL;
+// 	}
+// 	appl_param_count++;
+// 	return 0;
+// }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	pbap_add_appl_params,
-	SHELL_CMD_ARG(ps, NULL, "PropertySelector : 8bytes", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(f, NULL, "Format : 1byte", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(mlc, NULL, "MaxListCount : 2bytes", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(lso, NULL, "ListStartOffset : 2bytes", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(rnmc, NULL, "ResetNewMissedCalls : 1byte", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(vcs, NULL, "vCardSelector : 8bytes", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(vcso, NULL, "vCardSelectorOperator : 1byte", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(o, NULL, "Order : 1byte", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(sv, NULL, "SearchValue : string", cmd_add_appl_param, 2, 0),
-	SHELL_CMD_ARG(sp, NULL, "SearchProperty : 1byte", cmd_add_appl_param, 2, 0),
-	SHELL_SUBCMD_SET_END);
+// SHELL_STATIC_SUBCMD_SET_CREATE(
+// 	pbap_add_appl_params,
+// 	SHELL_CMD_ARG(ps, NULL, "PropertySelector : 8bytes", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(f, NULL, "Format : 1byte", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(mlc, NULL, "MaxListCount : 2bytes", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(lso, NULL, "ListStartOffset : 2bytes", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(rnmc, NULL, "ResetNewMissedCalls : 1byte", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(vcs, NULL, "vCardSelector : 8bytes", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(vcso, NULL, "vCardSelectorOperator : 1byte", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(o, NULL, "Order : 1byte", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(sv, NULL, "SearchValue : string", cmd_add_appl_param, 2, 0),
+// 	SHELL_CMD_ARG(sp, NULL, "SearchProperty : 1byte", cmd_add_appl_param, 2, 0),
+// 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	pbap_cmds, SHELL_CMD_ARG(register, NULL, "", cmd_register, 1, 0),
-	SHELL_CMD_ARG(connect_rfcomm, NULL, "<channel> <password(option)>", cmd_connect_rfcomm, 2,
-		      1),
-	SHELL_CMD_ARG(connect_l2cap, NULL, "<channel> <password(option)>", cmd_connect_l2cap, 2, 1),
-	SHELL_CMD_ARG(disconnect, NULL, "<channel>", cmd_disconnect, 2, 0),
-	SHELL_CMD_ARG(pull_pb_create, NULL, "<name>  <srmp>", cmd_pull_pb, 2, 0),
-	SHELL_CMD_ARG(pull_vcardlisting_create, NULL, "<name>  <srmp>", cmd_pull_vcardlisting, 1,
-		      2),
-	SHELL_CMD_ARG(pull_vcardentry_create, NULL, "<name>  <srmp>", cmd_pull_vcardentry, 2, 1),
+	SHELL_CMD_ARG(connect_rfcomm, NULL, "<channel> <mpl> [password]", cmd_connect_rfcomm, 3, 1),
+	SHELL_CMD_ARG(connect_l2cap, NULL, "<channel> <mpl> [password]", cmd_connect_l2cap, 3, 1),
+	SHELL_CMD_ARG(disconnect, NULL, "<0/1>", cmd_disconnect, 2, 0),
+	SHELL_CMD_ARG(pull_pb, NULL, "<name> [srmp(0/1)]", cmd_pull_pb, 2, 1),
+	SHELL_CMD_ARG(pull_vcardlisting, NULL, "<name>  [srmp(0/1)]", cmd_pull_vcardlisting, 2, 1),
+	SHELL_CMD_ARG(pull_vcardentry, NULL, "<name>  <srmp>", cmd_pull_vcardentry, 2, 1),
 	SHELL_CMD_ARG(setpath, NULL, "<name>", cmd_set_path, 2, 0),
-	SHELL_CMD_ARG(cmd_send, NULL, "<NULL>", cmd_cmd_send, 1, 0),
-	SHELL_CMD_ARG(add_appl_param, &pbap_add_appl_params, "Adding appl params", cmd_common, 1,
-		      0),
+	// SHELL_CMD_ARG(add_appl_param, &pbap_add_appl_params, "Adding appl params", cmd_common, 1,
+	// 	      0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(pbap, &pbap_cmds, "Bluetooth pbap shell commands", cmd_common, 1, 1);

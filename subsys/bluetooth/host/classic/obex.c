@@ -961,7 +961,8 @@ static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 
 	if (mopl > client->obex->tx.mtu) {
 		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, client->obex->tx.mtu);
-		goto failed;
+		// goto failed;
+                mopl = client->obex->tx.mtu;
 	}
 
 	client->tx.mopl = mopl;
