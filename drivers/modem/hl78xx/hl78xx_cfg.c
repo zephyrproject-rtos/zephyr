@@ -87,8 +87,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		cmd_set_rat = (const char *)SET_RAT_NBNTN_CMD_LEGACY;
 		*rat_request = HL78XX_RAT_NBNTN;
 	}
-#endif
-#endif
+#endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 
 	if (cmd_set_rat == NULL || *rat_request == HL78XX_RAT_MODE_NONE) {
 		ret = -EINVAL;
@@ -104,7 +104,7 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 			*modem_require_restart = true;
 		}
 	}
-#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 error:
 	return ret;
@@ -125,8 +125,7 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	for (int rat = HL78XX_RAT_CAT_M1; rat <= HL78XX_RAT_NB1; rat++) {
 #else
 	int rat = rat_config_request;
-
-#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 		ret = hl78xx_get_band_default_config_for_rat(rat, bnd_bitmap,
 							     ARRAY_SIZE(bnd_bitmap));
 		if (ret) {
@@ -200,6 +199,7 @@ error:
 }
 
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
+/* Find APN from profile string based on associated number prefix */
 int find_apn(const char *profile, const char *associated_number, char *apn_buff, uint8_t prefix_len)
 {
 	char buffer[512];
@@ -278,7 +278,7 @@ int modem_detect_apn(struct hl78xx_data *data, const char *associated_number)
 	}
 	return rc;
 }
-#endif
+#endif /* CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID || CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI */
 
 void set_band_bit(uint8_t *bitmap, uint16_t band_num)
 {

@@ -57,33 +57,6 @@ config MODEM_HL78XX_12_FW_R6
 
 endif # MODEM_HL78XX_12
 
-config MODEM_HL78XX_UART_BUFFER_SIZES
-	int "The UART receive and transmit buffer sizes in bytes."
-	default 512
-
-config MODEM_HL78XX_CHAT_BUFFER_SIZES
-	int "The size of the buffers used for the chat scripts in bytes."
-	default 512
-
-config MODEM_HL78XX_USER_PIPE_BUFFER_SIZES
-	int "The size of the buffers used for each user pipe in bytes."
-	default 512
-
-config MODEM_HL78XX_RECV_BUF_CNT
-	int "The number of allocated network buffers"
-	default 30
-
-config MODEM_HL78XX_RECV_BUF_SIZE
-	int "The size of the network buffers in bytes"
-	default 128
-
-config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
-	int "Stack size for the Sierra Wireless HL78XX driver modem driver work queue"
-	default 2048
-	help
-	  This stack is used by the work queue to pass off net_pkt data
-	  to the rest of the network stack, letting the rx thread continue
-	  processing data.
 
 choice MODEM_HL78XX_ADDRESS_FAMILY
 	prompt "IP Address family"
@@ -140,6 +113,7 @@ config MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 	bool "WAIT FOR ROAMING"
 	help
 	  Keep the device in boot mode until have +CREG/+CEREG: 1(normal) or 5(roaming)
+
 endif # MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
 
 config MODEM_HL78XX_PERIODIC_SCRIPT_MS
@@ -299,6 +273,7 @@ menuconfig MODEM_HL78XX_CONFIGURE_BANDS
 
 if MODEM_HL78XX_CONFIGURE_BANDS
 if !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_1
 	bool "Band 1  (2000MHz)"
 	default y
@@ -377,13 +352,17 @@ config MODEM_HL78XX_BAND_20
 	default y
 	help
 	  Enable Band 20 (800MHz)
+
 endif # !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_23
 	bool "Band 23 (2000MHz)"
 	default y if MODEM_HL78XX_RAT_NBNTN
 	help
 	  Enable Band 23 (2000MHz)
+
 if !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_25
 	bool "Band 25 (1900MHz)"
 	help
@@ -449,7 +428,9 @@ config MODEM_HL78XX_BAND_107
 	bool "Band 107 (1800MHz)"
 	help
 	  Enable Band 107 (1800MHz)
+
 endif # !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_255
 	bool "Band 255 (1500MHz)"
 	default y if MODEM_HL78XX_RAT_NBNTN
@@ -466,6 +447,7 @@ endif # MODEM_HL78XX_CONFIGURE_BAND
 
 # NB-IoT NTN Position Configuration
 if MODEM_HL78XX_RAT_NBNTN
+
 menuconfig MODEM_HL78XX_NBNTN_POSITIONING
 	bool "NB-IoT NTN Position Configuration"
 	depends on !MODEM_HL78XX_AUTORAT
@@ -530,6 +512,7 @@ config NTN_DYNAMIC_POSREQ_UPDATE
 	help
 	  If enabled, the UE position must be updated after receiving unsolicited +KNTNEV:
 	  'POSREQ' indication, before any outgoing network operation in dynamic mode.
+
 endif # MODEM_HL78XX_NBNTN_POSITIONING
 endif # MODEM_HL78XX_RAT_NBNTN
 
@@ -766,13 +749,33 @@ config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	  This option enables TLS (Transport Layer Security) for sockets
 	  on the HL78xx modem.
 
-config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	bool "Verbose debug output in the HL78xx"
-	depends on MODEM_MODULES_LOG_LEVEL_DBG
+config MODEM_HL78XX_UART_BUFFER_SIZES
+	int "The UART receive and transmit buffer sizes in bytes."
+	default 512
+
+config MODEM_HL78XX_CHAT_BUFFER_SIZES
+	int "The size of the buffers used for the chat scripts in bytes."
+	default 512
+
+config MODEM_HL78XX_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
+	default 512
+
+config MODEM_HL78XX_RECV_BUF_CNT
+	int "The number of allocated network buffers"
+	default 30
+
+config MODEM_HL78XX_RECV_BUF_SIZE
+	int "The size of the network buffers in bytes"
+	default 128
+
+config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
+	int "Stack size for the Sierra Wireless HL78XX driver modem driver work queue"
+	default 2048
 	help
-	  Enabling this setting will turn on VERY heavy debugging from the
-	  modem.  Do NOT leave on for production.
-	  This setting is depends on global log level debug.
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
 
 config MODEM_HL78XX_DEV_POWER_PULSE_DURATION
 	int "Duration of the power-on pulse in milliseconds."
@@ -816,6 +819,14 @@ config MODEM_HL78XX_OFFLOAD_INIT_PRIORITY
 	  Sierra Wireless HL78XX driver device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Make sure offload init priority higher than dev init priority
+
+config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	bool "Verbose debug output in the HL78xx"
+	depends on MODEM_MODULES_LOG_LEVEL_DBG
+	help
+	  Enabling this setting will turn on VERY heavy debugging from the
+	  modem.  Do NOT leave on for production.
+	  This setting is depends on global log level debug.
 
 rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
 

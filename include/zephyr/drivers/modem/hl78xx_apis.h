@@ -78,12 +78,19 @@ enum hl78xx_phone_functionality {
 };
 /** Module status codes */
 enum hl78xx_module_status {
+	/** Module is ready to receive commands for the TE. No access code is required. */
 	HL78XX_MODULE_READY = 0,
+	/** Module is waiting for an access code. Use AT+CPIN? to determine it. */
 	HL78XX_MODULE_WAITING_FOR_ACCESS_CODE,
+	/** SIM card is not present. */
 	HL78XX_MODULE_SIM_NOT_PRESENT,
+	/** Module is in “SIMlock” state. */
 	HL78XX_MODULE_SIMLOCK,
+	/** Unrecoverable error. */
 	HL78XX_MODULE_UNRECOVERABLE_ERROR,
+	/** Unknown state. */
 	HL78XX_MODULE_UNKNOWN_STATE,
+	/** Inactive SIM. */
 	HL78XX_MODULE_INACTIVE_SIM
 };
 

@@ -85,7 +85,7 @@
 
 #define SET_RAT_M1_CMD    "AT+KSRAT=0,1"
 #define SET_RAT_NB1_CMD   "AT+KSRAT=1,1"
-#define SET_RAT_GMS_CMD   "AT+KSRAT=2,1"
+#define SET_RAT_GSM_CMD   "AT+KSRAT=2,1"
 #define SET_RAT_NBNTN_CMD "AT+KSRAT=3,1"
 
 /* Power mode commands */
@@ -110,7 +110,7 @@
 		    (LOG_DBG(str, ##__VA_ARGS__)), \
 		    ((void)0))
 
-/* Enums */
+/* HL78XX States */
 enum hl78xx_state {
 	MODEM_HL78XX_STATE_IDLE = 0,
 	MODEM_HL78XX_STATE_RESET_PULSE,
@@ -173,6 +173,7 @@ enum hl78xx_tcp_notif {
 	TCP_NOTIF_SSL_INIT_ERROR = 14,
 	TCP_NOTIF_SSL_CERT_ERROR = 15
 };
+
 /** Enum representing information transfer capability events */
 enum hl78xx_info_transfer_event {
 	EVENT_START_SCAN = 0,
@@ -215,6 +216,7 @@ enum apn_state_enum_t {
 struct apn_state {
 	enum apn_state_enum_t state;
 };
+
 struct registration_status {
 	bool is_registered_currently;
 	bool is_registered_previously;
@@ -222,6 +224,7 @@ struct registration_status {
 	enum cellular_registration_status network_state_previous;
 	enum hl78xx_cell_rat_mode rat_mode;
 };
+
 /* driver data */
 struct modem_buffers {
 	uint8_t uart_rx[CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES];
@@ -245,6 +248,7 @@ struct modem_identity {
 	uint8_t fw_version[MDM_REVISION_LENGTH];
 	char apn[MDM_APN_MAX_LENGTH];
 };
+
 struct hl78xx_phone_functionality_work {
 	enum hl78xx_phone_functionality functionality;
 	bool in_progress;
@@ -345,6 +349,7 @@ struct hl78xx_config {
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 };
+
 /* socket read callback data */
 struct socket_read_data {
 	char *recv_buf;

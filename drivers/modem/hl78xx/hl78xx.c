@@ -966,9 +966,9 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
 		if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
-			LOG_ERR("modem wake pin is not enabled, make sure modem low power is "
-				"disabled, if you are not sure enable wake up pin by adding it "
-				"dts!!");
+			LOG_ERR("The modem wake pin is not enabled. Make sure that modem low-power "
+				"mode is disabled. If you’re unsure, enable it by adding the "
+				"corresponding DTS configuration entry.");
 		}
 
 		if (data->status.script_fail_counter++ < MAX_SCRIPT_AT_CMD_RETRY) {
@@ -1007,6 +1007,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 	}
 
 	if (modem_require_restart) {
+		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_restart, strlen(cmd_restart),
 					     hl78xx_get_ok_match(), 1, false);
 		if (ret < 0) {
@@ -1202,6 +1203,7 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 
 		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+		/* TODO: Handle script failure */
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -1464,7 +1466,7 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	if ((int)s <= MODEM_HL78XX_STATE_AWAIT_POWER_OFF && hl78xx_state_table[s].on_event) {
 		hl78xx_state_table[s].on_event(data, evt);
 	} else {
-		LOG_ERR("%d %s unknown event", __LINE__, __func__);
+		LOG_ERR("%d unknown event %d", __LINE__, evt);
 	}
 	if (state != s) {
 		hl78xx_log_state_changed(state, s);
@@ -1691,6 +1693,7 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 	k_sem_take(&data->stay_in_boot_mode_sem, K_FOREVER);
 #endif
+	LOG_INF("Modem HL78xx initialized");
 	return 0;
 error:
 	return ret;
