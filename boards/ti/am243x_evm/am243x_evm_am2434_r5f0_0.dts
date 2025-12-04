@@ -98,6 +98,15 @@
 
 &main_adc0 {
 	ti,fifo = <0>;
+	pinctrl-0 = <&main_adc0_ain0
+		     &main_adc0_ain1
+		     &main_adc0_ain2
+		     &main_adc0_ain3
+		     &main_adc0_ain4
+		     &main_adc0_ain5
+		     &main_adc0_ain6
+		     &main_adc0_ain7>;
+	pinctrl-names = "default";
 	status = "okay";
 	power-domains = <&adc0_pd>;
 
