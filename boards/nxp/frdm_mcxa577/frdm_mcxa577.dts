@@ -21,6 +21,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -139,6 +140,10 @@
 };
 
 &edma0 {
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
 
