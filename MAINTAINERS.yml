@@ -4721,8 +4721,6 @@ Sensor Subsystem:
   maintainers:
     - lixuzha
     - yperess
-  collaborators:
-    - qianruh
   files:
     - dts/bindings/sensor/zephyr,sensing.yaml
     - dts/bindings/sensor/zephyr,sensing*.yaml
