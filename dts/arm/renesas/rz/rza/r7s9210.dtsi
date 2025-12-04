@@ -7,6 +7,7 @@
 #include <arm/armv7-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/renesas_rza2m_clock.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r7s9210";
@@ -317,6 +318,18 @@
 					ngpios = <2>;
 				};
 			};
+		};
+
+		adc: adc@e8005800 {
+			compatible = "renesas,rza2m-adc";
+			reg = <0xe8005800 0xe8>;
+			interrupts = <GIC_SPI 247 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-available-mask = <0xFF>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_ADC, RZA2M_CLK_P1C)>;
+			status = "disabled";
 		};
 
 		scif0: serial@e8007000 {
