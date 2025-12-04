@@ -111,7 +111,7 @@ ZTEST_F(test_ase_control_params, test_sink_ase_control_operation_zero_length_wri
 
 	ret = fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, (void *)buf, 0, 0, 0);
 	zassert_true(ret < 0, "ase_cp_attr->write returned unexpected (err 0x%02x)",
-		     BT_GATT_ERR(ret));
+		     (uint8_t)BT_GATT_ERR(ret));
 }
 
 static void test_expect_unsupported_opcode(struct test_ase_control_params_fixture *fixture,
