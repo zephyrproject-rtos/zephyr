@@ -106,6 +106,12 @@
 /* PDP Context commands */
 #define DEACTIVATE_PDP_CONTEXT             "AT+CGACT=0"
 #define ACTIVATE_PDP_CONTEXT               "AT+CGACT=1"
+/**
+ * Airvantage commands
+ * User initiated connection start/stop
+ */
+#define WDSI_USER_INITIATED_CONNECTION_START_CMD "AT+WDSS=1,1"
+#define WDSI_USER_INITIATED_CONNECTION_STOP_CMD  "AT+WDSS=1,0"
 
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
@@ -132,6 +138,7 @@ enum hl78xx_state {
 	 */
 	MODEM_HL78XX_STATE_AWAIT_REGISTERED,
 	MODEM_HL78XX_STATE_CARRIER_ON,
+	MODEM_HL78XX_STATE_FOTA,
 	/* Minimum functionality, SIM powered off, Modem Power down
 	 * CFUN=0
 	 */
@@ -161,6 +168,19 @@ enum hl78xx_event {
 	/* Modem unexpected restart event */
 	MODEM_HL78XX_EVENT_MDM_RESTART,
 	MODEM_HL78XX_EVENT_SOCKET_READY,
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
+	/* WDSI FOTA events */
+	MODEM_HL78XX_EVENT_WDSI_UPDATE,
+	MODEM_HL78XX_EVENT_WDSI_RESTART,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE,
+	MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST,
+	MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE,
+	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED,
+	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	MODEM_HL78XX_EVENT_COUNT
 };
 
@@ -255,6 +275,7 @@ struct modem_identity {
 	uint8_t iccid[MDM_ICCID_LENGTH];
 	uint8_t manufacturer[MDM_MANUFACTURER_LENGTH];
 	uint8_t fw_version[MDM_REVISION_LENGTH];
+	uint8_t serial_number[MDM_SERIAL_NUMBER_LENGTH];
 	char apn[MDM_APN_MAX_LENGTH];
 };
 
@@ -278,6 +299,29 @@ struct hl78xx_gprs_status {
 	int8_t cid;
 };
 
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/* WDSI FOTA states */
+enum hl78xx_wdsi_fota_states {
+	HL78XX_WDSI_FOTA_IDLE = 0,
+	HL78XX_WDSI_FOTA_DOWNLOADING,
+	HL78XX_WDSI_FOTA_DOWNLOAD_COMPLETED,
+	HL78XX_WDSI_FOTA_INSTALLING,
+	HL78XX_WDSI_FOTA_INSTALL_COMPLETED,
+	HL78XX_WDSI_FOTA_INSTALL_FAILED
+};
+
+struct hl78xx_wdsi_status {
+	enum wdsi_indication level;
+	uint32_t data;
+	size_t fota_size;
+	bool in_progress;
+	enum hl78xx_wdsi_fota_states fota_state;
+	bool completed;
+	int progress;
+};
+
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
 struct modem_status {
 	struct registration_status registration;
 	int16_t rssi;
@@ -293,6 +337,9 @@ struct modem_status {
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct apn_state apn;
 	struct hl78xx_network_operator network_operator;
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+	struct hl78xx_wdsi_status wdsi;
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 };
 
 struct modem_gpio_callbacks {
