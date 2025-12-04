@@ -58,31 +58,4 @@ config CAN_MAX_FILTER
 	help
 	  Maximum number of filters supported by the can_add_rx_callback() API call.
 
-config CAN_MCP251XFD_PM_DEVICE
-	bool "Enable power management support"
-	default n
-	depends on PM_DEVICE
-	help
-	  Enable power management support for the MCP251XFD CAN controller.
-	  When enabled, the driver implements suspend and resume callbacks
-	  that transition the device to sleep mode on suspend and restore
-	  the previous operational mode on resume.
-
-config CAN_MCP251XFD_TRANSCEIVER_STANDBY_ON_SLEEP
-	bool "Put CAN transceiver in standby during sleep"
-	default n
-	depends on CAN_MCP251XFD_PM_DEVICE
-	help
-	  When enabled, the CAN transceiver will be put into standby mode
-	  when the CAN controller enters sleep mode. This provides the lowest
-	  power consumption.
-
-	  When disabled, the transceiver remains active during CAN sleep,
-	  which uses more power but may provide faster wake response on
-	  some hardware configurations.
-
-	  If XSTBY is enabled in the device tree and is directly connected to the
-	  standby pin of the transceiver, this option is not requrired, as the controller
-	  will automatically put the transceiver into standby via the XSTBY pin.
-
 endif # CAN_MCP251XFD

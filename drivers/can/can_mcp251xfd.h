@@ -509,10 +509,6 @@ struct mcp251xfd_data {
 	uint8_t current_mcp251xfd_mode;
 	int tdco;
 
-#if defined(CONFIG_CAN_MCP251XFD_PM_DEVICE)
-	bool in_sleep_mode;  /* True when device is intentionally in sleep mode */
-#endif
-
 	struct mcp251xfd_spi_data spi_data;
 
 };
