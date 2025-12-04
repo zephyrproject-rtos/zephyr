@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -97,6 +98,7 @@ enum ti_adc_irq {
 
 struct ti_adc_cfg {
 	DEVICE_MMIO_ROM;
+	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_func)(const struct device *dev);
 	uint32_t open_delay[TI_ADC_TOTAL_CHANNELS];
 	uint8_t oversampling[TI_ADC_TOTAL_CHANNELS];
@@ -295,8 +297,15 @@ static int ti_adc_init(const struct device *dev)
 	const struct ti_adc_cfg *cfg = DEV_CFG(dev);
 	struct ti_adc_data *data = DEV_DATA(dev);
 	struct ti_adc_regs *regs = DEV_REGS(dev);
+	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	cfg->irq_func(dev);
 
@@ -390,8 +399,10 @@ static void ti_adc_isr(const struct device *dev)
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
                                                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct ti_adc_cfg ti_adc_cfg_##n = {                                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.irq_func = &ti_adc_irq_setup_##n,                                                 \
 		.open_delay = CHAN_PROP_LIST(n, ti_open_delay),                                    \
 		.oversampling = CHAN_PROP_LIST(n, zephyr_oversampling),                            \
