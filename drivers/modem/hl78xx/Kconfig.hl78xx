@@ -785,28 +785,28 @@ config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
 	  to the rest of the network stack, letting the rx thread continue
 	  processing data.
 
-config MODEM_HL78XX_DEV_POWER_PULSE_DURATION
+config MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS
 	int "Duration of the power-on pulse in milliseconds."
 	default 1500
 	help
 	  Trigger a power-on sequence by setting a power on GPIO pin high
 	  for a specific amount of time.
 
-config MODEM_HL78XX_DEV_RESET_PULSE_DURATION
+config MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS
 	int "Duration of the power-reset pulse in milliseconds."
 	default 100
 	help
 	  Trigger a power-reset sequence by setting a reset GPIO pin high
 	  for a specific amount of time.
 
-config MODEM_HL78XX_DEV_STARTUP_TIME
+config MODEM_HL78XX_DEV_STARTUP_TIME_MS
 	int "Wait before assuming the device is ready."
 	default 1000
 	help
 	  The expected time (in milliseconds) the modem needs to fully power on
 	  and become operational.
 
-config MODEM_HL78XX_DEV_SHUTDOWN_TIME
+config MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS
 	int "Wait before assuming the device is completely off."
 	default 1000
 	help
