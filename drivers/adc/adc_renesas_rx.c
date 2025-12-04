@@ -354,6 +354,12 @@ static int adc_rx_init(const struct device *dev)
 #define ASSIGN_READ_ASYNC
 #endif
 
+#if defined(CONFIG_SOC_SERIES_RX14T)
+#define ADC_CONV_SPEED_FIELD
+#else
+#define ADC_CONV_SPEED_FIELD .conv_speed = ADC_CONVERT_SPEED_DEFAULT,
+#endif
+
 #define ADC_RX_INIT(idx)                                                                           \
 	IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
@@ -378,17 +384,14 @@ static int adc_rx_init(const struct device *dev)
 		.unit_id = idx,                                                                    \
 		.p_regs = (struct st_s12ad *)DT_INST_REG_ADDR(idx),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.adc_config =                                                                      \
-			{                                                                          \
-				.conv_speed = ADC_CONVERT_SPEED_DEFAULT,                           \
-				.alignment = ADC_ALIGN_RIGHT,                                      \
-				.add_cnt = ADC_ADD_OFF,                                            \
-				.clearing = ADC_CLEAR_AFTER_READ_OFF,                              \
-				.trigger = ADC_TRIG_NONE,                                          \
-				.trigger_groupb = ADC_TRIG_NONE,                                   \
-				.priority = 0,                                                     \
-				.priority_groupb = 0,                                              \
-			},                                                                         \
+		.adc_config = {.alignment = ADC_ALIGN_RIGHT,                                       \
+			       .add_cnt = ADC_ADD_OFF,                                             \
+			       .clearing = ADC_CLEAR_AFTER_READ_OFF,                               \
+			       .trigger = ADC_TRIG_NONE,                                           \
+			       .trigger_groupb = ADC_TRIG_NONE,                                    \
+			       .priority = 0,                                                      \
+			       .priority_groupb = 0,                                               \
+			       ADC_CONV_SPEED_FIELD},                                              \
 		.adc_chnl_cfg =                                                                    \
 			{                                                                          \
 				.add_mask = 0,                                                     \
