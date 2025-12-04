@@ -2159,7 +2159,6 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - gdengi
-    - nbalabak
   files:
     - drivers/pm_cpu_ops/
     - include/zephyr/drivers/pm_cpu_ops/
@@ -2980,8 +2979,6 @@ Intel Platforms (Agilex):
   status: maintained
   maintainers:
     - gdengi
-  collaborators:
-    - nbalabak
   files:
     - boards/intel/socfpga/
     - soc/intel/intel_socfpga/
