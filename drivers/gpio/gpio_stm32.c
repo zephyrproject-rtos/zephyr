@@ -530,9 +530,11 @@ static int gpio_stm32_config(const struct device *dev,
 			.dt_flags = (gpio_dt_flags_t)flags,
 		};
 
-		if (stm32_pwr_wkup_pin_cfg_gpio((const struct gpio_dt_spec *)&gpio_dt_cfg)) {
+		err = stm32_pwr_wkup_pin_cfg_gpio(&gpio_dt_cfg);
+		if (err < 0) {
 			LOG_ERR("Could not configure GPIO %s pin %d as a wake-up source",
 					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
+			return err;
 		}
 #else
 		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
