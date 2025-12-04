@@ -92,6 +92,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
+#elif defined(CONFIG_SOC_MCXA577)
+	clock_freq = CLOCK_GetWwdt0ClkFreq();
 #elif defined(CONFIG_SOC_FAMILY_MCXA)
 	clock_freq = CLOCK_GetWwdtClkFreq();
 #else

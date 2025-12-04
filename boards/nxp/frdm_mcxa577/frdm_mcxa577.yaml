@@ -18,4 +18,5 @@ supported:
   - uart
   - counter
   - dma
+  - watchdog
 vendor: nxp
