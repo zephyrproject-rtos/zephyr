@@ -6,6 +6,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 
 / {
@@ -488,6 +489,17 @@
 				reg = <0x3000>;
 				status = "disabled";
 			};
+		};
+
+		adc: adc@40059000 {
+			compatible = "renesas,rz-adc-c";
+			reg = <0x40059000 DT_SIZE_K(1)>;
+			interrupts = <347 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
 		};
 
 		scif0: serial@4004b800 {
