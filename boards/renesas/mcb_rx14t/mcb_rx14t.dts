@@ -9,6 +9,7 @@
 #include <renesas/r5f514t5amfm.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include "mcb_rx14t-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas MCB-RX14T";
@@ -95,5 +96,11 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
