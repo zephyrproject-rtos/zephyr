@@ -152,6 +152,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
 
+* Sys
+
+  * :c:macro:`COND_CASE_1`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
