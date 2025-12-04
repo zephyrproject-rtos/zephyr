@@ -524,6 +524,24 @@ static int gpio_stm32_config(const struct device *dev,
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {
 #ifdef CONFIG_POWEROFF
+		/*
+		 * On some series, wake-up pins must have a specific configuration
+		 * to work properly. The following per-series checks validate that
+		 * the configuration provided by caller is correct.
+		 */
+		if (IS_ENABLED(CONFIG_SOC_SERIES_STM32WBAX) &&
+		    (flags & GPIO_OUTPUT) == 0 &&
+		    ((flags & GPIO_INPUT) == 0 || (flags & (GPIO_PULL_DOWN | GPIO_PULL_UP)) == 0)) {
+			/*
+			 * RM0493 Rev. 7 Table 93 / RM0515 Rev. 3 Table 95:
+			 * Only input pins with PU/PD and output pins are retained in Standby.
+			 * Other pins are placed in High-Z state and can't be used for wake-up.
+			 */
+			LOG_ERR("STM32WBA: wake-up pin must be configured as "
+				"output, or input+pull-up/pull-down");
+			return -EINVAL;
+		}
+
 		struct gpio_dt_spec gpio_dt_cfg = {
 			.port = dev,
 			.pin = pin,
