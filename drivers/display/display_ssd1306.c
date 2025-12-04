@@ -94,6 +94,9 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_RESET_DELAY			1
 #define SSD1306_SUPPLY_DELAY			20
 
+/* This correspond to 8 lines of 132 width, which covers all sizes of compatibles */
+#define SSD1306_I2C_CHUNK_SIZE 132
+
 #ifndef SSD1306_ADDRESSING_MODE
 #define SSD1306_ADDRESSING_MODE		(SSD1306_MEM_ADDRESSING_HORIZONTAL)
 #endif
@@ -145,16 +148,19 @@ struct ssd1306_config {
 	int ready_time_ms;
 	bool use_internal_iref;
 	bool softreset;
+	uint8_t *i2c_buf;
 };
 
 struct ssd1306_data {
 	enum display_pixel_format pf;
 	enum display_orientation orientation;
+	struct k_mutex i2c_buf_lock;
 };
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
+
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -165,11 +171,36 @@ static bool ssd1306_bus_ready_i2c(const struct device *dev)
 static int ssd1306_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t len, bool command)
 {
 	const struct ssd1306_config *config = dev->config;
+	struct ssd1306_data *data = dev->data;
 
-	return i2c_burst_write_dt(&config->bus.i2c,
-				  command ? SSD1306_I2C_ALL_BYTES_CMD :
-				  SSD1306_I2C_ALL_BYTES_DATA,
-				  buf, len);
+	const uint8_t control =
+		command ? SSD1306_I2C_ALL_BYTES_CMD : SSD1306_I2C_ALL_BYTES_DATA;
+	int ret = 0;
+	size_t off = 0;
+
+	if (len == 0U) {
+		return 0;
+	}
+
+	k_mutex_lock(&data->i2c_buf_lock, K_FOREVER);
+
+	while (off < len) {
+		size_t this_len = MIN(SSD1306_I2C_CHUNK_SIZE, len - off);
+
+		config->i2c_buf[0] = control;
+		memcpy(&config->i2c_buf[1], &buf[off], this_len);
+
+		ret = i2c_write_dt(&config->bus.i2c, config->i2c_buf, this_len + 1);
+		if (ret < 0) {
+			goto out;
+		}
+
+		off += this_len;
+	}
+
+out:
+	k_mutex_unlock(&data->i2c_buf_lock);
+	return ret;
 }
 
 static const char *ssd1306_bus_name_i2c(const struct device *dev)
@@ -643,7 +674,10 @@ static int ssd1306_init_device(const struct device *dev)
 static int ssd1306_init(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
+	struct ssd1306_data *data = dev->data;
 	int ret;
+
+	k_mutex_init(&data->i2c_buf_lock);
 
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
@@ -703,6 +737,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	.data_cmd = GPIO_DT_SPEC_GET(node_id, data_cmd_gpios),
 
 #define SSD1306_CONFIG_I2C(node_id)                                                                \
+	.i2c_buf = (uint8_t [SSD1306_I2C_CHUNK_SIZE + 1]) {},                                      \
 	.bus = {.i2c = I2C_DT_SPEC_GET(node_id)},                                                  \
 	.bus_ready = ssd1306_bus_ready_i2c,                                                        \
 	.write_bus = ssd1306_write_bus_i2c,                                                        \
