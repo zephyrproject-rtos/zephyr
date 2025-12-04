@@ -3087,8 +3087,6 @@ JSON Web Token:
   status: maintained
   maintainers:
     - d3zd3z
-  collaborators:
-    - mrfuchs
   files:
     - subsys/jwt/
     - include/zephyr/data/json.h
