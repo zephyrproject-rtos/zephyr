@@ -45,12 +45,6 @@
 	chosen {
 		zephyr,bt-hci = &hci_spi;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-		invert-y;
-	};
 };
 
 &fmc {
@@ -104,7 +98,7 @@
 					height = <240>;
 					x-offset = <0>;
 					y-offset = <0>;
-					vcom = <0x1F>;
+					vcom = <0x1f>;
 					gctrl = <0x35>;
 					vdvs = <0x20>;
 					mdac = <0x00>;
@@ -193,6 +187,9 @@ stm32_lp_tick_source: &lptim1 {
 		reg = <0x38>;
 		int-gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
+		inverted-y;
+		screen-width = <240>;
+		screen-height = <240>;
 	};
 };
 

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: TPS55287 regulator
+
+compatible: "ti,tps55287"
+
+include:
+  - name: i2c-device.yaml
+  - name: regulator.yaml

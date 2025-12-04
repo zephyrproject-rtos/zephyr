@@ -121,7 +121,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	/* adding one to fit the terminating null character */
 	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
 
-	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
+	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
@@ -155,21 +155,18 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
-	uint16_t appearance_le = sys_cpu_to_le16(bt_get_appearance());
-	char * const appearance_le_bytes = (char *)&appearance_le;
 	uint16_t appearance;
 	int err;
 
-	if (offset >= sizeof(appearance_le)) {
+	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if ((offset + len) > sizeof(appearance_le)) {
+	if (len != sizeof(appearance)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&appearance_le_bytes[offset], buf, len);
-	appearance = sys_le16_to_cpu(appearance_le);
+	appearance = sys_get_le16(buf);
 
 	err = bt_set_appearance(appearance);
 

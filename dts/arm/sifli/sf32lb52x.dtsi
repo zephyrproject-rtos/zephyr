@@ -314,6 +314,20 @@
 			status = "disabled";
 		};
 
+		gptim2: timers@500b0000 {
+			compatible = "sifli,sf32lb-gptim";
+			reg = <0x500b0000 0x1000>;
+			interrupts = <71 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_GPTIM2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		aon: syscon@500c0000 {
 			compatible = "sifli,sf32lb-aon", "syscon";
 			reg = <0x500c0000 0x1000>;

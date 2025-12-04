@@ -39,6 +39,78 @@
 	};
 
 	soc {
+		sram: memory@100000 {
+			compatible = "mmio-sram";
+			reg = <0x00100000 DT_SIZE_K(128)>;
+		};
+
+		pinctrl: pinctrl@e0014000 {
+			compatible = "microchip,sama7g5-pinctrl";
+			reg = <0xe0014000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0xe0014000 0xe0014000 0x800>;
+
+			pioa: gpio@e0014000 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014000 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			piob: gpio@e0014040 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014040 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			pioc: gpio@e0014080 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014080 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			piod: gpio@e00140c0 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe00140c0 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			pioe: gpio@e0014100 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014100 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+				gpio-reserved-ranges = <8 24>;
+			};
+		};
+
+		pmc: clock-controller@e0018000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xe0018000 0x200>;
+			#clock-cells = <2>;
+			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
+			clock-names = "td_slck", "md_slck", "main_xtal";
+		};
+
 		clk32k: clock-controller@e001d050 {
 			compatible = "microchip,sama7g5-sckc", "microchip,sam9x60-sckc";
 			reg = <0xe001d050 0x4>;
@@ -46,25 +118,95 @@
 			#clock-cells = <1>;
 		};
 
-		dma0: dma-controller@e2808000 {
-			compatible = "atmel,sam-xdmac";
-			reg = <0xe2808000 0x1000>;
+		rtc: rtc@e001d0a8 {
+			compatible = "atmel,sam-rtc";
+			reg = <0xe001d0a8 0x30>;
 			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#dma-cells = <2>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
-			clock-names = "dma_clk";
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk32k 1>;
+		};
+
+		mcan0: mcan@e0828000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 123 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 61>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x3400 15 15 8 8 0 15 15>;
 			status = "disabled";
 		};
 
-		dma1: dma-controller@e280c000 {
-			compatible = "atmel,sam-xdmac";
-			reg = <0xe280c000 0x1000>;
+		mcan1: mcan@e082c000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe082c000 0x100>, <0x100000 0xbc00>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
 			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#dma-cells = <2>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
-			clock-names = "dma_clk";
+			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 62>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x7800 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan2: mcan@e0830000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0830000 0x100>, <0x100000 0x10000>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 125 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 63>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0xbc00 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan3: mcan@e0834000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0834000 0x100>, <0x110000 0x4400>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 64>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan4: mcan@e0838000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0838000 0x100>, <0x110000 0x8800>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 127 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 65>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x4400 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan5: mcan@e083c000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe083c000 0x100>, <0x100000 0xcc00>, <0xe1626030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 66>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x8800 15 15 8 8 0 15 15>;
 			status = "disabled";
 		};
 
@@ -76,6 +218,56 @@
 			#dma-cells = <2>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 24>;
 			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
+		sdmmc0: mmc@e1204000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1204000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 80>, <&pmc PMC_TYPE_GCK 80>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
+		sdmmc1: mmc@e1208000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1208000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 81>, <&pmc PMC_TYPE_GCK 81>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
+		pwm: pwm@e1604000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0xe1604000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 77>;
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pit64b0: timer@e1800000 {
+			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
+			reg = <0xe1800000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 70>, <&pmc PMC_TYPE_GCK 70>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		sha: sha@e1814000 {
+			compatible = "microchip,sha-g1-crypto";
+			reg = <0xe1814000 0x100>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 83>;
 			status = "disabled";
 		};
 
@@ -199,6 +391,15 @@
 			};
 		};
 
+		trng: rng@e2010000 {
+			compatible = "atmel,sam-trng";
+			reg = <0xe2010000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 97>;
+			status = "disabled";
+		};
+
 		flx4: flexcom@e2018000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2018000 0x200>;
@@ -317,6 +518,78 @@
 				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		ethernet@e2800000 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0xe2800000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 51>;
+
+			gmac0: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 117 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 119 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "gmac", "q1", "q2", "q3", "q4", "q5";
+				num-queues = <6>;
+				status = "disabled";
+			};
+
+			gmac0_mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		ethernet@e2804000 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0xe2804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 52>;
+
+			gmac1: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "gmac", "q1";
+				num-queues = <2>;
+				status = "disabled";
+			};
+
+			gmac1_mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		dma0: dma-controller@e2808000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0xe2808000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
+			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
+		dma1: dma-controller@e280c000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0xe280c000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <2>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
+			clock-names = "dma_clk";
+			status = "disabled";
 		};
 
 		flx8: flexcom@e2818000 {
@@ -444,272 +717,6 @@
 			reg = <0xe8c11000 0x1000>, <0xe8c12000 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
-		};
-
-		mcan0: mcan@e0828000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 123 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 61>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0x3400 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		mcan1: mcan@e082c000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe082c000 0x100>, <0x100000 0xbc00>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 62>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0x7800 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		mcan2: mcan@e0830000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe0830000 0x100>, <0x100000 0x10000>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 125 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 63>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0xbc00 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		mcan3: mcan@e0834000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe0834000 0x100>, <0x110000 0x4400>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 64>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		mcan4: mcan@e0838000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe0838000 0x100>, <0x110000 0x8800>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 127 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 65>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0x4400 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		mcan5: mcan@e083c000 {
-			compatible = "atmel,sam-can";
-			reg = <0xe083c000 0x100>, <0x100000 0xcc00>, <0xe1626030 0x4>;
-			reg-names = "m_can", "message_ram", "sram_sel";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "int0", "int1";
-			clocks = <&pmc PMC_TYPE_GCK 66>;
-			clock-names = "gck";
-			bosch,mram-cfg = <0x8800 15 15 8 8 0 15 15>;
-			status = "disabled";
-		};
-
-		rtc: rtc@e001d0a8 {
-			compatible = "atmel,sam-rtc";
-			reg = <0xe001d0a8 0x30>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clk32k 1>;
-		};
-
-		sram: memory@100000 {
-			compatible = "mmio-sram";
-			reg = <0x00100000 DT_SIZE_K(128)>;
-		};
-
-		pinctrl: pinctrl@e0014000 {
-			compatible = "microchip,sama7g5-pinctrl";
-			reg = <0xe0014000 0x800>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0xe0014000 0xe0014000 0x800>;
-
-			pioa: gpio@e0014000 {
-				compatible = "microchip,sam-pio4";
-				reg = <0xe0014000 0x40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
-			};
-
-			piob: gpio@e0014040 {
-				compatible = "microchip,sam-pio4";
-				reg = <0xe0014040 0x40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
-			};
-
-			pioc: gpio@e0014080 {
-				compatible = "microchip,sam-pio4";
-				reg = <0xe0014080 0x40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
-			};
-
-			piod: gpio@e00140c0 {
-				compatible = "microchip,sam-pio4";
-				reg = <0xe00140c0 0x40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
-			};
-
-			pioe: gpio@e0014100 {
-				compatible = "microchip,sam-pio4";
-				reg = <0xe0014100 0x40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
-				gpio-reserved-ranges = <8 24>;
-			};
-		};
-
-		pit64b0: timer@e1800000 {
-			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
-			reg = <0xe1800000 0x4000>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 70>, <&pmc PMC_TYPE_GCK 70>;
-			clock-names = "pclk", "gclk";
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		};
-
-		pmc: clock-controller@e0018000 {
-			compatible = "microchip,sam-pmc";
-			reg = <0xe0018000 0x200>;
-			#clock-cells = <2>;
-			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
-			clock-names = "td_slck", "md_slck", "main_xtal";
-		};
-
-		pwm: pwm@e1604000 {
-			compatible = "atmel,sam-pwm";
-			reg = <0xe1604000 0x4000>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 77>;
-			prescaler = <10>;
-			divider = <1>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		sdmmc0: mmc@e1204000 {
-			compatible = "microchip,sama7g5-sdmmc";
-			reg = <0xe1204000 0x4000>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 80>, <&pmc PMC_TYPE_GCK 80>;
-			clock-names = "hclock", "multclk";
-			assigned-clock-rates = <200000000>;
-			status = "disabled";
-		};
-
-		sdmmc1: mmc@e1208000 {
-			compatible = "microchip,sama7g5-sdmmc";
-			reg = <0xe1208000 0x4000>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 81>, <&pmc PMC_TYPE_GCK 81>;
-			clock-names = "hclock", "multclk";
-			assigned-clock-rates = <200000000>;
-			status = "disabled";
-		};
-
-		trng: rng@e2010000 {
-			compatible = "atmel,sam-trng";
-			reg = <0xe2010000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 97>;
-			status = "disabled";
-		};
-
-		ethernet@e2800000 {
-			compatible = "microchip,sam-ethernet-controller";
-			reg = <0xe2800000 0x4000>;
-			clocks = <&pmc PMC_TYPE_GCK 51>;
-
-			gmac0: ethernet {
-				compatible = "atmel,sam-gmac";
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 117 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 119 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				interrupt-names = "gmac", "q1", "q2", "q3", "q4", "q5";
-				num-queues = <6>;
-				status = "disabled";
-			};
-
-			gmac0_mdio: mdio {
-				compatible = "atmel,sam-mdio";
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
-		};
-
-		ethernet@e2804000 {
-			compatible = "microchip,sam-ethernet-controller";
-			reg = <0xe2804000 0x4000>;
-			clocks = <&pmc PMC_TYPE_GCK 52>;
-
-			gmac1: ethernet {
-				compatible = "atmel,sam-gmac";
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					     <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				interrupt-names = "gmac", "q1";
-				num-queues = <2>;
-				status = "disabled";
-			};
-
-			gmac1_mdio: mdio {
-				compatible = "atmel,sam-mdio";
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
 		};
 	};
 };

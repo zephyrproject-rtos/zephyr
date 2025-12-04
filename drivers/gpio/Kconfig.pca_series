@@ -16,17 +16,17 @@ menuconfig GPIO_PCA_SERIES
 	help
 	  Enable driver for PCA_SERIES I2C-based GPIO chip.
 
+if GPIO_PCA_SERIES
+
 config GPIO_PCA_SERIES_INIT_PRIORITY
 	int "Init priority"
-	default 70
-	depends on GPIO_PCA_SERIES
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
 config GPIO_PCA_SERIES_INTERRUPT
 	bool "Interrupt enable"
 	default y
-	depends on GPIO_PCA_SERIES
 	help
 	  Enable interrupt support in PCA_SERIES driver.
 	  Note that the PCA_SERIES cannot reliably detect
@@ -35,10 +35,11 @@ config GPIO_PCA_SERIES_INTERRUPT
 config GPIO_PCA_SERIES_CACHE_ALL
 	bool "Cache all registers"
 	default y
-	depends on GPIO_PCA_SERIES
 	help
 	  Cache all registers in RAM for faster configuration.
 	  Enabled by default.
 	  When disabled, only output registers will be cached.
 	  On devices w/o interrupt status, it will also cache
 	  input state.
+
+endif # GPIO_PCA_SERIES

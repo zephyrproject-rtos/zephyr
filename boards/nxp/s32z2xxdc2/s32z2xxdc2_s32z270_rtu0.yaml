@@ -22,4 +22,5 @@ supported:
   - pwm
   - sent
   - psi5
+  - crypto
 vendor: nxp

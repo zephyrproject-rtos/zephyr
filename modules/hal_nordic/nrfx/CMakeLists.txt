@@ -200,7 +200,19 @@ if(DEFINED uicr_path)
 
   dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
   if(${gpio_as_nreset})
-    zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
+    zephyr_library_compile_definitions(
+      NRF_CONFIG_GPIO_AS_PINRESET
+    )
+  endif()
+endif()
+
+dt_nodelabel(tampc_path NODELABEL "tampc")
+if(DEFINED tampc_path)
+  dt_prop(swd_pins_as_gpios PATH ${tampc_path} PROPERTY "swd-pins-as-gpios")
+  if(${swd_pins_as_gpios})
+    zephyr_library_compile_definitions(
+      NRF_CONFIG_SWD_PINS_AS_GPIOS
+    )
   endif()
 endif()
 

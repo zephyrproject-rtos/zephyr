@@ -12,7 +12,6 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - mps2/an521/cpu0/ns
-    platform_exclude:
       - lpcxpresso55s69/lpc55s69/cpu0/ns
     tags:
       - trusted-firmware-m

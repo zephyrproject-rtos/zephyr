@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Intel Corporation.
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/net/ethernet_bridge.h>
 #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa_core.h>
 #endif
@@ -30,7 +32,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv6.h"
 #include "ipv4.h"
-#include "bridge.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
@@ -266,6 +267,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct net_linkaddr *lladdr;
 	uint16_t type;
 	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
+	struct net_if *iface_eth = iface;
 
 	/* This expects that the Ethernet header is in the first net_buf
 	 * fragment. This is a safe expectation here as it would not make
@@ -276,25 +278,23 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
-	    net_eth_iface_is_bridged(ctx) && !net_pkt_is_l2_bridged(pkt)) {
-		struct net_if *bridge = net_eth_get_bridge(ctx);
-		struct net_pkt *out_pkt;
+	/* Set the pointers to ll src and dst addresses */
+	(void)net_linkaddr_create(net_pkt_lladdr_src(pkt), hdr->src.addr,
+				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
 
-		out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
-		if (out_pkt == NULL) {
+	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt), hdr->dst.addr,
+				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
+
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) && net_eth_iface_is_bridged(ctx)) {
+		verdict = eth_bridge_input_process(iface, pkt);
+		if (verdict == NET_DROP) {
 			goto drop;
 		}
 
-		net_pkt_set_l2_bridged(out_pkt, true);
-		net_pkt_set_iface(out_pkt, bridge);
-		net_pkt_set_orig_iface(out_pkt, iface);
-
-		NET_DBG("Passing pkt %p (orig %p) to bridge %d from %d",
-			out_pkt, pkt, net_if_get_by_iface(bridge),
-			net_if_get_by_iface(iface));
-
-		(void)net_if_queue_tx(bridge, out_pkt);
+		/* Handled by bridge locally */
+		if (verdict == NET_OK) {
+			iface = net_eth_get_bridge(ctx);
+		}
 	}
 
 	type = net_ntohs(hdr->type);
@@ -342,13 +342,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			}
 		}
 	}
-
-	/* Set the pointers to ll src and dst addresses */
-	(void)net_linkaddr_create(net_pkt_lladdr_src(pkt), hdr->src.addr,
-				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
-
-	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt), hdr->dst.addr,
-				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
 
 	lladdr = net_pkt_lladdr_dst(pkt);
 
@@ -415,7 +408,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		} else {
 			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
 				net_if_get_by_iface(iface), iface);
-			eth_stats_update_unknown_protocol(iface);
+			eth_stats_update_unknown_protocol(iface_eth);
 			return NET_DROP;
 		}
 	}
@@ -425,10 +418,10 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 out:
-	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
+	ethernet_update_rx_stats(iface_eth, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
-	eth_stats_update_errors_rx(iface);
+	eth_stats_update_errors_rx(iface_eth);
 	return NET_DROP;
 }
 

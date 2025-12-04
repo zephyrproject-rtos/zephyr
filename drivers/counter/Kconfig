@@ -84,4 +84,6 @@ source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
 # zephyr-keep-sorted-stop
 
+source "drivers/counter/Kconfig.rv3032_counter"
+
 endif # COUNTER

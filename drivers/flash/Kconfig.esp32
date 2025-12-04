@@ -25,11 +25,25 @@ config ESP_FLASH_ASYNC
 	  Enabling this makes the flash access operations deferred to the work thread.
 	  Meaning every flash read or write would be postponed and executed when available.
 
+config ESP_FLASH_ASYNC_TIMEOUT
+	int "Timeout in seconds while waiting for the request to be available"
+	depends on ESP_FLASH_ASYNC
+	default 10
+	help
+	  Timeout in seconds while waiting for the request.
+
 config ESP_FLASH_ASYNC_WORK
 	bool "Use dedicated work thread to perform the work tasks"
 	depends on ESP_FLASH_ASYNC
 	help
 	  Use dedicated work thread to perform the workqueue tasks with flash asynchronous operations.
+
+config ESP_FLASH_ASYNC_WORK_PRIORITY
+	int "Thread priority for dedicated work thread"
+	depends on ESP_FLASH_ASYNC_WORK
+	default 5
+	help
+	  Define thread priority for a dedicated work thread processing workqueue.
 
 config ESP_FLASH_ASYNC_WORK_STACK_SIZE
 	int "Stack size for dedicated work thread"
@@ -38,11 +52,19 @@ config ESP_FLASH_ASYNC_WORK_STACK_SIZE
 	help
 	  Define stack size for a dedicated work thread processing workqueue.
 
-config ESP_FLASH_ASYNC_WORK_PRIORITY
-	int "Thread priority for dedicated work thread"
-	depends on ESP_FLASH_ASYNC_WORK
-	default 5
+config ESP_FLASH_ASYNC_IPM
+	bool "Allow multiple CPUs to access system flash"
+	depends on ESP_FLASH_ASYNC && IPM
+	default y if IPM
 	help
-	  Define thread priority for a dedicated work thread processing workqueue.
+	  Enable support for multi processor flash access using ipm0.
+
+config ESP_FLASH_REMOTE
+	bool "Remote IPM flash driver"
+	default y if (SOC_ESP32_APPCPU || SOC_ESP32S3_APPCPU || SOC_ESP32C6_LPCORE)
+
+config ESP_FLASH_HOST
+	bool "Host functionality flash driver"
+	default y if !ESP_FLASH_REMOTE
 
 endif # SOC_FLASH_ESP32

@@ -7,8 +7,6 @@ board:
     variants:
     - name: xip
       cpucluster: cpuppr
-    - name: iron
-      cpucluster: cpuapp
   revision:
     format: major.minor.patch
     default: 0.2.0

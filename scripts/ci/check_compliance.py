@@ -606,7 +606,8 @@ class DevicetreeLintingCheck(ComplianceTest):
         if not self.ensure_npx():
             self.skip(
                 'dts-linter not installed. To run this check, '
-                'install Node.js and then run [npm ci] command inside ZEPHYR_BASE'
+                'install Node.js and then run [npm --prefix ./scripts/ci ci] command inside '
+                'ZEPHYR_BASE'
             )
         if not dts_files:
             self.skip('No DTS')
@@ -648,7 +649,8 @@ class DevicetreeLintingCheck(ComplianceTest):
                     self.failure(f"dts-linter found issues:\n{stderr_output}")
                 else:
                     err = "dts-linter failed with no output. "
-                    err += "Make sure you install Node.js and then run npm ci inside ZEPHYR_BASE"
+                    err += "Make sure you install Node.js and then run "
+                    err += "[npm --prefix ./scripts/ci ci] inside ZEPHYR_BASE"
                     self.failure(err)
             except RuntimeError as ex:
                 self.failure(f"{ex}")
@@ -1433,6 +1435,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                     and sym_name not in self.UNDEF_KCONFIG_ALLOWLIST
                     and not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms)
                     and not sym_name.startswith("BOARD_REVISION_")
+                    and not (sym_name.startswith("DT_HAS_") and sym_name.endswith("_ENABLED"))
                 ):
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 

@@ -24,6 +24,7 @@
 		led0 = &user_led0;
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
+		pressure-sensor = &dps368;
 	};
 
 	leds {
@@ -105,6 +106,33 @@ uart1: &scb1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&p10_0_scb1_uart_rx &p10_1_scb1_uart_tx>;
 	pinctrl-names = "default";
+};
+
+i2c0: &scb0 {
+	compatible = "infineon,cat1-i2c";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&p0_2_scb0_i2c_scl &p0_3_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	dps368: dps368@77 {
+		compatible = "infineon,dps368", "infineon,dps310";
+		status = "okay";
+		reg = <0x77>;
+	};
+};
+
+&p0_2_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p0_3_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
 };
 
 &p5_1_scb5_uart_tx {

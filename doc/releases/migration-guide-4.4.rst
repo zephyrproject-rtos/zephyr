@@ -70,6 +70,20 @@ QSPI
   Sample shifting is configurable now and disabled by default.
   (:github:`98999`).
 
+Radio
+=====
+
+* The following devicetree bindings have been renamed for consistency with the ``radio-`` prefix:
+
+  * :dtcompatible:`generic-fem-two-ctrl-pins` is now :dtcompatible:`radio-fem-two-ctrl-pins`
+  * :dtcompatible:`gpio-radio-coex` is now :dtcompatible:`radio-gpio-coex`
+
+* A new :dtcompatible:`radio.yaml` base binding has been introduced for generic radio hardware
+  capabilities. The ``tx-high-power-supported`` property has been renamed to
+  ``radio-tx-high-power-supported`` for consistency.
+
+* Device trees and overlays using the old compatible strings must be updated to use the new names.
+
 STM32
 =====
 
@@ -95,6 +109,11 @@ STM32
   * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+USB
+===
+
+  * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
 
 .. zephyr-keep-sorted-stop
 
@@ -135,6 +154,13 @@ Networking
 
 Other subsystems
 ****************
+
+JWT
+===
+
+* Previously deprecated ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed. This removal happens before
+  the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
+  that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
 
 Modules
 *******

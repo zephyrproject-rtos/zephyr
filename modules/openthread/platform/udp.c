@@ -20,8 +20,6 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
 
 static struct zsock_pollfd sockfd_udp[CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES];
@@ -202,8 +200,8 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 					     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 			     error = OT_ERROR_FAILED);
 		memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
-		VerifyOrExit(zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &if_req,
-					      sizeof(if_req)) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+					      &if_req, sizeof(if_req)) == 0,
 			     error = OT_ERROR_FAILED);
 		break;
 	default:
@@ -350,7 +348,7 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier a
 				    const otIp6Address *aAddress)
 {
 	otError error = OT_ERROR_NONE;
-	struct ipv6_mreq mreq = {0};
+	struct net_ipv6_mreq mreq = {0};
 	int sock;
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,

@@ -4,6 +4,7 @@
 		group1 {
 			pinmux = <PIO0_P14>, <PIO0_P15>;
 		};
+
 		group2 {
 			pinmux = <PIO0_P12>;
 			input-enable;
@@ -27,6 +28,7 @@
 		cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		mosi-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+
 		bme280@0 {
 			compatible = "bosch,bme280";
 			reg = <0>;

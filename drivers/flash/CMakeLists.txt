@@ -52,6 +52,7 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_OSPI flash_stm32_ospi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_XSPI flash_stm32_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_BFLB flash_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC23X0 soc_flash_cc23x0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
@@ -187,6 +188,17 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH flash_nxp_s32_
 if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
   zephyr_library_sources(flash_nxp_s32_qspi.c)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX_C40 flash_mcux_c40.c)
+
+if(CONFIG_SOC_FLASH_MCUX_C40 AND CONFIG_CODE_DATA_RELOCATION)
+  # Relocate the Zephyr driver to RAM when relocation is enabled
+  zephyr_code_relocate(FILES ${CMAKE_CURRENT_LIST_DIR}/flash_mcux_c40.c LOCATION RAM)
+  if(DEFINED ZEPHYR_HAL_NXP_MODULE_DIR)
+    # Relocate the HAL driver to RAM
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/flash_c40/fsl_c40_flash.c LOCATION RAM)
+  endif()
 endif()
 
 if(CONFIG_SOC_FLASH_RENESAS_RA_HP)

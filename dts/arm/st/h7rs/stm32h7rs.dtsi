@@ -266,11 +266,11 @@
 				clocks = <&rcc STM32_CLOCK(AHB4, 2)>;
 			};
 
-			gpiod: gpio@58020C00 {
+			gpiod: gpio@58020c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x58020C00 0x400>;
+				reg = <0x58020c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB4, 3)>;
 			};
 
@@ -1012,8 +1012,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x08FFF814>;
-		ts-cal2-addr = <0x08FFF818>;
+		ts-cal1-addr = <0x08fff814>;
+		ts-cal2-addr = <0x08fff818>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;

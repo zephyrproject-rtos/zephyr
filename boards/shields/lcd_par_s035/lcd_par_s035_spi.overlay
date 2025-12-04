@@ -16,13 +16,6 @@
 	aliases {
 		mipi-dbi = &zephyr_mipi_dbi_spi;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911_lcd_par_s035>;
-		swap-xy;
-		invert-y;
-	};
 };
 
 /* Initialization of touch, MIPI DBI and display devices is deferred to
@@ -36,6 +29,10 @@
 		reg = <0x5d>;
 		irq-gpios = <&nxp_lcd_pmod_connector 12 GPIO_ACTIVE_HIGH>;
 		zephyr,deferred-init;
+		swapped-x-y;
+		inverted-y;
+		screen-width = <480>;
+		screen-height = <320>;
 	};
 };
 

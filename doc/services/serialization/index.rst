@@ -9,4 +9,6 @@ structured data with a known format on-the-wire.
 .. toctree::
    :maxdepth: 1
 
+   cbor.rst
+   json.rst
    nanopb.rst

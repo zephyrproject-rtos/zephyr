@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT gpio_radio_coex
+#define DT_DRV_COMPAT radio_gpio_coex
 
 #include <errno.h>
 #include <soc.h>

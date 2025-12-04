@@ -54,8 +54,8 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 {
 	otError error = OT_ERROR_NONE;
 	struct net_pkt *pkt = NULL;
-	struct in6_addr dst = {0};
-	const struct in6_addr *src;
+	struct net_in6_addr dst = {0};
+	const struct net_in6_addr *src;
 
 	if (aBuffer[0] == NET_ICMPV6_RA) {
 		handle_ra_from_ot(aBuffer, aBufferLength);

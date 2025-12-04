@@ -327,7 +327,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 7>;
 			status = "disabled";
@@ -781,8 +781,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FFF75A8>;
-		ts-cal2-addr = <0x1FFF75CA>;
+		ts-cal1-addr = <0x1fff75a8>;
+		ts-cal2-addr = <0x1fff75ca>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -792,7 +792,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-addr = <0x1fff75aa>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 18>;
 		status = "disabled";

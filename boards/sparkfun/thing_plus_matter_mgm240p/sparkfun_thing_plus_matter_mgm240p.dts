@@ -9,7 +9,7 @@
 /dts-v1/;
 #include <silabs/xg24/mgm240pb32vna.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>

@@ -23,6 +23,7 @@
 
 	keys: keys {
 		compatible = "gpio-keys";
+
 		button0: button0 {
 			/* gpio0 pin 0 is already aliased to led0 */
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;

@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
-#include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
 
 / {
 	#address-cells = <1>;

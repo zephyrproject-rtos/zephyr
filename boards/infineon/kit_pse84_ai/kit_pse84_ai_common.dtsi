@@ -103,7 +103,3 @@ uart2: &scb2 {
 &gpio_prt20 {
 	status = "okay";
 };
-
-&dpll_hp {
-	status = "okay";
-};

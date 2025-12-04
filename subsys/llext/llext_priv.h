@@ -24,7 +24,7 @@
 	  (uintptr_t)(base_addr + alloc) <=                                                        \
 		  DT_REG_ADDR(DT_INST(inst, compat)) + DT_REG_SIZE(DT_INST(inst, compat)))) ||
 #define INSTR_FETCHABLE(base_addr, alloc)                                                          \
-	DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(arc_iccm, IN_NODE, base_addr, alloc) false
+	(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(arc_iccm, IN_NODE, base_addr, alloc) false)
 #elif CONFIG_HARVARD && !CONFIG_ARC
 /* Unknown if section / region is in instruction memory; warn or compensate */
 #define INSTR_FETCHABLE(base_addr, alloc) false

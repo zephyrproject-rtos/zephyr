@@ -60,11 +60,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911>;
-	};
-
 	aliases {
 		led0 = &blue_led_1;
 		led1 = &red_led_2;
@@ -268,9 +263,9 @@ csi_interface: &dcmipp {
 		vfront-porch = <2>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };
 
 /*

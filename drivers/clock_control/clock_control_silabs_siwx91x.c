@@ -245,10 +245,12 @@ static int siwx91x_clock_init(const struct device *dev)
 	sl_si91x_clock_manager_init();
 
 	/* Use SoC PLL at configured frequency as core clock */
-	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK,
+					       DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 
 	/* Use interface PLL at configured frequency as peripheral clock */
-	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	sl_si91x_clock_manager_set_pll_freq(INFT_PLL,
+					    DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency),
 					    PLL_REF_CLK_VAL_XTAL);
 
 	/* FIXME: Currently the clock consumer use clocks without power on them.

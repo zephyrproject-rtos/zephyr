@@ -4,6 +4,7 @@
 			psels = <NRF_PSEL(SPIM_SCK, 0, 16)>,
 				<NRF_PSEL(SPIM_MOSI, 0, 17)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(SPIM_MISO, 0, 18)>;
 			bias-pull-down;
@@ -24,6 +25,7 @@
 			psels = <NRF_PSEL(SPIM_SCK, 0, 13)>,
 				<NRF_PSEL(SPIM_MOSI, 0, 12)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(SPIM_MISO, 0, 11)>;
 			bias-pull-down;

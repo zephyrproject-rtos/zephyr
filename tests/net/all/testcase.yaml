@@ -1,6 +1,5 @@
 common:
   # Only used for compile testing so it is enough to use one platform here.
-  platform_allow: qemu_x86
   build_only: true
   min_ram: 32
   tags:
@@ -8,23 +7,26 @@ common:
     - net-all
 tests:
   net.build:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_TC_THREAD_COOPERATIVE=y
   net.build.preempt:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
   net.build.no_compat_namespacing:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
       - CONFIG_SHELL_GETOPT=n
       - CONFIG_NET_L2_WIFI_SHELL=n
   net.build.compat_namespacing:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=y
   # Compile test OpenThread
   net.build.no_compat_namespacing_openthread:
-    build_only: true
     tags:
       - net
       - openthread
@@ -112,3 +114,4 @@ tests:
       - CONFIG_NET_ROUTE_MCAST=y
       - CONFIG_OPENTHREAD_SHELL=y
       - CONFIG_DNS_RESOLVER_PACKET_FORWARDING=y
+      - CONFIG_MAX_THREAD_BYTES=5

@@ -555,6 +555,7 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 		ret = gspi_siwx91x_config(dev, config, cb, userdata);
 		if (ret) {
 			spi_context_release(&data->ctx, ret);
+			pm_device_runtime_put(dev);
 			return ret;
 		}
 	}
@@ -566,6 +567,9 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 	if (spi_siwx91x_is_dma_enabled_instance(dev)) {
 		/* Perform DMA transceive */
 		ret = gspi_siwx91x_transceive_dma(dev, config);
+		if (ret < 0) {
+			pm_device_runtime_put(dev);
+		}
 		spi_context_release(&data->ctx, ret);
 	} else {
 		/* Perform synchronous polling transceive */

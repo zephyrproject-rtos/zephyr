@@ -2817,8 +2817,12 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 {
 	int err;
 	struct bt_sdp_client *session;
+	size_t index;
 
-	session = &bt_sdp_client_pool[bt_conn_index(conn)];
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "ACL CONN index is out of bounds");
+
+	session = &bt_sdp_client_pool[index];
 	k_sem_take(&session->sem_lock, K_FOREVER);
 	if (session->state == SDP_CLIENT_CONNECTING ||
 	    session->state == SDP_CLIENT_CONNECTED) {

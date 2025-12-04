@@ -8,16 +8,16 @@
 	i2c30_default: i2c30_default {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
-					<NRF_PSEL(TWIM_SCL, 0, 3)>;
-					bias-pull-up;
+				<NRF_PSEL(TWIM_SCL, 0, 3)>;
+			bias-pull-up;
 		};
 	};
 
 	i2c30_sleep: i2c30_sleep {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
-					<NRF_PSEL(TWIM_SCL, 0, 3)>;
-					low-power-enable;
+				<NRF_PSEL(TWIM_SCL, 0, 3)>;
+			low-power-enable;
 		};
 	};
 };

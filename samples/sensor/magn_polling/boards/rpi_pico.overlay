@@ -10,6 +10,7 @@
 		group1 {
 			pinmux = <PIO0_P10>, <PIO0_P11>;
 		};
+
 		group2 {
 			pinmux = <PIO0_P8>;
 			input-enable;
@@ -33,6 +34,7 @@
 		cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 		mosi-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+
 		tmag5170: tmag5170@0 {
 			compatible = "ti,tmag5170";
 			reg = <0>;

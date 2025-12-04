@@ -8,21 +8,8 @@ Miscellaneous
    .. doxygengroup:: checksum
    .. doxygengroup:: structured_data
 
-Checksum APIs
-*************
-
-CRC
-=====
-
-.. doxygengroup:: crc
-
 Structured Data APIs
 ********************
-
-JSON
-====
-
-.. doxygengroup:: json
 
 JWT
 ===

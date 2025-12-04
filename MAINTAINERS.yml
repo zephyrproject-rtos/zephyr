@@ -685,6 +685,7 @@ Bluetooth Qualification:
   collaborators:
     - Thalley
     - jhedberg
+    - alxelax
   files:
     - doc/connectivity/bluetooth/autopts/
     - tests/bluetooth/qualification/
@@ -906,6 +907,7 @@ CRC:
     - subsys/crc/
     - tests/subsys/crc/
     - doc/hardware/peripherals/crc.rst
+    - doc/services/crc/index.rst
   labels:
     - "area: CRC"
 
@@ -1682,6 +1684,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - LaurentiuM1234
+  collaborators:
+    - yongxu-wang15
   files:
     - drivers/firmware/
     - include/zephyr/drivers/firmware/
@@ -2009,6 +2013,9 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - danieldegrasse
+  collaborators:
+    - JarmouniA
+    - VynDragon
   files:
     - drivers/mipi_dbi/
     - include/zephyr/drivers/mipi_dbi.h
@@ -2019,6 +2026,8 @@ Documentation Infrastructure:
 
 "Drivers: MIPI-DSI":
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
@@ -2928,6 +2937,7 @@ Infineon Platforms:
     - drivers/*/*ifx*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
+    - drivers/wifi/infineon/
     - dts/arm/infineon/
     - dts/bindings/*/*infineon*
     - soc/infineon/
@@ -3475,7 +3485,7 @@ NVMEM:
   collaborators:
     - henrikbrixandersen
   files:
-    - doc/services/nvmem/
+    - doc/services/storage/nvmem/
     - dts/bindings/nvmem/
     - include/zephyr/devicetree/nvmem.h
     - include/zephyr/nvmem.h
@@ -3489,10 +3499,8 @@ NVMEM:
 NXP Platform Drivers:
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
   collaborators:
-    - decsny
     - manuargue
     - dbaluta
     - Holt-Sun
@@ -3537,7 +3545,7 @@ NXP Platform Drivers:
 NXP Platform Wireless:
   status: maintained
   maintainers:
-    - dleach02
+    - mmahadevan108
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3575,15 +3583,12 @@ NXP Platform Wireless:
         - soc/
     - name: MCXW platform
       collaborators:
-        - EmilioCBen
-        - decsny
         - axelnxp
       files:
         - boards/nxp/*mcxw*/
         - soc/nxp/mcx/mcxw/
     - name: RW6xx platform
       collaborators:
-        - decsny
         - MaochenWang1
         - axelnxp
       files:
@@ -3595,10 +3600,8 @@ NXP Platform Wireless:
 NXP Platforms (MCU):
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
   collaborators:
-    - decsny
     - butok
   files:
     - boards/nxp/mimxrt*/
@@ -3647,14 +3650,14 @@ NXP Platforms (MCU):
         - boards/nxp/mcx_*/
     - name: NXP Kinetis
       collaborators:
-        - EmilioCBen
+        - mmahadevan108
       files:
         - boards/nxp/frdm_k*/
         - soc/nxp/kinetis/
         - dts/arm/nxp/nxp_k*
     - name: NXP LPC
       collaborators:
-        - EmilioCBen
+        - mmahadevan108
       files:
         - boards/nxp/lpc*/
         - soc/nxp/lpc/
@@ -3809,7 +3812,7 @@ Networking:
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
-    - samples/net/gptp/
+    - samples/net/ethernet/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
@@ -3932,7 +3935,7 @@ Networking:
     - doc/connectivity/networking/dsa*
     - include/zephyr/net/dsa*.h
     - include/zephyr/dt-bindings/ethernet/dsa*.h
-    - samples/net/dsa/
+    - samples/net/ethernet/dsa/
   labels:
     - "area: Networking"
     - "area: DSA"
@@ -4091,7 +4094,7 @@ Networking:
   files:
     - doc/connectivity/networking/api/gptp.rst
     - include/zephyr/net/gptp.h
-    - samples/net/gptp/
+    - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
   labels:
     - "area: Networking"
@@ -4455,9 +4458,6 @@ Release:
 Release Notes:
   status: maintained
   maintainers:
-    - cfriedt
-    - jhedberg
-  collaborators:
     - kartben
   files:
     - doc/releases/migration-guide-*
@@ -4585,7 +4585,7 @@ Retention:
     - dts/bindings/retention/
     - include/zephyr/retention/
     - subsys/retention/
-    - doc/services/retention/
+    - doc/services/storage/retention/
   labels:
     - "area: Retention"
 
@@ -5747,16 +5747,13 @@ West:
 "West project: hal_nxp":
   status: maintained
   maintainers:
-    - dleach02
     - mmahadevan108
-    - decsny
     - ZhaoxiangJin
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
-    - EmilioCBen
     - MaochenWang1
     - axelnxp
     - zejiang0jason
@@ -5769,7 +5766,6 @@ West:
 "West project: hal_openisa":
   status: odd fixes
   collaborators:
-    - dleach02
     - zejiang0jason
   files:
     - modules/Kconfig.vega
@@ -6038,7 +6034,8 @@ West:
     - ithinuel
   files:
     - modules/mbedtls/
-    - tests/crypto/mbedtls/
+    - tests/crypto/mbedtls_psa/
+    - tests/crypto/secp256r1/
     - tests/benchmarks/mbedtls/
   labels:
     - "area: mbedTLS / PSA Crypto"

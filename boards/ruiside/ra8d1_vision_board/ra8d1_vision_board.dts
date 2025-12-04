@@ -6,8 +6,8 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
 #include "ra8d1_vision_board-pinctrl.dtsi"

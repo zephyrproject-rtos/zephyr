@@ -111,7 +111,7 @@
 			ieee802154-supported;
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
-			tx-high-power-supported;
+			radio-tx-high-power-supported;
 
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";

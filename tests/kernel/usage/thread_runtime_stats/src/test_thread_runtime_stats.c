@@ -87,7 +87,11 @@ ZTEST(usage_api, test_all_stats_usage)
 
 	k_thread_runtime_stats_all_get(&stats2);
 
+#if defined(CONFIG_RISCV)
+	k_sleep(K_TICKS(3));  /* Helper runs for 3 ticks - on slower platforms */
+#else
 	k_sleep(K_TICKS(2));  /* Helper runs for 2 ticks */
+#endif
 
 	k_thread_runtime_stats_all_get(&stats3);
 

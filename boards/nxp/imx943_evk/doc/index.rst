@@ -77,7 +77,7 @@ The two switch ports could be verified via :zephyr:code-sample:`dsa` on M33 core
 or on A55 Core, for example for A55 Core:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dsa
+   :zephyr-app: samples/net/ethernet/dsa
    :host-os: unix
    :board: imx943_evk/mimx94398/a55
    :goals: flash
@@ -85,7 +85,7 @@ or on A55 Core, for example for A55 Core:
 Or for M33 Core:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dsa
+   :zephyr-app: samples/net/ethernet/dsa
    :host-os: unix
    :board: imx943_evk/mimx94398/m33/ddr
    :goals: build

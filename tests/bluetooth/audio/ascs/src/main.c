@@ -201,6 +201,8 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	/* Unregister the callbacks - which will clean up the ASCS */
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
 	/* Expected to notify the upper layers */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
 	expect_bt_bap_stream_ops_released_called_once(stream);
@@ -434,6 +436,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
 
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
 	/* Expected to notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_called_once(stream);
@@ -477,6 +481,8 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	/* Expected to notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
@@ -526,6 +532,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
 
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
 	/* Expected no change in ASE state */
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
@@ -533,6 +541,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 
 	err = bt_bap_stream_disable(stream);
 	zassert_equal(0, err, "Failed to disable stream: err %d", err);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		expect_bt_bap_stream_ops_qos_set_called_once(stream);
@@ -573,6 +583,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
 
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
 	/* Expected to not notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
@@ -587,6 +599,8 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 		err = bt_bap_stream_start(stream);
 		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
 	}
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	expect_bt_bap_stream_ops_connected_called_twice(stream);
 	expect_bt_bap_stream_ops_started_called_once(stream);

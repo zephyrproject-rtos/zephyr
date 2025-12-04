@@ -521,14 +521,15 @@ void z_riscv_pmp_init(void)
 	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
 	 * for detecting null pointer dereferencing.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      0,
 		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
 	/* The read-only area is always there for every mode */
-	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
+	set_pmp_entry(&index,
+		      PMP_R | PMP_X | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)__rom_region_start,
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -537,21 +538,20 @@ void z_riscv_pmp_init(void)
 #ifdef CONFIG_MULTITHREADING
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
-	 * addresses inaccessible. This will never change so we do it here
-	 * and lock it too.
+	 * addresses inaccessible. This will never change so we do it here.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks,
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_main_stack,
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -569,7 +569,9 @@ void z_riscv_pmp_init(void)
 	 * the kernel mode memory attribute permission is fully operational.
 	 */
 	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif /* CONFIG_MEM_ATTR */
 
+#if defined(CONFIG_MEM_ATTR) || defined(CONFIG_PMP_NO_LOCK_GLOBAL)
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for

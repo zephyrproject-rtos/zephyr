@@ -410,6 +410,14 @@ config PMP_GRANULARITY
 	  (ie 4, 8, 16, ...), but if neither TOR mode nor NA4 mode is
 	  supported, the minimum granularity is 8.
 
+config PMP_NO_LOCK_GLOBAL
+	bool "Do not lock the global PMP entries"
+	select PMP_KERNEL_MODE_DYNAMIC
+	help
+	  Configure the PMP entries as unlocked (L=0) to implement PMP relative
+	  features. This allows application to dynamically reconfigure PMP
+	  entries without requiring hard reset.
+
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD

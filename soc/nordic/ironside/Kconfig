@@ -3,7 +3,7 @@
 
 config NRF_IRONSIDE
 	bool
-	depends on SOC_NRF54H20 || SOC_NRF9280_IRON
+	depends on SOC_NRF54H20 || SOC_NRF9280
 	help
 	  This is selected by drivers interacting with Nordic IronSide firmware.
 
@@ -28,7 +28,7 @@ config NRF_IRONSIDE_CALL_INIT_PRIORITY
 endif # NRF_IRONSIDE_CALL
 
 menu "Nordic IronSide services"
-	depends on SOC_NRF54H20 || SOC_NRF9280_IRON
+	depends on SOC_NRF54H20 || SOC_NRF9280
 
 config NRF_IRONSIDE_CPUCONF_SERVICE
 	bool "IronSide CPUCONF service"

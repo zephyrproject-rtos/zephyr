@@ -1355,10 +1355,8 @@ static int process_set_absolute_volume_rsp(struct bt_avrcp *avrcp, uint8_t tid,
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 	absolute_volume = net_buf_pull_u8(buf);
-	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
-		return BT_AVRCP_STATUS_INVALID_PARAMETER;
-	}
+	/* PTS may respond with bit 7 set in the absolute volume parameter invalid behavior */
+	absolute_volume &= BT_AVRCP_MAX_ABSOLUTE_VOLUME;
 
 	avrcp_ct_cb->set_absolute_volume(get_avrcp_ct(avrcp), tid, status, absolute_volume);
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
@@ -1739,6 +1737,8 @@ static int handle_vendor_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf
 			     uint8_t ctype, uint8_t pdu_id,
 			     const struct avrcp_pdu_vendor_handler *handlers, size_t num_handlers)
 {
+	size_t min_len;
+
 	for (size_t i = 0; i < num_handlers; i++) {
 		const struct avrcp_pdu_vendor_handler *handler = &handlers[i];
 
@@ -1746,12 +1746,15 @@ static int handle_vendor_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf
 			continue;
 		}
 
+		if (handlers != rsp_vendor_handlers && ctype != handler->cmd_type) {
+			LOG_ERR("Invalid ctype 0x%02x for pdu_id 0x%02x", ctype, pdu_id);
+			return BT_AVRCP_STATUS_INVALID_COMMAND;
+		}
+
 		/** For REJECTED responses, only need 1 byte for error code.
 		 *  For NOT_IMPLEMENTED and IN_TRANSITION, no additional data is needed.
 		 *  For other responses, use the handler's minimum length requirement.
 		 */
-		size_t min_len;
-
 		if (ctype == BT_AVRCP_RSP_REJECTED) {
 			min_len = sizeof(uint8_t);
 		} else if (ctype == BT_AVRCP_RSP_NOT_IMPLEMENTED ||
@@ -2209,10 +2212,9 @@ static int process_set_absolute_volume_cmd(struct bt_avrcp *avrcp, uint8_t tid,
 	}
 
 	absolute_volume = net_buf_pull_u8(buf);
-	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
-		return BT_AVRCP_STATUS_INVALID_PARAMETER;
-	}
+	/* PTS may Set command with bit 7 set in the absolute volume parameter invalid behavior */
+	absolute_volume &= BT_AVRCP_MAX_ABSOLUTE_VOLUME;
+
 	avrcp_tg_cb->set_absolute_volume(get_avrcp_tg(avrcp), tid, absolute_volume);
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
 }
@@ -2383,11 +2385,6 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 		goto err_rsp;
 	}
 
-	if (ctype_or_rsp !=  get_cmd_type_by_pdu(pdu->pdu_id)) {
-		LOG_ERR("Invalid ctype 0x%02x for pdu_id 0x%02x", ctype_or_rsp, pdu->pdu_id);
-		error_code = BT_AVRCP_STATUS_INVALID_COMMAND;
-		goto err_rsp;
-	}
 
 	error_code = handle_vendor_pdu(avrcp, tid, buf, ctype_or_rsp, pdu->pdu_id,
 				       cmd_vendor_handlers, ARRAY_SIZE(cmd_vendor_handlers));

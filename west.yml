@@ -149,7 +149,7 @@ manifest:
       groups:
         - hal
     - name: hal_afbr
-      revision: 4e1eea7ea283db9d9ce529b0e9f89c0b5c2660e3
+      revision: 1abf6947457380934e27f92508ec5532ddedfc6d
       path: modules/hal/afbr
       groups:
         - hal
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: af6cfa2e3e7098b596062ab516b80a48a7ba7332
+      revision: 78f88d79bfdca7e84ec7aafb12c0ddd7440bf3d1
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 564e754139944286208f3eac122781cec4262392
+      revision: e891e1cda4db109c6816cc929dda4f6a18e3e1bc
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: a7f64ac242138179b7f893eb440ccb0c5655f8e9
+      revision: ee1ab8aa1909d800d83ae71a379387c54ab733b3
       path: modules/hal/nxp
       groups:
         - hal
@@ -286,7 +286,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 51698b0f5fdac2778484f565d4591fcb1dd92bc4
+      revision: 98daa83ecc54e560610711e142184f5f77607bad
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -342,7 +342,7 @@ manifest:
       revision: 5eec7aca321735f5fc8e3e7c79e162f0e9810b16
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: a39e9b155830461c9d1cf587afb151b894369b91
+      revision: 9f09f0785f9fc716514d8956a2a446021697400c
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
