@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(hwinfo_rcm, CONFIG_HWINFO_LOG_LEVEL);
  * Translate bitmask from MCUX RCM reset source bitmask to Zephyr
  * hwinfo reset source bitmask.
  *
- * @param NXP MCUX RCM reset source mask.
+ * @param sources NXP MCUX RCM reset source mask.
  * @retval Zephyr hwinfo reset source mask.
  */
 static uint32_t hwinfo_mcux_rcm_xlate_reset_sources(uint32_t sources)
@@ -43,7 +43,7 @@ static uint32_t hwinfo_mcux_rcm_xlate_reset_sources(uint32_t sources)
 	if (sources & kRCM_SourceLol) {
 		mask |= RESET_PLL;
 	}
-#endif /*  (defined(FSL_FEATURE_RCM_HAS_LOL) && FSL_FEATURE_RCM_HAS_LOL) */
+#endif /* (defined(FSL_FEATURE_RCM_HAS_LOL) && FSL_FEATURE_RCM_HAS_LOL) */
 
 	if (sources & kRCM_SourceWdog) {
 		mask |= RESET_WATCHDOG;
@@ -94,7 +94,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	sources = RCM_GetStickyResetSources(RCM) & kRCM_SourceAll;
 #else /* (defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS) */
 	sources = RCM_GetPreviousResetSources(RCM) & kRCM_SourceAll;
-#endif /* !(defined(FSL_FEATURE_RCM_HAS_PARAM) && FSL_FEATURE_RCM_HAS_PARAM) */
+#endif /* (defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS) */
 
 	*cause = hwinfo_mcux_rcm_xlate_reset_sources(sources);
 
