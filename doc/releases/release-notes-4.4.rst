@@ -122,8 +122,8 @@ New APIs and options
 
 * Settings
 
-   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
-   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
+  * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
+  * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
 
 .. zephyr-keep-sorted-stop
 
@@ -151,8 +151,8 @@ New Drivers
 
 * Radio
 
-   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
-   * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
+  * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
+  * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
 
 New Samples
 ***********
