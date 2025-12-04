@@ -6,6 +6,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 
 / {
@@ -714,6 +715,18 @@
 				#irq-cells = <1>;
 				status = "disabled";
 			};
+		};
+
+		adc0: adc0@41c00000 {
+			compatible = "renesas,rz-adc-e";
+			reg = <0x41c00000 0x400>;
+			unit = <0>;
+			interrupts = <403 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
 		};
 
 		sci0: sci0@42800c00 {
