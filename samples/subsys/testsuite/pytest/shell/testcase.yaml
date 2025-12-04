@@ -8,18 +8,39 @@ common:
   extra_configs:
     - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   min_ram: 40
-  integration_platforms:
-    - native_sim
-    - qemu_cortex_m3
 tests:
   sample.pytest.shell:
     harness: pytest
+    arch_exclude: arc
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
+  sample.pytest.shell.flash_before:
+    harness: pytest
+    arch_allow: arc
+    harness_config:
+      pytest_args: [--flash-before=true]
   sample.pytest.shell.vt100_colors_off:
     harness: pytest
+    arch_exclude: arc
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_SHELL_VT100_COLORS=n
+  sample.pytest.shell.vt100_colors_off.flash_before:
+    harness: pytest
+    arch_allow: arc
+    harness_config:
+      pytest_args: [--flash-before=true]
     extra_configs:
       - CONFIG_SHELL_VT100_COLORS=n
   sample.harness.shell:
     harness: shell
+    arch_exclude: arc
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     harness_config:
       shell_commands: &kernel_commands
         - command: "kernel cycles"
@@ -27,16 +48,37 @@ tests:
         - command: "kernel version"
           expected: "Zephyr version .*"
         - command: "kernel sleep 100"
+  sample.harness.shell.flash_before:
+    harness: shell
+    arch_allow: arc
+    harness_config:
+      pytest_args: [--flash-before=true]
+      shell_commands: *kernel_commands
   sample.harness.shell.vt100_colors_off:
     harness: shell
+    arch_exclude: arc
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     extra_configs:
       - CONFIG_SHELL_VT100_COLORS=n
     harness_config:
+      shell_commands: *kernel_commands
+  sample.harness.shell.vt100_colors_off.flash_before:
+    harness: shell
+    arch_allow: arc
+    extra_configs:
+      - CONFIG_SHELL_VT100_COLORS=n
+    harness_config:
+      pytest_args: [--flash-before=true]
       shell_commands: *kernel_commands
   sample.pytest.required_app_demo:
     required_applications:
       - name: sample.pytest.shell
       - name: sample.harness.shell
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     harness: pytest
     harness_config:
       pytest_root:

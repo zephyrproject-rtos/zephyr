@@ -8,11 +8,20 @@ tests:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: shell
+    arch_exclude: arc
     min_ram: 40
     integration_platforms:
       - native_sim
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+  sample.shell.shell_module.flash_before:
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    tags: shell
+    harness: shell
+    arch_allow: arc
+    harness_config:
+      pytest_args: [--flash-before=true]
+    min_ram: 40
   sample.shell.shell_module.usb:
     depends_on: usbd
     tags:
