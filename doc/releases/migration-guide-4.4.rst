@@ -149,6 +149,13 @@ STM32
   deprecated, but retained for backwards compatibility; **they will be removed in Zephyr 4.5**.
   The generic ``__dtcm_{data,bss,noinit}_section`` macros should be used instead. (:github:`100590`)
 
+* STM32 platforms now use the default MCUboot operating mode ``swap using offset``
+  (:kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET`). To support this bootloader mode,
+  some changes to the board devicetrees are required. Several boards already support this mode
+  (see :github:`100385`).
+  The previous ``swap using move`` mode can still be selected in sysbuild by enabling
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
+
 Shell
 =====
 
