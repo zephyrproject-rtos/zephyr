@@ -164,7 +164,8 @@ ZTEST_F(ascs_test_suite, test_sink_ase_read_state_idle)
 	zexpect_not_null(fixture->ase_snk.attr);
 
 	ret = ase->read(conn, ase, &hdr, sizeof(hdr), 0);
-	zassert_false(ret < 0, "attr->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->read returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 	zassert_equal(0x00, hdr.ase_state, "unexpected ASE_State 0x%02x", hdr.ase_state);
 }
 
