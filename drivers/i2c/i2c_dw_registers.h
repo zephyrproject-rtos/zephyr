@@ -144,6 +144,16 @@ union ic_comp_param_1_register {
 	} bits;
 };
 
+/* IC_SDA_HOLD */
+union ic_sda_hold_register {
+	uint32_t raw;
+	struct {
+		uint32_t sda_tx_hold: 16 __packed;
+		uint32_t sda_rx_hold: 8 __packed;
+		uint32_t rsvd_sda_hold: 8 __packed;
+	} bits;
+};
+
 #define DW_IC_REG_CON           (0x00)
 #define DW_IC_REG_TAR           (0x04)
 #define DW_IC_REG_SAR           (0x08)
@@ -213,6 +223,7 @@ DEFINE_MM_REG_WRITE(ss_scl_hcnt, DW_IC_REG_SS_SCL_HCNT, 32)
 DEFINE_MM_REG_WRITE(ss_scl_lcnt, DW_IC_REG_SS_SCL_LCNT, 32)
 
 DEFINE_MM_REG_WRITE(fs_scl_hcnt, DW_IC_REG_FS_SCL_HCNT, 32)
+DEFINE_MM_REG_READ(fs_scl_hcnt, DW_IC_REG_FS_SCL_HCNT, 32)
 DEFINE_MM_REG_WRITE(fs_scl_lcnt, DW_IC_REG_FS_SCL_LCNT, 32)
 
 DEFINE_MM_REG_WRITE(hs_scl_hcnt, DW_IC_REG_HS_SCL_HCNT, 32)
