@@ -6,6 +6,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a09g056";
@@ -161,6 +162,42 @@
 			};
 		};
 
+		adc0: adc0@41c00000 {
+			compatible = "renesas,rz-adc-e";
+			reg = <0x41c00000 0x400>;
+			unit = <0>;
+			interrupts = <403 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
+		adc1: adc1@41c02800 {
+			compatible = "renesas,rz-adc-e";
+			reg = <0x41c02800 0x400>;
+			unit = <1>;
+			interrupts = <404 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
+		adc2: adc2@41c02c00 {
+			compatible = "renesas,rz-adc-e";
+			reg = <0x41c02c00 0x400>;
+			unit = <2>;
+			interrupts = <405 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
 		sci0: sci0@42800c00 {
 			compatible = "renesas,rz-sci-b";
 			reg = <0x42800c00 0x400>;
@@ -309,6 +346,14 @@
 				current-speed = <115200>;
 				status = "disabled";
 			};
+		};
+
+		intc: intc@40400000 {
+			compatible = "renesas,rz-intc";
+			reg = <0x40400000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&nvic>;
 		};
 	};
 };
