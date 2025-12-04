@@ -4225,7 +4225,6 @@ PMCI:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - kehintel
   files:
     - subsys/pmci/
@@ -5952,7 +5951,6 @@ West:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - dkalowsk
   files: []
   labels:
