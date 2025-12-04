@@ -571,7 +571,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 			break;
 		}
 
-		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("No memory for net_pkt");
 			goto unref_packet;
