@@ -2561,8 +2561,6 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - str4t0m
-  collaborators:
-    - casparfriedrich
   files:
     - doc/hardware/peripherals/w1.rst
     - doc/hardware/peripherals/1-Wire_bus_topology.drawio.svg
