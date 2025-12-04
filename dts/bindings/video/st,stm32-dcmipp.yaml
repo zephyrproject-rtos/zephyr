@@ -49,6 +49,10 @@ properties:
   interrupts:
     required: true
 
+  interrupt-names:
+    required: true
+    enum: ["dcmipp", "dcmipp_csi"]
+
   resets:
     required: true
 

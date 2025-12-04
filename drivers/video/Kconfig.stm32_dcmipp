@@ -42,4 +42,11 @@ config VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT
 	help
 	  Pixel format of the sensor video frame.
 
+config VIDEO_STM32_DCMIPP_CSI_ENABLE_IRQ
+	bool "CSI Interrupt"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_DCMIPP),interrupt-names,dcmipp_csi)
+	help
+	  Enable the secondary DCMIPP interrupt dedicated to the CSI host. HAL callbacks
+	  HAL_DCMIPP_CSI_*Callback will be invoked and can be implemented by applications.
+
 endif

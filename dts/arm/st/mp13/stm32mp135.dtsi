@@ -15,6 +15,7 @@
 			compatible = "st,stm32-dcmipp";
 			reg = <0x5a000000 0x400>;
 			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "dcmipp";
 			clocks = <&rcc STM32_CLOCK(APB4, 1)>,
 				 <&rcc STM32_SRC_PLL2_Q DCMIPP_SEL(1)>;
 			clock-names = "dcmipp", "dcmipp-ker";
