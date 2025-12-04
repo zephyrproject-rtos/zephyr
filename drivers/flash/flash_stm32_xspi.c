@@ -2097,18 +2097,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("XSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	__HAL_RCC_SBS_CLK_ENABLE();
-	if (dev_data->hxspi.Instance == XSPI1) {
-		LL_PWR_EnableXSPIM1();
-		LL_SBS_EnableXSPI1SpeedOptim();
-	} else if (dev_data->hxspi.Instance == XSPI2) {
-		LL_PWR_EnableXSPIM2();
-		LL_SBS_EnableXSPI2SpeedOptim();
-	} else {
-		__ASSERT(0, "Not an XSPI instance?!");
-	}
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
