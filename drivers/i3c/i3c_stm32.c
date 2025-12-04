@@ -1903,13 +1903,19 @@ static void i3c_stm32_event_isr(void *arg)
 }
 
 /* Handles the I3C error ISR */
-static void i3c_stm32_error_isr(void *arg)
+static int i3c_stm32_error(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 
 	const struct i3c_stm32_config *config = dev->config;
 	struct i3c_stm32_data *data = dev->data;
 	I3C_TypeDef *i3c = config->i3c;
+
+#ifdef CONFIG_I3C_STM32_COMBINED_INTERRUPT
+	if (!LL_I3C_IsActiveFlag_ERR(i3c)) {
+		return 0;
+	}
+#endif /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
 
 	i3c_stm32_log_err_type(dev);
 
@@ -1921,7 +1927,23 @@ static void i3c_stm32_error_isr(void *arg)
 
 	(void)pm_device_runtime_put(dev);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	return 1;
 }
+
+#ifdef CONFIG_I3C_STM32_COMBINED_INTERRUPT
+static void i3c_stm32_combined_isr(void *arg)
+{
+	if (!i3c_stm32_error(arg)) {
+		i3c_stm32_event_isr(arg);
+	}
+}
+#else /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
+static void i3c_stm32_error_isr(void *arg)
+{
+	(void)i3c_stm32_error(arg);
+}
+#endif /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
 
 #ifdef CONFIG_I3C_USE_IBI
 
@@ -2176,6 +2198,14 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #define STM32_I3C_DMA_CHANNEL(index, dir, DIR, src, dest)
 #endif
 
+#ifdef CONFIG_I3C_STM32_COMBINED_INTERRUPT
+#define STM32_I3C_IRQ_CONNECT_AND_ENABLE(index)                                                    \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
+			    i3c_stm32_combined_isr, DEVICE_DT_INST_GET(index), 0);                 \
+		irq_enable(DT_INST_IRQN(index));                                                   \
+	} while (false)
+#else  /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
 #define STM32_I3C_IRQ_CONNECT_AND_ENABLE(index)                                                    \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),                                \
@@ -2188,6 +2218,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));                                \
 	} while (false)
+#endif /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I3C_IRQ_HANDLER_DECL(index)                                                          \
 	static void i3c_stm32_irq_config_func_##index(const struct device *dev)
