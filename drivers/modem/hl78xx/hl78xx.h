@@ -41,6 +41,7 @@
 #define MDM_MAX_DATA_LENGTH CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES
 
 #define MDM_MAX_SOCKETS           CONFIG_MODEM_HL78XX_NUM_SOCKETS
+#define MDM_MAX_PDP_CONTEXTS      CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS
 #define MDM_BASE_SOCKET_NUM       1
 #define MDM_BAND_BITMAP_LEN_BYTES 32
 #define MDM_BAND_HEX_STR_LEN      (MDM_BAND_BITMAP_LEN_BYTES * 2 + 1)
@@ -88,6 +89,11 @@
 #define SET_RAT_GSM_CMD   "AT+KSRAT=2,1"
 #define SET_RAT_NBNTN_CMD "AT+KSRAT=3,1"
 
+/* Enable/Disable RAT registration status */
+#define ENABLE_LTE_REG_STATUS_CMD          "AT+CEREG=5"
+#define ENABLE_GSM_REG_STATUS_CMD          "AT+CREG=3"
+#define DISABLE_LTE_REG_STATUS_CMD         "AT+CEREG=0"
+#define DISABLE_GSM_REG_STATUS_CMD         "AT+CREG=0"
 /* Power mode commands */
 #define SET_AIRPLANE_MODE_CMD_LEGACY       "AT+CFUN=4,0"
 #define SET_AIRPLANE_MODE_CMD              "AT+CFUN=4,1"
@@ -258,6 +264,10 @@ struct hl78xx_network_operator {
 	char operator[MDM_MODEL_LENGTH];
 	uint8_t format;
 };
+struct hl78xx_gprs_status {
+	bool is_active;
+	int8_t cid;
+};
 
 struct modem_status {
 	struct registration_status registration;
@@ -269,6 +279,7 @@ struct modem_status {
 	int variant;
 	enum hl78xx_state state;
 	struct kband_syntax kbndcfg[HL78XX_RAT_COUNT];
+	struct hl78xx_gprs_status gprs[MDM_MAX_PDP_CONTEXTS];
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct apn_state apn;
 	struct hl78xx_network_operator network_operator;

@@ -474,6 +474,27 @@ void hl78xx_on_kstatev(struct modem_chat *chat, char **argv, uint16_t argc, void
 		event_dispatcher_dispatch(&event);
 	}
 }
+
+void hl78xx_on_cgact(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	int act_status = -1;
+	int cid = -1;
+
+	if (argc != 3) {
+		return;
+	}
+	cid = ATOI(argv[1], -1, "cid");
+	act_status = ATOI(argv[2], -1, "act_status");
+	if (cid == -1 || act_status == -1 || cid > CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS) {
+		/* Invalid parameters */
+		return;
+	}
+
+	data->status.gprs[cid - 1].is_active = (act_status == 1) ? true : false;
+	data->status.gprs[cid - 1].cid = cid;
+	HL78XX_LOG_DBG("CGACT: %s %s", argv[0], argv[2]);
+}
 #endif
 
 void hl78xx_on_ksrep(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -1190,6 +1211,16 @@ static int hl78xx_on_await_registered_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 {
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	int ret = 0;
+	/* Activate the PDP context */
+	ret = hl78xx_gsm_pdp_activate(data);
+	if (ret) {
+		LOG_ERR("Failed to activate PDP context: %d", ret);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
+		return ret;
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 	notif_carrier_on(data->dev);
 	iface_status_work_cb(data, hl78xx_chat_callback_handler);
 	return 0;

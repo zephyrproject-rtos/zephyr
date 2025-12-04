@@ -742,6 +742,14 @@ config MODEM_HL78XX_NUM_SOCKETS
 	help
 	  Maximum number of sockets that can be opened at the same time
 
+config MODEM_HL78XX_MAX_PDP_CONTEXTS
+	int "Maximum number of PDP contexts"
+	default 1
+	range 1 1 if !MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	range 1 2 if MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	help
+	  Maximum number of PDP contexts that can be defined at the same time
+
 config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	bool "TLS for sockets"
 	depends on NET_SOCKETS_SOCKOPT_TLS

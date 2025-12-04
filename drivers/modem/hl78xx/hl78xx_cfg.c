@@ -104,6 +104,24 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 			*modem_require_restart = true;
 		}
 	}
+#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+	if (*rat_request == HL78XX_RAT_GSM) {
+		/* For GSM RAT, no band configuration is needed */
+		ret = hl78xx_run_lte_dis_gsm_en_reg_status_script(data);
+		if (ret < 0) {
+			goto error;
+		}
+	} else {
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+		/* For LTE RATs, enable LTE registration status and disable GSM */
+		ret = hl78xx_run_gsm_dis_lte_en_reg_status_script(data);
+		if (ret < 0) {
+			goto error;
+		}
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 error:
@@ -121,6 +139,11 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
 	}
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	if (rat_config_request == HL78XX_RAT_GSM) {
+		return 0;
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	for (int rat = HL78XX_RAT_CAT_M1; rat <= HL78XX_RAT_NB1; rat++) {
 #else
@@ -197,6 +220,31 @@ error:
 	LOG_ERR("Set APN to %s, result: %d", apn, ret);
 	return ret;
 }
+
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+
+int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
+{
+	int ret = 0;
+	/* Activate the PDP context, Today only one pdp context is supported */
+	const char *cmd_activate_pdp = "AT+CGACT=1,1";
+	/* Check if the current RAT is GSM and if the PDP context is not already active */
+	if (data->status.registration.rat_mode == HL78XX_RAT_CAT_M1 ||
+	    data->status.registration.rat_mode == HL78XX_RAT_NB1 ||
+	    data->status.gprs[0].is_active) {
+		return 0;
+	}
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd_activate_pdp, strlen(cmd_activate_pdp),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		LOG_ERR("GSM PDP activation failed: %d", ret);
+		return ret;
+	}
+	return 0;
+}
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
 /* Find APN from profile string based on associated number prefix */
