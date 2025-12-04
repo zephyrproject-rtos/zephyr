@@ -19,23 +19,9 @@ tests:
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64
-  bindesc.define.c99:
-    extra_configs:
-      - CONFIG_STD_C99=y
-  bindesc.define.c11:
-    extra_configs:
-      - CONFIG_STD_C11=y
   bindesc.define.c17:
     extra_configs:
       - CONFIG_STD_C17=y
-  bindesc.define.gnu99:
-    extra_configs:
-      - CONFIG_STD_C99=y
-      - CONFIG_GNU_C_EXTENSIONS=y
-  bindesc.define.gnu11:
-    extra_configs:
-      - CONFIG_STD_C11=y
-      - CONFIG_GNU_C_EXTENSIONS=y
   bindesc.define.gnu17:
     extra_configs:
       - CONFIG_STD_C17=y

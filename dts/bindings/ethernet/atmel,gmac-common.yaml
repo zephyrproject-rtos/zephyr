@@ -16,10 +16,6 @@ properties:
     description: |
       Number of hardware TX and RX queues.
 
-  mac-eeprom:
-    type: phandle
-    description: phandle to I2C eeprom device node. This property is deprecated.
-
   phy-connection-type:
     default: "rmii"
 

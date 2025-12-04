@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/bl602x-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/bl602x-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -21,6 +21,25 @@
 			pinmux = <GPIO7_UART0_RX>,
 				 <GPIO16_UART0_TX>;
 			bias-high-impedance;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO17_I2C_SDA>,
+				 <GPIO12_I2C_SCL>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <GPIO3_SPI_SCLK>,
+				 <GPIO4_SPI_MOSI>,
+				 <GPIO5_SPI_MISO>;
+			bias-pull-up;
+			input-schmitt-enable;
 		};
 	};
 };

@@ -677,10 +677,6 @@ static void isr_tx_common(void *param,
 		radio_isr_set(isr_done, lll);
 		radio_disable();
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-			lll_prof_send();
-		}
-
 		return;
 	}
 

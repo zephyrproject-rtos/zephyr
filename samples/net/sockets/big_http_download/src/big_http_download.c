@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "mbedtls/md.h"
+#include <psa/crypto.h>
 
 #if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
@@ -79,8 +79,6 @@ const char *port;
 const char *uri_path = "";
 static char response[1024];
 static char response_hash[32];
-mbedtls_md_context_t hash_ctx;
-const mbedtls_md_info_t *hash_info;
 unsigned int cur_bytes;
 
 void dump_addrinfo(const struct addrinfo *ai)
@@ -256,6 +254,9 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 	struct timeval timeout = {
 		.tv_sec = 5
 	};
+	psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+	psa_status_t psa_status;
+	size_t hash_len;
 
 	cur_bytes = 0U;
 	*redirect = false;
@@ -313,7 +314,11 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 		goto error;
 	}
 
-	mbedtls_md_starts(&hash_ctx);
+	psa_status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+	if (psa_status != PSA_SUCCESS) {
+		printf("Failed to setup PSA hash operation %d\n", psa_status);
+		goto error;
+	}
 
 	while (1) {
 		int len = recv(sock, response, sizeof(response) - 1, 0);
@@ -332,7 +337,11 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 			break;
 		}
 
-		mbedtls_md_update(&hash_ctx, response, len);
+		psa_status = psa_hash_update(&hash_op, response, len);
+		if (psa_status != PSA_SUCCESS) {
+			printf("Failed to update PSA operation %d\n", psa_status);
+			goto error;
+		}
 
 		cur_bytes += len;
 		printf("Download progress: %u Bytes; %u KiB; %u MiB\r",
@@ -344,18 +353,22 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 
 	printf("\n");
 
-	mbedtls_md_finish(&hash_ctx, response_hash);
+	psa_status = psa_hash_finish(&hash_op, response_hash, sizeof(response_hash), &hash_len);
+	if (psa_status != PSA_SUCCESS) {
+		printf("Failed to terminate PSA operation %d\n", psa_status);
+		goto error;
+	}
 
 	printf("Hash: ");
-	print_hex(response_hash, mbedtls_md_get_size(hash_info));
+	print_hex(response_hash, hash_len);
 	printf("\n");
 
-	if (memcmp(response_hash, download_hash,
-		   mbedtls_md_get_size(hash_info)) != 0) {
+	if (memcmp(response_hash, download_hash, hash_len) != 0) {
 		printf("HASH MISMATCH!\n");
 	}
 
 error:
+	psa_hash_abort(&hash_op);
 	(void)close(sock);
 
 	return redirect;
@@ -449,16 +462,6 @@ redirect:
 
 	dump_addrinfo(res);
 
-	hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	if (!hash_info) {
-		fatal("Unable to request hash type from mbedTLS");
-	}
-
-	mbedtls_md_init(&hash_ctx);
-	if (mbedtls_md_setup(&hash_ctx, hash_info, 0) < 0) {
-		fatal("Can't setup mbedTLS hash engine");
-	}
-
 	const uint32_t total_iterations = num_iterations;
 	uint32_t current_iteration = 1;
 	do {
@@ -484,7 +487,6 @@ redirect:
 
 	printf("Finished downloading.\n");
 
-	mbedtls_md_free(&hash_ctx);
 	freeaddrinfo(res);
 
 	return 0;

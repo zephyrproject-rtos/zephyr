@@ -34,13 +34,13 @@
  */
 
 #ifdef HAL_RADIO_HAVE_FEM
-#if FEM_HAS_COMPAT(generic_fem_two_ctrl_pins)
+#if FEM_HAS_COMPAT(radio_fem_two_ctrl_pins)
 #include "radio_nrf5_fem_generic.h"
 #elif FEM_HAS_COMPAT(nordic_nrf21540_fem)
 #include "radio_nrf5_fem_nrf21540.h"
 #else
 #error "radio node fem property has an unsupported compatible"
-#endif	/* FEM_HAS_COMPAT(generic_fem_two_ctrl_pins) */
+#endif	/* FEM_HAS_COMPAT(radio_fem_two_ctrl_pins) */
 #endif	/* HAL_RADIO_HAVE_FEM */
 
 /*

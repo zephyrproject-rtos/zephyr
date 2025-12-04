@@ -35,8 +35,16 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 	struct lvgl_pointer_input_data *data = dev->data;
 	lv_display_t *disp = lv_indev_get_display(data->common_data.indev);
 	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
-	struct display_capabilities *cap = &disp_data->cap;
-	lv_point_t *point = &data->common_data.pending_event.point;
+	struct display_capabilities *cap;
+	lv_point_t *point;
+
+	if (disp_data == NULL) {
+		LOG_WRN_ONCE("disp_data is NULL");
+		return;
+	}
+
+	cap = &disp_data->cap;
+	point = &data->common_data.pending_event.point;
 
 	switch (evt->code) {
 	case INPUT_ABS_X:
@@ -57,6 +65,8 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 		data->common_data.pending_event.state =
 			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 		break;
+	default:
+		return;
 	}
 
 	if (!evt->sync) {
@@ -134,8 +144,8 @@ int lvgl_pointer_input_init(const struct device *dev)
 }
 
 #define LVGL_POINTER_INPUT_DEFINE(inst)                                                            \
-	LVGL_INPUT_DEFINE(inst, pointer, CONFIG_LV_Z_POINTER_INPUT_MSGQ_COUNT,                     \
-			  lvgl_pointer_process_event);                                             \
+	LVGL_INPUT_INST_DEFINE(inst, pointer, CONFIG_LV_Z_POINTER_INPUT_MSGQ_COUNT,                \
+			       lvgl_pointer_process_event);                                        \
 	static const struct lvgl_pointer_input_config lvgl_pointer_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, pointer),                 \
 		.common_config.display_dev =                                                       \
@@ -150,3 +160,35 @@ int lvgl_pointer_input_init(const struct device *dev)
 			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_POINTER_INPUT_DEFINE)
+
+#ifdef CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH
+
+#define CHOSEN_TOUCH_DEV                 DEVICE_DT_GET(DT_CHOSEN(zephyr_touch))
+#define LVGL_CHOSEN_TOUCH_POINTER_DEV_ID pointer_chosen_zephyr_touch
+
+DEVICE_DECLARE(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID);
+
+LVGL_INPUT_DEFINE(CHOSEN_TOUCH_DEV, DEVICE_GET(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID),
+		  LVGL_CHOSEN_TOUCH_POINTER_DEV_ID, pointer, CONFIG_LV_Z_POINTER_INPUT_MSGQ_COUNT,
+		  lvgl_pointer_process_event);
+
+static const struct lvgl_pointer_input_config chosen_touch_pointer_config = {
+	.common_config.event_msgq =
+		&LVGL_INPUT_EVENT_MSGQ(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID, pointer),
+#ifdef CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH_INFER_DISPLAY
+	.common_config.display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display)),
+#endif /* CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH_INFER_DISPLAY */
+};
+static struct lvgl_pointer_input_data chosen_touch_pointer_data;
+
+DEVICE_DEFINE(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID, STRINGIFY(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID), NULL,
+							  NULL, &chosen_touch_pointer_data,
+							  &chosen_touch_pointer_config, POST_KERNEL,
+							  CONFIG_INPUT_INIT_PRIORITY, NULL);
+
+const struct device *lvgl_pointer_from_chosen_get(void)
+{
+	return DEVICE_GET(LVGL_CHOSEN_TOUCH_POINTER_DEV_ID);
+}
+
+#endif /* CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH */

@@ -52,8 +52,8 @@ static void __process_received(struct net_context *context,
 	k_fifo_put(&socket->fifo, pkt);
 }
 
-static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
-				 socklen_t addrlen)
+static int eswifi_socket_connect(void *obj, const struct net_sockaddr *addr,
+				 net_socklen_t addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -64,8 +64,8 @@ static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 		return -EINVAL;
 	}
 
-	if (addr->sa_family != AF_INET) {
-		LOG_ERR("Only AF_INET is supported!");
+	if (addr->sa_family != NET_AF_INET) {
+		LOG_ERR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -106,16 +106,16 @@ static int eswifi_socket_listen(void *obj, int backlog)
 	return ret;
 }
 
-static void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr,
-				      socklen_t len, int val, void *data)
+static void __eswifi_socket_accept_cb(struct net_context *context, struct net_sockaddr *addr,
+				      net_socklen_t len, int val, void *data)
 {
-	struct sockaddr *addr_target = data;
+	struct net_sockaddr *addr_target = data;
 
 	memcpy(addr_target, addr, len);
 }
 
-static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
-				  socklen_t *addrlen)
+static int __eswifi_socket_accept(void *obj, struct net_sockaddr *addr,
+				  net_socklen_t *addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -135,15 +135,15 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	k_sem_reset(&socket->accept_sem);
 	eswifi_unlock(eswifi);
 
-	*addrlen = sizeof(struct sockaddr_in);
+	*addrlen = sizeof(struct net_sockaddr_in);
 
 	k_sem_take(&socket->accept_sem, K_FOREVER);
 
 	return 0;
 }
 
-static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
-				socklen_t *addrlen)
+static int eswifi_socket_accept(void *obj, struct net_sockaddr *addr,
+				net_socklen_t *addrlen)
 {
 	int fd = zvfs_reserve_fd();
 	intptr_t sock;
@@ -166,7 +166,7 @@ static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
 }
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-static int map_credentials(int sd, const void *optval, socklen_t optlen)
+static int map_credentials(int sd, const void *optval, net_socklen_t optlen)
 {
 	sec_tag_t *sec_tags = (sec_tag_t *)optval;
 	int ret = 0;
@@ -188,18 +188,18 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 		while (cert != NULL) {
 			/* Map Zephyr cert types to Simplelink cert options: */
 			switch (cert->type) {
-			case TLS_CREDENTIAL_CA_CERTIFICATE:
+			case ZSOCK_TLS_CREDENTIAL_CA_CERTIFICATE:
 				id = 0;
 				break;
-			case TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
+			case ZSOCK_TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
 				id = 1;
 				break;
-			case TLS_CREDENTIAL_PRIVATE_KEY:
+			case ZSOCK_TLS_CREDENTIAL_PRIVATE_KEY:
 				id = 2;
 				break;
-			case TLS_CREDENTIAL_NONE:
-			case TLS_CREDENTIAL_PSK:
-			case TLS_CREDENTIAL_PSK_ID:
+			case ZSOCK_TLS_CREDENTIAL_NONE:
+			case ZSOCK_TLS_CREDENTIAL_PSK:
+			case ZSOCK_TLS_CREDENTIAL_PSK_ID:
 			default:
 				/* Not handled */
 				return -EINVAL;
@@ -231,25 +231,25 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 	return 0;
 }
 #else
-static int map_credentials(int sd, const void *optval, socklen_t optlen)
+static int map_credentials(int sd, const void *optval, net_socklen_t optlen)
 {
 	return 0;
 }
 #endif
 
 static int eswifi_socket_setsockopt(void *obj, int level, int optname,
-				    const void *optval, socklen_t optlen)
+				    const void *optval, net_socklen_t optlen)
 {
 	intptr_t sd = OBJ_TO_SD(obj);
 	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == ZSOCK_SOL_TLS) {
 		switch (optname) {
-		case TLS_SEC_TAG_LIST:
+		case ZSOCK_TLS_SEC_TAG_LIST:
 			ret = map_credentials(sd, optval, optlen);
 			break;
-		case TLS_HOSTNAME:
-		case TLS_PEER_VERIFY:
+		case ZSOCK_TLS_HOSTNAME:
+		case ZSOCK_TLS_PEER_VERIFY:
 			ret = 0;
 			break;
 		default:
@@ -306,8 +306,8 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 }
 
 static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
-				    int flags, const struct sockaddr *to,
-				    socklen_t tolen)
+				    int flags, const struct net_sockaddr *to,
+				    net_socklen_t tolen)
 {
 	if (to != NULL) {
 		errno = EOPNOTSUPP;
@@ -387,8 +387,8 @@ done:
 }
 
 static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
-				      int flags, struct sockaddr *from,
-				      socklen_t *fromlen)
+				      int flags, struct net_sockaddr *from,
+				      net_socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
 		errno = EOPNOTSUPP;
@@ -538,8 +538,8 @@ done:
 	return 1;
 }
 
-static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
-			      socklen_t addrlen)
+static int eswifi_socket_bind(void *obj, const struct net_sockaddr *addr,
+			      net_socklen_t addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -563,12 +563,12 @@ static bool eswifi_socket_is_supported(int family, int type, int proto)
 	enum eswifi_transport_type eswifi_socket_type;
 	int err;
 
-	if (family != AF_INET) {
+	if (family != NET_AF_INET) {
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != NET_SOCK_DGRAM &&
+	    type != NET_SOCK_STREAM) {
 		return false;
 	}
 
@@ -657,7 +657,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,
 			    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
@@ -665,7 +665,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 				  const struct zsock_addrinfo *hints,
 				  struct zsock_addrinfo **res)
 {
-	struct sockaddr_in *ai_addr;
+	struct net_sockaddr_in *ai_addr;
 	struct zsock_addrinfo *ai;
 	unsigned long port = 0;
 	char *rsp;
@@ -686,7 +686,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 		return DNS_EAI_NONAME;
 	}
 
-	if (hints && hints->ai_family != AF_INET) {
+	if (hints && hints->ai_family != NET_AF_INET) {
 		return DNS_EAI_FAIL;
 	}
 
@@ -708,7 +708,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 		goto done_unlock;
 	}
 
-	/* Now, alloc the embedded sockaddr struct: */
+	/* Now, alloc the embedded net_sockaddr struct: */
 	ai_addr = calloc(1, sizeof(*ai_addr));
 	if (!ai_addr) {
 		free(*res);
@@ -716,14 +716,14 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 		goto done_unlock;
 	}
 
-	ai->ai_family = AF_INET;
-	ai->ai_socktype = hints ? hints->ai_socktype : SOCK_STREAM;
-	ai->ai_protocol = ai->ai_socktype == SOCK_STREAM ? IPPROTO_TCP : IPPROTO_UDP;
+	ai->ai_family = NET_AF_INET;
+	ai->ai_socktype = hints ? hints->ai_socktype : NET_SOCK_STREAM;
+	ai->ai_protocol = ai->ai_socktype == NET_SOCK_STREAM ? NET_IPPROTO_TCP : NET_IPPROTO_UDP;
 
 	ai_addr->sin_family = ai->ai_family;
-	ai_addr->sin_port = htons(port);
+	ai_addr->sin_port = net_htons(port);
 
-	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct sockaddr *)ai_addr)) {
+	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct net_sockaddr *)ai_addr)) {
 		free(ai_addr);
 		free(*res);
 		err = DNS_EAI_FAIL;
@@ -731,7 +731,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	}
 
 	ai->ai_addrlen = sizeof(*ai_addr);
-	ai->ai_addr = (struct sockaddr *)ai_addr;
+	ai->ai_addr = (struct net_sockaddr *)ai_addr;
 	err = 0;
 
 done_unlock:

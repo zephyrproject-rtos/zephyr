@@ -73,11 +73,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&cst816s>;
-	};
-
 	vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 7>;

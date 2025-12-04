@@ -30,3 +30,10 @@ config SOC_EGIS_ET171_FIRMWARE_VERSION
 	default 0xAAAAAAAA
 	help
 	  Firmware version info of bin header
+
+config SOC_EGIS_ET171_VENDOR_FIRMWARE_SIZE
+	hex "The firmware size in the binary header"
+	default 0x0 # 0 means unused
+	help
+	  Customize the firmware size info in the binary header.
+	  Unused if zero.

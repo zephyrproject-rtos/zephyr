@@ -12,8 +12,8 @@ target_sources(app PRIVATE
 )
 
 target_sources(app PRIVATE
-	src/sample_test.c
-	src/test_main.c
+  src/sample_test.c
+  src/test_main.c
 )
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)

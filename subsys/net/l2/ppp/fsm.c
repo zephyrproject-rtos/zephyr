@@ -462,12 +462,12 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 
 	ppp.code = type;
 	ppp.id = id;
-	ppp.length = htons(len);
+	ppp.length = net_htons(len);
 
 	if (!pkt) {
 		pkt = net_pkt_alloc_with_buffer(iface,
 						sizeof(uint16_t) + len,
-						AF_UNSPEC, 0,
+						NET_AF_UNSPEC, 0,
 						PPP_BUF_ALLOC_TIMEOUT);
 		if (!pkt) {
 			goto out_of_mem;
@@ -620,7 +620,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 					sizeof(uint16_t) + sizeof(uint16_t) +
 						sizeof(uint8_t) + sizeof(uint8_t) +
 						remaining_len,
-					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+					NET_AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
 	if (!out) {
 		return NET_DROP;
 	}

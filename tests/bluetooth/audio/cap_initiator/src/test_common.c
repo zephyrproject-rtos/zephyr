@@ -13,12 +13,12 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/ztest_assert.h>
 
-#include "bap_endpoint.h"
+#include "audio/bap_endpoint.h"
 #include "cap_initiator.h"
 #include "conn.h"
 #include "test_common.h"
-#include "ztest_assert.h"
 
 DEFINE_FFF_GLOBALS;
 

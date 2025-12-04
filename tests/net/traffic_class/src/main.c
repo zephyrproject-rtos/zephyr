@@ -58,29 +58,29 @@ static enum net_priority rx_tc2prio[NET_TC_RX_COUNT];
 static const char *test_data = "Test data to be sent";
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 3 addresses */
-static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Destination address for test packets */
-static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
+static struct net_in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct sockaddr_in6 dst_addr6 = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(TEST_PORT),
+static struct net_sockaddr_in6 dst_addr6 = {
+	.sin6_family = NET_AF_INET6,
+	.sin6_port = net_htons(TEST_PORT),
 };
 
 static struct {
@@ -167,7 +167,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (start_receiving) {
-		struct in6_addr addr;
+		struct net_in6_addr addr;
 		struct net_udp_hdr hdr, *udp_hdr;
 		uint16_t port;
 
@@ -343,7 +343,7 @@ static void priority_setup(void)
 }
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
-static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
+static bool add_neighbor(struct net_if *iface, struct net_in6_addr *addr)
 {
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
@@ -374,8 +374,8 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 
 static void setup_net_context(struct net_context **ctx)
 {
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
+	struct net_sockaddr_in6 src_addr6 = {
+		.sin6_family = NET_AF_INET6,
 		.sin6_port = 0,
 	};
 	int ret;
@@ -383,18 +383,18 @@ static void setup_net_context(struct net_context **ctx)
 
 	iface1 = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, ctx);
+	ret = net_context_get(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP, ctx);
 	zassert_equal(ret, 0, "Create IPv6 UDP context %p failed (%d)\n",
 		      *ctx, ret);
 
-	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
+	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct net_in6_addr));
+	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct net_in6_addr));
 
 	ret = add_neighbor(iface1, &dst_addr);
 	zassert_true(ret, "Cannot add neighbor");
 
-	ret = net_context_bind(*ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
+	ret = net_context_bind(*ctx, (struct net_sockaddr *)&src_addr6,
+			       sizeof(struct net_sockaddr_in6));
 	zassert_equal(ret, 0,
 		      "Context bind failure test failed (%d)\n", ret);
 }
@@ -494,8 +494,8 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 	send_priorities[net_tx_priority2tc(prio)][pkt_count - 1] = prio + 1;
 
 	ret = net_context_sendto(net_ctxs_tx[tc].ctx, data, len,
-				 (struct sockaddr *)&dst_addr6,
-				 sizeof(struct sockaddr_in6),
+				 (struct net_sockaddr *)&dst_addr6,
+				 sizeof(struct net_sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 }
@@ -758,7 +758,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	int len, ret;
 	int tc = net_rx_priority2tc(prio);
 
-	const struct in6_addr *src_addr;
+	const struct net_in6_addr *src_addr;
 	struct net_if_addr *ifaddr;
 	struct net_if *iface = NULL;
 
@@ -787,8 +787,8 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	 * UDP header.
 	 */
 	ret = net_context_sendto(net_ctxs_rx[tc].ctx, data, len,
-				 (struct sockaddr *)&dst_addr6,
-				 sizeof(struct sockaddr_in6),
+				 (struct net_sockaddr *)&dst_addr6,
+				 sizeof(struct net_sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 

@@ -389,8 +389,6 @@ static int phy_lan8742_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	mdio_bus_enable(cfg->mdio);
-
 	ret = phy_lan8742_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);

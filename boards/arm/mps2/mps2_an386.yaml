@@ -3,6 +3,7 @@ name: ARM V2M MPS2-an386
 type: mcu
 arch: arm
 simulation:
+  - name: qemu
   - name: armfvp
     exec: FVP_MPS2_Cortex-M4
 toolchain:

@@ -13,10 +13,10 @@
 &tcc4 {
 	compatible = "microchip,tcc-g1-pwm";
 	status = "okay";
-	#pwm-cells = < 0x3 >;
-	pinctrl-0 = < &tcc4_pwm_default >;
+	#pwm-cells = <0x3>;
+	pinctrl-0 = <&tcc4_pwm_default>;
 	pinctrl-names = "default";
-	prescaler = < 0x1 >;
+	prescaler = <0x1>;
 };
 
 &tcc0 {

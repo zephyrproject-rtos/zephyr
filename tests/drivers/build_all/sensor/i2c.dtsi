@@ -1445,3 +1445,30 @@ test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
 	reg = <0xc0>;
 	sensor-type = <4>;
 };
+
+test_i2c_ina232: ina232@c1 {
+	compatible = "ti,ina232";
+	reg = <0xc1>;
+	current-lsb-microamps = <1000>;
+	rshunt-micro-ohms = <1000>;
+	mask = <0>;
+	alert-limit = <0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_rv3032: rv3032c7@c2 {
+	compatible = "microcrystal,rv3032-mfd";
+	reg = <0xc2>;
+	int-gpios = <&test_gpio 0 0>;
+	evi-gpios = <&test_gpio 0 0>;
+	backup-switch-mode = "disabled";
+	always-on;
+	status = "okay";
+
+	test_rv3032_temp: rv3032_temp {
+		compatible = "microcrystal,rv3032-temp";
+		low-temp = <40>;
+		high-temp = <105>;
+		status = "okay";
+	};
+};

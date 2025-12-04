@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include "ipv6.h"
 #include "udp_internal.h"
 
-bool arp_add(struct net_if *iface, struct in_addr *src,
+bool arp_add(struct net_if *iface, struct net_in_addr *src,
 	     struct net_eth_addr *hwaddr);
 
 #define NET_LOG_ENABLED 1
@@ -51,25 +51,25 @@ bool arp_add(struct net_if *iface, struct in_addr *src,
 static char *test_data = "Test data to be sent";
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in_addr my_addr = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr my_addr = { { { 192, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 3 addresses */
-static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-struct sockaddr virtual_addr;
-struct sockaddr peer_addr;
+struct net_sockaddr virtual_addr;
+struct net_sockaddr peer_addr;
 
 #define MTU 1024
 
@@ -380,7 +380,7 @@ static void test_virtual_setup(void)
 
 static void test_address_setup(void)
 {
-	struct in_addr netmask = {{{ 255, 255, 255, 0 }}};
+	struct net_in_addr netmask = {{{ 255, 255, 255, 0 }}};
 	struct net_if_addr *ifaddr;
 	struct net_if *eth, *virt, *dummy1, *dummy2;
 	int ret;
@@ -452,7 +452,7 @@ static void test_address_setup(void)
 	zassert_equal(ret, 1, "Cannot parse \"%s\"",
 		      CONFIG_NET_TEST_TUNNEL_MY_ADDR);
 
-	if (virtual_addr.sa_family == AF_INET) {
+	if (virtual_addr.sa_family == NET_AF_INET) {
 		ifaddr = net_if_ipv4_addr_add(virt,
 					&net_sin(&virtual_addr)->sin_addr,
 					NET_ADDR_MANUAL, 0);
@@ -463,13 +463,13 @@ static void test_address_setup(void)
 			zassert_not_null(ifaddr, "virt addr");
 		}
 
-		net_sin(&virtual_addr)->sin_port = htons(4242);
+		net_sin(&virtual_addr)->sin_port = net_htons(4242);
 
 		net_if_ipv4_set_netmask_by_addr(virt,
 						&net_sin(&virtual_addr)->sin_addr,
 						&netmask);
 
-	} else if (virtual_addr.sa_family == AF_INET6) {
+	} else if (virtual_addr.sa_family == NET_AF_INET6) {
 		ifaddr = net_if_ipv6_addr_add(virt,
 					&net_sin6(&virtual_addr)->sin6_addr,
 					NET_ADDR_MANUAL, 0);
@@ -480,7 +480,7 @@ static void test_address_setup(void)
 			zassert_not_null(ifaddr, "virt addr");
 		}
 
-		net_sin6(&virtual_addr)->sin6_port = htons(4242);
+		net_sin6(&virtual_addr)->sin6_port = net_htons(4242);
 	} else {
 		zassert_not_null(NULL, "Invalid address family (%d)",
 				 virtual_addr.sa_family);
@@ -501,7 +501,7 @@ static void test_address_setup(void)
 	test_failed = false;
 }
 
-static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
+static bool add_neighbor(struct net_if *iface, struct net_in6_addr *addr)
 {
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
@@ -527,7 +527,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-static bool add_to_arp(struct net_if *iface, struct in_addr *addr)
+static bool add_to_arp(struct net_if *iface, struct net_in_addr *addr)
 {
 #if defined(CONFIG_NET_ARP)
 	struct net_eth_addr lladdr;
@@ -705,10 +705,10 @@ ZTEST(net_virtual, test_virtual_05_set_peer)
 		      net_if_get_by_iface(iface), ret);
 
 	params.family = peer_addr.sa_family;
-	if (params.family == AF_INET) {
+	if (params.family == NET_AF_INET) {
 		net_ipaddr_copy(&params.peer4addr,
 				&net_sin(&peer_addr)->sin_addr);
-	} else if (params.family == AF_INET6) {
+	} else if (params.family == NET_AF_INET6) {
 		net_ipaddr_copy(&params.peer6addr,
 				&net_sin6(&peer_addr)->sin6_addr);
 	} else {
@@ -759,15 +759,15 @@ ZTEST(net_virtual, test_virtual_06_get_peer)
 	zassert_equal(params.family, peer_addr.sa_family,
 		      "Invalid family, should be %d was %d",
 		      peer_addr.sa_family, params.family);
-	if (params.family == AF_INET) {
+	if (params.family == NET_AF_INET) {
 		zassert_mem_equal(&params.peer4addr,
 				  &net_sin(&peer_addr)->sin_addr,
-				  sizeof(struct in_addr),
+				  sizeof(struct net_in_addr),
 				  "Peer IPv4 address invalid");
-	} else if (params.family == AF_INET6) {
+	} else if (params.family == NET_AF_INET6) {
 		zassert_mem_equal(&params.peer6addr,
 				  &net_sin6(&peer_addr)->sin6_addr,
-				  sizeof(struct in6_addr),
+				  sizeof(struct net_in6_addr),
 				  "Peer IPv6 address invalid");
 	} else {
 		zassert_true(false, "Invalid family (%d)", params.family);
@@ -815,13 +815,13 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
 	struct net_if *attached = eth_interfaces[0];
-	struct sockaddr dst_addr, src_addr;
+	struct net_sockaddr dst_addr, src_addr;
 	void *addr;
 	int addrlen;
 	int ret;
 
 	params.family = peer_addr.sa_family;
-	if (params.family == AF_INET) {
+	if (params.family == NET_AF_INET) {
 		net_ipaddr_copy(&params.peer4addr,
 				&net_sin(&peer_addr)->sin_addr);
 		expecting_outer = 0x45;
@@ -830,7 +830,7 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 		ret = add_to_arp(eth_interfaces[0],
 				 &net_sin(&peer_addr)->sin_addr);
 		zassert_true(ret, "Cannot add to arp");
-	} else if (params.family == AF_INET6) {
+	} else if (params.family == NET_AF_INET6) {
 		net_ipaddr_copy(&params.peer6addr,
 				&net_sin6(&peer_addr)->sin6_addr);
 		expecting_outer = 0x60;
@@ -862,19 +862,19 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 	memcpy(&dst_addr, &virtual_addr, sizeof(dst_addr));
 	memcpy(&src_addr, &virtual_addr, sizeof(src_addr));
 
-	if (dst_addr.sa_family == AF_INET) {
+	if (dst_addr.sa_family == NET_AF_INET) {
 		net_sin(&dst_addr)->sin_addr.s4_addr[3] = 2;
 
 		addr = &src_addr;
-		addrlen = sizeof(struct sockaddr_in);
+		addrlen = sizeof(struct net_sockaddr_in);
 
 		expecting_inner = 0x45; /* IPv4 */
 
-	} else if (dst_addr.sa_family == AF_INET6) {
+	} else if (dst_addr.sa_family == NET_AF_INET6) {
 		net_sin6(&dst_addr)->sin6_addr.s6_addr[15] = 2;
 
 		addr = &src_addr;
-		addrlen = sizeof(struct sockaddr_in6);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		expecting_inner = 0x60; /* IPv6 */
 	} else {
@@ -882,11 +882,11 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 		addrlen = 0;
 	}
 
-	ret = net_context_get(virtual_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(virtual_addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	zassert_equal(ret, 0, "Create IP UDP context failed");
 
-	ret = net_context_bind(udp_ctx, (struct sockaddr *)addr, addrlen);
+	ret = net_context_bind(udp_ctx, (struct net_sockaddr *)addr, addrlen);
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	test_started = true;
@@ -905,7 +905,7 @@ ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 }
 
 static struct net_pkt *create_outer(struct net_if *iface,
-				    sa_family_t family,
+				    net_sa_family_t family,
 				    enum net_ip_protocol proto,
 				    size_t inner_len,
 				    size_t outer_len)
@@ -915,7 +915,7 @@ static struct net_pkt *create_outer(struct net_if *iface,
 }
 
 static struct net_pkt *create_inner(struct net_if *iface,
-				    sa_family_t family,
+				    net_sa_family_t family,
 				    enum net_ip_protocol proto,
 				    size_t inner_len,
 				    size_t data_len)
@@ -939,9 +939,9 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 {
 	struct net_if *iface = virtual_interfaces[0];
 	struct net_if *attached = eth_interfaces[0];
-	struct sockaddr dst_addr, src_addr, inner_src;
-	struct in_addr *outerv4, *innerv4;
-	struct in6_addr *outerv6, *innerv6;
+	struct net_sockaddr dst_addr, src_addr, inner_src;
+	struct net_in_addr *outerv4, *innerv4;
+	struct net_in6_addr *outerv6, *innerv6;
 	size_t inner_len = sizeof(struct net_udp_hdr) +
 		strlen(test_data);
 	struct net_pkt *outer, *inner;
@@ -955,7 +955,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	memcpy(&src_addr, &peer_addr, sizeof(src_addr));
 	memcpy(&inner_src, &virtual_addr, sizeof(inner_src));
 
-	if (peer_addr.sa_family == AF_INET) {
+	if (peer_addr.sa_family == NET_AF_INET) {
 		net_sin(&dst_addr)->sin_addr.s4_addr[3] = 1;
 		net_sin(&src_addr)->sin_addr.s4_addr[3] = remote_ip;
 		outerv4 = &net_sin(&peer_addr)->sin_addr;
@@ -965,7 +965,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 		outerv6 = &net_sin6(&peer_addr)->sin6_addr;
 	}
 
-	if (virtual_addr.sa_family == AF_INET) {
+	if (virtual_addr.sa_family == NET_AF_INET) {
 		net_sin(&inner_src)->sin_addr.s4_addr[3] = 2;
 		innerv4 = &net_sin(&virtual_addr)->sin_addr;
 		inner_len += sizeof(struct net_ipv4_hdr);
@@ -975,8 +975,8 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 		inner_len += sizeof(struct net_ipv6_hdr);
 	}
 
-	if (peer_addr.sa_family == AF_INET) {
-		outer = create_outer(attached, AF_INET, IPPROTO_IP,
+	if (peer_addr.sa_family == NET_AF_INET) {
+		outer = create_outer(attached, NET_AF_INET, NET_IPPROTO_IP,
 				     sizeof(struct net_ipv4_hdr), 0);
 		zassert_not_null(outer, "Cannot allocate pkt");
 
@@ -985,7 +985,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 		zassert_equal(ret, 0, "Cannot create %s packet (%d)", "IPv4",
 			      ret);
 	} else {
-		outer = create_outer(attached, AF_INET6, IPPROTO_IPV6,
+		outer = create_outer(attached, NET_AF_INET6, NET_IPPROTO_IPV6,
 				     sizeof(struct net_ipv6_hdr), 0);
 		zassert_not_null(outer, "Cannot allocate %p pkt", outer);
 
@@ -995,8 +995,8 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 			      ret);
 	}
 
-	if (virtual_addr.sa_family == AF_INET) {
-		inner = create_inner(iface, AF_INET, IPPROTO_IP,
+	if (virtual_addr.sa_family == NET_AF_INET) {
+		inner = create_inner(iface, NET_AF_INET, NET_IPPROTO_IP,
 				     sizeof(struct net_ipv4_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
@@ -1006,10 +1006,10 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				      innerv4);
 		zassert_equal(ret, 0, "Cannot create outer %s (%d)", "IPv4",
 			      ret);
-		next_header = IPPROTO_IPIP;
-		addrlen = sizeof(struct sockaddr_in);
+		next_header = NET_IPPROTO_IPIP;
+		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
-		inner = create_inner(iface, AF_INET6, IPPROTO_IPV6,
+		inner = create_inner(iface, NET_AF_INET6, NET_IPPROTO_IPV6,
 				     sizeof(struct net_ipv6_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
@@ -1019,21 +1019,21 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				      innerv6);
 		zassert_equal(ret, 0, "Cannot create outer %s (%d)", "IPv6",
 			      ret);
-		next_header = IPPROTO_IPV6;
-		addrlen = sizeof(struct sockaddr_in6);
+		next_header = NET_IPPROTO_IPV6;
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
-	ret = net_udp_create(inner, htons(src_port), htons(dst_port));
+	ret = net_udp_create(inner, net_htons(src_port), net_htons(dst_port));
 	zassert_equal(ret, 0, "Cannot create UDP (%d)", ret);
 
 	net_pkt_write(inner, test_data, strlen(test_data));
 
 	net_pkt_cursor_init(inner);
 
-	if (virtual_addr.sa_family == AF_INET) {
-		net_ipv4_finalize(inner, IPPROTO_UDP);
+	if (virtual_addr.sa_family == NET_AF_INET) {
+		net_ipv4_finalize(inner, NET_IPPROTO_UDP);
 	} else {
-		net_ipv6_finalize(inner, IPPROTO_UDP);
+		net_ipv6_finalize(inner, NET_IPPROTO_UDP);
 	}
 
 	net_buf_frag_add(outer->buffer, inner->buffer);
@@ -1042,19 +1042,19 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 
 	net_pkt_cursor_init(outer);
 
-	if (peer_addr.sa_family == AF_INET) {
+	if (peer_addr.sa_family == NET_AF_INET) {
 		net_ipv4_finalize(outer, next_header);
 	} else {
 		net_ipv6_finalize(outer, next_header);
 	}
 
-	ret = net_context_get(virtual_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(virtual_addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	zassert_equal(ret, 0, "Create IP UDP context failed");
 
 	net_context_set_iface(udp_ctx, iface);
 
-	ret = net_context_bind(udp_ctx, (struct sockaddr *)&virtual_addr,
+	ret = net_context_bind(udp_ctx, (struct net_sockaddr *)&virtual_addr,
 			       addrlen);
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
@@ -1066,7 +1066,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 
 	net_pkt_cursor_init(outer);
 
-	if (peer_addr.sa_family == AF_INET) {
+	if (peer_addr.sa_family == NET_AF_INET) {
 		verdict = net_ipv4_input(outer);
 	} else {
 		verdict = net_ipv6_input(outer);

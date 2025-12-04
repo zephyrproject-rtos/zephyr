@@ -705,7 +705,7 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf);
  *
  *  Initiate outgoing voice calls by providing the destination phone
  *  number to the AG.
- *  Send the ATDdd…dd command to start phone number call.
+ *  Send the ATDdd...dd; command to start phone number call.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
@@ -720,7 +720,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number);
  *
  *  Initiate outgoing voice calls using the memory dialing feature
  *  of the AG.
- *  Send the ATD>Nan... command to start memory dialing.
+ *  Send the ATD>nnn...; command to start memory dialing.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
@@ -747,9 +747,8 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF setup audio connection
  *
- *  Setup audio conenction by sending AT+BCC.
- *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
- *  `-ENOTSUP` will be returned if the function called.
+ *  Setup audio conenction by sending AT+BCC if the Codec Negotiation is supported by both side.
+ *  Or, initialize the SCO audio connection directly.
  *
  *  @param hf HFP HF object.
  *

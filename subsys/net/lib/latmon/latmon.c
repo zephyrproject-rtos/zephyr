@@ -118,12 +118,12 @@ static ssize_t send_net_data(int latmus, const void *buf, size_t count)
 static int send_sample_data(int latmus, struct latmon_data *data)
 {
 	struct latmon_net_data ndata = {
-		.sum_lat_lo = htonl(data->sum_lat & 0xffffffff),
-		.sum_lat_hi = htonl(data->sum_lat >> 32),
-		.samples = htonl(data->current_samples),
-		.overruns = htonl(data->overruns),
-		.min_lat = htonl(data->min_lat),
-		.max_lat = htonl(data->max_lat),
+		.sum_lat_lo = net_htonl(data->sum_lat & 0xffffffff),
+		.sum_lat_hi = net_htonl(data->sum_lat >> 32),
+		.samples = net_htonl(data->current_samples),
+		.overruns = net_htonl(data->overruns),
+		.min_lat = net_htonl(data->min_lat),
+		.max_lat = net_htonl(data->max_lat),
 	};
 
 	/* Reset the data */
@@ -153,7 +153,7 @@ static int send_trailing_data(int latmus, struct latmus_conf *conf,
 
 	/* send histogram if enabled (ie, conf->cells > 0) */
 	for (int cell = 0; cell < conf->cells; cell++) {
-		data->histogram[cell] = htonl(data->histogram[cell]);
+		data->histogram[cell] = net_htonl(data->histogram[cell]);
 	}
 
 	ret = send_net_data(latmus, data->histogram, count);
@@ -324,36 +324,36 @@ out:
 	LOG_INF("\tmonitoring stopped");
 }
 
-static int broadcast_ip_address(struct in_addr *ip_addr)
+static int broadcast_ip_address(struct net_in_addr *ip_addr)
 {
 	char ip_str[NET_IPV4_ADDR_LEN];
-	struct sockaddr_in broadcast;
+	struct net_sockaddr_in broadcast;
 	int sock = -1;
 	int ret = -1;
 
-	if (ip_addr == NULL || ip_addr->s_addr == INADDR_ANY) {
+	if (ip_addr == NULL || ip_addr->s_addr == NET_INADDR_ANY) {
 		LOG_ERR("Invalid IP address for broadcast");
 		return -1;
 	}
 
-	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create broadcast socket : %d", errno);
 		return -1;
 	}
 
-	broadcast.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	broadcast.sin_port = htons(LATMON_NET_PORT);
-	broadcast.sin_family = AF_INET;
+	broadcast.sin_addr.s_addr = net_htonl(INADDR_BROADCAST);
+	broadcast.sin_port = net_htons(LATMON_NET_PORT);
+	broadcast.sin_family = NET_AF_INET;
 
-	if (net_addr_ntop(AF_INET, ip_addr, ip_str, sizeof(ip_str)) == NULL) {
+	if (net_addr_ntop(NET_AF_INET, ip_addr, ip_str, sizeof(ip_str)) == NULL) {
 		LOG_ERR("Failed to convert IP address to string");
 		ret = -1;
 		goto out;
 	}
 
 	ret = zsock_sendto(sock, ip_str, strlen(ip_str), 0,
-			(struct sockaddr *)&broadcast, sizeof(broadcast));
+			(struct net_sockaddr *)&broadcast, sizeof(broadcast));
 
 out:
 	zsock_close(sock);
@@ -362,12 +362,12 @@ out:
 }
 
 /* Get a socket to listen to Latmus requests */
-int net_latmon_get_socket(struct sockaddr *connection_addr)
+int net_latmon_get_socket(struct net_sockaddr *connection_addr)
 {
-	struct sockaddr_in addr = {
-		.sin_family = AF_INET,
-		.sin_addr.s_addr = htonl(INADDR_ANY),
-		.sin_port = htons(LATMON_NET_PORT)
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr.s_addr = net_htonl(NET_INADDR_ANY),
+		.sin_port = net_htons(LATMON_NET_PORT)
 	};
 	int s, on = 1;
 
@@ -375,14 +375,14 @@ int net_latmon_get_socket(struct sockaddr *connection_addr)
 		memcpy(&addr, connection_addr, sizeof(addr));
 	}
 
-	s = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	s = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (s < 0) {
 		LOG_ERR("failed to create latmon socket : %d", errno);
 		return -1;
 	}
 
 	zsock_setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-	if (zsock_bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+	if (zsock_bind(s, (struct net_sockaddr *)&addr, sizeof(addr)) < 0) {
 		LOG_ERR("failed to bind latmon socket : %d", errno);
 		zsock_close(s);
 		return -1;
@@ -398,12 +398,12 @@ int net_latmon_get_socket(struct sockaddr *connection_addr)
 }
 
 /* Waits for connection from Latmus */
-int net_latmon_connect(int socket, struct in_addr *ip)
+int net_latmon_connect(int socket, struct net_in_addr *ip)
 {
 	struct zsock_pollfd fd[1] = { {.fd = socket, .events = ZSOCK_POLLIN } };
-	struct sockaddr_in clnt_addr;
+	struct net_sockaddr_in clnt_addr;
 	const int timeout = 5000;
-	socklen_t len;
+	net_socklen_t len;
 	int latmus = -1;
 	int ret;
 
@@ -430,7 +430,7 @@ int net_latmon_connect(int socket, struct in_addr *ip)
 	 * chose to prioritize adherence to the project's code style guidelines.
 	 */
 	len = sizeof(clnt_addr);
-	latmus = zsock_accept(socket, (struct sockaddr *)&clnt_addr, &len);
+	latmus = zsock_accept(socket, (struct net_sockaddr *)&clnt_addr, &len);
 	if (latmus < 0) {
 		LOG_INF("Failed accepting new connection...");
 		return -1;
@@ -462,25 +462,25 @@ static int get_latmus_conf(ssize_t len, struct latmon_net_request *req,
 		return -1;
 	}
 
-	if (ntohl(req->period_usecs) == 0) {
+	if (net_ntohl(req->period_usecs) == 0) {
 		LOG_ERR("null period received, invalid\n");
 		return -1;
 	}
 
-	if (ntohl(req->period_usecs) > MAX_SAMPLING_PERIOD_USEC) {
+	if (net_ntohl(req->period_usecs) > MAX_SAMPLING_PERIOD_USEC) {
 		LOG_ERR("invalid period received: %u usecs\n",
-			ntohl(req->period_usecs));
+			net_ntohl(req->period_usecs));
 		return -1;
 	}
 
-	if (ntohl(req->histogram_cells) > HISTOGRAM_CELLS_MAX) {
+	if (net_ntohl(req->histogram_cells) > HISTOGRAM_CELLS_MAX) {
 		LOG_ERR("invalid histogram size received: %u > %u cells\n",
-			ntohl(req->histogram_cells), HISTOGRAM_CELLS_MAX);
+			net_ntohl(req->histogram_cells), HISTOGRAM_CELLS_MAX);
 		return -1;
 	}
 
-	conf->period = ntohl(req->period_usecs);
-	conf->cells = ntohl(req->histogram_cells);
+	conf->period = net_ntohl(req->period_usecs);
+	conf->cells = net_ntohl(req->histogram_cells);
 	conf->max_samples = MAX_SAMPLING_PERIOD_USEC / conf->period;
 
 	return 0;

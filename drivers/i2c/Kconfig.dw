@@ -12,7 +12,7 @@ menuconfig I2C_DW
 config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	depends on I2C_DW
-	default 110 if I2C_RTS5912
+	default 100 if I2C_RTS5912
 	default 32
 
 config I2C_DW_LPSS_DMA

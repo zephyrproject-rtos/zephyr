@@ -217,7 +217,7 @@ cleanup:
 }
 
 static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
-					 struct coap_reply *reply, const struct sockaddr *from)
+					 struct coap_reply *reply, const struct net_sockaddr *from)
 {
 	int ret;
 	bool last_block;

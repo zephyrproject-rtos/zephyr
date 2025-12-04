@@ -152,7 +152,7 @@ if(CONFIG_USERSPACE)
   # handling in arch_data_copy, so put it in RAM_REGION rather than DATA_REGION
   zephyr_linker_group(NAME APP_SMEM_GROUP GROUP RAM_REGION SYMBOL SECTION)
   zephyr_linker_symbol(SYMBOL "_app_smem_size" EXPR "@__app_smem_group_size@")
-	zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
+  zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
 
   zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)

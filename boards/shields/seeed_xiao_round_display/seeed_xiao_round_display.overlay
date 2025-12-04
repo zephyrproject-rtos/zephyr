@@ -20,11 +20,6 @@
 		full-ohms = <940000>;
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&chsc6x_xiao_round_display>;
-	};
-
 	aliases {
 		rtc = &pcf8563_xiao_round_display;
 	};

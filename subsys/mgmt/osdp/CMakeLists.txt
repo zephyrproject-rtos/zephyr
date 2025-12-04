@@ -17,7 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_OSDP_SC_ENABLED src/osdp_sc.c)
 
 # Common sources
 zephyr_library_sources_ifdef(CONFIG_OSDP
-	src/osdp_phy.c
-	src/osdp_common.c
-	src/osdp.c
+  src/osdp_phy.c
+  src/osdp_common.c
+  src/osdp.c
 )

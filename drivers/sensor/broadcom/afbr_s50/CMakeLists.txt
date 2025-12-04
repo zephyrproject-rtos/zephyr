@@ -4,6 +4,6 @@
 
 zephyr_library()
 zephyr_library_sources(
-	afbr_s50.c
-	afbr_s50_decoder.c
+  afbr_s50.c
+  afbr_s50_decoder.c
 )

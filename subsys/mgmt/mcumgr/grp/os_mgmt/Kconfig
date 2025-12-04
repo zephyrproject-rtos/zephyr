@@ -137,6 +137,26 @@ config MCUMGR_GRP_OS_TASKSTAT_STACK_INFO
 
 endif
 
+config MCUMGR_GRP_OS_MPSTAT
+	bool "Support for memory pool statistics command"
+	depends on SYS_HEAP_RUNTIME_STATS
+	depends on SYS_HEAP_ARRAY_SIZE > 0
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
+	help
+	  The memory pool statistics (mpstat) command will list the various heap memory pools
+	  on the device, including sizes, free space and minimum amount of free space.
+
+config MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+	bool "Send only data gathered by Zephyr"
+	depends on MCUMGR_GRP_OS_MPSTAT
+	default y
+	help
+	  Response will not include the "blksiz" field which Zephyr does not support (as it has a
+	  value of 1). Enable this if your client software is able to process "mpstat" response
+	  without the "blksiz" field for each memory pool. Enabling this option will slightly
+	  reduce code size.
+
 config MCUMGR_GRP_OS_ECHO
 	bool "Support for echo command"
 	default y

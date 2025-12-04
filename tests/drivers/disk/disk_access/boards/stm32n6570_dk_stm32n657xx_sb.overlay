@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 The Zephyr Contributors.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdmmc2 {
+	bus-width = <1>;
+	status = "okay";
+};

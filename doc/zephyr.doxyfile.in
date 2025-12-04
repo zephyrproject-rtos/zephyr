@@ -1,4 +1,4 @@
-# Doxyfile 1.14.0
+# Doxyfile 1.15.0
 
 # This file describes the settings to be used by the documentation system
 # Doxygen (www.doxygen.org) for a project.
@@ -51,7 +51,7 @@ PROJECT_NAME           = "Zephyr API Documentation"
 PROJECT_NUMBER         = @ZEPHYR_VERSION@
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
-# for a project that appears at the top of each page and should give viewer a
+# for a project that appears at the top of each page and should give viewers a
 # quick idea about the purpose of the project. Keep the description short.
 
 PROJECT_BRIEF          = "A Scalable Open Source RTOS"
@@ -189,14 +189,9 @@ STRIP_FROM_PATH        = @ZEPHYR_BASE@/include
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-# TODO: Once https://github.com/doxygen/doxygen/pull/11657 is accepted and
-# available in a released Doxygen version, the entry
-# "@ZEPHYR_BASE@/lib/libc/minimal/include/" should be added to this list.
-# In the meantime, API from headers contained in this folder (e.g. errno.h) will
-# continue to show incorrect include path in the generated docs.
-
 STRIP_FROM_INC_PATH    = @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/kernel/include/ \
+                         @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/internal \
                          @ZEPHYR_BASE@/subsys/secure_storage/include
@@ -376,6 +371,20 @@ EXTENSION_MAPPING      =
 
 MARKDOWN_SUPPORT       = YES
 
+# If the MARKDOWN_STRICT tag is enabled then Doxygen treats text in comments as
+# Markdown formatted also in cases where Doxygen's native markup format
+# conflicts with that of Markdown. This is only relevant in cases where
+# backticks are used. Doxygen's native markup style allows a single quote to end
+# a text fragment started with a backtick and then treat it as a piece of quoted
+# text, whereas in Markdown such text fragment is treated as verbatim and only
+# ends when a second matching backtick is found. Also, Doxygen's native markup
+# format requires double quotes to be escaped when they appear in a backtick
+# section, whereas this is not needed for Markdown.
+# The default value is: YES.
+# This tag requires that the tag MARKDOWN_SUPPORT is set to YES.
+
+MARKDOWN_STRICT        = YES
+
 # When the TOC_INCLUDE_HEADINGS tag is set to a non-zero value, all headings up
 # to that level are automatically included in the table of contents, even if
 # they do not have an id attribute.
@@ -525,7 +534,7 @@ LOOKUP_CACHE_SIZE      = 9
 # which effectively disables parallel processing. Please report any issues you
 # encounter. Generating dot graphs in parallel is controlled by the
 # DOT_NUM_THREADS setting.
-# Minimum value: 0, maximum value: 32, default value: 1.
+# Minimum value: 0, maximum value: 512, default value: 1.
 
 NUM_PROC_THREADS       = 0
 
@@ -1202,6 +1211,15 @@ FILTER_SOURCE_PATTERNS =
 
 USE_MDFILE_AS_MAINPAGE = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md
 
+# If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
+# directories of the project's root, is used as the documentation for that sub-
+# directory, except when the README.md starts with a \dir, \page or \mainpage
+# command. If set to NO, the README.md file needs to start with an explicit \dir
+# command in order to be used as directory documentation.
+# The default value is: YES.
+
+IMPLICIT_DIR_DOCS      = NO
+
 # The Fortran standard specifies that for fixed formatted Fortran code all
 # characters from position 72 are to be considered as comment. A common
 # extension is to allow longer lines before the automatic comment starts. The
@@ -1297,46 +1315,6 @@ USE_HTAGS              = NO
 # The default value is: YES.
 
 VERBATIM_HEADERS       = YES
-
-# If the CLANG_ASSISTED_PARSING tag is set to YES then Doxygen will use the
-# clang parser (see:
-# https://clang.llvm.org/) for more accurate parsing at the cost of reduced
-# performance. This can be particularly helpful with template rich C++ code for
-# which Doxygen's built-in parser lacks the necessary type information.
-# Note: The availability of this option depends on whether or not Doxygen was
-# generated with the -Duse_libclang=ON option for CMake.
-# The default value is: NO.
-
-CLANG_ASSISTED_PARSING = NO
-
-# If the CLANG_ASSISTED_PARSING tag is set to YES and the CLANG_ADD_INC_PATHS
-# tag is set to YES then Doxygen will add the directory of each input to the
-# include path.
-# The default value is: YES.
-# This tag requires that the tag CLANG_ASSISTED_PARSING is set to YES.
-
-CLANG_ADD_INC_PATHS    = YES
-
-# If clang assisted parsing is enabled you can provide the compiler with command
-# line options that you would normally use when invoking the compiler. Note that
-# the include paths will already be set by Doxygen for the files and directories
-# specified with INPUT and INCLUDE_PATH.
-# This tag requires that the tag CLANG_ASSISTED_PARSING is set to YES.
-
-CLANG_OPTIONS          =
-
-# If clang assisted parsing is enabled you can provide the clang parser with the
-# path to the directory containing a file called compile_commands.json. This
-# file is the compilation database (see:
-# https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html) containing the
-# options used when the source files were built. This is equivalent to
-# specifying the -p option to a clang tool, such as clang-check. These options
-# will then be passed to the parser. Any options specified with CLANG_OPTIONS
-# will be added as well.
-# Note: The availability of this option depends on whether or not Doxygen was
-# generated with the -Duse_libclang=ON option for CMake.
-
-CLANG_DATABASE_PATH    =
 
 #---------------------------------------------------------------------------
 # Configuration options related to the alphabetical class index
@@ -1897,7 +1875,7 @@ USE_MATHJAX            = NO
 # regards to the different settings, so it is possible that also other MathJax
 # settings have to be changed when switching between the different MathJax
 # versions.
-# Possible values are: MathJax_2 and MathJax_3.
+# Possible values are: MathJax_2, MathJax_3 and MathJax_4.
 # The default value is: MathJax_2.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
@@ -1906,9 +1884,10 @@ MATHJAX_VERSION        = MathJax_2
 # When MathJax is enabled you can set the default output format to be used for
 # the MathJax output. For more details about the output format see MathJax
 # version 2 (see:
-# https://docs.mathjax.org/en/v2.7-latest/output.html) and MathJax version 3
+# https://docs.mathjax.org/en/v2.7/output.html), MathJax version 3 (see:
+# https://docs.mathjax.org/en/v3.2/output/index.html) and MathJax version 4
 # (see:
-# https://docs.mathjax.org/en/latest/web/components/output.html).
+# https://docs.mathjax.org/en/v4.0/output/index.htm).
 # Possible values are: HTML-CSS (which is slower, but has the best
 # compatibility. This is the name for Mathjax version 2, for MathJax version 3
 # this will be translated into chtml), NativeMML (i.e. MathML. Only supported
@@ -1921,36 +1900,50 @@ MATHJAX_VERSION        = MathJax_2
 MATHJAX_FORMAT         = HTML-CSS
 
 # When MathJax is enabled you need to specify the location relative to the HTML
-# output directory using the MATHJAX_RELPATH option. The destination directory
-# should contain the MathJax.js script. For instance, if the mathjax directory
-# is located at the same level as the HTML output directory, then
-# MATHJAX_RELPATH should be ../mathjax. The default value points to the MathJax
-# Content Delivery Network so you can quickly see the result without installing
-# MathJax. However, it is strongly recommended to install a local copy of
-# MathJax from https://www.mathjax.org before deployment. The default value is:
+# output directory using the MATHJAX_RELPATH option. For Mathjax version 2 the
+# destination directory should contain the MathJax.js script. For instance, if
+# the mathjax directory is located at the same level as the HTML output
+# directory, then MATHJAX_RELPATH should be ../mathjax.s For Mathjax versions 3
+# and 4 the destination directory should contain the tex-<format>.js script
+# (where <format> is either chtml or svg). The default value points to the
+# MathJax Content Delivery Network so you can quickly see the result without
+# installing MathJax. However, it is strongly recommended to install a local
+# copy of MathJax from https://www.mathjax.org before deployment. The default
+# value is:
 # - in case of MathJax version 2: https://cdn.jsdelivr.net/npm/mathjax@2
 # - in case of MathJax version 3: https://cdn.jsdelivr.net/npm/mathjax@3
+# - in case of MathJax version 4: https://cdn.jsdelivr.net/npm/mathjax@4
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_RELPATH        = https://cdn.jsdelivr.net/npm/mathjax@3
+MATHJAX_RELPATH        =
 
 # The MATHJAX_EXTENSIONS tag can be used to specify one or more MathJax
 # extension names that should be enabled during MathJax rendering. For example
-# for MathJax version 2 (see
-# https://docs.mathjax.org/en/v2.7-latest/tex.html#tex-and-latex-extensions):
+# for MathJax version 2 (see https://docs.mathjax.org/en/v2.7/tex.html):
 # MATHJAX_EXTENSIONS = TeX/AMSmath TeX/AMSsymbols
 # For example for MathJax version 3 (see
-# https://docs.mathjax.org/en/latest/input/tex/extensions/index.html):
+# https://docs.mathjax.org/en/v3.2/input/tex/extensions/):
 # MATHJAX_EXTENSIONS = ams
+# For example for MathJax version 4 (see
+# https://docs.mathjax.org/en/v4.0/input/tex/extensions/):
+# MATHJAX_EXTENSIONS = units
+# Note that for Mathjax version 4 quite a few extensions are already
+# automatically loaded. To disable a package in Mathjax version 4 one can use
+# the package name prepended with a minus sign (- like MATHJAX_EXTENSIONS +=
+# -textmacros)
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
 MATHJAX_EXTENSIONS     =
 
 # The MATHJAX_CODEFILE tag can be used to specify a file with JavaScript pieces
-# of code that will be used on startup of the MathJax code. See the MathJax site
-# (see:
-# https://docs.mathjax.org/en/v2.7-latest/output.html) for more details. For an
-# example see the documentation.
+# of code that will be used on startup of the MathJax code. See the Mathjax site
+# for more details:
+# - MathJax version 2 (see:
+# https://docs.mathjax.org/en/v2.7/)
+# - MathJax version 3 (see:
+# https://docs.mathjax.org/en/v3.2/)
+# - MathJax version 4 (see:
+# https://docs.mathjax.org/en/v4.0/) For an example see the documentation.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
 MATHJAX_CODEFILE       =
@@ -2673,7 +2666,7 @@ HAVE_DOT               = NO
 # processors available in the system. You can set it explicitly to a value
 # larger than 0 to get control over the balance between CPU load and processing
 # speed.
-# Minimum value: 0, maximum value: 32, default value: 0.
+# Minimum value: 0, maximum value: 512, default value: 0.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 DOT_NUM_THREADS        = 0

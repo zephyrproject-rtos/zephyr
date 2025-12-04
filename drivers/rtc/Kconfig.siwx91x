@@ -5,6 +5,7 @@ config RTC_SILABS_SIWX91X
 	bool "Silabs siwx91x RTC driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_RTC_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Build the RTC driver for the Silabs SIWX91X SoC (Calendar
 	  hardware block as described in the reference manual).

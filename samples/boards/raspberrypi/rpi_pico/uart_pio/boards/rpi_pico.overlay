@@ -5,6 +5,7 @@
 			input-enable;
 			bias-pull-up;
 		};
+
 		tx_pins {
 			pinmux = <PIO1_P0>;
 		};
@@ -16,6 +17,7 @@
 			input-enable;
 			bias-pull-up;
 		};
+
 		tx_pins {
 			pinmux = <PIO1_P3>;
 		};

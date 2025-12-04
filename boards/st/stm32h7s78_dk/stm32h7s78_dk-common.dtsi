@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &display_ctp;
+		zephyr,canbus = &fdcan1;
 	};
 
 	psram: memory@90000000 {
@@ -75,8 +76,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 
@@ -123,6 +123,10 @@
 	ppre2 = <2>;
 	ppre4 = <2>;
 	ppre5 = <2>;
+};
+
+&pwr {
+	power-supply = "smps-direct";
 };
 
 &uart4 {
@@ -199,6 +203,11 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	/*
+	 * Make sure FDCAN and i2c1 are not enabled at the same time
+	 * because they share the pb9 pin
+	 * reference: DS14359 Rev 4 page 134
+	 */
 	status = "okay";
 
 	display_ctp: gt911@5d {
@@ -207,6 +216,16 @@
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	/*
+	 * fdcan1 is disabled by default in favor of i2c1 due to pb9 pin conflict
+	 * reference: DS14359 Rev 4 page 134
+	 */
+	status = "disabled";
 };
 
 &xspi1 {
@@ -329,7 +348,7 @@ zephyr_udc0: &usb2 {};
 		vfront-porch = <8>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };

@@ -8,6 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* HFP Profile Version */
+#define BT_HFP_VERSION_0_96 0x0096 /* HFP Rev. 0.96 */
+#define BT_HFP_VERSION_1_0  0x0100 /* HFP Rev. 1.0 */
+#define BT_HFP_VERSION_1_5  0x0105 /* HFP Rev. 1.5 */
+#define BT_HFP_VERSION_1_6  0x0106 /* HFP Rev. 1.6 */
+#define BT_HFP_VERSION_1_7  0x0107 /* HFP Rev. 1.7 */
+#define BT_HFP_VERSION_1_8  0x0108 /* HFP Rev. 1.8 */
+#define BT_HFP_VERSION_1_9  0x0109 /* HFP Rev. 1.9 */
+
 #define BT_HFP_MAX_MTU       (BT_L2CAP_RX_MTU - BT_RFCOMM_HDR_MAX_SIZE - BT_RFCOMM_FCS_SIZE)
 #define BT_HF_CLIENT_MAX_PDU BT_HFP_MAX_MTU
 
@@ -50,7 +59,7 @@
 #define BT_HFP_HF_SDP_FEATURE_WBS             BIT(5) /* Wide Band Speech */
 #define BT_HFP_HF_SDP_FEATURE_ENH_VOICE_RECG  BIT(6) /* Enhanced Voice Recognition Status */
 #define BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT BIT(7) /* Voice Recognition Text */
-#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS       BIT(7) /* Super Wide Band Speech */
+#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS       BIT(8) /* Super Wide Band Speech */
 
 /* HFP AG Features in SDP */
 #define BT_HFP_AG_SDP_FEATURE_3WAY_CALL       BIT(0) /* Three-way calling */

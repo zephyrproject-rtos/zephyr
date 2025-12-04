@@ -7,6 +7,10 @@ if SOC_SERIES_STM32WBX
 
 rsource "Kconfig.defconfig.stm32wb*"
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers17)
+
 config BT_USER_PHY_UPDATE
 	default y if BT
 

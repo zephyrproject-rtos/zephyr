@@ -3,7 +3,7 @@
 # See root CMakeLists.txt for description and expectations of these macros
 
 macro(toolchain_ld_relocation)
-  set(MEM_RELOCATION_LD   "${PROJECT_BINARY_DIR}/include/generated/linker_relocate.ld")
+  set(MEM_RELOCATION_LD "${PROJECT_BINARY_DIR}/include/generated/linker_relocate.ld")
   set(MEM_RELOCATION_SRAM_DATA_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_data_relocate.ld")
   set(MEM_RELOCATION_SRAM_BSS_LD
@@ -13,30 +13,38 @@ macro(toolchain_ld_relocation)
   set(DICT_FILE "${PROJECT_BINARY_DIR}/relocation_dict.txt")
 
   file(GENERATE
-  OUTPUT
-    ${DICT_FILE}
-  CONTENT
-    $<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>
+    OUTPUT
+      ${DICT_FILE}
+    CONTENT
+      $<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>
   )
 
   add_custom_command(
-    OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
+    OUTPUT
+      ${MEM_RELOCATION_CODE}
+      ${MEM_RELOCATION_LD}
     COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    -d ${APPLICATION_BINARY_DIR}
-    -i ${DICT_FILE}
-    -o ${MEM_RELOCATION_LD}
-    -s ${MEM_RELOCATION_SRAM_DATA_LD}
-    -b ${MEM_RELOCATION_SRAM_BSS_LD}
-    -c ${MEM_RELOCATION_CODE}
-    --default_ram_region ${MEM_REGION_DEFAULT_RAM}
-    DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY} ${DICT_FILE}
-    )
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
+      $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+      -d ${APPLICATION_BINARY_DIR}
+      -i ${DICT_FILE}
+      -o ${MEM_RELOCATION_LD}
+      -s ${MEM_RELOCATION_SRAM_DATA_LD}
+      -b ${MEM_RELOCATION_SRAM_BSS_LD}
+      -c ${MEM_RELOCATION_CODE}
+      --default_ram_region ${MEM_REGION_DEFAULT_RAM}
+    DEPENDS
+      app
+      kernel
+      ${ZEPHYR_LIBS_PROPERTY}
+      ${DICT_FILE}
+  )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
-  target_include_directories(code_relocation_source_lib PRIVATE
-	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
+  target_include_directories(code_relocation_source_lib
+    PRIVATE
+      ${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include
+  )
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

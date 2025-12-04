@@ -492,6 +492,25 @@ static void init(void)
 	}
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_bap_unicast_client_unregister_cb(&unicast_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to unregister client callbacks: %d", err);
+		return;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks: %d", err);
+		return;
+	}
+
+	bt_le_scan_cb_unregister(&bap_scan_cb);
+}
+
 static void scan_and_connect(void)
 {
 	int err;
@@ -850,8 +869,11 @@ static void transceive_streams(void)
 	}
 
 	if (source_stream != NULL) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(source_stream);
+
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		WAIT_FOR_FLAG(test_stream->flag_audio_received);
 	}
 }
 
@@ -1088,6 +1110,8 @@ static void test_main(void)
 
 	disconnect_acl();
 
+	deinit();
+
 	PASS("Unicast client passed\n");
 }
 
@@ -1140,6 +1164,8 @@ static void test_main_acl_disconnect(void)
 
 	disconnect_acl();
 
+	deinit();
+
 	PASS("Unicast client ACL disconnect passed\n");
 }
 
@@ -1177,6 +1203,8 @@ static void test_main_async_group(void)
 
 		return;
 	}
+
+	deinit();
 
 	PASS("Unicast client async group parameters passed\n");
 }
@@ -1224,6 +1252,8 @@ static void test_main_reconf_group(void)
 
 		return;
 	}
+
+	deinit();
 
 	PASS("Unicast client async group parameters passed\n");
 }

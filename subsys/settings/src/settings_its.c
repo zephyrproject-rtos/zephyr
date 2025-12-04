@@ -12,16 +12,15 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/psa/its_ids.h>
 
+/* TF-M config file containing ITS_MAX_ASSET_SIZE */
+#include <config_base.h>
+
+#include "settings_its_priv.h"
+
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 K_MUTEX_DEFINE(worker_mutex);
 static struct k_work_delayable worker;
-
-struct setting_entry {
-	char name[SETTINGS_MAX_NAME_LEN];
-	char value[SETTINGS_MAX_VAL_LEN];
-	size_t val_len;
-};
 
 static struct setting_entry entries[CONFIG_SETTINGS_TFM_ITS_NUM_ENTRIES];
 static int entries_count;
@@ -38,8 +37,7 @@ static const struct settings_store_itf settings_its_itf = {
 static struct settings_store default_settings_its = {.cs_itf = &settings_its_itf};
 
 /* Ensure Key configured max size does not exceed reserved Key range */
-BUILD_ASSERT(sizeof(entries) / CONFIG_TFM_ITS_MAX_ASSET_SIZE <=
-	     ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_SIZE,
+BUILD_ASSERT(sizeof(entries) / ITS_MAX_ASSET_SIZE <= ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_SIZE,
 	     "entries array exceeds reserved ITS UID range");
 
 static int store_entries(void)
@@ -47,7 +45,7 @@ static int store_entries(void)
 	psa_status_t status;
 	psa_storage_uid_t uid = ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_BEGIN;
 	size_t remaining = sizeof(entries);
-	size_t chunk_size = CONFIG_TFM_ITS_MAX_ASSET_SIZE;
+	size_t chunk_size = ITS_MAX_ASSET_SIZE;
 	const uint8_t *data_ptr = (const uint8_t *)&entries;
 
 	/*
@@ -83,7 +81,7 @@ static int load_entries(void)
 	size_t bytes_read;
 	psa_storage_uid_t uid = ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_BEGIN;
 	size_t remaining = sizeof(entries);
-	size_t chunk_size = CONFIG_TFM_ITS_MAX_ASSET_SIZE;
+	size_t chunk_size = ITS_MAX_ASSET_SIZE;
 	uint8_t *data_ptr = (uint8_t *)&entries;
 
 	/*

@@ -225,6 +225,25 @@
 			channels = <3>;
 		};
 
+		ac: ac@42002000 {
+			compatible = "microchip,ac-g1-comparator";
+			status = "disabled";
+			reg = <0x42002000 0x26>;
+			interrupts = <122 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+		};
+
+		trng: random@42002800 {
+			compatible = "microchip,trng-g1-entropy";
+			reg = <0x42002800 0x1e>;
+			interrupts = <131 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TRNG>;
+			clock-names = "mclk";
+			status = "disabled";
+		};
+
 		sercom4: sercom@43000000 {
 			compatible = "microchip,sercom-g1";
 			status = "disabled";

@@ -10,6 +10,7 @@
 		reg = <0>;
 		spi-max-frequency = <2000000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

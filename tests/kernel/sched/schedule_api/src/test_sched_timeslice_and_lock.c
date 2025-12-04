@@ -52,13 +52,13 @@ static void setup_threads(void)
 	k_thread_priority_set(k_current_get(), init_prio);
 }
 
-static void spawn_threads(int sleep_sec)
+static void spawn_threads(int sleep_msec)
 {
 	for (int i = 0; i < THREADS_NUM; i++) {
 		tdata[i].tid = k_thread_create(&tthread[i], tstacks[i],
 					       STACK_SIZE, thread_entry,
 					       INT_TO_POINTER(i),
-					       INT_TO_POINTER(sleep_sec),
+					       INT_TO_POINTER(sleep_msec),
 					       NULL, tdata[i].priority, 0,
 					       K_NO_WAIT);
 	}

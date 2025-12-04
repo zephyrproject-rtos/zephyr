@@ -439,11 +439,6 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 	uint32_t key = 0;
 	int ret;
 
-	if (memc_xspi_is_running_xip(xspi_dev)) {
-		key = irq_lock();
-		memc_xspi_wait_bus_idle(xspi_dev);
-	}
-
 	/* Setup the specific flash parameters. */
 	for (uint32_t i = 0; i < ARRAY_SIZE(device_configs); i++) {
 		if (strncmp(device_configs[i].name_prefix, data->dev_name,
@@ -470,13 +465,19 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 			break;
 		}
 
+		/* Block potential AHB access when setup XSPI. */
+		if (memc_xspi_is_running_xip(xspi_dev)) {
+			key = irq_lock();
+			memc_xspi_wait_bus_idle(xspi_dev);
+		}
+
 		ret = memc_xspi_set_device_config(xspi_dev, dev_config, flash_dev_config->lut_array,
 						  flash_dev_config->lut_count);
-	} while (0);
 
-	if (memc_xspi_is_running_xip(xspi_dev)) {
-		irq_unlock(key);
-	}
+		if (memc_xspi_is_running_xip(xspi_dev)) {
+			irq_unlock(key);
+		}
+	} while (0);
 
 	return ret;
 }

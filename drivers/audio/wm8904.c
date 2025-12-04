@@ -79,8 +79,6 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		wm_sample_rate = kWM8904_SampleRate8kHz;
 		break;
 	case 11025:
-		wm_sample_rate = kWM8904_SampleRate11025Hz;
-		break;
 	case 12000:
 		wm_sample_rate = kWM8904_SampleRate12kHz;
 		break;
@@ -88,8 +86,6 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		wm_sample_rate = kWM8904_SampleRate16kHz;
 		break;
 	case 22050:
-		wm_sample_rate = kWM8904_SampleRate22050Hz;
-		break;
 	case 24000:
 		wm_sample_rate = kWM8904_SampleRate24kHz;
 		break;
@@ -97,8 +93,6 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		wm_sample_rate = kWM8904_SampleRate32kHz;
 		break;
 	case 44100:
-		wm_sample_rate = kWM8904_SampleRate44100Hz;
-		break;
 	case 48000:
 		wm_sample_rate = kWM8904_SampleRate48kHz;
 		break;

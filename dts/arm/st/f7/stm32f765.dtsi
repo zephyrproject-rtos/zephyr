@@ -27,7 +27,7 @@
 		compatible = "st,stm32f765", "st,stm32f7", "simple-bus";
 
 		pinctrl: pin-controller@40020000 {
-			reg = <0x40020000 0x2C00>;
+			reg = <0x40020000 0x2c00>;
 
 			gpioj: gpio@40022400 {
 				compatible = "st,stm32-gpio";

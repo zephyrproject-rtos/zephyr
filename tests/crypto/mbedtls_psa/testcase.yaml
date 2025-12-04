@@ -19,6 +19,19 @@ common:
   tags:
     - mbedtls
     - psa
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - " PASS - test_aes_ecb.*"
+      - " PASS - test_generate_random.*"
+      - " PASS - test_hmac_sha256.*"
+      - " PASS - test_md5.*"
+      - " PASS - test_sha1.*"
+      - " PASS - test_sha224.*"
+      - " PASS - test_sha256.*"
+      - " PASS - test_sha384.*"
+      - " PASS - test_sha512.*"
 tests:
   crypto.mbedtls_psa.with_entropy_driver:
     filter: CONFIG_CSPRNG_ENABLED

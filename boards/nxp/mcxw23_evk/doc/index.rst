@@ -29,6 +29,9 @@ For more information about the MCXW236 SoC and MCXW23-EVK board, see:
 - `MCXW23 SoC Website`_
 - `MCXW23 Datasheet`_
 - `MCXW23 Reference Manual`_
+- `MCXW23-EVK Website`_
+- `MCXW23-EVK User Manual`_
+- `MCXW23-EVK Development Board Design Files`_
 
 Supported Features
 ==================
@@ -187,3 +190,12 @@ should see the following message in the terminal:
 
 .. _MCXW23 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=MCXW23RM
+
+.. _MCXW23-EVK Website:
+   https://www.nxp.com/design/design-center/development-boards-and-designs/MCXW23-EVK
+
+.. _MCXW23-EVK User Manual:
+   https://www.nxp.com/webapp/Download?colCode=UM12389
+
+.. _MCXW23-EVK Development Board Design Files:
+   https://www.nxp.com/downloads/en/design-support/MCXW23-EVK-DESIGNFILES.zip

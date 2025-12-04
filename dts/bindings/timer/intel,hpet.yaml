@@ -14,6 +14,10 @@ properties:
   interrupts:
     required: true
 
+  clock-frequency:
+    type: int
+    description: HPET timer clock frequency in Hz
+
   no-legacy-irq:
     type: boolean
     description: Do not set legacy IRQ bit

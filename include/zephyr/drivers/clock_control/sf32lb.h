@@ -57,6 +57,17 @@ struct sf32lb_clock_dt_spec {
 #define SF32LB_CLOCK_DT_INST_SPEC_GET(index) SF32LB_CLOCK_DT_SPEC_GET(DT_DRV_INST(index))
 
 /**
+ * @brief Initialize a `sf32lb_clock_dt_spec` structure from a parent DT instance.
+ *
+ * @param index DT instance index
+ */
+#define SF32LB_CLOCK_DT_INST_PARENT_SPEC_GET(index)                                                \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(index))),                       \
+		.id = DT_CLOCKS_CELL(DT_INST_PARENT(index), id),                                   \
+	}
+
+/**
  * @brief Same as SF32LB_CLOCK_DT_INST_SPEC_GET but with a default value.
  *
  * @param index DT instance index
@@ -97,6 +108,32 @@ static inline int sf32lb_clock_control_on_dt(const struct sf32lb_clock_dt_spec *
 static inline int sf32lb_clock_control_off_dt(const struct sf32lb_clock_dt_spec *spec)
 {
 	return clock_control_off(spec->dev, (clock_control_subsys_t)&spec->id);
+}
+
+/**
+ * @brief Get the status of a clock using a `sf32lb_clock_dt_spec` structure.
+ *
+ * @param spec SF32LB clock DT spec
+ * @return See clock_control_get_status().
+ */
+static inline enum clock_control_status sf32lb_clock_control_get_status_dt(
+		const struct sf32lb_clock_dt_spec *spec)
+{
+	return clock_control_get_status(spec->dev, (clock_control_subsys_t)&spec->id);
+}
+
+/**
+ * @brief Get the clock rate using a `sf32lb_clock_dt_spec` structure.
+ *
+ * @param spec SF32LB clock DT spec
+ * @param[out] rate Stored clock rate in Hz
+ *
+ * @return See clock_control_get_rate().
+ */
+static inline uint32_t sf32lb_clock_control_get_rate_dt(const struct sf32lb_clock_dt_spec *spec,
+						uint32_t *rate)
+{
+	return clock_control_get_rate(spec->dev, (clock_control_subsys_t)&spec->id, rate);
 }
 
 /** @} */

@@ -715,68 +715,65 @@ static DEVICE_API(dma, dma_funcs) = {
 	.get_status	 = dma_stm32_get_status,
 };
 
-#define DMA_STM32_INIT_DEV(index)					\
-static struct dma_stm32_stream						\
-	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
-									\
-const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
-	.config_irq = dma_stm32_config_irq_##index,			\
-	.base = DT_INST_REG_ADDR(index),				\
-	IF_ENABLED(CONFIG_DMA_STM32_V1,					\
-		(.support_m2m = DT_INST_PROP(index, st_mem2mem),))	\
-	.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
-	.streams = dma_stm32_streams_##index,				\
-	IF_ENABLED(CONFIG_DMAMUX_STM32,					\
-		(.offset = DT_INST_PROP(index, dma_offset),))		\
-};									\
-									\
-static struct dma_stm32_data dma_stm32_data_##index = {			\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index,						\
-		    dma_stm32_init,					\
-		    NULL,						\
-		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
-		    &dma_funcs)
+#define DMA_STM32_INIT_DEV(index)						\
+	static struct dma_stm32_stream						\
+		dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
+										\
+	const struct dma_stm32_config dma_stm32_config_##index = {		\
+		.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
+		.config_irq = dma_stm32_config_irq_##index,			\
+		.base = DT_INST_REG_ADDR(index),				\
+		IF_ENABLED(CONFIG_DMA_STM32_V1,					\
+			(.support_m2m = DT_INST_PROP(index, st_mem2mem),))	\
+		.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
+		.streams = dma_stm32_streams_##index,				\
+		IF_ENABLED(CONFIG_DMAMUX_STM32,					\
+			(.offset = DT_INST_PROP(index, dma_offset),))		\
+	};									\
+										\
+	static struct dma_stm32_data dma_stm32_data_##index;			\
+										\
+	DEVICE_DT_INST_DEFINE(index, dma_stm32_init, NULL,			\
+			      &dma_stm32_data_##index,				\
+			      &dma_stm32_config_##index,			\
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
+			      &dma_funcs)
 
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
 
 #define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan) /* nothing */
 
 /** Connect and enable IRQ @p chan of DMA instance @p dma */
-#define DMA_STM32_IRQ_CONNECT(dma, chan)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
-			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
-			    dma_stm32_shared_irq_handler,		\
-			    DEVICE_DT_INST_GET(dma), 0);		\
-		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
+#define DMA_STM32_IRQ_CONNECT(dma, chan)					\
+	do {									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),			\
+			    DT_INST_IRQ_BY_IDX(dma, chan, priority),		\
+			    dma_stm32_shared_irq_handler,			\
+			    DEVICE_DT_INST_GET(dma), 0);			\
+		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));			\
 	} while (false)
 
 
 #else /* CONFIG_DMA_STM32_SHARED_IRQS */
 
-#define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)				\
-static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
-{									\
-	dma_stm32_irq_handler(dev, chan);				\
-}
+#define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)					\
+	static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
+	{									\
+		dma_stm32_irq_handler(dev, chan);				\
+	}
 
 /**
  * Connect and enable IRQ @p chan of DMA instance @p dma
  *
  * @note Arguments order is reversed for compatibility with LISTIFY!
  */
-#define DMA_STM32_IRQ_CONNECT(chan, dma)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
-			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
-			    dma_stm32_irq_##dma##_##chan,		\
-			    DEVICE_DT_INST_GET(dma), 0);		\
-		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
+#define DMA_STM32_IRQ_CONNECT(chan, dma)					\
+	do {									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),			\
+			    DT_INST_IRQ_BY_IDX(dma, chan, priority),		\
+			    dma_stm32_irq_##dma##_##chan,			\
+			    DEVICE_DT_INST_GET(dma), 0);			\
+		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));			\
 	} while (false)
 
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */

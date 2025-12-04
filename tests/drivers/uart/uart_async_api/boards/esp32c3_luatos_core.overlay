@@ -10,6 +10,7 @@
 			pinmux = <UART1_TX_GPIO5>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <UART1_RX_GPIO5>;
 			output-enable;

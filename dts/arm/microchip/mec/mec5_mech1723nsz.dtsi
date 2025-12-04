@@ -22,11 +22,19 @@
 		#include "mec5/mec5_dma_chan16.dtsi"
 		#include "mec5/mec5_gpspi_v1.dtsi"
 		#include "mec5/mec5_eeprom_8kb.dtsi"
+		#include "mec5/mec5_rcid.dtsi"
+		#include "mec5/mec5_bclink.dtsi"
 
 		kscan0: kscan@40009c00 {
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
 			girqs = <21 25>;
+			status = "disabled";
+		};
+
+		bbled3: bbled@4000bb00 {
+			reg = <0x4000bb00 0x100>;
+			interrupts = <86 3>;
 			status = "disabled";
 		};
 	};

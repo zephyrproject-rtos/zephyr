@@ -213,7 +213,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No RX buffer available");
 		return;

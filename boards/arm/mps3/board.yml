@@ -1,6 +1,6 @@
 board:
   name: mps3
-  full_name: MPS3 AN547
+  full_name: MPS3 FPGA/Corstone FVP
   vendor: arm
   socs:
   - name: 'corstone300'

@@ -125,9 +125,9 @@
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM3 in CD domain */
-	sram2: memory@240A0000 {
+	sram2: memory@240a0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x240A0000 DT_SIZE_K(384)>;
+		reg = <0x240a0000 DT_SIZE_K(384)>;
 		zephyr,memory-region = "SRAM2";
 	};
 
@@ -152,18 +152,6 @@
 		zephyr,memory-region = "SRAM5";
 	};
 
-	dtcm: memory@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
-		reg = <0x20000000 DT_SIZE_K(128)>;
-		zephyr,memory-region = "DTCM";
-	};
-
-	itcm: memory@0 {
-		compatible = "zephyr,memory-region", "arm,itcm";
-		reg = <0x00000000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "ITCM";
-	};
-
 	ext_memory2: memory@70000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>; /* max addressable area */
@@ -177,14 +165,14 @@
 	};
 
 	die_temp: dietemp {
-		ts-cal1-addr = <0x08FFF814>;
-		ts-cal2-addr = <0x08FFF818>;
+		ts-cal1-addr = <0x08fff814>;
+		ts-cal2-addr = <0x08fff818>;
 		io-channels = <&adc2 18>;
 		ts-cal2-temp = <130>;
 	};
 
 	vref: vref {
-		vrefint-cal-addr = <0x08FFF810>;
+		vrefint-cal-addr = <0x08fff810>;
 		io-channels = <&adc2 19>;
 	};
 

@@ -125,6 +125,7 @@ struct ssp_intel_link_ctl {
 #define SSP_DMA_SYNC_DATA                       5
 #define SSP_DMA_CLK_CONTROLS_EXT                6
 #define SSP_LINK_CLK_SOURCE                     7
+#define SSP_GTW_DMA_CONFIG_ID			0x1000
 
 /**< Base top-level structure of an address of a gateway. */
 /*!

@@ -61,7 +61,7 @@
 		      <0x0087580 0x01>,
 		      <0x0087581 0x01>,
 		      <0x0087582 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR","IRQFLTE","IRQFLTC0", "NMISR",
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
 			    "NMIER", "NMICLR";
 
 		swint1: swint1@872e0 {
@@ -867,7 +867,7 @@
 
 		ctsu: ctsu@a0900 {
 			compatible = "renesas,rx-ctsu";
-			reg = < 0x000A0900 0x100 >;
+			reg = <0x000A0900 0x100>;
 			clocks = <&pclkb MSTPD 10>;
 			interrupts = <60 1>, <61 1>, <62 1>;
 			interrupt-names = "ctsuwr", "ctsurd", "ctsufn";

@@ -52,14 +52,18 @@ LOG_MODULE_REGISTER(bt_iso, CONFIG_BT_ISO_LOG_LEVEL);
 #define iso_chan(_iso) ((_iso)->iso.chan);
 
 #if defined(CONFIG_BT_ISO_RX)
-static bt_iso_buf_rx_freed_cb_t buf_rx_freed_cb;
+static atomic_ptr_t buf_rx_freed_cb;
 
 static void iso_rx_buf_destroy(struct net_buf *buf)
 {
+	bt_iso_buf_rx_freed_cb_t cb;
+
+	cb = (bt_iso_buf_rx_freed_cb_t)atomic_ptr_get(&buf_rx_freed_cb);
+
 	net_buf_destroy(buf);
 
-	if (buf_rx_freed_cb) {
-		buf_rx_freed_cb();
+	if (cb != NULL) {
+		cb();
 	}
 }
 
@@ -643,7 +647,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 
 void bt_iso_buf_rx_freed_cb_set(bt_iso_buf_rx_freed_cb_t cb)
 {
-	buf_rx_freed_cb = cb;
+	atomic_ptr_set(&buf_rx_freed_cb, (void *)cb);
 }
 
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
@@ -2047,6 +2051,11 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 
 		if (cis->qos->tx != NULL && cis->qos->tx->sdu != 0U) {
 			is_c_to_p = true;
+		}
+
+		if (!is_p_to_c && !is_c_to_p) {
+			LOG_DBG("Neither C to P nor P to C can be configured");
+			return false;
 		}
 	}
 

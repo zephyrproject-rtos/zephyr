@@ -19,14 +19,14 @@
 		led0 = &led0;
 		led1 = &led1;
 		watchdog0 = &wdt0;
-		sdhc0 = &sdhc0;
+		sdhc0 = &sdhc1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {
-			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 			label = "Status LED";
 		};
 
@@ -43,7 +43,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
-		zephyr,sdhc = &sdhc0;
+		zephyr,sdhc = &sdhc1;
 	};
 };
 
@@ -108,12 +108,9 @@
 };
 
 &sdhc {
-	sdhc0: sdhc@0 {
+	sdhc1: sdhc@1 {
 		status = "okay";
 
-		pinctrl-0 = <&sdhc0_default>;
-		pinctrl-names = "default";
-		power-delay-ms = <100>;
 		max-bus-freq = <52000000>;
 		bus-width = <4>;
 

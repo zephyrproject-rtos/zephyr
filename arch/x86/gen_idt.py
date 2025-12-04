@@ -29,13 +29,14 @@ This script outputs three binary tables:
 """
 
 import argparse
-import sys
-import struct
 import os
+import struct
+import sys
+
 import elftools
-from packaging import version
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -69,8 +70,7 @@ def create_irq_gate(handler, dpl):
     offset_hi = handler >> 16
     offset_lo = handler & 0xFFFF
 
-    data = struct.pack(gate_desc_format, offset_lo, KERNEL_CODE_SEG, 0,
-                       type_attr, offset_hi)
+    data = struct.pack(gate_desc_format, offset_lo, KERNEL_CODE_SEG, 0, type_attr, offset_hi)
     return data
 
 
@@ -121,15 +121,14 @@ def update_irq_vec_map(irq_vec_map, irq, vector, max_irq):
         return
 
     if irq >= max_irq:
-        error("irq %d specified, but CONFIG_MAX_IRQ_LINES is %d" %
-              (irq, max_irq))
+        error(f"irq {irq:d} specified, but CONFIG_MAX_IRQ_LINES is {max_irq:d}")
 
     # This table will never have values less than 32 since those are for
     # exceptions; 0 means unconfigured
     if irq_vec_map[irq] != 0:
-        error("multiple vector assignments for interrupt line %d" % irq)
+        error(f"multiple vector assignments for interrupt line {irq:d}")
 
-    debug("assign IRQ %d to vector %d" % (irq, vector))
+    debug(f"assign IRQ {irq:d} to vector {vector:d}")
     irq_vec_map[irq] = vector
 
 
@@ -145,11 +144,10 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
             continue
 
         if vec >= max_vec:
-            error("Vector %d specified, but size of IDT is only %d vectors" %
-                  (vec, max_vec))
+            error(f"Vector {vec:d} specified, but size of IDT is only {max_vec:d} vectors")
 
         if vectors[vec] is not None:
-            error("Multiple assignments for vector %d" % vec)
+            error(f"Multiple assignments for vector {vec:d}")
 
         vectors[vec] = (handler, tss, dpl)
         update_irq_vec_map(irq_vec_map, irq, vec, max_irq)
@@ -167,7 +165,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
                 break
 
         if vec == -1:
-            error("can't find a free vector in priority level %d" % prio)
+            error(f"can't find a free vector in priority level {prio:d}")
 
         vectors[vec] = (handler, tss, dpl)
         update_irq_vec_map(irq_vec_map, irq, vec, max_irq)
@@ -190,27 +188,27 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
 def get_symbols(obj):
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value
-                    for sym in section.iter_symbols()}
+            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     raise LookupError("Could not find symbol table")
 
+
 # struct genidt_header_s {
-#	uint32_t spurious_addr;
-#	uint32_t spurious_no_error_addr;
-#	int32_t num_entries;
+# uint32_t spurious_addr;
+# uint32_t spurious_no_error_addr;
+# int32_t num_entries;
 # };
 
 
 intlist_header_fmt = "<II"
 
 # struct genidt_entry_s {
-#	uint32_t isr;
-#	int32_t irq;
-#	int32_t priority;
-#	int32_t vector_id;
-#	int32_t dpl;
-#	int32_t tss;
+# uint32_t isr;
+# int32_t irq;
+# int32_t priority;
+# int32_t vector_id;
+# int32_t dpl;
+# int32_t tss;
 # };
 
 intlist_entry_fmt = "<Iiiiii"
@@ -226,23 +224,23 @@ def get_intlist(elf):
     spurious_code = header[0]
     spurious_nocode = header[1]
 
-    debug("spurious handler (code)    : %s" % hex(header[0]))
-    debug("spurious handler (no code) : %s" % hex(header[1]))
+    debug(f"spurious handler (code)    : {hex(header[0]):s}")
+    debug(f"spurious handler (no code) : {hex(header[1]):s}")
 
-    intlist = [i for i in
-               struct.iter_unpack(intlist_entry_fmt, intdata)]
+    intlist = [i for i in struct.iter_unpack(intlist_entry_fmt, intdata)]
 
     debug("Configured interrupt routing")
     debug("handler    irq pri vec dpl")
     debug("--------------------------")
 
     for irq in intlist:
-        debug("{0:<10} {1:<3} {2:<3} {3:<3} {4:<2}".format(
-            hex(irq[0]),
-            "-" if irq[1] == -1 else irq[1],
-            "-" if irq[2] == -1 else irq[2],
-            "-" if irq[3] == -1 else irq[3],
-            irq[4]))
+        debug(
+            f"{hex(irq[0]):<10} "
+            f"{'-' if irq[1] == -1 else irq[1]:<3} "
+            f"{'-' if irq[2] == -1 else irq[2]:<3} "
+            f"{'-' if irq[3] == -1 else irq[3]:<3} "
+            f"{irq[4]:<2}"
+        )
 
     return (spurious_code, spurious_nocode, intlist)
 
@@ -251,18 +249,26 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-m", "--vector-map", required=True,
-                        help="Output file mapping IRQ lines to IDT vectors")
-    parser.add_argument("-o", "--output-idt", required=True,
-                        help="Output file containing IDT binary")
-    parser.add_argument("-a", "--output-vectors-alloc", required=False,
-                        help="Output file indicating allocated vectors")
-    parser.add_argument("-k", "--kernel", required=True,
-                        help="Zephyr kernel image")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print extra debugging information")
+    parser.add_argument(
+        "-m", "--vector-map", required=True, help="Output file mapping IRQ lines to IDT vectors"
+    )
+    parser.add_argument(
+        "-o", "--output-idt", required=True, help="Output file containing IDT binary"
+    )
+    parser.add_argument(
+        "-a",
+        "--output-vectors-alloc",
+        required=False,
+        help="Output file indicating allocated vectors",
+    )
+    parser.add_argument("-k", "--kernel", required=True, help="Zephyr kernel image")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print extra debugging information"
+    )
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
@@ -274,7 +280,7 @@ def create_irq_vectors_allocated(vectors, spur_code, spur_nocode, filename):
     # interrupt handlers installed, they are free for runtime installation
     # of interrupts
     num_chars = (len(vectors) + 7) // 8
-    vbits = num_chars*[0]
+    vbits = num_chars * [0]
     for i, (handler, _, _) in enumerate(vectors):
         if handler not in (spur_code, spur_nocode):
             continue
@@ -300,14 +306,12 @@ def main():
     max_irq = syms["CONFIG_MAX_IRQ_LINES"]
     max_vec = syms["CONFIG_IDT_NUM_VECTORS"]
 
-    vectors, irq_vec_map = setup_idt(spur_code, spur_nocode, intlist, max_vec,
-                                     max_irq)
+    vectors, irq_vec_map = setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq)
 
     create_idt_binary(vectors, args.output_idt)
     create_irq_vec_map_binary(irq_vec_map, args.vector_map)
     if args.output_vectors_alloc:
-        create_irq_vectors_allocated(vectors, spur_code, spur_nocode,
-                                     args.output_vectors_alloc)
+        create_irq_vectors_allocated(vectors, spur_code, spur_nocode, args.output_vectors_alloc)
 
 
 if __name__ == "__main__":

@@ -14,15 +14,24 @@
 #define AVCTP_VER_1_4 (0x0104u)
 #define AVRCP_VER_1_6 (0x0106u)
 
-#define AVRCP_CAT_1                       BIT(0) /* Player/Recorder */
-#define AVRCP_CAT_2                       BIT(1) /* Monitor/Amplifier */
-#define AVRCP_CAT_3                       BIT(2) /* Tuner */
-#define AVRCP_CAT_4                       BIT(3) /* Menu */
-#define AVRCP_PLAYER_APPLICATION_SETTINGS BIT(4) /* Bit 0 must also be set */
-#define AVRCP_GROUP_NAVIGATION            BIT(5) /* Bit 0 must also be set */
-#define AVRCP_BROWSING_SUPPORT            BIT(6)
-#define AVRCP_MULTIPLE_MEDIA_PLAYERS      BIT(7)
-#define AVRCP_COVER_ART_SUPPORT           BIT(8)
+#define AVRCP_TG_CAT_1                       BIT(0) /* Player/Recorder */
+#define AVRCP_TG_CAT_2                       BIT(1) /* Monitor/Amplifier */
+#define AVRCP_TG_CAT_3                       BIT(2) /* Tuner */
+#define AVRCP_TG_CAT_4                       BIT(3) /* Menu */
+#define AVRCP_TG_PLAYER_APPLICATION_SETTINGS BIT(4) /* Bit 0 must also be set */
+#define AVRCP_TG_GROUP_NAVIGATION            BIT(5) /* Bit 0 must also be set */
+#define AVRCP_TG_BROWSING_SUPPORT            BIT(6)
+#define AVRCP_TG_MULTIPLE_MEDIA_PLAYERS      BIT(7)
+#define AVRCP_TG_COVER_ART_SUPPORT           BIT(8)
+
+#define AVRCP_CT_CAT_1                          BIT(0) /* Player/Recorder */
+#define AVRCP_CT_CAT_2                          BIT(1) /* Monitor/Amplifier */
+#define AVRCP_CT_CAT_3                          BIT(2) /* Tuner */
+#define AVRCP_CT_CAT_4                          BIT(3) /* Menu */
+#define AVRCP_CT_BROWSING_SUPPORT               BIT(6)
+#define AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES BIT(7) /* Cover Art GetImageProperties */
+#define AVRCP_CT_COVER_ART_GET_IMAGE            BIT(8) /* Cover Art GetImage */
+#define AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL BIT(9) /* Cover Art GetLinkedThumbnail */
 
 #define AVRCP_SUBUNIT_PAGE              (0) /* Fixed value according to AVRCP */
 #define AVRCP_SUBUNIT_EXTENSION_CODE    (7) /* Fixed value according to TA Document 2001012 */
@@ -41,10 +50,41 @@
 	 sizeof(struct bt_avrcp_header))
 
 #if defined(CONFIG_BT_AVRCP_BROWSING)
-#define AVRCP_BROWSING_ENABLE AVRCP_BROWSING_SUPPORT
+#define AVRCP_CT_BROWSING_ENABLE AVRCP_CT_BROWSING_SUPPORT
+#define AVRCP_TG_BROWSING_ENABLE AVRCP_TG_BROWSING_SUPPORT
 #else
-#define AVRCP_BROWSING_ENABLE 0
+#define AVRCP_CT_BROWSING_ENABLE 0
+#define AVRCP_TG_BROWSING_ENABLE 0
 #endif /* CONFIG_BT_AVRCP_BROWSING */
+
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+#define AVRCP_TG_COVER_ART_ENABLE AVRCP_TG_COVER_ART_SUPPORT
+#else
+#define AVRCP_TG_COVER_ART_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES)
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE)
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE AVRCP_CT_COVER_ART_GET_IMAGE
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL)
+#define AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL */
+
+#define AVRCP_CT_COVER_ART_FEAT_ENABLE \
+	(AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE | \
+	 AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE | \
+	 AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE)
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
@@ -240,3 +280,11 @@ struct bt_avrcp_frame {
 } __packed;
 
 int bt_avrcp_init(void);
+
+int bt_avrcp_tg_cover_art_init(uint16_t *psm);
+
+struct bt_avrcp_tg *bt_avrcp_get_tg(struct bt_conn *conn, uint16_t psm);
+
+struct bt_avrcp_ct;
+
+struct bt_conn *bt_avrcp_ct_get_acl_conn(struct bt_avrcp_ct *ct);

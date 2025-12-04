@@ -217,8 +217,9 @@ config LLEXT_EDK_NAME
 	  instance, the default name, "llext-edk", becomes LLEXT_EDK_INSTALL_DIR.
 
 choice LLEXT_EDK_FORMAT
-prompt "EDK compression and output format"
-default LLEXT_EDK_FORMAT_TAR_XZ
+	prompt "EDK compression and output format"
+	default LLEXT_EDK_FORMAT_TAR_ZSTD if LLEXT_EDK_PRESERVE_INPUT_FOLDER
+	default LLEXT_EDK_FORMAT_TAR_XZ
 
 config LLEXT_EDK_FORMAT_TAR_XZ
 	bool ".tar.xz"
@@ -247,5 +248,8 @@ config LLEXT_EDK_USERSPACE_ONLY
 	  or kernel space and route the call accordingly. If the EDK is expected
 	  to be used by userspace only extensions, this option will make EDK stubs
 	  not contain the routing code, and only generate the userspace one.
+
+config LLEXT_EDK_PRESERVE_INPUT_FOLDER
+	bool "Don't delete the EDK source folder"
 
 endif

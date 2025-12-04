@@ -55,12 +55,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-		invert-y;
-	};
-
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -104,7 +98,7 @@
 	mul-n = <266>;
 	div-p = <2>;
 	div-r = <5>;
-	div-divr  = <2>;
+	div-divr = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -141,6 +135,9 @@
 		reg = <0x2a>;
 		int-gpios = <&gpioj 5 0>;
 		status = "okay";
+		inverted-y;
+		screen-width = <800>;
+		screen-height = <480>;
 	};
 };
 
@@ -263,6 +260,7 @@ zephyr_udc0: &usbotg_fs {
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
 	status = "okay";
+
 	/* orisetech, otm8009a */
 	display-timings {
 		compatible = "zephyr,panel-timing";

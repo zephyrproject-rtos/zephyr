@@ -462,9 +462,11 @@ struct bt_gatt_authorization_cb {
 /**
  *  @brief Characteristic Authenticated Signed Writes property.
  *
+ *  @deprecated  This API is deprecated.
+ *
  *  If set, permits signed writes to the Characteristic Value.
  */
-#define BT_GATT_CHRC_AUTH			0x40
+#define BT_GATT_CHRC_AUTH			0x40 __DEPRECATED_MACRO
 /**
  *  @brief Characteristic Extended Properties property.
  *
@@ -621,6 +623,17 @@ static inline const char *bt_gatt_err_to_str(int gatt_err)
  *  @param cb Callback struct.
  */
 void bt_gatt_cb_register(struct bt_gatt_cb *cb);
+
+/** @brief Unregister GATT callbacks.
+ *
+ *  Unregister callbacks for monitoring the state of GATT. The callback
+ *  struct should be one that was previously registered.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_cb_unregister(struct bt_gatt_cb *cb);
 
 /** @brief Register GATT authorization callbacks.
  *

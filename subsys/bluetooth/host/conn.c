@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Xiaomi Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2002,30 +2003,30 @@ void bt_conn_notify_remote_info(struct bt_conn *conn)
 
 void bt_conn_notify_le_param_updated(struct bt_conn *conn)
 {
+	uint16_t interval_1250us = conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US;
+
 	/* If new connection parameters meet requirement of pending
 	 * parameters don't send peripheral conn param request anymore on timeout
 	 */
 	if (atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET) &&
-	    conn->le.interval >= conn->le.interval_min &&
-	    conn->le.interval <= conn->le.interval_max &&
+	    interval_1250us >= conn->le.interval_min &&
+	    interval_1250us <= conn->le.interval_max &&
 	    conn->le.latency == conn->le.pending_latency &&
 	    conn->le.timeout == conn->le.pending_timeout) {
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
-
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_param_updated) {
-			callback->le_param_updated(conn, conn->le.interval,
+			callback->le_param_updated(conn, interval_1250us,
 						   conn->le.latency, conn->le.timeout);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_param_updated) {
-			cb->le_param_updated(conn, conn->le.interval,
-					     conn->le.latency,
-					     conn->le.timeout);
+			cb->le_param_updated(conn, interval_1250us,
+					     conn->le.latency, conn->le.timeout);
 		}
 	}
 }
@@ -2885,7 +2886,10 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.local = &conn->le.resp_addr;
 			info->le.remote = &conn->le.init_addr;
 		}
-		info->le.interval = conn->le.interval;
+		info->le.interval_us = conn->le.interval_us;
+#if !defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+		info->le._interval = conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US;
+#endif
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -3243,6 +3247,24 @@ void bt_conn_notify_subrate_change(struct bt_conn *conn,
 	}
 }
 
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+void bt_conn_notify_conn_rate_change(struct bt_conn *conn, uint8_t status,
+				     const struct bt_conn_le_conn_rate_changed *params)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->conn_rate_changed != NULL) {
+			callback->conn_rate_changed(conn, status, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->conn_rate_changed != NULL) {
+			cb->conn_rate_changed(conn, status, params);
+		}
+	}
+}
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+
 static bool le_subrate_common_params_valid(const struct bt_conn_le_subrate_param *param)
 {
 	/* All limits according to BT Core spec 5.4 [Vol 4, Part E, 7.8.123] */
@@ -3330,6 +3352,182 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SUBRATE_REQUEST, buf, NULL);
 }
 #endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+int bt_conn_le_read_min_conn_interval_groups(struct bt_conn_le_min_conn_interval_info *info)
+{
+	struct net_buf *rsp;
+	struct bt_hci_op_le_read_min_supported_conn_interval *rp;
+	int err;
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MIN_SUPPORTED_CONN_INTERVAL, NULL,
+				   &rsp);
+	if (err != 0) {
+		return err;
+	}
+
+	rp = (struct bt_hci_op_le_read_min_supported_conn_interval *)rsp->data;
+
+	if (rp->num_groups > BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS) {
+		LOG_ERR("Too many groups: %d (max %d)",
+			rp->num_groups, BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS);
+		net_buf_unref(rsp);
+		return -ENOMEM;
+	}
+
+	info->min_supported_conn_interval_us =
+		BT_CONN_SCI_INTERVAL_TO_US(rp->min_supported_conn_interval);
+	info->num_groups = rp->num_groups;
+
+	/* Copy groups up to the number allocated by the application */
+	for (uint8_t i = 0; i < rp->num_groups; i++) {
+		info->groups[i].min_125us = sys_le16_to_cpu(rp->groups[i].group_min);
+		info->groups[i].max_125us = sys_le16_to_cpu(rp->groups[i].group_max);
+		info->groups[i].stride_125us = sys_le16_to_cpu(rp->groups[i].group_stride);
+	}
+
+	net_buf_unref(rsp);
+	return 0;
+}
+
+int bt_conn_le_read_min_conn_interval(uint16_t *min_interval_us)
+{
+	int err;
+	struct net_buf *rsp;
+	struct bt_hci_op_le_read_min_supported_conn_interval *rp;
+
+	if (min_interval_us == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MIN_SUPPORTED_CONN_INTERVAL, NULL,
+				   &rsp);
+	if (err != 0) {
+		return err;
+	}
+
+	rp = (struct bt_hci_op_le_read_min_supported_conn_interval *)rsp->data;
+	*min_interval_us = BT_CONN_SCI_INTERVAL_TO_US(rp->min_supported_conn_interval);
+
+	net_buf_unref(rsp);
+	return 0;
+}
+
+static bool le_conn_rate_common_params_valid(const struct bt_conn_le_conn_rate_param *param)
+{
+	/* All limits according to BT Core spec 6.2 [Vol 4, Part E, 7.8.154] */
+
+	if (!IN_RANGE(param->interval_min_125us, BT_HCI_LE_SCI_INTERVAL_MIN_125US,
+		    BT_HCI_LE_SCI_INTERVAL_MAX_125US) ||
+	    !IN_RANGE(param->interval_max_125us, BT_HCI_LE_SCI_INTERVAL_MIN_125US,
+		    BT_HCI_LE_SCI_INTERVAL_MAX_125US) ||
+	    param->interval_min_125us > param->interval_max_125us) {
+		return false;
+	}
+
+	if (!IN_RANGE(param->subrate_min, BT_HCI_LE_SUBRATE_FACTOR_MIN,
+		     BT_HCI_LE_SUBRATE_FACTOR_MAX) ||
+	    !IN_RANGE(param->subrate_max, BT_HCI_LE_SUBRATE_FACTOR_MIN,
+		     BT_HCI_LE_SUBRATE_FACTOR_MAX) ||
+	    param->subrate_min > param->subrate_max) {
+		return false;
+	}
+
+	if (!IN_RANGE(param->max_latency, 0, BT_HCI_LE_PERIPHERAL_LATENCY_MAX) ||
+	    param->subrate_max * (param->max_latency + 1) > 500) {
+		return false;
+	}
+
+	if (!IN_RANGE(param->continuation_number, 0, BT_HCI_LE_CONTINUATION_NUM_MAX) ||
+	    param->continuation_number >= param->subrate_max) {
+		return false;
+	}
+
+	if (!IN_RANGE(param->supervision_timeout_10ms, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+		     BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+		return false;
+	}
+
+	if (!IN_RANGE(param->min_ce_len_125us, BT_HCI_LE_SCI_CE_LEN_MIN_125US,
+		     BT_HCI_LE_SCI_CE_LEN_MAX_125US) ||
+	    !IN_RANGE(param->max_ce_len_125us, BT_HCI_LE_SCI_CE_LEN_MIN_125US,
+		     BT_HCI_LE_SCI_CE_LEN_MAX_125US) ||
+	    param->max_ce_len_125us < param->min_ce_len_125us) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CENTRAL)
+int bt_conn_le_conn_rate_set_defaults(const struct bt_conn_le_conn_rate_param *params)
+{
+	struct bt_hci_op_le_set_default_rate_parameters *cp;
+	struct net_buf *buf;
+
+	if (params == NULL || !le_conn_rate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->conn_interval_min = sys_cpu_to_le16(params->interval_min_125us);
+	cp->conn_interval_max = sys_cpu_to_le16(params->interval_max_125us);
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout_10ms);
+	cp->min_ce_len = sys_cpu_to_le16(params->min_ce_len_125us);
+	cp->max_ce_len = sys_cpu_to_le16(params->max_ce_len_125us);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_RATE_PARAMETERS, buf, NULL);
+}
+#endif /* CONFIG_BT_CENTRAL */
+
+int bt_conn_le_conn_rate_request(struct bt_conn *conn,
+				 const struct bt_conn_le_conn_rate_param *params)
+{
+	struct bt_hci_op_le_connection_rate_request *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_le(conn)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if (params == NULL || !le_conn_rate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->conn_interval_min = sys_cpu_to_le16(params->interval_min_125us);
+	cp->conn_interval_max = sys_cpu_to_le16(params->interval_max_125us);
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout_10ms);
+	cp->min_ce_len = sys_cpu_to_le16(params->min_ce_len_125us);
+	cp->max_ce_len = sys_cpu_to_le16(params->max_ce_len_125us);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONNECTION_RATE_REQUEST, buf, NULL);
+}
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
 
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
 void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,

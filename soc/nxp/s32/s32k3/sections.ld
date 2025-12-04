@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_XIP
+/* Emit IVT section only when XIP and (standalone app OR MCUboot itself) */
+#if defined(CONFIG_XIP) && (!defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_MCUBOOT))
 
-.ivt_header : {
-	KEEP(*(.ivt_header));
+/* IVT at flash base */
+.ivt_header ORIGIN(IVT_HEADER) : ALIGN(4)
+{
+	/* Using a wildcard makes it more robust */
+	KEEP(*(.ivt_header*));
 } > IVT_HEADER
 
 #else

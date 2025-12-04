@@ -3,19 +3,23 @@
 if(CONFIG_SDHC)
 
 zephyr_library()
+
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_CDNS_SDHC sdhc_cdns_ll.c sdhc_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_IMX_USDHC imx_usdhc.c)
-zephyr_library_sources_ifdef(CONFIG_SPI_SDHC sdhc_spi.c)
+zephyr_library_sources_ifdef(CONFIG_INTEL_EMMC_HOST intel_emmc_host.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_SDIF mcux_sdif.c)
 zephyr_library_sources_ifdef(CONFIG_RCAR_MMC rcar_mmc.c)
 zephyr_library_sources_ifdef(CONFIG_SAM_HSMCI sam_hsmci.c)
 zephyr_library_sources_ifdef(CONFIG_SAM_SDMMC sam_sdmmc.c)
-zephyr_library_sources_ifdef(CONFIG_INTEL_EMMC_HOST intel_emmc_host.c)
-zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1 ifx_cat1_sdio.c)
-zephyr_library_sources_ifdef(CONFIG_CDNS_SDHC sdhc_cdns_ll.c sdhc_cdns.c)
-zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
-zephyr_library_sources_ifdef(CONFIG_SDHC_RENESAS_RA sdhc_renesas_ra.c)
-zephyr_library_sources_ifdef(CONFIG_SDHC_MAX32 sdhc_max32.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_AMBIQ sdhc_ambiq.c)
-zephyr_library_sources_ifdef(CONFIG_XLNX_SDHC xlnx_sdhc.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1 ifx_cat1_sdio.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_MAX32 sdhc_max32.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_RENESAS_RA sdhc_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_STM32_SDIO sdhc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_SDHC sdhc_spi.c)
+zephyr_library_sources_ifdef(CONFIG_XLNX_SDHC xlnx_sdhc.c)
+# zephyr-keep-sorted-stop
+
 endif()

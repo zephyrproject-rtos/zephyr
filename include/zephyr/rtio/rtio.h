@@ -1122,6 +1122,51 @@ static inline struct rtio_sqe *rtio_sqe_acquire(struct rtio *r)
 }
 
 /**
+ * @brief Acquire a number of submission queue events if available
+ *
+ * @warning The sqe array is in an undefined state if the return value is -ENOMEM
+ *
+ * @param r RTIO context
+ * @param n Number of submission queue events to acquire
+ * @param sqes A pointer to an array of rtio_sqe struct pointers of size n
+ *
+ * @retval 0 success
+ * @retval -ENOMEM out of memory
+ */
+static inline int rtio_sqe_acquire_array(struct rtio *r, size_t n, struct rtio_sqe **sqes)
+{
+	struct rtio_iodev_sqe *iodev_sqe;
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		iodev_sqe = rtio_sqe_pool_alloc(r->sqe_pool);
+		if (iodev_sqe == NULL) {
+			break;
+		}
+		sqes[i] = &iodev_sqe->sqe;
+	}
+
+	/* Not enough SQEs in the pool */
+	if (i < n) {
+		while (i > 0) {
+			i--;
+			iodev_sqe = CONTAINER_OF(sqes[i], struct rtio_iodev_sqe, sqe);
+			rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
+			sqes[i] = NULL;
+		}
+
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < n; i++) {
+		iodev_sqe = CONTAINER_OF(sqes[i], struct rtio_iodev_sqe, sqe);
+		mpsc_push(&r->sq, &iodev_sqe->q);
+	}
+
+	return 0;
+}
+
+/**
  * @brief Drop all previously acquired sqe
  *
  * @param r RTIO context
@@ -1770,7 +1815,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 {
 
-	SYS_PORT_TRACING_FUNC_ENTER(rtio, submit, rtio, wait_count);
+	SYS_PORT_TRACING_FUNC_ENTER(rtio, submit, r, wait_count);
 	int res = 0;
 	uintptr_t cq_count = (uintptr_t)atomic_get(&r->cq_count);
 	uintptr_t cq_complete_count = cq_count + wait_count;

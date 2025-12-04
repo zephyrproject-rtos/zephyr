@@ -12,7 +12,7 @@
 #include <zephyr/drivers/uart.h>
 #include <ctype.h>
 
-#ifdef CONFIG_ARCH_POSIX
+#ifdef CONFIG_NATIVE_LIBC
 #include <unistd.h>
 #else
 #include <zephyr/posix/unistd.h>
@@ -109,14 +109,14 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
-		state = getopt_state_get();
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
+		state = sys_getopt_state_get();
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -166,7 +166,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -175,7 +175,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = optarg;
+			cvalue = sys_getopt_optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -185,17 +185,17 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
-			if (optopt == 'c') {
+			if (sys_getopt_optopt == 'c') {
 				shell_print(sh,
 					"Option -%c requires an argument.",
-					optopt);
-			} else if (isprint(optopt) != 0) {
+					sys_getopt_optopt);
+			} else if (isprint(sys_getopt_optopt) != 0) {
 				shell_print(sh, "Unknown option `-%c'.",
-					optopt);
+					    sys_getopt_optopt);
 			} else {
 				shell_print(sh,
 					"Unknown option character `\\x%x'.",
-					optopt);
+					sys_getopt_optopt);
 			}
 			return 1;
 		default:

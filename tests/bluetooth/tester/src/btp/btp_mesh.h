@@ -1194,7 +1194,7 @@ struct btp_mesh_prov_node_added_ev {
 struct btp_mesh_model_recv_ev {
 	uint16_t src;
 	uint16_t dst;
-	uint8_t payload_len;
+	uint16_t payload_len;
 	uint8_t payload[];
 } __packed;
 

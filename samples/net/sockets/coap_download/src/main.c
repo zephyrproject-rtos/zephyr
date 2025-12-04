@@ -11,6 +11,9 @@
 #include <zephyr/net/coap_client.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/arpa/inet.h>
 
 LOG_MODULE_REGISTER(coap_download, LOG_LEVEL_INF);
 
@@ -63,9 +66,10 @@ static void do_coap_download(struct sockaddr *sa)
 					      .num_options = 0,
 					      .user_data = NULL};
 
-	LOG_INF("Starting CoAP download using %s", (AF_INET == sa->sa_family) ? "IPv4" : "IPv6");
+	LOG_INF("Starting CoAP download using %s",
+		(AF_INET == sa->sa_family) ? "IPv4" : "IPv6");
 
-	sockfd = zsock_socket(sa->sa_family, SOCK_DGRAM, 0);
+	sockfd = socket(sa->sa_family, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
 		LOG_ERR("Failed to create socket, err %d", errno);
 		return;
@@ -84,7 +88,7 @@ static void do_coap_download(struct sockaddr *sa)
 
 	coap_client_cancel_requests(&client);
 
-	zsock_close(sockfd);
+	close(sockfd);
 }
 
 int main(void)
@@ -107,7 +111,7 @@ int main(void)
 
 	addr4->sin_family = AF_INET;
 	addr4->sin_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	zsock_inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
+	inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
 
 	do_coap_download(&sa);
 #endif
@@ -117,7 +121,7 @@ int main(void)
 
 	addr6->sin6_family = AF_INET6;
 	addr6->sin6_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	zsock_inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
+	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
 
 	do_coap_download(&sa);
 #endif

@@ -156,6 +156,12 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_SPM_LOG_LEVEL=${TFM_SPM_LOG_LEVEL})
   endif()
 
+  if(CONFIG_TFM_SECURE_UART)
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=1)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=0)
+  endif()
+
   # Enable TFM partitions as specified in Kconfig
   foreach(partition ${TFM_VALID_PARTITIONS})
     if(CONFIG_${partition})

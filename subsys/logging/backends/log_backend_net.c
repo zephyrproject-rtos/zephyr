@@ -32,7 +32,7 @@ static char dev_hostname[MAX_HOSTNAME_LEN + 1];
 
 static uint8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
 static bool net_init_done;
-struct sockaddr server_addr;
+struct net_sockaddr server_addr;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
@@ -46,8 +46,8 @@ static struct log_backend_net_ctx {
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
-	struct msghdr msg = { 0 };
-	struct iovec io_vector[2];
+	struct net_msghdr msg = { 0 };
+	struct net_iovec io_vector[2];
 	int pos = 0;
 	int ret;
 
@@ -91,15 +91,15 @@ LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 
 static int do_net_init(struct log_backend_net_ctx *ctx)
 {
-	socklen_t server_addr_len = 0;
-	int ret, proto = IPPROTO_UDP, type = SOCK_DGRAM;
+	net_socklen_t server_addr_len = 0;
+	int ret, proto = NET_IPPROTO_UDP, type = NET_SOCK_DGRAM;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
-		server_addr_len = sizeof(struct sockaddr_in);
+	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == NET_AF_INET) {
+		server_addr_len = sizeof(struct net_sockaddr_in);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == AF_INET6) {
-		server_addr_len = sizeof(struct sockaddr_in6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == NET_AF_INET6) {
+		server_addr_len = sizeof(struct net_sockaddr_in6);
 	}
 
 	if (server_addr_len == 0) {
@@ -108,8 +108,8 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	}
 
 	if (ctx->is_tcp) {
-		proto = IPPROTO_TCP;
-		type = SOCK_STREAM;
+		proto = NET_IPPROTO_TCP;
+		type = NET_SOCK_STREAM;
 	}
 
 	ret = zsock_socket(server_addr.sa_family, type, proto);
@@ -219,7 +219,7 @@ bool log_backend_net_set_addr(const char *addr)
 		return ret;
 	}
 
-	net_sin(&server_addr)->sin_port = htons(514);
+	net_sin(&server_addr)->sin_port = net_htons(514);
 
 	ret = net_ipaddr_parse(addr, strlen(addr), &server_addr);
 	if (!ret) {
@@ -230,7 +230,7 @@ bool log_backend_net_set_addr(const char *addr)
 	return ret;
 }
 
-bool log_backend_net_set_ip(const struct sockaddr *addr)
+bool log_backend_net_set_ip(const struct net_sockaddr *addr)
 {
 	bool ret = check_net_init_done();
 
@@ -238,8 +238,8 @@ bool log_backend_net_set_ip(const struct sockaddr *addr)
 		return ret;
 	}
 
-	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) ||
-	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6)) {
+	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6)) {
 		memcpy(&server_addr, addr, sizeof(server_addr));
 
 		net_port_set_default(&server_addr, 514);

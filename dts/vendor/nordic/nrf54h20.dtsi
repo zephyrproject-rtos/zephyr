@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
-#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/clock/nrfs-audiopll.h>
 #include <zephyr/dt-bindings/clock/nrf-auxpll.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
@@ -136,6 +136,7 @@
 				min-residency-us = <700>;
 				exit-latency-us = <5>;
 			};
+
 			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -487,7 +488,7 @@
 				status = "disabled";
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 				dfe-supported;
 				ieee802154-supported;
 				interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;

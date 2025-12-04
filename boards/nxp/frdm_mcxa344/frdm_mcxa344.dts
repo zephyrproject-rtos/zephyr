@@ -15,7 +15,7 @@
 	model = "NXP FRDM_MCXA344 board";
 	compatible = "nxp,mcxa344", "nxp,mcx";
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+import os
 
 import pytest
 from abstract.PowerMonitor import PowerMonitor
@@ -26,6 +27,11 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
 
     # Initialize the probe with the provided path
     probe = probe_class  # Instantiate the power monitor probe
+
+    # Set path for raw output data
+    build_dir_path = request.config.getoption("--build-dir")
+    if os.path.exists(build_dir_path):
+        probe.power_shield_conf.output_file = os.path.join(build_dir_path, "power_raw_data.csv")
 
     # Get test data
     measurements_dict = test_data

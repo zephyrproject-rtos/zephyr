@@ -71,10 +71,11 @@
 
 	 */
 	flash_controller: flash_controller@40250000 {
-		compatible = "infineon,cat1-qspi-flash-mtb-hal";
+		compatible = "infineon,cat1-qspi-flash";
 		reg = <0x40250000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
 
 		flash0: flash0@8000000 {
 			compatible = "soc-nv-flash";
@@ -87,7 +88,7 @@
 				#size-cells = <1>;
 				compatible = "fixed-partitions";
 
-				storage: storage@0 {
+				storage_partition: storage@0 {
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
 				};
@@ -96,8 +97,8 @@
 					reg = <0x60100000 0x400>;
 				};
 
-				m33s_xip: m33s_xip@70100400 {
-					reg = <0x70100400 DT_SIZE_M(2)>;
+				m33s_xip: m33s_xip@18100400 {
+					reg = <0x18100400 DT_SIZE_M(2)>;
 				};
 
 				m33_xip: m33_xip@8300000 {

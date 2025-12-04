@@ -391,7 +391,7 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 		/* Allocate a memory buffer chain from buffer pool
 		 * Using root iface. It will be updated in net_recv_data()
 		 */
-		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("pkt alloc frame-len=%d failed", len);
 			goto next;

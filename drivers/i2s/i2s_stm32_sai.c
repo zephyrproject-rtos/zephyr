@@ -29,6 +29,20 @@ enum mclk_divider {
 	MCLK_DIV_512
 };
 
+static const uint32_t dma_priority[] = {
+#if defined(CONFIG_DMA_STM32U5)
+	DMA_LOW_PRIORITY_LOW_WEIGHT,
+	DMA_LOW_PRIORITY_MID_WEIGHT,
+	DMA_LOW_PRIORITY_HIGH_WEIGHT,
+	DMA_HIGH_PRIORITY,
+#else
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH,
+#endif
+};
+
 struct queue_item {
 	void *buffer;
 	size_t size;
@@ -90,6 +104,7 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("RX mem_block NULL");
+			__HAL_SAI_DISABLE(hsai);
 			goto exit;
 		} else {
 			return;
@@ -101,18 +116,21 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
 	if (stream->state == I2S_STATE_STOPPING) {
 		stream->state = I2S_STATE_READY;
 		LOG_DBG("Stopping RX ...");
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
 	ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
@@ -137,6 +155,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (stream->state == I2S_STATE_ERROR) {
 		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
@@ -144,6 +163,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("TX mem_block NULL");
+			__HAL_SAI_DISABLE(hsai);
 			goto exit;
 		} else {
 			return;
@@ -154,6 +174,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
@@ -163,12 +184,14 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
 	ret = k_msgq_get(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
+		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
 
@@ -282,6 +305,12 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.Mode = DMA_NORMAL;
 
+	if (dma_cfg.channel_priority >= ARRAY_SIZE(dma_priority)) {
+		LOG_ERR("Invalid DMA channel priority");
+		return -EINVAL;
+	}
+	hdma->Init.Priority = dma_priority[dma_cfg.channel_priority];
+
 #if defined(DMA_CHANNEL_1)
 	hdma->Init.Channel = dma_cfg.dma_slot * DMA_CHANNEL_1;
 #else
@@ -292,7 +321,6 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
-	hdma->Init.Priority = DMA_HIGH_PRIORITY;
 	hdma->Init.SrcBurstLength = 1;
 	hdma->Init.DestBurstLength = 1;
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
@@ -300,7 +328,6 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 #else
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-	hdma->Init.Priority = DMA_PRIORITY_HIGH;
 	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma->Init.MemInc = DMA_MINC_ENABLE;
 #endif
@@ -815,12 +842,13 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                     \
 		.reg = (DMA_TypeDef *)DT_REG_ADDR(                                                 \
 			DT_PHANDLE_BY_NAME(DT_DRV_INST(index), dmas, dir)),                        \
-		.dma_cfg =                                                                         \
-			{                                                                          \
-				.dma_slot = STM32_DMA_SLOT(index, dir, slot),                      \
-				.channel_direction = src_dev##_TO_##dest_dev,                      \
-				.dma_callback = dma_callback,                                      \
-			},                                                                         \
+		.dma_cfg = {                                                                       \
+			.dma_slot = STM32_DMA_SLOT(index, dir, slot),                              \
+			.channel_direction = src_dev##_TO_##dest_dev,                              \
+			.dma_callback = dma_callback,                                              \
+			.channel_priority = STM32_DMA_CONFIG_PRIORITY(                             \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+		},                                                                                 \
 		.stream_start = stream_start,                                                      \
 		.queue_drop = queue_drop,                                                          \
 	}
@@ -832,18 +860,18 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	static const struct stm32_pclken clk_##index[] = STM32_DT_INST_CLOCKS(index);              \
                                                                                                    \
 	struct i2s_stm32_sai_data sai_data_##index = {                                             \
-		.hsai =                                                                            \
-			{                                                                          \
-				.Instance = (SAI_Block_TypeDef *)DT_INST_REG_ADDR(index),          \
-				.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                       \
-				.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_FULL,                      \
-				.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                            \
-				.Init.CompandingMode = SAI_NOCOMPANDING,                           \
-				.Init.TriState = SAI_OUTPUT_NOTRELEASED,                           \
-			},                                                                         \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                     \
-			(SAI_DMA_CHANNEL_INIT(index, tx, MEMORY, PERIPHERAL)),                  \
-		(SAI_DMA_CHANNEL_INIT(index, rx, PERIPHERAL, MEMORY)))};                     \
+		.hsai = {                                                                          \
+			.Instance = (SAI_Block_TypeDef *)DT_INST_REG_ADDR(index),                  \
+			.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                               \
+			.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_FULL,                              \
+			.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                                    \
+			.Init.CompandingMode = SAI_NOCOMPANDING,                                   \
+			.Init.TriState = SAI_OUTPUT_NOTRELEASED,                                   \
+		},                                                                                 \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                      \
+			    (SAI_DMA_CHANNEL_INIT(index, tx, MEMORY, PERIPHERAL)),                 \
+			    (SAI_DMA_CHANNEL_INIT(index, rx, PERIPHERAL, MEMORY))),                \
+	};                                                                                         \
                                                                                                    \
 	struct i2s_stm32_sai_cfg sai_config_##index = {                                            \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \

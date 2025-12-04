@@ -17,4 +17,26 @@
 			bias-pull-up;
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <PA33_I2C1_SDA>, <PA30_I2C1_SCL>;
+			input-enable;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <PA24_SPI1_DIO>, <PA28_SPI1_CLK>, <PA29_SPI1_CS>;
+			input-enable;
+			input-schmitt-enable;
+		};
+
+		group2 {
+			pinmux = <PA25_SPI1_DI>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
+		};
+	};
 };

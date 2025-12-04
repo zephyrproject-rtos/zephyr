@@ -17,7 +17,8 @@
  *
  * Sending data (TX):
  *
- *   * (AF_INET/6, SOCK_RAW, 0) - The IP header needs to be supplied by the user in the data:
+ *   * (NET_AF_INET/6, NET_SOCK_RAW, 0) - The IP header needs to be supplied by the user
+ *     in the data:
  *     - test_raw_v4_sock_send_proto_wildcard
  *     - test_raw_v6_sock_send_proto_wildcard
  *     - test_raw_v4_sock_sendto
@@ -25,7 +26,8 @@
  *     - test_raw_v4_sock_sendmsg
  *     - test_raw_v6_sock_sendmsg
  *
- *   * (AF_INET/6, SOCK_RAW, <protocol>) - Construct IP header according to the protocol number if
+ *   * (NET_AF_INET/6, NET_SOCK_RAW, <protocol>) - Construct IP header according to the
+ *     protocol number if
  *     `IP_HDRINCL` socket option is not set. Otherwise, IP header should be provided by the user.
  *     Currently `IP_HDRINCL` is always considered set:
  *     - test_raw_v4_sock_send_proto_match
@@ -33,15 +35,16 @@
  *     - test_raw_v6_sock_send_proto_match
  *     - test_raw_v6_sock_send_proto_mismatch
  *
- *   * (AF_INET/6, SOCK_RAW, IPPROTO_RAW) - The IP header needs to be supplied by the user in the
- *     data:
+ *   * (NET_AF_INET/6, NET_SOCK_RAW, IPPROTO_RAW) - The IP header needs to be supplied by
+ *     the user in the data:
  *     - test_raw_v4_sock_send_proto_ipproto_raw
  *     - test_raw_v6_sock_send_proto_ipproto_raw
  *
  * Receiving data (RX)
  *
- *   *  (AF_INET/6, SOCK_RAW, 0) - 0 value is also `IPPROTO_IP` which is "wildcard" value. The
- *      packet is received for any IP protocol. It works in similar way as in FreeBSD:
+ *   *  (NET_AF_INET/6, NET_SOCK_RAW, 0) - 0 value is also `IPPROTO_IP` which is
+ *      "wildcard" value. The packet is received for any IP protocol. It works in
+ *      similar way as in FreeBSD:
  *     - test_raw_v4_sock_recv_proto_wildcard
  *     - test_raw_v6_sock_recv_proto_wildcard
  *     - test_raw_v4_sock_recvfrom
@@ -49,12 +52,14 @@
  *     - test_raw_v4_sock_recvmsg
  *     - test_raw_v6_sock_recvmsg
  *
- *   *  (AF_INET/6, SOCK_RAW, <protocol>) - All packets matching the protocol number specified for
+ *   *  (NET_AF_INET/6, NET_SOCK_RAW, <protocol>) - All packets matching the protocol
+ *      number specified for
  *      the raw socket are passed to this socket. http://www.iana.org/assignments/protocol-numbers:
  *     - test_raw_v4_sock_recv_proto_match
  *     - test_raw_v6_sock_recv_proto_match
  *
- *   *  (AF_INET/6, SOCK_RAW, IPPROTO_RAW) - Receiving of all IP protocols via IPPROTO_RAW is not
+ *   *  (NET_AF_INET/6, NET_SOCK_RAW, IPPROTO_RAW) - Receiving of all IP protocols via
+ *      NET_IPPROTO_RAW is not
  *      possible using raw sockets. https://man7.org/linux/man-pages/man7/raw.7.html:
  *     - test_raw_v4_sock_recv_proto_ipproto_raw
  *     - test_raw_v6_sock_recv_proto_ipproto_raw
@@ -110,12 +115,12 @@ NET_DEVICE_INIT(test_iface_1, "test_iface_1", NULL, NULL, NULL, NULL,
 #define TEST_PORT_DST 4243
 
 static struct net_if *test_iface = NET_IF_GET(test_iface_1, 0);
-static struct in_addr test_ipv4_1 = { { { 192, 0, 2, 1 } } };
-static struct in_addr test_ipv4_2 = { { { 192, 0, 2, 2 } } };
-static struct in6_addr test_ipv6_1 = { { {
+static struct net_in_addr test_ipv4_1 = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr test_ipv4_2 = { { { 192, 0, 2, 2 } } };
+static struct net_in6_addr test_ipv6_1 = { { {
 	0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
 } } };
-static struct in6_addr test_ipv6_2 = { { {
+static struct net_in6_addr test_ipv6_2 = { { {
 	0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2
 } } };
 
@@ -124,15 +129,15 @@ static int raw_sock_2 = -1;
 static int udp_sock = -1;
 static int udp_sock_2 = -1;
 static int packet_sock = -1;
-static struct sockaddr src_addr;
-static struct sockaddr dst_addr;
-static socklen_t addrlen;
+static struct net_sockaddr src_addr;
+static struct net_sockaddr dst_addr;
+static net_socklen_t addrlen;
 
 static uint8_t test_payload[] = "test_payload";
 static uint8_t rx_buf[128];
 static uint8_t tx_buf[128];
 
-static void prepare_raw_sock_common(int *sock, sa_family_t family,
+static void prepare_raw_sock_common(int *sock, net_sa_family_t family,
 				    enum net_ip_protocol proto)
 {
 	struct timeval optval = {
@@ -140,56 +145,56 @@ static void prepare_raw_sock_common(int *sock, sa_family_t family,
 	};
 	int ret;
 
-	*sock = zsock_socket(family, SOCK_RAW, proto);
+	*sock = zsock_socket(family, NET_SOCK_RAW, proto);
 	zassert_true(*sock >= 0, "Failed to create RAW socket(%d)", errno);
 
-	ret = zsock_setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(*sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }
 
-static void prepare_raw_sock(sa_family_t family, enum net_ip_protocol proto)
+static void prepare_raw_sock(net_sa_family_t family, enum net_ip_protocol proto)
 {
 	prepare_raw_sock_common(&raw_sock, family, proto);
 }
 
-static void prepare_raw_sock_2(sa_family_t family, enum net_ip_protocol proto)
+static void prepare_raw_sock_2(net_sa_family_t family, enum net_ip_protocol proto)
 {
 	prepare_raw_sock_common(&raw_sock_2, family, proto);
 }
 
-static void prepare_udp_sock_common(int *sock, sa_family_t family,
-				    struct sockaddr *bind_addr)
+static void prepare_udp_sock_common(int *sock, net_sa_family_t family,
+				    struct net_sockaddr *bind_addr)
 {
 	struct timeval optval = {
 		.tv_usec = 100000,
 	};
 	int ret;
 
-	*sock = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	*sock = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(*sock >= 0, "Failed to create UDP socket (%d)", errno);
 
 	ret = zsock_bind(*sock, bind_addr, addrlen);
 	zassert_ok(ret, "Binding UDP socket failed (%d)", errno);
 
-	ret = zsock_setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(*sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }
 
-static void prepare_udp_sock(sa_family_t family)
+static void prepare_udp_sock(net_sa_family_t family)
 {
 	prepare_udp_sock_common(&udp_sock, family, &src_addr);
 }
 
-static void prepare_udp_sock_2(sa_family_t family)
+static void prepare_udp_sock_2(net_sa_family_t family)
 {
 	prepare_udp_sock_common(&udp_sock_2, family, &dst_addr);
 }
 
 static void prepare_packet_sock(uint16_t proto)
 {
-	struct sockaddr_ll addr = { 0 };
+	struct net_sockaddr_ll addr = { 0 };
 	struct timeval optval = {
 		.tv_usec = 100000,
 	};
@@ -198,40 +203,40 @@ static void prepare_packet_sock(uint16_t proto)
 	memset(&addr, 0, sizeof(addr));
 
 	addr.sll_ifindex = net_if_get_by_iface(test_iface);
-	addr.sll_family = AF_PACKET;
+	addr.sll_family = NET_AF_PACKET;
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_DGRAM, htons(proto));
+	packet_sock = zsock_socket(NET_AF_PACKET, NET_SOCK_DGRAM, net_htons(proto));
 	zassert_true(packet_sock >= 0, "Failed to create packet socket (%d)", errno);
 
-	ret = zsock_bind(packet_sock, (struct sockaddr *)&addr, sizeof(addr));
+	ret = zsock_bind(packet_sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_ok(ret, "Binding packet socket failed (%d)", errno);
 
-	ret = zsock_setsockopt(packet_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(packet_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }
 
-static void prepare_addr(sa_family_t family)
+static void prepare_addr(net_sa_family_t family)
 {
 	src_addr.sa_family = family;
 	dst_addr.sa_family = family;
 
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		net_sin(&src_addr)->sin_addr = test_ipv4_1;
-		net_sin(&src_addr)->sin_port = htons(TEST_PORT_OWN);
+		net_sin(&src_addr)->sin_port = net_htons(TEST_PORT_OWN);
 		net_sin(&dst_addr)->sin_addr = test_ipv4_2;
-		net_sin(&dst_addr)->sin_port = htons(TEST_PORT_DST);
-		addrlen = sizeof(struct sockaddr_in);
+		net_sin(&dst_addr)->sin_port = net_htons(TEST_PORT_DST);
+		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
 		net_sin6(&src_addr)->sin6_addr = test_ipv6_1;
-		net_sin6(&src_addr)->sin6_port = htons(TEST_PORT_OWN);
+		net_sin6(&src_addr)->sin6_port = net_htons(TEST_PORT_OWN);
 		net_sin6(&dst_addr)->sin6_addr = test_ipv6_2;
-		net_sin6(&dst_addr)->sin6_port = htons(TEST_PORT_DST);
-		addrlen = sizeof(struct sockaddr_in6);
+		net_sin6(&dst_addr)->sin6_port = net_htons(TEST_PORT_DST);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 }
 
-static void prepare_raw_and_udp_sock_and_addr(sa_family_t family,
+static void prepare_raw_and_udp_sock_and_addr(net_sa_family_t family,
 					      enum net_ip_protocol proto)
 {
 	prepare_addr(family);
@@ -239,11 +244,11 @@ static void prepare_raw_and_udp_sock_and_addr(sa_family_t family,
 	prepare_udp_sock(family);
 }
 
-static void sock_bind_any(int sock, sa_family_t family)
+static void sock_bind_any(int sock, net_sa_family_t family)
 {
-	struct sockaddr anyaddr = { .sa_family = family };
-	socklen_t bindaddr_len = (family == AF_INET) ?
-		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+	struct net_sockaddr anyaddr = { .sa_family = family };
+	net_socklen_t bindaddr_len = (family == NET_AF_INET) ?
+		sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6);
 
 	zassert_ok(zsock_bind(sock, &anyaddr, bindaddr_len),
 		   "Binding RAW socket failed (%d)", errno);
@@ -277,11 +282,11 @@ static void test_sockets_close(void)
 	}
 }
 
-static void validate_ip_udp_hdr(sa_family_t family, struct sockaddr *src,
-				struct sockaddr *dst, uint8_t *data,
+static void validate_ip_udp_hdr(net_sa_family_t family, struct net_sockaddr *src,
+				struct net_sockaddr *dst, uint8_t *data,
 				size_t datalen)
 {
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		struct net_ipv4_hdr *ipv4 = (struct net_ipv4_hdr *)data;
 		struct net_udp_hdr *udp = (struct net_udp_hdr *)(data + NET_IPV4H_LEN);
 
@@ -291,12 +296,12 @@ static void validate_ip_udp_hdr(sa_family_t family, struct sockaddr *src,
 				  "Invalid source address");
 		zassert_mem_equal(ipv4->dst, &net_sin(dst)->sin_addr, sizeof(ipv4->dst),
 				  "Invalid destination address");
-		zassert_equal(ipv4->proto, IPPROTO_UDP, "Invalid protocol");
+		zassert_equal(ipv4->proto, NET_IPPROTO_UDP, "Invalid protocol");
 		zassert_equal(udp->src_port, net_sin(src)->sin_port,
 			      "Invalid source port");
 		zassert_equal(udp->dst_port, net_sin(dst)->sin_port,
 			      "Invalid destination port");
-		zassert_equal(udp->len, htons(datalen - NET_IPV4H_LEN),
+		zassert_equal(udp->len, net_htons(datalen - NET_IPV4H_LEN),
 			      "Invalid UDP length");
 	} else {
 		struct net_ipv6_hdr *ipv6 = (struct net_ipv6_hdr *)data;
@@ -308,19 +313,19 @@ static void validate_ip_udp_hdr(sa_family_t family, struct sockaddr *src,
 				  "Invalid source address");
 		zassert_mem_equal(ipv6->dst, &net_sin6(dst)->sin6_addr, sizeof(ipv6->dst),
 				  "Invalid destination address");
-		zassert_equal(ipv6->nexthdr, IPPROTO_UDP, "Invalid protocol");
+		zassert_equal(ipv6->nexthdr, NET_IPPROTO_UDP, "Invalid protocol");
 		zassert_equal(udp->src_port, net_sin6(src)->sin6_port,
 			      "Invalid source port");
 		zassert_equal(udp->dst_port, net_sin6(dst)->sin6_port,
 			      "Invalid destination port");
-		zassert_equal(udp->len, htons(datalen - NET_IPV6H_LEN),
+		zassert_equal(udp->len, net_htons(datalen - NET_IPV6H_LEN),
 			      "Invalid UDP length");
 	}
 }
 
-static void verify_raw_recv_success(int sock, sa_family_t family)
+static void verify_raw_recv_success(int sock, net_sa_family_t family)
 {
-	size_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	size_t expected_len = headers_len + sizeof(test_payload);
 	int ret;
 
@@ -346,23 +351,23 @@ static void verify_raw_recv_failure(void)
 #define TEST_UDP_IVP4_CHKSUM 0x03e4
 #define TEST_UDP_IVP6_CHKSUM 0x930c
 
-static void prepare_raw_ip_packet(sa_family_t family, uint8_t *buf, uint16_t *buflen)
+static void prepare_raw_ip_packet(net_sa_family_t family, uint8_t *buf, uint16_t *buflen)
 {
-	uint16_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	uint16_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	uint16_t packet_len = headers_len + sizeof(test_payload);
 
 	zassert_true(packet_len <= *buflen, "Packet too long");
 	*buflen = packet_len;
 
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		struct net_ipv4_hdr *ipv4 = (struct net_ipv4_hdr *)tx_buf;
 		struct net_udp_hdr *udp = (struct net_udp_hdr *)(tx_buf + NET_IPV4H_LEN);
 
 		/* Prepare IPv4 header */
 		ipv4->vhl = 0x45;
-		ipv4->len = htons(packet_len);
+		ipv4->len = net_htons(packet_len);
 		ipv4->ttl = 64;
-		ipv4->proto = IPPROTO_UDP;
+		ipv4->proto = NET_IPPROTO_UDP;
 		/* UDP socket binds to src_addr, so for this test we swap src/dst */
 		memcpy(ipv4->src, &net_sin(&dst_addr)->sin_addr, sizeof(ipv4->src));
 		memcpy(ipv4->dst, &net_sin(&src_addr)->sin_addr, sizeof(ipv4->dst));
@@ -370,7 +375,7 @@ static void prepare_raw_ip_packet(sa_family_t family, uint8_t *buf, uint16_t *bu
 		/* Prepare UDP header */
 		udp->src_port = net_sin(&dst_addr)->sin_port;
 		udp->dst_port = net_sin(&src_addr)->sin_port;
-		udp->len = htons(sizeof(test_payload) + NET_UDPH_LEN);
+		udp->len = net_htons(sizeof(test_payload) + NET_UDPH_LEN);
 		udp->chksum = TEST_UDP_IVP4_CHKSUM;
 
 		memcpy(tx_buf + NET_IPV4UDPH_LEN, test_payload, sizeof(test_payload));
@@ -380,8 +385,8 @@ static void prepare_raw_ip_packet(sa_family_t family, uint8_t *buf, uint16_t *bu
 
 		/* Prepare IPv6 header */
 		ipv6->vtc = 0x60;
-		ipv6->len = htons(sizeof(test_payload) + NET_UDPH_LEN);
-		ipv6->nexthdr = IPPROTO_UDP;
+		ipv6->len = net_htons(sizeof(test_payload) + NET_UDPH_LEN);
+		ipv6->nexthdr = NET_IPPROTO_UDP;
 		ipv6->hop_limit = 64;
 		/* UDP socket binds to src_addr, so for this test we swap src/dst */
 		memcpy(ipv6->src, &net_sin6(&dst_addr)->sin6_addr, sizeof(ipv6->src));
@@ -390,14 +395,14 @@ static void prepare_raw_ip_packet(sa_family_t family, uint8_t *buf, uint16_t *bu
 		/* Prepare UDP header */
 		udp->src_port = net_sin6(&dst_addr)->sin6_port;
 		udp->dst_port = net_sin6(&src_addr)->sin6_port;
-		udp->len = htons(sizeof(test_payload) + NET_UDPH_LEN);
+		udp->len = net_htons(sizeof(test_payload) + NET_UDPH_LEN);
 		udp->chksum = TEST_UDP_IVP6_CHKSUM;
 
 		memcpy(tx_buf + NET_IPV6UDPH_LEN, test_payload, sizeof(test_payload));
 	}
 }
 
-static void test_raw_sock_send(sa_family_t family, enum net_ip_protocol proto)
+static void test_raw_sock_send(net_sa_family_t family, enum net_ip_protocol proto)
 {
 	uint16_t len = sizeof(tx_buf);
 	int ret;
@@ -419,40 +424,40 @@ static void test_raw_sock_send(sa_family_t family, enum net_ip_protocol proto)
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_send_proto_wildcard)
 {
-	test_raw_sock_send(AF_INET, IPPROTO_IP);
+	test_raw_sock_send(NET_AF_INET, NET_IPPROTO_IP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_send_proto_wildcard)
 {
-	test_raw_sock_send(AF_INET6, IPPROTO_IP);
+	test_raw_sock_send(NET_AF_INET6, NET_IPPROTO_IP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_send_proto_match)
 {
-	test_raw_sock_send(AF_INET, IPPROTO_UDP);
+	test_raw_sock_send(NET_AF_INET, NET_IPPROTO_UDP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_send_proto_match)
 {
-	test_raw_sock_send(AF_INET6, IPPROTO_UDP);
+	test_raw_sock_send(NET_AF_INET6, NET_IPPROTO_UDP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_send_proto_ipproto_raw)
 {
-	test_raw_sock_send(AF_INET, IPPROTO_RAW);
+	test_raw_sock_send(NET_AF_INET, NET_IPPROTO_RAW);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_send_proto_ipproto_raw)
 {
-	test_raw_sock_send(AF_INET6, IPPROTO_RAW);
+	test_raw_sock_send(NET_AF_INET6, NET_IPPROTO_RAW);
 }
 
-static void test_raw_sock_sendto(sa_family_t family)
+static void test_raw_sock_sendto(net_sa_family_t family)
 {
 	uint16_t len = sizeof(tx_buf);
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_IP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_IP);
 	prepare_raw_ip_packet(family, tx_buf, &len);
 
 	ret = zsock_sendto(raw_sock, tx_buf, len, 0, &src_addr, addrlen);
@@ -469,22 +474,22 @@ static void test_raw_sock_sendto(sa_family_t family)
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_sendto)
 {
-	test_raw_sock_sendto(AF_INET);
+	test_raw_sock_sendto(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_sendto)
 {
-	test_raw_sock_sendto(AF_INET6);
+	test_raw_sock_sendto(NET_AF_INET6);
 }
 
-static void test_raw_sock_sendmsg(sa_family_t family)
+static void test_raw_sock_sendmsg(net_sa_family_t family)
 {
 	uint16_t len = sizeof(tx_buf);
-	struct iovec io_vector;
-	struct msghdr msg = { 0 };
+	struct net_iovec io_vector;
+	struct net_msghdr msg = { 0 };
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_IP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_IP);
 	prepare_raw_ip_packet(family, tx_buf, &len);
 
 	io_vector.iov_base = tx_buf;
@@ -508,15 +513,15 @@ static void test_raw_sock_sendmsg(sa_family_t family)
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_sendmsg)
 {
-	test_raw_sock_sendmsg(AF_INET);
+	test_raw_sock_sendmsg(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_sendmsg)
 {
-	test_raw_sock_sendmsg(AF_INET6);
+	test_raw_sock_sendmsg(NET_AF_INET6);
 }
 
-static void test_raw_sock_recv(sa_family_t family, enum net_ip_protocol proto)
+static void test_raw_sock_recv(net_sa_family_t family, enum net_ip_protocol proto)
 {
 
 	int ret;
@@ -529,7 +534,7 @@ static void test_raw_sock_recv(sa_family_t family, enum net_ip_protocol proto)
 	zassert_equal(ret, sizeof(test_payload), "Failed to send UDP packet (%d)",
 		      errno);
 
-	if (proto == IPPROTO_IP || proto == IPPROTO_UDP) {
+	if (proto == NET_IPPROTO_IP || proto == NET_IPPROTO_UDP) {
 		verify_raw_recv_success(raw_sock, family);
 	} else {
 		verify_raw_recv_failure();
@@ -538,53 +543,53 @@ static void test_raw_sock_recv(sa_family_t family, enum net_ip_protocol proto)
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recv_proto_wildcard)
 {
-	test_raw_sock_recv(AF_INET, IPPROTO_IP);
+	test_raw_sock_recv(NET_AF_INET, NET_IPPROTO_IP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recv_proto_wildcard)
 {
-	test_raw_sock_recv(AF_INET6, IPPROTO_IP);
+	test_raw_sock_recv(NET_AF_INET6, NET_IPPROTO_IP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recv_proto_match)
 {
-	test_raw_sock_recv(AF_INET, IPPROTO_UDP);
+	test_raw_sock_recv(NET_AF_INET, NET_IPPROTO_UDP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recv_proto_match)
 {
-	test_raw_sock_recv(AF_INET6, IPPROTO_UDP);
+	test_raw_sock_recv(NET_AF_INET6, NET_IPPROTO_UDP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recv_proto_mismatch)
 {
-	test_raw_sock_recv(AF_INET, IPPROTO_TCP);
+	test_raw_sock_recv(NET_AF_INET, NET_IPPROTO_TCP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recv_proto_mismatch)
 {
-	test_raw_sock_recv(AF_INET6, IPPROTO_TCP);
+	test_raw_sock_recv(NET_AF_INET6, NET_IPPROTO_TCP);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recv_proto_ipproto_raw)
 {
-	test_raw_sock_recv(AF_INET, IPPROTO_RAW);
+	test_raw_sock_recv(NET_AF_INET, NET_IPPROTO_RAW);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recv_proto_ipproto_raw)
 {
-	test_raw_sock_recv(AF_INET6, IPPROTO_RAW);
+	test_raw_sock_recv(NET_AF_INET6, NET_IPPROTO_RAW);
 }
 
-static void test_raw_sock_recvfrom(sa_family_t family)
+static void test_raw_sock_recvfrom(net_sa_family_t family)
 {
-	size_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	size_t expected_len = headers_len + sizeof(test_payload);
-	struct sockaddr recv_addr = { 0 };
-	socklen_t recv_addrlen = sizeof(recv_addr);
+	struct net_sockaddr recv_addr = { 0 };
+	net_socklen_t recv_addrlen = sizeof(recv_addr);
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_IP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_IP);
 	sock_bind_any(raw_sock, family);
 
 	ret = zsock_sendto(udp_sock, test_payload, sizeof(test_payload), 0,
@@ -603,37 +608,37 @@ static void test_raw_sock_recvfrom(sa_family_t family)
 
 	zassert_equal(recv_addrlen, addrlen, "Invalid sender address length");
 	zassert_equal(recv_addr.sa_family, family, "Invalid sender address family");
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		zassert_mem_equal(&net_sin(&recv_addr)->sin_addr,
 				  &net_sin(&src_addr)->sin_addr,
-				  sizeof(struct in_addr), "Invalid sender address");
+				  sizeof(struct net_in_addr), "Invalid sender address");
 	} else {
 		zassert_mem_equal(&net_sin6(&recv_addr)->sin6_addr,
 				  &net_sin6(&src_addr)->sin6_addr,
-				  sizeof(struct in6_addr), "Invalid sender address");
+				  sizeof(struct net_in6_addr), "Invalid sender address");
 	}
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recvfrom)
 {
-	test_raw_sock_recvfrom(AF_INET);
+	test_raw_sock_recvfrom(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recvfrom)
 {
-	test_raw_sock_recvfrom(AF_INET6);
+	test_raw_sock_recvfrom(NET_AF_INET6);
 }
 
-static void test_raw_sock_recvmsg(sa_family_t family)
+static void test_raw_sock_recvmsg(net_sa_family_t family)
 {
-	size_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	size_t expected_len = headers_len + sizeof(test_payload);
-	struct sockaddr recv_addr = { 0 };
-	struct iovec io_vector;
-	struct msghdr msg = { 0 };
+	struct net_sockaddr recv_addr = { 0 };
+	struct net_iovec io_vector;
+	struct net_msghdr msg = { 0 };
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_IP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_IP);
 	sock_bind_any(raw_sock, family);
 
 	ret = zsock_sendto(udp_sock, test_payload, sizeof(test_payload), 0,
@@ -658,33 +663,33 @@ static void test_raw_sock_recvmsg(sa_family_t family)
 
 	zassert_equal(msg.msg_namelen, addrlen, "Invalid sender address length");
 	zassert_equal(recv_addr.sa_family, family, "Invalid sender address family");
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		zassert_mem_equal(&net_sin(&recv_addr)->sin_addr,
 				  &net_sin(&src_addr)->sin_addr,
-				  sizeof(struct in_addr), "Invalid sender address");
+				  sizeof(struct net_in_addr), "Invalid sender address");
 	} else {
 		zassert_mem_equal(&net_sin6(&recv_addr)->sin6_addr,
 				  &net_sin6(&src_addr)->sin6_addr,
-				  sizeof(struct in6_addr), "Invalid sender address");
+				  sizeof(struct net_in6_addr), "Invalid sender address");
 	}
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recvmsg)
 {
-	test_raw_sock_recvmsg(AF_INET);
+	test_raw_sock_recvmsg(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recvmsg)
 {
-	test_raw_sock_recvmsg(AF_INET6);
+	test_raw_sock_recvmsg(NET_AF_INET6);
 }
 
-static void test_raw_sock_bind(sa_family_t family, struct sockaddr *bind_addr,
+static void test_raw_sock_bind(net_sa_family_t family, struct net_sockaddr *bind_addr,
 			       bool shall_receive)
 {
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_UDP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_UDP);
 
 	ret = zsock_bind(raw_sock, bind_addr, addrlen);
 	zassert_ok(ret, "Binding RAW socket failed (%d)", errno);
@@ -703,51 +708,51 @@ static void test_raw_sock_bind(sa_family_t family, struct sockaddr *bind_addr,
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_bind)
 {
-	struct sockaddr_in bind_addr = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in bind_addr = {
+		.sin_family = NET_AF_INET,
 		.sin_addr = test_ipv4_2
 	};
 
-	test_raw_sock_bind(AF_INET, (struct sockaddr *)&bind_addr, true);
+	test_raw_sock_bind(NET_AF_INET, (struct net_sockaddr *)&bind_addr, true);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_bind)
 {
-	struct sockaddr_in6 bind_addr = {
-		.sin6_family = AF_INET6,
+	struct net_sockaddr_in6 bind_addr = {
+		.sin6_family = NET_AF_INET6,
 		.sin6_addr = test_ipv6_2
 	};
 
-	test_raw_sock_bind(AF_INET6, (struct sockaddr *)&bind_addr, true);
+	test_raw_sock_bind(NET_AF_INET6, (struct net_sockaddr *)&bind_addr, true);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_bind_other_addr)
 {
-	struct sockaddr_in bind_addr = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in bind_addr = {
+		.sin_family = NET_AF_INET,
 		.sin_addr = test_ipv4_1
 	};
 
-	test_raw_sock_bind(AF_INET, (struct sockaddr *)&bind_addr, false);
+	test_raw_sock_bind(NET_AF_INET, (struct net_sockaddr *)&bind_addr, false);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_bind_other_addr)
 {
-	struct sockaddr_in6 bind_addr = {
-		.sin6_family = AF_INET6,
+	struct net_sockaddr_in6 bind_addr = {
+		.sin6_family = NET_AF_INET6,
 		.sin6_addr = test_ipv6_1
 	};
 
-	test_raw_sock_bind(AF_INET6, (struct sockaddr *)&bind_addr, false);
+	test_raw_sock_bind(NET_AF_INET6, (struct net_sockaddr *)&bind_addr, false);
 }
 
-static void test_raw_sock_recv_no_cross_family(sa_family_t family_raw)
+static void test_raw_sock_recv_no_cross_family(net_sa_family_t family_raw)
 {
-	sa_family_t family_udp = family_raw == AF_INET ? AF_INET6 : AF_INET;
+	net_sa_family_t family_udp = family_raw == NET_AF_INET ? NET_AF_INET6 : NET_AF_INET;
 	int ret;
 
 	prepare_addr(family_udp);
-	prepare_raw_sock(family_raw, IPPROTO_UDP);
+	prepare_raw_sock(family_raw, NET_IPPROTO_UDP);
 	prepare_udp_sock(family_udp);
 	sock_bind_any(raw_sock, family_raw);
 
@@ -764,20 +769,20 @@ static void test_raw_sock_recv_no_cross_family(sa_family_t family_raw)
 
 ZTEST(socket_af_inet_raw, test_raw_v4_sock_recv_no_ipv6)
 {
-	test_raw_sock_recv_no_cross_family(AF_INET);
+	test_raw_sock_recv_no_cross_family(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_v6_sock_recv_no_ipv4)
 {
-	test_raw_sock_recv_no_cross_family(AF_INET6);
+	test_raw_sock_recv_no_cross_family(NET_AF_INET6);
 }
 
-static void test_two_raw_socks_recv(sa_family_t family)
+static void test_two_raw_socks_recv(net_sa_family_t family)
 {
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_UDP);
-	prepare_raw_sock_2(family, IPPROTO_IP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_UDP);
+	prepare_raw_sock_2(family, NET_IPPROTO_IP);
 	sock_bind_any(raw_sock, family);
 	sock_bind_any(raw_sock_2, family);
 
@@ -793,21 +798,21 @@ static void test_two_raw_socks_recv(sa_family_t family)
 
 ZTEST(socket_af_inet_raw, test_two_raw_v4_socks_recv)
 {
-	test_two_raw_socks_recv(AF_INET);
+	test_two_raw_socks_recv(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_two_raw_v6_socks_recv)
 {
-	test_two_raw_socks_recv(AF_INET6);
+	test_two_raw_socks_recv(NET_AF_INET6);
 }
 
-static void test_raw_and_udp_socks_recv(sa_family_t family)
+static void test_raw_and_udp_socks_recv(net_sa_family_t family)
 {
-	size_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	size_t expected_len = headers_len + sizeof(test_payload);
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_UDP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_UDP);
 	prepare_udp_sock_2(family);
 	sock_bind_any(raw_sock, family);
 
@@ -839,21 +844,21 @@ static void test_raw_and_udp_socks_recv(sa_family_t family)
 
 ZTEST(socket_af_inet_raw, test_raw_and_udp_v4_socks_recv)
 {
-	test_raw_and_udp_socks_recv(AF_INET);
+	test_raw_and_udp_socks_recv(NET_AF_INET);
 }
 
 ZTEST(socket_af_inet_raw, test_raw_and_udp_v6_socks_recv)
 {
-	test_raw_and_udp_socks_recv(AF_INET6);
+	test_raw_and_udp_socks_recv(NET_AF_INET6);
 }
 
-static void test_packet_and_raw_socks_recv(sa_family_t family, uint16_t packet_proto)
+static void test_packet_and_raw_socks_recv(net_sa_family_t family, uint16_t packet_proto)
 {
-	size_t headers_len = (family == AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t headers_len = (family == NET_AF_INET) ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
 	size_t expected_len = headers_len + sizeof(test_payload);
 	int ret;
 
-	prepare_raw_and_udp_sock_and_addr(family, IPPROTO_UDP);
+	prepare_raw_and_udp_sock_and_addr(family, NET_IPPROTO_UDP);
 	prepare_packet_sock(packet_proto);
 	sock_bind_any(raw_sock, family);
 
@@ -895,7 +900,7 @@ ZTEST(socket_af_inet_raw, test_packet_and_raw_v4_socks_recv_wildcard)
 		ztest_test_skip();
 	}
 
-	test_packet_and_raw_socks_recv(AF_INET, ETH_P_ALL);
+	test_packet_and_raw_socks_recv(NET_AF_INET, ETH_P_ALL);
 }
 
 ZTEST(socket_af_inet_raw, test_packet_and_raw_v6_socks_recv_wildcard)
@@ -904,7 +909,7 @@ ZTEST(socket_af_inet_raw, test_packet_and_raw_v6_socks_recv_wildcard)
 		ztest_test_skip();
 	}
 
-	test_packet_and_raw_socks_recv(AF_INET6, ETH_P_ALL);
+	test_packet_and_raw_socks_recv(NET_AF_INET6, ETH_P_ALL);
 }
 
 ZTEST(socket_af_inet_raw, test_packet_and_raw_v4_socks_recv_proto_match)
@@ -913,7 +918,7 @@ ZTEST(socket_af_inet_raw, test_packet_and_raw_v4_socks_recv_proto_match)
 		ztest_test_skip();
 	}
 
-	test_packet_and_raw_socks_recv(AF_INET, ETH_P_IP);
+	test_packet_and_raw_socks_recv(NET_AF_INET, ETH_P_IP);
 }
 
 ZTEST(socket_af_inet_raw, test_packet_and_raw_v6_socks_recv_proto_match)
@@ -922,7 +927,7 @@ ZTEST(socket_af_inet_raw, test_packet_and_raw_v6_socks_recv_proto_match)
 		ztest_test_skip();
 	}
 
-	test_packet_and_raw_socks_recv(AF_INET6, ETH_P_IPV6);
+	test_packet_and_raw_socks_recv(NET_AF_INET6, ETH_P_IPV6);
 }
 
 static void test_after(void *arg)

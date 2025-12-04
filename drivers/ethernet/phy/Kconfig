@@ -33,6 +33,7 @@ config PHY_GENERIC_MII
 	default y
 	depends on DT_HAS_ETHERNET_PHY_ENABLED
 	select MDIO
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ETHERNET_PHY),reset-gpios)
 	help
 	  This is a generic MII PHY interface that communicates with the
 	  PHY using the MDIO bus.
@@ -147,5 +148,13 @@ config PHY_VERIFY_DEVICE_IDENTIFICATION
 	help
 	  Verify the organizationally unique identifier that is reported
 	  by the phy chip.
+
+config PHY_MOTORCOMM_YT8521
+	bool "Motorcomm YT8521 Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED
+	select MDIO
+	help
+	  Enable Motorcomm YT8521 Ethernet PHY Driver
 
 endif # "Ethernet PHY Drivers"

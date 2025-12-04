@@ -9,6 +9,7 @@
 / {
 	fstab {
 		compatible = "zephyr,fstab";
+
 		lfs1: lfs1 {
 			compatible = "zephyr,fstab,littlefs";
 			mount-point = "/lfs1";
@@ -27,6 +28,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		lfs1_part: partition@0 {
 			label = "storage";
 			reg = <0x00000000 0x00010000>;

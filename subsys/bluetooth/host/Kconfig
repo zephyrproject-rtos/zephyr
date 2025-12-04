@@ -133,6 +133,26 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_TX_PROCESSOR_THREAD
+	# This thread is used to send pending HCI Commands, ACL and ISO data to
+	# Controller.
+	bool
+	# This option is automatically selected for all platforms except nRF51
+	# due to limited RAM on nRF51 devices.
+	default y if !SOC_SERIES_NRF51X
+
+if BT_TX_PROCESSOR_THREAD
+
+config BT_TX_PROCESSOR_THREAD_PRIO
+	int
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+config BT_TX_PROCESSOR_STACK_SIZE
+	int
+	default 1024
+
+endif
+
 config BT_CONN_TX_NOTIFY_WQ
 	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
 	depends on BT_CONN_TX
@@ -406,7 +426,7 @@ config BT_AUTO_PHY_UPDATE
 	  behavior can be accomplished by enabling BT_AUTO_PHY_PERIPHERAL_2M and
 	  BT_AUTO_PHY_CENTRAL_2M.
 
-choice
+choice BT_AUTO_PHY_PERIPHERAL
 	prompt "Auto PHY update for peripheral role"
 	depends on BT_PERIPHERAL
 	default BT_AUTO_PHY_PERIPHERAL_2M if BT_AUTO_PHY_UPDATE
@@ -426,7 +446,7 @@ config BT_AUTO_PHY_PERIPHERAL_CODED
 
 endchoice # BT_AUTO_PHY_PERIPHERAL
 
-choice
+choice BT_AUTO_PHY_CENTRAL
 	prompt "Auto PHY update for central role"
 	depends on BT_CENTRAL
 	default BT_AUTO_PHY_CENTRAL_2M
@@ -605,6 +625,7 @@ config BT_RPA_SHARING
 
 config BT_SIGNING
 	bool "Data signing support"
+	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
@@ -1161,6 +1182,15 @@ config BT_CONN_DISABLE_SECURITY
 
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
+
+config BT_SMP_LEGACY_PAIR_ONLY
+	bool "Force legacy pairing"
+	depends on BT_TESTING
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option enforces legacy pairing. This is required for testing
+	  legacy pairing between two Zephyr Bluetooth devices, as without this
+	  option the devices will default to using Secure Connections pairing.
 
 rsource "./classic/Kconfig"
 

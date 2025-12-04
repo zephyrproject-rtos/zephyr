@@ -6,6 +6,7 @@
 
 &usart1 {
 	current-speed = <9600>;
+
 	mhz19b {
 		compatible = "winsen,mhz19b";
 		maximum-range = <10000>;

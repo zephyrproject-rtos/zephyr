@@ -170,6 +170,7 @@ class DeviceAdapter(abc.ABC):
 
         If timeout is not provided, then use base_timeout.
         """
+        __tracebackhide__ = True   # pylint: disable=unused-variable
         timeout = timeout or self.base_timeout
         if regex:
             regex_compiled = re.compile(regex)
@@ -187,9 +188,12 @@ class DeviceAdapter(abc.ABC):
                 if num_of_lines and len(lines) == num_of_lines:
                     break
             else:
-                msg = 'Read from device timeout occurred'
+                if regex is not None:
+                    msg = f'Did not find line "{regex}" within {timeout} seconds'
+                else:
+                    msg = f'Did not find expected number of lines within {timeout} seconds'
                 logger.error(msg)
-                raise TwisterHarnessTimeoutException(msg)
+                raise AssertionError(msg)
         else:
             lines = self.readlines(print_output)
         return lines

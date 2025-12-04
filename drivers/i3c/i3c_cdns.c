@@ -2774,7 +2774,9 @@ static void cdns_i3c_target_sdr_tx_thr_int_handler(const struct device *dev,
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_USE_IBI) || defined(CONFIG_I3C_TARGET)
 	struct cdns_i3c_data *data = dev->data;
+#endif
 #ifdef CONFIG_I3C_CONTROLLER
 	uint32_t int_st = sys_read32(config->base + MST_ISR);
 

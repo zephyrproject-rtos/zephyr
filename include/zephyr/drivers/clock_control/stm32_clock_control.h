@@ -808,30 +808,53 @@ struct stm32_pclken {
 
 /** Device tree clocks helpers  */
 
-#define STM32_CLOCK_INFO(clk_index, node_id)				\
-	{								\
-	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
-	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) &         \
-		GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),                   \
-	.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
-		STM32_CLOCK_DIV_SHIFT,					\
+/* Get STM32 clock information for an indexed clock phandle in a DT node */
+#define STM32_CLOCK_INFO(clk_index, node_id)					\
+	{									\
+		.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
+		.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) &		\
+		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),			\
+		.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
+		       STM32_CLOCK_DIV_SHIFT,					\
 	}
+
+/* Get an array of STM32 clocks information for clocks listed in a DT node */
 #define STM32_DT_CLOCKS(node_id)					\
 	{								\
 		LISTIFY(DT_NUM_CLOCKS(node_id),				\
 			STM32_CLOCK_INFO, (,), node_id)			\
 	}
 
+/* Get an array of STM32 clocks information for clocks listed in a DT_DRV_COMPAT instance node */
 #define STM32_DT_INST_CLOCKS(inst)					\
 	STM32_DT_CLOCKS(DT_DRV_INST(inst))
 
+/* Get STM32 clock information for an indexed clock phandle in a DT_DRV_COMPAT instance node */
+#define STM32_DT_INST_CLOCK_INFO_BY_IDX(clk_index, inst)		\
+	STM32_CLOCK_INFO(clk_index, DT_DRV_INST(inst))
+
+/* Get STM32 clock information for clock index 0 in a DT_DRV_COMPAT instance node */
+#define STM32_DT_INST_CLOCK_INFO(inst)					\
+	STM32_DT_INST_CLOCK_INFO_BY_IDX(0, inst)
+
+/* Get STM32 clock information for a named clock phandle in DT node */
+#define STM32_CLOCK_INFO_BY_NAME(node_id, name)				\
+	{								\
+		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
+		.bus = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) &	\
+		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),		\
+		.div = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) >>	\
+		       STM32_CLOCK_DIV_SHIFT,				\
+	}
+
+/* Get STM32 clock information for named clock phandle in a DT_DRV_COMPAT instance node */
+#define STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, name)			\
+	STM32_CLOCK_INFO_BY_NAME(DT_DRV_INST(inst), name)
+
+/* Return true only if at least an enabled instance of the DT_DRV_COMPAT has at least 2 clocks */
 #define STM32_DOMAIN_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||
 #define STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT				\
 		(DT_INST_FOREACH_STATUS_OKAY(STM32_DOMAIN_CLOCK_INST_SUPPORT) 0)
-
-#define STM32_DOMAIN_CLOCK_SUPPORT(id) DT_CLOCKS_HAS_IDX(DT_NODELABEL(id), 1) ||
-#define STM32_DT_DEV_DOMAIN_CLOCK_SUPPORT					\
-		(DT_FOREACH_STATUS_OKAY(STM32_DOMAIN_CLOCK_SUPPORT) 0)
 
 /** Clock source binding accessors */
 

@@ -89,7 +89,7 @@ enum {
 	BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR = 0xFC01,
 };
 
-/* Externs for CY43xxx controller FW */
+/* Externs for CY208xx controller FW */
 extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 

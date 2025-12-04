@@ -14,6 +14,17 @@
 
 #include <fsl_netc_timer.h>
 
+#if defined(CONFIG_SOC_MIMXRT1189)
+#define PTP_CLOCK_NXP_NETC_CLK_DIV 1
+#else
+/*
+ * Most platforms should be 2.
+ * - SOC_MIMX9596
+ * - SOC_MIMX94398
+ */
+#define PTP_CLOCK_NXP_NETC_CLK_DIV 2
+#endif
+
 struct ptp_clock_nxp_netc_config {
 	const struct device *dev;
 	const struct device *clock_dev;
@@ -103,7 +114,7 @@ static int ptp_clock_nxp_netc_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-	ptp_config->refClkHz = netc_ref_pll_rate/2;
+	ptp_config->refClkHz = netc_ref_pll_rate / PTP_CLOCK_NXP_NETC_CLK_DIV;
 	ptp_config->entryNum = 0U;
 	ptp_config->defaultPpb = 0U;
 	ptp_config->clockSelect = kNETC_TimerSystemClk;

@@ -109,6 +109,10 @@
 	apb7-prescaler = <1>;
 };
 
+&pwr {
+	power-supply = "smps";
+};
+
 &iwdg {
 	status = "okay";
 };

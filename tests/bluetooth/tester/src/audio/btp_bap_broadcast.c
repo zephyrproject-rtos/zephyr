@@ -1833,6 +1833,71 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_bap_scan_delegator_add_src_cmd *cp = cmd;
+	struct btp_bap_scan_delegator_add_src_rp *rp = rsp;
+	struct bt_bap_scan_delegator_add_src_param param = {0};
+	struct net_buf_simple buf;
+	int err;
+
+	if (cmd_len < sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->big_encryption > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
+	param.sid = cp->advertiser_sid;
+	param.pa_state = (enum bt_bap_pa_state)cp->pa_sync_state;
+	param.encrypt_state = (enum bt_bap_big_enc_state)cp->big_encryption;
+	param.broadcast_id = sys_get_le24(cp->broadcast_id);
+	param.num_subgroups = cp->num_subgroups;
+
+	net_buf_simple_init_with_data(&buf, (void *)cp->subgroups, cmd_len - sizeof(*cp));
+
+	for (uint8_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
+
+		/* If remaining data is less than the necessary subgroup fields, return failed */
+		if (buf.len < sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		subgroup->bis_sync = net_buf_simple_pull_le32(&buf);
+		subgroup->metadata_len = net_buf_simple_pull_u8(&buf);
+
+		if (subgroup->metadata_len > sizeof(subgroup->metadata) ||
+		    subgroup->metadata_len > buf.len) {
+			return BTP_STATUS_FAILED;
+		}
+
+		memcpy(subgroup->metadata, net_buf_simple_pull_mem(&buf, subgroup->metadata_len),
+		       subgroup->metadata_len);
+	}
+
+	if (buf.len != 0U) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_scan_delegator_add_src(&param);
+	if (err < 0) {
+		return BTP_STATUS_VAL(err);
+	}
+
+	rp->src_id = (uint8_t)err;
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool broadcast_inited;
 
 int btp_bap_broadcast_init(void)

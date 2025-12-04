@@ -14,7 +14,7 @@
 
 #include "jwt.h"
 
-#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(CONFIG_JWT_SIGN_RSA_LEGACY)
+#if defined(CONFIG_JWT_SIGN_RSA_PSA)
 #define JWT_SIGNATURE_LEN 256
 #else /* CONFIG_JWT_SIGN_ECDSA_PSA */
 #define JWT_SIGNATURE_LEN 64
@@ -143,7 +143,7 @@ static int jwt_add_header(struct jwt_builder *builder)
 	 * Use https://www.base64encode.org/ for update
 	 */
 	const char jwt_header[] =
-#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(CONFIG_JWT_SIGN_RSA_LEGACY)
+#if defined(CONFIG_JWT_SIGN_RSA_PSA)
 		/* {"alg":"RS256","typ":"JWT"} */
 		"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
 #else /* CONFIG_JWT_SIGN_ECDSA_PSA */

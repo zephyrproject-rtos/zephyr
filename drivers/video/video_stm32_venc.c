@@ -836,7 +836,7 @@ static struct stm32_venc_data stm32_venc_data_0 = {};
 
 static const struct stm32_venc_config stm32_venc_config_0 = {
 	.reg = DT_INST_REG_ADDR(0),
-	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.reset = RESET_DT_SPEC_INST_GET_BY_IDX(0, 0),
 	.irq_config = stm32_venc_irq_config_func,
 };

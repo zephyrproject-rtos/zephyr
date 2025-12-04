@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <fsl_lptmr.h>
+#include <zephyr/spinlock.h>
 
 struct mcux_lptmr_config {
 	struct counter_config_info info;
@@ -25,8 +27,15 @@ struct mcux_lptmr_config {
 };
 
 struct mcux_lptmr_data {
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	counter_alarm_callback_t alarm_callback;
+	void *alarm_user_data;
+	bool alarm_active;
+	struct k_spinlock lock;
+#else
 	counter_top_callback_t top_callback;
 	void *top_user_data;
+#endif
 };
 
 static int mcux_lptmr_start(const struct device *dev)
@@ -60,6 +69,106 @@ static int mcux_lptmr_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(chan_id);
+
+	const struct mcux_lptmr_config *config = dev->config;
+	struct mcux_lptmr_data *data = dev->data;
+
+	/* Counter API: Alarm callback cannot be NULL. */
+	if ((alarm_cfg == NULL) || (alarm_cfg->callback == NULL) || (alarm_cfg->ticks == 0U) ||
+		(alarm_cfg->ticks > config->info.max_top_value)) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (data->alarm_active) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	data->alarm_callback = alarm_cfg->callback;
+	data->alarm_user_data = alarm_cfg->user_data;
+	data->alarm_active = true;
+
+	k_spin_unlock(&data->lock, key);
+
+	if (config->base->CSR & LPTMR_CSR_TEN_MASK) {
+		/* Already enabled, first stop then set period (HW constraint). */
+		LPTMR_StopTimer(config->base);
+		LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
+	} else {
+		LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
+		/* RM recommendation: clear status flag after setting period
+		 * when timer is disabled.
+		 */
+		LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
+	}
+
+	LPTMR_EnableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+	LPTMR_StartTimer(config->base);
+
+	return 0;
+}
+
+static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(chan_id);
+
+	const struct mcux_lptmr_config *config = dev->config;
+	struct mcux_lptmr_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	if (!data->alarm_active) {
+		k_spin_unlock(&data->lock, key);
+		return 0;
+	}
+
+	LPTMR_DisableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+
+	data->alarm_callback = NULL;
+	data->alarm_user_data = NULL;
+	data->alarm_active = false;
+
+	k_spin_unlock(&data->lock, key);
+
+	LPTMR_StopTimer(config->base);
+
+	return 0;
+}
+
+static int mcux_lptmr_set_top_value(const struct device *dev,
+				    const struct counter_top_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+
+	return -ENOTSUP;
+}
+#else
+static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(alarm_cfg);
+
+	return -ENOTSUP;
+}
+
+static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+
+	return -ENOTSUP;
+}
+
 static int mcux_lptmr_set_top_value(const struct device *dev,
 				    const struct counter_top_cfg *cfg)
 {
@@ -87,6 +196,7 @@ static int mcux_lptmr_set_top_value(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_MCUX_LPTMR_ALARM */
 
 static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
 {
@@ -122,9 +232,36 @@ static void mcux_lptmr_isr(const struct device *dev)
 	flags = LPTMR_GetStatusFlags(config->base);
 	LPTMR_ClearStatusFlags(config->base, flags);
 
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	counter_alarm_callback_t callback = data->alarm_callback;
+
+	if ((callback != NULL) && (data->alarm_active)) {
+		void *user_data = data->alarm_user_data;
+
+		LPTMR_DisableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+
+		data->alarm_callback = NULL;
+		data->alarm_user_data = NULL;
+		data->alarm_active = false;
+
+		k_spin_unlock(&data->lock, key);
+
+		uint32_t current_count = LPTMR_GetCurrentTimerCount(config->base);
+
+		LPTMR_StopTimer(config->base);
+
+		callback(dev, 0, current_count, user_data);
+
+		return;
+	}
+
+	k_spin_unlock(&data->lock, key);
+#else
 	if (data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
+#endif
 }
 
 static int mcux_lptmr_init(const struct device *dev)
@@ -156,6 +293,8 @@ static int mcux_lptmr_init(const struct device *dev)
 static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.start = mcux_lptmr_start,
 	.stop = mcux_lptmr_stop,
+	.set_alarm = mcux_lptmr_set_alarm,
+	.cancel_alarm = mcux_lptmr_cancel_alarm,
 	.get_value = mcux_lptmr_get_value,
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
@@ -189,7 +328,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 			.freq = DT_INST_PROP(n, clock_frequency) /		\
 				BIT(DT_INST_PROP(n, prescale_glitch_filter)),	\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-			.channels = 0,						\
+			.channels = 1,						\
 		},								\
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\

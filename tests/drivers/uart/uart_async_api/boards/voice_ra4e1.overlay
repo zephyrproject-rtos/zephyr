@@ -17,6 +17,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	dut: uart {
 		current-speed = <115200>;
 		status = "okay";

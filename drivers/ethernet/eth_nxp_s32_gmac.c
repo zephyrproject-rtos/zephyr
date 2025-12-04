@@ -414,7 +414,7 @@ static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 
 	/* Using root iface, it will be updated in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
-					   AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
+					   NET_AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
 	if (!pkt) {
 		LOG_ERR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
 		goto exit;

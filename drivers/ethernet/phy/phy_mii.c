@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
@@ -22,6 +23,7 @@ LOG_MODULE_REGISTER(phy_mii, CONFIG_PHY_LOG_LEVEL);
 
 #define ANY_DYNAMIC_LINK UTIL_NOT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(fixed_link))
 #define ANY_FIXED_LINK   DT_ANY_INST_HAS_PROP_STATUS_OKAY(fixed_link)
+#define ANY_RESET_GPIO   DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
 struct phy_mii_dev_config {
 	uint8_t phy_addr;
@@ -30,6 +32,11 @@ struct phy_mii_dev_config {
 	int fixed_speed;
 	enum phy_link_speed default_speeds;
 	const struct device * const mdio;
+#if ANY_RESET_GPIO
+	const struct gpio_dt_spec reset_gpio;
+	uint32_t reset_assert_duration_us;
+	uint32_t reset_deassertion_timeout_ms;
+#endif /* ANY_RESET_GPIO */
 };
 
 struct phy_mii_dev_data {
@@ -57,13 +64,15 @@ struct phy_mii_dev_data {
 static void invoke_link_cb(const struct device *dev);
 
 #if ANY_DYNAMIC_LINK
+static int check_autonegotiation_completion(const struct device *dev);
+
 static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to read */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
@@ -80,7 +89,7 @@ static inline int phy_mii_reg_write(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	/* if there is no mdio (fixed-link) it is not supported to write */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
@@ -119,6 +128,33 @@ static int reset(const struct device *dev)
 {
 	uint32_t timeout = 12U;
 	uint16_t value;
+
+#if ANY_RESET_GPIO
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	int ret;
+
+	if (gpio_is_ready_dt(&cfg->reset_gpio)) {
+		/* Issue a hard reset */
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure RST pin (%d)", ret);
+			return ret;
+		}
+
+		/* assertion time */
+		k_busy_wait(cfg->reset_assert_duration_us);
+
+		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to de-assert RST pin (%d)", ret);
+			return ret;
+		}
+
+		k_msleep(cfg->reset_deassertion_timeout_ms);
+
+		return 0;
+	}
+#endif /* ANY_RESET_GPIO */
 
 	/* Issue a soft reset */
 	if (phy_mii_reg_write(dev, MII_BMCR, MII_BMCR_RESET) < 0) {
@@ -176,8 +212,7 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	link_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
-
+	link_up = IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT);
 	/* If link is down, we can stop here. */
 	if (!link_up) {
 		data->state.speed = 0;
@@ -194,7 +229,7 @@ static int update_link_state(const struct device *dev)
 	}
 
 	/* If auto-negotiation is not enabled, we only need to check the link speed */
-	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
+	if (!IS_BIT_SET(bmcr_reg, MII_BMCR_AUTONEG_ENABLE_BIT)) {
 		enum phy_link_speed new_speed = phy_mii_get_link_speed_bmcr_reg(dev, bmcr_reg);
 
 		if ((data->state.speed != new_speed) || !data->state.is_up) {
@@ -225,7 +260,8 @@ static int update_link_state(const struct device *dev)
 	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
 
 	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
-	return -EINPROGRESS;
+
+	return check_autonegotiation_completion(dev);
 }
 
 static int check_autonegotiation_completion(const struct device *dev)
@@ -239,24 +275,28 @@ static int check_autonegotiation_completion(const struct device *dev)
 	uint16_t c1kt_reg = 0;
 	uint16_t s1kt_reg = 0;
 
-	/* On some PHY chips, the BMSR bits are latched, so the first read may
-	 * show incorrect status. A second read ensures correct values.
-	 */
 	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 		return -EIO;
 	}
 
-	/* Second read, clears the latched bits and gives the correct status */
-	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-		return -EIO;
-	}
-
-	if ((bmsr_reg & MII_BMSR_AUTONEG_COMPLETE) == 0U) {
+	if (!IS_BIT_SET(bmsr_reg, MII_BMSR_AUTONEG_COMPLETE_BIT)) {
 		if (sys_timepoint_expired(data->autoneg_timeout)) {
 			LOG_DBG("PHY (%d) auto-negotiate timeout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
 		return -EINPROGRESS;
+	}
+
+	/* Link status bit is latched low, so read it again to get current status */
+	if (unlikely(!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT))) {
+		/* Second read, clears the latched bits and gives the correct status */
+		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+			return -EIO;
+		}
+
+		if (!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT)) {
+			return -EAGAIN;
+		}
 	}
 
 	LOG_DBG("PHY (%d) auto-negotiate sequence completed",
@@ -298,7 +338,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE;
 	}
 
-	data->state.is_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
+	data->state.is_up = true;
 
 	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
 		cfg->phy_addr,
@@ -360,7 +400,7 @@ static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_sp
 	int ret = 0;
 
 	/* if there is no mdio (fixed-link) it is not supported to configure link */
-	if (cfg->fixed) {
+	if (ANY_FIXED_LINK && cfg->fixed) {
 		return -ENOTSUP;
 	}
 
@@ -499,8 +539,6 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 
 	data->state.is_up = false;
 
-	mdio_bus_enable(cfg->mdio);
-
 	if (cfg->no_reset == false) {
 		ret = reset(dev);
 		if (ret < 0) {
@@ -528,7 +566,11 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
 	/* Advertise default speeds */
-	phy_mii_cfg_link(dev, cfg->default_speeds, 0);
+	ret = phy_mii_cfg_link(dev, cfg->default_speeds, 0);
+	if (ret == -EALREADY) {
+		data->autoneg_in_progress = true;
+		data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
+	}
 
 	/* This will schedule the monitor work, if not already scheduled by phy_mii_cfg_link(). */
 	k_work_schedule(&data->monitor_work, K_NO_WAIT);
@@ -549,6 +591,18 @@ static DEVICE_API(ethphy, phy_mii_driver_api) = {
 #endif
 };
 
+#if ANY_RESET_GPIO
+#define RESET_GPIO(n)							 \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n,			 \
+			 reset_gpios, {0}),				 \
+	.reset_assert_duration_us = DT_INST_PROP_OR(n,			 \
+			 reset_assert_duration_us, 0),			 \
+	.reset_deassertion_timeout_ms = DT_INST_PROP_OR(n,		 \
+			 reset_deassertion_timeout_ms, 0),
+#else
+#define RESET_GPIO(n)
+#endif /* ANY_RESET_GPIO */
+
 #define PHY_MII_CONFIG(n)						 \
 BUILD_ASSERT(PHY_INST_GENERATE_DEFAULT_SPEEDS(n) != 0,			 \
 	"At least one valid speed must be configured for this driver");	 \
@@ -560,7 +614,8 @@ static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
-			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
+			 DEVICE_DT_GET(DT_INST_BUS(n))),		 \
+	RESET_GPIO(n)							 \
 };
 
 #define PHY_MII_DATA(n)							 \

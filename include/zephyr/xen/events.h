@@ -1,9 +1,18 @@
 /*
- * Copyright (c) 2021 EPAM Systems
+ * Copyright (c) 2021-2025 EPAM Systems
  * Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Xen event channel interface
+ *
+ * This file provides the interface for managing Xen event channels,
+ * including allocation, binding, and callback management.
+ */
+
 #ifndef __XEN_EVENTS_H__
 #define __XEN_EVENTS_H__
 
@@ -26,61 +35,96 @@ typedef struct event_channel_handle evtchn_handle_t;
 int evtchn_status(evtchn_status_t *status);
 int evtchn_close(evtchn_port_t port);
 int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
-void notify_evtchn(evtchn_port_t port);
+int notify_evtchn(evtchn_port_t port);
 
-/*
+/**
  * Allocate event-channel between caller and remote domain
  *
- * @param remote_dom - remote domain domid
- * @return - local event channel port on success, negative on error
+ * @param remote_dom remote domain domid
+ * @retval port local event channel port on success
+ * @retval -errno negative code on error
  */
 int alloc_unbound_event_channel(domid_t remote_dom);
 
 #ifdef CONFIG_XEN_DOM0
-/*
+/**
  * Allocate event-channel between remote domains. Can be used only from Dom0.
  *
- * @param dom - first remote domain domid (may be DOMID_SELF)
- * @param remote_dom - second remote domain domid
- * @return - local event channel port on success, negative on error
+ * @param dom first remote domain domid (may be DOMID_SELF)
+ * @param remote_dom second remote domain domid
+ * @retval port local event channel port on success
+ * @retval -errno negative code on error
  */
 int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
 #endif /* CONFIG_XEN_DOM0 */
 
-/*
+/**
  * Allocate local event channel, binded to remote port and attach specified callback
  * to it
  *
- * @param remote_dom - remote domain domid
- * @param remote_port - remote domain event channel port number
- * @param cb - callback, attached to locat port
- * @param data - private data, that will be passed to cb
- * @return - local event channel port on success, negative on error
+ * @param remote_dom remote domain domid
+ * @param remote_port remote domain event channel port number
+ * @param cb callback, attached to locat port
+ * @param data private data, that will be passed to cb
+ * @retval port local event channel port on success
+ * @retval -errno negative code on error
  */
 int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
 		evtchn_cb_t cb, void *data);
 
-/*
+/**
  * Bind user-defined handler to specified event-channel
  *
- * @param port - event channel number
- * @param cb - pointer to event channel handler
- * @param data - private data, that will be passed to handler as parameter
- * @return - zero on success
+ * @param port event channel number
+ * @param cb pointer to event channel handler
+ * @param data private data, that will be passed to handler as parameter
+ * @retval 0 on success
  */
 int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 
-/*
+/**
  * Unbind handler from event channel, substitute it with empty callback
  *
- * @param port - event channel number to unbind
- * @return - zero on success
+ * @param port event channel number to unbind
+ * @retval 0 on success
  */
 int unbind_event_channel(evtchn_port_t port);
+
+/**
+ * Check if missed events are present on specified port.
+ * @param port event channel number
+ * @retval 1 if missed events are present
+ * @retval 0 otherwise
+ */
 int get_missed_events(evtchn_port_t port);
+
+/**
+ * Disable event processing on specified port.
+ * @param port event channel number
+ * @retval 0 on success
+ * @retval -errno negative code on error
+ */
 int mask_event_channel(evtchn_port_t port);
+
+/**
+ * Enable event processing on specified port.
+ * @param port event channel number
+ * @retval 0 on success
+ * @retval -errno negative code on error
+ */
 int unmask_event_channel(evtchn_port_t port);
 
+/**
+ * Clear event channel from pending events
+ * @param port event channel number
+ */
+void clear_event_channel(evtchn_port_t port);
+
+/**
+ * Initialize Xen event channel driver, used on initialization
+ * @retval 0 on success
+ * @retval -errno negative code on error
+ */
 int xen_events_init(void);
 
 #endif /* __XEN_EVENTS_H__ */

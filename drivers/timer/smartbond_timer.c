@@ -17,7 +17,7 @@
 #define COUNTER_SPAN BIT(24)
 #define CYC_PER_TICK k_ticks_to_cyc_ceil32(1)
 #define TICK_TO_CYC(tick) k_ticks_to_cyc_ceil32(tick)
-#define CYC_TO_TICK(cyc) k_cyc_to_ticks_ceil32(cyc)
+#define CYC_TO_TICK(cyc) k_cyc_to_ticks_floor32(cyc)
 #define MAX_TICKS (((COUNTER_SPAN / 2) - CYC_PER_TICK) / (CYC_PER_TICK))
 #define SMARTBOND_CLOCK_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(osc))
 /* Margin values are based on DA1469x characterization data */
@@ -81,11 +81,34 @@ static uint32_t timer_val_32_noupdate(void)
 	return val;
 }
 
+static void schedule_next_interrupt(uint32_t ticks)
+{
+	uint32_t timer_val;
+	uint32_t target_val;
+
+	timer_val = timer_val_32_noupdate();
+
+	/* Calculate target timer value and align to full tick */
+	target_val = timer_val + TICK_TO_CYC(ticks);
+	target_val = ((target_val + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+
+	set_reload(target_val);
+
+	/*
+	 * If time was so small that it already fired or should fire
+	 * just now, mark interrupt as pending to avoid losing timer event.
+	 * Condition is true when target_val (point in time that should be
+	 * used for wakeup) is behind timer value or is equal to it.
+	 * In that case we don't know if reload value was set in time or
+	 * not but time expired anyway so make sure that interrupt is pending.
+	 */
+	if ((int32_t)(target_val - timer_val_32_noupdate() - 1) < 0) {
+		NVIC_SetPendingIRQ(TIMER2_IRQn);
+	}
+}
+
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	uint32_t target_val;
-	uint32_t timer_val;
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
@@ -130,25 +153,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
-	timer_val = timer_val_32_noupdate();
-
-	/* Calculate target timer value and align to full tick */
-	target_val = timer_val + TICK_TO_CYC(ticks);
-	target_val = ((target_val + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
-
-	set_reload(target_val);
-
-	/*
-	 * If time was so small that it already fired or should fire
-	 * just now, mark interrupt as pending to avoid losing timer event.
-	 * Condition is true when target_val (point in time that should be
-	 * used for wakeup) is behind timer value or is equal to it.
-	 * In that case we don't know if reload value was set in time or
-	 * not but time expired anyway so make sure that interrupt is pending.
-	 */
-	if ((int32_t)(target_val - timer_val_32_noupdate() - 1) < 0) {
-		NVIC_SetPendingIRQ(TIMER2_IRQn);
-	}
+	schedule_next_interrupt(ticks);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -175,7 +180,7 @@ void sys_clock_disable(void)
 	TIMER2->TIMER2_CTRL_REG &= ~TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk;
 }
 
-static void timer2_isr(const void *arg)
+void timer2_isr(const void *arg)
 {
 	uint32_t val;
 	int32_t delta;
@@ -192,6 +197,11 @@ static void timer2_isr(const void *arg)
 	last_isr_val_rounded += TICK_TO_CYC(dticks);
 	announced_ticks += dticks;
 	sys_clock_announce(dticks);
+
+	/* For tick-based kernel, schedule interrupt after 1 tick */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		schedule_next_interrupt(1);
+	}
 }
 
 static int sys_clock_driver_init(void)

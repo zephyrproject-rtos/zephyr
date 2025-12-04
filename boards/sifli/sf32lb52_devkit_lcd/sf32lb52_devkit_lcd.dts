@@ -9,6 +9,7 @@
 #include <sifli/sf32lb52x-ram012.dtsi>
 #include <zephyr/dt-bindings/dma/sf32lb52x-dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "sf32lb52_devkit_lcd-pinctrl.dtsi"
@@ -23,6 +24,9 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,crc = &crc;
+		zephyr,entropy = &trng;
+		zephyr,bt-hci = &mailbox;
 	};
 
 	buttons {
@@ -73,11 +77,16 @@
 	sifli,hdiv = <1>;
 	sifli,pdiv1 = <1>;
 	sifli,pdiv2 = <6>;
+	sifli,sys-clk-src = "dll1";
 
 	dll1 {
 		status = "okay";
 		clock-frequency = <DT_FREQ_M(240)>;
 	};
+};
+
+&rcc_rst {
+	status = "okay";
 };
 
 &gpioa_00_31 {
@@ -140,4 +149,33 @@
 
 &rtc {
 	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&crc {
+	status = "okay";
+};
+
+temp_sensor: &tsen {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&mailbox {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
 };

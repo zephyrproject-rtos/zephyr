@@ -119,12 +119,15 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 			return -EINVAL;
 		}
 		status->twt_capable = false;
-		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
-		status->channel = sl_ap_cfg.channel.channel;
+		status->channel = wlan_info.channel_number;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
+		status->link_mode = WIFI_4;
+		if (status->channel == 14) {
+			status->link_mode = WIFI_1;
+		}
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
 		memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
 	} else {

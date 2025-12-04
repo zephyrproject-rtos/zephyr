@@ -40,9 +40,9 @@
 			reg = <0x0 DT_SIZE_M(60)>;
 		};
 
-		slot1_partition: partition@3C00000 {
+		slot1_partition: partition@3c00000 {
 			label = "image-1";
-			reg = <0x3C00000 DT_SIZE_M(60)>;
+			reg = <0x3c00000 DT_SIZE_M(60)>;
 		};
 
 		storage_partition: partition@7800000 {

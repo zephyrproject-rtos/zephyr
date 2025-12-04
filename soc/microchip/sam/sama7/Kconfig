@@ -8,3 +8,4 @@ config SOC_FAMILY_MICROCHIP_SAMA7
 	select ARM
 	select CPU_CORTEX_A7
 	select MMU
+	select CACHE_MANAGEMENT

@@ -12,6 +12,7 @@
 
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -304,12 +305,12 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
-	cp->max_latency = 0x0007;
-	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
+	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
+	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
+	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, buf, NULL);
 	if (err) {
@@ -384,13 +385,13 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 
 	LOG_DBG("handle : %x", sco_conn->sco.acl->handle);
 
-	cp->handle = sco_conn->sco.acl->handle;
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
-	cp->max_latency = 0x0007;
-	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
+	cp->handle = sys_cpu_to_le16(sco_conn->sco.acl->handle);
+	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
+	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
+	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf, NULL);
 	if (err < 0) {

@@ -169,9 +169,9 @@ struct netmidi2_session {
 	/** Sequence number of the next universal MIDI packet to receive */
 	uint16_t rx_ump_seq;
 	/** Remote address of the peer */
-	struct sockaddr_storage addr;
+	struct net_sockaddr_storage addr;
 	/** Length of the peer's remote address */
-	socklen_t addr_len;
+	net_socklen_t addr_len;
 	/** The Network MIDI2 endpoint to which this session belongs */
 	struct netmidi2_ep *ep;
 #if defined(CONFIG_NETMIDI2_HOST_AUTH) || defined(__DOXYGEN__)
@@ -208,9 +208,9 @@ struct netmidi2_ep {
 	const char *piid;
 	/** The local endpoint address */
 	union {
-		struct sockaddr addr;
-		struct sockaddr_in addr4;
-		struct sockaddr_in6 addr6;
+		struct net_sockaddr addr;
+		struct net_sockaddr_in addr4;
+		struct net_sockaddr_in6 addr6;
 	};
 	/** The listening socket wrapped in a poll descriptor */
 	struct zsock_pollfd pollsock;

@@ -7,7 +7,7 @@ project(settings_fcb_raw)
 add_subdirectory(./src fcb_test_bindir)
 
 if(TEST)
-	target_compile_definitions(app PRIVATE
-		-DTEST_${TEST}
-		)
+  target_compile_definitions(app PRIVATE
+    -DTEST_${TEST}
+  )
 endif()

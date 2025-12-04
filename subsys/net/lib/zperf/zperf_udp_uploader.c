@@ -37,21 +37,21 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 
 	stat = (struct zperf_server_hdr *)
 			(data + sizeof(struct zperf_udp_datagram));
-	flags = ntohl(UNALIGNED_GET(&stat->flags));
+	flags = net_ntohl(UNALIGNED_GET(&stat->flags));
 	if (!(flags & ZPERF_FLAGS_VERSION1)) {
 		NET_WARN("Unexpected response flags");
 	}
 
-	results->nb_packets_rcvd = ntohl(UNALIGNED_GET(&stat->datagrams));
-	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));
+	results->nb_packets_rcvd = net_ntohl(UNALIGNED_GET(&stat->datagrams));
+	results->nb_packets_lost = net_ntohl(UNALIGNED_GET(&stat->error_cnt));
 	results->nb_packets_outorder =
-		ntohl(UNALIGNED_GET(&stat->outorder_cnt));
-	results->total_len = (((uint64_t)ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
-		ntohl(UNALIGNED_GET(&stat->total_len2));
-	results->time_in_us = ntohl(UNALIGNED_GET(&stat->stop_usec)) +
-		ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
-	results->jitter_in_us = ntohl(UNALIGNED_GET(&stat->jitter2)) +
-		ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
+		net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
+	results->total_len = (((uint64_t)net_ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
+		net_ntohl(UNALIGNED_GET(&stat->total_len2));
+	results->time_in_us = net_ntohl(UNALIGNED_GET(&stat->stop_usec)) +
+		net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
+	results->jitter_in_us = net_ntohl(UNALIGNED_GET(&stat->jitter2)) +
+		net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
 static inline int zperf_upload_fin(int sock,
@@ -78,9 +78,9 @@ static inline int zperf_upload_fin(int sock,
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
 		/* Fill the packet header */
-		datagram->id = htonl(-nb_packets);
-		datagram->tv_sec = htonl(secs);
-		datagram->tv_usec = htonl(usecs);
+		datagram->id = net_htonl(-nb_packets);
+		datagram->tv_sec = net_htonl(secs);
+		datagram->tv_usec = net_htonl(usecs);
 
 		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
 						     sizeof(*datagram));
@@ -91,12 +91,12 @@ static inline int zperf_upload_fin(int sock,
 		 * to set there some meaningful values.
 		 */
 		hdr->flags = 0;
-		hdr->num_of_threads = htonl(1);
+		hdr->num_of_threads = net_htonl(1);
 		hdr->port = 0;
 		hdr->buffer_len = sizeof(sample_packet) -
 			sizeof(*datagram) - sizeof(*hdr);
 		hdr->bandwidth = 0;
-		hdr->num_of_bytes = htonl(packet_size);
+		hdr->num_of_bytes = net_htonl(packet_size);
 
 		/* Send the packet */
 		ret = zsock_send(sock, sample_packet, packet_size, 0);
@@ -155,6 +155,77 @@ static inline int zperf_upload_fin(int sock,
 	return 0;
 }
 
+#define USECS_PER_TICK (Z_HZ_us / Z_HZ_ticks)
+#if (USECS_PER_TICK >= 1000)
+#define ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+#endif
+
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+struct compensate_ctx {
+	int period;
+	int64_t period_start;
+	int packet_duration_us;
+	int actual_pkts;
+	int compensate;
+};
+
+/**
+ * Add compensate to packet delay when time clock accuracy is lower than 1kHz.
+ * After given period, compare actual sent packets with expected sent packets,
+ * and get summary compensate ticks.
+ * Then try to compensate in this loop.
+ * If delay is not enough as it cannot be less than 0, pile up compensate ticks.
+ */
+static int cal_compensate_delay(struct compensate_ctx *ctx, int64_t loop_time, int delay)
+{
+	int64_t delta_time;
+	int expected_pkts;
+	int compensate_pkts;
+	int compensate_ticks;
+	int compensate_delay = delay;
+
+	if (ctx->period == 0) {
+		return delay;
+	}
+
+	if (ctx->period_start == -1) {
+		ctx->period_start = loop_time;
+		ctx->actual_pkts = 0;
+	}
+
+	ctx->actual_pkts++;
+	delta_time = loop_time - ctx->period_start;
+
+	if (delta_time < ctx->period) {
+		return delay;
+	}
+
+	/* calculate compensate ticks and maintain it during whole traffic */
+	expected_pkts = delta_time * USECS_PER_TICK / ctx->packet_duration_us;
+	compensate_pkts = ctx->actual_pkts - expected_pkts;
+	compensate_ticks = compensate_pkts * ctx->packet_duration_us / USECS_PER_TICK;
+	ctx->compensate += compensate_ticks;
+
+	if (ctx->compensate >= 0 || (ctx->compensate + delay) > 0) {
+		compensate_delay += ctx->compensate;
+		ctx->compensate = 0;
+	} else {
+		compensate_delay = 0;
+		ctx->compensate += delay;
+	}
+
+	/* restart statistic period */
+	ctx->period_start = -1;
+
+	/* rate is higher than capability, no need to compensate */
+	if (ctx->compensate < -1000) {
+		ctx->period = 0;
+	}
+
+	return compensate_delay;
+}
+#endif
+
 static int udp_upload(int sock, int port,
 		      const struct zperf_upload_params *param,
 		      struct zperf_results *results)
@@ -175,6 +246,10 @@ static int udp_upload(int sock, int port,
 	uint32_t print_period;
 	bool is_mcast_pkt = false;
 	int ret;
+	int compensate_delay;
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+	struct compensate_ctx ctx = {0};
+#endif
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		NET_WARN("Packet size too large! max size: %u", PACKET_SIZE_MAX);
@@ -195,6 +270,13 @@ static int udp_upload(int sock, int port,
 
 	/* Default data payload */
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
+
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+	/* compensate period, by default 10 ticks */
+	ctx.period = 10;
+	ctx.period_start = -1;
+	ctx.packet_duration_us = packet_duration_us;
+#endif
 
 	do {
 		struct zperf_udp_datagram *datagram;
@@ -222,6 +304,13 @@ static int udp_upload(int sock, int port,
 			delay = 0U; /* delay should never be negative */
 		}
 
+		/* add clock compensate to packet delay when clock accuracy is lower than 1KHz */
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+		compensate_delay = cal_compensate_delay(&ctx, loop_time, (int)delay);
+#else
+		compensate_delay = delay;
+#endif
+
 		last_loop_time = loop_time;
 
 		usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(loop_time - start_time);
@@ -231,19 +320,19 @@ static int udp_upload(int sock, int port,
 		/* Fill the packet header */
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
-		datagram->id = htonl(nb_packets);
-		datagram->tv_sec = htonl(secs);
-		datagram->tv_usec = htonl(usecs);
+		datagram->id = net_htonl(nb_packets);
+		datagram->tv_sec = net_htonl(secs);
+		datagram->tv_usec = net_htonl(usecs);
 
 		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
 						     sizeof(*datagram));
 		hdr->flags = 0;
-		hdr->num_of_threads = htonl(1);
-		hdr->port = htonl(port);
+		hdr->num_of_threads = net_htonl(1);
+		hdr->port = net_htonl(port);
 		hdr->buffer_len = sizeof(sample_packet) -
 			sizeof(*datagram) - sizeof(*hdr);
-		hdr->bandwidth = htonl(rate_in_kbps);
-		hdr->num_of_bytes = htonl(packet_size);
+		hdr->bandwidth = net_htonl(rate_in_kbps);
+		hdr->num_of_bytes = net_htonl(packet_size);
 
 		/* Load custom data payload if requested */
 		if (param->data_loader != NULL) {
@@ -268,7 +357,7 @@ static int udp_upload(int sock, int port,
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
 			if (print_time >= loop_time) {
 				NET_DBG("nb_packets=%u\tdelay=%u\tadjust=%d",
-					nb_packets, (unsigned int)delay,
+					nb_packets, (unsigned int)compensate_delay,
 					(int)adjust);
 				print_time += print_period;
 			}
@@ -278,8 +367,8 @@ static int udp_upload(int sock, int port,
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(USEC_PER_MSEC);
 #else
-		if (delay != 0) {
-			k_sleep(K_TICKS(delay));
+		if (compensate_delay > 0) {
+			k_sleep(K_TICKS(compensate_delay));
 		}
 #endif
 	} while (last_loop_time < end_time);
@@ -287,11 +376,11 @@ static int udp_upload(int sock, int port,
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
 
-	if (param->peer_addr.sa_family == AF_INET) {
+	if (param->peer_addr.sa_family == NET_AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
 			is_mcast_pkt = true;
 		}
-	} else if (param->peer_addr.sa_family == AF_INET6) {
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
 		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
 			is_mcast_pkt = true;
 		}
@@ -325,10 +414,10 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	if (param->peer_addr.sa_family == AF_INET) {
-		port = ntohs(net_sin(&param->peer_addr)->sin_port);
-	} else if (param->peer_addr.sa_family == AF_INET6) {
-		port = ntohs(net_sin6(&param->peer_addr)->sin6_port);
+	if (param->peer_addr.sa_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
+		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
 			param->peer_addr.sa_family);
@@ -336,17 +425,19 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, 0, IPPROTO_UDP);
+					 param->options.priority, 0,
+					 NET_IPPROTO_UDP);
 	if (sock < 0) {
 		return sock;
 	}
 
 	if (param->if_name[0]) {
 		(void)memset(req.ifr_name, 0, sizeof(req.ifr_name));
-		strncpy(req.ifr_name, param->if_name, IFNAMSIZ);
-		req.ifr_name[IFNAMSIZ - 1] = 0;
+		strncpy(req.ifr_name, param->if_name, NET_IFNAMSIZ);
+		req.ifr_name[NET_IFNAMSIZ - 1] = 0;
 
-		if (zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &req,
+		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET,
+				     ZSOCK_SO_BINDTODEVICE, &req,
 				     sizeof(struct ifreq)) != 0) {
 			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
 		}

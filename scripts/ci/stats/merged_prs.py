@@ -6,40 +6,49 @@
 # further insepctions using the PR dashboard at
 # https://kibana.zephyrproject.io/
 
-import sys
-import os
-from github import Auth, Github
 import argparse
+import os
+import pprint
+import sys
+from datetime import timedelta
+
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from datetime import timedelta
-import pprint
-
+from github import Auth, Github
 
 date_format = '%Y-%m-%d %H:%M:%S'
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False
+    )
 
     parser.add_argument('--pull-request', help='pull request number', type=int)
-    parser.add_argument('--range', help='execute based on a date range, for example 2023-01-01..2023-01-05')
+    parser.add_argument(
+        '--range', help='execute based on a date range, for example 2023-01-01..2023-01-05'
+    )
     parser.add_argument('--repo', help='github repo', default='zephyrproject-rtos/zephyr')
     parser.add_argument('--es-index', help='Elasticsearch index')
-    parser.add_argument('-y','--dry-run', action="store_true", help='dry run, do not upload data')
+    parser.add_argument('-y', '--dry-run', action="store_true", help='dry run, do not upload data')
 
     return parser.parse_args()
+
 
 def gendata(data, index):
     for t in data:
         yield {
-                "_index": index,
-                "_source": t
-                }
+            "_index": index,
+            "_source": t,
+        }
+
 
 def process_pr(pr):
     reviews = pr.get_reviews()
-    print(f'#{pr.number}: {pr.title} - {pr.comments} Comments, reviews: {reviews.totalCount}, {len(pr.assignees)} Assignees (Updated {pr.updated_at})')
+    msg = f'#{pr.number}: {pr.title} - '
+    msg += f"{pr.comments} Comments, reviews: {reviews.totalCount}, "
+    msg += f"{len(pr.assignees)} Assignees (Updated {pr.updated_at})"
+    print(msg)
     assignee_reviews = 0
     prj = {}
 
@@ -63,16 +72,17 @@ def process_pr(pr):
     if assignee_reviews > 0 or pr.merged_by.login in assignees:
         # in case of assignee reviews or if PR was merged by an assignee
         prj['review_rule'] = "yes"
-    elif not pr.assignees or \
-            (pr.user.login in assignees and len(assignees) == 1) or \
-            ('Trivial' in labels or 'Hotfix' in labels):
+    elif (
+        not pr.assignees
+        or (pr.user.login in assignees and len(assignees) == 1)
+        or ('Trivial' in labels or 'Hotfix' in labels)
+    ):
         # in case where no assignees set or if submitter is the only assignee
         # or in case of trivial or hotfixes
         prj['review_rule'] = "na"
     else:
         # everything else
         prj['review_rule'] = "no"
-
 
     created = pr.created_at
     # if a PR was made ready for review from draft, calculate based on when it
@@ -130,12 +140,15 @@ def process_pr(pr):
 
     return prj
 
+
 def main():
     args = parse_args()
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        sys.exit('Github token not set in environment, please set the '
-                 'GITHUB_TOKEN environment variable and retry.')
+        sys.exit(
+            'Github token not set in environment, please set the '
+            'GITHUB_TOKEN environment variable and retry.'
+        )
 
     gh = Github(auth=Auth.Token(token))
     json_list = []
@@ -156,10 +169,10 @@ def main():
     if json_list and not args.dry_run:
         # Send data over to elasticsearch.
         es = Elasticsearch(
-                [os.environ['ELASTICSEARCH_SERVER']],
-                api_key=os.environ['ELASTICSEARCH_KEY'],
-                verify_certs=False
-                )
+            [os.environ['ELASTICSEARCH_SERVER']],
+            api_key=os.environ['ELASTICSEARCH_KEY'],
+            verify_certs=False,
+        )
 
         try:
             if args.es_index:
@@ -172,6 +185,7 @@ def main():
             print(json_list)
     if args.dry_run:
         pprint.pprint(json_list)
+
 
 if __name__ == "__main__":
     main()

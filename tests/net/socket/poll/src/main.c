@@ -38,8 +38,8 @@ ZTEST(net_socket_poll, test_poll)
 	int s_sock;
 	int c_sock_tcp;
 	int s_sock_tcp;
-	struct sockaddr_in6 c_addr;
-	struct sockaddr_in6 s_addr;
+	struct net_sockaddr_in6 c_addr;
+	struct net_sockaddr_in6 s_addr;
 	struct zsock_pollfd pollfds[2];
 	struct zsock_pollfd pollout[1];
 	uint32_t tstamp;
@@ -51,10 +51,10 @@ ZTEST(net_socket_poll, test_poll)
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock_tcp, &c_addr);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock_tcp, &s_addr);
 
-	res = zsock_bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	res = zsock_bind(s_sock, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "bind failed");
 
-	res = zsock_connect(c_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	res = zsock_connect(c_sock, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "connect failed");
 
 	memset(pollfds, 0, sizeof(pollfds));
@@ -118,7 +118,7 @@ ZTEST(net_socket_poll, test_poll)
 	pollout[0].fd = c_sock;
 	pollout[0].events = ZSOCK_POLLOUT;
 
-	res = zsock_connect(c_sock, (const struct sockaddr *)&s_addr,
+	res = zsock_connect(c_sock, (const struct net_sockaddr *)&s_addr,
 			    sizeof(s_addr));
 	zassert_equal(res, 0, "");
 
@@ -135,12 +135,12 @@ ZTEST(net_socket_poll, test_poll)
 	pollout[0].fd = c_sock_tcp;
 	pollout[0].events = ZSOCK_POLLOUT;
 
-	res = zsock_bind(s_sock_tcp, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	res = zsock_bind(s_sock_tcp, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "");
 	res = zsock_listen(s_sock_tcp, 0);
 	zassert_equal(res, 0, "");
 
-	res = zsock_connect(c_sock_tcp, (const struct sockaddr *)&s_addr,
+	res = zsock_connect(c_sock_tcp, (const struct net_sockaddr *)&s_addr,
 			    sizeof(s_addr));
 	zassert_equal(res, 0, "");
 
@@ -181,19 +181,19 @@ ZTEST(net_socket_poll, test_pollout_tcp)
 	int c_sock;
 	int s_sock;
 	int new_sock;
-	struct sockaddr_in6 c_addr;
-	struct sockaddr_in6 s_addr;
+	struct net_sockaddr_in6 c_addr;
+	struct net_sockaddr_in6 s_addr;
 	struct zsock_pollfd pollout[1];
 	char buf[TEST_SNDBUF_SIZE] = { };
 
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock, &c_addr);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_addr);
 
-	res = zsock_bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	res = zsock_bind(s_sock, (struct net_sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "");
 	res = zsock_listen(s_sock, 0);
 	zassert_equal(res, 0, "");
-	res = zsock_connect(c_sock, (const struct sockaddr *)&s_addr,
+	res = zsock_connect(c_sock, (const struct net_sockaddr *)&s_addr,
 			    sizeof(s_addr));
 	zassert_equal(res, 0, "");
 	new_sock = zsock_accept(s_sock, NULL, NULL);

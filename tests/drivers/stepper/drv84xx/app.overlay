@@ -6,7 +6,6 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-
 	drv84xx: drv84xx {
 		status = "okay";
 		compatible = "ti,drv84xx";

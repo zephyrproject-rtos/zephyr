@@ -25,4 +25,5 @@ supported:
   - dma
   - i3c
   - opamp
+  - entropy
 vendor: nxp

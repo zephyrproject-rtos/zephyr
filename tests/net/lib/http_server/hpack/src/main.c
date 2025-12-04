@@ -92,7 +92,7 @@ static void test_huffman_code_prepare(uint32_t *buf, int index)
 	 */
 	*buf <<= pad_len;
 	*buf |= (1UL << pad_len) - 1UL;
-	*buf = htonl(*buf);
+	*buf = net_htonl(*buf);
 }
 
 ZTEST(http2_hpack, test_huffman_encode_single)
