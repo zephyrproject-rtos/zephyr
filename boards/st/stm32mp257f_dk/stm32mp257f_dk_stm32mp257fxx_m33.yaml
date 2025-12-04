@@ -9,6 +9,7 @@ supported:
   - LED
   - gpio
   - shell
+  - i3c
 testing:
   ignore_tags:
     - cmsis_rtos_v2
