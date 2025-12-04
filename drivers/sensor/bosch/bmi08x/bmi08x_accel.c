@@ -231,20 +231,6 @@ int bmi08x_accel_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *
 	return bmi08x_accel_transceive(dev, reg_addr | BIT(7), false, byte, 1);
 }
 
-static int bmi08x_accel_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word)
-{
-	int ret;
-
-	ret = bmi08x_accel_transceive(dev, reg_addr | BIT(7), false, word, 2);
-	if (ret != 0) {
-		return ret;
-	}
-
-	*word = sys_le16_to_cpu(*word);
-
-	return ret;
-}
-
 int bmi08x_accel_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte)
 {
 	return bmi08x_accel_transceive(dev, reg_addr & 0x7F, true, &byte, 1);
@@ -440,32 +426,24 @@ static inline void bmi08x_acc_channel_get(const struct device *dev, enum sensor_
 
 static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value *val)
 {
-	uint16_t temp_raw = 0U;
+	uint8_t temp_raw[2] = {0};
 	int32_t temp_micro = 0;
 	int16_t temp_int11 = 0;
 	int ret;
 
-	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_MSB, &temp_raw);
-	if (!ret) {
-		temp_int11 = (temp_raw & 0xFF) << 3;
-	} else {
-		LOG_ERR("Error reading BMI08X_REG_TEMP_MSB. (err %d)", ret);
+	ret = bmi08x_accel_read(dev, BMI08X_REG_TEMP_MSB, temp_raw, sizeof(temp_raw));
+	if (ret < 0) {
+		LOG_ERR("Error reading BMI08X temperature registers. (err %d)", ret);
 		return ret;
 	}
 
-	if (temp_raw == 0x80) {
+	if (temp_raw[0] == 0x80) {
 		/* temperature invalid */
 		LOG_ERR("BMI08X returned invalid temperature.");
 		return -ENODATA;
 	}
 
-	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_LSB, &temp_raw);
-	if (!ret) {
-		temp_int11 |= (temp_raw & 0xE0) >> 5;
-	} else {
-		LOG_ERR("Error reading BMI08X_REG_TEMP_LSB. (err %d)", ret);
-		return ret;
-	}
+	temp_int11 = ((int16_t)temp_raw[0] << 3) | ((temp_raw[1] & 0xE0) >> 5);
 	/*
 	 * int11 type ranges in [-1024, 1023]
 	 * the 11st bit declares +/-
@@ -475,8 +453,8 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 		temp_int11 -= 2048;
 	}
 	/* the value ranges in [-504, 496] */
-	/* the scale is 0.125°C/LSB = 125 micro degrees */
-	temp_micro = temp_int11 * 125 + 23 * 1000000;
+	/* the scale is 0.125°C/LSB = 125000 micro degrees */
+	temp_micro = temp_int11 * 125000 + 23 * 1000000;
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;
 
