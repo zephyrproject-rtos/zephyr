@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Default SRAM planning when building for nRF54L10 with ARM TrustZone-M support
+ * - Lowest 96 kB SRAM allocated to Secure image (sram0_s).
+ * - Upper 96 kB SRAM allocated to Non-Secure image (sram0_ns).
+ *
+ * nRF54L10 has 192 kB of volatile memory (SRAM).
+ * This static layout needs to be the same with the upstream TF-M layout in the
+ * header flash_layout.h of the relevant platform. Any updates in the layout
+ * needs to happen both in the flash_layout.h and in this file at the same time.
+ */
+
+&cpuapp_sram {
+	sram0_s: image_s@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(96)>;
+		ranges = <0x0 0x0 DT_SIZE_K(96)>;
+	};
+
+	sram0_ns: image_ns@18000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure image memory */
+		reg = <0x18000 DT_SIZE_K(96)>;
+		ranges = <0x0 0x18000 DT_SIZE_K(96)>;
+	};
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* nRF54L10 has 1012 kB of non volatile memory (RRAM).
+		 *
+		 * This static layout needs to be the same with the upstream TF-M layout in the
+		 * header flash_layout.h of the relevant platform. Any updates in the layout
+		 * needs to happen both in the flash_layout.h and in this file at the same time.
+		 */
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0000000 DT_SIZE_K(384)>;
+		};
+
+		tfm_ps_partition: partition@60000 {
+			label = "tfm-ps";
+			reg = <0x00060000 DT_SIZE_K(16)>;
+		};
+
+		tfm_its_partition: partition@64000 {
+			label = "tfm-its";
+			reg = <0x00064000 DT_SIZE_K(16)>;
+		};
+
+		tfm_otp_partition: partition@68000 {
+			label = "tfm-otp";
+			reg = <0x00068000 DT_SIZE_K(8)>;
+		};
+
+		slot0_ns_partition: partition@6A000 {
+			label = "image-0-nonsecure";
+			reg = <0x0006A000 DT_SIZE_K(556)>;
+		};
+
+		storage_partition: partition@F5000 {
+			label = "storage";
+			reg = <0x000F5000 DT_SIZE_K(32)>;
+		};
+	};
+};
