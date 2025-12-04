@@ -24,13 +24,23 @@ LOG_MODULE_REGISTER(hwinfo_cmc, CONFIG_HWINFO_LOG_LEVEL);
 #ifdef CMC_SRS_WWDT1_MASK
 #define CMC_RESET_MASK_WATCHDOG (CMC_SRS_WWDT0_MASK | CMC_SRS_WWDT1_MASK)
 #else
+#ifdef CMC_SRS_WWDT0_MASK
 #define CMC_RESET_MASK_WATCHDOG CMC_SRS_WWDT0_MASK
+#else
+#define CMC_RESET_MASK_WATCHDOG CMC_SRS_WDOG0_MASK
+#endif
 #endif
 
 #ifdef CMC_SRS_CDOG1_MASK
 #define CMC_RESET_MASK_CDOG (CMC_SRS_CDOG0_MASK | CMC_SRS_CDOG1_MASK)
 #else
 #define CMC_RESET_MASK_CDOG CMC_SRS_CDOG0_MASK
+#endif
+
+#ifdef CMC_SRS_VD_MASK
+#define CMC_RESET_MASK_BROWNOUT CMC_SRS_VD_MASK
+#else
+#define CMC_RESET_MASK_BROWNOUT CMC_SRS_LVD_MASK
 #endif
 
 /**
@@ -55,7 +65,7 @@ static uint32_t hwinfo_mcux_cmc_xlate_reset_sources(uint32_t sources)
 		mask |= RESET_POR;
 	}
 
-	if (sources & CMC_SRS_VD_MASK) {
+	if (sources & CMC_RESET_MASK_BROWNOUT) {
 		mask |= RESET_BROWNOUT;
 	}
 
