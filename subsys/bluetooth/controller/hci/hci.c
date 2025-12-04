@@ -1649,7 +1649,6 @@ static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
-	
 	if (IS_ENABLED(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)) {
 		status = ll_tx_pwr_lvl_get(BT_HCI_VS_LL_HANDLE_TYPE_ADV,
 				   0, 0, &rp->tx_power_level);
