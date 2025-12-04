@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+description: AS608 Optical Fingerprint Sensor
+
+compatible: "synochip,as608"
+
+include: [uart-device.yaml]
+
+properties:
+  comm-addr:
+    type: int
+    default: 0xFFFFFFFF
+    description: |
+      Device communication address used in AS608 protocol packets.
+      Default is 0xFFFFFFFF. Can be changed via system parameter commands.
+
+  password:
+    type: int
+    default: 0x00000000
+    description: |
+      AS608 sensor password. All sensors ship with default
+      password 0x00000000. Only change if you've modified
+      the sensor's password using the password change command.
