@@ -25,7 +25,7 @@
 #include <zephyr/timing/timing.h>
 
 /* printf format defines. */
-#define FORMAT "| %-65s|%10u|\n"
+#define FORMAT "| %-65s|%10llu|\n"
 
 /* length of the output line */
 #define SLINE_LEN 256
