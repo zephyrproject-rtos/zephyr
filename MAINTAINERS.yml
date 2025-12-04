@@ -141,9 +141,7 @@
 
 # zephyr-keep-sorted-start strip(":) nofold
 ACPI:
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - lib/acpi/
     - include/zephyr/acpi/
@@ -3017,7 +3015,6 @@ Intel Platforms (X86):
   maintainers:
     - edersondisouza
   collaborators:
-    - najumon1980
     - dcpleung
     - ceolin
   files:
@@ -5363,9 +5360,7 @@ West:
     - "area: West"
 
 "West project: acpica":
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - modules/acpica/
   labels:
@@ -6462,7 +6457,6 @@ x86 arch:
     - dcpleung
     - ceolin
     - laurenmurphyx64
-    - najumon1980
     - nashif
   files:
     - arch/x86/
