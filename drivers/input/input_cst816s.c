@@ -232,6 +232,7 @@ static void cst816s_chip_reset(const struct device *dev)
 
 static int cst816s_chip_init(const struct device *dev)
 {
+	uint8_t irq_mask;
 	const struct cst816s_config *cfg = dev->config;
 	int ret;
 	uint8_t chip_id;
@@ -261,9 +262,13 @@ static int cst816s_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_IRQ_CTL,
-				     CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE,
-				     CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE);
+#ifdef CONFIG_INPUT_CST816S_EV_DEVICE
+	irq_mask = CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE | CST816S_IRQ_EN_MOTION;
+#else
+	irq_mask = CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE;
+#endif
+
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_IRQ_CTL, irq_mask, irq_mask);
 	if (ret < 0) {
 		LOG_ERR("Could not enable irq");
 		return ret;
