@@ -65,3 +65,7 @@
 		status = "okay";
 	};
 };
+
+&adc0 {
+	status = "okay";
+};

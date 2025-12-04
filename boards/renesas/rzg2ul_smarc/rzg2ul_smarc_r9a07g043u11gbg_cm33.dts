@@ -23,3 +23,7 @@
 		reg = <0x60010000 DT_SIZE_M(46)>;
 	};
 };
+
+&adc {
+	status = "okay";
+};
