@@ -89,8 +89,8 @@ static uint32_t cyc_per_tick;
 #define CYC_PER_TICK cyc_per_tick
 
 static struct k_spinlock lock;
-static uint64_t last_cycle;
-static uint64_t last_tick;
+static uint32_t last_cycle;
+static uint32_t last_tick;
 static uint32_t last_elapsed;
 extern unsigned int z_clock_hw_cycles_per_sec;
 
