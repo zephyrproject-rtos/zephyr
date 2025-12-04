@@ -757,7 +757,9 @@ Bouffalolab Platforms:
   collaborators:
     - josuah
   files:
+    - boards/aithinker/ai_*/
     - boards/bflb/
+    - boards/doiting/
     - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
     - dts/riscv/bflb/
