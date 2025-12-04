@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 RTC Controller
+
+description: |
+  Microchip G1 RTC driver.
+
+  Group G1 RTC driver supports following hardware peripherals:
+    - module name="rtc" id="6056" version="0"
+
+compatible: "microchip,rtc-g1"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

@@ -65,7 +65,7 @@
 		};
 
 		rtc: rtc@e001d800 {
-			compatible = "atmel,sam-rtc";
+			compatible = "microchip,rtc-g1";
 			reg = <0xe001d800 0x30>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
