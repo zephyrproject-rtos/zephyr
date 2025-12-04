@@ -74,6 +74,8 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		break;
 	case STM32_CLOCK_PERIPH_I2C1:
 	case STM32_CLOCK_PERIPH_I2C2:
+	case STM32_CLOCK_PERIPH_I3C1:
+	case STM32_CLOCK_PERIPH_I3C2:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_I3C12_CLKSOURCE);
 		break;
 	case STM32_CLOCK_PERIPH_I2C4:
@@ -82,6 +84,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		break;
 	case STM32_CLOCK_PERIPH_I2C3:
 	case STM32_CLOCK_PERIPH_I2C5:
+	case STM32_CLOCK_PERIPH_I3C3:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C35_I3C3_CLKSOURCE);
 		break;
 	case STM32_CLOCK_PERIPH_I2C7:
@@ -89,6 +92,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		break;
 	case STM32_CLOCK_PERIPH_I2C8:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C8_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_I3C4:
+		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I3C4_CLKSOURCE);
 		break;
 	case STM32_CLOCK_PERIPH_SPI1:
 		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
