@@ -452,6 +452,30 @@
 			};
 		};
 
+		adc0: adc@89000 {
+			compatible = "renesas,rx-adc";
+			interrupts = <102 1>;
+			interrupt-names = "s12adi0";
+			reg = <0x00089000 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xff>;
+			vref-mv = <3300>;
+			channel-count = <8>;
+			status = "disabled";
+		};
+
+		adc1: adc@89200 {
+			compatible = "renesas,rx-adc";
+			interrupts = <105 1>;
+			interrupt-names = "s12adi1";
+			reg = <0x00089200 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xff>;
+			vref-mv = <3300>;
+			channel-count = <8>;
+			status = "disabled";
+		};
+
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
 			reg = <0xffffff80 0x0f>;
