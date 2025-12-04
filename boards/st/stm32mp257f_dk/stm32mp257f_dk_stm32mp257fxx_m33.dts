@@ -91,3 +91,9 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&i2c8 {
+	pinctrl-0 = <&i2c8_scl_pz4 &i2c8_sda_pz3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
