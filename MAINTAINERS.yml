@@ -266,7 +266,6 @@ ARM64 arch:
   status: odd fixes
   collaborators:
     - npitre
-    - sgrrzhf
     - wearyzen
     - ithinuel
     - JiafeiPan
