@@ -354,12 +354,28 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	int module_status;
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_MODEM_STARTUP};
 
 	if (argc != 2) {
 		return;
 	}
 	module_status = ATOI(argv[1], 0, "module_status");
+	data->status.boot.status = module_status;
+	/* Check for unexpected restart */
+	if (data->status.boot.is_booted_previously == true &&
+	    module_status == (int)HL78XX_MODULE_READY) {
+		LOG_DBG("Modem unexpected restart detected %d", module_status);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
+	} else if (data->status.boot.is_booted_previously == true &&
+		   module_status != (int)HL78XX_MODULE_READY) {
+		LOG_DBG("Modem failed to start %d", module_status);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
+	} else {
+		data->status.boot.is_booted_previously = true;
+		LOG_DBG("Modem started successfully %d %d", module_status,
+			data->status.boot.is_booted_previously);
+	}
 	event.content.value = module_status;
 	event_dispatcher_dispatch(&event);
 	HL78XX_LOG_DBG("Module status: %d", module_status);
@@ -897,11 +913,21 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
+		modem_pipe_open_async(data->uart_pipe);
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
+
+	case MODEM_HL78XX_EVENT_BUS_OPENED:
+		modem_chat_attach(&data->chat, data->uart_pipe);
+		hl78xx_run_post_restart_script_async(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	default:
@@ -910,19 +936,12 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 }
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
-	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
-	return modem_pipe_open_async(data->uart_pipe);
+	return hl78xx_run_init_script_async(data);
 }
 
 static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	switch (evt) {
-	case MODEM_HL78XX_EVENT_BUS_OPENED:
-		modem_chat_attach(&data->chat, data->uart_pipe);
-		/* Run init script via chat TU wrapper (script symbols live in hl78xx_chat.c) */
-		hl78xx_run_init_script_async(data);
-		break;
-
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT);
 		break;
@@ -1048,17 +1067,13 @@ error:
 
 static void hl78xx_run_rat_cfg_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	int ret = 0;
-
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
 		LOG_DBG("Rebooting modem to apply new RAT settings");
-		ret = hl78xx_run_post_restart_script_async(data);
-		if (ret < 0) {
-			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
-		}
 		break;
-
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
 		break;
@@ -1137,7 +1152,7 @@ static void hl78xx_enable_gprs_event_handler(struct hl78xx_data *data, enum hl78
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		hl78xx_start_timer(data, MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -1188,6 +1203,11 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 		LOG_WRN("Modem failed to register to the network within %d seconds",
 			MDM_REGISTRATION_TIMEOUT);
 
+		break;
+
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_REGISTERED:
@@ -1249,6 +1269,10 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
 
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
 	default:
 		break;
 	}
