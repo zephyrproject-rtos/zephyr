@@ -177,3 +177,8 @@ set_compiler_property(PROPERTY no_data_sections)
 
 # Compiler flag to enable function instrumentation
 set_compiler_property(PROPERTY func_instrumentation)
+
+# Compiler flags to enable or disable code generation of VLIW
+# (Very Long Instruction Word) instructions.
+set_compiler_property(PROPERTY generate_vliw)
+set_compiler_property(PROPERTY no_generate_vliw)
