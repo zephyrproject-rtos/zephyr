@@ -546,6 +546,59 @@ Limitations
 Cache size should be manually set so small that the content can fit normal packets sizes.
 When cache is full, new values are dropped.
 
+Send scheduler helper objects
+*****************************
+
+The optional SEND scheduler extension exposes two objects (Send scheduler Control ``10523`` and
+Sampling Rules ``10524``) that sit on top of cached resources to decide when samples should be kept
+and when the client should trigger a LWM2M SEND.
+
+Enabling and wiring
+===================
+
+* Select :kconfig:option:`CONFIG_LWM2M_SEND_SCHEDULER` (requires LwM2M 1.1 SEND support and
+  :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`).
+* Send-scheduler objects register automatically; ensure caches are configured before starting the
+  RD client.
+* Attach :c:func:`lwm2m_send_sched_cache_filter` to every cached resource that should be governed by
+  the scheduler using :c:func:`lwm2m_set_cache_filter`.
+* Call :c:func:`lwm2m_send_sched_handle_registration_event` from the RD client callback when
+  registration or registration-update completes (on
+  ``LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE`` and ``LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE``)
+  so cached samples are sent right after the registration exchange.
+
+Scheduler Control object (10523)
+================================
+
+The single-instance control object configures global behaviour:
+
+* ``0: paused`` – stop accepting samples in cache.
+* ``1: max-samples`` – upper limit for cached samples across all resources; a SEND is forced when
+  the limit is reached (``0`` disables).
+* ``2: max-age`` – maximum age in seconds of the oldest cached sample before a SEND is triggered
+  (``0`` disables).
+* ``3: flush`` – Execute resource that immediately triggers a SEND for all configured rule paths.
+* ``4: flush-on-update`` – when enabled (default), a successful registration or registration-update
+  event triggers a SEND of cached resources.
+
+Sampling Rules object (10524)
+=============================
+
+Each instance describes one cached resource to watch. ``/10524/X/0`` holds the resource path
+and ``/10524/X/1`` contains up to four rule strings. Supported attributes:
+
+* ``gt=<float>`` – trigger when the sample crosses above the threshold.
+* ``lt=<float>`` – trigger when the sample crosses below the threshold.
+* ``st=<float>`` – trigger when the absolute delta from the last reported value is greater than or
+  equal to the threshold.
+* ``pmin=<int>`` – minimum seconds between accepted samples.
+* ``pmax=<int>`` – force a cached sample to be kept at least every ``pmax`` seconds, even without
+  changes.
+
+When no rules are configured for an instance, every incoming sample is cached. The scheduler also
+forces a SEND when a cache for a controlled resource runs out of space or when the global
+``max-samples``/``max-age`` limits are reached.
+
 LwM2M engine and application events
 ***********************************
 

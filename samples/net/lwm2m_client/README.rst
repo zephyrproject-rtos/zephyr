@@ -52,6 +52,9 @@ samples/net/lwm2m_client directory:
     * - :file:`overlay-queue.conf`
       - This overlay config can be added to enable LWM2M Queue Mode support.
 
+    * - :file:`overlay-send-scheduler.conf`
+      - This overlay config enables LwM2M send scheduler support and activate caching for the temperature and humidity IPSO objects.
+
     * - :file:`overlay-tickless.conf`
       - This overlay config can be used to stop LwM2M engine for periodically interrupting socket polls. It can have significant effect on power usage on certain devices.
 
