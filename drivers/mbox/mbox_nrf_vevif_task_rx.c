@@ -39,7 +39,7 @@ static const uint8_t vevif_irqs[VEVIF_TASKS_NUM] = {
 
 static void vevif_task_rx_isr(const void *parameter)
 {
-	uint8_t channel = *(uint8_t *)parameter;
+	uint8_t channel = *(const uint8_t *)parameter;
 	uint8_t idx = channel - TASKS_IDX_MIN;
 
 	nrf_vpr_csr_vevif_tasks_clear(BIT(channel));
@@ -65,11 +65,12 @@ static int vevif_task_rx_register_callback(const struct device *dev, uint32_t id
 					   mbox_callback_t cb, void *user_data)
 {
 	ARG_UNUSED(dev);
-	uint8_t idx = id - TASKS_IDX_MIN;
 
 	if (!vevif_task_rx_is_task_valid(id)) {
 		return -EINVAL;
 	}
+
+	uint8_t idx = id - TASKS_IDX_MIN;
 
 	cbs.cb[idx] = cb;
 	cbs.user_data[idx] = user_data;
@@ -80,11 +81,12 @@ static int vevif_task_rx_register_callback(const struct device *dev, uint32_t id
 static int vevif_task_rx_set_enabled(const struct device *dev, uint32_t id, bool enable)
 {
 	ARG_UNUSED(dev);
-	uint8_t idx = id - TASKS_IDX_MIN;
 
 	if (!vevif_task_rx_is_task_valid(id)) {
 		return -EINVAL;
 	}
+
+	uint8_t idx = id - vevif_irqs[0];
 
 	if (enable) {
 		if ((cbs.enabled_mask & BIT(id)) != 0U) {
