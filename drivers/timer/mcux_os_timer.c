@@ -28,7 +28,7 @@
 #define CYC_PER_US ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)USEC_PER_SEC))
 #define MAX_CYC    INT_MAX
 #define MAX_TICKS  ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY  1000
+#define MIN_DELAY  CONFIG_MCUX_OS_TIMER_MIN_DELAY
 
 static struct k_spinlock lock;
 static uint64_t last_count;
