@@ -10,10 +10,9 @@ import os
 import socket
 import sys
 
-from coredump_parser.log_parser import CoredumpLogFile
-from coredump_parser.elf_parser import CoredumpElfFile
-
 import gdbstubs
+from coredump_parser.elf_parser import CoredumpElfFile
+from coredump_parser.log_parser import CoredumpLogFile
 
 LOGGING_FORMAT = "[%(levelname)s][%(name)s] %(message)s"
 
