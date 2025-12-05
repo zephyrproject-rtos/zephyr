@@ -338,6 +338,7 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target)
 	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
 	int status = 0;
 	struct i3c_i2c_device_desc *i3c_i2c_desc;
+	enum i3c_addr_slot_status slot_status;
 
 	/* check to see if the device has already been attached */
 	I3C_BUS_FOR_EACH_I2CDEV(target->bus, i3c_i2c_desc) {
@@ -346,7 +347,8 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target)
 		}
 	}
 
-	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, target->addr)) {
+	slot_status = i3c_addr_slots_status(slots, dev_addr);
+	if (slot_status != I3C_ADDR_SLOT_STATUS_FREE && slot_status != I3C_ADDR_SLOT_STATUS_RSVD) {
 		return -EADDRNOTAVAIL;
 	}
 
