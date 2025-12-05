@@ -167,6 +167,9 @@ static int st7796s_write(const struct device *dev,
 
 	mipi_desc.buf_size = desc->width * desc->height * ST7796S_PIXEL_SIZE;
 	mipi_desc.frame_incomplete = desc->frame_incomplete;
+	mipi_desc.pitch = desc->pitch;
+	mipi_desc.width = desc->width;
+	mipi_desc.height = desc->height;
 
 	ret =  mipi_dbi_command_write(config->mipi_dbi,
 				      &config->dbi_config, ST7796S_CMD_RAMWR,
@@ -379,8 +382,11 @@ static DEVICE_API(display, st7796s_api) = {
 						SPI_OP_MODE_MASTER |		\
 						SPI_WORD_SET(8),		\
 						0),				\
-			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
+			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,	\
 						MIPI_DBI_MODE_SPI_4WIRE),	\
+			.color_coding = DT_INST_STRING_UPPER_TOKEN_OR(n,	\
+						color_coding,			\
+						MIPI_DBI_MODE_RGB565),		\
 		},								\
 		.width = DT_INST_PROP(n, width),				\
 		.height = DT_INST_PROP(n, height),				\
