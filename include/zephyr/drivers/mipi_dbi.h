@@ -157,6 +157,8 @@ extern "C" {
 struct mipi_dbi_config {
 	/** MIPI DBI mode */
 	uint8_t mode;
+	/** MIPI DBI color coding for Type A or Type B(6800/8080) interface. */
+	uint8_t color_coding;
 	/** SPI configuration */
 	struct spi_config config;
 };
