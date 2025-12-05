@@ -44,6 +44,7 @@
 		watchdog0 = &wdt010;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
+		rtt-custom-section = &cpuapp_tcm_region;
 	};
 
 	buttons {
