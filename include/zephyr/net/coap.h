@@ -65,7 +65,9 @@ enum coap_option_num {
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
 	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
 	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
-	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
+	COAP_OPTION_REQUEST_TAG = 292,   /**< Request-Tag (RFC 9175) */
+	COAP_OPTION_SIGNAL_701_MMS = 2,  /**< Signal 7.01 Max message size (RFC 8323) */
+	COAP_OPTION_SIGNAL_701_BWT = 4	 /**< Signal 7.01 Block-wise transfer (RFC 8323) */
 };
 
 /**
@@ -195,7 +197,9 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_GATEWAY_TIMEOUT = COAP_MAKE_RESPONSE_CODE(5, 4),
 	/** 5.05 - Proxying Not Supported */
 	COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED =
-						COAP_MAKE_RESPONSE_CODE(5, 5)
+						COAP_MAKE_RESPONSE_CODE(5, 5),
+	/** 7.01 - Capabilities and Settings Message */
+	COAP_SIGNAL_CODE_CSM = COAP_MAKE_RESPONSE_CODE(7, 1)
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -747,6 +751,7 @@ enum coap_block_size {
 	COAP_BLOCK_256,  /**< 256-byte block size */
 	COAP_BLOCK_512,  /**< 512-byte block size */
 	COAP_BLOCK_1024, /**< 1024-byte block size */
+	COAP_BLOCK_BERT, /**< BERT block size (RFC 8323) - acts like 1024 for calculations */
 };
 
 /**
@@ -760,6 +765,11 @@ enum coap_block_size {
 static inline uint16_t coap_block_size_to_bytes(
 	enum coap_block_size block_size)
 {
+	/* BERT (SZX=7) acts like 1024 bytes for size calculations per RFC 8323 */
+	if (block_size == COAP_BLOCK_BERT) {
+		return 1024;
+	}
+
 	return (1 << (block_size + 4));
 }
 
@@ -779,7 +789,11 @@ static inline enum coap_block_size coap_bytes_to_block_size(uint16_t bytes)
 		return COAP_BLOCK_16;
 	}
 	if (sz > COAP_BLOCK_1024) {
+#if defined(CONFIG_COAP_RELIABLE)
+		return COAP_BLOCK_BERT;
+#else
 		return COAP_BLOCK_1024;
+#endif /* defined(CONFIG_COAP_RELIABLE) */
 	}
 	return (enum coap_block_size)sz;
 }
@@ -1275,6 +1289,34 @@ struct coap_transmission_parameters coap_get_transmission_parameters(void);
  * @param params Pointer to the transmission parameters structure.
  */
 void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
+
+#if defined(CONFIG_COAP_RELIABLE)
+
+uint8_t coap_header_get_token_tcp(const struct coap_packet *cpkt, uint8_t *token);
+
+uint8_t coap_header_get_code_tcp(const struct coap_packet *cpkt);
+
+const uint8_t *coap_packet_get_payload_tcp(const struct coap_packet *cpkt,
+				       uint32_t *len);
+
+int coap_packet_parse_tcp(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
+		      struct coap_option *options, uint8_t opt_num);
+
+int coap_packet_init_tcp(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
+		     uint8_t token_len, const uint8_t *token, uint8_t code);
+
+int coap_packet_tcp_update_len(struct coap_packet *cpkt);
+
+int coap_append_block2_option_tcp(struct coap_packet *cpkt,
+			      struct coap_block_context *ctx);
+
+int coap_update_from_block_tcp(const struct coap_packet *cpkt,
+			   struct coap_block_context *ctx);
+
+size_t coap_next_block_tcp(const struct coap_packet *cpkt,
+		       struct coap_block_context *ctx);
+
+#endif /* CONFIG_COAP_RELIABLE */
 
 #ifdef __cplusplus
 }
