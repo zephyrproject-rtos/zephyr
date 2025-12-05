@@ -22,10 +22,6 @@ The platform provides following hardware components:
 - DMA
 - USB
 
-.. figure:: img/et171_snapshot.webp
-     :align: center
-     :alt: EGIS_ET171_SOC
-
 Supported Features
 ==================
 
@@ -34,7 +30,7 @@ Supported Features
 Connections and IOs
 ===================
 
-The et171 platform has 1 GPIO controller. It providing 17 bits of IO.
+The et171 platform has 1 GPIO controller. It is providing 17 bits of IO.
 It is responsible for pin input/output, pull-up, etc.
 
 The et171 platform has 3 SPI controllers, 2 of which can
