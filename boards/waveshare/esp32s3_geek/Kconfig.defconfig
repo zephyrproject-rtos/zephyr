@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_GEEK
+
+if DISPLAY
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_ESP32S3_GEEK
