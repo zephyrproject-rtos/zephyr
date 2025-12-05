@@ -6,11 +6,11 @@
 
 &i2c1 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	timings = <32000000 I2C_BITRATE_STANDARD 0x10E03E52>;
+	timings = <32000000 I2C_BITRATE_STANDARD 0x10e03e52>;
 
 	smartbattery0: smartbattery@b {
 		compatible = "sbs,sbs-gauge";
-		reg = <0x0B>;
+		reg = <0x0b>;
 		status = "okay";
 	};
 };
