@@ -1116,19 +1116,21 @@ class SocLookupTables:
 
     def lookup_ctrlsel_for_pinctrl(self, prop: PinCtrl, psel: NrfPsel) -> Ctrlsel | None:
         """Find the appopriate CTRLSEL value for a given pinctrl."""
+        ctrlsel_default = None
         if psel.fun == NrfFun.ASSUMED_GPIO:
             # We map unsupported values to GPIO CTRLSEL
-            return CTRLSEL_DEFAULT
+            ctrlsel_default = CTRLSEL_DEFAULT
 
         periph_addr = dt_reg_addr(prop.node, secure=True)
-        return self._lookup_ctrlsel(periph_addr, psel)
+        return self._lookup_ctrlsel(periph_addr, psel, ctrlsel_default=ctrlsel_default)
 
     def _lookup_ctrlsel(
         self,
         periph_addr: int,
         prop_or_psel: NrfPsel | GpiosProp,
+        ctrlsel_default: Ctrlsel | None = None,
     ) -> Ctrlsel | None:
-        ctrlsel = None
+        ctrlsel = ctrlsel_default
 
         if periph_addr in self.ctrlsel_lookup:
             ident_lut = self.ctrlsel_lookup[periph_addr]
