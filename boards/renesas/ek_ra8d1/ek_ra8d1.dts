@@ -429,7 +429,7 @@
 	auto-refresh-count = <SDRAM_AUTO_REFRESH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
 	multiplex-addr-shift = "10-bit";
-	edian-mode = "little-endian";
+	endian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";
 
