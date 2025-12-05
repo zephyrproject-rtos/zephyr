@@ -1823,7 +1823,6 @@ done:
 static int mcp251xfd_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct mcp251xfd_data *dev_data = dev->data;
-	const struct mcp251xfd_config *dev_cfg = dev->config;
 	int ret = 0;
 
 	switch (action) {
