@@ -10,7 +10,7 @@
 	ccm0: memory@10000000 {
 		compatible = "zephyr,memory-region", "st,stm32-ccm";
 		reg = <0x10000000 DT_SIZE_K(4)>;
-		zephyr,memory-region = "CCM";
+		zephyr,memory-region = "DTCM";
 	};
 
 	sram0: memory@20000000 {
