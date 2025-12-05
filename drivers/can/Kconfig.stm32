@@ -57,7 +57,7 @@ config CAN_STM32_FDCAN
 
 if CAN_STM32_FDCAN
 
-config CAN_MAX_STD_ID_FILTER
+config CAN_STM32_FDCAN_MAX_STD_ID_FILTERS
 	int "Maximum number of standard (11-bit) ID filters"
 	default 28
 	range 0 28
@@ -65,7 +65,7 @@ config CAN_MAX_STD_ID_FILTER
 	  Defines the maximum number of filters with standard ID (11-bit)
 	  that can be added by the application.
 
-config CAN_MAX_EXT_ID_FILTER
+config CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS
 	int "Maximum number of extended (29-bit) ID filters"
 	default 8
 	range 0 8
