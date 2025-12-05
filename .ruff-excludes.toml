@@ -129,18 +129,10 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/coredump/coredump_parser/elf_parser.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
 "./scripts/coredump/coredump_parser/log_parser.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/coredump/coredump_serial_log_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler

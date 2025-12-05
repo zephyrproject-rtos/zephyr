@@ -7,7 +7,6 @@
 import logging
 import struct
 
-
 # Note: keep sync with C code
 COREDUMP_HDR_ID = b'ZE'
 COREDUMP_HDR_VER = 2
@@ -126,7 +125,7 @@ class CoredumpLogFile:
         mem = {"start": saddr, "end": eaddr, "data": data}
         self.memory_regions.append(mem)
 
-        logger.info("Memory: 0x%x to 0x%x of size %d" % (saddr, eaddr, size))
+        logger.info(f"Memory: 0x{saddr:x} to 0x{eaddr:x} of size {size:d}")
 
         return True
 
@@ -156,7 +155,7 @@ class CoredumpLogFile:
             "reason": reason,
         }
 
-        logger.info("Reason: {0}".format(reason_string(reason)))
+        logger.info(f"Reason: {reason_string(reason)}")
         logger.info(f"Pointer size {ptr_size}")
 
         del id1, id2, hdr_ver, tgt_code, ptr_size, flags, reason

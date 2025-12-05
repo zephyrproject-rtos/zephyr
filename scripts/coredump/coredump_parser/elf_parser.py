@@ -6,11 +6,10 @@
 
 import logging
 import struct
+from enum import IntEnum
 
 import elftools
 from elftools.elf.elffile import ELFFile
-from enum import IntEnum
-
 
 # ELF section flags
 SHF_WRITE = 0x1
@@ -144,8 +143,8 @@ class CoredumpElfFile:
             if store:
                 mem_region = {"start": sec_start, "end": sec_end, "data": section.data()}
                 logger.info(
-                    "ELF Section: 0x%x to 0x%x of size %d (%s)"
-                    % (mem_region["start"], mem_region["end"], len(mem_region["data"]), sect_desc)
+                    f'ELF Section: 0x{mem_region["start"]:x} to 0x{mem_region["end"]:x} '
+                    f'of size {mem_region["data"]:d} ({sect_desc:s})'
                 )
 
                 self.memory_regions.append(mem_region)
