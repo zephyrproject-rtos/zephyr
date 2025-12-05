@@ -266,6 +266,10 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west packages pip --install
 
+         .. note::
+
+            This could downgrade or upgrade west itself.
+
    .. group-tab:: macOS
 
       #. Create a new virtual environment:
@@ -316,6 +320,10 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
          .. code-block:: bash
 
             west packages pip --install
+
+         .. note::
+
+            This could downgrade or upgrade west itself.
 
    .. group-tab:: Windows
 
@@ -389,9 +397,19 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Install Python dependencies using ``west packages``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            west packages pip --install
+            .. code-tab:: bat
+
+               cmd /c scripts\utils\west-packages-pip-install.cmd
+
+            .. code-tab:: powershell
+
+               python -m pip install @((west packages pip) -split ' ')
+
+         .. note::
+
+            This could downgrade or upgrade west itself.
 
 Install the Zephyr SDK
 **********************
