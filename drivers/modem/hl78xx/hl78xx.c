@@ -1141,7 +1141,8 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 	if (modem_require_restart) {
 		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_restart, strlen(cmd_restart),
-					     hl78xx_get_ok_match(), 1, false);
+					     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+					     MDM_CMD_TIMEOUT, false);
 		if (ret < 0) {
 			goto error;
 		}
