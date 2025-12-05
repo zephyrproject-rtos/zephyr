@@ -16,5 +16,6 @@ supported:
   - gpio
   - pinctrl
   - pwm
+  - rtc
   - uart
 vendor: microchip
