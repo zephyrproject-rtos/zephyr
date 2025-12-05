@@ -389,9 +389,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Install Python dependencies using ``west packages``.
 
-         .. code-block:: bat
+         .. tabs::
 
-            west packages pip --install
+            .. code-block:: bat
+
+               west packages pip --install
+
+            .. code-tab:: powershell
+
+               python -m pip install @((west packages pip) -split ' ')
 
 Install the Zephyr SDK
 **********************
