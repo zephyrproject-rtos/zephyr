@@ -16,6 +16,53 @@ config DEBUG_NRF_ETR
 
 if DEBUG_NRF_ETR
 
+DT_CHOSEN_ZEPHYR_CONSOLE := zephyr,console
+
+config DEBUG_NRF_ETR_BACKEND_UART
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_CONSOLE))
+	bool "UART backend"
+
+config DEBUG_NRF_ETR_BACKEND_RTT
+	bool "RTT backend"
+	select USE_SEGGER_RTT
+	select SEGGER_RTT_CUSTOM_LOCKING
+
+if DEBUG_NRF_ETR_BACKEND_RTT
+
+config DEBUG_NRF_ETR_BACKEND_RTT_BUFFER
+	int "Buffer number used for logger output."
+	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 0
+	help
+	  Select index of up-buffer used for logger output, by default it uses
+	  terminal up-buffer and its settings.
+
+config DEBUG_NRF_ETR_BACKEND_RTT_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 1024
+	depends on DEBUG_NRF_ETR_BACKEND_RTT_BUFFER > 0
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+config DEBUG_NRF_ETR_BACKEND_RTT_RETRY_CNT
+	int "Number of retries"
+	default 4
+	help
+	  Number of TX retries before dropping the data and assuming that
+	  RTT session is inactive.
+
+config DEBUG_NRF_ETR_BACKEND_RTT_RETRY_DELAY_MS
+	int "Delay between TX retries in milliseconds"
+	default 5
+	help
+	  Sleep period between TX retry attempts. During RTT session, host pulls
+	  data periodically. Period starts from 1-2 milliseconds and can be
+	  increased if traffic on RTT increases (also from host to device). In
+	  case of heavy traffic data can be lost and it may be necessary to
+	  increase delay or number of retries.
+
+endif
+
 config DEBUG_NRF_ETR_DECODE
 	bool "Decode ETR content"
 	default y if LOG_FRONTEND_STMESP_FSC
@@ -80,6 +127,7 @@ config DEBUG_NRF_ETR_SHELL
 	select UART_ASYNC_RX_HELPER
 	select SHELL_LOG_BACKEND_CUSTOM
 	depends on DEBUG_NRF_ETR_DECODE
+	depends on DEBUG_NRF_ETR_BACKEND_UART
 	default y if SHELL
 	help
 	  Enable shell with Coresight STM logging support.
