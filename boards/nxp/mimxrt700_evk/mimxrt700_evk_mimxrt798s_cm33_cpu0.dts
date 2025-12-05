@@ -109,6 +109,15 @@
 			zephyr,memory-region = "PSRAM";
 		};
 	};
+
+	/* Memory region controlled by XSPI2, can be used by media domain masters. */
+	psram2: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x70000000 0x8000000>;
+		status = "okay";
+		zephyr,memory-region = "PSRAM2";
+	};
 };
 
 &ctimer0 {
