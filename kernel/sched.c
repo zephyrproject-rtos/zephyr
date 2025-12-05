@@ -325,7 +325,7 @@ static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 static void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(thread));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	/* If thread is queued already, do not try and added it to the
@@ -542,7 +542,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
+	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
 	add_thread_timeout(thread, timeout);

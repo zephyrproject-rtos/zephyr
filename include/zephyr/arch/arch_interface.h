@@ -871,31 +871,9 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief Detect memory coherence type
- *
- * Required when ARCH_HAS_COHERENCE is true.  This function returns
- * true if the byte pointed to lies within an architecture-defined
- * "coherence region" (typically implemented with uncached memory) and
- * can safely be used in multiprocessor code without explicit flush or
- * invalidate operations.
- *
- * @note The result is for only the single byte at the specified
- * address, this API is not required to check region boundaries or to
- * expect aligned pointers.  The expectation is that the code above
- * will have queried the appropriate address(es).
- */
-#ifndef CONFIG_ARCH_HAS_COHERENCE
-static inline bool arch_mem_coherent(void *ptr)
-{
-	ARG_UNUSED(ptr);
-	return true;
-}
-#endif
-
-/**
  * @brief Ensure cache coherence prior to context switch
  *
- * Required when ARCH_HAS_COHERENCE is true.  On cache-incoherent
+ * Required when CONFIG_KERNEL_COHERENCE is true.  On cache-incoherent
  * multiprocessor architectures, thread stacks are cached by default
  * for performance reasons.  They must therefore be flushed
  * appropriately on context switch.  The rules are:

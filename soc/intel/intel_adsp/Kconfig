@@ -8,9 +8,9 @@ config SOC_FAMILY_INTEL_ADSP
 	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
-	select ARCH_HAS_USERSPACE if XTENSA_MMU
-	imply XTENSA_MMU_DOUBLE_MAP
 	select CPU_CACHE_INCOHERENT
+	select CACHE_CAN_SAY_MEM_COHERENCE
+	select SOC_HAS_CACHE_FUNCTIONS
 	select IPC_SERVICE if DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
 
 if SOC_FAMILY_INTEL_ADSP
@@ -22,16 +22,6 @@ config INTEL_ADSP_SIM
 	select SIMULATOR_XTENSA
 	help
 	  Running this SoC family in a simulator.
-
-if INTEL_ADSP_SIM
-
-config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
-	bool "No secondary core flow."
-	help
-	  Select if simulator doesn't use the normal secondary core flow
-	  to initialise secondary clocks.
-
-endif # INTEL_ADSP_SIM
 
 config INTEL_ADSP_FWREADY_MSG
 	bool "Send firmware ready message to host"
@@ -158,5 +148,27 @@ config ADSP_IDLE_CLOCK_GATING
 	  HW configuration of a DSP. Every time core goes to the WAITI state
 	  (wait for interrupt) during idle, the clock can be gated (however, this
 	  does not mean that this will happen).
+
+config INTEL_ADSP_MEMORY_IS_MIRRORED
+	bool
+	help
+	  When true, this indicates certain physical memory regions are mirrored
+	  at different addressed. Accessing one set of addressed is via CPU cache
+	  while the other is direct to memory. Selected by SoCs using this type of
+	  memory mapping.
+
+config INTEL_ADSP_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  This specifies which 512M region (0-7, as defined by the Xtensa
+	  Region Protection Option) contains the "cached" mapping.
+
+config INTEL_ADSP_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for INTEL_ADSP_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
 
 endif # SOC_FAMILY_INTEL_ADSP
