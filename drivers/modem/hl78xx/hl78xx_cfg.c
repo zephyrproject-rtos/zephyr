@@ -35,7 +35,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		char cmd_kselq[] = "AT+KSELACQ=0," CONFIG_MODEM_HL78XX_AUTORAT_PRL_PROFILES;
 
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq, strlen(cmd_kselq),
-					     hl78xx_get_ok_match(), 1, false);
+					     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+					     MDM_CMD_TIMEOUT, false);
 		if (ret < 0) {
 			goto error;
 		} else {
@@ -52,8 +53,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	if (data->kselacq_data.rat1 != 0 && data->kselacq_data.rat2 != 0 &&
 	    data->kselacq_data.rat3 != 0) {
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq_disable,
-					     strlen(cmd_kselq_disable), hl78xx_get_ok_match(), 1,
-					     false);
+					     strlen(cmd_kselq_disable), hl78xx_get_ok_match(),
+					     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 		if (ret < 0) {
 			goto error;
 		}
@@ -97,7 +98,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 
 	if (*rat_request != data->status.registration.rat_mode) {
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_set_rat, strlen(cmd_set_rat),
-					     hl78xx_get_ok_match(), 1, false);
+					     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+					     MDM_CMD_TIMEOUT, false);
 		if (ret < 0) {
 			goto error;
 		} else {
@@ -162,8 +164,9 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 			char cmd_bnd[80] = {0};
 
 			snprintf(cmd_bnd, sizeof(cmd_bnd), "AT+KBNDCFG=%d,%s", rat, bnd_bitmap);
-			ret = modem_dynamic_cmd_send(data, NULL, cmd_bnd, strlen(cmd_bnd),
-						     hl78xx_get_ok_match(), 1, false);
+			ret = modem_dynamic_cmd_send(
+				data, NULL, cmd_bnd, strlen(cmd_bnd), hl78xx_get_ok_match(),
+				hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 			if (ret < 0) {
 				goto error;
 			} else {
@@ -205,20 +208,23 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 		 apn);
 
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}
 	snprintk(cmd_string, cmd_max_len,
 		 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	ret = modem_dynamic_cmd_send(data, NULL, "AT+WDSS=2,1", strlen("AT+WDSS=2,1"),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}
@@ -245,7 +251,8 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 	}
 
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_activate_pdp, strlen(cmd_activate_pdp),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("GSM PDP activation failed: %d", ret);
 		return ret;
