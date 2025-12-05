@@ -85,13 +85,13 @@ static int crc_sf32lb_prepare_config(const struct crc_ctx *ctx, uint8_t *polysiz
 		*width = 16U;
 		*xor_out = 0U;
 		break;
-	case CRC32_C:
-		__fallthrough;
 	case CRC32_IEEE:
 		*polysize = CRC_POLYSIZE_32;
 		*width = 32U;
 		*xor_out = 0xFFFFFFFFU;
 		break;
+	case CRC32_C:
+		__fallthrough;
 	case CRC32_K_4_2:
 		*polysize = CRC_POLYSIZE_32;
 		*width = 32U;
@@ -151,8 +151,7 @@ static int crc_sf32lb_begin(const struct device *dev, struct crc_ctx *ctx)
 	data->xor_out = xor_out;
 	mask = crc_sf32lb_mask(width);
 
-	cr = FIELD_PREP(CRC_CR_DATASIZE_Msk, CRC_DATASIZE_8) |
-	     FIELD_PREP(CRC_CR_POLYSIZE_Msk, polysize);
+	cr = FIELD_PREP(CRC_CR_POLYSIZE_Msk, polysize);
 
 	if ((ctx->reversed & CRC_FLAG_REVERSE_INPUT) != 0U) {
 		cr |= FIELD_PREP(CRC_CR_REV_IN_Msk, CRC_REV_IN_BYTE);
@@ -196,6 +195,7 @@ static int crc_sf32lb_update(const struct device *dev, struct crc_ctx *ctx, cons
 	size_t idx = 0U;
 
 	for (; idx < aligned_len; idx += sizeof(uint32_t)) {
+		sys_set_bits(config->base + CRC_CR_OFFSET, CRC_CR_DATASIZE_Msk);
 		uint32_t data = sys_get_le32(&data_buf[idx]);
 
 		sys_write32(data, config->base + CRC_DR_OFFSET);
@@ -212,6 +212,10 @@ static int crc_sf32lb_update(const struct device *dev, struct crc_ctx *ctx, cons
 	if (idx < bufsize) {
 		uint32_t rem = 0U;
 		size_t rem_bytes = bufsize - idx;
+
+		sys_clear_bits(config->base + CRC_CR_OFFSET, CRC_CR_DATASIZE_Msk);
+		sys_set_bits(config->base + CRC_CR_OFFSET,
+			     FIELD_PREP(CRC_CR_DATASIZE_Msk, (rem_bytes - 1U)));
 
 		sys_get_le(&rem, &data_buf[idx], rem_bytes);
 
