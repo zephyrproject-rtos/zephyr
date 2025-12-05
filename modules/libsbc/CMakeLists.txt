@@ -1,10 +1,13 @@
 if(CONFIG_LIBSBC)
 
 zephyr_library_named(libsbc)
+zephyr_library_compile_options(-O3 -std=c11 -ffast-math)
 # -Wno-stringop-overflow was added as otherwise gcc 13.3 produces multiple warnings in this library
 # Newer version of gcc do not produce them, and this code is taken from Android where it was
 # validated. So these warnings are presumed to be false positives.
-zephyr_library_compile_options(-O3 -std=c11 -ffast-math -Wno-stringop-overflow)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+  zephyr_library_compile_options(-Wno-stringop-overflow)
+endif()
 
 zephyr_include_directories(
     ${ZEPHYR_LIBSBC_MODULE_DIR}/encoder/include
