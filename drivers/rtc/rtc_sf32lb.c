@@ -59,6 +59,7 @@ struct rtc_sf32lb_alarm_cb {
 struct rtc_sf32lb_data {
 #ifdef CONFIG_RTC_ALARM
 	struct rtc_sf32lb_alarm_cb alarm_cb;
+	bool is_pending;
 #endif
 };
 
@@ -79,7 +80,10 @@ static void rtc_irq_handler(const struct device *dev)
 
 	if (isr & RTC_ISR_ALRMF) {
 		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
+
 #ifdef CONFIG_RTC_ALARM
+		data->is_pending = true;
+
 		if (data->alarm_cb.cb) {
 			data->alarm_cb.cb(dev, 0, data->alarm_cb.user_data);
 		}
@@ -308,18 +312,19 @@ static int rtc_sf32lb_alarm_get_time(const struct device *dev, uint16_t id, uint
 
 static int rtc_sf32lb_alarm_is_pending(const struct device *dev, uint16_t id)
 {
-	const struct rtc_sf32lb_config *config = dev->config;
+	struct rtc_sf32lb_data *data = dev->data;
+	int ret = 0;
 
 	if (id != 0) {
 		return -EINVAL;
 	}
 
-	if (sys_test_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos)) {
-		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
-		return 1;
-	}
+	__disable_irq();
+	ret = data->is_pending ? 1 : 0;
+	data->is_pending = false;
+	__enable_irq();
 
-	return 0;
+	return ret;
 }
 
 static int rtc_sf32lb_alarm_set_callback(const struct device *dev, uint16_t id,
