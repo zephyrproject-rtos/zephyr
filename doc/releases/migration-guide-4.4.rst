@@ -140,6 +140,11 @@ STM32
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
 
+* The ST-specific chosen property ``/chosen/zephyr,ccm`` is replaced by ``/chosen/zephyr,dtcm``.
+  Attribute macros ``__ccm_data_section``, ``__ccm_bss_section`` and ``__ccm_noinit_section`` are
+  deprecated, but retained for backwards compatibility; **they will be removed in Zephyr 4.5**.
+  The generic ``__dtcm_{data,bss,noinit}_section`` macros should be used instead. (:github:`100590`)
+
 Shell
 =====
 
