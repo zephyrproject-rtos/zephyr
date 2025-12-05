@@ -1713,7 +1713,6 @@ static int mcp251xfd_enter_sleep_mode(const struct device *dev)
 	struct mcp251xfd_data *dev_data = dev->data;
 	uint32_t *reg;
 	uint32_t reg_val;
-	uint8_t *reg_byte;
 	uint8_t current_mode;
 	int ret;
 
