@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,10 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/iterable_sections.h>
+
+#if CONFIG_PM_WAKEUP_CONTROLLER
+#include <zephyr/drivers/wuc.h>
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
@@ -278,7 +283,12 @@ bool pm_device_wakeup_enable(const struct device *dev, bool enable)
 {
 	atomic_val_t flags, new_flags;
 	struct pm_device_base *pm = dev->pm_base;
-
+#if CONFIG_PM_WAKEUP_CONTROLLER
+	const int wuc_count = pm->wuc_count;
+	const struct pm_wuc_config *wuc_configs = pm->wuc_configs;
+	int ret = 0;
+	int i = 0;
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 	if (pm == NULL) {
 		return false;
 	}
@@ -290,9 +300,31 @@ bool pm_device_wakeup_enable(const struct device *dev, bool enable)
 	}
 
 	if (enable) {
+#if CONFIG_PM_WAKEUP_CONTROLLER
+		if ((wuc_count > 0) && (wuc_configs != NULL)) {
+			for (i = 0; i < wuc_count; i++) {
+				ret = wuc_enable_wakeup_source(wuc_configs[i].wuc,
+							       wuc_configs[i].arg);
+				if (ret != 0) {
+					return false;
+				}
+			}
+		}
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 		new_flags = flags |
 			    BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
+#if CONFIG_PM_WAKEUP_CONTROLLER
+		if ((wuc_count > 0) && (wuc_configs != NULL)) {
+			for (i = 0; i < wuc_count; i++) {
+				ret = wuc_disable_wakeup_source(wuc_configs[i].wuc,
+								wuc_configs[i].arg);
+				if (ret != 0) {
+					return false;
+				}
+			}
+		}
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
 

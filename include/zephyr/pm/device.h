@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -184,6 +185,15 @@ typedef int (*pm_device_action_cb_t)(const struct device *dev,
 typedef bool (*pm_device_action_failed_cb_t)(const struct device *dev,
 					 int err);
 
+#if defined(CONFIG_PM_WAKEUP_CONTROLLER) || defined(__DOXYGEN__)
+struct pm_wuc_config {
+	/** Wakeup controller device */
+	const struct device *wuc;
+	/** Wakeup source argument used in wakeup controller */
+	uint32_t arg;
+};
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
+
 /**
  * @brief Device PM info
  *
@@ -205,6 +215,10 @@ struct pm_device_base {
 	/** Power Domain it belongs */
 	const struct device *domain;
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+#if defined(CONFIG_PM_WAKEUP_CONTROLLER) || defined(__DOXYGEN__)
+	uint8_t wuc_count;
+	const struct pm_wuc_config *wuc_configs;
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 };
 
 /**
@@ -272,6 +286,24 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
+#ifdef CONFIG_PM_WAKEUP_CONTROLLER
+#define Z_PM_DEVICE_WAKEUP_CTRL_INIT(_node_id)			\
+	.wuc_count = DT_PROP_LEN_OR(_node_id, wakeup_ctrls, 0),	\
+	.wuc_configs = (const struct pm_wuc_config [])		\
+		COND_CODE_1(DT_NODE_HAS_PROP(_node_id, wakeup_ctrls),		\
+			({DT_FOREACH_PROP_ELEM_SEP(_node_id, wakeup_ctrls,	\
+				Z_PM_WUC_CFG, (,))}),			\
+			({})),
+
+#define Z_PM_WUC_CFG(node_id, prop, idx)				\
+	{									\
+		.wuc = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),	\
+		.arg = DT_PHA_BY_IDX(node_id, prop, idx, source),		\
+	}
+#else
+#define Z_PM_DEVICE_WAKEUP_CTRL_INIT(obj)
+#endif	/* CONFIG_PM_WAKEUP_CONTROLLER */
+
 /**
  * @brief Utility macro to initialize #pm_device_base flags
  *
@@ -305,6 +337,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.action_cb = pm_action_cb,				     \
 		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
+		Z_PM_DEVICE_WAKEUP_CTRL_INIT(node_id)		     \
 	}
 
 /**

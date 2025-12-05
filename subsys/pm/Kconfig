@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Power Management"
@@ -126,6 +127,14 @@ config PM_DEVICE_RUNTIME
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
+
+config PM_WAKEUP_CONTROLLER
+	bool "Wakeup Controller Support"
+	default y
+	depends on WUC
+	help
+	  Enable support for Wakeup Controllers. When enabled, devices can be
+	  associated with a wakeup controller to manage wakeup events.
 
 if PM_DEVICE_RUNTIME
 
