@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 
 #include <register.h>
 
@@ -59,6 +60,7 @@ struct rtc_sf32lb_alarm_cb {
 struct rtc_sf32lb_data {
 #ifdef CONFIG_RTC_ALARM
 	struct rtc_sf32lb_alarm_cb alarm_cb;
+	ATOMIC_DEFINE(is_pending, 1);
 #endif
 };
 
@@ -79,7 +81,10 @@ static void rtc_irq_handler(const struct device *dev)
 
 	if (isr & RTC_ISR_ALRMF) {
 		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
+
 #ifdef CONFIG_RTC_ALARM
+		atomic_set_bit(&data->is_pending, 0);
+
 		if (data->alarm_cb.cb) {
 			data->alarm_cb.cb(dev, 0, data->alarm_cb.user_data);
 		}
@@ -308,18 +313,13 @@ static int rtc_sf32lb_alarm_get_time(const struct device *dev, uint16_t id, uint
 
 static int rtc_sf32lb_alarm_is_pending(const struct device *dev, uint16_t id)
 {
-	const struct rtc_sf32lb_config *config = dev->config;
+	struct rtc_sf32lb_data *data = dev->data;
 
 	if (id != 0) {
 		return -EINVAL;
 	}
 
-	if (sys_test_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos)) {
-		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
-		return 1;
-	}
-
-	return 0;
+	return (int)atomic_test_and_clear_bit(&data->is_pending, 0);
 }
 
 static int rtc_sf32lb_alarm_set_callback(const struct device *dev, uint16_t id,
