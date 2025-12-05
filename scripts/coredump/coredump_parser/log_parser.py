@@ -62,7 +62,7 @@ class CoredumpLogFile:
         self.log_hdr = None
         self.arch_data = list()
         self.memory_regions = list()
-        self.threads_metadata = {"hdr_ver" : None, "data" : None}
+        self.threads_metadata = {"hdr_ver": None, "data": None}
 
     def open(self):
         self.fd = open(self.logfile, "rb")
@@ -85,7 +85,7 @@ class CoredumpLogFile:
 
         arch_data = self.fd.read(num_bytes)
 
-        self.arch_data = {"hdr_ver" : hdr_ver, "data" : arch_data}
+        self.arch_data = {"hdr_ver": hdr_ver, "data": arch_data}
 
         return True
 
@@ -95,7 +95,7 @@ class CoredumpLogFile:
 
         data = self.fd.read(num_bytes)
 
-        self.threads_metadata = {"hdr_ver" : hdr_ver, "data" : data}
+        self.threads_metadata = {"hdr_ver": hdr_ver, "data": data}
 
         return True
 
@@ -126,8 +126,7 @@ class CoredumpLogFile:
         mem = {"start": saddr, "end": eaddr, "data": data}
         self.memory_regions.append(mem)
 
-        logger.info("Memory: 0x%x to 0x%x of size %d" %
-                    (saddr, eaddr, size))
+        logger.info("Memory: 0x%x to 0x%x of size %d" % (saddr, eaddr, size))
 
         return True
 
@@ -147,15 +146,15 @@ class CoredumpLogFile:
             logger.error(f"Log version: {hdr_ver}, expected: {COREDUMP_HDR_VER}!")
             return False
 
-        ptr_size = 2 ** ptr_size
+        ptr_size = 2**ptr_size
 
         self.log_hdr = {
-                        "hdr_version": hdr_ver,
-                        "tgt_code": tgt_code,
-                        "ptr_size": ptr_size,
-                        "flags": flags,
-                        "reason": reason,
-                        }
+            "hdr_version": hdr_ver,
+            "tgt_code": tgt_code,
+            "ptr_size": ptr_size,
+            "flags": flags,
+            "reason": reason,
+        }
 
         logger.info("Reason: {0}".format(reason_string(reason)))
         logger.info(f"Pointer size {ptr_size}")
@@ -168,7 +167,7 @@ class CoredumpLogFile:
                 # no more data to read
                 break
 
-            self.fd.seek(-1, 1) # go back 1 byte
+            self.fd.seek(-1, 1)  # go back 1 byte
             if section_id == COREDUMP_ARCH_HDR_ID:
                 if not self.parse_arch_section():
                     logger.error("Cannot parse architecture section")

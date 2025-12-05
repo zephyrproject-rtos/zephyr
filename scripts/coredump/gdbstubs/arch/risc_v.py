@@ -13,7 +13,8 @@ from gdbstubs.gdbstub import GdbStub
 
 logger = logging.getLogger("gdbstub")
 
-class RegNum():
+
+class RegNum:
     ZERO = 0
     RA = 1
     SP = 2
@@ -50,8 +51,8 @@ class RegNum():
 
 
 class GdbStub_RISC_V(GdbStub):
-    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIIIIIIIIIIII"
-    ARCH_DATA_BLK_STRUCT_2  = "<QQQQQQQQQQQQQQQQQQ"
+    ARCH_DATA_BLK_STRUCT = "<IIIIIIIIIIIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_2 = "<QQQQQQQQQQQQQQQQQQ"
 
     GDB_SIGNAL_DEFAULT = 7
 

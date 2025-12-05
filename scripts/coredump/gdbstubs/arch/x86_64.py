@@ -16,7 +16,7 @@ from gdbstubs.gdbstub import GdbStub
 logger = logging.getLogger("gdbstub")
 
 
-class RegNum():
+class RegNum:
     # Matches the enum amd64_regnum in GDB
     RAX = 0
     RBX = 1
@@ -26,8 +26,8 @@ class RegNum():
     RDI = 5
     RBP = 6
     RSP = 7
-    R8  = 8
-    R9  = 9
+    R8 = 8
+    R9 = 9
     R10 = 10
     R11 = 11
     R12 = 12
@@ -47,7 +47,7 @@ class RegNum():
     K_GS_BASE = 26
 
 
-class ExceptionVectors():
+class ExceptionVectors:
     # Matches arch/x86/include/kernel_arch_data.h
     IV_DIVIDE_ERROR = 0
     IV_DEBUG = 1
@@ -141,8 +141,8 @@ class GdbStub_x86_64(GdbStub):
         self.registers[RegNum.RSI] = tu[5]
         self.registers[RegNum.RDI] = tu[6]
         self.registers[RegNum.RSP] = tu[7]
-        self.registers[RegNum.R8 ] = tu[8]
-        self.registers[RegNum.R9 ] = tu[9]
+        self.registers[RegNum.R8] = tu[8]
+        self.registers[RegNum.R9] = tu[9]
         self.registers[RegNum.R10] = tu[10]
         self.registers[RegNum.R11] = tu[11]
         self.registers[RegNum.RIP] = tu[12]

@@ -20,8 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
 
     parser.add_argument("infile", help="Serial Log File")
-    parser.add_argument("outfile",
-            help="Output file for use with coredump GDB server")
+    parser.add_argument("outfile", help="Output file for use with coredump GDB server")
 
     return parser.parse_args()
 
