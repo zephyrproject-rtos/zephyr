@@ -3,6 +3,8 @@
 # Copyright (c) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# pylint: disable=duplicate-code
 
 import binascii
 import logging
