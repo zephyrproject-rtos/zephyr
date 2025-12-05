@@ -70,4 +70,6 @@ source "drivers/dma/Kconfig.xilinx_axi_dma"
 source "drivers/dma/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
+source "drivers/dma/Kconfig.nxp_4ch_dma"
+
 endif # DMA
