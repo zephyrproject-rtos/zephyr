@@ -1839,24 +1839,11 @@ static int mcp251xfd_pm_action(const struct device *dev, enum pm_device_action a
 		ret = mcp251xfd_enter_sleep_mode(dev);
 		if (ret == 0) {
 			LOG_DBG("Device entered sleep mode");
-
-#if defined(CONFIG_CAN_MCP251XFD_TRANSCEIVER_STANDBY_ON_SLEEP)
-			if (dev_cfg->common.phy != NULL) {
-				/* Put transceiver in standby for lowest power */
-				(void)can_transceiver_disable(dev_cfg->common.phy);
-			}
-#endif
 		}
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
 		LOG_DBG("PM resume requested");
-
-		if (dev_cfg->common.phy != NULL) {
-			/* Bring transceiver out of standby */
-			(void)can_transceiver_enable(dev_cfg->common.phy, dev_data->common.mode);
-		}
-
 		/*
 		 * Wake device by re-initializing oscillator.
 		 * Any SPI transaction (including this one) will wake the device
