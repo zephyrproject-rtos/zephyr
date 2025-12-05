@@ -16,6 +16,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "PCIe Endpoint Drivers"
 
-source "drivers/pcie/endpoint/Kconfig.iproc"
+source "drivers/pcie/endpoint/Kconfig.*"
 
 endif # PCIE_ENDPOINT

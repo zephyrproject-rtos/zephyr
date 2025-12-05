@@ -10,13 +10,7 @@ menuconfig ESPI
 
 if ESPI
 
-# zephyr-keep-sorted-start
-source "drivers/espi/Kconfig.espi_emul"
-source "drivers/espi/Kconfig.it8xxx2"
-source "drivers/espi/Kconfig.npcx"
-source "drivers/espi/Kconfig.rts5912"
-source "drivers/espi/Kconfig.xec"
-# zephyr-keep-sorted-stop
+source "drivers/espi/Kconfig.*"
 
 module = ESPI
 module-str = espi

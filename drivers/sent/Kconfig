@@ -18,6 +18,6 @@ config SENT_INIT_PRIORITY
 	help
 	  SENT driver device initialization priority.
 
-source "drivers/sent/Kconfig.nxp_s32"
+source "drivers/sent/Kconfig.*"
 
 endif # SENT

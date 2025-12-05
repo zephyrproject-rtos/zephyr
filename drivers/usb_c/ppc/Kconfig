@@ -21,8 +21,7 @@ config USBC_PPC_SHELL
 	help
 	  Add useful shell commands to manipulate and debug the PPCs
 
-source "drivers/usb_c/ppc/Kconfig.nxp"
-source "drivers/usb_c/ppc/Kconfig.numaker"
+source "drivers/usb_c/ppc/Kconfig.*"
 
 module = USBC_PPC
 module-str = usbc-ppc

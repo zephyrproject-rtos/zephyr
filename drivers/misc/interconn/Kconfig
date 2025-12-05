@@ -5,6 +5,6 @@
 
 menu "Interconn Drivers"
 
-source "drivers/misc/interconn/renesas_elc/Kconfig"
+source "drivers/misc/interconn/*/Kconfig"
 
 endmenu

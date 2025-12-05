@@ -65,10 +65,6 @@ module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
 
-# zephyr-keep-sorted-start
-source "drivers/mspi/Kconfig.ambiq"
-source "drivers/mspi/Kconfig.dw"
-source "drivers/mspi/Kconfig.mspi_emul"
-# zephyr-keep-sorted-stop
+source "drivers/mspi/Kconfig.*"
 
 endif # MSPI

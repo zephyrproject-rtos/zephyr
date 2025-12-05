@@ -5,6 +5,6 @@
 
 if PCIE_CONTROLLER
 
-source "drivers/pcie/controller/Kconfig.brcmstb"
+source "drivers/pcie/controller/Kconfig.*"
 
 endif # PCIE_CONTROLLER

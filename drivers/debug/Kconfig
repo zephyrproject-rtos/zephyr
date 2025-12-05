@@ -14,10 +14,7 @@ config DEBUG_DRIVER_INIT_PRIORITY
 	help
 	  Debug drivers initialization priority.
 
-# zephyr-keep-sorted-start
-source "drivers/debug/Kconfig.nrf"
-source "drivers/debug/Kconfig.silabs"
-# zephyr-keep-sorted-stop
+source "drivers/debug/Kconfig.*"
 
 module = DEBUG_DRIVER
 module-str = debug_driver

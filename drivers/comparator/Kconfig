@@ -18,19 +18,6 @@ config COMPARATOR_INIT_PRIORITY
 	help
 	  Comparator device driver initialization priority.
 
-# zephyr-keep-sorted-start
-rsource "Kconfig.fake_comp"
-rsource "Kconfig.it51xxx_vcmp"
-rsource "Kconfig.mchp"
-rsource "Kconfig.mcux_acmp"
-rsource "Kconfig.nrf_comp"
-rsource "Kconfig.nrf_lpcomp"
-rsource "Kconfig.nxp_cmp"
-rsource "Kconfig.renesas_ra"
-rsource "Kconfig.renesas_rx"
-rsource "Kconfig.shell"
-rsource "Kconfig.silabs_acmp"
-rsource "Kconfig.stm32_comp"
-# zephyr-keep-sorted-stop
+rsource "Kconfig.*"
 
 endif # COMPARATOR

@@ -27,21 +27,6 @@ config RESET_INIT_PRIORITY
 
 comment "Reset Controller Drivers"
 
-# zephyr-keep-sorted-start
-rsource "Kconfig.aspeed"
-rsource "Kconfig.gd32"
-rsource "Kconfig.intel_socfpga"
-rsource "Kconfig.lpc_syscon"
-rsource "Kconfig.mchp"
-rsource "Kconfig.mchp_mss"
-rsource "Kconfig.mmio"
-rsource "Kconfig.npcx"
-rsource "Kconfig.numaker"
-rsource "Kconfig.nxp_mrcc"
-rsource "Kconfig.nxp_rstctl"
-rsource "Kconfig.rpi_pico"
-rsource "Kconfig.sf32lb"
-rsource "Kconfig.stm32"
-# zephyr-keep-sorted-stop
+rsource "Kconfig.*"
 
 endif # RESET
