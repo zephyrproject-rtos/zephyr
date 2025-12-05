@@ -74,11 +74,16 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("sdmmc1", SDMMC1_BASE_ADDRESS, 0x4000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sha)),
+		   (MMU_REGION_FLAT_ENTRY("sha", SHA_BASE_ADDRESS, 0x100,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(trng)),
 		   (MMU_REGION_FLAT_ENTRY("trng", TRNG_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 
 	FOR_EACH_IDX(MMU_REGION_XDMAC_DEFN, (), 0, 1, 2)
+
 };
 
 const struct arm_mmu_config mmu_config = {

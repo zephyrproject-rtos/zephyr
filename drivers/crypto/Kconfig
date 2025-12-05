@@ -61,6 +61,7 @@ source "drivers/crypto/Kconfig.esp32"
 source "drivers/crypto/Kconfig.intel"
 source "drivers/crypto/Kconfig.it51xxx"
 source "drivers/crypto/Kconfig.it8xxx2"
+source "drivers/crypto/Kconfig.mchp"
 source "drivers/crypto/Kconfig.mcux_dcp"
 source "drivers/crypto/Kconfig.npcx"
 source "drivers/crypto/Kconfig.nrf_ecb"
@@ -69,7 +70,6 @@ source "drivers/crypto/Kconfig.rts5912"
 source "drivers/crypto/Kconfig.si32"
 source "drivers/crypto/Kconfig.smartbond"
 source "drivers/crypto/Kconfig.stm32"
-source "drivers/crypto/Kconfig.xec"
 # zephyr-keep-sorted-stop
 
 endif # CRYPTO
