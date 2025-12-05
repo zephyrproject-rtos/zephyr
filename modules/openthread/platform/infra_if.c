@@ -26,6 +26,7 @@
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_pkt_filter.h>
 #include <openthread/nat64.h>
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
@@ -45,9 +46,19 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
 static void raw_receive_handler(struct net_socket_service_event *evt);
 static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len);
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt);
 static int raw_infra_if_sock = -1;
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(handle_infra_if_raw_recv, raw_receive_handler, MAX_SERVICES);
+
+struct ot_nat64_pkt_filter_test {
+	struct npf_test test;
+};
+/* Packet filtering rules for NAT64 translator section */
+static struct ot_nat64_pkt_filter_test ot_nat64_drop_rule_check = {
+	.test.fn = infra_if_nat64_try_consume_packet};
+/* Drop all traffic destined to and consumed by NAT64 translator */
+static NPF_RULE(ot_nat64_drop_pkt_process, NET_DROP, ot_nat64_drop_rule_check);
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDestAddress,
@@ -318,6 +329,9 @@ otError infra_if_nat64_init(void)
 						 ARRAY_SIZE(sockfd_raw), NULL) == 0,
 		     error = OT_ERROR_FAILED);
 
+	npf_insert_ipv4_recv_rule(&ot_nat64_drop_pkt_process);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+
 exit:
 	return error;
 }
@@ -417,4 +431,44 @@ static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len)
 		break;
 	}
 }
+
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt)
+{
+	ARG_UNUSED(test);
+
+	struct net_buf *buf = NULL;
+	otMessage *message = NULL;
+	otMessageSettings settings;
+
+	openthread_mutex_lock();
+
+	if (ot_instance == NULL ||
+	    otNat64GetTranslatorState(ot_instance) != OT_NAT64_STATE_ACTIVE) {
+		ExitNow();
+	}
+
+	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+	settings.mLinkSecurityEnabled = true;
+
+	message = otIp4NewMessage(ot_instance, &settings);
+	VerifyOrExit(message != NULL);
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
+			otMessageFree(message);
+			ExitNow();
+		}
+	}
+
+	if (otNat64Send(ot_instance, message) == OT_ERROR_NONE) {
+		net_pkt_unref(pkt);
+		openthread_mutex_unlock();
+		return true;
+	}
+
+exit:
+	openthread_mutex_unlock();
+	return false;
+}
+
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
