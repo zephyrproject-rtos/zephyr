@@ -31,6 +31,8 @@ LOG_MODULE_REGISTER(adc_sf32lb, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RDATAX(n)    (ADC_RDATA + (((n) >> 1) * 4U))
 #define ADC_SLOT_REGX(n) (ADC_SLOT_REG + (n) * 4U)
 
+#define ADC_SF32LB_DEFAULT_VREF_INTERNAL 3300
+
 struct adc_sf32lb_data {
 	struct adc_context ctx;
 	const struct device *dev;
@@ -214,6 +216,7 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 static DEVICE_API(adc, adc_sf32lb_driver_api) = {
 	.channel_setup = adc_sf32lb_channel_setup,
 	.read = adc_sf32lb_read,
+	.ref_internal = ADC_SF32LB_DEFAULT_VREF_INTERNAL,
 };
 
 static int adc_sf32lb_init(const struct device *dev)
