@@ -366,4 +366,52 @@ otError infra_if_send_raw_message(uint8_t *buf, uint16_t len)
 exit:
 	return error;
 }
+
+static enum net_verdict infra_if_nat64_try_consume_packet(struct net_if *iface,
+							  uint16_t ptype,
+							  struct net_pkt *pkt)
+{
+	ARG_UNUSED(ptype);
+
+	struct net_buf *buf = NULL;
+	otMessage *message = NULL;
+	otMessageSettings settings;
+
+	if ((NET_IPV6_HDR(pkt)->vtc & 0xf0) != 0x40) {
+		return NET_CONTINUE;
+	}
+
+	openthread_mutex_lock();
+
+	if (ot_instance == NULL ||
+	    otNat64GetTranslatorState(ot_instance) != OT_NAT64_STATE_ACTIVE) {
+		ExitNow();
+	}
+
+	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+	settings.mLinkSecurityEnabled = true;
+
+	message = otIp4NewMessage(ot_instance, &settings);
+	VerifyOrExit(message != NULL);
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
+			otMessageFree(message);
+			ExitNow();
+		}
+	}
+
+	if (otNat64Send(ot_instance, message) == OT_ERROR_NONE) {
+		net_pkt_unref(pkt);
+		openthread_mutex_unlock();
+		return NET_OK;
+	}
+
+exit:
+	openthread_mutex_unlock();
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(OT_NAT64_CONSUMER, NET_ETH_PTYPE_IP, infra_if_nat64_try_consume_packet);
+
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
