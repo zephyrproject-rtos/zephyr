@@ -68,45 +68,32 @@ static void intel_adsp_ipc_isr(const void *devarg)
 	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
 
 	if (regs->tdr & INTEL_ADSP_IPC_BUSY) {
-		bool done = true;
-
 		if (ept_cfg->cb.received != NULL) {
-			struct intel_adsp_ipc_msg cb_msg = {
-				.data = regs->tdr & ~INTEL_ADSP_IPC_BUSY,
-				.ext_data = regs->tdd,
-			};
+			uint32_t msg[2] = {(regs->tdr & ~INTEL_ADSP_IPC_BUSY), regs->tdd};
 
-			ept_cfg->cb.received(&cb_msg, INTEL_ADSP_IPC_CB_MSG, ept_cfg->priv);
-
-			done = (priv_data->cb_ret == INTEL_ADSP_IPC_CB_RET_OKAY);
+			ept_cfg->cb.received(&msg, sizeof(msg), ept_cfg->priv);
 		}
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
-		if (done) {
+		if (priv_data->msg_done) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 			regs->tda = INTEL_ADSP_IPC_DONE;
 #endif
+			priv_data->msg_done = false;
 		}
 	}
 
-	/* Same signal, but on different bits in 1.5 */
-	bool done = (regs->ida & INTEL_ADSP_IPC_DONE);
-
-	if (done) {
+	/* Same signal, but on different bits in ACE */
+	if (regs->ida & INTEL_ADSP_IPC_DONE) {
 		bool external_completion = false;
 
-		if (ept_cfg->cb.received != NULL) {
-			ept_cfg->cb.received(NULL, INTEL_ADSP_IPC_CB_DONE, ept_cfg->priv);
-
-			if (priv_data->cb_ret == INTEL_ADSP_IPC_CB_RET_EXT_COMPLETE) {
-				external_completion = true;
-			}
+		if (devdata->done_notify != NULL) {
+			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
 
 		devdata->tx_ack_pending = false;
-
 		/*
 		 * Allow the system to enter the runtime idle state after the IPC acknowledgment
 		 * is received.
@@ -114,7 +101,7 @@ static void intel_adsp_ipc_isr(const void *devarg)
 		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 		k_sem_give(&devdata->sem);
 
-		/* IPC completion registers will be set externally. */
+		/* IPC completion registers will be set externally */
 		if (external_completion) {
 			k_spin_unlock(&devdata->lock, key);
 			return;
@@ -233,20 +220,6 @@ static int ipc_send_message(const struct device *dev, uint32_t data, uint32_t ex
 	return 0;
 }
 
-static int ipc_send_message_sync(const struct device *dev, uint32_t data, uint32_t ext_data,
-				 k_timeout_t timeout)
-{
-	struct intel_adsp_ipc_data *devdata = dev->data;
-
-	int ret = ipc_send_message(dev, data, ext_data);
-
-	if (ret == 0) {
-		k_sem_take(&devdata->sem, timeout);
-	}
-
-	return ret;
-}
-
 static int ipc_send_message_emergency(const struct device *dev, uint32_t data, uint32_t ext_data)
 {
 	const struct intel_adsp_ipc_config *const config = dev->config;
@@ -301,51 +274,94 @@ static int ipc_send_message_emergency(const struct device *dev, uint32_t data, u
  */
 static int intel_adsp_ipc_send(const struct device *dev, void *token, const void *data, size_t len)
 {
-	int ret;
+	ARG_UNUSED(token);
 
-	const struct intel_adsp_ipc_msg *msg = (const struct intel_adsp_ipc_msg *)data;
-
-	switch (len) {
-	case INTEL_ADSP_IPC_SEND_MSG: {
-		ret = ipc_send_message(dev, msg->data, msg->ext_data);
-
-		break;
-	}
-	case INTEL_ADSP_IPC_SEND_MSG_SYNC: {
-		ret = ipc_send_message_sync(dev, msg->data, msg->ext_data, msg->timeout);
-
-		break;
-	}
-	case INTEL_ADSP_IPC_SEND_MSG_EMERGENCY: {
-		ret = ipc_send_message_emergency(dev, msg->data, msg->ext_data);
-
-		break;
-	}
-	case INTEL_ADSP_IPC_SEND_DONE: {
-		ipc_complete(dev);
-
-		ret = 0;
-
-		break;
-	}
-	case INTEL_ADSP_IPC_SEND_IS_COMPLETE: {
-		bool completed = ipc_is_complete(dev);
-
-		if (completed) {
-			ret = 0;
-		} else {
-			ret = -EAGAIN;
-		}
-
-		break;
-	}
-	default:
-		ret = -EBADMSG;
-
-		break;
+	if (dev == NULL) {
+		return -EINVAL;
 	}
 
-	return ret;
+	if (len != sizeof(uint32_t) * 2 || data == NULL) {
+		return -EBADMSG;
+	}
+
+	const uint32_t *msg = (const uint32_t *)data;
+
+	return ipc_send_message(dev, msg[0], msg[1]);
+}
+
+/*
+ * Report the availability of the host IPC channel.
+ *
+ * This backend uses the TX buffer size query as a way to check whether the host is ready to
+ * receive the next message. When the IPC channel is idle (no BUSY bit set and no pending TX
+ * acknowledgment), a single “buffer” of two 32-bit words is considered available and the
+ * function returns sizeof(uint32_t) * 2. When the channel is still busy, no buffer is
+ * available and the function returns 0.
+ *
+ * Return values:
+ * - -EINVAL if @p instance is NULL.
+ * - sizeof(uint32_t) * 2 when the channel is ready for a new message.
+ * - 0 when the previous message has not yet been fully processed.
+ */
+int intel_adsp_ipc_get_tx_buffer_size(const struct device *instance, void *token)
+{
+	ARG_UNUSED(token);
+
+	if (instance == NULL) {
+		return -EINVAL;
+	}
+
+	if (ipc_is_complete(instance)) {
+		return sizeof(uint32_t) * 2;
+	}
+
+	return 0;
+}
+
+/*
+ * This backend does not need to explicitly hold RX buffers because the IPC channel is effectively
+ * held from the moment the message is received in the interrupt handler until the firmware
+ * completes the handling. However, we must still provide a hold_rx_buffer() implementation so that
+ * ipc_service_release_rx_buffer() can check both hold and release callbacks and allow the use of
+ * ipc_service_release_rx_buffer() to notify the host that the channel is available again.
+ */
+int intel_adsp_ipc_hold_rx_buffer(const struct device *instance, void *token, void *data)
+{
+	ARG_UNUSED(instance);
+	ARG_UNUSED(token);
+	ARG_UNUSED(data);
+	return -ENOTSUP;
+}
+
+int intel_adsp_ipc_release_rx_buffer(const struct device *instance, void *token, void *data)
+{
+	ARG_UNUSED(token);
+	ARG_UNUSED(data);
+
+	if (instance == NULL) {
+		return -EINVAL;
+	}
+
+	ipc_complete(instance);
+	return 0;
+}
+
+static int intel_adsp_ipc_send_critical(const struct device *dev, void *token,
+					const void *data, size_t len)
+{
+	ARG_UNUSED(token);
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (len != sizeof(uint32_t) * 2 || data == NULL) {
+		return -EBADMSG;
+	}
+
+	const uint32_t *msg = (const uint32_t *)data;
+
+	return ipc_send_message_emergency(dev, msg[0], msg[1]);
 }
 
 static int intel_adsp_ipc_dt_init(const struct device *dev)
@@ -461,6 +477,10 @@ const static struct ipc_service_backend intel_adsp_ipc_backend_api = {
 	.send = intel_adsp_ipc_send,
 	.register_endpoint = intel_adsp_ipc_register_ept,
 	.deregister_endpoint = intel_adsp_ipc_deregister_ept,
+	.get_tx_buffer_size = intel_adsp_ipc_get_tx_buffer_size,
+	.hold_rx_buffer = intel_adsp_ipc_hold_rx_buffer,
+	.release_rx_buffer = intel_adsp_ipc_release_rx_buffer,
+	.send_critical = intel_adsp_ipc_send_critical,
 };
 
 DEVICE_DT_DEFINE(INTEL_ADSP_IPC_HOST_DTNODE, intel_adsp_ipc_dt_init,
