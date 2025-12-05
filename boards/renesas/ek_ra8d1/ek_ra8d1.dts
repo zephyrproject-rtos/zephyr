@@ -425,8 +425,8 @@
 	pinctrl-0 = <&sdram_default>;
 	pinctrl-names = "default";
 	status = "okay";
-	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
-	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	auto-refresh-interval = <SDRAM_AUTO_REFRESH_INTERVAL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFRESH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
 	multiplex-addr-shift = "10-bit";
 	edian-mode = "little-endian";
