@@ -8,7 +8,6 @@ import argparse
 import binascii
 import sys
 
-
 COREDUMP_PREFIX_STR = "#CD:"
 
 COREDUMP_BEGIN_STR = COREDUMP_PREFIX_STR + "BEGIN#"
@@ -28,7 +27,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    infile = open(args.infile, "r")
+    infile = open(args.infile)
     if not infile:
         print(f"ERROR: Cannot open input file: {args.infile}, exiting...")
         sys.exit(1)

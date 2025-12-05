@@ -128,9 +128,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
-"./scripts/coredump/coredump_gdbserver.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/coredump/coredump_parser/elf_parser.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -146,9 +143,7 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/coredump/coredump_serial_log_parser.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/coredump/gdbstubs/arch/arm64.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
