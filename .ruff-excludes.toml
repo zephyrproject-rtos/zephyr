@@ -137,36 +137,6 @@
 "./scripts/coredump/coredump_serial_log_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
-"./scripts/coredump/gdbstubs/arch/arm64.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/coredump/gdbstubs/arch/arm_cortex_m.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/coredump/gdbstubs/arch/risc_v.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/coredump/gdbstubs/arch/x86.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/coredump/gdbstubs/arch/x86_64.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/coredump/gdbstubs/arch/xtensa.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./scripts/coredump/gdbstubs/gdbstub.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/dts/gen_defines.py" = [
     "B007",     # https://docs.astral.sh/ruff/rules/unused-loop-control-variable
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
