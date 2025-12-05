@@ -59,6 +59,32 @@ To build, simply specify the ``native_sim`` board as target:
    :goals: build
    :compact:
 
+Cross Compiling
+===============
+
+To cross-compile for the ``native_sim`` board (for example, targeting aarch64), use the following command:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: native_sim/native/64
+   :goals: build
+   :cmake-args: -DZEPHYR_TOOLCHAIN_VARIANT=cross-compile -DZEPHYR_POSIX_ARCH=aarch64 -DCROSS_COMPILE=<path-to-cross-compiler>/aarch64-none-linux-gnu- -DSYSROOT_DIR=<path-to-sysroot>
+   :compact:
+
+**Notes:**
+- Replace ``<path-to-cross-compiler>`` and ``<path-to-sysroot>`` with the actual locations on your system.
+- Ensure your cross-compiler toolchain is installed and accessible.
+
+Example:
+.. code-block:: console
+
+   west build -b native_sim/native/64 samples/hello_world -- \
+     -DZEPHYR_TOOLCHAIN_VARIANT=cross-compile \
+     -DZEPHYR_POSIX_ARCH=aarch64 \
+     -DCROSS_COMPILE=<path-to-cross-compiler>/aarch64-none-linux-gnu- \
+     -DSYSROOT_DIR=<path-to-sysroot>
+
 Running
 =======
 

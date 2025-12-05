@@ -70,11 +70,13 @@ if("${PTY_INTERFACE}" STREQUAL "PTY_INTERFACE-NOTFOUND")
   set(PTY_INTERFACE "")
 endif()
 
-# Default to the host system's toolchain if we are targeting a host based target
-if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
-   OR ("${BOARD}" STREQUAL "unit_testing"))
-  if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
-    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+# Default to the host system's toolchain if we are targeting a host based targets and is not defined
+if(NOT ZEPHYR_PROJECT_TOOLCHAIN)
+  if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
+    OR ("${BOARD}" STREQUAL "unit_testing"))
+    if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
+      set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+    endif()
   endif()
 endif()
 
