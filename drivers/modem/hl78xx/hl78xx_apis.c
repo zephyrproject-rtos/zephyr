@@ -266,7 +266,8 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 	/* configure modem functionality with/without restart  */
 	snprintf(cmd_string, sizeof(cmd_string), "AT+CFUN=%d,%d", functionality, reset);
-	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(), 1);
+	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
+			       hl78xx_get_ok_match_size());
 }
 
 int hl78xx_api_func_get_phone_functionality(const struct device *dev,
@@ -275,7 +276,8 @@ int hl78xx_api_func_get_phone_functionality(const struct device *dev,
 	const char *cmd_string = GET_FULLFUNCTIONAL_MODE_CMD;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 	/* get modem phone functionality */
-	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(), 1);
+	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
+			       hl78xx_get_ok_match_size());
 }
 
 int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char *cmd,
@@ -300,7 +302,8 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev)
 
 	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_START_CMD,
 				     strlen(WDSI_USER_INITIATED_CONNECTION_START_CMD),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Start DM session error %d", ret);
 		return ret;
@@ -315,7 +318,8 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 
 	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_STOP_CMD,
 				     strlen(WDSI_USER_INITIATED_CONNECTION_STOP_CMD),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Stop DM session error %d", ret);
 		return ret;

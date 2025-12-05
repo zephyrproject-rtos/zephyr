@@ -1430,7 +1430,7 @@ static int send_udp_config(const struct net_sockaddr *addr, struct hl78xx_socket
 		 (addr->sa_family - 1), 0);
 
 	ret = modem_dynamic_cmd_send(socket_data->mdata_global, NULL, cmd_buf, strlen(cmd_buf),
-				     hl78xx_get_kudpind_match(), 1, false);
+				     hl78xx_get_kudpind_match(), hl78xx_get_kudpind_allow_matches_size(), MDM_CMD_TIMEOUT_MS, false);
 	if (ret < 0) {
 		goto error;
 	}
@@ -1998,9 +1998,8 @@ static int transmit_regular_data(struct hl78xx_socket_data *socket_data, const c
 
 /* send binary data via the +KUDPSND/+KTCPSND commands */
 static ssize_t send_socket_data(void *obj, struct hl78xx_socket_data *socket_data,
-				const struct net_sockaddr *dst_addr,
-				const char *buf, size_t buf_len,
-				k_timeout_t timeout)
+				const struct net_sockaddr *dst_addr, const char *buf,
+				size_t buf_len, k_timeout_t timeout)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char cmd_buf[82] = {0}; /* AT+KUDPSND/KTCP=,IP,PORT,LENGTH */
@@ -2030,8 +2029,8 @@ static ssize_t send_socket_data(void *obj, struct hl78xx_socket_data *socket_dat
 		goto cleanup;
 	}
 	modem_chat_attach(&socket_data->mdata_global->chat, socket_data->mdata_global->uart_pipe);
-	ret = modem_dynamic_cmd_send(socket_data->mdata_global, NULL, "", 0,
-				     hl78xx_get_sockets_ok_match(), 1, false);
+	ret = modem_dynamic_cmd_send(socket_data->mdata_global, NULL, "", 0, hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Final confirmation failed: %d", ret);
 		goto cleanup;
@@ -2373,9 +2372,10 @@ static int hl78xx_configure_chipper_suit(struct hl78xx_socket_data *socket_data)
 {
 	const char *cmd_chipper_suit = "AT+KSSLCRYPTO=0,8,1,8192,4,4,3,0";
 
-	return modem_dynamic_cmd_send(
-		socket_data->mdata_global, NULL, cmd_chipper_suit, strlen(cmd_chipper_suit),
-		(const struct modem_chat_match *)hl78xx_get_ok_match(), 1, false);
+	return modem_dynamic_cmd_send(socket_data->mdata_global, NULL, cmd_chipper_suit,
+				      strlen(cmd_chipper_suit),
+				      (const struct modem_chat_match *)hl78xx_get_ok_match(),
+				      hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 }
 /* send binary data via the K....STORE commands */
 static ssize_t hl78xx_send_cert(struct hl78xx_socket_data *socket_data, const char *cert_data,
@@ -2444,8 +2444,8 @@ static ssize_t hl78xx_send_cert(struct hl78xx_socket_data *socket_data, const ch
 	}
 	modem_chat_attach(&socket_data->mdata_global->chat, socket_data->mdata_global->uart_pipe);
 	ret = modem_dynamic_cmd_send(socket_data->mdata_global, NULL, "", 0,
-				     (const struct modem_chat_match *)hl78xx_get_ok_match(), 1,
-				     false);
+				     (const struct modem_chat_match *)hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Final confirmation failed: %d", ret);
 		goto cleanup;
