@@ -42,4 +42,10 @@
 			input-schmitt-enable;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <GPIO11_ADC_CH10>;
+		};
+	};
 };
