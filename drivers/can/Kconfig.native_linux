@@ -20,7 +20,7 @@ config CAN_NATIVE_LINUX_RX_THREAD_PRIORITY
 	  Priority level of the internal thread which is run for
 	  handling of incoming packets.
 
-config CAN_MAX_FILTER
+config CAN_NATIVE_LINUX_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
 	default 5
 	range 1 32
