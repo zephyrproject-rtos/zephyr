@@ -11,12 +11,13 @@
 #include <zephyr/logging/log.h>
 
 #ifndef CONFIG_SPI_NAND_BCH_HEAP_SIZE
-#define CONFIG_SPI_NAND_BCH_HEAP_SIZE 51200
+#error "CONFIG_SPI_NAND_BCH_HEAP_SIZE is not defined"
 #endif
 
 #define MAX_GEN_POLY_SIZE 169
 
 K_HEAP_DEFINE(bch_heap, CONFIG_SPI_NAND_BCH_HEAP_SIZE);
+
 LOG_MODULE_REGISTER(bch, CONFIG_FLASH_LOG_LEVEL);
 
 static void *bch_alloc(size_t size, int *err)
@@ -25,6 +26,9 @@ static void *bch_alloc(size_t size, int *err)
 
 	if (*err == 0) {
 		ptr = k_heap_alloc(&bch_heap, size, K_NO_WAIT);
+		if (ptr != NULL) {
+			(void)memset(ptr, 0, size);
+		}
 	}
 	if (ptr == NULL) {
 		*err = 1;
@@ -61,7 +65,7 @@ static void build_syndrome(bch_t *bch)
 		i = ecc_bits - 32;
 		ecc_bits = i;
 		while (*ecc > 0) {
-			if (*ecc & 1 != 0U) {
+			if ((*ecc & 1) != 0U) {
 				for (j = 0; j < 2 * bch->t; j++) {
 					bch->syn[j] ^= bch->a_pow[mod(bch, (j + 1) * i)];
 				}
@@ -166,18 +170,22 @@ static void build_gf_table(bch_t *bch)
 	uint32_t prim_poly[] = {0x11d, 0x211, 0x409, 0x805, 0x1053, 0x201b};
 
 	poly = prim_poly[bch->m - 8];
+
 	msb = 1 << bch->m;
 	bch->a_pow[0] = 1;
 	bch->a_log[1] = 0;
 	x = 2;
+
 	for (int i = 1; i < bch->n; i++) {
 		bch->a_pow[i] = x;
 		bch->a_log[x] = i;
+
 		x <<= 1;
-		if (x & msb != 0U) {
+		if ((x & msb) != 0) {
 			x ^= poly;
 		}
 	}
+
 	bch->a_pow[bch->n] = 1;
 	bch->a_log[0] = 0;
 }
@@ -213,7 +221,7 @@ static void build_mod_tables(bch_t *bch, const uint32_t *g)
 	}
 }
 
-static int build_generator_poly(bch_t *bch)
+static void build_generator_poly(bch_t *bch)
 {
 	int i, j, k, m, t;
 	uint32_t n;
@@ -230,7 +238,7 @@ static int build_generator_poly(bch_t *bch)
 					x[j] = x[j - 1];
 				}
 			}
-			if (x[j] != 0) {
+			if (x[j]) {
 				x[j] = bch->a_pow[mod(bch, bch->a_log[x[j]] + i)];
 			}
 			bch->ecc_bits++;
@@ -247,8 +255,6 @@ static int build_generator_poly(bch_t *bch)
 		}
 		i++;
 	}
-
-	return 0;
 }
 
 void bch_encode(bch_t *bch, uint8_t *data, uint8_t *ecc)
@@ -312,11 +318,9 @@ int bch_decode(bch_t *bch, uint8_t *data, uint8_t *ecc)
 	bch_encode(bch, data, NULL);
 	memcpy(bch->ecc2, ecc, bch->ecc_bytes);
 	for (i = 0; i < bch->ecc_words; i++) {
-		uint32_t ecc_word_le = swap32_byte(bch->ecc2[i]);
-
-		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], ecc_word_le,
-			bch->ecc[i] != ecc_word_le ? "**" : "");
-		bch->ecc[i] ^= ecc_word_le;
+		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], swap32_byte(bch->ecc2[i]),
+			bch->ecc[i] != swap32_byte(bch->ecc2[i]) ? "**" : "");
+		bch->ecc[i] ^= swap32_byte(bch->ecc2[i]);
 		err |= bch->ecc[i];
 	}
 	if (err == 0) {
@@ -365,17 +369,31 @@ int bch_init(int m, int t, uint32_t size_step, bch_t **bch_ret)
 		LOG_DBG("bch init failed, params should be m: 8 ~ 13, t: 1 ~ 12\r\n");
 		return -EINVAL;
 	}
+
 	bch = bch_alloc(sizeof(bch_t), &err);
 	if (bch == NULL) {
 		return -ENOMEM;
 	}
+
+	bch->le = (*p == 1);
+	LOG_DBG("This system is %s endian\r\n", bch->le ? "Little" : "Big");
+
+	bch->size_step = size_step;
 	bch->m = m;
 	bch->t = t;
 	bch->n = (1 << m) - 1;
 	bch->ecc_words = (m * t + 31) / 32;
 	bch->len = (bch->n + 1) / 8;
 	bch->a_pow = bch_alloc((bch->n + 1) * sizeof(*bch->a_pow), &err);
+	if (err != 0) {
+		bch_free(bch);
+		return -ENOMEM;
+	}
 	bch->a_log = bch_alloc((bch->n + 1) * sizeof(*bch->a_log), &err);
+	if (err != 0) {
+		bch_free(bch);
+		return -ENOMEM;
+	}
 	bch->mod_tab = bch_alloc(bch->ecc_words * 16 * 4 * sizeof(*bch->mod_tab), &err);
 	bch->ecc = bch_alloc(bch->ecc_words * sizeof(*bch->ecc), &err);
 	bch->ecc2 = bch_alloc(bch->ecc_words * sizeof(*bch->ecc2), &err);
@@ -391,16 +409,9 @@ int bch_init(int m, int t, uint32_t size_step, bch_t **bch_ret)
 		return -ENOMEM;
 	}
 
-	bch->le = (*p == 1);
-	LOG_DBG("This system is %s endian\r\n", bch->le ? "Little" : "Big");
-
-	bch->size_step = size_step;
-
 	build_gf_table(bch);
-	if (0 != build_generator_poly(bch)) {
-		bch_free(bch);
-		return -EINVAL;
-	}
+	build_generator_poly(bch);
+
 	bch->ecc_bytes = (bch->ecc_bits + 7) / 8;
 	build_mod_tables(bch, bch->g);
 

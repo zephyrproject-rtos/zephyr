@@ -40,6 +40,7 @@ config SPI_NAND_ECC_STEP_SIZE
 config SPI_NAND_BCH_HEAP_SIZE
 	int "BCH heap size (bytes)"
 	default 51200
+	depends on SPI_NAND_SOFTWARE_ECC
 	help
 	  Specify the heap size (in bytes) reserved for BCH (Bose-Chaudhuri-Hocquenghem)
 	  error correction in SPI NAND flash operations.

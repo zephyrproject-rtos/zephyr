@@ -11,6 +11,8 @@ description: |
       id = [c2 1E];
       cs-wait-delay = <0>;
       page-size = <2048>;
+      flash-size = <134217728>;
+      ecc-bits = <8>;
       status = "okay";
     };
 
@@ -43,3 +45,8 @@ properties:
     type: int
     description: |
       Size (in bytes) of the Flash memory.
+  ecc-bits:
+    required: true
+    type: int
+    description: |
+      Number of error correction bits used by the BCH algorithm for SPI NAND flash ECC protection.

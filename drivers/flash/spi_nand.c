@@ -15,9 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "spi_nand.h"
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 #include "bch.h"
-#define SPI_NAND_ECC_SIZE SPI_NAND_ECC_STEP_SIZE
+#define SPI_NAND_ECC_SIZE CONFIG_SPI_NAND_ECC_STEP_SIZE
 #endif
 
 LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
@@ -56,14 +56,16 @@ LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
 
 #define OP_TYPE_RD       0
 #define OP_TYPE_PGM      1
+#define SPI_NAND_ID_LEN  2
 #define FLASH_WRITE_SIZE DT_PROP(DT_INST(0, DT_DRV_COMPAT), page_size)
 #define FLASH_SIZE       DT_PROP(DT_INST(0, DT_DRV_COMPAT), flash_size)
+#define ECC_BITS         DT_PROP(DT_INST(0, DT_DRV_COMPAT), ecc_bits)
 
 /* Build-time data associated with the device. */
 struct spi_nand_config {
 	/* Devicetree SPI configuration */
 	struct spi_dt_spec spi;
-	uint8_t id[2];
+	uint8_t id[SPI_NAND_ID_LEN];
 	uint32_t page_size;
 };
 
@@ -111,7 +113,7 @@ struct spi_nand_data {
 		uint8_t *ecc_code;
 	} ecc;
 
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 	struct nand_bch_control {
 		bch_t *bch;
 		uint8_t *mask_ff;
@@ -168,7 +170,10 @@ static int spi_nand_access(const struct device *const dev, uint8_t opcode, unsig
 	uint8_t buf[5] = {0};
 	uint8_t address_len = 0;
 	struct spi_buf spi_buf[2] = {
-		{.buf = buf, .len = 1},
+		{
+			.buf = buf,
+			.len = 1,
+		},
 		{.buf = data, .len = length},
 	};
 
@@ -302,16 +307,29 @@ static int spi_nand_wait_until_ready(const struct device *dev)
 	return -ETIMEDOUT;
 }
 
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 static int nand_bch_calc(const struct device *dev, uint8_t *buf_data, uint8_t *buf_ecc)
 {
 	int ret = 0;
 	struct spi_nand_data *data = dev->data;
 
-	ret = bch_encode(data->nbc.bch, buf_data, buf_ecc);
+	bch_encode(data->nbc.bch, buf_data, buf_ecc);
 	for (int n = 0; n < data->ecc.ecc_bytes; n++) {
 		buf_ecc[n] ^= data->nbc.mask_ff[n];
 	}
+
+	return ret;
+}
+
+static int nand_bch_corr(const struct device *dev, uint8_t *buf_data, uint8_t *buf_ecc)
+{
+	int ret = 0;
+	struct spi_nand_data *data = dev->data;
+
+	for (int n = 0; n < data->ecc.ecc_bytes; n++) {
+		buf_ecc[n] ^= data->nbc.mask_ff[n];
+	}
+	ret = bch_decode(data->nbc.bch, buf_data, buf_ecc);
 
 	return ret;
 }
@@ -446,20 +464,18 @@ static int spi_nand_read_software_ecc(const struct device *dev, off_t addr, void
 
 		p = (uint8_t *)data->page_buf;
 		ecc_steps = data->ecc.ecc_steps;
-
 		for (uint8_t i = 0; ecc_steps > 0;
 		     ecc_steps--, i += data->ecc.ecc_bytes, p += data->ecc.ecc_size) {
 
 			memset(data->nbc.input_data, 0x0, data->ecc.ecc_size);
 			memcpy(data->nbc.input_data, p, data->ecc.ecc_size);
 
-			int ret = bch_decode(data->nbc.bch, data->nbc.input_data,
-					     (uint8_t *)(data->ecc.ecc_code + i));
-
+			int ret = nand_bch_corr(dev, data->nbc.input_data, data->ecc.ecc_code + i);
 			if (ret < 0) {
 				LOG_ERR("Reading data failed");
 				goto out;
 			}
+			memcpy(p, data->nbc.input_data, data->ecc.ecc_size);
 		}
 
 		memcpy(dest, data->page_buf + offset, chunk);
@@ -596,10 +612,13 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 {
 	int ret = 0;
 	struct spi_nand_data *data = dev->data;
+
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((addr + size) > data->flash_size)) {
+	if ((addr < 0) || (addr >= data->flash_size) || (size > data->flash_size) ||
+	    ((data->flash_size - addr) < size)) {
 		return -EINVAL;
 	}
+
 	if (data->ecc.ecc_bits == 0) {
 		if (data->continuous_read) {
 			ret = spi_nand_read_cont(dev, addr, dest, size);
@@ -607,7 +626,7 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 			ret = spi_nand_read_normal(dev, addr, dest, size);
 		}
 	} else {
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 		ret = spi_nand_read_software_ecc(dev, addr, dest, size);
 #else
 		return -ENOTSUP;
@@ -624,17 +643,15 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 	uint32_t offset = 0;
 	uint32_t chunk = 0;
 	uint32_t written_bytes = 0;
-
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((addr + size) > flash_size)) {
+	if ((addr < 0) || (addr >= data->flash_size) || (size > data->flash_size) ||
+	    ((data->flash_size - addr) < size)) {
 		return -EINVAL;
 	}
-
 	/* size must be a multiple of page */
 	if ((size % data->page_size) != 0) {
 		return -EINVAL;
 	}
-
 	acquire_device(dev);
 
 	while (size > 0) {
@@ -654,7 +671,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 				goto out;
 			}
 		} else {
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 			uint8_t *p = (uint8_t *)data->page_buf;
 			uint8_t ecc_steps = data->ecc.ecc_steps;
 
@@ -698,18 +715,15 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 			LOG_ERR("program excute failed: %d", ret);
 			goto out;
 		}
-
 		src = (const uint8_t *)(src) + chunk;
 		addr = (addr + SPI_NAND_PAGE_OFFSET) & (~SPI_NAND_PAGE_MASK);
 		size -= chunk;
-
 		ret = spi_nand_wait_until_ready(dev);
 		if (ret != 0) {
 			LOG_ERR("wait ready failed: %d", ret);
 			goto out;
 		}
 	}
-
 out:
 	release_device(dev);
 	return ret;
@@ -719,10 +733,13 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 {
 	struct spi_nand_data *data = dev->data;
 	int ret = 0;
+
 	/* erase area must be subregion of device */
-	if ((addr < 0) || ((size + addr) > data->flash_size)) {
+	if ((addr < 0) || (addr >= data->flash_size) || (size > data->flash_size) ||
+	    ((data->flash_size - addr) < size)) {
 		return -EINVAL;
 	}
+
 	/* address must be block-aligned */
 	if ((addr % data->block_size) != 0) {
 		return -EINVAL;
@@ -764,6 +781,10 @@ static int spi_nand_check_id(const struct device *dev)
 	const struct spi_nand_config *cfg = dev->config;
 	uint8_t const *expected_id = cfg->id;
 	uint8_t read_id[SPI_NAND_ID_LEN];
+
+	if (read_id == NULL) {
+		return -EINVAL;
+	}
 
 	acquire_device(dev);
 	int ret = spi_nand_access(dev, SPI_NAND_CMD_RDID, NAND_ACCESS_DUMMY, 0, read_id,
@@ -825,14 +846,16 @@ out0:
 	if (ret != 0) {
 		return ret;
 	}
+
 	ret = spi_nand_read(dev, 1 << data->page_shift, onfi_table, sizeof(onfi_table));
 	if (ret != 0) {
 		LOG_ERR("read onfi table failed: %d", ret);
 		return ret;
 	}
+
 	if (onfi_table[ONFI_SIG_0] == 'O' && onfi_table[ONFI_SIG_1] == 'N' &&
 	    onfi_table[ONFI_SIG_2] == 'F' && onfi_table[ONFI_SIG_3] == 'I') {
-		LOG_ERR("ONFI table found\n");
+		LOG_INF("ONFI table found");
 		data->page_size = onfi_table[ONFI_PAGE_SIZE_80] +
 				  (onfi_table[ONFI_PAGE_SIZE_81] << 8) +
 				  (onfi_table[ONFI_PAGE_SIZE_82] << 16);
@@ -854,18 +877,25 @@ out0:
 			data->block_shift = data->page_shift + 8;
 			break;
 		}
-		data->ecc.ecc_bits = onfi_table[ONFI_ECC_NUM_112];
+		data->ecc.ecc_bits = ECC_BITS;
 
 		if (data->ecc.ecc_bits > 0 && IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)) {
-#if IS_ENABLED(CONFIG_SPI_NAND_SOFTWARE_ECC)
+#if defined(CONFIG_SPI_NAND_SOFTWARE_ECC)
 			ret = bch_ecc_init(dev, data->ecc.ecc_bits);
 			if (ret != 0) {
 				LOG_ERR("bch init failed: %d", ret);
 				goto out1;
 			}
+#else
+			ret = -ENOTSUP;
 #endif
+			if (ret != 0) {
+				LOG_ERR("bch init failed: %d", ret);
+				goto out1;
+			}
 		} else {
 			acquire_device(dev);
+
 			secur_reg |= SPINAND_SECURE_BIT_ECC_EN;
 			ret = spi_nand_set_feature(dev, SPI_NAND_FEA_ADDR_CONF_B0, secur_reg);
 			if (ret != 0) {
@@ -964,7 +994,9 @@ out:
 	if (ret != 0) {
 		return ret;
 	}
+
 	ret = spi_nand_read_otp_onfi(dev);
+
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return -ENODEV;
