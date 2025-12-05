@@ -12,6 +12,10 @@ tests:
     extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
     integration_platforms:
       - native_sim
+    platform_exclude:
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
+      - mpfs_icicle/polarfire/e51
     harness_config:
       type: multi_line
       regex:
