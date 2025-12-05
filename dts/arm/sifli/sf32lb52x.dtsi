@@ -173,6 +173,14 @@
 			status = "disabled";
 		};
 
+		crypto: crypto@5000d000 {
+			compatible = "sifli,sf32lb-crypto";
+			reg = <0x5000d000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_AES>;
+			interrupts = <67 0>;
+			status = "disabled";
+		};
+
 		dmac: dma-controller@50081000 {
 			compatible = "sifli,sf32lb-dmac";
 			reg = <0x50081000 0x1000>;
