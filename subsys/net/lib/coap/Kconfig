@@ -101,6 +101,13 @@ config COAP_KEEP_USER_DATA
 	help
 	  This option enables keeping application-specific user data
 
+config COAP_OVER_RELIABLE_TRANSPORT
+	bool "CoAP over reliable transports (RFC8323) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables the implementation support of RFC8323
+	  (CoAP (Constrained Application Protocol) over TCP, TLS, and WebSockets)
+
 config COAP_CLIENT
 	bool "CoAP client support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -171,6 +178,39 @@ config COAP_CLIENT_TRUNCATE_MSGS
 	  Otherwise it happens silently.
 
 endif # COAP_CLIENT
+
+if COAP_OVER_RELIABLE_TRANSPORT
+
+config COAP_CLIENT_TCP
+	bool
+	default y
+
+config COAP_CLIENT_TCP_REQUEST_TIMEOUT
+	int "Timeout for TCP CoAP requests in milliseconds"
+	default 30000
+	range 1000 300000
+	help
+	  Timeout for TCP-based CoAP requests. Unlike UDP, TCP requests
+	  have a single timeout with no retransmission. Default is 30 seconds
+	  as recommended by RFC 8323. Range is 1-300 seconds.
+
+config COAP_CLIENT_TCP_EXCHANGE_LIFETIME
+	int "Exchange lifetime for TCP CoAP in milliseconds"
+	default 247000
+	range 60000 600000
+	help
+	  Maximum lifetime of a TCP CoAP exchange from initial request to
+	  final response. Default is 247 seconds as per RFC 8323.
+	  Used to determine when request contexts can be safely released.
+
+config COAP_CLIENT_TCP_BLOCKWISE_REUSE_TOKEN
+	bool "Reuse the request token when requesting further blocks"
+	help
+	  This config exists for compatibility reasons when communicating with
+	  other CoAP libraries (e.g., go-coap) that expect token reuse during
+	  blockwise transfers.
+
+endif # COAP_OVER_RELIABLE_TRANSPORT
 
 config COAP_SERVER
 	bool "CoAP server support [EXPERIMENTAL]"
