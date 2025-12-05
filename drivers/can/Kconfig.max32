@@ -11,7 +11,7 @@ config CAN_MAX32
 
 if CAN_MAX32
 
-config CAN_MAX_FILTER
+config CAN_MAX32_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
 	default 5
 	range 1 32

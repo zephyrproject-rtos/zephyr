@@ -54,7 +54,7 @@ struct max32_can_data {
 	struct max32_req_data tx_data;
 
 	uint32_t filter_usage;
-	struct max32_can_rx_callback rx_callbacks[CONFIG_CAN_MAX_FILTER];
+	struct max32_can_rx_callback rx_callbacks[CONFIG_CAN_MAX32_MAX_FILTERS];
 	struct max32_req_data rx_data;
 };
 
@@ -352,12 +352,13 @@ static int can_max32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 	k_mutex_lock(&dev_data->inst_mutex, K_FOREVER);
 
 	/* find free filter */
-	while ((BIT(filter_idx) & dev_data->filter_usage) && (filter_idx < CONFIG_CAN_MAX_FILTER)) {
+	while ((BIT(filter_idx) & dev_data->filter_usage) &&
+		(filter_idx < CONFIG_CAN_MAX32_MAX_FILTERS)) {
 		filter_idx++;
 	}
 
 	/* setup filter */
-	if (filter_idx < CONFIG_CAN_MAX_FILTER) {
+	if (filter_idx < CONFIG_CAN_MAX32_MAX_FILTERS) {
 		unsigned int key = irq_lock();
 
 		dev_data->filter_usage |= BIT(filter_idx);
@@ -371,7 +372,8 @@ static int can_max32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 		LOG_DBG("Set filter id:%08X mask:%08X", filter->id, filter->mask);
 	} else {
 		filter_idx = -ENOSPC;
-		LOG_WRN("All filters are used CONFIG_CAN_MAX_FILTER=%d", CONFIG_CAN_MAX_FILTER);
+		LOG_WRN("All filters are used CONFIG_CAN_MAX32_MAX_FILTERS=%d",
+			CONFIG_CAN_MAX32_MAX_FILTERS);
 	}
 
 	k_mutex_unlock(&dev_data->inst_mutex);
@@ -384,7 +386,7 @@ static void can_max32_remove_rx_filter(const struct device *dev, int filter_idx)
 	struct max32_can_data *dev_data = dev->data;
 	unsigned int key;
 
-	if ((filter_idx < 0) || (filter_idx >= CONFIG_CAN_MAX_FILTER)) {
+	if ((filter_idx < 0) || (filter_idx >= CONFIG_CAN_MAX32_MAX_FILTERS)) {
 		LOG_ERR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
@@ -465,7 +467,7 @@ static int can_max32_get_max_filters(const struct device *dev, bool ide)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_MAX32_MAX_FILTERS;
 }
 
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
@@ -510,7 +512,7 @@ static void can_max32_rx_soft_filter(const struct device *dev, struct can_frame 
 	}
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-	for (; filter_id < CONFIG_CAN_MAX_FILTER; filter_id++) {
+	for (; filter_id < CONFIG_CAN_MAX32_MAX_FILTERS; filter_id++) {
 		if (!(BIT(filter_id) & dev_data->filter_usage)) {
 			continue; /* filter slot empty */
 		}
