@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,14 @@
 	};
 
 	soc {
+		hwinfo: device_id@8061fc {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x008061fc 0x4>,
+			      <0x00806010 0x4>,
+			      <0x00806014 0x4>,
+			      <0x00806018 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(256)>;
