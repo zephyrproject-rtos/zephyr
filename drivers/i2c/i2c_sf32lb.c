@@ -235,6 +235,33 @@ static int i2c_sf32lb_configure(const struct device *dev, uint32_t dev_config)
 	return 0;
 }
 
+static int i2c_sf32lb_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	const struct i2c_sf32lb_config *cfg = dev->config;
+	uint32_t cr = sys_read32(cfg->base + I2C_CR);
+
+	*dev_config = I2C_MODE_CONTROLLER;
+
+	switch (FIELD_GET(I2C_CR_MODE_Msk, cr)) {
+	case I2C_MODE_STD:
+		*dev_config |= I2C_SPEED_SET(I2C_SPEED_STANDARD);
+		break;
+	case I2C_MODE_FS:
+		*dev_config |= I2C_SPEED_SET(I2C_SPEED_FAST);
+		break;
+	case I2C_MODE_HS_STD:
+		*dev_config |= I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		break;
+	case I2C_MODE_HS_FS:
+		*dev_config |= I2C_SPEED_SET(I2C_SPEED_HIGH);
+		break;
+	default:
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
 static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			       uint16_t addr)
 {
@@ -293,6 +320,7 @@ static int i2c_sf32lb_recover_bus(const struct device *dev)
 
 static DEVICE_API(i2c, i2c_sf32lb_driver_api) = {
 	.configure = i2c_sf32lb_configure,
+	.get_config = i2c_sf32lb_get_config,
 	.transfer = i2c_sf32lb_transfer,
 	.recover_bus = i2c_sf32lb_recover_bus,
 };
