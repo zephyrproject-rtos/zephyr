@@ -10,7 +10,6 @@ import logging
 
 from coredump_parser.elf_parser import ThreadInfoOffset
 
-
 logger = logging.getLogger("gdbstub")
 
 
@@ -213,7 +212,8 @@ class GdbStub(abc.ABC):
                     thread_count += 1
                     response += b"," + bytes(str(thread_count), 'ascii')
 
-                # Next walk the linked list, counting the number of threads and construct the response for qfThreadInfo along the way
+                # Next walk the linked list, counting the number of threads and construct
+                # the response for qfThreadInfo along the way
                 t_next_thread_offset = self.elffile.get_kernel_thread_info_offset(
                     ThreadInfoOffset.THREAD_INFO_OFFSET_T_NEXT_THREAD
                 )
@@ -239,7 +239,8 @@ class GdbStub(abc.ABC):
             elif pkt[0:12] == b"qsThreadInfo":
                 self.put_gdb_packet(b"l")
 
-            # For qThreadExtraInfo, obtain a printable string description of thread attributes for the provided thread
+            # For qThreadExtraInfo, obtain a printable string description of thread attributes for
+            # the provided thread
             elif pkt[0:16] == b"qThreadExtraInfo":
                 thread_info_bytes = b''
 

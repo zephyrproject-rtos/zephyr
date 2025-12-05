@@ -9,8 +9,8 @@ import logging
 import struct
 
 from coredump_parser.elf_parser import ThreadInfoOffset
-from gdbstubs.gdbstub import GdbStub
 
+from gdbstubs.gdbstub import GdbStub
 
 logger = logging.getLogger("gdbstub")
 
@@ -179,7 +179,8 @@ class GdbStub_ARM_CortexM(GdbStub):
                         )
                         exc_return = int.from_bytes(exc_return_bytes, "little")
 
-                        # If the bit 4 is not set, the stack frame is extended for floating point data, adjust the SP accordingly
+                        # If the bit 4 is not set, the stack frame is extended for floating point
+                        # data, adjust the SP accordingly
                         if (exc_return & (1 << 4)) == 0:
                             thread_registers[RegNum.SP] = thread_registers[RegNum.SP] + 72
 

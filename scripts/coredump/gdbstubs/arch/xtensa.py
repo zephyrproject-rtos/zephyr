@@ -8,8 +8,8 @@ import binascii
 import logging
 import struct
 import sys
-
 from enum import Enum
+
 from gdbstubs.gdbstub import GdbStub
 
 logger = logging.getLogger("gdbstub")
@@ -155,11 +155,11 @@ class GdbStub_Xtensa(GdbStub):
         arch_data_blk = self.logfile.get_arch_data()['data']
 
         self.version = struct.unpack('H', arch_data_blk[1:3])[0]
-        logger.debug("Xtensa GDB stub version: %d" % self.version)
+        logger.debug(f"Xtensa GDB stub version: {self.version}")
 
         # Get SOC and toolchain to get correct format for unpack
         self.soc = XtensaSoc(bytearray(arch_data_blk)[0])
-        logger.debug("Xtensa SOC: %s" % self.soc.name)
+        logger.debug(f"Xtensa SOC: {self.soc.name}")
 
         if self.version >= 2:
             self.toolchain = XtensaToolchain(bytearray(arch_data_blk)[3])
@@ -173,7 +173,7 @@ class GdbStub_Xtensa(GdbStub):
                 self.toolchain = XtensaToolchain.ZEPHYR
             arch_data_blk_regs = arch_data_blk[3:]
 
-        logger.debug("Xtensa toolchain: %s" % self.toolchain.name)
+        logger.debug(f"Xtensa toolchain: {self.toolchain.name}")
 
         self.gdb_reg_def = get_gdb_reg_definition(self.soc, self.toolchain)
 
@@ -198,7 +198,7 @@ class GdbStub_Xtensa(GdbStub):
                 if r == self.gdb_reg_def.RegNum.EXCCAUSE:
                     self.exception_code = tu[i]
                 self.registers[reg_num] = tu[i]
-            i += 1
+            i = i + 1
 
     def compute_signal(self):
         sig = self.GDB_SIGNAL_DEFAULT

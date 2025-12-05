@@ -12,7 +12,6 @@ import struct
 
 from gdbstubs.gdbstub import GdbStub
 
-
 logger = logging.getLogger("gdbstub")
 
 
