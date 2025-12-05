@@ -17,6 +17,7 @@ logger = logging.getLogger("gdbstub")
 # Matches same in coredump.c
 XTENSA_BLOCK_HDR_DUMMY_SOC = 255
 
+
 # Must match --soc arg options; see get_soc
 class XtensaSoc(Enum):
     UNKNOWN = 0
@@ -60,8 +61,10 @@ def get_gdb_reg_definition(soc, toolchain):
         elif toolchain == XtensaToolchain.XCC:
             return GdbRegDef_Intel_Adsp_CAVS_XCC
         elif toolchain == XtensaToolchain.ESPRESSIF:
-            logger.error("Can't use espressif toolchain with CAVS. " +
-                "Use zephyr or xcc instead. Exiting...")
+            logger.error(
+                "Can't use espressif toolchain with CAVS. "
+                + "Use zephyr or xcc instead. Exiting..."
+            )
             sys.exit(1)
         else:
             raise NotImplementedError
@@ -107,7 +110,6 @@ class ExceptionCodes(Enum):
 
 
 class GdbStub_Xtensa(GdbStub):
-
     GDB_SIGNAL_DEFAULT = 7
 
     # Mapping based on section 4.4.1.5 of the
@@ -149,7 +151,6 @@ class GdbStub_Xtensa(GdbStub):
         self.parse_arch_data_block()
         self.compute_signal()
 
-
     def parse_arch_data_block(self):
         arch_data_blk = self.logfile.get_arch_data()['data']
 
@@ -176,13 +177,11 @@ class GdbStub_Xtensa(GdbStub):
 
         self.gdb_reg_def = get_gdb_reg_definition(self.soc, self.toolchain)
 
-        tu = struct.unpack(self.gdb_reg_def.ARCH_DATA_BLK_STRUCT_REGS,
-                arch_data_blk_regs)
+        tu = struct.unpack(self.gdb_reg_def.ARCH_DATA_BLK_STRUCT_REGS, arch_data_blk_regs)
 
         self.registers = dict()
 
         self.map_registers(tu)
-
 
     def map_registers(self, tu):
         i = 0
@@ -201,7 +200,6 @@ class GdbStub_Xtensa(GdbStub):
                 self.registers[reg_num] = tu[i]
             i += 1
 
-
     def compute_signal(self):
         sig = self.GDB_SIGNAL_DEFAULT
         code = ExceptionCodes(self.exception_code)
@@ -211,19 +209,20 @@ class GdbStub_Xtensa(GdbStub):
 
         if code in self.GDB_SIGNAL_MAPPING:
             sig = self.GDB_SIGNAL_MAPPING[code]
-        elif ExceptionCodes.COPROCESSOR_DISABLED_START.value <= code <= \
-            ExceptionCodes.COPROCESSOR_DISABLED_END.value:
+        elif (
+            ExceptionCodes.COPROCESSOR_DISABLED_START.value
+            <= code
+            <= ExceptionCodes.COPROCESSOR_DISABLED_END.value
+        ):
             sig = 8
 
         self.gdb_signal = sig
-
 
     def handle_register_group_read_packet(self):
         idx = 0
         pkt = b''
 
-        GDB_G_PKT_MAX_REG = \
-            max([reg_num.value for reg_num in self.gdb_reg_def.RegNum])
+        GDB_G_PKT_MAX_REG = max([reg_num.value for reg_num in self.gdb_reg_def.RegNum])
 
         # We try to send as many of the registers listed
         # as possible, but we are constrained by the
@@ -238,7 +237,6 @@ class GdbStub_Xtensa(GdbStub):
             idx += 1
 
         self.put_gdb_packet(pkt)
-
 
     def handle_register_single_read_packet(self, pkt):
         # format is pXX, where XX is the hex representation of the idx
@@ -272,7 +270,6 @@ class GdbRegDef_Sample_Controller:
     # Unlike on ESP32 GDB, there doesn't seem to be an
     # actual hard limit to how big the g packet can be.
     SOC_GDB_GPKT_BIN_SIZE = 444
-
 
     class RegNum(Enum):
         PC = 0
@@ -337,6 +334,7 @@ class GdbRegDef_ESP32:
         WINDOWBASE = 69
         WINDOWSTART = 70
 
+
 class GdbRegDef_ESP32S2:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIII'
     SOC_GDB_GPKT_BIN_SIZE = 420
@@ -365,6 +363,7 @@ class GdbRegDef_ESP32S2:
         A15 = 170
         WINDOWBASE = 66
         WINDOWSTART = 67
+
 
 class GdbRegDef_ESP32S3:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
@@ -399,6 +398,7 @@ class GdbRegDef_ESP32S3:
         WINDOWBASE = 69
         WINDOWSTART = 70
 
+
 # sdk-ng -> overlays/xtensa_intel_apl/gdb/gdb/xtensa-config.c
 class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
@@ -409,7 +409,6 @@ class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
     # even if it was sent in the g packet, I arbitrarily shrunk the
     # G packet to include up to A1, which fixed the issue.
     SOC_GDB_GPKT_BIN_SIZE = 640
-
 
     class RegNum(Enum):
         PC = 0
@@ -450,7 +449,6 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
     # xt-gdb doesn't use the g packet at all
     SOC_GDB_GPKT_BIN_SIZE = 0
 
-
     class RegNum(Enum):
         PC = 32
         EXCCAUSE = 744
@@ -479,6 +477,7 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
         LCOUNT = 514
         WINDOWBASE = 584
         WINDOWSTART = 585
+
 
 # sdk-ng -> overlays/xtensa_dc233c/gdb/gdb/xtensa-config.c
 class GdbRegDef_DC233C:
