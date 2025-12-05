@@ -22,7 +22,7 @@ config CAN_NATIVE_LINUX_RX_THREAD_PRIORITY
 
 config CAN_NATIVE_LINUX_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
-	default 5
+	default 16
 	range 1 32
 	help
 	  Defines the array size of the callback/msgq pointers.
