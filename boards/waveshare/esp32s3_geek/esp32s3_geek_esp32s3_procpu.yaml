@@ -1,0 +1,13 @@
+identifier: esp32s3_geek/esp32s3/procpu
+name: ESP32-S3-GEEK PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - display
+  - gpio
+  - i2c
+  - sdhc
+  - uart
+vendor: waveshare
