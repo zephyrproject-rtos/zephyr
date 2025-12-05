@@ -31,9 +31,6 @@
 #if defined(CONFIG_ARM)
 #define __kinetis_flash_config_section __in_section_unique(_KINETIS_FLASH_CONFIG_SECTION_NAME)
 #define __ti_ccfg_section Z_GENERIC_SECTION(_TI_CCFG_SECTION_NAME)
-#define __ccm_data_section Z_GENERIC_SECTION(_CCM_DATA_SECTION_NAME)
-#define __ccm_bss_section Z_GENERIC_SECTION(_CCM_BSS_SECTION_NAME)
-#define __ccm_noinit_section Z_GENERIC_SECTION(_CCM_NOINIT_SECTION_NAME)
 #define __itcm_section Z_GENERIC_SECTION(_ITCM_SECTION_NAME)
 #define __dtcm_data_section Z_GENERIC_SECTION(_DTCM_DATA_SECTION_NAME)
 #define __dtcm_bss_section Z_GENERIC_SECTION(_DTCM_BSS_SECTION_NAME)
@@ -46,6 +43,14 @@
 #define __imx_boot_dcd_section Z_GENERIC_SECTION(_IMX_BOOT_DCD_SECTION_NAME)
 #define __imx_boot_container_section Z_GENERIC_SECTION(_IMX_BOOT_CONTAINER_SECTION_NAME)
 #define __stm32_backup_sram_section Z_GENERIC_SECTION(_STM32_BACKUP_SRAM_SECTION_NAME)
+
+/*
+ * Deprecated aliases, provided for backwards compatibility.
+ * These aliases will be removed in Zephyr v4.5.
+ */
+#define __ccm_data_section __dtcm_data_section __DEPRECATED_MACRO
+#define __ccm_bss_section __dtcm_bss_section __DEPRECATED_MACRO
+#define __ccm_noinit_section __dtcm_noinit_section __DEPRECATED_MACRO
 #endif /* CONFIG_ARM */
 
 #if defined(CONFIG_NOCACHE_MEMORY)
