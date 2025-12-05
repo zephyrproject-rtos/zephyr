@@ -660,6 +660,8 @@ static void clock_control_bl60x_peripheral_clock_init(void)
 	regval |= (1 << 18);
 	/* enable DMA clock routing */
 	regval |= (1 << 12);
+	/* enable IR clock routing */
+	regval |= (1 << 22);
 
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG1_OFFSET);
 
