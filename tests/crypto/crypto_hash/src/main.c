@@ -23,6 +23,8 @@
 #define CRYPTO_DEV_COMPAT nxp_s32_crypto_hse_mu
 #elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_sha256)
 #define CRYPTO_DEV_COMPAT raspberrypi_pico_sha256
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_crypto)
+#define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
