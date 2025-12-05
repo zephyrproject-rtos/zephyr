@@ -17,5 +17,8 @@ supported:
   - arduino_gpio
   - flash
   - gpio
+  - i2c
+  - spi
   - uart
+  - watchdog
 vendor: nxp
