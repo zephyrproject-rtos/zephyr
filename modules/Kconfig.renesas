@@ -45,6 +45,11 @@ config USE_RA_FSP_I2C_IIC_CONTROLLER
 	help
 	  Enable Renesas RA I2C IIC Controller driver
 
+config USE_RA_FSP_I2C_IIC_TARGET
+	bool
+	help
+	  Enable Renesas RA I2C IIC Target driver
+
 config USE_RA_FSP_SCI_I2C
 	bool
 	help
