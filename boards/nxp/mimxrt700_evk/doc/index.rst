@@ -253,3 +253,35 @@ for a list). The display sample can be built for this module like so:
    :zephyr-app: samples/drivers/display
    :goals: build
    :compact:
+
+NXP RK055HDMIPI4MA0 720p MIPI Display
+=====================================
+
+The :ref:`rk055hdmipi4ma0` connects to the board's MIPI connector J52
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/rk055hdmipi4ma0/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). This panel has a 720p resolution which needs large frame buffer(s) so PSRAM memory
+region must be used, which needs to connect JP45 1-2. The display sample can be built for this
+module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: rk055hdmipi4ma0
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+NXP ZC143AC72MIPI MIPI Display
+==============================
+
+The :ref:`zc143ac72mipi` connects to the board's MIPI connector J26
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/zc143ac72mipi/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: zc143ac72mipi
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
