@@ -546,7 +546,7 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 
 	if (!ret_val) {
 #if CONFIG_SHELL_GETOPT
-		getopt_init();
+		sys_getopt_init();
 #endif
 
 		z_flag_cmd_ctx_set(sh, true);
