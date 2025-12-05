@@ -51,7 +51,7 @@ config CAN_MCP251XFD_READ_CRC_RETRIES
 	help
 	  Number of retries during SFR register read if CRC fails.
 
-config CAN_MAX_FILTER
+config CAN_MCP251XFD_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
 	default 5
 	range 1 32
