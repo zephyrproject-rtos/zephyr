@@ -186,6 +186,17 @@
 			interrupt-parent = <&clic>;
 		};
 
+		irx: irx@2000a600 {
+			compatible = "bflb,irx";
+			reg = <0x2000a600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <36 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		dbi0: dbi@2000a800 {
 			compatible = "bflb,dbi";
 			reg = <0x2000a800 0x100>;
