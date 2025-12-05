@@ -73,6 +73,7 @@
 #define TERMINATION_PATTERN "+++"
 #define CONNECT_STRING      "CONNECT"
 #define CME_ERROR_STRING    "+CME ERROR: "
+#define ERROR_STRING        "ERROR"
 #define OK_STRING           "OK"
 
 /* RAT (Radio Access Technology) commands */
