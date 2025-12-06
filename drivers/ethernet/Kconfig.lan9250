@@ -37,4 +37,10 @@ config ETH_LAN9250_BUF_ALLOC_TIMEOUT
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
 
+config ETH_LAN9250_SPI_FAST_READ
+	bool "SPI Fast Reads up to 80MHz"
+	help
+	  This allows the driver to perform high-speed read
+	  operations (up to 80 MHz).
+
 endif

@@ -429,26 +429,49 @@ static int lan9250_write_buf(const struct device *dev, uint8_t *data_buffer, uin
 static int lan9250_read_buf(const struct device *dev, uint8_t *data_buffer, uint16_t buf_len)
 {
 	const struct lan9250_config *config = dev->config;
-	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
 	uint8_t instr[2] = {(LAN9250_RX_DATA_FIFO >> 8) & 0xFF, (LAN9250_RX_DATA_FIFO & 0xFF)};
+
+#ifndef CONFIG_ETH_LAN9250_SPI_FAST_READ
+	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
 	struct spi_buf tx_buf[3];
 	struct spi_buf rx_buf[3];
 	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
 	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 3};
+#else
+	uint8_t cmd[1] = {LAN9250_SPI_INSTR_FASTREAD};
+	struct spi_buf tx_buf[4];
+	struct spi_buf rx_buf[4];
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 4};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 4};
+#endif
 
 	tx_buf[0].buf = &cmd;
 	tx_buf[0].len = ARRAY_SIZE(cmd);
 	tx_buf[1].buf = &instr;
 	tx_buf[1].len = ARRAY_SIZE(instr);
+#ifndef CONFIG_ETH_LAN9250_SPI_FAST_READ
 	tx_buf[2].buf = NULL;
 	tx_buf[2].len = buf_len;
+#else
+	tx_buf[2].buf = NULL;
+	tx_buf[2].len = 1;
+	tx_buf[3].buf = NULL;
+	tx_buf[3].len = buf_len;
+#endif
 
 	rx_buf[0].buf = NULL;
 	rx_buf[0].len = 1;
 	rx_buf[1].buf = NULL;
 	rx_buf[1].len = 2;
+#ifndef CONFIG_ETH_LAN9250_SPI_FAST_READ
 	rx_buf[2].buf = data_buffer;
 	rx_buf[2].len = buf_len;
+#else
+	rx_buf[2].buf = NULL;
+	rx_buf[2].len = 1;
+	rx_buf[3].buf = data_buffer;
+	rx_buf[3].len = buf_len;
+#endif
 
 	return spi_transceive_dt(&config->spi, &tx, &rx);
 }
@@ -665,6 +688,9 @@ static int lan9250_init(const struct device *dev)
 	struct lan9250_runtime *context = dev->data;
 
 	context->dev = dev;
+
+	__ASSERT(config->spi.config.frequency <= LAN9250_SPI_MAX_FREQUENCY,
+		 "SPI frequency exceeds supported maximum\n");
 
 	/* SPI config */
 	if (!spi_is_ready_dt(&config->spi)) {
