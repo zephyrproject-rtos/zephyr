@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_MCUX_WUU
+    bool "NXP WUU wakeup control"
+    default y
+    depends on DT_HAS_NXP_WUU_ENABLED
+    help
+        Enable support for NXP WUU (Wakeup Unit) wakeup controller driver.

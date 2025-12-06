@@ -15,6 +15,10 @@
 #include <fsl_lptmr.h>
 #include <zephyr/irq.h>
 
+#if CONFIG_PM_WAKEUP_CONTROLLER && DT_INST_NODE_HAS_PROP(0, wakeup_ctrls) && DT_INST_NODE_HAS_PROP(0, wakeup_source)
+#include <zephyr/drivers/wuc.h>
+#endif 
+
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "No LPTMR instance enabled in devicetree");
 
@@ -27,6 +31,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
 #define LPTMR_IRQN DT_INST_IRQN(0)
 #define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
+
+#if CONFIG_PM_WAKEUP_CONTROLLER && DT_INST_NODE_HAS_PROP(0, wakeup_ctrls) && DT_INST_NODE_HAS_PROP(0, wakeup_source)
+#define LPTMR_WUC_DEV DEVICE_DT_GET(DT_INST_PHANDLE(0, wakeup_ctrls))
+#define LPTMR_WUC_SOURCE_ID DT_PHA_BY_IDX(DT_DRV_INST(0), wakeup_ctrls, 0, sourceid);
+#endif 
 
 /* Timer cycles per tick */
 #define CYCLES_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
@@ -55,6 +64,11 @@ void sys_clock_disable(void)
 {
 	LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
 	LPTMR_StopTimer(LPTMR_BASE);
+#if CONFIG_PM_WAKEUP_CONTROLLER && DT_INST_NODE_HAS_PROP(0, wakeup_ctrls) && DT_INST_NODE_HAS_PROP(0, wakeup_source)
+	const struct device *wuc = LPTMR_WUC_DEV;
+	uint32_t sourceId = LPTMR_WUC_SOURCE_ID;
+	(void)wuc_disable_wakeup_source(wuc, sourceId);
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -80,6 +94,14 @@ static void mcux_lptmr_timer_isr(const void *arg)
 static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
+
+#if CONFIG_PM_WAKEUP_CONTROLLER && DT_INST_NODE_HAS_PROP(0, wakeup_ctrls) && DT_INST_NODE_HAS_PROP(0, wakeup_source)
+	const struct device *wuc = LPTMR_WUC_DEV;
+	uint32_t sourceId = LPTMR_WUC_SOURCE_ID;
+	if (wuc_enable_wakeup_source(wuc, sourceId) != 0) {
+		return -EIO;
+	};
+#endif /* CONFIG_PM_WAKEUP_CONTROLLER */
 
 	LPTMR_GetDefaultConfig(&config);
 	config.timerMode = kLPTMR_TimerModeTimeCounter;

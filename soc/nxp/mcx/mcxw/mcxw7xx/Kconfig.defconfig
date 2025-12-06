@@ -68,3 +68,12 @@ config NXP_RF_IMU
 endif # IEEE802154
 
 endif
+
+config PM_DEVICE
+	default y if PM
+
+# config PM_WAKEUP_CONTROLLER
+# 	default y if "$(dt_nodelabel_enabled,wuu)"
+
+config WUC
+	default y if "$(dt_nodelabel_enabled,wuu)"
