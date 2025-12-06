@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config LIN_RENESAS_RA
+	bool
+	help
+	  Enable Renesas RA LIN driver support
+
+config LIN_RENESAS_RA_SCI_B
+	bool "Renesas RA LIN SCI_B"
+	default y
+	depends on DT_HAS_RENESAS_RA_LIN_SCI_B_ENABLED
+	select LIN_RENESAS_RA
+	select USE_RA_FSP_SCI_B_LIN
+	select PINCTRL
+	help
+	  Enable Renesas RA LIN SCI_B driver
