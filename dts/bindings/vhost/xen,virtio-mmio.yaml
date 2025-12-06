@@ -1,0 +1,39 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xen Platform Control Registers
+
+compatible: "xen,vhost-mmio"
+
+include: base.yaml
+
+properties:
+  base:
+    type: int
+    required: true
+
+  num-queues:
+    type: int
+    required: true
+
+  queue-size-max:
+    type: int
+    required: true
+
+  device-id:
+    type: int
+    required: true
+
+  vendor-id:
+    type: int
+    default: 0
+
+  stack-size:
+    type: int
+    description: >
+      Stack size (in bytes) for the instance-specific work_q thread.
+
+  priority:
+    type: int
+    description: >
+      Priority for the instance-specific work_q thread.
