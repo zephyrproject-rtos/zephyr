@@ -332,9 +332,9 @@ def print_linker_sections(list_sections: 'list[OutputSection]'):
     out = ''
     for section in sorted(list_sections):
         template = PRINT_TEMPLATE if section.keep else PRINT_TEMPLATE_NOKEEP
-        out += template.format(
-            obj_file_name=section.obj_file_name, section_name=section.section_name
-        )
+        # Replace quoted section name with wildcard.
+        section_name = re.sub(r'\.\"[^\"]+\"\.', '.*.', section.section_name)
+        out += template.format(obj_file_name=section.obj_file_name, section_name=section_name)
     return out
 
 
