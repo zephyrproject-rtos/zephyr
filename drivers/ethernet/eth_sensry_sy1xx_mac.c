@@ -571,7 +571,7 @@ const struct ethernet_api sy1xx_mac_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.promiscuous_mode = DT_INST_PROP_OR(n, promiscuous_mode, false),                   \
 		.use_zephyr_random_mac = DT_INST_PROP(n, zephyr_random_mac_address),               \
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};                         \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))};                         \
                                                                                                    \
 	static struct sy1xx_mac_dma_buffers __attribute__((section(".udma_access")))               \
 	__aligned(4) sy1xx_mac_dma_buffers_##n;                                                    \
