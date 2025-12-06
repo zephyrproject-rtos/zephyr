@@ -1,0 +1,32 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * TODO: Modify this overlay to not use the real hardware in the build test.
+ */
+
+/ {
+	aliases {
+		i2s-codec-rx = &i2s0;
+		i2s-codec-tx = &i2s1;
+	};
+};
+
+&i3c0 {
+	status = "okay";
+};
+
+&i2s0 {
+	status = "okay";
+};
+
+&i2s1 {
+	status = "okay";
+};
+
+dmic_dev: &dmic0 {
+	status = "okay";
+};
