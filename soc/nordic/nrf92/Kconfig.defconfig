@@ -38,6 +38,33 @@ config SPI_DW_HSSI
 config SPI_DW_ACCESS_WORD_ONLY
 	default y if SPI_DW
 
+if PM
+
+config PM_DEVICE
+	default y
+
+if LOG
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	default 1536
+
+endif # LOG
+
+endif # PM
+
+if PM_DEVICE
+
+config PM_DEVICE_RUNTIME
+	default y
+
+config DEVICE_DEPS
+	default y
+
+config PM_DEVICE_POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER
 
