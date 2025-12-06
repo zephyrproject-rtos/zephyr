@@ -106,6 +106,15 @@
 			status = "disabled";
 		};
 
+		lcdc: lcdc@50008000 {
+			compatible = "sifli,sf32lb-mipi-dbi";
+			reg = <0x50008000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_LCDC1>;
+			status = "disabled";
+		};
+
 		trng: trng@5000f000 {
 			compatible = "sifli,sf32lb-trng";
 			reg = <0x5000f000 0x1000>;
