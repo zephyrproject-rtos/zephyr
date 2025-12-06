@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 #define I2C_CLK_LIMIT_REF_TICK (1 * 1000 * 1000 / 20)	/* REF_TICK, no more than REF_TICK/20*/
 #define I2C_CLK_LIMIT_APB (80 * 1000 * 1000 / 20)	/* Limited by APB, no more than APB/20 */
 #define I2C_CLK_LIMIT_RTC (20 * 1000 * 1000 / 20)	/* Limited by RTC, no more than RTC/20 */
-#define I2C_CLK_LIMIT_XTAL (40 * 1000 * 1000 / 20)	/* Limited by RTC, no more than XTAL/20 */
+#define I2C_CLK_LIMIT_XTAL (40 * 1000 * 1000 / 20)	/* Limited by XTAL, no more than XTAL/20 */
 
 #define I2C_CLOCK_INVALID                 (-1)
 
