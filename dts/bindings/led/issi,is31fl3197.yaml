@@ -2,19 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  IS31FL3194 3-channel LED driver with programmable pattern sequencing
+  IS31FL3197 4-channel LED controller with programmable pattern sequencing
 
-  Supports single-channel and RGB LEDs. For single channel LEDs,
-  the led_set_brightness() API can be used to set the brightness of each LED.
-  For RGB LEDs.
+  Supports single-channel and RGB and maybe RGBW LEDs. For single
+  channel LEDs.
 
-  The LED_SHELL application can be used for testing.
+  The following shows configuration for Arduino Giga Display shield
 
-  The following defines a single RGB LED in the is31fl3194 DT node:
+  The following defines a single RGB LED in the is31fl3197 DT node:
 
-    is31fl3194@53 {
-      compatible = "issi,is31fl3194";
-      reg = <0x53>;
+    is31fl3197@50 {
+      compatible = "issi,is31fl3197";
+      reg = <0x50>;
 
       led_0 {
         label = "RGB LED";
@@ -25,11 +24,11 @@ description: |
       };
     };
 
-  The following example defines three single-channel LEDs in the is31fl3194 DT node:
+  The following example defines three single-channel LEDs in the is31fl3197 DT node:
 
-    is31fl3194@53 {
-      compatible = "issi,is31fl3194";
-      reg = <0x53>;
+    is31fl3197@50 {
+      compatible = "issi,is31fl3197";
+      reg = <0x50>;
 
       led_0 {
         label = "RED LED";
@@ -47,8 +46,7 @@ description: |
       };
     };
 
-
-compatible: "issi,is31fl3194"
+compatible: "issi,is31fl3197"
 
 include: ["i2c-device.yaml", "led-controller.yaml"]
 
@@ -62,11 +60,8 @@ child-binding:
 
     current-limit:
       type: int
+      default: 10
       enum:
         - 10
-        - 20
-        - 30
-        - 40
-      required: true
       description: |
         The current limit for the LED in mA.
