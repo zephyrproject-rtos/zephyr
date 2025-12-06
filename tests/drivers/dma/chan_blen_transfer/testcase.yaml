@@ -18,3 +18,4 @@ tests:
     filter: dt_nodelabel_enabled("tst_dma0")
     platform_allow:
       - nucleo_c031c6
+      - sam_e54_xpro
