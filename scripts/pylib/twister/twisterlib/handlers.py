@@ -869,9 +869,15 @@ class DeviceHandler(Handler):
                     # Return to normal boot
                     ser.rts = False
                 else:
+                    # Wait for serial port to appear after flashing
+                    # To keep dependency between flash_timeout proposed 20% of this value
+                    # but not less than 10s. TO keep clarity of measurement,
+                    # declare new start time instead of using existing one start_time.
+                    serial_wait_timeout = max(10, int(flash_timeout * 0.2))
+                    flash_start_time = time.time()
                     while ser.port not in (p.name for p in list_ports.comports()):
                         time.sleep(0.1)
-                        if time.time() - start_time > flash_timeout:
+                        if time.time() - flash_start_time > serial_wait_timeout:
                             break
                     ser.open()
 
