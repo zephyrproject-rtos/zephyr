@@ -9,6 +9,10 @@ CONFIG_HW_STACK_PROTECTION=y
 # Enable GPIO
 CONFIG_GPIO=y
 
+# Even though these boards have an external crystal, they are notoriously
+# faulty/poorly tuned, so use the internal RC by default
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
 # Board Kconfig.defconfig enables USB CDC ACM and should disable USB remote
 # wakeup by default. It needs to be disabled here, because the USB nrfx
 # driver always overwrites option from Kconfig mentioned above with the
