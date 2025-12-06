@@ -697,6 +697,15 @@ static int lan9250_init(const struct device *dev)
 		return ret;
 	}
 	lan9250_configure(dev);
+
+	ret = net_eth_mac_load(&config->mac_cfg, context->mac_address);
+	if (ret == -ENODATA) {
+		LOG_WRN("No MAC address configured for %s", dev->name);
+	} else if (ret < 0) {
+		LOG_ERR("Failed to load MAC address (%d)", ret);
+		return ret;
+	}
+
 	lan9250_set_macaddr(dev);
 
 	k_thread_create(&context->thread, context->thread_stack,
@@ -710,7 +719,6 @@ static int lan9250_init(const struct device *dev)
 
 #define LAN9250_DEFINE(inst)                                                                       \
 	static struct lan9250_runtime lan9250_##inst##_runtime = {                                 \
-		.mac_address = DT_INST_PROP_OR(inst, local_mac_address, {0}),                      \
 		.tx_rx_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.tx_rx_sem, 1, UINT_MAX),   \
 		.int_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.int_sem, 0, UINT_MAX),       \
 	};                                                                                         \
@@ -719,6 +727,7 @@ static int lan9250_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.timeout = CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT,                                   \
+		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan9250_init, NULL, &lan9250_##inst##_runtime,         \
