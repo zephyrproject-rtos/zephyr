@@ -13,6 +13,7 @@
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
@@ -939,7 +940,7 @@ static int mcp251xfd_handle_modif(const struct device *dev)
 	/* try to transition back into our target mode */
 	if (dev_data->common.started) {
 		LOG_INF("Switching back into mode %d", dev_data->next_mcp251xfd_mode);
-		ret =  mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
+		ret = mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
 	}
 
 finish:
@@ -1098,6 +1099,21 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 				LOG_ERR("Error handling MODIF [%d]", ret);
 			}
 		}
+
+#if defined(CONFIG_PM_DEVICE)
+		if ((reg_int & MCP251XFD_REG_INT_WAKIF) != 0) {
+			LOG_DBG("WAKIF Interrupt - CAN bus activity wake");
+
+			/*
+			 * Device has autonomously woken due to CAN bus activity.
+			 * Trigger PM resume to synchronize state and restore operation.
+			 */
+			ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
+			if (ret < 0 && ret != -EALREADY) {
+				LOG_ERR("Failed to trigger PM resume after wake [%d]", ret);
+			}
+		}
+#endif
 
 		/*
 		 * From Linux mcp251xfd driver
@@ -1412,6 +1428,9 @@ static inline int mcp251xfd_init_int_reg(const struct device *dev)
 
 	tmp = MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
 	      MCP251XFD_REG_INT_CERRIE;
+#if defined(CONFIG_PM_DEVICE)
+	tmp |= MCP251XFD_REG_INT_WAKIE;
+#endif
 #if defined(CONFIG_CAN_STATS)
 	tmp |= MCP251XFD_REG_INT_RXOVIE;
 #endif
@@ -1688,6 +1707,170 @@ static int mcp251xfd_init(const struct device *dev)
 	return ret;
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int mcp251xfd_enter_sleep_mode(const struct device *dev)
+{
+	struct mcp251xfd_data *dev_data = dev->data;
+	uint32_t *reg;
+	uint32_t reg_val;
+	uint8_t current_mode;
+	int ret;
+
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	/* Read current mode */
+	ret = mcp251xfd_get_mode_internal(dev, &current_mode);
+	if (ret < 0) {
+		LOG_ERR("Failed to read current mode [%d]", ret);
+		goto done;
+	}
+	LOG_DBG("Current mode: %d, started: %d", current_mode, dev_data->common.started);
+
+	/* Only allow sleep mode from configuration mode */
+	if (current_mode != MCP251XFD_REG_CON_MODE_CONFIG) {
+		LOG_ERR("invalid mode %u", current_mode);
+		ret = -EINVAL;
+		goto done;
+	}
+
+	/* Clear any pending clearable interrupt flags before sleep.
+	 * This is required because pending MODIF from CONFIG transition
+	 * can prevent sleep entry.
+	 */
+	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_INT, MCP251XFD_REG_SIZE);
+	if (reg) {
+		reg_val = sys_le32_to_cpu(*reg);
+		if (reg_val & MCP251XFD_REG_INT_IF_CLEARABLE_MASK) {
+			uint16_t *reg_int_hw = mcp251xfd_get_spi_buf_ptr(dev);
+			*reg_int_hw = reg_val & 0xFFFF; /* Lower 16 bits */
+			*reg_int_hw &= ~MCP251XFD_REG_INT_IF_CLEARABLE_MASK;
+			*reg_int_hw = sys_cpu_to_le16(*reg_int_hw);
+			mcp251xfd_write(dev, MCP251XFD_REG_INT, sizeof(*reg_int_hw));
+			LOG_DBG("Cleared pending interrupt flags (0x%04x)",
+				(unsigned int)(reg_val & MCP251XFD_REG_INT_IF_CLEARABLE_MASK));
+		}
+	}
+
+	/* Per datasheet: "Sleep mode is requested by clearing OSC.LPMEN,
+	 * and setting REQOP = 001"
+	 * First, clear LPMEN bit in OSC register
+	 */
+	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_OSC, MCP251XFD_REG_SIZE);
+	if (!reg) {
+		ret = -EINVAL;
+		goto done;
+	}
+
+	reg_val = sys_le32_to_cpu(*reg);
+	reg_val &= ~MCP251XFD_REG_OSC_LPMEN; /* Clear LPMEN bit */
+	*reg = sys_cpu_to_le32(reg_val);
+
+	ret = mcp251xfd_write(dev, MCP251XFD_REG_OSC, MCP251XFD_REG_SIZE);
+	if (ret < 0) {
+		LOG_ERR("Failed to clear LPMEN [%d]", ret);
+		goto done;
+	}
+
+	/* Now set REQOP to sleep mode (001) in CON register */
+	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+	if (!reg) {
+		ret = -EINVAL;
+		goto done;
+	}
+
+	reg_val = sys_le32_to_cpu(*reg);
+
+	/* Set REQOP to sleep mode (001) */
+	reg_val &= ~MCP251XFD_REG_CON_REQOP_MASK;
+	reg_val |= FIELD_PREP(MCP251XFD_REG_CON_REQOP_MASK, MCP251XFD_REG_CON_MODE_SLEEP);
+
+	*reg = sys_cpu_to_le32(reg_val);
+
+	ret = mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+	if (ret < 0) {
+		LOG_ERR("Failed to write sleep mode request [%d]", ret);
+		goto done;
+	}
+
+	/* Per datasheet: poll OSCDIS bit in OSC register to confirm sleep entry.
+	 * When OSCDIS=1, device is in sleep mode.
+	 * Note: OPMOD will read as CONFIG (100) during sleep - this is expected.
+	 */
+	ret = mcp251xfd_reg_check_value_wtimeout(dev, MCP251XFD_REG_OSC, MCP251XFD_REG_OSC_OSCDIS, 
+		MCP251XFD_REG_OSC_OSCDIS, MCP251XFD_MODE_CHANGE_TIMEOUT_USEC, MCP251XFD_MODE_CHANGE_RETRIES, 
+		true);
+
+	if (ret == 0) {
+		dev_data->current_mcp251xfd_mode = MCP251XFD_REG_CON_MODE_SLEEP;
+		LOG_DBG("Sleep mode confirmed (OSCDIS=1)");
+	} else {
+		/* Read OSC register to see current state */
+		reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_OSC, MCP251XFD_REG_SIZE);
+		if (reg) {
+			reg_val = sys_le32_to_cpu(*reg);
+			LOG_ERR("OSC register after timeout: 0x%08x (OSCDIS=%d, OSCRDY=%d)",
+				reg_val, (reg_val & MCP251XFD_REG_OSC_OSCDIS) ? 1 : 0,
+				(reg_val & MCP251XFD_REG_OSC_OSCRDY) ? 1 : 0);
+		}
+		LOG_ERR("Failed to confirm sleep mode [%d]", ret);
+	}
+
+done:
+	k_mutex_unlock(&dev_data->mutex);
+	return ret;
+}
+
+static int mcp251xfd_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct mcp251xfd_data *dev_data = dev->data;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		LOG_DBG("PM suspend requested");
+
+		if (pm_device_is_busy(dev)) {
+			return -EBUSY;
+		}
+
+		/* Use dedicated sleep entry function that polls OSCDIS */
+		ret = mcp251xfd_enter_sleep_mode(dev);
+		if (ret == 0) {
+			LOG_DBG("Device entered sleep mode");
+		}
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		LOG_DBG("PM resume requested");
+		/*
+		 * Wake device by re-initializing oscillator.
+		 * Any SPI transaction (including this one) will wake the device
+		 * by asserting nCS, but we need to wait for OSCRDY.
+		 */
+		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+		ret = mcp251xfd_init_osc_reg(dev);
+		k_mutex_unlock(&dev_data->mutex);
+		if (ret < 0) {
+			LOG_ERR("Failed to re-initialize oscillator [%d]", ret);
+			return ret;
+		}
+
+		/* Restore to config mode */
+		ret = mcp251xfd_set_mode_internal(dev, MCP251XFD_REG_CON_MODE_CONFIG);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore config mode [%d]", ret);
+			return ret;
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	.get_capabilities = mcp251xfd_get_capabilities,
 	.set_mode = mcp251xfd_set_mode,
@@ -1775,7 +1958,11 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 		MCP251XFD_SET_CLOCK(inst)                                                          \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_init, NULL, &mcp251xfd_data_##inst,             \
+	IF_ENABLED(CONFIG_PM_DEVICE,                                                 \
+		   (PM_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_pm_action);))                         \
+                                                                                                   \
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_init, COND_CODE_1(CONFIG_PM_DEVICE,                  \
+                          (PM_DEVICE_DT_INST_GET(inst)), (NULL)), &mcp251xfd_data_##inst,          \
 				  &mcp251xfd_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &mcp251xfd_api_funcs);
 
