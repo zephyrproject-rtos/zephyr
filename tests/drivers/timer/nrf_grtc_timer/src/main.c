@@ -319,7 +319,7 @@ static void report_progress(uint32_t start, uint32_t end)
 	}
 }
 
-static void grtc_stress_test(bool busy_sim_en)
+ZTEST(nrf_grtc_timer, test_stress)
 {
 	static struct counter_alarm_cfg alarm_cfg;
 #if DT_NODE_EXISTS(DT_NODELABEL(test_timer)) && DT_NODE_HAS_STATUS(DT_NODELABEL(test_timer), okay)
@@ -354,7 +354,7 @@ static void grtc_stress_test(bool busy_sim_en)
 		counter_set(counter_dev, &alarm_cfg);
 	}
 
-	if (busy_sim_en) {
+	if (IS_ENABLED(CONFIG_TEST_BUSY_SIM)) {
 #ifdef CONFIG_TEST_BUSY_SIM
 		busy_sim_start(500, 200, 1000, 400, NULL);
 #endif
@@ -388,7 +388,7 @@ static void grtc_stress_test(bool busy_sim_en)
 	}
 	TC_PRINT("CPU load during test:%d.%d\n", load / 10, load % 10);
 
-	if (busy_sim_en) {
+	if (IS_ENABLED(CONFIG_TEST_BUSY_SIM)) {
 #ifdef CONFIG_TEST_BUSY_SIM
 		busy_sim_stop();
 #endif
@@ -397,11 +397,6 @@ static void grtc_stress_test(bool busy_sim_en)
 	if (counter_dev) {
 		counter_stop(counter_dev);
 	}
-}
-
-ZTEST(nrf_grtc_timer, test_stress)
-{
-	grtc_stress_test(false);
 }
 
 ZTEST_SUITE(nrf_grtc_timer, NULL, NULL, NULL, NULL, NULL);
