@@ -164,11 +164,6 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	spi_bit_width_t spi_width;
 	fsp_err_t err;
 
-	if (spi_context_configured(&data->ctx, spi_cfg)) {
-		/* This configuration is already in use */
-		return 0;
-	}
-
 	if (data->fsp_ctrl->open != 0) {
 		config->fsp_api->close(data->fsp_ctrl);
 	}
