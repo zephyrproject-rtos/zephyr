@@ -168,6 +168,10 @@ manifest:
       revision: ebecd183d4f52225e465d056f457792e4ebe80c1
       groups:
         - hal
+    - name: hal_elan
+      path: modules/hal/elan
+      revision: 50e4bb7889193687fc63b5cbcb11aa383ac3aa92
+      url: https://github.com/elantw-zephyr/hal_elan.git
     - name: hal_espressif
       revision: 78f88d79bfdca7e84ec7aafb12c0ddd7440bf3d1
       path: modules/hal/espressif

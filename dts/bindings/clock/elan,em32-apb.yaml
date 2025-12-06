@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Elan Microelectronics Corp..
+# SPDX-License-Identifier: Apache-2.0
+
+description: Elan eM32F967 APB Clock Controller Node
+
+compatible: "elan,em32-apb"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    description: Clock reference source
+    required: true
+
+  "#clock-cells":
+    const: 0

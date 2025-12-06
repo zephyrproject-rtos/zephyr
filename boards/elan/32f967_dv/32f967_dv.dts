@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv7-m.dtsi>
+#include <elan/em32fxxx.dtsi>
+#include <elan/em32f967-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "ELAN EM32F967 Development Board";
+	compatible = "elan,em32f967_dv";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &em32_flash_controller;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "User LED 0 (PB14)";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button 0 (PA6)";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+};
+
+&clk_ahb {
+	status = "okay";
+};
+
+&clk_apb {
+	clocks = <&clk_ahb>;
+	status = "okay";
+};
+
+&sram0 {
+	reg = <0x20000000 0x28000>;
+};
+
+&spi2 {
+	status = "disabled";
+	pinctrl-0 = <&spi2_sck_pb5 &spi2_miso_pb6 &spi2_mosi_pb7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_pa1 &uart1_tx_pa2>;
+	pinctrl-names = "default";
+};
+
+&em32_flash_controller {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "disabled";
+};
+
+&uid {
+	status = "disabled";
+};
+
+&bbram0 {
+	status = "disabled";
+};
+
+&trng0 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "disabled";
+};
+
+&crypto0 {
+	status = "disabled";
+};
+
+/* Enable Timer controllers */
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+/* Enable RTC */
+&rtc0 {
+	status = "disabled";
+};

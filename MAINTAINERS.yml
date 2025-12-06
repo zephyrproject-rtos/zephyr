@@ -5629,6 +5629,15 @@ West:
   labels:
     - "platform: Infineon"
 
+"West project: hal_elan":
+  status: maintained
+  maintainers:
+    - galak
+  files:
+    - ../modules/hal/elan/**/
+  labels:
+    - "platform: Elan"
+
 "West project: hal_espressif":
   status: maintained
   maintainers:
