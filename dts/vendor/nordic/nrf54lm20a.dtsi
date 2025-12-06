@@ -234,6 +234,11 @@
 				ghwcfg1 = <0x0>;
 				ghwcfg2 = <0x22affc52>;
 				ghwcfg4 = <0x3e10aa60>;
+				/* 3040 locations with full flexibility */
+				g-rx-fifo-size = <592>;
+				g-np-tx-fifo-size = <32>;
+				g-tx-fifo-size = <512 256 256 256 256 256 256 256
+						  16 16 16 16 16 16 16>;
 				status = "disabled";
 			};
 
