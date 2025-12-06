@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_XSPI := nxp,xspi
 
 DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_CHOSEN_FLASH_CTRL := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
 DT_CHOSEN_FLASH_CTRL_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_CTRL))
 
-DT_FLASH_CTRL_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_PARENT),$(DT_COMPAT_XSPI))
+DT_FLASH_CTRL_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_PARENT),$(DT_COMPAT_NXP_XSPI))
 DT_FLASH_CTRL_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_CTRL),size)
 
 config FLASH_BASE_ADDRESS
