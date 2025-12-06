@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+ * Copyright (c) 2025 Byteflies NV
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,6 +142,10 @@ int main(void)
 		printf("warning: tmp108 device not found checking for compatible ams device\n");
 
 		temp_sensor = DEVICE_DT_GET_ANY(ams_as6212);
+	}
+
+	if (!temp_sensor) {
+		temp_sensor = DEVICE_DT_GET_ANY(ams_as6221);
 
 		if (!temp_sensor) {
 			printf("error: tmp108 compatible devices not found\n");
