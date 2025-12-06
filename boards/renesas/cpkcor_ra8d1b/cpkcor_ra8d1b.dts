@@ -1,0 +1,251 @@
+/*
+ * Copyright (c) 2025 Jisheng Zhang <jszhang@kernel.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "cpkcor_ra8d1b-pinctrl.dtsi"
+
+/ {
+	model = "Renesas CPKCOR-RA8D1B";
+	compatible = "renesas,ra8d1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash;
+		zephyr,crc = &crc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&ioporta 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x68000000 DT_SIZE_M(32)>;	/* 256 Mbits */
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		watchdog0 = &wdt;
+		sdhc0 = &sdhc1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+	div = <4>;
+	mul = <160 0>;
+
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
+};
+
+&pll2 {
+	status = "okay";
+	clocks = <&xtal>;
+	div = <3>;
+	mul = <100 0>;
+
+	pll2p {
+		status = "okay";
+		freq = <DT_FREQ_M(200)>;
+		div = <4>;
+	};
+};
+
+&sciclk {
+	clocks = <&pllp>;
+	div = <4>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
+	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq12 {
+	interrupts = <88 12>;
+	status = "okay";
+};
+
+&sdram {
+	pinctrl-0 = <&sdram_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	multiplex-addr-shift = "8-bit";
+	edian-mode = "little-endian";
+	continuous-access;
+	bus-width = "16-bit";
+
+	bank@0 {
+		reg = <0>;
+		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
+	};
+};
+
+&wdt {
+	status = "okay";
+};
+
+&ulpt0 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&crc {
+	status = "okay";
+};
+
+&sdhc1 {
+	pinctrl-names = "default";
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <60 12>, <61 12>, <62 12>;
+	pinctrl-0 = <&sdhc1_default>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
