@@ -1,0 +1,8 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SHIELD_NXP_MX9_DSI_OLED
+	def_bool $(shields_list_contains,nxp_mx9_dsi_oled)
