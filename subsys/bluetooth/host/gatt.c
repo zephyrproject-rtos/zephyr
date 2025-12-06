@@ -5395,15 +5395,17 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			}
 			prev = node;
 		}
-	} else if (!params->value) {
-		/* Notify with NULL data to complete unsubscribe */
-		params->notify(conn, params, NULL, 0);
 	}
 
 	att_err = att_err_from_int(err);
 
 	if (params->subscribe) {
 		params->subscribe(conn, att_err, params);
+	}
+
+	if (!err && !params->value) {
+		/* Notify with NULL data to complete unsubscribe */
+		params->notify(conn, params, NULL, 0);
 	}
 }
 
