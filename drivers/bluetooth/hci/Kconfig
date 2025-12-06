@@ -184,7 +184,7 @@ config BT_ESP32
 config BT_PSOC6_BLESS
 	bool
 	default y
-	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	depends on DT_HAS_INFINEON_BLESS_HCI_ENABLED
 	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	select BT_HCI_SETUP
 	help

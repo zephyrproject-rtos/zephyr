@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT     infineon_cat1_qspi_flash
+#define DT_DRV_COMPAT     infineon_qspi_flash
 #define SOC_NV_FLASH_NODE DT_PARENT(DT_INST(0, fixed_partitions))
 
 #define PAGE_LEN DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
@@ -18,7 +18,7 @@
 #include "cy_serial_flash_qspi.h"
 #include "cy_smif_memslot.h"
 
-LOG_MODULE_REGISTER(flash_infineon_cat1, CONFIG_FLASH_LOG_LEVEL);
+LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 
 /* Device config structure */
 struct ifx_cat1_flash_config {

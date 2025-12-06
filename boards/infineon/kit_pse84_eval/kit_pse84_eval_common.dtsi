@@ -45,7 +45,7 @@
 };
 
 uart2: &scb2 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 

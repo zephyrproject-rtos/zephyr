@@ -5,7 +5,7 @@
 
 description: Infineon CAT1 SDHC/SDIO controller
 
-compatible: "infineon,cat1-sdhc-sdio"
+compatible: "infineon,sdhc-sdio"
 
 include: [sdhc.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 

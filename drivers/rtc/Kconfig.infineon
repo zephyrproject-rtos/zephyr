@@ -8,7 +8,7 @@
 config RTC_INFINEON_CAT1
 	bool "Infineon CAT1 RTC driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_RTC_ENABLED
+	depends on DT_HAS_INFINEON_RTC_ENABLED
 	select USE_INFINEON_RTC
 	help
 	  This option enables the RTC driver for Infineon CAT1 family.

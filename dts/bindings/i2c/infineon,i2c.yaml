@@ -12,7 +12,7 @@ description: |
   ranging sensor connected on the bus:
 
   i2c3: &scb3 {
-      compatible = "infineon,cat1-i2c";
+      compatible = "infineon,i2c";
       status = "okay";
 
       #address-cells = <1>;
@@ -40,9 +40,9 @@ description: |
     input-enable;
   };
 
-compatible: "infineon,cat1-i2c"
+compatible: "infineon,i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml, "infineon,cat1-scb.yaml"]
+include: [i2c-controller.yaml, pinctrl-device.yaml, "infineon,scb.yaml"]
 
 properties:
   reg:
