@@ -10,4 +10,22 @@ config SD_CMD_TIMEOUT
 
 endif # DISK_DRIVER_SDMMC
 
+if DISPLAY
+
+config MEMC
+	default y
+
+config RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
+	default ".sdram"
+	depends on RENESAS_RA_GLCDC
+
+if LVGL
+
+config LV_Z_VDB_CUSTOM_SECTION
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
 endif # BOARD_EK_RA8P1
