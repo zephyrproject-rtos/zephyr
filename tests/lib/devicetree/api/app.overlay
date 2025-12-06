@@ -658,18 +658,23 @@
 		/* there should only be one of these */
 		test_children: test-children {
 			compatible = "vnd,child-bindings";
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-			test_child_a: child-a {
+			test_child_a: child@a {
+				reg = <0xa>;
 				val = <0>;
 				status = "okay";
 			};
 
-			test_child_b: child-b {
+			test_child_b: child@b {
+				reg = <0xb>;
 				val = <1>;
 				status = "okay";
 			};
 
-			test_child_c: child-c {
+			test_child_c: child@c {
+				reg = <0xc>;
 				val = <2>;
 				status = "disabled";
 			};
