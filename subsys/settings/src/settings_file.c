@@ -539,9 +539,15 @@ static int mkdir_for_file(const char *file_path)
 		if (i > 0 && file_path[i] == '/') {
 			dir_path[i] = '\0';
 
-			err = mkdir_if_not_exists(dir_path);
-			if (err) {
-				return err;
+			if (strrchr(dir_path, ':') == &dir_path[strlen(dir_path) - 1]) {
+				LOG_INF("FatFS root directory detected, skipping mkdir for path: "
+					"%s",
+					dir_path);
+			} else {
+				err = mkdir_if_not_exists(dir_path);
+				if (err) {
+					return err;
+				}
 			}
 		}
 
