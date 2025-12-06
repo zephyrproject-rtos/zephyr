@@ -294,16 +294,24 @@ extern char z_kobject_data_begin[];
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 extern char __tdata_start[];
 extern char __tdata_end[];
-extern char __tdata_size[];
 extern char __tdata_align[];
 extern char __tbss_start[];
 extern char __tbss_end[];
-extern char __tbss_size[];
 extern char __tbss_align[];
 extern char __tls_start[];
 extern char __tls_end[];
 extern char __tls_size[];
+
+#ifdef CONFIG_RISCV_CMODEL_MEDANY
+#define  __tbss_size (size_t)((uintptr_t)__tbss_end  - (uintptr_t)__tbss_start)
+#define  __tdata_size (size_t)((uintptr_t)__tdata_end - (uintptr_t)__tdata_start)
+#else
+extern char __tbss_size[];
+extern char __tdata_size[];
+#endif
+
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 /* lnkr_boot_start[] and lnkr_boot_end[]
