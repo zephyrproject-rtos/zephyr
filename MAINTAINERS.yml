@@ -3775,6 +3775,8 @@ Native_sim and POSIX arch:
     - scripts/valgrind.supp
     - soc/native/
     - tests/boards/native_sim/
+  files-regex:
+    - (drivers/|subsys/).*(bottom)\.([c|h])
   labels:
     - "area: native port"
   description: >-
