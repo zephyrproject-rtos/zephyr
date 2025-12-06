@@ -30,7 +30,7 @@ DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
 DEFAULT_OPENOCD_GDB_PORT = 3333
 DEFAULT_OPENOCD_RTT_PORT = 5555
-DEFAULT_OPENOCD_RESET_HALT_CMD = 'reset init'
+DEFAULT_OPENOCD_RESET_HALT_CMD = ''
 DEFAULT_OPENOCD_TARGET_HANDLE = "_TARGETNAME"
 
 def to_num(number):
@@ -389,7 +389,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append(rtos_command)
 
         server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-                      ['-c', f'tcl_port {self.tcl_port}',
+                      ['-c', 'init', '-c', f'tcl_port {self.tcl_port}',
                        '-c', f'telnet_port {self.telnet_port}',
                        '-c', f'gdb_port {self.gdb_port}'] +
                       pre_init_cmd + self.init_arg + self.targets_arg +
@@ -486,7 +486,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         cmd = (self.openocd_cmd + self.cfg_cmd +
                ['-c', f'tcl_port {self.tcl_port}',
                 '-c', f'telnet_port {self.telnet_port}',
-                '-c', f'gdb_port {self.gdb_port}'] +
+                '-c', f'gdb_port {self.gdb_port}',
+                '-c', f'init; halt; esp appimage_offset 0x20000',
+                ] +
                pre_init_cmd + self.init_arg + self.targets_arg +
                ['-c', self.reset_halt_cmd])
 
