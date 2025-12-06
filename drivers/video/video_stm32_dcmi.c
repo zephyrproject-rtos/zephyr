@@ -375,9 +375,11 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 		.format = &data->fmt,
 	};
 	struct video_frmival best_sensor_frmival;
-	uint64_t best_diff_nsec = INT32_MAX;
-	uint64_t diff_nsec = 0, a, b;
+	uint32_t best_diff_nsec = INT32_MAX;
+	uint32_t diff_nsec = 0, a, b;
 	int best_capture_rate = 1;
+
+	a = video_frmival_nsec(frmival) / USEC_PER_MSEC;
 
 	/*
 	 * Try to figure out a frameinterval setting allow to reach as close as
@@ -392,9 +394,8 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 		fie.discrete.numerator = frmival->numerator;
 		fie.discrete.denominator = frmival->denominator * capture_rate;
 
-		a = video_frmival_nsec(&fie.discrete);
 		video_closest_frmival(config->sensor_dev, &fie);
-		b = video_frmival_nsec(&fie.discrete);
+		b = video_frmival_nsec(&fie.discrete) * capture_rate / USEC_PER_MSEC;
 		diff_nsec = a > b ? a - b : b - a;
 		if (diff_nsec < best_diff_nsec) {
 			best_diff_nsec = diff_nsec;
