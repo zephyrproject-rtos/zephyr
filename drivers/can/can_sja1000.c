@@ -550,7 +550,7 @@ int can_sja1000_get_max_filters(const struct device *dev, bool ide)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_SJA1000_MAX_FILTERS;
 }
 
 static void can_sja1000_handle_receive_irq(const struct device *dev)
