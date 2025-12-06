@@ -140,12 +140,15 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#ifdef CONFIG_SOC_SERIES_STM32WBAX
-	uint32_t wait_cycles, rng_rate;
-
-	if (LL_PKA_IsEnabled(PKA)) {
+#if defined(PKA)
+	/* PKA module needs RNG clock */
+	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
 		return 0;
 	}
+#endif /* PKA */
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+	uint32_t wait_cycles, rng_rate;
 
 	if (clock_control_get_rate(dev_data->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
