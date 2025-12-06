@@ -30,12 +30,16 @@
 LOG_MODULE_REGISTER(main, CONFIG_MODEM_LOG_LEVEL);
 
 static K_SEM_DEFINE(network_connected_sem, 0, 1);
-const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
+static K_SEM_DEFINE(fota_complete_rerun, 0, 1);
+const static struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
 /* Zephyr NET management event callback structures. */
 static struct net_mgmt_event_callback l4_cb;
 static struct net_mgmt_event_callback conn_cb;
-
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+static int fota_update_status = -1;
+#endif
+/** Convert RAT mode enum to string */
 static const char *rat_get_in_string(enum hl78xx_cell_rat_mode rat)
 {
 	switch (rat) {
@@ -144,9 +148,6 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 
 static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_entry *context)
 {
-#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("%d HL78XX modem Event Received: %d", __LINE__, event->type);
-#endif
 	switch (event->type) {
 		/* Do something */
 	case HL78XX_LTE_RAT_UPDATE:
@@ -160,7 +161,40 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 		LOG_INF("%d HL78XX modem startup status: %s", __LINE__,
 			hl78xx_module_status_to_string(event->content.value));
 		break;
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+	case HL78XX_LTE_FOTA_UPDATE_STATUS:
+		LOG_INF("%d HL78XX modem FOTA update status: %d", __LINE__,
+			event->content.wdsi_indication);
+		if (event->content.wdsi_indication == WDSI_FIRMWARE_UPDATE_SUCCESS) {
+			LOG_INF("FOTA update complete, restarting modem...");
+			k_sem_reset(&network_connected_sem);
+			fota_update_status = (int)WDSI_FIRMWARE_UPDATE_SUCCESS;
+			k_sem_give(&fota_complete_rerun);
+		} else if (event->content.wdsi_indication == WDSI_FIRMWARE_UPDATE_FAILED) {
+			LOG_INF("FOTA update failed.");
+			fota_update_status = (int)WDSI_FIRMWARE_UPDATE_FAILED;
+			k_sem_give(&fota_complete_rerun);
+		} else if (event->content.wdsi_indication == WDSI_FIRMWARE_DOWNLOAD_REQUEST &&
+			   fota_update_status != (int)WDSI_FIRMWARE_DOWNLOAD_REQUEST) {
+			LOG_INF("FOTA download requested, starting download...");
+			if (fota_update_status != (int)WDSI_SESSION_STARTED) {
+				return;
+			}
+			fota_update_status = (int)WDSI_FIRMWARE_DOWNLOAD_REQUEST;
+			k_sem_give(&fota_complete_rerun);
+		} else if (event->content.wdsi_indication == WDSI_SESSION_STARTED) {
+			LOG_INF("FOTA session started...");
+			fota_update_status = (int)WDSI_SESSION_STARTED;
+		} else {
+			/* Other WDSI indications can be handled here if needed */
+		}
+
+		break;
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	default:
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+		LOG_DBG("%d HL78XX modem Event Received: %d", __LINE__, event->type);
+#endif
 		break;
 	}
 }
@@ -171,7 +205,7 @@ static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, vo
 		return;
 	}
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("%d %s %s", __LINE__, __func__, argv[0]);
+	LOG_DBG("%d %s", __LINE__, argv[0]);
 #endif
 }
 
@@ -251,7 +285,6 @@ int main(void)
 		}
 
 		(void)conn_mgr_if_connect(iface);
-
 		LOG_INF("Waiting for network connection...");
 		k_sem_take(&network_connected_sem, K_FOREVER);
 	}
@@ -262,6 +295,7 @@ int main(void)
 	char apn[MDM_APN_MAX_LENGTH] = {0};
 	char operator[MDM_MODEL_LENGTH] = {0};
 	char imei[MDM_IMEI_LENGTH] = {0};
+	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
 	enum hl78xx_cell_rat_mode tech;
 	enum cellular_registration_status status;
 	int16_t rsrp;
@@ -289,6 +323,9 @@ int main(void)
 
 	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, (char *)apn, sizeof(apn));
 
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_SERIAL_NUMBER, (char *)serial_number,
+			      sizeof(serial_number));
+
 	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, imei, sizeof(imei));
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	/* In auto rat mode, get the current rat from the modem status */
@@ -308,6 +345,7 @@ int main(void)
 	LOG_RAW("**********************************************************\n");
 	LOG_INF("Manufacturer: %s", manufacturer);
 	LOG_INF("Firmware Version: %s", fw_ver);
+	LOG_INF("Module Serial Number: %s", serial_number);
 	LOG_INF("APN: \"%s\"", apn);
 	LOG_INF("Imei: %s", imei);
 	LOG_INF("RAT: %s", rat_get_in_string(tech));
@@ -337,6 +375,35 @@ int main(void)
 
 	resolve_broker_addr(&test_endpoint_addr);
 
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
+	LOG_INF("Starting AirVantage DM session...");
+	hl78xx_start_airvantage_dm_session(modem);
+	k_sem_reset(&fota_complete_rerun);
+	LOG_INF("Waiting for AirVantage FOTA Creation...");
+	/* Wait for FOTA download request, max 120 seconds */
+	ret = k_sem_take(&fota_complete_rerun, K_SECONDS(120));
+	if (ret < 0) {
+		LOG_WRN("AirVantage DM session timed out waiting for FOTA download request.%d",
+			ret);
+	} else {
+		k_sem_reset(&fota_complete_rerun);
+		LOG_INF("Waiting for AirVantage FOTA Completion...");
+		/* Wait for FOTA completion */
+		ret = k_sem_take(&fota_complete_rerun, K_FOREVER);
+		if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_SUCCESS) {
+			LOG_INF("FOTA update successful, restarting application to apply update.");
+		} else if (fota_update_status == (int)WDSI_FIRMWARE_UPDATE_FAILED) {
+			LOG_WRN("FOTA update failed.");
+		} else {
+			LOG_WRN("FOTA update status unknown.");
+		}
+	}
+
+#else
+	LOG_WRN("AirVantage User Agreement not accepted, cannot start DM session.");
+#endif
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	LOG_INF("Sample application finished.");
 
 	return 0;
