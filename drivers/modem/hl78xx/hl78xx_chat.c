@@ -186,7 +186,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 );
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_post_restart_chat_script, hl78xx_post_restart_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 1000);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 12);
 
 /* init_fail_script moved from hl78xx.c */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_fail_script_cmds,
