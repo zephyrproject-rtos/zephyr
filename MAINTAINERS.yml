@@ -141,9 +141,7 @@
 
 # zephyr-keep-sorted-start strip(":) nofold
 ACPI:
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - lib/acpi/
     - include/zephyr/acpi/
@@ -268,8 +266,6 @@ ARM64 arch:
   status: odd fixes
   collaborators:
     - npitre
-    - povergoing
-    - sgrrzhf
     - wearyzen
     - ithinuel
     - JiafeiPan
@@ -509,7 +505,6 @@ Bluetooth Controller:
   collaborators:
     - carlescufi
     - thoh-ot
-    - ppryga
     - wopu-ot
     - erbr-ot
     - Tronil
@@ -658,7 +653,6 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
-    - Andrewpini
     - akredalen
     - HaavardRei
     - omkar3141
@@ -2165,7 +2159,6 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - gdengi
-    - nbalabak
   files:
     - drivers/pm_cpu_ops/
     - include/zephyr/drivers/pm_cpu_ops/
@@ -2562,8 +2555,6 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - str4t0m
-  collaborators:
-    - casparfriedrich
   files:
     - doc/hardware/peripherals/w1.rst
     - doc/hardware/peripherals/1-Wire_bus_topology.drawio.svg
@@ -2988,8 +2979,6 @@ Intel Platforms (Agilex):
   status: maintained
   maintainers:
     - gdengi
-  collaborators:
-    - nbalabak
   files:
     - boards/intel/socfpga/
     - soc/intel/intel_socfpga/
@@ -3021,7 +3010,6 @@ Intel Platforms (X86):
   maintainers:
     - edersondisouza
   collaborators:
-    - najumon1980
     - teburd
     - dcpleung
     - ceolin
@@ -3092,8 +3080,6 @@ JSON Web Token:
   status: maintained
   maintainers:
     - d3zd3z
-  collaborators:
-    - mrfuchs
   files:
     - subsys/jwt/
     - include/zephyr/data/json.h
@@ -4230,7 +4216,6 @@ PMCI:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - kehintel
   files:
     - subsys/pmci/
@@ -4607,7 +4592,6 @@ SPDX Tooling:
     - kartben
   collaborators:
     - pdgendt
-    - swinslow
   files:
     - scripts/west_commands/spdx.py
     - scripts/west_commands/zspdx/
@@ -4731,8 +4715,6 @@ Sensor Subsystem:
   maintainers:
     - lixuzha
     - yperess
-  collaborators:
-    - qianruh
   files:
     - dts/bindings/sensor/zephyr,sensing.yaml
     - dts/bindings/sensor/zephyr,sensing*.yaml
@@ -5360,7 +5342,6 @@ West:
   collaborators:
     - mbolivar
     - carlescufi
-    - swinslow
     - marc-hb
   files:
     - scripts/west-commands.yml
@@ -5371,9 +5352,7 @@ West:
     - "area: West"
 
 "West project: acpica":
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - modules/acpica/
   labels:
@@ -5498,8 +5477,6 @@ West:
   status: maintained
   maintainers:
     - stephanosio
-  collaborators:
-    - povergoing
   files:
     - modules/cmsis/
   labels:
@@ -5579,7 +5556,6 @@ West:
     - bperseghetti
   collaborators:
     - PetervdPerk-NXP
-    - jgoppert
   files:
     - modules/hal_afbr/
   labels:
@@ -5830,7 +5806,6 @@ West:
     - asmellby
   collaborators:
     - jerome-pouiller
-    - sateeshkotapati
     - yonsch
     - rettichschnidi
     - Martinhoff-maker
@@ -5943,7 +5918,6 @@ West:
 "West project: liblc3":
   status: maintained
   maintainers:
-    - Casper-Bonde-Bose
     - MariuszSkamra
   collaborators:
     - thalley
@@ -5959,7 +5933,6 @@ West:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - dkalowsk
   files: []
   labels:
@@ -6474,7 +6447,6 @@ x86 arch:
     - dcpleung
     - ceolin
     - laurenmurphyx64
-    - najumon1980
     - nashif
   files:
     - arch/x86/
