@@ -429,6 +429,10 @@ if(CONFIG_BUILD_WITH_TFM)
     ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
 
+  # Ensure that the generated syscall include headers of Zephyr are available to TF-M
+  # because some platforms might use the same source files for both builds.
+  add_dependencies(tfm ${SYSCALL_LIST_H_TARGET})
+
   # To ensure that generated include files are created before they are used.
   add_dependencies(zephyr_interface tfm)
 
