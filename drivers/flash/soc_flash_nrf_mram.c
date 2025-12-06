@@ -9,6 +9,9 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
+#include "../soc/nordic/common/mram_latency.h"
+#include "../soc/nordic/ironside/include/nrf_ironside/boot_report.h"
 
 LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 
@@ -25,9 +28,36 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 
 #define ERASE_VALUE 0xff
 
+#define SOC_NRF_MRAM_BANK_11_OFFSET  0x100000
+#define SOC_NRF_MRAM_BANK_11_ADDRESS (MRAM_START + SOC_NRF_MRAM_BANK_11_OFFSET)
+#define SOC_NRF_MRAMC_BASE_ADDR_10   0x5f092000
+#define SOC_NRF_MRAMC_BASE_ADDR_11   0x5f093000
+#define SOC_NRF_MRAMC_READY_REG_0    (SOC_NRF_MRAMC_BASE_ADDR_10 + 0x400)
+#define SOC_NRF_MRAMC_READY_REG_1    (SOC_NRF_MRAMC_BASE_ADDR_11 + 0x400)
+
+#define IRONSIDE_SE_VER_MASK 0x000000FF /* This is the Mask for Ironside SE Seqnum */
+#define IRONSIDE_SE_SUPPORT_READY_VER 21
+
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
 BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 	     "erase-block-size expected to be a multiple of write-block-size");
+
+struct nrf_mram_data_t {
+        uint8_t ironside_se_ver;
+};
+
+static inline uint32_t nrf_mram_ready(uint32_t addr, uint8_t ironside_se_ver)
+{
+	if (ironside_se_ver < IRONSIDE_SE_SUPPORT_READY_VER) {
+		return 1;
+	}
+
+	if (addr < SOC_NRF_MRAM_BANK_11_ADDRESS) {
+		return sys_read32(SOC_NRF_MRAMC_READY_REG_0);
+	} else {
+		return sys_read32(SOC_NRF_MRAMC_READY_REG_1);
+	}
+}
 
 /**
  * @param[in,out] offset      Relative offset into memory, from the driver API.
@@ -101,7 +131,8 @@ static int nrf_mram_read(const struct device *dev, off_t offset, void *data, siz
 
 static int nrf_mram_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
-	ARG_UNUSED(dev);
+	struct nrf_mram_data_t *nrf_mram_data = dev->data;
+	uint8_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
 
 	const uintptr_t addr = validate_and_map_addr(offset, len, true);
 
@@ -111,15 +142,36 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 
 	LOG_DBG("write: %p:%zu", (void *)addr, len);
 
-	memcpy((void *)addr, data, len);
+	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		mram_no_latency_sync_request();
+	}
+	for (uint32_t i = 0; i < (len / MRAM_WORD_SIZE); i++) {
+		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
+			/* Wait until MRAM controller is ready */
+		}
+		memcpy((void *)(addr + (i * MRAM_WORD_SIZE)),
+		       (void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
+	}
+
+	if (len % MRAM_WORD_SIZE) {
+		while (!nrf_mram_ready(addr + (len & ~MRAM_WORD_MASK), ironside_se_ver)) {
+			/* Wait until MRAM controller is ready */
+		}
+		memcpy((void *)(addr + (len & ~MRAM_WORD_MASK)),
+		       (void *)((uintptr_t)data + (len & ~MRAM_WORD_MASK)), len & MRAM_WORD_MASK);
+	}
 	commit_changes(addr + len);
+	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		mram_no_latency_sync_release();
+	}
 
 	return 0;
 }
 
 static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 {
-	ARG_UNUSED(dev);
+	struct nrf_mram_data_t *nrf_mram_data = dev->data;
+	uint8_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
 
 	const uintptr_t addr = validate_and_map_addr(offset, size, true);
 
@@ -129,8 +181,27 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 
 	LOG_DBG("erase: %p:%zu", (void *)addr, size);
 
-	memset((void *)addr, ERASE_VALUE, size);
+	/* Ensure that the mramc banks are powered on */
+	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		mram_no_latency_sync_request();
+	}
+	for (uint32_t i = 0; i < (size / MRAM_WORD_SIZE); i++) {
+		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
+			/* Wait until MRAM controller is ready */
+		}
+		memset((void *)(addr + (i * MRAM_WORD_SIZE)), ERASE_VALUE, MRAM_WORD_SIZE);
+	}
+	if (size % MRAM_WORD_SIZE) {
+		while (!nrf_mram_ready(addr + (size & ~MRAM_WORD_MASK), ironside_se_ver)) {
+			/* Wait until MRAM controller is ready */
+		}
+		memset((void *)(addr + (size & ~MRAM_WORD_MASK)), ERASE_VALUE,
+		       size & MRAM_WORD_MASK);
+	}
 	commit_changes(addr + size);
+	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		mram_no_latency_sync_release();
+	}
 
 	return 0;
 }
@@ -186,5 +257,27 @@ static DEVICE_API(flash, nrf_mram_api) = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &nrf_mram_api);
+static int nrf_mram_init(const struct device *dev)
+{
+	struct nrf_mram_data_t *nrf_mram_data = dev->data;
+	const struct ironside_boot_report *report;
+	int rc = 0;
+
+	rc = ironside_boot_report_get(&report);
+
+	if (rc) {
+		LOG_ERR("Failed to get Ironside boot report");
+		return rc;
+	}
+
+	nrf_mram_data->ironside_se_ver = FIELD_GET(IRONSIDE_SE_VER_MASK,
+						   report->ironside_se_version_int);
+	LOG_DBG("Ironside SE version: %u", nrf_mram_data->ironside_se_ver);
+
+	return 0;
+}
+
+static struct nrf_mram_data_t nrf_mram_data;
+
+DEVICE_DT_INST_DEFINE(0, nrf_mram_init, NULL, &nrf_mram_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &nrf_mram_api);
