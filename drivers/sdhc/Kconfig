@@ -41,6 +41,18 @@ config SDHC_BUFFER_ALIGNMENT
 	  this value if they require alignment. This represents the alignment
 	  of buffers required in bytes
 
+config SDHC_SCATTER_GATHER_TRANSFER
+	bool "Scatter-Gather API"
+	depends on SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	help
+	  Enable SDHC scatter-gather API.
+
+config SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	bool
+	help
+	  Selected by host controller driver if scatter-gather transfer support
+	  is present.
+
 config SDHC_SUPPORTS_UHS
 	bool
 	help
