@@ -99,3 +99,8 @@ west-commands:
       - name: gtags
         class: Gtags
         help: create a GNU global tags file for the current workspace
+  - file: scripts/west_commands/new.py
+    commands:
+      - name: new
+        class: New
+        help: create new zephyr project, module or driver template
