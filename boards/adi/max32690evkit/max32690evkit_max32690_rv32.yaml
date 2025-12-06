@@ -1,0 +1,13 @@
+identifier: max32690evkit/max32690/rv32
+name: max32690evkit rv32
+vendor: adi
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - serial
+  - flash
+ram: 128
+flash: 256
