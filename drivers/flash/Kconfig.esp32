@@ -61,7 +61,7 @@ config ESP_FLASH_ASYNC_IPM
 
 config ESP_FLASH_REMOTE
 	bool "Remote IPM flash driver"
-	default y if (SOC_ESP32_APPCPU || SOC_ESP32S3_APPCPU || SOC_ESP32C6_LPCORE)
+	default y if (SOC_ESP32_APPCPU || SOC_ESP32S3_APPCPU || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
 
 config ESP_FLASH_HOST
 	bool "Host functionality flash driver"
