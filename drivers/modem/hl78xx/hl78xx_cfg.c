@@ -61,7 +61,7 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	}
 	/* Query current rat */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_ksrat_query, strlen(cmd_ksrat_query),
-				     hl78xx_get_ksrat_match(), 1, false);
+				     hl78xx_get_ksrat_match(), 1, MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}

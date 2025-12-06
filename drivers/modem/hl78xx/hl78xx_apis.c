@@ -28,7 +28,7 @@ static int hl78xx_send_cmd(struct hl78xx_data *data, const char *cmd,
 		return -EINVAL;
 	}
 	return modem_dynamic_cmd_send(data, chat_cb, cmd, (uint16_t)strlen(cmd), matches,
-				      match_count, true);
+				      match_count, MDM_CMD_TIMEOUT, true);
 }
 
 int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_signal_type type,
@@ -292,7 +292,7 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 	}
 	/* respect provided matches_size and serialize modem access */
 	return modem_dynamic_cmd_send(data, NULL, cmd, cmd_size, response_matches, matches_size,
-				      true);
+				      MDM_CMD_TIMEOUT, true);
 }
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 int hl78xx_start_airvantage_dm_session(const struct device *dev)
