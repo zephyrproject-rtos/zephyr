@@ -20,6 +20,15 @@
 		i2c-0 = &i2c0;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		led0 = &led0_gpio;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0_gpio: led_0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "On-board LED";
+		};
 	};
 
 	buttons {
