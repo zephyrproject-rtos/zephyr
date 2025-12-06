@@ -11,7 +11,7 @@ description: |
       auto-refresh-count = <8>;
       precharge-cycle-count = <3>;
       multiplex-addr-shift = "10-bit";
-      edian-mode = "little-endian";
+      endian-mode = "little-endian";
       continuous-access;
       bus-width = "16-bit";
       bank@0 {
@@ -85,7 +85,7 @@ properties:
       Select the size of the shift towards the lower half of the row address in row address/column
       address multiplexing.
 
-  edian-mode:
+  endian-mode:
     type: string
     default: "little-endian"
     enum:
