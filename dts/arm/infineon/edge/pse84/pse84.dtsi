@@ -421,6 +421,26 @@
 			status = "disabled";
 		};
 
+		i2s0: tdm@44418000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x44418000 0x200>;
+			interrupts = <158 4>, /* RX Structure */
+			<159 4>; /* TX Structure */
+			status = "disabled";
+		};
+
+		i2s1: tdm@44418200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x44418200 0x200>;
+			interrupts = <160 4>, /* RX Structure */
+			<161 4>; /* TX Structure */
+			status = "disabled";
+		};
+
 		watchdog0: watchdog@4240c000 {
 			compatible = "infineon,cat1-watchdog";
 			reg = <0x4240c000 0x180>;
