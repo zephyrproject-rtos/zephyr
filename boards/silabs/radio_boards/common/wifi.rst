@@ -291,6 +291,7 @@ Bugs and Limitations
    - The device supports bandwidth of 20 MHz only and 1 spatial stream.
    - Although STA and BLE can coexist simultaneously, AP and BLE cannot operate
      together.
+   - The actual timeout applied by the FW will be slightly higher than requested.
 
 Common Features
 ===============
