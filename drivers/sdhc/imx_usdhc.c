@@ -216,14 +216,14 @@ static void imx_usdhc_error_recovery(const struct device *dev)
 
 	if (status & kUSDHC_CommandInhibitFlag) {
 		/* Reset command line */
-		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 100U)) {
+		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 1000U)) {
 			LOG_ERR("Failed to reset command line");
 		}
 	}
 	if (((status & (uint32_t)kUSDHC_DataInhibitFlag) != 0U) ||
 	    (USDHC_GetAdmaErrorStatusFlags(base) != 0U)) {
 		/* Reset data line */
-		if (!USDHC_Reset(base, kUSDHC_ResetData, 100U)) {
+		if (!USDHC_Reset(base, kUSDHC_ResetData, 1000U)) {
 			LOG_ERR("Failed to reset data line");
 		}
 	}
@@ -568,7 +568,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	transfer.data = &data;
 
 	/* Reset tuning circuit */
-	USDHC_Reset(base, kUSDHC_ResetTuning, 100U);
+	USDHC_Reset(base, kUSDHC_ResetTuning, 1000U);
 	/* Disable standard tuning */
 	USDHC_EnableStandardTuning(base, IMX_USDHC_STANDARD_TUNING_START, IMX_USDHC_TUNING_STEP,
 				   false);
