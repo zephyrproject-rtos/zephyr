@@ -110,11 +110,7 @@ click==8.3.0 \
 colorama==0.4.6 \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via
-    #   click
-    #   pytest
-    #   sphinx
-    #   sphinx-autobuild
+    # via sphinx-autobuild
 coverxygen==1.8.1 \
     --hash=sha256:d1c2f6569e8df8823ae313b1f7876e88ff20b4372c6d02f04c51fb5dc424576f
     # via -r requirements.in
@@ -512,10 +508,6 @@ ruamel-yaml==0.18.15 \
     --hash=sha256:148f6488d698b7a5eded5ea793a025308b25eca97208181b6a026037f391f701 \
     --hash=sha256:dbfca74b018c4c3fba0b9cc9ee33e53c371194a9000e694995e620490fd40700
     # via pykwalify
-setuptools==80.9.0 \
-    --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
-    --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
-    # via sphinx-togglebutton
 six==1.17.0 \
     --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
     --hash=sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81
@@ -617,9 +609,9 @@ starlette==0.49.1 \
     --hash=sha256:481a43b71e24ed8c43b11ea02f5353d77840e01480881b8cb5a26b8cae64a8cb \
     --hash=sha256:d92ce9f07e4a3caa3ac13a79523bd18e3bc0042bb8ff2d759a8e7dd0e1859875
     # via sphinx-autobuild
-urllib3==2.5.0 \
-    --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
-    --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
+urllib3==2.6.0 \
+    --hash=sha256:c90f7a39f716c572c4e3e58509581ebd83f9b59cced005b7db7ad2d22b0db99f \
+    --hash=sha256:cb9bcef5a4b345d5da5d145dc3e30834f58e8018828cbc724d30b4cb7d4d49f1
     # via requests
 uvicorn==0.37.0 \
     --hash=sha256:4115c8add6d3fd536c8ee77f0e14a7fd2ebba939fed9b02583a97f80648f9e13 \
