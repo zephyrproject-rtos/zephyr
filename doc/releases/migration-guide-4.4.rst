@@ -115,6 +115,13 @@ STM32
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
 
+* STM32 platforms now use the default MCUboot operating mode ``swap using offset``
+  (:kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET`). To support this bootloader mode,
+  some changes to the board devicetrees are required. Several boards already support this mode
+  (see :github:`100385`).
+  The previous ``swap using move`` mode can still be selected in sysbuild by enabling
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
+
 Stepper
 =======
 
