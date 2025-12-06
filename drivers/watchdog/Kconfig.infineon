@@ -8,7 +8,7 @@
 config WDT_INFINEON_CAT1
 	bool "Infineon CAT1 Watchdog Driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_WATCHDOG_ENABLED
+	depends on DT_HAS_INFINEON_WATCHDOG_ENABLED
 	select USE_INFINEON_WDT
 	help
 	  Enable Watchdog driver for Infineon CAT1 devices.

@@ -8,7 +8,7 @@ title: Infineon CAT1 DMA
 description: |
   DMA for Infineon CAT1 devices
 
-compatible: "infineon,cat1-dma"
+compatible: "infineon,dma"
 
 include: [dma-controller.yaml, "infineon,system-interrupts.yaml"]
 

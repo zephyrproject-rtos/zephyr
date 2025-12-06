@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(psoc6_bless);
 #include "cy_ble_stack_pvt.h"
 #include "cycfg_ble.h"
 
-#define DT_DRV_COMPAT infineon_cat1_bless_hci
+#define DT_DRV_COMPAT infineon_bless_hci
 
 struct psoc6_bless_data {
 	bt_hci_recv_t recv;

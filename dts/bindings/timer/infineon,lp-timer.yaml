@@ -5,7 +5,7 @@
 
 description: Infineon Cat1 low power timer
 
-compatible: "infineon,cat1-lp-timer"
+compatible: "infineon,lp-timer"
 
 include: [base.yaml, "infineon,system-interrupts.yaml"]
 

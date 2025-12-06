@@ -13,7 +13,7 @@
  *   is not supported in current version of GPIO CAT1 driver.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_gpio
+#define DT_DRV_COMPAT infineon_gpio
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>

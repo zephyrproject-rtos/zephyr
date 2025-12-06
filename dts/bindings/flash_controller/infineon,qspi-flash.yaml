@@ -1,5 +1,5 @@
 description: Infineon CAT1 QSPI flash controller
 
-compatible: "infineon,cat1-qspi-flash"
+compatible: "infineon,qspi-flash"
 
 include: flash-controller.yaml

@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 
-#define DT_DRV_COMPAT infineon_cat1_rtc
+#define DT_DRV_COMPAT infineon_rtc
 
 #define _IFX_CAT1_RTC_STATE_UNINITIALIZED 0
 #define _IFX_CAT1_RTC_STATE_ENABLED       1

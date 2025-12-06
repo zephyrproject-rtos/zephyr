@@ -17,19 +17,19 @@
 
 	soc {
 		pinctrl: pinctrl@42400000 {
-			compatible = "infineon,cat1-pinctrl";
+			compatible = "infineon,pinctrl";
 			reg = <0x42400000 0x20000>;
 		};
 
 		hsiom: hsiom@42400000 {
-			compatible = "infineon,cat1-hsiom";
+			compatible = "infineon,hsiom";
 			reg = <0x42400000 0x4000>;
 			interrupts = <21 4>, <20 4>;
 			status = "disabled";
 		};
 
 		gpio_prt0: gpio@42410000 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410000 0x80>;
 			interrupts = <0 4>;
 			gpio-controller;
@@ -39,7 +39,7 @@
 		};
 
 		gpio_prt1: gpio@42410080 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410080 0x80>;
 			interrupts = <1 4>;
 			gpio-controller;
@@ -49,7 +49,7 @@
 		};
 
 		gpio_prt2: gpio@42410100 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410100 0x80>;
 			interrupts = <2 4>;
 			gpio-controller;
@@ -59,7 +59,7 @@
 		};
 
 		gpio_prt3: gpio@42410180 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410180 0x80>;
 			interrupts = <3 4>;
 			gpio-controller;
@@ -69,7 +69,7 @@
 		};
 
 		gpio_prt4: gpio@42410200 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410200 0x80>;
 			interrupts = <4 4>;
 			gpio-controller;
@@ -79,7 +79,7 @@
 		};
 
 		gpio_prt5: gpio@42410280 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410280 0x80>;
 			interrupts = <5 4>;
 			gpio-controller;
@@ -89,7 +89,7 @@
 		};
 
 		gpio_prt6: gpio@42410300 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410300 0x80>;
 			interrupts = <6 4>;
 			gpio-controller;
@@ -99,7 +99,7 @@
 		};
 
 		gpio_prt7: gpio@42410380 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410380 0x80>;
 			interrupts = <7 4>;
 			gpio-controller;
@@ -109,7 +109,7 @@
 		};
 
 		gpio_prt8: gpio@42410400 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410400 0x80>;
 			interrupts = <8 4>;
 			gpio-controller;
@@ -119,7 +119,7 @@
 		};
 
 		gpio_prt9: gpio@42410480 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x42410480 0x80>;
 			interrupts = <9 4>;
 			gpio-controller;
@@ -145,70 +145,70 @@
 		};
 
 		ipc0: ipc@421d0000 {
-			compatible = "infineon,cat1-ipc";
+			compatible = "infineon,ipc";
 			reg = <0x421d0000 0x1200>;
 			status = "disabled";
 			#ipc-config-cells = <3>;
 		};
 
 		scb0: scb@42820000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42820000 0xfd0>;
 			interrupts = <23 4>;
 			status = "disabled";
 		};
 
 		scb1: scb@42840000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42840000 0xfd0>;
 			interrupts = <31 4>;
 			status = "disabled";
 		};
 
 		scb2: scb@42850000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42850000 0xfd0>;
 			interrupts = <32 4>;
 			status = "disabled";
 		};
 
 		scb3: scb@42860000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42860000 0xfd0>;
 			interrupts = <33 4>;
 			status = "disabled";
 		};
 
 		scb4: scb@42870000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42870000 0xfd0>;
 			interrupts = <34 4>;
 			status = "disabled";
 		};
 
 		scb5: scb@42c00000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x42c00000 0xfd0>;
 			interrupts = <35 4>;
 			status = "disabled";
 		};
 
 		watchdog0: watchdog@4220c000 {
-			compatible = "infineon,cat1-watchdog";
+			compatible = "infineon,watchdog";
 			reg = <0x4220c000 0x10>;
 			interrupts = <28 4>;
 			status = "disabled";
 		};
 
 		mcwdt0: mcwdt@4220d000 {
-			compatible = "infineon,cat1-lp-timer";
+			compatible = "infineon,lp-timer";
 			reg = <0x4220d000 0x40>;
 			interrupts = <24 4>;
 			status = "disabled";
 		};
 
 		rtc0: rtc@42220000 {
-			compatible = "infineon,cat1-rtc";
+			compatible = "infineon,rtc";
 			reg = <0x42220000 0xff0c>;
 			interrupts = <25 4>;
 			alarms-count = <2>;
@@ -615,7 +615,7 @@
 
 		dma0: dw@42180000 {
 			#dma-cells = <1>;
-			compatible = "infineon,cat1-dma";
+			compatible = "infineon,dma";
 			reg = <0x42180000 0x10000>;
 			dma-channels = <16>;
 			interrupts = <37 4>, /* CH0 */
@@ -639,7 +639,7 @@
 
 		dma1: dw@42190000 {
 			#dma-cells = <1>;
-			compatible = "infineon,cat1-dma";
+			compatible = "infineon,dma";
 			reg = <0x42190000 0x10000>;
 			dma-channels = <16>;
 			interrupts = <53 4>, /* CH0 */

@@ -10,7 +10,7 @@ description: |
   the board.  For example on the cy8cproto_062_4343w P10.0 is mapped to adc0,channel0 and
   P10.1 is mapped to adc0,channel1.
 
-compatible: "infineon,cat1-adc"
+compatible: "infineon,adc"
 
 include: adc-controller.yaml
 

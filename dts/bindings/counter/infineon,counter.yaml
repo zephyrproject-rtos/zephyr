@@ -5,7 +5,7 @@
 
 description: Infineon counters
 
-compatible: "infineon,cat1-counter"
+compatible: "infineon,counter"
 
 include: [base.yaml, "infineon,system-interrupts.yaml"]
 

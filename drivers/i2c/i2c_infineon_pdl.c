@@ -9,7 +9,7 @@
  * @brief I2C driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_i2c
+#define DT_DRV_COMPAT infineon_i2c
 
 #include <infineon_kconfig.h>
 
@@ -19,7 +19,7 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_infineon_cat1, CONFIG_I2C_LOG_LEVEL);
+LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 
 #include "cy_scb_i2c.h"
 

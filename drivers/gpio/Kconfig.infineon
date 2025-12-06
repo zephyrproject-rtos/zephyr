@@ -7,6 +7,6 @@
 config GPIO_INFINEON_CAT1
 	bool "Infineon CAT1 GPIO driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_GPIO_ENABLED
+	depends on DT_HAS_INFINEON_GPIO_ENABLED
 	help
 	  Enable support for Infineon CAT1 GPIO controllers.

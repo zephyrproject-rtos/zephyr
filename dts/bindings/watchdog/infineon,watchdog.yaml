@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon Serial Communication Blocks (SCB) node
+description: Infineon CAT1 Watchdog
 
-compatible: "infineon,cat1-scb"
+compatible: "infineon,watchdog"
 
 include: [base.yaml, "infineon,system-interrupts.yaml"]
 

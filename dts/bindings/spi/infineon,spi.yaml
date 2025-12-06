@@ -5,7 +5,7 @@
 
 description: Infineon CAT1 SPI
 
-compatible: "infineon,cat1-spi"
+compatible: "infineon,spi"
 
 include: [spi-controller.yaml, pinctrl-device.yaml]
 
