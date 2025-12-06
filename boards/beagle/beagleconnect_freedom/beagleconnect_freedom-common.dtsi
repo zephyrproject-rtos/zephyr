@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
-#include <ti/cc1352r7.dtsi>
 #include "beagleconnect_freedom-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -97,28 +94,6 @@
 	};
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* Allocate 56 KiB for mcuboot */
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(56)>;
-		};
-
-		/* Allocate 640 KiB for application */
-		slot0_partition: partition@e000 {
-			label = "image-0";
-			reg = <0x0000e000 DT_SIZE_K(640)>;
-		};
-
-		/* (avoid touching CCFG) */
-	};
-};
-
 &cpu0 {
 	clock-frequency = <48000000>;
 };
@@ -181,29 +156,6 @@
 		t-enter-dpd = <20000>;
 		t-exit-dpd = <100000>;
 		jedec-id = [c8 40 15];
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			/* Allocate 640 KiB for application */
-			slot1_partition: partition@0 {
-				label = "image-1";
-				reg = <0x00000000 DT_SIZE_K(640)>;
-			};
-
-			/* Allocate 128 KiB scratch for image swap */
-			scratch_partition: partition@A0000 {
-				label = "image-scratch";
-				reg = <0x000a0000 DT_SIZE_K(128)>;
-			};
-
-			storage_partition: partition@c0000 {
-				label = "storage";
-				reg = <0x000c0000 DT_SIZE_K(1280)>;
-			};
-		};
 	};
 };
 
