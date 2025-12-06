@@ -145,12 +145,12 @@ config SETTINGS_CUSTOM
 
 config SETTINGS_TFM_PSA
 	bool "TF-M PSA"
-	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	depends on BUILD_WITH_TFM
 	select EXPERIMENTAL
 	help
 	  Enables PSA Settings backend. Intended for use with boards
 	  using TF-M which cannot make use of persistent storage otherwise.
-	  This backend uses the PSA Internal Trusted Storage (ITS) service to store settings data.
+	  This backend uses the PSA ITS or PS service to store settings data.
 	  Note: This settings backend compacts settings data into as few secure storage nodes as possible.
 	  After each save, the entire settings array is written to the secure storage. To avoid excessive
 	  latency on saving, settings are saved after a delay using a kernel work item.
@@ -269,6 +269,26 @@ config SETTINGS_SHELL
 
 if SETTINGS_TFM_PSA
 
+choice SETTINGS_TFM_PSA_BACKEND
+	prompt "TF-M PSA Settings backend"
+	default SETTINGS_TFM_PSA_BACKEND_ITS
+	help
+	  PSA storage option to be used by the PSA settings backend.
+
+config SETTINGS_TFM_PSA_BACKEND_PS
+	bool "PSA Protected Storage (PS)"
+	depends on TFM_PARTITION_PROTECTED_STORAGE
+	help
+	  Use PSA Protected Storage as settings storage backend.
+
+config SETTINGS_TFM_PSA_BACKEND_ITS
+	bool "PSA Internal Trusted Storage (ITS)"
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	help
+	  Use PSA Internal Trusted Storage as settings storage backend.
+
+endchoice # SETTINGS_TFM_PSA_BACKEND
+
 config SETTINGS_TFM_PSA_NUM_ENTRIES
 	int "Maximum number of settings entries"
 	default 10
@@ -285,7 +305,7 @@ config SETTINGS_TFM_PSA_LAZY_PERSIST_DELAY_MS
 	  unacceptable for time-sensitive events.
 	  Data is always persisted to the secure storage using k_work_delayable, instead of happening in
 	  the same context as settings_save. This option sets the delay with which the
-	  work item is scheduled. The delay is useful in cases where a PSA ITS write may
+	  work item is scheduled. The delay is useful in cases where a write may
 	  block a time-sensitive event, for example Bluetooth pairing, which requires a
 	  sequence of settings writes.
 
