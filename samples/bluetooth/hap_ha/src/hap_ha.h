@@ -1,10 +1,21 @@
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2025 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+
+/**
+ * @brief Initialize the BAP broadcast Sink
+ *
+ * This will register hearing aid sample presets.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int has_server_init(void);
+
 
 /**
  * @brief Initialize the BAP Unicast Server role
@@ -51,10 +62,8 @@ int micp_mic_dev_init(void);
 int ccp_call_ctrl_init(void);
 
 /**
- * @brief Initialize the HAS Server
- *
- * This will register hearing aid sample presets.
+ * @brief Initialize the Broadcast Sink role
  *
  * @return 0 if success, errno on failure.
  */
-int has_server_init(void);
+int init_bap_sink(void);
