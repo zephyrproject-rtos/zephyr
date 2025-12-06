@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2017 ARM Ltd.
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2025 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,15 @@ LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
+
+#if defined(CONFIG_USB_HOST_STACK)
+#include <zephyr/device.h>
+#include <zephyr/usb/usbh.h>
+#endif
+
+#if defined(CONFIG_USB_HOST_STACK)
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+#endif
 
 #define DHCP_OPTION_NTP (42)
 
@@ -86,6 +96,22 @@ static void option_handler(struct net_dhcpv4_option_callback *cb,
 int main(void)
 {
 	LOG_INF("Run dhcpv4 client");
+
+#if defined(CONFIG_USB_HOST_STACK)
+	int err;
+
+	err = usbh_init(&uhs_ctx);
+	if (err) {
+		LOG_ERR("Failed to initialize %s: %d", uhs_ctx.name, err);
+		return err;
+	}
+
+	err = usbh_enable(&uhs_ctx);
+	if (err) {
+		LOG_ERR("Failed to enable %s: %d", uhs_ctx.name, err);
+		return err;
+	}
+#endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
