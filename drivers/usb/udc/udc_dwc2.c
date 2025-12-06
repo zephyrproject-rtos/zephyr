@@ -2397,6 +2397,18 @@ static int udc_dwc2_init(const struct device *dev)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL)) {
+		const struct udc_dwc2_config *const config = dev->config;
+
+		if (config->clk_dev) {
+			ret = clock_control_on(config->clk_dev, config->clk_id);
+			if (ret < 0) {
+				LOG_ERR("Failed to enable clock (%d)", ret);
+				return ret;
+			}
+		}
+	}
+
 	return dwc2_init_pinctrl(dev);
 }
 
@@ -2408,6 +2420,19 @@ static int udc_dwc2_shutdown(const struct device *dev)
 	if (ret) {
 		LOG_ERR("Quirk shutdown failed %d", ret);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL)) {
+		const struct udc_dwc2_config *const config = dev->config;
+
+		if (config->clk_dev) {
+			ret = clock_control_off(config->clk_dev,
+						config->clk_id);
+			if (ret < 0) {
+				LOG_ERR("Failed to disable clock (%d)", ret);
+				return ret;
+			}
+		}
 	}
 
 	return 0;
@@ -3516,6 +3541,16 @@ static const struct udc_api udc_dwc2_api = {
 	}
 #endif
 
+#define UDC_DWC2_CLOCK_DEFINE(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),				\
+		    (static const clock_control_subsys_t usb_dw_clk_id##n =	\
+		    (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid);), ())
+
+#define UDC_DWC2_CLOCK_CONFIG(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),				\
+		    (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		     .clk_id = usb_dw_clk_id##n,), ())
+
 #define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)					\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
@@ -3530,6 +3565,7 @@ static const struct udc_api udc_dwc2_api = {
  */
 #define UDC_DWC2_DEVICE_DEFINE(n)						\
 	UDC_DWC2_PINCTRL_DT_INST_DEFINE(n);					\
+	UDC_DWC2_CLOCK_DEFINE(n);						\
 										\
 	K_THREAD_STACK_DEFINE(udc_dwc2_stack_##n, CONFIG_UDC_DWC2_STACK_SIZE);	\
 										\
@@ -3574,6 +3610,7 @@ static const struct udc_api udc_dwc2_api = {
 		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),				\
 		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),				\
 		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),				\
+		UDC_DWC2_CLOCK_CONFIG(n)					\
 	};									\
 										\
 	static struct udc_dwc2_data udc_priv_##n = {				\
