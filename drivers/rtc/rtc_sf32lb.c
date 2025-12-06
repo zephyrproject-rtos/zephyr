@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(rtc_sf32lb, CONFIG_RTC_LOG_LEVEL);
 #define SYS_CFG_RTC_TR offsetof(HPSYS_CFG_TypeDef, RTC_TR)
 #define SYS_CFG_RTC_DR offsetof(HPSYS_CFG_TypeDef, RTC_DR)
 
+#define SF32LB_LXT32_NODE         DT_NODELABEL(lxt32)
+
 /*
  * The RTC clock, CLK_RTC, can be configured to use the LXT32 (32.768 kHz) or
  * LRC10 (9.8 kHz). The prescaler values need to be set such that the CLK1S
@@ -35,9 +37,15 @@ LOG_MODULE_REGISTER(rtc_sf32lb, CONFIG_RTC_LOG_LEVEL);
  * clock frequency is as follows:
  *  F(CLK1S) = CLK_RTC / (DIV_A_INT + DIV_A_FRAC / 2^14) / DIV_B
  */
-#define RC10K_DIVA_INT 38U
-#define RC10K_DIVA_FRAC 4608U
-#define RC10K_DIVB 256U
+#if DT_NODE_HAS_STATUS(SF32LB_LXT32_NODE, okay)
+#define DIVA_INT 128U
+#define DIVA_FRAC 0U
+#define DIVB 256U
+#else
+#define DIVA_INT 38U
+#define DIVA_FRAC 4608U
+#define DIVB 256U
+#endif
 
 #ifdef CONFIG_RTC_ALARM
 #define RTC_SF32LB_ALRM_MASK_ALL                                                                   \
@@ -59,6 +67,7 @@ struct rtc_sf32lb_alarm_cb {
 struct rtc_sf32lb_data {
 #ifdef CONFIG_RTC_ALARM
 	struct rtc_sf32lb_alarm_cb alarm_cb;
+	bool is_pending;
 #endif
 };
 
@@ -79,7 +88,10 @@ static void rtc_irq_handler(const struct device *dev)
 
 	if (isr & RTC_ISR_ALRMF) {
 		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
+
 #ifdef CONFIG_RTC_ALARM
+		data->is_pending = true;
+
 		if (data->alarm_cb.cb) {
 			data->alarm_cb.cb(dev, 0, data->alarm_cb.user_data);
 		}
@@ -124,7 +136,7 @@ static int rtc_sf32lb_set_time(const struct device *dev, const struct rtc_time *
 	tr = FIELD_PREP(RTC_TR_HT_Msk | RTC_TR_HU_Msk, bin2bcd(timeptr->tm_hour)) |
 	     FIELD_PREP(RTC_TR_MNT_Msk | RTC_TR_MNU_Msk, bin2bcd(timeptr->tm_min)) |
 	     FIELD_PREP(RTC_TR_ST_Msk | RTC_TR_SU_Msk, bin2bcd(timeptr->tm_sec)) |
-	     FIELD_PREP(RTC_TR_SS_Msk, timeptr->tm_nsec * RC10K_DIVA_FRAC / 1000000000U);
+	     FIELD_PREP(RTC_TR_SS_Msk, timeptr->tm_nsec * DIVB / 1000000000U);
 
 	rtc_sf32lb_enter_init_mode(dev);
 	sys_write32(tr, config->base + RTC_TIMER);
@@ -165,7 +177,7 @@ static int rtc_sf32lb_get_time(const struct device *dev, struct rtc_time *timept
 	timeptr->tm_hour = bcd2bin(FIELD_GET(RTC_TR_HT_Msk | RTC_TR_HU_Msk, reg));
 	timeptr->tm_min = bcd2bin(FIELD_GET(RTC_TR_MNT_Msk | RTC_TR_MNU_Msk, reg));
 	timeptr->tm_sec = bcd2bin(FIELD_GET(RTC_TR_ST_Msk | RTC_TR_SU_Msk, reg));
-	timeptr->tm_nsec = FIELD_GET(RTC_TR_SS_Msk, reg) * 1000000000U / RC10K_DIVA_FRAC;
+	timeptr->tm_nsec = FIELD_GET(RTC_TR_SS_Msk, reg) * 1000000000U / DIVB;
 
 	reg = sys_read32(config->cfg + SYS_CFG_RTC_DR);
 
@@ -308,18 +320,19 @@ static int rtc_sf32lb_alarm_get_time(const struct device *dev, uint16_t id, uint
 
 static int rtc_sf32lb_alarm_is_pending(const struct device *dev, uint16_t id)
 {
-	const struct rtc_sf32lb_config *config = dev->config;
+	struct rtc_sf32lb_data *data = dev->data;
+	int ret = 0;
 
 	if (id != 0) {
 		return -EINVAL;
 	}
 
-	if (sys_test_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos)) {
-		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
-		return 1;
-	}
+	__disable_irq();
+	ret = data->is_pending ? 1 : 0;
+	data->is_pending = false;
+	__enable_irq();
 
-	return 0;
+	return ret;
 }
 
 static int rtc_sf32lb_alarm_set_callback(const struct device *dev, uint16_t id,
@@ -360,9 +373,12 @@ static int rtc_sf32lb_init(const struct device *dev)
 	const struct rtc_sf32lb_config *config = dev->config;
 	uint32_t psclr = 0;
 
-	psclr |= FIELD_PREP(RTC_PSCLR_DIVA_INT_Msk, RC10K_DIVA_INT);
-	psclr |= FIELD_PREP(RTC_PSCLR_DIVA_FRAC_Msk, RC10K_DIVA_FRAC);
-	psclr |= FIELD_PREP(RTC_PSCLR_DIVB_Msk, RC10K_DIVB);
+#if DT_NODE_HAS_STATUS(SF32LB_LXT32_NODE, okay)
+	sys_set_bit(config->base + RTC_CR, RTC_CR_LPCKSEL_Pos);
+#endif
+	psclr |= FIELD_PREP(RTC_PSCLR_DIVA_INT_Msk, DIVA_INT);
+	psclr |= FIELD_PREP(RTC_PSCLR_DIVA_FRAC_Msk, DIVA_FRAC);
+	psclr |= FIELD_PREP(RTC_PSCLR_DIVB_Msk, DIVB);
 	sys_write32(psclr, config->base + RTC_PSCLR);
 
 	if (!sys_test_bit(config->base + RTC_CR, RTC_CR_BYPSHAD_Pos)) {
