@@ -325,6 +325,8 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
 	} else {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 	}

@@ -176,6 +176,8 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
 		return "modem unexpected restart";
+	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
+		return "AT command timeout";
 	default:
 		return "unknown event";
 	}
@@ -1022,6 +1024,10 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
+	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+		break;
+
 	default:
 		break;
 	}
@@ -1077,6 +1083,7 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 		}
 		break;
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
 			break;
