@@ -18,6 +18,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/pm/policy.h>
 
 #include <zephyr/spinlock.h>
@@ -37,6 +38,8 @@
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+static const struct reset_dt_spec lptim_reset = RESET_DT_SPEC_INST_GET(0);
 
 /*
  * Assumptions and limitations:
@@ -558,6 +561,9 @@ static int sys_clock_driver_init(void)
 		lptim_clock_freq = KHZ(32);
 	}
 #endif
+
+	/* Reset timer to default state using RCC */
+	(void)reset_line_toggle_dt(&lptim_reset);
 
 #if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
 	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
