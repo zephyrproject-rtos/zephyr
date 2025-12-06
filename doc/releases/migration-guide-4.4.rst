@@ -39,6 +39,26 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+ESP32-S3
+========
+
+* The former ``espressif,esp32-lcd-cam`` binding has been restructured. The
+  LCD_CAM peripheral is now represented by a common ``lcd_cam`` node, with its
+  functional blocks split into two separate child nodes:
+
+    * :dtcompatible:`espressif,esp32-lcd-cam-dvp` compatible node for the DVP
+      (camera) input module, labeled as ``lcd_cam_dvp``.
+    * :dtcompatible:`espressif,esp32-lcd-cam-mipi-dbi` compatible node for the
+      LCD output module, labeled as ``lcd_cam_disp``.
+
+  The original :dtcompatible:`espressif,esp32-lcd-cam` compatible node keeps the
+  common pinctrl, clock, and interrupt properties, while camera-specific
+  properties have moved into the new ``lcd_cam_dvp`` child node.
+
+  Camera-related properties must be moved from ``lcd_cam`` node to the new
+  ``lcd_cam_dvp`` child node, and  ``zephyr,camera`` chosen property should
+  point to ``lcd_cam_dvp`` instead.
+
 Ethernet
 ========
 

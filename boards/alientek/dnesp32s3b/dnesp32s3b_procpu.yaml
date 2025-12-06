@@ -5,6 +5,7 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
+  - display
   - gpio
   - uart
   - i2c
