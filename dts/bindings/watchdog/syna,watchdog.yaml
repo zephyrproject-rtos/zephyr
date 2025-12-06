@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: syna watchdog
+
+compatible: "syna,watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+
+  interrupts:
+    required: true

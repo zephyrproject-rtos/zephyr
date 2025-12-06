@@ -1,0 +1,7 @@
+# Synaptics SR100 Astra Machina Micro (RDK) Board configuration options
+
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SR100_RDK
+	select SOC_SR100_B0
