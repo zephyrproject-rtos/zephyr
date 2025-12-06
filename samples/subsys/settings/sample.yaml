@@ -56,6 +56,16 @@ tests:
       - CONFIG_SETTINGS_NVS=y
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
 
+  sample.subsys.settings.tfm-ps:
+    tags:
+      - trusted-firmware-m
+    filter: CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    extra_args:
+      - CONFIG_SETTINGS_TFM_PSA=y
+      - CONFIG_SETTINGS_TFM_PSA_BACKEND_PS=y
+
   sample.subsys.settings.tfm-its:
     tags:
       - trusted-firmware-m
@@ -63,4 +73,5 @@ tests:
     integration_platforms:
       - mps2/an521/cpu0/ns
     extra_args:
-      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_SETTINGS_TFM_PSA=y
+      - CONFIG_SETTINGS_TFM_PSA_BACKEND_ITS=y
