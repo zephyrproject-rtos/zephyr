@@ -426,6 +426,14 @@ static int lan865x_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = net_eth_mac_load(&cfg->mac_cfg, ctx->mac_address);
+	if (ret == -ENODATA) {
+		LOG_DBG("No MAC address configured for %s", dev->name);
+	} else if (ret < 0) {
+		LOG_ERR("Failed to load MAC address (%d)", ret);
+		return ret;
+	}
+
 	return lan865x_gpio_reset(dev);
 }
 
@@ -475,12 +483,13 @@ static const struct ethernet_api lan865x_api_func = {
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
 		.phy = DEVICE_DT_GET(                                                              \
-			DT_CHILD(DT_INST_CHILD(inst, lan865x_mdio), ethernet_phy_##inst))};        \
+			DT_CHILD(DT_INST_CHILD(inst, lan865x_mdio), ethernet_phy_##inst)),         \
+		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
+	};                                                                                         \
                                                                                                    \
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
 		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};                     \
 	static struct lan865x_data lan865x_data_##inst = {                                         \
-		.mac_address = DT_INST_PROP_OR(inst, local_mac_address, {0}),                      \
 		.tx_rx_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),             \
 		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
 		.tc6 = &oa_tc6_##inst};                                                            \
