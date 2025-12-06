@@ -663,7 +663,7 @@ static sa_family_t eth_intel_igc_get_sa_family(uint8_t *rx_buf)
 		break;
 	}
 
-	return AF_UNSPEC;
+	return NET_AF_UNSPEC;
 }
 
 /**

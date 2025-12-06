@@ -25,6 +25,20 @@ tests:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=y
+  # Compile test CANBUS
+  net.build.no_compat_namespacing_canbus:
+    platform_allow: qemu_x86
+    tags: can
+    depends_on: can
+    extra_configs:
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
+      - CONFIG_POSIX_API=n
+      - CONFIG_SHELL_GETOPT=n
+      - CONFIG_NET_L2_WIFI_SHELL=n
+      - CONFIG_NET_CANBUS=y
+      - CONFIG_CAN=y
+      - CONFIG_NET_SOCKETS_CAN=y
+      - CONFIG_NET_L2_IEEE802154=n
   # Compile test OpenThread
   net.build.no_compat_namespacing_openthread:
     tags:
