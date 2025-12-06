@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# UFS Host Controller (UFSHC) Drivers Configuration
+menuconfig UFSHC
+	bool "UFS Host Controller (UFSHC) drivers"
+	help
+	  Enable support for UFS host controller drivers.
+
+if UFSHC
+
+source "drivers/ufshc/Kconfig.amd_versal2"
+
+# UFS Host Controller driver initialization priority
+config UFSHC_INIT_PRIORITY
+	int "UFSHC driver init priority"
+	default 85
+	help
+	  Set the initialization priority for the UFSHC driver during system boot.
+
+# Buffer alignment for UFS Host Controller drivers
+config UFSHC_BUFFER_ALIGNMENT
+	int
+	default 64
+	help
+	  Some UFS host controllers require specific buffer alignment for DMA operations.
+	  Devices should adjust this value if a different alignment is necessary for operation.
+	  This value represents the alignment of data buffers in bytes (default: 64 bytes).
+
+module = UFSHC
+module-str = ufshc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # UFSHC
