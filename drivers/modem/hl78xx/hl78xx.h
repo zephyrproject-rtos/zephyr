@@ -113,6 +113,9 @@
  */
 #define WDSI_USER_INITIATED_CONNECTION_START_CMD "AT+WDSS=1,1"
 #define WDSI_USER_INITIATED_CONNECTION_STOP_CMD  "AT+WDSS=1,0"
+/* Baud rate commands */
+#define GET_BAUDRATE_CMD                         "AT+IPR?"
+#define SET_BAUDRATE_CMD_FMT                     "AT+IPR=%d"
 
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
@@ -184,6 +187,7 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED,
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT,
 	MODEM_HL78XX_EVENT_COUNT
 };
 
@@ -325,6 +329,13 @@ struct hl78xx_wdsi_status {
 
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
+struct hl78xx_modem_uart_status {
+	uint32_t current_baudrate;
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	uint32_t target_baudrate;
+	uint8_t baudrate_detection_retry;
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+};
 struct modem_status {
 	struct registration_status registration;
 	int16_t rssi;
@@ -343,6 +354,7 @@ struct modem_status {
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	struct hl78xx_modem_uart_status uart;
 };
 
 struct modem_gpio_callbacks {
