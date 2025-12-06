@@ -28,16 +28,6 @@ properties:
   step-width-ns:
     default: 1000
 
-  m0-gpios:
-    required: true
-    type: phandle-array
-    description: Microstep configuration pin 0.
-
-  m1-gpios:
-    required: true
-    type: phandle-array
-    description: Microstep configuration pin 1.
-
   reset-gpios:
     type: phandle-array
     required: true
