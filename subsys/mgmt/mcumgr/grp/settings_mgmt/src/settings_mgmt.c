@@ -75,12 +75,12 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 	}
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	key_name = (char *)malloc(key.len + 1);
-	data = (uint8_t *)malloc(max_size);
+	key_name = (char *)k_malloc(key.len + 1);
+	data = (uint8_t *)k_malloc(max_size);
 
 	if (data == NULL || key_name == NULL) {
 		if (key_name != NULL) {
-			free(key_name);
+			k_free(key_name);
 		}
 
 		return MGMT_ERR_ENOMEM;
@@ -143,8 +143,8 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 
 end:
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	free(key_name);
-	free(data);
+	k_free(key_name);
+	k_free(data);
 #endif
 
 	return MGMT_RETURN_CHECK(ok);
@@ -191,7 +191,7 @@ static int settings_mgmt_write(struct smp_streamer *ctxt)
 	}
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	key_name = (char *)malloc(key.len + 1);
+	key_name = (char *)k_malloc(key.len + 1);
 
 	if (key_name == NULL) {
 		return MGMT_ERR_ENOMEM;
@@ -247,7 +247,7 @@ static int settings_mgmt_write(struct smp_streamer *ctxt)
 
 end:
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	free(key_name);
+	k_free(key_name);
 #endif
 
 	return MGMT_RETURN_CHECK(ok);
@@ -292,7 +292,7 @@ static int settings_mgmt_delete(struct smp_streamer *ctxt)
 	}
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	key_name = (char *)malloc(key.len + 1);
+	key_name = (char *)k_malloc(key.len + 1);
 
 	if (key_name == NULL) {
 		return MGMT_ERR_ENOMEM;
@@ -331,7 +331,7 @@ static int settings_mgmt_delete(struct smp_streamer *ctxt)
 	rc = settings_delete(key_name);
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	free(key_name);
+	k_free(key_name);
 #endif
 
 	if (rc < 0) {
@@ -476,7 +476,7 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		}
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-		key_name = (char *)malloc(key.len + 1);
+		key_name = (char *)k_malloc(key.len + 1);
 
 		if (key_name == NULL) {
 			return MGMT_ERR_ENOMEM;
@@ -504,7 +504,7 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-				free(key_name);
+				k_free(key_name);
 #endif
 				return ret_rc;
 			}
@@ -551,7 +551,7 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 
 end:
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-	free(key_name);
+	k_free(key_name);
 #endif
 
 	return MGMT_RETURN_CHECK(ok);
