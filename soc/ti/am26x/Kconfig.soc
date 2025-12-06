@@ -1,0 +1,14 @@
+# Texas Instruments AM26x MCU Family
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_TI_AM26X
+	bool
+	default y
+
+config SOC_FAMILY
+	default "ti_am26x" if SOC_FAMILY_TI_AM26X
+
+rsource "*/Kconfig.soc"
