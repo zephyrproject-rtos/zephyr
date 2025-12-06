@@ -247,6 +247,7 @@ static void mcux_lptmr_isr(const struct device *dev)
 		uint32_t current_count = LPTMR_GetCurrentTimerCount(config->base);
 
 		LPTMR_StopTimer(config->base);
+		LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 
 		callback(dev, 0, current_count, user_data);
 
