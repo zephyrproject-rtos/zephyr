@@ -679,6 +679,7 @@ sunw	Sun Microsystems, Inc
 supermicro	Super Micro Computer, Inc.
 swir	Sierra Wireless
 syna	Synaptics Inc.
+synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
