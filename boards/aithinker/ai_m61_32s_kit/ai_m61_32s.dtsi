@@ -48,7 +48,7 @@
 
 			storage_partition: partition@100000 {
 				label = "storage";
-				reg = <0x00100000 (0x800000 - 0x2000)>;
+				reg = <0x00100000 (0x700000 - 0x2000)>;
 			};
 		};
 	};
