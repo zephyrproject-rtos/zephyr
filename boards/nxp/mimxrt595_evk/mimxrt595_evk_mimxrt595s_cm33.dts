@@ -355,6 +355,14 @@ arduino_serial: &flexcomm12 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy-handle = <&usbphy>;
+};
+
+&usbphy {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &ctimer0 {
