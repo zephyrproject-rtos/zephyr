@@ -6,7 +6,6 @@
 #define DT_DRV_COMPAT sifli_sf32lb_mpi_qspi_nor
 
 #include "jesd216.h"
-#include "spi_nor.h"
 
 #include <stdint.h>
 
@@ -14,6 +13,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma/sf32lb.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/cache.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
