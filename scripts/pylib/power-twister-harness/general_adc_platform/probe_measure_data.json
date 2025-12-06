@@ -1,0 +1,27 @@
+{
+	"sequence_number": 1,
+	"adcs": {
+		"ADC_0": {
+			"channel_0": {
+				"sample_count": 5,
+				"readings": [
+					{"raw": 36, "voltage_mv": 65},
+					{"raw": 35, "voltage_mv": 63},
+					{"raw": 36, "voltage_mv": 65},
+					{"raw": 35, "voltage_mv": 63},
+					{"raw": 36, "voltage_mv": 65}
+				]
+			},
+			"channel_1": {
+				"sample_count": 5,
+				"readings": [
+					{"raw": 0, "voltage_mv": 0},
+					{"raw": 0, "voltage_mv": 0},
+					{"raw": 1, "voltage_mv": 1},
+					{"raw": 0, "voltage_mv": 0},
+					{"raw": 1, "voltage_mv": 1}
+				]
+			}
+		}
+	}
+}
