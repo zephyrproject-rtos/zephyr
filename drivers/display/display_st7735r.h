@@ -71,6 +71,12 @@
 /* CMD_MADCTL bits */
 #define ST7735R_MADCTL_RBG                      0x00
 #define ST7735R_MADCTL_BGR                      0x08
+#define ST7735R_MADCTL_MY_TOP_TO_BOTTOM         0x00
+#define ST7735R_MADCTL_MY_BOTTOM_TO_TOP         0x80
+#define ST7735R_MADCTL_MX_LEFT_TO_RIGHT         0x00
+#define ST7735R_MADCTL_MX_RIGHT_TO_LEFT         0x40
+#define ST7735R_MADCTL_MV_REVERSE_MODE          0x20
+#define ST7735R_MADCTL_MV_NORMAL_MODE           0x00
 
 
 #endif  /* ST7735R_DISPLAY_DRIVER_H__ */
