@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -97,6 +98,7 @@ enum ti_adc_irq {
 
 struct ti_adc_cfg {
 	DEVICE_MMIO_ROM;
+	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_func)(const struct device *dev);
 	uint32_t open_delay[TI_ADC_TOTAL_CHANNELS];
 	uint8_t oversampling[TI_ADC_TOTAL_CHANNELS];
@@ -183,6 +185,11 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 
 	if (chan >= TI_ADC_TOTAL_CHANNELS) {
 		LOG_ERR("Channel %d invalid, must be less than %d", chan, TI_ADC_TOTAL_CHANNELS);
+		return -EINVAL;
+	}
+
+	if (chan_cfg->reference != ADC_REF_VDD_1) {
+		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 
@@ -288,9 +295,18 @@ static int ti_adc_init(const struct device *dev)
 {
 	const struct ti_adc_cfg *cfg = DEV_CFG(dev);
 	struct ti_adc_data *data = DEV_DATA(dev);
-	struct ti_adc_regs *regs = DEV_REGS(dev);
+	struct ti_adc_regs *regs;
+	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	regs = DEV_REGS(dev);
+
+	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	cfg->irq_func(dev);
 
@@ -370,13 +386,16 @@ static void ti_adc_isr(const struct device *dev)
 
 #define CHAN_PROP_LIST(n, prop) {DT_INST_FOREACH_CHILD_SEP_VARGS(n, EXPLICIT_CHAN_PROP, (,), prop)}
 
+static DEVICE_API(adc, ti_adc_driver_api) = {
+	.channel_setup = ti_adc_channel_setup,
+	.read = ti_adc_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = ti_adc_read_async,
+#endif /* CONFIG_ADC_ASYNC */
+};
+
 #define TI_ADC_INIT(n)                                                                             \
-	static DEVICE_API(adc, ti_adc_driver_api_##n) = {                                          \
-		.channel_setup = ti_adc_channel_setup,                                             \
-		.read = ti_adc_read,                                                               \
-		.ref_internal = DT_INST_PROP(n, ti_vrefp),                                         \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = ti_adc_read_async,)) };                \
-                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void ti_adc_irq_setup_##n(const struct device *dev)                                 \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_adc_isr,                 \
@@ -386,6 +405,7 @@ static void ti_adc_isr(const struct device *dev)
                                                                                                    \
 	static const struct ti_adc_cfg ti_adc_cfg_##n = {                                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.irq_func = &ti_adc_irq_setup_##n,                                                 \
 		.open_delay = CHAN_PROP_LIST(n, ti_open_delay),                                    \
 		.oversampling = CHAN_PROP_LIST(n, zephyr_oversampling),                            \
@@ -400,6 +420,6 @@ static void ti_adc_isr(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ti_adc_init, NULL, &ti_adc_data_##n, &ti_adc_cfg_##n,             \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &ti_adc_driver_api_##n);
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &ti_adc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_ADC_INIT)
