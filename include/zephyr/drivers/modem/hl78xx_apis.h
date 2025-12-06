@@ -106,6 +106,8 @@ enum hl78xx_modem_info_type {
 	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
 	/* <Serial Number> */
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
+	/* Current Baud Rate */
+	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
 };
 
 /** Cellular network structure */
