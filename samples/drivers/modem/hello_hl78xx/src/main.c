@@ -299,6 +299,7 @@ int main(void)
 	enum hl78xx_cell_rat_mode tech;
 	enum cellular_registration_status status;
 	int16_t signal_strength = 0;
+	uint32_t current_baudrate = 0;
 	const char *newapn = "";
 	const char *sample_cmd = "AT";
 
@@ -343,6 +344,9 @@ int main(void)
 	/* Get the current network operator name */
 	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_NETWORK_OPERATOR, (char *)operator,
 			      sizeof(operator));
+	/* Get the current baudrate */
+	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_BAUD_RATE, &current_baudrate,
+			      sizeof(current_baudrate));
 
 	LOG_RAW("\n**********************************************************\n");
 	LOG_RAW("********* Hello HL78XX Modem Sample Application **********\n");
@@ -360,6 +364,7 @@ int main(void)
 	LOG_INF("RSRP : %d", signal_strength);
 #endif
 	LOG_INF("Operator: %s", (strlen(operator) > 0) ? operator : "\"\"");
+	LOG_INF("Current Baudrate: %dbps", current_baudrate);
 	LOG_RAW("**********************************************************\n\n");
 
 	LOG_INF("Setting new APN: %s", newapn);
