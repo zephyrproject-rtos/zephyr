@@ -38,6 +38,12 @@ config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 config ADC_CONFIGURABLE_VBIAS_PIN
 	bool
 
+config ADC_INJECTED_CHANNELS
+	bool "Injected channel support"
+	help
+	  This option enables the support for injected channels, i.e. reading a sequence of
+	  channels outside of the regular sequence.
+
 config ADC_ASYNC
 	bool "Asynchronous call support"
 	select POLL
