@@ -309,6 +309,11 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kTRNG0_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
+	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbfsClock();
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

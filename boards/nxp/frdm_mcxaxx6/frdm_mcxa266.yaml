@@ -25,4 +25,6 @@ supported:
   - dma
   - i3c
   - entropy
+  - arduino_gpio
+  - usbd
 vendor: nxp
