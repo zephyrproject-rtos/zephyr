@@ -104,12 +104,34 @@ extern const struct modem_chat_match modem_chat_any_match;
 /* Helper struct to match nothing. */
 extern const struct modem_chat_match modem_chat_empty_matches[0];
 
+/* Special value that signifies union member is `request_fn`, not `request` */
+#define MODEM_CHAT_REQUEST_FN_LEN UINT16_MAX
+
+/**
+ * @brief Function that retrieves the request to send
+ *
+ * @note The lifetime of the output request pointer must match or exceed the
+ *       lifetime of script_chat.
+ *
+ * @note This function can be called multiple times per request that is sent.
+ *
+ * @param request pointer to store the request in
+ * @param user_data modem chat user data
+ *
+ * @retval Length of @a request
+ */
+typedef uint16_t (*modem_chat_script_request_fn)(const uint8_t **request, void *user_data);
+
 /**
  * @brief Modem chat script chat
  */
 struct modem_chat_script_chat {
-	/** Request to send to modem */
-	const uint8_t *request;
+	union {
+		/** Request to send to modem */
+		const uint8_t *request;
+		/** Function that returns request to send to modem */
+		modem_chat_script_request_fn request_fn;
+	};
 	/** Size of request */
 	uint16_t request_size;
 	/** Expected responses to request */
@@ -142,6 +164,33 @@ struct modem_chat_script_chat {
 	{                                                                                          \
 		.request = (uint8_t *)(_request),                                                  \
 		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = NULL,                                                          \
+		.response_matches_size = 0,                                                        \
+		.timeout = _timeout_ms,                                                            \
+	}
+
+#define MODEM_CHAT_SCRIPT_CMD_RESP_FN(_request_fn, _response_match)                                \
+	{                                                                                          \
+		.request_fn = _request_fn,                                                         \
+		.request_size = MODEM_CHAT_REQUEST_FN_LEN,                                         \
+		.response_matches = &_response_match,                                              \
+		.response_matches_size = 1,                                                        \
+		.timeout = 0,                                                                      \
+	}
+
+#define MODEM_CHAT_SCRIPT_CMD_RESP_MULT_FN(_request_fn, _response_matches)                         \
+	{                                                                                          \
+		.request_fn = _request_fn,                                                         \
+		.request_size = MODEM_CHAT_REQUEST_FN_LEN,                                         \
+		.response_matches = _response_matches,                                             \
+		.response_matches_size = ARRAY_SIZE(_response_matches),                            \
+		.timeout = 0,                                                                      \
+	}
+
+#define MODEM_CHAT_SCRIPT_CMD_RESP_NONE_FN(_request_fn, _timeout_ms)                               \
+	{                                                                                          \
+		.request_fn = _request_fn,                                                         \
+		.request_size = MODEM_CHAT_REQUEST_FN_LEN,                                         \
 		.response_matches = NULL,                                                          \
 		.response_matches_size = 0,                                                        \
 		.timeout = _timeout_ms,                                                            \
