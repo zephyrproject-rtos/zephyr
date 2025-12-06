@@ -450,10 +450,17 @@ static void handle_end_of_packet(struct mspi_dw_data *dev_data)
 static void handle_fifos(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet;
 	bool finished = false;
 
+	/* On initialization TXEIS/RXUIS may be raised before any data is
+	 * requested. If packet is NULL we have nothing to process.
+	 */
+	if (!dev_data->xfer.packets) {
+		return;
+	}
+
+	packet = &dev_data->xfer.packets[dev_data->packets_done];
 	if (packet->dir == MSPI_TX) {
 		if (dev_data->buf_pos < dev_data->buf_end) {
 			tx_data(dev, packet);
@@ -1827,7 +1834,14 @@ static int dev_init(const struct device *dev)
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
 	const struct gpio_dt_spec *ce_gpio;
+	unsigned int key = irq_lock();
 	int rc;
+
+	/* Make sure controller is disabled. */
+	write_ssienr(dev, 0);
+
+	/* Make sure IRQs are disabled. */
+	write_imr(dev, 0);
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -1835,8 +1849,6 @@ static int dev_init(const struct device *dev)
 
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
 				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
-
-	dev_config->irq_config();
 
 #if defined(CONFIG_MULTITHREADING)
 	dev_data->dev = dev;
@@ -1859,12 +1871,13 @@ static int dev_init(const struct device *dev)
 		if (!device_is_ready(ce_gpio->port)) {
 			LOG_ERR("CE GPIO port %s is not ready",
 				ce_gpio->port->name);
-			return -ENODEV;
+			rc = -ENODEV;
+			goto done;
 		}
 
 		rc = gpio_pin_configure_dt(ce_gpio, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			return rc;
+			goto done;
 		}
 	}
 
@@ -1873,20 +1886,22 @@ static int dev_init(const struct device *dev)
 		rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 		if (rc < 0) {
 			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
-			return rc;
+			goto done;
 		}
 	}
 #endif
 
 	rc = pm_device_driver_init(dev, dev_pm_action_cb);
 	if (rc < 0) {
-		return rc;
+		goto done;
 	}
 
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
+	dev_config->irq_config();
 
-	return 0;
+done:
+	irq_unlock(key);
+
+	return rc;
 }
 
 static DEVICE_API(mspi, drv_api) = {
