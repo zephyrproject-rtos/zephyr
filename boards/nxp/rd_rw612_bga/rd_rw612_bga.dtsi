@@ -336,3 +336,11 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 	wakeup-source;
 };
+
+&cache64_ctrl0 {
+	status = "okay";
+};
+
+&cache64_ctrl1 {
+	status = "okay";
+};
