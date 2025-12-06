@@ -41,5 +41,12 @@
 				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
 				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 		};
+
+		rng: rng@50060800 {
+			/* L4R/S RNG differs from L4P/Q; these properties are not available */
+			/delete-property/ nist-config;
+			/delete-property/ health-test-magic;
+			/delete-property/ health-test-config;
+		};
 	};
 };
