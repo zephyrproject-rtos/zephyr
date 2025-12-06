@@ -520,57 +520,28 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 #endif
 };
 
-static const struct apds9960_config apds9960_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif
-#if CONFIG_APDS9960_PGAIN_8X
-	.pgain = APDS9960_PGAIN_8X,
-#elif CONFIG_APDS9960_PGAIN_4X
-	.pgain = APDS9960_PGAIN_4X,
-#elif CONFIG_APDS9960_PGAIN_2X
-	.pgain = APDS9960_PGAIN_2X,
+#if CONFIG_APDS9960_FETCH_MODE_INTERRUPT
+#define APDS9960_CONFIG_INTERRUPT(inst) \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),
 #else
-	.pgain = APDS9960_PGAIN_1X,
+#define APDS9960_CONFIG_INTERRUPT(inst)
 #endif
-#if CONFIG_APDS9960_AGAIN_64X
-	.again = APDS9960_AGAIN_64X,
-#elif CONFIG_APDS9960_AGAIN_16X
-	.again = APDS9960_AGAIN_16X,
-#elif CONFIG_APDS9960_AGAIN_4X
-	.again = APDS9960_AGAIN_4X,
-#else
-	.again = APDS9960_AGAIN_1X,
-#endif
-#if CONFIG_APDS9960_PPULSE_LENGTH_32US
-	.ppcount = APDS9960_PPULSE_LENGTH_32US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#elif CONFIG_APDS9960_PPULSE_LENGTH_16US
-	.ppcount = APDS9960_PPULSE_LENGTH_16US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#elif CONFIG_APDS9960_PPULSE_LENGTH_8US
-	.ppcount = APDS9960_PPULSE_LENGTH_8US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#else
-	.ppcount = APDS9960_PPULSE_LENGTH_4US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#endif
-#if CONFIG_APDS9960_PLED_BOOST_300PCT
-	.pled_boost = APDS9960_PLED_BOOST_300,
-#elif CONFIG_APDS9960_PLED_BOOST_200PCT
-	.pled_boost = APDS9960_PLED_BOOST_200,
-#elif CONFIG_APDS9960_PLED_BOOST_150PCT
-	.pled_boost = APDS9960_PLED_BOOST_150,
-#else
-	.pled_boost = APDS9960_PLED_BOOST_100,
-#endif
-};
 
-static struct apds9960_data apds9960_data;
+#define APDS9960_INIT(i)                                                                           \
+	static struct apds9960_data apds9960_data_##i;                                             \
+	static const struct apds9960_config apds9960_config_##i = {                                \
+		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
+		APDS9960_CONFIG_INTERRUPT(i)                                                       \
+		.pgain = DT_INST_PROP(i, pgain) << 1,                                              \
+		.again = DT_INST_PROP(i, again),                                                   \
+		.ppcount = DT_INST_PROP(i, ppulse_length) | (DT_INST_PROP(i, ppulse_count) - 1),   \
+		.pled_boost = DT_INST_PROP(i, pled_boost) << 4,                                    \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(i, apds9960_pm_action);                                           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, apds9960_init,                                             \
+		PM_DEVICE_DT_INST_GET(i), &apds9960_data_##i, &apds9960_config_##i,                \
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 
-PM_DEVICE_DT_INST_DEFINE(0, apds9960_pm_action);
-
-SENSOR_DEVICE_DT_INST_DEFINE(0, apds9960_init,
-	      PM_DEVICE_DT_INST_GET(0), &apds9960_data, &apds9960_config,
-	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(APDS9960_INIT)
