@@ -162,7 +162,7 @@ struct usbd_desc_node {
 		struct usbd_bos_desc_data bos;
 	};
 	/** Opaque pointer to a descriptor payload */
-	const void *const ptr;
+	const void *ptr;
 	/** Descriptor size in bytes */
 	uint8_t bLength;
 	/** Descriptor type */
