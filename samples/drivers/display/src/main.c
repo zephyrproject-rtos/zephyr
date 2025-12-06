@@ -89,9 +89,9 @@ static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
 	}
 
 	for (size_t idx = 0; idx < buf_size; idx += 3) {
-		*(buf + idx + 0) = color >> 16;
+		*(buf + idx + 0) = color >> 0;
 		*(buf + idx + 1) = color >> 8;
-		*(buf + idx + 2) = color >> 0;
+		*(buf + idx + 2) = color >> 16;
 	}
 }
 
