@@ -53,6 +53,24 @@
 			status = "okay";
 		};
 
+		itcm: itcm@0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: dtcm@20000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x00020000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram3: sram3@8180000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x08180000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "SRAM3";
+		};
+
 		pinctrl: pin-controller@10410000 {
 			compatible = "renesas,rzv-pinctrl";
 			reg = <0x10410000 DT_SIZE_K(64)>;
