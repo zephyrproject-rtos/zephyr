@@ -6,9 +6,7 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#define TEMP_CHANNELS				\
-	{ SENSOR_CHAN_AMBIENT_TEMP, 0 },	\
-	{ SENSOR_CHAN_AMBIENT_TEMP, 1 }
+#define TEMP_CHANNELS      (SENSOR_CHAN_AMBIENT_TEMP, 0), (SENSOR_CHAN_AMBIENT_TEMP, 1)
 #define TEMP_ALIAS(id) DT_ALIAS(CONCAT(temp, id))
 #define TEMP_IODEV_SYM(id) CONCAT(temp_iodev, id)
 #define TEMP_IODEV_PTR(id) &TEMP_IODEV_SYM(id)

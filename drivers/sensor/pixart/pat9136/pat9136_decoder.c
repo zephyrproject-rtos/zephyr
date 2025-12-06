@@ -291,8 +291,10 @@ static int pat9136_decoder_decode(const uint8_t *buffer,
 	return -1;
 }
 
-static bool pat9136_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool pat9136_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	struct pat9136_encoded_data *edata = (struct pat9136_encoded_data *)buffer;
 
 	switch (trigger) {
