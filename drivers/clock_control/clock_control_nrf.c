@@ -13,7 +13,7 @@
 #include <nrfx_clock.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -646,7 +646,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 			/* Clear pending interrupt, otherwise new clock event
 			 * would not wake up from idle.
 			 */
-			NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+			sys_irq_clear(SYS_DT_IRQN(DT_NODELABEL(clock)));
 			nrf_clock_task_trigger(NRF_CLOCK,
 					       NRF_CLOCK_TASK_LFCLKSTART);
 		}
@@ -794,6 +794,20 @@ static void hfclkaudio_init(void)
 #endif
 }
 
+static int clk_irq_handler_wrapper(const void *data)
+{
+	ARG_UNUSED(data);
+
+	nrfx_power_clock_irq_handler();
+	return SYS_IRQ_HANDLED;
+}
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfrc))
+SYS_DT_DEFINE_IRQ_HANDLER(DT_NODELABEL(lfrc), clk_irq_handler_wrapper, NULL);
+#endif
+
+SYS_DT_INST_DEFINE_IRQ_HANDLER(0, clk_irq_handler_wrapper, NULL);
+
 static int clk_init(const struct device *dev)
 {
 	int err;
@@ -801,13 +815,6 @@ static int clk_init(const struct device *dev)
 		.start = onoff_start,
 		.stop = onoff_stop
 	};
-
-#if NRF_LFRC_HAS_CALIBRATION
-	IRQ_CONNECT(LFRC_IRQn, DT_INST_IRQ(0, priority), nrfx_isr, nrfx_power_clock_irq_handler, 0);
-#endif
-
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 
 	if (nrfx_clock_init(clock_event_handler) != 0) {
 		return -EIO;
@@ -821,7 +828,13 @@ static int clk_init(const struct device *dev)
 		z_nrf_clock_calibration_init(data->mgr);
 	}
 
-	nrfx_clock_enable();
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfrc))
+	sys_irq_configure(SYS_DT_IRQN(DT_NODELABEL(lfrc)), SYS_DT_IRQ_FLAGS(DT_NODELABEL(lfrc)));
+	sys_irq_enable(SYS_DT_IRQN(DT_NODELABEL(lfrc)));
+#endif
+
+	sys_irq_configure(SYS_DT_INST_IRQN(0), SYS_DT_INST_IRQ_FLAGS(0));
+	sys_irq_enable(SYS_DT_INST_IRQN(0));
 
 	for (enum clock_control_nrf_type i = 0;
 		i < CLOCK_CONTROL_NRF_TYPE_COUNT; i++) {

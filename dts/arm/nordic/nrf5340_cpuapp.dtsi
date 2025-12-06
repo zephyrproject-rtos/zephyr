@@ -124,6 +124,7 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+	interrupt-lines = <65>;
 };
 
 &systick {

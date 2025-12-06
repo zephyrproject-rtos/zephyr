@@ -1,0 +1,9 @@
+tests:
+  kernel.sys_irq.shared_irq:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+  kernel.sys_irq.shared_irq.lto:
+    extra_configs:
+      - CONFIG_LTO=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp

@@ -12,3 +12,6 @@ properties:
     type: int
     required: true
     description: Number of items to expect in an interrupt specifier
+  interrupt-lines:
+    type: int
+    description: Number of interrupt lines
