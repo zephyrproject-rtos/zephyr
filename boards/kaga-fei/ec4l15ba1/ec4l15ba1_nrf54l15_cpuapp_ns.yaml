@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 KAGA FEI Co., Ltd.
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+identifier: ec4l15ba1/nrf54l15/cpuapp/ns
+name: EC4L15BA1-nRF54l15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 256
+flash: 1524
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - adc
+  - i2s
+vendor: nordic
+sysbuild: true
