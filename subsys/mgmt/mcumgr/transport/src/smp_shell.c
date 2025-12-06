@@ -228,7 +228,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 	int rc;
 
 	shell_uart = (struct shell_uart_common *)shell_backend_uart_get_ptr()->iface->ctx;
-	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
+	rc = mcumgr_serial_tx_pkt(shell_uart->dev, nb->data, nb->len, smp_shell_tx_raw);
 	smp_packet_free(nb);
 
 	return rc;

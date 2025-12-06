@@ -26,6 +26,9 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(smp_smp, 4);
+
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /*
  * @brief	Translate SMP version 2 error code to legacy SMP version 1 MCUmgr error code.
@@ -355,7 +358,12 @@ static void smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+		streamer->smpt->functions.output(streamer->smpt->dev, rsp);
+#else
 		streamer->smpt->functions.output(rsp);
+#endif
+
 		rsp = NULL;
 	}
 
@@ -440,7 +448,11 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			}
 
 			/* Send the response. */
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+			rc = streamer->smpt->functions.output(streamer->smpt->dev, rsp);
+#else
 			rc = streamer->smpt->functions.output(rsp);
+#endif
 			rsp = NULL;
 		} else if (IS_ENABLED(CONFIG_SMP_CLIENT) && (req_hdr.nh_op == MGMT_OP_READ_RSP ||
 			   req_hdr.nh_op == MGMT_OP_WRITE_RSP)) {
