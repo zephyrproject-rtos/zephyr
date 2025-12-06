@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 
 #if defined __has_include
-#if __has_include("app_version.h")
-#include "app_version.h"
+#if __has_include(<zephyr/app_version.h>)
+#include <zephyr/app_version.h>
 #define SOC_IMAGE_VERSION APPVERSION
 #endif
 #endif
