@@ -6,6 +6,7 @@
 import argparse
 import os
 import pickle
+from pathlib import Path
 
 from tabulate import tabulate
 
@@ -18,12 +19,37 @@ KIND_TO_COL = {
 }
 
 
-def source_link(refpath, fn, ln):
-    if refpath:
-        fn = os.path.relpath(fn, refpath)
+def is_cross_drive(path1, path2):
+    """Check if two paths are on different drives (Windows only)"""
 
-    link_fn = fn
-    disp_fn = os.path.normpath(fn).replace("../", "").replace("_", "\\_")
+    if os.name != 'nt':
+        return False
+
+    try:
+        p1 = Path(path1).resolve()
+        p2 = Path(path2).resolve()
+        # On Windows, drive is the first part before ':'
+        drive1 = str(p1).split(':')[0] if ':' in str(p1) else None
+        drive2 = str(p2).split(':')[0] if ':' in str(p2) else None
+        return drive1 != drive2 and drive1 is not None and drive2 is not None
+    except Exception:
+        return False
+
+
+def source_link(refpath, fn, ln, use_absolute):
+    full_path = Path(fn).resolve().as_posix().replace("_", "\\_")
+
+    if use_absolute:
+        return f"{full_path}:{ln}"
+
+    try:
+        fn = os.path.relpath(fn, refpath)
+    except ValueError:
+        # fallback to absolute path
+        return f"{full_path}:{ln}"
+
+    link_fn = fn.replace("\\", "/")
+    disp_fn = os.path.normpath(fn).replace("\\", "/").replace("../", "").replace("_", "\\_")
 
     return f"[{disp_fn}:{ln}](<{link_fn}#L{ln}>)"
 
@@ -31,12 +57,12 @@ def source_link(refpath, fn, ln):
 def write_markdown(trace_data, output):
     sections = {"user": [], "hidden": [], "unset": []}
 
-    if os.name == "nt":
-        # relative paths on Windows can't span drives, so don't use them
-        # generated links will be absolute
-        refpath = None
-    else:
-        refpath = os.path.dirname(os.path.abspath(output))
+    refpath = os.path.dirname(os.path.abspath(output))
+
+    # Check if we need to use absolute paths (cross-drive on Windows)
+    use_absolute = False
+    if os.name == 'nt' and is_cross_drive(refpath, __file__):
+        use_absolute = True
 
     for sym in trace_data:
         sym_name, sym_vis, sym_type, sym_value, sym_src, sym_loc = sym
@@ -56,7 +82,7 @@ def write_markdown(trace_data, output):
             sym_value = f'"{sym_value}"'.replace("_", "\\_")
 
         if isinstance(sym_loc, tuple):
-            sym_loc = source_link(refpath, *sym_loc)
+            sym_loc = source_link(refpath, *sym_loc, use_absolute)
         elif isinstance(sym_loc, list):
             sym_loc = " || <br> ".join(f"`{loc}`" for loc in sym_loc)
             sym_loc = sym_loc.replace("|", "\\|")
@@ -112,6 +138,7 @@ def main():
     with open(args.dotconfig_file + '-trace.pickle', 'rb') as f:
         trace_data = pickle.load(f)
     write_markdown(trace_data, args.output_file)
+    print(f"\nTraceconfig generated to: {args.output_file}")
 
 
 if __name__ == '__main__':
