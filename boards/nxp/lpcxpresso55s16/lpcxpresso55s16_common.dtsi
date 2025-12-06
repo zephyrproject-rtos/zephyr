@@ -219,6 +219,14 @@
 	};
 };
 
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};
+
 arduino_i2c: &flexcomm4 {};
 
 arduino_spi: &hs_lspi {};

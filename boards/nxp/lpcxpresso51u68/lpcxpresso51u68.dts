@@ -73,6 +73,14 @@
 	};
 };
 
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};
+
 &flexcomm0 {
 	status = "okay";
 	compatible = "nxp,lpc-usart";

@@ -240,3 +240,11 @@ i2s1: &flexcomm7 {
 &counter_rtc {
 	status = "okay";
 };
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};

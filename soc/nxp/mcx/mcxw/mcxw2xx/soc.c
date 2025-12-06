@@ -109,6 +109,10 @@ __weak void clock_init(void)
 	 */
 	CLOCK_EnableClock(kCLOCK_Sysctl);
 #endif
+
+	if (IS_ENABLED(CONFIG_NXP_GINT)) {
+		CLOCK_EnableClock(kCLOCK_Gint);
+	}
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
