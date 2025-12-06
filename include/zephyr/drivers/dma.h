@@ -482,6 +482,9 @@ static inline int dma_stop(const struct device *dev, uint32_t channel)
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
 
+	if (api->stop == NULL) {
+		return -ENOSYS;
+	}
 	return api->stop(dev, channel);
 }
 
