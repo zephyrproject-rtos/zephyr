@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2021-2024 NXP
  *
+ * Copyright (c) 2025 u-blox AG
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
