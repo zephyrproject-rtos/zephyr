@@ -25,6 +25,7 @@
 		lptim3: timers@40009000 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
+			resets = <&rctl STM32_RESET(APB1L, 26)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009000 0x400>;
