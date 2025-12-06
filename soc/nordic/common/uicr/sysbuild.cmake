@@ -8,6 +8,7 @@ ExternalZephyrProject_Add(
 
 # Ensure UICR is configured and built after the default image so EDT/ELFs exist.
 sysbuild_add_dependencies(CONFIGURE uicr ${DEFAULT_IMAGE})
+sysbuild_cache_set(VAR uicr_default_image_dir ${APPLICATION_BINARY_DIR}/${DEFAULT_IMAGE})
 
 # Add build dependencies for all images whose ELF files may be used by gen_uicr.
 # The gen_uicr/CMakeLists.txt scans all sibling build directories and adds their
