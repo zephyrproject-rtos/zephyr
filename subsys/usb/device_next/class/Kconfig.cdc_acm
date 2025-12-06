@@ -37,6 +37,16 @@ config USBD_CDC_ACM_BUF_POOL
 	  ACM instances and the size of the bulk endpoints. When disabled, the
 	  implementation uses the UDC driver's pool.
 
+config USBD_CDC_ACM_BUF_POOL_SIZE
+	int "Size of the buffers in the dedicated buffer pool"
+	depends on USBD_CDC_ACM_BUF_POOL
+	default 512 if USBD_MAX_SPEED_HIGH
+	default 64 if USBD_MAX_SPEED_FULL
+	help
+	  Increasing the size of buffers past the endpoint MPS can reduce the
+	  number of round trips through the CDC ACM class when the TX FIFO is larger,
+	  than the endpoint MPS, increasing throughput.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
