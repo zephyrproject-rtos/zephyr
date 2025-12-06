@@ -27,10 +27,38 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
 #else
-K_HEAP_DEFINE(video_buffer_pool,
-		CONFIG_VIDEO_BUFFER_POOL_SZ_MAX * CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+
+#if !defined(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION)
+#define VIDEO_BUFFER_POOL_REGION_NAME __noinit_named(kheap_buf_video_buffer_pool)
+#else
+#define VIDEO_BUFFER_POOL_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME)
+#endif
+
+#define VIDEO_BUFFER_POOL_SIZE (CONFIG_VIDEO_BUFFER_POOL_SZ_MAX * CONFIG_VIDEO_BUFFER_POOL_NUM_MAX)
+
+/*
+ * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
+ * since the section might not be yet accessible from the beginning, making it impossible
+ * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
+ */
+static char VIDEO_BUFFER_POOL_REGION_NAME
+	__aligned(8) video_buffer_pool_mem[MAX(VIDEO_BUFFER_POOL_SIZE, Z_HEAP_MIN_SIZE)];
+static struct k_heap video_buffer_pool;
+static bool video_buffer_pool_initialized;
+
+static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_timeout_t timeout)
+{
+	if (!video_buffer_pool_initialized) {
+		k_heap_init(&video_buffer_pool, video_buffer_pool_mem,
+			    MAX(VIDEO_BUFFER_POOL_SIZE, Z_HEAP_MIN_SIZE));
+		video_buffer_pool_initialized = true;
+	}
+
+	return k_heap_aligned_alloc(&video_buffer_pool, align, bytes, timeout);
+}
+
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
-	k_heap_aligned_alloc(&video_buffer_pool, align, size, timeout);
+	video_buffer_k_heap_aligned_alloc(align, size, timeout)
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
 #endif
 
