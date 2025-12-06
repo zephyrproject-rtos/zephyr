@@ -21,3 +21,9 @@ properties:
   io-mapped:
     type: boolean
     description: specify registers are IO mapped or memory mapped
+
+  loopback:
+    type: boolean
+    description: |
+      Connects TX to RX internally creating a loop back connection. Useful
+      for testing.
