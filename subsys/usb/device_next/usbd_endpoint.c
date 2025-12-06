@@ -50,8 +50,6 @@ int usbd_ep_disable(const struct device *dev,
 		return ret;
 	}
 
-	k_yield();
-
 	return ret;
 }
 
