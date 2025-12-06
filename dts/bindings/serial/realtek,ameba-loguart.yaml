@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ameba LOGUART
+compatible: "realtek,ameba-loguart"
+
+include: [uart-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+bus: uart
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
