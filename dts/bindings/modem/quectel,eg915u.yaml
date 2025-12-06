@@ -1,0 +1,14 @@
+description: Quectel EG915U modem
+
+compatible: "quectel,eg915u"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true
