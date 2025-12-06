@@ -26,13 +26,6 @@ config FPGA_SHELL
 	help
 	  Enable FPGA Shell support.
 
-# zephyr-keep-sorted-start
-source "drivers/fpga/Kconfig.altera_agilex_bridge"
-source "drivers/fpga/Kconfig.eos_s3"
-source "drivers/fpga/Kconfig.ice40"
-source "drivers/fpga/Kconfig.mpfs"
-source "drivers/fpga/Kconfig.slg471x5"
-source "drivers/fpga/Kconfig.zynqmp"
-# zephyr-keep-sorted-stop
+source "drivers/fpga/Kconfig.*"
 
 endif # FPGA

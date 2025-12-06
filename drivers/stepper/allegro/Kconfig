@@ -3,6 +3,4 @@
 
 comment "Allegro Stepper Drivers"
 
-# zephyr-keep-sorted-start
-rsource "Kconfig.a4979"
-# zephyr-keep-sorted-stop
+rsource "Kconfig.*"

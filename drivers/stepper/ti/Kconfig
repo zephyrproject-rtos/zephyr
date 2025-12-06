@@ -3,4 +3,4 @@
 
 comment "TI Stepper Drivers"
 
-rsource "Kconfig.drv84xx"
+rsource "Kconfig.*"

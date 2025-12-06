@@ -12,6 +12,6 @@ module = USB_BC12
 module-str = usb_bc12
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/usb/bc12/Kconfig.pi3usb9201"
+source "drivers/usb/bc12/Kconfig.*"
 
 endif # USB_BC12

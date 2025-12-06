@@ -13,6 +13,9 @@
 
 #include "device_mec5.h"
 
+/* common peripheral register defines */
+#include <reg/mec_gpio.h>
+
 /* common SoC API */
 #include <soc_dt.h>
 #include <soc_ecia.h>

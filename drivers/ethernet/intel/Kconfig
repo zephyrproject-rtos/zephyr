@@ -9,4 +9,4 @@ config ETH_INTEL_PLAT
 	  share them with all the child devices such as MDIO, PHY, MAC
 	  and PTP_CLOCK.
 
-source "drivers/ethernet/intel/Kconfig.intel_igc"
+source "drivers/ethernet/intel/Kconfig.*"

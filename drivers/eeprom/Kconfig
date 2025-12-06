@@ -93,14 +93,7 @@ config EEPROM_AT2X_INIT_PRIORITY
 	  The EEPROM is connected to I2C or SPI bus an has to be initialized
 	  after I2C/SPI driver.
 
-source "drivers/eeprom/Kconfig.lpc11u6x"
-source "drivers/eeprom/Kconfig.stm32"
-source "drivers/eeprom/Kconfig.eeprom_emu"
-source "drivers/eeprom/Kconfig.tmp11x"
-source "drivers/eeprom/Kconfig.xec"
-source "drivers/eeprom/Kconfig.mb85rcxx"
-source "drivers/eeprom/Kconfig.mb85rsxx"
-source "drivers/eeprom/Kconfig.fm25xxx"
+source "drivers/eeprom/Kconfig.*"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"

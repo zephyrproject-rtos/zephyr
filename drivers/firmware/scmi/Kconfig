@@ -71,6 +71,6 @@ config ARM_SCMI_CHAN_SEM_TIMEOUT_USEC
 	  Maximum number of microseconds to wait for a reply from the
 	  scmi platform.
 
-source "drivers/firmware/scmi/nxp/Kconfig"
+source "drivers/firmware/scmi/*/Kconfig"
 
 endif # ARM_SCMI
