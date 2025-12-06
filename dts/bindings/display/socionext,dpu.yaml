@@ -1,0 +1,12 @@
+# Copyright (c) 2025, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: socionext DPU controller
+
+compatible: "socionext,dpu"
+
+include: [base.yaml, display-controller.yaml]
+
+properties:
+  reg:
+    required: true
