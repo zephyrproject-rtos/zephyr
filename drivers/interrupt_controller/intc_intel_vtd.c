@@ -74,8 +74,8 @@ static void vtd_send_cmd(const struct device *dev,
 
 	vtd_write_reg32(dev, VTD_GCMD_REG, value);
 
-	while (!sys_test_bit((base_address + VTD_GSTS_REG),
-			     status_bit)) {
+	while (!sys_io_test_bit(base_address + VTD_GSTS_REG,
+				status_bit)) {
 		/* Do nothing */
 	}
 }

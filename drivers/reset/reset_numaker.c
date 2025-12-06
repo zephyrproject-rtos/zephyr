@@ -30,8 +30,8 @@ static int reset_numaker_status(const struct device *dev, uint32_t id, uint8_t *
 {
 	const struct reset_numaker_config *config = dev->config;
 
-	*status = !!sys_test_bit(config->base + NUMAKER_RESET_IP_OFFSET(id),
-				 NUMAKER_RESET_IP_BIT(id));
+	*status = sys_io_test_bit(config->base + NUMAKER_RESET_IP_OFFSET(id),
+				  NUMAKER_RESET_IP_BIT(id));
 
 	return 0;
 }
