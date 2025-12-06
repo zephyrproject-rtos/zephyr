@@ -168,6 +168,11 @@ Libsbc
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
 
+Settings
+========
+
+* :kconfig:option:`SETTINGS_TFM_ITS` has been renamed to :kconfig:option:`SETTINGS_TFM_PSA`
+
 Modules
 *******
 
