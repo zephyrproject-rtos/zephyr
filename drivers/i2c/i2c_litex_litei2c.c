@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_litex_litei2c, CONFIG_I2C_LOG_LEVEL);
@@ -43,10 +44,20 @@ struct i2c_litex_litei2c_config {
 #endif /* I2C_LITEX_ANY_HAS_IRQ */
 };
 
+struct i2c_context {
+	struct i2c_msg *msg;
+	uint32_t buf_idx;
+	uint8_t num_msgs;
+	uint8_t num_msgs_idx;
+};
+
 struct i2c_litex_litei2c_data {
 	struct k_mutex mutex;
+	struct i2c_context context;
+	uint8_t len_rx;
 #if I2C_LITEX_ANY_HAS_IRQ
 	struct k_sem sem_rx_ready;
+	int ret;
 #endif /* I2C_LITEX_ANY_HAS_IRQ */
 };
 
@@ -121,24 +132,180 @@ static int i2c_litex_write_settings(const struct device *dev, uint8_t len_tx, ui
 	return 0;
 }
 
-static void i2c_litex_wait_for_rx_ready(const struct device *dev)
+static inline uint8_t get_write_bytes_from_i2c_msg(struct i2c_context *context, uint8_t *data,
+						   uint8_t data_len, bool *with_stop)
+{
+	uint8_t idx = 0;
+	uint8_t to_copy;
+	uint32_t msg_len;
+
+	while ((data_len > 0) && (context->num_msgs_idx < context->num_msgs) &&
+	       !(context->msg[context->num_msgs_idx].flags & I2C_MSG_READ)) {
+
+		msg_len = context->msg[context->num_msgs_idx].len - context->buf_idx;
+		to_copy = min(data_len, msg_len);
+
+		memcpy(&data[idx], &context->msg[context->num_msgs_idx].buf[context->buf_idx],
+		       to_copy);
+
+		idx += to_copy;
+		data_len -= to_copy;
+		if (to_copy >= msg_len) {
+			context->num_msgs_idx++;
+			context->buf_idx = 0;
+
+			if (context->msg[context->num_msgs_idx - 1].flags & I2C_MSG_STOP) {
+				*with_stop = true;
+				return idx;
+			}
+		} else {
+			context->buf_idx += to_copy;
+		}
+	}
+
+	if ((data_len == 0) && (context->num_msgs_idx < context->num_msgs) &&
+	    !(context->msg[context->num_msgs_idx].flags & I2C_MSG_READ)) {
+		/* Signal that there is more data to write */
+		return idx + 1;
+	}
+
+	return idx;
+}
+
+static inline bool next_msg_is_available(struct i2c_context *context)
+{
+	return (context->num_msgs_idx < context->num_msgs);
+}
+
+static inline uint8_t get_read_bytes_len_from_i2c_msg(struct i2c_context *context,
+						      uint8_t max_data_len)
+{
+	uint32_t counter = 0;
+	uint32_t buf_idx = context->buf_idx;
+	uint8_t num_msgs_idx = context->num_msgs_idx;
+
+	while ((counter < max_data_len) && (num_msgs_idx < context->num_msgs) &&
+	       (context->msg[num_msgs_idx].flags & I2C_MSG_READ)) {
+		counter += context->msg[num_msgs_idx].len - buf_idx;
+
+		if (context->msg[num_msgs_idx].flags & I2C_MSG_STOP) {
+			break;
+		}
+		num_msgs_idx++;
+		buf_idx = 0;
+	}
+
+	return min(counter, max_data_len);
+}
+
+static inline uint8_t set_read_bytes_from_i2c_msg(struct i2c_context *context, uint8_t *data,
+						  uint8_t data_len)
+{
+	uint8_t idx = 0;
+	uint8_t to_copy;
+	uint32_t msg_len;
+
+	while ((data_len > 0) && (context->num_msgs_idx < context->num_msgs) &&
+	       (context->msg[context->num_msgs_idx].flags & I2C_MSG_READ)) {
+
+		msg_len = context->msg[context->num_msgs_idx].len - context->buf_idx;
+		to_copy = min(data_len, msg_len);
+
+		memcpy(&context->msg[context->num_msgs_idx].buf[context->buf_idx], &data[idx],
+		       to_copy);
+
+		idx += to_copy;
+		data_len -= to_copy;
+		if (to_copy >= msg_len) {
+			context->num_msgs_idx++;
+			context->buf_idx = 0;
+		} else {
+			context->buf_idx += to_copy;
+		}
+	}
+
+	return idx;
+}
+
+static void i2c_litex_i2c_do_tx(const struct device *dev)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
-
-#if I2C_LITEX_ANY_HAS_IRQ
 	struct i2c_litex_litei2c_data *data = dev->data;
+	uint32_t txd = 0U;
+	uint8_t len_rx = 0;
+	uint8_t len_tx;
+	uint8_t tx_buf[4] = {0};
+	bool with_stop = false;
 
-	if (I2C_LITEX_HAS_IRQ) {
-		/* Wait for the RX ready event */
-		k_sem_take(&data->sem_rx_ready, K_FOREVER);
-		return;
-	}
-#endif /* I2C_LITEX_ANY_HAS_IRQ */
+	len_tx = get_write_bytes_from_i2c_msg(&data->context, tx_buf, sizeof(tx_buf), &with_stop);
 
-	while (!(litex_read8(config->master_status_addr) &
-		BIT(MASTER_STATUS_RX_READY_OFFSET))) {
-		/* Wait until RX is ready */
+	switch (len_tx) {
+	case 5:
+	case 4:
+		txd = sys_get_be32(tx_buf);
+		break;
+	case 3:
+		txd = sys_get_be24(tx_buf);
+		break;
+	case 2:
+		txd = sys_get_be16(tx_buf);
+		break;
+	default:
+		txd = tx_buf[0];
+		break;
 	}
+
+	if (!with_stop) {
+		len_rx = get_read_bytes_len_from_i2c_msg(&data->context, 5);
+	}
+
+	data->len_rx = min(len_rx, 4);
+
+	LOG_DBG("len_tx: %d, len_rx: %d", len_tx, len_rx);
+	i2c_litex_write_settings(dev, len_tx, len_rx, false);
+
+	LOG_DBG("txd: 0x%x", txd);
+	litex_write32(txd, config->master_rxtx_addr);
+}
+
+static int i2c_litex_i2c_do_rx(const struct device *dev)
+{
+	const struct i2c_litex_litei2c_config *config = dev->config;
+	struct i2c_litex_litei2c_data *data = dev->data;
+	uint32_t rxd;
+	uint8_t rx_buf[4] = {0};
+
+	if (litex_read16(config->master_status_addr) & BIT(MASTER_STATUS_NACK_OFFSET)) {
+		/* NACK received, clear RX FIFO */
+		(void)litex_read32(config->master_rxtx_addr);
+
+		return -EIO;
+	}
+
+	rxd = litex_read32(config->master_rxtx_addr);
+
+	LOG_DBG("rxd: 0x%x", rxd);
+
+	switch (data->len_rx) {
+	case 4:
+		sys_put_be32(rxd, rx_buf);
+		break;
+	case 3:
+		sys_put_be24(rxd, rx_buf);
+		break;
+	case 2:
+		sys_put_be16(rxd, rx_buf);
+		break;
+	case 1:
+		rx_buf[0] = rxd;
+		break;
+	default:
+		return 0;
+	}
+
+	set_read_bytes_from_i2c_msg(&data->context, rx_buf, data->len_rx);
+
+	return 0;
 }
 
 static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
@@ -146,31 +313,21 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
 	struct i2c_litex_litei2c_data *data = dev->data;
-	uint32_t len_tx_buf = 0;
-	uint32_t len_rx_buf = 0;
-	uint8_t len_tx = 0;
-	uint8_t len_rx = 0;
-
-	uint8_t *tx_buf_ptr;
-	uint8_t *rx_buf_ptr;
-
-	uint32_t tx_buf;
-	uint32_t rx_buf;
-
-	uint32_t tx_j = 0;
-	uint32_t rx_j = 0;
-
 	int ret = 0;
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
+
+	data->context.msg = msgs;
+	data->context.num_msgs = num_msgs;
+	data->context.num_msgs_idx = 0;
+	data->context.buf_idx = 0;
 
 	litex_write8(1, config->master_active_addr);
 
 	/* Flush RX buffer */
 	while ((litex_read8(config->master_status_addr) &
 		BIT(MASTER_STATUS_RX_READY_OFFSET))) {
-		rx_buf = litex_read32(config->master_rxtx_addr);
-		LOG_DBG("flushed rxd: 0x%x", rx_buf);
+		(void)litex_read32(config->master_rxtx_addr);
 	}
 
 	while (!(litex_read8(config->master_status_addr) &
@@ -178,150 +335,39 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		(void)litex_read32(config->master_rxtx_addr);
 	}
 
-#if I2C_LITEX_ANY_HAS_IRQ
-	if (I2C_LITEX_HAS_IRQ) {
-		litex_write8(BIT(0), config->master_ev_enable_addr);
-		litex_write8(BIT(0), config->master_ev_pending_addr);
-		k_sem_reset(&data->sem_rx_ready);
-	}
-#endif /* I2C_LITEX_ANY_HAS_IRQ */
-
 	LOG_DBG("addr: 0x%x", addr);
 	litex_write8((uint8_t)addr, config->master_addr_addr);
 
-	for (uint8_t i = 0; i < num_msgs; i++) {
-		if (msgs[i].flags & I2C_MSG_READ) {
-			len_tx_buf = 0;
-			len_rx_buf = msgs[i].len;
-			rx_buf_ptr = msgs[i].buf;
-			tx_buf_ptr = NULL;
-		} else {
-			len_tx_buf = msgs[i].len;
-			tx_buf_ptr = msgs[i].buf;
-			if (!(msgs[i].flags & I2C_MSG_STOP) && (i + 1 < num_msgs) &&
-			    (msgs[i + 1].flags & I2C_MSG_READ) &&
-			    (msgs[i + 1].flags & I2C_MSG_RESTART)) {
-				i++;
-				len_rx_buf = msgs[i].len;
-				rx_buf_ptr = msgs[i].buf;
-			} else {
-				len_rx_buf = 0;
-				rx_buf_ptr = NULL;
-			}
-		}
-
-		LOG_HEXDUMP_DBG(tx_buf_ptr, len_tx_buf, "tx_buf");
-
-		tx_j = 0;
-		rx_j = 0;
-		do {
-
-			if (len_tx_buf > (tx_j + 4)) {
-				len_tx = 5;
-				len_rx = 0;
-			} else {
-				len_tx = len_tx_buf - tx_j;
-
-				if (len_rx_buf > (rx_j + 4)) {
-					len_rx = 5;
-				} else {
-					len_rx = len_rx_buf - rx_j;
-				}
-			}
-
-			tx_buf = 0;
-
-			switch (len_tx) {
-			case 5:
-			case 4:
-				tx_buf |= tx_buf_ptr[0 + tx_j] << 24;
-				tx_buf |= tx_buf_ptr[1 + tx_j] << 16;
-				tx_buf |= tx_buf_ptr[2 + tx_j] << 8;
-				tx_buf |= tx_buf_ptr[3 + tx_j];
-				tx_j += 4;
-				break;
-			case 3:
-				tx_buf |= tx_buf_ptr[0 + tx_j] << 16;
-				tx_buf |= tx_buf_ptr[1 + tx_j] << 8;
-				tx_buf |= tx_buf_ptr[2 + tx_j];
-				tx_j += 3;
-				break;
-			case 2:
-				tx_buf |= tx_buf_ptr[0 + tx_j] << 8;
-				tx_buf |= tx_buf_ptr[1 + tx_j];
-				tx_j += 2;
-				break;
-			case 1:
-				tx_buf |= tx_buf_ptr[0 + tx_j];
-				tx_j += 1;
-				break;
-			default:
-				break;
-			}
-
-			LOG_DBG("len_tx: %d, len_rx: %d", len_tx, len_rx);
-			i2c_litex_write_settings(dev, len_tx, len_rx, false);
-
-			LOG_DBG("tx_buf: 0x%x", tx_buf);
-			litex_write32(tx_buf, config->master_rxtx_addr);
-
-			i2c_litex_wait_for_rx_ready(dev);
-
-			if (litex_read16(config->master_status_addr) &
-			    BIT(MASTER_STATUS_NACK_OFFSET)) {
-				LOG_DBG("NACK received (addr: 0x%x)", addr);
-				ret = -EIO;
-			}
-
-			rx_buf = litex_read32(config->master_rxtx_addr);
-			LOG_DBG("rx_buf: 0x%x", rx_buf);
-
-			switch (len_rx) {
-			case 5:
-			case 4:
-				rx_buf_ptr[0 + rx_j] = rx_buf >> 24;
-				rx_buf_ptr[1 + rx_j] = rx_buf >> 16;
-				rx_buf_ptr[2 + rx_j] = rx_buf >> 8;
-				rx_buf_ptr[3 + rx_j] = rx_buf;
-				rx_j += 4;
-				break;
-			case 3:
-				rx_buf_ptr[0 + rx_j] = rx_buf >> 16;
-				rx_buf_ptr[1 + rx_j] = rx_buf >> 8;
-				rx_buf_ptr[2 + rx_j] = rx_buf;
-				rx_j += 3;
-				break;
-			case 2:
-				rx_buf_ptr[0 + rx_j] = rx_buf >> 8;
-				rx_buf_ptr[1 + rx_j] = rx_buf;
-				rx_j += 2;
-				break;
-			case 1:
-				rx_buf_ptr[0 + rx_j] = rx_buf;
-				rx_j += 1;
-				break;
-			default:
-				break;
-			}
-
-			if (ret < 0) {
-				goto transfer_end;
-			}
-
-		} while ((tx_j < len_tx_buf) || (rx_j < len_rx_buf));
-
-		LOG_HEXDUMP_DBG(rx_buf_ptr, len_rx_buf, "rx_buf");
-	}
-
-transfer_end:
-
-	litex_write8(0, config->master_active_addr);
-
 #if I2C_LITEX_ANY_HAS_IRQ
 	if (I2C_LITEX_HAS_IRQ) {
-		litex_write8(0, config->master_ev_enable_addr);
+		litex_write8(BIT(0), config->master_ev_pending_addr);
+		litex_write8(BIT(0), config->master_ev_enable_addr);
+		k_sem_reset(&data->sem_rx_ready);
+
+		i2c_litex_i2c_do_tx(dev);
+
+		k_sem_take(&data->sem_rx_ready, K_FOREVER);
+
+		ret = data->ret;
+
+		k_mutex_unlock(&data->mutex);
+
+		return ret;
 	}
 #endif /* I2C_LITEX_ANY_HAS_IRQ */
+
+	do {
+		i2c_litex_i2c_do_tx(dev);
+
+		while (!(litex_read8(config->master_status_addr) &
+			BIT(MASTER_STATUS_RX_READY_OFFSET))) {
+			/* Wait until RX is ready */
+		}
+
+		ret = i2c_litex_i2c_do_rx(dev);
+	} while ((ret == 0) && next_msg_is_available(&data->context));
+
+	litex_write8(0, config->master_active_addr);
 
 	k_mutex_unlock(&data->mutex);
 
@@ -363,12 +409,24 @@ static void i2c_litex_irq_handler(const struct device *dev)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
 	struct i2c_litex_litei2c_data *data = dev->data;
+	int ret;
 
 	if (litex_read8(config->master_ev_pending_addr) & BIT(0)) {
-		k_sem_give(&data->sem_rx_ready);
+		ret = i2c_litex_i2c_do_rx(dev);
 
 		/* ack reader irq */
 		litex_write8(BIT(0), config->master_ev_pending_addr);
+
+		if ((ret == 0) && next_msg_is_available(&data->context)) {
+			i2c_litex_i2c_do_tx(dev);
+		} else {
+			litex_write8(0, config->master_ev_enable_addr);
+			litex_write8(0, config->master_active_addr);
+
+			data->ret = ret;
+
+			k_sem_give(&data->sem_rx_ready);
+		}
 	}
 }
 #endif /* I2C_LITEX_ANY_HAS_IRQ */
