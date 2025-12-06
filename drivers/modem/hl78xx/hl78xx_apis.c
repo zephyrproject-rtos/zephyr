@@ -179,6 +179,9 @@ int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
 		safe_strncpy(info, (const char *)data->identity.serial_number,
 			     MIN(size, sizeof(data->identity.serial_number)));
 		break;
+	case HL78XX_MODEM_INFO_CURRENT_BAUD_RATE:
+		*(uint32_t *)info = data->status.uart.current_baudrate;
+		break;
 	default:
 		break;
 	}

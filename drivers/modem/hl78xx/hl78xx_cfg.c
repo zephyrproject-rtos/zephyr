@@ -21,6 +21,8 @@ LOG_MODULE_DECLARE(hl78xx_dev);
 #define IMSI_PREFIX_LEN             6
 #define MAX_BANDS                   32
 #define MDM_APN_FULL_STRING_MAX_LEN 256
+/* Delay after AT+IPR command for new rate to take effect */
+#define BAUDRATE_SWITCH_DELAY_MS    2500
 
 int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
@@ -649,3 +651,194 @@ void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn
 		essential_apn[max_len - 1] = '\0';
 	}
 }
+
+int hl78xx_get_uart_config(struct hl78xx_data *data)
+{
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	struct uart_config uart_cfg;
+	int ret;
+	/* Get current UART configuration */
+	ret = uart_config_get(config->uart, &uart_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to get UART config: %d", ret);
+		return ret;
+	}
+	data->status.uart.current_baudrate = uart_cfg.baudrate;
+	return 0;
+}
+
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+
+int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate)
+{
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	struct uart_config uart_cfg;
+	int ret;
+
+	/* Get current UART configuration */
+	ret = uart_config_get(config->uart, &uart_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to get UART config: %d", ret);
+		return ret;
+	}
+
+	/* Update baud rate */
+	uart_cfg.baudrate = baudrate;
+	LOG_INF("Trying baud rate: %d", baudrate);
+	/* Apply new UART configuration */
+	ret = uart_configure(config->uart, &uart_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to set UART baud rate to %d: %d", baudrate, ret);
+		return ret;
+	}
+
+	/* Give the modem time to stabilize */
+	k_sleep(K_MSEC(50));
+	return 0;
+}
+
+int hl78xx_try_baudrate(struct hl78xx_data *data, uint32_t baudrate)
+{
+	int ret;
+	/* Configure UART to the target baud rate */
+	ret = configure_uart_for_auto_baudrate(data, baudrate);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Try to send AT command and wait for response */
+	const char *test_cmd = "AT";
+
+	ret = modem_dynamic_cmd_send(data, NULL, test_cmd, strlen(test_cmd),
+				     hl78xx_get_sockets_allow_matches(),
+				     hl78xx_get_sockets_allow_matches_size(),
+				     CONFIG_MODEM_HL78XX_AUTOBAUD_TIMEOUT, false);
+
+	if (ret == 0) {
+		LOG_INF("Modem responded at %d baud", baudrate);
+		data->status.uart.current_baudrate = baudrate;
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int hl78xx_detect_current_baudrate(struct hl78xx_data *data)
+{
+	const char *baudrate_list = CONFIG_MODEM_HL78XX_AUTOBAUD_DETECTION_BAUDRATES;
+	char baudrate_str[16];
+	const char *ptr = baudrate_list;
+	int idx = 0;
+	int ret;
+
+	LOG_INF("Starting baud rate detection...");
+
+	while (*ptr != '\0') {
+		/* Extract baud rate from string */
+		while (*ptr == ' ' || *ptr == ',') {
+			ptr++;
+		}
+
+		if (*ptr == '\0') {
+			break;
+		}
+
+		idx = 0;
+		while (*ptr >= '0' && *ptr <= '9' && idx < sizeof(baudrate_str) - 1) {
+			baudrate_str[idx++] = *ptr++;
+		}
+		baudrate_str[idx] = '\0';
+
+		if (idx > 0) {
+			uint32_t baudrate = (uint32_t)strtol(baudrate_str, NULL, 10);
+
+			LOG_DBG("Trying baud rate: %d", baudrate);
+			ret = hl78xx_try_baudrate(data, baudrate);
+			if (ret == 0) {
+				return 0;
+			}
+		}
+	}
+
+	LOG_ERR("Failed to detect modem baud rate");
+	return -ENOENT;
+}
+
+int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
+{
+	char cmd_buf[32];
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	struct uart_config uart_cfg;
+	int ret;
+
+	if (data->status.uart.current_baudrate == target_baudrate) {
+		LOG_INF("Already at target baud rate %d", target_baudrate);
+		return 0;
+	}
+
+	LOG_INF("Switching baud rate from %d to %d", data->status.uart.current_baudrate,
+		target_baudrate);
+
+	/* Send AT+IPR command to set baud rate */
+	snprintf(cmd_buf, sizeof(cmd_buf), SET_BAUDRATE_CMD_FMT, target_baudrate);
+	ret = modem_dynamic_cmd_send(data, NULL, cmd_buf, strlen(cmd_buf), hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to send baud rate change command: %d", ret);
+		return ret;
+	}
+
+	/* Wait for new baud rate to take effect (~2s per AT command guide) */
+	LOG_DBG("Waiting %d ms for modem to apply new baud rate", BAUDRATE_SWITCH_DELAY_MS);
+	k_sleep(K_MSEC(BAUDRATE_SWITCH_DELAY_MS));
+
+	/* Get current UART configuration */
+	ret = uart_config_get(config->uart, &uart_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to get UART config: %d", ret);
+		return ret;
+	}
+
+	/* Update to new baud rate */
+	uart_cfg.baudrate = target_baudrate;
+	ret = uart_configure(config->uart, &uart_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure new baud rate: %d", ret);
+		return ret;
+	}
+
+	/* Wait for UART to stabilize */
+	k_sleep(K_MSEC(50));
+
+	/* Verify communication at new baud rate */
+	const char *test_cmd = "AT";
+
+	ret = modem_dynamic_cmd_send(data, NULL, test_cmd, strlen(test_cmd), hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(),
+				     CONFIG_MODEM_HL78XX_AUTOBAUD_TIMEOUT, false);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to communicate at new baud rate %d", target_baudrate);
+		return ret;
+	}
+
+#ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT
+	/* Save configuration to non-volatile memory (required per AT command guide) */
+	const char *cmd_save = "AT&W";
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd_save, strlen(cmd_save), hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+
+	if (ret < 0) {
+		LOG_WRN("Failed to save baud rate to NVRAM: %d (will be temporary)", ret);
+		/* Continue anyway - baud rate is still active for current session */
+	} else {
+		LOG_DBG("Baud rate configuration saved to NVRAM");
+	}
+#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT */
+	data->status.uart.current_baudrate = target_baudrate;
+	LOG_INF("Successfully switched to baud rate %d", target_baudrate);
+
+	return 0;
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
