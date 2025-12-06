@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  libraries.data_structure.set:
+    integration_platforms:
+      - native_sim
