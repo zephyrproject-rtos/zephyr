@@ -252,11 +252,11 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_
  */
 MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(CONNECT_STRING, "", NULL),
 			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL), );
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCHES_DEFINE(kudpind_allow_match,
 			  MODEM_CHAT_MATCH("+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create),
 			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL), );
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(ktcpind_match, "+KTCP_IND: ", ",", hl78xx_on_ktcpind);
 MODEM_CHAT_MATCH_DEFINE(ktcpcfg_match, "+KTCPCFG: ", "", hl78xx_on_ktcpsocket_create);
 MODEM_CHAT_MATCH_DEFINE(cgdcontrdp_match, "+CGCONTRDP: ", ",", hl78xx_on_cgdcontrdp);

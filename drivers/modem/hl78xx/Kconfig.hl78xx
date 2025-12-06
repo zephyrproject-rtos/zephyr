@@ -78,6 +78,143 @@ config MODEM_AT_SHELL_RESPONSE_MAX_SIZE
 
 endif # MODEM_HL78XX_AT_SHELL
 
+menuconfig MODEM_HL78XX_AUTO_BAUDRATE
+	bool "Auto Baud Rate Detection and Switching"
+	select UART_USE_RUNTIME_CONFIGURE if SOC_SERIES_NRF52X
+	help
+	  Enable automatic baud rate detection and switching for the HL78xx modem.
+	  The driver will attempt to detect the modem's current baud rate and
+	  switch to the configured target baud rate using AT+IPR command.
+
+if MODEM_HL78XX_AUTO_BAUDRATE
+
+choice MODEM_HL78XX_TARGET_BAUDRATE
+	prompt "Target UART Baud Rate"
+	default MODEM_HL78XX_TARGET_BAUDRATE_115200
+	help
+	  Select the target baud rate for communication with the modem.
+	  The driver will configure the modem to use this baud rate after detection.
+
+config MODEM_HL78XX_TARGET_BAUDRATE_9600
+	bool "9600"
+	help
+	  Set modem baud rate to 9600 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_19200
+	bool "19200"
+	help
+	  Set modem baud rate to 19200 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_38400
+	bool "38400"
+	help
+	  Set modem baud rate to 38400 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_57600
+	bool "57600"
+	help
+	  Set modem baud rate to 57600 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_115200
+	bool "115200"
+	help
+	  Set modem baud rate to 115200 bps (default)
+
+config MODEM_HL78XX_TARGET_BAUDRATE_230400
+	bool "230400"
+	help
+	  Set modem baud rate to 230400 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_460800
+	bool "460800"
+	help
+	  Set modem baud rate to 460800 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_921600
+	bool "921600"
+	help
+	  Set modem baud rate to 921600 bps
+
+config MODEM_HL78XX_TARGET_BAUDRATE_3000000
+	bool "3000000"
+	depends on MODEM_HL78XX_12
+	help
+	  Set modem baud rate to 3000000 bps
+endchoice
+
+config MODEM_HL78XX_TARGET_BAUDRATE_VALUE
+	int
+	default 9600 if MODEM_HL78XX_TARGET_BAUDRATE_9600
+	default 19200 if MODEM_HL78XX_TARGET_BAUDRATE_19200
+	default 38400 if MODEM_HL78XX_TARGET_BAUDRATE_38400
+	default 57600 if MODEM_HL78XX_TARGET_BAUDRATE_57600
+	default 115200 if MODEM_HL78XX_TARGET_BAUDRATE_115200
+	default 230400 if MODEM_HL78XX_TARGET_BAUDRATE_230400
+	default 460800 if MODEM_HL78XX_TARGET_BAUDRATE_460800
+	default 921600 if MODEM_HL78XX_TARGET_BAUDRATE_921600
+	default 3000000 if MODEM_HL78XX_TARGET_BAUDRATE_3000000
+
+config MODEM_HL78XX_AUTOBAUD_DETECTION_BAUDRATES
+	string "Baud rates to try during auto-detection (comma-separated)"
+	default "115200,9600,57600,38400,19200"
+	help
+	  Comma-separated list of baud rates to try when auto-detecting
+	  the modem's current baud rate. The driver will try each rate
+	  in order until it successfully communicates with the modem.
+	  Common baud rates: 9600, 19200, 38400, 57600, 115200
+
+config MODEM_HL78XX_AUTOBAUD_TIMEOUT
+	int "Timeout for each baud rate detection attempt (seconds)"
+	default 4
+	range 1 120
+	help
+	  Maximum time to wait for a response from the modem when trying
+	  a specific baud rate during auto-detection.
+
+config MODEM_HL78XX_AUTOBAUD_RETRY_COUNT
+	int "Number of retries for baud rate detection"
+	default 3
+	range 1 10
+	help
+	  Number of times to retry baud rate detection before giving up.
+
+config MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT
+	bool "Save detected baud rate persistently"
+	default y
+	help
+	  Enable this option to save the configuration to the modem non-volatile memory,
+	  otherwise it will revert to previous setting on power cycle.
+	  Highly recommended to enable this option to detect unexpected modem reboots
+	  and quick recovery.
+
+	  Baudrate change will be permanent across power cycles.
+	  NOTE: Changing phone functionality (AT+CFUN) does reset baud rate to default.
+
+config MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE
+	bool "Start auto baud rate detection with target baud rate"
+	default y
+	help
+	  Enable this option to start the auto baud rate detection process
+	  by first attempting communication at the configured target baud rate.
+	  This can speed up detection if the modem is already set to the target rate.
+
+config MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL
+	bool "Only perform auto baud rate detection on communication failure"
+	default y
+	help
+	  Enable this option to perform auto baud rate detection only
+	  if initial uart communication with the modem at the configured
+	  target baud rate fails.
+
+config MODEM_HL78XX_AUTOBAUD_AT_BOOT
+	bool "Perform auto baud rate detection at boot (skip KSUP wait)"
+	help
+	  When enabled, the driver will immediately perform auto baud rate detection
+	  as soon as the modem is powered up, without waiting for the KSUP URC
+	  (startup ready indication).
+
+endif # MODEM_HL78XX_AUTO_BAUDRATE
+
 choice MODEM_HL78XX_ADDRESS_FAMILY
 	prompt "IP Address family"
 	default MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6
@@ -874,13 +1011,17 @@ config MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS
 
 config MODEM_HL78XX_DEV_STARTUP_TIME_MS
 	int "Wait before assuming the device is ready."
-	default 120
+	default 2000 if MODEM_HL78XX_AUTOBAUD_AT_BOOT
+	default 120 if !MODEM_HL78XX_AUTOBAUD_AT_BOOT
 	help
 	  The expected delay time (in milliseconds) the modem needs to fully power on
 	  and become operational.This delay before the driver opens the UART pipe
 	  and attaches the chat layer. The value must be long enough for the driver
 	  startup code to initialize, but short enough to ensure the pipe is ready
 	  before the modem sends its first URCs during boot.
+	  BUT,
+	  if auto baudrate detection at boot is enabled,
+	  a longer delay is recommended to allow the modem to complete its boot sequence.
 
 config MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS
 	int "Wait before assuming the device is completely off."

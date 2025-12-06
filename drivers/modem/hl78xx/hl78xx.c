@@ -1017,13 +1017,31 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 
 	case MODEM_HL78XX_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
+#ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
+#else
 		hl78xx_run_post_restart_script_async(data);
+#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT */
 		break;
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		(void)hl78xx_get_uart_config(data);
+		LOG_DBG("Current baudrate after post-restart script: %d",
+			data->status.uart.current_baudrate);
+#if defined(CONFIG_MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL) ||     \
+	!defined(CONFIG_MODEM_HL78XX_AUTO_BAUDRATE)
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+#else
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
+#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL */
 		break;
 
+	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
+#else
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
 		break;
@@ -1032,6 +1050,71 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		break;
 	}
 }
+
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+static int hl78xx_on_set_baudrate_state_enter(struct hl78xx_data *data)
+{
+	int ret;
+
+	data->status.uart.target_baudrate = CONFIG_MODEM_HL78XX_TARGET_BAUDRATE_VALUE;
+
+	/* Detect current baud rate */
+	ret = hl78xx_detect_current_baudrate(data);
+	if (ret < 0) {
+		LOG_ERR("Baud rate detection failed");
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
+		return ret;
+	}
+
+	/* Switch to target baud rate if different */
+	ret = hl78xx_switch_baudrate(data, data->status.uart.target_baudrate);
+	if (ret < 0) {
+		LOG_ERR("Failed to switch baud rate: %d", ret);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
+		return ret;
+	}
+	data->status.boot.is_booted_previously = true;
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+	return 0;
+}
+
+static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
+{
+	switch (evt) {
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
+	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+		/* Increment retry counter */
+		data->status.uart.baudrate_detection_retry++;
+
+		/* Retry detection or give up */
+		if (data->status.uart.baudrate_detection_retry <
+		    CONFIG_MODEM_HL78XX_AUTOBAUD_RETRY_COUNT) {
+			LOG_WRN("Retrying baud rate detection (attempt %d/%d)",
+				data->status.uart.baudrate_detection_retry + 1,
+				CONFIG_MODEM_HL78XX_AUTOBAUD_RETRY_COUNT);
+			k_sleep(K_MSEC(500));
+			hl78xx_on_set_baudrate_state_enter(data);
+		} else {
+			LOG_ERR("Baud rate configuration failed after %d attempts",
+				data->status.uart.baudrate_detection_retry);
+			hl78xx_enter_state(data,
+					   MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+		}
+		break;
+
+	case MODEM_HL78XX_EVENT_SUSPEND:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
+
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
 	return hl78xx_run_init_script_async(data);
@@ -1083,7 +1166,13 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 		}
 		break;
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		LOG_ERR("Modem initialization failed after diagnostic script");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
+#else
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
 			break;
@@ -1095,6 +1184,7 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 		}
 
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 		break;
 	case MODEM_HL78XX_EVENT_BUS_CLOSED:
 		break;
@@ -1169,6 +1259,12 @@ static void hl78xx_run_rat_cfg_script_event_handler(struct hl78xx_data *data, en
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+		if (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT) == false) {
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
+		}
+		break;
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 		LOG_DBG("Rebooting modem to apply new RAT settings");
 		break;
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
@@ -1827,6 +1923,15 @@ static int hl78xx_init(const struct device *dev)
 	data->buffers.eof_pattern_size = strlen(data->buffers.eof_pattern);
 	data->buffers.termination_pattern_size = strlen(data->buffers.termination_pattern);
 	memset(data->identity.apn, 0, MDM_APN_MAX_LENGTH);
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	data->status.uart.current_baudrate = 0;
+	data->status.uart.target_baudrate = CONFIG_MODEM_HL78XX_TARGET_BAUDRATE_VALUE;
+	data->status.uart.baudrate_detection_retry = 0;
+#ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE
+	/* Update baud rate */
+	configure_uart_for_auto_baudrate(data, data->status.uart.target_baudrate);
+#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE */
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	/* GPIO validation */
 	const struct gpio_dt_spec *gpio_pins[GPIO_CONFIG_LEN] = {
 #if HAS_RESET_GPIO
@@ -2011,11 +2116,13 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 		NULL,
 		hl78xx_await_power_on_event_handler
 	},
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 	[MODEM_HL78XX_STATE_SET_BAUDRATE] = {
+		hl78xx_on_set_baudrate_state_enter,
 		NULL,
-		NULL,
-		NULL
+		hl78xx_set_baudrate_event_handler
 	},
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	[MODEM_HL78XX_STATE_RUN_INIT_SCRIPT] = {
 		hl78xx_on_run_init_script_state_enter,
 		NULL,
