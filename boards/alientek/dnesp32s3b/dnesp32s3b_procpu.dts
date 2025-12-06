@@ -102,6 +102,16 @@ zephyr_udc0: &usb_otg {
 	current-speed = <115200>;
 };
 
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
 &gpio0 {
 	status = "okay";
 };
