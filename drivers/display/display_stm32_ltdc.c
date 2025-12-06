@@ -573,6 +573,11 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];
 #endif
 
+/* LTDC supports RGB888 and RGB666 for output however only RGB_888 is supported for now */
+#if DT_INST_PROP(0, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888
+#error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
+#endif
+
 #define STM32_LTDC_DEVICE(inst)									\
 	STM32_LTDC_FRAME_BUFFER_DEFINE(inst);                       \
 	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);							\
