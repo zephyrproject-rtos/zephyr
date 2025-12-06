@@ -7,3 +7,8 @@ board:
     variants:
     - name: 'ns'
       cpucluster: 'cpuapp'
+      include-parent-kconfig: True
+      include-parent-dts: True
+      variants:
+      - name: 'shop'
+        include-parent-dts: True
