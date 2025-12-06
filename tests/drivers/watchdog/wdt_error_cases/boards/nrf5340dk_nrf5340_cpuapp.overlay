@@ -11,19 +11,3 @@
 		opt-pause-halted-by-dbg;
 	};
 };
-
-&wdt010 {
-	status = "disabled";
-};
-
-&wdt011 {
-	status = "okay";
-};
-
-&wdt131 {
-	status = "disabled";
-};
-
-&wdt132 {
-	status = "disabled";
-};

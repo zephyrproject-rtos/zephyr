@@ -1,0 +1,7 @@
+/ {
+	resources {
+		compatible = "test-wdt-error-cases";
+		opt-pause-in-sleep;
+		opt-pause-halted-by-dbg;
+	};
+};
