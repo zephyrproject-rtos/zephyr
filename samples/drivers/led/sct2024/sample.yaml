@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the SCT2024 LED driver
+  name: SCT2024 sample
+tests:
+  sample.drivers.led.sct2024:
+    filter: dt_compat_enabled("sct,sct2024")
+    tags: LED
+    depends_on: spi
