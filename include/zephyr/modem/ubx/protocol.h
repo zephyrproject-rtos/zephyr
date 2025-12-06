@@ -62,6 +62,7 @@ enum ubx_class_id {
 
 enum ubx_msg_id_nav {
 	UBX_MSG_ID_NAV_PVT = 0x07,
+	UBX_MSG_ID_NAV_VELNED = 0x12,
 	UBX_MSG_ID_NAV_SAT = 0x35,
 };
 
@@ -167,6 +168,18 @@ struct ubx_nav_sat {
 		uint32_t flags;
 	} sat[];
 };
+
+struct ubx_nav_velned {
+	uint32_t itow;
+	int32_t vel_n;
+	int32_t vel_e;
+	int32_t vel_d;
+	uint32_t speed;
+	uint32_t ground_speed;
+	int32_t heading;
+	uint32_t speed_acc;
+	uint32_t heading_acc;
+} __packed;
 
 enum ubx_msg_id_ack {
 	UBX_MSG_ID_ACK = 0x01,
