@@ -15,7 +15,7 @@ pytest_plugins = ['pytester']
     'import_path, class_name, device_type',
     [
         ('twister_harness.device.binary_adapter', 'NativeSimulatorAdapter', 'native'),
-        ('twister_harness.device.qemu_adapter', 'QemuAdapter', 'qemu'),
+        ('twister_harness.device.binary_adapter', 'QemuAdapter', 'qemu'),
         ('twister_harness.device.hardware_adapter', 'HardwareAdapter', 'hardware'),
     ],
     ids=[

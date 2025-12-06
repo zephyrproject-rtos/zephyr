@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Generator
 from unittest.mock import patch
 
+from unittest import mock
 import pytest
 
-from twister_harness.device.qemu_adapter import QemuAdapter
+from twister_harness.device.binary_adapter import QemuAdapter
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig
 
@@ -36,21 +37,22 @@ def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> 
     fifo_file_path = str(device.device_config.build_dir / 'qemu-fifo')
     script_path = resources.joinpath('fifo_mock.py')
     device.command = ['python', str(script_path), fifo_file_path]
+    device.connections[0]._write_to_device = mock.Mock()
     device.launch()
     lines = device.readlines_until(regex='Namespaces are one honking great idea')
     device.close()
     assert 'Readability counts.' in lines
-    assert os.path.isfile(device.handler_log_path)
-    with open(device.handler_log_path, 'r') as file:
+    assert os.path.isfile(device.connections[0].log_path)
+    with open(device.connections[0].log_path, 'r') as file:
         file_lines = [line.strip() for line in file.readlines()]
     assert file_lines[-2:] == lines[-2:]
 
 
 def test_if_qemu_adapter_raise_exception_due_to_no_fifo_connection(device: QemuAdapter) -> None:
-    device.base_timeout = 0.3
+    device.connections[0].timeout = 0.3
     device.command = ['sleep', '1']
     with pytest.raises(TwisterHarnessException, match='Cannot establish communication with QEMU device.'):
-        device._flash_and_run()
-    device._close_device()
-    assert not os.path.exists(device._fifo_connection._fifo_out_path)
-    assert not os.path.exists(device._fifo_connection._fifo_in_path)
+        device.launch()
+    device.close()
+    assert not os.path.exists(device.connections[0]._fifo_connection._fifo_out_path)
+    assert not os.path.exists(device.connections[0]._fifo_connection._fifo_in_path)
