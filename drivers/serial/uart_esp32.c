@@ -539,7 +539,11 @@ static void uart_esp32_isr(void *arg)
 
 #if CONFIG_UART_ASYNC_API
 	if (uart_intr_status & UART_INTR_RXFIFO_FULL) {
-		data->async.rx_counter++;
+		if (data->async.rx_counter < data->async.rx_len) {
+			data->async.rx_counter++;
+		} else {
+			data->async.rx_counter = data->async.rx_len;
+		}
 		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
 	}
 #endif
@@ -556,16 +560,21 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	struct uart_esp32_data *data = uart_dev->data;
 	struct uart_event evt = {0};
 	unsigned int key = irq_lock();
+	size_t rx_count = data->async.rx_counter;
+	const size_t rx_len = data->async.rx_len;
+
+	if (rx_count > rx_len) {
+		rx_count = rx_len;
+	}
 
 	/* If the receive buffer is not complete we reload the DMA at current buffer position and
 	 * let the timeout callback handle the notifications
 	 */
-	if (data->async.rx_counter != data->async.rx_len) {
+	if (rx_count != rx_len) {
 		dma_reload(config->dma_dev, config->rx_dma_channel, 0,
-			   (uint32_t)data->async.rx_buf + data->async.rx_counter,
-			   data->async.rx_len - data->async.rx_counter);
+			   (uint32_t)data->async.rx_buf + rx_count, rx_len - rx_count);
 		dma_start(config->dma_dev, config->rx_dma_channel);
-		data->uhci_dev->pkt_thres.thrs = data->async.rx_len - data->async.rx_counter;
+		data->uhci_dev->pkt_thres.thrs = rx_len - rx_count;
 		irq_unlock(key);
 		return;
 	}
@@ -573,7 +582,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	/*Notify RX_RDY*/
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
+	evt.data.rx.len = rx_count - data->async.rx_offset;
 	evt.data.rx.offset = data->async.rx_offset;
 
 	if (data->async.cb && evt.data.rx.len) {
@@ -687,17 +696,22 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	struct uart_esp32_data *data = CONTAINER_OF(async, struct uart_esp32_data, async);
 	struct uart_event evt = {0};
 	unsigned int key = irq_lock();
+	size_t rx_count = data->async.rx_counter;
+
+	if (rx_count > data->async.rx_len) {
+		rx_count = data->async.rx_len;
+	}
 
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
+	evt.data.rx.len = rx_count - data->async.rx_offset;
 	evt.data.rx.offset = data->async.rx_offset;
 
 	if (data->async.cb && evt.data.rx.len) {
 		data->async.cb(data->uart_dev, &evt, data->async.user_data);
 	}
 
-	data->async.rx_offset = data->async.rx_counter;
+	data->async.rx_offset = rx_count;
 	k_work_cancel_delayable(&data->async.rx_timeout_work);
 	irq_unlock(key);
 }
@@ -882,6 +896,11 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 		goto unlock;
 	}
 
+	size_t rx_count = data->async.rx_counter;
+	if (rx_count > data->async.rx_len) {
+		rx_count = data->async.rx_len;
+	}
+
 	err = dma_stop(config->dma_dev, config->rx_dma_channel);
 	if (err) {
 		LOG_ERR("Error stopping Rx DMA (%d)", err);
@@ -891,7 +910,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 	/*If any bytes have been received notify RX_RDY*/
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
+	evt.data.rx.len = rx_count - data->async.rx_offset;
 	evt.data.rx.offset = data->async.rx_offset;
 
 	if (data->async.cb && evt.data.rx.len) {
