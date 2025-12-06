@@ -292,7 +292,7 @@ static void ecm_read_cb(uint8_t ep, int size, void *priv)
 		}
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(), size, AF_UNSPEC,
+	pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(), size, NET_AF_UNSPEC,
 					   0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("no memory for network packet");

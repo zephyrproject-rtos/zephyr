@@ -177,7 +177,7 @@ static void eem_read_cb(uint8_t ep, int size, void *priv)
 
 		pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(),
 						   eem_size - sizeof(sentinel),
-						   AF_UNSPEC, 0, K_FOREVER);
+						   NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("Unable to alloc pkt");
 			break;
