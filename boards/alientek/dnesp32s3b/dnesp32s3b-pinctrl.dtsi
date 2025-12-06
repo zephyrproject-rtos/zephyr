@@ -20,6 +20,30 @@
 		};
 	};
 
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO18>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO8>;
+			bias-pull-up;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <UART2_TX_GPIO5>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART2_RX_GPIO6>;
+			bias-pull-up;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <I2C0_SCL_GPIO45>,
