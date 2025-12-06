@@ -312,6 +312,7 @@ struct lan9250_config {
 	struct gpio_dt_spec reset;
 	uint8_t full_duplex;
 	int32_t timeout;
+	bool random_mac;
 };
 
 struct lan9250_runtime {
