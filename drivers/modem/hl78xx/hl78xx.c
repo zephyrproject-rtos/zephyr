@@ -768,7 +768,7 @@ int modem_dynamic_cmd_send(
 			modem_chat_script_callback script_user_callback,
 			const uint8_t *cmd, uint16_t cmd_size,
 			const struct modem_chat_match *response_matches, uint16_t matches_size,
-			bool user_cmd
+			uint16_t response_timeout, bool user_cmd
 		)
 {
 	int ret = 0;
@@ -784,7 +784,7 @@ int modem_dynamic_cmd_send(
 		.request_size = cmd_size,
 		.response_matches = response_matches,
 		.response_matches_size = matches_size,
-		.timeout = 1000,
+		.timeout = 0, /* Has no effect */
 	};
 	struct modem_chat_script chat_script = {
 		.name = "dynamic_script",
@@ -793,7 +793,7 @@ int modem_dynamic_cmd_send(
 		.abort_matches = hl78xx_get_abort_matches(),
 		.abort_matches_size = hl78xx_get_abort_matches_size(),
 		.callback = script_user_callback,
-		.timeout = 1000
+		.timeout = response_timeout, /* overall script timeout */
 	};
 
 	ret = k_mutex_lock(&data->tx_lock, K_NO_WAIT);
