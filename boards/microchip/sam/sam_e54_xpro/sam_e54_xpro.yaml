@@ -24,4 +24,6 @@ supported:
   - rtc
   - shell
   - uart
+  - usb
+  - watchdog
 vendor: microchip

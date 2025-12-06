@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		label = "HID0";
+		protocol-code = "none";
+		in-polling-period-us = <1000>;
+		in-report-size = <64>;
+	};
+};
+
+/* Overlay for clock node */
+&clock {
+	fdpll {
+		compatible = "microchip,sam-d5x-e5x-fdpll";
+
+		fdpll1 {
+			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL1>;
+			fdpll-divider-ratio-int = <95>;
+			fdpll-divider-ratio-frac = <0>;
+			fdpll-src = "gclk1";
+			fdpll-lock-bypass-en = <1>;
+			fdpll-run-in-standby-en = <0>;
+			fdpll-en = <1>;
+			fdpll-wakeup-fast-en = <1>;
+		};
+	};
+
+	gclkgen {
+		gclkgen2 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN2>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll1";
+			gclkgen-en = <1>;
+		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <12>;
+			gclkgen-src = "xosc1";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph {
+		usb0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_USB>;
+			gclkperiph-src = "gclk2";
+			gclkperiph-en = <1>;
+		};
+	};
+
+	mclkperiph {
+		usb0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_APBB_USB>;
+			mclk-en = <1>;
+		};
+	};
+};
+
+/* Enable USB0 node */
+&usb0 {
+	status = "okay";
+};
