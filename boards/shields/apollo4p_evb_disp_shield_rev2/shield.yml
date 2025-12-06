@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Ambiq Micro
+
+shield:
+  name: apollo4p_evb_disp_shield_rev2
+  full_name: Apollo 4P EVB Display Shield Rev 2
+  vendor: ambiq
+  supported_features:
+    - accel_polling
+    - spi
