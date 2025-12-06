@@ -20,6 +20,7 @@ tests:
         - ".*: CTR Mode"
         - ".*: CCM Mode"
         - ".*: GCM Mode"
+        - "ENCRYPT - Match"
   sample.drivers.crypto.stm32:
     tags: crypto
     filter: dt_compat_enabled("st,stm32-aes") or dt_compat_enabled("st,stm32-cryp")
