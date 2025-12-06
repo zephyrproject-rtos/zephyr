@@ -29,6 +29,14 @@
 	};
 
 	soc {
+		hwinfo: device_id@8061fc {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x008061fc 0x4>,
+			      <0x00806010 0x4>,
+			      <0x00806014 0x4>,
+			      <0x00806018 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -87,7 +95,6 @@
 
 		rstc: rstc@40000c00 {
 			compatible = "microchip,rstc-g1-reset";
-			status = "disabled";
 			reg = <0x40000c00 0x400>;
 		};
 
