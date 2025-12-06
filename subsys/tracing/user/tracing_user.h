@@ -370,6 +370,8 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_heap_free(heap)
 #define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
 #define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
+#define sys_port_trace_k_heap_aligned_realloc_enter(h, ptr, align, bytes, timeout)
+#define sys_port_trace_k_heap_aligned_realloc_exit(h, ptr, align, bytes, timeout, ret)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
@@ -380,6 +382,8 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
+#define sys_port_trace_k_heap_sys_k_aligned_realloc_enter(heap, ptr)
+#define sys_port_trace_k_heap_sys_k_aligned_realloc_exit(heap, ptr, ret)
 
 #define sys_port_trace_k_mem_slab_init(slab, rc)
 #define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout)
