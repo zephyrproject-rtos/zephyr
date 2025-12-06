@@ -324,7 +324,7 @@ class LFXOConfig:
             raise ValueError("Invalid LFXO startup time (not configured)")
 
         return cls(
-            accuracy_ppm=int(lfosc_lfxoconfig.enum_get("ACCURACY")[:3]),
+            accuracy_ppm=int(lfosc_lfxoconfig.enum_get("ACCURACY")[:-3]),
             mode=LFXOMode(lfosc_lfxoconfig.enum_get("MODE")),
             builtin_load_capacitors=builtin_load_capacitors,
             builtin_load_capacitance_pf=builtin_load_capacitance_pf,
