@@ -7,6 +7,12 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
+#ifdef CONFIG_ARM_MPU_SRAM_WRITE_THROUGH
+#define ARM_MPU_SRAM_REGION_ATTR  REGION_RAM_WT_ATTR
+#else
+#define ARM_MPU_SRAM_REGION_ATTR  REGION_RAM_ATTR
+#endif
+
 #define MEMORY_REGION_SIZE_KB(SIZE)    (SIZE / 1024)
 
 #define ITCM_SIZE                       DT_REG_SIZE_BY_IDX(DT_NODELABEL(itcm), 0)
@@ -60,7 +66,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ocram1))
 	MPU_REGION_ENTRY("OCRAM1", REGION_OCRAM1_SHM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(REGION_OCRAM1_SHM_SIZE)),
+			 ARM_MPU_SRAM_REGION_ATTR(REGION_OCRAM1_SHM_SIZE)),
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ocram2))
@@ -70,7 +76,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
 	MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(REGION_HYPER_RAM_SIZE)),
+			 ARM_MPU_SRAM_REGION_ATTR(REGION_HYPER_RAM_SIZE)),
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(w25q128jw))
