@@ -16,6 +16,7 @@ import random
 import re
 import subprocess
 import sys
+import time
 from argparse import Namespace
 from collections import OrderedDict
 from itertools import islice
@@ -830,6 +831,7 @@ class TestPlan:
         integration_mode_list = test_config_options.get('integration_mode', [])
 
         logger.info("Building initial testsuite list...")
+        build_list_start = time.time()
 
         keyed_tests = {}
         for _, ts in self.testsuites.items():
@@ -1219,6 +1221,9 @@ class TestPlan:
         for inst in filtered_and_skipped_instances:
             change_skip_to_error_if_integration(self.options, inst)
             inst.add_missing_case_status(inst.status)
+
+        build_list_duration = time.time() - build_list_start
+        logger.info(f"Built testsuite list in {build_list_duration:.2f} seconds")
 
     def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
         if req_platform := required_app.get("platform", None):
