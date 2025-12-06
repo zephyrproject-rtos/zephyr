@@ -62,7 +62,9 @@ static void cbSendSystemDesc(void)
 	SEGGER_SYSVIEW_SendSysDesc("C=" CONFIG_BOARD_QUALIFIERS);
 #endif
 
-#ifdef CONFIG_SYMTAB
+#ifdef CONFIG_SEGGER_SYSVIEW_CUSTOM_ISR_NAMES
+	SEGGER_SYSVIEW_SendSysDesc(CONFIG_SEGGER_SYSVIEW_CUSTOM_ISR_NAMES);
+#elif defined(CONFIG_SYMTAB)
 	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
 
 	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
