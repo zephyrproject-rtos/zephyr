@@ -156,6 +156,13 @@ New APIs and options
 
   * :c:macro:`COND_CASE_1`
 
+* Utilities
+
+  * :c:struct:`sys_set_node`
+  * :c:func:`sys_set_makeset`
+  * :c:func:`sys_set_find`
+  * :c:func:`sys_set_union`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
