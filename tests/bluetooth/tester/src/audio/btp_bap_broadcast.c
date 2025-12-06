@@ -1680,12 +1680,6 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
-		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* For semantic purposes Zephyr API uses BIS Index bitfield
-			 * where BIT(1) means BIS Index 1
-			 */
-			subgroup->bis_sync <<= 1;
-		}
 
 		ptr += sizeof(subgroup->bis_sync);
 		subgroup->metadata_len = *ptr;
@@ -1751,12 +1745,6 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
-		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* For semantic purposes Zephyr API uses BIS Index bitfield
-			 * where BIT(1) means BIS Index 1
-			 */
-			subgroup->bis_sync <<= 1;
-		}
 
 		ptr += sizeof(subgroup->bis_sync);
 		subgroup->metadata_len = *ptr;
