@@ -16,6 +16,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/drivers/reset.h>
 #include "fsl_ostimer.h"
 #if !defined(CONFIG_SOC_FAMILY_MCXN) && !defined(CONFIG_SOC_FAMILY_MCXA)
 #include "fsl_power.h"
@@ -179,9 +180,14 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	}
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
 	cyc_sys_compensated += CYC_PER_US * slept_time_us;
+
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
 		/* Reset the OS Timer to a known state */
-		RESET_PeripheralReset(kOSEVENT_TIMER_RST_SHIFT_RSTn);
+		const struct reset_dt_spec reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
+
+		if (reset.dev != NULL) {
+			reset_line_toggle_dt(&reset);
+		}
 		/* Reactivate os_timer for cases where it loses its state */
 		OSTIMER_Init(base);
 	}
@@ -337,7 +343,9 @@ static int sys_clock_driver_init(void)
 /* On some SoC's, OS Timer cannot wakeup from low power mode in standby modes */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	counter_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
-	counter_max_val = counter_get_max_top_value(counter_dev);
+	if (NULL != counter_dev) {
+		counter_max_val = counter_get_max_top_value(counter_dev);
+	}
 #endif
 
 #if (DT_INST_PROP(0, wakeup_source))
