@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UDC_NUMAKER
-	bool "Nuvoton NuMaker USB 1.1 device controller"
+	bool "Nuvoton NuMaker USB device controller"
 	default y
-	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED \
+		|| DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
 	select PINCTRL
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT if DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
 	help
-	  Enable Nuvoton NuMaker USB 1.1 device controller driver
+	  Enable Nuvoton NuMaker USB device controller driver
 
 if UDC_NUMAKER
 
@@ -28,5 +30,19 @@ config UDC_NUMAKER_THREAD_PRIORITY
 	default 8
 	help
 	  Priority of the driver internal thread.
+
+config UDC_NUMAKER_DMA
+	bool "UDC NuMaker DMA support"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	help
+	  This enables DMA transfer between user buffer and USB buffer.
+
+config UDC_NUMAKER_DMA_TIMEOUT_MS
+	int "UDC NuMaker DMA timeout"
+	default 2000
+	depends on UDC_NUMAKER_DMA
+	help
+	  This configures timeout of DMA transfer in milliseconds.
 
 endif # UDC_NUMAKER
