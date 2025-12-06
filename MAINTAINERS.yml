@@ -744,6 +744,8 @@ Bouffalolab Platforms:
     - josuah
   files:
     - boards/bflb/
+    - boards/aithinker/ai_*/
+    - boards/doiting/
     - drivers/*/*bflb*
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
