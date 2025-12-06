@@ -65,7 +65,7 @@ source "drivers/display/Kconfig.st7789v"
 source "drivers/display/Kconfig.st7796s"
 source "drivers/display/Kconfig.stm32_ltdc"
 source "drivers/display/Kconfig.uc81xx"
-source "drivers/display/Kconfig.waveshare_dsi_lcd"
+source "drivers/display/Kconfig.waveshare_dsi2dpi"
 # zephyr-keep-sorted-stop
 
 endif # DISPLAY
