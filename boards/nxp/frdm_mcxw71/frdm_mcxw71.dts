@@ -138,6 +138,8 @@
 	};
 };
 
+arduino_i2c: &lpi2c1 {};
+
 &lpspi1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
