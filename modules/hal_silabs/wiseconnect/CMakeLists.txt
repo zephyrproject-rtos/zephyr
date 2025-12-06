@@ -105,10 +105,29 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
-)
+if(CONFIG_MEMC_SILABS_SIWX91X_QSPI)
+  zephyr_library_sources(
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/rsi_d_cache.c
+  )
+  zephyr_compile_definitions(
+    SLI_SI91X_MCU_PSRAM_PRESENT
+    SLI_SI91X_MCU_ENABLE_PSRAM_FEATURE
+    SL_SI91X_REQUIRES_INTF_PLL
+  )
+  dt_nodelabel(memc_path NODELABEL "memc")
+  dt_prop(half_sleep PATH "${memc_path}" PROPERTY "half-sleep-supported")
+  if(half_sleep)
+    zephyr_compile_definitions(PSRAM_HALF_SLEEP_SUPPORTED)
+  endif()
+  dt_prop(ext_ldo PATH "${memc_path}" PROPERTY "external-ldo")
+  if(ext_ldo)
+    zephyr_compile_definitions(SLI_SI91X_MCU_EXTERNAL_LDO_FOR_PSRAM)
+  else()
+    zephyr_compile_definitions(SLI_SI91X_MCU_INTERNAL_LDO_FOR_PSRAM)
+  endif()
+endif() # CONFIG_MEMC_SILABS_SIWX91X_QSPI
 
 if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources(
