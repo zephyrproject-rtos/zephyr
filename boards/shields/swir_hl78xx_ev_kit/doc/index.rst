@@ -77,3 +77,7 @@ References
 
 .. _HL/RC Module Evaluation Kit Shield specification website:
    https://info.sierrawireless.com/iot-modules-evaluation-kit#guide-for-the-hl78-series-evaluation-kit
+
+.. _HL/RC Module Evaluation Kit Shield Auto Baud Rate Detection Feature Documentation:
+   :doc:`auto_baudrate/AUTO_BAUDRATE_README.md`
+   :doc:`auto_baudrate/QUICK_REFERENCE.md`

@@ -33,6 +33,7 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
  */
 const struct modem_chat_match *hl78xx_get_at_ready_match(void);
 const struct modem_chat_match *hl78xx_get_ok_match(void);
+size_t hl78xx_get_ok_match_size(void);
 const struct modem_chat_match *hl78xx_get_abort_matches(void);
 const struct modem_chat_match *hl78xx_get_unsol_matches(void);
 size_t hl78xx_get_unsol_matches_size(void);
@@ -69,12 +70,12 @@ int hl78xx_run_periodic_script_async(struct hl78xx_data *data);
 const struct modem_chat_match *hl78xx_get_ksrat_match(void);
 
 /* Socket-related chat matches used by the sockets TU */
-const struct modem_chat_match *hl78xx_get_sockets_ok_match(void);
 const struct modem_chat_match *hl78xx_get_connect_matches(void);
 size_t hl78xx_get_connect_matches_size(void);
 const struct modem_chat_match *hl78xx_get_sockets_allow_matches(void);
 size_t hl78xx_get_sockets_allow_matches_size(void);
 const struct modem_chat_match *hl78xx_get_kudpind_match(void);
+size_t hl78xx_get_kudpind_allow_matches_size(void);
 const struct modem_chat_match *hl78xx_get_ktcpind_match(void);
 const struct modem_chat_match *hl78xx_get_ktcpcfg_match(void);
 const struct modem_chat_match *hl78xx_get_cgdcontrdp_match(void);
