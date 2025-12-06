@@ -252,6 +252,11 @@ Tracing
 
   With this change, existing CTF traces with 8-bit IDs won't be compatible.
 
+Settings
+========
+
+* ``CONFIG_SETTINGS_TFM_ITS`` has been renamed to :kconfig:option:`CONFIG_SETTINGS_TFM_PSA`.
+
 Modules
 *******
 
