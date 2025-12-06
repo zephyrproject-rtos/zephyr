@@ -165,7 +165,7 @@ otError otPlatUdpBind(otUdpSocket *aUdpSocket)
 exit:
 	return error;
 }
-
+#include <assert.h>
 otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifIdentifier)
 {
 	otError error = OT_ERROR_NONE;
@@ -195,6 +195,7 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 		break;
 	case OT_NETIF_THREAD_INTERNAL:
 		assert(false);
+		// __ASSERT(false);
 	case OT_NETIF_BACKBONE:
 		VerifyOrExit(net_if_get_name(ail_iface_ptr, name,
 					     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
