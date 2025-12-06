@@ -2197,3 +2197,35 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = timer_expiry_enter;
+	id = 0x100;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_expiry_exit;
+	id = 0x101;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_enter;
+	id = 0x102;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_exit;
+	id = 0x103;
+	fields := struct {
+		uint32_t id;
+	};
+};

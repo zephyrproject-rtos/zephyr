@@ -939,6 +939,26 @@ void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
 	ctf_top_timer_status_sync_exit((uint32_t)(uintptr_t)timer, result);
 }
 
+void sys_trace_k_timer_expiry_enter(struct k_timer *timer)
+{
+	ctf_top_timer_expiry_enter((uint32_t)(uintptr_t)timer);
+}
+
+void sys_trace_k_timer_expiry_exit(struct k_timer *timer)
+{
+	ctf_top_timer_expiry_exit((uint32_t)(uintptr_t)timer);
+}
+
+void sys_trace_k_timer_stop_fn_expiry_enter(struct k_timer *timer)
+{
+	ctf_top_timer_stop_fn_expiry_enter((uint32_t)(uintptr_t)timer);
+}
+
+void sys_trace_k_timer_stop_fn_expiry_exit(struct k_timer *timer)
+{
+	ctf_top_timer_stop_fn_expiry_exit((uint32_t)(uintptr_t)timer);
+}
+
 /* Network socket */
 void sys_trace_socket_init(int sock, int family, int type, int proto)
 {
