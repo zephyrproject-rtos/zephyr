@@ -29,6 +29,8 @@
 #define SCMI_PINCTRL_ATTRIBUTES_CONFIG_NUM(attributes)\
 	(((attributes) & GENMASK(9, 2)) >> 2)
 
+#define SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION	0x10000
+
 /**
  * @brief Pinctrl protocol command message IDs
  */

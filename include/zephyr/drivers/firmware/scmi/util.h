@@ -146,12 +146,13 @@
  * @param proto protocol ID in decimal format
  * @param pdata protocol private data
  */
-#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata)			\
+#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val)	\
 	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
 	{									\
 		.id = proto,							\
 		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),			\
 		.data = pdata,							\
+		.version = version_val						\
 	}
 
 #else /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
@@ -209,9 +210,10 @@
  * @param prio protocol's priority within its initialization level
  */
 #define DT_SCMI_PROTOCOL_DEFINE(node_id, init_fn, pm, data, config,		\
-				level, prio, api)				\
+				level, prio, api, version_val)			\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data);	\
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data,	\
+			version_val);						\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm,					\
 			 &SCMI_PROTOCOL_NAME(DT_REG_ADDR_RAW(node_id)),		\
 					     config, level, prio, api)
@@ -230,9 +232,9 @@
  * @param prio protocol's priority within its initialization level
  */
 #define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,		\
-				     level, prio, api)				\
+				     level, prio, api, version)			\
 	DT_SCMI_PROTOCOL_DEFINE(DT_INST(inst, DT_DRV_COMPAT), init_fn, pm,	\
-				data, config, level, prio, api)
+				data, config, level, prio, api, version)
 
 /**
  * @brief Define an SCMI protocol with no device
@@ -245,9 +247,10 @@
  * @param node_id protocol node identifier
  * @param data protocol private data
  */
-#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data)				\
+#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version)			\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data)
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data,	\
+			version)						\
 
 /**
  * @brief Create an SCMI message field
