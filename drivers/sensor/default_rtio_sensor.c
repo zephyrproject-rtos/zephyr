@@ -311,6 +311,38 @@ void sensor_processing_with_callback(struct rtio *ctx, sensor_processing_callbac
 	rtio_release_buffer(ctx, buf, buf_len);
 }
 
+int sensor_processing_cb_with_timeout(struct rtio *ctx, sensor_processing_callback_t cb,
+				      k_timeout_t timeout)
+{
+	void *userdata = NULL;
+	uint8_t *buf = NULL;
+	uint32_t buf_len = 0;
+	int rc;
+
+	/* Wait for a CQE */
+	struct rtio_cqe *cqe = rtio_cqe_consume_block_timeout(ctx, timeout);
+
+	if (!cqe) {
+		return -ETIMEDOUT;
+	}
+
+	/* Cache the data from the CQE */
+	rc = cqe->result;
+	userdata = cqe->userdata;
+	rtio_cqe_get_mempool_buffer(ctx, cqe, &buf, &buf_len);
+
+	/* Release the CQE */
+	rtio_cqe_release(ctx, cqe);
+
+	/* Call the callback */
+	cb(rc, buf, buf_len, userdata);
+
+	/* Release the memory */
+	rtio_release_buffer(ctx, buf, buf_len);
+
+	return 0;
+}
+
 /**
  * @brief Default decoder get frame count
  *
