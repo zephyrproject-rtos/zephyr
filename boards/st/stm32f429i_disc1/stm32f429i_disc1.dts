@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -76,7 +76,7 @@
 			width = <240>;
 			height = <320>;
 			rotation = <180>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			pwctrla = [39 2c 00 34 02];
 			pwctrlb = [00 c1 30];
 			timctrla = [85 00 78];
