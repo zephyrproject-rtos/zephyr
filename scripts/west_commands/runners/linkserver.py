@@ -144,9 +144,14 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                 if self.elf_name is  None or not os.path.isfile(self.elf_name):
                     raise ValueError('Cannot debug; elf file required')
 
+                is_batch = ''
+                if command == 'debug':
+                    is_batch = os.environ.get("ZEPHYR_TWISTER_RUN_IN_DEBUG", '')
+
                 gdb_cmd = ([self.gdb_cmd] +
                            self.tui_arg +
                            [self.elf_name] +
+                           ['-batch' if is_batch else ''] +
                            ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
 
                 if command == 'debug':
@@ -154,6 +159,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                     # the ram as inaccessible and does not flash.
                     gdb_cmd += ['-ex', 'set mem inaccessible-by-default off']
                     gdb_cmd += ['-ex', 'monitor reset', '-ex', 'load']
+                    if is_batch:
+                        gdb_cmd += ['-ex', 'monitor go', '-ex', 'disconnect', '-ex', 'quit']
 
                 if command == 'attach':
                     linkserver_cmd += ['--attach']

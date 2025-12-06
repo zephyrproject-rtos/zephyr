@@ -398,16 +398,22 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 raise ValueError('Cannot debug; elf is missing')
             else:
                 elf_name = self.elf_name
+            is_batch = os.environ.get("ZEPHYR_TWISTER_RUN_IN_DEBUG", '')
             client_cmd = (self.gdb_cmd +
                           self.tui_arg +
                           [elf_name] +
+                          ['-batch' if is_batch else ''] +
                           ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
             if command == 'debug':
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
-                if self.reset:
-                    client_cmd += ['-ex', 'monitor reset']
+                if is_batch:
+                    client_cmd += ['-ex', 'monitor go', '-ex', 'disconnect', '-ex', 'quit']
+                else:
+                    if self.reset:
+                        client_cmd += ['-ex', 'monitor reset']
+
             if not self.gdb_host:
                 self.require(self.gdbserver)
                 self.print_gdbserver_message()

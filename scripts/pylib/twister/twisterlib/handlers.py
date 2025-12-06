@@ -589,7 +589,11 @@ class DeviceHandler(Handler):
         command = ["west"]
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
-        command += ["flash", "--skip-rebuild", "-d", self.build_dir]
+        os.environ["ZEPHYR_TWISTER_RUN_IN_DEBUG"] = 'y'
+        if hardware.west_cmd:
+            command += [hardware.west_cmd, "--no-rebuild", "-d", self.build_dir]
+        else:
+            command += [self.options.west_cmd, "--no-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
         # There are three ways this option is used.
