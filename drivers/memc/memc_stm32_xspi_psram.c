@@ -294,6 +294,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
 	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
 		/*
 		 * Do not configure the XSPIManager if running on the ext flash
@@ -313,6 +314,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 			return -EIO;
 		}
 	}
+#endif /* XSPIM */
 
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
@@ -334,8 +336,13 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
 	cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
 	cmd.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_ENABLE;
+#if defined(HAL_XSPI_DATA_16_LINES)
 	cmd.DataMode = DT_INST_PROP(0, io_x16_mode) ? HAL_XSPI_DATA_16_LINES
 						    : HAL_XSPI_DATA_8_LINES;
+#else
+	BUILD_ASSERT(!DT_INST_PROP(0, io_x16_mode), "SoC does not support io-x16-mode");
+	cmd.DataMode = HAL_XSPI_DATA_8_LINES;
+#endif
 	cmd.DataDTRMode = HAL_XSPI_DATA_DTR_ENABLE;
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_WRITE;
 	cmd.DQSMode = HAL_XSPI_DQS_ENABLE;
@@ -402,9 +409,13 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 		.Init = {
 			.FifoThresholdByte = 2U,
 			.MemoryMode = HAL_XSPI_SINGLE_MEM,
+#if defined(HAL_XSPI_DATA_16_LINES)
 			.MemoryType = (DT_INST_PROP(0, io_x16_mode) ?
 					HAL_XSPI_MEMTYPE_APMEM_16BITS :
 					HAL_XSPI_MEMTYPE_APMEM),
+#else
+			.MemoryType = HAL_XSPI_MEMTYPE_APMEM,
+#endif
 			.ChipSelectHighTimeCycle = 5U,
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
 			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
@@ -412,9 +423,13 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.SampleShifting = HAL_XSPI_SAMPLE_SHIFT_NONE,
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
+#if defined(XSPI_DCR3_MAXTRAN)
 			.MaxTran = 0U,
+#endif /* XSPI_DCR3_MAXTRAN */
 			.Refresh = 0x81U,
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
 			.MemorySelect = HAL_XSPI_CSSEL_NCS1,
+#endif /* XSPIM */
 		},
 	},
 };
