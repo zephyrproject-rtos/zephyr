@@ -298,7 +298,7 @@ int main(void)
 	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
 	enum hl78xx_cell_rat_mode tech;
 	enum cellular_registration_status status;
-	int16_t rsrp;
+	int16_t signal_strength = 0;
 	const char *newapn = "";
 	const char *sample_cmd = "AT";
 
@@ -335,7 +335,11 @@ int main(void)
 	/* Get the current registration status */
 	cellular_get_registration_status(modem, hl78xx_rat_to_access_tech(tech), &status);
 	/* Get the current signal strength */
-	cellular_get_signal(modem, CELLULAR_SIGNAL_RSRP, &rsrp);
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &signal_strength);
+#else
+	cellular_get_signal(modem, CELLULAR_SIGNAL_RSRP, &signal_strength);
+#endif
 	/* Get the current network operator name */
 	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_NETWORK_OPERATOR, (char *)operator,
 			      sizeof(operator));
@@ -350,7 +354,11 @@ int main(void)
 	LOG_INF("Imei: %s", imei);
 	LOG_INF("RAT: %s", rat_get_in_string(tech));
 	LOG_INF("Connection status: %s(%d)", reg_status_get_in_string(status), status);
-	LOG_INF("RSRP : %d", rsrp);
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	LOG_INF("RSSI : %d", signal_strength);
+#else
+	LOG_INF("RSRP : %d", signal_strength);
+#endif
 	LOG_INF("Operator: %s", (strlen(operator) > 0) ? operator : "\"\"");
 	LOG_RAW("**********************************************************\n\n");
 
