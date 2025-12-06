@@ -17,4 +17,6 @@ supported:
   - uart
   - gpio
   - arduino_gpio
+  - counter
+  - pwm
 vendor: nxp
