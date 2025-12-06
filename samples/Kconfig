@@ -1,0 +1,8 @@
+# General configuration options for samples
+
+# Copyright (c) 2025 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_SAMPLE
+	int "System workqueue stack size for a sample application"
+	default 1024
