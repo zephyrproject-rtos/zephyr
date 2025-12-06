@@ -465,8 +465,8 @@ Bluetooth Audio:
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
     - tests/bluetooth/tester/src/audio/
-    - doc/connectivity/bluetooth/api/audio/
-    - doc/connectivity/bluetooth/shell/audio/
+    - doc/services/connectivity/bluetooth/api/audio/
+    - doc/services/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/ccp*/
@@ -490,7 +490,7 @@ Bluetooth Classic:
     - makeshi
     - chengkai15
   files:
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/services/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -514,9 +514,9 @@ Bluetooth Controller:
     - erbr-ot
     - Tronil
   files:
-    - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
-    - doc/connectivity/bluetooth/img/ctlr*
-    - doc/connectivity/bluetooth/api/controller.rst
+    - doc/services/connectivity/bluetooth/bluetooth-ctlr-arch.rst
+    - doc/services/connectivity/bluetooth/img/ctlr*
+    - doc/services/connectivity/bluetooth/api/controller.rst
     - include/zephyr/bluetooth/controller.h
     - subsys/bluetooth/common/
     - subsys/bluetooth/controller/
@@ -569,7 +569,7 @@ Bluetooth Host:
     - PavelVPV
     - HaavardRei
   files:
-    - doc/connectivity/bluetooth/
+    - doc/services/connectivity/bluetooth/
     - include/zephyr/bluetooth/
     - samples/bluetooth/
     - subsys/bluetooth/common/
@@ -589,15 +589,15 @@ Bluetooth Host:
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
-    - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
-    - doc/connectivity/bluetooth/autopts/
-    - doc/connectivity/bluetooth/img/ctlr*
-    - doc/connectivity/bluetooth/api/audio/
-    - doc/connectivity/bluetooth/api/mesh/
-    - doc/connectivity/bluetooth/api/controller.rst
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
-    - doc/connectivity/bluetooth/shell/host/iso.rst
-    - doc/connectivity/bluetooth/shell/audio/
+    - doc/services/connectivity/bluetooth/bluetooth-ctlr-arch.rst
+    - doc/services/connectivity/bluetooth/autopts/
+    - doc/services/connectivity/bluetooth/img/ctlr*
+    - doc/services/connectivity/bluetooth/api/audio/
+    - doc/services/connectivity/bluetooth/api/mesh/
+    - doc/services/connectivity/bluetooth/api/controller.rst
+    - doc/services/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/services/connectivity/bluetooth/shell/host/iso.rst
+    - doc/services/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/ccp*/
@@ -639,7 +639,7 @@ Bluetooth ISO:
     - cvinayak
   files:
     - include/zephyr/bluetooth/iso.h
-    - doc/connectivity/bluetooth/shell/host/iso.rst
+    - doc/services/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
@@ -664,7 +664,7 @@ Bluetooth Mesh:
     - omkar3141
     - KyraLengfeld
   files:
-    - doc/connectivity/bluetooth/api/mesh/
+    - doc/services/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh.h
     - samples/bluetooth/mesh*/
@@ -687,7 +687,7 @@ Bluetooth Qualification:
     - jhedberg
     - alxelax
   files:
-    - doc/connectivity/bluetooth/autopts/
+    - doc/services/connectivity/bluetooth/autopts/
     - tests/bluetooth/qualification/
     - tests/bluetooth/tester/
     - tests/bsim/bluetooth/tester/
@@ -1322,7 +1322,7 @@ Documentation Infrastructure:
     - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
-    - doc/connectivity/canbus/
+    - doc/services/connectivity/canbus/
     - doc/hardware/peripherals/can/
     - drivers/can/
     - drivers/net/canbus.c
@@ -3101,6 +3101,7 @@ JSON Web Token:
     - lib/utils/json.c
     - tests/subsys/jwt/
     - tests/lib/json/
+    - doc/services/jwt/index.rst
   labels:
     - "area: JSON"
   tests:
@@ -3279,7 +3280,7 @@ LoRa and LoRaWAN:
     - samples/subsys/lorawan/
     - include/zephyr/dt-bindings/lora/
     - dts/bindings/lora/
-    - doc/connectivity/lora_lorawan/index.rst
+    - doc/services/connectivity/lora_lorawan/index.rst
     - tests/subsys/lorawan/
     - tests/drivers/build_all/lora/
   labels:
@@ -3439,7 +3440,7 @@ Modbus:
     - include/zephyr/modbus/
     - tests/subsys/modbus/
     - subsys/modbus/
-    - doc/connectivity/modbus/
+    - doc/services/connectivity/modbus/
   labels:
     - "area: modbus"
   tests:
@@ -3455,7 +3456,7 @@ Modem:
     - subsys/modem/
     - include/zephyr/modem/
     - tests/subsys/modem/
-    - doc/services/modem/
+    - doc/services/connectivity/modem/
     - samples/net/cellular_modem/
     - include/zephyr/drivers/cellular.h
   labels:
@@ -3796,16 +3797,16 @@ Networking:
     - include/zephyr/net/
     - samples/net/
     - subsys/net/
-    - doc/connectivity/networking/
+    - doc/services/connectivity/networking/
     - tests/net/
     - tests/unit/net_timeout/
   files-exclude:
-    - doc/connectivity/networking/api/gptp.rst
-    - doc/connectivity/networking/api/ieee802154.rst
-    - doc/connectivity/networking/api/ocpp.rst
-    - doc/connectivity/networking/api/ptp.rst
-    - doc/connectivity/networking/api/wifi.rst
-    - doc/connectivity/networking/api/http*.rst
+    - doc/services/connectivity/networking/api/gptp.rst
+    - doc/services/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/ocpp.rst
+    - doc/services/connectivity/networking/api/ptp.rst
+    - doc/services/connectivity/networking/api/wifi.rst
+    - doc/services/connectivity/networking/api/http*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
@@ -3899,7 +3900,7 @@ Networking:
     - subsys/net/conn_mgr/
     - tests/net/conn_mgr_monitor/
     - tests/net/conn_mgr_conn/
-    - doc/connectivity/networking/conn_mgr/
+    - doc/services/connectivity/networking/conn_mgr/
   labels:
     - "area: Networking"
   tests:
@@ -3932,7 +3933,7 @@ Networking:
     - subsys/net/l2/ethernet/dsa/
     - drivers/ethernet/dsa/
     - dts/bindings/dsa/
-    - doc/connectivity/networking/dsa*
+    - doc/services/connectivity/networking/dsa*
     - include/zephyr/net/dsa*.h
     - include/zephyr/dt-bindings/ethernet/dsa*.h
     - samples/net/ethernet/dsa/
@@ -3950,7 +3951,7 @@ Networking:
   collaborators:
     - matt-rodgers
   files:
-    - doc/connectivity/networking/api/http*.rst
+    - doc/services/connectivity/networking/api/http*.rst
     - include/zephyr/net/http/
     - subsys/net/lib/http/
     - samples/net/sockets/*http*/
@@ -4013,7 +4014,7 @@ Networking:
     - rlubos
     - jukkar
   files:
-    - doc/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/ieee802154.rst
     - include/zephyr/net/ieee802154*.h
     - subsys/net/l2/ieee802154/
     - subsys/net/lib/config/ieee802154*
@@ -4031,7 +4032,7 @@ Networking:
     - samples/net/ocpp/
     - subsys/net/lib/ocpp/
     - tests/net/lib/ocpp/
-    - doc/connectivity/networking/api/ocpp.rst
+    - doc/services/connectivity/networking/api/ocpp.rst
   labels:
     - "area: OCPP"
 
@@ -4058,7 +4059,7 @@ Networking:
   maintainers:
     - awojasinski
   files:
-    - doc/connectivity/networking/api/ptp.rst
+    - doc/services/connectivity/networking/api/ptp.rst
     - include/zephyr/net/ptp.h
     - subsys/net/lib/ptp/
     - samples/net/ptp/
@@ -4076,7 +4077,7 @@ Networking:
     - krish2718
     - MaochenWang1
   files:
-    - doc/connectivity/networking/api/wifi.rst
+    - doc/services/connectivity/networking/api/wifi.rst
     - include/zephyr/net/wifi*.h
     - subsys/net/l2/wifi/
     - samples/net/wifi/
@@ -4092,7 +4093,7 @@ Networking:
   maintainers:
     - jukkar
   files:
-    - doc/connectivity/networking/api/gptp.rst
+    - doc/services/connectivity/networking/api/gptp.rst
     - include/zephyr/net/gptp.h
     - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
@@ -5229,7 +5230,7 @@ USB:
     - tests/drivers/build_all/usb/
     - tests/drivers/usb/
     - tests/drivers/udc/
-    - doc/connectivity/usb/
+    - doc/services/connectivity/usb/
   labels:
     - "area: USB"
   tests:
@@ -5250,7 +5251,7 @@ USB-C:
     - include/zephyr/usb_c/
     - samples/subsys/usb_c/
     - subsys/usb/usb_c/
-    - doc/connectivity/usb/pd/
+    - doc/services/connectivity/usb/pd/
     - doc/hardware/peripherals/usbc_vbus.rst
     - scripts/generate_usb_vif/
   labels:

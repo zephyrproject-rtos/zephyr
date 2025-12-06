@@ -66,7 +66,7 @@ be instantiated. A USB controller device can be assigned to multiple contexts,
 but only one context can be initialized and used at a time. Context properties
 must not be directly accessed or manipulated by the application.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc device instantiation start
@@ -80,7 +80,7 @@ use the appropriate :c:macro:`USBD_DESC_MANUFACTURER_DEFINE`,
 require a single instantiation of the language descriptor using the
 :c:macro:`USBD_DESC_LANG_DEFINE` macro.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc string instantiation start
@@ -89,7 +89,7 @@ require a single instantiation of the language descriptor using the
 String descriptors must be added to the device context at runtime before
 initializing the USB device with :c:func:`usbd_add_descriptor`.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc add string descriptor start
@@ -99,7 +99,7 @@ USB device requires at least one configuration instance per supported speed.
 The application should use :c:macro:`USBD_CONFIGURATION_DEFINE` to instantiate
 a configuration. Later, USB device functions are assigned to a configuration.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc configuration instantiation start
@@ -111,7 +111,7 @@ context at runtime before the USB device is initialized using
 :c:enumerator:`USBD_SPEED_HS`. The first full-speed or high-speed
 configuration will get ``bConfigurationValue`` one, and then further upward.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc configuration register start
@@ -127,7 +127,7 @@ configuration is specified using :c:enumerator:`USBD_SPEED_FS` or
 :c:func:`usbd_register_all_classes` can be used to register all available
 instances.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc functions register start
@@ -146,7 +146,7 @@ present.
 A function or class implementation may require its own specific configuration
 steps, which should be performed prior to initializing the USB device.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc device init start
@@ -157,7 +157,7 @@ if the USB device is connected to a USB host controller, the host can start
 enumerating the device. The application can disable the USB device using
 :c:func:`usbd_disable`.
 
-.. literalinclude:: ../../../../samples/subsys/usb/hid-keyboard/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb/hid-keyboard/src/main.c
    :language: c
    :dedent:
    :start-after: doc device enable start
@@ -171,7 +171,7 @@ receive message notification from the USB device support subsystem. The
 messages are mostly about the common device state changes, and a few specific
 types from the USB CDC ACM implementation.
 
-.. literalinclude:: ../../../../samples/subsys/usb/common/sample_usbd_init.c
+.. literalinclude:: ../../../../../samples/subsys/usb/common/sample_usbd_init.c
    :language: c
    :dedent:
    :start-after: doc device init-and-msg start
@@ -185,7 +185,7 @@ application may want to enable the USB device only when it is connected to a
 host. A generic application should use :c:func:`usbd_can_detect_vbus` to check
 for this capability.
 
-.. literalinclude:: ../../../../samples/subsys/usb/hid-keyboard/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb/hid-keyboard/src/main.c
    :language: c
    :dedent:
    :start-after: doc device msg-cb start
