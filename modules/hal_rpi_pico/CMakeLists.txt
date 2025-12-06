@@ -72,6 +72,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${common_dir}/boot_picobin_headers/include
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/pico_base_headers/include
+    ${common_dir}/pico_binary_info/include
     ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
     ${rp2_common_dir}/hardware_boot_lock/include
@@ -95,6 +96,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2xxx_dir}/hardware_regs/include
     ${rp2xxx_dir}/hardware_structs/include
     ${rp2xxx_dir}/pico_platform/include
+    ${boot_stage_dir}/include
   )
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_GPIO
