@@ -24,13 +24,9 @@ LOG_MODULE_REGISTER(flash_img, CONFIG_IMG_MANAGER_LOG_LEVEL);
 #include <bootutil/bootutil_public.h>
 #endif
 
-#define FIXED_PARTITION_GET_FLASH_NODE(node_id)                                    \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions),   \
-		    (DT_PARENT(DT_GPARENT(node_id))), (DT_GPARENT(node_id)))
-
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
-	DT_SAME_NODE(FIXED_PARTITION_GET_FLASH_NODE(DT_CHOSEN(zephyr_code_partition)),             \
-		     FIXED_PARTITION_GET_FLASH_NODE(DT_NODELABEL(label))) &&                       \
+	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
+		FIXED_PARTITION_MTD(label)) &&                                                     \
 	(FIXED_PARTITION_OFFSET(label) <= CONFIG_FLASH_LOAD_OFFSET &&                              \
 	 FIXED_PARTITION_OFFSET(label) + FIXED_PARTITION_SIZE(label) > CONFIG_FLASH_LOAD_OFFSET)
 
