@@ -31,6 +31,12 @@ properties:
       DMAMUX. This value is used to validate the request source index provided in the
       DMA specifier.
 
+  nxp,has-dmamux:
+    type: boolean
+    description: |
+      Indicates whether the DMA controller has an integrated DMAMUX.
+      If present, the controller includes DMAMUX functionality.
+
   dmamux-reg-offset:
     type: int
     default: 0
@@ -70,9 +76,14 @@ properties:
       - 2
       - 3
       - 4
-      - 5
     description: |
-      eDMA IP revision number.
+      eDMA driver version number, used to match the corresponding eDMA driver revision.
+      This property ensures the correct driver implementation is selected based on
+      the hardware IP version present in the SoC.
+      - Version 2: EDMA driver compatible with eDMA IP EDMA
+      - Version 3: DMA3 driver compatible with eDMA IP DMA3
+      - Version 4: EDMA4 driver compatible with multiple eDMA IP versions(EDMA,DMA3,EDMA4,EDMA5)
+                   and enables concurrent use of multiple eDMA IP within project.
 
   channels-shared-irq-mask:
     type: array
