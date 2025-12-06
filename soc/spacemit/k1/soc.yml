@@ -1,0 +1,7 @@
+series:
+- name: key_stone
+  socs:
+  - name: k1
+    cpuclusters:
+    - name: x60
+    - name: n308

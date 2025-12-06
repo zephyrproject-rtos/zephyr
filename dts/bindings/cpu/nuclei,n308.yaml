@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Junhui Liu <junhui.liu@pigmoral.tech>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuclei N308 RISC-V Core
+
+compatible: "nuclei,n308"
+
+include: riscv,cpus.yaml
