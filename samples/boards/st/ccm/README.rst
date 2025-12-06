@@ -10,18 +10,20 @@ Show usage of the Core Coupled Memory (CCM) that is available
 on several STM32 devices. The very important difference with
 normal RAM is that CCM can not be used for DMA.
 
-By prefixing a variable with __ccm_data_section, __ccm_bss_section,
-or __ccm_noinit_section those variables are placed in the CCM.
+In this sample, the CCM is used to store data (i.e., as a DTCM).
+By prefixing a variable with ``__dtcm_data_section``,
+``__dtcm_bss_section`` or ``__dtcm_noinit_section``,
+those variables are placed in the CCM.
 
-The __ccm_data_section prefix should be used for variables that
-are initialized. Like the normal data section the initial
+The ``__dtcm_data_section`` prefix should be used for variables
+that are initialized. Like the normal data section the initial
 values take up space in the FLASH image.
 
-The __ccm_bss_section prefix should be used for variables that
-should be initialized to 0. Like the normal bss section they
-do not take up FLASH space.
+The ``__dtcm_bss_section`` prefix should be used for variables
+that should be initialized to 0. Like the normal bss section
+they do not take up FLASH space.
 
-The __ccm_noinit_section prefix should be used for variables
+The ``__dtcm_noinit_section`` prefix should be used for variables
 that don't need to have a defined initial value (for example
 buffers that will receive data). Compared to bss or data the
 kernel does not need to initialize the noinit section making
@@ -32,7 +34,7 @@ board's DTS file ``chosen`` section:
 
 .. code-block:: console
 
-   zephyr,ccm = &ccm0;
+   zephyr,dtcm = &ccm0;
 
 For example the olimex STM32 E407 DTS file looks like this:
 
