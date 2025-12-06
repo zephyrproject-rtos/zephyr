@@ -1,2 +1,5 @@
-socs:
-- name: versal_rpu
+family:
+- name: amd_versal
+  socs:
+  - name: versal_rpu
+  - name: versal_apu
