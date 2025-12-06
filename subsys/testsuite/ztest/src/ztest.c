@@ -129,8 +129,8 @@ K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD + 1, CPUHOLD_STACK_S
 
 static struct k_sem cpuhold_sem;
 
-volatile int cpuhold_active;
-volatile bool cpuhold_spawned;
+static atomic_t cpuhold_active;
+static atomic_t cpuhold_spawned;
 
 static int find_unused_thread(void)
 {
@@ -189,7 +189,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 		__ASSERT_NO_MSG(i != -1);
 
-		cpuhold_spawned = false;
+		atomic_set(&cpuhold_spawned, 0);
 
 		cpuhold_pool_items[i].used = true;
 		k_thread_create(&cpuhold_pool_items[i].thread, cpuhold_stacks[i], CPUHOLD_STACK_SZ,
@@ -201,7 +201,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		 * ensure it does not spawn on CPU0.
 		 */
 
-		while (!cpuhold_spawned) {
+		while (atomic_get(&cpuhold_spawned) == 0) {
 			k_busy_wait(1000);
 		}
 
@@ -209,7 +209,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	}
 
 	if (thread != NULL) {
-		cpuhold_spawned = true;
+		atomic_set(&cpuhold_spawned, 1);
 
 		/* Busywait until a new thread is scheduled in on CPU0 */
 
@@ -238,7 +238,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	k_float_disable(_current_cpu->arch.fpu_owner);
 #endif
 
-	while (cpuhold_active) {
+	while (atomic_get(&cpuhold_active)) {
 		k_busy_wait(1000);
 	}
 
@@ -259,7 +259,7 @@ void z_impl_z_test_1cpu_start(void)
 	unsigned int num_cpus = arch_num_cpus();
 	int j;
 
-	cpuhold_active = 1;
+	atomic_set(&cpuhold_active, 1);
 
 	k_sem_init(&cpuhold_sem, 0, 999);
 
@@ -283,7 +283,7 @@ void z_impl_z_test_1cpu_start(void)
 void z_impl_z_test_1cpu_stop(void)
 {
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	cpuhold_active = 0;
+	atomic_set(&cpuhold_active, 0);
 
 	for (int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
 		if (cpuhold_pool_items[i].used) {
