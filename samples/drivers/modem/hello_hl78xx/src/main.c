@@ -16,10 +16,6 @@
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/socket.h>
 
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netdb.h>
-
 /* Macros used to subscribe to specific Zephyr NET management events. */
 #if defined(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION)
 #define L4_EVENT_MASK (NET_EVENT_DNS_SERVER_ADD | NET_EVENT_L4_DISCONNECTED)
@@ -186,9 +182,9 @@ static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, vo
 static int resolve_broker_addr(struct sockaddr_in *broker)
 {
 	int ret;
-	struct addrinfo *ai = NULL;
+	struct zsock_addrinfo *ai = NULL;
 
-	const struct addrinfo hints = {
+	const struct zsock_addrinfo hints = {
 		.ai_family = AF_INET,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = 0,
@@ -196,19 +192,19 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 	char port_string[6] = {0};
 
 	snprintf(port_string, sizeof(port_string), "%d", TEST_SERVER_PORT);
-	ret = getaddrinfo(TEST_SERVER_ENDPOINT, port_string, &hints, &ai);
+	ret = zsock_getaddrinfo(TEST_SERVER_ENDPOINT, port_string, &hints, &ai);
 	if (ret == 0) {
 		char addr_str[INET_ADDRSTRLEN];
 
 		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen, sizeof(struct sockaddr_storage)));
 
-		inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
+		zsock_inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
 	} else {
 		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
 
-	freeaddrinfo(ai);
+	zsock_freeaddrinfo(ai);
 
 	return ret;
 }
