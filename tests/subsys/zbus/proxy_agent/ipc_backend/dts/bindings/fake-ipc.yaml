@@ -1,0 +1,3 @@
+description: Fake IPC backend for testing zbus proxy agent
+
+compatible: "fake-ipc"

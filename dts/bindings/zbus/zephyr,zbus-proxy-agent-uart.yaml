@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+description: Zbus proxy agent UART backend
+
+compatible: "zephyr,zbus-proxy-agent-uart"
+
+include: zephyr,zbus-proxy-agent-base.yaml
+
+properties:
+  uart-device:
+    required: true
+    type: phandle
+    description: |
+      Phandle to the UART device node used for interprocessor communication.
+  rx-buf-count:
+    type: int
+    default: 2
+    description: |
+      Number of UART RX buffers for async reception.
+      Must be at least 2
+  rx-chunk-size:
+    type: int
+    default: 32
+    description: |
+      UART chunk size in bytes for framed message transmission.
+  rx-buf-timeout-us:
+    type: int
+    default: 1000
+    description: |
+      Inactivity period after receiving at least a byte which triggers #UART_RX_RDY event
+      for processing the current RX buffer fragment (needed in case of partial fragments).
