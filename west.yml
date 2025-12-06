@@ -224,6 +224,11 @@ manifest:
       path: modules/hal/quicklogic
       groups:
         - hal
+    - name: hal_realtek
+      path: modules/hal/realtek
+      revision: 84dd5401b13b6d602b9e432cfae20656e7de417f
+      groups:
+        - hal
     - name: hal_renesas
       path: modules/hal/renesas
       revision: d01039075990309dcbbec9b86510ed9f70a01dff
