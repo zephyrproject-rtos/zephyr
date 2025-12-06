@@ -101,3 +101,8 @@ void sys_trace_gpio_pin_interrupt_configure_exit_user(const struct device *port,
 {
 	printk("port: %s, pin: %d ret: %d\n", port->name, pin, ret);
 }
+
+void sys_trace_set_state_user(bool state)
+{
+	printk("set current tracing state to %d\n", state);
+}
