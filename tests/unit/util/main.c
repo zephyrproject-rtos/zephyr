@@ -1240,4 +1240,69 @@ ZTEST(util, test_bitmask_find_gap)
 	test_single_bitmask_find_gap(0x0000000F, 2, 6, false, 4, __LINE__);
 }
 
+ZTEST(util, test_gcd)
+{
+	/* Zero cases */
+	zassert_equal(gcd(0, 0), 0, "should be 0");
+	zassert_equal(gcd(0, INT_MAX), INT_MAX, "should be 0");
+	zassert_equal(gcd(INT_MAX, 0), INT_MAX, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(gcd(12, 8), 4, "should be 4");
+
+	/* Negative number cases */
+	zassert_equal(gcd(-12, 8), 4, "should be 4");
+	zassert_equal(gcd(-12, -8), 4, "should be 4");
+
+	/* Prime numbers */
+	zassert_equal(gcd(17, 13), 1, "should be 1");
+	zassert_equal(gcd(25, 49), 1, "should be 1");
+
+	/* Boundary values */
+	zassert_equal(gcd(INT_MAX, INT_MAX), INT_MAX, "should be INT_MAX");
+	zassert_equal(gcd(INT_MIN, INT_MIN), (uint32_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX + 1");
+	zassert_equal(gcd(INT_MIN, INT_MAX), 1, "should be 1");
+	zassert_equal(gcd(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(gcd(a++, b++), 4, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
+}
+
+ZTEST(util, test_lcm)
+{
+	/* Zero cases - lcm with 0 should be 0 */
+	zassert_equal(lcm(0, 0), 0, "should be 0");
+	zassert_equal(lcm(0, INT_MAX), 0, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(lcm(12, 8), 24, "should be 24");
+	zassert_equal(lcm(8, 12), 24, "should be 24");
+
+	/* Negative number cases - lcm should always be positive */
+	zassert_equal(lcm(-12, 8), 24, "should be 24");
+
+	/* Prime numbers (gcd = 1, so lcm = a * b) */
+	zassert_equal(lcm(17, 13), 221, "should be 221");
+
+	/* Boundary values */
+	zassert_equal(lcm(INT_MAX, INT_MAX - 1), (uint64_t)INT_MAX * (INT_MAX - 1),
+		      "should be INT_MAX * (INT_MAX - 1)");
+	zassert_equal(lcm(INT_MIN, INT_MIN), (uint64_t)INT_MAX + 1, "should be INT_MAX + 1");
+	zassert_equal(lcm(INT_MIN, INT_MAX), (uint64_t)INT_MAX * (uint64_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX * (INT_MAX + 1)");
+	zassert_equal(lcm(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(lcm(a++, b++), 24, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);
