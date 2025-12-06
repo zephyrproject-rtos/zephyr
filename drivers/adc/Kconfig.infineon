@@ -8,7 +8,7 @@
 config ADC_INFINEON_CAT1
 	bool "Infineon CAT1 ADC driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_ADC_ENABLED
+	depends on DT_HAS_INFINEON_ADC_ENABLED
 	select USE_INFINEON_ADC
 	select USE_INFINEON_DMA
 	select ADC_CONFIGURABLE_INPUTS

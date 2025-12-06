@@ -97,7 +97,7 @@ description: |
       input-enable;
     };
 
-compatible: "infineon,cat1-pinctrl"
+compatible: "infineon,pinctrl"
 
 include: base.yaml
 

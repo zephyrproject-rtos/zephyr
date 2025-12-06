@@ -8,7 +8,7 @@
 config SDHC_INFINEON_CAT1
 	bool "Infineon CAT1 SDHC driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_SDHC_SDIO_ENABLED
+	depends on DT_HAS_INFINEON_SDHC_SDIO_ENABLED
 	select USE_INFINEON_SDIO
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL

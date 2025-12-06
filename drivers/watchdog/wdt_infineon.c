@@ -7,7 +7,7 @@
 
 /* Watchdog timer driver for the Infineon MCU family. */
 
-#define DT_DRV_COMPAT infineon_cat1_watchdog
+#define DT_DRV_COMPAT infineon_watchdog
 
 #include "cy_wdt.h"
 #include "cy_sysclk.h"
@@ -16,7 +16,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wdt_infineon_cat1, CONFIG_WDT_LOG_LEVEL);
+LOG_MODULE_REGISTER(wdt_infineon, CONFIG_WDT_LOG_LEVEL);
 
 #define IFX_CAT1_WDT_IS_IRQ_EN DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
 

@@ -10,7 +10,7 @@
  *
  */
 
-#define DT_DRV_COMPAT infineon_cat1_uart
+#define DT_DRV_COMPAT infineon_uart
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
