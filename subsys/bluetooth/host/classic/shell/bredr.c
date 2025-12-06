@@ -792,6 +792,48 @@ static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_iscan_param(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (argc == 1) {
+		err = bt_br_inquiry_scan_update_param(BT_BR_INQUIRY_SCAN_PARAM_DEFAULT);
+		if (err) {
+			shell_print(sh, "BR/EDR update inquiry scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh,
+			    "BR/EDR update inquiry scan param(interval:0x%02x, window:0x%02x, "
+			    "type:%u) success",
+			    BT_BR_INQUIRY_SCAN_PARAM_DEFAULT->interval,
+			    BT_BR_INQUIRY_SCAN_PARAM_DEFAULT->window,
+			    BT_BR_INQUIRY_SCAN_PARAM_DEFAULT->type);
+	} else if (argc == 4) {
+		struct bt_br_inquiry_scan_param param = {0};
+
+		param.interval = strtoul(argv[1], NULL, 16);
+		param.window = strtoul(argv[2], NULL, 16);
+		param.type = strtoul(argv[3], NULL, 16);
+
+		err = bt_br_inquiry_scan_update_param(&param);
+		if (err) {
+			shell_print(sh, "BR/EDR update inquiry scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh,
+			    "BR/EDR update inquiry scan param(interval:0x%02x, window:0x%02x, "
+			    "type:%u) success",
+			    param.interval, param.window, param.type);
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+
 static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -814,6 +856,99 @@ static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "BR/EDR set/reset connectable done");
+
+	return 0;
+}
+
+static int cmd_pscan_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (argc != 2) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	if (!strcmp(argv[1], "r0")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_R0);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param R0 success");
+	} else if (!strcmp(argv[1], "fr1")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_FAST_R1);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param fast R1 success");
+	} else if (!strcmp(argv[1], "mr1")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_MEDIUM_R1);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param medium R1 success");
+	} else if (!strcmp(argv[1], "sr1")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_SLOW_R1);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param slow R1 success");
+	} else if (!strcmp(argv[1], "fr2")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_FAST_R2);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param fast R2 success");
+	} else if (!strcmp(argv[1], "sr2")) {
+		err = bt_br_page_scan_update_param(BT_BR_PAGE_SCAN_PARAM_SLOW_R2);
+		if (err) {
+			shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+
+		shell_print(sh, "BR/EDR update page scan param slow R2 success");
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+
+static int cmd_pscan_param(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_br_page_scan_param param = {0};
+
+	if (argc != 4) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	param.interval = strtoul(argv[1], NULL, 16);
+	param.window = strtoul(argv[2], NULL, 16);
+	param.type = strtoul(argv[3], NULL, 16);
+
+	err = bt_br_page_scan_update_param(&param);
+	if (err) {
+		shell_print(sh, "BR/EDR update page scan param failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(
+		sh,
+		"BR/EDR update page scan param(interval 0x%04x, window 0x%04x, type: %u) success",
+		param.interval, param.window, param.type);
 
 	return 0;
 }
@@ -1730,6 +1865,38 @@ static int cmd_set_sniff_mode(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif
 
+static int cmd_get_class_of_device(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint32_t cod;
+
+	err = bt_br_get_class_of_device(&cod);
+	if (err) {
+		shell_error(sh, "fail to set cod (err %d)", err);
+	} else {
+		shell_print(sh, "get cod:0x%04x success", cod);
+	}
+
+	return 0;
+}
+
+static int cmd_set_class_of_device(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint32_t cod;
+
+	cod = strtoul(argv[1], NULL, 16);
+
+	err = bt_br_set_class_of_device(cod);
+	if (err) {
+		shell_error(sh, "fail to set cod (err %d)", err);
+	} else {
+		shell_print(sh, "set cod:0x%04x success", cod);
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
 {
@@ -1843,6 +2010,16 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"<psm> <mode: none, ret, fc, eret, stream> [hold_credit] "    \
 	"[mode_optional] [extended_control]"
 
+#define HELP_PSCAN_PARAM                                                                           \
+	"<interval: scan interval in units of 0.625 ms>\n"                                         \
+	"<window: window in units of 0.625 ms>\n"                                                  \
+	"<type: 0 for standard, 1 for interlaced>"
+
+#define HELP_ISCAN_PARAM                                                                           \
+	"<interval: scan interval in units of 0.625 ms>\n"                                         \
+	"<window: window in units of 0.625 ms>\n"                                                  \
+	"<type: 0 for standard, 1 for interlaced>]"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_l2cap_echo_reg, 1, 0),
 	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_echo_unreg, 1, 0),
@@ -1892,9 +2069,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 		      cmd_discovery, 2, 2),
 	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
 		      cmd_discoverable, 2, 1),
+	SHELL_CMD_ARG(iscan-param, NULL, HELP_ISCAN_PARAM, cmd_iscan_param, 1, 3),
 	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
+	SHELL_CMD_ARG(pscan-mode, NULL, "<mode: r0, fr1, mr1, sr1, fr2, sr2>",
+		      cmd_pscan_mode, 2, 0),
+	SHELL_CMD_ARG(pscan-param, NULL, HELP_PSCAN_PARAM, cmd_pscan_param, 4, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "[HFPAG, HFPHF, A2SRC, A2SNK, PNP, AVRCP_CT, AVRCP_TG]",
 		      cmd_sdp_find_record, 1, 1),
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
@@ -1905,6 +2086,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 		      "<value:on, off> [min_interval] [max_interval] [attempt] [timeout]",
 		      cmd_set_sniff_mode, 2, 4),
 #endif
+	SHELL_CMD_ARG(cod-get, NULL, "NULL", cmd_get_class_of_device, 1, 0),
+	SHELL_CMD_ARG(cod-set, NULL, "<cod>", cmd_set_class_of_device, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
