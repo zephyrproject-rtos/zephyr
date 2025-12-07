@@ -1,0 +1,12 @@
+sample:
+  description: DALI Logger application
+  name: dali-logger
+common:
+  build_only: true
+  integration_platforms:
+    - nrf52840dk/nrf52840
+tests:
+  app.default: {}
+  app.debug:
+    extra_overlay_confs:
+      - debug.conf
