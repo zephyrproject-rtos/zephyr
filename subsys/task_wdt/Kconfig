@@ -37,6 +37,10 @@ config TASK_WDT_HW_FALLBACK
 	  application that is used as an additional safety layer if the task
 	  watchdog itself gets stuck.
 
+	  If ``DEBUG_COREDUMP`` is enabled, make sure to reserve enough timeout
+	  (TASK_WDT_MIN_TIMEOUT + TASK_WDT_HW_FALLBACK_DELAY) to prevent it
+	  from being truncated.
+
 config TASK_WDT_MIN_TIMEOUT
 	int "Minimum timeout for task watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
@@ -54,7 +58,8 @@ config TASK_WDT_MIN_TIMEOUT
 config TASK_WDT_HW_FALLBACK_DELAY
 	int "Additional delay for hardware watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
-	default 20
+	default 20   if !DEBUG_COREDUMP
+	default 2000 if DEBUG_COREDUMP
 	range 1 10000
 	help
 	  The timeout of the hardware watchdog fallback will be increased by
