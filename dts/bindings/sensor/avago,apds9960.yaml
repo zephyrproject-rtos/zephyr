@@ -60,3 +60,13 @@ properties:
     type: int
     default: 0x8
     description: Proximity Pulse Count
+
+  proximity:
+    type: int
+    description: Gesture Proximity Enter Threshold
+    default: 40
+
+  ir-difference:
+    type: int
+    description: Minimum IR diode difference for gesture
+    default: 5

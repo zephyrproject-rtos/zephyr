@@ -22,7 +22,7 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
-#include "apds9960.h"
+#include <zephyr/drivers/sensor/apds9960.h>
 
 LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -527,6 +527,16 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 #define APDS9960_CONFIG_INTERRUPT(inst)
 #endif
 
+#if CONFIG_APDS9960_ENABLE_GESTURE
+#define APDS9960_CONFIG_GESTURE(inst)                                                              \
+		.gesture_config = {                                                                \
+			.proximity = DT_INST_PROP(inst, proximity),                                \
+			.ir_difference = DT_INST_PROP(inst, ir_difference),                        \
+		},
+#else
+#define APDS9960_CONFIG_GESTURE(inst)
+#endif
+
 #define APDS9960_INIT(i)                                                                           \
 	static struct apds9960_data apds9960_data_##i;                                             \
 	static const struct apds9960_config apds9960_config_##i = {                                \
@@ -536,6 +546,7 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 		.again = DT_INST_PROP(i, again),                                                   \
 		.ppcount = DT_INST_PROP(i, ppulse_length) | (DT_INST_PROP(i, ppulse_count) - 1),   \
 		.pled_boost = DT_INST_PROP(i, pled_boost) << 4,                                    \
+		APDS9960_CONFIG_GESTURE(i)                                                         \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(i, apds9960_pm_action);                                           \
