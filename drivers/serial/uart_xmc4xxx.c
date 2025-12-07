@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	infineon_xmc4xxx_uart
+#define DT_DRV_COMPAT infineon_xmc4xxx_uart
 
 #include <xmc_uart.h>
 #include <zephyr/drivers/dma.h>
@@ -20,7 +20,7 @@
 #define IRQS_PER_USIC 6
 
 #define CURRENT_BUFFER 0
-#define NEXT_BUFFER 1
+#define NEXT_BUFFER    1
 
 struct uart_xmc4xxx_config {
 	XMC_USIC_CH_t *uart;
@@ -114,7 +114,7 @@ static void disable_tx_events(const struct uart_xmc4xxx_config *config)
 {
 	if (config->fifo_tx_size > 0) {
 		XMC_USIC_CH_TXFIFO_DisableEvent(config->uart,
-					       XMC_USIC_CH_TXFIFO_EVENT_CONF_STANDARD);
+						XMC_USIC_CH_TXFIFO_EVENT_CONF_STANDARD);
 	} else {
 		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_SHIFT);
 	}
@@ -222,7 +222,7 @@ static int uart_xmc4xxx_irq_tx_ready(const struct device *dev)
 		return !XMC_USIC_CH_TXFIFO_IsFull(config->uart);
 	} else {
 		return XMC_USIC_CH_GetTransmitBufferStatus(config->uart) ==
-			XMC_USIC_CH_TBUF_STATUS_IDLE;
+		       XMC_USIC_CH_TBUF_STATUS_IDLE;
 	}
 }
 
@@ -233,10 +233,11 @@ static void uart_xmc4xxx_irq_rx_disable(const struct device *dev)
 	if (config->fifo_rx_size > 0) {
 		XMC_USIC_CH_RXFIFO_DisableEvent(config->uart,
 						XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
-						XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
+							XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
 	} else {
-		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
-						       XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
+		XMC_USIC_CH_DisableEvent(config->uart,
+					 XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
+						 XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
 	}
 }
 static void uart_xmc4xxx_irq_rx_enable(const struct device *dev)
@@ -256,7 +257,7 @@ static void uart_xmc4xxx_irq_rx_enable(const struct device *dev)
 #endif
 		XMC_USIC_CH_RXFIFO_EnableEvent(config->uart,
 					       XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
-					       XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
+						       XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
 	} else {
 		/* flush out any received bytes while the uart rx irq was disabled */
 		recv_status = XMC_USIC_CH_GetReceiveBufferStatus(config->uart);
@@ -267,8 +268,9 @@ static void uart_xmc4xxx_irq_rx_enable(const struct device *dev)
 			XMC_UART_CH_GetReceivedData(config->uart);
 		}
 
-		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
-						      XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
+		XMC_USIC_CH_EnableEvent(config->uart,
+					XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
+						XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
 	}
 }
 #endif
@@ -925,8 +927,7 @@ static int uart_xmc4xxx_init(const struct device *dev)
 		return ret;
 	}
 	/* Connect UART RX to the target pin */
-	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
-				   config->input_src);
+	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD, config->input_src);
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	config->irq_config_func(dev);
@@ -990,22 +991,22 @@ static DEVICE_API(uart, uart_xmc4xxx_driver_api) = {
 #endif
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-#define XMC4XXX_IRQ_HANDLER(index)                                                         \
-static void uart_xmc4xxx_irq_setup_##index(const struct device *dev)                       \
-{                                                                                          \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tx, irq),                                   \
-		    DT_INST_IRQ_BY_NAME(index, tx, priority), uart_xmc4xxx_isr,            \
-		    DEVICE_DT_INST_GET(index), 0);                                         \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
-		    DT_INST_IRQ_BY_NAME(index, rx, priority), uart_xmc4xxx_isr,            \
-		    DEVICE_DT_INST_GET(index), 0);                                         \
-	irq_enable(DT_INST_IRQ_BY_NAME(index, tx, irq));                                   \
-	irq_enable(DT_INST_IRQ_BY_NAME(index, rx, irq));                                   \
-}
+#define XMC4XXX_IRQ_HANDLER(index)                                                                 \
+	static void uart_xmc4xxx_irq_setup_##index(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tx, irq),                                   \
+			    DT_INST_IRQ_BY_NAME(index, tx, priority), uart_xmc4xxx_isr,            \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
+			    DT_INST_IRQ_BY_NAME(index, rx, priority), uart_xmc4xxx_isr,            \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, tx, irq));                                   \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, rx, irq));                                   \
+	}
 
-#define XMC4XXX_IRQ_STRUCT_INIT(index)                                                     \
-	.irq_config_func = uart_xmc4xxx_irq_setup_##index,                                 \
-	.irq_num_tx = DT_INST_IRQ_BY_NAME(index, tx, irq),                                 \
+#define XMC4XXX_IRQ_STRUCT_INIT(index)                                                             \
+	.irq_config_func = uart_xmc4xxx_irq_setup_##index,                                         \
+	.irq_num_tx = DT_INST_IRQ_BY_NAME(index, tx, irq),                                         \
 	.irq_num_rx = DT_INST_IRQ_BY_NAME(index, rx, irq),
 
 #else
@@ -1013,30 +1014,27 @@ static void uart_xmc4xxx_irq_setup_##index(const struct device *dev)            
 #define XMC4XXX_IRQ_STRUCT_INIT(index)
 #endif
 
-#define XMC4XXX_INIT(index)						\
-PINCTRL_DT_INST_DEFINE(index);						\
-XMC4XXX_IRQ_HANDLER(index)						\
-static struct uart_xmc4xxx_data xmc4xxx_data_##index = {		\
-	.config.baudrate = DT_INST_PROP(index, current_speed),		\
-	UART_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)         \
-	UART_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)         \
-};									\
-									\
-static const struct uart_xmc4xxx_config xmc4xxx_config_##index = {	\
-	.uart = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),		\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.input_src = DT_INST_ENUM_IDX(index, input_src),		\
-XMC4XXX_IRQ_STRUCT_INIT(index)						\
-	.fifo_start_offset = DT_INST_PROP(index, fifo_start_offset),    \
-	.fifo_tx_size = DT_INST_ENUM_IDX(index, fifo_tx_size),          \
-	.fifo_rx_size = DT_INST_ENUM_IDX(index, fifo_rx_size),          \
-};									\
-									\
-	DEVICE_DT_INST_DEFINE(index, uart_xmc4xxx_init,			\
-			    NULL,					\
-			    &xmc4xxx_data_##index,			\
-			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
-			    &uart_xmc4xxx_driver_api);
+#define XMC4XXX_INIT(index)                                                                        \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+	XMC4XXX_IRQ_HANDLER(index)                                                                 \
+                                                                                                   \
+	static struct uart_xmc4xxx_data xmc4xxx_data_##index = {                                   \
+		.config.baudrate = DT_INST_PROP(index, current_speed),                             \
+		UART_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)                            \
+			UART_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};                  \
+                                                                                                   \
+	static const struct uart_xmc4xxx_config xmc4xxx_config_##index = {                         \
+		.uart = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),                                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+		.input_src = DT_INST_ENUM_IDX(index, input_src),                                   \
+		XMC4XXX_IRQ_STRUCT_INIT(index).fifo_start_offset =                                 \
+			DT_INST_PROP(index, fifo_start_offset),                                    \
+		.fifo_tx_size = DT_INST_ENUM_IDX(index, fifo_tx_size),                             \
+		.fifo_rx_size = DT_INST_ENUM_IDX(index, fifo_rx_size),                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, uart_xmc4xxx_init, NULL, &xmc4xxx_data_##index,               \
+			      &xmc4xxx_config_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+			      &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)
