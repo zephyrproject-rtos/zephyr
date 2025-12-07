@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #define APDS9960_ENABLE_REG		0x80
 #define APDS9960_ENABLE_GEN		BIT(6)
@@ -216,6 +217,11 @@
 #define APDS9960_DEFAULT_WAIT_TIME      2.78
 #define APDS9960_MAX_WAIT_TIME          10000
 
+struct apds9960_gesture_setup {
+	int proximity;
+	int ir_difference;
+};
+
 struct apds9960_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
@@ -225,6 +231,22 @@ struct apds9960_config {
 	uint8_t again;
 	uint8_t ppcount;
 	uint8_t pled_boost;
+#ifdef CONFIG_APDS9960_ENABLE_GESTURE
+	struct apds9960_gesture_setup gesture_config;
+#endif
+};
+
+/* apds9960 specific channels */
+enum sensor_channel_apds9960 {
+	SENSOR_CHAN_APDS9960_GESTURE = SENSOR_CHAN_PRIV_START,
+};
+
+enum apds9960_gesture {
+	APDS9960_GESTURE_NONE,
+	APDS9960_GESTURE_UP,
+	APDS9960_GESTURE_DOWN,
+	APDS9960_GESTURE_LEFT,
+	APDS9960_GESTURE_RIGHT,
 };
 
 struct apds9960_data {
@@ -233,6 +255,7 @@ struct apds9960_data {
 	const struct device *dev;
 	uint16_t sample_crgb[4];
 	uint8_t pdata;
+	enum apds9960_gesture gesture;
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
