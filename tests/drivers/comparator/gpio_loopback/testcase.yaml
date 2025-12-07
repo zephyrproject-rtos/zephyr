@@ -44,3 +44,6 @@ tests:
     platform_allow:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_g474re/stm32g474xx
+  drivers.comparator.gpio_loopback.nxp_hscmp:
+    platform_allow:
+      - lpcxpresso55s36
