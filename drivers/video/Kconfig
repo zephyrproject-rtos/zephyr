@@ -27,6 +27,10 @@ config VIDEO_BUFFER_POOL_SZ_MAX
 	int "Size of the largest buffer in the video pool"
 	default 1048576
 
+config VIDEO_BUFFER_POOL_HEAP_SIZE
+	int "Size in byte of the video buffer pool"
+	default 2097152
+
 config VIDEO_BUFFER_POOL_NUM_MAX
 	int "Number of maximum sized buffer in the video pool"
 	default 2
