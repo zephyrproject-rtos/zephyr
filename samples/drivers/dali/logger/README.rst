@@ -1,27 +1,26 @@
-.. zephyr:code-sample:: dali_blinky
-   :name: Digital Addressable Lighting Interface (DALI)
+.. zephyr:code-sample:: dali_logger
+   :name: Digital Addressable Lighting Interface (DALI) logger
 
-   Blink LED controllers connected to a DALI bus.
+   Log activity on a DALI bus to UART/RTT.
 
 Overview
 ********
 
-This sample utilizes the :ref:`dali <dali_api>` driver API to blink DALI enabled LED drivers.
+This sample utilizes the :ref:`dali <dali_api>` driver API to log DALI frames to UART/RTT.
+
+The output format conforms to `dali_mon specification <https://github.com/SvenHaedrich/dali_mon/blob/main/docs/serial.md>`_.
 
 Building and Running
 ********************
 
-The interface to the DALI bus is defined in the board's devicetree.
-
-The board's devicetree must have a ``dali0`` node that provides the
-access to the DALI bus. See the predefined overlays in
-:zephyr_file:`samples/drivers/dali/blinky/boards` for examples.
+The interface to the DALI bus is defined in the board's devicetree. For details see the
+:zephyr:code-sample:`DALI blinky <dali_blinky>` sample.
 
 .. note:: For proper operation a DALI specific physical interface is required.
 
 Building and Running for ST Nucleo F091RC
 =========================================
-The :zephyr_file:`samples/drivers/dali/blinky/boards/nucleo_f091rc.overlay`
+The :zephyr_file:`samples/drivers/dali/logger/boards/nucleo_f091rc.overlay`
 is specifically for the Mikroe-2672 DALI2 click development board
 used as physical interface to the DALI bus. This board uses negative
 logic for signal transmission (Tx Low <-> DALI Bus Idle).
@@ -29,7 +28,7 @@ The sample can be build and executed for the
 :zephyr:board:`nucleo_f091rc` as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/dali/blinky
+   :zephyr-app: samples/drivers/dali/logger
    :board: nucleo_f091rc
    :goals: build flash
    :shield: arduino_uno_click,mikroe_dali_2_click
@@ -37,7 +36,7 @@ The sample can be build and executed for the
 
 Building and Running for Nordic nRF52840
 ========================================
-The :zephyr_file:`samples/drivers/dali/blinky/boards/nrf52840dk_nrf52840.overlay`
+The :zephyr_file:`samples/drivers/dali/logger/boards/nrf52840dk_nrf52840.overlay`
 is specifically for the Mikroe-2672 DALI2 click development board
 used as physical interface to the DALI bus. The pin assignment
 supports the use of an Arduino UNO click shield.
@@ -47,7 +46,7 @@ The sample can be build and executed for the
 :zephyr:board:`nrf52840dk` as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/dali/blinky
+   :zephyr-app: samples/drivers/dali/logger
    :board: nrf52840dk/nrf52840
    :goals: build flash
    :shield: arduino_uno_click,mikroe_dali_2_click
@@ -56,8 +55,4 @@ The sample can be build and executed for the
 Sample output
 =============
 
-You should see DALI frames transferred every 2 seconds to the DALI bus.
-The frames are alternating. One frame is a DALI OFF command broadcasted to
-all control gears. The other frame is a DALI RECALL MAX command broadcasted
-to all control gears. When a control gear is connected it will alternate
-between no light output from the attached LED and maximum output of the LED.
+You should see log on UART/RTT, when there's activity on the bus.
