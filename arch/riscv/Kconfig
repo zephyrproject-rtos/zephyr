@@ -164,6 +164,15 @@ config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	  function __soc_handle_all_irqs has to be implemented. It shall service
 	  and clear all pending interrupts.
 
+config RISCV_SOC_HAS_CUSTOM_ISR_PREP
+	bool
+	help
+	  This allows the SoC to implement a custom ISR table. If enabled, the
+	  function __soc_prep_isr has to be implemented. It shall use the irq
+	  number provided with the a0 register to fetch the ISR function and
+	  optional argument. The ISR function pointer must be loaded into t1,
+	  and the optional argument loaded into a0.
+
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	bool
 	help
@@ -249,7 +258,7 @@ config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
 	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
-	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
+	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC && !INTC_NRF_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
