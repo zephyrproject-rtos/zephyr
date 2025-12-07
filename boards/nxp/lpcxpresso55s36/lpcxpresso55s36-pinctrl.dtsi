@@ -135,4 +135,12 @@
 			nxp,analog-mode;
 		};
 	};
+
+	pinmux_hscmp0: pinmux_hscmp0 {
+		group0 {
+			pinmux = <HSCMP0_IN3_PIO1_5>;
+			slew-rate = "standard";
+			nxp,analog-mode;
+		};
+	};
 };

@@ -23,4 +23,5 @@ supported:
   - pwm
   - usb_device
   - usbd
+  - comparator
 vendor: nxp
