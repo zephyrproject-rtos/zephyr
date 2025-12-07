@@ -759,6 +759,7 @@
 				arm,num-irq-priority-bits = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				interrupt-lines = <271>;
 			};
 
 			cpuapp_systick: timer@e000e010 {
