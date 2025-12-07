@@ -16,6 +16,7 @@
  */
 
 #include <zephyr/drivers/intc/irq_flags/arm_v8m_nvic.h>
+#include <zephyr/drivers/intc/irq_flags/nordic_nrf_clic.h>
 
 /** @} */
 

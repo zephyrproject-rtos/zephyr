@@ -8,5 +8,6 @@ menuconfig INTC
 if INTC
 
 rsource "intc_arm_v8m_nvic/Kconfig"
+rsource "intc_nrf_clic/Kconfig"
 
 endif # INTC

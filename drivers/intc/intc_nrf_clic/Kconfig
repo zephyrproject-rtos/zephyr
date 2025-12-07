@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_NRF_CLIC
+	bool "Nordic nRF CPU Local Interrupt Controller"
+	default y
+	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
+	select USE_ISR_WRAPPER
+	select RISCV_SOC_HAS_CUSTOM_ISR_PREP
