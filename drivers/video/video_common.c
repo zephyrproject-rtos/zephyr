@@ -34,15 +34,13 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 #define VIDEO_BUFFER_POOL_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME)
 #endif
 
-#define VIDEO_BUFFER_POOL_SIZE (CONFIG_VIDEO_BUFFER_POOL_SZ_MAX * CONFIG_VIDEO_BUFFER_POOL_NUM_MAX)
-
 /*
  * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
  * since the section might not be yet accessible from the beginning, making it impossible
  * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
  */
-static char VIDEO_BUFFER_POOL_REGION_NAME
-	__aligned(8) video_buffer_pool_mem[MAX(VIDEO_BUFFER_POOL_SIZE, Z_HEAP_MIN_SIZE)];
+static char VIDEO_BUFFER_POOL_REGION_NAME __aligned(8)
+	video_buffer_pool_mem[MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
 static struct k_heap video_buffer_pool;
 static bool video_buffer_pool_initialized;
 
@@ -50,7 +48,7 @@ static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_tim
 {
 	if (!video_buffer_pool_initialized) {
 		k_heap_init(&video_buffer_pool, video_buffer_pool_mem,
-			    MAX(VIDEO_BUFFER_POOL_SIZE, Z_HEAP_MIN_SIZE));
+			    MAX(CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE, Z_HEAP_MIN_SIZE));
 		video_buffer_pool_initialized = true;
 	}
 
