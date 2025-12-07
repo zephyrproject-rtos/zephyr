@@ -23,10 +23,6 @@ config VIDEO_INIT_PRIORITY
 	help
 	  System initialization priority for video drivers.
 
-config VIDEO_BUFFER_POOL_SZ_MAX
-	int "Size of the largest buffer in the video pool"
-	default 1048576
-
 config VIDEO_BUFFER_POOL_HEAP_SIZE
 	int "Size in byte of the video buffer pool"
 	default 2097152
