@@ -312,6 +312,36 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
+	hscmp0: comparator@b3000 {
+		compatible = "nxp,hscmp";
+		reg = <0xb3000 0x1000>;
+		interrupts = <77 0>;
+		clocks = <&syscon MCUX_HSCMP0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 15)>;
+		status = "disabled";
+		nxp,references = <&vref0 1800>;
+	};
+
+	hscmp1: comparator@b7000 {
+		compatible = "nxp,hscmp";
+		reg = <0xb7000 0x1000>;
+		interrupts = <78 0>;
+		clocks = <&syscon MCUX_HSCMP1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 16)>;
+		status = "disabled";
+		nxp,references = <&vref0 1800>;
+	};
+
+	hscmp2: comparator@ba000 {
+		compatible = "nxp,hscmp";
+		reg = <0xba000 0x1000>;
+		interrupts = <79 0>;
+		clocks = <&syscon MCUX_HSCMP2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 17)>;
+		status = "disabled";
+		nxp,references = <&vref0 1800>;
+	};
+
 	opamp0: opamp@b4000 {
 		compatible = "nxp,opamp";
 		reg = <0xb4000 0x1000>;
