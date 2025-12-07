@@ -2,4 +2,4 @@
    :name: Digital Addressable Lighting Interface (DALI)
    :show-listing:
 
-   These samples demonstrate how to use the :ref:`dali` driver API.
+   These samples demonstrate how to use the :ref:`DALI driver API <dali_api>`.
