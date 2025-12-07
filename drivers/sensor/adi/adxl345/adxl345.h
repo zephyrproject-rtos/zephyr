@@ -170,6 +170,7 @@ struct adxl345_dev_data {
 	uint8_t is_full_res;
 	uint8_t selected_range;
 	enum adxl345_odr odr;
+	enum adxl345_op_mode op_mode;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback gpio_cb;
 
