@@ -49,7 +49,6 @@ config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
 
 config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
 	bool "Use shared multi heap for video buffer"
-	default n
 
 config VIDEO_BUFFER_SMH_ATTRIBUTE
 	int "Shared multi heap attribute for video buffer"
