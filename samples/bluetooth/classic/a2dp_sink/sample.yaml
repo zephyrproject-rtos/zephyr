@@ -1,0 +1,15 @@
+sample:
+  name: "Classic Bluetooth A2DP Sink with AVRCP Target"
+  description: >
+    This sample implements a Classic Bluetooth (BR/EDR) A2DP Sink device with
+    AVRCP Target support. It receives stereo audio from a Bluetooth Controller
+    (e.g., smartphone) via A2DP and responds to basic AVRCP commands (play/pause/stop,
+    volume up/down). BLE is disabled, only Classic Bluetooth is used for device discovery
+    and data transmission.
+tests:
+  sample.bluetooth.a2dp_sink:
+    harness: bluetooth
+    platform_allow:
+      - sf32lb52_devkit_lcd/sf32lb525uc6
+    tags: bluetooth
+    sysbuild: true
