@@ -23,6 +23,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <soc.h>
 
@@ -73,6 +74,8 @@ static int nxp_mrt_stop(const struct device *dev)
 	/* LOAD bit and 0 ivalue allows us to forcibly stop the timer */
 	base->CHANNEL[channel_id].INTVAL = MRT_CHANNEL_INTVAL_LOAD(1);
 
+	pm_policy_device_power_lock_put(dev);
+
 	return 0;
 }
 
@@ -89,6 +92,8 @@ static int nxp_mrt_start(const struct device *dev)
 				base, channel_id, config->info.max_top_value);
 		data->top = config->info.max_top_value;
 	}
+
+	pm_policy_device_power_lock_get(dev);
 
 	/* Start with previously configured top value (if already running this has no effect) */
 	base->CHANNEL[channel_id].INTVAL = data->top;

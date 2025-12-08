@@ -79,5 +79,12 @@ int nxp_pint_pin_set_callback(uint8_t pin, nxp_pint_cb_t cb, void *data);
  */
 void nxp_pint_pin_unset_callback(uint8_t pin);
 
+/**
+ * @brief Get PINT slot index the pin is allocated to
+ *
+ * @param pin: The pin to get the PINT slot index for
+ * @return The allocated slot index, if not allocated, return -EINVAL.
+ */
+int nxp_pint_pin_get_slot_index(uint8_t pin);
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_NXP_PINT_H_ */
