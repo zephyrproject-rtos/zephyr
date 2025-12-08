@@ -1,7 +1,7 @@
 name: STM32N6570 Discovery Kit
 type: mcu
 arch: arm
-ram: 128
+ram: 192
 flash: 512
 vendor: st
 supported:
