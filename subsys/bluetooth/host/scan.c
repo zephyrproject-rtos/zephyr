@@ -1891,6 +1891,11 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -EINVAL;
 	}
 
+	if ((param->options & BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE) != 0 &&
+	    BT_FEAT_LE_PER_ADV_ADI_SUPP(bt_dev.le.features) == 0) {
+		return -ENOTSUP;
+	}
+
 	per_adv_sync = per_adv_sync_new();
 	if (!per_adv_sync) {
 		return -ENOMEM;
