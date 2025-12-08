@@ -367,7 +367,9 @@ menu "OpenThread Border Router"
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality [EXPERIMENTAL]"
 	select EXPERIMENTAL
-	imply NET_ROUTING
+	select NET_ROUTING
+	select NET_PKT_FILTER if OPENTHREAD_NAT64_TRANSLATOR
+	select NET_PKT_FILTER_IPV4_HOOK if OPENTHREAD_NAT64_TRANSLATOR
 	help
 	  Enable support for Border Router using Openthread's implementation.
 
