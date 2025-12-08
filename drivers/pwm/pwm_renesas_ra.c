@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(pwm_renesas_ra, CONFIG_PWM_LOG_LEVEL);
 
 #define DT_DRV_COMPAT renesas_ra_pwm
 
-#define MAX_PIN                                          2U
+#define MAX_CHANNEL                                      2U
 #define GPT_PRV_GTIO_HIGH_COMPARE_MATCH_LOW_CYCLE_END    0x6U
 #define GPT_PRV_GTIO_LOW_COMPARE_MATCH_HIGH_CYCLE_END    0x9U
 #define GPT_PRV_GTIOR_INITIAL_LEVEL_BIT                  4
@@ -143,14 +143,15 @@ static int pwm_renesas_ra_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
 	return 0;
 }
 
-static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uint32_t period_cycles,
-				     uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t channel,
+				     uint32_t period_cycles, uint32_t pulse_cycles,
+				     pwm_flags_t flags)
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	uint32_t pulse;
 	fsp_err_t err;
 
-	if (pin >= MAX_PIN) {
+	if (channel >= MAX_CHANNEL) {
 		LOG_ERR("Only valid for gtioca and gtiocb pins");
 		return -EINVAL;
 	}
@@ -162,7 +163,7 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	}
 
 	/* gtioca and gtiocb setting */
-	if (pin == RA_PWM_GPT_IO_A) {
+	if (channel == RA_PWM_GPT_IO_A) {
 		data->extend_cfg.gtioca.output_enabled = true;
 	} else {
 		data->extend_cfg.gtiocb.output_enabled = true;
@@ -186,7 +187,7 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	}
 
 	/* Update pulse cycles, reflected at an overflow */
-	err = R_GPT_DutyCycleSet(&data->fsp_ctrl, pulse, pin);
+	err = R_GPT_DutyCycleSet(&data->fsp_ctrl, pulse, channel);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
@@ -209,19 +210,19 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 #endif /* CONFIG_RENESAS_RA_ELC */
 
 	LOG_DBG("channel %u, pin %u, pulse %u, period %u, prescaler: %u.", data->fsp_cfg.channel,
-		pin, pulse_cycles, period_cycles, data->fsp_cfg.source_div);
+		channel, pulse_cycles, period_cycles, data->fsp_cfg.source_div);
 
 	return 0;
 };
 
-static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t pin,
+static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					     uint64_t *cycles)
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	timer_info_t info;
 	fsp_err_t err;
 
-	if (pin >= MAX_PIN) {
+	if (channel >= MAX_CHANNEL) {
 		LOG_ERR("Only valid for gtioca and gtiocb pins");
 		return -EINVAL;
 	}
@@ -255,7 +256,7 @@ static void disable_irq(IRQn_Type irq)
 	}
 }
 
-static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t pin,
+static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t channel,
 					    pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 					    void *user_data)
 {
@@ -272,9 +273,9 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 	}
 
 	data->capture.capture_type_flag = flags & PWM_CAPTURE_TYPE_MASK;
-	data->capture.capture_channel = pin;
+	data->capture.capture_channel = channel;
 
-	if (pin == RA_PWM_GPT_IO_A) {
+	if (channel == RA_PWM_GPT_IO_A) {
 		if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
 			data->capture.capture_both_event_count = 0;
 			if (flags & PWM_POLARITY_INVERTED) {
@@ -330,7 +331,7 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 						       GPT_SOURCE_NONE);
 			}
 		}
-	} else if (pin == RA_PWM_GPT_IO_B) {
+	} else if (channel == RA_PWM_GPT_IO_B) {
 		if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
 			data->capture.capture_both_event_count = 0;
 			if (flags & PWM_POLARITY_INVERTED) {
@@ -392,9 +393,9 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 	data->capture.continuous = flags & PWM_CAPTURE_MODE_CONTINUOUS;
 
 	if (data->capture.continuous) {
-		if (pin == RA_PWM_GPT_IO_A) {
+		if (channel == RA_PWM_GPT_IO_A) {
 			data->extend_cfg.stop_source = data->extend_cfg.capture_a_source;
-		} else if (pin == RA_PWM_GPT_IO_B) {
+		} else if (channel == RA_PWM_GPT_IO_B) {
 			data->extend_cfg.stop_source = data->extend_cfg.capture_b_source;
 		}
 		data->extend_cfg.clear_source = data->extend_cfg.start_source;
@@ -406,7 +407,7 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 	return 0;
 }
 
-static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
+static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t channel)
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
@@ -420,7 +421,7 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 		return -EINVAL;
 	}
 
-	data->capture.capture_channel = pin;
+	data->capture.capture_channel = channel;
 	data->capture.is_busy = true;
 
 	/* Enable capture source */
@@ -433,32 +434,34 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_ipl, &data->fsp_ctrl);
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)data->overflow_event;
 
-	if (pin == RA_PWM_GPT_IO_A) {
-		enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl, &data->fsp_ctrl);
+	if (channel == RA_PWM_GPT_IO_A) {
+		enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl,
+			   &data->fsp_ctrl);
 		R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)data->capture_a_event;
-	} else if (pin == RA_PWM_GPT_IO_B) {
-		enable_irq(data->extend_cfg.capture_b_irq, data->extend_cfg.capture_b_ipl, &data->fsp_ctrl);
+	} else if (channel == RA_PWM_GPT_IO_B) {
+		enable_irq(data->extend_cfg.capture_b_irq, data->extend_cfg.capture_b_ipl,
+			   &data->fsp_ctrl);
 		R_ICU->IELSR[data->extend_cfg.capture_b_irq] = (elc_event_t)data->capture_b_event;
 	}
 
 	return 0;
 }
 
-static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t pin)
+static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t channel)
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
-	data->capture.capture_channel = pin;
+	data->capture.capture_channel = channel;
 	data->capture.is_busy = false;
 
 	/* Disable interruption */
 	disable_irq(data->fsp_cfg.cycle_end_irq);
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)ELC_EVENT_NONE;
 
-	if (pin == RA_PWM_GPT_IO_A) {
+	if (channel == RA_PWM_GPT_IO_A) {
 		disable_irq(data->extend_cfg.capture_a_irq);
 		R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)ELC_EVENT_NONE;
-	} else if (pin == RA_PWM_GPT_IO_B) {
+	} else if (channel == RA_PWM_GPT_IO_B) {
 		disable_irq(data->extend_cfg.capture_b_irq);
 		R_ICU->IELSR[data->extend_cfg.capture_b_irq] = (elc_event_t)ELC_EVENT_NONE;
 	}
