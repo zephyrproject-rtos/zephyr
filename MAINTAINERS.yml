@@ -1604,7 +1604,11 @@ Documentation Infrastructure:
     - albertofloyd
   collaborators:
     - VenkatKotakonda
-    - jvasanth1
+    - AdiIntel
+    - scottwcpg
+    - Dino-Li
+    - ChiHuaL
+    - JhanBoChao-Realtek
   files:
     - drivers/espi/
     - include/zephyr/drivers/espi.h
