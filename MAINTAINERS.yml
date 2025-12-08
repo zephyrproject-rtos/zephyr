@@ -2925,6 +2925,7 @@ Infineon Platforms:
   status: maintained
   maintainers:
     - sreeramIfx
+    - teburd
   collaborators:
     - mcatee-infineon
     - talih0
@@ -3003,7 +3004,6 @@ Intel Platforms (ISH):
   maintainers:
     - kwd-doodling
   collaborators:
-    - teburd
     - likongintel
     - nashif
   files:
@@ -3021,7 +3021,6 @@ Intel Platforms (X86):
     - edersondisouza
   collaborators:
     - najumon1980
-    - teburd
     - dcpleung
     - ceolin
   files:
@@ -5686,7 +5685,6 @@ West:
   maintainers:
     - kwd-doodling
   collaborators:
-    - teburd
     - likongintel
   files:
     - modules/Kconfig.intel
