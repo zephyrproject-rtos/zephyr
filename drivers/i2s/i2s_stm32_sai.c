@@ -303,7 +303,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 {
 	struct i2s_stm32_sai_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->stream;
-	struct dma_config dma_cfg = dev_data->stream.dma_cfg;
+	struct dma_config *dma_cfg = &dev_data->stream.dma_cfg;
 	int ret;
 
 	SAI_HandleTypeDef *hsai = &dev_data->hsai;
@@ -315,12 +315,12 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg.user_data = hdma;
+	dma_cfg->user_data = hdma;
 
 	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
+	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 
-	ret = dma_config(stream->dma_dev, stream->dma_channel, &dma_cfg);
+	ret = dma_config(stream->dma_dev, stream->dma_channel, dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d", stream->dma_channel);
 		return ret;
@@ -329,16 +329,16 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.Mode = DMA_NORMAL;
 
-	if (dma_cfg.channel_priority >= ARRAY_SIZE(dma_priority)) {
+	if (dma_cfg->channel_priority >= ARRAY_SIZE(dma_priority)) {
 		LOG_ERR("Invalid DMA channel priority");
 		return -EINVAL;
 	}
-	hdma->Init.Priority = dma_priority[dma_cfg.channel_priority];
+	hdma->Init.Priority = dma_priority[dma_cfg->channel_priority];
 
 #if defined(DMA_CHANNEL_1)
-	hdma->Init.Channel = dma_cfg.dma_slot * DMA_CHANNEL_1;
+	hdma->Init.Channel = dma_cfg->dma_slot * DMA_CHANNEL_1;
 #else
-	hdma->Init.Request = dma_cfg.dma_slot;
+	hdma->Init.Request = dma_cfg->dma_slot;
 #endif
 
 	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
@@ -377,7 +377,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #endif
 
-	if (stream->dma_cfg.channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
+	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
 		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
 
 #if defined(CONFIG_DMA_STM32U5)
