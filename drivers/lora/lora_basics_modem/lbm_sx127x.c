@@ -457,3 +457,4 @@ static int sx127x_driver_init(const struct device *dev)
 
 DT_FOREACH_STATUS_OKAY(semtech_sx1272, SX127X_DEFINE);
 DT_FOREACH_STATUS_OKAY(semtech_sx1276, SX127X_DEFINE);
+DT_FOREACH_STATUS_OKAY(semtech_sx1278, SX127X_DEFINE);
