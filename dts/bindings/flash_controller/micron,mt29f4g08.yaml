@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NAND flash driver for Micron MT29F4G08 flash memory.
+
+  The MT29F4G08 is a 4 Gb NAND flash organised in pages of 2048 bytes each.
+
+  Refer to the Micron MT29F4G08 datasheet for more details.
+
+compatible: "micron,mt29f4g08"
+
+properties:
+  reg:
+    type: int
+    required: true
+
+  page-size:
+    type: int
+    required: true
+
+  spare-area-size:
+    type: int
+    required: true
+
+  block-size:
+    type: int
+    required: true
+
+  plane-size:
+    type: int
+    required: true
+
+  flash-size:
+    type: int
+    required: true
+
+  setup-time:
+    type: int
+    default: 0
+
+  wait-setup-time:
+    type: int
+    default: 0
+
+  hold-setup-time:
+    type: int
+    default: 0
+
+  hiz-setup-time:
+    type: int
+    default: 0
