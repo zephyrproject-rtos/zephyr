@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&fmc {
+	nand-controller {
+		compatible = "st,stm32-fmc-nand";
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		page-buffer-size = <1>;
+
+		mt29f4g08@3 {
+			compatible = "micron,mt29f4g08";
+			status = "okay";
+			reg = <3>;
+
+			page-size = <1>;
+			spare-area-size = <1>;
+			block-size = <2>;
+			plane-size = <4>;
+			flash-size = <8>;
+		};
+	};
+};

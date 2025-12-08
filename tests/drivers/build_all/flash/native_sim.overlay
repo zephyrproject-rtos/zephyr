@@ -24,14 +24,14 @@
 			status = "okay";
 			clock-frequency = <2000000>;
 
-			/* one entry for every devices at spi.dtsi */
+			/* one entry for every devices at native_sim_spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
-			#include "spi.dtsi"
+			#include "native_sim_spi.dtsi"
 		};
 	};
 };
