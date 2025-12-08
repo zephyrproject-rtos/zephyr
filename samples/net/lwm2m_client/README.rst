@@ -49,6 +49,9 @@ samples/net/lwm2m_client directory:
     * - :file:`overlay-dtls.conf`
       - This overlay config can be added for DTLS support via MBEDTLS.
 
+    * - :file:`overlay-dtls-cert.conf`
+      - This overlay config can be added for DTLS with certificates support via MBEDTLS.
+
     * - :file:`overlay-queue.conf`
       - This overlay config can be added to enable LWM2M Queue Mode support.
 
