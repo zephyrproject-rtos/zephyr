@@ -715,6 +715,55 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_ESP32_USB_OTG_DEFINE)
 
 #endif /*DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(syna_sr100_usb)
+
+#include <zephyr/drivers/clock_control.h>
+
+struct syna_usb_clk {
+	const struct device *const dev;
+	const clock_control_subsys_t id;
+};
+
+static inline int syna_usb_enable_clk(const struct syna_usb_clk *const clk)
+{
+	if (!device_is_ready(clk->dev)) {
+		return -ENODEV;
+	}
+
+	return clock_control_on(clk->dev, clk->id);
+}
+
+static inline int syna_usb_init_caps(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+
+	data->caps.hs = true;
+
+	return 0;
+}
+
+#define QUIRK_SYNA_USB_DEFINE(n)						\
+	static const clock_control_subsys_t syna_usb_clk_id##n =		\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid);		\
+	static const struct syna_usb_clk syna_usb_clk_##n = {			\
+		.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
+		.id = syna_usb_clk_id##n,					\
+	};									\
+										\
+	static int syna_usb_enable_clk_##n(const struct device *dev)		\
+	{									\
+		return syna_usb_enable_clk(&syna_usb_clk_##n);			\
+	}									\
+										\
+	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
+		.caps = syna_usb_init_caps,					\
+		.pre_enable = syna_usb_enable_clk_##n,				\
+	};
+
+DT_INST_FOREACH_STATUS_OKAY(QUIRK_SYNA_USB_DEFINE)
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(syna_sr100_usb) */
+
 /* Add next vendor quirks definition above this line */
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_VENDOR_QUIRKS_H */
