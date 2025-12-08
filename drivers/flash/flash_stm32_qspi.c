@@ -1558,7 +1558,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-	struct dma_config dma_cfg = dev_data->dma.cfg;
+	struct dma_config *dma_cfg = &dev_data->dma.cfg;
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
@@ -1567,34 +1567,34 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg.user_data = &hdma;
+	dma_cfg->user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, dma_cfg);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Proceed to the HAL DMA driver init */
-	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
 		LOG_ERR("Source and destination data sizes not aligned");
 		return -EINVAL;
 	}
 
-	int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+	int index = find_lsb_set(dma_cfg->source_data_size) - 1;
 
 	hdma.Init.PeriphDataAlignment = table_p_size[index];
 	hdma.Init.MemDataAlignment = table_m_size[index];
 	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
 	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
+	hdma.Init.Priority = table_priority[dma_cfg->channel_priority];
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
-	hdma.Init.Channel = dma_cfg.dma_slot;
+	hdma.Init.Channel = dma_cfg->dma_slot;
 #else
-	hdma.Init.Request = dma_cfg.dma_slot;
+	hdma.Init.Request = dma_cfg->dma_slot;
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
