@@ -46,19 +46,22 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &gpio0 {
