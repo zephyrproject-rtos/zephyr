@@ -97,6 +97,7 @@ struct lbm_sx126x_config {
 	uint8_t dio3_tcxo_voltage;
 	bool dio2_rf_switch;
 	bool rx_boosted;
+	bool regulator_ldo;
 	enum sx126x_variant variant;
 };
 
@@ -277,8 +278,14 @@ sx126x_hal_status_t sx126x_hal_wakeup(const void *context)
 
 void ral_sx126x_bsp_get_reg_mode(const void *context, sx126x_reg_mod_t *reg_mode)
 {
-	/* Not currently described in devicetree */
-	*reg_mode = SX126X_REG_MODE_DCDC;
+	const struct device *dev = context;
+	const struct lbm_sx126x_config *config = dev->config;
+
+	if (config->regulator_ldo) {
+		*reg_mode = SX126X_REG_MODE_LDO;
+	} else {
+		*reg_mode = SX126X_REG_MODE_DCDC;
+	}
 }
 
 void ral_sx126x_bsp_get_rf_switch_cfg(const void *context, bool *dio2_is_set_as_rf_switch)
@@ -506,6 +513,7 @@ static int sx126x_init(const struct device *dev)
 		.dio3_tcxo_voltage = DT_PROP_OR(node_id, dio3_tcxo_voltage, UINT8_MAX),            \
 		.dio2_rf_switch = DT_PROP(node_id, dio2_tx_enable),                                \
 		.rx_boosted = DT_PROP(node_id, rx_boosted),                                        \
+		.regulator_ldo = DT_PROP(node_id, regulator_ldo),                                  \
 		.variant = sx_variant,                                                             \
 	};                                                                                         \
 	static struct lbm_sx126x_data data_##node_id;                                              \
