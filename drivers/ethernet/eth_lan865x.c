@@ -285,13 +285,12 @@ static void lan865x_int_callback(const struct device *dev, struct gpio_callback 
 
 static void lan865x_read_chunks(const struct device *dev)
 {
-	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_rx_alloc(K_MSEC(cfg->timeout));
+	pkt = net_pkt_rx_alloc(K_MSEC(CONFIG_ETH_LAN865X_TIMEOUT));
 	if (!pkt) {
 		LOG_ERR("OA RX: Could not allocate packet!");
 		return;
@@ -479,7 +478,6 @@ static const struct ethernet_api lan865x_api_func = {
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
-		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
 		.phy = DEVICE_DT_GET(                                                              \
 			DT_CHILD(DT_INST_CHILD(inst, lan865x_mdio), ethernet_phy_##inst)),         \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
