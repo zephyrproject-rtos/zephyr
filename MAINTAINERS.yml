@@ -1604,6 +1604,8 @@ Documentation Infrastructure:
     - albertofloyd
   collaborators:
     - VenkatKotakonda
+    - AdiIntel
+    - scottwcpg
     - jvasanth1
   files:
     - drivers/espi/
