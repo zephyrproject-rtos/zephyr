@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 &pinctrl {
 	uart1_default_alt: uart1_default_alt {
@@ -17,6 +21,10 @@
 	};
 };
 
+&timer1 {
+	status = "reserved";
+};
+
 dut: &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
@@ -24,4 +32,5 @@ dut: &uart1 {
 	pinctrl-0 = <&uart1_default_alt>;
 	pinctrl-1 = <&uart1_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	timer = <&timer1>;
 };
