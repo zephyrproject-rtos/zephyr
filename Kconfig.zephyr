@@ -1071,8 +1071,6 @@ menu "Boot Options"
 
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
-	depends on XIP
-	depends on ARM
 	help
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.
