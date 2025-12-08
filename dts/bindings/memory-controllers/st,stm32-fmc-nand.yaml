@@ -1,0 +1,145 @@
+# Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Flexible Memory Controller (FMC) for NAND flashes.
+
+  The FMC generates the appropriate signal timings to drive 8- and 16-bit NAND flash memories.
+
+  A unique chip select signal (NE) is used per bank. All the other signals (addresses, data and
+  control) are shared. A wide range of devices is supported through programmable timings.
+
+  Refer to the STM32 reference manual for more details.
+
+  The FMC NAND controller must be defined below the FMC node and banks are defined as child nodes
+  of the controller node.
+
+  An optional DMA channel specifier can be provided to enable memory-to-memory transfers using DMA.
+  The specifier should hold a phandle reference to the DMA controller, the channel number, the slot
+  number (unused for memory-to-memory transfers) and channel configuration. The followed DMA
+  channel name must be "tx_rx". Use constants defined in dt-bindings/dma/stm32_dma.h.
+
+  You can enable the controller in the devicetree as follows:
+
+  &fmc {
+    status = "okay";
+    pinctrl-0 = <&fmc_nce_pc8 &fmc_ale_pd12 ...>;
+    pinctrl-names = "default";
+
+    nand-controller {
+      compatible = "st,stm32-fmc-nand";
+      status = "okay";
+
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      page-buffer-size = <DT_SIZE_K(2)>;
+
+      dmas = <&dma1 2 0 0x0000>;
+      dma-names = "tx_rx";
+
+      nand-flash@3 {
+        compatible = "micron,mt29f4g08";
+        status = "okay";
+        reg = <3>;
+
+        page-size = <DT_SIZE_K(2)>;
+        spare-area-size = <64>;
+        block-size = <DT_SIZE_K(128)>;
+        plane-size = <DT_SIZE_M(256)>;
+        flash-size = <DT_SIZE_M(512)>;
+      };
+    };
+  };
+
+compatible: "st,stm32-fmc-nand"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  page-buffer-size:
+    type: int
+    required: true
+    description: |
+      Page buffer size in bytes. Must be equal to the largest NAND page size among the child nodes.
+
+child-binding:
+  description: NAND bank.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        NAND bank value. Used to chip select the bank to which the flash memory is connected.
+        Should be equal to a value of FMC_NAND_BANKx.
+
+    page-size:
+      type: int
+      required: true
+      description: |
+        NAND page size in bytes.
+
+    spare-area-size:
+      type: int
+      required: true
+      description: |
+        NAND spare area size in bytes.
+
+    block-size:
+      type: int
+      required: true
+      description: |
+        NAND block size in bytes. Must be a multiple of page size.
+
+    plane-size:
+      type: int
+      required: true
+      description: |
+        NAND plane size in bytes. Must be a multiple of block size.
+
+    flash-size:
+      type: int
+      required: true
+      description: |
+        Total NAND flash size in bytes. Must be a multiple of plane size.
+
+    setup-time:
+      type: int
+      default: 0
+      description: |
+        Number of HCLK cycles to set up the address before asserting the command for NAND flash
+        read or write access. Applies to common, attribute, or I/O memory space, depending on the
+        timing configuration. Valid values: 0 to 254.
+
+    wait-setup-time:
+      type: int
+      default: 0
+      description: |
+        Minimum number of HCLK cycles to assert the command for NAND flash read or write access.
+        Applies to common, attribute, or I/O memory space, depending on the timing configuration.
+        Valid values: 0 to 254.
+
+    hold-setup-time:
+      type: int
+      default: 0
+      description: |
+        Number of HLCK cycles to hold address and possibly data after de-asserting the command for
+        NAND flash read or write access. Applies to common, attribute, or I/O memory space,
+        depending on the timing configuration. Valid values: 0 to 254.
+
+    hiz-setup-time:
+      type: int
+      default: 0
+      description: |
+        Number of HCLK cycles for keeping data bus in HiZ after starting a NAND flash write access.
+        Applies to common, attribute, or I/O memory space, depending on the timing configuration.
+        Valid values: 0 to 254.
