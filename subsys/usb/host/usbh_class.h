@@ -46,11 +46,9 @@ bool usbh_class_is_matching(struct usbh_class_filter *const filters,
 /**
  * @brief Initialize every class instantiated on the system
  *
- * @param[in] uhs_ctx USB Host context to pass to the class.
- *
  * @retval 0 on success or negative error code on failure
  */
-void usbh_class_init_all(struct usbh_context *const uhs_ctx);
+void usbh_class_init_all(void);
 
 /**
  * @brief Probe an USB device function against all available classes.

@@ -99,8 +99,7 @@ struct usbh_class_filter {
  */
 struct usbh_class_api {
 	/** Host init handler, before any device is connected */
-	int (*init)(struct usbh_class_data *const c_data,
-		    struct usbh_context *const uhs_ctx);
+	int (*init)(struct usbh_class_data *const c_data);
 	/** Request completion event handler */
 	int (*completion_cb)(struct usbh_class_data *const c_data,
 			     struct uhc_transfer *const xfer);

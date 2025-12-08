@@ -14,7 +14,7 @@
 
 LOG_MODULE_REGISTER(usbh_class, CONFIG_USBH_LOG_LEVEL);
 
-void usbh_class_init_all(struct usbh_context *const uhs_ctx)
+void usbh_class_init_all(void)
 {
 	int ret;
 
@@ -26,7 +26,7 @@ void usbh_class_init_all(struct usbh_context *const uhs_ctx)
 			continue;
 		}
 
-		ret = usbh_class_init(c_data, uhs_ctx);
+		ret = usbh_class_init(c_data);
 		if (ret != 0) {
 			LOG_WRN("Failed to initialize class %s (%d)", c_data->name, ret);
 			c_node->state = USBH_CLASS_STATE_ERROR;

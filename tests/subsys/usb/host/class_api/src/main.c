@@ -52,8 +52,7 @@ static struct test_class_priv test_class_priv = {
 	.state = TEST_CLASS_PRIV_INACTIVE,
 };
 
-static int test_class_init(struct usbh_class_data *const c_data,
-			   struct usbh_context *const uhs_ctx)
+static int test_class_init(struct usbh_class_data *const c_data)
 {
 	struct test_class_priv *priv = c_data->priv;
 
