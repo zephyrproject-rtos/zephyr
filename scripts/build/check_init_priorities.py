@@ -262,6 +262,17 @@ class Validator:
 
         self.errors = 0
 
+    def _flag_error(self, msg):
+        """Remember that a validation error occurred and report to user"""
+        if not self.errors:
+            self.log.error(
+                "Device initialization priority validation failed, "
+                "the sequence of initialization calls does not match "
+                "the devicetree dependencies."
+            )
+        self.errors += 1
+        self.log.error(msg)
+
     def _check_dep(self, dev_ord, dep_ord):
         """Validate the priority between two devices."""
         if dev_ord == dep_ord:
@@ -287,14 +298,7 @@ class Validator:
                 f"{dev_node.path} and {dep_node.path} have the same priority: {dev_prio}"
             )
         elif dev_prio < dep_prio:
-            if not self.errors:
-                self.log.error(
-                    "Device initialization priority validation failed, "
-                    "the sequence of initialization calls does not match "
-                    "the devicetree dependencies."
-                )
-            self.errors += 1
-            self.log.error(
+            self._flag_error(
                 f"{dev_node.path} <{dev_init}> is initialized before its dependency "
                 f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})"
             )
