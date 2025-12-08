@@ -1095,6 +1095,8 @@
 		reg = <0x480000 0x1000>;
 		interrupts = <56 0>;
 		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	mipi_dsi: dsi@417000 {
