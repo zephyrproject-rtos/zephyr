@@ -9,6 +9,10 @@ source "Kconfig.constants"
 
 osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
+# This should be sourced early since the autogen Kconfig.dts options
+# and macros may get used by shields/boards/SoC defconfig or modules.
+source "dts/Kconfig"
+
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
 # After merging all definitions for a symbol/choice, Kconfig picks the first
@@ -32,10 +36,6 @@ source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
 source "subsys/testsuite/Kconfig.defconfig"
-
-# This should be early since the autogen Kconfig.dts symbols may get
-# used by modules
-source "dts/Kconfig"
 
 menu "Modules"
 
