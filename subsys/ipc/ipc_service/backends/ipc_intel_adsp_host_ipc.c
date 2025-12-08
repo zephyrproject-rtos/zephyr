@@ -9,16 +9,14 @@
  *
  * @brief IPC service backend for Intel Audio DSP host IPC
  *
- * @note When declaring struct ipt_ept_cfg, the field priv must point to
- *       a struct intel_adsp_ipc_ept_priv_data. This is used for passing
- *       callback returns.
+ * @note When declaring struct ipc_ept_cfg, the field @p priv must point to a struct
+ *       intel_adsp_ipc_ept_priv_data. This is used to pass backend private state between the ISR
+ *       and the application callbacks.
  *
- * @note For sending message and the received callback, the data and len
- *       arguments are not used to represent a byte array. Instead,
- *       the data argument points to the descriptor of data to be sent
- *       (of struct intel_adsp_ipc_msg). The len argument represents
- *       the type of message to be sent (enum intel_adsp_send_len) and
- *       the type of callback (enum intel_adsp_cb_len).
+ * @note For sending messages and in the receive callback, the @p data and @p len arguments
+ *       represent a fixed two-word IPC payload rather than a generic byte buffer. The @p data
+ *       pointer must reference an array of two uint32_t values (header and extended payload) and
+ *       @p len must be sizeof(uint32_t) * 2.
  */
 
 #define DT_DRV_COMPAT intel_adsp_host_ipc
@@ -250,27 +248,25 @@ static int ipc_send_message_emergency(const struct device *dev, uint32_t data, u
 /**
  * @brief Send an IPC message.
  *
- * This implements the inner working of ipc_service_send().
+ * This implements the backend send() hook used by ipc_service_send() for the Intel Audio DSP host
+ * IPC.
  *
- * @note Arguments @a data and @a len are not used to point to a byte buffer of data
- *       to be sent. Instead, @a data must point to a descriptor of data to be sent,
- *       struct intel_adsp_ipc_msg. And @a len indicates what type of message to send
- *       as described in enum intel_adsp_send_len.
+ * The @a data argument is expected to point to an array of two 32-bit words, where the first word
+ * is the IPC header and the second word is the extended payload. The @a len argument must be
+ * exactly sizeof(uint32_t) * 2 or the call is rejected.
  *
- * Return values for various message types:
- * - For INTEL_ADSP_IPC_SEND_MSG_*, returns 0 when message is sent. Negative errno if
- *   errors.
- * - For INTEL_ADSP_IPC_SEND_DONE, always returns 0 for sending DONE message.
- * - For INTEL_ADSP_IPC_SEND_IS_COMPLETE, returns 0 if host has processed the message.
- *   -EAGAIN if not.
+ * On success the function programs the IPC registers and starts transmission towards the host,
+ * enforcing the normal BUSY and TX acknowledgment checks performed by ipc_send_message().
  *
- * @param[in] dev Pointer to device struct.
- * @param[in] token Backend-specific token.
- * @param[in] data Descriptor of IPC message to be sent (as struct intel_adsp_ipc_msg).
- * @param[in] len Type of message to be sent (described in enum intel_adsp_send_len).
+ * @param[in] dev   Pointer to device struct.
+ * @param[in] token Backend-specific token (unused).
+ * @param[in] data  Pointer to two-word IPC payload.
+ * @param[in] len   Size of the payload in bytes (must be 8).
  *
- * @return 0 if message is sent successfully or query returns okay.
- *         Negative errno otherwise.
+ * @return 0 on success, negative errno on failure.
+ *         -EINVAL if @p dev is NULL.
+ *         -EBADMSG if @p data is NULL or @p len is invalid.
+ *         Propagates error codes from ipc_send_message().
  */
 static int intel_adsp_ipc_send(const struct device *dev, void *token, const void *data, size_t len)
 {
