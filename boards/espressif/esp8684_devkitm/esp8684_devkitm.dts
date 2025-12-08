@@ -44,7 +44,8 @@
 	status = "okay";
 	current-speed = <74880>;
 	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &trng0 {
