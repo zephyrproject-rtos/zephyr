@@ -52,6 +52,7 @@ struct secproxy_thread {
 	mem_addr_t target_data;
 	mem_addr_t rt;
 	mem_addr_t scfg;
+	uint32_t channel;
 };
 
 /**
@@ -88,7 +89,9 @@ struct secproxy_mailbox_config {
 static inline int secproxy_verify_thread(struct secproxy_thread *spt, uint8_t dir)
 {
 	/* Check for any errors already available */
-	if (sys_read32(spt->rt + RT_THREAD_STATUS) & RT_THREAD_STATUS_ERROR_MASK) {
+	uint32_t status = sys_read32(spt->rt + RT_THREAD_STATUS);
+
+	if (status & RT_THREAD_STATUS_ERROR_MASK) {
 		LOG_ERR("Thread is corrupted, cannot send data.\n");
 		return -EINVAL;
 	}
@@ -104,18 +107,13 @@ static inline int secproxy_verify_thread(struct secproxy_thread *spt, uint8_t di
 		return -EINVAL;
 	}
 
-	/* Check the message queue before sending/receiving data */
-	int timeout_ms = SEC_PROXY_TIMEOUT_US;
-	int waited_ms = 0;
-	const int poll_interval_ms = 1000;
-
-	while (!(sys_read32(spt->rt + RT_THREAD_STATUS) & RT_THREAD_STATUS_CUR_CNT_MASK)) {
-		k_busy_wait(poll_interval_ms);
-		waited_ms += poll_interval_ms;
-		if (waited_ms >= timeout_ms) {
-			LOG_ERR("Timeout waiting for thread to %s\n",
-				(dir == THREAD_IS_TX) ? "empty" : "fill");
-			return -ETIMEDOUT;
+	if (dir == THREAD_IS_TX) {
+		if ((status & RT_THREAD_STATUS_CUR_CNT_MASK) == (SECPROXY_MAILBOX_NUM_MSGS)) {
+			return -EBUSY;
+		}
+	} else {
+		if ((status & RT_THREAD_STATUS_CUR_CNT_MASK) == 0) {
+			return -ENODATA;
 		}
 	}
 
@@ -137,20 +135,9 @@ static void secproxy_mailbox_isr(const struct device *dev)
 		spt.target_data = SEC_PROXY_THREAD(DEV_TDATA(dev), i_channel);
 		spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), i_channel);
 		spt.scfg = SEC_PROXY_THREAD(DEV_SCFG(dev), i_channel);
-
-		uint32_t status = sys_read32(spt.rt + RT_THREAD_STATUS);
-
-		if (status & RT_THREAD_STATUS_ERROR_MASK) {
-			LOG_ERR("Thread %d error state detected in ISR", i_channel);
-			continue;
-		}
+		spt.channel = i_channel;
 
 		if (secproxy_verify_thread(&spt, THREAD_IS_RX)) {
-			LOG_ERR("Thread %d is in error state\n", i_channel);
-			continue;
-		}
-
-		if (!(sys_read32(spt.rt) & 0x7F)) {
 			continue;
 		}
 
@@ -233,16 +220,9 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	spt.target_data = SEC_PROXY_THREAD(DEV_TDATA(dev), channel);
 	spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), channel);
 	spt.scfg = SEC_PROXY_THREAD(DEV_SCFG(dev), channel);
+	spt.channel = channel;
 
 	if (secproxy_verify_thread(&spt, THREAD_IS_TX)) {
-		LOG_ERR("Thread is in error state\n");
-		k_spin_unlock(&data->lock, key);
-		return -EBUSY;
-	}
-
-	uint32_t status = sys_read32(spt.rt + RT_THREAD_STATUS);
-
-	if ((status & RT_THREAD_STATUS_CUR_CNT_MASK) == (SECPROXY_MAILBOX_NUM_MSGS)) {
 		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
