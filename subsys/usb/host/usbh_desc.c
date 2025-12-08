@@ -1,7 +1,6 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
- * Copyright NXP
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
