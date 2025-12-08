@@ -2,10 +2,18 @@ common:
   integration_platforms:
     - native_sim
     - nrf54l15dk/nrf54l15/cpuapp
-  platform_exclude:
-    - qemu_cortex_m0 # settings subsystem initialization fails
-    - nrf54h20dk/nrf54h20/cpuapp
-    - nrf54h20dk/nrf54h20/cpurad
+  platform_allow:
+    - native_sim
+    - mps2/an385
+    - qemu_x86/atom
+    - qemu_x86_64/atom
+    - nrf54l15dk/nrf54l15/cpuapp
+    - nrf5340dk/nrf5340/cpuapp
+    - nrf52840dk/nrf52840
+    - nrf9151dk/nrf9151
+    - nrf9160dk/nrf9160
+    - nrf9161dk/nrf9161
+    - ophelia4ev/nrf54l15/cpuapp
   timeout: 600
   tags:
     - psa.secure_storage
