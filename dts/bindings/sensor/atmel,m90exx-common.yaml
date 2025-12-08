@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  cf1-gpios:
+    type: phandle-array
+    description: "Active Energy Pulse Output"
+
+  cf2-gpios:
+    type: phandle-array
+    description: "Reactive/Apparent Energy Pulse Output"
+
+  wrn-out-gpios:
+    type: phandle-array
+    description: "Fatal Error Warning"
+
+  irq0-gpios:
+    type: phandle-array
+    description: "Interrupt Output 0"

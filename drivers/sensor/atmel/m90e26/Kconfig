@@ -1,0 +1,206 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig M90E26
+	bool "Atmel M90E26 Energy Meter Driver"
+	default y
+	depends on DT_HAS_ATMEL_M90E26_ENABLED
+	select UART if $(dt_compat_on_bus,$(DT_COMPAT_ATMEL_M90E26),uart)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ATMEL_M90E26),spi)
+	select PM_DEVICE_RUNTIME if PM_DEVICE
+	help
+	Enable driver for Atmel M90E26 energy meter IC.
+
+if M90E26
+
+config M90E26_BUS_UART
+	bool
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ATMEL_M90E26),uart) && UART_INTERRUPT_DRIVEN
+	default y
+
+config M90E26_BUS_SPI
+	bool
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ATMEL_M90E26),spi)
+	default y
+
+menu "Status and Special Registers"
+
+config M90E26_FUNCEN
+	hex "FuncEn"
+	range 0x0 0xFFFF
+	default 0x000C
+	help
+	Function Enable.
+
+config M90E26_SAGTH
+	hex "SagTh"
+	range 0x0 0xFFFF
+	default 0x1D6A
+	help
+	Voltage Sag Threshold.
+
+config M90E26_SMALLPMOD
+	hex "SmallPmod"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Small Power Mode Command.
+
+endmenu # Status and Special Registers
+
+menu "Metering Calibration and Configuration Registers"
+
+config M90E26_PLCONSTH
+	hex "PLconstH"
+	range 0x0 0xFFFF
+	default 0x0015
+	help
+	High Word of PL_Constant.
+
+config M90E26_PLCONSTL
+	hex "PLconstL"
+	range 0x0 0xFFFF
+	default 0xD174
+	help
+	Low Word of PL_Constant.
+
+config M90E26_LGAIN
+	hex "Lgain"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	L Line Calibration Gain.
+
+config M90E26_LPHI
+	hex "Lphi"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	L Line Calibration Angle.
+
+config M90E26_NGAIN
+	hex "Ngain"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	N Line Calibration Gain.
+
+config M90E26_NPHI
+	hex "Nphi"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	N Line Calibration Angle.
+
+config M90E26_PSTARTTH
+	hex "PStartTh"
+	range 0x0 0xFFFF
+	default 0x08BD
+	help
+	Active Startup Power Threshold.
+
+config M90E26_PNOLTH
+	hex "PNolTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Active No-Load Power Threshold.
+
+config M90E26_QSTARTTH
+	hex "QStartTh"
+	range 0x0 0xFFFF
+	default 0x0AEC
+	help
+	Reactive Startup Power Threshold.
+
+config M90E26_QNOLTH
+	hex "QNolTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Reactive No-Load Power Threshold.
+
+config M90E26_MMODE
+	hex "Mmode"
+	range 0x0 0xFFFF
+	default 0x9422
+	help
+	Metering Mode Configuration.
+
+endmenu # Metering Calibration and Configuration Registers
+
+menu "Measurement Calibration Registers"
+
+config M90E26_UGAIN
+	hex "Ugain"
+	range 0x0 0xFFFF
+	default 0x6720
+	help
+	Voltage RMS Gain.
+
+config M90E26_IGAINL
+	hex "IgainL"
+	range 0x0 0xFFFF
+	default 0x7A13
+	help
+	L Line Current RMS Gain.
+
+config M90E26_IGAINN
+	hex "IgainN"
+	range 0x0 0xFFFF
+	default 0x7530
+	help
+	N Line Current RMS Gain.
+
+config M90E26_UOFFSET
+	hex "Uoffset"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage Offset.
+
+config M90E26_IOFFSETL
+	hex "IoffsetL"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	L Line Current Offset.
+
+config M90E26_IOFFSETN
+	hex "IoffsetN"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	N Line Current Offset.
+
+config M90E26_POFFSETL
+	hex "PoffsetL"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	L Line Active Power Offset.
+
+config M90E26_QOFFSETL
+	hex "QoffsetL"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	L Line Reactive Power Offset.
+
+config M90E26_POFFSETN
+	hex "PoffsetN"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	N Line Active Power Offset.
+
+config M90E26_QOFFSETN
+	hex "QoffsetN"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	N Line Reactive Power Offset.
+
+endmenu # Measurement Calibration Registers
+
+endif # M90E26

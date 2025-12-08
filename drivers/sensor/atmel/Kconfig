@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config M90EXX_ROBUSTNESS_WORKAROUND
+	bool "Atmel M90EXX robustness workaround"
+	default n
+	depends on M90E32AS || M90E26
+	help
+	Enable workaround for robustness issues in Atmel M90EXX series energy metering ICs.
+
+	This option enables additional checks and error handling to improve the reliability
+	of communication with the M90EXX devices, which may be prone to transient faults
+	under certain conditions.
+
+	At read/write operations, the driver will implement retries and validation
+	mechanisms to ensure data integrity. This may introduce slight performance overhead,
+	but significantly enhances robustness in noisy environments.
+
+	If unsure, it is recommended to enable this option.
+
+config M90EXX_SHELL
+	bool "Atmel M90EXX Shell Commands"
+	default n
+	depends on SHELL && (M90E32AS || M90E26)
+	help
+	Enable shell commands for interacting with Atmel M90EXX series energy metering ICs.
+
+	This option adds a set of shell commands that allow users to query and configure
+	M90EXX devices directly from the Zephyr shell interface. It is useful for debugging,
+	testing, and manual configuration of the energy metering ICs.
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/atmel/m90e26/Kconfig"
+source "drivers/sensor/atmel/m90e3x/Kconfig"
+# zephyr-keep-sorted-stop
