@@ -268,7 +268,8 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
-    ${ZEPHYR_BASE}/drivers/gpio/*.c
+    ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x.c
+    ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
     LOCATION RAM
   )
 endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR
