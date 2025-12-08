@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#define BT_OBEX_MIN_MTU 280
+#define BT_OBEX_MIN_MTU 255
 
 /** @brief OBEX Response Code. */
 enum __packed bt_obex_rsp_code {

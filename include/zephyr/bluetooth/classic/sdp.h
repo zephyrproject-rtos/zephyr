@@ -1083,6 +1083,8 @@ ssize_t bt_sdp_attr_addl_proto_count(const struct bt_sdp_attribute *attr);
 int bt_sdp_attr_addl_proto_read(const struct bt_sdp_attribute *attr, uint16_t index,
 				const struct bt_uuid *uuid, struct bt_sdp_attr_value *value);
 
+
+int bt_sdp_get_goep_l2cap_psm(const struct net_buf *buf, uint16_t *l2cap_psm);
 #ifdef __cplusplus
 }
 #endif

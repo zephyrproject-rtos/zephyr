@@ -1312,6 +1312,41 @@ done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
 
+static uint8_t sdp_pse_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			      const struct bt_sdp_discover_params *params)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int err;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result == NULL || result->resp_buf == NULL) {
+		bt_shell_print("No SDP PSE data from remote %s", addr);
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	bt_shell_print("SDP PSE data@%p (len %u) hint %u from remote %s",
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint, addr);
+
+	err = bt_sdp_get_goep_l2cap_psm(result->resp_buf, &param);
+	if (err < 0) {
+		bt_shell_error("PSE PSM not found, err %d", err);
+	}
+	bt_shell_print("PSE L2CAP PSM param 0x%04x", param);
+
+        err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_RFCOMM, &param);
+	if (err < 0) {
+		bt_shell_error("PSE rfcomm channel  not found, err %d", err);
+	}
+	bt_shell_print("PSE RFCOMM channel param 0x%04x", param);
+
+
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
 static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			    const struct bt_sdp_discover_params *params)
 {
@@ -1403,6 +1438,13 @@ static struct bt_sdp_discover_params discov_avrcp_tg = {
 	.pool = &sdp_client_pool,
 };
 
+static struct bt_sdp_discover_params discov_pse = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_PBAP_PSE_SVCLASS),
+	.func = sdp_pse_user,
+	.pool = &sdp_client_pool,
+};
+
 static struct bt_sdp_discover_params discov;
 
 static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[])
@@ -1437,6 +1479,8 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 		discov = discov_avrcp_tg;
 	} else if (!strcmp(action, "PNP")) {
 		discov = discov_pnp;
+	} else if (!strcmp(action, "PSE")) {
+		discov = discov_pse;
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;

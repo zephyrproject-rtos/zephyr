@@ -2932,6 +2932,25 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto, uint16_t *
 	return sdp_pass_value_u16(&value, param);
 }
 
+
+
+int bt_sdp_get_goep_l2cap_psm(const struct net_buf *buf, uint16_t *l2cap_psm)
+{
+	struct bt_sdp_attribute attr;
+	const uint8_t *p;
+	int err;
+
+	err = bt_sdp_get_attr(buf, BT_SDP_ATTR_GOEP_L2CAP_PSM, &attr);
+	if (err < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_GOEP_L2CAP_PSM, err);
+		return err;
+	}
+
+        p = attr.val.data;
+        *l2cap_psm = sys_get_be16(++p);
+	return 0;
+}
+
 int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8_t index,
 				uint16_t *param)
 {
