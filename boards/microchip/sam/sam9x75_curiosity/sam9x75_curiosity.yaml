@@ -1,0 +1,13 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sam9x75_curiosity
+name: SAM9X75 Curiosity LAN Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - uart
+vendor: microchip
