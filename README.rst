@@ -87,7 +87,7 @@ And also there are supports for some third-party libs:
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |  fatfs |       -        |    apollo510-dev   | samples\\subsys\\fs\\fs\_sample           |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-| mbedtls|  coming soon   |                    |                                           |                  |
+| mbedtls| software only  |    apollo510-dev   | tests\\crypto\\mbedtls                    |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |  lvgl  |       -        |    apollo510-dev   | samples\\modules\\lvgl\\demos             |    ap510_disp    |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
@@ -236,6 +236,46 @@ For those samples that require additional hardware, such as the ap510_disp shiel
 
 ``west build -b apollo510_evb --shield ap510_disp ./samples/drivers/display -p always``
 
+For Bluetooth samples, you need to program the BLE Controller firmware via JLINK once before running samples. The programming script and binary locate in ambiq SDK ambiqsuite.
+Please get the SDK from Ambiq Content Portal.
+
+For MSPI samples, please refer to How_to_Run_Zephyr_MSPI_Samples_and_Tests.rst
+
+For USB samples, please refer to How_to_Run_Zephyr_USB_Samples.rst
+
+For MCU_Boot samples, please refer to How_to_Run_MCUBoot_Samples_and_Tests.rst
+
+
+Power Management Instructions
+-----------------------------
+
+To achieve lowest power consumption, customer needs to follow the following process for inspection and configuration optimization:
+
+1. According to the actual usage of memory, adjust the memory configurations (e.g., SRAM, DTCM, NVM) in soc_early_init_hook;
+
+2. Make sure ``CONFIG_PM=y``, ``CONFIG_PM_DEVICE=y``.
+
+3. There are 2 ways for drivers PM to operate: the first one is to keep ``CONFIG_PM_DEVICE_RUNTIME=y`` and ``CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE=y``, so the drivers that have runtime PM ability
+   should be power-managed automatically; and the other one is to keep ``CONFIG_PM_DEVICE_SYSTEM_MANAGED=y`` and drivers will be suspended automatically before deep sleep.
+   Note: These two methods can coexist. Devices with runtime PM enabled will be managed by runtime PM, while other devices will be managed by system-managed PM if enabled.
+
+4. If choose the first way (runtime PM) in step 3, in application code, call pm_device_runtime_put() / pm_device_runtime_get() around peripherals that should power-cycle on demand to ensure their usage
+   count returns to zero after use.
+
+5. In order to run CI without print log error, we keep the console UART always on by default. Users need to set ``CONFIG_PM_DEVICE_RUNTIME_DISABLE_CONSOLE=n`` in their own project to resume PM control
+   on it.
+
+6. Configure CPU performance mode to low power mode when high performance is not required. This can be done via devicetree (set ``ambiq,perf-mode = <AMBIQ_POWER_MODE_LOW_POWER>``) or by calling
+   ``apollo5x_set_performance_mode(AMBIQ_POWER_MODE_LOW_POWER)`` in application code.
+
+7. Disable unused peripheral power domains in soc_early_init_hook (e.g., DEBUG, CRYPTO, OTP) if they are not needed in your application.
+
+8. Disable unused peripherals in devicetree by setting ``status = "disabled"`` for nodes that are not used in your application.
+
+9. Reduce log level in production builds by setting appropriate ``CONFIG_LOG_*`` options to minimize logging overhead and power consumption.
+
+Check `Zephyr Power Management`_ for more detailed information.
+
 .. start_include_here
 
 Community Support
@@ -309,4 +349,6 @@ Additional Resources
 .. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
 .. _Ambiq SoC: https://contentportal.ambiq.com/soc
 .. _Ambiq Products: https://ambiq.com/products/
+.. _Ambiq Content Portal: https://contentportal.ambiq.com/
 .. _Ambiq HAL Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq
+.. _Zephyr Power Management: https://docs.zephyrproject.org/latest/services/pm/index.html
