@@ -85,7 +85,6 @@ static int getopt_internal(struct sys_getopt_state *state, int nargc, char *cons
 static int parse_long_options(struct sys_getopt_state *state, char *const *nargv,
 			      const char *options, const struct sys_getopt_option *long_options,
 			      int *idx, int short_too, int flags);
-static int gcd(int a, int b);
 static void permute_args(int panonopt_start, int panonopt_end, int opt_end, char *const *nargv);
 
 /* Error messages */
@@ -105,23 +104,6 @@ static int dash_prefix = NO_PREFIX;
 #define NOARG        "option doesn't take an argument -- %.*s"
 #define ILLOPTSTRING "unknown option -- %s"
 #endif
-
-/*
- * Compute the greatest common divisor of a and b.
- */
-static int gcd(int a, int b)
-{
-	int c;
-
-	c = a % b;
-	while (c != 0) {
-		a = b;
-		b = c;
-		c = a % b;
-	}
-
-	return b;
-}
 
 /*
  * Exchange the block from nonopt_start to nonopt_end with the block
