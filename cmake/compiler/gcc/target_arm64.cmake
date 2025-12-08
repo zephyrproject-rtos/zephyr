@@ -9,6 +9,12 @@ if(CONFIG_ARM64_SVE)
   endif()
 endif()
 
+if(CONFIG_ARM64_RNG)
+  if(DEFINED GCC_M_ARCH)
+    set(GCC_M_ARCH "${GCC_M_ARCH}+rng")
+  endif()
+endif()
+
 if(DEFINED GCC_M_CPU)
   list(APPEND TOOLCHAIN_C_FLAGS   -mcpu=${GCC_M_CPU})
   list(APPEND TOOLCHAIN_LD_FLAGS  -mcpu=${GCC_M_CPU})
