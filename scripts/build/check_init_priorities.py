@@ -49,6 +49,11 @@ _IGNORE_COMPATIBLES = frozenset(
     ]
 )
 
+# Deferred initialization property name.
+# When present, the device is not initialized during boot.
+# (it is evaluated as if initializing "after everything else")
+_DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
+
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
 
@@ -286,6 +291,30 @@ class Validator:
             if dev_compat in _IGNORE_COMPATIBLES:
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
+
+        def _deferred(node):
+            # Even though the property is boolean, it is sometimes present
+            # in node.props despite having value false: check for both
+            # presence *and* value.
+            if (p := node.props.get(_DEFERRED_INIT_PROP_NAME)) is None:
+                return False
+            assert isinstance(p.val, bool)
+            return p.val
+
+        dev_deferred = _deferred(dev_node)
+        dep_deferred = _deferred(dep_node)
+
+        # Deferred devices can depend on any device...
+        if dev_deferred:
+            self.log.info(f"Ignoring deferred device {dev_node.path}")
+            return
+
+        # ...but non-deferred devices cannot depend on them!
+        if dep_deferred:  # we already know dev_deferred==False
+            self._flag_error(
+                f"Non-deferred device {dev_node.path} depends on deferred device {dep_node.path}"
+            )
+            return
 
         dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
         dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
