@@ -246,9 +246,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_usart.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_udma_wrapper.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_udma.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sli_si91x_clock_manager.c
