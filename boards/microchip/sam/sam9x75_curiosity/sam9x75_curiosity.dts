@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <common/freq.h>
+#include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <microchip/sam/sam9/sam9x7/sam9x75d2g.dtsi>
+
+/ {
+	model = "SAM9X75-Curiosity board";
+	compatible = "microchip,sam9x75curiosity", "microchip,sam9x75", "microchip,sam9x7";
+
+	chosen {
+		zephyr,sram = &ddram;
+		zephyr,console = &dbgu;
+		zephyr,shell-uart = &dbgu;
+	};
+
+	clocks {
+		main_xtal {
+			clock-frequency = <DT_FREQ_M(24)>;
+		};
+
+		slow_xtal {
+			clock-frequency = <32768>;
+		};
+	};
+};
+
+&dbgu {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&pit64b0 {
+	clock-frequency = <DT_FREQ_M(10)>;
+};
