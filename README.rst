@@ -35,9 +35,9 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 | CRYPTO |  coming soon   |                    |                                           |                  |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-| DISPLAY|       -        |    apollo510-dev   |  samples\\drivers\\display                | with ap510_disp  |
+| DISPLAY|       -        |    apollo510-dev   |  samples\\drivers\\display                |    ap510_disp    |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-| FLASH  |       -        |    apollo510-dev   |  tests\\drivers\\flash\_api               |        All       |
+| FLASH  |       -        |    apollo510-dev   |  samples\\subsys\\mgmt\\mcumgr\\smp_svr   |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 | HWINFO |       -        |    apollo510-dev   |  tests\\drivers\\hwinfo\\api              |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
@@ -45,21 +45,25 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   I2S  |       -        |    apollo510-dev   |  samples\\drivers\\i2s\\dmic\_i2s         |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|  INPUT |       -        |    apollo510-dev   |samples\\subsys\\input\\draw\_touch\_events| with ap510_disp  |
+|  INPUT |       -        |    apollo510-dev   |samples\\subsys\\input\\draw\_touch\_events|    ap510_disp    |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|MIPI_DSI|       -        |    apollo510-dev   |  samples\\drivers\\display                | with ap510_disp  |
+|  JDI   |       -        |    apollo510-dev   |  samples\\drivers\\display                |  ap510_jdi_disp  |
++--------+----------------+--------------------+-------------------------------------------+------------------+
+|MIPI_DBI|       -        |    apollo510-dev   |  samples\\drivers\\display                |display_8080_card |
++--------+----------------+--------------------+-------------------------------------------+------------------+
+|MIPI_DSI|       -        |    apollo510-dev   |  samples\\drivers\\display                |    ap510_disp    |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |  MSPI  |       -        |    apollo510-dev   |   samples\\drivers\\mspi\\mspi\_flash     |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   PDM  |       -        |    apollo510-dev   |    samples\\drivers\\audio\\dmic          |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|   PM   |       -        |    apollo510-dev   |    samples\\subsys\\pm\\device\_pm        |        All       |
+|   PM   |       -        |    apollo510-dev   |    tests\\subsys\\pm\\power_wakeup_timer  |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   PWM  |       -        |    apollo510-dev   |    samples\\drivers\\led\\pwm             |apollo510_evb only|
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   RTC  |       -        |    apollo510-dev   |    samples\\drivers\\rtc                  |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|  SDHC  |       -        |    apollo510-dev   |samples\\subsys\\fs\\fs\_sample            |        All       |
+|  SDHC  |       -        |    apollo510-dev   |         tests\\subsys\\sd\\mmc            |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   SPI  |       -        |    apollo510-dev   |samples\\boards\\ambiq\\spi\_serial\_flash |apollo510_eb only |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
@@ -71,7 +75,7 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 |   USB  |       -        |    apollo510-dev   |  samples\\drivers\\subsys\\usb\\mass      |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|   WDT  |       -        |    apollo510-dev   |  samples\\drivers\\watchdog               |        All       |
+|   WDT  |       -        |    apollo510-dev   |  samples\\subsys\\task_wdt                |        All       |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 
 And also there are supports for some third-party libs:
@@ -85,7 +89,7 @@ And also there are supports for some third-party libs:
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 | mbedtls|  coming soon   |                    |                                           |                  |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
-|  lvgl  |  coming soon   |                    |                                           |                  |
+|  lvgl  |       -        |    apollo510-dev   | samples\\modules\\lvgl\\demos             |    ap510_disp    |
 +--------+----------------+--------------------+-------------------------------------------+------------------+
 
 
@@ -134,9 +138,12 @@ Get to Know Ambiq Components
   │
   ├── boards/
   │   ├── ambiq/
-  │   │   └── apollo510_evb
+  │   │   ├── apollo510_evb
+  │   │   └── apollo510_eb
   │   └── shields/
-  │       └── ap510_disp
+  │       ├── ap510_disp
+  │       ├── ap510_jdi_disp
+  │       └── apollo5_eb_display_8080_card
   ├── drivers/
   │   ├── adc/
   │   │   └── adc_ambiq.c
@@ -152,7 +159,8 @@ Get to Know Ambiq Components
   │   ├── counter/
   │   │   └── counter_ambiq_timer.c
   │   ├── display/
-  │   │   └── display_co5300.c
+  │   │   ├── display_co5300.c
+  │   │   └── display_ls014b7dd01.c
   │   ├── entropy/
   │   │   └── entropy_ambiq_puf_trng.c
   │   ├── flash/
@@ -165,6 +173,10 @@ Get to Know Ambiq Components
   │   │   └── i2c_ambiq.c
   │   ├── i2s/
   │   │   └── i2s_ambiq.c
+  │   ├── jdi/
+  │   │   └── jdi_ambiq.c
+  │   ├── mipi_dbi/
+  │   │   └── mipi_dbi_ambiq.c
   │   ├── mipi_dsi/
   │   │   └── dsi_ambiq.c
   │   ├── mspi/
