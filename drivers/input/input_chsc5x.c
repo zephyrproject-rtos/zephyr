@@ -252,6 +252,9 @@ static int chsc5x_init(const struct device *dev)
 		return ret;
 	}
 
+	/* It takes about 94ms until chip is ready after reset. */
+	k_msleep(100);
+
 	return chsc5x_chip_init(dev);
 };
 
