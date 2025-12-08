@@ -1,0 +1,12 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_MICROCHIP_SAM9
+	select MICROCHIP_SAM
+	select ARM
+	select CPU_ARM926EJ_S
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select MMU
+	select ATOMIC_OPERATIONS_C if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
