@@ -1044,6 +1044,11 @@ class Node:
       returning the value of the first 'bus:' key found. If none of the node's
       parents has a 'bus:' key, this attribute is an empty list.
 
+    on_bus:
+      Unlike on_buses that just assign to children from bus parent, Binding.on_bus
+      is respected and checked against parent node's buses values. The attribute is
+      either a bus value in parent nodes's buses or None.
+
     bus_node:
       Like on_bus, but contains the Node for the bus controller, or None if the
       node is not on a bus.
@@ -1254,6 +1259,18 @@ class Node:
         "See the class docstring"
         bus_node = self.bus_node
         return bus_node.buses if bus_node else []
+
+    @property
+    def on_bus(self) -> Optional[str]:
+        "See the class docstring"
+        if self._binding and self._binding.on_bus is not None:
+            bus_node = self.bus_node
+            if bus_node and self._binding.on_bus in bus_node.buses:
+                return self._binding.on_bus
+            else:
+                return None
+        else:
+            return None
 
     @property
     def flash_controller(self) -> 'Node':
