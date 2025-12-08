@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_MCHP_COMMON
@@ -21,6 +21,14 @@ config CLOCK_CONTROL_MCHP_PIC32CM_JH
 	select CLOCK_CONTROL_MCHP_COMMON
 	help
 	  Enable clock controller driver for Microchip PIC32CM_JH family.
+
+config CLOCK_CONTROL_MCHP_PIC32CZ_CA
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CZ_CA_CLOCK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip PIC32CZ_CA family.
 
 if CLOCK_CONTROL_MCHP_COMMON
 
