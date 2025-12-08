@@ -52,27 +52,29 @@ static int bmm350_prep_reg_write_rtio_async(const struct bmm350_bus *bus,
 {
 	struct rtio *ctx = bus->rtio.ctx;
 	struct rtio_iodev *iodev = bus->rtio.iodev;
-	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(ctx);
-	struct rtio_sqe *write_buf_sqe = rtio_sqe_acquire(ctx);
+	struct rtio_sqe *write_sqe = rtio_sqe_acquire(ctx);
+	uint8_t write_buf[2];
 
-	if (!write_reg_sqe || !write_buf_sqe) {
+	if (!write_sqe) {
 		rtio_sqe_drop_all(ctx);
 		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
-	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_tiny_write(write_buf_sqe, iodev, RTIO_PRIO_NORM, &val, 1, NULL);
+	write_buf[0] = reg;
+	write_buf[1] = val;
+
+	/* Single I2C transaction: [W(addr), reg, data] */
+	rtio_sqe_prep_tiny_write(write_sqe, iodev, RTIO_PRIO_NORM, write_buf, 2, NULL);
 	if (bus->rtio.type == BMM350_BUS_TYPE_I2C) {
-		write_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
 	}
 
-	/** Send back last SQE so it can be concatenated later. */
+	/** Send back SQE so it can be concatenated later. */
 	if (out) {
-		*out = write_buf_sqe;
+		*out = write_sqe;
 	}
 
-	return 2;
+	return 1;
 }
 
 static int bmm350_reg_read_rtio(const struct bmm350_bus *bus, uint8_t start, uint8_t *buf, int size)
