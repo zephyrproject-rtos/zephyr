@@ -19,5 +19,6 @@ supported:
   - counter
   - flash
   - gpio
+  - i2c
   - uart
 vendor: nxp
