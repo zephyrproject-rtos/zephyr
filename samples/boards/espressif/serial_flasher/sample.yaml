@@ -1,0 +1,9 @@
+sample:
+  description: ESP Serial Flasher sample code
+  name: zephyr_flasher
+tests:
+  sample.esp_flasher.zephyr_example:
+    platform_allow:
+      - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
+    tags: esp32
