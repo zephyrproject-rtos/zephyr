@@ -227,8 +227,6 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   )
   zephyr_compile_definitions(
     SL_CATALOG_SLEEPTIMER_PRESENT
-    SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
-    SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
   )
   zephyr_code_relocate(FILES
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
@@ -250,10 +248,8 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${SISDK}/platform/common/src/sl_slist.c
   )
   zephyr_compile_definitions(
-    SL_CODE_COMPONENT_POWER_MANAGER=power_manager
     SL_SI91X_TICKLESS_MODE
     SL_SLEEP_TIMER
-    SL_CODE_COMPONENT_CORE=core
     SLI_WIRELESS_COMPONENT_PRESENT
   )
   zephyr_code_relocate(FILES
