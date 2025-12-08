@@ -21,6 +21,14 @@
 		};
 	};
 
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>,
+				 <UART0_RX_GPIO44>;
+			drive-open-drain;
+		};
+	};
+
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <UART1_TX_GPIO17>;

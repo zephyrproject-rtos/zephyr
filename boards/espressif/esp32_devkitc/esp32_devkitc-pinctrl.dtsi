@@ -21,6 +21,14 @@
 		};
 	};
 
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>,
+				 <UART0_RX_GPIO3>;
+			drive-open-drain;
+		};
+	};
+
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <UART1_TX_GPIO10>;
@@ -32,6 +40,14 @@
 		};
 	};
 
+	uart1_sleep: uart1_sleep {
+		group1 {
+			pinmux = <UART1_TX_GPIO10>,
+				 <UART1_RX_GPIO9>;
+			drive-open-drain;
+		};
+	};
+
 	uart2_default: uart2_default {
 		group1 {
 			pinmux = <UART2_TX_GPIO17>;
@@ -40,6 +56,14 @@
 		group2 {
 			pinmux = <UART2_RX_GPIO16>;
 			bias-pull-up;
+		};
+	};
+
+	uart2_sleep: uart2_sleep {
+		group1 {
+			pinmux = <UART2_TX_GPIO17>,
+				 <UART2_RX_GPIO16>;
+			drive-open-drain;
 		};
 	};
 

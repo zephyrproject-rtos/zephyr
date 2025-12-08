@@ -20,4 +20,12 @@
 			bias-pull-up;
 		};
 	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <UART0_TX_GPIO20>,
+				 <UART0_RX_GPIO19>;
+			drive-open-drain;
+		};
+	};
 };
