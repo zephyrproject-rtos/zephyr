@@ -218,20 +218,6 @@ static int ipc_send_message(const struct device *dev, uint32_t data, uint32_t ex
 	return 0;
 }
 
-static int ipc_send_message_sync(const struct device *dev, uint32_t data, uint32_t ext_data,
-				 k_timeout_t timeout)
-{
-	struct intel_adsp_ipc_data *devdata = dev->data;
-
-	int ret = ipc_send_message(dev, data, ext_data);
-
-	if (ret == 0) {
-		k_sem_take(&devdata->sem, timeout);
-	}
-
-	return ret;
-}
-
 static int ipc_send_message_emergency(const struct device *dev, uint32_t data, uint32_t ext_data)
 {
 	const struct intel_adsp_ipc_config *const config = dev->config;

@@ -78,13 +78,31 @@ int intel_adsp_ipc_send_message(const struct device *dev, uint32_t data, uint32_
 	return ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
 }
 
+/*
+ * This helper sends an IPC message and then waits synchronously for completion using the backend
+ * semaphore. It is currently only used by tests, SOF firmware does not rely on it.
+ *
+ * The long‑term plan is to either:
+ * - remove this helper entirely,
+ * - move the synchronous wait logic to the application layer (SOF), or
+ * - extend the generic IPC service API with an explicit synchronous send primitive.
+ *
+ * Until that decision is made, the function is kept here only to support existing test code and
+ * should not be used by new callers.
+ */
 int intel_adsp_ipc_send_message_sync(const struct device *dev, uint32_t data, uint32_t ext_data,
 				     k_timeout_t timeout)
 {
-	ARG_UNUSED(dev);
 	uint32_t msg[2] = {data, ext_data};
+	struct intel_adsp_ipc_data *devdata = dev->data;
 
-	return ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
+	int ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
+
+	if (ret < 0) {
+		k_sem_take(&devdata->sem, timeout);
+	}
+
+	return ret;
 }
 
 void intel_adsp_ipc_send_message_emergency(const struct device *dev, uint32_t data,
