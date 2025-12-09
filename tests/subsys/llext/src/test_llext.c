@@ -323,6 +323,17 @@ static LLEXT_CONST uint8_t align_ext[] ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(align)
 
+#if defined(CONFIG_LLEXT_RODATA_NO_RELOC)
+static LLEXT_CONST uint8_t rodata_no_reloc_ext[] ELF_ALIGN = {
+	#include "rodata_no_reloc.inc"
+};
+const void *rodata_no_reloc_ext_ptr = rodata_no_reloc_ext;
+EXPORT_SYMBOL(rodata_no_reloc_ext_ptr);
+const size_t rodata_no_reloc_ext_size = sizeof(rodata_no_reloc_ext);
+EXPORT_SYMBOL(rodata_no_reloc_ext_size);
+LLEXT_LOAD_UNLOAD(rodata_no_reloc)
+#endif
+
 static LLEXT_CONST uint8_t inspect_ext[] ELF_ALIGN = {
 	#include "inspect.inc"
 };
