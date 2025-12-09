@@ -174,6 +174,7 @@ struct pinnacle_config {
 
 	enum pinnacle_sensitivity sensitivity;
 	bool relative_mode;
+	bool sleep_mode_enable;
 	uint8_t idle_packets_count;
 
 	bool clipping_enabled;
@@ -802,7 +803,12 @@ static int pinnacle_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = pinnacle_write(dev, PINNACLE_REG_SYS_CONFIG1, 0x00);
+	value = 0x00;
+	if (config->sleep_mode_enable) {
+		value |= PINNACLE_SYS_CONFIG1_LOW_POWER_MODE;
+	}
+
+	rc = pinnacle_write(dev, PINNACLE_REG_SYS_CONFIG1, value);
 	if (rc) {
 		LOG_ERR("Failed to write SysConfig1");
 		return rc;
@@ -896,6 +902,7 @@ static int pinnacle_init(const struct device *dev)
 		.relative_mode = DT_INST_ENUM_IDX(inst, data_mode),                                \
 		.sensitivity = DT_INST_ENUM_IDX(inst, sensitivity),                                \
 		.idle_packets_count = DT_INST_PROP(inst, idle_packets_count),                      \
+		.sleep_mode_enable = DT_INST_PROP(inst, sleep_mode_enable),                        \
 		.clipping_enabled = DT_INST_PROP(inst, clipping_enable),                           \
 		.active_range_x_min = DT_INST_PROP(inst, active_range_x_min),                      \
 		.active_range_x_max = DT_INST_PROP(inst, active_range_x_max),                      \

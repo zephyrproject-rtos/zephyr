@@ -44,6 +44,12 @@ properties:
       taps. When set to 0, no empty packets are sent. Supported values from 0
       to 255.
 
+  sleep-mode-enable:
+    type: boolean
+    description: |
+      Enable sleep mode, allowing the hardware to enter a lower power mode
+      after 5 seconds with no finger detected.
+
   clipping-enable:
     type: boolean
     description: |
