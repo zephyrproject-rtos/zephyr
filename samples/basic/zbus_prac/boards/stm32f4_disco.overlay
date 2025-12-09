@@ -1,0 +1,33 @@
+/ {
+    leds {
+        compatible = "gpio-leds";
+
+        led0: led0_node {
+            gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+            label = "LD3 Orange";
+        };
+
+        led1: led1_node {
+            gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+            label = "LD4 Green";
+        };
+
+        led2: led2_node {
+            gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+            label = "LD5 Red";
+        };
+
+        led3: led3_node {
+            gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+            label = "LD6 Blue";
+        };
+    };
+
+    aliases {
+        led0 = &led0;
+        led1 = &led1;
+        led2 = &led2;
+        led3 = &led3;
+    };
+};
+
