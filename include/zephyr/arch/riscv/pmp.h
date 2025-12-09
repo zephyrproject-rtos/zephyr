@@ -7,9 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_RISCV_PMP_H_
 #define ZEPHYR_INCLUDE_RISCV_PMP_H_
 
- #include <zephyr/arch/riscv/arch.h>
-
-#ifdef CONFIG_RISCV_PMP
+#include <zephyr/arch/riscv/arch.h>
 
 /**
  * @brief Change the memory protection (R/W/X) permissions for a defined region.
@@ -26,6 +24,7 @@
  * committed to the PMP configuration registers.
  *
  * @kconfig_dep{CONFIG_MEM_ATTR}
+ * @kconfig_dep{CONFIG_RISCV_PMP}
  *
  * @param region_idx Index of the memory attribute region (from
  * mem_attr_get_regions) whose permissions should be changed.
@@ -40,6 +39,8 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm);
 /**
  * @brief Resets all unlocked PMP entries to OFF mode (Null Region).
  *
+ * @kconfig_dep{CONFIG_RISCV_PMP}
+ *
  * This function is used to securely clear the PMP configuration. It first
  * ensures the execution context is M-mode by setting MSTATUS_MPRV=0 and
  * MSTATUS_MPP=M-mode. It then reads all pmpcfgX CSRs, iterates through
@@ -47,7 +48,5 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm);
  * for any entry that is not locked (PMP_L is clear), effectively disabling the region.
  */
 void z_riscv_pmp_clear_all(void);
-
-#endif
 
 #endif /* ZEPHYR_INCLUDE_RISCV_PMP_H_ */
