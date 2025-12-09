@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #define GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK   110000000
-#define GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE 40000000
 #define GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE 4096
 #define SPI_HIGH_BURST_FREQ_THRESHOLD_HZ      10000000
 
@@ -155,11 +154,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	if (clk_div_factor < 1) {
 		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_EN = 1;
 		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_SYNC = 1;
-	}
-
-	/* Configure data sampling edge for high-speed transfers */
-	if (spi_cfg->frequency > GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE) {
-		cfg->reg->GSPI_BUS_MODE_b.GSPI_DATA_SAMPLE_EDGE = 1;
 	}
 
 	/* Set the clock divider factor */
