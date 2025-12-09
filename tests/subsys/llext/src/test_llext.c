@@ -332,6 +332,17 @@ static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "inspect.inc"
 };
 
+#if defined(CONFIG_LLEXT_RODATA_NO_RELOC)
+static LLEXT_CONST uint8_t rodata_no_reloc_ext[] ELF_ALIGN = {
+	#include "rodata_no_reloc.inc"
+};
+const void *rodata_no_reloc_ext_ptr = rodata_no_reloc_ext;
+EXPORT_SYMBOL(rodata_no_reloc_ext_ptr);
+const size_t rodata_no_reloc_ext_size = sizeof(rodata_no_reloc_ext);
+EXPORT_SYMBOL(rodata_no_reloc_ext_size);
+LLEXT_LOAD_UNLOAD(rodata_no_reloc)
+#endif
+
 void do_inspect_checks(struct llext_loader *ldr, struct llext *ext, enum llext_mem reg_idx,
 		       const char *sect_name, const char *sym_name)
 {
