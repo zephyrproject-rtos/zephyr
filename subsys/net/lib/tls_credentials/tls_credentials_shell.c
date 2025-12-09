@@ -16,6 +16,15 @@ LOG_MODULE_REGISTER(tls_credentials_shell, CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
 #include <strings.h>
 #include <ctype.h>
 
+#if defined(CONFIG_PSA_CRYPTO)
+#include <psa/crypto.h>
+#include <psa/crypto_extra.h>
+#endif /* defined(CONFIG_PSA_CRYPTO)*/
+
+#if defined(MBEDTLS_PEM_WRITE_C)
+#include <mbedtls/pem.h>
+#endif /* defined(MBEDTLS_PEM_WRITE_C)*/
+
 enum cred_storage_fmt {
 	/* Credential is stored as a string and will be passed between the shell and storage
 	 * unmodified.
@@ -896,6 +905,179 @@ cleanup:
 	return 0;
 }
 
+#if defined(CONFIG_PSA_CRYPTO)
+/* Key type parameter for generate_ecdsa_keypair */
+enum ecdsa_key_type {
+	ECDSA_P256 = 0, /* secp256r1 / P-256 */
+};
+
+/* Generate ECDSA keypair with specified key type.
+ * Returns 0 on success or negative error code.
+ */
+static int generate_ecdsa_keypair(psa_key_id_t *user_keypair_id,
+					   enum ecdsa_key_type key_type)
+{
+	if (user_keypair_id != NULL) {
+		psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+		psa_status_t status;
+		psa_ecc_family_t ecc_family;
+		size_t key_bits;
+
+		/* Initialize PSA Crypto (Can be done multiple times) */
+		status = psa_crypto_init();
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("psa_crypto_init() failed! (Error: %d)", status);
+			return -EFAULT;
+		}
+
+		/* Configure key parameters based on key type */
+		switch (key_type) {
+		case ECDSA_P256:
+			ecc_family = PSA_ECC_FAMILY_SECP_R1;
+			key_bits = 256;
+			break;
+		default:
+			LOG_ERR("Unsupported key type: %d", key_type);
+			return -EINVAL;
+		}
+
+		/* Configure the key attributes */
+		psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_EXPORT);
+		psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+		psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+		psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(ecc_family));
+		psa_set_key_bits(&key_attributes, key_bits);
+
+		/* Generate the keypair */
+		status = psa_generate_key(&key_attributes, user_keypair_id);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("psa_generate_key() failed! (Error: %d)", status);
+			return -EFAULT;
+		}
+
+		psa_reset_key_attributes(&key_attributes);
+
+		return 0;
+	}
+	return -EINVAL;
+}
+#endif /* defined(CONFIG_PSA_CRYPTO)*/
+
+/* Generate a private key on device using ECDSA and store it as a credential
+ * Returns 0 on success or negative error code.
+ */
+static int tls_cred_cmd_generate_key(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_PSA_CRYPTO)
+	int err = 0;
+	psa_key_id_t keypair_id = 0;
+	sec_tag_t sectag;
+	enum ecdsa_key_type key_type;
+	size_t key_der_len;
+	size_t key_pem_len;
+	uint8_t key_der[256]; /* Buffer for DER-formatted key */
+	uint8_t key_pem[512]; /* Buffer for PEM-formatted key */
+
+	if (argc < 2) {
+		shell_fprintf(sh, SHELL_ERROR, "Usage: generate_key <sectag> [key_type]\n");
+		shell_fprintf(sh, SHELL_ERROR, "Supported key types: p256 (default)\n");
+		return -EINVAL;
+	}
+
+	/* Parse sectag */
+	err = shell_parse_cred_sectag(sh, argv[1], &sectag, false);
+	if (err) {
+		return err;
+	}
+
+	/* Parse key type if provided, default to P256 */
+	key_type = ECDSA_P256;
+	if (argc >= 3) {
+		if (strcasecmp(argv[2], "p256") == 0) {
+			key_type = ECDSA_P256;
+		} else {
+			shell_fprintf(sh, SHELL_ERROR, "Unknown key type: %s\n", argv[2]);
+			shell_fprintf(sh, SHELL_ERROR, "Supported types: p256\n");
+			return -EINVAL;
+		}
+	}
+
+	/* Lock credentials to prevent concurrent access */
+	credentials_lock();
+
+	/* Check if credential already exists */
+	if (credential_get(sectag, TLS_CREDENTIAL_PRIVATE_KEY)) {
+		shell_fprintf(sh, SHELL_ERROR,
+			      "TLS credential with sectag %d and type PK already exists.\n",
+			      sectag);
+		err = -EEXIST;
+		goto cleanup;
+	}
+
+	/* Generate the keypair */
+	err = generate_ecdsa_keypair(&keypair_id, key_type);
+	if (err) {
+		shell_fprintf(sh, SHELL_ERROR, "Failed to generate ECDSA keypair (Error: %d)\n",
+			      err);
+		goto cleanup;
+	}
+
+	/* Export the private key in DER format */
+	psa_status_t status = psa_export_key(keypair_id, key_der, sizeof(key_der), &key_der_len);
+
+	if (status != PSA_SUCCESS) {
+		shell_fprintf(sh, SHELL_ERROR, "Failed to export key (Error: %d)\n", status);
+		err = (int)status;
+		goto cleanup;
+	}
+
+#if defined(MBEDTLS_PEM_WRITE_C)
+	/* Convert DER to PEM format */
+	err = mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
+				       "-----END EC PRIVATE KEY-----\n", key_der, key_der_len,
+				       key_pem, sizeof(key_pem), &key_pem_len);
+	if (err != 0) {
+		shell_fprintf(sh, SHELL_ERROR, "Failed to convert key to PEM format (Error: %d)\n",
+			      err);
+		goto cleanup;
+	}
+
+	/* Store the PEM-formatted key as a TLS credential */
+	err = tls_credential_add(sectag, TLS_CREDENTIAL_PRIVATE_KEY, key_pem, key_pem_len);
+	if (err) {
+		shell_fprintf(sh, SHELL_ERROR,
+			      "Failed to store private key credential with sectag %d (Error: %d)\n",
+			      sectag, err);
+		goto cleanup;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL,
+		      "Successfully generated and stored ECDSA private key at sectag %d\n", sectag);
+	shell_fprintf(sh, SHELL_NORMAL, "Key type: %s, Format: PEM, Size: %d bytes\n",
+		      (key_type == ECDSA_P256) ? "P-256" : "unknown", key_pem_len);
+#else
+	shell_fprintf(sh, SHELL_ERROR,
+		      "MBEDTLS_PEM_WRITE_C is not enabled. Cannot convert to PEM.\n");
+	err = -ENOTSUP;
+	goto cleanup;
+#endif /* MBEDTLS_PEM_WRITE_C */
+
+cleanup:
+	/* Destroy the volatile key handle */
+	if (keypair_id != 0) {
+		psa_destroy_key(keypair_id);
+	}
+
+	/* Unlock credentials */
+	credentials_unlock();
+
+	return err;
+#else
+	shell_fprintf(sh, SHELL_ERROR, "PSA_CRYPTO is not enabled. Cannot generate keypair.\n");
+	return -ENOTSUP;
+#endif /* defined(CONFIG_PSA_CRYPTO)*/
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_buf_cmds,
 	SHELL_CMD(clear, NULL, "Clear the credential buffer", tls_cred_cmd_buf_clear),
 	SHELL_CMD(load, NULL, "Load credential directly to buffer so it can be added.",
@@ -915,6 +1097,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 	SHELL_CMD_ARG(list, NULL, "List stored TLS credentials, optionally filtering by type "
 				  "or sectag.",
 		      tls_cred_cmd_list, 0, 0),
+	SHELL_CMD_ARG(generate_key, NULL,
+		      "Generate an ECDSA keypair on device and store as private key credential",
+		      tls_cred_cmd_generate_key, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 
