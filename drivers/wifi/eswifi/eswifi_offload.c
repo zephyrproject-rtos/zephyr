@@ -404,7 +404,7 @@ done:
 	return ret;
 }
 
-static int eswifi_off_get(sa_family_t family,
+static int eswifi_off_get(net_sa_family_t family,
 			  enum net_sock_type type,
 			  enum net_ip_protocol ip_proto,
 			  struct net_context **context)
