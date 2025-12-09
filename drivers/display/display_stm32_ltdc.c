@@ -190,7 +190,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	if ((x == 0) && (y == 0) &&
 	    (desc->width == config->width) &&
 	    (desc->height ==  config->height) &&
-	    (desc->pitch == desc->width)) {
+	    (desc->pitch == desc->width * data->current_pixel_size)) {
 		/* Use buf as ltdc frame buffer directly if it length same as ltdc frame buffer. */
 		pend_buf = buf;
 	} else {
@@ -221,7 +221,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 			(void) memcpy(dst, src, desc->width * data->current_pixel_size);
 			sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 			dst += (config->width * data->current_pixel_size);
-			src += (desc->pitch * data->current_pixel_size);
+			src += desc->pitch;
 		}
 
 	}
@@ -269,7 +269,7 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 		(void) memcpy(dst, src, desc->width * data->current_pixel_size);
 		sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 		src += (config->width * data->current_pixel_size);
-		dst += (desc->pitch * data->current_pixel_size);
+		dst += desc->pitch;
 	}
 
 	return 0;

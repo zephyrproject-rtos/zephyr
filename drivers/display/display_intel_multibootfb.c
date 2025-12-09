@@ -23,7 +23,7 @@ struct framebuf_dev_config {
 
 struct framebuf_dev_data {
 	void *buffer;
-	uint32_t pitch;
+	uint32_t pitch; /* In Bytes. */
 };
 
 static int framebuf_set_pixel_format(const struct device *dev,
@@ -135,12 +135,12 @@ static int multiboot_framebuf_init(const struct device *dev)
 
 		adj_x = info->fb_width - config->width;
 		adj_y = info->fb_height - config->height;
-		data->pitch = (info->fb_pitch / 4) + adj_x;
+		data->pitch = info->fb_pitch + adj_x * sizeof(uint32_t);
 		adj_x /= 2U;
 		adj_y /= 2U;
 		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
 		buffer += adj_x;
-		buffer += adj_y * data->pitch;
+		buffer += adj_y * (data->pitch / sizeof(uint32_t));
 		data->buffer = buffer;
 		return 0;
 	} else {

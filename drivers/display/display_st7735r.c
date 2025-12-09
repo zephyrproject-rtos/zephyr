@@ -183,8 +183,7 @@ static int st7735r_write(const struct device *dev,
 	enum display_pixel_format fmt;
 	struct display_buffer_descriptor mipi_desc;
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height)
+	__ASSERT((desc->pitch * desc->height)
 		 <= desc->buf_size, "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
@@ -194,11 +193,11 @@ static int st7735r_write(const struct device *dev,
 		goto out;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > (desc->width * ST7735R_PIXEL_SIZE)) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * ST7735R_PIXEL_SIZE;
+		mipi_desc.buf_size = desc->pitch;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
@@ -208,7 +207,7 @@ static int st7735r_write(const struct device *dev,
 
 	mipi_desc.width = desc->width;
 	/* Per MIPI API, pitch must always match width */
-	mipi_desc.pitch = desc->width;
+	mipi_desc.pitch = desc->width * ST7735R_PIXEL_SIZE;
 
 
 	if (!(config->madctl & ST7735R_MADCTL_BGR) != !config->rgb_is_inverted) {
@@ -224,7 +223,7 @@ static int st7735r_write(const struct device *dev,
 		goto out;
 	}
 
-	write_data_start += (desc->pitch * ST7735R_PIXEL_SIZE);
+	write_data_start += desc->pitch;
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		ret = mipi_dbi_write_display(config->mipi_dev,
 					     &config->dbi_config,
@@ -235,7 +234,7 @@ static int st7735r_write(const struct device *dev,
 			goto out;
 		}
 
-		write_data_start += (desc->pitch * ST7735R_PIXEL_SIZE);
+		write_data_start += desc->pitch;
 	}
 
 	ret = 0;

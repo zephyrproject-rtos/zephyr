@@ -181,7 +181,7 @@ static int ssd135x_write(const struct device *dev, const uint16_t x, const uint1
 		(x + desc->width - 1 + config->column_offset) & 0x7F};
 	uint8_t y_position[] = {y & 0x7F, (y + desc->height - 1) & 0x7F};
 
-	if (desc->pitch != desc->width) {
+	if (desc->pitch != desc->width * 2) {
 		LOG_ERR("Pitch is not width");
 		return -EINVAL;
 	}
