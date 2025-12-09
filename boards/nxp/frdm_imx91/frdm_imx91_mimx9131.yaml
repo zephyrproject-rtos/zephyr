@@ -14,6 +14,5 @@ toolchain:
 ram: 1024
 supported:
   - counter
-  - net
   - uart
 vendor: nxp
