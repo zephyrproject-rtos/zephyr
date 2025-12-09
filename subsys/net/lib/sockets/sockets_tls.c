@@ -1112,6 +1112,85 @@ static int dtls_server_new_active_session(struct tls_context *tls_ctx,
 	return 0;
 }
 
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+static K_MUTEX_DEFINE(dtls_server_cid_check_lock);
+
+static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
+{
+	static uint8_t tmp_buf[MBEDTLS_SSL_IN_CONTENT_LEN];
+	struct tls_session_context *session_ctx = NULL;
+	int result = -ENOENT;
+
+	if (!tls_ctx->options.dtls_cid.enabled) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&dtls_server_cid_check_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
+		struct net_sockaddr addr;
+		net_socklen_t addrlen;
+		int cid_enabled;
+		ssize_t len;
+		int ret;
+
+		ret = mbedtls_ssl_get_peer_cid(&session_ctx->ssl, &cid_enabled,
+					       NULL, NULL);
+		if (ret != 0 || cid_enabled != MBEDTLS_SSL_CID_ENABLED) {
+			continue;
+		}
+
+		/* This deserves some additional context. The only way I found to
+		 * check if the datagram matches current session based on DTLS CID
+		 * is mbedtls_ssl_check_record() function (which according to the
+		 * API documentation serves exactly the purpose). Because of this,
+		 * we need to:
+		 * - peek the full datagram from the socket this time, not just
+		 *   a dummy byte,
+		 * - and as the function may modify the provided datagram, we
+		 *   need to repeat this for each checked client session.
+		 *
+		 * As the DTLS records can take up to 16kB in size depending on
+		 * the configuration, it's been decided to dedicate a single
+		 * static buffer for the purpose, and protect it with a mutex to
+		 * avoid races in case multiple DTLS server sockets run in parallel.
+		 */
+		addrlen = sizeof(struct net_sockaddr);
+		len = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
+				     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
+				     &addr, &addrlen);
+		if (len < 0) {
+			result = -errno;
+			break;
+		}
+
+		ret = mbedtls_ssl_check_record(&session_ctx->ssl, tmp_buf, len);
+		if (ret == 0) {
+			NET_DBG("Found matching session (CID) for [%s]:%d (was [%s]:%d)",
+				LOG_ADDR_PORT_HELPER(&addr),
+				LOG_ADDR_PORT_HELPER(&session_ctx->dtls_peer_addr));
+
+			/* Need to update peer address as CID matched */
+			dtls_peer_address_set(session_ctx, &addr, addrlen);
+			tls_ctx->active_session = session_ctx;
+			result = 0;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&dtls_server_cid_check_lock);
+
+	return result;
+}
+#else
+#define dtls_server_switch_active_session_by_cid(...) (-ENOTSUP)
+#endif /* defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID) */
+
+/* Returns
+ * - 0 when session was switched or updated,
+ * - 1 if session was already valid,
+ * - negative error code otherwise
+ */
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
@@ -1119,7 +1198,7 @@ static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 	uint8_t tmp_buf;
 	int ret;
 
-	/* Peek the datagram first to see if the session needs to be updated. */
+	/* Peek a dummy byte first to get peer address. */
 	ret = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
 			     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
 			     &addr, &addrlen);
@@ -1131,6 +1210,12 @@ static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 	ret = dtls_server_switch_active_session(tls_ctx, &addr, addrlen);
 	if (ret == 0 || ret == 1) {
 		return ret;
+	}
+
+	/* Not found, try to match existing session by CID */
+	ret = dtls_server_switch_active_session_by_cid(tls_ctx);
+	if (ret == 0) {
+		return 0;
 	}
 
 	/* No session found, try to allocate one. */
