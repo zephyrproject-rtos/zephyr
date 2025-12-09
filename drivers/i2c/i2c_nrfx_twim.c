@@ -14,6 +14,7 @@
 #include <nrfx_twim.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <dmm.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -33,6 +34,7 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile int res;
+	uint8_t *buf_ptr;
 };
 
 int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
@@ -70,6 +72,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	uint16_t msg_buf_size = dev_config->msg_buf_size;
 	uint8_t *buf;
 	uint16_t buf_len;
+	uint8_t *dma_buf;
 
 	(void)i2c_nrfx_twim_exclusive_access_acquire(dev, K_FOREVER);
 
@@ -134,7 +137,23 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			buf = msg_buf;
 			buf_len = msg_buf_used;
 		}
-		ret = i2c_nrfx_twim_msg_transfer(dev, msgs[i].flags, buf, buf_len, addr);
+
+		if (msgs[i].flags & I2C_MSG_READ) {
+			ret = dmm_buffer_in_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		} else {
+			ret = dmm_buffer_out_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Failed to prepare buffer: %d", ret);
+			return ret;
+		}
+
+		dev_data->buf_ptr = buf;
+
+		ret = i2c_nrfx_twim_msg_transfer(dev, msgs[i].flags, dma_buf, buf_len, addr);
 		if (ret < 0) {
 			break;
 		}
@@ -196,6 +215,16 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	const struct i2c_nrfx_twim_common_config *config = dev->config;
+
+	if (p_event->xfer_desc.type == NRFX_TWIM_XFER_TX) {
+		dmm_buffer_out_release(config->mem_reg,
+			(void **)&p_event->xfer_desc.p_primary_buf);
+	} else {
+		dmm_buffer_in_release(config->mem_reg, dev_data->buf_ptr,
+			p_event->xfer_desc.primary_length,
+			p_event->xfer_desc.p_primary_buf);
+	}
 
 	switch (p_event->type) {
 	case NRFX_TWIM_EVT_DONE:
@@ -277,6 +306,7 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 		IF_ENABLED(USES_MSG_BUF(inst),						      \
 			(.msg_buf = twim_##inst##_msg_buf,))				      \
 		.max_transfer_size = MAX_TRANSFER_SIZE(inst),				      \
+		.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),				      \
 	};										      \
 	PM_DEVICE_DT_INST_DEFINE(inst, twim_nrfx_pm_action, I2C_PM_ISR_SAFE(inst));	      \
 	I2C_DEVICE_DT_INST_DEINIT_DEFINE(inst, i2c_nrfx_twim_init, i2c_nrfx_twim_deinit,      \

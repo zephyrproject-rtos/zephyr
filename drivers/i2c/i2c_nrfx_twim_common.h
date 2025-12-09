@@ -75,6 +75,7 @@ struct i2c_nrfx_twim_common_config {
 	uint8_t *msg_buf;
 	uint16_t max_transfer_size;
 	nrfx_twim_t *twim;
+	void *mem_reg;
 };
 
 int i2c_nrfx_twim_common_init(const struct device *dev);
