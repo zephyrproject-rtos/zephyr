@@ -347,6 +347,12 @@ static int st7796s_set_orientation(const struct device *dev,
 	return 0;
 }
 
+static int st7796s_set_pixel_format(const struct device *dev,
+				    const enum display_pixel_format pixel_format)
+{
+	return 0;
+}
+
 static int st7796s_init(const struct device *dev)
 {
 	const struct st7796s_config *config = dev->config;
@@ -407,8 +413,8 @@ static DEVICE_API(display, st7796s_api) = {
 	.write = st7796s_write,
 	.get_capabilities = st7796s_get_capabilities,
 	.set_orientation = st7796s_set_orientation,
+	.set_pixel_format = st7796s_set_pixel_format,
 };
-
 
 #define ST7796S_INIT(n)								\
 	static const struct st7796s_config st7796s_config_##n = {		\
