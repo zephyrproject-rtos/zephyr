@@ -1,0 +1,15 @@
+/*
+ * Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <microchip/sam/sam9/sam9x7/sam9x75.dtsi>
+
+/ {
+	ddram: ddram@20000000 {
+		compatible = "ddram";
+		reg = <0x20000000 DT_SIZE_M(256)>;
+	};
+};
