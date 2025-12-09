@@ -1,6 +1,11 @@
 common:
   integration_platforms:
     - native_sim
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+    - qemu_cortex_m3
 
 tests:
   debug.assert_custom_header:
