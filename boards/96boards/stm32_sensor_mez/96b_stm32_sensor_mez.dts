@@ -80,6 +80,7 @@
 	mul-n = <192>;
 	div-r = <3>;
 	div-q = <4>;
+	post-div-q = <1>;
 	clocks = <&clk_hse>;
 	status = "okay"; /* 48MHz on PLLI2SQ */
 };
