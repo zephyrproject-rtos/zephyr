@@ -28,31 +28,31 @@ typedef void (*irq_config_func_t)(void);
 
 BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
- /* Configuration validation
-  *BUILD_ASSERT(!(IS_ENABLED(CONFIG_SDIO_STACK) && IS_ENABLED(CONFIG_SDMMC_STACK)),
-  *	"Both SDIO_STACK and SDMMC_STACK cannot be enabled simultaneously");
-  *
-  *BUILD_ASSERT((IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)),
-  *	"Either SDIO_STACK or SDMMC_STACK must be enabled");
-  */
+/* Configuration validation
+ *BUILD_ASSERT(!(IS_ENABLED(CONFIG_SDIO_STACK) && IS_ENABLED(CONFIG_SDMMC_STACK)),
+ *	"Both SDIO_STACK and SDMMC_STACK cannot be enabled simultaneously");
+ *
+ *BUILD_ASSERT((IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)),
+ *	"Either SDIO_STACK or SDMMC_STACK must be enabled");
+ */
 
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
 struct sdhc_stm32_config {
-	bool hw_flow_control;                  /* flag for enabling hardware flow control */
-	bool support_1_8_v;                    /* flag indicating support for 1.8V signaling */
-	unsigned int max_freq;                 /* Max bus frequency in Hz */
-	unsigned int min_freq;                 /* Min bus frequency in Hz */
-	uint8_t bus_width;                     /* Width of the SDIO/SDMMC bus */
-	uint16_t clk_div;                      /* Clock divider value to configure SDIO/SDMMC clock speed */
-	uint32_t power_delay_ms;               /* power delay prop for the host in milliseconds */
-	uint32_t reg_addr;                     /* Base address of the SDIO/SDMMC peripheral register block */
-	SDMMC_HandleTypeDef *hsd;              /* Pointer to SDMMC handle */
+	bool hw_flow_control;     /* flag for enabling hardware flow control */
+	bool support_1_8_v;       /* flag indicating support for 1.8V signaling */
+	unsigned int max_freq;    /* Max bus frequency in Hz */
+	unsigned int min_freq;    /* Min bus frequency in Hz */
+	uint8_t bus_width;        /* Width of the SDIO/SDMMC bus */
+	uint16_t clk_div;         /* Clock divider value to configure SDIO/SDMMC clock speed */
+	uint32_t power_delay_ms;  /* power delay prop for the host in milliseconds */
+	uint32_t reg_addr;        /* Base address of the SDIO/SDMMC peripheral register block */
+	SDMMC_HandleTypeDef *hsd; /* Pointer to SDMMC handle */
 	const struct stm32_pclken *pclken;     /* Pointer to peripheral clock configuration */
 	const struct pinctrl_dev_config *pcfg; /* Pointer to pin control configuration */
-	struct gpio_dt_spec sdhi_on_gpio;      /* Power pin to control the regulators used by card.*/
-	struct gpio_dt_spec cd_gpio;           /* Card detect GPIO pin */
-	irq_config_func_t irq_config_func;     /* IRQ config function */
+	struct gpio_dt_spec sdhi_on_gpio;  /* Power pin to control the regulators used by card.*/
+	struct gpio_dt_spec cd_gpio;       /* Card detect GPIO pin */
+	irq_config_func_t irq_config_func; /* IRQ config function */
 };
 
 struct sdhc_stm32_data {
@@ -135,11 +135,13 @@ static void sdhc_stm32_log_sdio_err_type(uint32_t error_code)
 
 static void sdhc_stm32_log_sdmmc_err_type(uint32_t error_code)
 {
-	if (error_code & (SDMMC_ERROR_TIMEOUT | SDMMC_ERROR_CMD_RSP_TIMEOUT | SDMMC_ERROR_DATA_TIMEOUT)) {
+	if (error_code &
+	    (SDMMC_ERROR_TIMEOUT | SDMMC_ERROR_CMD_RSP_TIMEOUT | SDMMC_ERROR_DATA_TIMEOUT)) {
 		LOG_ERR("SDHC Timeout occurred (command or data response)");
 	} else if (error_code & SDMMC_ERROR_BUSY) {
 		LOG_ERR("SDHC interface is busy.");
-	} else if (error_code & (SDMMC_ERROR_CMD_CRC_FAIL | SDMMC_ERROR_DATA_CRC_FAIL | SDMMC_ERROR_COM_CRC_FAILED)) {
+	} else if (error_code & (SDMMC_ERROR_CMD_CRC_FAIL | SDMMC_ERROR_DATA_CRC_FAIL |
+				 SDMMC_ERROR_COM_CRC_FAILED)) {
 		LOG_ERR("CRC failure detected (command, data, or communication)");
 	} else if (error_code & SDMMC_ERROR_TX_UNDERRUN) {
 		LOG_ERR("Transmit FIFO underrun during SD/MMC write");
@@ -147,13 +149,16 @@ static void sdhc_stm32_log_sdmmc_err_type(uint32_t error_code)
 		LOG_ERR("Receive FIFO overrun during SD/MMC read");
 	} else if (error_code & (SDMMC_ERROR_ADDR_MISALIGNED | SDMMC_ERROR_ADDR_OUT_OF_RANGE)) {
 		LOG_ERR("Addressing error: misaligned or out-of-range access");
-	} else if (error_code & (SDMMC_ERROR_BLOCK_LEN_ERR | SDMMC_ERROR_ERASE_SEQ_ERR | SDMMC_ERROR_BAD_ERASE_PARAM | SDMMC_ERROR_WP_ERASE_SKIP)) {
+	} else if (error_code & (SDMMC_ERROR_BLOCK_LEN_ERR | SDMMC_ERROR_ERASE_SEQ_ERR |
+				 SDMMC_ERROR_BAD_ERASE_PARAM | SDMMC_ERROR_WP_ERASE_SKIP)) {
 		LOG_ERR("Block or erase sequence error");
-	} else if (error_code & (SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED | SDMMC_ERROR_ILLEGAL_CMD)) {
+	} else if (error_code & (SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED |
+				 SDMMC_ERROR_ILLEGAL_CMD)) {
 		LOG_ERR("Access violation: write-protect, lock/unlock, or illegal command");
 	} else if (error_code & SDMMC_ERROR_CID_CSD_OVERWRITE) {
 		LOG_ERR("CID/CSD register overwrite attempted");
-	} else if (error_code & (SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_ERASE_RESET | SDMMC_ERROR_AKE_SEQ_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE)) {
+	} else if (error_code & (SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_ERASE_RESET |
+				 SDMMC_ERROR_AKE_SEQ_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE)) {
 		LOG_ERR("General SDHC error or invalid operation");
 	} else if (error_code & SDMMC_ERROR_INVALID_PARAMETER) {
 		LOG_ERR("Invalid parameter passed to SD/MMC operation");
@@ -211,10 +216,11 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 	SDMMC_HandleTypeDef *hsd = config->hsd;
 
 	data->host_io.bus_width = config->bus_width;
-	hsd->Instance = (SDMMC_TypeDef *) config->reg_addr;
+	hsd->Instance = (SDMMC_TypeDef *)config->reg_addr;
 
 	if (SDMMC_LL_DeInit(hsd) != SDMMC_OK) {
-		LOG_ERR("Failed to de-initialize the %s device", IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
+		LOG_ERR("Failed to de-initialize the %s device",
+			IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
 		return -EIO;
 	}
 
@@ -272,7 +278,7 @@ static int sdhc_stm32_activate(const struct device *dev)
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		if (clock_control_configure(clk,
-					    (clock_control_subsys_t)(uintptr_t) &config->pclken[1],
+					    (clock_control_subsys_t)(uintptr_t)&config->pclken[1],
 					    NULL) != 0) {
 			LOG_ERR("Failed to enable SDHC domain clock");
 			return -EIO;
@@ -304,10 +310,7 @@ static int sdhc_stm32_rw_direct(const struct device *dev, struct sdhc_command *c
 	uint32_t reg_addr = (cmd->arg >> SDIO_CMD_ARG_REG_ADDR_SHIFT) & SDIO_CMD_ARG_REG_ADDR_MASK;
 
 	SDIO_LL_DirectCmd_TypeDef arg = {
-		.Reg_Addr = reg_addr,
-		.ReadAfterWrite = raw_flag,
-		.IOFunctionNbr = func
-	};
+		.Reg_Addr = reg_addr, .ReadAfterWrite = raw_flag, .IOFunctionNbr = func};
 
 	if (direction == SDIO_IO_WRITE) {
 		uint8_t data_in = cmd->arg & SDIO_DIRECT_CMD_DATA_MASK;
@@ -321,7 +324,7 @@ static int sdhc_stm32_rw_direct(const struct device *dev, struct sdhc_command *c
 }
 
 static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command *cmd,
-				   struct sdhc_data *data)
+				  struct sdhc_data *data)
 {
 	SDMMC_StatusTypeDef res;
 	struct sdhc_stm32_data *dev_data = dev->data;
@@ -337,17 +340,17 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		return -EINVAL;
 	}
 
-	SDIO_LL_ExtendedCmd_TypeDef arg = {
-		.Reg_Addr = reg_addr,
-		.IOFunctionNbr = func,
-		.Block_Mode = is_block_mode ? SDMMC_SDIO_MODE_BLOCK : SDMMC_SDIO_MODE_BYTE,
-		.OpCode = increment
-	};	config->hsd->block_size = is_block_mode ? data->block_size : 0;
+	SDIO_LL_ExtendedCmd_TypeDef arg = {.Reg_Addr = reg_addr,
+					   .IOFunctionNbr = func,
+					   .Block_Mode = is_block_mode ? SDMMC_SDIO_MODE_BLOCK
+								       : SDMMC_SDIO_MODE_BYTE,
+					   .OpCode = increment};
+	config->hsd->block_size = is_block_mode ? data->block_size : 0;
 	dev_data->total_transfer_bytes = data->blocks * data->block_size;
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
 		dev_data->sdio_dma_buf = k_aligned_alloc(CONFIG_SDHC_BUFFER_ALIGNMENT,
-							data->blocks * data->block_size);
+							 data->blocks * data->block_size);
 		if (dev_data->sdio_dma_buf == NULL) {
 			LOG_ERR("DMA buffer allocation failed");
 			return -ENOMEM;
@@ -357,27 +360,25 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	if (direction == SDIO_IO_WRITE) {
 		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
 			res = SDIO_LL_WriteExtended(config->hsd, &arg, data->data,
-							dev_data->total_transfer_bytes,
-							data->timeout_ms);
+						    dev_data->total_transfer_bytes,
+						    data->timeout_ms);
 		} else {
-			memcpy(dev_data->sdio_dma_buf, data->data,
-				dev_data->total_transfer_bytes);
+			memcpy(dev_data->sdio_dma_buf, data->data, dev_data->total_transfer_bytes);
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
-							dev_data->total_transfer_bytes);
-			res = SDIO_LL_WriteExtended_DMA(config->hsd, &arg,
-							dev_data->sdio_dma_buf,
+						   dev_data->total_transfer_bytes);
+			res = SDIO_LL_WriteExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
 							dev_data->total_transfer_bytes);
 		}
 	} else {
 		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
 			res = SDIO_LL_ReadExtended(config->hsd, &arg, data->data,
-							dev_data->total_transfer_bytes,
-							data->timeout_ms);
+						   dev_data->total_transfer_bytes,
+						   data->timeout_ms);
 		} else {
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
-						dev_data->total_transfer_bytes);
+						   dev_data->total_transfer_bytes);
 			res = SDIO_LL_ReadExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
-							dev_data->total_transfer_bytes);
+						       dev_data->total_transfer_bytes);
 		}
 	}
 
@@ -390,7 +391,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 
 		if (direction == SDIO_IO_READ) {
 			sys_cache_data_invd_range(dev_data->sdio_dma_buf,
-						dev_data->total_transfer_bytes);
+						  dev_data->total_transfer_bytes);
 			memcpy(data->data, dev_data->sdio_dma_buf, data->block_size * data->blocks);
 		}
 
@@ -431,20 +432,20 @@ static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *d
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
-		sys_cache_data_flush_range(data->data,
-					   data->blocks * data->block_size);
+		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 
 		ret = SDMMC_WriteBlocks_DMA(config->hsd, data->data, data->block_addr,
 					    data->blocks);
 	} else {
 		ret = SDMMC_WriteBlocks(config->hsd, data->data, data->block_addr, data->blocks,
-					 data->timeout_ms);
+					data->timeout_ms);
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
@@ -472,7 +473,8 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
@@ -480,11 +482,10 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 
-		ret = SDMMC_ReadBlocks_DMA(config->hsd, data->data, data->block_addr,
-					    data->blocks);
+		ret = SDMMC_ReadBlocks_DMA(config->hsd, data->data, data->block_addr, data->blocks);
 	} else {
 		ret = SDMMC_ReadBlocks(config->hsd, data->data, data->block_addr, data->blocks,
-					data->timeout_ms);
+				       data->timeout_ms);
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
@@ -503,12 +504,14 @@ static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *da
 	int res;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	res = SDMMC_Erase(config->hsd, data->block_addr, ((data->block_size * data->blocks) + data->block_addr));
+	res = SDMMC_Erase(config->hsd, data->block_addr,
+			  ((data->block_size * data->blocks) + data->block_addr));
 	if (res != SDMMC_OK) {
 		return res;
 	}
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
@@ -516,7 +519,8 @@ static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *da
 	return res == SDMMC_OK ? 0 : -EIO;
 }
 
-static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_config *config,
+						     struct sdhc_command *cmd)
 {
 	int res = 0;
 	uint8_t DeviceSizeMul, RdBlockLen;
@@ -524,24 +528,32 @@ static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_con
 
 	res = SDMMC_CmdSendCSD(config->hsd->Instance, cmd->arg);
 	if (res == 0U) {
-		config->hsd->CSD[0U] = cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
-		config->hsd->CSD[1U] = cmd->response[1] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2);
-		config->hsd->CSD[2U] = cmd->response[2] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP3);
-		config->hsd->CSD[3U] = cmd->response[3] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP4);
-		config->hsd->SdCard.Class = (SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2) >> 20U);
+		config->hsd->CSD[0U] = cmd->response[0] =
+			SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
+		config->hsd->CSD[1U] = cmd->response[1] =
+			SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2);
+		config->hsd->CSD[2U] = cmd->response[2] =
+			SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP3);
+		config->hsd->CSD[3U] = cmd->response[3] =
+			SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP4);
+		config->hsd->SdCard.Class =
+			(SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2) >> 20U);
 	}
 
 	if (config->hsd->SdCard.CardType == CARD_SDSC) {
-		DeviceSize = (((config->hsd->CSD[1] & 0x000003FFU) << 2U) | ((config->hsd->CSD[2] & 0xC0000000U) >> 30U));
-		config->hsd->SdCard.BlockNbr  = (DeviceSize + 1U);
+		DeviceSize = (((config->hsd->CSD[1] & 0x000003FFU) << 2U) |
+			      ((config->hsd->CSD[2] & 0xC0000000U) >> 30U));
+		config->hsd->SdCard.BlockNbr = (DeviceSize + 1U);
 		DeviceSizeMul = (uint8_t)((config->hsd->CSD[2] & 0x00038000U) >> 15U);
 		config->hsd->SdCard.BlockNbr *= (1UL << ((DeviceSizeMul & 0x07U) + 2U));
 		RdBlockLen = (uint8_t)((config->hsd->CSD[1] & 0x000F0000U) >> 16U);
 		config->hsd->SdCard.BlockSize = (1UL << (RdBlockLen & 0x0FU));
-		config->hsd->SdCard.LogBlockNbr = (config->hsd->SdCard.BlockNbr) * ((config->hsd->SdCard.BlockSize) / BLOCKSIZE);
+		config->hsd->SdCard.LogBlockNbr = (config->hsd->SdCard.BlockNbr) *
+						  ((config->hsd->SdCard.BlockSize) / BLOCKSIZE);
 		config->hsd->SdCard.LogBlockSize = BLOCKSIZE;
 	} else {
-		DeviceSize = (((config->hsd->CSD[1] & 0x0000003FU) << 16U) | ((config->hsd->CSD[2] & 0xFFFF0000U) >> 16U));
+		DeviceSize = (((config->hsd->CSD[1] & 0x0000003FU) << 16U) |
+			      ((config->hsd->CSD[2] & 0xFFFF0000U) >> 16U));
 		config->hsd->SdCard.BlockNbr = ((DeviceSize + 1U) * 1024U);
 		config->hsd->SdCard.LogBlockNbr = config->hsd->SdCard.BlockNbr;
 		config->hsd->SdCard.BlockSize = BLOCKSIZE;
@@ -551,13 +563,14 @@ static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_con
 	return res;
 }
 
-static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config,
+					struct sdhc_command *cmd)
 {
 	uint32_t res;
 
 	res = SDMMC_CmdAppOperCommand(config->hsd->Instance, cmd->arg);
 	if (res == 0U) {
-		cmd->response[0] =  SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
+		cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
 		if ((cmd->response[0] & SDMMC_HIGH_CAPACITY) == SDMMC_HIGH_CAPACITY) {
 			config->hsd->SdCard.CardType = CARD_SDHC_SDXC;
 		}
@@ -566,7 +579,8 @@ static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config, 
 	return res;
 }
 
-static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config,
+				    struct sdhc_command *cmd)
 {
 	uint32_t res;
 
@@ -581,7 +595,8 @@ static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config, stru
 	return res;
 }
 
-static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card_relative_address, uint32_t *card_status_resp)
+static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card_relative_address,
+					 uint32_t *card_status_resp)
 {
 	uint32_t res;
 
@@ -615,7 +630,8 @@ static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config)
 	return true;
 }
 
-static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *config,
+					      struct sdhc_command *cmd)
 {
 	uint32_t sdmmc_res = SDMMC_CmdSetRelAdd(config->hsd->Instance, (uint16_t *)&cmd->response);
 
@@ -627,7 +643,7 @@ static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *co
 	 * Zephyr subsys and SDMMC_CmdSetRelAdd
 	 */
 	cmd->response[0] = cmd->response[0] << 16;
-	config->hsd->SdCard.RelCardAdd  = cmd->response[0];
+	config->hsd->SdCard.RelCardAdd = cmd->response[0];
 
 	return sdmmc_res;
 }
@@ -638,7 +654,8 @@ static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd)
 		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) || (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK));
 }
 
-static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config,
+				       struct sdhc_command *cmd)
 {
 	uint32_t sdmmc_res = SDMMC_CmdSelDesel(config->hsd->Instance, cmd->arg);
 
@@ -648,8 +665,7 @@ static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config, s
 
 	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		/* Clear unused flags to avoid SDIO card identification issues */
-		cmd->response[0U] &=
-			~(SD_R1_ERASE_SKIP | SD_R1_CSD_OVERWRITE | SD_R1_ERASE_PARAM);
+		cmd->response[0U] &= ~(SD_R1_ERASE_SKIP | SD_R1_CSD_OVERWRITE | SD_R1_ERASE_PARAM);
 	}
 
 	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
@@ -705,7 +721,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SEND_CSD:
-		res  = sdhc_stm32_send_csd_and_save_card_configs(config, cmd);
+		res = sdhc_stm32_send_csd_and_save_card_configs(config, cmd);
 		break;
 
 	case SD_ERASE_BLOCK_OPERATION:
@@ -719,7 +735,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	case SD_APP_CMD:
 		sdmmc_res = SDMMC_CmdAppCommand(config->hsd->Instance, cmd->arg);
 		if (sdmmc_res == 0U) {
-			cmd->response[0] =  SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
+			cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
 		}
 		break;
 
@@ -728,7 +744,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_ALL_SEND_CID:
-		sdmmc_res  = sdhc_stm32_send_cid(config, cmd);
+		sdmmc_res = sdhc_stm32_send_cid(config, cmd);
 		break;
 
 	case SD_SELECT_CARD:
@@ -741,7 +757,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 
 	case SDIO_SEND_OP_COND:
 		sdmmc_res = SDMMC_CmdSendOperationcondition(config->hsd->Instance, cmd->arg,
-								(uint32_t *)&cmd->response);
+							    (uint32_t *)&cmd->response);
 		break;
 
 	case SD_WRITE_SINGLE_BLOCK:
@@ -792,9 +808,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		sdhc_stm32_log_err_type(config->hsd);
 	}
 
-	if (IS_ENABLED(CONFIG_SDMMC_STACK) &&
-	   !IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) &&
-	   sdhc_stm32_is_read_write_opcode(cmd)) {
+	if (IS_ENABLED(CONFIG_SDMMC_STACK) && !IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) &&
+	    sdhc_stm32_is_read_write_opcode(cmd)) {
 		goto end;
 	}
 
@@ -821,8 +836,8 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	if ((ios->clock != 0) && (host_io->clock != ios->clock)) {
 		if ((ios->clock > props->f_max) || (ios->clock < props->f_min)) {
-			LOG_ERR("Invalid clock frequency, domain (%u, %u)",
-				props->f_min, props->f_max);
+			LOG_ERR("Invalid clock frequency, domain (%u, %u)", props->f_min,
+				props->f_max);
 			res = -EINVAL;
 			goto out;
 		}
@@ -1027,8 +1042,8 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	const struct sdhc_stm32_config *config = dev->config;
 
 	if (__SDMMC_GET_FLAG(config->hsd->Instance,
-				SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
-				SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
+			     SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+				     SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
 		k_sem_give(&data->device_sync_sem);
 	}
 
@@ -1085,13 +1100,12 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	ret = sdhc_stm32_sd_init(dev);
 	if (ret != 0) {
-		LOG_ERR("%s init failed",
-			IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
+		LOG_ERR("%s init failed", IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
 		sdhc_stm32_log_err_type(config->hsd);
 		return ret;
 	}
 
-	LOG_INF("%s Init Passed Successfully", IS_ENABLED(CONFIG_SDIO_STACK) ?  "SDIO" : "SDMMC");
+	LOG_INF("%s Init Passed Successfully", IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
 
 	sdhc_stm32_init_props(dev);
 
@@ -1140,48 +1154,48 @@ static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action 
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define STM32_SDHC_IRQ_HANDLER(index)	\
-	static void sdhc_stm32_irq_config_func_##index(void)					\
-	{											\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),				\
-			    DT_INST_IRQ_BY_NAME(index, event, priority), sdhc_stm32_event_isr,	\
-			    DEVICE_DT_INST_GET(index), 0);					\
-		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));				\
+#define STM32_SDHC_IRQ_HANDLER(index)                                                              \
+	static void sdhc_stm32_irq_config_func_##index(void)                                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),                                \
+			    DT_INST_IRQ_BY_NAME(index, event, priority), sdhc_stm32_event_isr,     \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));                                \
 	}
 
-#define SDHC_STM32_INIT(index)									\
-												\
-	STM32_SDHC_IRQ_HANDLER(index)								\
-												\
-	static SDMMC_HandleTypeDef hsd_##index;						\
-												\
-	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);	\
-												\
-	PINCTRL_DT_INST_DEFINE(index);								\
-												\
-	static const struct sdhc_stm32_config sdhc_stm32_cfg_##index = {			\
-		.hsd = &hsd_##index,								\
-		.reg_addr = DT_INST_REG_ADDR(index),						\
-		.irq_config_func = sdhc_stm32_irq_config_func_##index,				\
-		.pclken = pclken_##index,							\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
-		.hw_flow_control = DT_INST_PROP(index, hw_flow_control),			\
-		.clk_div = DT_INST_PROP(index, clk_div),					\
-		.bus_width = DT_INST_PROP(index, bus_width),					\
-		.power_delay_ms = DT_INST_PROP(index, power_delay_ms),				\
-		.support_1_8_v = DT_INST_PROP(index, support_1_8_v),				\
-		.sdhi_on_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(index), sdhi_on_gpios, {0}),	\
-		.cd_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(index), cd_gpios, {0}),		\
-		.min_freq = DT_INST_PROP(index, min_bus_freq),					\
-		.max_freq = DT_INST_PROP(index, max_bus_freq),					\
-	};											\
-												\
-	static struct sdhc_stm32_data sdhc_stm32_data_##index;					\
-												\
-	PM_DEVICE_DT_INST_DEFINE(index, sdhc_stm32_pm_action);					\
-												\
-	DEVICE_DT_INST_DEFINE(index, &sdhc_stm32_init, PM_DEVICE_DT_INST_GET(index),		\
-			      &sdhc_stm32_data_##index, &sdhc_stm32_cfg_##index, POST_KERNEL,   \
+#define SDHC_STM32_INIT(index)                                                                     \
+                                                                                                   \
+	STM32_SDHC_IRQ_HANDLER(index)                                                              \
+                                                                                                   \
+	static SDMMC_HandleTypeDef hsd_##index;                                                    \
+                                                                                                   \
+	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	static const struct sdhc_stm32_config sdhc_stm32_cfg_##index = {                           \
+		.hsd = &hsd_##index,                                                               \
+		.reg_addr = DT_INST_REG_ADDR(index),                                               \
+		.irq_config_func = sdhc_stm32_irq_config_func_##index,                             \
+		.pclken = pclken_##index,                                                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+		.hw_flow_control = DT_INST_PROP(index, hw_flow_control),                           \
+		.clk_div = DT_INST_PROP(index, clk_div),                                           \
+		.bus_width = DT_INST_PROP(index, bus_width),                                       \
+		.power_delay_ms = DT_INST_PROP(index, power_delay_ms),                             \
+		.support_1_8_v = DT_INST_PROP(index, support_1_8_v),                               \
+		.sdhi_on_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(index), sdhi_on_gpios, {0}),       \
+		.cd_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(index), cd_gpios, {0}),                 \
+		.min_freq = DT_INST_PROP(index, min_bus_freq),                                     \
+		.max_freq = DT_INST_PROP(index, max_bus_freq),                                     \
+	};                                                                                         \
+                                                                                                   \
+	static struct sdhc_stm32_data sdhc_stm32_data_##index;                                     \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, sdhc_stm32_pm_action);                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &sdhc_stm32_init, PM_DEVICE_DT_INST_GET(index),               \
+			      &sdhc_stm32_data_##index, &sdhc_stm32_cfg_##index, POST_KERNEL,      \
 			      CONFIG_SDHC_INIT_PRIORITY, &sdhc_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_STM32_INIT)
