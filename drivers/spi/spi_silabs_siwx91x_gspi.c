@@ -24,7 +24,6 @@
 LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
-#define GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK   110000000
 #define GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE 4096
 #define SPI_HIGH_BURST_FREQ_THRESHOLD_HZ      10000000
 
@@ -94,7 +93,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 {
 	__maybe_unused struct gspi_siwx91x_data *data = dev->data;
 	const struct gspi_siwx91x_config *cfg = dev->config;
-	uint32_t clk_div_factor;
 	uint32_t clock_rate;
 	int ret;
 	__maybe_unused int channel_filter;
@@ -124,18 +122,11 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	}
 
 	/* Configure clock divider based on the requested bit rate */
-	if (spi_cfg->frequency > GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK) {
-		clk_div_factor = 1;
-	} else {
-		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_rate);
-		if (ret) {
-			return ret;
-		}
-		clk_div_factor = gspi_siwx91x_get_divider(clock_rate, spi_cfg->frequency);
+	ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_rate);
+	if (ret) {
+		return ret;
 	}
-
-	/* Set the clock divider factor */
-	cfg->reg->GSPI_CLK_DIV = clk_div_factor;
+	cfg->reg->GSPI_CLK_DIV = gspi_siwx91x_get_divider(clock_rate, spi_cfg->frequency);
 
 	/* Configure SPI clock mode */
 	if ((spi_cfg->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) == 0) {
