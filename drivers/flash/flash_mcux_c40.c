@@ -334,7 +334,7 @@ static DEVICE_API(flash, mcux_c40_api) = {
 		DT_NODE_HAS_STATUS(DT_NODELABEL(lbl), okay),					\
 		(COND_CODE_1(									\
 			DT_SAME_NODE(								\
-				DT_PARENT(DT_NODELABEL(lbl)),					\
+				DT_GPARENT(DT_NODELABEL(lbl)),					\
 				C40_FLASH_NODE(inst)),						\
 			({ .off  = (uint32_t)FIXED_PARTITION_OFFSET(lbl),			\
 			    .len  = (uint32_t)FIXED_PARTITION_SIZE(lbl),			\
