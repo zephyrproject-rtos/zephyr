@@ -3147,6 +3147,7 @@ Kernel:
   collaborators:
     - lyakh
     - pillo79
+    - laurenmurphyx64
   files:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
