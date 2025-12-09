@@ -75,6 +75,7 @@ void __weak sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const st
 						     gpio_pin_t pins) {}
 void __weak sys_trace_gpio_fire_callback_user(const struct device *port,
 					      struct gpio_callback *callback) {}
+void __weak sys_trace_set_state_user(bool state) {}
 
 void __weak sys_trace_rtio_submit_enter_user(const struct rtio *r, uint32_t wait_count)
 {
@@ -462,4 +463,9 @@ void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iod
 void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
 {
 	sys_trace_rtio_chain_next_exit_user(r, iodev_sqe);
+}
+
+void _sys_trace_set_state(bool state)
+{
+	sys_trace_set_state_user(state);
 }
