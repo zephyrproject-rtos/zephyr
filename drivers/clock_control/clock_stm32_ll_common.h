@@ -20,6 +20,7 @@
 #define pllp(v) CONCAT(LL_RCC_PLLP_DIV_, v)
 #define pllq(v) CONCAT(LL_RCC_PLLQ_DIV_, v)
 #define pllr(v) CONCAT(LL_RCC_PLLR_DIV_, v)
+#define plldivr(v) CONCAT(LL_RCC_PLLDIVR_DIV_, v)
 
 #if defined(RCC_PLLI2SCFGR_PLLI2SM)
 /* Some stm32F4 devices have a dedicated PLL I2S with M divider */
@@ -28,8 +29,11 @@
 /* Some stm32F4 devices (typ. stm32F401) have a dedicated PLL I2S with PLL M divider */
 #define plli2sm(v) CONCAT(LL_RCC_PLLM_DIV_, v)
 #endif /* RCC_PLLI2SCFGR_PLLI2SM */
+#define plli2sp(v) CONCAT(LL_RCC_PLLI2SP_DIV_, v)
 #define plli2sq(v) CONCAT(LL_RCC_PLLI2SQ_DIV_, v)
+#define plli2sdivq(v) CONCAT(LL_RCC_PLLI2SDIVQ_DIV_, v)
 #define plli2sr(v) CONCAT(LL_RCC_PLLI2SR_DIV_, v)
+#define plli2sdivr(v) CONCAT(LL_RCC_PLLI2SDIVR_DIV_, v)
 
 #define pllsaim(v) CONCAT(LL_RCC_PLLM_DIV_, v)
 #define pllsaip(v) CONCAT(LL_RCC_PLLSAIP_DIV_, v)
@@ -65,6 +69,7 @@ uint32_t get_pllsrc_frequency(void);
 void config_pll2(void);
 #endif
 #if defined(STM32_PLLI2S_ENABLED)
+uint32_t get_plli2ssrc_frequency(void);
 void config_plli2s(void);
 #endif
 #if defined(STM32_PLLSAI_ENABLED)
