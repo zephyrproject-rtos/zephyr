@@ -8,6 +8,10 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &c40fc;
+	};
+
 	soc {
 		itcm: memory@0 {
 			compatible = "zephyr,memory-region", "mmio-sram";
@@ -90,4 +94,16 @@
 
 &flexcan_5 {
 	number-of-mb = <32>;
+};
+
+&c40fc {
+	status = "okay";
+	ranges = <0x0 0x00400000 DT_SIZE_K(3920)>;
+
+	flash0: flash@0 {
+		compatible = "nxp,c40-flash";
+		reg = <0x0 DT_SIZE_K(3920)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <8>;
+	};
 };
