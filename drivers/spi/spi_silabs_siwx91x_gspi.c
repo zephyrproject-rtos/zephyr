@@ -151,11 +151,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 		}
 	}
 
-	if (clk_div_factor < 1) {
-		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_EN = 1;
-		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_SYNC = 1;
-	}
-
 	/* Set the clock divider factor */
 	cfg->reg->GSPI_CLK_DIV = clk_div_factor;
 
