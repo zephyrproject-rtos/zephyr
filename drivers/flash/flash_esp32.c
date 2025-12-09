@@ -760,7 +760,7 @@ static DEVICE_API(flash, flash_esp32_driver_api) = {
 	.read = flash_esp32_read_async,
 	.write = flash_esp32_write_async,
 	.erase = flash_esp32_erase_async,
-#else
+#elif CONFIG_ESP_FLASH_HOST
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,
