@@ -207,7 +207,7 @@
 		/* 896K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
-			reg = <0x00018000 0x000E0000>;
+			reg = <0x00018000 0x000e0000>;
 		};
 
 		/*
@@ -235,13 +235,13 @@
 		/* 896K */
 		slot1_partition: partition@0 {
 			label = "image-1";
-			reg = <0x00000000 0x000E0000>;
+			reg = <0x00000000 0x000e0000>;
 		};
 
 		/* 128K */
-		scratch_partition: partition@E0000 {
+		scratch_partition: partition@e0000 {
 			label = "image-scratch";
-			reg = <0x000E0000 0x00020000>;
+			reg = <0x000e0000 0x00020000>;
 		};
 
 		/* 7MB */

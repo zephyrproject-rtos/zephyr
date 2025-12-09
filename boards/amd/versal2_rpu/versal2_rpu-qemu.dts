@@ -960,7 +960,7 @@
 				phandle = <0x10f>;
 			};
 
-			loader_write_cpu0_0x1@0xF1110880 {
+			loader_write_cpu0_0x1@0xf1110880 {
 				compatible = "loader";
 				addr = <0xf1110880>;
 				data = <0x01>;
@@ -972,7 +972,7 @@
 				phandle = <0x110>;
 			};
 
-			loader_write_cpu0_0x5@0xFD1A0050 {
+			loader_write_cpu0_0x5@0xfd1a0050 {
 				compatible = "loader";
 				addr = <0xfd1a0050>;
 				data = <0x05>;
@@ -984,7 +984,7 @@
 				phandle = <0x111>;
 			};
 
-			loader_write_cpu0_0xFF@0xF111010C {
+			loader_write_cpu0_0xFF@0xf111010c {
 				compatible = "loader";
 				addr = <0xf111010c>;
 				data = <0xff>;
@@ -1031,7 +1031,7 @@
 				phandle = <0x44>;
 			};
 
-			loader_write_cpu0_0x80C@0xF12B0100 {
+			loader_write_cpu0_0x80C@0xf12b0100 {
 				compatible = "loader";
 				addr = <0xf12b0100>;
 				data = <0x80c>;
@@ -1043,7 +1043,7 @@
 				phandle = <0x113>;
 			};
 
-			loader_write_cpu0_0x77@0xF1260320 {
+			loader_write_cpu0_0x77@0xf1260320 {
 				compatible = "loader";
 				addr = <0xf1260320>;
 				data = <0x77>;
@@ -2488,7 +2488,7 @@
 					phandle = <0x165>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC30440 {
+				loader_write_cpu0_0x1@0xedc30440 {
 					compatible = "loader";
 					addr = <0xedc30440>;
 					data = <0x01>;
@@ -2500,7 +2500,7 @@
 					phandle = <0x166>;
 				};
 
-				loader_write_cpu0_0x7F@0xEDC30444 {
+				loader_write_cpu0_0x7F@0xedc30444 {
 					compatible = "loader";
 					addr = <0xedc30444>;
 					data = <0x7f>;
@@ -2512,7 +2512,7 @@
 					phandle = <0x167>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC3044c {
+				loader_write_cpu0_0x1@0xedc3044c {
 					compatible = "loader";
 					addr = <0xedc3044c>;
 					data = <0x01>;
@@ -2524,7 +2524,7 @@
 					phandle = <0x168>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC30450 {
+				loader_write_cpu0_0x1@0xedc30450 {
 					compatible = "loader";
 					addr = <0xedc30450>;
 					data = <0x01>;
@@ -2536,7 +2536,7 @@
 					phandle = <0x169>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC30460 {
+				loader_write_cpu0_0x1@0xedc30460 {
 					compatible = "loader";
 					addr = <0xedc30460>;
 					data = <0x01>;
@@ -2548,7 +2548,7 @@
 					phandle = <0x16a>;
 				};
 
-				loader_write_cpu0_0x7f@0xEDC30464 {
+				loader_write_cpu0_0x7f@0xedc30464 {
 					compatible = "loader";
 					addr = <0xedc30464>;
 					data = <0x7f>;
@@ -2560,7 +2560,7 @@
 					phandle = <0x16b>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC3046c {
+				loader_write_cpu0_0x1@0xedc3046c {
 					compatible = "loader";
 					addr = <0xedc3046c>;
 					data = <0x01>;
@@ -2572,7 +2572,7 @@
 					phandle = <0x16c>;
 				};
 
-				loader_write_cpu0_0x1@0xEDC30470 {
+				loader_write_cpu0_0x1@0xedc30470 {
 					compatible = "loader";
 					addr = <0xedc30470>;
 					data = <0x01>;
@@ -2584,7 +2584,7 @@
 					phandle = <0x16d>;
 				};
 
-				loader_write_cpu0_0x3@0xED0A0098 {
+				loader_write_cpu0_0x3@0xed0a0098 {
 					compatible = "loader";
 					addr = <0xed0a0098>;
 					data = <0x03>;
@@ -3289,7 +3289,7 @@ Cannot continue.\nTry installing libgcrypt.";
 				phandle = <0x91>;
 			};
 
-			pmc_sha1@0xF1800000 {
+			pmc_sha1@0xf1800000 {
 				doc-status = "complete";
 				compatible = "xlnx,asu_sha2";
 				reg = <0x00 0xf1800000 0x00 0x10000 0x00>;
@@ -3941,7 +3941,7 @@ Cannot continue.\nTry installing libgcrypt.";
 				xlnx,use-io-bus = <0x01>;
 				phandle = <0x1a4>;
 
-				asu_io_intc@0C {
+				asu_io_intc@0c {
 					#interrupt-cells = <0x01>;
 					compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 					interrupt-controller;
@@ -4268,7 +4268,7 @@ Cannot continue.\nTry installing libgcrypt.";
 			xlnx,use-io-bus = <0x01>;
 			phandle = <0x1b5>;
 
-			pmc_ppu0_intc@0C {
+			pmc_ppu0_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -4484,7 +4484,7 @@ Cannot continue.\nTry installing libgcrypt.";
 			xlnx,use-io-bus = <0x01>;
 			phandle = <0x1bf>;
 
-			pmc_ppu1_intc@0C {
+			pmc_ppu1_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -4730,7 +4730,7 @@ Cannot continue.\nTry installing libgcrypt.";
 			priority = <0xffffffff>;
 			phandle = <0x1cd>;
 
-			ddrmc0_intc@0C {
+			ddrmc0_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -5062,7 +5062,7 @@ Cannot continue.\nTry installing libgcrypt.";
 		phandle = <0x103>;
 	};
 
-	memory@0x50000000000ULL {
+	memory@0x50000000000ull {
 		compatible = "qemu:memory-region";
 		device_type = "memory";
 		container = <0x0d>;
@@ -5797,7 +5797,7 @@ Cannot continue.\nTry installing libgcrypt.";
 		phandle = <0xa2>;
 	};
 
-	ddr_2@0x800000000ULL {
+	ddr_2@0x800000000ull {
 		compatible = "qemu:memory-region-spec";
 		container = <0x103>;
 		qemu,ram = <0x01>;

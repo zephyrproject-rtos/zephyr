@@ -102,7 +102,7 @@
 
 		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400C4000 0x2000>;
+			reg = <0x400c4000 0x2000>;
 			interrupts = <33 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			uart-rx = <&wui_cr_sin1>;
@@ -111,7 +111,7 @@
 
 		uart2: serial@400c6000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400C6000 0x2000>;
+			reg = <0x400c6000 0x2000>;
 			interrupts = <32 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			uart-rx = <&wui_cr_sin2>;
@@ -377,7 +377,7 @@
 
 	soc-id {
 		chip-id = <0x07>;
-		revision-reg = <0x00007FFC 1>;
+		revision-reg = <0x00007ffc 1>;
 	};
 
 	booter-variant {
