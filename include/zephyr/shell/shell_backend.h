@@ -50,7 +50,7 @@ static inline int shell_backend_count_get(void)
  *
  * @param[in] backend_name Name of the backend as defined by the SHELL_DEFINE.
  *
- * @retval Pointer to the backend instance if found, NULL if backend is not found.
+ * @return Pointer to the backend instance if found, NULL if backend is not found.
  */
 const struct shell *shell_backend_get_by_name(const char *backend_name);
 

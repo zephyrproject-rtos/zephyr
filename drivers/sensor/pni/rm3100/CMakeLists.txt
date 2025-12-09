@@ -4,9 +4,9 @@
 
 zephyr_library()
 zephyr_library_sources(
-	rm3100.c
-	rm3100_decoder.c
+  rm3100.c
+  rm3100_decoder.c
 )
 zephyr_library_sources_ifdef(CONFIG_RM3100_STREAM
-	rm3100_stream.c
+  rm3100_stream.c
 )

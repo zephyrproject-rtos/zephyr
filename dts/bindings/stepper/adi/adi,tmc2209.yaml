@@ -25,13 +25,13 @@ properties:
   step-width-ns:
     default: 100
 
-  msx-gpios:
+  m0-gpios:
     type: phandle-array
-    description: |
-      An array of GPIO pins for configuring the microstep resolution of the driver.
-      The pins should be listed in the following order:
-      - MS1
-      - MS2
+    description: Microstep configuration pin MS1.
+
+  m1-gpios:
+    type: phandle-array
+    description: Microstep configuration pin MS2.
 
   dual-edge-step:
     type: boolean

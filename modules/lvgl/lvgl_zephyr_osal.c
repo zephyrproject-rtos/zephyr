@@ -42,10 +42,20 @@ lv_result_t lv_thread_delete(lv_thread_t *thread)
 {
 	int ret;
 
-	k_thread_abort(thread->tid);
+	if (thread == NULL || thread->tid == NULL) {
+		LOG_ERR("Invalid thread pointer");
+		return LV_RESULT_INVALID;
+	}
+
+	ret = k_thread_join(&thread->thread, K_MSEC(100));
+	if (ret != 0) {
+		LOG_WRN("Thread join failed or timed out: %d, aborting thread", ret);
+		k_thread_abort(thread->tid);
+	}
+
 	ret = k_thread_stack_free(thread->stack);
 	if (ret < 0) {
-		LOG_ERR("Failled to delete thread: %d", ret);
+		LOG_ERR("Failed to delete thread: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -153,7 +163,11 @@ void thread_entry(void *thread, void *cb, void *user_data)
 	lv_thread_entry entry_cb = (lv_thread_entry)cb;
 
 	entry_cb(user_data);
-	lv_thread_delete((lv_thread_t *)thread);
+}
+
+void lv_sleep_ms(uint32_t ms)
+{
+	k_msleep(ms);
 }
 
 #endif /* CONFIG_LV_Z_USE_OSAL */

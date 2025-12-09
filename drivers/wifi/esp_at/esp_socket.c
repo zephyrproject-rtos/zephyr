@@ -114,7 +114,7 @@ static struct net_pkt *esp_socket_prepare_pkt(struct esp_socket *sock,
 	struct net_pkt *pkt;
 	size_t to_copy;
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, AF_UNSPEC,
+	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, NET_AF_UNSPEC,
 					   0, RX_NET_PKT_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;

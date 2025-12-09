@@ -5,7 +5,6 @@
 
 menuconfig ZVFS
 	bool "Zephyr virtual filesystem (ZVFS) support [EXPERIMENTAL]"
-	select FDTABLE
 	select EXPERIMENTAL
 	help
 	  ZVFS is a central, Zephyr-native library that provides a common interoperable API for all
@@ -14,9 +13,28 @@ menuconfig ZVFS
 
 if ZVFS
 
+config ZVFS_FDTABLE
+	bool "ZVFS file descriptor table"
+	default y
+	help
+	  This file provides generic file descriptor table implementation, suitable
+	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
+	  aux operations).
+
+if ZVFS_FDTABLE
+
+config ZVFS_DEFAULT_FILE_VMETHODS
+	bool "ZVFS default virtual methods for files"
+	help
+	  Provide typical file operations, which can be referenced in a struct fd_op_vtable
+	  and subsequently called by ZVFS functions.
+
+endif
+
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"
 	imply ZVFS_POLL
+	select ZVFS_FDTABLE
 	help
 	  Enable support for ZVFS event file descriptors. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
@@ -37,6 +55,7 @@ endif # ZVFS_EVENTFD
 config ZVFS_POLL
 	bool "ZVFS poll"
 	select POLL
+	select ZVFS_FDTABLE
 	help
 	  Enable support for zvfs_poll().
 

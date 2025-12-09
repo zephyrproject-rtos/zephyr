@@ -5,7 +5,7 @@
  *
  */
 
-#include <dt-bindings/usb-c/pd.h>
+#include <zephyr/dt-bindings/usb-c/pd.h>
 
 &adc2 {
 	status = "okay";

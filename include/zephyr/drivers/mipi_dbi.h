@@ -26,7 +26,7 @@
  * @brief Interfaces for MIPI-DBI (Display Bus Interface).
  * @defgroup mipi_dbi_interface MIPI-DBI
  * @since 3.6
- * @version 0.8.0
+ * @version 1.0.0
  * @ingroup display_interface
  * @{
  */

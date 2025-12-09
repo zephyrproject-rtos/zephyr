@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+# Copyright 2021, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
@@ -16,5 +16,10 @@ flash: 64
 supported:
   - smp
 testing:
-  timeout_multiplier: 20
+  timeout_multiplier: 8
+  ignore_tags:
+    - multi_heap
+    - kernel
+    - benchmark
+    - lockfree
 vendor: arm

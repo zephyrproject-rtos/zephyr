@@ -111,7 +111,7 @@ static struct net_pkt *eth_esp32_rx(
 	}
 
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, receive_len, AF_UNSPEC, 0, K_MSEC(100));
+		dev_data->iface, receive_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(dev_data->iface);
 		LOG_ERR("Could not allocate rx buffer");

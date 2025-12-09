@@ -1,0 +1,59 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig options for STM32 family-wide code
+#
+# The following options are used to enable or configure
+# code in `soc/st/stm32/common` which is shared between
+# multiple STM32 series.
+#
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CCM := zephyr,ccm
+
+config STM32_CCM
+	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
+
+config STM32_BACKUP_SRAM
+	bool "STM32 Backup SRAM"
+	default y
+	depends on DT_HAS_ST_STM32_BACKUP_SRAM_ENABLED
+	help
+	  Enable support for STM32 backup SRAM.
+
+config STM32_BACKUP_SRAM_INIT_PRIORITY
+	int "STM32 Backup SRAM init priority"
+	default APPLICATION_INIT_PRIORITY
+	depends on STM32_BACKUP_SRAM
+	help
+	  STM32 Backup SRAM device initialization priority.
+
+config STM32_ENABLE_DEBUG_SLEEP_STOP
+	bool "Allow debugger attach in stop/sleep Mode"
+	default y if DEBUG
+	help
+	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
+	  of power consumption. As a side-effects this prevents
+	  debuggers from attaching w/o resetting the target. This
+	  effectively destroys the use-case of `west attach`. Also
+	  SEGGER RTT and similar technologies need this.
+
+config SWJ_ANALOG_PRIORITY
+	int "SWJ DP port to analog routine initialization priority"
+	default 49
+	help
+	  Initialization priority of the routine within the PRE_KERNEL1 level.
+	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
+	  UART_INIT_PRIORITY.
+
+config STM32_WKUP_PINS
+	bool "STM32 PWR Wake-up Pins"
+	depends on DT_HAS_ST_STM32_PWR_ENABLED
+	help
+	  Enable support for STM32 PWR wake-up pins.
+
+config STM32_BACKUP_PROTECTION
+	bool "SoC has backup domain protection access"
+	help
+	  Enabled for SoCs for which access protection to backup domain
+	  resources needs to be explicitly handled.

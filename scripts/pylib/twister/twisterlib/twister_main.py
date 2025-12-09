@@ -182,7 +182,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace) ->
 
     if options.dry_run:
         duration = time.time() - start_time
-        logger.info(f"Completed in {duration} seconds")
+        logger.info(f"Completed in {duration:.2f} seconds")
         return 0
 
     if options.short_build_path:

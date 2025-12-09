@@ -60,6 +60,7 @@ int main(void)
 	const struct device *display_dev;
 	lv_obj_t *hello_world_label;
 	lv_obj_t *count_label;
+	int ret;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -142,7 +143,11 @@ int main(void)
 	lv_obj_align(count_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
 	lv_timer_handler();
-	display_blanking_off(display_dev);
+	ret = display_blanking_off(display_dev);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		return 0;
+	}
 
 	while (1) {
 		if ((count % 100) == 0U) {

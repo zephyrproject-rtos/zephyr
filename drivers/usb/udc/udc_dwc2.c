@@ -422,6 +422,11 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 		return -ENOMEM;
 	}
 
+	if (dwc2_in_buffer_dma_mode(dev)) {
+		/* Get rid of all dirty cache lines */
+		sys_cache_data_invd_range(buf->data, net_buf_tailroom(buf));
+	}
+
 	udc_buf_put(ep_cfg, buf);
 	atomic_set_bit(&priv->xfer_new, 16);
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
@@ -592,8 +597,6 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 
 		sys_write32((uint32_t)buf->data,
 			    (mem_addr_t)&base->in_ep[ep_idx].diepdma);
-
-		sys_cache_data_flush_range(buf->data, len);
 	}
 
 	diepctl = sys_read32(diepctl_reg);
@@ -793,8 +796,6 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 		sys_write32((uint32_t)data,
 			    (mem_addr_t)&base->out_ep[ep_idx].doepdma);
-
-		sys_cache_data_invd_range(data, xfersize);
 	}
 
 	sys_write32(doepctl, doepctl_reg);
@@ -969,6 +970,10 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 	if (buf == NULL) {
 		LOG_ERR("No buffer queued for ep 0x%02x", cfg->addr);
 		return -ENODATA;
+	}
+
+	if (dwc2_in_buffer_dma_mode(dev)) {
+		sys_cache_data_invd_range(buf->data, buf->len);
 	}
 
 	udc_ep_set_busy(cfg, false);
@@ -1746,20 +1751,11 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 		dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	}
 
+	udc_dwc2_ep_disable(dev, cfg, false, true);
+
 	dxepctl = sys_read32(dxepctl_reg);
-
-	if (dxepctl & USB_DWC2_DEPCTL_USBACTEP) {
-		LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x",
-			cfg->addr, ep_idx, dxepctl);
-
-		udc_dwc2_ep_disable(dev, cfg, false, true);
-
-		dxepctl = sys_read32(dxepctl_reg);
-		dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
-	} else {
-		LOG_WRN("ep 0x%02x is not active DxEPCTL%u %x",
-			cfg->addr, ep_idx, dxepctl);
-	}
+	LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x", cfg->addr, ep_idx, dxepctl);
+	dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
 
 	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U &&
 	    ep_idx != 0U) {
@@ -1838,6 +1834,17 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
 	LOG_DBG("%p enqueue %x %p", dev, cfg->addr, buf);
+
+	if (dwc2_in_buffer_dma_mode(dev)) {
+		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			/* Write all dirty cache lines to memory */
+			sys_cache_data_flush_range(buf->data, buf->len);
+		} else {
+			/* Get rid of all dirty cache lines */
+			sys_cache_data_invd_range(buf->data, net_buf_tailroom(buf));
+		}
+	}
+
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
@@ -1864,6 +1871,13 @@ static int udc_dwc2_ep_dequeue(const struct device *dev,
 	udc_dwc2_ep_disable(dev, cfg, false, true);
 
 	buf = udc_buf_get_all(cfg);
+
+	if (dwc2_in_buffer_dma_mode(dev) && USB_EP_DIR_IS_OUT(cfg->addr)) {
+		for (struct net_buf *iter = buf; iter; iter = iter->frags) {
+			sys_cache_data_invd_range(iter->data, iter->len);
+		}
+	}
+
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -2338,6 +2352,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	config->irq_disable_func(dev);
+	cancel_hibernation_request(priv);
 
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
@@ -2830,7 +2845,9 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	}
 
 	if (dwc2_in_buffer_dma_mode(dev) && bcnt) {
-		sys_cache_data_invd_range(net_buf_tail(buf), bcnt);
+		/* Update just the length, cache will be invalidated in thread
+		 * context after transfer if finished or cancelled.
+		 */
 		net_buf_add(buf, bcnt);
 	}
 

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
  * Organisation (CSIRO) ABN 41 687 119 230.
+ * Copyright (c) 2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/mbox.h>
+#include <zephyr/drivers/hwspinlock.h>
 
 #include <zephyr/linker/devicetree_regions.h>
 
@@ -57,6 +59,39 @@ ZTEST(devicetree_api_ext, test_mbox_dt_spec)
 	const struct mbox_dt_spec channel_zero = MBOX_DT_SPEC_GET(TEST_TEMP, zero);
 
 	zassert_equal(channel_zero.channel_id, 0, "");
+}
+
+#define TEST_HWSPINLOCK \
+	DT_NODELABEL(test_hwspinlock)
+
+#define TEST_HWSPINLOCK_DEV \
+	DT_NODELABEL(test_hwspinlock_dev)
+
+#define HWSPINLOCK_BY_IDX(node_id, prop, idx) \
+	HWSPINLOCK_DT_SPEC_GET_BY_IDX(node_id, idx)
+
+static const struct hwspinlock_dt_spec spec[] = {
+	DT_FOREACH_PROP_ELEM_SEP(TEST_HWSPINLOCK_DEV, hwlocks, HWSPINLOCK_BY_IDX, (,))
+};
+
+static const struct hwspinlock_dt_spec rd =
+	HWSPINLOCK_DT_SPEC_GET_BY_NAME(TEST_HWSPINLOCK_DEV, rd);
+
+static const struct hwspinlock_dt_spec wr =
+	HWSPINLOCK_DT_SPEC_GET_BY_NAME(TEST_HWSPINLOCK_DEV, wr);
+
+ZTEST(devicetree_api_ext, test_hwspinlock_dt_spec)
+{
+	for (int i = 0; i < ARRAY_SIZE(spec); i++) {
+		zassert_equal(spec[i].dev, DEVICE_DT_GET(TEST_HWSPINLOCK));
+		zassert_equal(spec[i].id, i + 1);
+	}
+
+	zassert_equal(rd.dev, DEVICE_DT_GET(TEST_HWSPINLOCK));
+	zassert_equal(rd.id, 1);
+
+	zassert_equal(wr.dev, DEVICE_DT_GET(TEST_HWSPINLOCK));
+	zassert_equal(wr.id, 2);
 }
 
 ZTEST_SUITE(devicetree_api_ext, NULL, NULL, NULL, NULL, NULL);

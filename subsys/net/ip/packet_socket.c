@@ -26,7 +26,7 @@ void net_packet_socket_input(struct net_pkt *pkt,
 					 uint16_t proto,
 					 enum net_sock_type type)
 {
-	sa_family_t orig_family;
+	net_sa_family_t orig_family;
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 	/*
@@ -40,7 +40,7 @@ void net_packet_socket_input(struct net_pkt *pkt,
 
 	orig_family = net_pkt_family(pkt);
 
-	net_pkt_set_family(pkt, AF_PACKET);
+	net_pkt_set_family(pkt, NET_AF_PACKET);
 
 	net_conn_packet_input(pkt, proto, type);
 

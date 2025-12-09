@@ -31,7 +31,7 @@ MODEM_CMD_DEFINE(on_cmd_caopen)
 /*
  * Connects an modem socket. Protocol can either be TCP or UDP.
  */
-static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	uint16_t dst_port = 0;
@@ -60,10 +60,10 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	}
 
 	/* get the destination port */
-	if (addr->sa_family == AF_INET6) {
-		dst_port = ntohs(net_sin6(addr)->sin6_port);
-	} else if (addr->sa_family == AF_INET) {
-		dst_port = ntohs(net_sin(addr)->sin_port);
+	if (addr->sa_family == NET_AF_INET6) {
+		dst_port = net_ntohs(net_sin6(addr)->sin6_port);
+	} else if (addr->sa_family == NET_AF_INET) {
+		dst_port = net_ntohs(net_sin(addr)->sin_port);
 	}
 
 	/* Get protocol */
@@ -124,7 +124,7 @@ MODEM_CMD_DEFINE(on_cmd_casend)
  * then send a OK or ERROR.
  */
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-				  const struct sockaddr *dest_addr, socklen_t addrlen)
+				  const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -304,7 +304,7 @@ MODEM_CMD_DEFINE(on_cmd_carecv)
  * Read data from a given socket.
  */
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
-				struct sockaddr *src_addr, socklen_t *addrlen)
+				struct net_sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char sendbuf[sizeof("AT+CARECV=##,####")];
@@ -377,7 +377,7 @@ exit:
 /*
  * Sends messages to the modem.
  */
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	struct modem_socket *sock = obj;
 	ssize_t sent = 0;
@@ -391,7 +391,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		return -EINVAL;
 	}
 
-	if (sock->type == SOCK_DGRAM) {
+	if (sock->type == NET_SOCK_DGRAM) {
 		/*
 		 * Current implementation only handles single contiguous fragment at a time, so
 		 * prevent sending multiple datagrams.

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		step-dir-driver = &adi_tmc2209;
+	};
+
+	adi_tmc2209: adi_tmc2209 {
+		status = "okay";
+		compatible = "adi,tmc2209";
+		micro-step-res = <32>;
+		dir-gpios = <&gpio1 0 0>;
+		step-gpios = <&gpio1 1 0>;
+		en-gpios = <&gpio2 1 0>;
+		m0-gpios = <&gpio3 0 0>;
+		m1-gpios = <&gpio4 1 0>;
+		counter = <&counter0>;
+		dual-edge-step;
+	};
+};

@@ -563,6 +563,27 @@ static inline void bsim_btp_wait_for_tmap_discovery_complete(void)
 	net_buf_unref(buf);
 }
 
+static inline void bsim_btp_vcs_register(uint8_t step, uint8_t flags, uint8_t vol)
+{
+	struct btp_vcs_register_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_VCS;
+	cmd_hdr->opcode = BTP_VCS_REGISTER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->step = step;
+	cmd->flags = flags;
+	cmd->volume = vol;
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
 static inline void bsim_btp_vcp_discover(const bt_addr_le_t *address)
 {
 	struct btp_vcp_discover_cmd *cmd;

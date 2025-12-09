@@ -160,16 +160,22 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_CLOCK;
 	}
 #endif
-#if NRFX_RESET_REASON_HAS_NETWORK
+#if NRFX_RESET_REASON_HAS_LSREQ
 	if (reason & NRFX_RESET_REASON_LSREQ_MASK) {
 		flags |= RESET_SOFTWARE;
 	}
+#endif
+#if NRFX_RESET_REASON_HAS_LLOCKUP
 	if (reason & NRFX_RESET_REASON_LLOCKUP_MASK) {
 		flags |= RESET_CPU_LOCKUP;
 	}
+#endif
+#if NRFX_RESET_REASON_HAS_LDOG
 	if (reason & NRFX_RESET_REASON_LDOG_MASK) {
 		flags |= RESET_WATCHDOG;
 	}
+#endif
+#if NRFX_RESET_REASON_HAS_LCTRLAP
 	if (reason & NRFX_RESET_REASON_LCTRLAP_MASK) {
 		flags |= RESET_DEBUG;
 	}

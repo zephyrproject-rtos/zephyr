@@ -411,7 +411,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto rx_out_enable_rx;

@@ -109,11 +109,11 @@ static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }
 
-int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr);
-struct sockaddr_in6 *zperf_get_sin6(void);
+int zperf_get_ipv6_addr(char *host, char *prefix_str, struct net_in6_addr *addr);
+struct net_sockaddr_in6 *zperf_get_sin6(void);
 
-int zperf_get_ipv4_addr(char *host, struct in_addr *addr);
-struct sockaddr_in *zperf_get_sin(void);
+int zperf_get_ipv4_addr(char *host, struct net_in_addr *addr);
+struct net_sockaddr_in *zperf_get_sin(void);
 
 extern void connect_ap(char *ssid);
 
@@ -128,7 +128,7 @@ struct zperf_work {
 extern void start_jobs(void);
 extern struct zperf_work *get_queue(enum session_proto proto, int session_id);
 
-int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
+int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 			      int priority, int tcp_nodelay, int proto);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);

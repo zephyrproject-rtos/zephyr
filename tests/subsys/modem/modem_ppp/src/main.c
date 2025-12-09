@@ -502,7 +502,7 @@ ZTEST(modem_ppp, test_ip_frame_send)
 	net_pkt_cursor_init(pkt);
 	ret = net_pkt_write(pkt, ip_frame_unwrapped, sizeof(ip_frame_unwrapped));
 	zassert_true(ret == 0, "Failed to write data to allocated network packet");
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 
 	/* Send network packet */
 	test_net_send(pkt);
@@ -529,7 +529,7 @@ ZTEST(modem_ppp, test_ip_frame_send_multiple)
 		net_pkt_cursor_init(pkts[i]);
 		ret = net_pkt_write(pkts[i], ip_frame_unwrapped, sizeof(ip_frame_unwrapped));
 		zassert_true(ret == 0, "Failed to write data to allocated network packet");
-		net_pkt_set_family(pkts[i], AF_INET);
+		net_pkt_set_family(pkts[i], NET_AF_INET);
 	}
 
 	/* Send net pkts */
@@ -554,7 +554,7 @@ ZTEST(modem_ppp, test_ip_frame_send_large)
 					AF_UNSPEC, 0, K_NO_WAIT);
 
 	net_pkt_cursor_init(pkt);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	size = test_modem_ppp_fill_net_pkt(pkt, TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N);
 	zassert_true(size == TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N, "Failed to fill net pkt");
 	test_net_send(pkt);

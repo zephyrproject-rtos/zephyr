@@ -440,6 +440,7 @@ for brevity, in real drivers they must be handled.
           return pm_device_driver_init(dev, dummy_driver_pm_action);
    }
 
+   #ifdef CONFIG_DEVICE_DEINIT_SUPPORT
    static int dummy_deinit(const struct device *dev)
    {
            int ret;
@@ -473,6 +474,7 @@ for brevity, in real drivers they must be handled.
 
            return ret;
    }
+   #endif
 
    static struct dummy_driver_data data0;
 

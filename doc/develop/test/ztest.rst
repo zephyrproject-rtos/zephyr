@@ -367,6 +367,15 @@ is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
 filters out all testcases.yml in which type: unit is not set. Only unit tests
 are executed with a firmware build with BOARD=unit_testing.
 
+.. note::
+   Unit tests are run as **native** applications on the host and are therefore
+   subject to similar :ref:`limitations <posix_arch_limitations>` as documented
+   for the :ref:`POSIX architecture<Posix arch>`. Running unit tests is
+   therefore only supported for Linux. To run unit tests on Windows or macOS
+   it is necessary to use containers or Virtual Machines running a Linux guest.
+   Follow the same instructions as for the
+   :ref:`POSIX Arch dependencies<posix_arch_deps>`.
+
 CMakeLists.txt
 ==============
 

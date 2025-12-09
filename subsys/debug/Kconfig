@@ -215,6 +215,16 @@ config SPIN_LOCK_TIME_LIMIT
 	  the lock has been held is less than the configured value. Requires
 	  the timer driver sys_clock_get_cycles_32() be lock free.
 
+config ASSERT_CUSTOM_HEADER
+	bool "Include Custom Assert Header [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  When enabled, a custom application provided header, named
+	  "zephyr_custom_assert.h", is included at the end of __assert.h. This enables
+	  extension of the assert APIs at the macro level. Please use cautiously!
+	  The internal assert API may change in future releases.
+
+
 endif # ASSERT
 
 config FORCE_NO_ASSERT

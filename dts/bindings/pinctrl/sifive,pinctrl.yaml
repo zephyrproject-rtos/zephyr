@@ -14,7 +14,7 @@ description: |
 
   For example, setting pins 16 and 17 both to IOF0 would look like this:
 
-    #include <dt-bindings/pinctrl/sifive-pinctrl.h>
+    #include <zephyr/dt-bindings/pinctrl/sifive-pinctrl.h>
 
     &pinctrl {
       uart0_rx_default: uart0_rx_default {

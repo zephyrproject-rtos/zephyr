@@ -3,7 +3,7 @@ tests:
     tags: kernel
     # The following architectures are excluded as they have boards that
     # exhibit precision timing anomalies related to emulation.
-    #     posix, riscv32, sparc
+    #     posix, sparc
     # The following architectures are exluded as the necessary
     # thread runtime statistic hooks do not yet exist.
     #     mips

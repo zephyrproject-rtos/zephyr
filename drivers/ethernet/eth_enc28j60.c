@@ -559,7 +559,7 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len,
-					   AF_UNSPEC, 0, K_MSEC(config->timeout));
+					   NET_AF_UNSPEC, 0, K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
 		eth_stats_update_errors_rx(get_iface(context));

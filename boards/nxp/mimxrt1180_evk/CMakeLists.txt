@@ -20,10 +20,10 @@ endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(NOT ((DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM33)
-	  OR (DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7)))
+    OR (DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7)))
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT1180-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration or device configuration data blocks")
+      "the MIMXRT1180-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration or device configuration data blocks")
   endif()
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # This flash configuration block may need modification if another

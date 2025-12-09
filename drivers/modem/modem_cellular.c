@@ -17,6 +17,8 @@
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/net/ppp.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
@@ -95,6 +97,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PPP_DEAD,
 	MODEM_CELLULAR_EVENT_MODEM_READY,
 	MODEM_CELLULAR_EVENT_APN_SET,
+	MODEM_CELLULAR_EVENT_RING,
 };
 
 struct modem_cellular_event_cb {
@@ -166,11 +169,13 @@ struct modem_cellular_data {
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
 	uint8_t event_buf[8];
-	struct ring_buf event_rb;
-	struct k_mutex event_rb_lock;
+	struct k_pipe event_pipe;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
+
+	/* Ring interrupt */
+	struct gpio_callback ring_gpio_cb;
 };
 
 struct modem_cellular_user_pipe {
@@ -187,11 +192,16 @@ struct modem_cellular_config {
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec wake_gpio;
+	struct gpio_dt_spec ring_gpio;
+	struct gpio_dt_spec dtr_gpio;
 	uint16_t power_pulse_duration_ms;
 	uint16_t reset_pulse_duration_ms;
 	uint16_t startup_time_ms;
 	uint16_t shutdown_time_ms;
 	bool autostarts;
+	bool cmux_enable_runtime_power_save;
+	bool cmux_close_pipe_on_power_save;
+	k_timeout_t cmux_idle_timeout;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
@@ -284,6 +294,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "modem ready";
 	case MODEM_CELLULAR_EVENT_APN_SET:
 		return "apn set";
+	case MODEM_CELLULAR_EVENT_RING:
+		return "RING";
 	}
 
 	return "";
@@ -721,26 +733,18 @@ static void modem_cellular_event_dispatch_handler(struct k_work *item)
 	struct modem_cellular_data *data =
 		CONTAINER_OF(item, struct modem_cellular_data, event_dispatch_work);
 
-	uint8_t events[sizeof(data->event_buf)];
-	uint8_t events_cnt;
+	enum modem_cellular_event event;
+	const size_t len = sizeof(event);
 
-	k_mutex_lock(&data->event_rb_lock, K_FOREVER);
-
-	events_cnt = (uint8_t)ring_buf_get(&data->event_rb, events, sizeof(data->event_buf));
-
-	k_mutex_unlock(&data->event_rb_lock);
-
-	for (uint8_t i = 0; i < events_cnt; i++) {
-		modem_cellular_event_handler(data, (enum modem_cellular_event)events[i]);
+	while (k_pipe_read(&data->event_pipe, (uint8_t *)&event, len, K_NO_WAIT) == len) {
+		modem_cellular_event_handler(data, (enum modem_cellular_event)event);
 	}
 }
 
 static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 					  enum modem_cellular_event evt)
 {
-	k_mutex_lock(&data->event_rb_lock, K_FOREVER);
-	ring_buf_put(&data->event_rb, (uint8_t *)&evt, 1);
-	k_mutex_unlock(&data->event_rb_lock);
+	k_pipe_write(&data->event_pipe, (const uint8_t *)&evt, sizeof(evt), K_NO_WAIT);
 	k_work_submit(&data->event_dispatch_work);
 }
 
@@ -1322,7 +1326,10 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -1367,7 +1374,10 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -1416,7 +1426,10 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		modem_ppp_release(data->ppp);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -1475,7 +1488,10 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
 		modem_cellular_stop_timer(data);
-		__fallthrough;
+		data->cmd_pipe = data->uart_pipe;
+		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
+		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
@@ -2173,6 +2189,15 @@ static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t 
 	}
 }
 
+static void modem_cellular_ring_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+					      uint32_t pins)
+{
+	struct modem_cellular_data *data =
+		CONTAINER_OF(cb, struct modem_cellular_data, ring_gpio_cb);
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RING);
+}
+
 static void modem_cellular_init_apn(struct modem_cellular_data *data)
 {
 #ifdef CONFIG_MODEM_CELLULAR_APN
@@ -2196,14 +2221,14 @@ static int modem_cellular_init(const struct device *dev)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 	struct modem_cellular_config *config = (struct modem_cellular_config *)dev->config;
+	const struct gpio_dt_spec *dtr_gpio = NULL;
 
 	data->dev = dev;
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
-
 	k_work_init(&data->event_dispatch_work, modem_cellular_event_dispatch_handler);
-	ring_buf_init(&data->event_rb, sizeof(data->event_buf), data->event_buf);
+	k_pipe_init(&data->event_pipe, data->event_buf, sizeof(data->event_buf));
 
 	k_sem_init(&data->suspended_sem, 0, 1);
 
@@ -2219,9 +2244,42 @@ static int modem_cellular_init(const struct device *dev)
 		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	}
 
+	if (modem_cellular_gpio_is_enabled(&config->ring_gpio)) {
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->ring_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure ring GPIO (%d)", ret);
+			return ret;
+		}
+
+		gpio_init_callback(&data->ring_gpio_cb, modem_cellular_ring_gpio_callback,
+				   BIT(config->ring_gpio.pin));
+
+		ret = gpio_add_callback(config->ring_gpio.port, &data->ring_gpio_cb);
+		if (ret < 0) {
+			LOG_ERR("Failed to add ring GPIO callback (%d)", ret);
+			return ret;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(&config->ring_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure ring GPIO interrupt (%d)", ret);
+			return ret;
+		}
+
+		LOG_DBG("Ring GPIO interrupt configured");
+	}
+
+	if (modem_cellular_gpio_is_enabled(&config->dtr_gpio)) {
+		gpio_pin_configure_dt(&config->dtr_gpio, GPIO_OUTPUT_INACTIVE);
+		dtr_gpio = &config->dtr_gpio;
+	}
+
 	{
 		const struct modem_backend_uart_config uart_backend_config = {
 			.uart = config->uart,
+			.dtr_gpio = dtr_gpio,
 			.receive_buf = data->uart_backend_receive_buf,
 			.receive_buf_size = ARRAY_SIZE(data->uart_backend_receive_buf),
 			.transmit_buf = data->uart_backend_transmit_buf,
@@ -2242,6 +2300,9 @@ static int modem_cellular_init(const struct device *dev)
 			.receive_buf_size = ARRAY_SIZE(data->cmux_receive_buf),
 			.transmit_buf = data->cmux_transmit_buf,
 			.transmit_buf_size = ARRAY_SIZE(data->cmux_transmit_buf),
+			.enable_runtime_power_management = config->cmux_enable_runtime_power_save,
+			.close_pipe_on_power_save = config->cmux_close_pipe_on_power_save,
+			.idle_timeout = config->cmux_idle_timeout,
 		};
 
 		modem_cmux_init(&data->cmux, &cmux_config);
@@ -2853,6 +2914,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf91_slm)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
@@ -2870,7 +2932,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_ini
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XPPP=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=2", ok_match));
 
@@ -2973,26 +3035,30 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 
 /* Helper to define modem instance */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
-				       set_baudrate_script,                                        \
-				       init_script,                                                \
-				       dial_script,                                                \
-				       periodic_script,                                            \
-				       shutdown_script)                                            \
+				       set_baudrate_script, init_script, dial_script,              \
+				       periodic_script, shutdown_script)                           \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
+		.ring_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_ring_gpios, {}),                   \
+		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
-		.startup_time_ms  = (startup_ms),                                                  \
+		.startup_time_ms = (startup_ms),                                                   \
 		.shutdown_time_ms = (shutdown_ms),                                                 \
 		.autostarts = DT_INST_PROP_OR(inst, autostarts, (start)),                          \
-		.set_baudrate_chat_script    = (set_baudrate_script),                              \
-		.init_chat_script            = (init_script),                                      \
-		.dial_chat_script            = (dial_script),                                      \
+		.cmux_enable_runtime_power_save =                                                  \
+			DT_INST_PROP_OR(inst, cmux_enable_runtime_power_save, 0),                  \
+		.cmux_close_pipe_on_power_save =                                                   \
+			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
+		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
+		.set_baudrate_chat_script = (set_baudrate_script),                                 \
+		.init_chat_script = (init_script),                                                 \
+		.dial_chat_script = (dial_script),                                                 \
 		.periodic_chat_script = (periodic_script),                                         \
-		.shutdown_chat_script  = (shutdown_script),                                        \
+		.shutdown_chat_script = (shutdown_script),                                         \
 		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
 		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
 	};                                                                                         \

@@ -25,6 +25,8 @@ config HAPTICS_SHELL
 	help
 	  Enable Haptics-related shell commands.
 
+# zephyr-keep-sorted-start
 source "drivers/haptics/Kconfig.drv2605"
+# zephyr-keep-sorted-stop
 
 endif # HAPTICS

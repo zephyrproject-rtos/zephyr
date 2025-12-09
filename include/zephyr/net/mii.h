@@ -91,36 +91,51 @@
 #define MII_BMCR_SPEED_1000          BIT(MII_BMCR_SPEED_MSB_BIT)
 
 /* Basic Mode Status Register (BMSR) bit definitions */
+#define MII_BMSR_100BASE_T4_BIT       15
+#define MII_BMSR_100BASE_X_FULL_BIT   14
+#define MII_BMSR_100BASE_X_HALF_BIT   13
+#define MII_BMSR_10_FULL_BIT          12
+#define MII_BMSR_10_HALF_BIT          11
+#define MII_BMSR_100BASE_T2_FULL_BIT  10
+#define MII_BMSR_100BASE_T2_HALF_BIT  9
+#define MII_BMSR_EXTEND_STATUS_BIT    8
+#define MII_BMSR_MF_PREAMB_SUPPR_BIT  6
+#define MII_BMSR_AUTONEG_COMPLETE_BIT 5
+#define MII_BMSR_REMOTE_FAULT_BIT     4
+#define MII_BMSR_AUTONEG_ABILITY_BIT  3
+#define MII_BMSR_LINK_STATUS_BIT      2
+#define MII_BMSR_JABBER_DETECT_BIT    1
+#define MII_BMSR_EXTEND_CAPAB_BIT     0
 /** 100BASE-T4 capable */
-#define MII_BMSR_100BASE_T4        BIT(15)
+#define MII_BMSR_100BASE_T4           BIT(MII_BMSR_100BASE_T4_BIT)
 /** 100BASE-X full duplex capable */
-#define MII_BMSR_100BASE_X_FULL    BIT(14)
+#define MII_BMSR_100BASE_X_FULL       BIT(MII_BMSR_100BASE_X_FULL_BIT)
 /** 100BASE-X half duplex capable */
-#define MII_BMSR_100BASE_X_HALF    BIT(13)
+#define MII_BMSR_100BASE_X_HALF       BIT(MII_BMSR_100BASE_X_HALF_BIT)
 /** 10 Mb/s full duplex capable */
-#define MII_BMSR_10_FULL           BIT(12)
+#define MII_BMSR_10_FULL              BIT(MII_BMSR_10_FULL_BIT)
 /** 10 Mb/s half duplex capable */
-#define MII_BMSR_10_HALF           BIT(11)
+#define MII_BMSR_10_HALF              BIT(MII_BMSR_10_HALF_BIT)
 /** 100BASE-T2 full duplex capable */
-#define MII_BMSR_100BASE_T2_FULL   BIT(10)
+#define MII_BMSR_100BASE_T2_FULL      BIT(MII_BMSR_100BASE_T2_FULL_BIT)
 /** 100BASE-T2 half duplex capable */
-#define MII_BMSR_100BASE_T2_HALF   BIT(9)
+#define MII_BMSR_100BASE_T2_HALF      BIT(MII_BMSR_100BASE_T2_HALF_BIT)
 /** extend status information in reg 15 */
-#define MII_BMSR_EXTEND_STATUS     BIT(8)
+#define MII_BMSR_EXTEND_STATUS        BIT(MII_BMSR_EXTEND_STATUS_BIT)
 /** PHY accepts management frames with preamble suppressed */
-#define MII_BMSR_MF_PREAMB_SUPPR   BIT(6)
+#define MII_BMSR_MF_PREAMB_SUPPR      BIT(MII_BMSR_MF_PREAMB_SUPPR_BIT)
 /** Auto-negotiation process completed */
-#define MII_BMSR_AUTONEG_COMPLETE  BIT(5)
+#define MII_BMSR_AUTONEG_COMPLETE     BIT(MII_BMSR_AUTONEG_COMPLETE_BIT)
 /** remote fault detected */
-#define MII_BMSR_REMOTE_FAULT      BIT(4)
+#define MII_BMSR_REMOTE_FAULT         BIT(MII_BMSR_REMOTE_FAULT_BIT)
 /** PHY is able to perform Auto-Negotiation */
-#define MII_BMSR_AUTONEG_ABILITY   BIT(3)
+#define MII_BMSR_AUTONEG_ABILITY      BIT(MII_BMSR_AUTONEG_ABILITY_BIT)
 /** link is up */
-#define MII_BMSR_LINK_STATUS       BIT(2)
+#define MII_BMSR_LINK_STATUS          BIT(MII_BMSR_LINK_STATUS_BIT)
 /** jabber condition detected */
-#define MII_BMSR_JABBER_DETECT     BIT(1)
+#define MII_BMSR_JABBER_DETECT        BIT(MII_BMSR_JABBER_DETECT_BIT)
 /** extended register capabilities */
-#define MII_BMSR_EXTEND_CAPAB      BIT(0)
+#define MII_BMSR_EXTEND_CAPAB         BIT(MII_BMSR_EXTEND_CAPAB_BIT)
 
 /* Auto-negotiation Advertisement Register (ANAR) bit definitions */
 /* Auto-negotiation Link Partner Ability Register (ANLPAR) bit definitions */

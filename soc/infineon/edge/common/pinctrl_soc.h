@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 #include <zephyr/devicetree.h>
+#include <infineon_kconfig.h>
+#include <cy_gpio.h>
 
 #ifdef __cplusplus
 extern "C" {

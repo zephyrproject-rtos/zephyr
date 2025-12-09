@@ -8,6 +8,7 @@
 #define ZEPHYR_LLEXT_SYMBOL_H
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -155,19 +156,33 @@ struct llext_symtable {
 #endif
 /** @endcond */
 
+#if defined(LL_EXTENSION_BUILD)
+/* Extension build: No Kconfig conditionals */
+#define Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)		\
+	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+#else
+/* LLEXT application: Export if relevant group is enabled */
+#define Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)		\
+	IF_ENABLED(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_ ## group,			\
+		(Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)))
+#endif /* defined(LL_EXTENSION_BUILD) */
+
 /**
  * @brief Export a constant symbol from the current build with a custom name
  *
  * Version of @ref EXPORT_SYMBOL that allows the user to specify a custom name
- * for the exported symbol.
+ * for the exported symbol. The symbol is part of the UNASSIGNED group.
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
+ * macro is a no-op.
  *
  * @param sym_ident Symbol to export
  * @param sym_name Name associated with the symbol
  */
 #define EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
-	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+	Z_EXPORT_SYMBOL_NAMED_IN_GROUP(UNASSIGNED, sym_ident, sym_name)
 
 /**
  * @brief Export a constant symbol from the current build
@@ -175,12 +190,51 @@ struct llext_symtable {
  * Takes a symbol (function or object) by symbolic name and adds the name
  * and address of the symbol to a table of symbols that may be referenced
  * by extensions or by the base image, depending on the current build type.
+ * The symbol is part of the UNASSIGNED group.
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
+ * macro is a no-op.
  *
  * @param x Symbol to export
  */
 #define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
+
+/**
+ * @brief Export a constant symbol with a custom name and group
+ *
+ * Version of @ref EXPORT_SYMBOL_NAMED that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ * @param sym_name Name associated with the symbol
+ */
+#define EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_name)			\
+	Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)
+
+/**
+ * @brief Export a constant symbol in a custom group
+ *
+ * Version of @ref EXPORT_SYMBOL that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ */
+#define EXPORT_GROUP_SYMBOL(group, sym_ident) \
+	EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_ident)
 
 /**
  * @}

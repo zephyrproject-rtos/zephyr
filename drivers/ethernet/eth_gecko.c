@@ -193,7 +193,7 @@ static struct net_pkt *frame_get(const struct device *dev)
 	if (eofIdx != UINT32_MAX) {
 		/* Allocate room for full frame */
 		rx_frame = net_pkt_rx_alloc_with_buffer(dev_data->iface,
-					total_len, AF_UNSPEC, 0, K_NO_WAIT);
+					total_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!rx_frame) {
 			LOG_ERR("Failed to obtain RX buffer");
 			ETH_RX_DISABLE(eth);

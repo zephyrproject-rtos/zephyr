@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <ene/kb1200.dtsi>
 #include <ene/kb1200-pinctrl.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "KB1200 board";

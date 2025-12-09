@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_LMEM_CACHE
+	bool "NXP LMEM cache driver"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_LMEM_CACHE
+	help
+	  This option enables the LMEM cache driver for NXP SOCs.

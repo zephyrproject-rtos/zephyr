@@ -190,11 +190,11 @@ config SHELL_VT100_COLORS
 
 config SHELL_GETOPT
 	bool "Threadsafe getopt support in shell"
-	select POSIX_C_LIB_EXT
+	select GETOPT
 	help
 	  This config creates a separate getopt_state for the shell instance.
 	  It ensures that using getopt with shell is thread safe.
-	  When more threads are using getopt please call getopt_state_get to
+	  When more threads are using sys_getopt please call sys_getopt_state_get to
 	  get getopt state of the shell thread.
 
 config SHELL_METAKEYS
@@ -296,12 +296,48 @@ config SHELL_LOG_BACKEND_CUSTOM
 	  It allows to provide custom implementation of multiplexing logging messages
 	  with shell data.
 
+if SHELL_LOG_BACKEND
+
+config SHELL_LOG_OUTPUT_TIMESTAMP
+	bool "Log output timestamp"
+	default y
+	help
+	  Enable timestamp in log output.
+
 config SHELL_LOG_FORMAT_TIMESTAMP
 	bool "Format timestamp"
 	default y
-	depends on SHELL_LOG_BACKEND
 	help
 	  Enable timestamp formatting.
+
+config SHELL_LOG_OUTPUT_LEVEL
+	bool "Log output level"
+	default y
+	help
+	  Enable log level in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_NONE
+	bool "Log output CRLF none"
+	help
+	  Do not modify CRLF characters in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_LFONLY
+	bool "Log output CRLF LF only"
+	help
+	  Convert CRLF to LF in log output.
+
+config SHELL_LOG_OUTPUT_THREAD
+	bool "Log output thread"
+	default y
+	help
+	  Enable logging thread id or name
+
+config SHELL_LOG_OUTPUT_SKIP_SOURCE
+	bool "Log output skip source"
+	help
+	  Skip outputting source in log output.
+
+endif # SHELL_LOG_BACKEND
 
 config SHELL_AUTOSTART
 	bool "Auto-start shell at boot"
@@ -318,7 +354,8 @@ config SHELL_CMDS_RETURN_VALUE
 	  the return value from the most recently executed command.
 
 config SHELL_CUSTOM_HEADER
-	bool "Include Custom Shell Header"
+	bool "Include Custom Shell Header [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  When enabled, a custom application provided header, named
 	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables

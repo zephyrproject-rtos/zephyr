@@ -54,8 +54,6 @@ extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NRF70_DATA_TX
 
-#define MAX_RX_QUEUES 3
-
 #define MAX_TX_FRAME_SIZE \
 	(CONFIG_NRF_WIFI_IFACE_MTU + NRF_WIFI_FMAC_ETH_HDR_LEN + TX_BUF_HEADROOM)
 #define TOTAL_TX_SIZE \
@@ -67,8 +65,6 @@ BUILD_ASSERT(CONFIG_NRF70_MAX_TX_TOKENS >= 1,
 	"At least one TX token is required");
 BUILD_ASSERT(CONFIG_NRF70_MAX_TX_AGGREGATION <= 15,
 	"Max TX aggregation is 15");
-BUILD_ASSERT(CONFIG_NRF70_RX_NUM_BUFS >= 1,
-	"At least one RX buffer is required");
 #ifndef CONFIG_NRF71_ON_IPC
 BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
 	"Packet RAM overflow: not enough memory for TX");
@@ -78,10 +74,6 @@ BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE % 4 == 0,
 	"TX buffer size must be a multiple of 4");
-BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE % 4 == 0,
-	"RX buffer size must be a multiple of 4");
-BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE >= 400,
-	"RX buffer size must be at least 400 bytes");
 
 static const unsigned char aggregation = 1;
 static const unsigned char max_num_tx_agg_sessions = 4;
@@ -91,6 +83,14 @@ static const unsigned char max_rxampdu_size = MAX_RX_AMPDU_SIZE_64KB;
 
 static const unsigned char max_tx_aggregation = CONFIG_NRF70_MAX_TX_AGGREGATION;
 
+static const unsigned char rate_protection_type;
+#endif
+
+BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE % 4 == 0,
+	"RX buffer size must be a multiple of 4");
+
+#define MAX_RX_QUEUES 3
+
 static const unsigned int rx1_num_bufs = CONFIG_NRF70_RX_NUM_BUFS / MAX_RX_QUEUES;
 static const unsigned int rx2_num_bufs = CONFIG_NRF70_RX_NUM_BUFS / MAX_RX_QUEUES;
 static const unsigned int rx3_num_bufs = CONFIG_NRF70_RX_NUM_BUFS / MAX_RX_QUEUES;
@@ -98,18 +98,6 @@ static const unsigned int rx3_num_bufs = CONFIG_NRF70_RX_NUM_BUFS / MAX_RX_QUEUE
 static const unsigned int rx1_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
 static const unsigned int rx2_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
 static const unsigned int rx3_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
-
-static const unsigned char rate_protection_type;
-#else
-/* Reduce buffers to Scan only operation */
-static const unsigned int rx1_num_bufs = 2;
-static const unsigned int rx2_num_bufs = 2;
-static const unsigned int rx3_num_bufs = 2;
-
-static const unsigned int rx1_buf_sz = 1000;
-static const unsigned int rx2_buf_sz = 1000;
-static const unsigned int rx3_buf_sz = 1000;
-#endif
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 static K_MUTEX_DEFINE(reg_lock);

@@ -19,4 +19,12 @@ config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 config GPIO
 	default y
 
+# Enable cache management features
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 endif # SOC_SERIES_MCXE24X

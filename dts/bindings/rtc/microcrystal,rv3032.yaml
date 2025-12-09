@@ -7,7 +7,6 @@ compatible: "microcrystal,rv3032"
 
 include:
   - name: rtc-device.yaml
-  - name: i2c-device.yaml
 
 properties:
   clkout-frequency:
@@ -27,21 +26,6 @@ properties:
       1. Use XTAL mode for frequencies: 1, 64, 1024, 32768 Hz
       2. Use HF mode for other frequencies (must be multiples of 8192 Hz)
 
-  backup-switch-mode:
-    type: string
-    required: true
-    enum:
-      - disabled
-      - direct
-      - level
-    description: |
-      Automatic backup switchover function selection:
-        - disabled: The switchover function is disabled - only one power supply available (VDD)
-        - direct: Direct Switching Mode (DSM): when VDD < VBACKUP, switchover occurs from VDD to
-          VBACKUP without requiring VDD to drop below VTH:LSM (2.0 V)
-        - level: Level Switching Mode (LSM): when VDD < VTH:LSM (2.0 V) AND VBACKUP > VTH:LSM,
-          switchover occurs from VDD to VBACKUP
-
   trickle-resistor-ohms:
     type: int
     enum:
@@ -54,10 +38,12 @@ properties:
       Ignored if 'trickle-charger-mode' is not present (TCM=00).
       Note: 600 ohms corresponds to TCR=00 (0.6kΩ) in RV3032.
 
-
   trickle-charger-mode:
     type: int
-    enum: [1750, 3000, 4500]
+    enum:
+      - 1750
+      - 3000
+      - 4500
     description: |
       Trickle Charger Mode (TCM).
         - If this property is not present, the trickle charger is disabled (TCM=00).
@@ -67,8 +53,3 @@ properties:
         - 4500: TCM=11. Internal charge-pump ~4.5 V, only valid in LSM.
       Note: In LSM, the 1.75/3.0/4.5 V levels are only generated when VDD > VTH:LSM
       (typ. 2.0 V, max 2.2 V).
-
-  int-gpios:
-    type: phandle-array
-    description: |
-      GPIO connected to the RV3032 INT interrupt output. This signal is open-drain, active low.

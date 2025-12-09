@@ -1253,11 +1253,12 @@ static int cmd_runall(const struct shell *sh, size_t argc, char **argv)
 static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 {
 
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"suite_iter", required_argument, 0, 's'},
-					       {"case_iter", required_argument, 0, 'c'},
-					       {0, 0, 0, 0}};
+	static struct sys_getopt_option long_options[] = {
+		{"suite_iter", sys_getopt_required_argument, 0, 's'},
+		{"case_iter", sys_getopt_required_argument, 0, 'c'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1265,8 +1266,8 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 	int suite_iter = 1;
 	int case_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			val = atoi(state->optarg);
@@ -1301,9 +1302,10 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"repeat_iter", required_argument, NULL, 'r'},
+	static struct sys_getopt_option long_options[] = {
+		{"repeat_iter", sys_getopt_required_argument, NULL, 'r'},
 		{NULL, 0, NULL, 0}};
 	int opt_index = 0;
 	int val;
@@ -1311,8 +1313,8 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	void *param = NULL;
 	int repeat_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			val = atoi(state->optarg);

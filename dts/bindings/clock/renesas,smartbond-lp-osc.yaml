@@ -18,3 +18,12 @@ properties:
     default: 8000
     description: |
       This is only valid for XTAL32K. Time in ms needed to XTAL32K to settle.
+  calibration-interval:
+    type: int
+    default: 1000
+    description: |
+      Time interval (ms) between oscillator calibrations.
+      Setting this value to 0 disables calibration entirely.
+      Calibration should only be disabled in tests that require strict thread
+      scheduling, where even minimal unexpected CPU usage from calibration
+      could cause failures.

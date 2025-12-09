@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &ili9341;
+		zephyr,touch = &stmpe811;
 	};
 
 	leds {
@@ -156,6 +157,7 @@
 		int-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 		screen-width = <240>;
 		screen-height = <320>;
+		inverted-y;
 		raw-x-min = <240>;
 		raw-y-min = <200>;
 		raw-x-max = <3680>;

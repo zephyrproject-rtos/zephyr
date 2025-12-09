@@ -199,6 +199,8 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
 
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
@@ -206,8 +208,6 @@
 					sdclk = <1>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <2>;
-				status = "okay";
 			};
 
 			fclk: fclk {

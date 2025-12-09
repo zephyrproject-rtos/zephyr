@@ -65,9 +65,9 @@ struct pca9533_data {
  */
 static uint8_t ms_to_psc(uint32_t period_ms)
 {
-	uint32_t tmp = (period_ms * 152U + 500U) / 1000U;
+	int32_t tmp = (period_ms * 152U + 500U) / 1000U;
 
-	return CLAMP(tmp - 1U, 0U, UINT8_MAX);
+	return CLAMP(tmp - 1, 0U, UINT8_MAX);
 }
 
 /**

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/armv8-a.dtsi>
+#include "fvp_base_revc_2xaem.dtsi"
+
+/ {
+	model = "FVP Base RevC 2xAEM ARMv8-A";
+};
+
+&cpu0 {
+	compatible = "arm,cortex-a53";
+};
+
+&cpu1 {
+	compatible = "arm,cortex-a53";
+};
+
+&cpu2 {
+	compatible = "arm,cortex-a53";
+};
+
+&cpu3 {
+	compatible = "arm,cortex-a53";
+};

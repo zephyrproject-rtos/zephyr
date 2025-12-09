@@ -1,0 +1,235 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
+ * SPDX-FileCopyrightText: Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright (c) 2023 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include "heltec_wireless_tracker-pinctrl.dtsi"
+
+/ {
+	model = "Heltec Wireless Tracker V1.1 PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		lora0 = &lora0;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		gnss = &gnss;
+		display0 = &st7735r_160x80;
+	};
+
+	gnss_rst: gnss_rst {
+		compatible = "gpio-leds";
+		gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		label = "GNSS Reset";
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USER SW";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 0>;
+		output-ohms = <100000>;
+		full-ohms = <(100000 + 390000)>;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &st7735r_160x80;
+	};
+
+	mipi_dbi_st7735r_160x80 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;  /* GPIO 40 = gpio1 pin 8 (40-32) */
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;  /* GPIO 39 = gpio1 pin 7 (39-32) */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		write-only;
+		status = "okay";
+
+		st7735r_160x80: st7735r@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <24000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			reg = <0>;
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			x-offset = <1>;
+			y-offset = <26>;
+			madctl = <0xA8>;
+			colmod = <0x05>;
+			invctr = <7>;
+			vmctr1 = <0x0E>;
+			pwctr1 = [A2 02 84];
+			pwctr2 = [C1];
+			pwctr3 = [0A 00];
+			pwctr4 = [8A 2A];
+			pwctr5 = [8A EE];
+			frmctr1 = [01 26 2E];
+			frmctr2 = [01 26 2E];
+			frmctr3 = [01 26 2E 01 26 2E];
+			gamctrp1 = [0F 1A 0F 18 2F 28 20 22 1F 1B 23 37 00 07 02 10];
+			gamctrn1 = [0F 1B 0F 17 33 2C 29 2E 30 2E 30 3B 00 07 03 10];
+			caset = [00 01 00 A0];
+			raset = [00 1A 00 69];
+		};
+	};
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		status = "okay";
+	};
+};
+
+&gpio0 {
+	status = "okay";
+
+	vext-power {
+		gpio-hog;
+		gpios = <3 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	tft-backlight {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	lora0: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		reset-gpios = <&gpio0 12 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <4000000>;
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim3_default>;
+	cs-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	use-iomux;
+	status = "okay";
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&usb_otg {
+	status = "okay";
+};
+
+&lora0 {
+	status = "okay";
+};
+
+&st7735r_160x80 {
+	status = "okay";
+};

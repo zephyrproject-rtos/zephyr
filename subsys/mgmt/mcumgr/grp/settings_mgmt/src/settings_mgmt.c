@@ -515,13 +515,28 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 	}
 
 	if (save_subtree) {
+#ifdef CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+		/*
+		 * This allows saving either a subtree or single setting, if a full setting name
+		 * is provided then the single setting will be saved, otherwise it will save the
+		 * subtree (assuming it is a valid setting subtree).
+		 */
+		rc = settings_save_subtree_or_single_without_modification(key_name, true, true);
+#else
 		rc = settings_save_subtree(key_name);
+#endif
 	} else {
 		rc = settings_save();
 	}
 
 	if (rc != 0) {
 		switch (rc) {
+#ifdef CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+		case -EDOM:
+			rc = SETTINGS_MGMT_ERR_SAVE_FAILED_VALUE_TOO_LONG_TO_READ;
+			break;
+		case -ENOSYS:
+#endif
 		case -ENOENT:
 		case -ENOTSUP:
 			rc = SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED;

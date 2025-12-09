@@ -473,6 +473,17 @@ static void init(void)
 	}
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks (err %d)\n", err);
+		return;
+	}
+}
+
 static void scan_and_connect(struct bt_conn **conn)
 {
 	int err;
@@ -888,6 +899,8 @@ static void test_main_cap_handover_central(void)
 
 	unicast_audio_stop();
 
+	deinit();
+
 	PASS("CAP initiator handover unicast to broadcast passed\n");
 }
 
@@ -919,6 +932,8 @@ static void test_main_cap_handover_central_reception_stop(void)
 	backchannel_sync_wait_all();
 
 	unicast_audio_stop();
+
+	deinit();
 
 	PASS("CAP initiator handover unicast to broadcast passed\n");
 }

@@ -91,6 +91,10 @@
 	ppre5 = <2>;
 };
 
+&pwr {
+	power-supply = "smps-direct";
+};
+
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pd0>;
 	pinctrl-names = "default";

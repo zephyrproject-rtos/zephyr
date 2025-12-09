@@ -4,10 +4,10 @@
 add_subdirectory(../../src settings_test_bindir)
 
 zephyr_include_directories(
-	${ZEPHYR_BASE}/subsys/settings/include
-	${ZEPHYR_BASE}/subsys/settings/src
-	${ZEPHYR_BASE}/tests/subsys/settings/file/include
-	)
+  ${ZEPHYR_BASE}/subsys/settings/include
+  ${ZEPHYR_BASE}/subsys/settings/src
+  ${ZEPHYR_BASE}/tests/subsys/settings/file/include
+)
 
 target_sources(app PRIVATE
   settings_test_compress_file.c

@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/types.h>
 #include "rsi_rom_udma.h"
 #include "rsi_rom_udma_wrapper.h"
@@ -62,16 +62,6 @@ struct dma_siwx91x_data {
 					      * related information
 					      */
 };
-
-static void siwx91x_dma_pm_policy_state_lock_get(void)
-{
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-}
-
-static void siwx91x_dma_pm_policy_state_lock_put(void)
-{
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-}
 
 static enum dma_xfer_dir siwx91x_transfer_direction(uint32_t dir)
 {
@@ -495,15 +485,14 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	/* Get the power management policy state lock */
 	if (!data->zephyr_channel_info[channel].channel_active) {
-		siwx91x_dma_pm_policy_state_lock_get();
+		pm_device_runtime_get(dev);
 		data->zephyr_channel_info[channel].channel_active = true;
 	}
 
 	if (RSI_UDMA_ChannelEnable(udma_handle, channel) != 0) {
 		if (data->zephyr_channel_info[channel].channel_active) {
-			siwx91x_dma_pm_policy_state_lock_put();
+			pm_device_runtime_put(dev);
 			data->zephyr_channel_info[channel].channel_active = false;
 		}
 		return -EINVAL;
@@ -534,7 +523,7 @@ static int siwx91x_dma_stop(const struct device *dev, uint32_t channel)
 	}
 
 	if (data->zephyr_channel_info[channel].channel_active) {
-		siwx91x_dma_pm_policy_state_lock_put();
+		pm_device_runtime_put(dev);
 		data->zephyr_channel_info[channel].channel_active = false;
 	}
 
@@ -680,15 +669,15 @@ static void siwx91x_dma_isr(const struct device *dev)
 	}
 
 	if (data->chan_info[channel].Cnt == data->chan_info[channel].Size) {
+		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
+		if (data->zephyr_channel_info[channel].channel_active) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			data->zephyr_channel_info[channel].channel_active = false;
+		}
 		if (data->zephyr_channel_info[channel].dma_callback) {
 			/* Transfer complete, call user callback */
 			data->zephyr_channel_info[channel].dma_callback(
 				dev, data->zephyr_channel_info[channel].cb_data, channel, 0);
-		}
-		sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->UDMA_DONE_STATUS_REG);
-		if (data->zephyr_channel_info[channel].channel_active) {
-			siwx91x_dma_pm_policy_state_lock_put();
-			data->zephyr_channel_info[channel].channel_active = false;
 		}
 	} else {
 		/* Call UDMA ROM IRQ handler. */

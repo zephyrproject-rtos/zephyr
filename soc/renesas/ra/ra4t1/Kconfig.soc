@@ -1,0 +1,63 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA4T1
+	bool
+	select SOC_FAMILY_RENESAS_RA
+	help
+	  Renesas RA4T1 series
+
+config SOC_R7FA4T1BB3CFM
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1BB3CFL
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1BB3CFJ
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1BB3CNE
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1BB3CNH
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1B93CFM
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1B93CFL
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1B93CFJ
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1B93CNE
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_R7FA4T1B93CNH
+	bool
+	select SOC_SERIES_RA4T1
+
+config SOC_SERIES
+	default "ra4t1" if SOC_SERIES_RA4T1
+
+config SOC
+	default "r7fa4t1bb3cfm" if SOC_R7FA4T1BB3CFM
+	default "r7fa4t1bb3cfl" if SOC_R7FA4T1BB3CFL
+	default "r7fa4t1bb3cfj" if SOC_R7FA4T1BB3CFJ
+	default "r7fa4t1bb3cne" if SOC_R7FA4T1BB3CNE
+	default "r7fa4t1bb3cnh" if SOC_R7FA4T1BB3CNH
+	default "r7fa4t1b93cfm" if SOC_R7FA4T1B93CFM
+	default "r7fa4t1b93cfl" if SOC_R7FA4T1B93CFL
+	default "r7fa4t1b93cfj" if SOC_R7FA4T1B93CFJ
+	default "r7fa4t1b93cne" if SOC_R7FA4T1B93CNE
+	default "r7fa4t1b93cnh" if SOC_R7FA4T1B93CNH

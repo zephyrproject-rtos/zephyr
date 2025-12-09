@@ -8,6 +8,7 @@
 
 &lpi2c2 {
 	status = "okay";
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -17,6 +18,7 @@
 
 &lpi2c3 {
 	status = "okay";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;

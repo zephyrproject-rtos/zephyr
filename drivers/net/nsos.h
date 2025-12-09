@@ -70,12 +70,12 @@ struct nsos_mid_sockaddr_in6 {
 
 #define UNIX_PATH_MAX 108
 struct nsos_mid_sockaddr_un {
-	sa_family_t sun_family;              /* AF_UNIX */
+	uint16_t    sun_family;              /* AF_UNIX */
 	char        sun_path[UNIX_PATH_MAX]; /* pathname */
 };
 
 struct nsos_mid_sockaddr_ll {
-	sa_family_t sll_family;   /**< Always AF_PACKET                   */
+	uint16_t    sll_family;   /**< Always AF_PACKET                   */
 	uint16_t    sll_protocol; /**< Physical-layer protocol            */
 	int         sll_ifindex;  /**< Interface number                   */
 	uint16_t    sll_hatype;   /**< ARP hardware type                  */

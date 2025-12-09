@@ -173,6 +173,7 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	printk("Started stream %p\n", stream);
 
@@ -905,6 +906,17 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 	}
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+	ARRAY_FOR_EACH_PTR(unicast_client_source_streams, test_stream) {
+		if (audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+	printk("Data received\n");
+}
+
 static void test_main_cap_initiator_unicast(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
@@ -930,14 +942,15 @@ static void test_main_cap_initiator_unicast(void)
 		for (size_t j = 0U; j < iterations; j++) {
 			printk("\nRunning iteration j=%zu\n\n", i);
 
-			UNSET_FLAG(flag_audio_received);
+			ARRAY_FOR_EACH_PTR(unicast_client_sink_streams, test_stream) {
+				UNSET_FLAG(test_stream->flag_audio_received);
+			}
 
 			unicast_audio_start(unicast_group, true);
 
 			unicast_audio_update();
 
-			printk("Waiting for data\n");
-			WAIT_FOR_FLAG(flag_audio_received);
+			wait_for_data();
 
 			/* Due to how the backchannel sync is implemented for LE Audio we cannot
 			 * easily tell the remote (CAP acceptor) how many times to wait for data,
@@ -981,9 +994,7 @@ static void test_main_cap_initiator_unicast_inval(void)
 	unicast_audio_update_inval();
 	unicast_audio_update();
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	printk("Data received\n");
+	wait_for_data();
 
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
@@ -1091,9 +1102,7 @@ static void test_cap_initiator_unicast_ase_error(void)
 	/* Without invalid metadata type, start should pass */
 	unicast_audio_start(unicast_group, true);
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	printk("Data received\n");
+	wait_for_data();
 
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
@@ -1487,7 +1496,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 
 	if (expect_rx) {
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		wait_for_data();
 	}
 
 	cap_initiator_unicast_audio_stop(unicast_group);

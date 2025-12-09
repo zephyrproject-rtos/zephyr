@@ -69,10 +69,10 @@ end:
 }
 
 static int socks5_tcp_connect(struct net_context *ctx,
-			      const struct sockaddr *proxy,
-			      socklen_t proxy_len,
-			      const struct sockaddr *dest,
-			      socklen_t dest_len)
+			      const struct net_sockaddr *proxy,
+			      net_socklen_t proxy_len,
+			      const struct net_sockaddr *dest,
+			      net_socklen_t dest_len)
 {
 	struct socks5_method_request method_req;
 	struct socks5_method_response method_rsp;
@@ -122,9 +122,9 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	cmd_req.r.cmd = SOCKS5_CMD_CONNECT;
 	cmd_req.r.rsv = SOCKS5_PKT_RSV;
 
-	if (proxy->sa_family == AF_INET) {
-		const struct sockaddr_in *d4 =
-			(struct sockaddr_in *)dest;
+	if (proxy->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *d4 =
+			(struct net_sockaddr_in *)dest;
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV4;
 
@@ -136,9 +136,9 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 		size = sizeof(struct socks5_command_request_common)
 			+ sizeof(struct socks5_ipv4_addr);
-	} else if (proxy->sa_family == AF_INET6) {
-		const struct sockaddr_in6 *d6 =
-			(struct sockaddr_in6 *)dest;
+	} else if (proxy->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *d6 =
+			(struct net_sockaddr_in6 *)dest;
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV6;
 
@@ -185,17 +185,17 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	return 0;
 }
 
-int net_socks5_connect(struct net_context *ctx, const struct sockaddr *addr,
-		       socklen_t addrlen)
+int net_socks5_connect(struct net_context *ctx, const struct net_sockaddr *addr,
+		       net_socklen_t addrlen)
 {
-	struct sockaddr proxy;
-	socklen_t proxy_len;
+	struct net_sockaddr proxy;
+	net_socklen_t proxy_len;
 	int type;
 	int ret;
 
 	type = net_context_get_type(ctx);
 	/* TODO: Only TCP and TLS supported, UDP and DTLS yet to support. */
-	if (type != SOCK_STREAM) {
+	if (type != NET_SOCK_STREAM) {
 		return -ENOTSUP;
 	}
 

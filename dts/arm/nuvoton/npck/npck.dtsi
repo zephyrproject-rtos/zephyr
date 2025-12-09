@@ -373,6 +373,7 @@
 			interrupts = <21 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			vref-mv = <3300>;
+			speed-conf = <0x02 0x8901 0x0100 0x0405>;
 			status = "disabled";
 		};
 
@@ -529,6 +530,13 @@
 			compatible = "nuvoton,npcx-tach";
 			reg = <0x400e9000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL0 6>;
+			status = "disabled";
+		};
+
+		v2t0: adc-v2t0 {
+			compatible = "nuvoton,npcx-adc-v2t";
+			adc-dev = <&adc0>;
+			support-npckn-v1;
 			status = "disabled";
 		};
 

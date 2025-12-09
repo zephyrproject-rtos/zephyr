@@ -1,6 +1,58 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
+
+config BT_SILABS_SIWX91X
+	bool "Silabs SiWx91x Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
+	select SILABS_SIWX91X_NWP
+	select ENTROPY_GENERATOR
+	select BT_HCI_SETUP
+	help
+	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
+
+# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+configdefault BT_HCI_ACL_FLOW_CONTROL
+	default n if BT_SILABS_SIWX91X
+
+config BT_SILABS_EFR32
+	bool "Silabs EFR32 HCI driver"
+	default y
+	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	select PSA_CRYPTO
+	select SILABS_SISDK_PROTOCOL_CRYPTO
+	select HAS_BT_CTLR
+	# Features supported by all EFR32 devices
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_PRIVACY_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	# Features supported by some EFR32 devices
+	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_EFR32_RADIO_BLE_2M
+	select BT_CTLR_PHY_CODED_SUPPORT if HAS_HW_EFR32_RADIO_BLE_CODED
+	select BT_CTLR_CHANNEL_SOUNDING_SUPPORT if HAS_HW_EFR32_RADIO_CS
+	select BT_CTLR_DF_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_CTE_TX_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_CTE_RX_SUPPORT if HAS_HW_EFR32_RADIO_CTE_RX
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_RX
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_SILABS_EFR32_HIGH_POWER if HAS_HW_EFR32_RADIO_TX_HIGH_POWER
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
 menu "EFR32 Bluetooth Controller Configuration"
 	depends on BT_SILABS_EFR32
 
@@ -60,11 +112,11 @@ config BT_SILABS_EFR32_MAX_QUEUED_ADV_REPORTS
 	  Additional advertising reports are dropped.
 
 config BT_SILABS_EFR32_HIGH_POWER
-	bool "High power transmission"
+	bool
 	help
-	  Normally the transmit power is limited to 10 dBm. Enable this option
-	  to allow the controller to transmit at higher power levels. Note that
-	  this feature is not available on all devices.
+	  Normally the transmit power is limited to 10 dBm. This option
+	  is automatically enabled on devices with high power PA support
+	  and allows the controller to transmit at higher power levels.
 
 config BT_SILABS_EFR32_HIGH_POWER_AFH
 	bool "Adaptive frequency hopping for high power transmitters"

@@ -51,6 +51,7 @@ enum bl61x_clkid {
 	bl61x_clkid_clk_wifipll = BL61X_CLKID_CLK_WIFIPLL,
 	bl61x_clkid_clk_aupll = BL61X_CLKID_CLK_AUPLL,
 	bl61x_clkid_clk_bclk = BL61X_CLKID_CLK_BCLK,
+	bl61x_clkid_clk_160mux = BL61X_CLKID_CLK_160M,
 };
 
 struct clock_control_bl61x_pll_config {
@@ -811,6 +812,29 @@ static uint32_t clock_control_bl61x_get_bclk(const struct device *dev)
 	return source_clock / (tmp + 1);
 }
 
+/* Alternative clock for SPI, DBI, UART, PKA peripherals */
+static uint32_t clock_control_bl61x_get_160m(const struct device *dev)
+{
+	uint32_t tmp;
+	uint32_t source_clock;
+
+	tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+	tmp = (tmp & GLB_REG_TOP_MUXPLL_160M_SEL_MSK) >> GLB_REG_TOP_MUXPLL_160M_SEL_POS;
+	source_clock = clock_control_bl61x_get_fclk(dev);
+	switch (tmp) {
+	default:
+	case 0:
+		return source_clock / 2;
+	case 1:
+		return source_clock / 3;
+	case 2:
+		return source_clock / 2;
+	case 3:
+		return source_clock * 2 / 5;
+	}
+	return 0;
+}
+
 static void clock_control_bl61x_init_root_as_wifipll(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
@@ -1011,16 +1035,18 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval |= (1 << 16);
 	/* enable UART1 clock routing */
 	regval |= (1 << 17);
+	/* enable SPI0 clock routing */
+	regval |= (1 << 18);
 	/* enable I2C0 clock routing */
 	regval |= (1 << 19);
 	/* enable I2C1 clock routing */
 	regval |= (1 << 25);
-	/* enable SPI0 clock routing */
-	regval |= (1 << 18);
 	/* enable USB clock routing */
 	regval |= (1 << 13);
 	/* enable DMA clock routing */
 	regval |= (1 << 12);
+	/* enable DBI clock routing */
+	regval |= (1 << 24);
 
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG1_OFFSET);
 
@@ -1162,12 +1188,20 @@ static enum clock_control_status clock_control_bl61x_get_status(const struct dev
 static int clock_control_bl61x_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					   uint32_t *rate)
 {
+	struct clock_control_bl61x_data *data = dev->data;
+
 	if ((enum bl61x_clkid)sys == bl61x_clkid_clk_root) {
 		*rate = clock_control_bl61x_get_hclk(dev);
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_bclk) {
 		*rate = clock_control_bl61x_get_bclk(dev);
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_crystal) {
 		*rate = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_160mux) {
+		if (data->wifipll_enabled || data->aupll_enabled) {
+			*rate = clock_control_bl61x_get_160m(dev);
+		} else {
+			return -EINVAL;
+		}
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_rc32m) {
 		*rate = BFLB_RC32M_FREQUENCY;
 	} else {

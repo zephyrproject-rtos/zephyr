@@ -13,7 +13,7 @@
 
 #define BUF_SIZE	32
 
-#if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A)
+#if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEM)
 #define SLEEP_MS_LONG	30000
 #elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
 	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)

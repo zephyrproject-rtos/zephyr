@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2025 Space Cubics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_SCOBC_V1
+	select SOC_VERSAL_RPU

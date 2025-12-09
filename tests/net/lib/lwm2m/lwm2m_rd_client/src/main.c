@@ -181,11 +181,11 @@ void message_reply_cb_default(struct lwm2m_message *msg)
 {
 	struct coap_packet response;
 	struct coap_reply reply;
-	struct sockaddr from;
+	struct net_sockaddr from;
 
 	memset(&response, 0, sizeof(struct coap_packet));
 	memset(&reply, 0, sizeof(struct coap_reply));
-	memset(&from, 0, sizeof(struct sockaddr));
+	memset(&from, 0, sizeof(struct net_sockaddr));
 
 	msg->reply_cb(&response, &reply, &from);
 }

@@ -73,13 +73,13 @@ static void test_config_psk(int s_sock, int c_sock)
 		      0, "Failed to register PSK ID");
 
 	if (s_sock >= 0) {
-		zassert_equal(zsock_setsockopt(s_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+		zassert_equal(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list)),
 			      0, "Failed to set PSK on server socket");
 	}
 
 	if (c_sock >= 0) {
-		zassert_equal(zsock_setsockopt(c_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+		zassert_equal(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list)),
 			      0, "Failed to set PSK on client socket");
 	}
@@ -90,7 +90,7 @@ static void test_fcntl(int sock, int cmd, int val)
 	zassert_equal(zsock_fcntl(sock, cmd, val), 0, "fcntl failed");
 }
 
-static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
+static void test_bind(int sock, struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	zassert_equal(zsock_bind(sock, addr, addrlen),
 		      0,
@@ -104,7 +104,7 @@ static void test_listen(int sock)
 		      "listen failed");
 }
 
-static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
+static void test_connect(int sock, struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	k_yield();
 
@@ -125,12 +125,12 @@ static void test_send(int sock, const void *buf, size_t len, int flags)
 		      "send failed");
 }
 
-static void test_sendmsg(int sock, const struct msghdr *msg, int flags)
+static void test_sendmsg(int sock, const struct net_msghdr *msg, int flags)
 {
 	size_t total_len = 0;
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
-		struct iovec *vec = msg->msg_iov + i;
+		struct net_iovec *vec = msg->msg_iov + i;
 
 		total_len += vec->iov_len;
 	}
@@ -140,8 +140,8 @@ static void test_sendmsg(int sock, const struct msghdr *msg, int flags)
 		      "sendmsg failed");
 }
 
-static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
-			socklen_t *addrlen)
+static void test_accept(int sock, int *new_sock, struct net_sockaddr *addr,
+			net_socklen_t *addrlen)
 {
 	zassert_not_null(new_sock, "null newsock");
 
@@ -202,23 +202,23 @@ static void test_eof(int sock)
 
 ZTEST(net_socket_tls, test_so_type)
 {
-	struct sockaddr_in bind_addr4;
-	struct sockaddr_in6 bind_addr6;
+	struct net_sockaddr_in bind_addr4;
+	struct net_sockaddr_in6 bind_addr6;
 	int sock1, sock2, rv;
 	int optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 
-	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, NET_IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, NET_IPPROTO_TLS_1_2);
 
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optval, SOCK_STREAM, "getsockopt got invalid type");
+	zassert_equal(optval, NET_SOCK_STREAM, "getsockopt got invalid type");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optval, SOCK_STREAM, "getsockopt got invalid type");
+	zassert_equal(optval, NET_SOCK_STREAM, "getsockopt got invalid type");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
 	test_close(sock1);
@@ -227,24 +227,24 @@ ZTEST(net_socket_tls, test_so_type)
 
 ZTEST(net_socket_tls, test_so_protocol)
 {
-	struct sockaddr_in bind_addr4;
-	struct sockaddr_in6 bind_addr6;
+	struct net_sockaddr_in bind_addr4;
+	struct net_sockaddr_in6 bind_addr6;
 	int sock1, sock2, rv;
 	int optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 
-	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, IPPROTO_TLS_1_1);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, NET_IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, NET_IPPROTO_TLS_1_1);
 
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_PROTOCOL, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optval, IPPROTO_TLS_1_2,
+	zassert_equal(optval, NET_IPPROTO_TLS_1_2,
 		      "getsockopt got invalid protocol");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_PROTOCOL, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optval, IPPROTO_TLS_1_1,
+	zassert_equal(optval, NET_IPPROTO_TLS_1_1,
 		      "getsockopt got invalid protocol");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
@@ -277,7 +277,7 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 struct connect_data {
 	struct k_work_delayable work;
 	int sock;
-	struct sockaddr *addr;
+	struct net_sockaddr *addr;
 };
 
 static void client_connect_work_handler(struct k_work *work)
@@ -286,8 +286,8 @@ static void client_connect_work_handler(struct k_work *work)
 	struct connect_data *data =
 		CONTAINER_OF(dwork, struct connect_data, work);
 
-	test_connect(data->sock, data->addr, data->addr->sa_family == AF_INET ?
-		     sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+	test_connect(data->sock, data->addr, data->addr->sa_family == NET_AF_INET ?
+		     sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6));
 }
 
 static void dtls_client_connect_send_work_handler(struct k_work *work)
@@ -297,36 +297,36 @@ static void dtls_client_connect_send_work_handler(struct k_work *work)
 		CONTAINER_OF(dwork, struct connect_data, work);
 	uint8_t tx_buf = 0;
 
-	test_connect(data->sock, data->addr, data->addr->sa_family == AF_INET ?
-		     sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+	test_connect(data->sock, data->addr, data->addr->sa_family == NET_AF_INET ?
+		     sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6));
 	test_send(data->sock, &tx_buf, sizeof(tx_buf), 0);
 }
 
-static void test_prepare_tls_connection(sa_family_t family)
+static void test_prepare_tls_connection(net_sa_family_t family)
 {
-	struct sockaddr c_saddr;
-	struct sockaddr s_saddr;
-	socklen_t exp_addrlen = family == AF_INET6 ?
-				sizeof(struct sockaddr_in6) :
-				sizeof(struct sockaddr_in);
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
+	struct net_sockaddr c_saddr;
+	struct net_sockaddr s_saddr;
+	net_socklen_t exp_addrlen = family == NET_AF_INET6 ?
+				sizeof(struct net_sockaddr_in6) :
+				sizeof(struct net_sockaddr_in);
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
 	struct connect_data test_data;
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock,
-				    (struct sockaddr_in6 *)&c_saddr,
-				    IPPROTO_TLS_1_2);
+				    (struct net_sockaddr_in6 *)&c_saddr,
+				    NET_IPPROTO_TLS_1_2);
 		prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock,
-				    (struct sockaddr_in6 *)&s_saddr,
-				    IPPROTO_TLS_1_2);
+				    (struct net_sockaddr_in6 *)&s_saddr,
+				    NET_IPPROTO_TLS_1_2);
 	} else {
 		prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
-				    (struct sockaddr_in *)&c_saddr,
-				    IPPROTO_TLS_1_2);
+				    (struct net_sockaddr_in *)&c_saddr,
+				    NET_IPPROTO_TLS_1_2);
 		prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock,
-				    (struct sockaddr_in *)&s_saddr,
-				    IPPROTO_TLS_1_2);
+				    (struct net_sockaddr_in *)&s_saddr,
+				    NET_IPPROTO_TLS_1_2);
 	}
 
 	test_config_psk(s_sock, c_sock);
@@ -348,39 +348,39 @@ static void test_prepare_tls_connection(sa_family_t family)
 	test_work_wait(&test_data.work);
 }
 
-static void test_prepare_dtls_connection(sa_family_t family)
+static void test_prepare_dtls_connection(net_sa_family_t family)
 {
-	struct sockaddr c_saddr;
-	struct sockaddr s_saddr;
-	socklen_t exp_addrlen = family == AF_INET6 ?
-				sizeof(struct sockaddr_in6) :
-				sizeof(struct sockaddr_in);
+	struct net_sockaddr c_saddr;
+	struct net_sockaddr s_saddr;
+	net_socklen_t exp_addrlen = family == NET_AF_INET6 ?
+				sizeof(struct net_sockaddr_in6) :
+				sizeof(struct net_sockaddr_in);
 	struct connect_data test_data;
-	int role = TLS_DTLS_ROLE_SERVER;
+	int role = ZSOCK_TLS_DTLS_ROLE_SERVER;
 	struct zsock_pollfd fds[1];
 	uint8_t rx_buf;
 	int ret;
 
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock,
-				     (struct sockaddr_in6 *)&c_saddr,
-				     IPPROTO_DTLS_1_2);
+				     (struct net_sockaddr_in6 *)&c_saddr,
+				     NET_IPPROTO_DTLS_1_2);
 		prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock,
-				     (struct sockaddr_in6 *)&s_saddr,
-				     IPPROTO_DTLS_1_2);
+				     (struct net_sockaddr_in6 *)&s_saddr,
+				     NET_IPPROTO_DTLS_1_2);
 	} else {
 		prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
-				     (struct sockaddr_in *)&c_saddr,
-				     IPPROTO_DTLS_1_2);
+				     (struct net_sockaddr_in *)&c_saddr,
+				     NET_IPPROTO_DTLS_1_2);
 		prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock,
-				     (struct sockaddr_in *)&s_saddr,
-				     IPPROTO_DTLS_1_2);
+				     (struct net_sockaddr_in *)&s_saddr,
+				     NET_IPPROTO_DTLS_1_2);
 	}
 
 	test_config_psk(s_sock, c_sock);
 
-	zassert_equal(zsock_setsockopt(s_sock, SOL_TLS, TLS_DTLS_ROLE,
+	zassert_equal(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE,
 				 &role, sizeof(role)),
 		      0, "setsockopt() failed");
 
@@ -419,7 +419,7 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 		.tv_usec = 500000,
 	};
 
-	test_prepare_tls_connection(AF_INET);
+	test_prepare_tls_connection(NET_AF_INET);
 
 	/* Regular MSG_WAITALL - make sure recv returns only after
 	 * requested amount is received.
@@ -440,7 +440,7 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
 	 */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
 			       sizeof(timeo_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -475,7 +475,7 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 		.tv_usec = 500000,
 	};
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Regular MSG_WAITALL - make sure recv returns only after
 	 * requested amount is received.
@@ -496,7 +496,7 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
 	 */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
 			       sizeof(timeo_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -535,7 +535,7 @@ static void send_work_handler(struct k_work *work)
 	test_send(test_data->sock, test_data->data, test_data->datalen, 0);
 }
 
-void test_msg_trunc(sa_family_t family)
+void test_msg_trunc(net_sa_family_t family)
 {
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
@@ -575,18 +575,18 @@ void test_msg_trunc(sa_family_t family)
 
 ZTEST(net_socket_tls, test_v4_msg_trunc)
 {
-	test_msg_trunc(AF_INET);
+	test_msg_trunc(NET_AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_msg_trunc)
 {
-	test_msg_trunc(AF_INET6);
+	test_msg_trunc(NET_AF_INET6);
 }
 
 struct test_sendmsg_data {
 	struct k_work_delayable tx_work;
 	int sock;
-	const struct msghdr *msg;
+	const struct net_msghdr *msg;
 };
 
 static void test_sendmsg_tx_work_handler(struct k_work *work)
@@ -598,11 +598,11 @@ static void test_sendmsg_tx_work_handler(struct k_work *work)
 	test_sendmsg(test_data->sock, test_data->msg, 0);
 }
 
-static void test_dtls_sendmsg_no_buf(sa_family_t family)
+static void test_dtls_sendmsg_no_buf(net_sa_family_t family)
 {
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
-	struct iovec iov[3] = {
+	struct net_iovec iov[3] = {
 		{},
 		{
 			.iov_base = TEST_STR_SMALL,
@@ -610,7 +610,7 @@ static void test_dtls_sendmsg_no_buf(sa_family_t family)
 		},
 		{},
 	};
-	struct msghdr msg = {};
+	struct net_msghdr msg = {};
 	struct test_sendmsg_data test_data = {
 		.msg = &msg,
 	};
@@ -669,7 +669,7 @@ ZTEST(net_socket_tls, test_v4_dtls_sendmsg_no_buf)
 		ztest_test_skip();
 	}
 
-	test_dtls_sendmsg_no_buf(AF_INET);
+	test_dtls_sendmsg_no_buf(NET_AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg_no_buf)
@@ -678,16 +678,16 @@ ZTEST(net_socket_tls, test_v6_dtls_sendmsg_no_buf)
 		ztest_test_skip();
 	}
 
-	test_dtls_sendmsg_no_buf(AF_INET6);
+	test_dtls_sendmsg_no_buf(NET_AF_INET6);
 }
 
-static void test_dtls_sendmsg(sa_family_t family)
+static void test_dtls_sendmsg(net_sa_family_t family)
 {
 	int rv;
 	uint8_t buf[128 + 1] = { 0 };
 	uint8_t dummy_byte = 0;
 	static const char expected_str[] = "testtest";
-	struct iovec iov[3] = {
+	struct net_iovec iov[3] = {
 		{
 			.iov_base = TEST_STR_SMALL,
 			.iov_len = sizeof(TEST_STR_SMALL) - 1,
@@ -698,7 +698,7 @@ static void test_dtls_sendmsg(sa_family_t family)
 		},
 		{},
 	};
-	struct msghdr msg = {};
+	struct net_msghdr msg = {};
 	struct test_sendmsg_data test_data = {
 		.msg = &msg,
 	};
@@ -789,7 +789,7 @@ ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 		ztest_test_skip();
 	}
 
-	test_dtls_sendmsg(AF_INET);
+	test_dtls_sendmsg(NET_AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
@@ -798,7 +798,7 @@ ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 		ztest_test_skip();
 	}
 
-	test_dtls_sendmsg(AF_INET6);
+	test_dtls_sendmsg(NET_AF_INET6);
 }
 
 struct close_data {
@@ -817,16 +817,16 @@ static void close_work(struct k_work *work)
 
 ZTEST(net_socket_tls, test_close_while_accept)
 {
-	struct sockaddr_in6 s_saddr;
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
 	struct close_data close_work_data;
 
-	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr, NET_IPPROTO_TLS_1_2);
 
 	test_config_psk(s_sock, -1);
 
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
 
 	/* Schedule close() from workqueue */
@@ -851,7 +851,7 @@ ZTEST(net_socket_tls, test_close_while_recv)
 	struct close_data close_work_data;
 	uint8_t rx_buf;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Schedule close() from workqueue */
 	k_work_init_delayable(&close_work_data.work, close_work);
@@ -871,22 +871,22 @@ ZTEST(net_socket_tls, test_close_while_recv)
 
 ZTEST(net_socket_tls, test_connect_timeout)
 {
-	struct sockaddr_in6 c_saddr;
-	struct sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
 	int ret;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 	test_config_psk(-1, c_sock);
 
-	s_saddr.sin6_family = AF_INET6;
-	s_saddr.sin6_port = htons(SERVER_PORT);
-	ret = zsock_inet_pton(AF_INET6, MY_IPV6_ADDR, &s_saddr.sin6_addr);
+	s_saddr.sin6_family = NET_AF_INET6;
+	s_saddr.sin6_port = net_htons(SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, MY_IPV6_ADDR, &s_saddr.sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	loopback_set_packet_drop_ratio(1.0f);
 
-	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
 	zassert_equal(errno, ETIMEDOUT,
@@ -900,20 +900,20 @@ ZTEST(net_socket_tls, test_connect_timeout)
 
 ZTEST(net_socket_tls, test_connect_closed_port)
 {
-	struct sockaddr_in6 c_saddr;
-	struct sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
 	int ret;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 	test_config_psk(-1, c_sock);
 
-	s_saddr.sin6_family = AF_INET6;
-	s_saddr.sin6_port = htons(SERVER_PORT);
-	ret = zsock_inet_pton(AF_INET6, MY_IPV6_ADDR, &s_saddr.sin6_addr);
+	s_saddr.sin6_family = NET_AF_INET6;
+	s_saddr.sin6_port = net_htons(SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, MY_IPV6_ADDR, &s_saddr.sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
-	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
 	zassert_equal(errno, ECONNREFUSED,
@@ -963,19 +963,19 @@ out:
 }
 
 static void test_prepare_fake_tcp_server(struct fake_tcp_server_data *s_data,
-					 sa_family_t family, int *s_sock,
-					 struct sockaddr *s_saddr, bool reply)
+					 net_sa_family_t family, int *s_sock,
+					 struct net_sockaddr *s_saddr, bool reply)
 {
-	socklen_t exp_addrlen = family == AF_INET6 ?
-				sizeof(struct sockaddr_in6) :
-				sizeof(struct sockaddr_in);
+	net_socklen_t exp_addrlen = family == NET_AF_INET6 ?
+				sizeof(struct net_sockaddr_in6) :
+				sizeof(struct net_sockaddr_in);
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, s_sock,
-				    (struct sockaddr_in6 *)s_saddr);
+				    (struct net_sockaddr_in6 *)s_saddr);
 	} else {
 		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, s_sock,
-				    (struct sockaddr_in *)s_saddr);
+				    (struct net_sockaddr_in *)s_saddr);
 	}
 
 	test_bind(*s_sock, s_saddr, exp_addrlen);
@@ -990,16 +990,16 @@ static void test_prepare_fake_tcp_server(struct fake_tcp_server_data *s_data,
 ZTEST(net_socket_tls, test_connect_invalid_handshake_data)
 {
 	struct fake_tcp_server_data server_data;
-	struct sockaddr_in6 c_saddr;
-	struct sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 	test_config_psk(-1, c_sock);
-	test_prepare_fake_tcp_server(&server_data, AF_INET6, &s_sock,
-				     (struct sockaddr *)&s_saddr, true);
+	test_prepare_fake_tcp_server(&server_data, NET_AF_INET6, &s_sock,
+				     (struct net_sockaddr *)&s_saddr, true);
 
-	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
 	zassert_equal(errno, ECONNABORTED,
@@ -1017,16 +1017,16 @@ ZTEST(net_socket_tls, test_connect_invalid_handshake_data)
 ZTEST(net_socket_tls, test_connect_no_handshake_data)
 {
 	struct fake_tcp_server_data server_data;
-	struct sockaddr_in6 c_saddr;
-	struct sockaddr s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr s_saddr;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 	test_config_psk(-1, c_sock);
-	test_prepare_fake_tcp_server(&server_data, AF_INET6, &s_sock,
-				     (struct sockaddr *)&s_saddr, false);
+	test_prepare_fake_tcp_server(&server_data, NET_AF_INET6, &s_sock,
+				     (struct net_sockaddr *)&s_saddr, false);
 
-	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
 	zassert_equal(errno, ECONNABORTED,
@@ -1041,14 +1041,14 @@ ZTEST(net_socket_tls, test_connect_no_handshake_data)
 ZTEST(net_socket_tls, test_accept_non_block)
 {
 	uint32_t timestamp;
-	struct sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 s_saddr;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 
 	test_config_psk(s_sock, -1);
 	test_fcntl(s_sock, F_SETFL, O_NONBLOCK);
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
 
 	timestamp = k_uptime_get_32();
@@ -1063,19 +1063,19 @@ ZTEST(net_socket_tls, test_accept_non_block)
 
 ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
 {
-	struct sockaddr_in6 s_saddr;
-	struct sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
 
 	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr,
-			    IPPROTO_TLS_1_2);
+			    NET_IPPROTO_TLS_1_2);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
 
 	test_config_psk(s_sock, -1);
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
 
 	/* Connect at TCP level and send some unexpected data. */
-	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_send(c_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL), 0);
 
 	new_sock = zsock_accept(s_sock, NULL, NULL);
@@ -1091,7 +1091,7 @@ ZTEST(net_socket_tls, test_recv_non_block)
 	int ret;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Verify ZSOCK_MSG_DONTWAIT flag first */
 	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
@@ -1134,7 +1134,7 @@ ZTEST(net_socket_tls, test_recv_block)
 		.datalen = sizeof(TEST_STR_SMALL) - 1
 	};
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	test_data.sock = c_sock;
 	k_work_init_delayable(&test_data.tx_work, send_work_handler);
@@ -1152,7 +1152,7 @@ ZTEST(net_socket_tls, test_recv_block)
 
 ZTEST(net_socket_tls, test_recv_eof_on_close)
 {
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	test_close(c_sock);
 	c_sock = -1;
@@ -1173,10 +1173,10 @@ ZTEST(net_socket_tls, test_send_non_block)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	int buf_optval = TLS_RECORD_OVERHEAD + sizeof(TEST_STR_SMALL) - 1;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			       sizeof(buf_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1266,10 +1266,10 @@ ZTEST(net_socket_tls, test_send_block)
 		.datalen = sizeof(TEST_STR_SMALL) - 1
 	};
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			       sizeof(buf_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1310,7 +1310,7 @@ ZTEST(net_socket_tls, test_send_on_close)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	int ret;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	test_close(new_sock);
 	new_sock = -1;
@@ -1332,7 +1332,7 @@ ZTEST(net_socket_tls, test_send_on_close)
 
 	/* And in reverse order */
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	test_close(new_sock);
 	new_sock = -1;
@@ -1368,9 +1368,9 @@ ZTEST(net_socket_tls, test_so_rcvtimeo)
 	};
 	int ret;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
-	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1411,14 +1411,14 @@ ZTEST(net_socket_tls, test_so_sndtimeo)
 	};
 	int ret;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
-	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_SNDTIMEO, &timeo_optval,
+	ret = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDTIMEO, &timeo_optval,
 			       sizeof(timeo_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			       sizeof(buf_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1453,7 +1453,7 @@ ZTEST(net_socket_tls, test_so_sndtimeo)
 
 ZTEST(net_socket_tls, test_shutdown_rd_synchronous)
 {
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Shutdown reception */
 	test_shutdown(c_sock, ZSOCK_SHUT_RD);
@@ -1487,7 +1487,7 @@ ZTEST(net_socket_tls, test_shutdown_rd_while_recv)
 		.how = ZSOCK_SHUT_RD,
 	};
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	/* Schedule reception shutdown from workqueue */
 	k_work_init_delayable(&test_data.work, shutdown_work);
@@ -1515,7 +1515,7 @@ ZTEST(net_socket_tls, test_send_while_recv)
 	};
 	int ret;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	test_data_c.sock = c_sock;
 	k_work_init_delayable(&test_data_c.tx_work, send_work_handler);
@@ -1548,7 +1548,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollin)
 	int ret;
 	struct zsock_pollfd fds[1];
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	fds[0].fd = new_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1583,7 +1583,7 @@ ZTEST(net_socket_tls, test_poll_dtls_pollin)
 	int ret;
 	struct zsock_pollfd fds[1];
 
-	test_prepare_dtls_connection(AF_INET6);
+	test_prepare_dtls_connection(NET_AF_INET6);
 
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1617,7 +1617,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollout)
 	int ret;
 	struct zsock_pollfd fds[1];
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	fds[0].fd = c_sock;
 	fds[0].events = ZSOCK_POLLOUT;
@@ -1627,7 +1627,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollout)
 	zassert_equal(fds[0].revents, ZSOCK_POLLOUT, "No POLLOUT event");
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			       sizeof(buf_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1663,7 +1663,7 @@ ZTEST(net_socket_tls, test_poll_dtls_pollout)
 	struct zsock_pollfd fds[1];
 	int ret;
 
-	test_prepare_dtls_connection(AF_INET6);
+	test_prepare_dtls_connection(NET_AF_INET6);
 
 	fds[0].fd = c_sock;
 	fds[0].events = ZSOCK_POLLOUT;
@@ -1685,7 +1685,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollhup)
 	uint8_t rx_buf;
 	int ret;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	fds[0].fd = new_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1713,7 +1713,7 @@ ZTEST(net_socket_tls, test_poll_dtls_pollhup)
 	uint8_t rx_buf;
 	int ret;
 
-	test_prepare_dtls_connection(AF_INET6);
+	test_prepare_dtls_connection(NET_AF_INET6);
 
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1744,10 +1744,10 @@ ZTEST(net_socket_tls, test_poll_tls_pollerr)
 	int ret;
 	struct zsock_pollfd fds[1];
 	int optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 	mbedtls_ssl_context *ssl_ctx;
 
-	test_prepare_tls_connection(AF_INET6);
+	test_prepare_tls_connection(NET_AF_INET6);
 
 	fds[0].fd = new_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1761,7 +1761,7 @@ ZTEST(net_socket_tls, test_poll_tls_pollerr)
 	zassert_equal(ret, 1, "poll() should've report event");
 	zassert_true(fds[0].revents & ZSOCK_POLLERR, "No POLLERR event");
 
-	ret = zsock_getsockopt(new_sock, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	ret = zsock_getsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, ECONNABORTED, "getsockopt got invalid error %d",
 		      optval);
@@ -1781,10 +1781,10 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 	int ret;
 	struct zsock_pollfd fds[1];
 	int optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 	mbedtls_ssl_context *ssl_ctx;
 
-	test_prepare_dtls_connection(AF_INET6);
+	test_prepare_dtls_connection(NET_AF_INET6);
 
 	fds[0].fd = s_sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -1798,7 +1798,7 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 	zassert_equal(ret, 1, "poll() should've report event");
 	zassert_true(fds[0].revents & ZSOCK_POLLERR, "No POLLERR event");
 
-	ret = zsock_getsockopt(s_sock, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	ret = zsock_getsockopt(s_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, ECONNABORTED, "getsockopt got invalid error %d",
 		      optval);
@@ -1861,9 +1861,9 @@ static void test_bad_cred_common(bool test_dtls)
 				      sizeof(bad_psk)), "Failed to add psk");
 
 	if (test_dtls) {
-		s_sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_DTLS_1_2);
+		s_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
 	} else {
-		s_sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+		s_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 	}
 
 	zassert_true(s_sock >= 0, "socket open failed");
@@ -1872,7 +1872,7 @@ static void test_bad_cred_common(bool test_dtls)
 		sec_tag_t test_tag = bad_tags[i];
 		int ret;
 
-		ret = zsock_setsockopt(s_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+		ret = zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 				       &test_tag, sizeof(test_tag));
 		zassert_equal(ret, -1, "zsock_setsockopt should've failed with invalid credential");
 		if (test_tag == BAD_NO_CRED_TAG) {

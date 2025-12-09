@@ -3,7 +3,9 @@
 
 # Common fields for Ethernet devices
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: nvmem-consumer.yaml
 
 properties:
   local-mac-address:
@@ -22,6 +24,13 @@ properties:
       It is driver specific how the OUI octets are handled.
 
       If set we ignore any setting of the local-mac-address property.
+
+  zephyr,mac-address-prefix:
+    type: uint8-array
+    description: |
+      A statically assigned MAC address prefix.
+      Can be combined with zephyr,random-mac-address or an NVMEM cell, for
+      example to set the OUI.
 
   phy-handle:
     type: phandle

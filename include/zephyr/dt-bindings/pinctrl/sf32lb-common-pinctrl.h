@@ -41,4 +41,20 @@
 	 (((pad) << SF32LB_PAD_POS) & SF32LB_PAD_MSK) |                                            \
 	 (((fsel) << SF32LB_FSEL_POS) & SF32LB_FSEL_MSK))
 
+/**
+ * @brief Analog mode pin configuration.
+ *
+ * Configures a pin for analog mode with FSEL=15, PE=0 (pull disabled),
+ * and IE=0 (input disabled). Used for ADC inputs, power supply pins,
+ * or other analog functions.
+ *
+ * @param port Port (SA, PA, ...)
+ * @param pad Pad number
+ */
+
+#define SF32LB_PINMUX_ANALOG(port, pad)                                                            \
+	((((SF32LB_PORT_##port) << SF32LB_PORT_POS) & SF32LB_PORT_MSK) |                           \
+	 (((pad) << SF32LB_PAD_POS) & SF32LB_PAD_MSK) |                                            \
+	 ((15U << SF32LB_FSEL_POS) & SF32LB_FSEL_MSK))
+
 #endif /* _INCLUDE_ZEPHYR_DT_BINDINGS_PINCTRL_SF32LB_COMMON_PINCTRL_H_ */

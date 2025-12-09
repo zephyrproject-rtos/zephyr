@@ -65,6 +65,7 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 void pbuf_native_addr_remap(struct pbuf *pb)
 {
 	native_emb_addr_remap((void **)&pb->cfg->rd_idx_loc);
+	native_emb_addr_remap((void **)&pb->cfg->handshake_loc);
 	native_emb_addr_remap((void **)&pb->cfg->wr_idx_loc);
 	native_emb_addr_remap((void **)&pb->cfg->data_loc);
 }

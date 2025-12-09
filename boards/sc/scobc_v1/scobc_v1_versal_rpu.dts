@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/versal_rpu.dtsi>
+
+/ {
+	model = "SC-OBC Module V1 Versal Cortex-R5F";
+
+	chosen {
+		zephyr,sram = &tcm;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};
+
+&ttc0 {
+	status = "okay";
+	clock-frequency = <150000000>;
+};

@@ -31,243 +31,243 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 #include "net_private.h"
 
 struct net_addr_test_data {
-	sa_family_t family;
+	net_sa_family_t family;
 	bool pton;
 
 	struct {
 		char c_addr[16];
 		char c_verify[16];
-		struct in_addr addr;
-		struct in_addr verify;
+		struct net_in_addr addr;
+		struct net_in_addr verify;
 	} ipv4;
 
 	struct {
 		char c_addr[46];
 		char c_verify[46];
-		struct in6_addr addr;
-		struct in6_addr verify;
+		struct net_in6_addr addr;
+		struct net_in6_addr verify;
 	} ipv6;
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_1 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "192.0.0.1",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 1 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_2 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "192.1.0.0",
 	.ipv4.verify.s4_addr = { 192, 1, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_3 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "192.0.0.0",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_4 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "255.255.255.255",
 	.ipv4.verify.s4_addr = { 255, 255, 255, 255 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_5 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "0.0.0.0",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_6 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "0.0.0.1",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 1 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_7 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "0.0.1.0",
 	.ipv4.verify.s4_addr = { 0, 0, 1, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_8 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = true,
 	.ipv4.c_addr = "0.1.0.0",
 	.ipv4.verify.s4_addr = { 0, 1, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "ff08::",
-	.ipv6.verify.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
+	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "::",
 	.ipv6.verify.s6_addr16 = { 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "ff08::1",
-	.ipv6.verify.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, htons(1) },
+	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_4 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "2001:db8::1",
-	.ipv6.verify.s6_addr16 = { htons(0x2001), htons(0xdb8),
-				   0, 0, 0, 0, 0, htons(1) },
+	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
+				   0, 0, 0, 0, 0, net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_5 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "2001:db8::2:1",
-	.ipv6.verify.s6_addr16 = { htons(0x2001), htons(0xdb8),
-				   0, 0, 0, 0, htons(2), htons(1) },
+	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
+				   0, 0, 0, 0, net_htons(2), net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
-	.ipv6.verify.s6_addr16 = { htons(0xff08), htons(0x1122),
-				   htons(0x3344), htons(0x5566),
-				   htons(0x7788), htons(0x9900),
-				   htons(0xaabb), htons(0xccdd) },
+	.ipv6.verify.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
+				   net_htons(0x3344), net_htons(0x5566),
+				   net_htons(0x7788), net_htons(0x9900),
+				   net_htons(0xaabb), net_htons(0xccdd) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_7 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "0:ff08::",
-	.ipv6.verify.s6_addr16 = { 0, htons(0xff08), 0, 0, 0, 0, 0, 0 },
+	.ipv6.verify.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
 /* net_addr_ntop test cases */
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_1 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "192.0.0.1",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 1 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_2 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "192.1.0.0",
 	.ipv4.addr.s4_addr = { 192, 1, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_3 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "192.0.0.0",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_4 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "255.255.255.255",
 	.ipv4.addr.s4_addr = { 255, 255, 255, 255 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_5 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "0.0.0.0",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_6 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "0.0.0.1",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 1 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_7 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "0.0.1.0",
 	.ipv4.addr.s4_addr = { 0, 0, 1, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_8 = {
-	.family = AF_INET,
+	.family = NET_AF_INET,
 	.pton = false,
 	.ipv4.c_verify = "0.1.0.0",
 	.ipv4.addr.s4_addr = { 0, 1, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "ff08::",
-	.ipv6.addr.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
+	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "::",
 	.ipv6.addr.s6_addr16 = { 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "ff08::1",
-	.ipv6.addr.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, htons(1) },
+	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_4 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "2001:db8::1",
-	.ipv6.addr.s6_addr16 = { htons(0x2001), htons(0xdb8),
-				 0, 0, 0, 0, 0, htons(1) },
+	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
+				 0, 0, 0, 0, 0, net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_5 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "2001:db8::2:1",
-	.ipv6.addr.s6_addr16 = { htons(0x2001), htons(0xdb8),
-				 0, 0, 0, 0, htons(2), htons(1) },
+	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
+				 0, 0, 0, 0, net_htons(2), net_htons(1) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
-	.ipv6.addr.s6_addr16 = { htons(0xff08), htons(0x1122),
-				 htons(0x3344), htons(0x5566),
-				 htons(0x7788), htons(0x9900),
-				 htons(0xaabb), htons(0xccdd) },
+	.ipv6.addr.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
+				 net_htons(0x3344), net_htons(0x5566),
+				 net_htons(0x7788), net_htons(0x9900),
+				 net_htons(0xaabb), net_htons(0xccdd) },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_7 = {
-	.family = AF_INET6,
+	.family = NET_AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "0:ff08::",
-	.ipv6.addr.s6_addr16 = { 0, htons(0xff08), 0, 0, 0, 0, 0, 0 },
+	.ipv6.addr.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
 static const struct {
@@ -316,9 +316,9 @@ static const struct {
 static bool check_net_addr(struct net_addr_test_data *data)
 {
 	switch (data->family) {
-	case AF_INET:
+	case NET_AF_INET:
 		if (data->pton) {
-			if (net_addr_pton(AF_INET, (char *)data->ipv4.c_addr,
+			if (net_addr_pton(NET_AF_INET, (char *)data->ipv4.c_addr,
 					  &data->ipv4.addr) < 0) {
 				printk("Failed to convert %s\n",
 				       data->ipv4.c_addr);
@@ -334,7 +334,7 @@ static bool check_net_addr(struct net_addr_test_data *data)
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(AF_INET, &data->ipv4.addr,
+			if (!net_addr_ntop(NET_AF_INET, &data->ipv4.addr,
 					   data->ipv4.c_addr,
 					   sizeof(data->ipv4.c_addr))) {
 				printk("Failed to convert %s\n",
@@ -355,9 +355,9 @@ static bool check_net_addr(struct net_addr_test_data *data)
 
 		break;
 
-	case AF_INET6:
+	case NET_AF_INET6:
 		if (data->pton) {
-			if (net_addr_pton(AF_INET6, (char *)data->ipv6.c_addr,
+			if (net_addr_pton(NET_AF_INET6, (char *)data->ipv6.c_addr,
 					  &data->ipv6.addr) < 0) {
 				printk("Failed to convert %s\n",
 				       data->ipv6.c_addr);
@@ -376,7 +376,7 @@ static bool check_net_addr(struct net_addr_test_data *data)
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(AF_INET6, &data->ipv6.addr,
+			if (!net_addr_ntop(NET_AF_INET6, &data->ipv6.addr,
 					   data->ipv6.c_addr,
 					   sizeof(data->ipv6.c_addr))) {
 				printk("Failed to convert %s\n",
@@ -422,22 +422,22 @@ ZTEST(test_utils_fn, test_net_addr)
 
 ZTEST(test_utils_fn, test_addr_parse)
 {
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	bool ret;
 	int i;
 #if defined(CONFIG_NET_IPV4)
 	static const struct {
 		const char *address;
 		int len;
-		struct sockaddr_in result;
+		struct net_sockaddr_in result;
 		bool verdict;
 	} parse_ipv4_entries[] = {
 		{
 			.address = "192.0.2.1:80",
 			.len = sizeof("192.0.2.1:80") - 1,
 			.result = {
-				.sin_family = AF_INET,
-				.sin_port = htons(80),
+				.sin_family = NET_AF_INET,
+				.sin_port = net_htons(80),
 				.sin_addr = {
 					.s4_addr[0] = 192,
 					.s4_addr[1] = 0,
@@ -451,7 +451,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "192.0.2.2",
 			.len = sizeof("192.0.2.2") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 192,
@@ -466,7 +466,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "192.0.2.3/foobar",
 			.len = sizeof("192.0.2.3/foobar") - 8,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 192,
@@ -481,7 +481,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "255.255.255.255:0",
 			.len = sizeof("255.255.255.255:0") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 255,
@@ -496,8 +496,8 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "127.0.0.42:65535",
 			.len = sizeof("127.0.0.42:65535") - 1,
 			.result = {
-				.sin_family = AF_INET,
-				.sin_port = htons(65535),
+				.sin_family = NET_AF_INET,
+				.sin_port = net_htons(65535),
 				.sin_addr = {
 					.s4_addr[0] = 127,
 					.s4_addr[1] = 0,
@@ -521,7 +521,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "192.0.2.3:80/foobar",
 			.len = sizeof("192.0.2.3") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 192,
@@ -536,8 +536,8 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "192.0.2.3:80/foobar",
 			.len = sizeof("192.0.2.3:80") - 1,
 			.result = {
-				.sin_family = AF_INET,
-				.sin_port = htons(80),
+				.sin_family = NET_AF_INET,
+				.sin_port = net_htons(80),
 				.sin_addr = {
 					.s4_addr[0] = 192,
 					.s4_addr[1] = 0,
@@ -566,7 +566,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "192.168.0.1",
 			.len = sizeof("192.168.0.1:80000") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 192,
@@ -587,23 +587,23 @@ ZTEST(test_utils_fn, test_addr_parse)
 	static const struct {
 		const char *address;
 		int len;
-		struct sockaddr_in6 result;
+		struct net_sockaddr_in6 result;
 		bool verdict;
 	} parse_ipv6_entries[] = {
 		{
 			.address = "[2001:db8::2]:80",
 			.len = sizeof("[2001:db8::2]:80") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
-				.sin6_port = htons(80),
+				.sin6_family = NET_AF_INET6,
+				.sin6_port = net_htons(80),
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(2)
+					.s6_addr16[7] = net_ntohs(2)
 				}
 			},
 			.verdict = true
@@ -612,16 +612,16 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[2001:db8::a]/barfoo",
 			.len = sizeof("[2001:db8::a]/barfoo") - 8,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0xa)
+					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
 			.verdict = true
@@ -630,16 +630,16 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[2001:db8::a]",
 			.len = sizeof("[2001:db8::a]") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0xa)
+					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
 			.verdict = true
@@ -648,17 +648,17 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[2001:db8:3:4:5:6:7:8]:65535",
 			.len = sizeof("[2001:db8:3:4:5:6:7:8]:65535") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 65535,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
-					.s6_addr16[2] = ntohs(3),
-					.s6_addr16[3] = ntohs(4),
-					.s6_addr16[4] = ntohs(5),
-					.s6_addr16[5] = ntohs(6),
-					.s6_addr16[6] = ntohs(7),
-					.s6_addr16[7] = ntohs(8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
+					.s6_addr16[2] = net_ntohs(3),
+					.s6_addr16[3] = net_ntohs(4),
+					.s6_addr16[4] = net_ntohs(5),
+					.s6_addr16[5] = net_ntohs(6),
+					.s6_addr16[6] = net_ntohs(7),
+					.s6_addr16[7] = net_ntohs(8),
 				}
 			},
 			.verdict = true
@@ -667,7 +667,7 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[::]:0",
 			.len = sizeof("[::]:0") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
 					.s6_addr16[0] = 0,
@@ -686,16 +686,16 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "2001:db8::42",
 			.len = sizeof("2001:db8::42") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0x42)
+					.s6_addr16[7] = net_ntohs(0x42)
 				}
 			},
 			.verdict = true
@@ -734,11 +734,11 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[2001:db8::]:80/url/continues",
 			.len = sizeof("[2001:db8::]") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
@@ -752,16 +752,16 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "[2001:db8::200]:080",
 			.len = sizeof("[2001:db8:433:2]:80000") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
-				.sin6_port = htons(80),
+				.sin6_family = NET_AF_INET6,
+				.sin6_port = net_htons(80),
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0x200)
+					.s6_addr16[7] = net_ntohs(0x200)
 				}
 			},
 			.verdict = true
@@ -786,16 +786,16 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.address = "2001:db8::1:80",
 			.len = sizeof("2001:db8::1:80") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
-					.s6_addr16[6] = ntohs(0x01),
-					.s6_addr16[7] = ntohs(0x80)
+					.s6_addr16[6] = net_ntohs(0x01),
+					.s6_addr16[7] = net_ntohs(0x80)
 				}
 			},
 			.verdict = true
@@ -870,8 +870,8 @@ static const char *check_ipaddr(const char *addresses)
 		char addr_str[NET_IPV6_ADDR_LEN + 4 + 1];
 		char expecting[NET_IPV6_ADDR_LEN + 4 + 1];
 		const char *orig = addresses;
-		struct sockaddr_storage addr;
-		struct sockaddr_storage mask;
+		struct net_sockaddr_storage addr;
+		struct net_sockaddr_storage mask;
 		uint8_t mask_len;
 		int ret;
 
@@ -882,29 +882,29 @@ static const char *check_ipaddr(const char *addresses)
 		memset(expecting, 0, sizeof(expecting));
 
 		addresses = net_ipaddr_parse_mask(addresses, strlen(addresses),
-						  (struct sockaddr *)&addr, &mask_len);
+						  (struct net_sockaddr *)&addr, &mask_len);
 		zassert_not_null(addresses, "Invalid parse, expecting \"%s\"", orig);
 
 		strncpy(expecting, orig,
 			*addresses == '\0' ? strlen(orig) : addresses - orig - 1);
 
 		(void)net_addr_ntop(addr.ss_family,
-				    &net_sin((struct sockaddr *)&addr)->sin_addr,
+				    &net_sin((struct net_sockaddr *)&addr)->sin_addr,
 				    addr_str, sizeof(addr_str));
 
 		ret = net_mask_len_to_netmask(addr.ss_family, mask_len,
-					      (struct sockaddr *)&mask);
+					      (struct net_sockaddr *)&mask);
 		zassert_equal(ret, 0, "Failed to convert mask %d", mask_len);
 
 		ret = net_netmask_to_mask_len(addr.ss_family,
-					      (struct sockaddr *)&mask,
+					      (struct net_sockaddr *)&mask,
 					      &mask_len);
 		zassert_equal(ret, 0, "Failed to convert mask %s",
 			      net_sprint_addr(addr.ss_family,
 					      (const void *)&net_sin(
-						      ((struct sockaddr *)&mask))->sin_addr));
+						      ((struct net_sockaddr *)&mask))->sin_addr));
 
-		if (net_sin((struct sockaddr *)&mask)->sin_addr.s_addr != 0) {
+		if (net_sin((struct net_sockaddr *)&mask)->sin_addr.s_addr != 0) {
 			int addr_len = strlen(addr_str);
 
 			snprintk(addr_str + addr_len,
@@ -924,7 +924,7 @@ static const char *check_ipaddr(const char *addresses)
 
 ZTEST(test_utils_fn, test_addr_parse_mask)
 {
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	uint8_t mask_len;
 	const char *next;
 	int i;
@@ -932,7 +932,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 	static const struct {
 		const char *address;
 		int len;
-		struct sockaddr_in result;
+		struct net_sockaddr_in result;
 		uint8_t mask_len;
 		const char *verdict;
 	} parse_ipv4_entries[] = {
@@ -945,7 +945,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "192.0.2.2",
 			.len = sizeof("192.0.2.2") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_addr = {
 					.s4_addr[0] = 192,
 					.s4_addr[1] = 0,
@@ -964,7 +964,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "127.0.0.42,1.2.3.4",
 			.len = sizeof("127.0.0.42,1.2.3.4") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_addr = {
 					.s4_addr[0] = 127,
 					.s4_addr[1] = 0,
@@ -979,7 +979,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "127.0.0.42/8,1.2.3.4",
 			.len = sizeof("127.0.0.42/8,1.2.3.4") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_addr = {
 					.s4_addr[0] = 127,
 					.s4_addr[1] = 0,
@@ -1004,7 +1004,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "192.0.2.3:80/foobar",
 			.len = sizeof("192.0.2.3") - 1,
 			.result = {
-				.sin_family = AF_INET,
+				.sin_family = NET_AF_INET,
 				.sin_port = 0,
 				.sin_addr = {
 					.s4_addr[0] = 192,
@@ -1030,7 +1030,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 	static const struct {
 		const char *address;
 		int len;
-		struct sockaddr_in6 result;
+		struct net_sockaddr_in6 result;
 		uint8_t mask_len;
 		const char *verdict;
 	} parse_ipv6_entries[] = {
@@ -1038,15 +1038,15 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::2",
 			.len = sizeof("2001:db8::2") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(2)
+					.s6_addr16[7] = net_ntohs(2)
 				}
 			},
 			.verdict = "",
@@ -1055,16 +1055,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::a/barfoo",
 			.len = sizeof("2001:db8::a/barfoo") - 8,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0xa)
+					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
 			.verdict = "",
@@ -1073,16 +1073,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::a",
 			.len = sizeof("2001:db8::a") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0xa)
+					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
 			.verdict = "",
@@ -1101,16 +1101,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::42",
 			.len = sizeof("2001:db8::42") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_port = 0,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0x42)
+					.s6_addr16[7] = net_ntohs(0x42)
 				}
 			},
 			.verdict = "",
@@ -1175,15 +1175,15 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::1:80",
 			.len = sizeof("2001:db8::1:80") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
-					.s6_addr16[6] = ntohs(0x01),
-					.s6_addr16[7] = ntohs(0x80)
+					.s6_addr16[6] = net_ntohs(0x01),
+					.s6_addr16[7] = net_ntohs(0x80)
 				}
 			},
 			.verdict = "",
@@ -1192,16 +1192,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.address = "2001:db8::1/64,2001:db8::2",
 			.len = sizeof("2001:db8::1/64,2001:db8::2") - 1,
 			.result = {
-				.sin6_family = AF_INET6,
+				.sin6_family = NET_AF_INET6,
 				.sin6_addr = {
-					.s6_addr16[0] = ntohs(0x2001),
-					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
 					.s6_addr16[2] = 0,
 					.s6_addr16[3] = 0,
 					.s6_addr16[4] = 0,
 					.s6_addr16[5] = 0,
 					.s6_addr16[6] = 0,
-					.s6_addr16[7] = ntohs(0x01)
+					.s6_addr16[7] = net_ntohs(0x01)
 				}
 			},
 			.mask_len = 64,
@@ -1393,7 +1393,7 @@ ZTEST(test_utils_fn, test_linkaddr_handling)
 	int ret;
 
 	pkt = net_pkt_rx_alloc_with_buffer(net_if_get_default(),
-					   sizeof(udp), AF_UNSPEC,
+					   sizeof(udp), NET_AF_UNSPEC,
 					   0, K_NO_WAIT);
 	zassert_not_null(pkt, "Cannot allocate pkt");
 

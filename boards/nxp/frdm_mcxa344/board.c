@@ -94,6 +94,21 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GatePORT4);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER2, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	RESET_ReleasePeripheralReset(kGPIO0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO0);
@@ -117,6 +132,25 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	RESET_ReleasePeripheralReset(kGPIO4_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO4);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
+
+/*
+ * Clock Select Decides what input source the lptmr will clock from
+ *
+ * 0 <- Reserved
+ * 1 <- 16K FRO
+ * 2 <- Reserved
+ * 3 <- Combination of clocks configured in MRCC_LPTMR0_CLKSEL[MUX] field
+ */
+#if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
+	CLOCK_SetClockDiv(kCLOCK_DivLPTMR0, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPTMR0);
+#endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
+
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))

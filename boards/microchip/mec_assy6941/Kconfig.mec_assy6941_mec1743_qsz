@@ -1,5 +1,0 @@
-# Copyright (c) 2025, Microchip Technology Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MEC_ASSY6941_MEC1743_QSZ
-	select SOC_MEC1743_QSZ

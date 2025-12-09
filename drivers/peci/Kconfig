@@ -10,9 +10,11 @@ menuconfig PECI
 
 if PECI
 
-source "drivers/peci/Kconfig.xec"
+# zephyr-keep-sorted-start
 source "drivers/peci/Kconfig.it8xxx2"
 source "drivers/peci/Kconfig.npcx"
+source "drivers/peci/Kconfig.xec"
+# zephyr-keep-sorted-stop
 
 module = PECI
 module-str = peci

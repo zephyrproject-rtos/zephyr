@@ -10,3 +10,12 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  wakeup-delay:
+    type: int
+    description: |
+      When a different VDD_CORE level is configured
+      in low power modes (LP_CFG register) compared
+      to active modes (ACTIVE_CFG register), the
+      LPWKUP_DELAY register must be configured to a
+      minimum value.

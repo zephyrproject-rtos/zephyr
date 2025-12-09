@@ -524,7 +524,7 @@ New Boards
 
 * Ai-Thinker Co., Ltd.
 
-   * :zephyr:board:`ai_wb2_12f` (``ai_wb2_12f``)
+   * :zephyr:board:`ai_wb2_12f_kit` (``ai_wb2_12f_kit``)
 
 * Ambiq Micro, Inc.
 

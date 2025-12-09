@@ -1,0 +1,51 @@
+# Ethernet bridge configuration options
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_ETHERNET_BRIDGE
+	bool "Ethernet Bridging support"
+	select NET_PROMISCUOUS_MODE
+	select NET_L2_VIRTUAL
+	help
+	  Enables Ethernet bridging where packets can be transparently
+	  forwarded across interfaces registered to a bridge.
+
+if NET_ETHERNET_BRIDGE
+
+config NET_ETHERNET_BRIDGE_COUNT
+	int "Max number of bridge interfaces"
+	default 1
+	range 1 16
+	help
+	  How many bridge interfaces are created. Each interface can bridge
+	  two or more Ethernet interfaces.
+
+config NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT
+	int "Max number of Ethernet interfaces bridged together"
+	default 2
+	range 2 32
+	help
+	  How many Ethernet interfaces can be bridged together per each
+	  bridge interface.
+
+config NET_ETHERNET_BRIDGE_TXRX_DEBUG
+	bool "Debug received and sent packets in bridge"
+	depends on NET_L2_ETHERNET_LOG_LEVEL_DBG
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+
+config NET_ETHERNET_BRIDGE_SHELL
+	bool "Ethernet Bridging management shell"
+	select NET_SHELL
+	help
+	  Enables shell utility to manage bridge configuration interactively.
+
+module = NET_ETHERNET_BRIDGE
+module-dep = NET_LOG
+module-str = Log level for Ethernet Bridging
+module-help = Enables Ethernet Bridge code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_ETHERNET_BRIDGE

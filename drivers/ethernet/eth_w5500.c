@@ -232,7 +232,7 @@ static void w5500_rx(const struct device *dev)
 	rx_len = sys_get_be16(header) - 2;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len,
-			AF_UNSPEC, 0, K_MSEC(config->timeout));
+			NET_AF_UNSPEC, 0, K_MSEC(config->timeout));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
 		return;

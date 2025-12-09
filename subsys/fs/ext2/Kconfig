@@ -9,11 +9,11 @@ config FILE_SYSTEM_EXT2
 	help
 	  Enable Ext2 file system support.
 
+if FILE_SYSTEM_EXT2
+
 module = EXT2
 module-str = Ext2
 source "subsys/logging/Kconfig.template.log_config"
-
-if FILE_SYSTEM_EXT2
 
 menu "Ext2 file system Settings"
 	visible if FILE_SYSTEM_EXT2

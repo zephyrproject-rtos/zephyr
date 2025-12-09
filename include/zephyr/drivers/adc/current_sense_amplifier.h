@@ -88,6 +88,7 @@ current_sense_amplifier_scale_ua_dt(const struct current_sense_amplifier_dt_spec
 	 *          (INT32_MAX * 1000) * UINT16_MAX <= INT64_MAX
 	 *                                   ~2**57 <= 2**63
 	 */
+	temp = temp - 1000 * (int64_t)(spec->zero_current_voltage_mv);
 	int64_t scaled = temp * 1000 * spec->sense_gain_div;
 	/* Perform final divisions */
 	return scaled / spec->sense_gain_mult / spec->sense_milli_ohms;

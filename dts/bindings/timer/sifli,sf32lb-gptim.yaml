@@ -1,0 +1,25 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sifli SF32LB General Purpose Timer (GPT)
+
+compatible: "sifli,sf32lb-gptim"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  sifli,prescaler:
+    type: int
+    default: 0
+    required: true
+    description: |
+      Counter prescaler from 0 to 65535. The clock frequency to the counter
+      is the input frequency divided by (prescaler + 1). For example, if the
+      input clock is 48 MHz and the desired counter clock is 1 MHz, set this
+      property to 47.

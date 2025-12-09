@@ -83,7 +83,7 @@ conditional visibility to the compiler.
 Any header file that declares system calls must include a special generated
 header at the very bottom of the header file. This header follows the
 naming convention ``syscalls/<name of header file>``. For example, at the
-bottom of ``include/sensor.h``:
+bottom of :zephyr_file:`include/zephyr/drivers/sensor.h`:
 
 .. code-block:: c
 
@@ -170,7 +170,8 @@ the project out directory under ``include/generated/``:
 
 The body of the API is created in the generated system header. Using the
 example of :c:func:`k_sem_init()`, this API is declared in
-``include/kernel.h``. At the bottom of ``include/kernel.h`` is::
+:zephyr_file:`include/zephyr/kernel.h`. At the bottom of
+:zephyr_file:`include/zephyr/kernel.h` is::
 
     #include <zephyr/syscalls/kernel.h>
 

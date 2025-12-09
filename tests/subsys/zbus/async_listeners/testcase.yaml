@@ -1,0 +1,48 @@
+tests:
+  message_bus.zbus.async_listeners:
+    tags: zbus
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_leon3
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "^.*?E: could not deliver notification to observer . Error code -12"
+
+  message_bus.zbus.async_listeners_alloc_static:
+    tags: zbus
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_leon3
+    extra_configs:
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "^.*?E: could not deliver notification to observer . Error code -12"
+
+  message_bus.zbus.async_listeners.smp:
+    tags: zbus
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_leon3
+
+  message_bus.zbus.async_listeners_alloc_static.smp:
+    tags: zbus
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_leon3
+    extra_configs:
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16

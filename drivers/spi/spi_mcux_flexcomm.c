@@ -101,9 +101,9 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
 		/* nothing left to rx or tx, we're done! */
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, 0);
-		spi_context_release(&data->ctx, 0);
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
+		spi_context_release(ctx, 0);
 		pm_policy_device_power_lock_put(dev);
 		return;
 	}
@@ -151,8 +151,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	status = SPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start");
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, -EIO);
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, -EIO);
 		pm_policy_device_power_lock_put(dev);
 	}
 }
@@ -171,9 +171,10 @@ static void spi_mcux_transfer_callback(SPI_Type *base,
 		spi_master_handle_t *handle, status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
+	struct spi_context *ctx = &data->ctx;
 
-	spi_context_update_tx(&data->ctx, data->word_size_bytes, data->transfer_len);
-	spi_context_update_rx(&data->ctx, data->word_size_bytes, data->transfer_len);
+	spi_context_update_tx(ctx, data->word_size_bytes, data->transfer_len);
+	spi_context_update_rx(ctx, data->word_size_bytes, data->transfer_len);
 
 	spi_mcux_transfer_next_packet(data->dev);
 }
@@ -196,10 +197,11 @@ static int spi_mcux_configure(const struct device *dev,
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	SPI_Type *base = config->base;
 	uint32_t clock_freq;
 
-	if ((spi_context_configured(&data->ctx, spi_cfg)) && (!force_reconfig)) {
+	if ((spi_context_configured(ctx, spi_cfg)) && (!force_reconfig)) {
 		/* This configuration is already in use */
 		return 0;
 	}
@@ -234,11 +236,8 @@ static int spi_mcux_configure(const struct device *dev,
 		uint8_t max_slave = SPI_CHIP_SELECT_COUNT;
 
 #ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
-		struct spi_context *ctx = &data->ctx;
-
 		max_slave = MAX(max_slave, ctx->num_cs_gpios);
 #endif
-
 		max_slave -= 1;
 
 		if (spi_cfg->slave > max_slave) {
@@ -288,7 +287,7 @@ static int spi_mcux_configure(const struct device *dev,
 					     spi_mcux_transfer_callback, data);
 #endif
 
-		data->ctx.config = spi_cfg;
+		ctx->config = spi_cfg;
 	} else {
 		spi_slave_config_t slave_config;
 
@@ -322,7 +321,7 @@ static int spi_mcux_configure(const struct device *dev,
 					      spi_mcux_transfer_callback, data);
 #endif
 
-		data->ctx.config = spi_cfg;
+		ctx->config = spi_cfg;
 	}
 
 	return 0;
@@ -339,6 +338,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	/* arg directly holds the spi device */
 	const struct device *spi_dev = arg;
 	struct spi_mcux_data *data = spi_dev->data;
+	struct spi_context *ctx = &data->ctx;
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
@@ -353,15 +353,15 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 			 * we use that to call context complete.
 			 */
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG;
-			spi_context_cs_control(&data->ctx, false);
-			spi_context_complete(&data->ctx, spi_dev, 0);
+			spi_context_cs_control(ctx, false);
+			spi_context_complete(ctx, spi_dev, 0);
 			pm_policy_device_power_lock_put(dev);
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.",
 								channel);
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
-			spi_context_cs_control(&data->ctx, false);
-			spi_context_complete(&data->ctx, spi_dev, -EIO);
+			spi_context_cs_control(ctx, false);
+			spi_context_complete(ctx, spi_dev, -EIO);
 			pm_policy_device_power_lock_put(dev);
 		}
 	}
@@ -378,24 +378,32 @@ static uint32_t spi_mcux_get_tx_word(uint32_t value, const struct spi_config *sp
 }
 
 static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, const uint8_t *buf,
-					  size_t len, uint32_t def_char, uint8_t word_size)
+					  size_t len, uint32_t def_char, uint8_t word_size,
+					  uint32_t *last_word)
 {
 	uint32_t value = def_char;
+
+	if (len < 1) {
+		LOG_ERR("Invalid len");
+		return -ECANCELED;
+	}
 
 	/* Buffer will be null if TX is sending dummy data. In this case, we don't
 	 * need to copy any data from the buffer into the dummy word.
 	 */
 	if (buf != NULL) {
 		if (word_size > 8) {
-			assert(len > 1);
-			value = (((uint32_t)buf[len - 1U] << 8U) | (buf[len - 2U]));
+			/* driver only support up to 16 bit */
+			value = (((uint32_t)buf[1] << 8U) | (buf[0]));
 		} else {
-			value = buf[len - 1U];
+			value = buf[0];
 		}
 	}
 	value |= (uint32_t)SPI_FIFOWR_EOT_MASK;
 
-	return spi_mcux_get_tx_word(value, spi_cfg, word_size);
+	*last_word = spi_mcux_get_tx_word(value, spi_cfg, word_size);
+
+	return 0;
 }
 
 static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_config *spi_cfg,
@@ -404,11 +412,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	SPI_Type *base = config->base;
-	struct dma_block_config *blk_cfg;
-
 	/* remember active TX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_tx;
+	struct dma_block_config *blk_cfg;
+	SPI_Type *base = config->base;
+	int ret = 0;
 
 	/* prepare the block for this TX DMA channel */
 	blk_cfg = &stream->dma_blk_cfg[dma_block_num];
@@ -418,14 +426,17 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 	blk_cfg->dest_scatter_en = 0;
 	blk_cfg->source_gather_en = 0;
 	if (last_packet) {
-		data->last_word = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
-							    data->word_size_bits);
+		ret = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
+						data->word_size_bits, &data->last_word);
+		if (ret) {
+			return ret;
+		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->block_size = sizeof(uint32_t);
+		blk_cfg->block_size = data->word_size_bytes;
 		blk_cfg->next_block = NULL;
 	} else {
-		blk_cfg->block_size = len;
+		blk_cfg->block_size = len * data->word_size_bytes;
 		blk_cfg->next_block = blk_cfg + 1;
 		if (buf) {
 			blk_cfg->source_address = (uint32_t)buf;
@@ -436,7 +447,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
 	}
-	return EXIT_SUCCESS;
+	return ret;
 }
 
 static int spi_mcux_dma_tx_start(const struct device *dev, const struct spi_config *spi_cfg)
@@ -485,7 +496,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 
 	/* prepare the block for this RX DMA channel */
 	blk_cfg = &stream->dma_blk_cfg[dma_block_num];
-	blk_cfg->block_size = len;
+	blk_cfg->block_size = len * data->word_size_bytes;
 	blk_cfg->dest_scatter_en = 0;
 	if (last_packet) {
 		blk_cfg->next_block = NULL;
@@ -532,6 +543,7 @@ static int spi_mcux_dma_rx_start(const struct device *dev)
 static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	const size_t data_size = data->word_size_bytes;
 	size_t dma_block = 0;
 	size_t block_length;
@@ -548,40 +560,45 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 
 	/* Parse all data to be sent into chained DMA blocks. */
 	while (1) {
-		block_length = spi_context_max_continuous_chunk(&data->ctx);
-		assert(block_length >= data_size);
-		if (data->ctx.tx_count <= 1 && data->ctx.rx_count <= 1 &&
-		    block_length == spi_context_longest_current_buf(&data->ctx)) {
+		block_length = spi_context_max_continuous_chunk(ctx);
+		if (block_length < 1) {
+			LOG_ERR("unexpected block length");
+			return -ECANCELED;
+		}
+		if (ctx->tx_count <= 1 && ctx->rx_count <= 1 &&
+		    block_length == spi_context_longest_current_buf(ctx)) {
 			/* On the last buffer. First send all but the last word, then when only one
 			 * word is remaining, load the last buffer with that word so it can be set
 			 * to release the CS line.
 			 */
-			if (block_length > data_size) {
-				block_length -= data_size;
+			if (block_length > 1) {
+				block_length -= 1;
 			} else {
 				/* There is only one transfer left. */
 				last_packet = true;
 			}
 		}
-		ret = spi_mcux_dma_rx_load(dev, data->ctx.rx_buf, block_length, dma_block,
+		ret = spi_mcux_dma_rx_load(dev, ctx->rx_buf, block_length, dma_block,
 					   last_packet);
 		if (ret) {
 			LOG_ERR("could not load rx data to dma: %d", ret);
 			return ret;
 		}
-		ret = spi_mcux_dma_tx_load(dev, spi_cfg, data->ctx.tx_buf, block_length, dma_block,
+		ret = spi_mcux_dma_tx_load(dev, spi_cfg, ctx->tx_buf, block_length, dma_block,
 					   last_packet);
 		if (ret) {
 			LOG_ERR("could not load tx data to dma: %d", ret);
 			return ret;
 		}
-		spi_context_update_rx(&data->ctx, data_size, block_length);
-		spi_context_update_tx(&data->ctx, data_size, block_length);
+		spi_context_update_rx(ctx, data_size, block_length);
+		spi_context_update_tx(ctx, data_size, block_length);
 		/* Increment block count before exit so the last block is counted for dma_cfg. */
 		dma_block++;
 		if (last_packet) {
-			assert(spi_context_total_rx_len(&data->ctx) == 0);
-			assert(spi_context_total_tx_len(&data->ctx) == 0);
+			if (spi_context_total_rx_len(ctx) != 0 ||
+			    spi_context_total_tx_len(ctx) != 0) {
+				return -EIO;
+			}
 			break;
 		}
 		if (dma_block == CONFIG_SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS) {
@@ -608,7 +625,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 	return EXIT_SUCCESS;
 }
 
-static void spi_mcux_transfer_one_word(const struct device *dev, const struct spi_config *spi_cfg)
+static int spi_mcux_transfer_one_word(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	/* don't use the SDK, which is overkill for a one word transfer */
 	const struct spi_mcux_config *config = dev->config;
@@ -616,9 +633,13 @@ static void spi_mcux_transfer_one_word(const struct device *dev, const struct sp
 	struct spi_context *ctx = &data->ctx;
 	SPI_Type *base = config->base;
 	uint32_t tmp32;
+	int ret = 0;
 
-	tmp32 = spi_mcux_get_last_tx_word(spi_cfg, ctx->tx_buf, 1, config->def_char,
-					  data->word_size_bits);
+	ret = spi_mcux_get_last_tx_word(spi_cfg, ctx->tx_buf, 1, config->def_char,
+					data->word_size_bits, &tmp32);
+	if (ret) {
+		return ret;
+	}
 
 	/* wait for TXFIFO to not be full */
 	while ((base->FIFOSTAT & SPI_FIFOSTAT_TXNOTFULL_MASK) == 0) {
@@ -635,8 +656,7 @@ static void spi_mcux_transfer_one_word(const struct device *dev, const struct sp
 	tmp32 = base->FIFORD;
 
 	/* copy to user buffer if given one */
-	if (ctx->rx_len) {
-		assert(ctx->rx_buf);
+	if (ctx->rx_len > 0 && ctx->rx_buf != NULL) {
 		ctx->rx_buf[0] = (uint8_t)tmp32;
 		if (data->word_size_bits > 8) {
 			ctx->rx_buf[1] = (uint8_t)(tmp32 >> 8);
@@ -646,6 +666,8 @@ static void spi_mcux_transfer_one_word(const struct device *dev, const struct sp
 	/* wait if TX FIFO of previous transfer is not empty */
 	while ((base->FIFOSTAT & SPI_FIFOSTAT_TXEMPTY_MASK) == 0) {
 	}
+
+	return ret;
 }
 
 static int transceive_dma(const struct device *dev,
@@ -658,9 +680,10 @@ static int transceive_dma(const struct device *dev,
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	SPI_Type *base = config->base;
-	int ret;
 	uint8_t word_size = (uint8_t)SPI_WORD_SIZE_GET(spi_cfg->operation);
+	int ret = 0;
 
 	if (word_size > SPI_MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
@@ -669,7 +692,7 @@ static int transceive_dma(const struct device *dev,
 
 	pm_policy_device_power_lock_get(dev);
 
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
+	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
 	data->word_size_bits = word_size;
 	data->word_size_bytes = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
@@ -678,9 +701,28 @@ static int transceive_dma(const struct device *dev,
 		goto out;
 	}
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->word_size_bytes);
 
-	spi_context_cs_control(&data->ctx, true);
+	if (spi_context_total_tx_len(ctx) == 0 &&
+	    spi_context_total_rx_len(ctx) == 0) {
+		/* nothing to do */
+		goto out;
+	}
+
+	if ((data->ctx.tx_count + data->ctx.rx_count) == 0) {
+		/* no data to transfer */
+		ret = 0;
+		goto out;
+	}
+
+	data->word_size_bits = word_size;
+	data->word_size_bytes = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
+	ret = spi_mcux_configure(dev, spi_cfg);
+	if (ret) {
+		goto out;
+	}
+
+	spi_context_cs_control(ctx, true);
 
 	/* Clear FIFOs and any previous errors before transfer */
 	base->FIFOCFG |= SPI_FIFOCFG_EMPTYTX_MASK | SPI_FIFOCFG_EMPTYRX_MASK;
@@ -691,17 +733,20 @@ static int transceive_dma(const struct device *dev,
 	 * word. This also avoids the edge case where the FIFOWR bits cannot be set by a chained
 	 * DMA descriptor, because there is only one DMA descriptor.
 	 */
-	if (data->ctx.tx_count <= 1 && data->ctx.rx_count <= 1 &&
-	    spi_context_longest_current_buf(&data->ctx) == data->word_size_bytes) {
+	if (ctx->tx_count <= 1 && ctx->rx_count <= 1 &&
+	    spi_context_longest_current_buf(ctx) == 1) {
 		/* Disable DMATX/RX */
 		base->FIFOCFG &= ~(SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK);
 
-		spi_mcux_transfer_one_word(dev, spi_cfg);
+		ret = spi_mcux_transfer_one_word(dev, spi_cfg);
+		if (ret) {
+			return ret;
+		}
 
-		spi_context_update_tx(&data->ctx, data->word_size_bytes, data->transfer_len);
-		spi_context_update_rx(&data->ctx, data->word_size_bytes, data->transfer_len);
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, 0);
+		spi_context_update_tx(ctx, data->word_size_bytes, data->transfer_len);
+		spi_context_update_rx(ctx, data->word_size_bytes, data->transfer_len);
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
 		/* If asynchronous was true, set to false since transfer is done and we
 		 * want to release the power lock below.
 		 */
@@ -711,7 +756,7 @@ static int transceive_dma(const struct device *dev,
 		base->FIFOCFG |= SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK;
 		ret = spi_mcux_dma_transfer(dev, spi_cfg);
 		if (ret) {
-			spi_context_cs_control(&data->ctx, false);
+			spi_context_cs_control(ctx, false);
 			goto out;
 		}
 	}
@@ -719,10 +764,10 @@ static int transceive_dma(const struct device *dev,
 	/* if asynchronous is true, spi_context_wait_for_completion() just returns 0
 	 * and spi_context_release() is a noop
 	 */
-	ret = spi_context_wait_for_completion(&data->ctx);
+	ret = spi_context_wait_for_completion(ctx);
 
 out:
-	spi_context_release(&data->ctx, ret);
+	spi_context_release(ctx, ret);
 
 	if (!asynchronous || (ret != 0)) {
 		/* Only release the power lock if synchronous, or if an error occurred.
@@ -746,6 +791,7 @@ static int transceive(const struct device *dev,
 		      void *userdata)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	int ret;
 	uint8_t word_size = (uint8_t)SPI_WORD_SIZE_GET(spi_cfg->operation);
 
@@ -761,7 +807,7 @@ static int transceive(const struct device *dev,
 
 	pm_policy_device_power_lock_get(dev);
 
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
+	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
 	data->word_size_bits = word_size;
 	data->word_size_bytes = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
@@ -770,16 +816,16 @@ static int transceive(const struct device *dev,
 		goto out;
 	}
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
-	spi_context_cs_control(&data->ctx, true);
+	spi_context_cs_control(ctx, true);
 
 	spi_mcux_transfer_next_packet(dev);
 
-	return spi_context_wait_for_completion(&data->ctx);
+	return spi_context_wait_for_completion(ctx);
 
 out:
-	spi_context_release(&data->ctx, ret);
+	spi_context_release(ctx, ret);
 
 	pm_policy_device_power_lock_put(dev);
 
@@ -827,6 +873,7 @@ static int spi_mcux_init_common(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	int err = 0;
 
 	if (!device_is_ready(config->reset.dev)) {
@@ -863,12 +910,12 @@ static int spi_mcux_init_common(const struct device *dev)
 #endif /* CONFIG_SPI_MCUX_FLEXCOMM_DMA */
 
 
-	err = spi_context_cs_configure_all(&data->ctx);
+	err = spi_context_cs_configure_all(ctx);
 	if (err < 0) {
 		return err;
 	}
 
-	spi_context_unlock_unconditionally(&data->ctx);
+	spi_context_unlock_unconditionally(ctx);
 
 	return 0;
 }

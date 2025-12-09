@@ -681,8 +681,6 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 		return ret;
 	}
 
-	mdio_bus_enable(config->mdio_dev);
-
 	ret = ksz8081_init_reset_gpios(dev);
 	if (ret) {
 		return ret;

@@ -95,12 +95,6 @@
 			clocks = <&lfosc>;
 		};
 
-		hsclk: hsclk {
-			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
-			clocks = <&sysosc>;
-		};
-
 		ulpclk: ulpclk {
 			#clock-cells = <1>;
 			compatible = "ti,mspm0-clk";

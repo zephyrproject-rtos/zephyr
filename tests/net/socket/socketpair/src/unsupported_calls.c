@@ -9,20 +9,20 @@
 ZTEST_USER_F(net_socketpair, test_unsupported_calls)
 {
 	int res;
-	struct sockaddr_un addr = {
-		.sun_family = AF_UNIX,
+	struct net_sockaddr_un addr = {
+		.sun_family = NET_AF_UNIX,
 	};
-	socklen_t len = sizeof(addr);
+	net_socklen_t len = sizeof(addr);
 
 	for (size_t i = 0; i < 2; ++i) {
 
-		res = zsock_bind(fixture->sv[i], (struct sockaddr *)&addr, len);
+		res = zsock_bind(fixture->sv[i], (struct net_sockaddr *)&addr, len);
 		zassert_equal(res, -1,
 			"bind should fail on a socketpair endpoint");
 		zassert_equal(errno, EISCONN,
 			"bind should set errno to EISCONN");
 
-		res = zsock_connect(fixture->sv[i], (struct sockaddr *)&addr, len);
+		res = zsock_connect(fixture->sv[i], (struct net_sockaddr *)&addr, len);
 		zassert_equal(res, -1,
 			"connect should fail on a socketpair endpoint");
 		zassert_equal(errno, EISCONN,
@@ -34,7 +34,7 @@ ZTEST_USER_F(net_socketpair, test_unsupported_calls)
 		zassert_equal(errno, EINVAL,
 			"listen should set errno to EINVAL");
 
-		res = zsock_accept(fixture->sv[i], (struct sockaddr *)&addr, &len);
+		res = zsock_accept(fixture->sv[i], (struct net_sockaddr *)&addr, &len);
 		zassert_equal(res, -1,
 			"accept should fail on a socketpair endpoint");
 		zassert_equal(errno, EOPNOTSUPP,

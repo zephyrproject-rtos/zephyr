@@ -10,7 +10,6 @@
 #include <zephyr/drivers/comparator/nrf_lpcomp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
-#include "comparator_nrf_common.h"
 
 #include <string.h>
 
@@ -38,22 +37,15 @@ struct shim_nrf_lpcomp_data {
 	void *user_data;
 };
 
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-BUILD_ASSERT(NRF_COMP_AIN0 == 0);
-BUILD_ASSERT(NRF_COMP_AIN7 == 7);
-#else
-BUILD_ASSERT((NRF_COMP_AIN0 == NRF_LPCOMP_INPUT_0) &&
-	     (NRF_COMP_AIN1 == NRF_LPCOMP_INPUT_1) &&
-	     (NRF_COMP_AIN2 == NRF_LPCOMP_INPUT_2) &&
-	     (NRF_COMP_AIN3 == NRF_LPCOMP_INPUT_3) &&
-	     (NRF_COMP_AIN4 == NRF_LPCOMP_INPUT_4) &&
-	     (NRF_COMP_AIN5 == NRF_LPCOMP_INPUT_5) &&
-	     (NRF_COMP_AIN6 == NRF_LPCOMP_INPUT_6) &&
-	     (NRF_COMP_AIN7 == NRF_LPCOMP_INPUT_7) &&
-	     (NRF_COMP_AIN0 == NRF_LPCOMP_EXT_REF_REF0) &&
-	     (NRF_COMP_AIN1 == NRF_LPCOMP_EXT_REF_REF1),
-	     "Definitions from nrf-comp.h do not match those from HAL");
-#endif
+BUILD_ASSERT((NRF_COMP_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
+	     (NRF_COMP_AIN1 == NRFX_ANALOG_EXTERNAL_AIN1) &&
+	     (NRF_COMP_AIN2 == NRFX_ANALOG_EXTERNAL_AIN2) &&
+	     (NRF_COMP_AIN3 == NRFX_ANALOG_EXTERNAL_AIN3) &&
+	     (NRF_COMP_AIN4 == NRFX_ANALOG_EXTERNAL_AIN4) &&
+	     (NRF_COMP_AIN5 == NRFX_ANALOG_EXTERNAL_AIN5) &&
+	     (NRF_COMP_AIN6 == NRFX_ANALOG_EXTERNAL_AIN6) &&
+	     (NRF_COMP_AIN7 == NRFX_ANALOG_EXTERNAL_AIN7),
+	     "Definitions from nrf-comp.h do not match those from nrfx_analog_common.h");
 
 #if (LPCOMP_REFSEL_RESOLUTION == 8)
 BUILD_ASSERT((SHIM_NRF_LPCOMP_DT_INST_REFSEL(0) < COMP_NRF_LPCOMP_REFSEL_VDD_1_16) ||
@@ -133,99 +125,6 @@ static int shim_nrf_lpcomp_pm_callback(const struct device *dev, enum pm_device_
 
 	return 0;
 }
-
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static int shim_nrf_lpcomp_psel_to_nrf(uint8_t shim,
-				       nrf_lpcomp_input_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[shim];
-
-#if NRF_GPIO_HAS_RETENTION_SETCLEAR
-	nrf_gpio_pin_retain_disable(shim_nrf_comp_ain_map[shim]);
-#endif
-
-	return 0;
-}
-#else
-static int shim_nrf_lpcomp_psel_to_nrf(uint8_t shim,
-				       nrf_lpcomp_input_t *nrf)
-{
-	switch (shim) {
-	case  NRF_COMP_AIN0:
-		*nrf = NRF_LPCOMP_INPUT_0;
-		break;
-
-	case  NRF_COMP_AIN1:
-		*nrf = NRF_LPCOMP_INPUT_1;
-		break;
-
-	case  NRF_COMP_AIN2:
-		*nrf = NRF_LPCOMP_INPUT_2;
-		break;
-
-	case  NRF_COMP_AIN3:
-		*nrf = NRF_LPCOMP_INPUT_3;
-		break;
-
-	case  NRF_COMP_AIN4:
-		*nrf = NRF_LPCOMP_INPUT_4;
-		break;
-
-	case  NRF_COMP_AIN5:
-		*nrf = NRF_LPCOMP_INPUT_5;
-		break;
-
-	case  NRF_COMP_AIN6:
-		*nrf = NRF_LPCOMP_INPUT_6;
-		break;
-
-	case  NRF_COMP_AIN7:
-		*nrf = NRF_LPCOMP_INPUT_7;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
-
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static int shim_nrf_lpcomp_extrefsel_to_nrf(uint8_t shim,
-					    nrf_lpcomp_ext_ref_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[shim];
-	return 0;
-}
-#else
-static int shim_nrf_lpcomp_extrefsel_to_nrf(uint8_t shim,
-					    nrf_lpcomp_ext_ref_t *nrf)
-{
-	switch (shim) {
-	case  NRF_COMP_AIN0:
-		*nrf = NRF_LPCOMP_EXT_REF_REF0;
-		break;
-
-	case  NRF_COMP_AIN1:
-		*nrf = NRF_LPCOMP_EXT_REF_REF1;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
 
 static int shim_nrf_lpcomp_refsel_to_nrf(enum comp_nrf_lpcomp_refsel shim,
 					 nrf_lpcomp_ref_t *nrf)
@@ -311,9 +210,8 @@ static int shim_nrf_lpcomp_config_to_nrf(const struct comp_nrf_lpcomp_config *sh
 		return -EINVAL;
 	}
 
-	if (shim_nrf_lpcomp_extrefsel_to_nrf(shim->extrefsel, &nrf->ext_ref)) {
-		return -EINVAL;
-	}
+	nrf->ext_ref = (nrfx_analog_input_t)shim->extrefsel;
+	nrf->input = (nrfx_analog_input_t)shim->psel;
 
 #if NRF_LPCOMP_HAS_HYST
 	if (shim->enable_hyst) {
@@ -326,10 +224,6 @@ static int shim_nrf_lpcomp_config_to_nrf(const struct comp_nrf_lpcomp_config *sh
 		return -EINVAL;
 	}
 #endif
-
-	if (shim_nrf_lpcomp_psel_to_nrf(shim->psel, &nrf->input)) {
-		return -EINVAL;
-	}
 
 	return 0;
 }
@@ -463,7 +357,7 @@ static int shim_nrf_lpcomp_init(const struct device *dev)
 					    &shim_nrf_lpcomp_data0.config);
 
 	if (nrfx_lpcomp_init(&shim_nrf_lpcomp_data0.config,
-			     shim_nrf_lpcomp_event_handler) != NRFX_SUCCESS) {
+			     shim_nrf_lpcomp_event_handler) != 0) {
 		return -ENODEV;
 	}
 

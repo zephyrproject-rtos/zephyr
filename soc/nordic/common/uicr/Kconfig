@@ -3,7 +3,7 @@
 
 config NRF_PERIPHCONF_SECTION
 	bool "Populate global peripheral initialization section"
-	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD
+	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD || SOC_NRF9280_CPUAPP
 	depends on LINKER_DEVNULL_SUPPORT
 	imply LINKER_DEVNULL_MEMORY
 	help
@@ -12,7 +12,7 @@ config NRF_PERIPHCONF_SECTION
 
 config NRF_PERIPHCONF_GENERATE_ENTRIES
 	bool "Generate PERIPHCONF entries source file"
-	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD
+	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD || SOC_NRF9280_CPUAPP
 	depends on NRF_PERIPHCONF_SECTION
 	depends on NRF_PLATFORM_HALTIUM
 	help
@@ -25,3 +25,14 @@ config IS_IRONSIDE_SE_SECONDARY_IMAGE
 	  This Kconfig is set by sysbuild to indicate that this image is a
 	  secondary firmware for Ironside SE. This is used by the UICR generation
 	  system to determine which PERIPHCONF partition to use.
+
+config IS_GEN_UICR_IMAGE
+	bool "UICR generator image indicator (informative only, do not change)"
+	help
+	  This Kconfig is automatically set when building the gen_uicr image.
+	  It indicates that this is the UICR generator utility image and enables
+	  the UICR generator configuration options.
+
+# Source UICR generator options when building the gen_uicr image
+# All options are disabled by default unless IS_GEN_UICR_IMAGE is set
+rsource "Kconfig.gen_uicr"

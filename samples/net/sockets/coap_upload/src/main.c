@@ -11,6 +11,9 @@
 #include <zephyr/net/coap_client.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/arpa/inet.h>
 
 #include "net_sample_common.h"
 
@@ -167,15 +170,16 @@ static void coap_upload(struct coap_client *client, struct sockaddr *sa,
 	int ret;
 
 	LOG_INF("");
-	LOG_INF("* Starting CoAP upload using %s", (AF_INET == sa->sa_family) ? "IPv4" : "IPv6");
+	LOG_INF("* Starting CoAP upload using %s",
+		(AF_INET == sa->sa_family) ? "IPv4" : "IPv6");
 
-	sock = zsock_socket(sa->sa_family, SOCK_DGRAM, 0);
+	sock = socket(sa->sa_family, SOCK_DGRAM, 0);
 	if (sock < 0) {
 		LOG_ERR("Failed to create socket, err %d", errno);
 		return;
 	}
 
-	ret = zsock_connect(sock, sa, addrlen);
+	ret = connect(sock, sa, addrlen);
 	if (ret < 0) {
 		LOG_ERR("Failed to connect socket, err %d", errno);
 		goto out;
@@ -194,7 +198,7 @@ static void coap_upload(struct coap_client *client, struct sockaddr *sa,
 out:
 	coap_client_cancel_requests(client);
 
-	zsock_close(sock);
+	close(sock);
 }
 
 int main(void)
@@ -217,7 +221,7 @@ int main(void)
 
 	addr4->sin_family = AF_INET;
 	addr4->sin_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	zsock_inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
+	inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
 
 	coap_upload(&client, &sa, sizeof(struct sockaddr_in));
 #endif
@@ -227,7 +231,7 @@ int main(void)
 
 	addr6->sin6_family = AF_INET6;
 	addr6->sin6_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	zsock_inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
+	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
 
 	coap_upload(&client, &sa, sizeof(struct sockaddr_in6));
 #endif

@@ -23,6 +23,7 @@
 		zephyr,sram = &sram1;
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &st7789v;
+		zephyr,touch = &ft3267;
 	};
 
 	leds {
@@ -83,13 +84,6 @@
 		/* DT_MEM_ARM_MPU_EXTMEM and DT_MEM_ARM_MPU_FLASH cause MPU issues */
 		zephyr,memory-attr = <DT_MEM_ARM_MPU_IO>;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft3267>;
-		display = <&st7789v>;
-		invert-y;
-	};
 };
 
 &fmc {
@@ -143,7 +137,7 @@
 					height = <240>;
 					x-offset = <0>;
 					y-offset = <0>;
-					vcom = <0x1F>;
+					vcom = <0x1f>;
 					gctrl = <0x35>;
 					vdvs = <0x20>;
 					mdac = <0x00>;
@@ -221,6 +215,9 @@
 		reg = <0x38>;
 		int-gpios = <&gpiog 7 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpiog 3 GPIO_ACTIVE_LOW>;
+		inverted-y;
+		screen-width = <240>;
+		screen-height = <240>;
 	};
 };
 

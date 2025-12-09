@@ -546,7 +546,7 @@ static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linka
 	}
 
 	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		uint16_t short_addr = ntohs(*(uint16_t *)(dst->addr));
+		uint16_t short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 		*broadcast = (short_addr == IEEE802154_BROADCAST_ADDRESS);
 		return IEEE802154_ADDR_MODE_SHORT;
 	} else {
@@ -574,7 +574,7 @@ static inline bool data_addr_to_fs_settings(struct net_linkaddr *dst, struct iee
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 			fs->fc.ar = 0U;
 		} else if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-			params->dst.short_addr = ntohs(*(uint16_t *)(dst->addr));
+			params->dst.short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
 			__ASSERT_NO_MSG(dst->len == IEEE802154_EXT_ADDR_LENGTH);
@@ -689,7 +689,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
 	if (src->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		params.short_addr = ntohs(*(uint16_t *)(src->addr));
+		params.short_addr = net_ntohs(*(uint16_t *)(src->addr));
 		if (ctx->short_addr != params.short_addr) {
 			goto out;
 		}
@@ -861,7 +861,7 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	 * bigger than IEEE802154_MTU bytes less the FCS size, so let's allocate that
 	 * size as buffer.
 	 */
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, NET_AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		goto out;
 	}

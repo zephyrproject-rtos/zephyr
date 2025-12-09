@@ -9,5 +9,6 @@ target_sources(app PRIVATE src/test_rtio_api.c src/test_rtio_pool.c)
 
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/include
-	${ZEPHYR_BASE}/kernel/include
-	${ZEPHYR_BASE}/arch/${ARCH}/include)
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+)

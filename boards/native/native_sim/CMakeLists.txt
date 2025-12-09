@@ -5,13 +5,13 @@ zephyr_library()
 zephyr_library_compile_definitions(NO_POSIX_CHEATS)
 
 zephyr_library_sources(
-	cmdline.c
-	cpu_wait.c
-	nsi_if.c
-	irq_handler.c
-	misc.c
-	posix_arch_if.c
-	)
+  cmdline.c
+  cpu_wait.c
+  nsi_if.c
+  irq_handler.c
+  misc.c
+  posix_arch_if.c
+)
 
 if(CONFIG_NATIVE_SIM_REBOOT)
   zephyr_library_sources(reboot.c)
@@ -33,7 +33,7 @@ if(CONFIG_HAS_SDL)
 endif()
 
 add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
-	${CMAKE_CURRENT_BINARY_DIR}/extra_args
+  ${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
 
 set(nsi_config_content

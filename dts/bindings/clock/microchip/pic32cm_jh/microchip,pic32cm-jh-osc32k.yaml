@@ -1,0 +1,82 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH Internal Oscillator (OSC32K) Control
+
+description: |
+  32.768 kHz High Accuracy Internal Oscillator (OSC32K).
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-osc32k"
+
+properties:
+  osc32k-startup-time:
+    type: string
+    enum:
+      - "183-us"
+      - "214-us"
+      - "275-us"
+      - "397-us"
+      - "641-us"
+      - "1129-us"
+      - "2106-us"
+      - "4059-us"
+    default: "183-us"
+    description: |
+      Oscillator Start-Up Time
+
+  osc32k-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on, if standby-en is true, else run in
+         Standby Sleep mode if requested by a peripheral.
+      1: Run if requested by peripheral
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.
+
+  osc32k-run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: Run if requested by peripheral
+      1: The oscillator is always on, if demand-en is false
+
+  osc32k-1khz-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      1kHz Output Enable
+      0: to disable, 1: to enable
+
+  osc32k-32khz-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      32kHz output is enable
+      0: to disable, 1: to enable
+
+  osc32k-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable

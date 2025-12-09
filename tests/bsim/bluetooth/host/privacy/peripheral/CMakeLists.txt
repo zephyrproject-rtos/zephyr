@@ -13,13 +13,13 @@ target_link_libraries(app PRIVATE
 )
 
 target_sources(app PRIVATE
-	src/tester_rpa_rotation.c
-	src/tester_rpa_expired.c
-	src/main.c
-	src/main_rpa_rotation.c
-	src/main_rpa_expired.c
-	src/dut_rpa_rotation.c
-	src/dut_rpa_expired.c
+  src/tester_rpa_rotation.c
+  src/tester_rpa_expired.c
+  src/main.c
+  src/main_rpa_rotation.c
+  src/main_rpa_expired.c
+  src/dut_rpa_rotation.c
+  src/dut_rpa_expired.c
 )
 
 zephyr_include_directories(

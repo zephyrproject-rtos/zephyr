@@ -19,12 +19,6 @@ pytest_plugins = ["pytester"]
 logging.getLogger("twister").setLevel(logging.DEBUG)  # requires for testing twister
 
 
-def new_get_toolchain(*args, **kwargs):
-    return 'zephyr'
-
-TestPlan.get_toolchain = new_get_toolchain
-
-
 @pytest.fixture(name='test_data')
 def _test_data():
     """ Pytest fixture to load the test data directory"""

@@ -96,7 +96,7 @@ void mailbox_test(void)
 void mailbox_put(uint32_t size, int count, uint32_t *time)
 {
 	int i;
-	unsigned int t;
+	uint64_t  t;
 	timing_t  start;
 	timing_t  end;
 
@@ -110,6 +110,6 @@ void mailbox_put(uint32_t size, int count, uint32_t *time)
 		k_mbox_put(&MAILB1, &message, K_FOREVER);
 	}
 	end = timing_timestamp_get();
-	t = (unsigned int)timing_cycles_get(&start, &end);
-	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
+	t = timing_cycles_get(&start, &end);
+	*time = timing_cycles_to_ns_avg(t, count);
 }

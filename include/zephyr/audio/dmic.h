@@ -36,6 +36,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,6 +107,33 @@ struct pdm_io_cfg {
 	 * @}
 	 */
 };
+
+/**
+ * @brief Construct a \ref pdm_io_cfg from devicetree description
+ *
+ * @param node_id Devicetree node that includes "pdm-dmic"
+ */
+#define PDM_DT_IO_CFG_GET(node_id)						\
+	{									\
+		.min_pdm_clk_freq = DT_PROP(node_id, clk_frequency_min),	\
+		.max_pdm_clk_freq = DT_PROP(node_id, clk_frequency_max),	\
+		.min_pdm_clk_dc = DT_PROP(node_id, clk_duty_cycle_min),		\
+		.max_pdm_clk_dc = DT_PROP(node_id, clk_duty_cycle_max),		\
+	}
+
+/**
+ * @brief Check whether microphone has the left channel available
+ *
+ * @param node_id Devicetree node that includes "pdm-dmic"
+ */
+#define PDM_DT_HAS_LEFT_CHANNEL(node_id)	DT_PROP(node_id, channel_left)
+
+/**
+ * @brief Check whether microphone has the right channel available
+ *
+ * @param node_id Devicetree node that includes "pdm-dmic"
+ */
+#define PDM_DT_HAS_RIGHT_CHANNEL(node_id)	DT_PROP(node_id, channel_right)
 
 /**
  * Configuration of the PCM streams to be output by the PDM hardware

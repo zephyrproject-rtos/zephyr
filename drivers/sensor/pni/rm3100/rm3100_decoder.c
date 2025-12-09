@@ -122,14 +122,14 @@ static int rm3100_convert_raw_to_q31(uint16_t cycle_count, uint32_t raw_reading,
 	raw_reading = sys_be24_to_cpu(raw_reading);
 	value = sign_extend(raw_reading, 23);
 
-	/** Convert to Gauss, assuming 1 LSB = 75 uT, given default Cycle-Counting (200).
+	/** Convert to Gauss, assuming 75 LSB = 1 uT, given default Cycle-Counting (200).
 	 * We can represent the largest sample (2^23 LSB) in Gauss with 11 bits.
 	 */
 	if (cycle_count == RM3100_CYCLE_COUNT_DEFAULT) {
 		*shift = 11;
 		divider = 75;
 	} else {
-		/** Otherwise, it's 1 LSB = 38 uT at Cycle-counting for 600 Hz ODR (100):
+		/** Otherwise, it's 38 LSB = 1 uT at Cycle-counting for 600 Hz ODR (100):
 		 * 12-bits max value.
 		 */
 		*shift = 12;

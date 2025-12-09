@@ -12,9 +12,9 @@
 
 #include "../../../subsys/net/lib/dhcpv6/dhcpv6.c"
 
-static struct in6_addr test_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr test_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
 static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
@@ -109,9 +109,9 @@ static void generate_fake_server_duid(void)
 
 	memset(serverid, 0, sizeof(*serverid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+	UNALIGNED_PUT(net_htons(DHCPV6_DUID_TYPE_LL),
 		      UNALIGNED_MEMBER_ADDR(serverid, duid.type));
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+	UNALIGNED_PUT(net_htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
 		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, fake_mac, sizeof(fake_mac));
 
@@ -130,8 +130,8 @@ static struct net_pkt *test_dhcpv6_create_message(
 		struct net_if *iface, enum dhcpv6_msg_type msg_type,
 		test_dhcpv6_options_fn_t set_options_fn)
 {
-	struct in6_addr *local_addr;
-	struct in6_addr peer_addr;
+	struct net_in6_addr *local_addr;
+	struct net_in6_addr peer_addr;
 	struct net_pkt *pkt;
 
 	local_addr = net_if_ipv6_get_ll(iface, NET_ADDR_ANY_STATE);
@@ -146,15 +146,15 @@ static struct net_pkt *test_dhcpv6_create_message(
 	memcpy(&peer_addr, local_addr, sizeof(peer_addr));
 	peer_addr.s6_addr[15] = ~peer_addr.s6_addr[15];
 
-	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, AF_INET6,
-					IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, NET_AF_INET6,
+					NET_IPPROTO_UDP, K_FOREVER);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
 	if (net_ipv6_create(pkt, &peer_addr, local_addr) < 0 ||
-	    net_udp_create(pkt, htons(DHCPV6_SERVER_PORT),
-			   htons(DHCPV6_CLIENT_PORT)) < 0) {
+	    net_udp_create(pkt, net_htons(DHCPV6_SERVER_PORT),
+			   net_htons(DHCPV6_CLIENT_PORT)) < 0) {
 		goto fail;
 	}
 
@@ -169,7 +169,7 @@ static struct net_pkt *test_dhcpv6_create_message(
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 	net_pkt_cursor_init(pkt);
 
 	return pkt;
@@ -186,7 +186,7 @@ static void evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	ARG_UNUSED(cb);
 
 	if (mgmt_event == NET_EVENT_IF_UP) {
-		struct in6_addr lladdr;
+		struct net_in6_addr lladdr;
 
 		net_ipv6_addr_create_iid(&lladdr, net_if_get_link_addr(test_ctx.iface));
 		(void)net_if_ipv6_addr_add(test_ctx.iface, &lladdr, NET_ADDR_AUTOCONF, 0);
@@ -195,7 +195,7 @@ static void evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 
 static void *dhcpv6_tests_setup(void)
 {
-	struct in6_addr lladdr;
+	struct net_in6_addr lladdr;
 
 	test_ctx.iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
@@ -330,7 +330,7 @@ static void verify_dhcpv6_elapsed_time(struct net_if *iface, struct net_pkt *pkt
 }
 
 static void verify_dhcpv6_ia_na(struct net_if *iface, struct net_pkt *pkt,
-				struct in6_addr *addr)
+				struct net_in6_addr *addr)
 {
 	struct dhcpv6_ia_na ia_na;
 	int ret;
@@ -358,7 +358,7 @@ static void verify_dhcpv6_ia_na(struct net_if *iface, struct net_pkt *pkt,
 }
 
 static void verify_dhcpv6_ia_pd(struct net_if *iface, struct net_pkt *pkt,
-				struct in6_addr *prefix, uint8_t prefix_len)
+				struct net_in6_addr *prefix, uint8_t prefix_len)
 {
 	struct dhcpv6_ia_pd ia_pd;
 	int ret;

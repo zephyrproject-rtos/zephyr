@@ -45,9 +45,10 @@ LOG_MODULE_REGISTER(mb85rsxx, CONFIG_EEPROM_LOG_LEVEL);
  * MB85RSXX product ID (2 bytes); first byte provides memory size, so let's use a mask later when
  * checking it
  */
-#define EEPROM_MB85RSXX_PROD_ID		0x20U
-#define EEPROM_MB85RSXX_PROD_ID2	0x03U
-#define EEPROM_MB85RSXX_PROD_MASK	GENMASK(7, 5)
+#define EEPROM_MB85RSXX_PROD_ID1_MB85RS2MT	0x20U
+#define EEPROM_MB85RSXX_PROD_ID1_MB85RS2MTA	0x48U
+#define EEPROM_MB85RSXX_PROD_ID2	        0x03U
+#define EEPROM_MB85RSXX_PROD_MASK	        GENMASK(7, 5)
 
 struct eeprom_mb85rsxx_config {
 	struct spi_dt_spec spi;
@@ -261,10 +262,10 @@ static int eeprom_mb85rsxx_rdid(const struct device *dev)
 	}
 
 	/* Validate Manufacturer ID and Product ID */
-	if (id[0] != EEPROM_MB85RSXX_MAN_ID
-		|| id[1] != EEPROM_MB85RSXX_CON_CODE
-		|| (id[2] & EEPROM_MB85RSXX_PROD_MASK) != EEPROM_MB85RSXX_PROD_ID
-		|| id[3] != EEPROM_MB85RSXX_PROD_ID2) {
+	if (id[0] != EEPROM_MB85RSXX_MAN_ID || id[1] != EEPROM_MB85RSXX_CON_CODE ||
+		(((id[2] & EEPROM_MB85RSXX_PROD_MASK) != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MT) &&
+		 (id[2] != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MTA)) ||
+		id[3] != EEPROM_MB85RSXX_PROD_ID2) {
 		LOG_ERR("invalid device ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
 		return -EIO;
 	}

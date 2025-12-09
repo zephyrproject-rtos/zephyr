@@ -79,14 +79,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-		swap-xy;
-		invert-x;
-		invert-y;
-	};
-
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
@@ -199,6 +191,11 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
+		inverted-x;
+		inverted-y;
+		screen-width = <320>;
+		screen-height = <240>;
 	};
 
 	bme680@76 {

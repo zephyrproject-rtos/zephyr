@@ -123,7 +123,7 @@ void z_time_slice(void)
 		}
 #endif
 		if (!z_is_thread_prevented_from_running(curr)) {
-			move_thread_to_end_of_prio_q(curr);
+			move_current_to_end_of_prio_q();
 		}
 		z_reset_time_slice(curr);
 	}

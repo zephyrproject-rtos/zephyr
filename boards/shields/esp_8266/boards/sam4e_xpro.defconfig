@@ -5,13 +5,10 @@
 
 if BOARD_SAM4E_XPRO
 
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default n
 
-config ETH_SAM_GMAC
+configdefault ETH_SAM_GMAC
 	default n
-
-config USART_SAM
-	default y
 
 endif # BOARD_SAM4E_XPRO

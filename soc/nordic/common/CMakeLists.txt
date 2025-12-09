@@ -31,6 +31,10 @@ if(CONFIG_HAS_NORDIC_DMM)
   zephyr_library_sources(dmm.c)
 endif()
 
+if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+  zephyr_library_sources(gppi_init.c)
+endif()
+
 if(CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)
   zephyr_library_include_directories(
@@ -41,3 +45,4 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_NRF_SYS_EVENT nrf_sys_event.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF_FORCE_CONSTLAT nrf_constlat.c)
 zephyr_library_sources_ifdef(CONFIG_MRAM_LATENCY mram_latency.c)
+zephyr_library_sources(gpiote_nrfx.c)

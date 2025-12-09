@@ -1,5 +1,6 @@
 .. zephyr:code-sample:: crc_subsys
    :name: Cyclic Redundancy Check Subsystem (CRC Subsys)
+   :relevant-api: crc
 
    Compute and verify a CRC computation using the CRC subsys API.
 
@@ -13,8 +14,9 @@ Configuration Options
 
 This sample uses the following Kconfig options:
 
-- ``CONFIG_CRC``: Enable CRC functionality.
-- ``CONFIG_CRC*``: Use software-based CRC if a chosen node is present; otherwise, hardware acceleration is used.
+- :kconfig:option:`CONFIG_CRC`: Enable CRC functionality.
+- :kconfig:option-regex:`CONFIG_CRC[0-9].*`: Force software-based CRC if a ``zephyr,crc`` property
+  has been set in the ``/chosen`` node in Devicetree; otherwise, hardware acceleration is used.
 
 These options can be modified in the project's ``prj.conf`` file or passed via CMake arguments.
 

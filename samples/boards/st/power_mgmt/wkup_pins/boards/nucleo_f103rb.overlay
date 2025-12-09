@@ -10,9 +10,14 @@
 	};
 
 	gpio_keys {
+		/*
+		 * PA0 is not connected to any button: you
+		 * must connect it to Vdd using a jumper wire.
+		 * (N.B.: PA0 is Arduino "A0"; Vdd is "+3.3V")
+		 */
 		wkup_button: wkup {
 			label = "WKUP";
-			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_POWER>;
 		};
 	};

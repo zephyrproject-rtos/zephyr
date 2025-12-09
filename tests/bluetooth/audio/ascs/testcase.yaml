@@ -2,19 +2,20 @@ common:
   tags:
     - bluetooth
     - bluetooth_audio
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+
 tests:
-  bluetooth.audio.ascs.test_default:
-    type: unit
+  bluetooth.audio.ascs.test_default: {}
   bluetooth.audio.ascs.test_snk_only:
-    type: unit
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio.ascs.test_src_only:
-    type: unit
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio.ascs.test_unicast_client_enabled:
-    type: unit
     extra_configs:
       - CONFIG_BT_CENTRAL=y
       - CONFIG_BT_ISO_CENTRAL=y
@@ -23,6 +24,5 @@ tests:
       - CONFIG_BT_GATT_AUTO_DISCOVER_CCC=y
       - CONFIG_BT_GATT_AUTO_UPDATE_MTU=y
   bluetooth.audio.ascs.test_stream_pair:
-    type: unit
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ACTIVE_ASES=2

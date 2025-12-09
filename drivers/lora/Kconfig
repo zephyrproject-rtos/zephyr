@@ -7,9 +7,8 @@
 # Top-level configuration file for LORA drivers.
 
 menuconfig LORA
-	bool "LoRa drivers [EXPERIMENTAL]"
+	bool "LoRa drivers"
 	select POLL
-	select EXPERIMENTAL
 	help
 	  Include LoRa drivers in the system configuration.
 
@@ -23,12 +22,12 @@ config LORA_MODULE_BACKEND_LORAMAC_NODE
 	depends on ZEPHYR_LORAMAC_NODE_MODULE
 
 config LORA_MODULE_BACKEND_LORA_BASICS_MODEM
-	bool "LoRa Basic modem backend [EXPERIMENTAL]"
+	bool "LoRa Basic modem backend"
 	depends on ZEPHYR_LORA_BASICS_MODEM_MODULE
 	depends on DT_HAS_SEMTECH_SX1262_ENABLED || DT_HAS_SEMTECH_SX1261_ENABLED || DT_HAS_SEMTECH_SX1272_ENABLED || DT_HAS_SEMTECH_SX1276_ENABLED
 	select USE_LORA_BASICS_MODEM_DRIVERS
 	help
-	  Experimental support for implementing the LoRa API using the LoRa Basics Modem module.
+	  LoRa API support using the LoRa Basics Modem module.
 
 endchoice
 

@@ -196,7 +196,7 @@ Arm FVP
 ========
 
 * :zephyr:board:`fvp_baser_aemv8r`
-* :ref:`fvp_base_revc_2xaemv8a`
+* :zephyr:board:`fvp_base_revc_2xaem`
 
 This sample application running on Arm FVP board can negotiate IP
 address from DHCPv4 server running on Arm FVP, so there is no extra

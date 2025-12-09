@@ -9,7 +9,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(os_mgmt_echo)
 
 FILE(GLOB app_sources
-	src/*.c
+  src/*.c
 )
 
 target_sources(app PRIVATE ${app_sources})

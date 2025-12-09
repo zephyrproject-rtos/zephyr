@@ -1,8 +1,10 @@
 # Copyright (c) 2025 Core Devices LLC
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import shlex
+import subprocess
 
 from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
@@ -18,6 +20,7 @@ class SftoolRunner(ZephyrBinaryRunner):
         erase: bool,
         dt_flash: bool,
         tool_opt: list[str],
+        flash_files: list[str],
     ) -> None:
         super().__init__(cfg)
 
@@ -25,6 +28,7 @@ class SftoolRunner(ZephyrBinaryRunner):
         self._port = port
         self._erase = erase
         self._dt_flash = dt_flash
+        self._flash_files = flash_files
 
         self._tool_opt: list[str] = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -53,6 +57,13 @@ class SftoolRunner(ZephyrBinaryRunner):
             required=True,
             help="Serial port device, e.g. /dev/ttyUSB0",
         )
+        parser.add_argument(
+            "--flash-file",
+            dest="flash_files",
+            action="append",
+            default=[],
+            help="Additional file@address entries that must be flashed before the Zephyr image",
+        )
 
     @classmethod
     def do_create(cls, cfg: RunnerConfig, args: argparse.Namespace) -> "SftoolRunner":
@@ -63,6 +74,7 @@ class SftoolRunner(ZephyrBinaryRunner):
             erase=args.erase,
             dt_flash=args.dt_flash,
             tool_opt=args.tool_opt,
+            flash_files=args.flash_files,
         )
 
     def do_run(self, command: str, **kwargs):
@@ -71,16 +83,25 @@ class SftoolRunner(ZephyrBinaryRunner):
         cmd = [sftool, "--chip", self._chip, "--port", self._port]
         cmd += self._tool_opt
 
-        if self._erase:
-            self.check_call(cmd + ["erase_flash"])
+        flash_targets: list[str] = []
+        flash_targets.extend(self._flash_files)
 
         if self.cfg.file:
-            self.check_call(cmd + ["write_flash", self.cfg.file])
+            flash_targets.append(self.cfg.file)
         else:
             if self.cfg.bin_file and self._dt_flash:
                 addr = self.flash_address_from_build_conf(self.build_conf)
-                self.check_call(cmd + ["write_flash", f"{self.cfg.bin_file}@0x{addr:08x}"])
+                flash_targets.append(f"{self.cfg.bin_file}@0x{addr:08x}")
             elif self.cfg.hex_file:
-                self.check_call(cmd + ["write_flash", self.cfg.hex_file])
+                flash_targets.append(self.cfg.hex_file)
             else:
                 raise RuntimeError("No file available for flashing")
+
+        write_args = ["write_flash"]
+        if self._erase:
+            write_args.append("-e")
+
+        full_cmd = cmd + write_args + flash_targets
+        self._log_cmd(full_cmd)
+        if not self.dry_run:
+            subprocess.run(full_cmd, check=True)

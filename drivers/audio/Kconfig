@@ -35,7 +35,9 @@ module = AUDIO_CODEC
 module-str = audio codec
 source "subsys/logging/Kconfig.template.log_config"
 
+# zephyr-keep-sorted-start
 source "drivers/audio/Kconfig.cs43l22"
+source "drivers/audio/Kconfig.da7212"
 source "drivers/audio/Kconfig.max98091"
 source "drivers/audio/Kconfig.pcm1681"
 source "drivers/audio/Kconfig.tas6422dac"
@@ -43,7 +45,7 @@ source "drivers/audio/Kconfig.tlv320aic3110"
 source "drivers/audio/Kconfig.tlv320dac"
 source "drivers/audio/Kconfig.wm8904"
 source "drivers/audio/Kconfig.wm8962"
-source "drivers/audio/Kconfig.da7212"
+# zephyr-keep-sorted-stop
 
 endif # AUDIO_CODEC
 
@@ -64,11 +66,13 @@ module = AUDIO_DMIC
 module-str = audio_dmic
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/audio/Kconfig.mpxxdtyy"
-source "drivers/audio/Kconfig.dmic_pdm_nrfx"
-source "drivers/audio/Kconfig.dmic_mcux"
+# zephyr-keep-sorted-start
 source "drivers/audio/Kconfig.dmic_ambiq_pdm"
+source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_nxp_micfil"
+source "drivers/audio/Kconfig.dmic_pdm_nrfx"
+source "drivers/audio/Kconfig.mpxxdtyy"
+# zephyr-keep-sorted-stop
 
 endif # AUDIO_DMIC
 

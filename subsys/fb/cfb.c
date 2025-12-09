@@ -69,6 +69,10 @@ static struct char_framebuffer char_fb;
 
 static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
+	if (c < fptr->first_char || c > fptr->last_char) {
+		return NULL;
+	}
+
 	return (uint8_t *)fptr->data +
 	       (c - fptr->first_char) *
 	       (fptr->width * fptr->height / 8U);

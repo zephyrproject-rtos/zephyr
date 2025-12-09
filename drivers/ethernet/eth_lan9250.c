@@ -486,7 +486,7 @@ static int lan9250_rx(const struct device *dev)
 	}
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
 					   K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("%s: Could not allocate rx buffer", dev->name);

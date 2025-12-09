@@ -45,9 +45,9 @@ extern int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 			  uint16_t *host_offset);
 extern size_t service_proto_size(const struct dns_sd_rec *ref);
 extern bool rec_is_valid(const struct dns_sd_rec *ref);
-extern int setup_dst_addr(int sock, sa_family_t family,
-			  struct sockaddr *src, socklen_t src_len,
-			  struct sockaddr *dst, socklen_t *dst_len);
+extern int setup_dst_addr(int sock, net_sa_family_t family,
+			  struct net_sockaddr *src, net_socklen_t src_len,
+			  struct net_sockaddr *dst, net_socklen_t *dst_len);
 
 
 /** Text for advertised service */
@@ -95,8 +95,8 @@ static uint8_t *create_query(const struct dns_sd_rec *inst,
 	struct dns_header *hdr =
 		(struct dns_header *)&create_query_buf[0];
 
-	hdr->id = htons(0);
-	hdr->qdcount = htons(1);
+	hdr->id = net_htons(0);
+	hdr->qdcount = net_htons(1);
 	offs += sizeof(struct dns_header);
 
 	label_size = strlen(inst->service);
@@ -118,8 +118,8 @@ static uint8_t *create_query(const struct dns_sd_rec *inst,
 
 	struct dns_query *query =
 		(struct dns_query *)&create_query_buf[offs];
-	query->type = htons(rr_type);
-	query->class_ = htons(DNS_CLASS_IN);
+	query->type = net_htons(rr_type);
+	query->class_ = net_htons(DNS_CLASS_IN);
 	offs += sizeof(struct dns_query);
 
 	zassert_equal(expected_req_buf_size, offs,
@@ -434,7 +434,7 @@ ZTEST(dns_sd, test_add_a_record)
 	const uint32_t offset = 0;
 	const uint16_t host_offset = 0x59;
 	/* this one is made up */
-	const struct in_addr addr = { { { 177, 5, 240, 13 } } };
+	const struct net_in_addr addr = { { { 177, 5, 240, 13 } } };
 
 	static uint8_t actual_buf[BUFSZ];
 	static const uint8_t expected_buf[] = {
@@ -444,7 +444,7 @@ ZTEST(dns_sd, test_add_a_record)
 
 	int expected_int = sizeof(expected_buf);
 	int actual_int = add_a_record(&nasxxxxxx, ttl, host_offset,
-				      ntohl(addr.s_addr), actual_buf, offset,
+				      net_ntohl(addr.s_addr), actual_buf, offset,
 				      sizeof(actual_buf));
 
 	zassert_equal(actual_int, expected_int, "");
@@ -455,12 +455,12 @@ ZTEST(dns_sd, test_add_a_record)
 	/* test offset too large */
 	zassert_equal(-E2BIG,
 		      add_a_record(&nasxxxxxx, ttl, DNS_SD_PTR_MASK,
-				   ntohl(addr.s_addr), actual_buf, offset,
+				   net_ntohl(addr.s_addr), actual_buf, offset,
 				   sizeof(actual_buf)), "");
 
 	/* test buffer too small */
 	zassert_equal(-ENOSPC, add_a_record(&nasxxxxxx, ttl,
-					    host_offset, ntohl(addr.s_addr),
+					    host_offset, net_ntohl(addr.s_addr),
 					    actual_buf, offset,
 					    0), "");
 }
@@ -511,7 +511,7 @@ ZTEST(dns_sd, test_add_aaaa_record)
 /** Test for @ref dns_sd_handle_ptr_query */
 ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 {
-	struct in_addr addr = { { { 177, 5, 240, 13 } } };
+	struct net_in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -577,7 +577,7 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 				DNS_SD_EMPTY_TXT,
 				CONST_PORT);
 
-	struct in_addr addr = { { { 177, 5, 240, 13 } } };
+	struct net_in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
@@ -658,9 +658,9 @@ ZTEST(dns_sd, test_dns_sd_rec_match)
 ZTEST(dns_sd, test_setup_dst_addr)
 {
 	struct net_if *iface;
-	struct sockaddr dst;
-	socklen_t dst_len;
-	socklen_t optlen;
+	struct net_sockaddr dst;
+	net_socklen_t dst_len;
+	net_socklen_t optlen;
 	int ttl;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -668,17 +668,17 @@ ZTEST(dns_sd, test_setup_dst_addr)
 
 	/* IPv4 case */
 	int v4;
-	struct in_addr addr_v4_expect = { { { 224, 0, 0, 251 } } };
+	struct net_in_addr addr_v4_expect = { { { 224, 0, 0, 251 } } };
 
-	memset(&dst, 0, sizeof(struct sockaddr));
+	memset(&dst, 0, sizeof(struct net_sockaddr));
 
-	v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	v4 = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(v4 >= 0, "Create IPv4 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v4, AF_INET, NULL, 0, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v4, NET_AF_INET, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
-	(void)zsock_getsockopt(v4, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, &optlen);
+	(void)zsock_getsockopt(v4, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL, &ttl, &optlen);
 
 	zassert_equal(255, ttl, "TTL invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv4_addr_cmp(&addr_v4_expect,
@@ -690,18 +690,18 @@ ZTEST(dns_sd, test_setup_dst_addr)
 #if defined(CONFIG_NET_IPV6)
 	/* IPv6 case */
 	int v6;
-	struct in6_addr addr_v6_expect = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0xfb } } };
+	struct net_in6_addr addr_v6_expect = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+						   0, 0, 0, 0, 0, 0, 0, 0xfb } } };
 
-	memset(&dst, 0, sizeof(struct sockaddr));
+	memset(&dst, 0, sizeof(struct net_sockaddr));
 
-	v6 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	v6 = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(v6 >= 0, "Create IPv6 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v6, AF_INET6, NULL, 0, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v6, NET_AF_INET6, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
-	(void)zsock_getsockopt(v6, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, &optlen);
+	(void)zsock_getsockopt(v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS, &ttl, &optlen);
 
 	zassert_equal(255, ttl, "Hoplimit invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv6_addr_cmp(&addr_v6_expect,
@@ -715,11 +715,11 @@ ZTEST(dns_sd, test_setup_dst_addr)
 
 	int xx;
 
-	xx = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	xx = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(xx >= 0, "Create IPV4 udp socket failed");
 
 	zassert_equal(-EPFNOSUPPORT,
-		      setup_dst_addr(xx, AF_PACKET, NULL, 0, &dst, &dst_len), "");
+		      setup_dst_addr(xx, NET_AF_PACKET, NULL, 0, &dst, &dst_len), "");
 }
 
 /** test for @ref dns_sd_is_service_type_enumeration */

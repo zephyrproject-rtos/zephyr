@@ -71,7 +71,7 @@ int mqtt_transport_write(struct mqtt_client *client, const uint8_t *data,
 }
 
 int mqtt_transport_write_msg(struct mqtt_client *client,
-			     const struct msghdr *message)
+			     const struct net_msghdr *message)
 {
 	return transport_fn[client->transport.type].write_msg(client, message);
 }

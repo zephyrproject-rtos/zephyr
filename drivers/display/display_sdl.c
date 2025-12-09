@@ -43,7 +43,6 @@ struct sdl_display_task {
 	};
 };
 
-
 struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
@@ -57,6 +56,7 @@ struct sdl_display_data {
 	void *texture;
 	void *read_texture;
 	void *background_texture;
+	void *round_disp_mask;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
@@ -83,20 +83,36 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 	struct sdl_display_data *disp_data = dev->data;
 
 	switch (task->op) {
-	case SDL_WRITE:
-		sdl_display_write_bottom(task->write.desc->height, task->write.desc->width,
-					 task->write.x, task->write.y, disp_data->renderer,
-					 disp_data->mutex, disp_data->texture,
-					 disp_data->background_texture, disp_data->buf,
-					 disp_data->display_on,
-					 task->write.desc->frame_incomplete,
-					 CONFIG_SDL_DISPLAY_COLOR_TINT);
+	case SDL_WRITE: {
+		struct sdl_display_write_params write_params = {
+			.height = task->write.desc->height,
+			.width = task->write.desc->width,
+			.x = task->write.x,
+			.y = task->write.y,
+			.renderer = disp_data->renderer,
+			.mutex = disp_data->mutex,
+			.texture = disp_data->texture,
+			.background_texture = disp_data->background_texture,
+			.buf = disp_data->buf,
+			.display_on = disp_data->display_on,
+			.frame_incomplete = task->write.desc->frame_incomplete,
+			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
+			.round_disp_mask = disp_data->round_disp_mask,
+		};
+		sdl_display_write_bottom(&write_params);
 		break;
-	case SDL_BLANKING_OFF:
-		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-						disp_data->background_texture,
-						CONFIG_SDL_DISPLAY_COLOR_TINT);
+	}
+	case SDL_BLANKING_OFF: {
+		struct sdl_display_blanking_off_params blanking_off_params = {
+			.renderer = disp_data->renderer,
+			.texture = disp_data->texture,
+			.background_texture = disp_data->background_texture,
+			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
+			.round_disp_mask = disp_data->round_disp_mask,
+		};
+		sdl_display_blanking_off_bottom(&blanking_off_params);
 		break;
+	}
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
 		break;
@@ -119,13 +135,28 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
 	}
 
-	int rc = sdl_display_init_bottom(
-		config->height, config->width, sdl_display_zoom_pct, use_accelerator,
-		&disp_data->window, dev, config->title, &disp_data->renderer, &disp_data->mutex,
-		&disp_data->texture, &disp_data->read_texture, &disp_data->background_texture,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+	struct sdl_display_init_params init_params = {
+		.height = config->height,
+		.width = config->width,
+		.zoom_pct = sdl_display_zoom_pct,
+		.use_accelerator = use_accelerator,
+		.window = &disp_data->window,
+		.window_user_data = dev,
+		.title = config->title,
+		.renderer = &disp_data->renderer,
+		.mutex = &disp_data->mutex,
+		.texture = &disp_data->texture,
+		.read_texture = &disp_data->read_texture,
+		.background_texture = &disp_data->background_texture,
+		.transparency_grid_color1 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+		.transparency_grid_color2 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+		.transparency_grid_cell_size = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE,
+		.round_disp_mask = COND_CODE_1(CONFIG_SDL_DISPLAY_ROUNDED_MASK,
+						(&disp_data->round_disp_mask), NULL),
+		.mask_color = CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR,
+		};
+
+	int rc = sdl_display_init_bottom(&init_params);
 
 	k_sem_give(&disp_data->task_sem);
 
@@ -611,9 +642,20 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	memset(disp_data->read_buf, 0, desc->pitch * desc->height * 4);
 
-	err = sdl_display_read_bottom(desc->height, desc->width, x, y, disp_data->renderer,
-				      disp_data->read_buf, desc->pitch, disp_data->mutex,
-				      disp_data->texture, disp_data->read_texture);
+	struct sdl_display_read_params read_params = {
+		.height = desc->height,
+		.width = desc->width,
+		.x = x,
+		.y = y,
+		.renderer = disp_data->renderer,
+		.buf = disp_data->read_buf,
+		.pitch = desc->pitch,
+		.mutex = disp_data->mutex,
+		.texture = disp_data->texture,
+		.read_texture = disp_data->read_texture,
+	};
+
+	err = sdl_display_read_bottom(&read_params);
 
 	if (err) {
 		k_mutex_unlock(&disp_data->task_mutex);
@@ -779,9 +821,16 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 
 static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 {
-	sdl_display_cleanup_bottom(&disp_data->window, &disp_data->renderer, &disp_data->mutex,
-				   &disp_data->texture, &disp_data->read_texture,
-				   &disp_data->background_texture);
+	struct sdl_display_cleanup_params cleanup_params = {
+		.window = &disp_data->window,
+		.renderer = &disp_data->renderer,
+		.mutex = &disp_data->mutex,
+		.texture = &disp_data->texture,
+		.read_texture = &disp_data->read_texture,
+		.background_texture = &disp_data->background_texture,
+		.round_disp_mask = &disp_data->round_disp_mask,
+	};
+	sdl_display_cleanup_bottom(&cleanup_params);
 }
 
 static DEVICE_API(display, sdl_display_api) = {

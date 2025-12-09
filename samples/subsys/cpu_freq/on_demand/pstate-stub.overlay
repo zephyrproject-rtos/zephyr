@@ -11,11 +11,13 @@
 			load-threshold = <50>;
 			pstate-id = <0>;
 		};
+
 		pstate_1: pstate_1 {
 			compatible = "zephyr,generic-pstate";
 			load-threshold = <20>;
 			pstate-id = <1>;
 		};
+
 		pstate_2: pstate_2 {
 			compatible = "zephyr,generic-pstate";
 			load-threshold = <0>;

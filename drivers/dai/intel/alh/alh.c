@@ -124,7 +124,7 @@ static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
 }
 
 static int dai_alh_config_set(const struct device *dev, const struct dai_config *cfg,
-				  const void *bespoke_cfg)
+				  const void *bespoke_cfg, size_t size)
 {
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 

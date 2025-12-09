@@ -70,6 +70,7 @@
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_cmp: pinmux_cmp {
 		group0 {
 			pinmux = <CMP0_IN0_PTC6>;

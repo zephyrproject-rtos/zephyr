@@ -385,7 +385,7 @@ launch:
    https://www.st.com/en/evaluation-tools/stm32h573i-dk.html
 
 .. _STM32H573I-DK Discovery board User Manual:
-   https://www.st.com/en/evaluation-tools/stm32h573i-dk.html
+   https://www.st.com/resource/en/user_manual/um3143-discovery-kit-with-stm32h573ii-mcu-stmicroelectronics.pdf
 
 .. _STM32H573 on www.st.com:
    https://www.st.com/en/microcontrollers/stm32h573ii.html

@@ -8,9 +8,9 @@
 
 #include "sx126x_common.h"
 
-#include <stm32wlxx_ll_exti.h>
-#include <stm32wlxx_ll_pwr.h>
-#include <stm32wlxx_ll_rcc.h>
+#include <stm32_ll_exti.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

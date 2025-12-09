@@ -317,6 +317,7 @@
 		reg = <0xb4000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 12)>;
 	};
@@ -326,6 +327,7 @@
 		reg = <0xb8000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 13)>;
 	};
@@ -335,6 +337,7 @@
 		reg = <0xbb000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
+		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 14)>;
 	};

@@ -11,18 +11,20 @@
 	};
 };
 
-&pll2 {
-	/* 44.1KHz (0.09% Error) */
-	div-m = <2>;
-	mul-n = <113>;
+&pll3 {
+	/* 44.1 KHz (0.0% Error) */
+	div-m = <1>;
+	mul-n = <35>;
 	div-q = <2>;
 	div-r = <2>;
-	div-p = <2>;
+	div-p = <25>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &sai1_a {
+	clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+		 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
 	pinctrl-0 = <&sai1_mclk_a_pe2 &sai1_sd_a_pe6
 		     &sai1_fs_a_pe4 &sai1_sck_a_pe5>;
 	pinctrl-names = "default";

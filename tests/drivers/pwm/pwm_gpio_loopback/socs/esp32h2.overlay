@@ -15,7 +15,7 @@
 			<&gpio0 3 ESP32_GPIO_PIN_OUT_EN>;
 
 		pwms = <&ledc0 0 160000 PWM_POLARITY_NORMAL>,
-			<&ledc0 5 80000 PWM_POLARITY_INVERTED>;
+		       <&ledc0 5 80000 PWM_POLARITY_INVERTED>;
 	};
 };
 
@@ -23,7 +23,7 @@
 	ledc0_default: ledc0_default {
 		group1 {
 			pinmux = <LEDC_CH0_GPIO2>,
-				<LEDC_CH5_GPIO3>;
+				 <LEDC_CH5_GPIO3>;
 			input-enable;
 		};
 	};

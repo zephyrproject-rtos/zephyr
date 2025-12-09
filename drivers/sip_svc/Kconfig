@@ -26,6 +26,8 @@ config ARM_SIP_SVC_HAS_DRIVER
 	   to signal that there is a sip svc driver. This is used by other
 	   modules which depends on sip svc driver.
 
+# zephyr-keep-sorted-start
 source "drivers/sip_svc/Kconfig.sip_smc_agilex"
+# zephyr-keep-sorted-stop
 
 endif # ARM_SIP_SVC_DRIVER

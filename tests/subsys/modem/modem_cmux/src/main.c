@@ -955,4 +955,23 @@ ZTEST(modem_cmux, test_modem_cmux_invalid_cr)
 	zassert_false(events, "Wrong CMD should have been ignored");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_invalid_command)
+{
+	static uint8_t invalid_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0x00,
+					     0x00, 0x00, 0x00, 0xFB, 0xF9};
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, invalid_cmd,
+			       sizeof(invalid_cmd));
+
+	events = k_event_wait_all(&cmux_event,
+				  (MODEM_CMUX_EVENT_CONNECTED | MODEM_CMUX_EVENT_DISCONNECTED),
+				  false, K_SECONDS(1));
+
+	zassert_false(events, "Wrong CMD should have been ignored");
+
+	/* Invalid command should not cause any response */
+	zassert_equal(0, modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)));
+}
+
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

@@ -39,11 +39,11 @@ static uint16_t modem_ppp_fcs_final(uint16_t fcs)
 
 static uint16_t modem_ppp_ppp_protocol(struct net_pkt *pkt)
 {
-	if (net_pkt_family(pkt) == AF_INET) {
+	if (net_pkt_family(pkt) == NET_AF_INET) {
 		return PPP_IP;
 	}
 
-	if (net_pkt_family(pkt) == AF_INET6) {
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
 		return PPP_IPV6;
 	}
 
@@ -270,7 +270,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 
 		if (net_pkt_available_buffer(ppp->rx_pkt) == 1) {
 			if (net_pkt_alloc_buffer(ppp->rx_pkt, CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE,
-						 AF_INET, K_NO_WAIT) < 0) {
+						 NET_AF_INET, K_NO_WAIT) < 0) {
 				LOG_WRN("Failed to alloc buffer");
 				net_pkt_unref(ppp->rx_pkt);
 				ppp->rx_pkt = NULL;
@@ -478,8 +478,8 @@ static int modem_ppp_ppp_api_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Validate packet protocol */
-	if ((net_pkt_is_ppp(pkt) == false) && (net_pkt_family(pkt) != AF_INET) &&
-	    (net_pkt_family(pkt) != AF_INET6)) {
+	if ((net_pkt_is_ppp(pkt) == false) && (net_pkt_family(pkt) != NET_AF_INET) &&
+	    (net_pkt_family(pkt) != NET_AF_INET6)) {
 		return -EPROTONOSUPPORT;
 	}
 

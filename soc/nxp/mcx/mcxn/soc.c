@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,3 +68,8 @@ static int second_core_boot(void)
 
 SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
+
+void enable_ecc(uint32_t mask)
+{
+	SYSCON->ECC_ENABLE_CTRL = mask;
+}

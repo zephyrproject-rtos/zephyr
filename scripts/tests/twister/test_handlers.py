@@ -32,6 +32,7 @@ from twisterlib.handlers import (
 from twisterlib.hardwaremap import DUT
 from twisterlib.statuses import TwisterStatus
 
+# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -1047,21 +1048,21 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir']
     ),
     (
         [],
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir']
     ),
     (
         '--dummy',
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--', '--dummy']
     ),
     (
@@ -1069,7 +1070,7 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--', '--dummy1', '--dummy2', '--dummy, 3']
     ),
 
@@ -1078,7 +1079,7 @@ TESTDATA_13 = [
         'runner',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'runner', 'param1', 'param2']
     ),
 
@@ -1087,7 +1088,7 @@ TESTDATA_13 = [
         'pyocd',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'pyocd', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
     (
@@ -1095,7 +1096,7 @@ TESTDATA_13 = [
         'nrfjprog',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'nrfjprog', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
     (
@@ -1103,7 +1104,7 @@ TESTDATA_13 = [
         'openocd',
         'STM32 STLink',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
     ),
@@ -1112,7 +1113,7 @@ TESTDATA_13 = [
         'openocd',
         'STLINK-V3',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
     ),
@@ -1121,7 +1122,7 @@ TESTDATA_13 = [
         'openocd',
         'EDBG CMSIS-DAP',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
     ),
@@ -1130,7 +1131,7 @@ TESTDATA_13 = [
         'jlink',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'jlink', '--dev-id', 12345,
          'param1', 'param2']
     ),
@@ -1139,8 +1140,8 @@ TESTDATA_13 = [
         'stm32cubeprogrammer',
         'product',
         None,
-        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--runner', 'stm32cubeprogrammer', '--tool-opt=sn=12345',
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+         '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
          'param1', 'param2']
     ),
     (

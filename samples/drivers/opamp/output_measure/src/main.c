@@ -24,6 +24,27 @@ uint8_t size = ARRAY_SIZE(gain);
 uint8_t size;
 #endif
 
+const static char *opamp_gain2str[] = {
+	[OPAMP_GAIN_1_7] = "1/7",
+	[OPAMP_GAIN_1_3] = "1/3",
+	[OPAMP_GAIN_1] = "1",
+	[OPAMP_GAIN_5_3] = "5/3",
+	[OPAMP_GAIN_2] = "2",
+	[OPAMP_GAIN_11_5] = "11/5",
+	[OPAMP_GAIN_3] = "3",
+	[OPAMP_GAIN_4] = "4",
+	[OPAMP_GAIN_13_3] = "13/3",
+	[OPAMP_GAIN_7] = "7",
+	[OPAMP_GAIN_8] = "8",
+	[OPAMP_GAIN_15] = "15",
+	[OPAMP_GAIN_16] = "16",
+	[OPAMP_GAIN_31] = "31",
+	[OPAMP_GAIN_32] = "32",
+	[OPAMP_GAIN_33] = "33",
+	[OPAMP_GAIN_63] = "63",
+	[OPAMP_GAIN_64] = "64",
+};
+
 static int device_initialize(const struct adc_dt_spec *adc_channel,
 			const struct device *opamp_dev,
 			struct adc_sequence *seq)
@@ -31,24 +52,24 @@ static int device_initialize(const struct adc_dt_spec *adc_channel,
 	int ret;
 
 	if (!adc_is_ready_dt(adc_channel)) {
-		printf("ADC device %s is not ready\n", adc_channel->dev->name);
+		printk("ADC device %s is not ready\n", adc_channel->dev->name);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(opamp_dev)) {
-		printf("OPAMP device %s is not ready\n", opamp_dev->name);
+		printk("OPAMP device %s is not ready\n", opamp_dev->name);
 		return -ENODEV;
 	}
 
 	ret = adc_channel_setup_dt(adc_channel);
 	if (ret < 0) {
-		printf("ADC channel could not setup with code (%d)\n", ret);
+		printk("ADC channel could not be set up with code (%d)\n", ret);
 		return ret;
 	}
 
 	ret = adc_sequence_init_dt(adc_channel, seq);
 	if (ret < 0) {
-		printf("ADC sequence initialize failed with code (%d)\n", ret);
+		printk("ADC sequence initialize failed with code (%d)\n", ret);
 		return ret;
 	}
 
@@ -68,7 +89,7 @@ static int read_opamp_output(const struct adc_dt_spec *adc_channel,
 
 	ret = adc_read_dt(adc_channel, seq);
 	if (ret < 0) {
-		printf("ADC read failed with code (%d)\n", ret);
+		printk("ADC read failed with code (%d)\n", ret);
 		return ret;
 	}
 
@@ -78,7 +99,7 @@ static int read_opamp_output(const struct adc_dt_spec *adc_channel,
 				sample_buffer);
 
 	if (ret < 0) {
-		printf("Convert to millivolts failed with code (%d)\n", ret);
+		printk("Convert to millivolts failed with code (%d)\n", ret);
 		return ret;
 	}
 
@@ -97,32 +118,38 @@ int main(void)
 	struct adc_sequence sequence = {
 		.buffer = &sample_buffer,
 		.buffer_size = sizeof(sample_buffer),
+		.calibrate = true,
 	};
 
 	ret = device_initialize(&adc_channel, opamp_dev, &sequence);
 	if (ret < 0) {
-		printf("Initialization failed with code (%d)\n", ret);
+		printk("Initialization failed with code (%d)\n", ret);
 		return 0;
 	}
+
+	const char *gain_str = "default";
 
 	do {
 #if OPAMP_SUPPORT_PROGRAMMABLE_GAIN
 		/* For OPAMPs which support programmable gain, retrieve the gain array. */
 		ret = opamp_set_gain(opamp_dev, gain[size - 1]);
 		if (ret < 0) {
-			printf("OPAMP gain set failed with code (%d)\n", ret);
+			printk("OPAMP gain set failed with code (%d)\n", ret);
 			return 0;
 		}
-
+		gain_str = opamp_gain2str[gain[size - 1]];
 		size--;
+#else
+		/* Avoid compilation error on platforms without programmable gain. */
+		ARG_UNUSED(opamp_gain2str);
 #endif
 		ret = read_opamp_output(&adc_channel, &sequence, &sample_buffer);
 		if (ret < 0) {
-			printf("OPAMP output read failed with code (%d)\n", ret);
+			printk("OPAMP output read failed with code (%d)\n", ret);
 			return 0;
 		}
 
-		printf("OPAMP output is: %d(mv)\n", sample_buffer);
+		printk("OPAMP output (@gain: %s) is: %d(mv)\n", gain_str, sample_buffer);
 	} while (size);
 
 	return 0;

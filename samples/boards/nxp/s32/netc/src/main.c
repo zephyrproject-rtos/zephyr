@@ -27,7 +27,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	LOG_INF("Configuring iface %d (%p)", net_if_get_by_iface(iface), iface);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
-		if (net_addr_pton(AF_INET6, ipv6_addr, &addr6)) {
+		if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
 			LOG_ERR("Invalid address: %s", ipv6_addr);
 			return -EINVAL;
 		}
@@ -41,7 +41,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
-		if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
+		if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
 			LOG_ERR("Invalid address: %s", ipv4_addr);
 			return -EINVAL;
 		}
@@ -56,7 +56,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 		if (netmask && netmask[0]) {
 			struct in_addr nm;
 
-			if (net_addr_pton(AF_INET, netmask, &nm)) {
+			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
 				LOG_ERR("Invalid netmask: %s", netmask);
 				return -EINVAL;
 			}

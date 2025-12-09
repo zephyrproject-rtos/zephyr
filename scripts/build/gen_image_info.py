@@ -22,16 +22,17 @@ Information included in the image information header:
 
 import argparse
 import re
+
 from elftools.elf.elffile import ELFFile
 
 
 def write_header(filename, segments, adjusted_lma):
     content = []
 
-    filename_we = re.sub(r'[\W]','_', filename).upper()
+    filename_we = re.sub(r'[\W]', '_', filename).upper()
     content.append(f'#ifndef {filename_we}_H')
     content.append(f'#define {filename_we}_H')
-    content.append(f'')
+    content.append('')
     content.append(f'#define SEGMENT_NUM {len(segments)}')
     content.append(f'#define ADJUSTED_LMA {adjusted_lma}')
 
@@ -41,12 +42,12 @@ def write_header(filename, segments, adjusted_lma):
         hex_vma_addr = hex(segment_header.p_vaddr)
         hex_size = hex(segment_header.p_filesz)
 
-        content.append(f'')
+        content.append('')
         content.append(f'#define SEGMENT_LMA_ADDRESS_{idx} {hex_lma_addr}')
         content.append(f'#define SEGMENT_VMA_ADDRESS_{idx} {hex_vma_addr}')
         content.append(f'#define SEGMENT_SIZE_{idx} {hex_size}')
 
-    content.append(f'')
+    content.append('')
     content.append(f'#endif /* {filename_we}_H */')
 
     with open(filename, 'w') as out_file:
@@ -54,7 +55,7 @@ def write_header(filename, segments, adjusted_lma):
 
 
 def read_segments(filename):
-    elffile = ELFFile(open(filename, 'rb'))
+    elffile = ELFFile(open(filename, 'rb'))  # noqa: SIM115
     segments = list()
     for segment_idx in range(elffile.num_segments()):
         segments.insert(segment_idx, dict())
@@ -63,17 +64,21 @@ def read_segments(filename):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='''
+    parser = argparse.ArgumentParser(
+        description='''
     Process ELF file and extract image information.
     Create header file with extracted image information which can be included
-    in other build systems.''', allow_abbrev=False)
+    in other build systems.''',
+        allow_abbrev=False,
+    )
 
-    parser.add_argument('--header-file', required=True,
-                        help="""Header file to write with image data.""")
-    parser.add_argument('--elf-file', required=True,
-                        help="""ELF File to process.""")
-    parser.add_argument('--adjusted-lma', required=False, default=0,
-                        help="""Adjusted LMA address value.""")
+    parser.add_argument(
+        '--header-file', required=True, help="""Header file to write with image data."""
+    )
+    parser.add_argument('--elf-file', required=True, help="""ELF File to process.""")
+    parser.add_argument(
+        '--adjusted-lma', required=False, default=0, help="""Adjusted LMA address value."""
+    )
     args = parser.parse_args()
 
     segments = read_segments(args.elf_file)

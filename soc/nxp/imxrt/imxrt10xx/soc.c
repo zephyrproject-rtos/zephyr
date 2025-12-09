@@ -360,12 +360,12 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_SOC_RESET_HOOK
 void soc_reset_hook(void)
 {
-	/* Call CMSIS SystemInit */
-	SystemInit();
-
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
 	flexram_dt_partition();
 #endif
+
+	/* Call CMSIS SystemInit */
+	SystemInit();
 }
 #endif

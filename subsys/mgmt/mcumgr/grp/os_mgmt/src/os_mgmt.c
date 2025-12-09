@@ -25,6 +25,11 @@
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+#include <zephyr/sys/sys_heap.h>
+#include <mgmt/mcumgr/transport/smp_internal.h>
+#endif
+
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
 #endif
@@ -143,6 +148,22 @@ struct datetime_parser {
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+/* Specifies the maximum characters in the memory pool ID, allowing up to 999 outputs */
+#define MPSTAT_ID_KEY_SIZE 4
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+/* Number of items per memory pool output */
+#define MPSTAT_KEY_MAP_ENTRIES 3
+#else
+/* Number of items per memory pool output */
+#define MPSTAT_KEY_MAP_ENTRIES 4
+
+/* Specifies the block size of memory pools, zephyr used byte-level allocation */
+#define MPSTAT_BLOCK_SIZE 1
+#endif
 #endif
 
 /**
@@ -354,6 +375,76 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 	return 0;
 }
 #endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT */
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+/**
+ * Command handler: os mpstat
+ */
+static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	struct sys_heap **heap;
+	uint8_t key[MPSTAT_ID_KEY_SIZE] = { 0 };
+	int heap_elements;
+	int i = 0;
+	bool ok;
+
+	heap_elements = sys_heap_array_get(&heap);
+	ok = zcbor_tstr_put_lit(zse, "tasks") &&
+	     zcbor_map_start_encode(zse, heap_elements);
+
+	if (!ok) {
+		goto end;
+	}
+
+	while (i < heap_elements) {
+		struct sys_memory_stats heap_stats;
+		uint32_t heap_total_size;
+		int rc;
+		uint8_t key_size;
+
+		rc = sys_heap_runtime_stats_get(heap[i], &heap_stats);
+
+		if (rc != 0) {
+			ok = smp_mgmt_reset_zse(ctxt) &&
+			     smp_add_cmd_err(zse, MGMT_GROUP_ID_OS,
+					     OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED);
+			LOG_ERR("Failed to get heap stats from address %p: %d", heap[i], rc);
+			goto end;
+		}
+
+		key_size = u8_to_dec(key, sizeof(key), i);
+		heap_total_size = heap_stats.allocated_bytes + heap_stats.free_bytes;
+
+		ok = zcbor_tstr_encode_ptr(zse, key, (size_t)key_size) &&
+		     zcbor_map_start_encode(zse, MPSTAT_KEY_MAP_ENTRIES) &&
+#ifndef CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+		     zcbor_tstr_put_lit(zse, "blksiz") &&
+		     zcbor_uint32_put(zse, MPSTAT_BLOCK_SIZE) &&
+#endif
+		     zcbor_tstr_put_lit(zse, "nblks") &&
+		     zcbor_uint32_put(zse, heap_total_size) &&
+		     zcbor_tstr_put_lit(zse, "nfree") &&
+		     zcbor_uint32_put(zse, heap_stats.free_bytes) &&
+		     zcbor_tstr_put_lit(zse, "min") &&
+		     zcbor_uint32_put(zse, (heap_total_size - heap_stats.max_allocated_bytes)) &&
+		     zcbor_map_end_encode(zse, MPSTAT_KEY_MAP_ENTRIES);
+
+		if (!ok) {
+			break;
+		}
+
+		++i;
+	}
+
+	if (ok == true) {
+		ok = zcbor_map_end_encode(zse, heap_elements);
+	}
+
+end:
+	return MGMT_RETURN_CHECK(ok);
+}
+#endif /* CONFIG_MCUMGR_GRP_OS_MPSTAT */
 
 #ifdef CONFIG_REBOOT
 /**
@@ -1117,6 +1208,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
 	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
+	case OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED:
 		rc = MGMT_ERR_ENOENT;
 		break;
 
@@ -1139,6 +1231,12 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
+	},
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+	[OS_MGMT_ID_MPSTAT] = {
+		os_mgmt_mpstat_read, NULL
 	},
 #endif
 

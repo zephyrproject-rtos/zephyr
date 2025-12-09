@@ -33,10 +33,6 @@ support for the application core, on the simulated nRF54LM20 SOC.
 
    This simulated target does **not** yet support targeting the cpuflpr core.
 
-.. warning::
-
-   This target is experimental.
-
 This board includes models of some of the nRF54LM20 SOC peripherals:
 
 * AAR (Accelerated Address Resolver)

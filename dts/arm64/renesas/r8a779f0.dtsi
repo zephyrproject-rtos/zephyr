@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/clock/r8a779f0_cpg_mssr.h>
 

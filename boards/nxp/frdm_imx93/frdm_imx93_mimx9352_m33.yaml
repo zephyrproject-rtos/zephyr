@@ -1,0 +1,18 @@
+# Copyright 2025 Filip Stojanovic <filipembedded@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_imx93/mimx9352/m33
+name: NXP FRDM-IMX93 M33
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+flash: 128
+supported:
+  - gpio
+  - uart
+  - pwm
+  - adc
+vendor: nxp

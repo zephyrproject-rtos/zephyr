@@ -22,11 +22,62 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &powerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	performance-states {
+		pstate_0: pstate-0 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <60>;
+			cpu-frequency-level = "high";
+		};
+
+		pstate_1: pstate-1 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <30>;
+			cpu-frequency-level = "medium";
+		};
+
+		pstate_2: pstate-2 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <0>;
+			cpu-frequency-level = "low";
+		};
+	};
+
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
 		};
 	};
 
@@ -169,6 +220,66 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portf>;
+	};
+
+	eim0: eim@5b000 {
+		compatible = "nxp,eim";
+		status = "disabled";
+		reg = <0x5b000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(3, 24)>;
+
+		eim0_channel0: channel0 {
+			channel-id = <0>;
+			erm-channel-id = <0>;
+			size = <DT_SIZE_K(96)>;
+			start-address = <0x4000000>;
+			ecc-enable = <0x2>;
+			status = "disabled";
+		};
+
+		eim0_channel1: channel1 {
+			channel-id = <1>;
+			erm-channel-id = <1>;
+			size = <DT_SIZE_K(32)>;
+			start-address = <0x20000000>;
+			ecc-enable = <0x1>;
+			status = "disabled";
+		};
+
+		eim0_channel2: channel2 {
+			channel-id = <2>;
+			erm-channel-id = <2>;
+			size = <DT_SIZE_K(32)>;
+			start-address = <0x20008000>;
+			ecc-enable = <0x2>;
+			status = "disabled";
+		};
+
+		eim0_channel3: channel3 {
+			channel-id = <3>;
+			erm-channel-id = <3>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20010000>;
+			ecc-enable = <0x4>;
+			status = "disabled";
+		};
+
+		eim0_channel4: channel4 {
+			channel-id = <4>;
+			erm-channel-id = <4>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20020000>;
+			ecc-enable = <0x4>;
+			status = "disabled";
+		};
+	};
+
+	erm0: erm@5c000 {
+		compatible = "nxp,erm";
+		status = "disabled";
+		reg = <0x5c000 0x1000>;
+		interrupts = <136 0>, <137 0>;
+		channels = <0 1 2 3 4 7 8 9>;
 	};
 
 	flexcomm0: flexcomm@92000 {
@@ -1024,6 +1135,31 @@
 			dc-remover-cutoff-freq = <2>;
 			decimation-filter-gain = <4>;
 		};
+	};
+
+	spc: system-modules@45000 {
+		compatible = "nxp,spc";
+		reg = <0x45000 0x1000>;
+		interrupts = <146 0>;
+		wakeup-delay = <780>;
+	};
+
+	wuu: system-modules@46000 {
+		compatible = "nxp,wuu";
+		reg = <0x46000 0x1000>;
+		interrupts = <147 0>;
+	};
+
+	cmc: system-modules@48000 {
+		compatible = "nxp,cmc";
+		reg = <0x48000 0x1000>;
+		interrupts = <154 0>;
+	};
+
+	vbat: system-modules@59000 {
+		compatible = "nxp,vbat";
+		reg = <0x59000 0x1000>;
+		interrupts = <99 0>;
 	};
 };
 

@@ -43,6 +43,10 @@
 	d3ppre = <1>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 /* USART1: Servo UART (console) */
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;

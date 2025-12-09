@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

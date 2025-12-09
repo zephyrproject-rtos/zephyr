@@ -111,6 +111,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &quadspi {
 	pinctrl-0 = <&quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13

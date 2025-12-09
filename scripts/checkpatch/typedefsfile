@@ -8,3 +8,4 @@ io_rw_32
 Pwm
 FILE
 NRF_GPIO_Type
+EIM_Type

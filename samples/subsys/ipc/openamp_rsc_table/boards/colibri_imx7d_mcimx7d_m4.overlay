@@ -7,7 +7,6 @@
 /* Follow the board's documentation to modify the Linux DT accordingly */
 
 / {
-
 	chosen {
 		/* Use OCRAM 128kB because TCM 32kB is too small for the sample */
 		zephyr,flash = &ocram_code;

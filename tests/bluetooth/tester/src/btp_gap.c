@@ -135,7 +135,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
 		bt_addr_le_copy(&ev.address, info.le.dst);
-		ev.interval = sys_cpu_to_le16(info.le.interval);
+		ev.interval = sys_cpu_to_le16(info.le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US);
 		ev.latency = sys_cpu_to_le16(info.le.latency);
 		ev.timeout = sys_cpu_to_le16(info.le.timeout);
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {

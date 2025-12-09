@@ -13,7 +13,7 @@
 #include <hal/nrf_hsfll.h>
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 

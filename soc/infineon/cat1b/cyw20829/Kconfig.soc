@@ -1,79 +1,70 @@
-# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 # Infineon CYW20829 series MCUs
-
-# SOC series
 config SOC_SERIES_CYW20829
 	bool
+	select SOC_FAMILY_INFINEON_CAT1B
 
 config SOC_SERIES
 	default "cyw20829" if SOC_SERIES_CYW20829
 
-# SOC die
-config SOC_DIE_CYW20829
-	bool
-	select SOC_FAMILY_INFINEON_CAT1B
-
-# SOC packages
-config SOC_PACKAGE_CYW20829_56_QFN
-	bool
-
-config SOC_PACKAGE_CYW20829_40_QFN
-	bool
-
-config SOC_PACKAGE_CYW20829_77_BGA
-	bool
-
-# MPN
-config SOC_CYW20829A0LKML
-	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_56_QFN
-	select SOC_SERIES_CYW20829
-
-config SOC_CYW20829A0KML
-	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_40_QFN
-	select SOC_SERIES_CYW20829
-
-config SOC_CYW89829A0KML
-	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_40_QFN
-	select SOC_SERIES_CYW20829
-
+# Infineon CYW20829 series MPNs
 config SOC_CYW20829B0LKML
 	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_56_QFN
 	select SOC_SERIES_CYW20829
 
-config SOC_CYW20829B0KML
+config SOC_CYW89829B0232
 	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_40_QFN
 	select SOC_SERIES_CYW20829
 
-config SOC_CYW89829B0KML
+config SOC_CYW20829B0000
 	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_40_QFN
 	select SOC_SERIES_CYW20829
 
-config SOC_CYW89829B01MKSBG
+config SOC_CYW20829B0010
 	bool
-	select SOC_DIE_CYW20829
-	select SOC_PACKAGE_CYW20829_77_BGA
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1240
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1340
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B0062
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B1062
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1000
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1010
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B1232
+	bool
 	select SOC_SERIES_CYW20829
 
 config SOC
-	default "cyw20829a0lkml" if SOC_CYW20829A0LKML
-	default "cyw20829a0kml" if SOC_CYW20829A0KML
-	default "cyw89829a0kml" if SOC_CYW89829A0KML
 	default "cyw20829b0lkml" if SOC_CYW20829B0LKML
-	default "cyw20829b0kml" if SOC_CYW20829B0KML
-	default "cyw89829b0kml" if SOC_CYW89829B0KML
-	default "cyw89829b01mksbg" if SOC_CYW89829B01MKSBG
+	default "cyw89829b0232" if SOC_CYW89829B0232
+	default "cyw20829b0000" if SOC_CYW20829B0000
+	default "cyw20829b0010" if SOC_CYW20829B0010
+	default "cyw20829b1240" if SOC_CYW20829B1240
+	default "cyw20829b1340" if SOC_CYW20829B1340
+	default "cyw89829b0062" if SOC_CYW89829B0062
+	default "cyw89829b1062" if SOC_CYW89829B1062
+	default "cyw20829b1000" if SOC_CYW20829B1000
+	default "cyw20829b1010" if SOC_CYW20829B1010
+	default "cyw89829b1232" if SOC_CYW89829B1232

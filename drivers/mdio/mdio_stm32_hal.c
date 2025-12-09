@@ -184,8 +184,7 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
 	};                                                                                         \
 	static struct mdio_stm32_config mdio_stm32_config_##inst = {                               \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bus),      \
-			   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bits)},    \
+		.pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(inst), stm_eth),                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,               \
 			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2025 Siratul Islam <sirat4757@gmail.com>
+ * Copyright (c) 2025 Siratul Islam <email@sirat.me>
  * SPDX-License-Identifier: Apache-2.0
  *
- * Driver for 32x16 monochrome LED panels with HUB12 interface.
+ * Driver for 32x16 monochrome P10 LED panels with HUB12 interface.
  */
 
 #include <zephyr/kernel.h>
@@ -18,15 +18,20 @@ LOG_MODULE_REGISTER(hub12, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zephyr_hub12
 
-/* Display layout constants */
+/* Single panel constants */
+#define HUB12_PANEL_WIDTH     32
+#define HUB12_PANEL_HEIGHT    16
 #define HUB12_ROWS            4
-#define HUB12_BYTES_PER_ROW   16
+#define HUB12_BYTES_PER_PANEL 16
 #define HUB12_GROUP_SIZE      4
 #define HUB12_NUM_GROUPS      4
 #define HUB12_PIXELS_PER_BYTE 8
 
+/* Macros for cache and row calculations */
+#define HUB12_BYTES_PER_ROW(width) (((width) / HUB12_PANEL_WIDTH) * HUB12_BYTES_PER_PANEL)
+#define HUB12_CACHE_SIZE(width)    (HUB12_ROWS * HUB12_BYTES_PER_ROW(width))
+
 /* Brightness control parameters */
-#define HUB12_PWM_FREQ           1000
 #define HUB12_DEFAULT_BRIGHTNESS 5
 #define HUB12_MIN_BRIGHTNESS     1
 #define HUB12_MAX_BRIGHTNESS     50
@@ -39,11 +44,13 @@ struct hub12_config {
 	struct spi_dt_spec spi;
 	uint16_t width;
 	uint16_t height;
+	uint16_t bytes_per_row;
+	uint8_t num_panels;
 };
 
 struct hub12_data {
 	uint8_t *framebuffer;
-	uint8_t cache[HUB12_ROWS][HUB12_BYTES_PER_ROW];
+	uint8_t *cache;
 	uint8_t current_row;
 	struct k_timer scan_timer;
 	struct k_work scan_work;
@@ -52,27 +59,38 @@ struct hub12_data {
 	uint8_t brightness_us;
 };
 
-static void hub12_update_cache(struct hub12_data *data, uint8_t row)
+static void hub12_update_cache(struct hub12_data *data, const struct hub12_config *config,
+			       uint8_t row)
 {
 	const uint8_t *fb = data->framebuffer;
+	uint8_t *cache_row = data->cache + (row * config->bytes_per_row);
 
-	for (int i = 0; i < HUB12_BYTES_PER_ROW; i++) {
-		int group = i / HUB12_GROUP_SIZE;
-		int offset = i % HUB12_GROUP_SIZE;
-		int reverse_offset = (HUB12_GROUP_SIZE - 1) - offset;
-		int fb_idx = reverse_offset * HUB12_NUM_GROUPS * HUB12_ROWS +
-			     row * HUB12_NUM_GROUPS + group;
+	for (uint8_t panel = 0; panel < config->num_panels; panel++) {
+		for (int i = 0; i < HUB12_BYTES_PER_PANEL; i++) {
+			/* Determine byte position within 4-byte groups */
+			int group = i / HUB12_GROUP_SIZE;
+			int offset = i % HUB12_GROUP_SIZE;
+			int reverse_offset = (HUB12_GROUP_SIZE - 1) - offset;
 
-		data->cache[row][i] = fb[fb_idx];
+			/* Calculate which framebuffer byte maps to this cache position */
+			int bytes_per_group_row = config->num_panels * HUB12_NUM_GROUPS;
+			int offset_base = reverse_offset * bytes_per_group_row * HUB12_ROWS;
+			int row_offset = row * bytes_per_group_row;
+			int panel_offset = panel * HUB12_NUM_GROUPS;
+			int fb_idx = offset_base + row_offset + panel_offset + group;
+
+			cache_row[panel * HUB12_BYTES_PER_PANEL + i] = ~fb[fb_idx];
+		}
 	}
 }
 
 static void hub12_scan_row(struct hub12_data *data, const struct hub12_config *config)
 {
 	uint8_t row = data->current_row;
+	uint8_t *cache_row = data->cache + (row * config->bytes_per_row);
 	int ret;
 
-	struct spi_buf tx_buf = {.buf = data->cache[row], .len = HUB12_BYTES_PER_ROW};
+	struct spi_buf tx_buf = {.buf = cache_row, .len = config->bytes_per_row};
 	struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	ret = spi_write_dt(&config->spi, &tx);
@@ -97,8 +115,6 @@ static void hub12_scan_row(struct hub12_data *data, const struct hub12_config *c
 	}
 
 	data->current_row = (data->current_row + 1) % HUB12_ROWS;
-
-	hub12_update_cache(data, data->current_row);
 }
 
 static void hub12_scan_work_handler(struct k_work *work)
@@ -106,7 +122,16 @@ static void hub12_scan_work_handler(struct k_work *work)
 	struct hub12_data *data = CONTAINER_OF(work, struct hub12_data, scan_work);
 	const struct hub12_config *config = data->dev->config;
 
-	hub12_scan_row(data, config);
+	/* K_NO_WAIT to avoid blocking work queue */
+	if (k_sem_take(&data->lock, K_NO_WAIT) == 0) {
+		hub12_scan_row(data, config);
+
+		uint8_t next_row = data->current_row;
+
+		hub12_update_cache(data, config, next_row);
+
+		k_sem_give(&data->lock);
+	}
 }
 
 static void hub12_scan_timer_handler(struct k_timer *timer)
@@ -175,7 +200,7 @@ static int hub12_write(const struct device *dev, const uint16_t x, const uint16_
 	}
 
 	for (int i = 0; i < HUB12_ROWS; i++) {
-		hub12_update_cache(data, i);
+		hub12_update_cache(data, config, i);
 	}
 
 	k_sem_give(&data->lock);
@@ -280,13 +305,6 @@ static int hub12_init(const struct device *dev)
 
 	data->dev = dev;
 
-	/* Only supporting single, unchained panels for now */
-	if (config->width != 32 || config->height != 16) {
-		LOG_ERR("Unsupported dimensions %dx%d. Only 32x16 panels supported", config->width,
-			config->height);
-		return -ENOTSUP;
-	}
-
 	if (!gpio_is_ready_dt(&config->pa) || !gpio_is_ready_dt(&config->pb) ||
 	    !gpio_is_ready_dt(&config->pe) || !gpio_is_ready_dt(&config->plat)) {
 		LOG_ERR("GPIO devices not ready");
@@ -319,7 +337,7 @@ static int hub12_init(const struct device *dev)
 	}
 
 	memset(data->framebuffer, 0, (config->width * config->height) / HUB12_PIXELS_PER_BYTE);
-	memset(data->cache, 0, sizeof(data->cache));
+	memset(data->cache, 0, HUB12_ROWS * config->bytes_per_row);
 	data->current_row = 0;
 	data->brightness_us = HUB12_DEFAULT_BRIGHTNESS;
 
@@ -330,24 +348,30 @@ static int hub12_init(const struct device *dev)
 	}
 
 	for (int i = 0; i < HUB12_ROWS; i++) {
-		hub12_update_cache(data, i);
+		hub12_update_cache(data, config, i);
 	}
 
 	k_work_init(&data->scan_work, hub12_scan_work_handler);
 	k_timer_init(&data->scan_timer, hub12_scan_timer_handler, NULL);
 	k_timer_start(&data->scan_timer, K_MSEC(1), K_MSEC(1));
 
-	LOG_INF("HUB12 display initialized: %dx%d", config->width, config->height);
+	LOG_INF("HUB12 display initialized: %dx%d (%d panels)", config->width, config->height,
+		config->num_panels);
 
 	return 0;
 }
 
 #define HUB12_INIT(inst)                                                                           \
+	BUILD_ASSERT((DT_INST_PROP(inst, width) % HUB12_PANEL_WIDTH) == 0,                         \
+		     "HUB12 width must be a multiple of " STRINGIFY(HUB12_PANEL_WIDTH));           \
+                                                                                                   \
 	static uint8_t hub12_framebuffer_##inst[(DT_INST_PROP(inst, width) *                       \
 						 DT_INST_PROP(inst, height)) /                     \
 						HUB12_PIXELS_PER_BYTE];                            \
+	static uint8_t hub12_cache_##inst[HUB12_CACHE_SIZE(DT_INST_PROP(inst, width))];            \
 	static struct hub12_data hub12_data_##inst = {                                             \
 		.framebuffer = hub12_framebuffer_##inst,                                           \
+		.cache = hub12_cache_##inst,                                                       \
 	};                                                                                         \
                                                                                                    \
 	static const struct hub12_config hub12_config_##inst = {                                   \
@@ -358,6 +382,8 @@ static int hub12_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),           \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
+		.num_panels = DT_INST_PROP(inst, width) / HUB12_PANEL_WIDTH,                       \
+		.bytes_per_row = HUB12_BYTES_PER_ROW(DT_INST_PROP(inst, width)),                   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hub12_init, NULL, &hub12_data_##inst, &hub12_config_##inst,    \

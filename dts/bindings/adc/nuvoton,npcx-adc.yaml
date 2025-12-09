@@ -28,6 +28,21 @@ properties:
     type: int
     required: true
     description: the number of threshold detectors adc supports
-
+  speed-conf:
+    type: array
+    required: true
+    description: ADC speed configurations
+  support-npcxn-v1:
+    type: boolean
+    description: |
+        This option enables the ADC support for NPCXn V1.
+  support-npcxn-v2:
+    type: boolean
+    description: |
+        This option enables the ADC support for NPCXn V2.
+  support-npcxn-v3:
+    type: boolean
+    description: |
+        This option enables the ADC support for NPCXn V3.
 io-channel-cells:
   - input

@@ -11,7 +11,7 @@
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	zephyr_uhc0: max3421e@0 {
-		compatible = "maxim,max3421e_spi";
+		compatible = "maxim,max3421e-spi";
 		spi-max-frequency = <26000000>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;

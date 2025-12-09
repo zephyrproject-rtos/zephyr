@@ -30,6 +30,17 @@ config PM_CPU_OPS_PSCI
 	  0022A ("Power State Coordination Interface System Software on
 	  ARM processors").
 
+config PM_CPU_OPS_FVP
+	bool "Support for Arm FVP CPU power management"
+	depends on DT_HAS_ARM_FVP_PWRC_ENABLED && !PM_CPU_OPS_PSCI
+	default y if SMP
+	select PM_CPU_OPS_HAS_DRIVER
+	help
+	  Say Y here if you want Zephyr to support CPU power management
+	  operations on Arm Fixed Virtual Platform (FVP) without PSCI.
+	  This driver directly controls the FVP power controller and
+	  V2M system registers for CPU power-on and system reset operations.
+
 config PSCI_SHELL
 	bool "Support for PSCI interface shell commands"
 	depends on SHELL && PM_CPU_OPS_PSCI

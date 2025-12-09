@@ -43,12 +43,23 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct z_arm64_fp_context {
-	__int128 q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7;
-	__int128 q8,  q9,  q10, q11, q12, q13, q14, q15;
-	__int128 q16, q17, q18, q19, q20, q21, q22, q23;
-	__int128 q24, q25, q26, q27, q28, q29, q30, q31;
 	uint32_t fpsr, fpcr;
+	union {
+		struct {
+			__int128 v_regs[32];
+		} neon;
+#ifdef CONFIG_ARM64_SVE
+		struct {
+			uint8_t z_regs[32 * CONFIG_ARM64_SVE_VL_MAX] __aligned(8);
+			uint8_t p_regs[16 * (CONFIG_ARM64_SVE_VL_MAX / 8)];
+			uint8_t ffr[CONFIG_ARM64_SVE_VL_MAX / 8];
+			enum { SIMD_NONE = 0, SIMD_NEON, SIMD_SVE } simd_mode;
+		} sve;
+#endif
+	};
 };
+
+typedef struct z_arm64_fp_context z_arm64_fp_context;
 
 struct _thread_arch {
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
@@ -64,10 +75,11 @@ struct _thread_arch {
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	uint64_t stack_limit;
 #endif
+	uint8_t exception_depth;
+	/* Keep large structures at the end to avoid offset issues */
 #ifdef CONFIG_FPU_SHARING
 	struct z_arm64_fp_context saved_fp_context;
 #endif
-	uint8_t exception_depth;
 };
 
 typedef struct _thread_arch _thread_arch_t;

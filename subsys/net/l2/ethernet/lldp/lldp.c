@@ -106,7 +106,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		len += sizeof(uint16_t);
 	}
 
-	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
+	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, NET_AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		ret = -ENOMEM;
@@ -133,7 +133,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
-		uint16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
+		uint16_t tlv_end = net_htons(NET_LLDP_END_LLDPDU_VALUE);
 
 		ret = net_pkt_write(pkt, (uint8_t *)&tlv_end, sizeof(tlv_end));
 		if (ret < 0) {
@@ -377,21 +377,21 @@ int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv, size_t le
 
 static const struct net_lldpdu lldpdu = {
 	.chassis_id = {
-		.type_length = htons((LLDP_TLV_CHASSIS_ID << 9) |
+		.type_length = net_htons((LLDP_TLV_CHASSIS_ID << 9) |
 			NET_LLDP_CHASSIS_ID_TLV_LEN),
 		.subtype = CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE,
 		.value = NET_LLDP_CHASSIS_ID_VALUE
 	},
 	.port_id = {
-		.type_length = htons((LLDP_TLV_PORT_ID << 9) |
+		.type_length = net_htons((LLDP_TLV_PORT_ID << 9) |
 			NET_LLDP_PORT_ID_TLV_LEN),
 		.subtype = CONFIG_NET_LLDP_PORT_ID_SUBTYPE,
 		.value = NET_LLDP_PORT_ID_VALUE
 	},
 	.ttl = {
-		.type_length = htons((LLDP_TLV_TTL << 9) |
+		.type_length = net_htons((LLDP_TLV_TTL << 9) |
 			NET_LLDP_TTL_TLV_LEN),
-		.ttl = htons(NET_LLDP_TTL)
+		.ttl = net_htons(NET_LLDP_TTL)
 	},
 };
 

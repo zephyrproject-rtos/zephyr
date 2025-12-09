@@ -176,7 +176,7 @@ int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *
  *
  * @param handle The periodic sync set handle
  *
- * @retval The corresponding periodic advertising sync set object on success,
+ * @return The corresponding periodic advertising sync set object on success,
  *         NULL if it does not exist.
  */
 struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle);

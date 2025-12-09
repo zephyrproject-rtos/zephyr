@@ -43,22 +43,39 @@ bq25180@2 {
 	constant-charge-voltage-max-microvolt = <4200000>;
 };
 
-sbs-charger@3 {
-	compatible = "sbs,sbs-charger";
+bq25186@3 {
+	compatible = "ti,bq25186";
 	reg = <0x3>;
+	constant-charge-current-max-microamp = <500000>;
+	constant-charge-voltage-max-microvolt = <4200000>;
+	re-charge-threshold-millivolt = <200>;
+	vsys-target-regulation = "Vin Passthrough";
 };
 
-bq257130@4 {
-	compatible = "ti,bq25713";
+bq25188@4 {
+	compatible = "ti,bq25187";
 	reg = <0x4>;
+	constant-charge-current-max-microamp = <500000>;
+	constant-charge-voltage-max-microvolt = <4200000>;
+	vsys-target-regulation = "Battery Tracking";
+};
+
+sbs-charger@5 {
+	compatible = "sbs,sbs-charger";
+	reg = <0x5>;
+};
+
+bq257130@6 {
+	compatible = "ti,bq25713";
+	reg = <0x6>;
 	constant-charge-current-max-microamp = <1000000>;
 	constant-charge-voltage-max-microvolt = <3800000>;
 	system-voltage-min-threshold-microvolt = <3328000>;
 };
 
-axp2101@5 {
+axp2101@7 {
 	compatible = "x-powers,axp2101";
-	reg = <0x5>;
+	reg = <0x7>;
 
 	charger {
 		compatible = "x-powers,axp2101-charger";

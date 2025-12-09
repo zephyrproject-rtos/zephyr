@@ -260,7 +260,7 @@ typedef struct {
  *
  * @param timeout Timeout value relative to current time (may also be
  *                `K_FOREVER` or `K_NO_WAIT`).
- * @retval Timepoint value corresponding to given timeout
+ * @return Timepoint value corresponding to given timeout
  *
  * @see sys_timepoint_timeout()
  * @see sys_timepoint_expired()
@@ -276,7 +276,7 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
  * `K_FOREVER` is returned.
  *
  * @param timepoint Timepoint for which a timeout value is wanted.
- * @retval Corresponding timeout value.
+ * @return Corresponding timeout value.
  *
  * @see sys_timepoint_calc()
  */

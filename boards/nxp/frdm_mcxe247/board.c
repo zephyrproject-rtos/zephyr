@@ -131,6 +131,16 @@ static const scg_spll_config_t scg_spll_config = {
 };
 #endif
 
+static void board_set_rtc_clock(uint8_t src)
+{
+	uint32_t temp;
+
+	temp = SIM->LPOCLKS;
+	temp &= ~SIM_LPOCLKS_RTCCLKSEL_MASK;
+	temp |= SIM_LPOCLKS_RTCCLKSEL(src);
+	SIM->LPOCLKS = temp;
+}
+
 __weak void clock_init(void)
 {
 	scg_sys_clk_config_t current;
@@ -211,6 +221,10 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Adc1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
+	CLOCK_SetIpSrc(kCLOCK_Lpit0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm0))
 	CLOCK_SetIpSrc(kCLOCK_Ftm0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm0), ip_source));
@@ -254,6 +268,10 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_ptp_clock))
 	CLOCK_SetIpSrc(kCLOCK_Enet,
 		       DT_CLOCKS_CELL(DT_NODELABEL(enet_ptp_clock), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* Set RTC clock source to LPO32K_CLK */
+	board_set_rtc_clock(0x01);
 #endif
 }
 

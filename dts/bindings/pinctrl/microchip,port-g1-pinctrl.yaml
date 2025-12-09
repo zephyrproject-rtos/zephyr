@@ -14,6 +14,7 @@ description: |
   Group g1 PORT PINCTRL driver supports following hardware peripherals:
     - module name="PORT" id="U2210" version="2.2.0"
     - module name="PORT" id="U2210" version="3.1.0"
+    - module name="PORT" id="03720" version="4a0"
 
   The node has the 'pinctrl' node label set in your SoC's devicetree, so you can
   modify it like this:
@@ -67,6 +68,12 @@ description: |
   - drive-strength: Increase sink current.
   - input-enable: Enable input on pin.
   - output-enable: Enable output on a pin without actively driving it.
+  - drive-open-drain: Enable open-drain for the pin.
+  - slew-rate: Provide slew rate for the pin (Choose from the options below).
+      - "fast"
+      - "slow4"
+      - "slow8"
+      - "slow12"
 
   To link pin configurations with a device, use a pinctrl-N property for some
   number N, like this example you could place in your board's DTS file:
@@ -105,6 +112,7 @@ child-binding:
           - drive-strength
           - input-enable
           - output-enable
+          - drive-open-drain
 
     properties:
       pinmux:
@@ -125,3 +133,19 @@ child-binding:
           configured as an output.
             0: Pin drive strength is set to normal drive strength.
             1: Pin drive strength is set to stronger drive strength.
+      slew-rate:
+        default: "fast"
+        type: string
+        enum:
+          - "fast"
+          - "slow4"
+          - "slow8"
+          - "slow12"
+        description: |
+          Pin speed. The default value of slew-rate is the SoC power-on-reset
+          value. Slew rate control can be used to improve signal integrity
+          for high-speed signals
+            fast: Slew rate control disabled (fast).
+            slow4: Slew rate control enabled (4x slower).
+            slow8: Slew rate control enabled (8x slower).
+            slow12: Slew rate control enabled (12x slower).

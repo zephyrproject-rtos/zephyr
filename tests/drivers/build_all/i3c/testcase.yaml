@@ -19,3 +19,18 @@ tests:
     platform_allow: qemu_cortex_m3
     tags: i3c_cdns i3c_dw
     extra_args: "CONFIG_I3C_TARGET_ROLE_ONLY=y"
+  drivers.i3c.build.dual_role_nibi:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_DUAL_ROLE=y CONFIG_I3C_RTIO=y CONFIG_I3C_USE_IBI=n"
+  drivers.i3c.build.controller_role_only_nibi:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_CONTROLLER_ROLE_ONLY=y CONFIG_I3C_RTIO=y CONFIG_I3C_USE_IBI=n"
+  drivers.i3c.build.target_role_only_nibi:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns i3c_dw
+    extra_args: "CONFIG_I3C_TARGET_ROLE_ONLY=y CONFIG_I3C_USE_IBI=n"

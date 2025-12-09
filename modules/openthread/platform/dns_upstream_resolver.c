@@ -88,6 +88,7 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 	sys_slist_append(&query_list, &ctx->node);
 
 	switch (qtype) {
+	case DNS_RR_TYPE_A:
 	case DNS_RR_TYPE_AAAA:
 		VerifyOrExit(dns_get_addr_info(name, qtype, &ctx->resolve_query_id,
 					       dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
@@ -108,7 +109,6 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 	default:
 		break;
 	}
-
 
 exit:
 	net_buf_unref(result);
@@ -159,7 +159,7 @@ static void dns_pkt_recv_cb(struct net_buf *dns_data, size_t buf_len, void *user
 			     OT_ERROR_NONE);
 
 		(void)memcpy(req->buffer, dns_data->data, buf_len);
-		UNALIGNED_PUT(htons(ctx->originated_query_id), (uint16_t *)(req->buffer));
+		UNALIGNED_PUT(net_htons(ctx->originated_query_id), (uint16_t *)(req->buffer));
 		req->length = buf_len;
 		req->cb = dns_upstream_resolver_handle_response;
 		req->user_data = user_data;

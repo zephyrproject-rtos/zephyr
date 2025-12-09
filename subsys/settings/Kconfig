@@ -27,6 +27,24 @@ config SETTINGS_DYNAMIC_HANDLERS
 	help
 	  Enables the use of dynamic settings handlers
 
+config SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+	bool "Save single or subtree (without modification) function"
+	help
+	  Includes the `settings_save_subtree_or_single_without_modification()` function which
+	  allows saving an item that might be a subtree or a single setting, without changing the
+	  value. To save a single setting, the setting must support reading and writing of it
+	  using the `h_get()` function pointer and must support reading it into a large buffer
+	  size.
+
+config SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE
+	int "Save single or subtree (without modification) maximum value size"
+	default 65
+	depends on SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+	help
+	  The maximum size of a single setting that can be saved using the
+	  `settings_save_subtree_or_single_without_modification()` function - note that this will
+	  use stack memory.
+
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
 	bool

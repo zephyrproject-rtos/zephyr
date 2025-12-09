@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
+
+# Add SVE support if enabled
+if(CONFIG_ARM64_SVE)
+  if(DEFINED GCC_M_ARCH)
+    set(GCC_M_ARCH "${GCC_M_ARCH}+sve")
+  else()
+    set(GCC_M_ARCH "armv9-a+sve")
+  endif()
+endif()
+
 if(DEFINED GCC_M_CPU)
   list(APPEND TOOLCHAIN_C_FLAGS   -mcpu=${GCC_M_CPU})
   list(APPEND TOOLCHAIN_LD_FLAGS  -mcpu=${GCC_M_CPU})

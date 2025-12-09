@@ -3,8 +3,8 @@
 zephyr_include_directories(.)
 
 zephyr_sources(
-	stm32cube_hal.c
-	soc_config.c
+  stm32cube_hal.c
+  soc_config.c
 )
 
 if(DEFINED CONFIG_STM32_CCM)
@@ -35,5 +35,6 @@ in STOP modes due to internal oscillators that remain active.")
 endif()
 
 zephyr_sources_ifdef(CONFIG_DCACHE stm32_cache.c)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff_common.c)
 
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_PROTECTION stm32_backup_domain.c)

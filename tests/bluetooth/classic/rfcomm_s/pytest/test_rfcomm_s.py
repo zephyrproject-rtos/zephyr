@@ -502,6 +502,18 @@ async def tc_rfcomm_s_4(hci_port, shell, dut, address, snoop_file) -> None:
         dlc_7 = await establish_dlc(rfcomm_mux, channel_7)
         assert dlc_9 and dlc_7, "Failed to establish DLC"
 
+        found, lines = await _wait_for_shell_response(dut, "connected")
+        assert found is True
+
+        connected_count = 0
+        for line in lines:
+            if "connected" in line:
+                connected_count += 1
+
+        if connected_count < 2:
+            found, _ = await _wait_for_shell_response(dut, "connected")
+            assert found is True
+
         logger.info('Step 3: Transfer data')
         await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1")
         assert await wait_mux_response(logger_capture, 'Data send pass'), (

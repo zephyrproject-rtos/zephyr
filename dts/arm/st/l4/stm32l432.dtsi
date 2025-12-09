@@ -32,6 +32,7 @@
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -57,7 +58,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 25)>; //RCC_APB1ENR1_CAN1EN
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			status = "disabled";
 		};
 

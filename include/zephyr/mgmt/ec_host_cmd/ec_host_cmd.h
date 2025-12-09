@@ -222,11 +222,54 @@ struct ec_host_cmd_handler {
  *        @a _function.
  */
 #define EC_HOST_CMD_HANDLER(_id, _function, _version_mask, _request_type, _response_type)          \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
 		.min_rqt_size = sizeof(_request_type),                                             \
+		.min_rsp_size = sizeof(_response_type),                                            \
+	}
+
+/**
+ * @brief Statically define and register a request only host command handler.
+ *
+ * Helper macro to statically define and register a host command handler that
+ * has a compile-time-fixed size for its request structure.
+ *
+ * @param _id Id of host command to handle request for.
+ * @param _function Name of handler function.
+ * @param _version_mask The bitfield of all versions that the @a _function
+ *        supports. E.g. BIT(0) corresponds to version 0.
+ * @param _request_type The datatype of the request parameters for @a _function.
+ */
+#define EC_HOST_CMD_HANDLER_REQ_ONLY(_id, _function, _version_mask, _request_type)                 \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
+		.handler = _function,                                                              \
+		.id = _id,                                                                         \
+		.version_mask = _version_mask,                                                     \
+		.min_rqt_size = sizeof(_request_type),                                             \
+		.min_rsp_size = 0,                                                                 \
+	}
+
+/**
+ * @brief Statically define and register a response only host command handler.
+ *
+ * Helper macro to statically define and register a host command handler that
+ * has a compile-time-fixed sizes for its response structure.
+ *
+ * @param _id Id of host command to handle request for.
+ * @param _function Name of handler function.
+ * @param _version_mask The bitfield of all versions that the @a _function
+ *        supports. E.g. BIT(0) corresponds to version 0.
+ * @param _response_type The datatype of the response parameters for
+ *        @a _function.
+ */
+#define EC_HOST_CMD_HANDLER_RESP_ONLY(_id, _function, _version_mask, _response_type)               \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
+		.handler = _function,                                                              \
+		.id = _id,                                                                         \
+		.version_mask = _version_mask,                                                     \
+		.min_rqt_size = 0,                                                                 \
 		.min_rsp_size = sizeof(_response_type),                                            \
 	}
 
@@ -242,7 +285,7 @@ struct ec_host_cmd_handler {
  *        supports. E.g. BIT(0) corresponds to version 0.
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_id, _function, _version_mask)                                 \
-	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd_##_id) = {                        \
 		.handler = _function,                                                              \
 		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \

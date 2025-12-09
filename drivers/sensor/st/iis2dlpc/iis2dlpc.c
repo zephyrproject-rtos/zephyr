@@ -298,7 +298,7 @@ static int iis2dlpc_init(const struct device *dev)
 	}
 
 	/* reset device */
-	if (iis2dlpc_reset_set(ctx, PROPERTY_ENABLE) < 0) {
+	if (iis2dlpc_reset_set(ctx) < 0) {
 		return -EIO;
 	}
 

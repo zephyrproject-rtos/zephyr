@@ -328,6 +328,7 @@
 			interrupts = <10 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			vref-mv = <2816>;
+			speed-conf = <0x03 0x8B07 0x0100 0x0001>;
 			status = "disabled";
 		};
 

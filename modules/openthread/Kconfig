@@ -394,12 +394,41 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MODEL_NAME
 	  This value represents Border Agent's product model.
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES
-	int "The maximum number of pollable UDP sockets to be registered in platform UDP."
-	depends on OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	int "The maximum number of pollable UDP sockets to be registered in platform code."
 	default 5
 	help
 	  This configuration defines the maximum number of pollable UDP sockets
 	  to be used within platform UDP module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_MDNS_SERVICES
+	int "The maximum number of pollable mDNS sockets to be registered in platform code."
+	default 1 if NET_IPV6 && !NET_IPV4
+	default 2 if NET_IPV6 && NET_IPV4
+	help
+	  This configuration defines the maximum number of pollable mDNS sockets
+	  to be used within platform mDNS module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_TREL_SERVICES
+	int "The maximum number of pollable TREL sockets to be registered in platform code."
+	default 1
+	help
+	  This configuration defines the maximum number of pollable TREL sockets
+	  to be used within platform TREL module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_DHCP6_PD_SERVICES
+	int "The maximum number of pollable DHCP6_PD sockets to be registered in platform code."
+	default 1
+	help
+	  This configuration defines the maximum number of pollable DHCP6_PD sockets
+	  to be used within platform DHCP6_PD module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_SERVICES
+	int "The maximum number of pollable RAW IPV4 sockets to be registered in platform code."
+	depends on OPENTHREAD_NAT64_TRANSLATOR
+	default 1
+	help
+	  This configuration defines the maximum number of pollable RAW IPV4 sockets
+	  to be used within platform Infrastructure Interface module.
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM
 	int "Maximum entries of backbone message pool."

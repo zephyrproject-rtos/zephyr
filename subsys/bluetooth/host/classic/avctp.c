@@ -140,6 +140,29 @@ static void avctp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t stat
 	LOG_DBG("");
 }
 
+static struct net_buf *avctp_l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf;
+	struct bt_avctp *session;
+
+	if (chan == NULL) {
+		LOG_ERR("Invalid AVCTP chan");
+		return NULL;
+	}
+
+	session = AVCTP_CHAN(chan);
+	LOG_DBG("chan %p session %p", chan, session);
+
+	if (session->ops != NULL && session->ops->alloc_buf != NULL) {
+		buf = session->ops->alloc_buf(session);
+		if (buf == NULL) {
+			LOG_ERR("Failed to allocate buffer");
+		}
+		return buf;
+	}
+	return NULL;
+}
+
 static void avctp_tx_cb(struct bt_conn *conn, void *user_data, int err)
 {
 	if (err < 0) {
@@ -330,10 +353,6 @@ static void avctp_tx_processor(struct k_work *item)
 		goto failed;
 	}
 
-	if (net_buf_tailroom(buf) < chunk_size) {
-		LOG_WRN("Not enough tailroom for AVCTP payload (len: %d)", chunk_size);
-		goto failed;
-	}
 	net_buf_pull_mem(buf, chunk_size);
 
 	user_data->sent_len += chunk_size;
@@ -561,6 +580,7 @@ static const struct bt_l2cap_chan_ops ops = {
 	.disconnected = avctp_l2cap_disconnected,
 	.encrypt_change = avctp_l2cap_encrypt_changed,
 	.recv = avctp_l2cap_recv,
+	.alloc_buf = avctp_l2cap_alloc_buf,
 };
 
 int bt_avctp_connect(struct bt_conn *conn, uint16_t psm, struct bt_avctp *session)

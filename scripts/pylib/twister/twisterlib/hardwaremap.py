@@ -170,7 +170,7 @@ class HardwareMap:
 
     def __init__(self, env=None):
         self.detected = []
-        self.duts = []
+        self.duts: list[DUT] = []
         self.options = env.options
 
     def discover(self):
@@ -196,7 +196,7 @@ class HardwareMap:
                             self.options.platform.append(d.platform)
 
             elif self.options.device_serial:
-                self.add_device(self.options.device_serial,
+                self.add_device(self.options.device_serial[0],
                                 self.options.platform[0],
                                 self.options.pre_script,
                                 False,
@@ -205,6 +205,12 @@ class HardwareMap:
                                 flash_with_test=self.options.device_flash_with_test,
                                 flash_before=self.options.flash_before,
                                 )
+                if len(self.options.device_serial) > 1:
+                    for serial in self.options.device_serial[1:]:
+                        self.add_device(serial,
+                                        platform=None,
+                                        pre_script=None,
+                                        is_pty=False)
 
             elif self.options.device_serial_pty:
                 self.add_device(self.options.device_serial_pty,

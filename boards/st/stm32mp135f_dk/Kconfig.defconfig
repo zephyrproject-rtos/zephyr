@@ -12,4 +12,7 @@ config GPIO_MCP230XX_INIT_PRIORITY
 
 endif # GPIO_MCP230XX
 
+configdefault NET_L2_ETHERNET
+	default y
+
 endif # BOARD_STM32MP135F_DK

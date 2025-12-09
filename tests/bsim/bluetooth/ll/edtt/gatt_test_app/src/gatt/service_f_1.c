@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2019 Oticon A/S
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -381,7 +382,7 @@ static struct bt_gatt_attr service_f_1_attrs[] = {
 		BT_GATT_PERM_READ,
 		read_agg_format, NULL, &agg_format_value, 0xAF),
 	BT_GATT_H_CHARACTERISTIC(BT_UUID_VALUE_V17,
-		BT_GATT_CHRC_READ | BT_GATT_CHRC_AUTH,
+		BT_GATT_CHRC_READ,
 		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 		read_value_v17, NULL, &value_v17_value, 0xB0)
 };

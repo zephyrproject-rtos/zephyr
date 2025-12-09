@@ -782,4 +782,21 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb)
 
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
+#define sys_port_trace_rtio_submit_exit(rtio)
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
+#define sys_port_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
+#define sys_port_trace_rtio_cqe_submit_exit(rtio)
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
+#define sys_port_trace_rtio_cqe_release(rtio, cqe)
+#define sys_port_trace_rtio_cqe_consume_enter(rtio)
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+
 #endif /* ZEPHYR_TRACE_TEST_H */

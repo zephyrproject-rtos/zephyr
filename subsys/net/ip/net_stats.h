@@ -372,9 +372,9 @@ static inline void net_stats_update_per_proto_recv(struct net_if *iface,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		net_stats_update_udp_recv(iface);
-	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		net_stats_update_tcp_seg_recv(iface);
 	}
 }
@@ -386,9 +386,9 @@ static inline void net_stats_update_per_proto_drop(struct net_if *iface,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		net_stats_update_udp_drop(iface);
-	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		net_stats_update_tcp_drop(iface);
 	}
 }

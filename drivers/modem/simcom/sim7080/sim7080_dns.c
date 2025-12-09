@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(modem_simcom_sim7080_dns, CONFIG_MODEM_LOG_LEVEL);
 #include "sim7080.h"
 
 static struct zsock_addrinfo dns_result;
-static struct sockaddr dns_result_addr;
+static struct net_sockaddr dns_result_addr;
 static char dns_result_canonname[DNS_MAX_NAME_SIZE + 1];
 
 /*
@@ -53,7 +53,7 @@ MODEM_CMD_DEFINE(on_cmd_cdnsgip)
 
 	*ipv4 = '\0';
 	net_addr_pton(dns_result.ai_family, ips,
-			  &((struct sockaddr_in *)&dns_result_addr)->sin_addr);
+			  &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr);
 	ret = 0;
 
 exit:
@@ -83,8 +83,8 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	(void)memset(&dns_result_addr, 0, sizeof(dns_result_addr));
 
 	/* Currently only support IPv4. */
-	dns_result.ai_family = AF_INET;
-	dns_result_addr.sa_family = AF_INET;
+	dns_result.ai_family = NET_AF_INET;
+	dns_result_addr.sa_family = NET_AF_INET;
 	dns_result.ai_addr = &dns_result_addr;
 	dns_result.ai_addrlen = sizeof(dns_result_addr);
 	dns_result.ai_canonname = dns_result_canonname;
@@ -98,14 +98,14 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	if (port > 0U) {
-		if (dns_result.ai_family == AF_INET) {
+		if (dns_result.ai_family == NET_AF_INET) {
 			net_sin(&dns_result_addr)->sin_port = htons(port);
 		}
 	}
 
 	/* Check if node is an IP address */
 	if (net_addr_pton(dns_result.ai_family, node,
-			  &((struct sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
+			  &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
 		*res = &dns_result;
 		return 0;
 	}

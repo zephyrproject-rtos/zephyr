@@ -226,4 +226,19 @@ config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
 
 endchoice
 
+config LOG_BACKEND_CRLF_NONE
+	bool "Prevent adding CR and LF in logger"
+	help
+	  When enabled, selected backend prints do not add CR and LF to log
+
+config LOG_BACKEND_CRLF_LFONLY
+	bool "Force a single LF for line breaks in logger"
+	help
+	  When enabled, selected backend prints use single LF for line breaks in log
+
+config LOG_BACKEND_SKIP_SOURCE
+	bool "Skip logging the source"
+	help
+	  When enabled, selected backend prints do not add the source to log
+
 endmenu

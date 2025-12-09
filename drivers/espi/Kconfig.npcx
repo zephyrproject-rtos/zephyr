@@ -88,6 +88,14 @@ config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE
 	  The size of the ring buffer in byte used by the Port80 ISR to store
 	  Postcodes from Host.
 
+config ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND
+	bool
+	default y if SOC_NPCX9M7FB
+	help
+	  This option enables the workaround to prevent missing IRQ1/IRQ12 when the
+	  firmware writes data to the output buffer immediately after detecting that
+	  the buffer is empty.
+
 config ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK
 	bool "Check the value was read by host after wire bits changed"
 	help

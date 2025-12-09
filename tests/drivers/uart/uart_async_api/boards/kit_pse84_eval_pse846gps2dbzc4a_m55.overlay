@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
+
+dut: &scb5 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16bit_1>;
+
+	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "tx", "rx";
+};
+
+&p17_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p17_0_scb5_uart_rx {
+	input-enable;
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <5>;
+	clock-div = <109>;
+};

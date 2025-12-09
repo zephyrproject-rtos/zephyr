@@ -39,7 +39,7 @@ the VLAN network interface itself, such as setting the IP address, etc.
 
 See also the :zephyr:code-sample:`VLAN sample application <vlan>` for API usage
 example. The source code for that sample application can be found at
-:zephyr_file:`samples/net/vlan`.
+:zephyr_file:`samples/net/ethernet/vlan`.
 
 The net-shell module contains *net vlan add* and *net vlan del* commands
 that can be used to enable or disable VLAN tags for a given network interface.

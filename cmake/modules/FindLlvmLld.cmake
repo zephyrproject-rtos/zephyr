@@ -20,9 +20,11 @@
 include(FindPackageHandleStandardArgs)
 
 # See if the compiler has a preferred linker
-execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.lld
-                OUTPUT_VARIABLE LLVMLLD_LINKER
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.lld
+  OUTPUT_VARIABLE LLVMLLD_LINKER
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 if(NOT EXISTS "${LLVMLLD_LINKER}")
   # Need to clear it or else find_program() won't replace the value.
@@ -44,12 +46,11 @@ endif()
 if(LLVMLLD_LINKER)
   # Parse the 'ld.lld --version' output to find the installed version.
   execute_process(
-    COMMAND
-    ${LLVMLLD_LINKER} --version
+    COMMAND ${LLVMLLD_LINKER} --version
     OUTPUT_VARIABLE llvmlld_version_output
     ERROR_VARIABLE  llvmlld_error_output
     RESULT_VARIABLE llvmlld_status
-    )
+  )
 
   set(LLVMLLD_VERSION_STRING)
   if(${llvmlld_status} EQUAL 0)
@@ -59,14 +60,15 @@ if(LLVMLLD_LINKER)
     # - "GNU ld (GNU Binutils for Ubuntu) 2.34"
     # - "GNU ld (Zephyr SDK 0.15.2) 2.38"
     # - "GNU ld (Gentoo 2.39 p5) 2.39.0"
-    string(REGEX MATCH
-           "LLD ([0-9]+[.][0-9]+[.]?[0-9]*).*"
-           out_var ${llvmlld_version_output})
+    string(REGEX
+      MATCH "LLD ([0-9]+[.][0-9]+[.]?[0-9]*).*"
+      out_var ${llvmlld_version_output}
+    )
     set(LLVMLLD_VERSION_STRING ${CMAKE_MATCH_1})
   endif()
 endif()
 
 find_package_handle_standard_args(LlvmLld
-                                  REQUIRED_VARS LLVMLLD_LINKER
-                                  VERSION_VAR LLVMLLD_VERSION_STRING
+  REQUIRED_VARS LLVMLLD_LINKER
+  VERSION_VAR LLVMLLD_VERSION_STRING
 )

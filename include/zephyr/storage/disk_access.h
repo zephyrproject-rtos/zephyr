@@ -69,7 +69,7 @@ int disk_access_status(const char *pdrv);
  *
  * Function to read data from disk to a memory buffer.
  *
- * Note: if he disk is of NVMe type, user will need to ensure data_buf
+ * Note: if the disk is of NVMe type, user will need to ensure data_buf
  *       pointer is 4-bytes aligned.
  *
  * @param[in] pdrv          Disk name
@@ -87,7 +87,7 @@ int disk_access_read(const char *pdrv, uint8_t *data_buf,
  *
  * Function write data from memory buffer to disk.
  *
- * Note: if he disk is of NVMe type, user will need to ensure data_buf
+ * Note: if the disk is of NVMe type, user will need to ensure data_buf
  *       pointer is 4-bytes aligned.
  *
  * @param[in] pdrv          Disk name

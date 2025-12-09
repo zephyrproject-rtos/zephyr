@@ -517,11 +517,14 @@ cleanup:
 
 #define ASCII_CTRL_C 0x03
 
-static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size_t len)
+static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size_t len,
+				     void *user_data)
 {
 	bool terminate = false;
 	int res;
 	size_t write_len = len;
+
+	ARG_UNUSED(user_data);
 
 	for (size_t i = 0; i < len; i++) {
 		if (data[i] == ASCII_CTRL_C) {
@@ -533,7 +536,7 @@ static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size
 
 	res = cred_buf_write(data, write_len);
 	if (res == -ENOMEM) {
-		shell_set_bypass(sh, NULL);
+		shell_set_bypass(sh, NULL, NULL);
 		shell_fprintf(sh, SHELL_ERROR, "Not enough room in credential buffer for "
 					       "provided data. Increase "
 					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE.\n");
@@ -542,7 +545,7 @@ static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size
 	}
 
 	if (terminate) {
-		shell_set_bypass(sh, NULL);
+		shell_set_bypass(sh, NULL, NULL);
 		shell_fprintf(sh, SHELL_NORMAL, "Stored %d bytes.\n", cred_written);
 	}
 }
@@ -561,7 +564,7 @@ static int tls_cred_cmd_buf_load(const struct shell *sh, size_t argc, char *argv
 	shell_clear_cred_buf(sh);
 
 	shell_fprintf(sh, SHELL_NORMAL, "Input credential, finish with CTRL+C.\n");
-	shell_set_bypass(sh, tls_cred_cmd_load_bypass);
+	shell_set_bypass(sh, tls_cred_cmd_load_bypass, NULL);
 	return 0;
 }
 

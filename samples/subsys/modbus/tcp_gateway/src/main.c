@@ -10,6 +10,13 @@
 #include <zephyr/modbus/modbus.h>
 #include <zephyr/net/socket.h>
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/netdb.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tcp_gateway, LOG_LEVEL_INF);
 

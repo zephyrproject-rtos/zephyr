@@ -428,6 +428,7 @@
 			reg = <0x400b7000 0x1000>;
 			status = "disabled";
 			operation-mode = "low_noise";
+			functional-mode = "follower";
 			clocks = <&syscon MCUX_OPAMP0_CLK>;
 		};
 

@@ -36,3 +36,19 @@ properties:
     type: int
     required: false
     default: 123
+
+examples:
+  - |
+    / {
+        leds {
+            compatible = "gpio-leds";
+
+            uled: led {
+                gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+            };
+        };
+
+        aliases {
+            led0 = &uled;
+        };
+    };

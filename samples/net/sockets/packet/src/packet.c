@@ -16,6 +16,9 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+
 #define STACK_SIZE 1024
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)

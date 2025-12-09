@@ -207,6 +207,29 @@ static int gpio_siwx91x_pm_action(const struct device *dev, enum pm_device_actio
 	return 0;
 }
 
+
+static int gpio_siwx91x_port_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct gpio_siwx91x_port_config *port_cfg = dev->config;
+	const struct device *parent = port_cfg->parent;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		pm_device_runtime_get(parent);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		pm_device_runtime_put(parent);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
 static int gpio_siwx91x_port_get(const struct device *port, gpio_port_value_t *value)
 {
 	const struct gpio_siwx91x_port_config *port_cfg = port->config;
@@ -378,7 +401,7 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 	__ASSERT(port_cfg->port < cfg->port_count, "Too many ports");
 	data->ports[port_cfg->port] = port;
 
-	return 0;
+	return pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
 }
 
 static void gpio_siwx91x_isr(const struct device *parent)
@@ -449,10 +472,10 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 		.pin_config_info = pin_config_info_##n,                                            \
 		.total_pin_cnt = __builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_NODE(n)),           \
 	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, NULL, &gpio_siwx91x_port_data##n,              \
-			 &gpio_siwx91x_port_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
-			 &gpio_siwx91x_api);
+	PM_DEVICE_DT_DEFINE(n, gpio_siwx91x_port_pm_action);                                       \
+	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, PM_DEVICE_DT_GET(n),                           \
+			 &gpio_siwx91x_port_data##n, &gpio_siwx91x_port_config##n, PRE_KERNEL_1,   \
+			 CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_api);
 
 #define CONFIGURE_SHARED_INTERRUPT(node_id, prop, idx)                                             \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \

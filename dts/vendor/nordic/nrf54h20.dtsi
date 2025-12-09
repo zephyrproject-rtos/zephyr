@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
-#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/clock/nrfs-audiopll.h>
 #include <zephyr/dt-bindings/clock/nrf-auxpll.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
@@ -136,6 +136,7 @@
 				min-residency-us = <700>;
 				exit-latency-us = <5>;
 			};
+
 			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -202,7 +203,6 @@
 			status = "disabled";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
-			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
 			lfrc-startup-time-us = <200>; /* To be measured */
@@ -487,7 +487,7 @@
 				status = "disabled";
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 				dfe-supported;
 				ieee802154-supported;
 				interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -679,7 +679,7 @@
 				#clock-cells = <0>;
 				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
 				nordic,frequency = <NRF_AUXPLL_FREQ_DIV_MIN>;
-				nordic,out-div = <2>;
+				nordic,out-div = <NRF_AUXPLL_OUT_DIV_2>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <6>;
 				nordic,sdm-disable;

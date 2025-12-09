@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	int ret;
 
 	if (!argv[1]) {
@@ -21,7 +21,7 @@ static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	ret = net_addr_pton(AF_INET6, argv[1], &addr);
+	ret = net_addr_pton(NET_AF_INET6, argv[1], &addr);
 	if (ret < 0) {
 		PR_WARNING("Cannot parse '%s'\n", argv[1]);
 		return -ENOEXEC;

@@ -55,14 +55,15 @@ endif()
 # 2) No toolchain specified == Default to Zephyr toolchain
 # Until we completely deprecate it
 if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
-   (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
-   (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
-   (Zephyr-sdk_FIND_REQUIRED))
+  (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
+  (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
+  (Zephyr-sdk_FIND_REQUIRED)
+)
 
   # No toolchain was specified, so inform user that we will be searching.
   if(NOT Zephyr-sdk_FIND_QUIETLY AND
-      NOT DEFINED ZEPHYR_SDK_INSTALL_DIR AND
-      NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
+    NOT DEFINED ZEPHYR_SDK_INSTALL_DIR AND
+    NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
     message(STATUS "ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK")
   endif()
 
@@ -86,13 +87,14 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
   else()
     # Paths that are used to find installed Zephyr SDK versions
     SET(zephyr_sdk_search_paths
-        /usr
-        /usr/local
-        /opt
-        $ENV{HOME}
-        $ENV{HOME}/.local
-        $ENV{HOME}/.local/opt
-        $ENV{HOME}/bin)
+      /usr
+      /usr/local
+      /opt
+      $ENV{HOME}
+      $ENV{HOME}/.local
+      $ENV{HOME}/.local/opt
+      $ENV{HOME}/bin
+    )
 
     # Search for Zephyr SDK version 0.0.0 which does not exist, this is needed to
     # return a list of compatible versions and find the best suited version that
@@ -135,8 +137,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
       # Loop over each found Zepher SDK version until one is found that is compatible.
       foreach(zephyr_sdk_candidate ${Zephyr-sdk_CONSIDERED_VERSIONS})
         if("${zephyr_sdk_candidate}" VERSION_GREATER_EQUAL "${Zephyr-sdk_FIND_VERSION}"
-           AND "${zephyr_sdk_candidate}" VERSION_LESS${upper_bound} "${Zephyr-sdk_FIND_VERSION_MAX}"
-        )
+          AND "${zephyr_sdk_candidate}" VERSION_LESS${upper_bound} "${Zephyr-sdk_FIND_VERSION_MAX}")
           # Find the path for the current version being checked and get the directory
           # of the Zephyr SDK so it can be checked.
           cmake_path(GET Zephyr-sdk-${zephyr_sdk_candidate}_DIR PARENT_PATH zephyr_sdk_current_check_path)

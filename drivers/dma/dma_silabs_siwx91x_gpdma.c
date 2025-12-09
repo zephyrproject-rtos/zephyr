@@ -12,7 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include "rsi_gpdma.h"
 #include "rsi_rom_gpdma.h"
 
@@ -43,6 +43,7 @@ struct siwx91x_gpdma_channel_info {
 	void *cb_data;
 	RSI_GPDMA_DESC_T *desc;
 	enum gpdma_xfer_dir xfer_direction;
+	bool channel_active;
 };
 
 struct siwx91x_gpdma_config {
@@ -61,16 +62,6 @@ struct siwx19x_gpdma_data {
 	struct siwx91x_gpdma_channel_info *chan_info;
 	uint8_t reload_compatible;
 };
-
-static void siwx91x_gpdma_pm_policy_state_lock_get(void)
-{
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-}
-
-static void siwx91x_gpdma_pm_policy_state_lock_put(void)
-{
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-}
 
 static bool siwx91x_gpdma_is_priority_valid(uint32_t channel_priority)
 {
@@ -408,19 +399,22 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 
 static int siwx91x_gpdma_start(const struct device *dev, uint32_t channel)
 {
-	const struct siwx91x_gpdma_config *cfg = dev->config;
 	struct siwx19x_gpdma_data *data = dev->data;
 
 	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
-	if (!sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
-		siwx91x_gpdma_pm_policy_state_lock_get();
+	if (data->chan_info[channel].channel_active) {
+		pm_device_runtime_get(dev);
+		data->chan_info[channel].channel_active = true;
 	}
 
 	if (RSI_GPDMA_DMAChannelTrigger(&data->hal_ctx, channel)) {
-		siwx91x_gpdma_pm_policy_state_lock_put();
+		if (data->chan_info[channel].channel_active) {
+			pm_device_runtime_put(dev);
+			data->chan_info[channel].channel_active = false;
+		}
 		return -EINVAL;
 	}
 
@@ -429,16 +423,11 @@ static int siwx91x_gpdma_start(const struct device *dev, uint32_t channel)
 
 static int siwx91x_gpdma_stop(const struct device *dev, uint32_t channel)
 {
-	const struct siwx91x_gpdma_config *cfg = dev->config;
 	struct siwx19x_gpdma_data *data = dev->data;
 	k_spinlock_key_t key;
 
 	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
-	}
-
-	if (sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
-		siwx91x_gpdma_pm_policy_state_lock_put();
 	}
 
 	if (RSI_GPDMA_AbortChannel(&data->hal_ctx, channel)) {
@@ -448,6 +437,11 @@ static int siwx91x_gpdma_stop(const struct device *dev, uint32_t channel)
 	key = k_spin_lock(&data->desc_pool_lock);
 	siwx91x_gpdma_free_desc(data->desc_pool, data->chan_info[channel].desc);
 	k_spin_unlock(&data->desc_pool_lock, key);
+
+	if (data->chan_info[channel].channel_active) {
+		pm_device_runtime_put(dev);
+		data->chan_info[channel].channel_active = false;
+	}
 
 	return 0;
 }
@@ -552,7 +546,10 @@ static void siwx91x_gpdma_isr(const struct device *dev)
 	if (channel_int_status & abort_mask) {
 		RSI_GPDMA_AbortChannel(&data->hal_ctx, channel);
 		cfg->reg->GLOBAL.INTERRUPT_STAT_REG = abort_mask;
-		siwx91x_gpdma_pm_policy_state_lock_put();
+		if (data->chan_info[channel].channel_active) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			data->chan_info[channel].channel_active = false;
+		}
 	}
 
 	if (channel_int_status & desc_fetch_mask) {
@@ -569,11 +566,16 @@ static void siwx91x_gpdma_isr(const struct device *dev)
 		k_spin_unlock(&data->desc_pool_lock, key);
 		data->chan_info[channel].desc = NULL;
 		cfg->reg->GLOBAL.INTERRUPT_STAT_REG = done_mask;
+
+		if (data->chan_info[channel].channel_active) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			data->chan_info[channel].channel_active = false;
+		}
+
 		if (data->chan_info[channel].cb) {
 			data->chan_info[channel].cb(dev, data->chan_info[channel].cb_data, channel,
 						    0);
 		}
-		siwx91x_gpdma_pm_policy_state_lock_put();
 	}
 }
 

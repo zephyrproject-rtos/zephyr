@@ -33,7 +33,7 @@ is further divided, for each partition found, into data and BSS for each
 partition.
 """
 
-#The linker script fragments looks something like this:
+# The linker script fragments looks something like this:
 # SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME,,)
 # 	{
 # 		APP_SHARED_ALIGN;
@@ -168,16 +168,16 @@ partition.
 #     "(@z_data_smem_z_libc_partition_bss_end@ - @z_data_smem_z_libc_partition_bss_start@)"
 #     )
 
-
-import sys
 import argparse
 import json
 import os
 import re
+import sys
 from collections import OrderedDict
+
+import elftools.common.exceptions
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-import elftools.common.exceptions
 
 SZ = 'size'
 SRC = 'sources'
@@ -187,6 +187,7 @@ LIB = 'libraries'
 # application shared memory partitions.
 # these are later read by the macros defined in app_memdomain.h for
 # initialization purpose when USERSPACE is enabled.
+
 
 class LDScriptTemlate:
     data_template = """
@@ -244,27 +245,34 @@ class LDScriptTemlate:
         z_data_smem_{partition}_bss_size = z_data_smem_{partition}_bss_end - z_data_smem_{partition}_bss_start;
     """
 
-def cmake_list_append(list, props):
-    tokens = [fr"{key}\;{value}" for key, value in props.items()]
-    stuff = r"\;".join(tokens)
-    return """list(APPEND """+ list + """ \"{{""" + stuff + """}}\")\n"""
 
-def zephyr_linker_section(name, group, align = None, noinput = True, align_with_input = True, hidden = False, noinit = False):
+def cmake_list_append(list, props):
+    tokens = [rf"{key}\;{value}" for key, value in props.items()]
+    stuff = r"\;".join(tokens)
+    return """list(APPEND """ + list + """ \"{{""" + stuff + """}}\")\n"""
+
+
+def zephyr_linker_section(
+    name, group, align=None, noinput=True, align_with_input=True, hidden=False, noinit=False
+):
     props = {"""NAME""": name, """GROUP""": group}
-    if align :
+    if align:
         props['ALIGN'] = align
-    #The bool flags are always there:
+    # The bool flags are always there:
     props['NOIPUT'] = noinput
     props['ALIGN_WITH_INPUT'] = align_with_input
     props['HIDDEN'] = hidden
     props['NOINIT'] = noinit
     return cmake_list_append("SECTIONS", props)
 
-def zephyr_linker_section_configure(section, input = None, symbols = None, align = None, any = False, first = False, keep = False):
+
+def zephyr_linker_section_configure(
+    section, input=None, symbols=None, align=None, any=False, first=False, keep=False
+):
     props = {"SECTION": section}
     if input:
         props["INPUT"] = input
-    #ANY\;FALSE\;FIRST\;FALSE\;KEEP\;FALSE\
+    # ANY\;FALSE\;FIRST\;FALSE\;KEEP\;FALSE\
     props['ANY'] = any
     props['FIRST'] = first
     props['KEEP'] = keep
@@ -274,50 +282,84 @@ def zephyr_linker_section_configure(section, input = None, symbols = None, align
         props["ALIGN"] = align
     return cmake_list_append("SECTION_SETTINGS", props)
 
-def zephyr_linker_symbol(symbol, expr) :
-    return cmake_list_append("SYMBOLS", {'SYMBOL': symbol, 'EXPR':expr})
+
+def zephyr_linker_symbol(symbol, expr):
+    return cmake_list_append("SYMBOLS", {'SYMBOL': symbol, 'EXPR': expr})
+
 
 class CmakeTemplate:
     section_name = "@_APP_SMEM{SECTION}_SECTION_NAME@"
-    data_template = (
-        zephyr_linker_section_configure(section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@")+
-        zephyr_linker_section_configure(section=section_name, input="data_smem_{partition}_data*", symbols="z_data_smem_{partition}_part_start", keep=True)
+    data_template = zephyr_linker_section_configure(
+        section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@"
+    ) + zephyr_linker_section_configure(
+        section=section_name,
+        input="data_smem_{partition}_data*",
+        symbols="z_data_smem_{partition}_part_start",
+        keep=True,
     )
 
-    library_data_template = zephyr_linker_section_configure(section=section_name, input="*{lib}:*(.data .data.* .sdata .sdata.*)")
-
-    bss_template = (
-        zephyr_linker_section_configure(section=section_name, input="data_smem_{partition}_bss*", symbols="z_data_smem_{partition}_bss_start", keep=True)
+    library_data_template = zephyr_linker_section_configure(
+        section=section_name, input="*{lib}:*(.data .data.* .sdata .sdata.*)"
     )
 
-    library_bss_template = zephyr_linker_section_configure(section=section_name, input="*{lib}:*(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)")
+    bss_template = zephyr_linker_section_configure(
+        section=section_name,
+        input="data_smem_{partition}_bss*",
+        symbols="z_data_smem_{partition}_bss_start",
+        keep=True,
+    )
+
+    library_bss_template = zephyr_linker_section_configure(
+        section=section_name, input="*{lib}:*(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)"
+    )
 
     footer_template = (
-        zephyr_linker_section_configure(section=section_name, symbols="z_data_smem_{partition}_bss_end", keep=True) +
-        zephyr_linker_section_configure(section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@") +
-        zephyr_linker_section_configure(section=section_name, symbols="z_data_smem_{partition}_part_end", keep=True)
+        zephyr_linker_section_configure(
+            section=section_name, symbols="z_data_smem_{partition}_bss_end", keep=True
+        )
+        + zephyr_linker_section_configure(
+            section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@"
+        )
+        + zephyr_linker_section_configure(
+            section=section_name, symbols="z_data_smem_{partition}_part_end", keep=True
+        )
     )
 
-    linker_start_seq = (
-        zephyr_linker_section(name=section_name, group="APP_SMEM_GROUP", noinput=True, align_with_input=True) +
-        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN_BYTES@", symbols="_app_smem{section}_start"))
+    linker_start_seq = zephyr_linker_section(
+        name=section_name, group="APP_SMEM_GROUP", noinput=True, align_with_input=True
+    ) + zephyr_linker_section_configure(
+        section=section_name, align="@APP_SHARED_ALIGN_BYTES@", symbols="_app_smem{section}_start"
+    )
 
-    linker_end_seq = (
-        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN_BYTES@") +
-        zephyr_linker_section_configure(section=section_name, symbols="_app_smem{section}_end") )
+    linker_end_seq = zephyr_linker_section_configure(
+        section=section_name, align="@APP_SHARED_ALIGN_BYTES@"
+    ) + zephyr_linker_section_configure(section=section_name, symbols="_app_smem{section}_end")
 
     empty_app_smem = (
-        zephyr_linker_section(name=section_name, group="APP_SMEM_GROUP", align="@APP_SHARED_ALIGN_BYTES@", noinput=True, align_with_input=True) +
-        zephyr_linker_section_configure(section = section_name, symbols="_app_smem{section}_start") +
-        zephyr_linker_section_configure(section = section_name, symbols="_app_smem{section}_end") )
+        zephyr_linker_section(
+            name=section_name,
+            group="APP_SMEM_GROUP",
+            align="@APP_SHARED_ALIGN_BYTES@",
+            noinput=True,
+            align_with_input=True,
+        )
+        + zephyr_linker_section_configure(section=section_name, symbols="_app_smem{section}_start")
+        + zephyr_linker_section_configure(section=section_name, symbols="_app_smem{section}_end")
+    )
 
-    size_cal_string = (
-        zephyr_linker_symbol(symbol='z_data_smem_{partition}_part_size', expr='@z_data_smem_{partition}_part_end@ - @z_data_smem_{partition}_part_start@') +
-        zephyr_linker_symbol(symbol='z_data_smem_{partition}_bss_size', expr='@z_data_smem_{partition}_bss_end@ - @z_data_smem_{partition}_bss_start@'))
+    size_cal_string = zephyr_linker_symbol(
+        symbol='z_data_smem_{partition}_part_size',
+        expr='@z_data_smem_{partition}_part_end@ - @z_data_smem_{partition}_part_start@',
+    ) + zephyr_linker_symbol(
+        symbol='z_data_smem_{partition}_bss_size',
+        expr='@z_data_smem_{partition}_bss_end@ - @z_data_smem_{partition}_bss_start@',
+    )
+
 
 section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)*')
 
 elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
+
 
 def find_obj_file_partitions(filename, partitions):
     with open(filename, 'rb') as f:
@@ -344,7 +386,6 @@ def find_obj_file_partitions(filename, partitions):
 
             else:
                 partitions[partition_name][SZ] += section.header.sh_size
-
 
     return partitions
 
@@ -387,8 +428,7 @@ def parse_elf_file(partitions):
         except elftools.common.exceptions.ELFError as e:
             exit(f"Error: {args.elf}: {e}")
 
-        symbol_tbls = [s for s in elffile.iter_sections()
-                       if isinstance(s, SymbolTableSection)]
+        symbol_tbls = [s for s in elffile.iter_sections() if isinstance(s, SymbolTableSection)]
 
         for section in symbol_tbls:
             for symbol in section.iter_symbols():
@@ -410,6 +450,7 @@ def parse_elf_file(partitions):
                 else:
                     partitions[partition_name][SZ] += size
 
+
 def generate_final(linker_file, partitions, lnkr_sect=""):
     if linker_file.endswith(".ld"):
         template = LDScriptTemlate
@@ -417,9 +458,10 @@ def generate_final(linker_file, partitions, lnkr_sect=""):
         template = CmakeTemplate
     generate_final_linker(template, linker_file, partitions, lnkr_sect)
 
+
 def generate_final_linker(template, linker_file, partitions, lnkr_sect):
     string = ""
-    props = { 'section' : lnkr_sect, 'SECTION' : lnkr_sect.upper() }
+    props = {'section': lnkr_sect, 'SECTION': lnkr_sect.upper()}
     if len(partitions) > 0:
         string = template.linker_start_seq.format(**props)
         size_string = ''
@@ -444,33 +486,49 @@ def generate_final_linker(template, linker_file, partitions, lnkr_sect):
         string += template.linker_end_seq.format(**props)
         string += size_string
     else:
-        string = template.empty_app_smem.format(**props) #lnkr_sect, lnkr_sect.upper())
+        string = template.empty_app_smem.format(**props)  # lnkr_sect, lnkr_sect.upper())
 
     with open(linker_file, "w") as fw:
         fw.write(string)
+
 
 def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
-    parser.add_argument("-d", "--directory", required=False, default=None,
-                        help="Root build directory")
-    parser.add_argument("-e", "--elf", required=False, default=None,
-                        help="ELF file")
-    parser.add_argument("-f", "--compile-commands-file", required=False,
-                        default=None, help="CMake compile commands file")
-    parser.add_argument("-o", "--output", required=False,
-                        help="Output ld file")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Verbose Output")
-    parser.add_argument("-l", "--library", nargs=2, action="append", default=[],
-                        metavar=("LIBRARY", "PARTITION"),
-                        help="Include globals for a particular library or object filename into a designated partition")
-    parser.add_argument("--pinoutput", required=False,
-                        help="Output ld file for pinned sections")
-    parser.add_argument("--pinpartitions", action="store", required=False, default="",
-                        help="Comma separated names of partitions to be pinned in physical memory")
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+    parser.add_argument(
+        "-d", "--directory", required=False, default=None, help="Root build directory"
+    )
+    parser.add_argument("-e", "--elf", required=False, default=None, help="ELF file")
+    parser.add_argument(
+        "-f",
+        "--compile-commands-file",
+        required=False,
+        default=None,
+        help="CMake compile commands file",
+    )
+    parser.add_argument("-o", "--output", required=False, help="Output ld file")
+    parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbose Output")
+    parser.add_argument(
+        "-l",
+        "--library",
+        nargs=2,
+        action="append",
+        default=[],
+        metavar=("LIBRARY", "PARTITION"),
+        help="Include globals for a library or object filename into a designated partition",
+    )
+    parser.add_argument("--pinoutput", required=False, help="Output ld file for pinned sections")
+    parser.add_argument(
+        "--pinpartitions",
+        action="store",
+        required=False,
+        default="",
+        help="Comma separated names of partitions to be pinned in physical memory",
+    )
 
     args, _ = parser.parse_known_args()
 
@@ -500,18 +558,21 @@ def main():
     if args.pinoutput:
         pin_part_names = args.pinpartitions.split(',')
 
-        generic_partitions = {key: value for key, value in partitions.items()
-                              if key not in pin_part_names}
-        pinned_partitions = {key: value for key, value in partitions.items()
-                             if key in pin_part_names}
+        generic_partitions = {
+            key: value for key, value in partitions.items() if key not in pin_part_names
+        }
+        pinned_partitions = {
+            key: value for key, value in partitions.items() if key in pin_part_names
+        }
     else:
         generic_partitions = partitions
 
     # Sample partitions.items() list before sorting:
     #   [ ('part1', {'size': 64}), ('part3', {'size': 64}, ...
     #     ('part0', {'size': 334}) ]
-    decreasing_tuples = sorted(generic_partitions.items(),
-                           key=lambda x: (x[1][SZ], x[0]), reverse=True)
+    decreasing_tuples = sorted(
+        generic_partitions.items(), key=lambda x: (x[1][SZ], x[0]), reverse=True
+    )
 
     partsorted = OrderedDict(decreasing_tuples)
 
@@ -520,13 +581,12 @@ def main():
     if args.verbose:
         print("Partitions retrieved:")
         for key in partsorted:
-            print("    {0}: size {1}: {2}".format(key,
-                                                  partsorted[key][SZ],
-                                                  partsorted[key][SRC]))
+            print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
 
     if args.pinoutput:
-        decreasing_tuples = sorted(pinned_partitions.items(),
-                                   key=lambda x: (x[1][SZ], x[0]), reverse=True)
+        decreasing_tuples = sorted(
+            pinned_partitions.items(), key=lambda x: (x[1][SZ], x[0]), reverse=True
+        )
 
         partsorted = OrderedDict(decreasing_tuples)
 
@@ -534,9 +594,7 @@ def main():
         if args.verbose:
             print("Pinned partitions retrieved:")
             for key in partsorted:
-                print("    {0}: size {1}: {2}".format(key,
-                                                    partsorted[key][SZ],
-                                                    partsorted[key][SRC]))
+                print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
 
 
 if __name__ == '__main__':

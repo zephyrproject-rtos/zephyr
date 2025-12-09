@@ -299,7 +299,7 @@ struct ptp_msg {
 	/** Single-linked list of TLVs attached to the message. */
 	sys_slist_t tlvs;
 	/** Protocol address of the sender/receiver of the message. */
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 };
 
 /**

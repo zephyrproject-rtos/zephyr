@@ -1,0 +1,12 @@
+identifier: dnesp32s3b/esp32s3/procpu
+name: DNESP32S3B PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - watchdog
+vendor: alientek

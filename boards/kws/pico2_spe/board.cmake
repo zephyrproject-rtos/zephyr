@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if("${RPI_PICO_DEBUG_ADAPTER}" STREQUAL "")
-	set(RPI_PICO_DEBUG_ADAPTER "cmsis-dap")
+  set(RPI_PICO_DEBUG_ADAPTER "cmsis-dap")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]")

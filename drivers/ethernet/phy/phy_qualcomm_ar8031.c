@@ -327,8 +327,6 @@ static int qc_ar8031_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
-	mdio_bus_enable(cfg->mdio_dev);
-
 	data->state.is_up = false;
 
 	data->dev = dev;

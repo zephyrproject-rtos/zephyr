@@ -177,7 +177,7 @@ struct sim7080_data {
 struct socket_read_data {
 	char *recv_buf;
 	size_t recv_buf_len;
-	struct sockaddr *recv_addr;
+	struct net_sockaddr *recv_addr;
 	uint16_t recv_read_len;
 };
 

@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+config CRYPTO_MCHP_SHA_G1
+	bool "Microchip SAM SHA driver"
+	default y if DT_HAS_MICROCHIP_SHA_G1_CRYPTO_ENABLED
+	help
+	  Enable Microchip SAM Secure Hash Algorithm (SHA) driver.
+
+config CRYPTO_MCHP_XEC_SYMCR
+	bool "Microchip XEC symmetric crypto (AES/Hash) driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_SYMCR_ENABLED
+	help
+	  Enable Microchip XEC symmetric crypto (AES/Hash) driver.
+	  Symmetric crypto provides a single hardware interface
+	  to AES and hash engines.

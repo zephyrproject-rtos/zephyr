@@ -142,10 +142,7 @@ static int stm32_exti_enable_clocks(void)
 		return -ENODEV;
 	}
 
-	const struct stm32_pclken pclken = {
-		.bus = DT_CLOCKS_CELL(EXTI_NODE, bus),
-		.enr = DT_CLOCKS_CELL(EXTI_NODE, bits)
-	};
+	const struct stm32_pclken pclken = STM32_CLOCK_INFO(0, EXTI_NODE);
 
 	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
 #endif

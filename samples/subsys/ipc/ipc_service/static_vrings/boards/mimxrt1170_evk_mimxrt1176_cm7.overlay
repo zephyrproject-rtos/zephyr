@@ -28,6 +28,7 @@
 		zephyr,memory-region = "OCRAM2_IPC0";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
+
 	ocram2_ipc1: memory@202c8000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c8000 DT_SIZE_K(32)>;

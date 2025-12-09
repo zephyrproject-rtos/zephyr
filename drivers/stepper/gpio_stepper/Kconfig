@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+source "drivers/stepper/gpio_stepper/Kconfig.h_bridge"
+source "drivers/stepper/gpio_stepper/step_dir/Kconfig"

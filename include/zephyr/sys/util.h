@@ -645,7 +645,7 @@ extern "C" {
  * @param[in] first_match If true returns when first match is found, else returns the best fit.
  *
  * @retval -1 Contiguous bits not found.
- * @retval non-negative Starting index of the bits group.
+ * @retval >=0 Starting index of the bits group.
  */
 int bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits, bool first_match);
 
@@ -1027,6 +1027,81 @@ static inline size_t sys_count_bits(const void *value, size_t len)
 	return cnt;
 }
 
+/**
+ * @brief Returns the sign of a number.
+ *
+ * @param x The input value to determine the sign
+ *
+ * @retval 1 if x is positive
+ * @retval -1 if x is negative
+ * @retval 0 if x is zero
+ */
+#define SIGN(x) (((x) > 0) - ((x) < 0))
+
+/**
+ * @brief Compute the Greatest Common Divisor (GCD) of two integers
+ * using the Euclidean algorithm.
+ *
+ * @param a First integer
+ * @param b Second integer
+ *
+ * @return The greatest common divisor of a and b, always returns an unsigned value.
+ *         If one of the parameters is 0, returns the absolute value of the other parameter.
+ */
+#define gcd(a, b) ((((__typeof__(a))-1) < 0) ? gcd_s(a, b) : gcd_u(a, b))
+
+static ALWAYS_INLINE uint32_t gcd_u(uint32_t a, uint32_t b)
+{
+	uint32_t c;
+
+	if (a == 0) {
+		return b;
+	}
+
+	if (b == 0) {
+		return a;
+	}
+
+	c = a % b;
+	while (c != 0) {
+		a = b;
+		b = c;
+		c = a % b;
+	}
+
+	return b;
+}
+
+static ALWAYS_INLINE uint32_t gcd_s(int32_t a, int32_t b)
+{
+	return gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+}
+
+/**
+ * @brief Compute the Least Common Multiple (LCM) of two integers.
+ *
+ * @param a First integer
+ * @param b Second integer
+ *
+ * @retval The least common multiple of a and b.
+ * @retval 0 if either input is 0.
+ */
+#define lcm(a, b) ((((__typeof__(a))-1) < 0) ? lcm_s(a, b) : lcm_u(a, b))
+
+static ALWAYS_INLINE uint64_t lcm_u(uint32_t a, uint32_t b)
+{
+	if (a == 0 || b == 0) {
+		return 0;
+	}
+
+	return (uint64_t)(a / gcd_u(a, b)) * (uint64_t)b;
+}
+
+static ALWAYS_INLINE uint64_t lcm_s(int32_t a, int32_t b)
+{
+	return lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+}
+
 #ifdef __cplusplus
 }
 #endif
@@ -1086,17 +1161,19 @@ static inline size_t sys_count_bits(const void *value, size_t len)
  * @param delay_stmt Delay statement to perform each poll iteration
  *                   e.g.: NULL, k_yield(), k_msleep(1) or k_busy_wait(1)
  *
- * @retval expr As a boolean return, if false then it has timed out.
+ * @return expr As a boolean return, if false then it has timed out.
  */
 #define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
 	({                                                                                         \
 		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
 		uint32_t _wf_start = k_cycle_get_32();                                             \
-		while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {            \
+		bool _wf_ret;                                                                      \
+		while (!(_wf_ret = (expr)) &&                                                      \
+		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
 			delay_stmt;                                                                \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
-		(expr);                                                                            \
+		(_wf_ret);                                                                         \
 	})
 
 /**

@@ -180,7 +180,7 @@ static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
 
 	/* Use root iface, it will be updated later in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, buf->length,
-					   AF_UNSPEC, 0, NETC_TIMEOUT);
+					   NET_AF_UNSPEC, 0, NETC_TIMEOUT);
 	if (!pkt) {
 		goto exit;
 	}

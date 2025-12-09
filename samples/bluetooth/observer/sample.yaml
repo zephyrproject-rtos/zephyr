@@ -8,6 +8,7 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - nrf52840dk/nrf52840
+      - cyw920829m2evk_02/cyw20829b0lkml
     integration_platforms:
       - qemu_cortex_m3
       - nrf52840dk/nrf52840

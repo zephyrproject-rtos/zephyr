@@ -8,8 +8,8 @@
 
 #include <espressif/esp32s3/esp32s3_fn8.dtsi>
 #include "m5stack_atoms3_lite-pinctrl.dtsi"
-#include <dt-bindings/led/led.h>
-#include <dt-bindings/led/worldsemi_ws2812c.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp.dtsi>
 

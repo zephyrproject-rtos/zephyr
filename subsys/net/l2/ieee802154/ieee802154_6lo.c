@@ -39,7 +39,7 @@ int ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
 			      struct ieee802154_6lo_fragment_ctx *frag_ctx, uint8_t ll_hdr_len,
 			      uint8_t authtag_len)
 {
-	if (net_pkt_family(pkt) != AF_INET6) {
+	if (net_pkt_family(pkt) != NET_AF_INET6) {
 		return 0;
 	}
 

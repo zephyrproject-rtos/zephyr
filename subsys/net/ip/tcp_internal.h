@@ -1,8 +1,8 @@
 /** @file
  * @brief Transmission Control Protocol (TCP)
  *
- * - net_tcp_get() is called by net_context_get(AF_INET, SOCK_STREAM,
-     IPPROTO_TCP, ...) and creates struct tcp for the net_context
+ * - net_tcp_get() is called by net_context_get(NET_AF_INET, NET_SOCK_STREAM,
+     NET_IPPROTO_TCP, ...) and creates struct tcp for the net_context
  * - net_tcp_listen()/net_tcp_accept() listen/accept
  * - At the reception of SYN on the listening net_context, a new pair
  *   of net_context/struct tcp registers a new net_conn handle
@@ -141,8 +141,8 @@ static inline int net_tcp_get(struct net_context *context)
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_connect(struct net_context *context,
-		    const struct sockaddr *addr,
-		    struct sockaddr *laddr,
+		    const struct net_sockaddr *addr,
+		    struct net_sockaddr *laddr,
 		    uint16_t rport,
 		    uint16_t lport,
 		    k_timeout_t timeout,
@@ -150,8 +150,8 @@ int net_tcp_connect(struct net_context *context,
 		    void *user_data);
 #else
 static inline int net_tcp_connect(struct net_context *context,
-				  const struct sockaddr *addr,
-				  struct sockaddr *laddr,
+				  const struct net_sockaddr *addr,
+				  struct net_sockaddr *laddr,
 				  uint16_t rport, uint16_t lport,
 				  k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)
@@ -313,10 +313,10 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_queue(struct net_context *context, const void *data, size_t len,
-		  const struct msghdr *msg);
+		  const struct net_msghdr *msg);
 #else
 static inline int net_tcp_queue(struct net_context *context, const void *data,
-				size_t len, const struct msghdr *msg)
+				size_t len, const struct net_msghdr *msg)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(data);
@@ -470,14 +470,14 @@ static inline void net_tcp_reply_rst(struct net_pkt *pkt)
  * @param context Network context
  * @param local TCP connection local socket information is copied here
  * @param peer TCP connection peer socket information is copied here
- * @param addrlen Size of the sockaddr struct. Copied size is returned.
+ * @param addrlen Size of the net_sockaddr struct. Copied size is returned.
  *
  * @return <0 if there was an error, 0 if ok
  */
 int net_tcp_endpoint_copy(struct net_context *ctx,
-			  struct sockaddr *local,
-			  struct sockaddr *peer,
-			  socklen_t *addrlen);
+			  struct net_sockaddr *local,
+			  struct net_sockaddr *peer,
+			  net_socklen_t *addrlen);
 
 /**
  * @brief Notify TCP layer that connection has been accepted by the application

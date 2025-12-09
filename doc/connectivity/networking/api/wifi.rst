@@ -120,6 +120,29 @@ To initiate a Wi-Fi connection using enterprise security, use one of the followi
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.
 
+Server certificate domain name verification
+-------------------------------------------
+
+The authentication server’s identity is verified by validating the domain name in the X.509 certificate received from the server, using the ``Common Name`` (CN) field.
+
+* Exact domain match — Verifies that the certificate’s CN exactly matches the specified domain.
+
+* Domain suffix match — Allows a certificate whose CN ends with the specified domain suffix.
+
+To initiate a Wi-Fi connection using enterprise security with server certificate validation, use one of the following commands, depending on the desired validation mode:
+
+* Exact domain match
+
+  .. code-block:: console
+
+     wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> -e <Domain match>
+
+* Domain suffix match
+
+  .. code-block:: console
+
+     wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> -x <Domain suffix name>
+
 Certificate requirements for EAP methods
 ----------------------------------------
 

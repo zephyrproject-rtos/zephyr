@@ -708,6 +708,12 @@ static int udc_mcux_init(const struct device *dev)
 		return -ENOMEM;
 	}
 
+	if (!IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+		USBHS_Type *usbBase = (USBHS_Type *)config->base;
+
+		usbBase->PORTSC1 |= USBHS_PORTSC1_PFSC_MASK;
+	}
+
 	/* enable USB interrupt */
 	config->irq_enable_func(dev);
 

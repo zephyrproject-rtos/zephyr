@@ -25,7 +25,7 @@ static struct net_mgmt_event_callback mgmt4_acd_cb;
 
 static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 {
-	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
+	struct net_in_addr netmask = { { { 255, 255, 0, 0 } } };
 
 	if (ipv4auto->state == NET_IPV4_AUTOCONF_INIT) {
 		ipv4auto->requested_ip.s4_addr[0] = 169U;
@@ -58,7 +58,7 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 			      uint64_t mgmt_event, struct net_if *iface)
 {
 	struct net_if_config *cfg;
-	struct in_addr *addr;
+	struct net_in_addr *addr;
 
 	cfg = net_if_get_config(iface);
 	if (!cfg) {
@@ -75,11 +75,11 @@ static void acd_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (cb->info_length != sizeof(struct in_addr)) {
+	if (cb->info_length != sizeof(struct net_in_addr)) {
 		return;
 	}
 
-	addr = (struct in_addr *)cb->info;
+	addr = (struct net_in_addr *)cb->info;
 
 	if (!net_ipv4_addr_cmp(&cfg->ipv4auto.requested_ip, addr)) {
 		return;

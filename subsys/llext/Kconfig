@@ -110,13 +110,14 @@ config LLEXT_STORAGE_WRITABLE
 
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"
+	select LLEXT_EXPORT_SYMBOL_GROUP_DEVICE
 	help
 	  When enabled, all Zephyr devices defined in the device tree are
 	  made available to llexts via the standard DT_ / DEVICE_* macros.
 
 config LLEXT_EXPORT_DEV_IDS_BY_HASH
 	bool "Use hash of device path in device name"
-	depends on LLEXT_EXPORT_DEVICES
+	depends on LLEXT_EXPORT_SYMBOL_GROUP_DEVICE
 	help
 	  When enabled, exported device names are generated from a hash of the
 	  node path instead of an ordinal number. Identifiers generated this
@@ -154,6 +155,40 @@ config LLEXT_EXPERIMENTAL
 	  Include support for LLEXT experimental and unstable functionality that
 	  has a very high likelihood to change in the future.
 
+menu "Exported symbol groups"
+
+config LLEXT_EXPORT_DEFAULT_GROUPS
+	bool "Export the default set of Zephyr application symbols"
+	default y
+	help
+	  Exports default, syscall and libc symbols
+
+config LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED
+	bool "Export all symbols from the UNASSIGNED group"
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
+	help
+	  Exports all symbols declared without an explicit group.
+
+config LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL
+	bool "Export all syscalls"
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
+	help
+	  Exports all syscall symbols.
+
+config LLEXT_EXPORT_SYMBOL_GROUP_LIBC
+	bool "Export standard library symbols"
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
+	help
+	  Export symbols such as memcpy, memset, strlen.
+
+config LLEXT_EXPORT_SYMBOL_GROUP_DEVICE
+	bool "Export Zephyr devices"
+	help
+	  When enabled, all Zephyr devices defined in the device tree are
+	  made available to llexts via the standard DT_ / DEVICE_* macros.
+
+endmenu
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
@@ -182,8 +217,9 @@ config LLEXT_EDK_NAME
 	  instance, the default name, "llext-edk", becomes LLEXT_EDK_INSTALL_DIR.
 
 choice LLEXT_EDK_FORMAT
-prompt "EDK compression and output format"
-default LLEXT_EDK_FORMAT_TAR_XZ
+	prompt "EDK compression and output format"
+	default LLEXT_EDK_FORMAT_TAR_ZSTD if LLEXT_EDK_PRESERVE_INPUT_FOLDER
+	default LLEXT_EDK_FORMAT_TAR_XZ
 
 config LLEXT_EDK_FORMAT_TAR_XZ
 	bool ".tar.xz"
@@ -212,5 +248,8 @@ config LLEXT_EDK_USERSPACE_ONLY
 	  or kernel space and route the call accordingly. If the EDK is expected
 	  to be used by userspace only extensions, this option will make EDK stubs
 	  not contain the routing code, and only generate the userspace one.
+
+config LLEXT_EDK_PRESERVE_INPUT_FOLDER
+	bool "Don't delete the EDK source folder"
 
 endif

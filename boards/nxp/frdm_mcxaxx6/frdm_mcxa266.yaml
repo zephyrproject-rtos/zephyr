@@ -24,4 +24,5 @@ supported:
   - counter
   - dma
   - i3c
+  - entropy
 vendor: nxp

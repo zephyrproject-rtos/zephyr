@@ -9,6 +9,8 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - can
+  - crypto
   - dma
   - entropy
   - pwm

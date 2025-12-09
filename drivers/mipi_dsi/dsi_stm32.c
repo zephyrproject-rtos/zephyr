@@ -504,24 +504,11 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 	static const struct mipi_dsi_stm32_config stm32_dsi_config_##inst = {			\
 		.rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),					\
 		.reset = RESET_DT_SPEC_INST_GET(inst),						\
-		.dsi_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bus),			\
-		},										\
-		COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, dsisrc),				\
-			(.dsisrc_clk = {							\
-				.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsisrc, bits),		\
-				.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsisrc, bus),		\
-			},),									\
-			(.dsisrc_clk = {0},))							\
-		.ref_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bus),			\
-		},										\
-		.pix_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bits),		\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bus),		\
-		},										\
+		.dsi_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dsiclk),			\
+		IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(inst, dsisrc),				\
+			   (.dsisrc_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dsisrc),))	\
+		.ref_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, refclk),			\
+		.pix_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, pixelclk),			\
 		/* Use only one (the first) display configuration for DSI HOST configuration */	\
 		.data_lanes = data_lanes_##inst[0],						\
 		.active_errors = DT_INST_PROP_OR(inst, active_errors, HAL_DSI_ERROR_NONE),	\

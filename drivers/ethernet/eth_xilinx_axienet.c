@@ -150,7 +150,8 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 	data->rx_completed_buffer_index = next_descriptor;
 
 	packet_size = dma_xilinx_axi_dma_last_received_frame_length(dma);
-	pkt = net_pkt_rx_alloc_with_buffer(data->interface, packet_size, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(data->interface, packet_size,
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	if (!pkt) {
 		LOG_ERR("Could not allocate a packet!");

@@ -74,7 +74,7 @@ The following is an example of a CoAP resource registered with our service:
     #include <zephyr/net/coap_service.h>
 
     static int my_get(struct coap_resource *resource, struct coap_packet *request,
-                      struct sockaddr *addr, socklen_t addr_len)
+                      struct net_sockaddr *addr, socklen_t addr_len)
     {
         static const char *msg = "Hello, world!";
         uint8_t data[CONFIG_COAP_SERVER_MESSAGE_SIZE];
@@ -106,7 +106,7 @@ The following is an example of a CoAP resource registered with our service:
     }
 
     static int my_put(struct coap_resource *resource, struct coap_packet *request,
-                      struct sockaddr *addr, socklen_t addr_len)
+                      struct net_sockaddr *addr, socklen_t addr_len)
     {
         /* ... Handle the incoming request ... */
 
@@ -142,7 +142,7 @@ of CoAP services. An example using a temperature sensor can look like:
     K_WORK_DELAYABLE_DEFINE(temp_work, notify_observers);
 
     static int send_temperature(struct coap_resource *resource,
-                                const struct sockaddr *addr, socklen_t addr_len,
+                                const struct net_sockaddr *addr, socklen_t addr_len,
                                 uint16_t age, uint16_t id, const uint8_t *token, uint8_t tkl,
                                 bool is_response)
     {
@@ -187,7 +187,7 @@ of CoAP services. An example using a temperature sensor can look like:
     }
 
     static int temp_get(struct coap_resource *resource, struct coap_packet *request,
-                        struct sockaddr *addr, socklen_t addr_len)
+                        struct net_sockaddr *addr, socklen_t addr_len)
     {
         uint8_t token[COAP_TOKEN_MAX_LEN];
         uint16_t id;

@@ -89,6 +89,10 @@
 	d3ppre = <2>;  /* APB4: 137.5 MHz */
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";

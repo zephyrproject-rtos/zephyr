@@ -12,6 +12,7 @@
 		test_int_gpio {
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			test_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0x0>;

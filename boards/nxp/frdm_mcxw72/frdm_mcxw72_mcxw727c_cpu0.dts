@@ -131,11 +131,16 @@
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_K(2032)>;
+			reg = <0x0 DT_SIZE_K(2024)>;
 		};
 
-		storage_partition: partition@1FC000 {
-			reg = <0x1FC000 DT_SIZE_K(16)>;
+		storage_partition: partition@1FA000 {
+			reg = <0x1FA000 DT_SIZE_K(16)>;
+		};
+
+		hw_params_partition: partition@1FE000 {
+			label = "hw-parameters";
+			reg = <0x1FE000 DT_SIZE_K(8)>;
 		};
 	};
 };

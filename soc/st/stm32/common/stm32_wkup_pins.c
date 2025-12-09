@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
 
+#include <stm32_bitops.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_pwr.h>
 
@@ -140,7 +141,7 @@ static const uint32_t table_wakeup_pins[PWR_STM32_MAX_NB_WKUP_PINS + 1] = {
 static struct wkup_pin_dt_cfg_t wkup_pins_cfgs[] = {
 	DT_FOREACH_CHILD(STM32_PWR_NODE, WKUP_PIN_CFG_DT_COMMA)};
 
-#if PWR_STM32_WKUP_PINS_PUPD_CFG
+#if PWR_STM32_WKUP_PINS_PUPD_CFG || CONFIG_SOC_SERIES_STM32WBAX
 
 /**
  * @brief Array containing pointers to each GPIO port.
@@ -166,6 +167,9 @@ static const struct device *const gpio_ports[] = {
 /* Number of GPIO ports. */
 static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
+#endif /* PWR_STM32_WKUP_PINS_PUPD_CFG || CONFIG_SOC_SERIES_STM32WBAX */
+
+#if PWR_STM32_WKUP_PINS_PUPD_CFG
 /**
  * @brief LookUp Table to store LL_PWR_GPIO_x of each GPIO port.
  */
@@ -325,6 +329,27 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 		wakeup_pin_cfg.pupd_cfg = STM32_PWR_WKUP_PIN_NOPULL;
 	}
 #endif /* PWR_STM32_WKUP_PINS_PUPD_CFG */
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+	for (i = 0; i < gpio_ports_cnt; i++) {
+		if (gpio_ports[i] == gpio->port) {
+			/*
+			 * Roll our own implementation instead of using
+			 * LL_PWR_EnableGPIOStandbyRetention, which is
+			 * a mere SET_BIT() - this avoids adding another
+			 * look-up table. Since this is series-specific
+			 * code anyways, raw register access tricks like
+			 * this one are fine.
+			 *
+			 * See RefMan/PWR registers layout for details.
+			 */
+			volatile uint32_t *ioretenr_x = (&PWR->IORETENRA) + 2 * i;
+
+			stm32_reg_set_bits(ioretenr_x, 1U << gpio->pin);
+			break;
+		}
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
 	wkup_pin_setup(&wakeup_pin_cfg);
 

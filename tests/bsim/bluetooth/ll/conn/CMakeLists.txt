@@ -6,10 +6,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_app)
 
 target_sources(app PRIVATE
-	src/main.c
-	src/test_empty.c
-	src/test_connect1.c
-	src/test_connect2.c
+  src/main.c
+  src/test_empty.c
+  src/test_connect1.c
+  src/test_connect2.c
 )
 
 zephyr_include_directories(

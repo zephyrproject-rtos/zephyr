@@ -21,24 +21,24 @@ LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "ipv6.h" /* to get infinite lifetime */
 
-static struct sockaddr_in6 in6_addr_my = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(MY_SRC_PORT),
+static struct net_sockaddr_in6 ipv6_addr_my = {
+	.sin6_family = NET_AF_INET6,
+	.sin6_port = net_htons(MY_SRC_PORT),
 };
 
-static struct sockaddr_in in4_addr_my = {
-	.sin_family = AF_INET,
-	.sin_port = htons(MY_SRC_PORT),
+static struct net_sockaddr_in ipv4_addr_my = {
+	.sin_family = NET_AF_INET,
+	.sin_port = net_htons(MY_SRC_PORT),
 };
 
-struct sockaddr_in6 *zperf_get_sin6(void)
+struct net_sockaddr_in6 *zperf_get_sin6(void)
 {
-	return &in6_addr_my;
+	return &ipv6_addr_my;
 }
 
-struct sockaddr_in *zperf_get_sin(void)
+struct net_sockaddr_in *zperf_get_sin(void)
 {
-	return &in4_addr_my;
+	return &ipv4_addr_my;
 }
 
 #define ZPERF_WORK_Q_THREAD_PRIORITY					\
@@ -106,7 +106,7 @@ static struct k_work_q zperf_work_q;
 
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
-int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
+int zperf_get_ipv6_addr(char *host, char *prefix_str, struct net_in6_addr *addr)
 {
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_addr *ifaddr;
@@ -117,7 +117,7 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET6, host, addr);
+	ret = net_addr_pton(NET_AF_INET6, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -143,7 +143,7 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
 }
 
 
-int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
+int zperf_get_ipv4_addr(char *host, struct net_in_addr *addr)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
@@ -152,7 +152,7 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
 		return -EINVAL;
 	}
 
-	ret = net_addr_pton(AF_INET, host, addr);
+	ret = net_addr_pton(NET_AF_INET, host, addr);
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -167,24 +167,24 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
 	return 0;
 }
 
-int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
+int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 			      int priority, int tcp_nodelay, int proto)
 {
-	socklen_t addrlen = peer_addr->sa_family == AF_INET6 ?
-			    sizeof(struct sockaddr_in6) :
-			    sizeof(struct sockaddr_in);
-	int type = (proto == IPPROTO_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	net_socklen_t addrlen = peer_addr->sa_family == NET_AF_INET6 ?
+			    sizeof(struct net_sockaddr_in6) :
+			    sizeof(struct net_sockaddr_in);
+	int type = (proto == NET_IPPROTO_UDP) ? NET_SOCK_DGRAM : NET_SOCK_STREAM;
 	int sock = -1;
 	int ret;
 
 	switch (peer_addr->sa_family) {
-	case AF_INET:
+	case NET_AF_INET:
 		if (!IS_ENABLED(CONFIG_NET_IPV4)) {
 			NET_ERR("IPv4 not available.");
 			return -EINVAL;
 		}
 
-		sock = zsock_socket(AF_INET, type, proto);
+		sock = zsock_socket(NET_AF_INET, type, proto);
 		if (sock < 0) {
 			NET_ERR("Cannot create IPv4 network socket (%d)",
 				errno);
@@ -192,7 +192,7 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 		}
 
 		if (tos > 0) {
-			if (zsock_setsockopt(sock, IPPROTO_IP, IP_TOS,
+			if (zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_TOS,
 					     &tos, sizeof(tos)) != 0) {
 				NET_WARN("Failed to set IP_TOS socket option. "
 					 "Please enable CONFIG_NET_CONTEXT_DSCP_ECN.");
@@ -201,13 +201,13 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 
 		break;
 
-	case AF_INET6:
+	case NET_AF_INET6:
 		if (!IS_ENABLED(CONFIG_NET_IPV6)) {
 			NET_ERR("IPv6 not available.");
 			return -EINVAL;
 		}
 
-		sock = zsock_socket(AF_INET6, type, proto);
+		sock = zsock_socket(NET_AF_INET6, type, proto);
 		if (sock < 0) {
 			NET_ERR("Cannot create IPv6 network socket (%d)",
 				errno);
@@ -215,7 +215,7 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 		}
 
 		if (tos >= 0) {
-			if (zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS,
+			if (zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_TCLASS,
 					     &tos, sizeof(tos)) != 0) {
 				NET_WARN("Failed to set IPV6_TCLASS socket option. "
 					 "Please enable CONFIG_NET_CONTEXT_DSCP_ECN.");
@@ -249,11 +249,11 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 		}
 	}
 
-	if (proto == IPPROTO_TCP && tcp_nodelay &&
-	    zsock_setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+	if (proto == NET_IPPROTO_TCP && tcp_nodelay &&
+	    zsock_setsockopt(sock, NET_IPPROTO_TCP, ZSOCK_TCP_NODELAY,
 			     &tcp_nodelay,
 			     sizeof(tcp_nodelay)) != 0) {
-		NET_WARN("Failed to set IPPROTO_TCP - TCP_NODELAY socket option.");
+		NET_WARN("Failed to set NET_IPPROTO_TCP - TCP_NODELAY socket option.");
 		ret = -errno;
 		goto error;
 	}

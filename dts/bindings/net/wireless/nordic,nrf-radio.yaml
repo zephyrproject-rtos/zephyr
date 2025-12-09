@@ -31,7 +31,7 @@ description: |
 
     Currently supported "compatible" properties for the FEM node are:
 
-      - generic-fem-two-ctrl-pins
+      - radio-fem-two-ctrl-pins
       - nordic,nrf21540-fem
 
     Refer to the bindings for these compatibles for more information
@@ -108,7 +108,7 @@ description: |
 
 compatible: "nordic,nrf-radio"
 
-include: [base.yaml]
+include: [base.yaml, ble-radio.yaml, radio.yaml]
 
 properties:
   reg:
@@ -211,26 +211,3 @@ properties:
     description: |
       If set, indicates that the radio hardware supports the IEEE 802.15.4
       mode.
-
-  ble-2mbps-supported:
-    type: boolean
-    description: |
-      If set, indicates that the radio hardware supports the 2 Mbps BLE mode.
-
-  ble-coded-phy-supported:
-    type: boolean
-    description: |
-      If set, indicates that the radio hardware supports coded BLE PHY.
-
-  tx-high-power-supported:
-    type: boolean
-    description: |
-      If set, indicates that the radio hardware supports high TX power
-      settings.
-
-  cs-supported:
-    type: boolean
-    description: |
-      If set, the radio hardware supports the BLE Channel Sounding feature.
-      This property should be treated as read-only and should not be overridden;
-      the correct value is provided for your target's SoC already.

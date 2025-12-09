@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
  * Organisation (CSIRO) ABN 41 687 119 230.
+ * Copyright (c) 2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,6 +22,7 @@
 			reg = <0x20000000 0x1000>;
 			zephyr,memory-region = "SRAM_REGION";
 		};
+
 		test_sram2: sram@20001000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20001000 0x1000>;
@@ -73,6 +75,19 @@
 			io-channel-names = "ch1", "ch2";
 			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
 			mbox-names = "tx", "rx", "zero";
+		};
+
+		test_hwspinlock: hwspinlock {
+			compatible = "vnd,hwspinlock";
+			#hwlock-cells = <1>;
+			status = "okay";
+		};
+
+		test_hwspinlock_dev: hwspinlock-dev {
+			compatible = "vnd,hwspinlock-device";
+			hwlocks = <&test_hwspinlock 1>, <&test_hwspinlock 2>;
+			hwlock-names = "rd", "wr";
+			status = "okay";
 		};
 	};
 };

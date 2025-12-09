@@ -287,6 +287,10 @@ struct usbd_context {
 	const struct device *dev;
 	/** Notification message recipient callback */
 	usbd_msg_cb_t msg_cb;
+	/** slist to keep endpoint events */
+	sys_slist_t ep_events;
+	/** Endpoint event list spinlock */
+	struct k_spinlock ep_event_lock;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, BOS */

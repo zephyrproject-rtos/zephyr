@@ -126,3 +126,35 @@ which includes some Kconfig extensions:
 - ``def_int``, ``def_hex``, and ``def_string`` keywords are available,
   analogous to ``def_bool``. These set the type and add a ``default`` at the
   same time.
+
+- A symbol name can be associated to ``choice`` groups using the ``choice <symbol>`` syntax.
+  Such choices, called *named choices*, can be modified from places other than their initial
+  definition. For example, the following statements define the named choice ``FOOBAR``:
+
+  .. code-block:: kconfig
+
+    choice FOOBAR
+	    prompt "Example choice"
+	    default BAR
+
+    config FOO
+	    bool "Foo"
+
+    config BAR
+	    bool "Bar"
+
+    endchoice
+
+  The following statements could then be used, in a ``Kconfig.defconfig`` file for example,
+  to override the default option of choice ``FOOBAR``:
+
+  .. code-block:: kconfig
+
+    # Note how "prompt" is not present here
+    choice FOOBAR
+        default FOO
+    endchoice
+
+  .. note::
+    The *named choices* feature originates from Linux, but it is no longer supported in Linux
+    since kernel release 6.9, and has thus become a Kconfiglib language extension.

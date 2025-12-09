@@ -471,7 +471,7 @@ Code::
 		printk("STATE0\n");
 	}
 
-	static void s0_run(void *o)
+	static enum smf_state_result s0_run(void *o)
 	{
 		struct s_object *s = (struct s_object *)o;
 
@@ -488,7 +488,7 @@ Code::
 		printk("STATE1\n");
 	}
 
-	static void s1_run(void *o)
+	static enum smf_state_result s1_run(void *o)
 	{
 		struct s_object *s = (struct s_object *)o;
 

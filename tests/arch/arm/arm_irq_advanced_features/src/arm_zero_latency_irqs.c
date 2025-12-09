@@ -9,6 +9,12 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
+#if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#endif
+
 static volatile int test_flag;
 
 void arm_zero_latency_isr_handler(const void *args)
@@ -39,7 +45,7 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 
 	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
 			 * Interrupts configured statically with IRQ_CONNECT(.)

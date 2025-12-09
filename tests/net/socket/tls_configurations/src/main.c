@@ -11,6 +11,10 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <stdio.h>
 
 #include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/socket.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
@@ -83,16 +87,16 @@ static int wait_for_event(void)
 static int create_socket(void)
 {
 	int ret = 0;
-	struct sockaddr_in addr;
+	struct net_sockaddr_in addr;
 
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(CONFIG_SERVER_PORT);
-	inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+	addr.sin_family = NET_AF_INET;
+	addr.sin_port = net_htons(CONFIG_SERVER_PORT);
+	inet_pton(NET_AF_INET, "127.0.0.1", &addr.sin_addr);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
-	socket_fd = socket(addr.sin_family, SOCK_STREAM, IPPROTO_TLS_1_3);
+	socket_fd = socket(addr.sin_family, NET_SOCK_STREAM, IPPROTO_TLS_1_3);
 #else
-	socket_fd = socket(addr.sin_family, SOCK_STREAM, IPPROTO_TLS_1_2);
+	socket_fd = socket(addr.sin_family, NET_SOCK_STREAM, IPPROTO_TLS_1_2);
 #endif
 	if (socket_fd < 0) {
 		LOG_ERR("Failed to create TLS socket (%d)", errno);
@@ -125,7 +129,7 @@ static int create_socket(void)
 	}
 #endif
 
-	ret = connect(socket_fd, (struct sockaddr *) &addr, sizeof(addr));
+	ret = connect(socket_fd, (struct net_sockaddr *) &addr, sizeof(addr));
 	if (ret < 0) {
 		LOG_ERR("Cannot connect to TCP remote (%d)", errno);
 		return -errno;
@@ -147,7 +151,7 @@ void close_socket(void)
 
 static int setup_credentials(void)
 {
-	int err;
+	__maybe_unused int err;
 
 #if defined(USE_CERTIFICATE)
 	err = tls_credential_add(CA_CERTIFICATE_TAG,

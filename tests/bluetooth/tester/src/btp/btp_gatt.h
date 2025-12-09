@@ -240,14 +240,6 @@ struct btp_gatt_write_without_rsp_cmd {
 	uint8_t data[];
 } __packed;
 
-#define BTP_GATT_SIGNED_WRITE_WITHOUT_RSP	0x16
-struct btp_gatt_signed_write_without_rsp_cmd {
-	bt_addr_le_t address;
-	uint16_t handle;
-	uint16_t data_length;
-	uint8_t data[];
-} __packed;
-
 #define BTP_GATT_WRITE				0x17
 struct btp_gatt_write_cmd {
 	bt_addr_le_t address;
@@ -355,6 +347,21 @@ struct btp_gatt_cfg_notify_mult_cmd {
 	uint16_t cnt;
 	uint16_t attr_id[];
 } __packed;
+
+#define BTP_GATT_GET_HANDLE_FROM_UUID 0x22
+struct btp_gatt_get_handle_from_uuid_cmd {
+	uint8_t uuid_length;
+	uint8_t uuid[];
+} __packed;
+struct btp_gatt_get_handle_from_uuid_rp {
+	uint16_t handle;
+} __packed;
+
+#define BTP_GATT_REMOVE_HANDLE_FROM_DB 0x23
+struct btp_gatt_remove_handle_from_db_cmd {
+	uint16_t handle;
+} __packed;
+
 /* GATT events */
 #define BTP_GATT_EV_NOTIFICATION		0x80
 struct btp_gatt_notification_ev {

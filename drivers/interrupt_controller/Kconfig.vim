@@ -5,7 +5,7 @@
 
 if CPU_CORTEX_R5
 
-config VIM
+config TI_VIM
 	bool "TI Vectored Interrupt Manager"
 	default y
 	depends on DT_HAS_TI_VIM_ENABLED

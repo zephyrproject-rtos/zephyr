@@ -1534,7 +1534,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		 * now that the total frame length is known.
 		 */
 		pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, rx_data_length,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (pkt == NULL) {
 			LOG_ERR("RX packet buffer alloc failed: %u bytes",
 				rx_data_length);

@@ -503,7 +503,7 @@ static int sy1xx_mac_receive_data(const struct device *dev, uint8_t *rx, uint16_
 	struct net_pkt *rx_pkt;
 	int ret;
 
-	rx_pkt = net_pkt_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+	rx_pkt = net_pkt_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 	if (rx_pkt == NULL) {
 		LOG_ERR("rx packet allocation failed");
 		return -EINVAL;

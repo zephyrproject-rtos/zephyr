@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <renesas/r5f52618bgfp.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include "fpb_rx261-pinctrl.dtsi"
 
 / {
@@ -83,4 +83,11 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&rspi0 {
+	pinctrl-0 = <&rspi0_default>;
+	pinctrl-names = "default";
+	ssl-assert = <0>;
+	status = "okay";
 };

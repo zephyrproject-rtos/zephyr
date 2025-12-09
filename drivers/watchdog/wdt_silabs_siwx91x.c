@@ -149,10 +149,6 @@ static int siwx91x_wdt_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
-	if (options & (WDT_OPT_PAUSE_IN_SLEEP)) {
-		return -ENOTSUP;
-	}
-
 	RSI_WWDT_ConfigSysRstTimer(config->reg, data->delay_reset);
 	RSI_WWDT_ConfigIntrTimer(config->reg, data->delay_irq);
 

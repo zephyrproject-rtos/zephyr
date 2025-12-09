@@ -6,6 +6,7 @@ config DMA_SILABS_SIWX91X
 	default y
 	select SYS_MEM_BLOCKS
 	depends on DT_HAS_SILABS_SIWX91X_DMA_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the High Power(HP)/Ultra Low Power(ULP) DMA driver for the Silabs SiWx91x SoC series.
 
@@ -14,6 +15,7 @@ config DMA_SILABS_SIWX91X_GPDMA
 	default y
 	select SYS_MEM_BLOCKS
 	depends on DT_HAS_SILABS_GPDMA_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the GDMA driver for the Silabs SiWx91x SoC series.
 

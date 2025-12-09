@@ -34,6 +34,9 @@ config BT_LONG_WQ_STACK_SIZE
 config MAIN_STACK_SIZE
 	default 2048
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
 endif # BT
 
 endif # SOC_SERIES_MCXW2XX

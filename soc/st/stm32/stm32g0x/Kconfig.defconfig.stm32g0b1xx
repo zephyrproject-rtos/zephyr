@@ -10,7 +10,7 @@ config NUM_IRQS
 
 if CAN_STM32_FDCAN
 
-config SHARED_INTERRUPTS
+configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,fdcan1) && $(dt_nodelabel_enabled,fdcan2)
 
 endif # CAN_STM32_FDCAN

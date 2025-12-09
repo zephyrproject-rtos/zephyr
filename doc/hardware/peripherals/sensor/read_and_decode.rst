@@ -3,13 +3,12 @@
 Read and Decode
 ###############
 
-The quickly stabilizing experimental APIs for reading sensor data are:
+The quickly stabilizing APIs for reading sensor data are:
 
 * :c:func:`sensor_read`
 * :c:func:`sensor_read_async_mempool`
 * :c:func:`sensor_get_decoder`
 * :c:func:`sensor_decode`
-
 
 Benefits over :ref:`sensor-fetch-and-get`
 *********************************************************

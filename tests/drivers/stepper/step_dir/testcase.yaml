@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - step_dir
+
+tests:
+  drivers.stepper.step_dir.adi_tmc2209:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209.overlay"
+    extra_configs:
+      - CONFIG_MICRO_STEP_RESOLUTION=16
+      - CONFIG_MICRO_STEP_RESOLUTION_M0=1
+      - CONFIG_MICRO_STEP_RESOLUTION_M1=1
+    platform_allow:
+      - native_sim/native/64
+  drivers.stepper.step_dir.allegro_a4979:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979.overlay"
+    extra_configs:
+      - CONFIG_MICRO_STEP_RESOLUTION=16
+      - CONFIG_MICRO_STEP_RESOLUTION_M0=1
+      - CONFIG_MICRO_STEP_RESOLUTION_M1=1
+    platform_allow:
+      - native_sim/native/64
+  drivers.stepper.step_dir.drv84xx:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx.overlay"
+    extra_configs:
+      - CONFIG_MICRO_STEP_RESOLUTION=8
+      - CONFIG_MICRO_STEP_RESOLUTION_M0=1
+      - CONFIG_MICRO_STEP_RESOLUTION_M1=1
+    platform_allow:
+      - native_sim/native/64

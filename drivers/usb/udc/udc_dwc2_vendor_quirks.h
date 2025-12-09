@@ -328,7 +328,7 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 
 #define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_INST_REG_ADDR_BY_NAME(n, wrapper))
 
-#include <nrf.h>
+#include <nrfx.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>

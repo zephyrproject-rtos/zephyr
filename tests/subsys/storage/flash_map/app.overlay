@@ -36,6 +36,7 @@
 					reg = <0x00000100 0xF00>;
 				};
 			};
+
 			disabled_b: partition@1000 {
 				compatible = "fixed-subpartitions";
 				label = "disabled_b";

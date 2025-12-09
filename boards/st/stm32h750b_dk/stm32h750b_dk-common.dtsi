@@ -20,7 +20,8 @@
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		/* 128Mbit, but only half is available by HW design */
+		reg = <0xd0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -114,9 +115,9 @@
 		vfront-porch = <4>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };
 
 &pll {
@@ -150,6 +151,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	pinctrl-names = "default";
@@ -169,6 +174,7 @@
 	 * and accessed simultaneously, 4bits sent to/received from each.
 	 */
 	dual-flash;
+	ssht-enable;
 	status = "okay";
 
 	ext_flash_ctrl: qspi-flash-controller@0 {
@@ -231,7 +237,7 @@
 					    STM32_FMC_SDRAM_MWID_16
 					    STM32_FMC_SDRAM_NB_4
 					    STM32_FMC_SDRAM_CAS_3
-					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_3
 					    STM32_FMC_SDRAM_RBURST_ENABLE
 					    STM32_FMC_SDRAM_RPIPE_1>;
 			st,sdram-timing = <2 7 4 7 2 2 2>;

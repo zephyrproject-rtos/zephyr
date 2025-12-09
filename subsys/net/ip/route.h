@@ -59,7 +59,7 @@ struct net_route_entry {
 	struct net_timeout lifetime;
 
 	/** IPv6 address/prefix of the route. */
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 
 	/** IPv6 address/prefix length. */
 	uint8_t prefix_len;
@@ -87,10 +87,10 @@ struct net_route_entry {
  */
 #if defined(CONFIG_NET_NATIVE)
 struct net_route_entry *net_route_lookup(struct net_if *iface,
-					 struct in6_addr *dst);
+					 struct net_in6_addr *dst);
 #else
 static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
-						       struct in6_addr *dst)
+						       struct net_in6_addr *dst)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
@@ -112,9 +112,9 @@ static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
  * @return Return created route entry, NULL if could not be created.
  */
 struct net_route_entry *net_route_add(struct net_if *iface,
-				      struct in6_addr *addr,
+				      struct net_in6_addr *addr,
 				      uint8_t prefix_len,
-				      struct in6_addr *nexthop,
+				      struct net_in6_addr *nexthop,
 				      uint32_t lifetime,
 				      uint8_t preference);
 
@@ -136,7 +136,7 @@ int net_route_del(struct net_route_entry *entry);
  * @return number of routes deleted, <0 if error
  */
 int net_route_del_by_nexthop(struct net_if *iface,
-			     struct in6_addr *nexthop);
+			     struct net_in6_addr *nexthop);
 
 /**
  * @brief Update the route lifetime.
@@ -158,7 +158,7 @@ void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
  *
  * @return IPv6 address of the nexthop, NULL if not found.
  */
-struct in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
+struct net_in6_addr *net_route_get_nexthop(struct net_route_entry *entry);
 
 /**
  * @brief Get generic neighbor entry from route entry.
@@ -195,7 +195,7 @@ struct net_route_entry_mcast {
 	void *data;
 
 	/** IPv6 multicast group of the route. */
-	struct in6_addr group;
+	struct net_in6_addr group;
 
 	/** Routing entry lifetime in seconds. */
 	uint32_t lifetime;
@@ -237,7 +237,7 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
  * @return Total number of multicast routing entries that are in use.
  */
 int net_route_mcast_foreach(net_route_mcast_cb_t cb,
-			    struct in6_addr *skip,
+			    struct net_in6_addr *skip,
 			    void *user_data);
 
 /**
@@ -250,7 +250,7 @@ int net_route_mcast_foreach(net_route_mcast_cb_t cb,
  * @return Multicast routing entry.
  */
 struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
-						  struct in6_addr *group,
+						  struct net_in6_addr *group,
 						  uint8_t prefix_len);
 
 /**
@@ -270,7 +270,7 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route);
  * @return Routing entry corresponding this multicast group.
  */
 struct net_route_entry_mcast *
-net_route_mcast_lookup(struct in6_addr *group);
+net_route_mcast_lookup(struct net_in6_addr *group);
 
 /**
  * @brief Lookup a multicast routing entry on a given interface.
@@ -281,7 +281,7 @@ net_route_mcast_lookup(struct in6_addr *group);
  * @return Routing entry corresponding to this multicast group and interface.
  */
 struct net_route_entry_mcast *
-net_route_mcast_lookup_by_iface(struct in6_addr *group, struct net_if *iface);
+net_route_mcast_lookup_by_iface(struct net_in6_addr *group, struct net_if *iface);
 
 /**
  * @brief Add an interface to multicast routing entry.
@@ -315,9 +315,9 @@ bool net_route_mcast_iface_del(struct net_route_entry_mcast *entry, struct net_i
  * @return True if there is a route to the destination, False otherwise
  */
 bool net_route_get_info(struct net_if *iface,
-			struct in6_addr *dst,
+			struct net_in6_addr *dst,
 			struct net_route_entry **route,
-			struct in6_addr **nexthop);
+			struct net_in6_addr **nexthop);
 
 /**
  * @brief Send the network packet to network via some intermediate host.
@@ -327,7 +327,7 @@ bool net_route_get_info(struct net_if *iface,
  *
  * @return 0 if there was no error, <0 if the packet could not be sent.
  */
-int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop);
+int net_route_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop);
 
 /**
  * @brief Send the network packet to network via the given interface.

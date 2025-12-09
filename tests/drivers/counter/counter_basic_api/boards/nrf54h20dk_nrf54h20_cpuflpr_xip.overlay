@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+/* FLPR does not have interrupts for slow peripherals. */
+&timer130 {
+	status = "disabled";
+};
+
+&timer131 {
+	status = "disabled";
+};
+
+&timer132 {
+	status = "disabled";
+};
+
+&timer133 {
+	status = "disabled";
+};
+
+&timer134 {
+	status = "disabled";
+};
+
+&timer135 {
+	status = "disabled";
+};
+
+&timer136 {
+	status = "disabled";
+};
+
+&timer137 {
+	status = "disabled";
+};
+
+&rtc130 {
+	status = "disabled";
+};
+
+&rtc131 {
+	status = "disabled";
+};

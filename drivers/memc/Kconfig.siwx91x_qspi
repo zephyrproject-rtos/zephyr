@@ -5,6 +5,7 @@ config MEMC_SILABS_SIWX91X_QSPI
 	bool "Silabs SiWx91x QSPI memory controller"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_QSPI_MEMORY_ENABLED
+	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
 	  Enable Silabs SiWx91x QSPI (Quad Serial Peripheral Interface) memory

@@ -8,6 +8,7 @@ config POSIX_DEVICE_IO
 	bool "POSIX device I/O"
 	select REQUIRES_FULL_LIBC
 	select ZVFS
+	select ZVFS_DEFAULT_FILE_VMETHODS
 	select ZVFS_POLL
 	select ZVFS_SELECT
 	help

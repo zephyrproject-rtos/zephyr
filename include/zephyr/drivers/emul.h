@@ -118,12 +118,12 @@ struct emul {
 
 /* Conditionally places text based on what bus _dev_node_id is on. */
 #define Z_EMUL_BUS(_dev_node_id, _i2c, _espi, _spi, _mspi, _uart, _none)                           \
-	COND_CODE_1(DT_ON_BUS(_dev_node_id, i2c), (_i2c),                                          \
-	(COND_CODE_1(DT_ON_BUS(_dev_node_id, espi), (_espi),                                       \
-	(COND_CODE_1(DT_ON_BUS(_dev_node_id, spi), (_spi),                                         \
-	(COND_CODE_1(DT_ON_BUS(_dev_node_id, mspi), (_mspi),                                       \
-	(COND_CODE_1(DT_ON_BUS(_dev_node_id, uart), (_uart),                                       \
-	(_none))))))))))
+	COND_CASE_1(DT_ON_BUS(_dev_node_id, i2c), (_i2c),                                          \
+		    DT_ON_BUS(_dev_node_id, espi), (_espi),                                        \
+		    DT_ON_BUS(_dev_node_id, spi), (_spi),                                          \
+		    DT_ON_BUS(_dev_node_id, mspi), (_mspi),                                        \
+		    DT_ON_BUS(_dev_node_id, uart), (_uart),                                        \
+		    (_none))
 
 /**
  * @brief Define a new emulator

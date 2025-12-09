@@ -245,7 +245,7 @@ void soc_early_init_hook(void)
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 
-#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
+#if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
 #endif
 }

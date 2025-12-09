@@ -38,7 +38,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
+			status = "disabled";
 
 			flash0: flash@1000000 {
 				compatible = "soc-nv-flash";

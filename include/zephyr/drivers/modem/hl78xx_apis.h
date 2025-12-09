@@ -38,6 +38,8 @@ extern "C" {
 #define MDM_APN_MAX_LENGTH      64
 #define MDM_MAX_CERT_LENGTH     4096
 #define MDM_MAX_HOSTNAME_LEN    128
+#define MDM_SERIAL_NUMBER_LENGTH 32
+
 /**
  * @brief Define an Event monitor to receive notifications in the system workqueue thread.
  *
@@ -78,12 +80,19 @@ enum hl78xx_phone_functionality {
 };
 /** Module status codes */
 enum hl78xx_module_status {
+	/** Module is ready to receive commands for the TE. No access code is required. */
 	HL78XX_MODULE_READY = 0,
+	/** Module is waiting for an access code. Use AT+CPIN? to determine it. */
 	HL78XX_MODULE_WAITING_FOR_ACCESS_CODE,
+	/** SIM card is not present. */
 	HL78XX_MODULE_SIM_NOT_PRESENT,
+	/** Module is in “SIMlock” state. */
 	HL78XX_MODULE_SIMLOCK,
+	/** Unrecoverable error. */
 	HL78XX_MODULE_UNRECOVERABLE_ERROR,
+	/** Unknown state. */
 	HL78XX_MODULE_UNKNOWN_STATE,
+	/** Inactive SIM. */
 	HL78XX_MODULE_INACTIVE_SIM
 };
 
@@ -95,6 +104,8 @@ enum hl78xx_modem_info_type {
 	HL78XX_MODEM_INFO_CURRENT_RAT,
 	/* <Network Operator> */
 	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
+	/* <Serial Number> */
+	HL78XX_MODEM_INFO_SERIAL_NUMBER,
 };
 
 /** Cellular network structure */
@@ -115,7 +126,54 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_REGISTRATION_STAT_UPDATE,
 	HL78XX_LTE_SIM_REGISTRATION,
 	HL78XX_LTE_MODEM_STARTUP,
+	HL78XX_LTE_FOTA_UPDATE_STATUS,
 };
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/**
+ * Enum representing Device Services Indications (+WDSI)
+ */
+enum wdsi_indication {
+	/** Raised at startup if credentials for Bootstrap Server are present */
+	WDSI_BOOTSTRAP_CREDENTIALS_PRESENT = 0,
+	/** Device requests user agreement to connect to AirVantage */
+	WDSI_USER_AGREEMENT_REQUEST = 1,
+	/** AirVantage requests device to download firmware package */
+	WDSI_FIRMWARE_DOWNLOAD_REQUEST = 2,
+	/** AirVantage requests device to install firmware package */
+	WDSI_FIRMWARE_INSTALL_REQUEST = 3,
+	/** Starting authentication with Bootstrap or DM Server */
+	WDSI_AUTHENTICATION_START = 4,
+	/** Authentication failed */
+	WDSI_AUTHENTICATION_FAILED = 5,
+	/** Authentication succeeded, starting session */
+	WDSI_AUTHENTICATION_SUCCESS = 6,
+	/** Connection denied by server */
+	WDSI_CONNECTION_DENIED = 7,
+	/** DM session closed */
+	WDSI_DM_SESSION_CLOSED = 8,
+	/** Firmware package available for download */
+	WDSI_FIRMWARE_AVAILABLE = 9,
+	/** Firmware package downloaded and stored */
+	WDSI_FIRMWARE_DOWNLOADED = 10,
+	/** Firmware download issue, reason indicated by subcode */
+	WDSI_FIRMWARE_DOWNLOAD_ISSUE = 11,
+	/** Package verified and certified */
+	WDSI_PACKAGE_VERIFIED_CERTIFIED = 12,
+	/** Package verified but not certified */
+	WDSI_PACKAGE_VERIFIED_NOT_CERTIFIED = 13,
+	/** Starting firmware update */
+	WDSI_FIRMWARE_UPDATE_START = 14,
+	/** Firmware update failed */
+	WDSI_FIRMWARE_UPDATE_FAILED = 15,
+	/** Firmware updated successfully */
+	WDSI_FIRMWARE_UPDATE_SUCCESS = 16,
+	/** Download in progress, percentage indicated */
+	WDSI_DOWNLOAD_IN_PROGRESS = 18,
+	/** Session started with Bootstrap server +WDSI: 23,0*/
+	/** Session started with DM server +WDSI: 23,1*/
+	WDSI_SESSION_STARTED = 23
+};
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
 struct hl78xx_evt {
 	enum hl78xx_evt_type type;
@@ -123,6 +181,9 @@ struct hl78xx_evt {
 	union {
 		enum cellular_registration_status reg_status;
 		enum hl78xx_cell_rat_mode rat_mode;
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+		enum wdsi_indication wdsi_indication;
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 		bool status;
 		int value;
 	} content;
@@ -450,7 +511,12 @@ int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
  * @brief Convert HL78xx RAT mode to standard cellular API.
  */
 enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_mode rat_mode);
-
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/** Start a AirVantage Device Management (DM) session. */
+int hl78xx_start_airvantage_dm_session(const struct device *dev);
+/** Stop a AirVantage Device Management (DM) session. */
+int hl78xx_stop_airvantage_dm_session(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 #ifdef __cplusplus
 }
 #endif

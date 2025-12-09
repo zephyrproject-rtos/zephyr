@@ -16,7 +16,7 @@ description: |
 
   Example usage in a board or overlay:
 
-  #include <dt-bindings/pinctrl/ambiq-apollo2-pinctrl.h>
+  #include <zephyr/dt-bindings/pinctrl/ambiq-apollo2-pinctrl.h>
 
   &pinctrl {
     uart0_default: uart0_default {

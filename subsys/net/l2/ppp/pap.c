@@ -25,7 +25,7 @@ static struct net_pkt *pap_config_info_add(struct ppp_fsm *fsm)
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm), sizeof(payload),
-					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+					NET_AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}

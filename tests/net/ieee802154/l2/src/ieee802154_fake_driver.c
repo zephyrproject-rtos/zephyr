@@ -83,8 +83,8 @@ static int fake_tx(const struct device *dev,
 
 		struct net_pkt *ack_pkt;
 
-		ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC,
-						       0, K_FOREVER);
+		ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH,
+						       NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!ack_pkt) {
 			NET_ERR("*** Could not allocate ack pkt.");
 			return -ENOMEM;

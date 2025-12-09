@@ -8,8 +8,8 @@ find_package(Python REQUIRED COMPONENTS Interpreter)
 project(prometheus_sample)
 
 if(CONFIG_NET_SOCKETS_SOCKOPT_TLS AND
-   CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED AND
-   (CONFIG_NET_SAMPLE_PSK_HEADER_FILE STREQUAL "dummy_psk.h"))
+  CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED AND
+  (CONFIG_NET_SAMPLE_PSK_HEADER_FILE STREQUAL "dummy_psk.h"))
   add_custom_target(development_psk
     COMMAND ${CMAKE_COMMAND} -E echo "----------------------------------------------------------"
     COMMAND ${CMAKE_COMMAND} -E echo "--- WARNING: Using dummy PSK! Only suitable for        ---"
@@ -20,7 +20,6 @@ if(CONFIG_NET_SOCKETS_SOCKOPT_TLS AND
   add_dependencies(app development_psk)
 endif()
 
-
 target_sources(app PRIVATE src/main.c)
 target_sources_ifdef(CONFIG_NET_STATISTICS_VIA_PROMETHEUS app PRIVATE src/stats.c)
 
@@ -30,22 +29,24 @@ target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTPS_SERVICE NAME
-				http_resource_desc_test_https_service
-				KVMA RAM_REGION GROUP RODATA_REGION)
+  http_resource_desc_test_https_service
+  KVMA RAM_REGION GROUP RODATA_REGION
+)
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE NAME
-				http_resource_desc_test_http_service
-				KVMA RAM_REGION GROUP RODATA_REGION)
+  http_resource_desc_test_http_service
+  KVMA RAM_REGION GROUP RODATA_REGION
+)
 
 foreach(inc_file
-	ca.der
-	server.der
-	server_privkey.der
-	https-server-cert.der
-	https-server-key.der
-    )
+  ca.der
+  server.der
+  server_privkey.der
+  https-server-cert.der
+  https-server-key.der
+)
   generate_inc_file_for_target(
     app
     src/${inc_file}
     ${gen_dir}/${inc_file}.inc
-    )
+  )
 endforeach()

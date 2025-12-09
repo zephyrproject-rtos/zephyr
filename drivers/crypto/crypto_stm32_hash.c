@@ -179,7 +179,8 @@ static struct crypto_stm32_hash_data crypto_stm32_hash_dev_data = {0};
 
 static const struct crypto_stm32_hash_config crypto_stm32_hash_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
-	.pclken = {.enr = DT_INST_CLOCKS_CELL(0, bits), .bus = DT_INST_CLOCKS_CELL(0, bus)}};
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
+};
 
 DEVICE_DT_INST_DEFINE(0, crypto_stm32_hash_init, NULL, &crypto_stm32_hash_dev_data,
 		      &crypto_stm32_hash_dev_config, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,

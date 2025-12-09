@@ -713,6 +713,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_BMBURSTDONE         23
 #define NPCX_ESPISTS_ESPIRST_LVL         24
 #define NPCX_ESPISTS_AUTO_RD_DIS_STS     29
+#define NPCX_STATUS_IMG_VWIRE_AVAIL      6
 #define NPCX_VWSWIRQ_IRQ_NUM             FIELD(0, 7)
 #define NPCX_VWSWIRQ_IRQ_LVL             7
 #define NPCX_VWSWIRQ_INDEX               FIELD(8, 7)
@@ -977,6 +978,8 @@ struct kbc_reg {
 #define NPCX_HICTRL_PMIOCIE 5
 #define NPCX_HICTRL_PMICIE  6
 #define NPCX_HICTRL_FW_OBF  7
+#define NPCX_HIIRQC_IRQ1B   0
+#define NPCX_HIIRQC_IRQ12B  1
 #define NPCX_HIKMST_OBF     0
 #define NPCX_HIKMST_IBF     1
 #define NPCX_HIKMST_F0      2
@@ -2235,5 +2238,44 @@ struct gdma_reg {
 #define NPCX_DMACTL_TC                   18
 #define NPCX_DMACTL_BMSAFIX              30
 #define NPCX_DMACTL_BMDAFIX              31
+
+/* LCT (Long Countdown Timer) registers */
+struct lct_reg {
+	/* 0x000-0x001 */
+	volatile uint8_t reserved1[2];
+	/* 0x002: LCT Control */
+	volatile uint8_t LCTCONT;
+	/* 0x003 */
+	volatile uint8_t reserved2;
+	/* 0x004: LCT Status */
+	volatile uint8_t LCTSTAT;
+	/* 0x005: LCT Seconds */
+	volatile uint8_t LCTSECOND;
+	/* 0x006: LCT Minutes */
+	volatile uint8_t LCTMINUTE;
+	/* 0x007 */
+	volatile uint8_t reserved3;
+	/* 0x008: LCT Hours */
+	volatile uint8_t LCTHOUR;
+	/* 0x009 */
+	volatile uint8_t reserved4;
+	/* 0x00A: LCT Days */
+	volatile uint8_t LCTDAY;
+	/* 0x00B */
+	volatile uint8_t reserved5;
+	/* 0x00C: LCT Weeks */
+	volatile uint8_t LCTWEEK;
+#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_lct_v2)
+	/* 0x00D: LCT Weeks MSB */
+	volatile uint8_t LCTWEEKM;
+#endif
+};
+
+#define NPCX_LCTCONT_LCTEN        0
+#define NPCX_LCTCONT_LCTEVEN      1
+#define NPCX_LCTCONT_LCTPSLEN     2
+#define NPCX_LCTCONT_LCT_CLK_EN   6
+#define NPCX_LCTCONT_LCT_VSBY_PWR 7
+#define NPCX_LCTSTAT_LCTEVST      0
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

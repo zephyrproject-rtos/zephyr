@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip SERCOM G1 I2C driver
+
+description: |
+  Microchip SERCOM I2C driver bindings.
+
+  Group g1 SERCOM I2C driver supports following hardware peripherals:
+    - module name="SERCOM" id="U2201" version="5.0.0"
+
+compatible: "microchip,sercom-g1-i2c"
+
+include:
+  - name: i2c-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Enable (1) or disable (0) runstandby mode for SERCOM I2C.

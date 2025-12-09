@@ -90,7 +90,8 @@ static void test_modem_get_put_all(void)
 	int fds[ARRAY_SIZE(sockets)];
 
 	for (int i = 0; i < ARRAY_SIZE(sockets); i++) {
-		fds[i] = modem_socket_get(&socket_config, AF_INET, SOCK_DGRAM, IPPROTO_TCP);
+		fds[i] = modem_socket_get(&socket_config, NET_AF_INET, NET_SOCK_DGRAM,
+					  NET_IPPROTO_TCP);
 		zassert_false(fds[i] < 0);
 	}
 

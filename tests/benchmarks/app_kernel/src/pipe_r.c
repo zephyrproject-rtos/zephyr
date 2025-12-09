@@ -83,7 +83,7 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 			unsigned int *time)
 {
 	int i;
-	unsigned int t;
+	uint64_t t;
 	timing_t  start;
 	timing_t  end;
 	size_t sizexferd_total = 0;
@@ -116,8 +116,8 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	}
 
 	end = timing_timestamp_get();
-	t = (unsigned int) timing_cycles_get(&start, &end);
-	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
+	t = timing_cycles_get(&start, &end);
+	*time = timing_cycles_to_ns_avg(t, count);
 
 	return 0;
 }

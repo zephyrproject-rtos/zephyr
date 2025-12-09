@@ -530,8 +530,8 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			data_out, enc_data);
 	} else {
 		/* Calculate which sample is decoded. */
-		if ((uint8_t *)*fit >= buffer) {
-			sample_num = ((uint8_t *)*fit - buffer) / packet_size;
+		if (*fit >= (uintptr_t)buffer) {
+			sample_num = (*fit - (uintptr_t)buffer) / packet_size;
 		}
 
 		while (count < max_count && buffer < buffer_end) {

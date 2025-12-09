@@ -97,7 +97,7 @@ static bool bt_obex_has_header_cb(struct bt_obex_hdr *hdr, void *user_data)
 	return true;
 }
 
-static bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
+bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
 {
 	struct bt_obex_has_header data;
 	int err;
@@ -961,7 +961,12 @@ static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 
 	if (mopl > client->obex->tx.mtu) {
 		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, client->obex->tx.mtu);
-		goto failed;
+		/* In mainstream mobile operating system settings, such as IPhone and Android,
+		 * MOPL is usually greater than the MTU of rfcomm or l2cap.
+		 * Therefore, the smaller value among them is selected as the final MOPL and
+		 * transmitted to the application by callback.
+		 */
+		mopl = client->obex->tx.mtu;
 	}
 
 	client->tx.mopl = mopl;
@@ -2077,7 +2082,7 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	}
 
 	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if (active_client != client) {
+	if ((active_client != NULL) && (active_client != client)) {
 		LOG_WRN("One OBEX request is executing");
 		return -EBUSY;
 	}
@@ -2479,7 +2484,7 @@ static bool bt_obex_unicode_is_valid(uint16_t len, const uint8_t *str)
 	return true;
 }
 
-static bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
+bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
 {
 	if (BT_OBEX_HEADER_ENCODING(id) == BT_OBEX_HEADER_ENCODING_UNICODE) {
 		return bt_obex_unicode_is_valid(len, str);
@@ -3015,7 +3020,7 @@ int bt_obex_add_header_session_seq_number(struct net_buf *buf, uint32_t session_
 	return 0;
 }
 
-int bt_obex_add_header_action_id(struct net_buf *buf, uint32_t action_id)
+int bt_obex_add_header_action_id(struct net_buf *buf, uint8_t action_id)
 {
 	size_t total;
 
@@ -3030,7 +3035,7 @@ int bt_obex_add_header_action_id(struct net_buf *buf, uint32_t action_id)
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_ACTION_ID);
-	net_buf_add_be32(buf, action_id);
+	net_buf_add_u8(buf, action_id);
 	return 0;
 }
 
@@ -3825,7 +3830,7 @@ int bt_obex_get_header_session_seq_number(struct net_buf *buf, uint32_t *session
 	return 0;
 }
 
-int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id)
+int bt_obex_get_header_action_id(struct net_buf *buf, uint8_t *action_id)
 {
 	struct bt_obex_find_header_data data;
 	int err;
@@ -3849,7 +3854,7 @@ int bt_obex_get_header_action_id(struct net_buf *buf, uint32_t *action_id)
 		return -ENODATA;
 	}
 
-	*action_id = sys_get_be32(data.hdr.data);
+	*action_id = data.hdr.data[0];
 	return 0;
 }
 

@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -82,6 +83,31 @@
 			interrupts = <2 0>, <3 0>, <4 0>, <5 0>;
 			no-error-irq;
 			status = "disabled";
+		};
+
+		eim0: eim@4008c000 {
+			compatible = "nxp,eim";
+			status = "disabled";
+			reg = <0x4008c000 0x1000>;
+			resets = <&reset NXP_SYSCON_RESET(0, 11)>;
+
+			eim0_channel0: channel0 {
+				channel-id = <0>;
+				erm-channel-id = <0>;
+				size = <DT_SIZE_K(8)>;
+				start-address = <0x20000000>;
+				ecc-enable = <0x1>;
+				status = "disabled";
+			};
+		};
+
+		erm0: erm@4008d000 {
+			compatible = "nxp,erm";
+			status = "disabled";
+			reg = <0x4008d000 0x1000>;
+			resets = <&reset NXP_SYSCON_RESET(0, 12)>;
+			interrupts = <10 0>, <11 0>;
+			channels = <0 1>;
 		};
 
 		flexpwm0: flexpwm@400a9000 {

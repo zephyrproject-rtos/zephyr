@@ -47,7 +47,7 @@ Samples
 =======
 
 #. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample
-application:
+   application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -61,8 +61,7 @@ application:
 
       $ screen /dev/ttyUSB0 115200
 
-   The -o option tells minicom not to send the modem initialization
-   string. Connection should be configured as follows:
+   Connection should be configured as follows:
 
       - Speed: 115200
       - Data: 8 bits

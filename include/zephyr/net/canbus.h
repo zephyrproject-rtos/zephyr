@@ -39,12 +39,12 @@ struct canbus_api {
 	/** Set socket CAN option */
 	int (*setsockopt)(const struct device *dev, void *obj, int level,
 			  int optname,
-			  const void *optval, socklen_t optlen);
+			  const void *optval, net_socklen_t optlen);
 
 	/** Get socket CAN option */
 	int (*getsockopt)(const struct device *dev, void *obj, int level,
 			  int optname,
-			  const void *optval, socklen_t *optlen);
+			  const void *optval, net_socklen_t *optlen);
 };
 
 /* Make sure that the network interface API is properly setup inside

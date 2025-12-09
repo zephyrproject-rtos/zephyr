@@ -17,7 +17,7 @@
  * @brief Interfaces for MIPI-DSI (Display Serial Interface).
  * @defgroup mipi_dsi_interface MIPI-DSI
  * @since 3.1
- * @version 0.8.0
+ * @version 1.0.0
  * @ingroup display_interface
  * @{
  */

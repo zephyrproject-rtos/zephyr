@@ -1181,7 +1181,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    size_t resources_len,
 			    struct coap_option *options,
 			    uint8_t opt_num,
-			    struct sockaddr *addr, socklen_t addr_len)
+			    struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	if (!coap_packet_is_request(cpkt)) {
 		return -ENOTSUP;
@@ -1215,7 +1215,7 @@ int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
 			struct coap_option *options,
 			uint8_t opt_num,
-			struct sockaddr *addr, socklen_t addr_len)
+			struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	size_t resources_len = 0;
 	struct coap_resource *resource;
@@ -1601,7 +1601,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr,
+		      const struct net_sockaddr *addr,
 		      const struct coap_transmission_parameters *params)
 {
 	memset(pending, 0, sizeof(*pending));
@@ -1654,16 +1654,16 @@ struct coap_reply *coap_reply_next_unused(
 	return NULL;
 }
 
-static inline bool is_addr_unspecified(const struct sockaddr *addr)
+static inline bool is_addr_unspecified(const struct net_sockaddr *addr)
 {
-	if (addr->sa_family == AF_UNSPEC) {
+	if (addr->sa_family == NET_AF_UNSPEC) {
 		return true;
 	}
 
-	if (addr->sa_family == AF_INET6) {
+	if (addr->sa_family == NET_AF_INET6) {
 		return net_ipv6_is_addr_unspecified(
 			&(net_sin6(addr)->sin6_addr));
-	} else if (addr->sa_family == AF_INET) {
+	} else if (addr->sa_family == NET_AF_INET) {
 		return net_sin(addr)->sin_addr.s4_addr32[0] == 0U;
 	}
 
@@ -1816,7 +1816,7 @@ static inline void coap_observer_increment_age(struct coap_resource *resource)
 
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
-	const struct sockaddr *from,
+	const struct net_sockaddr *from,
 	struct coap_reply *replies, size_t len)
 {
 	struct coap_reply *r;
@@ -1958,7 +1958,7 @@ bool coap_request_is_observe(const struct coap_packet *request)
 
 void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
-			const struct sockaddr *addr)
+			const struct net_sockaddr *addr)
 {
 	observer->tkl = coap_header_get_token(request, observer->token);
 
@@ -2013,8 +2013,8 @@ bool coap_remove_observer(struct coap_resource *resource,
 	return true;
 }
 
-static bool sockaddr_equal(const struct sockaddr *a,
-			   const struct sockaddr *b)
+static bool sockaddr_equal(const struct net_sockaddr *a,
+			   const struct net_sockaddr *b)
 {
 	/* FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
 	 * ipv4 addresses?
@@ -2023,9 +2023,9 @@ static bool sockaddr_equal(const struct sockaddr *a,
 		return false;
 	}
 
-	if (a->sa_family == AF_INET) {
-		const struct sockaddr_in *a4 = net_sin(a);
-		const struct sockaddr_in *b4 = net_sin(b);
+	if (a->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *a4 = net_sin(a);
+		const struct net_sockaddr_in *b4 = net_sin(b);
 
 		if (a4->sin_port != b4->sin_port) {
 			return false;
@@ -2034,9 +2034,9 @@ static bool sockaddr_equal(const struct sockaddr *a,
 		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
 	}
 
-	if (b->sa_family == AF_INET6) {
-		const struct sockaddr_in6 *a6 = net_sin6(a);
-		const struct sockaddr_in6 *b6 = net_sin6(b);
+	if (b->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *a6 = net_sin6(a);
+		const struct net_sockaddr_in6 *b6 = net_sin6(b);
 
 		if (a6->sin6_port != b6->sin6_port) {
 			return false;
@@ -2051,7 +2051,7 @@ static bool sockaddr_equal(const struct sockaddr *a,
 
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr,
+	const struct net_sockaddr *addr,
 	const uint8_t *token, uint8_t token_len)
 {
 	if (token_len == 0U || token_len > COAP_TOKEN_MAX_LEN) {
@@ -2073,7 +2073,7 @@ struct coap_observer *coap_find_observer(
 
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr)
+	const struct net_sockaddr *addr)
 {
 	size_t i;
 

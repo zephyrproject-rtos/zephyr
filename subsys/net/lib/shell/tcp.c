@@ -31,28 +31,28 @@ static void tcp_connected(struct net_context *context,
 }
 
 static void get_my_ipv6_addr(struct net_if *iface,
-			     struct sockaddr *myaddr)
+			     struct net_sockaddr *myaddr)
 {
 #if defined(CONFIG_NET_IPV6)
-	const struct in6_addr *my6addr;
+	const struct net_in6_addr *my6addr;
 
 	my6addr = net_if_ipv6_select_src_addr(iface,
 					      &net_sin6(myaddr)->sin6_addr);
 
-	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct in6_addr));
+	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct net_in6_addr));
 
 	net_sin6(myaddr)->sin6_port = 0U; /* let the IP stack to select */
 #endif
 }
 
 static void get_my_ipv4_addr(struct net_if *iface,
-			     struct sockaddr *myaddr)
+			     struct net_sockaddr *myaddr)
 {
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	/* Just take the first IPv4 address of an interface. */
 	memcpy(&net_sin(myaddr)->sin_addr,
 	       &iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr,
-	       sizeof(struct in_addr));
+	       sizeof(struct net_in_addr));
 
 	net_sin(myaddr)->sin_port = 0U; /* let the IP stack to select */
 #endif
@@ -60,32 +60,32 @@ static void get_my_ipv4_addr(struct net_if *iface,
 
 static void print_connect_info(const struct shell *sh,
 			       int family,
-			       struct sockaddr *myaddr,
-			       struct sockaddr *addr)
+			       struct net_sockaddr *myaddr,
+			       struct net_sockaddr *addr)
 {
 	switch (family) {
-	case AF_INET:
+	case NET_AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			PR("Connecting from %s:%u ",
 			   net_sprint_ipv4_addr(&net_sin(myaddr)->sin_addr),
-			   ntohs(net_sin(myaddr)->sin_port));
+			   net_ntohs(net_sin(myaddr)->sin_port));
 			PR("to %s:%u\n",
 			   net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
-			   ntohs(net_sin(addr)->sin_port));
+			   net_ntohs(net_sin(addr)->sin_port));
 		} else {
 			PR_INFO("IPv4 not supported\n");
 		}
 
 		break;
 
-	case AF_INET6:
+	case NET_AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			PR("Connecting from [%s]:%u ",
 			   net_sprint_ipv6_addr(&net_sin6(myaddr)->sin6_addr),
-			   ntohs(net_sin6(myaddr)->sin6_port));
+			   net_ntohs(net_sin6(myaddr)->sin6_port));
 			PR("to [%s]:%u\n",
 			   net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
-			   ntohs(net_sin6(addr)->sin6_port));
+			   net_ntohs(net_sin6(addr)->sin6_port));
 		} else {
 			PR_INFO("IPv6 not supported\n");
 		}
@@ -102,23 +102,23 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			struct net_context **ctx)
 {
 	struct net_if *iface = net_if_get_default();
-	struct sockaddr myaddr;
-	struct sockaddr addr;
+	struct net_sockaddr myaddr;
+	struct net_sockaddr addr;
 	struct net_nbr *nbr;
 	int addrlen;
 	int family;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && !IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = net_addr_pton(AF_INET6, host,
+		ret = net_addr_pton(NET_AF_INET6, host,
 				    &net_sin6(&addr)->sin6_addr);
 		if (ret < 0) {
 			PR_WARNING("Invalid IPv6 address\n");
 			return;
 		}
 
-		net_sin6(&addr)->sin6_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in6);
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
 		if (nbr) {
@@ -126,42 +126,42 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 		}
 
 		get_my_ipv6_addr(iface, &myaddr);
-		family = addr.sa_family = myaddr.sa_family = AF_INET6;
+		family = addr.sa_family = myaddr.sa_family = NET_AF_INET6;
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   !IS_ENABLED(CONFIG_NET_IPV6)) {
 		ARG_UNUSED(nbr);
 
-		ret = net_addr_pton(AF_INET, host, &net_sin(&addr)->sin_addr);
+		ret = net_addr_pton(NET_AF_INET, host, &net_sin(&addr)->sin_addr);
 		if (ret < 0) {
 			PR_WARNING("Invalid IPv4 address\n");
 			return;
 		}
 
 		get_my_ipv4_addr(iface, &myaddr);
-		net_sin(&addr)->sin_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in);
-		family = addr.sa_family = myaddr.sa_family = AF_INET;
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
+		family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = net_addr_pton(AF_INET6, host,
+		ret = net_addr_pton(NET_AF_INET6, host,
 				    &net_sin6(&addr)->sin6_addr);
 		if (ret < 0) {
-			ret = net_addr_pton(AF_INET, host,
+			ret = net_addr_pton(NET_AF_INET, host,
 					    &net_sin(&addr)->sin_addr);
 			if (ret < 0) {
 				PR_WARNING("Invalid IP address\n");
 				return;
 			}
 
-			net_sin(&addr)->sin_port = htons(port);
-			addrlen = sizeof(struct sockaddr_in);
+			net_sin(&addr)->sin_port = net_htons(port);
+			addrlen = sizeof(struct net_sockaddr_in);
 
 			get_my_ipv4_addr(iface, &myaddr);
-			family = addr.sa_family = myaddr.sa_family = AF_INET;
+			family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
 		} else {
-			net_sin6(&addr)->sin6_port = htons(port);
-			addrlen = sizeof(struct sockaddr_in6);
+			net_sin6(&addr)->sin6_port = net_htons(port);
+			addrlen = sizeof(struct net_sockaddr_in6);
 
 			nbr = net_ipv6_nbr_lookup(NULL,
 						  &net_sin6(&addr)->sin6_addr);
@@ -170,7 +170,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			}
 
 			get_my_ipv6_addr(iface, &myaddr);
-			family = addr.sa_family = myaddr.sa_family = AF_INET6;
+			family = addr.sa_family = myaddr.sa_family = NET_AF_INET6;
 		}
 	} else {
 		PR_WARNING("No IPv6 nor IPv4 is enabled\n");
@@ -179,7 +179,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 
 	print_connect_info(sh, family, &myaddr, &addr);
 
-	ret = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, ctx);
+	ret = net_context_get(family, NET_SOCK_STREAM, NET_IPPROTO_TCP, ctx);
 	if (ret < 0) {
 		PR_WARNING("Cannot get TCP context (%d)\n", ret);
 		return;

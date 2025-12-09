@@ -18,10 +18,12 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA230_BUS_VOLTAGE_UV_LSB 1250U
+#define INA232_BUS_VOLTAGE_UV_LSB 1600U
 #define INA236_BUS_VOLTAGE_UV_LSB 1600U
 
 /** @brief The scaling for the power register. */
 #define INA230_POWER_SCALING 25
+#define INA232_POWER_SCALING 32
 #define INA236_POWER_SCALING 32
 
 INA2XX_REG_DEFINE(ina230_config, INA230_REG_CONFIG, 16);
@@ -38,6 +40,18 @@ static struct ina2xx_channels ina230_channels = {
 	.power = &ina230_power,
 };
 #endif /* ti_ina230 */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina232)
+INA2XX_CHANNEL_DEFINE(ina232_current, INA230_REG_CURRENT, 16, 0, 1, 1);
+INA2XX_CHANNEL_DEFINE(ina232_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA232_BUS_VOLTAGE_UV_LSB, 1);
+INA2XX_CHANNEL_DEFINE(ina232_power, INA230_REG_POWER, 16, 0, INA232_POWER_SCALING, 1);
+
+static struct ina2xx_channels ina232_channels = {
+	.voltage = &ina232_bus_voltage,
+	.current = &ina232_current,
+	.power = &ina232_power,
+};
+#endif /* ti_ina232 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ti_ina236)
 INA2XX_CHANNEL_DEFINE(ina236_current, INA230_REG_CURRENT, 16, 0, 1, 1);
@@ -198,65 +212,94 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
 
-#define INA230_DT_CONFIG(inst)                                 \
-	(DT_INST_PROP_OR(inst, high_precision, 0) << 12) |         \
-	(DT_INST_ENUM_IDX(inst, avg_count) << 9) |                 \
-	(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |   \
-	(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) | \
-	(DT_INST_ENUM_IDX(inst, adc_mode))
+#define INA230_DT_CONFIG(inst)                                                                     \
+	(DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                                         \
+		(DT_INST_ENUM_IDX(inst, avg_count) << 9) |                                         \
+		(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                           \
+		(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |                         \
+		(DT_INST_ENUM_IDX(inst, adc_mode))
 
-#define INA230_DT_CAL(inst)                                \
-	(uint16_t)(((INA230_CAL_SCALING * 10000000ULL) /       \
-	((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) * \
-	DT_INST_PROP(inst, rshunt_micro_ohms))) >>             \
-	(DT_INST_PROP_OR(inst, high_precision, 0) << 1))
+#define INA230_DT_CAL(inst)                                                                        \
+	(uint16_t)(((INA230_CAL_SCALING * 10000000ULL) /                                           \
+		    ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *                         \
+		     DT_INST_PROP(inst, rshunt_micro_ohms))) >>                                    \
+		   (DT_INST_PROP_OR(inst, high_precision, 0) << 1))
 
-#define INA230_DRIVER_INIT(inst)                                               \
-	static struct ina230_data ina230_data_##inst;                              \
-	static const struct ina230_config ina230_config_##inst = {                 \
-		.common = {                                                            \
-			.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
-			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
-			.config = INA230_DT_CONFIG(inst),                                  \
-			.cal = INA230_DT_CAL(inst),                                        \
-			.id_reg = NULL,                                                    \
-			.config_reg = &ina230_config,                                      \
-			.adc_config_reg = NULL,                                            \
-			.cal_reg = &ina230_cal,                                            \
-			.channels = &ina230_channels,                                      \
-		},                                                                     \
-		.uv_lsb = INA230_BUS_VOLTAGE_UV_LSB,                                   \
-		.power_scale = INA230_POWER_SCALING,                                   \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),                  \
-				(INA230_CFG_IRQ(inst)), ())};                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL,                     \
-				&ina230_data_##inst, &ina230_config_##inst,                    \
-				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
+#define INA230_DRIVER_INIT(inst)                                                                   \
+	static struct ina230_data ina230_data_##inst;                                              \
+	static const struct ina230_config ina230_config_##inst = {                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
+				.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
+				.config = INA230_DT_CONFIG(inst),                                  \
+				.cal = INA230_DT_CAL(inst),                                        \
+				.id_reg = NULL,                                                    \
+				.config_reg = &ina230_config,                                      \
+				.adc_config_reg = NULL,                                            \
+				.cal_reg = &ina230_cal,                                            \
+				.channels = &ina230_channels,                                      \
+			},                                                                         \
+		.uv_lsb = INA230_BUS_VOLTAGE_UV_LSB,                                               \
+		.power_scale = INA230_POWER_SCALING,                                               \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),                              \
+				(INA230_CFG_IRQ(inst)), ())};                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &ina230_data_##inst,                \
+				     &ina230_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
 
-#define INA236_DRIVER_INIT(inst)                                               \
-	static struct ina230_data ina236_data_##inst;                              \
-	static const struct ina230_config ina236_config_##inst = {                 \
-		.common = {                                                            \
-			.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
-			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
-			.config = INA230_DT_CONFIG(inst),                                  \
-			.cal = INA230_DT_CAL(inst),                                        \
-			.id_reg = NULL,                                                    \
-			.config_reg = &ina230_config,                                      \
-			.adc_config_reg = NULL,                                            \
-			.cal_reg = &ina230_cal,                                            \
-			.channels = &ina236_channels,                                      \
-		},                                                                     \
-		.uv_lsb = INA236_BUS_VOLTAGE_UV_LSB,                                   \
-		.power_scale = INA236_POWER_SCALING,                                   \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),                  \
-				(INA230_CFG_IRQ(inst)), ())};                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL,                     \
-				&ina236_data_##inst, &ina236_config_##inst,                    \
-				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
+#define INA232_DRIVER_INIT(inst)                                                                   \
+	static struct ina230_data ina232_data_##inst;                                              \
+	static const struct ina230_config ina232_config_##inst = {                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
+				.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
+				.config = INA230_DT_CONFIG(inst),                                  \
+				.cal = INA230_DT_CAL(inst),                                        \
+				.id_reg = NULL,                                                    \
+				.config_reg = &ina230_config,                                      \
+				.adc_config_reg = NULL,                                            \
+				.cal_reg = &ina230_cal,                                            \
+				.channels = &ina232_channels,                                      \
+			},                                                                         \
+		.uv_lsb = INA232_BUS_VOLTAGE_UV_LSB,                                               \
+		.power_scale = INA232_POWER_SCALING,                                               \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),                              \
+				(INA230_CFG_IRQ(inst)), ())};                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &ina232_data_##inst,                \
+				     &ina232_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
+
+#define INA236_DRIVER_INIT(inst)                                                                   \
+	static struct ina230_data ina236_data_##inst;                                              \
+	static const struct ina230_config ina236_config_##inst = {                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
+				.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
+				.config = INA230_DT_CONFIG(inst),                                  \
+				.cal = INA230_DT_CAL(inst),                                        \
+				.id_reg = NULL,                                                    \
+				.config_reg = &ina230_config,                                      \
+				.adc_config_reg = NULL,                                            \
+				.cal_reg = &ina230_cal,                                            \
+				.channels = &ina236_channels,                                      \
+			},                                                                         \
+		.uv_lsb = INA236_BUS_VOLTAGE_UV_LSB,                                               \
+		.power_scale = INA236_POWER_SCALING,                                               \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),                              \
+				(INA230_CFG_IRQ(inst)), ())};                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &ina236_data_##inst,                \
+				     &ina236_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
 
 #define DT_DRV_COMPAT ti_ina230
 DT_INST_FOREACH_STATUS_OKAY(INA230_DRIVER_INIT)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_ina232
+DT_INST_FOREACH_STATUS_OKAY(INA232_DRIVER_INIT)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT ti_ina236

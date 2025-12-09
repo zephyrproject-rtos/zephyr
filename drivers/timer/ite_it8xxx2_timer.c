@@ -73,6 +73,13 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
 #define EVEN_TIMER_MAX_CNT_SYS_TICK	(EVENT_TIMER_MAX_CNT \
 					/ HW_CNT_PER_SYS_TICK)
 
+/* Timer tick threshold to prevent SoC from entering idle mode.
+ * Calculated as 150µs converted to timer ticks using the formula:
+ *   ticks = us * timer_clk_src / 1000000
+ * where (event/free run timers)timer_clk_src is fixed at 32768Hz
+ */
+#define IDLE_BLOCK_TIMER_TICKS DIV_ROUND_UP(150 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, 1000000)
+
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
 static volatile uint32_t last_announced_hw_cnt;
@@ -388,6 +395,12 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	}
 
 	return 0;
+}
+
+bool ite_ec_timer_block_idle(void)
+{
+	return (IT8XXX2_EXT_CNTOX(EVENT_TIMER) < IDLE_BLOCK_TIMER_TICKS) ||
+	       (IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER) < IDLE_BLOCK_TIMER_TICKS);
 }
 
 static int sys_clock_driver_init(void)

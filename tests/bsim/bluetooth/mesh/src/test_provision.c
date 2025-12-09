@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Lingao Meng
+ * Copyright (c) 2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +10,10 @@
 #include "mesh/access.h"
 #include "mesh/net.h"
 #include "mesh/crypto.h"
+#include "mesh/prov.h"
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
-
-#include <psa/crypto.h>
 
 #include <zephyr/sys/byteorder.h>
 
@@ -65,15 +65,19 @@ static struct oob_auth_test_vector_s {
 	{static_key1, sizeof(static_key1), 0, 0, 0, 0},
 	{static_key2, sizeof(static_key2), 0, 0, 0, 0},
 	{static_key3, sizeof(static_key3), 0, 0, 0, 0},
-	{NULL, 0, 3, BT_MESH_BLINK, 0, 0},
+	{NULL, 0, 1, BT_MESH_BLINK, 0, 0},
 	{NULL, 0, 5, BT_MESH_BEEP, 0, 0},
-	{NULL, 0, 6, BT_MESH_VIBRATE, 0, 0},
-	{NULL, 0, 7, BT_MESH_DISPLAY_NUMBER, 0, 0},
-	{NULL, 0, 8, BT_MESH_DISPLAY_STRING, 0, 0},
-	{NULL, 0, 0, 0, 4, BT_MESH_PUSH},
+	{NULL, 0, 8, BT_MESH_VIBRATE, 0, 0},
+	{NULL, 0, 15, BT_MESH_DISPLAY_NUMBER, 0, 0},
+	{NULL, 0, 19, BT_MESH_DISPLAY_STRING, 0, 0},
+	{NULL, 0, 32, BT_MESH_DISPLAY_NUMBER, 0, 0},
+	{NULL, 0, 32, BT_MESH_DISPLAY_STRING, 0, 0},
+	{NULL, 0, 0, 0, 1, BT_MESH_PUSH},
 	{NULL, 0, 0, 0, 5, BT_MESH_TWIST},
-	{NULL, 0, 0, 0, 8, BT_MESH_ENTER_NUMBER},
-	{NULL, 0, 0, 0, 7, BT_MESH_ENTER_STRING},
+	{NULL, 0, 0, 0, 13, BT_MESH_ENTER_NUMBER},
+	{NULL, 0, 0, 0, 27, BT_MESH_ENTER_STRING},
+	{NULL, 0, 0, 0, 32, BT_MESH_ENTER_NUMBER},
+	{NULL, 0, 0, 0, 32, BT_MESH_ENTER_STRING},
 };
 
 static ATOMIC_DEFINE(test_flags, TEST_FLAGS);
@@ -414,25 +418,23 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 
 static void delayed_input(struct k_work *work)
 {
-	char oob_str[16];
-	uint32_t oob_number;
+	uint8_t oob_data[PROV_IO_OOB_SIZE_MAX + 1] = {0};
 	int size = bs_bc_is_msg_received(*oob_channel_id);
 
-	if (size <= 0) {
-		FAIL("OOB data is not gotten");
-	}
+	ASSERT_TRUE_MSG(size > 0, "OOB data is not gotten");
+	ASSERT_TRUE_MSG(size <= PROV_IO_OOB_SIZE_MAX, "OOB data size %d exceeds max %d",
+			size, PROV_IO_OOB_SIZE_MAX);
+
+	bs_bc_receive_msg(*oob_channel_id, oob_data, size);
 
 	switch (gact) {
 	case BT_MESH_PUSH:
 	case BT_MESH_TWIST:
 	case BT_MESH_ENTER_NUMBER:
-		ASSERT_TRUE(size == sizeof(uint32_t));
-		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)&oob_number, size);
-		ASSERT_OK(bt_mesh_input_number(oob_number));
+		ASSERT_OK(bt_mesh_input_numeric(oob_data, size));
 		break;
 	case BT_MESH_ENTER_STRING:
-		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)oob_str, size);
-		ASSERT_OK(bt_mesh_input_string(oob_str));
+		ASSERT_OK(bt_mesh_input_string((const char *)oob_data));
 		break;
 	default:
 		FAIL("Unknown input action %u (size %u) requested!", gact, gsize);
@@ -444,7 +446,7 @@ static void prov_input_complete(void)
 	LOG_INF("Input OOB data completed");
 }
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number);
+static int output_numeric(bt_mesh_output_action_t act, uint8_t *numeric, size_t size);
 static int output_string(const char *str);
 static void capabilities(const struct bt_mesh_dev_capabilities *cap);
 static struct bt_mesh_prov prov = {
@@ -456,7 +458,7 @@ static struct bt_mesh_prov prov = {
 	.link_close = prov_link_close,
 	.reprovisioned = prov_reprovisioned,
 	.node_added = prov_node_added,
-	.output_number = output_number,
+	.output_numeric = output_numeric,
 	.output_string = output_string,
 	.input = input,
 	.input_complete = prov_input_complete,
@@ -464,11 +466,48 @@ static struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static void binary_to_ascii_digits(const uint8_t *in, size_t in_len, char *out_str)
 {
-	LOG_INF("OOB Number: %u", number);
+	uint8_t temp[PROV_IO_OOB_SIZE_MAX];
+	size_t digit_count = 0;
 
-	bs_bc_send_msg(*oob_channel_id, (uint8_t *)&number, sizeof(uint32_t));
+	memcpy(temp, in, in_len);
+
+	while (in_len > 0) {
+		uint16_t remainder = 0;
+
+		/* Divide the number in `temp` by 10, store quotient back in `temp` */
+		for (ssize_t i = in_len - 1; i >= 0; --i) {
+			uint16_t acc = ((uint16_t)remainder << 8) | temp[i];
+
+			temp[i] = acc / 10;
+			remainder = acc % 10;
+		}
+
+		/* Store ASCII digit */
+		out_str[digit_count++] = '0' + remainder;
+
+		/* Trim leading zeros */
+		while (in_len > 0 && temp[in_len - 1] == 0) {
+			in_len--;
+		}
+	}
+
+	/* Digits are in reverse order, reverse them to get correct string */
+	sys_mem_swap(out_str, digit_count);
+
+	/* Null-terminate the string */
+	out_str[digit_count] = '\0';
+}
+
+static int output_numeric(bt_mesh_output_action_t act, uint8_t *numeric, size_t size)
+{
+	uint8_t numeric_ascii[PROV_IO_OOB_SIZE_MAX + 1];
+
+	binary_to_ascii_digits(numeric, size, numeric_ascii);
+	LOG_INF("OOB Number: %s", numeric_ascii);
+
+	bs_bc_send_msg(*oob_channel_id, numeric, size);
 	return 0;
 }
 
@@ -476,7 +515,7 @@ static int output_string(const char *str)
 {
 	LOG_INF("OOB String: %s", str);
 
-	bs_bc_send_msg(*oob_channel_id, (uint8_t *)str, strlen(str) + 1);
+	bs_bc_send_msg(*oob_channel_id, (uint8_t *)str, strlen(str));
 	return 0;
 }
 

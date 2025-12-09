@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,4 +48,6 @@
 &flexspi {
 	pinctrl-0 = <&pinmux_flexspi_safe>;
 	pinctrl-names = "default";
+	rx-buffer-config = <1 0 10 512>, <0 0 0 0>, <0 0 0 0>, <0 0 0 0>,
+			   <0 0 0 0>, <0 0 0 0>, <0 0 0 0>, <1 0 0 512>;
 };

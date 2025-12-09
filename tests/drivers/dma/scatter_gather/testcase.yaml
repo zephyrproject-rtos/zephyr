@@ -21,7 +21,7 @@ tests:
       - adp_xc7k/ae350
       - adp_xc7k/ae350/clic
       - bg29_rb4420a
-    filter: dt_alias_exists("dma0")
+    filter: dt_nodelabel_enabled("tst_dma0")
     integration_platforms:
       - intel_adsp/cavs25
       - native_sim

@@ -183,7 +183,7 @@ static void try_recv_data(struct net_if *iface, uint16_t ptype, enum service_typ
 
 	copy_mac_to(dest);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, MTU, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, MTU, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 		return;
 	}
@@ -374,7 +374,7 @@ static enum net_verdict l2_service(struct net_if *iface, uint16_t ptype, struct 
 	posix_cpu_hold(simulated_work_time);
 
 	if (type == SERVICE_TYPE_ECHO) {
-		echo_reply = net_pkt_alloc_with_buffer(iface, 12, AF_UNSPEC, 0, K_NO_WAIT);
+		echo_reply = net_pkt_alloc_with_buffer(iface, 12, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (echo_reply) {
 			net_pkt_set_ll_proto_type(echo_reply, net_pkt_ll_proto_type(pkt));
 			net_pkt_set_priority(echo_reply, net_pkt_priority(pkt));

@@ -9,6 +9,8 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -155,9 +157,9 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 
 	int r;
 	int client_fd;
-	socklen_t addrlen;
+	net_socklen_t addrlen;
 	char addrstr[INET_ADDRSTRLEN];
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	char *addrstrp;
 
 	k_thread_name_set(k_current_get(), "server");
@@ -169,7 +171,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 
 	NET_DBG("Accepting client connection..");
 	k_sem_give(&server_sem);
-	r = accept(server_fd, (struct sockaddr *)&sa, &addrlen);
+	r = accept(server_fd, (struct net_sockaddr *)&sa, &addrlen);
 	if (expect_failure) {
 		zassert_equal(r, -1, "accept() should've failed");
 		return;
@@ -183,7 +185,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("accepted connection from [%s]:%d as fd %d",
-		addrstr, ntohs(sa.sin_port), client_fd);
+		addrstr, net_ntohs(sa.sin_port), client_fd);
 
 	if (echo) {
 		NET_DBG("calling recv()");
@@ -219,7 +221,7 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
 	char addrstr[INET_ADDRSTRLEN];
 	const sec_tag_t *sec_tag_list;
 	size_t sec_tag_list_size;
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	const int yes = true;
 	char *addrstrp;
 	int server_fd;
@@ -266,11 +268,11 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
 
 	memset(&sa, 0, sizeof(sa));
 	/* The server listens on all network interfaces */
-	sa.sin_addr.s_addr = INADDR_ANY;
+	sa.sin_addr.s_addr = NET_INADDR_ANY;
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(PORT);
+	sa.sin_port = net_htons(PORT);
 
-	r = bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
+	r = bind(server_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(r, -1, "failed to bind (%d)", errno);
 
 	r = listen(server_fd, 1);
@@ -282,7 +284,7 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("listening on [%s]:%d as fd %d",
-		addrstr, ntohs(sa.sin_port), server_fd);
+		addrstr, net_ntohs(sa.sin_port), server_fd);
 
 	NET_DBG("Creating server thread");
 	*server_thread_id = k_thread_create(&server_thread, server_stack,
@@ -298,7 +300,7 @@ static int test_configure_server(k_tid_t *server_thread_id, int peer_verify,
 	return server_fd;
 }
 
-static int test_configure_client(struct sockaddr_in *sa, bool own_cert,
+static int test_configure_client(struct net_sockaddr_in *sa, bool own_cert,
 				 const char *hostname)
 {
 	static const sec_tag_t client_tag_list_verify_none[] = {
@@ -341,7 +343,7 @@ static int test_configure_client(struct sockaddr_in *sa, bool own_cert,
 	zassert_not_equal(r, -1, "failed to set TLS_HOSTNAME (%d)", errno);
 
 	sa->sin_family = AF_INET;
-	sa->sin_port = htons(PORT);
+	sa->sin_port = net_htons(PORT);
 	r = inet_pton(AF_INET, MY_IPV4_ADDR, &sa->sin_addr.s_addr);
 	zassert_not_equal(-1, r, "inet_pton() failed (%d)", errno);
 	zassert_not_equal(0, r, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
@@ -353,7 +355,7 @@ static int test_configure_client(struct sockaddr_in *sa, bool own_cert,
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("connecting to [%s]:%d with fd %d",
-		addrstr, ntohs(sa->sin_port), client_fd);
+		addrstr, net_ntohs(sa->sin_port), client_fd);
 
 	return client_fd;
 }
@@ -378,7 +380,7 @@ static void test_shutdown(int client_fd, int server_fd, k_tid_t server_thread_id
 static void test_common(int peer_verify)
 {
 	k_tid_t server_thread_id;
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	uint8_t rx_buf[16];
 	int server_fd;
 	int client_fd;
@@ -400,7 +402,7 @@ static void test_common(int peer_verify)
 	 * The main part of the test
 	 */
 
-	r = connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	r = connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(r, -1, "failed to connect (%d)", errno);
 
 	NET_DBG("Calling send()");
@@ -441,9 +443,9 @@ static void test_tls_cert_verify_result_opt_common(uint32_t expect)
 {
 	int server_fd, client_fd, ret;
 	k_tid_t server_thread_id;
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	uint32_t optval;
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 	const char *hostname = "localhost";
 	int peer_verify = TLS_PEER_VERIFY_OPTIONAL;
 
@@ -459,7 +461,7 @@ static void test_tls_cert_verify_result_opt_common(uint32_t expect)
 			       &peer_verify, sizeof(peer_verify));
 	zassert_ok(ret, "failed to set TLS_PEER_VERIFY (%d)", errno);
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(ret, -1, "failed to connect (%d)", errno);
 
 	ret = zsock_getsockopt(client_fd, SOL_TLS, TLS_CERT_VERIFY_RESULT,
@@ -506,7 +508,7 @@ static void test_tls_cert_verify_cb_opt_common(int result)
 {
 	int server_fd, client_fd, ret;
 	k_tid_t server_thread_id;
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	struct test_cert_verify_ctx ctx = {
 		.cb_called = false,
 		.result = result,
@@ -524,7 +526,7 @@ static void test_tls_cert_verify_cb_opt_common(int result)
 			       &cb, sizeof(cb));
 	zassert_ok(ret, "failed to set TLS_CERT_VERIFY_CALLBACK (%d)", errno);
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	zassert_true(ctx.cb_called, "callback not called");
 	if (result == 0) {
 		zassert_equal(ret, 0, "failed to connect (%d)", errno);

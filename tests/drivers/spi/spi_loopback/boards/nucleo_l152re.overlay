@@ -12,11 +12,13 @@
 	       <&dma1 2 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	status = "okay";
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <150000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

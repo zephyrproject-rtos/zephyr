@@ -1564,6 +1564,10 @@ the following new options:
 The ``--device-serial`` option denotes the serial device the board is connected to.
 This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
+If the platform supports multiple serial ports, you can provide ``--device-serial``
+multiple times, and it will be passed to the pytest harness.
+However, currently the pytest-twister-harness plugin handles only the first serial port,
+other ports must be opened manually in the test code.
 
 The ``--device-serial-baud`` option is only needed if your device does not run at
 115200 baud.

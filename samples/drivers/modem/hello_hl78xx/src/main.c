@@ -16,6 +16,10 @@
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/socket.h>
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netdb.h>
+
 /* Macros used to subscribe to specific Zephyr NET management events. */
 #if defined(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION)
 #define L4_EVENT_MASK (NET_EVENT_DNS_SERVER_ADD | NET_EVENT_L4_DISCONNECTED)

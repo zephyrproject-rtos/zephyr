@@ -14,6 +14,10 @@
 #include "MEC1501hsz.h"
 #include "regaccess.h"
 
+/* common peripheral register defines */
+
+#include <reg/mec_gpio.h>
+
 /* common SoC API */
 #include <soc_dt.h>
 #include <soc_ecia.h>
@@ -22,9 +26,6 @@
 #include <soc_mmcr.h>
 #include <soc_pcr.h>
 #include <soc_pins.h>
-
-/* common peripheral register defines */
-#include <reg/mec_gpio.h>
 
 #include "soc_espi_saf_v1.h"
 

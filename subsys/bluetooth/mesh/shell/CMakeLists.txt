@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library_sources(
-	shell.c
-	utils.c
-	)
+  shell.c
+  utils.c
+)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_HEALTH_CLI health.c)
 
@@ -20,13 +20,13 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_RPR_CLI rpr.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_SAR_CFG_CLI sar.c)
 
 if(CONFIG_BT_MESH_SHELL_BLOB_CLI OR CONFIG_BT_MESH_SHELL_BLOB_SRV OR
-	CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
-zephyr_library_sources(blob.c)
+  CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
+  zephyr_library_sources(blob.c)
 endif()
 
 if(CONFIG_BT_MESH_SHELL_DFU_SLOT OR CONFIG_BT_MESH_SHELL_DFU_METADATA OR
-	CONFIG_BT_MESH_SHELL_DFU_CLI OR CONFIG_BT_MESH_SHELL_DFU_SRV)
-zephyr_library_sources(dfu.c)
+  CONFIG_BT_MESH_SHELL_DFU_CLI OR CONFIG_BT_MESH_SHELL_DFU_SRV)
+  zephyr_library_sources(dfu.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_DFD_SRV dfd.c)

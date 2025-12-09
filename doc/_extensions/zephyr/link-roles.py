@@ -76,7 +76,7 @@ def modulelink(default_module=None, format="blob"):
         source, line = inliner.reporter.get_source_and_line(lineno)
         trace = f"at '{source}:{line}'"
 
-        m = re.search(r"(.*)\s*<(.*)>", text)
+        m = re.search(r"(.*?)\s*<(.*)>", text)
         if m:
             link_text = m.group(1)
             link = m.group(2)

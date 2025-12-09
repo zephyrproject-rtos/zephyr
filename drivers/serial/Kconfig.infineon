@@ -1,0 +1,34 @@
+# Infineon CAT1 UART configuration options
+
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_INFINEON_CAT1_HAL
+	bool "Infineon CAT1 UART driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_UART_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC if !(SOC_FAMILY_INFINEON_CAT1C || SOC_CY8C6244LQI_S4D92)
+	select USE_INFINEON_UART
+	select PINCTRL
+	select DMA if UART_ASYNC_API
+	help
+	  This option enables the Legacy HAL based UART driver for Infineon CAT1 family.
+
+config UART_INFINEON_CAT1_PDL
+	bool "Infineon CAT1 UART driver (PDL)"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_UART_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC if !SOC_FAMILY_INFINEON_CAT1C
+	select USE_INFINEON_UART
+	select PINCTRL
+	select DMA if UART_ASYNC_API
+	select USE_INFINEON_DMA if UART_ASYNC_API
+	help
+	  This option enables the PDL based UART driver for Infineon CAT1 family.

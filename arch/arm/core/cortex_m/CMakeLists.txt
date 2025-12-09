@@ -49,9 +49,9 @@ if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 endif()
 
 if(CONFIG_CORTEX_M_DWT)
-	if(CONFIG_TIMING_FUNCTIONS)
-		zephyr_library_sources(timing.c)
-	endif()
+  if(CONFIG_TIMING_FUNCTIONS)
+    zephyr_library_sources(timing.c)
+  endif()
 endif()
 
 if(CONFIG_SW_VECTOR_RELAY)

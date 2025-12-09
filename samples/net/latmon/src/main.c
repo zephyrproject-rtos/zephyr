@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(sample_latmon, LOG_LEVEL_DBG);
 #include <zephyr/net/socket.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/posix/unistd.h>
+
 /*
  * Blink Control
  * DHCP: red

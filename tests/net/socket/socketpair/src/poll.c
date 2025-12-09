@@ -130,7 +130,7 @@ ZTEST_F(net_socketpair, test_poll_close_remote_end_POLLOUT)
 	 * But rather than reading, close the other end of the channel
 	 */
 
-	res = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, fixture->sv);
+	res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);
 	zassert_not_equal(res, -1, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {

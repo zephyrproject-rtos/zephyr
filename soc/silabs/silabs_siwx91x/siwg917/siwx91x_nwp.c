@@ -28,6 +28,7 @@
 #include "sl_si91x_power_manager.h"
 
 #define AP_MAX_NUM_STA 4
+#define SL_SI91X_EXT_FEAT_FRONT_END_MSK (BIT(30) | BIT(29))
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
@@ -43,6 +44,11 @@ struct siwx91x_nwp_config {
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t power_profile;
+	uint8_t antenna_selection;
+	bool support_1p8v;
+	bool enable_xtal_correction;
+	bool qspi_80mhz_clk;
+	uint32_t clock_frequency;
 };
 
 typedef struct {
@@ -147,6 +153,34 @@ static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config
 	}
 }
 
+static void siwx91x_apply_boot_config(const struct device *dev,
+				      sl_si91x_boot_configuration_t *boot_config)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+	struct {
+		bool enabled;
+		uint32_t *target;
+		uint32_t bit;
+	} features[] = {
+		{ cfg->support_1p8v, &boot_config->ext_custom_feature_bit_map,
+		  SL_SI91X_EXT_FEAT_1P8V_SUPPORT },
+		{ !cfg->enable_xtal_correction, &boot_config->ext_custom_feature_bit_map,
+		  SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION },
+		{ cfg->qspi_80mhz_clk, &boot_config->ext_custom_feature_bit_map,
+		  SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE },
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(features); i++) {
+		if (features[i].enabled) {
+			*features[i].target |= features[i].bit;
+		}
+	}
+
+	boot_config->ext_custom_feature_bit_map &= ~SL_SI91X_EXT_FEAT_FRONT_END_MSK;
+	boot_config->ext_custom_feature_bit_map |=
+		FIELD_PREP(SL_SI91X_EXT_FEAT_FRONT_END_MSK, cfg->antenna_selection);
+}
+
 static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_config)
 {
 	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
@@ -154,9 +188,15 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 
 	boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
 
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
-		boot_config->custom_feature_bit_map |=
-			SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
+	if (wifi_enabled) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
+			boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
+		}
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
+		}
 	}
 
 	if (wifi_enabled && bt_enabled) {
@@ -174,9 +214,9 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-	boot_config->ext_custom_feature_bit_map |=
-		SL_SI91X_EXT_FEAT_IEEE_80211W |
-		SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
 		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
 	}
@@ -261,7 +301,6 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 
 static int siwx91x_check_nwp_version(void)
 {
-	sl_wifi_firmware_version_t expected_version;
 	sl_wifi_firmware_version_t version;
 	int ret;
 
@@ -270,38 +309,29 @@ static int siwx91x_check_nwp_version(void)
 		return -EINVAL;
 	}
 
-	sscanf(SIWX91X_NWP_FW_EXPECTED_VERSION, "%hhX.%hhd.%hhd.%hhd.%hhd.%hhd.%hd",
-	       &expected_version.rom_id,
-	       &expected_version.major,
-	       &expected_version.minor,
-	       &expected_version.security_version,
-	       &expected_version.patch_num,
-	       &expected_version.customer_id,
-	       &expected_version.build_num);
-
 	/* Ignore rom_id:
-	 * B is parsed as an hex value and we get 11 in expected_version.rom_id
-	 * We received rom_id=17 in version.rom_id, we suspect a double hex->decimal conversion
+	 * the right value is 0x0B but we received 17 in version.rom_id, we suspect a double
+	 * hex->decimal conversion
 	 */
-	if (expected_version.major != version.major) {
+	if (siwx91x_nwp_fw_expected_version.major != version.major) {
 		return -EINVAL;
 	}
-	if (expected_version.minor != version.minor) {
+	if (siwx91x_nwp_fw_expected_version.minor != version.minor) {
 		return -EINVAL;
 	}
-	if (expected_version.security_version != version.security_version) {
+	if (siwx91x_nwp_fw_expected_version.security_version != version.security_version) {
 		return -EINVAL;
 	}
-	if (expected_version.patch_num != version.patch_num) {
+	if (siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
 		return -EINVAL;
 	}
-	if (expected_version.customer_id != version.customer_id) {
-		LOG_DBG("customer_id diverge: expected %d, actual %d", expected_version.customer_id,
-			version.customer_id);
+	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
+		LOG_DBG("customer_id diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.customer_id, version.customer_id);
 	}
-	if (expected_version.build_num != version.build_num) {
-		LOG_DBG("build_num diverge: expected %d, actual %d", expected_version.build_num,
-			version.build_num);
+	if (siwx91x_nwp_fw_expected_version.build_num != version.build_num) {
+		LOG_DBG("build_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.build_num, version.build_num);
 	}
 
 	return 0;
@@ -311,25 +341,22 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 				  sl_wifi_device_configuration_t *get_config,
 				  uint8_t wifi_oper_mode, bool hidden_ssid, uint8_t max_num_sta)
 {
+	const struct siwx91x_nwp_config *config = dev->config;
 	sl_wifi_device_configuration_t default_config = {
 		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE |
-					   SL_SI91X_FEAT_SECURITY_PSK | SL_SI91X_FEAT_AGGREGATION |
-					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
+			.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE | SL_SI91X_FEAT_AGGREGATION,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
-						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS |
-						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
-			.ext_custom_feature_bit_map =
-				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
-				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
-				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
-				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
-				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
-				SL_SI91X_EXT_FEAT_XTAL_CLK,
+						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
+			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
+		},
+		.ta_pool = {
+			.tx_ratio_in_buffer_pool     = 1,
+			.rx_ratio_in_buffer_pool     = 1,
+			.global_ratio_in_buffer_pool = 1
 		}
 	};
 
@@ -344,8 +371,28 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS)) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS;
+	}
 	siwx91x_store_country_code(dev, DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
+	siwx91x_apply_boot_config(dev, boot_config);
+
+	/* Apply TA clock configuration based on DT property */
+	switch (config->clock_frequency) {
+	case 80000000:
+		/* no configuration bit needed */
+		break;
+	case 120000000:
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_120MHZ;
+		break;
+	case 160000000:
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		break;
+	default:
+		__ASSERT(0, "Corrupted DT configuration");
+		break;
+	}
 
 	switch (wifi_oper_mode) {
 	case WIFI_STA_MODE:
@@ -414,8 +461,15 @@ static int siwx91x_nwp_init(const struct device *dev)
 	/* Check if the NWP firmware version is correct */
 	ret = siwx91x_check_nwp_version();
 	if (ret < 0) {
-		LOG_ERR("Unexpected NWP firmware version (expected: %s)",
-			SIWX91X_NWP_FW_EXPECTED_VERSION);
+		LOG_ERR("Unexpected NWP firmware version (expected: %X.%d.%d.%d.%d.%d.%d)",
+			siwx91x_nwp_fw_expected_version.rom_id,
+			siwx91x_nwp_fw_expected_version.major,
+			siwx91x_nwp_fw_expected_version.minor,
+			siwx91x_nwp_fw_expected_version.security_version,
+			siwx91x_nwp_fw_expected_version.patch_num,
+			siwx91x_nwp_fw_expected_version.customer_id,
+			siwx91x_nwp_fw_expected_version.build_num);
+		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
@@ -467,7 +521,12 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
 		.power_profile = DT_ENUM_IDX(DT_DRV_INST(inst), power_profile),                    \
-		.stack_size = DT_INST_PROP(inst, stack_size)                                       \
+		.stack_size = DT_INST_PROP(inst, stack_size),                                      \
+		.support_1p8v = DT_INST_PROP(inst, support_1p8v),                                  \
+		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
+		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
+		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
 	};                                                                                         \
                                                                                                    \
 	/* Coprocessor uses value stored in IVT to store its stack. We can't use Z_ISR_DECLARE() */\

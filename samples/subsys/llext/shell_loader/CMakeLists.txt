@@ -12,6 +12,6 @@ target_sources(app PRIVATE ${app_sources})
 set(ext_src ${PROJECT_SOURCE_DIR}/hello_world.c)
 set(ext_bin ${PROJECT_BINARY_DIR}/hello_world.llext)
 add_llext_target(hello_world_ext
-	OUTPUT  ${ext_bin}
-	SOURCES ${ext_src}
+  OUTPUT  ${ext_bin}
+  SOURCES ${ext_src}
 )

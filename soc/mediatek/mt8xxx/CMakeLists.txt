@@ -9,10 +9,11 @@ zephyr_library_sources_ifdef(CONFIG_SOC_MT8188 ${CONFIG_SOC}/cpuclk.c)
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_SOC}/linker.ld CACHE INTERNAL "")
 
 add_custom_target(dsp_img ALL
-	DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
-	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img.py
-		${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
-		${CMAKE_BINARY_DIR}/zephyr/zephyr.img)
+  DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img.py
+    ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+    ${CMAKE_BINARY_DIR}/zephyr/zephyr.img
+)
 
 # Sign zephyr.ri using west (if the underlying rimage tool is
 # available; generally it isn't except in SOF builds).  Note that the
@@ -37,9 +38,9 @@ board_set_rimage_target(${CONFIG_SOC})
 set(RIMAGE_SIGN_KEY "otc_private_key_3k.pem" CACHE STRING "default rimage key")
 add_custom_target(zephyr.ri ALL DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri)
 add_custom_command(
-	OUTPUT ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
-	COMMENT "Sign with rimage..."
-	COMMAND west $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose> sign
-                     --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR}
-	DEPENDS ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+  OUTPUT ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
+  COMMENT "Sign with rimage..."
+  COMMAND west $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose> sign
+    --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR}
+  DEPENDS ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
 )

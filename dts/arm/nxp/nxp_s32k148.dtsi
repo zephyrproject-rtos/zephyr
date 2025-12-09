@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/clock/nxp_s32k148_clock.h>
+#include <zephyr/dt-bindings/clock/nxp_s32k148_clock.h>
 #include <nxp/nxp_s32k1xx.dtsi>
 
 / {

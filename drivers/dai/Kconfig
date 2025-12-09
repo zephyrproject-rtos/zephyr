@@ -25,12 +25,14 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "Device Drivers"
 
-source "drivers/dai/intel/ssp/Kconfig.ssp"
+# zephyr-keep-sorted-start
 source "drivers/dai/intel/alh/Kconfig.alh"
 source "drivers/dai/intel/dmic/Kconfig.dmic"
 source "drivers/dai/intel/hda/Kconfig.hda"
-source "drivers/dai/nxp/sai/Kconfig.sai"
+source "drivers/dai/intel/ssp/Kconfig.ssp"
 source "drivers/dai/nxp/esai/Kconfig.esai"
 source "drivers/dai/nxp/micfil/Kconfig.micfil"
+source "drivers/dai/nxp/sai/Kconfig.sai"
+# zephyr-keep-sorted-stop
 
 endif # DAI

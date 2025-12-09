@@ -182,6 +182,11 @@ but, accessing the host for test purposes from your embedded code will be more
 difficult, and you will have a limited choice of
 :ref:`drivers and backends to chose from<native_sim_peripherals_c_compat>`.
 
+Cross-compiling native_sim
+**************************
+
+It is possible to :ref:`cross compile native_sim<posix_arch_cross_compile>`.
+
 Rationale for this port and comparison with other options
 *********************************************************
 

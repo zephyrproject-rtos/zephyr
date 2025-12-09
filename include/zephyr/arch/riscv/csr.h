@@ -156,6 +156,17 @@
 #define IRQ_COP		12
 #define IRQ_HOST	13
 
+/* SMRNMI CSR addresses */
+#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+#define CSR_MNSCRATCH 0x740
+#define CSR_MNEPC     0x741
+#define CSR_MNCAUSE   0x742
+#define CSR_MNSTATUS  0x744
+
+/* MNSTATUS bit fields */
+#define MNSTATUS_NMIE 0x00000008 /* NMI Enable (bit 3) */
+#endif                           /* CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY */
+
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000
 #define CLINT_SIZE	0x000c0000
@@ -232,5 +243,45 @@
 				: : "rK" (__cv)			\
 				: "memory");			\
 })
+
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
+#define MISELECT 0x350
+#define MIREG    0x351
+#define MIREG2   0x352
+#define MIREG3   0x353
+#define MIREG4   0x355
+#define MIREG5   0x356
+#define MIREG6   0x357
+
+static inline unsigned long icsr_read(unsigned int index)
+{
+	csr_write(MISELECT, index);
+	return csr_read(MIREG);
+}
+
+static inline void icsr_write(unsigned int index, unsigned long value)
+{
+	csr_write(MISELECT, index);
+	csr_write(MIREG, value);
+}
+
+static inline unsigned long icsr_read_set(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val | mask);
+	return val;
+}
+
+static inline unsigned long icsr_read_clear(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val & ~mask);
+	return val;
+}
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
 #endif /* CSR_H_ */

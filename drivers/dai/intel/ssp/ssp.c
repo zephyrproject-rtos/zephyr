@@ -1875,6 +1875,9 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 #else
 		return 0;
 #endif
+	case SSP_GTW_DMA_CONFIG_ID:
+		/* ignored */
+		return 0;
 	default:
 		LOG_ERR("undefined aux data type %u", aux_tlv->type);
 		return -EINVAL;
@@ -2000,6 +2003,9 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 			LOG_INF("link clock_source %u", link->clock_source);
 #endif
 			break;
+		case SSP_GTW_DMA_CONFIG_ID:
+			/* ignored */
+			break;
 		default:
 			LOG_ERR("undefined aux data type %u", aux_tlv->type);
 			return -EINVAL;
@@ -2012,7 +2018,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 	return 0;
 }
 
-static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config, size_t size)
 {
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_3_0 *blob30 = spec_config;
@@ -2026,7 +2032,7 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 		aux_len = cfg_len - pre_aux_len;
 		aux_ptr = (uint8_t *)blob15 + pre_aux_len;
 	} else if (blob30->version == SSP_BLOB_VER_3_0) {
-		cfg_len = blob30->size;
+		cfg_len = size;
 		pre_aux_len = sizeof(*blob30) +
 			      blob30->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
 		aux_len = cfg_len - pre_aux_len;
@@ -2180,7 +2186,7 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 #endif
 
 static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
-				   const void *spec_config)
+				   const void *spec_config, size_t size)
 {
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
 	const struct dai_intel_ipc4_ssp_configuration_blob_ver_3_0 *blob30 = spec_config;
@@ -2200,7 +2206,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	}
 
 	if (blob15->version == SSP_BLOB_VER_1_5) {
-		err = dai_ssp_parse_aux_data(dp, spec_config);
+		err = dai_ssp_parse_aux_data(dp, spec_config, size);
 		if (err) {
 			return err;
 		}
@@ -2210,7 +2216,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 			return err;
 		}
 	} else if (blob30->version == SSP_BLOB_VER_3_0) {
-		err = dai_ssp_parse_aux_data(dp, spec_config);
+		err = dai_ssp_parse_aux_data(dp, spec_config, size);
 		if (err) {
 			return err;
 		}
@@ -2502,7 +2508,7 @@ static int dai_ssp_config_get(const struct device *dev, struct dai_config *cfg, 
 }
 
 static int dai_ssp_config_set(const struct device *dev, const struct dai_config *cfg,
-			      const void *bespoke_cfg)
+			      const void *bespoke_cfg, size_t size)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
@@ -2511,7 +2517,7 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 	if (cfg->type == DAI_INTEL_SSP) {
 		ret = dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
 	} else {
-		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg, size);
 	}
 	dai_ssp_program_channel_map(dp, cfg, ssp_plat_data->ssp_index, bespoke_cfg);
 

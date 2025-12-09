@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cyw920829m2evk_02/cyw20829b1010
+name: The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit w/ CYW20829B1010
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - clock_control
+  - bluetooth
+  - adc
+  - watchdog
+  - spi
+  - i2c
+  - rtc
+  - dma
+  - pwm
+  - watchdog
+vendor: infineon

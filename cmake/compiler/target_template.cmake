@@ -102,7 +102,7 @@ if(NOT COMMAND compiler_set_linker_properties)
     # Compute the library directory name
 
     get_filename_component(library_dir ${library_path} DIRECTORY)
-    set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
+    set_linker_property(PROPERTY lib_include_dir "-L\"${library_dir}\"")
 
     # Compute the linker option for this library
 

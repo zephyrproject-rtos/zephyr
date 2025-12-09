@@ -10,10 +10,10 @@
 LOG_MODULE_DECLARE(coap_client_test, LOG_LEVEL_DBG);
 
 DEFINE_FAKE_VALUE_FUNC(uint32_t, z_impl_sys_rand32_get);
-DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_recvfrom, int, void *, size_t, int, struct sockaddr *,
-		       socklen_t *);
+DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_recvfrom, int, void *, size_t, int,
+		       struct net_sockaddr *, net_socklen_t *);
 DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_sendto, int, void *, size_t, int,
-		       const struct sockaddr *, socklen_t);
+		       const struct net_sockaddr *, net_socklen_t);
 
 struct zvfs_pollfd {
 	int fd;

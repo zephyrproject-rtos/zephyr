@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2021 Nordic Semiconductor ASA.
  * Copyright (c) 2025 HubbleNetwork.
+ * Copyright (c) 2025 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,16 +160,20 @@ static int get_sync_locked(const struct device *dev)
 	uint32_t flags = pm->base.flags;
 
 	if (pm->base.usage == 0) {
-		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
+		if ((flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) == 0) {
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
-			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
-				ret = pm_device_runtime_get(domain);
-				if (ret < 0) {
-					return ret;
+			if (domain != NULL) {
+				if ((domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) != 0) {
+					ret = pm_device_runtime_get(domain);
+					if (ret < 0) {
+						return ret;
+					}
+					/* Power domain successfully claimed */
+					pm->base.flags |= BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+				} else {
+					return -EWOULDBLOCK;
 				}
-			} else {
-				return -EWOULDBLOCK;
 			}
 		}
 
@@ -331,6 +336,7 @@ static int put_sync_locked(const struct device *dev)
 
 			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = put_sync_locked(domain);
+				pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
 			} else {
 				ret = -EWOULDBLOCK;
 			}

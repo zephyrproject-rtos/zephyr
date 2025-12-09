@@ -31,7 +31,7 @@
 		};
 
 		rx_led: led_1 {
-			gpios = <&portb  3 GPIO_ACTIVE_LOW>;
+			gpios = <&portb 3 GPIO_ACTIVE_LOW>;
 			label = "RX_LED";
 		};
 

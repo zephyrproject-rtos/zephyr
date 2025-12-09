@@ -129,7 +129,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 
 	if (upipe->rx_len == upipe->rx_off) {
 		pkt = net_pkt_rx_alloc_with_buffer(upipe->iface, upipe->rx_len,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_DBG("No pkt available");
 			goto flush;

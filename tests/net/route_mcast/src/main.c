@@ -43,29 +43,29 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
-static struct in6_addr iface_1_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr iface_1_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static struct in6_addr iface_2_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr iface_2_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0x0b, 0x0e, 0x0e, 0x3 } } };
 
-static struct in6_addr iface_3_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr iface_3_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0x0e, 0x0e, 0x0e, 0x4 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr_1 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr_1 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0xf2,
 					0xaa, 0x29, 0x02, 0x04 } } };
 
-static struct in6_addr ll_addr_2 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr_2 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2,
 					   0xaa, 0x29, 0x05, 0x06 } } };
 
-static struct in6_addr ll_addr_3 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr_3 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2,
 					   0xaa, 0x29, 0x07, 0x08 } } };
 
-static struct in6_addr in6addr_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+static struct net_in6_addr in6addr_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 static struct net_if *iface_1;
@@ -83,32 +83,32 @@ struct net_route_mcast_iface_cfg {
 
 static struct net_route_entry_mcast *test_mcast_routes[MAX_MCAST_ROUTES];
 
-static struct in6_addr mcast_prefix_iflocal = { { {
+static struct net_in6_addr mcast_prefix_iflocal = { { {
 					0xFF, 0x01, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0 } } };
-static struct in6_addr mcast_prefix_llocal = { { {
+static struct net_in6_addr mcast_prefix_llocal = { { {
 					0xFF, 0x02, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0 } } };
-static struct in6_addr mcast_prefix_admin = { { {
+static struct net_in6_addr mcast_prefix_admin = { { {
 					0xFF, 0x04, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0 } } };
-static struct in6_addr mcast_prefix_site_local = { { {
+static struct net_in6_addr mcast_prefix_site_local = { { {
 					0xFF, 0x05, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0 } } };
-static struct in6_addr mcast_prefix_orga = { { {
+static struct net_in6_addr mcast_prefix_orga = { { {
 					0xFF, 0x08, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0 } } };
-static struct in6_addr mcast_prefix_global = { { {
+static struct net_in6_addr mcast_prefix_global = { { {
 					0xFF, 0x0E, 0, 0,
 					0, 0, 0, 0,
 					0, 0, 0, 0,
@@ -119,7 +119,7 @@ static struct in6_addr mcast_prefix_global = { { {
  * FF3F:40:FD01:101:: \128
  * network prefix FD01:101::\64
  */
-static struct in6_addr mcast_prefix_nw_based = { { {
+static struct net_in6_addr mcast_prefix_nw_based = { { {
 		0xFF, 0x3F, 0, 0x40,
 		0xFD, 0x01, 0x01, 0x01,
 		0, 0, 0, 0,
@@ -131,8 +131,8 @@ static bool iface_2_forwarded;
 static bool iface_3_forwarded;
 
 struct net_route_mcast_scenario_cfg {
-	struct in6_addr src;
-	struct in6_addr mcast;
+	struct net_in6_addr src;
+	struct net_in6_addr mcast;
 	bool is_active;
 };
 
@@ -164,7 +164,7 @@ static uint8_t *net_route_mcast_get_mac(const struct device *dev)
 }
 
 static void net_route_mcast_add_addresses(struct net_if *iface,
-		struct in6_addr *ipv6, struct in6_addr *ll_addr)
+		struct net_in6_addr *ipv6, struct net_in6_addr *ll_addr)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
@@ -212,10 +212,10 @@ static bool check_packet_addresses(struct net_pkt *pkt)
 
 	if ((memcmp(&active_scenario.src,
 			&ipv6_hdr->src,
-			sizeof(struct in6_addr)) != 0) ||
+			sizeof(struct net_in6_addr)) != 0) ||
 			(memcmp(&active_scenario.mcast,
 				ipv6_hdr->dst,
-				sizeof(struct in6_addr)) != 0)) {
+				sizeof(struct net_in6_addr)) != 0)) {
 		return false;
 	}
 
@@ -288,16 +288,16 @@ NET_DEVICE_INIT_INSTANCE(mcast_iface_3, "mcast_iface_3", iface_3,
 			_ETH_L2_CTX_TYPE, 127);
 
 static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
-				      struct in6_addr *src_addr,
-				      struct in6_addr *remote_addr,
+				      struct net_in6_addr *src_addr,
+				      struct net_in6_addr *remote_addr,
 				      uint16_t src_port, uint16_t remote_port)
 {
 	static const char payload[] = "foobar";
 	struct net_pkt *pkt;
 	int res;
 
-	pkt = net_pkt_alloc_with_buffer(iface, strlen(payload), AF_INET6,
-					IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, strlen(payload), NET_AF_INET6,
+					NET_IPPROTO_UDP, K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -307,14 +307,14 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 	res = net_ipv6_create(pkt, src_addr, remote_addr);
 	zassert_equal(0, res, "ipv6 create failed");
 
-	res = net_udp_create(pkt, htons(src_port), htons(remote_port));
+	res = net_udp_create(pkt, net_htons(src_port), net_htons(remote_port));
 	zassert_equal(0, res, "udp create failed");
 
 	res = net_pkt_write(pkt, (uint8_t *) payload, strlen(payload));
 	zassert_equal(0, res, "pkt write failed");
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 	net_pkt_cursor_init(pkt);
 
 	return pkt;
@@ -333,7 +333,7 @@ static void test_route_mcast_init(void)
 
 static void test_route_mcast_route_add(void)
 {
-	struct in6_addr nw_prefix_based_all_nodes;
+	struct net_in6_addr nw_prefix_based_all_nodes;
 	struct net_route_entry_mcast *entry;
 
 	entry = net_route_mcast_add(iface_1, &mcast_prefix_iflocal, 16);
@@ -371,7 +371,7 @@ static void test_route_mcast_route_add(void)
 			"add for nw prefix based failed");
 
 	memcpy(&nw_prefix_based_all_nodes, &mcast_prefix_nw_based,
-			sizeof(struct in6_addr));
+			sizeof(struct net_in6_addr));
 	nw_prefix_based_all_nodes.s6_addr[15] = 0x01;
 
 	test_mcast_routes[5] = net_route_mcast_add(iface_2,
@@ -480,11 +480,11 @@ static void test_route_mcast_scenario1(void)
 	 *		only iface_2 forwards
 	 */
 	reset_counters();
-	memcpy(&active_scenario.src, &iface_1_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_1_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x02;
 
 	memcpy(&active_scenario.mcast, &mcast_prefix_site_local,
-			sizeof(struct in6_addr));
+			sizeof(struct net_in6_addr));
 	active_scenario.mcast.s6_addr[15] = 0x01;
 
 	struct net_pkt *pkt1 = setup_ipv6_udp(iface_1, &active_scenario.src,
@@ -507,7 +507,7 @@ static void test_route_mcast_scenario1(void)
 
 	reset_counters();
 
-	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x09;
 
 	struct net_pkt *pkt2 = setup_ipv6_udp(iface_3, &active_scenario.src,
@@ -542,11 +542,11 @@ static void test_route_mcast_scenario2(void)
 	 *		now iface_1 must forward due to routing entry
 	 */
 	reset_counters();
-	memcpy(&active_scenario.src, &iface_1_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_1_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x08;
 
 	memcpy(&active_scenario.mcast, &mcast_prefix_admin,
-			sizeof(struct in6_addr));
+			sizeof(struct net_in6_addr));
 	active_scenario.mcast.s6_addr[15] = 0x01;
 
 	struct net_pkt *pkt = setup_ipv6_udp(iface_1, &active_scenario.src,
@@ -566,7 +566,7 @@ static void test_route_mcast_scenario2(void)
 	zassert_equal(forwarding_counter, 0, "wrong count forwarded packets");
 
 	reset_counters();
-	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x08;
 
 	struct net_pkt *pkt2 = setup_ipv6_udp(iface_3, &active_scenario.src,
@@ -598,11 +598,11 @@ static void test_route_mcast_scenario3(void)
 	 *		no iface forwards
 	 */
 	reset_counters();
-	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x08;
 
 	memcpy(&active_scenario.mcast, &mcast_prefix_nw_based,
-				sizeof(struct in6_addr));
+				sizeof(struct net_in6_addr));
 	active_scenario.mcast.s6_addr[15] = 0x01;
 
 	struct net_pkt *pkt = setup_ipv6_udp(iface_3, &active_scenario.src,
@@ -685,10 +685,10 @@ void test_route_mcast_multiple_route_ifaces(void)
 	bool res;
 
 	reset_counters();
-	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct in6_addr));
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct net_in6_addr));
 	active_scenario.src.s6_addr[15] = 0x02;
 
-	memcpy(&active_scenario.mcast, &mcast_prefix_site_local, sizeof(struct in6_addr));
+	memcpy(&active_scenario.mcast, &mcast_prefix_site_local, sizeof(struct net_in6_addr));
 	active_scenario.mcast.s6_addr[15] = 0x01;
 
 	struct net_pkt *pkt = setup_ipv6_udp(iface_3, &active_scenario.src, &active_scenario.mcast,

@@ -13,4 +13,6 @@ toolchain:
 supported:
   - arduino_gpio
   - gpio
+  - rtc
+  - watchdog
 vendor: nxp

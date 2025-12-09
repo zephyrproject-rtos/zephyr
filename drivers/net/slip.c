@@ -167,11 +167,11 @@ static void process_msg(struct slip_context *slip)
 	{
 		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+		if (net_ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
 			struct net_eth_vlan_hdr *hdr_vlan =
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			net_pkt_set_vlan_tci(pkt, net_ntohs(hdr_vlan->vlan.tci));
 			vlan_tag = net_pkt_vlan_tag(pkt);
 		}
 	}

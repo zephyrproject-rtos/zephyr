@@ -194,6 +194,15 @@ static int eth_initialize(const struct device *dev)
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_ptp);
 #endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	ret |= clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				       (clock_control_subsys_t)&cfg->pclken_ker,
+				       NULL);
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t)&cfg->pclken_mac);
+#endif
 
 	if (ret) {
 		LOG_ERR("Failed to enable ethernet clock");
@@ -422,15 +431,19 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
-	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
-		   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits)},
-	.pclken_tx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
-		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits)},
-	.pclken_rx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),
-		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bits)},
+	.pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), stm_eth),
+	.pclken_tx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_tx),
+	.pclken_rx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_rx),
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	.pclken_ptp = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bus),
-		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bits)},
+	.pclken_ptp = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_ptp),
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	.pclken_mac = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bits)},
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bits)},
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
@@ -455,6 +468,10 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 			.MediaInterface = STM32_ETH_PHY_MODE(0),
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+			.ClockSelection = DT_INST_PROP(0, st_ext_phyclk) ? HAL_ETH1_REF_CLK_RCC
+							     : HAL_ETH1_REF_CLK_RX_CLK_PIN,
+#endif
 		},
 	},
 };

@@ -59,7 +59,7 @@ void net_latmon_start(int latmus, net_latmon_measure_t measure_func);
  * negative errno code on failure.
  *
  */
-int net_latmon_connect(int socket, struct in_addr *ip);
+int net_latmon_connect(int socket, struct net_in_addr *ip);
 
 /**
  * @brief Get a socket for the Latmus service.
@@ -73,7 +73,7 @@ int net_latmon_connect(int socket, struct in_addr *ip);
  *
  * @return A valid socket descriptor on success, negative errno code on failure.
  */
-int net_latmon_get_socket(struct sockaddr *bind_addr);
+int net_latmon_get_socket(struct net_sockaddr *bind_addr);
 
 /**
  * @brief Check if the latency monitor is running.

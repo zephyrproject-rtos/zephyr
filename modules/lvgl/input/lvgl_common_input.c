@@ -130,5 +130,9 @@ int lvgl_init_input_devices(void)
 	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_keypad_input, LV_DEV_INIT, lvgl_keypad_input_init);
 #endif /* CONFIG_LV_Z_KEYPAD_INPUT */
 
+#ifdef CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH
+	lvgl_pointer_input_init(lvgl_pointer_from_chosen_get());
+#endif
+
 	return 0;
 }

@@ -14,7 +14,7 @@
 #include "mcx_nx4x_evk_cpu0.dtsi"
 
 / {
-	aliases{
+	aliases {
 		pwm-0 = &flexpwm1_pwm0;
 	};
 };

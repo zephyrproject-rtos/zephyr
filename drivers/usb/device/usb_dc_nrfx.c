@@ -795,9 +795,9 @@ static inline void usbd_work_process_recvreq(struct nrf_usbd_ctx *ctx,
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 	NRF_USBD_COMMON_TRANSFER_OUT(transfer, ep_ctx->buf.data,
 				     ep_ctx->cfg.max_sz);
-	nrfx_err_t err = nrf_usbd_common_ep_transfer(
+	int err = nrf_usbd_common_ep_transfer(
 		ep_addr_to_nrfx(ep_ctx->cfg.addr), &transfer);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("nRF USBD transfer error (OUT): 0x%02x", err);
 	}
 	k_mutex_unlock(&ctx->drv_lock);
@@ -1146,7 +1146,7 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const p_event)
 static inline void usbd_reinit(void)
 {
 	int ret;
-	nrfx_err_t err;
+	int err;
 
 	nrfx_power_usbevt_disable();
 	nrf_usbd_common_disable();
@@ -1160,7 +1160,7 @@ static inline void usbd_reinit(void)
 	nrfx_power_usbevt_enable();
 	err = nrf_usbd_common_init(usbd_event_handler);
 
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_DBG("nRF USBD driver reinit failed. Code: %d", err);
 		__ASSERT_NO_MSG(0);
 	}
@@ -1692,9 +1692,9 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 
 	ep_ctx->write_in_progress = true;
 	NRF_USBD_COMMON_TRANSFER_IN(transfer, data, data_len, 0);
-	nrfx_err_t err = nrf_usbd_common_ep_transfer(ep_addr_to_nrfx(ep), &transfer);
+	int err = nrf_usbd_common_ep_transfer(ep_addr_to_nrfx(ep), &transfer);
 
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		ep_ctx->write_in_progress = false;
 		if (ret_bytes) {
 			*ret_bytes = 0;
@@ -1883,7 +1883,7 @@ int usb_dc_wakeup_request(void)
 static int usb_init(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
-	nrfx_err_t err;
+	int err;
 
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
@@ -1909,12 +1909,12 @@ static int usb_init(void)
 	};
 
 	err = nrf_usbd_common_init(usbd_event_handler);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_DBG("nRF USBD driver init failed. Code: %d", (uint32_t)err);
 		return -EIO;
 	}
 
-	/* Ignore the return value, as NRFX_ERROR_ALREADY is not
+	/* Ignore the return value, as -EALREADY is not
 	 * a problem here.
 	 */
 	(void)nrfx_power_init(&power_config);

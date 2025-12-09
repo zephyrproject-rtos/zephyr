@@ -22,7 +22,7 @@ description: |
        */
 
       /* include pre-defined pins and functions for the SoC used by the board */
-      #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+      #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
       &pinctrl {
         /* configuration for I2C0 default state */

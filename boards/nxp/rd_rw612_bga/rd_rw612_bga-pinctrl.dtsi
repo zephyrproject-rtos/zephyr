@@ -122,7 +122,7 @@
 
 	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
 		group0 {
-			pinmux = <IO_MUX_FC1_I2S>;
+			pinmux = <IO_MUX_FC1_I2S>, <IO_MUX_MCLK>;
 			slew-rate = "normal";
 		};
 	};

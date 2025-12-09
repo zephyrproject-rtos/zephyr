@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 
 #include <stm32_ll_system.h>
-#include <stm32f1xx_ll_bus.h>
+#include <stm32_ll_bus.h>
 
 #include <cmsis_core.h>
 

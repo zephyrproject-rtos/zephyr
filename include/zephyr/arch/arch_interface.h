@@ -21,8 +21,8 @@
  * must eventually pull in full definitions for all of them (the actual macro
  * defines and inline function bodies)
  *
- * include/kernel.h and other public headers depend on definitions in this
- * header.
+ * include/zephyr/kernel.h and other public headers depend on definitions in
+ * this header.
  */
 #ifndef ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
 #define ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_

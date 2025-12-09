@@ -59,7 +59,7 @@ def pytest_addoption(parser: pytest.Parser):
         help='Name of used platform (qemu_x86, nrf52840dk/nrf52840, etc.).'
     )
     twister_harness_group.addoption(
-        '--device-serial',
+        '--device-serial', action='append', default=[],
         help='Serial device for accessing the board (e.g., /dev/ttyACM0).'
     )
     twister_harness_group.addoption(

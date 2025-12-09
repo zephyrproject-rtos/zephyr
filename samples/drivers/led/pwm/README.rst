@@ -25,6 +25,20 @@ For each PWM LEDs (one after the other):
 - Blinking on: 1 sec, off: 1 sec
 - Turning off
 
+Fallback Blink Delay Calculation
+=================================
+
+When the configured blink delays exceed the platform's timer range limitations,
+the sample automatically calculates fallback delays based on each LED's PWM
+period defined in the devicetree. The calculation uses configurable divisors:
+
+- Short delay = LED PWM period / :kconfig:option:`CONFIG_BLINK_DELAY_SHORT_LED_PERIOD_DIV` / 2
+- Long delay = LED PWM period / :kconfig:option:`CONFIG_BLINK_DELAY_LONG_LED_PERIOD_DIV` / 2
+
+This ensures the sample works correctly on platforms with timer limitations by
+providing hardware-appropriate delays that are compatible with each LED's PWM
+configuration.
+
 Building and Running
 ********************
 

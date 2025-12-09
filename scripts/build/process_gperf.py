@@ -17,13 +17,15 @@ the generated code so that we work with pointers directly and not strings.
 This saves a considerable amount of space.
 """
 
-import sys
 import argparse
 import os
 import re
+import sys
+
 from packaging import version
 
 # --- debug stuff ---
+
 
 def debug(text):
     if not args.verbose:
@@ -36,12 +38,7 @@ def error(text):
 
 
 def warn(text):
-    sys.stdout.write(
-        os.path.basename(
-            sys.argv[0]) +
-        " WARNING: " +
-        text +
-        "\n")
+    sys.stdout.write(os.path.basename(sys.argv[0]) + " WARNING: " + text + "\n")
 
 
 def reformat_str(match_obj):
@@ -49,7 +46,7 @@ def reformat_str(match_obj):
 
     # Nip quotes
     addr_str = addr_str[1:-1]
-    addr_vals = [0, 0, 0, 0, 0, 0, 0 , 0]
+    addr_vals = [0, 0, 0, 0, 0, 0, 0, 0]
     ctr = 7
     i = 0
 
@@ -60,7 +57,7 @@ def reformat_str(match_obj):
         if addr_str[i] == "\\":
             if addr_str[i + 1].isdigit():
                 # Octal escape sequence
-                val_str = addr_str[i + 1:i + 4]
+                val_str = addr_str[i + 1 : i + 4]
                 addr_vals[ctr] = int(val_str, 8)
                 i += 4
             else:
@@ -74,7 +71,7 @@ def reformat_str(match_obj):
 
         ctr -= 1
 
-    return "(char *)0x%02x%02x%02x%02x%02x%02x%02x%02x" % tuple(addr_vals)
+    return f"(char *)0x{bytes(addr_vals).hex()}"
 
 
 def process_line(line, fp):
@@ -93,9 +90,8 @@ def process_line(line, fp):
         v = version.parse(m.groups()[0])
         v_lo = version.parse("3.0")
         v_hi = version.parse("3.1")
-        if (v < v_lo or v > v_hi):
-            warn("gperf %s is not tested, versions %s through %s supported" %
-                 (v, v_lo, v_hi))
+        if v < v_lo or v > v_hi:
+            warn(f"gperf {v} is not tested, versions {v_lo} through {v_hi} supported")
 
     # Replace length lookups with constant len since we're always
     # looking at pointers
@@ -105,8 +101,9 @@ def process_line(line, fp):
     line = re.sub(r'[{]["]["][}]', r'{}', line)
 
     # Suppress a compiler warning since this table is no longer necessary
-    line = re.sub(r'static unsigned char lengthtable',
-                  r'static unsigned char __unused lengthtable', line)
+    line = re.sub(
+        r'static unsigned char lengthtable', r'static unsigned char __unused lengthtable', line
+    )
 
     # drop all use of register keyword, let compiler figure that out,
     # we have to do this since we change stuff to take the address of some
@@ -114,8 +111,7 @@ def process_line(line, fp):
     line = re.sub(r'register', r'', line)
 
     # Hashing the address of the string
-    line = re.sub(r"hash [(]str, len[)]",
-                  r"hash((const char *)&str, len)", line)
+    line = re.sub(r"hash [(]str, len[)]", r"hash((const char *)&str, len)", line)
 
     # Just compare pointers directly instead of using memcmp
     if re.search("if [(][*]str", line):
@@ -138,24 +134,24 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        allow_abbrev=False)
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-i", "--input", required=True,
-                        help="Input C file from gperf")
-    parser.add_argument("-o", "--output", required=True,
-                        help="Output C file with processing done")
-    parser.add_argument("-p", "--pattern", required=True,
-            help="Search pattern for objects")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print extra debugging information")
+    parser.add_argument("-i", "--input", required=True, help="Input C file from gperf")
+    parser.add_argument("-o", "--output", required=True, help="Output C file with processing done")
+    parser.add_argument("-p", "--pattern", required=True, help="Search pattern for objects")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print extra debugging information"
+    )
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
 
+
 def main():
     parse_args()
 
-    with open(args.input, "r") as in_fp, open(args.output, "w") as out_fp:
+    with open(args.input) as in_fp, open(args.output, "w") as out_fp:
         for line in in_fp.readlines():
             process_line(line, out_fp)
 
