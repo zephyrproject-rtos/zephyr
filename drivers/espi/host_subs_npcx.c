@@ -607,6 +607,39 @@ static void host_port80_init(void)
 }
 #endif
 
+int host_espi_npcx_interrupt_config(uint32_t espi_flags, uint32_t espi_vendor_flags)
+{
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		if (espi_flags & ESPI_PERIPHERAL_8042_KBC_EVENTS) {
+			irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
+			irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
+		} else {
+			irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
+			irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
+		}
+	}
+
+	/* Enable host PM channel (Host IO) sub-device interrupt */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) || IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		if (espi_flags & ESPI_PERIPHERAL_HOST_IO_EVENTS) {
+			irq_enable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
+		} else {
+			irq_disable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
+		}
+	}
+
+	/* Enable host Port80 sub-device interrupt installation */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		if (espi_flags & ESPI_PERIPHERAL_DEBUG_PORT80_EVENTS) {
+			irq_enable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
+		} else {
+			irq_disable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
+		}
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
 static void host_cus_opcode_enable_interrupts(void)
 {
