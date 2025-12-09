@@ -8,6 +8,15 @@
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
+	clocks {
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f469", "st,stm32f4", "simple-bus";
 
