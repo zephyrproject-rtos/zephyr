@@ -3386,6 +3386,7 @@ Microchip RISC-V Platforms:
   status: maintained
   maintainers:
     - fkokosinski
+  collaborators:
     - kgugala
     - tgorochowik
   files:
