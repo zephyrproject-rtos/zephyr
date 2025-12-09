@@ -1,6 +1,11 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config CRYPTO_MCHP_AES_G1
+	bool "Microchip SAM AES driver"
+	default y if DT_HAS_MICROCHIP_AES_G1_CRYPTO_ENABLED
+	help
+	  Enable Microchip SAM Advanced Encryption Standard (AES) driver.
 
 config CRYPTO_MCHP_SHA_G1
 	bool "Microchip SAM SHA driver"
