@@ -1,8 +1,10 @@
 /*
  * Copyright (c) 2020 Demant
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
@@ -179,6 +181,8 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	uint32_t iso_interval_us;
 	uint16_t handle;
 
+	/* Here we have ft, iso_interval and sdu_interval */
+
 	/* Get CIG by id */
 	cig = ll_conn_iso_group_get_by_id(req->cig_id);
 	if (!cig) {
@@ -337,6 +341,46 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
+
+	/* Calculate and set cig->c_latency if not yet set */
+	if (cig->c_latency == 0U && cis->lll.rx.max_pdu != 0U) /* not yet set */ {
+		uint32_t iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
+			/* ISO_Interval is below minimum (5 ms) */
+			iso_interval_us = ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN);
+		}
+
+		if (cis->framed) {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval */
+			cig->c_latency = cig->sync_delay + (cis->lll.rx.ft * iso_interval_us) +
+					 cig->c_sdu_interval;
+		} else {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval */
+			cig->c_latency = cig->sync_delay + (cis->lll.rx.ft * iso_interval_us) -
+					 cig->c_sdu_interval;
+		}
+	}
+
+	/* Calculate and set cig->p_latency if not yet set */
+	if (cig->p_latency == 0U && cis->lll.tx.max_pdu != 0U) {
+		uint32_t iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
+			/* ISO_Interval is below minimum (5 ms) */
+			iso_interval_us = ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN);
+		}
+
+		if (cis->framed) {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval */
+			cig->p_latency = cig->sync_delay + (cis->lll.tx.ft * iso_interval_us) +
+					 cig->p_sdu_interval;
+		} else {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval */
+			cig->p_latency = cig->sync_delay + (cis->lll.tx.ft * iso_interval_us) -
+					 cig->p_sdu_interval;
+		}
+	}
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 	cis->pkt_seq_num = 0U;
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
