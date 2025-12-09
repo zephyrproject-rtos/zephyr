@@ -262,6 +262,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				mem_idx = LLEXT_MEM_TEXT;
 			} else if (shdr->sh_flags & SHF_WRITE) {
 				mem_idx = LLEXT_MEM_DATA;
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+			} else if (strcmp(name, LLEXT_SECTION_RODATA_NO_RELOC) == 0) {
+				mem_idx = LLEXT_MEM_RODATA_NO_RELOC;
+#endif
 			} else {
 				mem_idx = LLEXT_MEM_RODATA;
 			}
@@ -533,6 +537,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			ldr->sect_map[i].offset = shdr->sh_offset - ldr->sects[mem_idx].sh_offset;
 		}
 	}
+
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	if (ldr->sects[LLEXT_MEM_RODATA_NO_RELOC].sh_flags & SHF_LLEXT_HAS_RELOCS) {
+		LOG_ERR("%s has relocations", LLEXT_SECTION_RODATA_NO_RELOC);
+		return -ENOEXEC;
+	}
+#endif
 
 	return 0;
 }
