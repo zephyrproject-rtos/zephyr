@@ -3,4 +3,8 @@
 
 zephyr_include_directories(.)
 
+zephyr_library_sources_ifdef(CONFIG_ARM_MPU
+    mpu_regions.c
+)
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
