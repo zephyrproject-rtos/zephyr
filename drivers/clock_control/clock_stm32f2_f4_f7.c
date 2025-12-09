@@ -387,6 +387,7 @@ uint32_t get_ck48_frequency(void)
 						     LL_RCC_PLL_GetDivider(),
 						     LL_RCC_PLL_GetN(),
 						     LL_RCC_PLL_GetQ());
+#ifdef LL_RCC_CK48M_CLKSOURCE_PLLI2S
 	} else if (source == LL_RCC_CK48M_CLKSOURCE_PLLI2S) {
 		/* Get the PLL I2S source : HSE or HSI */
 		source = (LL_RCC_PLLI2S_GetMainSource() == LL_RCC_PLLSOURCE_HSE) ?
@@ -396,6 +397,18 @@ uint32_t get_ck48_frequency(void)
 						     LL_RCC_PLLI2S_GetDivider(),
 						     LL_RCC_PLLI2S_GetN(),
 						     LL_RCC_PLLI2S_GetQ());
+#endif /* LL_RCC_CK48M_CLKSOURCE_PLLI2S */
+#ifdef LL_RCC_CK48M_CLKSOURCE_PLLSAI
+	} else if (source == LL_RCC_CK48M_CLKSOURCE_PLLSAI) {
+		/* Get the PLL SAI source : HSE or HSI */
+		source = (LL_RCC_PLLSAI_GetMainSource() == LL_RCC_PLLSOURCE_HSE) ?
+			 HSE_VALUE : HSI_VALUE;
+		/* Get the PLL SAI P freq. No HAL macro for that */
+		return __LL_RCC_CALC_PLLSAI_48M_FREQ(source,
+						     LL_RCC_PLLSAI_GetDivider(),
+						     LL_RCC_PLLSAI_GetN(),
+						     LL_RCC_PLLSAI_GetP());
+#endif /* LL_RCC_CK48M_CLKSOURCE_PLLSAI */
 	} else {
 		__ASSERT(0, "Invalid source");
 	}
