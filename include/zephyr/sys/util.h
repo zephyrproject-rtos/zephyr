@@ -1050,6 +1050,9 @@ static inline size_t sys_count_bits(const void *value, size_t len)
  */
 #define gcd(a, b) ((((__typeof__(a))-1) < 0) ? gcd_s(a, b) : gcd_u(a, b))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 static ALWAYS_INLINE uint32_t gcd_u(uint32_t a, uint32_t b)
 {
 	uint32_t c;
@@ -1076,6 +1079,9 @@ static ALWAYS_INLINE uint32_t gcd_s(int32_t a, int32_t b)
 {
 	return gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
 }
+/**
+ * @endcond
+ */
 
 /**
  * @brief Compute the Least Common Multiple (LCM) of two integers.
@@ -1088,6 +1094,9 @@ static ALWAYS_INLINE uint32_t gcd_s(int32_t a, int32_t b)
  */
 #define lcm(a, b) ((((__typeof__(a))-1) < 0) ? lcm_s(a, b) : lcm_u(a, b))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 static ALWAYS_INLINE uint64_t lcm_u(uint32_t a, uint32_t b)
 {
 	if (a == 0 || b == 0) {
@@ -1101,6 +1110,9 @@ static ALWAYS_INLINE uint64_t lcm_s(int32_t a, int32_t b)
 {
 	return lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
 }
+/**
+ * @endcond
+ */
 
 #ifdef __cplusplus
 }
