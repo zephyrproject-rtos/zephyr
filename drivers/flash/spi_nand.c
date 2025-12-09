@@ -288,7 +288,7 @@ static int spi_nand_wait_until_ready(const struct device *dev)
 	uint8_t reg = 0;
 	struct spi_nand_data *data = dev->data;
 
-	int timeout_ms = data->prg_timeout;
+	int timeout_ms = data->prg_timeout ?: 10;
 	int64_t start_time = k_uptime_get();
 
 	do {
