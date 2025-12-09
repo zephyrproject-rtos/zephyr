@@ -5,9 +5,9 @@
  */
 
 #include <errno.h>
-#include <zephyr/bluetooth/sbc.h>
+#include <zephyr/libsbc/sbc.h>
 
-#if defined(CONFIG_LIBSBC)
+#if defined(CONFIG_LIBSBC_ENCODER)
 
 int sbc_setup_encoder(struct sbc_encoder *encoder, struct sbc_encoder_init_param *param)
 {
@@ -136,7 +136,9 @@ int sbc_frame_encoded_bytes(struct sbc_encoder *encoder)
 
 	return size;
 }
+#endif
 
+#if defined(CONFIG_LIBSBC_DECODER)
 /**
  * Setup decoder
  */
