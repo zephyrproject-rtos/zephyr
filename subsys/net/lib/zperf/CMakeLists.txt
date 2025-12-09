@@ -5,6 +5,7 @@ zephyr_library_named(zperf)
 zephyr_library_sources(zperf_common.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP zperf_udp_uploader.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP zperf_tcp_uploader.c)
+zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_RAW_TX zperf_raw_uploader.c)
 
 if(CONFIG_NET_ZPERF_SERVER)
   zephyr_library_sources(zperf_session.c)

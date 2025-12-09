@@ -81,5 +81,20 @@ config NET_ZPERF_UDP_REPORT_RETANSMISSION_COUNT
 	  report from the server. `0` means the report will not be requested
 	  at all, which is useful for testing purposes.
 
+config NET_ZPERF_RAW_TX
+	bool "Raw packet TX support"
+	depends on NET_SOCKETS_PACKET
+	help
+	  Enable raw packet socket TX support in zperf. This allows sending
+	  custom raw packets with user-defined headers for performance testing.
+	  Useful for testing vendor-specific protocols or custom L2 frames.
+
+config NET_ZPERF_RAW_TX_MAX_HDR_SIZE
+	int "Maximum raw TX header size"
+	depends on NET_ZPERF_RAW_TX
+	default 64
+	help
+	  Maximum size of the custom header that can be prepended to raw TX
+	  packets. The header is provided as hex bytes by the user.
 
 endif
