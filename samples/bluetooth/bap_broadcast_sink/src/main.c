@@ -460,7 +460,7 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 	printk("Receive state updated, pa sync state: %u, encrypt_state %u\n",
 	       recv_state->pa_sync_state, recv_state->encrypt_state);
 
-	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
 	}
 
@@ -517,7 +517,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	printk("PA sync termination req, pa sync state: %u\n", recv_state->pa_sync_state);
 
-	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
 	}
 
@@ -558,7 +558,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 
-	for (uint8_t subgroup = 0; subgroup < recv_state->num_subgroups; subgroup++) {
+	for (uint8_t subgroup = 0U; subgroup < recv_state->num_subgroups; subgroup++) {
 
 		printk("bis_sync_req[%u] = 0x%0x\n", subgroup, bis_sync_req[subgroup]);
 		if (bis_sync_req[subgroup] != 0) {
@@ -735,7 +735,7 @@ static bool is_substring(const char *substr, const char *str)
 		return false;
 	}
 
-	for (size_t pos = 0; pos < str_len; pos++) {
+	for (size_t pos = 0U; pos < str_len; pos++) {
 		if (pos + sub_str_len > str_len) {
 			return false;
 		}
@@ -1022,9 +1022,21 @@ static int stop_adv(void)
 static int pa_sync_create(void)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
+	struct bt_le_local_features feature;
+	int err;
+
+	err = bt_le_get_local_features(&feature);
+	if (err < 0) {
+		printk("Failed to get local le features (err %d)\n", err);
+		return err;
+	}
 
 	bt_addr_le_copy(&create_params.addr, &broadcaster_addr);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	create_params.sid = broadcaster_info.sid;
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(broadcaster_info.interval);
@@ -1037,7 +1049,7 @@ static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
 {
 	uint32_t result = 0U;
 
-	for (uint8_t i = 0; i < n && bitfield != 0; i++) {
+	for (uint8_t i = 0U; i < n && bitfield != 0; i++) {
 		uint32_t lsb = bitfield & -bitfield; /* extract lsb */
 
 		result |= lsb;
@@ -1117,7 +1129,7 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 #else  /* !CONFIG_TARGET_BROADCAST_CHANNEL */
 	bool bis_sync_req_no_pref = false;
 
-	for (uint8_t i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+	for (uint8_t i = 0U; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		if (bis_sync_req[i] != 0) {
 			if (bis_sync_req[i] == BT_BAP_BIS_SYNC_NO_PREF) {
 				bis_sync_req_no_pref = true;

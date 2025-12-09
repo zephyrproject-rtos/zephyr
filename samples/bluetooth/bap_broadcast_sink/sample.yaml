@@ -9,6 +9,7 @@ tests:
       - qemu_x86
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
+      - sf32lb52_devkit_lcd/sf32lb525uc6
     integration_platforms:
       - qemu_x86
       - nrf5340dk/nrf5340/cpuapp
