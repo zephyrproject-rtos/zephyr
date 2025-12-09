@@ -177,6 +177,10 @@
 	overdrive = <12>;
 };
 
+&pit_0 {
+	status = "okay";
+};
+
 &pll {
 	status = "okay";
 	workmode = "Integer";
