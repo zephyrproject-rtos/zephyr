@@ -28,12 +28,13 @@ typedef void (*irq_config_func_t)(void);
 
 BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
-// /* Configuration validation */
-// BUILD_ASSERT(!(IS_ENABLED(CONFIG_SDIO_STACK) && IS_ENABLED(CONFIG_SDMMC_STACK)),
-//              "Both SDIO_STACK and SDMMC_STACK cannot be enabled simultaneously");
-
-// BUILD_ASSERT((IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)),
-//              "Either SDIO_STACK or SDMMC_STACK must be enabled");
+ /* Configuration validation
+  *BUILD_ASSERT(!(IS_ENABLED(CONFIG_SDIO_STACK) && IS_ENABLED(CONFIG_SDMMC_STACK)),
+  *	"Both SDIO_STACK and SDMMC_STACK cannot be enabled simultaneously");
+  *
+  *BUILD_ASSERT((IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)),
+  *	"Either SDIO_STACK or SDMMC_STACK must be enabled");
+  */
 
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
@@ -181,11 +182,11 @@ static void sdhc_stm32_log_err_type(SDMMC_HandleTypeDef *hsd)
 {
 	uint32_t error_code = SDMMC_LL_GetError(hsd);
 
-	if(IS_ENABLED(CONFIG_SDMMC_STACK)) {
+	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		sdhc_stm32_log_sdmmc_err_type(error_code);
 	}
 
-	if (IS_ENABLED(CONFIG_SDIO_STACK)){
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		sdhc_stm32_log_sdio_err_type(error_code);
 	}
 
@@ -239,16 +240,16 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 	 * since card enumeration is handled by Zephyr SD subsystem
 	 */
 
-	if(IS_ENABLED(CONFIG_SDIO_STACK)) {
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		if (SDMMC_LL_Init(hsd) != SDMMC_OK) {
 			return -EIO;
 		}
-	} else if (IS_ENABLED(CONFIG_SDMMC_STACK)){
+	} else if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		if (SDMMC_Interface_Init(hsd) != SDMMC_OK) {
 			return -EIO;
 		}
 	} else {
-			return -ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -424,17 +425,18 @@ static int sdhc_stm32_switch_to_1_8v(const struct device *dev)
 	return 0;
 }
 
-static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *data){
+static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *data)
+{
 	int ret;
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if(!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
 
-	if(!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		sys_cache_data_flush_range(data->data,
 					   data->blocks * data->block_size);
 
@@ -464,12 +466,13 @@ static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *d
  * @return int 0 on success, negative errno on failure
  *
  */
-static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *data){
+static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *data)
+{
 	int ret;
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if( !WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
@@ -495,16 +498,17 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 	return ret == SDMMC_OK ? 0 : -EIO;
 }
 
-static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *data) {
+static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *data)
+{
 	int res;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	res = SDMMC_Erase(config->hsd, data->block_addr, ((data->block_size * data->blocks)+ data->block_addr));
-	if(res != SDMMC_OK) {
+	res = SDMMC_Erase(config->hsd, data->block_addr, ((data->block_size * data->blocks) + data->block_addr));
+	if (res != SDMMC_OK) {
 		return res;
 	}
 
-	if( !WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
+	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT, k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
 	}
@@ -512,13 +516,14 @@ static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *da
 	return res == SDMMC_OK ? 0 : -EIO;
 }
 
-static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_config *config, struct sdhc_command *cmd) {
+static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+{
 	int res = 0;
 	uint8_t DeviceSizeMul, RdBlockLen;
 	uint32_t DeviceSize;
 
 	res = SDMMC_CmdSendCSD(config->hsd->Instance, cmd->arg);
-	if(res == 0U){
+	if (res == 0U) {
 		config->hsd->CSD[0U] = cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
 		config->hsd->CSD[1U] = cmd->response[1] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2);
 		config->hsd->CSD[2U] = cmd->response[2] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP3);
@@ -526,17 +531,16 @@ static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_con
 		config->hsd->SdCard.Class = (SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2) >> 20U);
 	}
 
-	if (config->hsd->SdCard.CardType == CARD_SDSC){
+	if (config->hsd->SdCard.CardType == CARD_SDSC) {
 		DeviceSize = (((config->hsd->CSD[1] & 0x000003FFU) << 2U) | ((config->hsd->CSD[2] & 0xC0000000U) >> 30U));
-		config->hsd->SdCard.BlockNbr  = (DeviceSize + 1U) ;
+		config->hsd->SdCard.BlockNbr  = (DeviceSize + 1U);
 		DeviceSizeMul = (uint8_t)((config->hsd->CSD[2] & 0x00038000U) >> 15U);
 		config->hsd->SdCard.BlockNbr *= (1UL << ((DeviceSizeMul & 0x07U) + 2U));
 		RdBlockLen = (uint8_t)((config->hsd->CSD[1] & 0x000F0000U) >> 16U);
 		config->hsd->SdCard.BlockSize = (1UL << (RdBlockLen & 0x0FU));
 		config->hsd->SdCard.LogBlockNbr = (config->hsd->SdCard.BlockNbr) * ((config->hsd->SdCard.BlockSize) / BLOCKSIZE);
 		config->hsd->SdCard.LogBlockSize = BLOCKSIZE;
-	}
-	else {
+	} else {
 		DeviceSize = (((config->hsd->CSD[1] & 0x0000003FU) << 16U) | ((config->hsd->CSD[2] & 0xFFFF0000U) >> 16U));
 		config->hsd->SdCard.BlockNbr = ((DeviceSize + 1U) * 1024U);
 		config->hsd->SdCard.LogBlockNbr = config->hsd->SdCard.BlockNbr;
@@ -547,14 +551,14 @@ static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_con
 	return res;
 }
 
-static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config, struct sdhc_command *cmd) {
+static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+{
 	uint32_t res;
 
 	res = SDMMC_CmdAppOperCommand(config->hsd->Instance, cmd->arg);
-	if(res == 0U) {
+	if (res == 0U) {
 		cmd->response[0] =  SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
-		if ((cmd->response[0] & SDMMC_HIGH_CAPACITY) == SDMMC_HIGH_CAPACITY)
-		{
+		if ((cmd->response[0] & SDMMC_HIGH_CAPACITY) == SDMMC_HIGH_CAPACITY) {
 			config->hsd->SdCard.CardType = CARD_SDHC_SDXC;
 		}
 	}
@@ -562,11 +566,12 @@ static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config, 
 	return res;
 }
 
-static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config, struct sdhc_command *cmd) {
+static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+{
 	uint32_t res;
 
 	res = SDMMC_CmdSendCID(config->hsd->Instance);
-	if(res == 0U) {
+	if (res == 0U) {
 		cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
 		cmd->response[1] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP2);
 		cmd->response[2] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP3);
@@ -582,8 +587,7 @@ static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card
 
 	/* Send Status command */
 	res = SDMMC_CmdSendStatus(hsd->Instance, (uint32_t)(card_relative_address));
-	if (res != SDMMC_ERROR_NONE)
-	{
+	if (res != SDMMC_ERROR_NONE) {
 		LOG_ERR("Get Card status failed\n");
 		return -EIO;
 	}
@@ -594,15 +598,15 @@ static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card
 	return 0;
 }
 
-static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config){
-
-	if (IS_ENABLED(CONFIG_SDIO_STACK)){
+static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config)
+{
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		if (SDMMC_LL_GetState(config->hsd) != SDMMC_STATE_READY) {
 			return false;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_SDMMC_STACK)){
+	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		if (config->hsd->State != SDMMC_STATE_READY) {
 			return false;
 		}
@@ -611,41 +615,44 @@ static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config){
 	return true;
 }
 
-static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *config, struct sdhc_command *cmd) {
+static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+{
 	uint32_t sdmmc_res = SDMMC_CmdSetRelAdd(config->hsd->Instance, (uint16_t *)&cmd->response);
 
 	if (sdmmc_res != 0U) {
 		return sdmmc_res;
 	}
 	/*
-	* Restore RCA by reversing the double 16-bit right shift from
-	* Zephyr subsys and SDMMC_CmdSetRelAdd
-	*/
+	 * Restore RCA by reversing the double 16-bit right shift from
+	 * Zephyr subsys and SDMMC_CmdSetRelAdd
+	 */
 	cmd->response[0] = cmd->response[0] << 16;
 	config->hsd->SdCard.RelCardAdd  = cmd->response[0];
 
 	return sdmmc_res;
 }
 
-static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd) {
+static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd)
+{
 	return ((cmd->opcode == SD_READ_SINGLE_BLOCK) || (cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
 		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) || (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK));
 }
 
-static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config, struct sdhc_command *cmd) {
+static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config, struct sdhc_command *cmd)
+{
 	uint32_t sdmmc_res = SDMMC_CmdSelDesel(config->hsd->Instance, cmd->arg);
 
 	if (sdmmc_res != 0U) {
 		return sdmmc_res;
 	}
 
-	if (IS_ENABLED(CONFIG_SDIO_STACK)){
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		/* Clear unused flags to avoid SDIO card identification issues */
 		cmd->response[0U] &=
 			~(SD_R1_ERASE_SKIP | SD_R1_CSD_OVERWRITE | SD_R1_ERASE_PARAM);
 	}
 
-	if (IS_ENABLED(CONFIG_SDMMC_STACK)){
+	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
 	}
 
@@ -675,7 +682,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		return -EBUSY;
 	}
 
-	if(!sdhc_stm32_is_card_ready(config)) {
+	if (!sdhc_stm32_is_card_ready(config)) {
 		LOG_ERR("SDIO/SDMMC Card is busy");
 		k_mutex_unlock(&dev_data->bus_mutex);
 		return -ETIMEDOUT;
@@ -686,106 +693,106 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	switch (cmd->opcode) {
-		case SD_GO_IDLE_STATE:
-			sdmmc_res = sdhc_stm32_go_idle_state(dev);
-			break;
+	case SD_GO_IDLE_STATE:
+		sdmmc_res = sdhc_stm32_go_idle_state(dev);
+		break;
 
-		case SD_SEND_IF_COND:
-			sdmmc_res = SDMMC_CmdOperCond(config->hsd->Instance);
-			if (sdmmc_res == 0U) {
-				cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
-			}
-			break;
+	case SD_SEND_IF_COND:
+		sdmmc_res = SDMMC_CmdOperCond(config->hsd->Instance);
+		if (sdmmc_res == 0U) {
+			cmd->response[0] = SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
+		}
+		break;
 
-		case SD_SEND_CSD:
-			res  = sdhc_stm32_send_csd_and_save_card_configs(config, cmd);
-			break;
+	case SD_SEND_CSD:
+		res  = sdhc_stm32_send_csd_and_save_card_configs(config, cmd);
+		break;
 
-		case SD_ERASE_BLOCK_OPERATION:
-			res = sdhc_stm32_erase_block(dev, data);
-			break;
+	case SD_ERASE_BLOCK_OPERATION:
+		res = sdhc_stm32_erase_block(dev, data);
+		break;
 
-		case SD_SWITCH:
-			res = SDMMC_SwitchSpeed(config->hsd, cmd->arg);
-			break;
+	case SD_SWITCH:
+		res = SDMMC_SwitchSpeed(config->hsd, cmd->arg);
+		break;
 
-		case SD_APP_CMD:
-			sdmmc_res = SDMMC_CmdAppCommand(config->hsd->Instance, cmd->arg);
-			if(sdmmc_res == 0U) {
-				cmd->response[0] =  SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
-			}
-			break;
+	case SD_APP_CMD:
+		sdmmc_res = SDMMC_CmdAppCommand(config->hsd->Instance, cmd->arg);
+		if (sdmmc_res == 0U) {
+			cmd->response[0] =  SDMMC_GetResponse(config->hsd->Instance, SDMMC_RESP1);
+		}
+		break;
 
-		case SD_APP_SEND_OP_COND:
-			sdmmc_res = sdhc_stm32_send_op_cond(config, cmd);
-			break;
+	case SD_APP_SEND_OP_COND:
+		sdmmc_res = sdhc_stm32_send_op_cond(config, cmd);
+		break;
 
-		case SD_ALL_SEND_CID:
-			sdmmc_res  = sdhc_stm32_send_cid(config, cmd);
-			break;
+	case SD_ALL_SEND_CID:
+		sdmmc_res  = sdhc_stm32_send_cid(config, cmd);
+		break;
 
-		case SD_SELECT_CARD:
-			sdmmc_res = sdhc_stm32_select_card(config, cmd);
-			break;
+	case SD_SELECT_CARD:
+		sdmmc_res = sdhc_stm32_select_card(config, cmd);
+		break;
 
-		case SD_SEND_RELATIVE_ADDR:
-			sdmmc_res = sdhc_stm32_send_relative_addr(config, cmd);
-			break;
+	case SD_SEND_RELATIVE_ADDR:
+		sdmmc_res = sdhc_stm32_send_relative_addr(config, cmd);
+		break;
 
-		case SDIO_SEND_OP_COND:
-			sdmmc_res = SDMMC_CmdSendOperationcondition(config->hsd->Instance, cmd->arg,
-									(uint32_t *)&cmd->response);
-			break;
+	case SDIO_SEND_OP_COND:
+		sdmmc_res = SDMMC_CmdSendOperationcondition(config->hsd->Instance, cmd->arg,
+								(uint32_t *)&cmd->response);
+		break;
 
-		case SD_WRITE_SINGLE_BLOCK:
-		case SD_WRITE_MULTIPLE_BLOCK:
-			__ASSERT_NO_MSG(data != NULL);
-			res = sdhc_stm32_write_blocks(dev, data);
-			break;
+	case SD_WRITE_SINGLE_BLOCK:
+	case SD_WRITE_MULTIPLE_BLOCK:
+		__ASSERT_NO_MSG(data != NULL);
+		res = sdhc_stm32_write_blocks(dev, data);
+		break;
 
-		case SD_READ_SINGLE_BLOCK:
-		case SD_READ_MULTIPLE_BLOCK:
-			__ASSERT_NO_MSG(data != NULL);
-			res = sdhc_stm32_read_blocks(dev, data);
-			break;
+	case SD_READ_SINGLE_BLOCK:
+	case SD_READ_MULTIPLE_BLOCK:
+		__ASSERT_NO_MSG(data != NULL);
+		res = sdhc_stm32_read_blocks(dev, data);
+		break;
 
-		case SDIO_RW_DIRECT:
-			res = sdhc_stm32_rw_direct(dev, cmd);
-			break;
+	case SDIO_RW_DIRECT:
+		res = sdhc_stm32_rw_direct(dev, cmd);
+		break;
 
-		case SDIO_RW_EXTENDED:
-			__ASSERT_NO_MSG(data != NULL);
-			res = sdhc_stm32_rw_extended(dev, cmd, data);
-			break;
+	case SDIO_RW_EXTENDED:
+		__ASSERT_NO_MSG(data != NULL);
+		res = sdhc_stm32_rw_extended(dev, cmd, data);
+		break;
 
-		case SD_APP_SEND_SCR:
-			res = SDMMC_FindSCR(config->hsd, data->data);
-			break;
+	case SD_APP_SEND_SCR:
+		res = SDMMC_FindSCR(config->hsd, data->data);
+		break;
 
-		case SD_SET_BLOCK_SIZE:
-			sdmmc_res = SDMMC_CmdBlockLength(config->hsd->Instance, (uint32_t)cmd->arg);
-			break;
+	case SD_SET_BLOCK_SIZE:
+		sdmmc_res = SDMMC_CmdBlockLength(config->hsd->Instance, (uint32_t)cmd->arg);
+		break;
 
-		case SD_VOL_SWITCH:
-			res = sdhc_stm32_switch_to_1_8v(dev);
-			break;
+	case SD_VOL_SWITCH:
+		res = sdhc_stm32_switch_to_1_8v(dev);
+		break;
 
-		case SD_SEND_STATUS:
-			res = sdhc_stm32_get_sd_status(config->hsd, cmd->arg, &cmd->response[0]);
-			break;
+	case SD_SEND_STATUS:
+		res = sdhc_stm32_get_sd_status(config->hsd, cmd->arg, &cmd->response[0]);
+		break;
 
-		default:
-			LOG_DBG("Unsupported Command, opcode:%d", cmd->opcode);
-			res = -ENOTSUP;
+	default:
+		LOG_DBG("Unsupported Command, opcode:%d", cmd->opcode);
+		res = -ENOTSUP;
 	}
 
-	if((sdmmc_res != 0U) || (res !=0)) {
+	if ((sdmmc_res != 0U) || (res != 0)) {
 		res = -EIO;
 		LOG_ERR("Command Failed, opcode:%d", cmd->opcode);
 		sdhc_stm32_log_err_type(config->hsd);
 	}
 
-	if(IS_ENABLED(CONFIG_SDMMC_STACK) &&
+	if (IS_ENABLED(CONFIG_SDMMC_STACK) &&
 	   !IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) &&
 	   sdhc_stm32_is_read_write_opcode(cmd)) {
 		goto end;
@@ -904,7 +911,7 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_mutex_lock(&dev_data->bus_mutex, K_FOREVER);
 
-	if (IS_ENABLED(CONFIG_SDIO_STACK)){
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		/* Card is considered present if the read command did not time out */
 		if (SDMMC_CmdSendOperationcondition(config->hsd->Instance, 0, NULL) != 0) {
 			res = -EIO;
@@ -912,8 +919,8 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 		}
 	}
 
-	if(IS_ENABLED(CONFIG_SDMMC_STACK)) {
-		// Try CMD0 or CMD55/ACMD41 (send operation condition)
+	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
+		/* Try CMD0 or CMD55/ACMD41 (send operation condition) */
 		if (SDMMC_CmdGoIdleState(config->hsd->Instance) != 0) {
 			res = -EIO;
 			sdhc_stm32_log_err_type(config->hsd);
@@ -957,9 +964,9 @@ static int sdhc_stm32_reset(const struct device *dev)
 	k_msleep(data->props.power_delay);
 
 	/* Resetting card */
-	if (IS_ENABLED(CONFIG_SDIO_STACK)){
+	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
 		res = SDIO_LL_CardReset(config->hsd);
-	} else if(IS_ENABLED(CONFIG_SDMMC_STACK)) {
+	} else if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		res = sdhc_stm32_go_idle_state(dev);
 	} else {
 		k_mutex_unlock(&data->bus_mutex);
@@ -1027,7 +1034,7 @@ void sdhc_stm32_event_isr(const struct device *dev)
 
 	sdhc_stm32_clear_icr_flags(config);
 
-	if(config->hsd->ErrorCode != 0) {
+	if (config->hsd->ErrorCode != 0) {
 		LOG_ERR("Error Interrupt");
 		sdhc_stm32_log_err_type(config->hsd);
 	}

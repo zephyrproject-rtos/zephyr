@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 EXALT Technologies.
+ * Copyright (c) 2025 EXALT Technologies.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,96 +55,94 @@ typedef uint32_t SDMMC_CardStateTypeDef;
  * @brief SDMMC return status codes
  */
 typedef enum {
-    SDMMC_OK      = 0x00,  /* Operation successful */
-    SDMMC_ERROR   = 0x01,  /* Generic error */
-    SDMMC_BUSY    = 0x02,  /* Busy state */
-    SDMMC_TIMEOUT = 0x03   /* Timeout occurred */
+	SDMMC_OK      = 0x00,  /* Operation successful */
+	SDMMC_ERROR   = 0x01,  /* Generic error */
+	SDMMC_BUSY    = 0x02,  /* Busy state */
+	SDMMC_TIMEOUT = 0x03   /* Timeout occurred */
 } SDMMC_StatusTypeDef;
 
 /**
  * @brief SDMMC card status
  */
 typedef struct {
-    __IO uint8_t  DataBusWidth;           /* Currently defined data bus width */
-    __IO uint8_t  SecuredMode;            /* Card secured mode status */
-    __IO uint16_t CardType;               /* Card type information */
-    __IO uint32_t ProtectedAreaSize;      /* Capacity of protected area */
-    __IO uint8_t  SpeedClass;             /* Speed class of the card */
-    __IO uint8_t  PerformanceMove;        /* Performance move indicator */
-    __IO uint8_t  AllocationUnitSize;     /* Allocation unit size */
-    __IO uint16_t EraseSize;              /* Number of AUs erased per operation */
-    __IO uint8_t  EraseTimeout;           /* Timeout for AU erase */
-    __IO uint8_t  EraseOffset;            /* Erase offset */
-    __IO uint8_t  UhsSpeedGrade;          /* UHS speed grade */
-    __IO uint8_t  UhsAllocationUnitSize;  /* UHS card allocation unit size */
-    __IO uint8_t  VideoSpeedClass;        /* Video speed class */
+	__IO uint8_t  DataBusWidth;           /* Currently defined data bus width */
+	__IO uint8_t  SecuredMode;            /* Card secured mode status */
+	__IO uint16_t CardType;               /* Card type information */
+	__IO uint32_t ProtectedAreaSize;      /* Capacity of protected area */
+	__IO uint8_t  SpeedClass;             /* Speed class of the card */
+	__IO uint8_t  PerformanceMove;        /* Performance move indicator */
+	__IO uint8_t  AllocationUnitSize;     /* Allocation unit size */
+	__IO uint16_t EraseSize;              /* Number of AUs erased per operation */
+	__IO uint8_t  EraseTimeout;           /* Timeout for AU erase */
+	__IO uint8_t  EraseOffset;            /* Erase offset */
+	__IO uint8_t  UhsSpeedGrade;          /* UHS speed grade */
+	__IO uint8_t  UhsAllocationUnitSize;  /* UHS card allocation unit size */
+	__IO uint8_t  VideoSpeedClass;        /* Video speed class */
 } SDMMC_CardStatusTypeDef;
 
 /**
  * @brief SDMMC lock type definition
  */
 typedef enum {
-    SDMMC_UNLOCKED = 0x00,
-    SDMMC_LOCKED   = 0x01
+SDMMC_UNLOCKED = 0x00,
+SDMMC_LOCKED   = 0x01
 } SDMMC_LockTypeDef;
 
 /**
-  * @brief SD Card Information Structure definition
-  */
-typedef struct
-{
-  uint32_t CardType;      /* Specifies the card Type */
+ * @brief SD Card Information Structure definition
+ */
+typedef struct {
+	uint32_t CardType;      /* Specifies the card Type */
 
-  uint32_t CardVersion;   /* Specifies the card version */
+	uint32_t CardVersion;   /* Specifies the card version */
 
-  uint32_t Class;         /* Specifies the class of the card class */
+	uint32_t Class;         /* Specifies the class of the card class */
 
-  uint32_t RelCardAdd;    /* Specifies the Relative Card Address */
+	uint32_t RelCardAdd;    /* Specifies the Relative Card Address */
 
-  uint32_t BlockNbr;      /* Specifies the Card Capacity in blocks */
+	uint32_t BlockNbr;      /* Specifies the Card Capacity in blocks */
 
-  uint32_t BlockSize;     /* Specifies one block size in bytes */
+	uint32_t BlockSize;     /* Specifies one block size in bytes */
 
-  uint32_t LogBlockNbr;   /* Specifies the Card logical Capacity in blocks */
+	uint32_t LogBlockNbr;   /* Specifies the Card logical Capacity in blocks */
 
-  uint32_t LogBlockSize;  /* Specifies logical block size in bytes */
+	uint32_t LogBlockSize;  /* Specifies logical block size in bytes */
 
-  uint32_t CardSpeed;     /* Specifies the card Speed */
+	uint32_t CardSpeed;     /* Specifies the card Speed */
 
 } SDMMC_CardInfoTypeDef;
 
 /**
-  * @brief SD handle Structure definition
-  */
-typedef struct
-{
-  SDMMC_TypeDef         *Instance;     /* SD registers base address */
+ * @brief SD handle Structure definition
+ */
+typedef struct {
+	SDMMC_TypeDef         *Instance;     /* SD registers base address */
 
-  SDMMC_InitTypeDef      Init;         /* SD required parameters */
+	SDMMC_InitTypeDef      Init;         /* SD required parameters */
 
-  SDMMC_LockTypeDef      Lock;         /* SD locking object */
+	SDMMC_LockTypeDef      Lock;         /* SD locking object */
 
-  const uint8_t         *pTxBuffPtr;   /* Pointer to SD Tx transfer Buffer */
+	const uint8_t         *pTxBuffPtr;   /* Pointer to SD Tx transfer Buffer */
 
-  uint32_t               TxXferSize;   /* SD Tx Transfer size */
+	uint32_t               TxXferSize;   /* SD Tx Transfer size */
 
-  uint8_t               *pRxBuffPtr;   /* Pointer to SD Rx transfer Buffer */
+	uint8_t               *pRxBuffPtr;   /* Pointer to SD Rx transfer Buffer */
 
-  uint32_t               RxXferSize;   /* SD Rx Transfer size */
+	uint32_t               RxXferSize;   /* SD Rx Transfer size */
 
-  __IO uint32_t          Context;      /* SD transfer context */
+	__IO uint32_t          Context;      /* SD transfer context */
 
-  __IO uint32_t          State;        /* SD card State */
+	__IO uint32_t          State;        /* SD card State */
 
-  __IO uint32_t          ErrorCode;    /* SD Card Error codes */
+	__IO uint32_t          ErrorCode;    /* SD Card Error codes */
 
-  SDMMC_CardInfoTypeDef  SdCard;       /* SD Card information */
+	SDMMC_CardInfoTypeDef  SdCard;       /* SD Card information */
 
-  uint32_t               CSD[4];       /* SD card specific data table */
+	uint32_t               CSD[4];       /* SD card specific data table */
 
-  uint32_t               CID[4];       /* SD card identification number table */
+	uint32_t               CID[4];       /* SD card identification number table */
 
-  uint32_t               block_size;   /* Block size for SDIO data transfer */
+	uint32_t               block_size;   /* Block size for SDIO data transfer */
 } SDMMC_HandleTypeDef;
 
 /**
@@ -170,15 +168,17 @@ typedef struct {
  * @brief SD/MMC Functions Prototypes
  */
 SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd);
-SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_t *pData, uint32_t BlockAdd,
-                                         uint32_t NumberOfBlocks);
-SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *pData, uint32_t BlockAdd,
-                                     uint32_t NumberOfBlocks, uint32_t Timeout);
-SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pData, uint32_t BlockAdd,
-                                        uint32_t NumberOfBlocks);
-SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, uint32_t BlockAdd, uint32_t NumberOfBlocks,
-                                    uint32_t Timeout);
-SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd, uint32_t BlockEndAdd);
+SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
+										  uint32_t BlockAdd, uint32_t NumberOfBlocks);
+SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
+									  uint32_t BlockAdd, uint32_t NumberOfBlocks,
+									  uint32_t Timeout);
+SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pData,
+										 uint32_t BlockAdd, uint32_t NumberOfBlocks);
+SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, uint32_t BlockAdd,
+									 uint32_t NumberOfBlocks, uint32_t Timeout);
+SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd,
+								uint32_t BlockEndAdd);
 uint32_t SDMMC_SwitchSpeed(SDMMC_HandleTypeDef *hsd, uint32_t SwitchSpeedMode);
 uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR);
 SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd);
@@ -194,31 +194,21 @@ uint32_t SDMMC_LL_GetError(const SDMMC_HandleTypeDef *hsd);
  * @brief SDIO Functions Prototypes
  */
 SDMMC_StatusTypeDef SDIO_LL_ReadDirect(SDMMC_HandleTypeDef *hsd,
-                                     SDIO_LL_DirectCmd_TypeDef *Argument,
-                                     uint8_t *pData);
-
+									   SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t *pData);
 SDMMC_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
-                                        SDIO_LL_DirectCmd_TypeDef *Argument,
-                                        uint8_t Data);
-
+										SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t Data);
 SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
-                                         SDIO_LL_ExtendedCmd_TypeDef *Argument,
-                                         uint8_t *pData, uint32_t Size_byte,
-                                         uint32_t Timeout_Ms);
-
+										 SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
+										 uint32_t Size_byte, uint32_t Timeout_Ms);
 SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
-                                          SDIO_LL_ExtendedCmd_TypeDef *Argument,
-                                          uint8_t *pData, uint32_t Size_byte,
-                                          uint32_t Timeout_Ms);
-
+										  SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
+										  uint32_t Size_byte, uint32_t Timeout_Ms);
 SDMMC_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
-                                             SDIO_LL_ExtendedCmd_TypeDef *Argument,
-                                             uint8_t *pData, uint32_t Size_byte);
-
+											 SDIO_LL_ExtendedCmd_TypeDef *Argument,
+											 uint8_t *pData, uint32_t Size_byte);
 SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
-                                              SDIO_LL_ExtendedCmd_TypeDef *Argument,
-                                              uint8_t *pData, uint32_t Size_byte);
-
+											  SDIO_LL_ExtendedCmd_TypeDef *Argument,
+											  uint8_t *pData, uint32_t Size_byte);
 SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd);
 void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd);
 
