@@ -40,17 +40,34 @@
 		.tx_reply = _SCMI_MBOX_CHAN_DBELL(node_id, tx_reply),	\
 	}
 
+/* define private data for a protocol RX channel */
+#define _SCMI_MBOX_CHAN_DEFINE_PRIV_RX(node_id, proto)			\
+	static struct scmi_mbox_channel _SCMI_MBOX_CHAN_NAME(proto, 1) =\
+	{								\
+		.shmem = _SCMI_MBOX_SHMEM_BY_IDX(node_id, 1),		\
+		.rx = _SCMI_MBOX_CHAN_DBELL(node_id, rx),		\
+	}
+
 /*
  * Define a mailbox channel. This does two things:
  *	1) Define the mandatory `struct scmi_channel` structure
  *	2) Define the mailbox-specific private data for said
  *	channel (i.e: a struct scmi_mbox_channel)
  */
-#define _SCMI_MBOX_CHAN_DEFINE(node_id, proto, idx)				\
+#define _SCMI_MBOX_CHAN_DEFINE_TX(node_id, proto, idx)				\
 	_SCMI_MBOX_CHAN_DEFINE_PRIV_TX(node_id, proto);				\
 	DT_SCMI_TRANSPORT_CHAN_DEFINE(node_id, idx, proto,			\
 				    &(_SCMI_MBOX_CHAN_NAME(proto, idx)));	\
 
+#define _SCMI_MBOX_CHAN_DEFINE_RX(node_id, proto, idx)				\
+	_SCMI_MBOX_CHAN_DEFINE_PRIV_RX(node_id, proto);				\
+	DT_SCMI_TRANSPORT_CHAN_DEFINE(node_id, idx, proto,			\
+				    &(_SCMI_MBOX_CHAN_NAME(proto, idx)));	\
+
+#define _SCMI_MBOX_CHAN_DEFINE_RX_OPTIONAL(node_id, proto, idx)			\
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, shmem, idx),			\
+			(_SCMI_MBOX_CHAN_DEFINE_RX(node_id, proto, idx)),	\
+			())
 /*
  * Optionally define a mailbox channel for a protocol. This is optional
  * because a protocol might not have a dedicated channel.
@@ -69,24 +86,26 @@
 	_SCMI_MBOX_CHAN_DEFINE_OPTIONAL(node_id, DT_REG_ADDR(node_id), 0)
 
 /* define and validate base protocol TX channel */
-#define DT_INST_SCMI_MBOX_BASE_CHAN_DEFINE(inst)			\
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 1 ||		\
-		     (DT_INST_PROP_HAS_IDX(inst, shmem, 0) &&		\
-		     DT_INST_PROP_HAS_NAME(inst, mboxes, tx)),		\
-		     "bad bidirectional channel description");		\
-									\
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 2 ||		\
-		     (DT_INST_PROP_HAS_NAME(inst, mboxes, tx) &&	\
-		     DT_INST_PROP_HAS_NAME(inst, mboxes, tx_reply)),	\
-		     "bad unidirectional channel description");		\
-									\
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, shmem) == 1,		\
-		     "bad SHMEM count");				\
-									\
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) <= 2,		\
-		     "bad mbox count");					\
-									\
-	_SCMI_MBOX_CHAN_DEFINE(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 0)
+#define DT_INST_SCMI_MBOX_BASE_CHAN_DEFINE(inst)						\
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 1 ||					\
+		     (DT_INST_PROP_HAS_IDX(inst, shmem, 0) &&					\
+		     DT_INST_PROP_HAS_NAME(inst, mboxes, tx)),					\
+		     "bad bidirectional channel description");					\
+												\
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 2 ||					\
+		     ((DT_INST_PROP_HAS_NAME(inst, mboxes, tx) &&				\
+		     (DT_INST_PROP_HAS_NAME(inst, mboxes, tx_reply) ||				\
+		      DT_INST_PROP_HAS_NAME(inst, mboxes, rx)))),				\
+		     "bad unidirectional channel description");					\
+												\
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, shmem) <= 2,					\
+		     "bad SHMEM count");							\
+												\
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) <= 2,					\
+		     "bad mbox count");								\
+												\
+	_SCMI_MBOX_CHAN_DEFINE_TX(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 0)		\
+	_SCMI_MBOX_CHAN_DEFINE_RX_OPTIONAL(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 1) \
 
 /*
  * Define the mailbox-based transport layer. What this does is:
@@ -112,6 +131,8 @@ struct scmi_mbox_channel {
 	struct mbox_dt_spec tx;
 	/* TX reply dbell */
 	struct mbox_dt_spec tx_reply;
+	/* RX dbell */
+	struct mbox_dt_spec rx;
 };
 
 #endif /* _ZEPHYR_DRIVERS_FIRMWARE_SCMI_MAILBOX_H_ */

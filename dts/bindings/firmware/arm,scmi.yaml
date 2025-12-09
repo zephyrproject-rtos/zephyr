@@ -48,11 +48,12 @@ include: [base.yaml]
 
 properties:
   shmem:
-    type: phandle
+    type: phandles
     required: true
     description: |
-      Phandle to node describing TX channel shared memory area.
-      This translates to a **single** SCMI transmit channel.
+      Phandle array to nodes describing shared memory areas for SCMI transport.
+      The first entry corresponds to the TX channel, and the second (if present)
+      corresponds to the RX channel.
 
   mboxes:
     required: true
@@ -62,6 +63,8 @@ properties:
         mailbox channel for signaling)
         2) tx_reply - 2 mbox / 1 shmem (platform and agent use different
         mailbox channels for signaling)
+        3) tx + rx - 2 mbox / 2 shmem (platform and agent use different mailbox
+        channels and shmem between scmi_command and scmi_notification)
 
   mbox-names:
     required: true
