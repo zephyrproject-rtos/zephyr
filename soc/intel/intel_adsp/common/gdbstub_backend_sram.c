@@ -63,7 +63,7 @@ static inline int ring_have_data(const volatile struct gdb_sram_ring *ring)
 static volatile struct gdb_sram_ring *rx;
 static volatile struct gdb_sram_ring *tx;
 
-void z_gdb_backend_init(void)
+int z_gdb_backend_init(void)
 {
 	__ASSERT_NO_MSG(sizeof(ADSP_DW->descs) <= SOF_GDB_WINDOW_OFFSET);
 
@@ -71,6 +71,8 @@ void z_gdb_backend_init(void)
 	tx = sys_cache_uncached_ptr_get(TX_UNCACHED);
 	rx->head = rx->tail = 0;
 	tx->head = tx->tail = 0;
+
+	return 0;
 }
 
 void z_gdb_putchar(unsigned char c)
