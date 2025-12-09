@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/unistd.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_interface.h>
