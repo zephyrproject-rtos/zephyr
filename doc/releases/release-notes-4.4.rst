@@ -106,6 +106,15 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* ADC
+
+  * :c:macro:`ADC_DT_SPEC_GET_BY_IDX_OR`
+  * :c:macro:`ADC_DT_SPEC_GET_BY_NAME_OR`
+  * :c:macro:`ADC_DT_SPEC_GET_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
+
 * Architectures
 
   * Xtensa
