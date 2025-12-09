@@ -38,8 +38,22 @@ A rule is represented by a :c:struct:`npf_rule` object. It can be inserted to,
 appended to or removed from a rule list contained in a
 :c:struct:`npf_rule_list` object using :c:func:`npf_insert_rule()`,
 :c:func:`npf_append_rule()`, and :c:func:`npf_remove_rule()`.
-Currently, two such rule lists exist: ``npf_send_rules`` for outgoing packets,
-and ``npf_recv_rules`` for incoming packets.
+
+There are different sets of rules for different layers in the network stack.
+Some of the rules are applied for L2 layer like Ethernet, and some for L3 layer
+where IPv4 or IPv6 protocol is handled. The ``local_in`` rules are for matching
+incoming protocol types like UDP or TCP packets that are run on top of IPv4 or IPv6.
+The rule support for different layers can be controlled by relevant Kconfig options
+mentioned below.
+
+* ``npf_send_rules`` is a rule list applied to outgoing packets in L2 layer
+* ``npf_recv_rules`` is a rule list applied to incoming packets in L2 layer
+* ``npf_ipv4_recv_rules`` is a rule list applied for incoming IPv4 packets. Can be
+  enabled or disabled by :kconfig:option:`CONFIG_NET_PKT_FILTER_IPV4_HOOK` option.
+* ``npf_ipv6_recv_rules`` is a rule list applied for incoming IPv6 packets. Can be
+  enabled or disabled by :kconfig:option:`CONFIG_NET_PKT_FILTER_IPV6_HOOK` option.
+* ``npf_local_in_recv_rules`` is a rule list applied for incoming UDP or TCP packets.
+  Can be enabled or disabled by :kconfig:option:`CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK` option.
 
 If a filter rule list is empty then ``NET_OK`` is assumed. If a non-empty
 rule list runs to the end then ``NET_DROP`` is assumed. However it is
@@ -55,6 +69,10 @@ Convenience macros are provided in :zephyr_file:`include/zephyr/net/net_pkt_filt
 to statically define condition instances for various conditions, and
 :c:macro:`NPF_RULE()` and :c:macro:`NPF_PRIORITY()` to create a rule instance
 with an immediate outcome or a priority change.
+
+See also :zephyr:code-sample:`net-pkt-filter` sample for an example of how to create and
+manage packet filters. The network shell has a ``net filter`` command that can be used
+to see the installed rules at runtime.
 
 Examples
 ********
