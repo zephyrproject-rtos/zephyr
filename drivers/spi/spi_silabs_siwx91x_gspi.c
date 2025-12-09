@@ -105,7 +105,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 {
 	__maybe_unused struct gspi_siwx91x_data *data = dev->data;
 	const struct gspi_siwx91x_config *cfg = dev->config;
-	uint32_t bit_rate = spi_cfg->frequency;
 	uint32_t clk_div_factor;
 	uint32_t actual_freq;
 	uint32_t clock_rate;
@@ -137,7 +136,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	}
 
 	/* Configure clock divider based on the requested bit rate */
-	if (bit_rate > GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK) {
+	if (spi_cfg->frequency > GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK) {
 		clk_div_factor = 1;
 	} else {
 		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_rate);
@@ -159,7 +158,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	}
 
 	/* Configure data sampling edge for high-speed transfers */
-	if (bit_rate > GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE) {
+	if (spi_cfg->frequency > GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE) {
 		cfg->reg->GSPI_BUS_MODE_b.GSPI_DATA_SAMPLE_EDGE = 1;
 	}
 
