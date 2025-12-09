@@ -120,7 +120,7 @@ static void permute_args(int panonopt_start, int panonopt_end, int opt_end, char
 	 */
 	nnonopts = panonopt_end - panonopt_start;
 	nopts = opt_end - panonopt_end;
-	ncycle = gcd(nnonopts, nopts);
+	ncycle = sys_gcd(nnonopts, nopts);
 	cyclelen = (opt_end - panonopt_start) / ncycle;
 
 	for (int i = 0; i < ncycle; i++) {
