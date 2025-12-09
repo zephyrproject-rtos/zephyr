@@ -944,6 +944,12 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 		} else {
 			struct net_if_addr *ifaddr;
 
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr)) {
+				if (iface == NULL) {
+					iface = net_if_get_by_index(addr6->sin6_scope_id);
+				}
+			}
+
 			ifaddr = net_if_ipv6_addr_lookup(
 					&addr6->sin6_addr,
 					iface == NULL ? &iface : NULL);
@@ -2470,6 +2476,17 @@ static int context_sendto(struct net_context *context,
 				IF_ENABLED(CONFIG_NET_IPV6,
 					   (iface = net_if_get_by_index(
 						   context->options.ipv6_mcast_ifindex)));
+			}
+
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
+			    !net_context_is_bound_to_iface(context) &&
+			    COND_CODE_1(CONFIG_NET_IPV6,
+					(addr6->sin6_scope_id > 0), (false))) {
+				IF_ENABLED(CONFIG_NET_IPV6, (
+					   iface = net_if_get_by_index(addr6->sin6_scope_id)));
+				if (iface != NULL) {
+					net_context_set_iface(context, iface);
+				}
 			}
 		}
 
