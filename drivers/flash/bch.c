@@ -318,7 +318,7 @@ int bch_decode(bch_t *bch, uint8_t *data, uint8_t *ecc)
 	bch_encode(bch, data, NULL);
 	memcpy(bch->ecc2, ecc, bch->ecc_bytes);
 	for (i = 0; i < bch->ecc_words; i++) {
-		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], swap32_byte(bch->ecc2[i]),
+		LOG_DBG("<word %d> %08X : %08X %s", i, bch->ecc[i], swap32_byte(bch->ecc2[i]),
 			bch->ecc[i] != swap32_byte(bch->ecc2[i]) ? "**" : "");
 		bch->ecc[i] ^= swap32_byte(bch->ecc2[i]);
 		err |= bch->ecc[i];
