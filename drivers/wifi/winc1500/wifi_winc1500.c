@@ -289,7 +289,7 @@ static char *socket_message_to_string(uint8_t message)
 /**
  * This function is called when the socket is to be opened.
  */
-static int winc1500_get(sa_family_t family,
+static int winc1500_get(net_sa_family_t family,
 			enum net_sock_type type,
 			enum net_ip_protocol ip_proto,
 			struct net_context **context)
