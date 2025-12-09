@@ -292,7 +292,6 @@ int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample)
 #ifdef CONFIG_SENSOR_ASYNC_API
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
-void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 #ifdef CONFIG_ADXL345_STREAM

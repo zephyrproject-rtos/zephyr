@@ -313,14 +313,22 @@ int adxl345_read_sample(const struct device *dev,
 	return 0;
 }
 
-void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+static void adxl345_accel_convert(struct sensor_value *val, int16_t sample,
+				  uint8_t selected_range)
 {
+	const int32_t sensitivity[] = {
+		[ADXL345_RANGE_2G] = INT32_C(SENSOR_G / 256),
+		[ADXL345_RANGE_4G] = INT32_C(SENSOR_G / 128),
+		[ADXL345_RANGE_8G] = INT32_C(SENSOR_G / 64),
+		[ADXL345_RANGE_16G] = INT32_C(SENSOR_G / 32),
+	};
+
 	if (sample & BIT(9)) {
 		sample |= ADXL345_COMPLEMENT;
 	}
 
-	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
-	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
+	val->val1 = (sample * sensitivity[selected_range]) / 1000000;
+	val->val2 = (sample * sensitivity[selected_range]) % 1000000;
 }
 
 static int adxl345_sample_fetch(const struct device *dev,
@@ -350,18 +358,26 @@ static int adxl345_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->samples.x);
+		adxl345_accel_convert(val, data->samples.x,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->samples.y);
+		adxl345_accel_convert(val, data->samples.y,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->samples.z);
+		adxl345_accel_convert(val, data->samples.z,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->samples.x);
-		adxl345_accel_convert(val++, data->samples.y);
-		adxl345_accel_convert(val,   data->samples.z);
+		adxl345_accel_convert(val, data->samples.x,
+				      data->selected_range);
+		val++;
+		adxl345_accel_convert(val, data->samples.y,
+				      data->selected_range);
+		val++;
+		adxl345_accel_convert(val, data->samples.z,
+				      data->selected_range);
 		break;
 	default:
 		return -ENOTSUP;
