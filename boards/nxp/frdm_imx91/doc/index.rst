@@ -5,7 +5,7 @@ Overview
 
 The FRDM-IMX91 board is a low-cost and compact platform designed to show
 the most commonly used features of the i.MX 91 Applications Processor in a
-small and low cost package. The FRDM-IMX93 board is an entry-level development
+small and low cost package. The FRDM-IMX91 board is an entry-level development
 board, which helps developers to get familiar with the processor before
 investing a large amount of resources in more specific designs.
 
@@ -206,5 +206,58 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
    :host-os: unix
    :board: frdm_imx91/mimx9131
    :goals: debug
+
+Option 3. Boot Zephyr by Using SPSDK Runner
+===========================================
+
+SPSDK runner leverages SPSDK tools (https://spsdk.readthedocs.io), it builds an
+bootable flash image ``flash.bin`` which includes all necessary firmware components.
+Using west flash command will download the boot image flash.bin to DDR memory, SD card
+or eMMC flash. By using flash.bin, as no U-Boot image is available, so TF-A will boot
+up Zephyr on the Cortex-A55 Core directly.
+
+In order to use SPSDK runner, it requires fetching binary blobs, which can be achieved
+by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+SPSDK runner is enabled by configure item :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE`, currently
+it is not enabled by default for FRDM-IMX91 board, so use this configuration to enable
+it, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: frdm_imx91/mimx9131
+   :goals: build
+   :gen-args: -DCONFIG_BOARD_NXP_SPSDK_IMAGE=y
+
+If :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE` is available and enabled for the board variant,
+``flash.bin`` will be built automatically. The programming could be through below commands.
+Before that, onboard switch SW1[3:0] should be configured to 0b0001 for USB download mode
+to boot, and USB1 and DBG ports should be connected to Linux host PC. There are 2 serial ports
+enumerated (115200 8n1), the first port will be used for Cortex-A55 Zephyr's Console.
+(The flasher is spsdk which already installed via scripts/requirements.txt.
+On Linux host, USB device permission should be configured per Installation Guide
+of https://spsdk.readthedocs.io)
+
+.. code-block:: none
+
+   # load and run without programming. for next flashing, need to reset the board firstly
+   $ west flash -r spsdk
+
+   # program to SD card, then set SW1[3:0]=0b0011 to reboot from SD
+   $ west flash -r spsdk --bootdevice sd
+
+   # program to emmc card, then set SW1[3:0]=0b0010 to reboot from EMMC
+   $ west flash -r spsdk --bootdevice=emmc
+
+Then the Zephyr log will be displayed in the first serial port's console.
 
 .. include:: ../../common/board-footer.rst.inc
