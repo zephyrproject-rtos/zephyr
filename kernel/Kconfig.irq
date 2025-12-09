@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_IRQ
+	bool "System IRQ subsystem"
+	depends on INTC
+
+if SYS_IRQ
+
+config SYS_IRQ_LOG_SPURIOUS
+	bool "Log spurious IRQs"
+	depends on LOG
+
+config SYS_IRQ_DYNAMIC
+	bool "Dynamic IRQ"
+
+endif

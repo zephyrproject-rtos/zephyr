@@ -35,6 +35,15 @@ endchoice
 config ROM_START_OFFSET
 	default 0x800 if BOOTLOADER_MCUBOOT
 
+config GEN_ISR_TABLES
+	default n
+
+config GEN_SW_ISR_TABLE
+	default n
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
 endif # ARM
 
 if RISCV

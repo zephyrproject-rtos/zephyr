@@ -104,6 +104,10 @@ GDATA(_k_syscall_table)
 GTEXT(__soc_handle_all_irqs)
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_ISR_PREP
+GTEXT(__soc_prep_isr)
+#endif
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -645,7 +649,15 @@ on_irq_stack:
 	 */
 	jal ra, __soc_handle_irq
 
-#if defined CONFIG_GEN_SW_ISR_TABLE
+#if defined CONFIG_RISCV_SOC_HAS_CUSTOM_ISR_PREP
+	/*
+	 * Prepare ISR function call
+	 * Pass IRQ number to __soc_prep_isr via register a0
+	 * Expect ISR function in t1
+	 * Expect argument in a0
+	 */
+	call __soc_prep_isr
+#elif defined CONFIG_GEN_SW_ISR_TABLE
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * (table is 2-word wide, we should shift index accordingly)

@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/irq.h>
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
@@ -65,7 +65,7 @@
 #define LATENCY_THR_TICKS 200
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
+const int32_t z_sys_timer_irq_for_test = SYS_DT_IRQN(GRTC_NODE);
 #endif
 
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context);
@@ -424,14 +424,15 @@ uint32_t sys_clock_elapsed(void)
 	return (uint32_t)(last_elapsed / CYC_PER_TICK);
 }
 
-#if !defined(CONFIG_GEN_SW_ISR_TABLE)
-ISR_DIRECT_DECLARE(nrfx_grtc_direct_irq_handler)
+static int grtc_isr_wrapper(const void *arg)
 {
+	ARG_UNUSED(arg);
+
 	nrfx_grtc_irq_handler();
-	ISR_DIRECT_PM();
-	return 1;
+	return SYS_IRQ_HANDLED;
 }
-#endif
+
+SYS_DT_DEFINE_IRQ_HANDLER(GRTC_NODE, grtc_isr_wrapper, NULL);
 
 void sys_clock_disable(void)
 {
@@ -452,14 +453,8 @@ static int sys_clock_driver_init(void)
 {
 	int err_code;
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE)
-	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
-		    nrfx_grtc_irq_handler, 0);
-#else
-	IRQ_DIRECT_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority),
-			   nrfx_grtc_direct_irq_handler, 0);
-	irq_enable(DT_IRQN(GRTC_NODE));
-#endif
+	sys_irq_configure(SYS_DT_IRQN(GRTC_NODE), SYS_DT_IRQ_FLAGS(GRTC_NODE));
+	sys_irq_enable(SYS_DT_IRQN(GRTC_NODE));
 
 #if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
 #if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)

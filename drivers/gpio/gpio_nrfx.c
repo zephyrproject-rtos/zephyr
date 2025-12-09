@@ -12,8 +12,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_nrf.h>
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
-#include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -48,6 +48,8 @@ struct gpio_nrfx_cfg {
 	struct gpio_driver_config common;
 	NRF_GPIO_Type *port;
 	nrfx_gpiote_t *gpiote;
+	uint16_t gpiote_irqn;
+	uint32_t gpiote_irq_flags;
 	uint32_t edge_sense;
 	uint8_t port_num;
 #if defined(GPIOTE_FEATURE_FLAG)
@@ -586,20 +588,23 @@ static void nrfx_gpio_handler(nrfx_gpiote_pin_t abs_pin,
  * Casting brings similar effect, however clashes with IRQ_CONNECT macro implementation
  * for non-native builds.
  */
-void gpio_nrfx_gpiote_irq_handler(void const *param)
+static int gpio_nrfx_gpiote_irq_handler(const void *data)
 {
-	nrfx_gpiote_t *gpiote = (nrfx_gpiote_t *)param;
+	nrfx_gpiote_t *gpiote = (nrfx_gpiote_t *)data;
 
 	nrfx_gpiote_irq_handler(gpiote);
+	return SYS_IRQ_HANDLED;
 }
-#endif
 
-#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)		\
-	IRQ_CONNECT(DT_IRQN(node_id),			\
-		    DT_IRQ(node_id, priority),		\
-		    gpio_nrfx_gpiote_irq_handler,       \
-		    &GPIOTE_NRFX_INST_BY_NODE(node_id), \
-		    0);
+#define GPIOTE_NRF_DEFINE_IRQ_HANDLER(node_id)				\
+	SYS_DT_DEFINE_IRQ_HANDLER(					\
+		node_id,						\
+		gpio_nrfx_gpiote_irq_handler,				\
+		&GPIOTE_NRFX_INST_BY_NODE(node_id)			\
+	)
+
+DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_NRF_DEFINE_IRQ_HANDLER);
+#endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
 static int gpio_nrfx_pm_hook(const struct device *port, enum pm_device_action action)
 {
@@ -627,8 +632,11 @@ static int gpio_nrfx_init(const struct device *port)
 	}
 
 #ifdef CONFIG_GPIO_NRFX_INTERRUPT
+	if (sys_irq_configure(cfg->gpiote_irqn, cfg->gpiote_irq_flags)) {
+		return -EIO;
+	}
+
 	nrfx_gpiote_global_callback_set(cfg->gpiote, nrfx_gpio_handler, NULL);
-	DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_IRQ_HANDLER_CONNECT);
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
 pm_init:
@@ -672,6 +680,16 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 		    (&GPIOTE_NRFX_INST_BY_NODE(GPIOTE_PHANDLE(id))), \
 		    (NULL))
 
+#define GPIOTE_IRQN(id) \
+	COND_CODE_1(HAS_GPIOTE(id),				     \
+		    (SYS_DT_IRQN(GPIOTE_PHANDLE(id))),		     \
+		    (0))
+
+#define GPIOTE_IRQ_FLAGS(id) \
+	COND_CODE_1(HAS_GPIOTE(id),				     \
+		    (SYS_DT_IRQ_FLAGS(GPIOTE_PHANDLE(id))),	     \
+		    (0))
+
 #define GPIO_NRF_DEVICE(id)								\
 	GPIOTE_CHECK(id);								\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;				\
@@ -682,6 +700,8 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 		},									\
 		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),				\
 		.gpiote = GPIOTE_REF(id),						\
+		.gpiote_irqn = GPIOTE_IRQN(id),						\
+		.gpiote_irq_flags = GPIOTE_IRQ_FLAGS(id),				\
 		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),			\
 		.port_num = DT_INST_PROP(id, port),					\
 		IF_ENABLED(GPIOTE_FEATURE_FLAG,						\
