@@ -89,7 +89,7 @@
 
 		pll: pll {
 			#clock-cells = <0>;
-			compatible = "st,stm32f4-pll-clock";
+			compatible = "st,stm32fx-pll-clock";
 			status = "disabled";
 		};
 	};
