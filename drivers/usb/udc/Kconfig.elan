@@ -28,4 +28,4 @@ config UDC_E967_MSG_QUEUE_SIZE
 	help
 	  Maximum number of messages the driver can queue for interrupt bottom half processing.
 
-endif
+endif # UDC_ELAN_ELANDEV
