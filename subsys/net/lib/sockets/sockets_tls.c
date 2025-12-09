@@ -2926,18 +2926,24 @@ static ssize_t sendto_dtls_server(struct tls_context *ctx, const void *buf,
 				  const struct net_sockaddr *dest_addr,
 				  net_socklen_t addrlen)
 {
+	int ret;
+
+	if (dest_addr != NULL) {
+		/* Verify we have a session with the client. */
+		ret = dtls_server_switch_active_session(ctx, dest_addr, addrlen);
+		if (ret < 0) {
+			NET_DBG("No session found (TX) for [%s]:%d",
+				LOG_ADDR_PORT_HELPER(dest_addr));
+			errno = ENOTCONN;
+			return -1;
+		}
+	}
+
 	/* For DTLS server, require to have established DTLS connection
 	 * in order to send data.
 	 */
 	if (!is_handshake_complete(ctx->active_session)) {
 		errno = ENOTCONN;
-		return -1;
-	}
-
-	/* Verify we are sending to a peer that we have connection with. */
-	if (dest_addr &&
-	    !dtls_is_peer_addr_valid(ctx->active_session, dest_addr, addrlen) != 0) {
-		errno = EISCONN;
 		return -1;
 	}
 
