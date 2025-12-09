@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 #include "tls_internal.h"
+#include "../../ip/net_private.h"
 
 #if defined(CONFIG_MBEDTLS_DEBUG)
 #include <zephyr_mbedtls_priv.h>
@@ -940,12 +941,65 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 	return sent;
 }
 
-static int dtls_rx(void *ctx, unsigned char *buf, size_t len)
+static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
 	struct net_sockaddr addr;
 	int err;
+	ssize_t received;
+	uint8_t tmp_buf;
+
+	/* Peek the packet first to check the peer address. */
+	received = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
+				  ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
+				  &addr, &addrlen);
+	if (received < 0) {
+		if (errno == EAGAIN) {
+			return MBEDTLS_ERR_SSL_WANT_READ;
+		}
+
+		NET_ERR("DTLS server RX: failure %d", errno);
+		return MBEDTLS_ERR_NET_RECV_FAILED;
+	}
+
+	/* Check if the peer address matches the current session. */
+	if (tls_ctx->active_session->dtls_peer_addrlen != 0 &&
+	    !dtls_is_peer_addr_valid(tls_ctx->active_session, &addr, addrlen)) {
+		/* Peer address does not match the current session, exit now
+		 * and try to find the appropriate session or allocate a new one.
+		 */
+		return MBEDTLS_ERR_SSL_WANT_READ;
+	}
+
+	/* If the session matches, read the actual packet. */
+	received = zsock_recvfrom(tls_ctx->sock, buf, len,
+				  ZSOCK_MSG_DONTWAIT, &addr, &addrlen);
+	if (received < 0) {
+		NET_ERR("DTLS server RX: failure %d", errno);
+		return MBEDTLS_ERR_NET_RECV_FAILED;
+	}
+
+	/* Only allow to store peer address for DTLS servers. */
+	if (tls_ctx->active_session->dtls_peer_addrlen == 0) {
+		dtls_peer_address_set(tls_ctx->active_session, &addr, addrlen);
+
+		err = mbedtls_ssl_set_client_transport_id(&tls_ctx->active_session->ssl,
+							 (const unsigned char *)&addr,
+							 addrlen);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return received;
+}
+
+static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
+{
+	struct tls_context *tls_ctx = ctx;
+	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	struct net_sockaddr addr;
 	ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
@@ -959,23 +1013,14 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len)
 	}
 
 	if (tls_ctx->active_session->dtls_peer_addrlen == 0) {
-		/* Only allow to store peer address for DTLS servers. */
-		if (tls_ctx->options.role == MBEDTLS_SSL_IS_SERVER) {
-			dtls_peer_address_set(tls_ctx->active_session, &addr, addrlen);
+		/* For clients it's incorrect to receive when
+		 * no peer has been set up.
+		 */
+		return MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED;
+	}
 
-			err = mbedtls_ssl_set_client_transport_id(
-				&tls_ctx->active_session->ssl,
-				(const unsigned char *)&addr, addrlen);
-			if (err < 0) {
-				return err;
-			}
-		} else {
-			/* For clients it's incorrect to receive when
-			 * no peer has been set up.
-			 */
-			return MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED;
-		}
-	} else if (!dtls_is_peer_addr_valid(tls_ctx->active_session, &addr, addrlen)) {
+	if (!dtls_is_peer_addr_valid(tls_ctx->active_session, &addr, addrlen)) {
+		/* Received packet from a different peer, drop and retry. */
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
 
@@ -1390,8 +1435,9 @@ static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
 				    tls_tx, tls_rx, NULL);
 	} else {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		mbedtls_ssl_set_bio(&session_ctx->ssl, tls_ctx,
-				    dtls_tx, dtls_rx, NULL);
+		mbedtls_ssl_set_bio(&session_ctx->ssl, tls_ctx, dtls_tx,
+				    is_server ? dtls_server_rx : dtls_client_rx,
+				    NULL);
 
 		/* DTLS requires timer callbacks to operate */
 		mbedtls_ssl_set_timer_cb(&session_ctx->ssl,
