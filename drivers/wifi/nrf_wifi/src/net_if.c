@@ -1210,7 +1210,8 @@ out:
 }
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev)
+struct net_stats_eth *nrf_wifi_eth_stats_get_type(const struct device *dev,
+						   uint32_t type)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 #ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
@@ -1222,24 +1223,34 @@ struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev)
 	const uint8_t *fw_stats_bytes;
 	size_t i;
 	int vendor_idx = 0;
-#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
+	const char **key_ptr;
+	uint32_t *val_ptr;
+	uint32_t val;
+#endif
 
 	if (!dev) {
 		LOG_ERR("%s Device not found", __func__);
-		goto out;
+		goto err;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
-		goto out;
+		goto err;
+	}
+
+	if (!(type & ETHERNET_STATS_TYPE_VENDOR)) {
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+		vif_ctx_zep->eth_stats.vendor = NULL;
+#endif
+		goto done;
 	}
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		LOG_ERR("%s: rpu_ctx_zep or rpu_ctx is NULL", __func__);
-		goto out;
+		goto err;
 	}
 
 	memset(&stats, 0, sizeof(stats));
@@ -1248,7 +1259,7 @@ struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev)
 					     &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: Failed to get RPU stats", __func__);
-		goto ret;
+		goto done;
 	}
 
 	/* Treat stats.fw as a blob and divide into uint32_t chunks */
@@ -1257,49 +1268,34 @@ struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev)
 	fw_stats_bytes = (const uint8_t *)&stats.fw;
 
 	vendor_idx = 0;
-
 	for (i = 0; i < num_uint32 && vendor_idx < MAX_VENDOR_STATS - 1; i++) {
-		uint32_t val;
-		const char **key_ptr;
-		uint32_t *val_ptr;
+		memcpy(&val, fw_stats_bytes + i * sizeof(uint32_t),
+		       sizeof(uint32_t));
 
-		/* Extract uint32_t value from blob */
-		memcpy(&val, fw_stats_bytes + i * sizeof(uint32_t), sizeof(uint32_t));
+		snprintk(vif_ctx_zep->vendor_key_strings[vendor_idx], 16,
+			 "fw_%zu", i);
 
-		/* Create key name */
-		snprintk(vif_ctx_zep->vendor_key_strings[vendor_idx], 16, "fw_%zu", i);
-
-		/* Assign key */
-		key_ptr = (const char **)
-			&vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
+		key_ptr = (const char **) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
 		*key_ptr = vif_ctx_zep->vendor_key_strings[vendor_idx];
 
-		/* Assign value */
-		val_ptr = (uint32_t *)
-			&vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
+		val_ptr = (uint32_t *) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
 		*val_ptr = val;
 
 		vendor_idx++;
 	}
 
-	/* Null terminator entry */
-	{
-		const char **key_ptr = (const char **)
-			&vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
-		uint32_t *val_ptr = (uint32_t *)
-			&vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
+	key_ptr = (const char **) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
+	val_ptr = (uint32_t *) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
+	*key_ptr = NULL;
+	*val_ptr = 0;
 
-		*key_ptr = NULL;
-		*val_ptr = 0;
-	}
-
-	/* Point to the static vendor data */
 	vif_ctx_zep->eth_stats.vendor = vif_ctx_zep->eth_stats_vendor_data;
+#endif
 
-ret:
-#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
+done:
 	return &vif_ctx_zep->eth_stats;
-out:
+
+err:
 	return NULL;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */

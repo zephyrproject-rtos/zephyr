@@ -978,7 +978,7 @@ static const struct net_wifi_mgmt_offload wifi_offload_ops = {
 	.wifi_iface.get_capabilities = nrf_wifi_if_caps_get,
 	.wifi_iface.send = nrf_wifi_if_send,
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-	.wifi_iface.get_stats = nrf_wifi_eth_stats_get,
+	.wifi_iface.get_stats_type = nrf_wifi_eth_stats_get_type,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 	.wifi_mgmt_api = &nrf_wifi_mgmt_ops,
