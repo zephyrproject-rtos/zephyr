@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT nxp_sctimer_pwm
 
 #include <errno.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/pwm.h>
 #include <fsl_sctimer.h>
 #include <fsl_clock.h>
