@@ -241,6 +241,13 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* HWSPINLOCK
+
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_DEFINE`
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_INST_DEFINE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
