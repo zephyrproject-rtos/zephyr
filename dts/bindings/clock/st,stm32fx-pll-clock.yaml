@@ -1,0 +1,120 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32F2, STM32F4 and STM32F7 device
+
+  This binding can be used to describe any PLL present on these SoCs:
+    - PLL
+    - PLLI2S
+    - PLLSAI
+
+  Takes one of clk_hse or clk_hsi as input clock.
+
+  The PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP
+    f(PLL_Q) = f(VCO clock) / PLLQ
+    f(PLL_R) = f(VCO clock) / PLLR
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  An additional divisor is available on some SoCs for the Q and R outputs.
+
+  The PLL clock input is shared between PLLs (PLL / PLLI2S / PLLSAI) of the
+  SoC hence all PLLs must have the same source set.
+
+compatible: "st,stm32fx-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLL input clock.
+        On STM32F411, F412, F413, F423 and F446, the division M
+        factor is independent from other PLLs.
+        On all other SoCs, the division factor M is shared between
+        PLL, PLLSAI and PLLI2S, hence same value must be used
+        for those PLLs when used together.
+        Valid range: 2 - 63
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Multiplication factor for VCO.
+        Valid range:
+          - 192 - 432 for STM32F2x and STM32F401
+          - 50 - 432 for other STM32F4x and for STM32F7x
+
+  div-p:
+    type: int
+    description: |
+        Division factor for PLL_P.
+        Available on all SoCs for main PLL.
+        Available only on STM32F446 and on STM32F74x and higher for PLLI2S.
+        Available only on STM32F446, F469, F479 and on all STM32F7x for PLLSAI.
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  div-q:
+    type: int
+    description: |
+        Division factor for PLL_Q
+        Available on all SoCs for main PLL.
+        Available only on STM32F412, F413, F423, F427, F429, F437, F439, F446, F469, F479
+        and on all STM32F7x for PLLI2S.
+        Available only on STM32F427, F429, F437, F439, F446, F469, F479
+        and on all STM32F7x for PLLSAI.
+        Valid range: 2 - 15
+
+  post-div-q:
+    type: int
+    description: |
+        Division factor after PLL_Q.
+        Available only on STM32F427, F429, F437, F439, F446, F469, F479
+        and on all STM32F7x for PLLI2S.
+        Available only on STM32F427, F429, F437, F439, F446, F469, F479
+        and on all STM32F7x for PLLSAI.
+        If the div-q property is used and this property is applicable for the SoC, then it is
+        required to define it.
+        Valid range: 1 - 32
+
+  div-r:
+    type: int
+    description: |
+        Division factor for PLL_R.
+        Available only on STM32F410, F412, F413, F423, F446, F469, F479, F769 and F779 for main PLL.
+        Available on all SoCs except STM32F410 for PLLI2S.
+        Available only on STM32F427, F429, F437, F439, F469, F479
+        and on STM32F74x and higher for PLLSAI.
+        Valid range: 2 - 7
+
+  post-div-r:
+    type: int
+    description: |
+        Division factor after PLL_R.
+        Available only on STM32F413 and F423 for main PLL.
+        Available only on STM32F413 and F423 for PLLI2S.
+        Available only on STM32F427, F429, F437, F439, F469, F479
+        and on STM32F74x and higher for PLLSAI.
+        If the div-r property is used and this property is applicable for the SoC, then it is
+        required to define it.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
