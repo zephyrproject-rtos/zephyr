@@ -1122,6 +1122,11 @@
 		compatible = "nxp,pmc-tmpsns";
 		status = "disabled";
 	};
+
+	uuid: uuid@2bc0 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x2bc0 0x10>;
+	};
 };
 
 &xspi0 {
