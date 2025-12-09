@@ -32,27 +32,6 @@ extern "C" {
 #endif
 
 /**
- * @brief HW spinlock controller runtime context
- */
-struct hwspinlock_context {
-	/**
-	 * @internal
-	 * Per HW spinlock lock
-	 * @note HW spinlock protects resources across clusters, but we need to protect the
-	 * access to HW spinlock inside of the same cluster, so a single thread may claim the
-	 * lock at a time.
-	 */
-	struct k_spinlock lock;
-};
-
-/**
- * @brief Opaque type to represent a hwspinlock runtime context.
- *
- * This type is not meant to be inspected by application code.
- */
-typedef struct hwspinlock_context hwspinlock_ctx_t;
-
-/**
  * @brief Complete hardware spinlock DT information
  */
 struct hwspinlock_dt_spec {
@@ -60,21 +39,7 @@ struct hwspinlock_dt_spec {
 	const struct device *dev;
 	/** HW spinlock id */
 	uint32_t id;
-	/** Runtime context */
-	hwspinlock_ctx_t ctx;
 };
-
-/**
- * @brief Initializer for a hwspinlock_ctx_t
- *
- * @note We must declare each field individually because a struct k_spinlock might have no field
- * depending on Kconfig options, and gcc requires struct without any field to be initialized
- * explicitly, instead of just being able to do `{0}`.
- */
-#define HWSPINLOCK_CTX_INITIALIZER                                                                 \
-	{                                                                                          \
-		.lock = {},                                                                        \
-	}
 
 /**
  * @brief Structure initializer for struct hwspinlock_dt_spec from devicetree by index
@@ -106,7 +71,6 @@ struct hwspinlock_dt_spec {
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(DT_HWSPINLOCK_CTRL_BY_IDX(node_id, idx)),                     \
 		.id = DT_HWSPINLOCK_ID_BY_IDX(node_id, idx),                                       \
-		.ctx = HWSPINLOCK_CTX_INITIALIZER,                                                 \
 	}
 
 /**
@@ -140,7 +104,6 @@ struct hwspinlock_dt_spec {
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(DT_HWSPINLOCK_CTRL_BY_NAME(node_id, name)),                   \
 		.id = DT_HWSPINLOCK_ID_BY_NAME(node_id, name),                                     \
-		.ctx = HWSPINLOCK_CTX_INITIALIZER,                                                 \
 	}
 
 /**
@@ -188,6 +151,18 @@ struct hwspinlock_dt_spec {
 /** @cond INTERNAL_HIDDEN */
 
 /**
+ * @brief Callback API to get the regular spinlock for a specific hw spinlock
+ *
+ * This callback must be implemented.
+ *
+ * @param dev HW spinlock device instance.
+ * @param id Spinlock identifier.
+ *
+ * @returns the zephyr spinlock associated with the given hw spinlock id, or NULL on error
+ */
+typedef struct k_spinlock *(*hwspinlock_api_get_spinlock)(const struct device *dev, uint32_t id);
+
+/**
  * @brief Callback API for trying to lock HW spinlock
  *
  * This callback is optional. If not implemented, hw_spin_trylock() will return -ENOSYS.
@@ -224,6 +199,7 @@ typedef void (*hwspinlock_api_unlock)(const struct device *dev, uint32_t id);
 typedef uint32_t (*hwspinlock_api_get_max_id)(const struct device *dev);
 
 __subsystem struct hwspinlock_driver_api {
+	hwspinlock_api_get_spinlock get_spinlock;
 	hwspinlock_api_trylock trylock;
 	hwspinlock_api_lock lock;
 	hwspinlock_api_unlock unlock;
@@ -243,7 +219,6 @@ __subsystem struct hwspinlock_driver_api {
  * @see hw_spin_lock
  *
  * @param dev HW spinlock device instance.
- * @param ctx HW spinlock runtime context.
  * @param id Spinlock identifier.
  * @param[out] key A pointer to the spinlock key.
  *
@@ -252,17 +227,22 @@ __subsystem struct hwspinlock_driver_api {
  * @retval -EINVAL If HW spinlock id is invalid.
  * @retval -EBUSY If HW spinlock is already locked by someone else.
  */
-static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ctx, uint32_t id,
-				  k_spinlock_key_t *key)
+static inline int hw_spin_trylock(const struct device *dev, uint32_t id, k_spinlock_key_t *key)
 {
 	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	struct k_spinlock *lock;
 	int ret;
+
+	__ASSERT_NO_MSG(api->get_spinlock != NULL);
 
 	if (api->trylock == NULL) {
 		return -ENOSYS;
 	}
 
-	ret = k_spin_trylock(&ctx->lock, key);
+	lock = api->get_spinlock(dev, id);
+	__ASSERT_NO_MSG(lock);
+
+	ret = k_spin_trylock(lock, key);
 	if (ret) {
 		return ret;
 	}
@@ -270,11 +250,10 @@ static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ct
 	ret = api->trylock(dev, id);
 	if (ret) {
 		/* HW trylock failed: release local lock before returning. */
-		k_spin_unlock(&ctx->lock, *key);
-		return ret;
+		k_spin_unlock(lock, *key);
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -295,21 +274,24 @@ static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ct
  * @see k_spin_lock
  *
  * @param dev HW spinlock device instance.
- * @param ctx HW spinlock runtime context.
  * @param id Spinlock identifier.
  *
  * @return A key value that must be passed to hw_spin_unlock() when the
  *         lock is released.
  */
-static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, hwspinlock_ctx_t *ctx,
-					    uint32_t id)
+static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, uint32_t id)
 {
 	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	struct k_spinlock *lock;
 	k_spinlock_key_t k;
 
+	__ASSERT_NO_MSG(api->get_spinlock != NULL);
 	__ASSERT(api->lock != NULL, "hwspinlock lock callback must be implemented");
 
-	k = k_spin_lock(&ctx->lock);
+	lock = api->get_spinlock(dev, id);
+	__ASSERT_NO_MSG(lock);
+
+	k = k_spin_lock(lock);
 	api->lock(dev, id);
 
 	return k;
@@ -321,20 +303,23 @@ static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, hwspinlock
  * This function to unlock an HW spinlock
  *
  * @param dev HW spinlock device instance.
- * @param ctx HW spinlock runtime context.
  * @param id Spinlock identifier.
  * @param key The value returned from hw_spin_lock() when this lock was
  *        acquired
  */
-static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ctx, uint32_t id,
-				  k_spinlock_key_t key)
+static inline void hw_spin_unlock(const struct device *dev, uint32_t id, k_spinlock_key_t key)
 {
 	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	struct k_spinlock *lock;
 
+	__ASSERT_NO_MSG(api->get_spinlock != NULL);
 	__ASSERT(api->unlock != NULL, "hwspinlock unlock callback must be implemented");
 
+	lock = api->get_spinlock(dev, id);
+	__ASSERT_NO_MSG(lock);
+
 	api->unlock(dev, id);
-	k_spin_unlock(&ctx->lock, key);
+	k_spin_unlock(lock, key);
 }
 
 /**
@@ -345,7 +330,7 @@ static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ct
  *
  * @param dev HW spinlock device instance.
  *
- * @return HW spinlock max ID.
+ * @returns HW spinlock max ID.
  */
 static inline uint32_t hw_spinlock_get_max_id(const struct device *dev)
 {
@@ -369,7 +354,7 @@ static inline uint32_t hw_spinlock_get_max_id(const struct device *dev)
  */
 static inline int hw_spin_trylock_dt(struct hwspinlock_dt_spec *spec, k_spinlock_key_t *key)
 {
-	return hw_spin_trylock(spec->dev, &spec->ctx, spec->id, key);
+	return hw_spin_trylock(spec->dev, spec->id, key);
 }
 
 /**
@@ -384,7 +369,7 @@ static inline int hw_spin_trylock_dt(struct hwspinlock_dt_spec *spec, k_spinlock
  */
 static inline k_spinlock_key_t hw_spin_lock_dt(struct hwspinlock_dt_spec *spec)
 {
-	return hw_spin_lock(spec->dev, &spec->ctx, spec->id);
+	return hw_spin_lock(spec->dev, spec->id);
 }
 
 /**
@@ -399,7 +384,7 @@ static inline k_spinlock_key_t hw_spin_lock_dt(struct hwspinlock_dt_spec *spec)
  */
 static inline void hw_spin_unlock_dt(struct hwspinlock_dt_spec *spec, k_spinlock_key_t key)
 {
-	hw_spin_unlock(spec->dev, &spec->ctx, spec->id, key);
+	hw_spin_unlock(spec->dev, spec->id, key);
 }
 
 /**
