@@ -130,6 +130,13 @@ New APIs and options
     * :c:struct:`net_eth_mac_config`
     * :c:macro:`NET_ETH_MAC_DT_CONFIG_INIT` and :c:macro:`NET_ETH_MAC_DT_INST_CONFIG_INIT`
 
+  * Added :c:enum:`ethernet_stats_type` and optional ``get_stats_type`` callback in
+    :c:struct:`ethernet_api` to allow filtering of ethernet statistics by type
+    (common, vendor, or all). Drivers that support vendor-specific statistics can
+    implement ``get_stats_type`` to skip expensive FW queries when only common stats
+    are requested. The existing ``get_stats`` API remains unchanged for backward
+    compatibility.
+
 * Flash
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
