@@ -5,7 +5,6 @@
  */
 
 #include <nrfx_lpcomp.h>
-#include <hal/nrf_gpio.h>
 
 #include <zephyr/drivers/comparator/nrf_lpcomp.h>
 #include <zephyr/kernel.h>
