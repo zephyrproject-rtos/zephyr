@@ -12,7 +12,7 @@
 #include <zephyr/drivers/hwspinlock.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(sqn_hwspinlock, CONFIG_HWSPINLOCK_INIT_PRIORITY);
+LOG_MODULE_REGISTER(sqn_hwspinlock, CONFIG_HWSPINLOCK_LOG_LEVEL);
 
 #include <soc.h>
 
@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(sqn_hwspinlock, CONFIG_HWSPINLOCK_INIT_PRIORITY);
 
 struct sqn_hwspinlock_data {
 	DEVICE_MMIO_RAM;
+
+	struct k_spinlock *locks;
 };
 
 struct sqn_hwspinlock_config {
@@ -48,6 +50,11 @@ struct sqn_hwspinlock_config {
 static inline mem_addr_t get_lock_addr(const struct device *dev, uint32_t id)
 {
 	return (mem_addr_t)(DEVICE_MMIO_GET(dev) + id * DEV_CFG(dev)->reg_width);
+}
+
+static struct k_spinlock *sqn_hwspinlock_get_spinlock(const struct device *dev, uint32_t id)
+{
+	return &DEV_DATA(dev)->locks[id];
 }
 
 static int sqn_hwspinlock_trylock(const struct device *dev, uint32_t id)
@@ -99,6 +106,7 @@ static uint32_t sqn_hwspinlock_get_max_id(const struct device *dev)
 }
 
 static DEVICE_API(hwspinlock, sqn_hwspinlock_api) = {
+	.get_spinlock = sqn_hwspinlock_get_spinlock,
 	.trylock = sqn_hwspinlock_trylock,
 	.lock = sqn_hwspinlock_lock,
 	.unlock = sqn_hwspinlock_unlock,
@@ -113,7 +121,10 @@ static int sqn_hwspinlock_init(const struct device *dev)
 }
 
 #define SQN_HWSPINLOCK_INIT(idx)                                                                   \
-	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data;                              \
+	static struct k_spinlock sqn_hwspinlock_##idx##_locks[DT_INST_PROP(idx, num_locks)];       \
+	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data = {                           \
+		.locks = sqn_hwspinlock_##idx##_locks,                                             \
+	};                                                                                         \
 	static const struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {                 \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                            \
 		.reg_width = DT_INST_PROP_OR(idx, reg_width, 1),                                   \
