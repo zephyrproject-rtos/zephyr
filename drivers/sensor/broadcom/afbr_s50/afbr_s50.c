@@ -26,7 +26,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(AFBR_S50, CONFIG_SENSOR_LOG_LEVEL);
 
+enum afbr_s50_st {
+	AFBR_S50_ST_IDLE,
+	AFBR_S50_ST_RUNNING,
+	AFBR_S50_ST_STOPPING,
+};
+
 struct afbr_s50_data {
+	atomic_t st; /* enum afbr_s50_t */
 	/** RTIO section was included in the device data struct since the Argus
 	 * API does not support passing a parameter to get through the async
 	 * handler. Therefore, we're getting it through object composition:
@@ -68,7 +75,6 @@ static inline void handle_error_on_result(struct afbr_s50_data *data, int result
 	struct rtio_iodev_sqe *iodev_sqe = data->rtio.iodev_sqe;
 	status_t status;
 
-	(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
 	do {
 		/** Flush the existing data moving forward so the
 		 * internal buffers can be re-used afterwards.
@@ -76,6 +82,13 @@ static inline void handle_error_on_result(struct afbr_s50_data *data, int result
 		status = Argus_EvaluateData(data->platform.argus.handle, &data->buf);
 	} while (status == STATUS_OK);
 
+	if (atomic_set(&data->st, AFBR_S50_ST_STOPPING) != AFBR_S50_ST_STOPPING) {
+		LOG_WRN("Stopping Timer..");
+		status = Argus_StopMeasurementTimer(data->platform.argus.handle);
+		LOG_WRN("stop result: %d", status);
+		(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+		LOG_WRN("Timer stopped..");
+	}
 	data->rtio.iodev_sqe = NULL;
 	rtio_iodev_sqe_err(iodev_sqe, result);
 }
@@ -88,7 +101,6 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 	size_t edata_len = 0;
 	status_t status;
 	int err;
-
 	struct afbr_s50_edata *edata;
 
 	err = rtio_sqe_rx_buf(iodev_sqe,
@@ -122,21 +134,13 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 	if (status != STATUS_OK) {
 		LOG_ERR("Data not valid: %d, %d", status, edata->payload.Status);
 		handle_error_on_result(data, -EIO);
+		return;
 	}
 	CHECKIF(Argus_IsDataEvaluationPending(data->platform.argus.handle)) {
 		LOG_WRN("Overrun. More pending data than what we've served.");
 	}
 
-	/** After freeing the buffer with EvaluateData, decide whether to
-	 * cancel future submissions.
-	 */
-	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) &&
-	    Argus_IsTimerMeasurementActive(data->platform.argus.handle)) {
-		LOG_WRN("OP cancelled. Stopping stream");
-
-		(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
-	}
-
+	(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
 	data->rtio.iodev_sqe = NULL;
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
@@ -165,6 +169,11 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 		handle_error_on_result(data, -EIO);
 		return status;
 	}
+	if (iodev_sqe == NULL || FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+		LOG_WRN("SQE canceled. Discarding result");
+		handle_error_on_result(data, -ECANCELED);
+		return ERROR_FAIL;
+	}
 
 	/** RTIO workqueue used since the description of Argus_EvaluateResult()
 	 * discourages its use in the callback context as it may be blocking
@@ -190,23 +199,21 @@ static void afbr_s50_submit_single_shot(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL &&
-	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
+	if (atomic_get(&data->st) != AFBR_S50_ST_IDLE) {
 		LOG_WRN("Operation in progress. Rejecting request");
-
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
 		return;
 	}
-	data->rtio.iodev_sqe = iodev_sqe;
-
 	status_t status = Argus_TriggerMeasurement(data->platform.argus.handle,
 						   data_ready_callback);
+
 	if (status != STATUS_OK) {
 		LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
-
-		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
 	}
+	data->rtio.iodev_sqe = iodev_sqe;
+	(void)atomic_set(&data->st, AFBR_S50_ST_RUNNING);
 }
 
 static void afbr_s50_submit_streaming(const struct device *dev,
@@ -215,24 +222,22 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 
-	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL &&
-	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
-		LOG_WRN("Operation in progress");
-
-		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
-		return;
-	}
-	data->rtio.iodev_sqe = iodev_sqe;
-
-	CHECKIF(read_cfg->triggers->trigger != SENSOR_TRIG_DATA_READY ||
-		read_cfg->count != 1 ||
+	CHECKIF(read_cfg->triggers->trigger != SENSOR_TRIG_DATA_READY || read_cfg->count != 1 ||
 		read_cfg->triggers->opt != SENSOR_STREAM_DATA_INCLUDE) {
 		LOG_ERR("Invalid trigger for streaming mode");
-
-		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
 		return;
+	}
+	if (atomic_get(&data->st) == AFBR_S50_ST_STOPPING) {
+		LOG_WRN("Stopping existing stream. Please try again");
+		rtio_iodev_sqe_err(iodev_sqe, -EAGAIN);
+		return;
+	}
+	if (data->rtio.iodev_sqe != NULL &&
+	    !FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags)) {
+		LOG_WRN("On-going SQE. Cancelling before kicking-off stream...");
+		rtio_iodev_sqe_err(data->rtio.iodev_sqe, -ECANCELED);
+		data->rtio.iodev_sqe = NULL;
 	}
 
 	/** Given the streaming mode involves multi-shot submissions, we only
@@ -244,11 +249,12 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 
 		if (status != STATUS_OK) {
 			LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
-
-			data->rtio.iodev_sqe = NULL;
 			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
 		}
 	}
+	data->rtio.iodev_sqe = iodev_sqe;
+	(void)atomic_set(&data->st, AFBR_S50_ST_RUNNING);
 }
 
 static void afbr_s50_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
@@ -414,6 +420,7 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 	PINCTRL_DT_DEV_CONFIG_DECLARE(DT_INST_PARENT(inst));					   \
 												   \
 	static struct afbr_s50_data afbr_s50_data_##inst = {					   \
+		.st = AFBR_S50_ST_IDLE,								   \
 		.platform = {									   \
 			.argus.id = inst + 1,							   \
 			.s2pi = {								   \
