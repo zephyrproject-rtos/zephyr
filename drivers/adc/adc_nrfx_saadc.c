@@ -14,7 +14,6 @@
 #include <zephyr/pm/device_runtime.h>
 #include <dmm.h>
 #include <soc.h>
-#include <hal/nrf_gpio.h>
 
 LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
