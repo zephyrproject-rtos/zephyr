@@ -7,6 +7,7 @@ config CC27XX_SYSTIM_TIMER
 	bool "SYSTIM timer"
 	default y
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	depends on HAS_CC27XX_SDK
 	help
 	  This module provides SYSTIM as "system clock driver" interfaces

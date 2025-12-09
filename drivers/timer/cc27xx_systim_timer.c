@@ -26,6 +26,7 @@
 #include <inc/hw_types.h>
 #include <inc/hw_memmap.h>
 #include <inc/hw_systim.h>
+#include <inc/hw_rtc.h>
 #include <inc/hw_evtsvt.h>
 
 /* Kernel tick period in microseconds (same timebase as systim) */
@@ -44,6 +45,9 @@
 
 /* Set systim interrupt to lowest priority */
 #define SYSTIM_ISR_PRIORITY IRQ_PRIO_LOWEST
+
+/* Bit mask for the non-overlapping bits between RTC.TIME524M and SYSTIM.TIME1U */
+#define RTC_TI_CC27XX_TOP_19_BITS_MASK  0xFFFFE000
 
 static struct k_spinlock lock;
 
@@ -101,6 +105,66 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	/*
+	 * NOTE: This function does not implement true 64-bit cycle count, only 51 bit.
+	 * However, since it would take 71.4 years for the 51 bits to overflow, it
+	 * is deemed acceptable.
+	 */
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	uint64_t low;
+	uint64_t high;
+
+	/*
+	 * We combine both RTC and SYSTIM to get 51 bit cycle count.
+	 * RTC is a 67-bit timer, of which we can read the first 51 bits. The SYSTIM is a
+	 * 34 bit-timer. The RTC and SYSTIM are synchronized through hardware, however the RTC
+	 * is only updated every ~30us, which is too rare for it to be used for Zephyr's system
+	 * clock. What this means is that reading RTC.TIME1U to get a resolution of 1 us could be
+	 * up to 30 us behind the actual cycle count. Therefore we use SYSTIM.TIME1U for these
+	 * least significant bits that are updated more often than 30 us,
+	 * since SYSTIM is updated immediately on count.
+	 * We use RTC.TIME524M to get the most significant bits.
+	 */
+
+	high = HWREG(RTC_BASE + RTC_O_TIME524M);
+	low  = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+
+	/*
+	 * The 13 most significant bits of TIME1U and the 13 least significant bits of TIME524M
+	 * "overlaps". There is a possibility that the 13 bits in low are incremented, and we
+	 * call this function before the RTC is updated. Normally, if the overlapping bits in
+	 * TIME1U are numerically higher than those in TIME524U, no action is needed. However, if
+	 * the increment of TIME1U makes the counter overflow, this needs to be accounted for.
+	 * We check the overlapping bits, if those in "low" are numerically higher than those in
+	 * "high", no action is needed. If they are numerically lower, then this means TIME1U has
+	 * overflowed and the RTC is not yet updated. We do not want to wait for the RTC to
+	 * update, so we manually increment the high part by add 1 to the first non-overlapping
+	 * bit (bit 13). We can never have the opposite, where those in "high" are numerically
+	 * higher than those in "low", since the RTC is always updated to the current value of
+	 * the more frequently updated SYSTIM timer.
+	 */
+	if ((high & 0x1FFF) > (low  >> 19)) {
+
+		high += 1<<13;
+
+	}
+	/*
+	 * We mask out TIME524M[12:0] bits since they overlap, and shift the first
+	 * valid bit (bit 13) to position 32 in the resulting 64 bit cycle count. We do this
+	 * by left shifting the masked valued 32-13 = 19 positions.
+	 */
+
+	high = (high & RTC_TI_CC27XX_TOP_19_BITS_MASK) << 19;
+
+	k_spin_unlock(&lock, key);
+
+	return high | low;
 }
 
 void systim_isr(const void *arg)
