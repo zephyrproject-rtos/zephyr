@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
@@ -1327,7 +1328,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	}
 
 	/* Allocate memory for the struct with enough space for the targets */
-	deftgts = malloc(data_len);
+	deftgts = k_malloc(data_len);
 	if (!deftgts) {
 		return -ENOMEM;
 	}
@@ -1371,7 +1372,7 @@ int i3c_bus_deftgts(const struct device *dev)
 
 	ret = i3c_ccc_do_deftgts_all(dev, deftgts);
 
-	free(deftgts);
+	k_free(deftgts);
 
 	return ret;
 }
