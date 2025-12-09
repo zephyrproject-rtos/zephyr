@@ -1359,6 +1359,63 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 	return ret;
 }
 
+static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
+				    struct tls_context *tls_ctx, bool is_server)
+{
+	int ret;
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	/* For TLS clients, set hostname to empty string to enforce it's
+	 * verification - only if hostname option was not set. Otherwise
+	 * depend on user configuration.
+	 */
+	if (!is_server && !tls_ctx->options.is_hostname_set) {
+		ret = mbedtls_ssl_set_hostname(&session_ctx->ssl, "");
+		if (ret != 0) {
+			return -ENOMEM;
+		}
+	}
+#endif
+
+	ret = mbedtls_ssl_setup(&session_ctx->ssl, &tls_ctx->config);
+	if (ret != 0) {
+		/* According to mbedTLS API documentation,
+		 * mbedtls_ssl_setup can fail due to memory allocation failure
+		 */
+		return -ENOMEM;
+	}
+
+	if (tls_ctx->type == NET_SOCK_STREAM) {
+		mbedtls_ssl_set_bio(&session_ctx->ssl, tls_ctx,
+				    tls_tx, tls_rx, NULL);
+	} else {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+		mbedtls_ssl_set_bio(&session_ctx->ssl, tls_ctx,
+				    dtls_tx, dtls_rx, NULL);
+
+		/* DTLS requires timer callbacks to operate */
+		mbedtls_ssl_set_timer_cb(&session_ctx->ssl,
+					 &session_ctx->dtls_timing,
+					 dtls_timing_set_delay,
+					 dtls_timing_get_delay);
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+		if (tls_ctx->options.dtls_cid.enabled) {
+			ret = mbedtls_ssl_set_cid(&session_ctx->ssl, MBEDTLS_SSL_CID_ENABLED,
+						  tls_ctx->options.dtls_cid.cid,
+						  tls_ctx->options.dtls_cid.cid_len);
+			if (ret != 0) {
+				return -EINVAL;
+			}
+		}
+#endif /* CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
+#else /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+		return -ENOTSUP;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+	}
+
+	return 0;
+}
+
 static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 {
 	int role, type, ret;
@@ -1368,18 +1425,6 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	type = (context->type == NET_SOCK_STREAM) ?
 		MBEDTLS_SSL_TRANSPORT_STREAM :
 		MBEDTLS_SSL_TRANSPORT_DATAGRAM;
-
-	if (type == MBEDTLS_SSL_TRANSPORT_STREAM) {
-		mbedtls_ssl_set_bio(&context->active_session->ssl, context,
-				    tls_tx, tls_rx, NULL);
-	} else {
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		mbedtls_ssl_set_bio(&context->active_session->ssl, context,
-				    dtls_tx, dtls_rx, NULL);
-#else
-		return -ENOTSUP;
-#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
-	}
 
 	ret = mbedtls_ssl_config_defaults(&context->config, role, type,
 					  MBEDTLS_SSL_PRESET_DEFAULT);
@@ -1419,11 +1464,6 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-		/* DTLS requires timer callbacks to operate */
-		mbedtls_ssl_set_timer_cb(&context->active_session->ssl,
-					 &context->active_session->dtls_timing,
-					 dtls_timing_set_delay,
-					 dtls_timing_get_delay);
 		mbedtls_ssl_conf_handshake_timeout(&context->config,
 				context->options.dtls_handshake_timeout_min,
 				context->options.dtls_handshake_timeout_max);
@@ -1460,16 +1500,6 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		}
 	}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-	/* For TLS clients, set hostname to empty string to enforce it's
-	 * verification - only if hostname option was not set. Otherwise
-	 * depend on user configuration.
-	 */
-	if (!is_server && !context->options.is_hostname_set) {
-		mbedtls_ssl_set_hostname(&context->active_session->ssl, "");
-	}
-#endif
 
 	/* If verification level was specified explicitly, set it. Otherwise,
 	 * use mbedTLS default values (required for client, none for server)
@@ -1525,28 +1555,10 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	}
 #endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
 
-	ret = mbedtls_ssl_setup(&context->active_session->ssl,
-				&context->config);
-	if (ret != 0) {
-		/* According to mbedTLS API documentation,
-		 * mbedtls_ssl_setup can fail due to memory allocation failure
-		 */
-		return -ENOMEM;
+	ret = tls_mbedtls_session_init(context->active_session, context, is_server);
+	if (ret < 0) {
+		return ret;
 	}
-
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS) && defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
-	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-		if (context->options.dtls_cid.enabled) {
-			ret = mbedtls_ssl_set_cid(&context->active_session->ssl,
-						  MBEDTLS_SSL_CID_ENABLED,
-						  context->options.dtls_cid.cid,
-						  context->options.dtls_cid.cid_len);
-			if (ret != 0) {
-				return -EINVAL;
-			}
-		}
-	}
-#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS && CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
 
 	context->is_initialized = true;
 
