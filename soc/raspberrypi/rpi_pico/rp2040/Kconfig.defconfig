@@ -16,4 +16,7 @@ DT_CLK_SYS_PATH := $(dt_nodelabel_path,clk_sys)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_CLK_SYS_PATH),clock-frequency)
 
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y if ARM_MPU
+
 endif # SOC_SERIES_RP2040

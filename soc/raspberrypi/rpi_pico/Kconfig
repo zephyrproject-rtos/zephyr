@@ -13,4 +13,11 @@ config RPI_PICO_ROM_BOOTLOADER
 	default y
 	depends on RETENTION_BOOT_MODE
 
+config RPI_PICO_USE_ROMFUNC
+	bool
+	default y
+	depends on !NULL_POINTER_EXCEPTION_DETECTION_MPU
+	help
+	  Enable the use of ROM functions and add corresponding MPU entry if needed.
+
 endif # SOC_FAMILY_RPI_PICO
