@@ -14,6 +14,8 @@
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif CONFIG_CRYPTO_ESP32_AES
 #define CRYPTO_DEV_COMPAT espressif_esp32_aes
+#elif CONFIG_CRYPTO_MCHP_AES_G1
+#define CRYPTO_DEV_COMPAT microchip_aes_g1
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_crypto)
 #define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
 #elif CONFIG_CRYPTO_STM32
