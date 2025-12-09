@@ -15,11 +15,14 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - ".*: Cipher Sample"
-        - ".*: CBC Mode"
-        - ".*: CTR Mode"
-        - ".*: CCM Mode"
-        - ".*: GCM Mode"
+        - ".*: ECB mode ENCRYPT - Match"
+        - ".*: ECB mode DECRYPT - Match"
+        - ".*: CBC mode ENCRYPT - Match"
+        - ".*: CBC mode DECRYPT - Match"
+        - ".*: CCM mode ENCRYPT - Match"
+        - ".*: CCM mode DECRYPT - Match"
+        - ".*: GCM mode ENCRYPT - Match"
+        - ".*: GCM mode DECRYPT - Match"
   sample.drivers.crypto.stm32:
     tags: crypto
     filter: dt_compat_enabled("st,stm32-aes") or dt_compat_enabled("st,stm32-cryp")
