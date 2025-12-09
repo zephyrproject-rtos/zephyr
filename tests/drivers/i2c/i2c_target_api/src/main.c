@@ -20,6 +20,11 @@
 
 #include <zephyr/ztest.h>
 
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+/* Test helper provided by i2c_ambiq_ios driver to peek raw LRAM */
+extern int i2c_ambiq_ios_test_read_lram(const struct device *dev, uint32_t offset, uint8_t *val);
+#endif
+
 #define NODE_EP0 DT_NODELABEL(eeprom0)
 #define NODE_EP1 DT_NODELABEL(eeprom1)
 
@@ -63,6 +68,45 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+static int ambiq_ios_send_general_call(const struct device *i2c, uint8_t offset)
+{
+	uint8_t payload = offset;
+
+	return i2c_write(i2c, &payload, sizeof(payload), 0x00);
+}
+
+static int ios_fifo_read(const struct device *i2c, uint8_t addr, const uint8_t *offset_buf,
+			 size_t offset_len, uint8_t *rx_buf, size_t rx_len)
+{
+	int ret;
+	uint8_t fifo_reg = 0x7F;
+
+	if (offset_len == 1U) {
+		ret = ambiq_ios_send_general_call(i2c, offset_buf[0]);
+		if (ret != 0) {
+			return ret;
+		}
+	} else if (offset_len > 1U) {
+		ret = i2c_write(i2c, offset_buf, offset_len, addr);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	struct i2c_msg wr_rd[2];
+
+	wr_rd[0].buf = &fifo_reg;
+	wr_rd[0].len = 1;
+	wr_rd[0].flags = I2C_MSG_WRITE;
+	wr_rd[1].buf = rx_buf;
+	wr_rd[1].len = rx_len;
+	wr_rd[1].flags = I2C_MSG_READ | I2C_MSG_RESTART | I2C_MSG_STOP;
+
+	return i2c_transfer(i2c, wr_rd, ARRAY_SIZE(wr_rd), addr);
+}
+#endif
+
 static int run_full_read(const struct device *i2c, uint8_t addr,
 			 uint8_t addr_width, const uint8_t *comp_buffer)
 {
@@ -74,7 +118,11 @@ static int run_full_read(const struct device *i2c, uint8_t addr,
 
 	/* Read EEPROM from I2C Master requests, then compare */
 	memset(start_addr, 0, sizeof(start_addr));
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+	ret = ios_fifo_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE);
+#else
 	ret = i2c_write_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE);
+#endif
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	if (memcmp(i2c_buffer, comp_buffer, TEST_DATA_SIZE)) {
@@ -112,8 +160,13 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 		return -EINVAL;
 	}
 
-	ret = i2c_write_read(i2c, addr,
-			     start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE-offset);
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+	ret = ios_fifo_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer,
+			    TEST_DATA_SIZE - offset);
+#else
+	ret = i2c_write_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer,
+			     TEST_DATA_SIZE - offset);
+#endif
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	if (memcmp(i2c_buffer, &comp_buffer[offset], TEST_DATA_SIZE-offset)) {
@@ -131,8 +184,12 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 	return 0;
 }
 
-static int run_program_read(const struct device *i2c, uint8_t addr,
-			    uint8_t addr_width, unsigned int offset)
+static int run_program_read(const struct device *i2c, uint8_t addr, uint8_t addr_width,
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+			    unsigned int offset, const struct device *ios_dev)
+#else
+			    unsigned int offset)
+#endif
 {
 	int ret, i;
 	uint8_t start_addr[2];
@@ -166,11 +223,39 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	ret = i2c_transfer(i2c, &msg[0], 2, addr);
 	zassert_equal(ret, 0, "Failed to write EEPROM");
 
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+	if (ios_dev) {
+		size_t lram_len = TEST_DATA_SIZE - offset;
+		size_t i;
+
+		k_msleep(1);
+
+		for (i = 0; i < lram_len; i++) {
+			uint8_t v = 0;
+
+			ret = i2c_ambiq_ios_test_read_lram(ios_dev, offset + i, &v);
+			zassert_equal(ret, 0, "LRAM payload read failed");
+			if (v != (i & 0xFF)) {
+				TC_PRINT("Error: Unexpected %zu (%02x) LRAM content (expected "
+					 "%02x)\n",
+					 i, v, i & 0xFF);
+				return -EIO;
+			}
+		}
+		return 0;
+	}
+#endif
+
 	(void)memset(i2c_buffer, 0xFF, TEST_DATA_SIZE);
 
 	/* Read back EEPROM from I2C Master requests, then compare */
-	ret = i2c_write_read(i2c, addr,
-			     start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE-offset);
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+	ret = ios_fifo_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer,
+			    TEST_DATA_SIZE - offset);
+#else
+	ret = i2c_write_read(i2c, addr, start_addr, (addr_width >> 3), i2c_buffer,
+			     TEST_DATA_SIZE - offset);
+#endif
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
@@ -330,7 +415,17 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 		}
 	}
 
-	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
+	for (offset = 0; offset < TEST_DATA_SIZE - 1; ++offset) {
+#if IS_ENABLED(CONFIG_I2C_AMBIQ_IOS)
+		zassert_equal(0, run_program_read(i2c_1, addr_0,
+							  addr_0_width, offset, i2c_0),
+			      "Program I2C read EP0 failed");
+		if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+			zassert_equal(0, run_program_read(i2c_0, addr_1,
+							  addr_1_width, offset, i2c_1),
+				      "Program I2C read EP1 failed");
+		}
+#else
 		zassert_equal(0, run_program_read(i2c_1, addr_0,
 							  addr_0_width, offset),
 			      "Program I2C read EP0 failed");
@@ -339,6 +434,7 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 							  addr_1_width, offset),
 				      "Program I2C read EP1 failed");
 		}
+#endif
 	}
 
 	/* Detach EEPROM */
