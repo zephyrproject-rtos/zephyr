@@ -105,7 +105,7 @@ static struct k_work_q wncm14a2a_workq;
 
 struct wncm14a2a_socket {
 	struct net_context *context;
-	sa_family_t family;
+	net_sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
 	struct net_sockaddr src;
@@ -1430,7 +1430,7 @@ error:
 
 /*** OFFLOAD FUNCTIONS ***/
 
-static int offload_get(sa_family_t family,
+static int offload_get(net_sa_family_t family,
 		       enum net_sock_type type,
 		       enum net_ip_protocol ip_proto,
 		       struct net_context **context)
