@@ -4750,6 +4750,16 @@ Settings:
     - samples/subsys/settings/
     - doc/services/storage/settings/
     - tests/subsys/settings_commit_prio/
+  file-groups:
+    - name: TF-M PSA backend
+      collaborators:
+        - dsseng
+        - seankyer
+        - tomi-font
+      files:
+        - subsys/settings/src/settings_tfm_psa*
+        - tests/subsys/settings/functional/tfm_psa/
+        - tests/subsys/settings/tfm_psa/
   labels:
     - "area: Settings"
   tests:
