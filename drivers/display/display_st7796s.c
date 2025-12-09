@@ -190,7 +190,7 @@ static void st7796s_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
-
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_565X;
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
