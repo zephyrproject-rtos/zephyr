@@ -11,7 +11,7 @@
 #include "mock.h"
 
 #include <zephyr/acpi/acpi.h>
-#include <lib/acpi/acpi.c>
+#include <arch/x86/acpi/acpi.c>
 #include "assert.h"
 
 #include <zephyr/fff.h>
