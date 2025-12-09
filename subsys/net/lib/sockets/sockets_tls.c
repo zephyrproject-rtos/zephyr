@@ -56,6 +56,14 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr_mbedtls_priv.h>
 #endif
 
+#define LOG_ADDR_PORT_HELPER(addr)                                \
+	(addr)->sa_family == NET_AF_INET ?                        \
+		net_sprint_ipv4_addr(&net_sin(addr)->sin_addr) :  \
+		net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr), \
+	(addr)->sa_family == NET_AF_INET ?                        \
+		net_ntohs(net_sin(addr)->sin_port) :              \
+		net_ntohs(net_sin6(addr)->sin6_port)
+
 #if defined(CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS)
 #define ALPN_MAX_PROTOCOLS (CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS + 1)
 #else
@@ -1026,6 +1034,118 @@ static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 
 	return received;
 }
+
+static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
+				    struct tls_context *tls_ctx, bool is_server);
+
+/* Returns
+ * - 0 when session was switched,
+ * - 1 if session was already valid,
+ * - negative error code otherwise
+ */
+static int dtls_server_switch_active_session(struct tls_context *tls_ctx,
+					     const struct net_sockaddr *addr,
+					     net_socklen_t addrlen)
+{
+	struct tls_session_context *session_ctx = NULL;
+
+	if (tls_ctx->active_session->dtls_peer_addrlen == 0 ||
+	    dtls_is_peer_addr_valid(tls_ctx->active_session, addr, addrlen)) {
+		return 1;
+	}
+
+	NET_DBG("Need to swap session for [%s]:%d (current [%s]:%d)",
+		LOG_ADDR_PORT_HELPER(addr),
+		LOG_ADDR_PORT_HELPER(&tls_ctx->active_session->dtls_peer_addr));
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
+		if (dtls_is_peer_addr_valid(session_ctx, addr, addrlen)) {
+			NET_DBG("Found matching session (address)");
+			tls_ctx->active_session = session_ctx;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static int dtls_server_new_active_session(struct tls_context *tls_ctx,
+					  const struct net_sockaddr *addr,
+					  net_socklen_t addrlen)
+{
+	struct tls_session_context *session_ctx = NULL;
+	int ret;
+
+	session_ctx = tls_session_alloc();
+	if (session_ctx == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = tls_mbedtls_session_init(session_ctx, tls_ctx, true);
+	if (ret < 0) {
+		tls_session_free(session_ctx);
+		return ret;
+	}
+
+	dtls_peer_address_set(session_ctx, addr, addrlen);
+
+	ret = mbedtls_ssl_set_client_transport_id(&session_ctx->ssl,
+						  (const unsigned char *)addr,
+						  addrlen);
+	if (ret < 0) {
+		tls_session_free(session_ctx);
+		return -ENOMEM;
+	}
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	if (tls_ctx->options.is_hostname_set) {
+		mbedtls_ssl_set_hostname(&session_ctx->ssl,
+					 tls_ctx->active_session->ssl.hostname);
+	}
+#endif
+
+	sys_slist_append(&tls_ctx->sessions, &session_ctx->node);
+	tls_ctx->active_session = session_ctx;
+
+	return 0;
+}
+
+static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
+{
+	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	struct net_sockaddr addr;
+	uint8_t tmp_buf;
+	int ret;
+
+	/* Peek the datagram first to see if the session needs to be updated. */
+	ret = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
+			     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
+			     &addr, &addrlen);
+	if (ret < 0) {
+		return -errno;
+	}
+
+	/* Try to match existing session by peer address. */
+	ret = dtls_server_switch_active_session(tls_ctx, &addr, addrlen);
+	if (ret == 0 || ret == 1) {
+		return ret;
+	}
+
+	/* No session found, try to allocate one. */
+
+	NET_DBG("No session found (RX), allocating new");
+
+	ret = dtls_server_new_active_session(tls_ctx, &addr, addrlen);
+	if (ret < 0) {
+		NET_ERR("Failed to allocate new session for DTLS server, "
+			"dropping packet (err: %d)", ret);
+
+		(void)zsock_recv(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
+				 ZSOCK_MSG_DONTWAIT);
+	}
+
+	return ret;
+}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
@@ -1333,6 +1453,18 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 			if (context->type == NET_SOCK_DGRAM) {
+				if (context->options.role == MBEDTLS_SSL_IS_SERVER) {
+					/* DTLS server may need to switch session. */
+					int err = dtls_server_switch_session_on_rx(context);
+
+					if (err == 0) {
+						/* Switched the session, repeat the loop. */
+						context->active_session->handshake_in_progress =
+							true;
+						continue;
+					}
+				}
+
 				int timeout_dtls =
 					dtls_get_remaining_timeout(context->active_session);
 
@@ -2478,12 +2610,15 @@ free_fd:
 
 int ztls_close_ctx(struct tls_context *ctx, int sock)
 {
+	struct tls_session_context *session_ctx = NULL;
 	int ret, err = 0;
 
 	/* Try to send close notification. */
 	ctx->flags = 0;
 
-	(void)mbedtls_ssl_close_notify(&ctx->active_session->ssl);
+	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->sessions, session_ctx, node) {
+		(void)mbedtls_ssl_close_notify(&session_ctx->ssl);
+	}
 
 	err = tls_release(ctx);
 	ret = zsock_close(ctx->sock);
@@ -3044,10 +3179,11 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 				    struct net_sockaddr *src_addr,
 				    net_socklen_t *addrlen)
 {
-	int ret;
+	bool is_server = ctx->options.role == MBEDTLS_SSL_IS_SERVER;
 	bool is_block = is_blocking(ctx->sock, flags);
 	k_timeout_t timeout;
 	k_timepoint_t end;
+	int ret;
 
 	if (ctx->error != 0) {
 		errno = ctx->error;
@@ -3072,6 +3208,21 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
 				int timeout_dtls, timeout_sock, timeout_ms;
+
+				if (is_server) {
+					int err = dtls_server_switch_session_on_rx(ctx);
+
+					/* If session swapping is successful, return early so that
+					 * recvfrom_dtls_server() can proceed with another
+					 * handshake. Otherwise, there either really was no packet,
+					 * or we've failed to allocate a new session, so the packet
+					 * was dropped. In either case, just proceed as if there
+					 * were no packet.
+					 */
+					if (err == 0) {
+						return ret;
+					}
+				}
 
 				if (!is_block) {
 					return ret;
@@ -3238,13 +3389,25 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 	 * a socket.
 	 */
 	do {
+		net_socklen_t peer_addrlen = sizeof(struct net_sockaddr);
+		struct net_sockaddr peer_addr;
+
 		repeat = false;
 
 		if (!is_handshake_complete(ctx->active_session)) {
 			ret = tls_mbedtls_handshake(ctx, timeout);
 			if (ret < 0) {
-				/* In case of EAGAIN, just exit. */
+				/* In case of EAGAIN, check if it's needed to swap sessions,
+				 * otherwise just exit.
+				 */
 				if (ret == -EAGAIN) {
+					int err = dtls_server_switch_session_on_rx(ctx);
+
+					if (err == 0) {
+						/* Switched the session, repeat the loop. */
+						continue;
+					}
+
 					break;
 				}
 
@@ -3261,6 +3424,9 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			/* Server socket ready to use again. */
 			ctx->error = 0;
 		}
+
+		/* Backup peer address (to verify later if it changed). */
+		dtls_peer_address_get(ctx->active_session, &peer_addr, &peer_addrlen);
 
 		ret = recvfrom_dtls_common(ctx, buf, max_len, flags,
 					   src_addr, addrlen);
@@ -3289,7 +3455,16 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		case MBEDTLS_ERR_SSL_WANT_WRITE:
 		case MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS:
 		case MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS:
-			ret = -EAGAIN;
+			if (peer_addrlen > 0 &&
+			    !dtls_is_peer_addr_valid(ctx->active_session, &peer_addr,
+						     peer_addrlen)) {
+				/* Current peer changed, repeat the loop. */
+				repeat = true;
+			} else {
+				/* Otherwise, just return the error. */
+				ret = -EAGAIN;
+			}
+
 			break;
 
 		default:
@@ -3422,48 +3597,13 @@ exit:
 
 #include <zephyr/net/net_core.h>
 
-static int ztls_socket_data_check(struct tls_context *ctx)
+static int tls_data_check(struct tls_context *ctx)
 {
 	int ret;
 
-	if (ctx->type == NET_SOCK_STREAM) {
-		if (!ctx->is_initialized) {
-			return -ENOTCONN;
-		}
+	if (!ctx->is_initialized) {
+		return -ENOTCONN;
 	}
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	else {
-		if (!ctx->is_initialized) {
-			bool is_server = ctx->options.role == MBEDTLS_SSL_IS_SERVER;
-
-			ret = tls_mbedtls_init(ctx, is_server);
-			if (ret < 0) {
-				return -ENOMEM;
-			}
-		}
-
-		if (!is_handshake_complete(ctx->active_session)) {
-			ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
-			if (ret < 0) {
-				if (ret == -EAGAIN) {
-					return 0;
-				}
-
-				ret = tls_mbedtls_reset_session(ctx);
-				if (ret != 0) {
-					return -ENOMEM;
-				}
-
-				return 0;
-			}
-
-			/* Socket ready to use again. */
-			ctx->error = 0;
-
-			return 0;
-		}
-	}
-#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	ctx->flags = ZSOCK_MSG_DONTWAIT;
 
@@ -3475,14 +3615,7 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 			 * resetting the context would result in an error instead
 			 * of 0 in a consecutive recv() call.
 			 */
-			if (ctx->type == NET_SOCK_DGRAM) {
-				ret = tls_mbedtls_reset_session(ctx);
-				if (ret != 0) {
-					return -ENOMEM;
-				}
-			} else {
-				ctx->active_session->session_closed = true;
-			}
+			ctx->active_session->session_closed = true;
 
 			return -ENOTCONN;
 		}
@@ -3492,7 +3625,7 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 			return 0;
 		}
 
-		NET_ERR("TLS data check error: -%x", -ret);
+		NET_ERR("%s data check error: -%x", "TLS", -ret);
 
 		/* MbedTLS API documentation requires session to
 		 * be reset in other error cases
@@ -3501,20 +3634,14 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 			return -ENOMEM;
 		}
 
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		if (ret == MBEDTLS_ERR_SSL_TIMEOUT && ctx->type == NET_SOCK_DGRAM) {
-			/* DTLS timeout interpreted as closing of connection. */
-			return -ENOTCONN;
-		}
-#endif
 		return -ECONNABORTED;
 	}
 
 	return mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl);
 }
 
-static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
-				   struct zsock_pollfd *pfd)
+static int tls_update_pollin(int fd, struct tls_context *ctx,
+			     struct zsock_pollfd *pfd)
 {
 	int ret;
 
@@ -3526,34 +3653,17 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 		}
 	}
 
-	if (ctx->type == NET_SOCK_STREAM) {
-		if (!(pfd->revents & ZSOCK_POLLIN)) {
-			/* No new data on a socket. */
-			goto next;
-		}
+	if ((pfd->revents & ZSOCK_POLLIN) == 0) {
+		/* No new data on a socket. */
+		goto next;
+	}
 
-		if (ctx->is_listening) {
-			goto next;
-		}
+	if (ctx->is_listening) {
+		goto next;
 	}
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	else {
-		/* Perform data check without incoming data for completed DTLS connections.
-		 * This allows the connections to timeout with CONFIG_NET_SOCKETS_DTLS_TIMEOUT.
-		 */
-		if (!is_handshake_complete(ctx->active_session) && !(pfd->revents & ZSOCK_POLLIN)) {
-			goto next;
-		}
-	}
-#endif
-	ret = ztls_socket_data_check(ctx);
+
+	ret = tls_data_check(ctx);
 	if (ret == -ENOTCONN || (pfd->revents & ZSOCK_POLLHUP)) {
-		/* Datagram does not return 0 on consecutive recv, but an error
-		 * code, hence clear POLLIN.
-		 */
-		if (ctx->type == NET_SOCK_DGRAM) {
-			pfd->revents &= ~ZSOCK_POLLIN;
-		}
 		pfd->revents |= ZSOCK_POLLHUP;
 		goto next;
 	} else if (ret < 0) {
@@ -3575,6 +3685,164 @@ again:
 	pfd->revents &= ~ZSOCK_POLLIN;
 
 	return -EAGAIN;
+}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static int dtls_data_check(struct tls_context *ctx)
+{
+	bool is_server = ctx->options.role == MBEDTLS_SSL_IS_SERVER;
+	int ret;
+
+	if (!ctx->is_initialized) {
+		ret = tls_mbedtls_init(ctx, is_server);
+		if (ret < 0) {
+			return -ENOMEM;
+		}
+	}
+
+again:
+	if (!is_handshake_complete(ctx->active_session)) {
+		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
+		if (ret < 0) {
+			if (ret == -EAGAIN) {
+				if (is_server) {
+					ret = dtls_server_switch_session_on_rx(ctx);
+					if (ret == 0) {
+						goto again;
+					}
+				}
+
+				return 0;
+			}
+
+			ret = tls_mbedtls_reset_session(ctx);
+			if (ret != 0) {
+				return -ENOMEM;
+			}
+
+			return 0;
+		}
+
+		/* Socket ready to use again. */
+		ctx->error = 0;
+
+		return 0;
+	}
+
+	ctx->flags = ZSOCK_MSG_DONTWAIT;
+
+	ret = mbedtls_ssl_read(&ctx->active_session->ssl, NULL, 0);
+	if (ret < 0) {
+		if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			/* Don't reset the context for STREAM socket - the
+			 * application needs to reopen the socket anyway, and
+			 * resetting the context would result in an error instead
+			 * of 0 in a consecutive recv() call.
+			 */
+			ret = tls_mbedtls_reset_session(ctx);
+			if (ret != 0) {
+				return -ENOMEM;
+			}
+
+			return -ENOTCONN;
+		}
+
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			if (is_server) {
+				ret = dtls_server_switch_session_on_rx(ctx);
+				if (ret == 0) {
+					goto again;
+				}
+			}
+
+			return 0;
+		}
+
+		NET_ERR("TLS data check error: -%x", -ret);
+
+		if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
+			/* Send close notification before session is released. */
+			(void)mbedtls_ssl_close_notify(&ctx->active_session->ssl);
+		}
+
+		/* MbedTLS API documentation requires session to
+		 * be reset in other error cases
+		 */
+		if (tls_mbedtls_reset_session(ctx) != 0) {
+			return -ENOMEM;
+		}
+
+		if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
+			/* DTLS timeout interpreted as closing of connection. */
+			return -ENOTCONN;
+		}
+
+		return -ECONNABORTED;
+	}
+
+	return mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl);
+}
+
+static int dtls_update_pollin(int fd, struct tls_context *ctx,
+			      struct zsock_pollfd *pfd)
+{
+	int ret;
+
+	/* Already had DTLS data to read on socket. */
+	if (mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl) > 0) {
+		pfd->revents |= ZSOCK_POLLIN;
+		goto next;
+	}
+
+	/* Perform data check without incoming data for completed DTLS connections.
+	 * This allows the connections to timeout with CONFIG_NET_SOCKETS_DTLS_TIMEOUT.
+	 */
+	if (!is_handshake_complete(ctx->active_session) && (pfd->revents & ZSOCK_POLLIN) == 0) {
+		goto next;
+	}
+
+	ret = dtls_data_check(ctx);
+	if (ret == -ENOTCONN || (pfd->revents & ZSOCK_POLLHUP)) {
+		/* Datagram does not return 0 on consecutive recv, but an error
+		 * code, hence clear POLLIN.
+		 */
+		pfd->revents &= ~ZSOCK_POLLIN;
+		pfd->revents |= ZSOCK_POLLHUP;
+		goto next;
+	} else if (ret < 0) {
+		ctx->error = -ret;
+		pfd->revents &= ~ZSOCK_POLLIN;
+		pfd->revents |= ZSOCK_POLLERR;
+		goto next;
+	} else if (ret == 0) {
+		goto again;
+	}
+
+next:
+	return 0;
+
+again:
+	/* Received encrypted data, but still not enough
+	 * to decrypt it and return data through socket,
+	 * ask for retry if no other events are set.
+	 */
+	pfd->revents &= ~ZSOCK_POLLIN;
+
+	return -EAGAIN;
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
+				   struct zsock_pollfd *pfd)
+{
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (ctx->type == NET_SOCK_DGRAM) {
+		return dtls_update_pollin(fd, ctx, pfd);
+	}
+#endif
+
+	return tls_update_pollin(fd, ctx, pfd);
 }
 
 static int ztls_poll_update_ctx(struct tls_context *ctx,
