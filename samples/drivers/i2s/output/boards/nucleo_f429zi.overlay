@@ -15,7 +15,7 @@
 	div-m = <8>;
 	mul-n = <101>;
 	div-q = <9>;
-	div-divq = <1>;
+	post-div-q = <1>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
