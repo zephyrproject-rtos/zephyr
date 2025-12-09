@@ -20,6 +20,16 @@
 		};
 	};
 
+	soc {
+		c40fc: flash-controller@40268000 {
+			compatible = "nxp,c40-flash-controller";
+			reg = <0x40268000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,mcxe31x-siul2-pinctrl";
@@ -305,21 +315,6 @@
 		compatible = "nxp,firc";
 		reg = <0x2d0000 0x28>;
 		status = "disabled";
-	};
-
-	flash: flash-c40@2ec000 {
-		compatible = "nxp,pflash";
-		reg = <0x2ec000 0x19c>;
-		interrupts = <48 0>, <49 0>, <50 0>;
-		interrupt-names = "flash-0", "flash-1", "flash-2";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "disabled";
-
-		program_flash: memory@400000 {
-			compatible = "soc-nv-flash";
-			reg = <0x400000 DT_SIZE_K(4096)>;
-		};
 	};
 
 	flexcan_0: flexcan@304000 {
