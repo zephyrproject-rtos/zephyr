@@ -50,7 +50,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	key_len = strlen(key_accept);
 
 	olen = MIN(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
-	strncpy(key_accept + key_len, WS_MAGIC, olen);
+	memcpy(key_accept + key_len, WS_MAGIC, olen);
 
 	mbedtls_sha1(key_accept, olen + key_len, accept);
 
