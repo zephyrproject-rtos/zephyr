@@ -20,6 +20,8 @@ dut: &usic1ch1 {
 	fifo-start-offset = <0>;
 	fifo-tx-size = <0>;
 	fifo-rx-size = <0>;
+	data-bits = <8>;
+	stop-bits = "1";
 };
 
 &uart_tx_p3_15_u1c1 {
