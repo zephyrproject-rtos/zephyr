@@ -342,7 +342,7 @@ static int broadcast_ip_address(struct net_in_addr *ip_addr)
 		return -1;
 	}
 
-	broadcast.sin_addr.s_addr = net_htonl(INADDR_BROADCAST);
+	broadcast.sin_addr.s_addr = net_htonl(NET_INADDR_BROADCAST);
 	broadcast.sin_port = net_htons(LATMON_NET_PORT);
 	broadcast.sin_family = NET_AF_INET;
 
@@ -381,7 +381,7 @@ int net_latmon_get_socket(struct net_sockaddr *connection_addr)
 		return -1;
 	}
 
-	zsock_setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	zsock_setsockopt(s, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &on, sizeof(on));
 	if (zsock_bind(s, (struct net_sockaddr *)&addr, sizeof(addr)) < 0) {
 		LOG_ERR("failed to bind latmon socket : %d", errno);
 		zsock_close(s);
