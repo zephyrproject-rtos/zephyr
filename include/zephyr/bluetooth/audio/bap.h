@@ -1221,7 +1221,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream);
  * @retval 0 in case of success
  * @retval -EINVAL if the stream, endpoint, ISO channel or connection is NULL
  * @retval -EBADMSG if the stream or ISO channel is in an invalid state for connection
- * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_HCI_ROLE_CENTRAL
+ * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_CONN_ROLE_CENTRAL
  * @retval -EALREADY if the ISO channel is already connecting or connected
  * @retval -EBUSY if another ISO channel is connecting
  * @retval -ENOEXEC if otherwise rejected by the ISO layer
@@ -1265,7 +1265,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream);
  *
  * @retval 0 Success
  * @retval -EINVAL The @p stream does not have an endpoint or a connection, of the stream's
- *                 connection's role is not @p BT_HCI_ROLE_CENTRAL
+ *                 connection's role is not @p BT_CONN_ROLE_CENTRAL
  * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING
  * @retval -EALREADY The CIS state of the @p is not in a connected state, and thus is already
  *                   stopping
