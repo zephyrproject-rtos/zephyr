@@ -236,19 +236,19 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
  *                <tt>NET_OK</tt> or <tt>NET_DROP</tt>.
  * @param ... List of conditions for this rule.
  */
-#define NPF_RULE(_name, _result, ...) \
-	struct npf_rule _name = { \
-		.result = (_result), \
-		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1, \
+#define NPF_RULE(_name, _result, ...)					  \
+	struct npf_rule _name = {					  \
+		.result = (_result),					  \
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	  \
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
 	}
 
-#define NPF_PRIORITY(_name, _priority, ...)                                                        \
-	struct npf_rule _name = {                                                                  \
-		.result = NET_CONTINUE,                                                            \
-		.priority = (_priority),                                                           \
-		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,                                   \
-		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},                            \
+#define NPF_PRIORITY(_name, _priority, ...)				\
+	struct npf_rule _name = {					\
+		.result = NET_CONTINUE,					\
+		.priority = (_priority),				\
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	\
+		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},	\
 	}
 
 #define Z_NPF_TEST_ADDR(arg) &arg.test
