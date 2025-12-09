@@ -357,6 +357,19 @@ static int tls_cred_cmd_add(const struct shell *sh, size_t argc, char *argv[])
 	bool keep_copy = false;
 	int ref_slot = -1;
 
+	if (argc < 5) {
+		shell_fprintf(sh, SHELL_ERROR,
+			      "Usage: cred add <sectag> <type> <backend> <format> [data]\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <sectag>  : Security tag\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "  <type>    : CA_CERT, SERVER_CERT, PRIVATE_KEY, PSK, PSK_ID\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <backend> : default\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <format>  : str, strt, bin, bint\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "  [data]    : Optional credential data (or use 'cred buf' first)\n");
+		return -EINVAL;
+	}
+
 	/* Lock credentials so that we can interact with them directly.
 	 * Mainly this is required by credential_get.
 	 */
@@ -571,6 +584,17 @@ static int tls_cred_cmd_buf_load(const struct shell *sh, size_t argc, char *argv
 /* Buffers credential data into the credential buffer. */
 static int tls_cred_cmd_buf(const struct shell *sh, size_t argc, char *argv[])
 {
+	if (argc < 2) {
+		shell_fprintf(sh, SHELL_ERROR, "Usage: cred buf <data>\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "  <data> : Base64 encoded credential data to buffer\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "Or use: cred buf clear  - Clear the credential buffer\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "Or use: cred buf load   - Load credential interactively\n");
+		return -EINVAL;
+	}
+
 	/* Otherwise, assume provided arg is base64 and attempt to write it into the credential
 	 * buffer.
 	 */
@@ -585,6 +609,14 @@ static int tls_cred_cmd_del(const struct shell *sh, size_t argc, char *argv[])
 	enum tls_credential_type type;
 	struct tls_credential *cred = NULL;
 	int ref_slot = -1;
+
+	if (argc < 3) {
+		shell_fprintf(sh, SHELL_ERROR, "Usage: cred del <sectag> <type>\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <sectag> : Security tag\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "  <type>   : CA_CERT, SERVER_CERT, PRIVATE_KEY, PSK, PSK_ID\n");
+		return -EINVAL;
+	}
 
 	/* Lock credentials so that we can safely use internal access functions. */
 	credentials_lock();
@@ -654,6 +686,15 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 	bool terminated;
 
 	size_t line_length;
+
+	if (argc < 4) {
+		shell_fprintf(sh, SHELL_ERROR, "Usage: cred get <sectag> <type> <format>\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <sectag> : Security tag\n");
+		shell_fprintf(sh, SHELL_ERROR,
+			      "  <type>   : CA_CERT, SERVER_CERT, PRIVATE_KEY, PSK, PSK_ID\n");
+		shell_fprintf(sh, SHELL_ERROR, "  <format> : str, strt, bin, bint\n");
+		return -EINVAL;
+	}
 
 	/* Lock credentials so that we can safely use internal access functions. */
 	credentials_lock();
@@ -778,6 +819,21 @@ static int tls_cred_cmd_list(const struct shell *sh, size_t argc, char *argv[])
 	sec_tag_t sectag_filter = TLS_SEC_TAG_NONE;
 	enum tls_credential_type type_filter = TLS_CREDENTIAL_NONE;
 
+	/* Show usage on explicit help request */
+	if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+		shell_fprintf(sh, SHELL_NORMAL, "Usage: cred list [sectag] [type]\n");
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "  [sectag] : Filter by security tag (or 'any' for all)\n");
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "  [type]   : Filter by credential type (or 'any' for all)\n");
+		shell_fprintf(
+			sh, SHELL_NORMAL,
+			"             Types: CA_CERT, SERVER_CERT, PRIVATE_KEY, PSK, PSK_ID\n");
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "\nOutput format: <sectag>,<type>,<digest>,<error>\n");
+		return 0;
+	}
+
 	/* Lock credentials so that we can safely use internal access functions. */
 	credentials_lock();
 
@@ -849,16 +905,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_buf_cmds,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 	SHELL_CMD_ARG(buf, &tls_cred_buf_cmds, "Buffer in credential data so it can be added.",
-		      tls_cred_cmd_buf, 2, 0),
+		      tls_cred_cmd_buf, 0, 0),
 	SHELL_CMD_ARG(add, NULL, "Add a TLS credential.",
-		      tls_cred_cmd_add, 5, 1),
+		      tls_cred_cmd_add, 0, 0),
 	SHELL_CMD_ARG(del, NULL, "Delete a TLS credential.",
-		      tls_cred_cmd_del, 3, 0),
+		      tls_cred_cmd_del, 0, 0),
 	SHELL_CMD_ARG(get, NULL, "Retrieve the contents of a TLS credential",
-		      tls_cred_cmd_get, 4, 0),
+		      tls_cred_cmd_get, 0, 0),
 	SHELL_CMD_ARG(list, NULL, "List stored TLS credentials, optionally filtering by type "
 				  "or sectag.",
-		      tls_cred_cmd_list, 1, 2),
+		      tls_cred_cmd_list, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 
