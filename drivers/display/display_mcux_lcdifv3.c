@@ -80,13 +80,14 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 	const uint8_t *src;
 	uint8_t *dst;
 
-	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 		 "Input buffer too small");
 
 	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
 
 	if ((x == 0) && (y == 0) && (desc->width == config->display_config.panelWidth) &&
-	    (desc->height == config->display_config.panelHeight) && (desc->pitch == desc->width)) {
+	    (desc->height == config->display_config.panelHeight) &&
+	    (desc->pitch == desc->width * data->pixel_bytes)) {
 		/* We can use the display buffer directly, without copying */
 		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb, (void *)buf);
 		data->active_fb = buf;
@@ -111,7 +112,7 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
-			src += data->pixel_bytes * desc->pitch;
+			src += desc->pitch;
 			dst += data->pixel_bytes * config->display_config.panelWidth;
 		}
 		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb,

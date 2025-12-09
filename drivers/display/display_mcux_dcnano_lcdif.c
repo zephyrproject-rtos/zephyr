@@ -60,7 +60,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 	const uint8_t *src;
 	uint8_t *dst;
 
-	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <=
+	__ASSERT((desc->pitch * desc->height) <=
 		desc->buf_size, "Input buffer too small");
 
 	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
@@ -68,7 +68,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 	if ((x == 0) && (y == 0) &&
 		(desc->width == config->dpi_config.panelWidth) &&
 		(desc->height == config->dpi_config.panelHeight) &&
-		(desc->pitch == desc->width)) {
+		(desc->pitch == (desc->width * data->pixel_bytes))) {
 		/* We can use the display buffer directly, without copying */
 		LOG_DBG("Setting FB from %p->%p",
 			(void *)data->active_fb, (void *)buf);
@@ -94,7 +94,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
-			src += data->pixel_bytes * desc->pitch;
+			src += desc->pitch;
 			dst += data->pitch_bytes;
 		}
 		LOG_DBG("Setting FB from %p->%p", (void *) data->active_fb,

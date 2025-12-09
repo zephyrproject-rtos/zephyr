@@ -399,9 +399,9 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
 		x, y, desc->height, desc->width, desc->pitch);
 
-	buf_len = MIN(desc->buf_size,
-		      desc->height * desc->width / UC81XX_PIXELS_PER_BYTE);
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
+	buf_len = MIN(desc->buf_size, desc->height * desc->pitch);
+	__ASSERT(desc->width <= desc->pitch * UC81XX_PIXELS_PER_BYTE,
+		 "Pitch is smaller than width in bytes");
 	__ASSERT(buf != NULL, "Buffer is not available");
 	__ASSERT(buf_len != 0U, "Buffer of length zero");
 	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE),
