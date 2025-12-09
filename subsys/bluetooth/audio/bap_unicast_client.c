@@ -4667,7 +4667,7 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	}
 
 	role = conn->role;
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}

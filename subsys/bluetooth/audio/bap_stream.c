@@ -649,7 +649,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	}
 
 	role = conn_get_role(conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
@@ -720,7 +720,7 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 	}
 
 	role = conn_get_role(conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
@@ -747,7 +747,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 	}
 
 	role = conn_get_role(stream->conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
@@ -779,7 +779,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
@@ -839,9 +839,9 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_config(stream, codec_cfg);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_reconfig(stream, codec_cfg);
 	} else {
 		err = -EOPNOTSUPP;
@@ -882,7 +882,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 	}
 
 	/* Only a unicast client can connect a stream */
-	if (conn_get_role(stream->conn) == BT_HCI_ROLE_CENTRAL) {
+	if (conn_get_role(stream->conn) == BT_CONN_ROLE_CENTRAL) {
 		return bt_bap_unicast_client_connect(stream);
 	} else {
 		return -EOPNOTSUPP;
@@ -914,9 +914,9 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_start(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_start(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -961,9 +961,9 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_metadata(stream, meta, meta_len);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_metadata(stream, meta, meta_len);
 	} else {
 		err = -EOPNOTSUPP;
@@ -1003,9 +1003,9 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_disable(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_disable(stream);
 	} else {
 		err = -EOPNOTSUPP;
@@ -1051,9 +1051,9 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(stream->conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_HCI_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_release(stream);
-	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_HCI_ROLE_PERIPHERAL) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_release(stream);
 	} else {
 		err = -EOPNOTSUPP;
