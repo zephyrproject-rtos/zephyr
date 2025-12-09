@@ -45,6 +45,23 @@
 			zephyr,memory-region = "DTCM1";
 		};
 
+		c40fc: flash-controller@40268000 {
+			compatible = "nxp,c40-flash-controller";
+			reg = <0x40268000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ranges = <0x0 0x00400000 DT_SIZE_K(3920)>;
+
+			flash0: flash@0 {
+				compatible = "nxp,c40-flash";
+				reg = <0x0 DT_SIZE_K(3920)>;
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <8>;
+				status = "disabled";
+			};
+		};
+
 		peripheral: peripheral@40000000 {
 			ranges = <0x0 0x40000000 0x10000000>;
 		};
