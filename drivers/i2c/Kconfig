@@ -47,6 +47,7 @@ config I2C_DUMP_MESSAGES_ALLOWLIST
 	bool "Use allowlist for logging of I2C transactions"
 	depends on I2C_DUMP_MESSAGES
 	depends on DT_HAS_ZEPHYR_I2C_DUMP_ALLOWLIST_ENABLED
+	default y
 	help
 	  Use allowlist to specify which devices transactions should be logged.
 	  The allowlist is defined in the devicetree using the compatible string of
