@@ -8,13 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-
 #include <zephyr/kernel.h>
+#include <zephyr/sys/sys_getopt.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/crc.h>
 
