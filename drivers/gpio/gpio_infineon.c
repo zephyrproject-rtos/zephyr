@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright (c) 2022-2025 Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -48,12 +48,26 @@ struct gpio_cat1_data {
 	sys_slist_t callbacks;
 };
 
+static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios)
+{
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	return BIT_MASK(ngpios);
+#else
+	ARG_UNUSED(ngpios);
+	return 0xFFFFFFFFU;
+#endif
+}
+
 static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	uint32_t drive_mode = CY_GPIO_DM_HIGHZ;
 	bool pin_val = false;
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
+
+	if (pin >= cfg->ngpios) {
+		return -EINVAL;
+	}
 
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
 	case GPIO_INPUT:
@@ -80,12 +94,14 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 			}
 		} else {
 			drive_mode = CY_GPIO_DM_STRONG;
-			pin_val = (flags & GPIO_OUTPUT_INIT_HIGH) ? true : false;
+			pin_val = (flags & GPIO_OUTPUT_INIT_HIGH);
 		}
 		break;
 
 	case GPIO_DISCONNECTED:
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 		Cy_GPIO_SetInterruptMask(base, pin, 0);
+#endif
 		drive_mode = CY_GPIO_DM_ANALOG;
 		pin_val = false;
 		break;
@@ -108,7 +124,7 @@ static int gpio_cat1_port_get_raw(const struct device *dev, uint32_t *value)
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	*value = GPIO_PRT_IN(base);
+	*value = GPIO_PRT_IN(base) & gpio_cat1_valid_mask(cfg->ngpios);
 
 	return 0;
 }
@@ -118,7 +134,15 @@ static int gpio_cat1_port_set_masked_raw(const struct device *dev, uint32_t mask
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
+	mask &= gpio_cat1_valid_mask(cfg->ngpios);
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t tmp = base->DR;
+
+	base->DR = (tmp & ~mask) | (mask & value);
+#else
 	GPIO_PRT_OUT(base) = (GPIO_PRT_OUT(base) & ~mask) | (mask & value);
+#endif
 
 	return 0;
 }
@@ -128,7 +152,7 @@ static int gpio_cat1_port_set_bits_raw(const struct device *dev, uint32_t mask)
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_SET(base) = mask;
+	GPIO_PRT_OUT_SET(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
 
 	return 0;
 }
@@ -138,7 +162,7 @@ static int gpio_cat1_port_clear_bits_raw(const struct device *dev, uint32_t mask
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_CLR(base) = mask;
+	GPIO_PRT_OUT_CLR(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
 
 	return 0;
 }
@@ -148,7 +172,7 @@ static int gpio_cat1_port_toggle_bits(const struct device *dev, uint32_t mask)
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_INV(base) = mask;
+	GPIO_PRT_OUT_INV(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
 
 	return 0;
 }
@@ -158,26 +182,51 @@ static uint32_t gpio_cat1_get_pending_int(const struct device *dev)
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	return base->INTR & gpio_cat1_valid_mask(cfg->ngpios);
+#else
 	return GPIO_PRT_INTR_MASKED(base);
+#endif
 }
 
 #if (!(CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_CPU_CORTEX_M0PLUS))
 static void gpio_isr_handler(const struct device *dev)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
+	struct gpio_cat1_data *const data = dev->data;
 	GPIO_PRT_Type *const base = cfg->regs;
-	uint32_t pins = GPIO_PRT_INTR_MASKED(base);
+	uint32_t pending;
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t intr_status = base->INTR;
+	uint32_t intr_mask = 0U;
+
+	for (uint8_t i = 0; i < cfg->ngpios; i++) {
+		uint32_t intr_cfg = (base->INTR_CFG >> (i * 2U)) & 0x3U;
+
+		if (intr_cfg != CY_GPIO_INTR_DISABLE) {
+			intr_mask |= BIT(i);
+		}
+	}
+
+	pending = intr_status & intr_mask;
+#else
+	pending = GPIO_PRT_INTR_MASKED(base);
+#endif
+
+	if (pending == 0U) {
+		return;
+	}
 
 	for (uint8_t i = 0; i < CY_GPIO_PINS_MAX; i++) {
-		Cy_GPIO_ClearInterrupt(base, i);
+		if (pending & BIT(i)) {
+			Cy_GPIO_ClearInterrupt(base, i);
+		}
 	}
 
-	if (dev) {
-		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
-				    pins);
-	}
+	gpio_fire_callbacks(&data->callbacks, dev, pending);
 }
-#endif
+#endif /* !(CAT1C && M0+) */
 
 static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -186,8 +235,18 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
+	if (pin >= cfg->ngpios) {
+		return -EINVAL;
+	}
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		Cy_GPIO_SetInterruptEdge(base, pin, CY_GPIO_INTR_DISABLE);
+		Cy_GPIO_ClearInterrupt(base, pin);
+		return 0;
+	}
+
 	/* Level interrupts (GPIO_INT_MODE_LEVEL) is not supported */
-	if (mode == GPIO_INT_MODE_LEVEL) {
+	if (mode != GPIO_INT_MODE_EDGE) {
 		return -ENOTSUP;
 	}
 
@@ -205,12 +264,16 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		break;
 
 	default:
-		break;
+		return -ENOTSUP;
 	}
 
 	Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
+	Cy_GPIO_ClearInterrupt(base, pin);
+
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	Cy_GPIO_SetInterruptMask(base, pin,
 				 (uint32_t)(mode == GPIO_INT_MODE_DISABLED) ? false : true);
+#endif
 
 	return 0;
 }
