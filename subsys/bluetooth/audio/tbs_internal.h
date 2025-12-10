@@ -47,9 +47,6 @@
 #define BT_TBS_CALL_FLAG_SET_INCOMING(flag) (flag &= ~BT_TBS_CALL_FLAG_OUTGOING)
 #define BT_TBS_CALL_FLAG_SET_OUTGOING(flag) (flag |= BT_TBS_CALL_FLAG_OUTGOING)
 
-const char *parse_string_value(const void *data, uint16_t length,
-				      uint16_t max_len);
-
 static inline const char *bt_tbs_state_str(uint8_t state)
 {
 	switch (state) {
@@ -289,6 +286,11 @@ struct bt_tbs_current_call_item {
 struct bt_tbs_in_uri {
 	uint8_t call_index;
 	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+} __packed;
+
+struct bt_tbs_friendly_name {
+	uint8_t call_index;
+	char name[CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH + 1];
 } __packed;
 
 #if defined(CONFIG_BT_TBS_CLIENT)
