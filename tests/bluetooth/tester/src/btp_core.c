@@ -144,6 +144,12 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_CLASSIC)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_SDP);
 #endif /* CONFIG_BT_CLASSIC */
+#if defined(CONFIG_BT_HFP_HF)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_HFP_HF);
+#endif /* CONFIG_BT_HFP_HF */
+#if defined(CONFIG_BT_HFP_AG)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_HFP_AG);
+#endif /* CONFIG_BT_HFP_AG */
 
 	*rsp_len = sizeof(*rp) + 4U;
 
@@ -300,6 +306,16 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_sdp();
 		break;
 #endif /* CONFIG_BT_CLASSIC */
+#if defined(CONFIG_BT_HFP_HF)
+	case BTP_SERVICE_ID_HFP_HF:
+		status = tester_init_hfp_hf();
+		break;
+#endif /* CONFIG_BT_HFP_HF */
+#if defined(CONFIG_BT_HFP_AG)
+	case BTP_SERVICE_ID_HFP_AG:
+		status = tester_init_hfp_ag();
+		break;
+#endif /* CONFIG_BT_HFP_AG */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -460,6 +476,16 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_sdp();
 		break;
 #endif /* CONFIG_BT_CLASSIC */
+#if defined(CONFIG_BT_HFP_HF)
+	case BTP_SERVICE_ID_HFP_HF:
+		status = tester_unregister_hfp_hf();
+		break;
+#endif /* CONFIG_BT_HFP_HF*/
+#if defined(CONFIG_BT_HFP_AG)
+	case BTP_SERVICE_ID_HFP_AG:
+		status = tester_unregister_hfp_ag();
+		break;
+#endif /* CONFIG_BT_HFP_AG */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
