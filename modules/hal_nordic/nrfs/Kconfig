@@ -67,6 +67,7 @@ config NRFS_LOCAL_DOMAIN
 	select IPC_SERVICE
 	select MBOX
 	select EVENTS
+	select MULTITHREADING
 	select REBOOT
 	help
 	  This option enables the nRF Services Local Domain libraries.
