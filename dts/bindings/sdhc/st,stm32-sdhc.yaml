@@ -18,3 +18,7 @@ properties:
     type: boolean
     description: |
         When defined, it indicates that the external SDIO circuit supports 1.8V signaling.
+
+  sdhi-on-gpios:
+    type: phandle-array
+    description: GPIO used to enable/disable the SDHI.

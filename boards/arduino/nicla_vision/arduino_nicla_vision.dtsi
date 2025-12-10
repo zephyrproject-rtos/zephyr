@@ -40,7 +40,7 @@
 };
 
 sdhc: &sdmmc2 {
-	compatible = "st,stm32-sdio";
+	compatible = "st,stm32-sdhc";
 	interrupts = <124 0>;
 	interrupt-names = "event";
 	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15

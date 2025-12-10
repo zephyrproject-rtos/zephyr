@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_sdio
+#define DT_DRV_COMPAT st_stm32_sdhc
 
 #include <stm32_bitops.h>
 #include <zephyr/cache.h>
@@ -107,15 +107,15 @@ static void sdhc_stm32_log_sdio_err_type(uint32_t error_code)
 		uint32_t mask;
 		const char *msg;
 	} sdio_errors[] = {
-		{ SDMMC_ERROR_TIMEOUT,             "SDIO Timeout" },
-		{ SDMMC_ERROR_DATA_TIMEOUT,        "SDIO Data Timeout" },
-		{ SDMMC_ERROR_DATA_CRC_FAIL,       "SDIO Data CRC Error" },
-		{ SDMMC_ERROR_TX_UNDERRUN,         "SDIO FIFO Transmit Underrun" },
-		{ SDMMC_ERROR_RX_OVERRUN,          "SDIO FIFO Receive Overrun" },
-		{ SDMMC_ERROR_INVALID_PARAMETER,   "SDIO Invalid Parameter" },
-		{ SDMMC_ERROR_ADDR_MISALIGNED,     "SDIO Misaligned Address" },
-		{ SDMMC_ERROR_WRITE_PROT_VIOLATION,"SDIO Write Protection Violation" },
-		{ SDMMC_ERROR_ILLEGAL_CMD,         "SDIO Illegal Command" },
+		{ SDMMC_ERROR_TIMEOUT,              "SDIO Timeout" },
+		{ SDMMC_ERROR_DATA_TIMEOUT,         "SDIO Data Timeout" },
+		{ SDMMC_ERROR_DATA_CRC_FAIL,        "SDIO Data CRC Error" },
+		{ SDMMC_ERROR_TX_UNDERRUN,          "SDIO FIFO Transmit Underrun" },
+		{ SDMMC_ERROR_RX_OVERRUN,           "SDIO FIFO Receive Overrun" },
+		{ SDMMC_ERROR_INVALID_PARAMETER,    "SDIO Invalid Parameter" },
+		{ SDMMC_ERROR_ADDR_MISALIGNED,      "SDIO Misaligned Address" },
+		{ SDMMC_ERROR_WRITE_PROT_VIOLATION, "SDIO Write Protection Violation" },
+		{ SDMMC_ERROR_ILLEGAL_CMD,          "SDIO Illegal Command" },
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(sdio_errors); i++) {

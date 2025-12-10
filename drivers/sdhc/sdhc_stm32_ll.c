@@ -12,11 +12,6 @@ LOG_MODULE_REGISTER(sdhc_stm32_ll, CONFIG_SDHC_LOG_LEVEL);
 /* Private validation macros for SDIO parameters */
 #define IS_SDIO_RAW_FLAG(ReadAfterWrite) (((ReadAfterWrite) == 0U) || ((ReadAfterWrite) == 1U))
 #define IS_SDIO_FUNCTION(FN)             (((FN) >= 0U) && ((FN) <= 7U))
-#define IS_SDIO_SUPPORTED_BLOCK_SIZE(BLOCKSIZE)                                                    \
-	(((BLOCKSIZE) == 1U) || ((BLOCKSIZE) == 2U) || ((BLOCKSIZE) == 4U) ||                      \
-	 ((BLOCKSIZE) == 8U) || ((BLOCKSIZE) == 16U) || ((BLOCKSIZE) == 32U) ||                    \
-	 ((BLOCKSIZE) == 64U) || ((BLOCKSIZE) == 128U) || ((BLOCKSIZE) == 256U) ||                 \
-	 ((BLOCKSIZE) == 512U) || ((BLOCKSIZE) == 1024U) || ((BLOCKSIZE) == 2048U))
 
 /**
  * @brief Tx Transfer completed callbacks
@@ -415,44 +410,6 @@ SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd)
 	cardstate = ((resp1 >> 9U) & 0x0FU);
 
 	return (SDMMC_CardStateTypeDef)cardstate;
-}
-
-/**
- * @brief  Initializes the SD Card.
- * @param  hsd: Pointer to SD handle
- * @note   This function initializes the SD card. It could be used when a card
- * re-initialization is needed.
- * @retval SDMMC status
- */
-SDMMC_StatusTypeDef SDMMC_InitCard(SDMMC_HandleTypeDef *hsd)
-{
-	SDMMC_InitTypeDef Init;
-	uint32_t sdmmc_clk;
-
-	/* Default SDMMC peripheral configuration for SD card initialization */
-	Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-	Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-	Init.BusWide = SDMMC_BUS_WIDE_1B;
-	Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-
-	/* Init Clock should be less or equal to 400Khz*/
-	sdmmc_clk = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
-	if (sdmmc_clk == 0U) {
-		hsd->State = SDMMC_STATE_READY;
-		hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
-		return SDMMC_ERROR;
-	}
-	Init.ClockDiv = sdmmc_clk / (2U * SDMMC_INIT_FREQ);
-
-#if defined(USE_SD_DIRPOL)
-	/* Set Transceiver polarity */
-	hsd->Instance->POWER |= SDMMC_POWER_DIRPOL;
-#endif
-
-	/* Initialize SDMMC peripheral interface with default configuration */
-	(void)SDMMC_Init(hsd->Instance, Init);
-
-	return SDMMC_OK;
 }
 
 SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd)
@@ -1395,8 +1352,8 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 			SDMMC_PowerState_ON(hsd->Instance);
 
 			/* Wait 74 cycles: required power up time before starting SDIO operations
-			* At 400 kHz, this is ~185 us. Wait 1 ms to be safe.
-			*/
+			 * At 400 kHz, this is ~185 us. Wait 1 ms to be safe.
+			 */
 			sdmmc_clk = sdmmc_clk / (2U * Init.ClockDiv);
 			k_msleep(1U + (74U * 1000U / (sdmmc_clk)));
 		}
