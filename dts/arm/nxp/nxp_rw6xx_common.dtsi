@@ -604,6 +604,13 @@
 			#io-channel-cells = <0>;
 			power-domains = <&peripheral_domain>;
 		};
+
+		acomp: acomp@38400 {
+			compatible = "nxp,acomp";
+			reg = <0x38400 0x4c>;
+			interrupts = <110 0>;
+			status = "disabled";
+		};
 	};
 
 	os_timer: timers@13b000 {
