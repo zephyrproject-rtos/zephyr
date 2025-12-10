@@ -44,6 +44,9 @@ LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 #define CAT1_I2C_SPEED_FAST_HZ      (400000UL)
 #define CAT1_I2C_SPEED_FAST_PLUS_HZ (1000000UL)
 
+/* Transfer timeout period */
+#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(500)
+
 /* Data structure */
 struct ifx_cat1_event_callback_data {
 	cy_israddress callback;
@@ -370,7 +373,11 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_SCB_I2C_Enable(config->base, &data->context);
+#else
 	Cy_SCB_I2C_Enable(config->base);
+#endif
 	irq_enable(config->irq_num);
 
 	/* Register an I2C event callback handler */
@@ -517,7 +524,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		}
 
 		/* Acquire semaphore (block I2C async transfer for another thread) */
-		ret = k_sem_take(&data->transfer_sem, K_FOREVER);
+		ret = k_sem_take(&data->transfer_sem, I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret < 0) {
 			k_sem_give(&data->operation_sem);
 			return -EIO;
@@ -575,7 +582,7 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
 }
 
 void _i2c_free(const struct device *dev)
