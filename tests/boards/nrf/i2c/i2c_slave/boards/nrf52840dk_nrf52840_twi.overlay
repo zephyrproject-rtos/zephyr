@@ -1,10 +1,10 @@
 /*
- * Copyright 2024 Nordic Semiconductor ASA
+ * Copyright 2025 Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "nrf52840dk_nrf52840_common.overlay"
 
-dut_twim: &i2c0 {
-	compatible = "nordic,nrf-twim";
+&i2c0 {
+	compatible = "nordic,nrf-twi";
 };
