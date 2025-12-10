@@ -24,6 +24,12 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+  boards.nrf.i2c.i2c_slave.twi:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_twi.overlay"
   boards.nrf.i2c.i2c_slave.fast:
     platform_allow:
       - nrf52840dk/nrf52840
