@@ -13,6 +13,7 @@ config SOC_SERIES
 	default "nrf53" if SOC_SERIES_NRF53X
 	default "nrf54h" if SOC_SERIES_NRF54HX
 	default "nrf54l" if SOC_SERIES_NRF54LX
+	default "nrf71" if SOC_SERIES_NRF71
 	default "nrf91" if SOC_SERIES_NRF91X
 	default "nrf92" if SOC_SERIES_NRF92X
 
@@ -50,6 +51,12 @@ config SOC_SERIES_NRF54LX
 	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Nordic Semiconductor nRF54L series MCU
+
+config SOC_SERIES_NRF71
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Nordic Semiconductor nRF71 series MCU
 
 config SOC_SERIES_NRF91X
 	bool

@@ -14,6 +14,16 @@
  * supported by nrfx (see the corresponding nrfx_config_*.h files).
  */
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF7120_ENGA) && !defined(NRF7120_ENGA_XXAA)
+#define NRF7120_ENGA_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF7120_ENGA_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF7120_ENGA_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+
 #ifdef CONFIG_NRFX_ADC
 #define NRFX_ADC_ENABLED 1
 #endif

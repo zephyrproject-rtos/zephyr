@@ -1,0 +1,27 @@
+# Nordic Semiconductor nRF71 MCU line
+
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF71
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select SOC_EARLY_INIT_HOOK
+	select SOC_RESET_HOOK
+	select NRF_PLATFORM_LUMOS
+
+config SOC_NRF7120_ENGA_CPUAPP
+	select ARM
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_POWEROFF
+	select HAS_SWO
+
+config SOC_NRF7120_ENGA_CPUFLPR
+	select RISCV_CORE_NORDIC_VPR
