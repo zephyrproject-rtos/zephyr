@@ -160,7 +160,7 @@ static inline uint32_t get_core_bit_pos(uint32_t core_id)
 {
 	am26x_mbox_cfg *am26x_mbox_cfg_ptr;
 	am26x_mbox_cfg_ptr = &am26x_mbox_static_cfg[core_id][core_id];
-	return am26x_mbox_cfg_ptr->read_req_offset;
+	return am26x_mbox_cfg_ptr->intr_bit_pos;
 }
 
 static inline uint32_t get_sw_q_idx(uint32_t sender_core_id, uint32_t receiver_core_id)
