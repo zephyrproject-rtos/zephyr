@@ -23,7 +23,7 @@
 };
 
 uart0: &scb0 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 	clocks = <&peri0_group0_16bit_0>;
