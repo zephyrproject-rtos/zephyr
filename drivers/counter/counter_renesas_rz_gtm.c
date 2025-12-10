@@ -5,22 +5,13 @@
 
 #define DT_DRV_COMPAT renesas_rz_gtm_counter
 
+#include <r_gtm.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
-#include <r_gtm.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 
 #define RZ_GTM_TOP_VALUE UINT32_MAX
-
-#if defined(CONFIG_CPU_CORTEX_M)
-#define counter_rz_gtm_clear_pending(irq) NVIC_ClearPendingIRQ(irq)
-#define counter_rz_gtm_set_pending(irq)   NVIC_SetPendingIRQ(irq)
-#define counter_rz_gtm_is_pending(irq)    NVIC_GetPendingIRQ(irq)
-#elif defined(CONFIG_CPU_CORTEX_A)
-#define counter_rz_gtm_clear_pending(irq) R_BSP_GICD_ClearSpiPending(irq)
-#define counter_rz_gtm_set_pending(irq)   R_BSP_GICD_SetSpiPending(irq)
-#define counter_rz_gtm_is_pending(irq)    R_BSP_GICD_GetSpiPending(irq)
-#endif
 
 struct counter_rz_gtm_config {
 	struct counter_config_info config_info;
@@ -43,6 +34,33 @@ struct counter_rz_gtm_data {
 	bool is_periodic;
 };
 
+static inline void counter_rz_gtm_clear_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_clear_pending(irq);
+#else  /* NVIC */
+	NVIC_ClearPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static inline void counter_rz_gtm_set_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_set_pending(irq);
+#else  /* NVIC */
+	NVIC_SetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static inline uint32_t counter_rz_gtm_is_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	return arm_gic_irq_is_pending(irq);
+#else  /* NVIC */
+	return NVIC_GetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
 static int counter_rz_gtm_get_value(const struct device *dev, uint32_t *ticks)
 {
 	const struct counter_rz_gtm_config *cfg = dev->config;
@@ -63,18 +81,36 @@ static void counter_rz_gtm_irq_handler(timer_callback_args_t *p_args)
 {
 	const struct device *dev = p_args->p_context;
 	struct counter_rz_gtm_data *data = dev->data;
-	counter_alarm_callback_t alarm_callback = data->alarm_cb;
+	counter_alarm_callback_t alarm_callback;
+	counter_top_callback_t top_callback;
+	void *usr_data;
+	uint32_t now;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+
+	alarm_callback = data->alarm_cb;
+	top_callback = data->top_cb;
+	usr_data = data->user_data;
 
 	if (alarm_callback) {
-		uint32_t now;
+		data->alarm_cb = NULL;
+		data->user_data = NULL;
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	if (alarm_callback) {
 
 		if (counter_rz_gtm_get_value(dev, &now) != 0) {
 			return;
 		}
-		data->alarm_cb = NULL;
-		alarm_callback(dev, 0, now, data->user_data);
+
+		alarm_callback(dev, 0, now, usr_data);
 	} else if (data->top_cb) {
-		data->top_cb(dev, data->user_data);
+		top_callback(dev, usr_data);
+	} else {
+		/* Do nothing */
 	}
 }
 
@@ -82,7 +118,7 @@ static int counter_rz_gtm_init(const struct device *dev)
 {
 	struct counter_rz_gtm_data *data = dev->data;
 	const struct counter_rz_gtm_config *cfg = dev->config;
-	int err;
+	fsp_err_t err;
 
 	data->top_val = data->fsp_cfg->period_counts;
 
@@ -93,21 +129,40 @@ static int counter_rz_gtm_init(const struct device *dev)
 
 	data->is_periodic = false;
 
-	return err;
+	return 0;
 }
 
-static int counter_rz_gtm_switch_timer_mode(const struct device *dev)
+static int renesas_rz_gtm_period_set(const struct device *dev, uint32_t val)
+{
+	const struct counter_rz_gtm_config *cfg = dev->config;
+	struct counter_rz_gtm_data *data = dev->data;
+	fsp_err_t err;
+
+	data->fsp_cfg->period_counts = val;
+	err = cfg->fsp_api->periodSet(data->fsp_ctrl, data->fsp_cfg->period_counts);
+	if (err != FSP_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int renesas_rz_gtm_switch_timer_mode(const struct device *dev)
 {
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
 	gtm_extended_cfg_t *fsp_cfg_extend = (gtm_extended_cfg_t *)data->fsp_cfg->p_extend;
-	int err;
+	fsp_err_t err;
 
 	if (data->is_periodic) {
 		fsp_cfg_extend->gtm_mode = GTM_TIMER_MODE_INTERVAL;
 	} else {
+		data->top_cb = NULL;
+		data->top_val = RZ_GTM_TOP_VALUE;
 		fsp_cfg_extend->gtm_mode = GTM_TIMER_MODE_FREERUN;
 	}
+
+	data->fsp_cfg->period_counts = data->top_val;
 
 	err = cfg->fsp_api->close(data->fsp_ctrl);
 	if (err != FSP_SUCCESS) {
@@ -124,7 +179,7 @@ static int counter_rz_gtm_switch_timer_mode(const struct device *dev)
 		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 
 static int counter_rz_gtm_start(const struct device *dev)
@@ -144,10 +199,10 @@ static int counter_rz_gtm_start(const struct device *dev)
 		data->fsp_cfg->period_counts = data->top_val;
 	}
 
-	err = counter_rz_gtm_switch_timer_mode(dev);
-	if (err != FSP_SUCCESS) {
+	err = renesas_rz_gtm_switch_timer_mode(dev);
+	if (err < 0) {
 		k_spin_unlock(&data->lock, key);
-		return -EIO;
+		return err;
 	}
 
 	counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
@@ -158,7 +213,7 @@ static int counter_rz_gtm_start(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 
-	return err;
+	return 0;
 }
 
 static int counter_rz_gtm_stop(const struct device *dev)
@@ -166,7 +221,7 @@ static int counter_rz_gtm_stop(const struct device *dev)
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
 	k_spinlock_key_t key;
-	int err;
+	fsp_err_t err;
 
 	key = k_spin_lock(&data->lock);
 
@@ -189,10 +244,100 @@ static int counter_rz_gtm_stop(const struct device *dev)
 	data->top_cb = NULL;
 	data->alarm_cb = NULL;
 	data->user_data = NULL;
-
 	data->is_started = false;
 
 	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+
+static uint32_t ticks_sub(uint32_t val, uint32_t old)
+{
+	if (val >= old) {
+		return (val - old);
+	} else {
+		return (val + (RZ_GTM_TOP_VALUE - old + 1));
+	}
+}
+
+static int renesas_rz_gtm_abs_alarm_set(const struct device *dev, uint32_t val, bool irq_on_late)
+{
+	struct counter_rz_gtm_data *data = dev->data;
+	uint32_t max_rel_val;
+	uint32_t read_again;
+	uint32_t diff;
+	int err;
+
+	/* Set new period */
+	err = renesas_rz_gtm_period_set(dev, val);
+	if (err < 0) {
+		return err;
+	}
+
+	err = counter_rz_gtm_get_value(dev, &read_again);
+	if (err < 0) {
+		return err;
+	}
+
+	max_rel_val = RZ_GTM_TOP_VALUE - data->guard_period;
+	diff = ticks_sub(val, read_again);
+	if (diff > max_rel_val || diff == 0) {
+		err = -ETIME;
+
+		if (irq_on_late) {
+			irq_enable(data->fsp_cfg->cycle_end_irq);
+			counter_rz_gtm_set_pending(data->fsp_cfg->cycle_end_irq);
+		} else {
+			data->alarm_cb = NULL;
+		}
+	} else {
+		counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
+		irq_enable(data->fsp_cfg->cycle_end_irq);
+	}
+
+	return err;
+}
+
+static int renesas_rz_gtm_rel_alarm_set(const struct device *dev, uint32_t val, bool irq_on_late)
+{
+	struct counter_rz_gtm_data *data = dev->data;
+	uint32_t max_rel_val;
+	uint32_t read_again;
+	uint32_t diff;
+	uint32_t now;
+	int err;
+
+	err = counter_rz_gtm_get_value(dev, &now);
+	if (err < 0) {
+		return err;
+	}
+
+	val = (now + val) & RZ_GTM_TOP_VALUE;
+
+	/* Set new period */
+	err = renesas_rz_gtm_period_set(dev, val);
+	if (err < 0) {
+		return err;
+	}
+
+	err = counter_rz_gtm_get_value(dev, &read_again);
+	if (err < 0) {
+		return err;
+	}
+
+	max_rel_val = irq_on_late ? RZ_GTM_TOP_VALUE / 2U : RZ_GTM_TOP_VALUE;
+	diff = ticks_sub(val, read_again);
+	if (diff > max_rel_val || diff == 0) {
+		if (irq_on_late) {
+			irq_enable(data->fsp_cfg->cycle_end_irq);
+			counter_rz_gtm_set_pending(data->fsp_cfg->cycle_end_irq);
+		} else {
+			data->alarm_cb = NULL;
+		}
+	} else {
+		counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
+		irq_enable(data->fsp_cfg->cycle_end_irq);
+	}
 
 	return err;
 }
@@ -200,16 +345,12 @@ static int counter_rz_gtm_stop(const struct device *dev)
 static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 				    const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
 
 	bool absolute;
 	uint32_t val;
 	k_spinlock_key_t key;
 	bool irq_on_late;
-	uint32_t max_rel_val;
-	uint32_t now, diff;
-	uint32_t read_again;
 	int err;
 
 	if (chan != 0) {
@@ -220,13 +361,12 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 		return -EINVAL;
 	}
 
-	absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
-	val = alarm_cfg->ticks;
-
-	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
 		return -EINVAL;
 	}
+
+	absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
+	val = alarm_cfg->ticks;
 
 	key = k_spin_lock(&data->lock);
 
@@ -250,31 +390,25 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 		}
 
 		/* Restore free running mode */
-		irq_disable(data->fsp_cfg->cycle_end_irq);
-		data->top_cb = NULL;
-		data->top_val = RZ_GTM_TOP_VALUE;
 		data->is_periodic = false;
-		data->fsp_cfg->period_counts = data->top_val;
-
-		err = counter_rz_gtm_switch_timer_mode(dev);
-		if (err != FSP_SUCCESS) {
+		err = renesas_rz_gtm_switch_timer_mode(dev);
+		if (err < 0) {
 			k_spin_unlock(&data->lock, key);
-			return -EIO;
+			return err;
 		}
-	}
-
-	err = counter_rz_gtm_get_value(dev, &now);
-	if (err != 0) {
-		k_spin_unlock(&data->lock, key);
-		return -EIO;
 	}
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
 	if (absolute) {
-		max_rel_val = RZ_GTM_TOP_VALUE - data->guard_period;
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+
+		err = renesas_rz_gtm_abs_alarm_set(dev, val, irq_on_late);
+		if (err < 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
+		}
 	} else {
 		/* If relative value is smaller than half of the counter range
 		 * it is assumed that there is a risk of setting value too late
@@ -286,57 +420,11 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 		 * Note that half of counter range is an arbitrary value.
 		 */
 		irq_on_late = val < (RZ_GTM_TOP_VALUE / 2U);
-		/* Limit max to detect short relative being set too late. */
-		max_rel_val = irq_on_late ? RZ_GTM_TOP_VALUE / 2U : RZ_GTM_TOP_VALUE;
-		val = (now + val) & RZ_GTM_TOP_VALUE;
-	}
 
-	/* Set new period */
-	data->fsp_cfg->period_counts = val;
-	err = cfg->fsp_api->periodSet(data->fsp_ctrl, data->fsp_cfg->period_counts);
-	if (err != FSP_SUCCESS) {
-		k_spin_unlock(&data->lock, key);
-		return -EIO;
-	}
-
-	err = counter_rz_gtm_get_value(dev, &read_again);
-	if (err != 0) {
-		k_spin_unlock(&data->lock, key);
-		return -EIO;
-	}
-
-	if (val >= read_again) {
-		diff = (val - read_again);
-	} else {
-		diff = val + (RZ_GTM_TOP_VALUE - read_again);
-	}
-
-	if (diff > max_rel_val) {
-		if (absolute) {
-			err = -ETIME;
-		}
-
-		/* Interrupt is triggered always for relative alarm and
-		 * for absolute depending on the flag.
-		 */
-		if (irq_on_late) {
-			irq_enable(data->fsp_cfg->cycle_end_irq);
-			counter_rz_gtm_set_pending(data->fsp_cfg->cycle_end_irq);
-		} else {
-			data->alarm_cb = NULL;
-		}
-	} else {
-		if (diff == 0) {
-			/* RELOAD value could be set just in time for interrupt
-			 * trigger or too late. In any case time is interrupt
-			 * should be triggered. No need to enable interrupt
-			 * on TIMER just make sure interrupt is pending.
-			 */
-			irq_enable(data->fsp_cfg->cycle_end_irq);
-			counter_rz_gtm_set_pending(data->fsp_cfg->cycle_end_irq);
-		} else {
-			counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
-			irq_enable(data->fsp_cfg->cycle_end_irq);
+		err = renesas_rz_gtm_rel_alarm_set(dev, val, irq_on_late);
+		if (err < 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
 		}
 	}
 
@@ -374,111 +462,27 @@ static int counter_rz_gtm_cancel_alarm(const struct device *dev, uint8_t chan)
 	return 0;
 }
 
-static int counter_rz_gtm_set_top_value(const struct device *dev,
-					const struct counter_top_cfg *top_cfg)
+static int renesas_rz_gtm_check_reset_if_late(const struct device *dev, uint32_t flags)
 {
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
-	k_spinlock_key_t key;
-	uint32_t cur_tick;
+	uint32_t curr_tick;
 	bool reset;
-	int err = 0;
+	int err;
 
-	if (!top_cfg) {
-		return -EINVAL;
-	}
-
-	/* -EBUSY if any alarm is active */
-	if (data->alarm_cb) {
-		return -EBUSY;
-	}
-
-	key = k_spin_lock(&data->lock);
-
-	if (!data->is_periodic && top_cfg->ticks == RZ_GTM_TOP_VALUE) {
-		goto exit_unlock;
-	}
-
-	if (top_cfg->ticks == RZ_GTM_TOP_VALUE) {
-		/* Restore free running mode */
-		irq_disable(data->fsp_cfg->cycle_end_irq);
-		counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
-		data->top_cb = NULL;
-		data->user_data = NULL;
-		data->top_val = RZ_GTM_TOP_VALUE;
-		data->is_periodic = false;
-
-		if (data->is_started) {
-			err = counter_rz_gtm_switch_timer_mode(dev);
-			if (err != FSP_SUCCESS) {
-				k_spin_unlock(&data->lock, key);
-				return -EIO;
-			}
-			counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
-		}
-		goto exit_unlock;
-	}
-
-	data->top_cb = top_cfg->callback;
-	data->user_data = top_cfg->user_data;
-	data->top_val = top_cfg->ticks;
-
-	if (!data->is_started) {
-		data->is_periodic = true;
-		goto exit_unlock;
-	}
-
-	if (!data->is_periodic) {
-		/* Switch to interval mode first time, restart timer */
-		err = cfg->fsp_api->stop(data->fsp_ctrl);
-		if (err != FSP_SUCCESS) {
-			k_spin_unlock(&data->lock, key);
-			return -EIO;
-		}
-
-		irq_disable(data->fsp_cfg->cycle_end_irq);
-		data->is_periodic = true;
-		data->fsp_cfg->period_counts = data->top_val;
-
-		err = counter_rz_gtm_switch_timer_mode(dev);
-		if (err != FSP_SUCCESS) {
-			k_spin_unlock(&data->lock, key);
-			return -EIO;
-		}
-
-		if (data->top_cb) {
-			counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
-			irq_enable(data->fsp_cfg->cycle_end_irq);
-		}
-		goto exit_unlock;
-	}
-
-	if (!data->top_cb) {
-		/* New top cfg is without callback - stop IRQs */
-		irq_disable(data->fsp_cfg->cycle_end_irq);
-		counter_rz_gtm_clear_pending(data->fsp_cfg->cycle_end_irq);
-	}
-	/* Timer already in interval mode - only change top value */
-	data->fsp_cfg->period_counts = data->top_val;
-	err = cfg->fsp_api->periodSet(data->fsp_ctrl, data->fsp_cfg->period_counts);
-	if (err != FSP_SUCCESS) {
-		k_spin_unlock(&data->lock, key);
-		return -EIO;
-	}
-
-	/* Check if counter reset is required */
 	reset = false;
-	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+	err = 0;
+
+	if (flags & COUNTER_TOP_CFG_DONT_RESET) {
 		/* Don't reset counter */
-		err = counter_rz_gtm_get_value(dev, &cur_tick);
-		if (err != 0) {
-			k_spin_unlock(&data->lock, key);
-			return -EIO;
+		err = counter_rz_gtm_get_value(dev, &curr_tick);
+		if (err < 0) {
+			return err;
 		}
 
-		if (cur_tick >= data->top_val) {
+		if (curr_tick >= data->top_val) {
 			err = -ETIME;
-			if (top_cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			if (flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
 				/* Reset counter if current is late */
 				reset = true;
 			}
@@ -488,14 +492,96 @@ static int counter_rz_gtm_set_top_value(const struct device *dev,
 	}
 
 	if (reset) {
-		err = cfg->fsp_api->reset(data->fsp_ctrl);
-		if (err != FSP_SUCCESS) {
-			k_spin_unlock(&data->lock, key);
+		if (cfg->fsp_api->reset(data->fsp_ctrl) != FSP_SUCCESS) {
 			return -EIO;
 		}
 	}
 
-exit_unlock:
+	return err;
+}
+static int counter_rz_gtm_set_top_value(const struct device *dev,
+					const struct counter_top_cfg *top_cfg)
+{
+	struct counter_rz_gtm_data *data = dev->data;
+	k_spinlock_key_t key;
+	int err = 0;
+
+	if (!top_cfg) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->lock);
+
+	/* -EBUSY if any alarm is active */
+	if (data->alarm_cb) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	data->top_cb = top_cfg->callback;
+	data->user_data = top_cfg->user_data;
+	data->top_val = top_cfg->ticks;
+
+	if (!data->is_periodic && top_cfg->ticks == RZ_GTM_TOP_VALUE) {
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	if (top_cfg->ticks == RZ_GTM_TOP_VALUE) {
+		/* Restore free running mode */
+		data->user_data = NULL;
+		data->is_periodic = false;
+		if (data->is_started) {
+			err = renesas_rz_gtm_switch_timer_mode(dev);
+			if (err < 0) {
+				k_spin_unlock(&data->lock, key);
+				return err;
+			}
+		}
+
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	if (!data->is_started) {
+		data->is_periodic = true;
+
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	if (!data->is_periodic) {
+		/* Switch to interval mode first time, restart timer */
+		data->is_periodic = true;
+		err = renesas_rz_gtm_switch_timer_mode(dev);
+		if (err < 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
+		}
+
+		if (data->top_cb) {
+			irq_enable(data->fsp_cfg->cycle_end_irq);
+		}
+
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	if (!data->top_cb) {
+		/* New top cfg is without callback - stop IRQs */
+		irq_disable(data->fsp_cfg->cycle_end_irq);
+	}
+
+	/* Timer already in interval mode - only change top value */
+	err = renesas_rz_gtm_period_set(dev, data->top_val);
+	if (err < 0) {
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	/* Check if counter reset is required */
+	err = renesas_rz_gtm_check_reset_if_late(dev, top_cfg->flags);
+
 	k_spin_unlock(&data->lock, key);
 
 	return err;
@@ -516,11 +602,11 @@ static uint32_t counter_rz_gtm_get_top_value(const struct device *dev)
 
 	if (data->is_periodic) {
 		timer_info_t info;
-		int err;
+		fsp_err_t err;
 
 		err = cfg->fsp_api->infoGet(data->fsp_ctrl, &info);
 		if (err != FSP_SUCCESS) {
-			return 0;
+			return -EIO;
 		}
 		top_val = info.period_counts;
 	}
@@ -555,7 +641,7 @@ static uint32_t counter_rz_gtm_get_freq(const struct device *dev)
 	struct counter_rz_gtm_data *data = dev->data;
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	timer_info_t info;
-	int err;
+	fsp_err_t err;
 
 	err = cfg->fsp_api->infoGet(data->fsp_ctrl, &info);
 	if (err != FSP_SUCCESS) {
