@@ -16,10 +16,6 @@
 #define RZ_CMTW_CMWCR_CCLR_OFFSET (13U)
 #define RZ_CMTW_CMWCR_CCLR_MASK   (0x07U)
 
-#define counter_rz_cmtw_clear_pending(irq) arm_gic_irq_clear_pending(irq)
-#define counter_rz_cmtw_set_pending(irq)   arm_gic_irq_set_pending(irq)
-#define counter_rz_cmtw_is_pending(irq)    arm_gic_irq_is_pending(irq)
-
 struct counter_rz_cmtw_config {
 	struct counter_config_info config_info;
 	const timer_api_t *fsp_api;
@@ -38,11 +34,38 @@ struct counter_rz_cmtw_data {
 	bool is_started;
 };
 
+static inline void counter_rz_cmtw_clear_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_clear_pending(irq);
+#else  /* NVIC */
+	NVIC_ClearPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static inline void counter_rz_cmtw_set_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_set_pending(irq);
+#else  /* NVIC */
+	NVIC_SetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static inline uint32_t counter_rz_cmtw_is_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	return arm_gic_irq_is_pending(irq);
+#else  /* NVIC */
+	return NVIC_GetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
 static int counter_rz_cmtw_period_set(const struct device *dev, uint32_t period)
 {
 	const struct counter_rz_cmtw_config *cfg = dev->config;
 	struct counter_rz_cmtw_data *data = dev->data;
-	int err;
+	fsp_err_t err;
 
 	if (data->is_started) {
 		err = cfg->fsp_api->stop(data->fsp_ctrl);
@@ -88,7 +111,7 @@ static int counter_rz_cmtw_get_value(const struct device *dev, uint32_t *ticks)
 	const struct counter_rz_cmtw_config *cfg = dev->config;
 	struct counter_rz_cmtw_data *data = dev->data;
 	timer_status_t timer_status;
-	int err;
+	fsp_err_t err;
 
 	err = cfg->fsp_api->statusGet(data->fsp_ctrl, &timer_status);
 	if (err != FSP_SUCCESS) {
@@ -104,17 +127,22 @@ static void counter_rz_cmtw_irq_handler(timer_callback_args_t *p_args)
 	const struct device *dev = p_args->p_context;
 	struct counter_rz_cmtw_data *data = dev->data;
 	counter_alarm_callback_t alarm_callback = data->alarm_cb;
+	void *usr_data = data->user_data;
+	uint32_t now;
 
 	if (alarm_callback) {
-		uint32_t now;
+		data->alarm_cb = NULL;
+		data->user_data = NULL;
 
 		if (counter_rz_cmtw_get_value(dev, &now) != 0) {
 			return;
 		}
-		data->alarm_cb = NULL;
-		alarm_callback(dev, 0, now, data->user_data);
+
+		alarm_callback(dev, 0, now, usr_data);
 	} else if (data->top_cb) {
-		data->top_cb(dev, data->user_data);
+		data->top_cb(dev, usr_data);
+	} else {
+		;
 	}
 }
 
@@ -122,14 +150,14 @@ static int counter_rz_cmtw_init(const struct device *dev)
 {
 	struct counter_rz_cmtw_data *data = dev->data;
 	const struct counter_rz_cmtw_config *cfg = dev->config;
-	int err;
+	fsp_err_t err;
 
 	err = cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 
 static int counter_rz_cmtw_start(const struct device *dev)
@@ -137,7 +165,7 @@ static int counter_rz_cmtw_start(const struct device *dev)
 	const struct counter_rz_cmtw_config *cfg = dev->config;
 	struct counter_rz_cmtw_data *data = dev->data;
 	k_spinlock_key_t key;
-	int err;
+	fsp_err_t err;
 
 	key = k_spin_lock(&data->lock);
 
@@ -157,7 +185,7 @@ static int counter_rz_cmtw_start(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 
-	return err;
+	return 0;
 }
 
 static int counter_rz_cmtw_stop(const struct device *dev)
@@ -165,7 +193,7 @@ static int counter_rz_cmtw_stop(const struct device *dev)
 	const struct counter_rz_cmtw_config *cfg = dev->config;
 	struct counter_rz_cmtw_data *data = dev->data;
 	k_spinlock_key_t key;
-	int err;
+	fsp_err_t err;
 
 	key = k_spin_lock(&data->lock);
 
@@ -192,6 +220,97 @@ static int counter_rz_cmtw_stop(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 
+	return 0;
+}
+
+static uint32_t ticks_sub(uint32_t val, uint32_t old)
+{
+	if (val >= old) {
+		return (val - old);
+	} else {
+		return (val + (RZ_CMTW_TOP_VALUE - old + 1));
+	}
+}
+
+static int renesas_rz_cmtw_abs_alarm_set(const struct device *dev, uint32_t val, bool irq_on_late)
+{
+	struct counter_rz_cmtw_data *data = dev->data;
+	uint32_t max_rel_val;
+	uint32_t read_again;
+	uint32_t diff;
+	int err;
+
+	/* Set new period */
+	err = counter_rz_cmtw_period_set(dev, val);
+	if (err < 0) {
+		return err;
+	}
+
+	err = counter_rz_cmtw_get_value(dev, &read_again);
+	if (err < 0) {
+		return err;
+	}
+
+	max_rel_val = RZ_CMTW_TOP_VALUE - data->guard_period;
+	diff = ticks_sub(val, read_again);
+	if (diff > max_rel_val || diff == 0) {
+		err = -ETIME;
+
+		if (irq_on_late) {
+			irq_enable(data->fsp_cfg->cycle_end_irq);
+			counter_rz_cmtw_set_pending(data->fsp_cfg->cycle_end_irq);
+		} else {
+			data->alarm_cb = NULL;
+		}
+	} else {
+		counter_rz_cmtw_clear_pending(data->fsp_cfg->cycle_end_irq);
+		irq_enable(data->fsp_cfg->cycle_end_irq);
+	}
+
+	return err;
+}
+
+static int renesas_rz_cmtw_rel_alarm_set(const struct device *dev, uint32_t val, bool irq_on_late)
+{
+	struct counter_rz_cmtw_data *data = dev->data;
+	uint32_t max_rel_val;
+	uint32_t read_again;
+	uint32_t diff;
+	uint32_t now;
+	int err;
+
+	err = counter_rz_cmtw_get_value(dev, &now);
+	if (err < 0) {
+		return err;
+	}
+
+	val = (now + val) & RZ_CMTW_TOP_VALUE;
+
+	/* Set new period */
+	err = counter_rz_cmtw_period_set(dev, val);
+	if (err < 0) {
+		return err;
+	}
+
+	err = counter_rz_cmtw_get_value(dev, &read_again);
+	if (err < 0) {
+		return err;
+	}
+
+	max_rel_val = irq_on_late ? RZ_CMTW_TOP_VALUE / 2U : RZ_CMTW_TOP_VALUE;
+	diff = ticks_sub(val, read_again);
+	if (diff > max_rel_val || diff == 0) {
+		if (irq_on_late) {
+			irq_enable(data->fsp_cfg->cycle_end_irq);
+			counter_rz_cmtw_set_pending(data->fsp_cfg->cycle_end_irq);
+		} else {
+			data->alarm_cb = NULL;
+		}
+	} else {
+		counter_rz_cmtw_clear_pending(data->fsp_cfg->cycle_end_irq);
+		irq_enable(data->fsp_cfg->cycle_end_irq);
+	}
+
 	return err;
 }
 
@@ -205,9 +324,6 @@ static int counter_rz_cmtw_set_alarm(const struct device *dev, uint8_t chan,
 	uint32_t val;
 	k_spinlock_key_t key;
 	bool irq_on_late;
-	uint32_t max_rel_val;
-	uint32_t now, diff;
-	uint32_t read_again;
 	int err;
 
 	if (chan != 0) {
@@ -218,13 +334,12 @@ static int counter_rz_cmtw_set_alarm(const struct device *dev, uint8_t chan,
 		return -EINVAL;
 	}
 
-	absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
-	val = alarm_cfg->ticks;
-
-	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
 		return -EINVAL;
 	}
+
+	absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
+	val = alarm_cfg->ticks;
 
 	key = k_spin_lock(&data->lock);
 
@@ -248,18 +363,17 @@ static int counter_rz_cmtw_set_alarm(const struct device *dev, uint8_t chan,
 		counter_rz_cmtw_apply_clear_source(dev, CMTW_CLEAR_SOURCE_DISABLED);
 	}
 
-	err = counter_rz_cmtw_get_value(dev, &now);
-	if (err) {
-		k_spin_unlock(&data->lock, key);
-		return err;
-	}
-
 	data->alarm_cb = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
 	if (absolute) {
-		max_rel_val = RZ_CMTW_TOP_VALUE - data->guard_period;
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+
+		err = renesas_rz_cmtw_abs_alarm_set(dev, val, irq_on_late);
+		if (err < 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
+		}
 	} else {
 		/* If relative value is smaller than half of the counter range
 		 * it is assumed that there is a risk of setting value too late
@@ -271,55 +385,11 @@ static int counter_rz_cmtw_set_alarm(const struct device *dev, uint8_t chan,
 		 * Note that half of counter range is an arbitrary value.
 		 */
 		irq_on_late = val < (RZ_CMTW_TOP_VALUE / 2U);
-		/* Limit max to detect short relative being set too late. */
-		max_rel_val = irq_on_late ? RZ_CMTW_TOP_VALUE / 2U : RZ_CMTW_TOP_VALUE;
-		val = (now + val) & RZ_CMTW_TOP_VALUE;
-	}
 
-	err = counter_rz_cmtw_period_set(dev, val);
-	if (err) {
-		k_spin_unlock(&data->lock, key);
-		return err;
-	}
-
-	err = counter_rz_cmtw_get_value(dev, &read_again);
-	if (err) {
-		k_spin_unlock(&data->lock, key);
-		return err;
-	}
-
-	if (val >= read_again) {
-		diff = (val - read_again);
-	} else {
-		diff = val + (RZ_CMTW_TOP_VALUE - read_again);
-	}
-
-	if (diff > max_rel_val) {
-		if (absolute) {
-			err = -ETIME;
-		}
-
-		/* Interrupt is triggered always for relative alarm and
-		 * for absolute depending on the flag.
-		 */
-		if (irq_on_late) {
-			irq_enable(data->fsp_cfg->cycle_end_irq);
-			counter_rz_cmtw_set_pending(data->fsp_cfg->cycle_end_irq);
-		} else {
-			data->alarm_cb = NULL;
-		}
-	} else {
-		if (diff == 0) {
-			/* RELOAD value could be set just in time for interrupt
-			 * trigger or too late. In any case time is interrupt
-			 * should be triggered. No need to enable interrupt
-			 * on TIMER just make sure interrupt is pending.
-			 */
-			irq_enable(data->fsp_cfg->cycle_end_irq);
-			counter_rz_cmtw_set_pending(data->fsp_cfg->cycle_end_irq);
-		} else {
-			counter_rz_cmtw_clear_pending(data->fsp_cfg->cycle_end_irq);
-			irq_enable(data->fsp_cfg->cycle_end_irq);
+		err = renesas_rz_cmtw_rel_alarm_set(dev, val, irq_on_late);
+		if (err < 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
 		}
 	}
 
@@ -373,12 +443,13 @@ static int counter_rz_cmtw_set_top_value(const struct device *dev,
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
+
 	/* -EBUSY if any alarm is active */
 	if (data->alarm_cb) {
+		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
-
-	key = k_spin_lock(&data->lock);
 
 	data->top_cb = top_cfg->callback;
 	data->user_data = top_cfg->user_data;
@@ -394,7 +465,7 @@ static int counter_rz_cmtw_set_top_value(const struct device *dev,
 	}
 
 	err = counter_rz_cmtw_period_set(dev, top_cfg->ticks);
-	if (err) {
+	if (err < 0) {
 		k_spin_unlock(&data->lock, key);
 		return err;
 	}
@@ -404,7 +475,7 @@ static int counter_rz_cmtw_set_top_value(const struct device *dev,
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
 		/* Don't reset counter */
 		err = counter_rz_cmtw_get_value(dev, &cur_tick);
-		if (err) {
+		if (err < 0) {
 			k_spin_unlock(&data->lock, key);
 			return err;
 		}
@@ -421,8 +492,7 @@ static int counter_rz_cmtw_set_top_value(const struct device *dev,
 	}
 
 	if (reset) {
-		err = cfg->fsp_api->reset(data->fsp_ctrl);
-		if (err != FSP_SUCCESS) {
+		if (cfg->fsp_api->reset(data->fsp_ctrl) != FSP_SUCCESS) {
 			k_spin_unlock(&data->lock, key);
 			return -EIO;
 		}
@@ -476,11 +546,11 @@ static uint32_t counter_rz_cmtw_get_freq(const struct device *dev)
 	struct counter_rz_cmtw_data *data = dev->data;
 	const struct counter_rz_cmtw_config *cfg = dev->config;
 	timer_info_t info;
-	int err;
+	fsp_err_t err;
 
 	err = cfg->fsp_api->infoGet(data->fsp_ctrl, &info);
 	if (err != FSP_SUCCESS) {
-		return 0;
+		return -EIO;
 	}
 
 	return info.clock_frequency;
