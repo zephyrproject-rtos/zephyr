@@ -18,6 +18,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 		spi0 = &usart0;
 		sw0 = &button0;
 		watchdog0 = &wdog0;
