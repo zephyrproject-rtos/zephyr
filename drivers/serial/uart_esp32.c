@@ -517,7 +517,7 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
 
-static void uart_esp32_isr(void *arg)
+static void IRAM_ATTR uart_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
@@ -955,11 +955,9 @@ static int uart_esp32_init(const struct device *dev)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(intr_handler_t)uart_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (intr_handler_t)uart_esp32_isr, (void *)dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Error allocating UART interrupt (%d)", ret);
 		return ret;
