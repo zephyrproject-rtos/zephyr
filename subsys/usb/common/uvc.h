@@ -209,6 +209,23 @@
 /* Base GUID string present at the end of most GUID formats, preceded by the FourCC code */
 #define UVC_FORMAT_GUID(fourcc) fourcc "\x00\x00\x10\x00\x80\x00\x00\xaa\x00\x38\x9b\x71"
 
+/* Handle cases where device mode is not enabled */
+#if CONFIG_USBD_VIDEO_MAX_FRMIVAL
+#define USBD_VIDEO_MAX_FRMIVAL CONFIG_USBD_VIDEO_MAX_FRMIVAL
+#else
+#define USBD_VIDEO_MAX_FRMIVAL 0
+#endif
+
+/* Handle cases where host mode is not enabled */
+#if CONFIG_USBH_VIDEO_MAX_FRMIVAL
+#define USBH_VIDEO_MAX_FRMIVAL CONFIG_USBH_VIDEO_MAX_FRMIVAL
+#else
+#define USBH_VIDEO_MAX_FRMIVAL 0
+#endif
+
+/* Maximum number of frame interval supported by either USB device or host */
+#define USB_VIDEO_MAX_FRMIVAL MAX(USBH_VIDEO_MAX_FRMIVAL, USBD_VIDEO_MAX_FRMIVAL)
+
 struct uvc_if_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -436,7 +453,7 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_frame_based_continuous_descriptor {
@@ -468,7 +485,7 @@ struct uvc_frame_based_discrete_descriptor {
 	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_color_descriptor {
