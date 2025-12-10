@@ -16,4 +16,5 @@ supported:
   - dma
   - pwm
   - spi
+  - watchdog
 vendor: silabs
