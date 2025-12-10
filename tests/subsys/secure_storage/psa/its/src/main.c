@@ -8,7 +8,8 @@
 #include <psa/internal_trusted_storage.h>
 
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
-#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT) &&                        \
+	DT_HAS_CHOSEN(zephyr_flash_controller)
 static int erase_flash(void)
 {
 	const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
