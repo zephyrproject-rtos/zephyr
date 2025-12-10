@@ -115,6 +115,16 @@ zephyr_library_sources_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_bod.c
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_BT_SILABS_SIWX91X
+  SLI_SI91X_ENABLE_BLE
+)
+zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
@@ -169,17 +179,6 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
-if(CONFIG_BT_SILABS_SIWX91X)
-  zephyr_compile_definitions(
-    SLI_SI91X_ENABLE_BLE
-  )
-  zephyr_library_sources(
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
-  )
-endif() # CONFIG_BT_SILABS_SIWX91X
 
 if(CONFIG_SILABS_SIWX91X_NWP)
   wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
