@@ -167,6 +167,16 @@ config OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 endchoice # OPENTHREAD_SECURITY
 
+config OPENTHREAD_CRYPTO_PSA
+	bool "PSA Crypto API"
+	default y
+	select PSA_CRYPTO
+	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
+	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+	help
+	  Use PSA Crypto API as backend for cryptographic operations instead
+	  of legacy Mbed TLS.
+
 if OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_CRYPTO_PSA_CONFIG
@@ -236,16 +246,6 @@ config OPENTHREAD_MBEDTLS_TLS_CONFIG
 	  TLS configuration of Mbed TLS.
 
 endif # OPENTHREAD_SECURITY_DEFAULT_CONFIG
-
-config OPENTHREAD_CRYPTO_PSA
-	bool "PSA Crypto API"
-	default y
-	select PSA_CRYPTO
-	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
-	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
-	help
-	  Use PSA Crypto API as backend for cryptographic operations instead
-	  of legacy Mbed TLS.
 
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
