@@ -19,7 +19,6 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-
 #include "sdhc_stm32_ll.h"
 
 LOG_MODULE_REGISTER(sdhc_stm32, CONFIG_SDHC_LOG_LEVEL);
@@ -94,83 +93,133 @@ static int sdhi_power_on(const struct device *dev)
 	return ret;
 }
 
+/**
+ * @brief Log SDIO-related error conditions.
+ *
+ * This function inspects the SDIO error status returned by the STM32 SDIO
+ * peripheral and prints err message for each bit set in the provided error code.
+ *
+ * @param error_code Error fla returned by the SDIO controller.
+ */
 static void sdhc_stm32_log_sdio_err_type(uint32_t error_code)
 {
-	if ((error_code & SDMMC_ERROR_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Timeout");
+	static const struct {
+		uint32_t mask;
+		const char *msg;
+	} sdio_errors[] = {
+		{ SDMMC_ERROR_TIMEOUT,             "SDIO Timeout" },
+		{ SDMMC_ERROR_DATA_TIMEOUT,        "SDIO Data Timeout" },
+		{ SDMMC_ERROR_DATA_CRC_FAIL,       "SDIO Data CRC Error" },
+		{ SDMMC_ERROR_TX_UNDERRUN,         "SDIO FIFO Transmit Underrun" },
+		{ SDMMC_ERROR_RX_OVERRUN,          "SDIO FIFO Receive Overrun" },
+		{ SDMMC_ERROR_INVALID_PARAMETER,   "SDIO Invalid Parameter" },
+		{ SDMMC_ERROR_ADDR_MISALIGNED,     "SDIO Misaligned Address" },
+		{ SDMMC_ERROR_WRITE_PROT_VIOLATION,"SDIO Write Protection Violation" },
+		{ SDMMC_ERROR_ILLEGAL_CMD,         "SDIO Illegal Command" },
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(sdio_errors); i++) {
+		if (error_code & sdio_errors[i].mask) {
+			LOG_ERR("%s", sdio_errors[i].msg);
+			return;
+		}
 	}
 
-	if ((error_code & SDMMC_ERROR_DATA_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Data Timeout");
-	}
-
-	if ((error_code & SDMMC_ERROR_DATA_CRC_FAIL) != 0U) {
-		LOG_ERR("SDIO Data CRC");
-	}
-
-	if ((error_code & SDMMC_ERROR_TX_UNDERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Transmit Underrun");
-	}
-
-	if ((error_code & SDMMC_ERROR_RX_OVERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Receive Overrun");
-	}
-
-	if ((error_code & SDMMC_ERROR_INVALID_PARAMETER) != 0U) {
-		LOG_ERR("SDIO Invalid Callback");
-	}
-
-	if ((error_code & SDMMC_ERROR_ADDR_MISALIGNED) != 0U) {
-		LOG_ERR("SDIO Misaligned address");
-	}
-
-	if ((error_code & SDMMC_ERROR_WRITE_PROT_VIOLATION) != 0U) {
-		LOG_ERR("Attempt to program a write protected block");
-	}
-
-	if ((error_code & SDMMC_ERROR_ILLEGAL_CMD) != 0U) {
-		LOG_ERR("Command is not legal for the card state");
-	}
+	LOG_ERR("Unknown SDIO Error: 0x%08x", error_code);
 }
 
+/**
+ * @brief Log SDMMC-related error conditions.
+ *
+ * This function inspects the SDMMC error status returned by the STM32 SDMMC
+ * peripheral and prints err message for each bit set in the provided error code.
+ *
+ * @param error_code Error fla returned by the SDMMC controller.
+ */
 static void sdhc_stm32_log_sdmmc_err_type(uint32_t error_code)
 {
-	if (error_code &
-	    (SDMMC_ERROR_TIMEOUT | SDMMC_ERROR_CMD_RSP_TIMEOUT | SDMMC_ERROR_DATA_TIMEOUT)) {
-		LOG_ERR("SDHC Timeout occurred (command or data response)");
-	} else if (error_code & SDMMC_ERROR_BUSY) {
-		LOG_ERR("SDHC interface is busy.");
-	} else if (error_code & (SDMMC_ERROR_CMD_CRC_FAIL | SDMMC_ERROR_DATA_CRC_FAIL |
-				 SDMMC_ERROR_COM_CRC_FAILED)) {
-		LOG_ERR("CRC failure detected (command, data, or communication)");
-	} else if (error_code & SDMMC_ERROR_TX_UNDERRUN) {
-		LOG_ERR("Transmit FIFO underrun during SD/MMC write");
-	} else if (error_code & SDMMC_ERROR_RX_OVERRUN) {
-		LOG_ERR("Receive FIFO overrun during SD/MMC read");
-	} else if (error_code & (SDMMC_ERROR_ADDR_MISALIGNED | SDMMC_ERROR_ADDR_OUT_OF_RANGE)) {
-		LOG_ERR("Addressing error: misaligned or out-of-range access");
-	} else if (error_code & (SDMMC_ERROR_BLOCK_LEN_ERR | SDMMC_ERROR_ERASE_SEQ_ERR |
-				 SDMMC_ERROR_BAD_ERASE_PARAM | SDMMC_ERROR_WP_ERASE_SKIP)) {
-		LOG_ERR("Block or erase sequence error");
-	} else if (error_code & (SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED |
-				 SDMMC_ERROR_ILLEGAL_CMD)) {
-		LOG_ERR("Access violation: write-protect, lock/unlock, or illegal command");
-	} else if (error_code & SDMMC_ERROR_CID_CSD_OVERWRITE) {
-		LOG_ERR("CID/CSD register overwrite attempted");
-	} else if (error_code & (SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_ERASE_RESET |
-				 SDMMC_ERROR_AKE_SEQ_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE)) {
-		LOG_ERR("General SDHC error or invalid operation");
-	} else if (error_code & SDMMC_ERROR_INVALID_PARAMETER) {
-		LOG_ERR("Invalid parameter passed to SD/MMC operation");
-	} else if (error_code & SDMMC_ERROR_INVALID_VOLTRANGE) {
-		LOG_ERR("Card does not support the requested voltage range.");
-	} else if (error_code & SDMMC_ERROR_UNSUPPORTED_FEATURE) {
-		LOG_ERR("Requested feature is not supported by the card");
-	} else if (error_code & SDMMC_ERROR_DMA) {
-		LOG_ERR("DMA transfer error occurred");
-	} else {
-		LOG_ERR("Unknown SDHC Error: 0x%0x", error_code);
+	static const struct {
+		uint32_t mask;
+		const char *msg;
+	} sdmmc_errors[] = {
+		{ SDMMC_ERROR_TIMEOUT |
+		  SDMMC_ERROR_CMD_RSP_TIMEOUT |
+		  SDMMC_ERROR_DATA_TIMEOUT,
+		  "Timeout occurred (command or data response)"
+		},
+
+		{ SDMMC_ERROR_BUSY,
+		  "SDHC interface is busy"
+		},
+
+		{ SDMMC_ERROR_CMD_CRC_FAIL |
+		  SDMMC_ERROR_DATA_CRC_FAIL |
+		  SDMMC_ERROR_COM_CRC_FAILED,
+		  "CRC failure detected (command, data, or communication)"
+		},
+
+		{ SDMMC_ERROR_TX_UNDERRUN,
+		  "Transmit FIFO underrun during write"
+		},
+
+		{ SDMMC_ERROR_RX_OVERRUN,
+		  "Receive FIFO overrun during read"
+		},
+
+		{ SDMMC_ERROR_ADDR_MISALIGNED |
+		  SDMMC_ERROR_ADDR_OUT_OF_RANGE,
+		  "Addressing error: misaligned or out-of-range access"
+		},
+
+		{ SDMMC_ERROR_BLOCK_LEN_ERR |
+		  SDMMC_ERROR_ERASE_SEQ_ERR |
+		  SDMMC_ERROR_BAD_ERASE_PARAM |
+		  SDMMC_ERROR_WP_ERASE_SKIP,
+		  "Block or erase sequence error"
+		},
+
+		{ SDMMC_ERROR_WRITE_PROT_VIOLATION |
+		  SDMMC_ERROR_LOCK_UNLOCK_FAILED |
+		  SDMMC_ERROR_ILLEGAL_CMD,
+		  "Access violation: write-protect, lock/unlock failure, or illegal command"
+		},
+
+		{ SDMMC_ERROR_CID_CSD_OVERWRITE,
+		  "CID/CSD register overwrite attempted"
+		},
+
+		{ SDMMC_ERROR_GENERAL_UNKNOWN_ERR |
+		  SDMMC_ERROR_ERASE_RESET |
+		  SDMMC_ERROR_AKE_SEQ_ERR |
+		  SDMMC_ERROR_REQUEST_NOT_APPLICABLE,
+		  "General SDHC error or invalid operation"
+		},
+
+		{ SDMMC_ERROR_INVALID_PARAMETER,
+		  "Invalid parameter passed to SD/MMC operation"
+		},
+
+		{ SDMMC_ERROR_INVALID_VOLTRANGE,
+		  "Unsupported voltage range requested"
+		},
+
+		{ SDMMC_ERROR_UNSUPPORTED_FEATURE,
+		  "Requested card feature is not supported"
+		},
+
+		{ SDMMC_ERROR_DMA,
+		  "DMA transfer error occurred"
+		},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(sdmmc_errors); i++) {
+		if (error_code & sdmmc_errors[i].mask) {
+			LOG_ERR("SDHC Error: %s", sdmmc_errors[i].msg);
+			return;
+		}
 	}
+
+	LOG_ERR("Unknown SDMMC Error: 0x%08x", error_code);
 }
 
 /**
@@ -242,16 +291,8 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 		hsd->Init.BusWide = SDMMC_BUS_WIDE_1B;
 	}
 
-	/* Note: Card identification callback is not needed with LL wrapper
-	 * since card enumeration is handled by Zephyr SD subsystem
-	 */
-
-	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
+	if (IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		if (SDMMC_LL_Init(hsd) != SDMMC_OK) {
-			return -EIO;
-		}
-	} else if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
-		if (SDMMC_Interface_Init(hsd) != SDMMC_OK) {
 			return -EIO;
 		}
 	} else {
@@ -348,7 +389,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	config->hsd->block_size = is_block_mode ? data->block_size : 0;
 	dev_data->total_transfer_bytes = data->blocks * data->block_size;
 
-	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		dev_data->sdio_dma_buf = k_aligned_alloc(CONFIG_SDHC_BUFFER_ALIGNMENT,
 							 data->blocks * data->block_size);
 		if (dev_data->sdio_dma_buf == NULL) {
@@ -358,7 +399,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	}
 
 	if (direction == SDIO_IO_WRITE) {
-		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 			res = SDIO_LL_WriteExtended(config->hsd, &arg, data->data,
 						    dev_data->total_transfer_bytes,
 						    data->timeout_ms);
@@ -370,7 +411,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 							dev_data->total_transfer_bytes);
 		}
 	} else {
-		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 			res = SDIO_LL_ReadExtended(config->hsd, &arg, data->data,
 						   dev_data->total_transfer_bytes,
 						   data->timeout_ms);
@@ -382,7 +423,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		/* Wait for whole transfer to complete */
 		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(CONFIG_SD_CMD_TIMEOUT)) != 0) {
 			k_free(dev_data->sdio_dma_buf);
@@ -615,16 +656,8 @@ static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card
 
 static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config)
 {
-	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
-		if (SDMMC_LL_GetState(config->hsd) != SDMMC_STATE_READY) {
-			return false;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
-		if (config->hsd->State != SDMMC_STATE_READY) {
-			return false;
-		}
+	if (SDMMC_LL_GetState(config->hsd) != SDMMC_STATE_READY) {
+		return false;
 	}
 
 	return true;
@@ -651,7 +684,8 @@ static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *co
 static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd)
 {
 	return ((cmd->opcode == SD_READ_SINGLE_BLOCK) || (cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
-		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) || (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK));
+		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) || (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) ||
+		(cmd->opcode == SDIO_RW_EXTENDED) || (cmd->opcode == SDIO_RW_DIRECT));
 }
 
 static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config,
@@ -699,7 +733,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if (!sdhc_stm32_is_card_ready(config)) {
-		LOG_ERR("SDIO/SDMMC Card is busy");
+		LOG_ERR("%s Card is busy", IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
 		k_mutex_unlock(&dev_data->bus_mutex);
 		return -ETIMEDOUT;
 	}
@@ -808,8 +842,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		sdhc_stm32_log_err_type(config->hsd);
 	}
 
-	if (IS_ENABLED(CONFIG_SDMMC_STACK) && !IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) &&
-	    sdhc_stm32_is_read_write_opcode(cmd)) {
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) && sdhc_stm32_is_read_write_opcode(cmd)) {
 		goto end;
 	}
 
@@ -1043,7 +1076,7 @@ void sdhc_stm32_event_isr(const struct device *dev)
 
 	if (__SDMMC_GET_FLAG(config->hsd->Instance,
 			     SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
-				     SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
+			     SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
 		k_sem_give(&data->device_sync_sem);
 	}
 

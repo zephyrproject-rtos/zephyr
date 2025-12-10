@@ -9,6 +9,15 @@
 
 LOG_MODULE_REGISTER(sdhc_stm32_ll, CONFIG_SDHC_LOG_LEVEL);
 
+/* Private validation macros for SDIO parameters */
+#define IS_SDIO_RAW_FLAG(ReadAfterWrite) (((ReadAfterWrite) == 0U) || ((ReadAfterWrite) == 1U))
+#define IS_SDIO_FUNCTION(FN)             (((FN) >= 0U) && ((FN) <= 7U))
+#define IS_SDIO_SUPPORTED_BLOCK_SIZE(BLOCKSIZE)                                                    \
+	(((BLOCKSIZE) == 1U) || ((BLOCKSIZE) == 2U) || ((BLOCKSIZE) == 4U) ||                      \
+	 ((BLOCKSIZE) == 8U) || ((BLOCKSIZE) == 16U) || ((BLOCKSIZE) == 32U) ||                    \
+	 ((BLOCKSIZE) == 64U) || ((BLOCKSIZE) == 128U) || ((BLOCKSIZE) == 256U) ||                 \
+	 ((BLOCKSIZE) == 512U) || ((BLOCKSIZE) == 1024U) || ((BLOCKSIZE) == 2048U))
+
 /**
  * @brief Tx Transfer completed callbacks
  * @param hsd: Pointer to SD handle
@@ -463,51 +472,6 @@ SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd)
 
 	hsd->ErrorCode = SDMMC_ERROR_NONE;
 	hsd->State = SDMMC_STATE_RESET;
-
-	return SDMMC_OK;
-}
-
-/**
- * @brief  Initializes the SD according to the specified parameters in the
- * SDMMC_HandleTypeDef and create the associated handle.
- * @param  hsd: Pointer to the SD handle
- * @retval SDMMC status
- */
-SDMMC_StatusTypeDef SDMMC_Interface_Init(SDMMC_HandleTypeDef *hsd)
-{
-	/* Check the SD handle allocation */
-	if (hsd == NULL) {
-		return SDMMC_ERROR;
-	}
-
-	/* Check the parameters */
-	assert_param(IS_SDMMC_ALL_INSTANCE(hsd->Instance));
-	assert_param(IS_SDMMC_CLOCK_EDGE(hsd->Init.ClockEdge));
-	assert_param(IS_SDMMC_CLOCK_POWER_SAVE(hsd->Init.ClockPowerSave));
-	assert_param(IS_SDMMC_BUS_WIDE(hsd->Init.BusWide));
-	assert_param(IS_SDMMC_HARDWARE_FLOW_CONTROL(hsd->Init.HardwareFlowControl));
-	assert_param(IS_SDMMC_CLKDIV(hsd->Init.ClockDiv));
-
-	if (hsd->State == SDMMC_STATE_RESET) {
-		/* Allocate lock resource and initialize it */
-		hsd->Lock = SDMMC_UNLOCKED;
-	}
-
-	hsd->State = SDMMC_STATE_PROGRAMMING;
-
-	/* Initialize the Card parameters */
-	if (SDMMC_InitCard(hsd) != SDMMC_OK) {
-		return SDMMC_ERROR;
-	}
-
-	/* Initialize the error code */
-	hsd->ErrorCode = SDMMC_ERROR_NONE;
-
-	/* Initialize the SD operation */
-	hsd->Context = SDMMC_CONTEXT_NONE;
-
-	/* Initialize the SD state */
-	hsd->State = SDMMC_STATE_READY;
 
 	return SDMMC_OK;
 }
@@ -1008,6 +972,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pDat
 		return SDMMC_BUSY;
 	}
 }
+
 /**
  * @brief  Wrap up reading in non-blocking mode.
  * @param  hsd: pointer to a SDMMC_HandleTypeDef structure that contains
@@ -1224,18 +1189,71 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	}
 }
 
-/* Private validation macros for SDIO parameters */
-#define IS_SDIO_RAW_FLAG(ReadAfterWrite) (((ReadAfterWrite) == 0U) || ((ReadAfterWrite) == 1U))
-#define IS_SDIO_FUNCTION(FN)             (((FN) >= 0U) && ((FN) <= 7U))
-#define IS_SDIO_SUPPORTED_BLOCK_SIZE(BLOCKSIZE)                                                    \
-	(((BLOCKSIZE) == 1U) || ((BLOCKSIZE) == 2U) || ((BLOCKSIZE) == 4U) ||                      \
-	 ((BLOCKSIZE) == 8U) || ((BLOCKSIZE) == 16U) || ((BLOCKSIZE) == 32U) ||                    \
-	 ((BLOCKSIZE) == 64U) || ((BLOCKSIZE) == 128U) || ((BLOCKSIZE) == 256U) ||                 \
-	 ((BLOCKSIZE) == 512U) || ((BLOCKSIZE) == 1024U) || ((BLOCKSIZE) == 2048U))
+/**
+ * @brief Helper function to convert block size to SDMMC_DataBlockSize
+ * @param hsd Pointer to SDMMC handle
+ * @param block_size Block size in bytes
+ * @return SDMMC DataBlockSize value
+ */
+static uint32_t SDMMC_LL_Convert_Block_Size(SDMMC_HandleTypeDef *hsd, uint32_t block_size)
+{
+	uint32_t datablock_size = SDMMC_DATABLOCK_SIZE_1B;
 
-/* Private function prototypes */
-static uint32_t SDMMC_LL_GetClockFreq(void);
-static uint32_t SDMMC_LL_Convert_Block_Size(SDMMC_HandleTypeDef *hsd, uint32_t block_size);
+	/* Find the matching SDMMC_DATABLOCK_SIZE_* constant */
+	switch (block_size) {
+	case 1:
+		datablock_size = SDMMC_DATABLOCK_SIZE_1B;
+		break;
+	case 2:
+		datablock_size = SDMMC_DATABLOCK_SIZE_2B;
+		break;
+	case 4:
+		datablock_size = SDMMC_DATABLOCK_SIZE_4B;
+		break;
+	case 8:
+		datablock_size = SDMMC_DATABLOCK_SIZE_8B;
+		break;
+	case 16:
+		datablock_size = SDMMC_DATABLOCK_SIZE_16B;
+		break;
+	case 32:
+		datablock_size = SDMMC_DATABLOCK_SIZE_32B;
+		break;
+	case 64:
+		datablock_size = SDMMC_DATABLOCK_SIZE_64B;
+		break;
+	case 128:
+		datablock_size = SDMMC_DATABLOCK_SIZE_128B;
+		break;
+	case 256:
+		datablock_size = SDMMC_DATABLOCK_SIZE_256B;
+		break;
+	case 512:
+		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
+		break;
+	case 1024:
+		datablock_size = SDMMC_DATABLOCK_SIZE_1024B;
+		break;
+	case 2048:
+		datablock_size = SDMMC_DATABLOCK_SIZE_2048B;
+		break;
+	case 4096:
+		datablock_size = SDMMC_DATABLOCK_SIZE_4096B;
+		break;
+	case 8192:
+		datablock_size = SDMMC_DATABLOCK_SIZE_8192B;
+		break;
+	case 16384:
+		datablock_size = SDMMC_DATABLOCK_SIZE_16384B;
+		break;
+	default:
+		/* Default to 512 bytes if invalid */
+		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
+		break;
+	}
+
+	return datablock_size;
+}
 
 /**
  * @brief Get the SDMMC peripheral clock frequency
@@ -1251,17 +1269,6 @@ static uint32_t SDMMC_LL_GetClockFreq(void)
 	return 0;
 #endif
 }
-
-/* Private validation macros for SDIO parameters */
-#define IS_SDIO_RAW_FLAG(ReadAfterWrite) (((ReadAfterWrite) == 0U) || ((ReadAfterWrite) == 1U))
-
-#define IS_SDIO_FUNCTION(FN) (((FN) >= 0U) && ((FN) <= 7U))
-
-#define IS_SDIO_SUPPORTED_BLOCK_SIZE(BLOCKSIZE)                                                    \
-	(((BLOCKSIZE) == 1U) || ((BLOCKSIZE) == 2U) || ((BLOCKSIZE) == 4U) ||                      \
-	 ((BLOCKSIZE) == 8U) || ((BLOCKSIZE) == 16U) || ((BLOCKSIZE) == 32U) ||                    \
-	 ((BLOCKSIZE) == 64U) || ((BLOCKSIZE) == 128U) || ((BLOCKSIZE) == 256U) ||                 \
-	 ((BLOCKSIZE) == 512U) || ((BLOCKSIZE) == 1024U) || ((BLOCKSIZE) == 2048U))
 
 /**
  * @brief Configure SDIO/SDMMC clock frequency
@@ -1362,34 +1369,40 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 
 	/* If state is already initialized, we can just reconfigure */
 	if (hsd->State == SDMMC_STATE_RESET) {
-		/* Initialize with default values for first-time init */
-		Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-		Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-		Init.BusWide = SDMMC_BUS_WIDE_1B;
-		Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+		if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
+			hsd->Lock = SDMMC_UNLOCKED;
+		} else {
+			/* Initialize with default values for first-time init */
+			Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
+			Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+			Init.BusWide = SDMMC_BUS_WIDE_1B;
+			Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
 
-		/* Calculate initial clock divider for 400 kHz */
-		sdmmc_clk = SDMMC_LL_GetClockFreq();
-		if (sdmmc_clk == 0U) {
-			hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
-			return SDMMC_ERROR;
+			/* Calculate initial clock divider for 400 kHz */
+			sdmmc_clk = SDMMC_LL_GetClockFreq();
+			if (sdmmc_clk == 0U) {
+				hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
+				return SDMMC_ERROR;
+			}
+			Init.ClockDiv = sdmmc_clk / (2U * init_freq);
+
+			/* Initialize SDMMC peripheral with default configuration */
+			if (SDMMC_Init(hsd->Instance, Init) != (HAL_StatusTypeDef)SDMMC_OK) {
+				return SDMMC_ERROR;
+			}
+
+			/* Set Power State to ON */
+			SDMMC_PowerState_ON(hsd->Instance);
+
+			/* Wait 74 cycles: required power up time before starting SDIO operations
+			* At 400 kHz, this is ~185 us. Wait 1 ms to be safe.
+			*/
+			sdmmc_clk = sdmmc_clk / (2U * Init.ClockDiv);
+			k_msleep(1U + (74U * 1000U / (sdmmc_clk)));
 		}
-		Init.ClockDiv = sdmmc_clk / (2U * init_freq);
-
-		/* Initialize SDMMC peripheral with default configuration */
-		if (SDMMC_Init(hsd->Instance, Init) != (HAL_StatusTypeDef)SDMMC_OK) {
-			return SDMMC_ERROR;
-		}
-
-		/* Set Power State to ON */
-		SDMMC_PowerState_ON(hsd->Instance);
-
-		/* Wait 74 cycles: required power up time before starting SDIO operations
-		 * At 400 kHz, this is ~185 us. Wait 1 ms to be safe.
-		 */
-		sdmmc_clk = sdmmc_clk / (2U * Init.ClockDiv);
-		k_msleep(1U + (74U * 1000U / (sdmmc_clk)));
 	}
+
+	hsd->State = SDMMC_STATE_PROGRAMMING;
 
 	/* Configure the SDMMC with user parameters from handle */
 	Init.ClockEdge = hsd->Init.ClockEdge;
@@ -1398,6 +1411,21 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 	Init.HardwareFlowControl = hsd->Init.HardwareFlowControl;
 	Init.ClockDiv = hsd->Init.ClockDiv;
 
+	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
+		/* Init Clock should be less or equal to 400Khz*/
+		sdmmc_clk = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
+		if (sdmmc_clk == 0U) {
+			hsd->State = SDMMC_STATE_READY;
+			hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
+			return SDMMC_ERROR;
+		}
+		Init.ClockDiv = sdmmc_clk / (2U * SDMMC_INIT_FREQ);
+
+		#if defined(USE_SD_DIRPOL)
+			/* Set Transceiver polarity */
+			hsd->Instance->POWER |= SDMMC_POWER_DIRPOL;
+		#endif
+	}
 	/* Apply user configuration to SDMMC peripheral */
 	if (SDMMC_Init(hsd->Instance, Init) != (HAL_StatusTypeDef)SDMMC_OK) {
 		return SDMMC_ERROR;
@@ -1405,6 +1433,7 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 
 	/* Clear error code and set state to ready */
 	hsd->ErrorCode = SDMMC_ERROR_NONE;
+	hsd->Context = SDMMC_CONTEXT_NONE;
 	hsd->State = SDMMC_STATE_READY;
 
 	LOG_DBG("SDMMC peripheral initialized successfully");
@@ -1590,72 +1619,6 @@ SDMMC_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
 	hsd->State = SDMMC_STATE_READY;
 
 	return SDMMC_OK;
-}
-
-/**
- * @brief Helper function to convert block size to SDMMC_DataBlockSize
- * @param hsd Pointer to SDMMC handle
- * @param block_size Block size in bytes
- * @return SDMMC DataBlockSize value
- */
-static uint32_t SDMMC_LL_Convert_Block_Size(SDMMC_HandleTypeDef *hsd, uint32_t block_size)
-{
-	uint32_t datablock_size = SDMMC_DATABLOCK_SIZE_1B;
-
-	/* Find the matching SDMMC_DATABLOCK_SIZE_* constant */
-	switch (block_size) {
-	case 1:
-		datablock_size = SDMMC_DATABLOCK_SIZE_1B;
-		break;
-	case 2:
-		datablock_size = SDMMC_DATABLOCK_SIZE_2B;
-		break;
-	case 4:
-		datablock_size = SDMMC_DATABLOCK_SIZE_4B;
-		break;
-	case 8:
-		datablock_size = SDMMC_DATABLOCK_SIZE_8B;
-		break;
-	case 16:
-		datablock_size = SDMMC_DATABLOCK_SIZE_16B;
-		break;
-	case 32:
-		datablock_size = SDMMC_DATABLOCK_SIZE_32B;
-		break;
-	case 64:
-		datablock_size = SDMMC_DATABLOCK_SIZE_64B;
-		break;
-	case 128:
-		datablock_size = SDMMC_DATABLOCK_SIZE_128B;
-		break;
-	case 256:
-		datablock_size = SDMMC_DATABLOCK_SIZE_256B;
-		break;
-	case 512:
-		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
-		break;
-	case 1024:
-		datablock_size = SDMMC_DATABLOCK_SIZE_1024B;
-		break;
-	case 2048:
-		datablock_size = SDMMC_DATABLOCK_SIZE_2048B;
-		break;
-	case 4096:
-		datablock_size = SDMMC_DATABLOCK_SIZE_4096B;
-		break;
-	case 8192:
-		datablock_size = SDMMC_DATABLOCK_SIZE_8192B;
-		break;
-	case 16384:
-		datablock_size = SDMMC_DATABLOCK_SIZE_16384B;
-		break;
-	default:
-		/* Default to 512 bytes if invalid */
-		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
-		break;
-	}
-
-	return datablock_size;
 }
 
 /**
