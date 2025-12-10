@@ -19,6 +19,10 @@
 		zephyr,sram = &ddr0;
 	};
 
+	aliases {
+		led0 = &ld1;
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -41,6 +45,14 @@
 		/* Note: This board actually has 2GB DRAM available */
 		reg = <0x82000000 DT_SIZE_M(1)>;
 	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld1: led_0 {
+			gpios = <&main_gpio1 49 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &main_uart0 {
@@ -48,4 +60,39 @@
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&main_gpio1_1 {
+	pinctrl-0 = <&main_gpio1_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c0 {
+	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		address-width = <16>;
+		pagesize = <128>;
+		size = <65536>;
+		timeout = <5>;
+	};
+};
+
+&main_i2c1 {
+	pinctrl-0 = <&main_i2c1_scl &main_i2c1_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_expander: tca6424a@22 {
+		compatible = "ti,tca6424a";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+	};
 };
