@@ -9,4 +9,5 @@ supported:
   - adc
   - uart
   - gpio
+  - counter
   - pwm
