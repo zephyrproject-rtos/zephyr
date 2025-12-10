@@ -1,0 +1,399 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "aik_ra8d1-pinctrl.dtsi"
+#include "aik_ra8d1-connector.dtsi"
+
+/ {
+	model = "Renesas AIK-RA8D1";
+	compatible = "renesas,ra8d1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash0;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,entropy = &trng;
+		zephyr,canbus = &canfd1;
+		zephyr,crc = &crc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_blue: led1-blue {
+			gpios = <&ioportb 7 GPIO_ACTIVE_HIGH>;
+			label = "LED1 Blue";
+		};
+
+		led1_green: led1-green {
+			gpios = <&ioport9 4 GPIO_ACTIVE_HIGH>;
+			label = "LED1 Green";
+		};
+
+		led1_red: led1-red {
+			gpios = <&ioport9 3 GPIO_ACTIVE_HIGH>;
+			label = "LED1 Red";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button2: s2 {
+			gpios = <&ioport5 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* IRQ1 */
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button3: s3 {
+			gpios = <&ioport5 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* IRQ3 */
+			label = "Push button switch 3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led1_blue;
+		led1 = &led1_green;
+		led2 = &led1_red;
+		sw0 = &button2;
+		sw1 = &button3;
+		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdt;
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		zephyr,memory-region = "SDRAM";
+	};
+
+	dvp_20pin_xclk: cam_clock: pwmclock {
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		clock-frequency = <DT_FREQ_M(24)>;
+		pwms = <&pwm3 0 PWM_KHZ(24000) PWM_POLARITY_NORMAL>;
+		status = "disabled";
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
+		status = "okay";
+	};
+
+	pllr {
+		div = <9>;
+		freq = <106666667>; /* 106.67 Mhz */
+		status = "okay";
+	};
+};
+
+&sciclk {
+	clocks = <&pllr>;
+	div = <2>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pllp>;
+	div = <6>;
+	status = "okay";
+};
+
+&lcdclk {
+	clocks = <&pll>;
+	div = <2>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
+	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport7 {
+	status = "okay";
+};
+
+&ioport8 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&ioportb {
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <0 12>;
+	status = "okay";
+};
+
+&port_irq3 {
+	interrupts = <1 12>;
+	status = "okay";
+};
+
+&port_irq13 {
+	interrupts = <2 12>;
+};
+
+&sdram {
+	pinctrl-0 = <&sdram_default>;
+	pinctrl-names = "default";
+	auto-refresh-interval = <SDRAM_AUTO_REFRESH_INTERVAL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFRESH_COUNT_8TIMES>;
+	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	multiplex-addr-shift = "10-bit";
+	endian-mode = "little-endian";
+	continuous-access;
+	bus-width = "16-bit";
+	status = "okay";
+
+	bank@0 {
+		reg = <0>;
+		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupt-names = "ulpti";
+	interrupts = <3 12>;
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts = <4 12>, <5 12>, <6 12>, <7 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&sci2 {
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	interrupts = <8 12>, <9 12>, <10 12>, <11 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	interrupts = <12 12>, <13 12>, <14 12>, <15 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_default>;
+	pinctrl-names = "default";
+	interrupts = <16 12>, <17 12>, <18 12>, <19 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart4: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <20 12>, <21 12>, <22 12>, <23 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	interrupts = <24 12>, <25 12>, <26 12>, <27 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	interrupts = <28 12>, <29 12>, <30 12>, <31 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+};
+
+&canfd_global {
+	interrupts = <32 12>, <33 12>;
+	interrupt-names = "rxf", "glerr";
+	status = "okay";
+
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		interrupts = <34 12>, <35 12>, <36 12>;
+		interrupt-names = "err", "tx", "rx";
+		rx-max-filters = <16>;
+		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
+
+&eth {
+	interrupts = <37 12>;
+	local-mac-address = [74 90 50 b0 5d e9];
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&pwm3 {
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+	interrupts = <38 12>, <39 12>;
+	interrupt-names = "gtioca", "overflow";
+};
+
+&ceu {
+	pinctrl-0 = <&ceu_default>;
+	pinctrl-names = "default";
+	interrupts = <40 12>;
+	interrupt-names = "ceui";
+	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
+	clock-names = "pclk", "cam-xclk";
+	burst-transfer = <256>;
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	interrupts = <41 12>, <42 12>;
+	interrupt-names = "usbfs-i", "usbfs-r";
+	maximum-speed = "full-speed";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};

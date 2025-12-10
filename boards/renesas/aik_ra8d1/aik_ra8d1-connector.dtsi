@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
+
+/ {
+	renesas_mipi_connector: mipi-connector {
+		compatible = "renesas,ra-gpio-mipi-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <15 0 &ioport9 15 0>,	/* DISP_BLEN */
+			   <17 0 &ioport0 8 0>,		/* DISP_INT */
+			   <18 0 &ioport0 3 0>;		/* DISP_RST */
+	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 0x3f>;
+		gpio-map = <DVP_20PIN_PEN 0 &ioport7 5 0>,
+			   <DVP_20PIN_PDN 0 &ioport7 4 0>;
+	};
+
+	/* To use PMOD1 as mode 1 (SPI or UART), please change SW4.1 to UART/SPI position */
+	pmod1_header_mode1: pmod-connector1-mode1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport8 4 0>,	/* IO1: SS/CTS */
+			   <1 0 &ioport8 1 0>,	/* IO2: MOSI/TXD*/
+			   <2 0 &ioport8 2 0>,	/* IO3: MISO/RXD */
+			   <3 0 &ioport8 3 0>,	/* IO4: SCK/RTS */
+			   <4 0 &ioport8 0 0>,	/* IO5: GPIO3/INT */
+			   <5 0 &ioport8 8 0>,	/* IO6: GPIO4/RESET */
+			   <6 0 &ioport8 10 0>,	/* IO7: GPIO1 */
+			   <7 0 &ioport8 9 0>;	/* IO8: GPIO2 */
+	};
+
+	/* To use PMOD1 as mode 2 (I2C), please change SW4.1 to IIC position */
+	pmod1_header_mode2: pmod-connector1-mode2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport8 0 0>,	/* IO1: INT */
+			   <1 0 &ioport8 1 0>,	/* IO2: RESET */
+			   <2 0 &ioport5 12 0>,	/* IO3: SCL */
+			   <3 0 &ioport5 11 0>,	/* IO4: SDA */
+			   <4 0 &ioport8 12 0>,	/* IO5: INT */
+			   <5 0 &ioport8 8 0>,	/* IO6: RESET */
+			   <6 0 &ioport8 10 0>,	/* IO7: CS2 */
+			   <7 0 &ioport8 9 0>;	/* IO8: SC3 */
+	};
+
+	/* To use PMOD2 as mode 1 (SPI or UART), please change SW4.1 to UART/SPI position */
+	pmod2_header_mode1: pmod-connector2-mode1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport4 11 0>,	/* IO1: SS/CTS  */
+			   <1 0 &ioport4 9 0>,	/* IO2: MOSI/TXD */
+			   <2 0 &ioport4 8 0>,	/* IO3: MISO/RXD */
+			   <3 0 &ioport4 10 0>,	/* IO4: SCK/RTS  */
+			   <4 0 &ioport4 15 0>,	/* IO5: GPIO3/INT */
+			   <5 0 &ioport4 12 0>,	/* IO6: GPIO4/RESET */
+			   <6 0 &ioport4 14 0>,	/* IO7: GPIO1 */
+			   <7 0 &ioport4 13 0>;	/* IO8: GPIO2 */
+	};
+
+	/* To use PMOD2 as mode 2 (I2C), please change SW4.1 to IIC position */
+	pmod2_header_mode2: pmod-connector2-mode2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport4 15 0>,	/* IO1: INT */
+			   <1 0 &ioport4 9 0>,	/* IO2: RESET */
+			   <2 0 &ioport5 12 0>,	/* IO3: SCL */
+			   <3 0 &ioport5 11 0>,	/* IO4: SDA */
+			   <4 0 &ioport2 7 0>,	/* IO5: INT */
+			   <5 0 &ioport4 12 0>,	/* IO6: RESET */
+			   <6 0 &ioport4 14 0>,	/* IO7: CS2 */
+			   <7 0 &ioport4 13 0>;	/* IO8: SC3 */
+	};
+
+	pmod3_header: pmod-connector3 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioportb 1 0>,	/* IO1: SS */
+			   <1 0 &ioport7 7 0>,	/* IO2: MOSI */
+			   <2 0 &ioport7 6 0>,	/* IO3: MISO */
+			   <3 0 &ioportb 0 0>,	/* IO4: SCK */
+			   <4 0 &ioport0 1 0>,	/* IO5: INT */
+			   <5 0 &ioport7 13 0>,	/* IO6: RESET */
+			   <6 0 &ioportb 5 0>,	/* IO7: GPIO1 */
+			   <7 0 &ioportb 4 0>;	/* IO8: GPIO2 */
+	};
+
+	pmod4_header: pmod-connector4 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport0 15 0>,	/* IO1: INT */
+			   <1 0 &ioport9 10 0>,	/* IO2: RESET */
+			   <2 0 &ioport5 12 0>,	/* IO3: SCL */
+			   <3 0 &ioport5 11 0>,	/* IO4: SDA */
+			   <4 0 &ioport5 1 0>,	/* IO5: INT */
+			   <5 0 &ioport9 14 0>,	/* IO6: RESET */
+			   <6 0 &ioport9 11 0>,	/* IO7: CS2 */
+			   <7 0 &ioport9 12 0>;	/* IO8: SC3 */
+	};
+
+	pmod5_header: pmod-connector5 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport1 4 0>,	/* IO1: SS */
+			   <1 0 &ioport1 1 0>,	/* IO2: MOSI */
+			   <2 0 &ioport1 0 0>,	/* IO3: MISO */
+			   <3 0 &ioport1 2 0>,	/* IO4: SCK */
+			   <3 0 &ioport1 5 0>,	/* IO4: INT */
+			   <3 0 &ioport1 7 0>,	/* IO4: RESET */
+			   <3 0 &ioport1 6 0>,	/* IO4: GPIO1 */
+			   <3 0 &ioport6 0 0>;	/* IO4: GPIO2 */
+	};
+
+	pmod6_header: pmod-connector6 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport5 9 0>,	/* IO1: INT */
+			   <1 0 &ioport5 0 0>,	/* IO2: RESET */
+			   <2 0 &ioporta 15 0>,	/* IO3: SCL */
+			   <3 0 &ioporta 14 0>,	/* IO4: SDA */
+			   <4 0 &ioport5 4 0>,	/* IO5: GPIO1 */
+			   <5 0 &ioporta 6 0>,	/* IO6: GPIO2 */
+			   <6 0 &ioport8 13 0>,	/* IO7: GPIO3 */
+			   <7 0 &ioporta 1 0>;	/* IO8: GPIO4 */
+	};
+};
+
+zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+renesas_disp_int: &port_irq13 {};
+
+dvp_20pin_interface: &ceu {};
+
+renesas_mipi_i2c: &{/soc/sci9@40358900/i2c} {
+	sda-output-delay = <300>;
+	noise-filter-clock-select = <1>;
+	bit-rate-modulation;
+};
+
+dvp_20pin_i2c: &{/soc/sci9@40358900/i2c} {};
+
+pmod6_i2c: &{/soc/sci9@40358900/i2c} {};
+
+pmod1_spi: &{/soc/sci2@40358200/spi} {
+	cs-gpios = <&pmod1_header_mode1 0 GPIO_ACTIVE_LOW>;
+};
+
+pmod2_spi: &{/soc/sci3@40358300/spi} {
+	cs-gpios = <&pmod2_header_mode1 0 GPIO_ACTIVE_LOW>;
+};
+
+pmod3_spi: &{/soc/sci1@40358100/spi} {
+	cs-gpios = <&pmod3_header 0 GPIO_ACTIVE_LOW>;
+};
+
+pmod5_spi: &spi1 {};
+
+/* Notes: pmod1_spi and pmod1_serial cannot be enabled simultaneously. */
+pmod1_serial: &{/soc/sci2@40358200/uart} {};
+
+/* Notes: pmod2_spi and pmod2_serial cannot be enabled simultaneously. */
+pmod2_serial: &{/soc/sci3@40358300/uart} {};
+
+/* Notes: pmod3_spi and pmod3_serial cannot be enabled simultaneously. */
+pmod3_serial: &{/soc/sci1@40358100/uart} {};
+
+/* Notes: pmod1_i2c and pmod2_i2c cannot be used when SW4.1 is set to UART/SPI position */
+pmod1_i2c: &iic1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+pmod2_i2c: &iic1 {};
+
+pmod4_i2c: &iic1 {};

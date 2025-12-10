@@ -1,0 +1,23 @@
+identifier: aik_ra8d1
+name: RA8D1 AI Kit Development Platform
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - i2c
+  - usbd
+  - display
+  - video
+  - can
+  - watchdog
+  - crc
+  - display
+  - video
+  - eth
+vendor: renesas
