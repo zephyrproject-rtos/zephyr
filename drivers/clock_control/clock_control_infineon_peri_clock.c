@@ -22,7 +22,7 @@
 #include <cy_sysclk.h>
 #include <cy_systick.h>
 
-struct ifx_cat1_peri_clock_data {
+struct ifx_peri_clock_data {
 	struct ifx_cat1_resource_inst hw_resource;
 	struct ifx_cat1_clock clock;
 	uint16_t divider;
@@ -31,10 +31,26 @@ struct ifx_cat1_peri_clock_data {
 
 #if defined(CY_IP_MXPERI) || defined(CY_IP_M0S8PERI)
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+
 #define _IFX_CAT1_PCLK_GROUP(clkdst) 0
 #define _IFX_CAT1_TCPWM0_PCLK_CLOCK0 PCLK_TCPWM0_CLOCKS0
 #define _IFX_CAT1_TCPWM1_PCLK_CLOCK0 PCLK_TCPWM1_CLOCKS0
-#define _IFX_CAT1_SCB0_PCLK_CLOCK    PCLK_SCB0_CLOCK
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS0 PCLK_TCPWM_CLOCKS0
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS1 PCLK_TCPWM_CLOCKS1
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS2 PCLK_TCPWM_CLOCKS2
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS3 PCLK_TCPWM_CLOCKS3
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS4 PCLK_TCPWM_CLOCKS4
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS5 PCLK_TCPWM_CLOCKS5
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS6 PCLK_TCPWM_CLOCKS6
+#define _IFX_PSOC4_PCLK_TCPWM_CLOCKS7 PCLK_TCPWM_CLOCKS7
+#endif
+
+#define _IFX_CAT1_SCB0_PCLK_CLOCK PCLK_SCB0_CLOCK
 
 #elif defined(CY_IP_MXSPERI)
 
@@ -45,6 +61,8 @@ struct ifx_cat1_peri_clock_data {
 #define _IFX_CAT1_SCB1_PCLK_CLOCK    PCLK_SCB1_CLOCK_SCB_EN
 #define _IFX_CAT1_SCB5_PCLK_CLOCK    PCLK_SCB5_CLOCK_SCB_EN
 #endif
+
+#define CLK_FRAC_DIV_MODE 0x02
 
 en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num)
 {
@@ -67,19 +85,40 @@ en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num)
 #else
 	clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK + block_num);
 #endif
+
 	return clk;
 }
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
-	struct ifx_cat1_peri_clock_data *const data = dev->data;
+	struct ifx_peri_clock_data *const data = dev->data;
+	uint32_t err;
 
 	if (data->hw_resource.type == IFX_RSC_SCB) {
 		en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
 
-		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
-		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
-		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+		if ((data->clock.block & CLK_FRAC_DIV_MODE) == 0) {
+			err = ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock,
+								   data->divider - 1);
+		} else {
+			err = ifx_cat1_utils_peri_pclk_set_frac_divider(clk_idx, &(data->clock),
+									data->divider - 1, 0);
+		}
+
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
+		err = ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+		if (err != CY_SYSCLK_SUCCESS) {
+			return -EIO;
+		}
+
 	} else {
 		return -EINVAL;
 	}
@@ -105,7 +144,7 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 #endif
 
 #define INFINEON_CAT1_PERI_CLOCK_INIT(n)                                                           \
-	static struct ifx_cat1_peri_clock_data ifx_cat1_peri_clock##n##_data = {                   \
+	static struct ifx_peri_clock_data ifx_cat1_peri_clock##n##_data = {                        \
 		PERI_CLOCK_INIT(n).divider = DT_INST_PROP(n, clock_div),                           \
 		.hw_resource = {.type = DT_INST_PROP(n, resource_type),                            \
 				.block_num = DT_INST_PROP(n, resource_instance)},                  \
