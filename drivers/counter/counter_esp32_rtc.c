@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
@@ -47,6 +48,30 @@ struct counter_esp32_data {
 	uint32_t clk_src_freq;
 };
 
+static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id);
+
+static int counter_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* If the driver is being suspended, RTC is not enabled as wakeup device,
+		 * thus alarm can be cancelled.
+		 */
+		counter_esp32_cancel_alarm(dev, 0);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int counter_esp32_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
@@ -66,9 +91,10 @@ static int counter_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+	return pm_device_driver_init(dev, counter_esp32_pm_action);
 }
 
 static int counter_esp32_start(const struct device *dev)
@@ -321,11 +347,8 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	}
 }
 
-DEVICE_DT_INST_DEFINE(0,
-		      &counter_esp32_init,
-		      NULL,
-		      &counter_data,
-		      &counter_config,
-		      PRE_KERNEL_2,
-		      CONFIG_COUNTER_INIT_PRIORITY,
+PM_DEVICE_DT_INST_DEFINE(0, counter_esp32_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &counter_esp32_init, PM_DEVICE_DT_INST_GET(0), &counter_data,
+		      &counter_config, PRE_KERNEL_2, CONFIG_COUNTER_INIT_PRIORITY,
 		      &rtc_timer_esp32_api);
