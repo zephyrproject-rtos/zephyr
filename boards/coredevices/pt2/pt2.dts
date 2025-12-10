@@ -39,7 +39,7 @@
 
 		btn_up: button-up {
 			label = "UP";
-			gpios = <&gpioa_32_44 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpioa_32_44 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
 
@@ -51,7 +51,7 @@
 
 		btn_down: button-down {
 			label = "DOWN";
-			gpios = <&gpioa_32_44 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpioa_32_44 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 	};
