@@ -14,5 +14,6 @@ supported:
   - uart
   - i2c
   - dma
+  - pwm
   - spi
 vendor: silabs

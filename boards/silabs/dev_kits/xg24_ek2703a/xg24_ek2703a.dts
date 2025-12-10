@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/xg24/efr32mg24b210f1536im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg24_ek2703a-pinctrl.dtsi"
 
@@ -27,6 +28,8 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
@@ -41,6 +44,20 @@
 
 		led1: led_1 {
 			gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM LED 0";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM LED 1";
 		};
 	};
 
@@ -122,6 +139,16 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &gpio {
