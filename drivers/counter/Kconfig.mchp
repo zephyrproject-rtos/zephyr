@@ -14,3 +14,10 @@ config COUNTER_MCHP_TC_G1
 	depends on DT_HAS_MICROCHIP_TC_G1_COUNTER_ENABLED
 	help
 	  This option enables the counter driver for Microchip timer peripherals.
+
+config COUNTER_MCHP_RTC_G1
+	bool "Microchip RTC G1 Counter driver"
+	default y
+	depends on DT_HAS_MICROCHIP_RTC_G1_COUNTER_ENABLED
+	help
+	  This option enables the counter driver for Microchip timer peripherals
