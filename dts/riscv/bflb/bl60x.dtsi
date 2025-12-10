@@ -57,6 +57,10 @@
 		};
 	};
 
+	chosen {
+		zephyr,flash-controller = &flashctrl;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
