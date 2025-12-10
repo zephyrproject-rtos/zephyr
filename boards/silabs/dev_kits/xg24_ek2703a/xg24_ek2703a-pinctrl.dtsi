@@ -15,6 +15,12 @@
 		};
 	};
 
+	iadc0_default: iadc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_BEVEN1_IADC0>;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group0 {
 			pins = <I2C0_SCL_PC4>, <I2C0_SDA_PC5>;
@@ -50,6 +56,12 @@
 			pins = <USART0_RX_PA6>;
 			input-enable;
 			silabs,input-filter;
+		};
+	};
+
+	vdac0_default: vdac0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_BEVEN0_VDAC0CH0>;
 		};
 	};
 };

@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <silabs/xg24/efr32mg24b210f1536im48.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -73,6 +75,13 @@
 			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	mikrobus_adc: mikrobus_dac: zephyr,user {
+		io-channels = <&adc0 0>;
+		dac = <&vdac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
 	};
 };
 
@@ -220,11 +229,33 @@
 };
 
 &adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
 };
 
 &vdac0 {
+	pinctrl-0 = <&vdac0_default>;
+	pinctrl-names = "default";
+	voltage-reference = "AVDD";
 	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		aux-output = <VDAC_OUTPUT_PB0>;
+	};
 };
 
 &vdac1 {
