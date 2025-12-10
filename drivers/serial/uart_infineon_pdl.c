@@ -46,13 +46,13 @@ LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
 #define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXS22SCB_INSTANCES)
 #endif /* CY_IP_MXSCB_INSTANCES */
 
-#if defined(CONFIG_SOC_SERIES_PSOC4100TP)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #define IFX_UART_RX_FIFO_TRIGGER_LEVEL 7
 #define IFX_UART_TX_FIFO_TRIGGER_LEVEL 0
 #else
 #define IFX_UART_RX_FIFO_TRIGGER_LEVEL 63UL
 #define IFX_UART_TX_FIFO_TRIGGER_LEVEL 63UL
-#endif /* CONFIG_SOC_SERIES_PSOC4100TP */
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 #define IFX_UART_RX_INT_MASK_NONE 0UL
 #define IFX_UART_TX_INT_MASK_NONE 0UL
@@ -698,7 +698,7 @@ static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.breakWidth = 11UL,
 	.dropOnFrameError = false,
 	.dropOnParityError = false,
-#if !defined(CONFIG_SOC_SERIES_PSOC4100TP)
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	.breaklevel = false,
 #else
 	.breakLevel = false,
