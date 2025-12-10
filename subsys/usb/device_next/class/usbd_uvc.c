@@ -1288,9 +1288,9 @@ static int uvc_add_vs_frame_interval(struct uvc_frame_descriptor *const desc,
 	    desc->bDescriptorSubtype == UVC_VS_FRAME_MJPEG) {
 		struct uvc_frame_discrete_descriptor *frame_desc = (void *)desc;
 
-		if (frame_desc->bFrameIntervalType >= CONFIG_USBD_VIDEO_MAX_FRMIVAL) {
-			LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FRMIVAL above %u",
-				CONFIG_USBD_VIDEO_MAX_FRMIVAL);
+		if (frame_desc->bFrameIntervalType >= CONFIG_USB_VIDEO_MAX_FRMIVAL) {
+			LOG_WRN("Out of descriptors, raise CONFIG_USB_VIDEO_MAX_FRMIVAL above %u",
+				CONFIG_USB_VIDEO_MAX_FRMIVAL);
 			return -ENOMEM;
 		}
 
@@ -1301,9 +1301,9 @@ static int uvc_add_vs_frame_interval(struct uvc_frame_descriptor *const desc,
 	} else if (desc->bDescriptorSubtype == UVC_VS_FRAME_FRAME_BASED) {
 		struct uvc_frame_based_discrete_descriptor *frame_desc = (void *)desc;
 
-		if (frame_desc->bFrameIntervalType >= CONFIG_USBD_VIDEO_MAX_FRMIVAL) {
-			LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FRMIVAL above %u",
-				CONFIG_USBD_VIDEO_MAX_FRMIVAL);
+		if (frame_desc->bFrameIntervalType >= CONFIG_USB_VIDEO_MAX_FRMIVAL) {
+			LOG_WRN("Out of descriptors, raise CONFIG_USB_VIDEO_MAX_FRMIVAL above %u",
+				CONFIG_USB_VIDEO_MAX_FRMIVAL);
 			return -ENOMEM;
 		}
 
@@ -1343,7 +1343,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 	}
 
 	desc->bLength = sizeof(struct uvc_frame_discrete_descriptor) -
-		CONFIG_USBD_VIDEO_MAX_FRMIVAL * sizeof(uint32_t);
+		CONFIG_USB_VIDEO_MAX_FRMIVAL * sizeof(uint32_t);
 	desc->bDescriptorType = USB_DESC_CS_INTERFACE;
 	desc->bFrameIndex = format_desc->bNumFrameDescriptors + 1;
 	desc->wWidth = sys_cpu_to_le16(fmt->width);
