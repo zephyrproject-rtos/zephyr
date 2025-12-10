@@ -370,7 +370,11 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_SCB_I2C_Enable(config->base, &data->context);
+#else
 	Cy_SCB_I2C_Enable(config->base);
+#endif
 	irq_enable(config->irq_num);
 
 	/* Register an I2C event callback handler */
@@ -575,7 +579,7 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
 }
 
 void _i2c_free(const struct device *dev)
