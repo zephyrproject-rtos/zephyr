@@ -92,7 +92,6 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_adc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_dac.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_pwm.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
@@ -101,7 +100,6 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_calendar.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_pwm.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/hal/src/sl_si91x_hal_soc_soft_reset.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/ipmu_apis.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
@@ -145,6 +143,12 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SILABS_SIWX91X
 zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_PWM_SILABS_SIWX91X
+  # Do not use PWM_ROMDRIVER_PRESENT since ROM of siwx917b0 is buggy
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_pwm.c
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_pwm.c
 )
 
 if(CONFIG_PINCTRL_SILABS_SIWX91X OR CONFIG_GPIO_SILABS_SIWX91X)
