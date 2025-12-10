@@ -18,6 +18,7 @@ supported:
   - i2c
   - dma
   - spi
+  - pwm
 testing:
   ignore_tags:
     - pm
