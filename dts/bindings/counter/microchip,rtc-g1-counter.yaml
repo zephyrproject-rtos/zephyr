@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip RTC g1 counter driver
+
+description: |
+  Microchip RTC counter driver.
+
+  This driver is used for configuring and  managing the RTC (Real Time Counter)
+  peripheral in Microchip microcontrollers.
+  These peripherals support measuring time intervals and generating periodic
+  interrupts.
+  Group g1 counter RTC driver supports following hardware peripherals:
+    - module name="RTC" id="U2250" version="2.1.0"
+  The supported Families are:
+    - same5xd5x family
+
+compatible: "microchip,rtc-g1-counter"
+include: microchip,rtc-g1.yaml
+properties:
+  max-bit-width:
+    type: int
+    required: true
+    description: |
+      Maximum bit width supported by the counter.
+
+      This property indicates the resolution of the counter.
+    enum:
+      - 16
+      - 32
