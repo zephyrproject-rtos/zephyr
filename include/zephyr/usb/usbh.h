@@ -27,6 +27,12 @@
 extern "C" {
 #endif
 
+
+/* device signal value definitions */
+#define USBH_DEVICE_CONNECTED			1
+#define USBH_DEVICE_DISCONNECTED		2
+
+
 /**
  * @brief USB HOST Core Layer API
  * @defgroup usb_host_core_api USB Host Core API
