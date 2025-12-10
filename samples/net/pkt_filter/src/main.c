@@ -148,11 +148,17 @@ static void init_app(void)
 	 * First append the priority rules, so that they get evaluated before
 	 * deciding on the final verdict for the packet.
 	 */
-	npf_append_recv_rule(&eth_priority_default);
-	npf_append_recv_rule(&eth_priority_ptp);
-	npf_append_recv_rule(&eth_priority_vlan);
-	npf_append_recv_rule(&arp_priority_vlan1);
-	npf_append_recv_rule(&arp_priority_vlan2);
+	if (IS_ENABLED(CONFIG_NET_SAMPLE_USE_PACKET_PRIORITIES)) {
+		LOG_INF("Using packet priorities");
+
+		npf_append_recv_rule(&eth_priority_default);
+		npf_append_recv_rule(&eth_priority_ptp);
+		npf_append_recv_rule(&eth_priority_vlan);
+		npf_append_recv_rule(&arp_priority_vlan1);
+		npf_append_recv_rule(&arp_priority_vlan2);
+	} else {
+		LOG_INF("Packet priorities are disabled");
+	}
 
 	/* We allow small IPv4 packets to the VLAN interface 1 */
 	npf_append_recv_rule(&small_ipv4_pkt);
