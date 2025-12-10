@@ -119,4 +119,10 @@ const registerOnScrollEvent = (function(){
 
         registerOnScrollEvent(mediaQuery);
         mediaQuery.addListener(registerOnScrollEvent);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        if (mode) {
+          document.querySelector('dark-mode-toggle').setAttribute('mode', mode);
+        }
       });
