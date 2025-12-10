@@ -39,4 +39,14 @@ config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
 	default y
 endif # VIDEO
 
+if ETH_STM32_HAL && NVMEM
+
+config OTP
+	default y
+
+config OTP_STM32_BSEC
+	default y
+
+endif # ETH_STM32_HAL
+
 endif # BOARD_STM32N6570_DK
