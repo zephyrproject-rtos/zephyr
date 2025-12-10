@@ -148,6 +148,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			do {
 				(void)k_sleep(K_FOREVER);
 			} while (true);
+			/* [coverity : unreachable] */
 			CODE_UNREACHABLE;
 			break;
 		case PTHREAD_MUTEX_RECURSIVE:
