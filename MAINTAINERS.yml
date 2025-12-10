@@ -5516,6 +5516,17 @@ West:
   labels:
     - "area: CMSIS_6"
 
+"West project: dhara":
+  status: maintained
+  maintainers:
+    - LinderPi
+    - tpambor
+  files:
+    - drivers/disk/ftl_dhara.c
+    - modules/dhara/
+  labels:
+    - "area: Disk Access"
+
 "West project: edtt":
   status: maintained
   maintainers:
