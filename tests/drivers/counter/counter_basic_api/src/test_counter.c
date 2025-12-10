@@ -529,6 +529,10 @@ static bool single_channel_alarm_capable(const struct device *dev)
 
 static bool single_channel_alarm_and_custom_top_capable(const struct device *dev)
 {
+#if defined(CONFIG_COUNTER_RENESAS_RZ_GTM) || defined(CONFIG_COUNTER_RENESAS_RZ_CMTW)
+	/* Both top change and alarm are not supported */
+	return false;
+#endif
 	return single_channel_alarm_capable(dev) &&
 		set_top_value_capable(dev);
 }
