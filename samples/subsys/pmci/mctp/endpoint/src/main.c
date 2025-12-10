@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <unistd.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/pmci/mctp/mctp_uart.h>
