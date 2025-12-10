@@ -16,5 +16,6 @@ toolchain:
 supported:
   - uart
   - gpio
+  - adc
   - arduino_gpio
 vendor: nxp
