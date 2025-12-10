@@ -1,0 +1,31 @@
+# Nordic Semiconductor nRF71 MCU line
+
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF7120
+	bool
+	select SOC_SERIES_NRF71
+	help
+	  NRF7120
+
+config SOC_NRF7120_ENGA
+	bool
+	select SOC_NRF7120
+	help
+	  NRF7120 ENGA
+
+config SOC_NRF7120_ENGA_CPUAPP
+	bool
+	select SOC_NRF7120_ENGA
+	help
+	  NRF7120 ENGA CPUAPP
+
+config SOC_NRF7120_ENGA_CPUFLPR
+	bool
+	select SOC_NRF7120_ENGA
+	help
+	  NRF7120 ENGA CPUFLPR
+
+config SOC
+	default "nrf7120" if SOC_NRF7120
