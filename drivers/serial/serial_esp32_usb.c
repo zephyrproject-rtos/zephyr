@@ -102,10 +102,9 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(intr_handler_t)serial_esp32_usb_isr,
-			(void *)dev, NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (intr_handler_t)serial_esp32_usb_isr, (void *)dev, NULL);
 #endif
 	return ret;
 }
@@ -222,7 +221,7 @@ static void serial_esp32_usb_irq_callback_set(const struct device *dev,
 	data->irq_cb = cb;
 }
 
-static void serial_esp32_usb_isr(void *arg)
+static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct serial_esp32_usb_data *data = dev->data;

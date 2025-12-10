@@ -92,7 +92,7 @@ static int counter_esp32_init(const struct device *dev)
 
 	int ret = esp_intr_alloc(cfg->irq_source,
 				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-					 ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+					 ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
 				 (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
@@ -330,7 +330,7 @@ static DEVICE_API(counter, counter_api) = {
 	.set_guard_period = counter_esp32_set_guard_period,
 };
 
-static void counter_esp32_isr(void *arg)
+static void IRAM_ATTR counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
