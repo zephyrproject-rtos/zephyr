@@ -4,6 +4,9 @@
 
 if SOC_SERIES_NPCM4
 
+config CORTEX_M_SYSTICK
+	default !NPCX_ITIM_TIMER
+
 config NUM_IRQS
 	default 82
 
