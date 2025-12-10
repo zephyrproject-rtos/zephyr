@@ -97,7 +97,6 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
@@ -144,6 +143,10 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
 zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_WDT_SILABS_SIWX91X
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
 )
 
 if(CONFIG_WIFI_SILABS_SIWX91X)
