@@ -282,6 +282,12 @@ static int usb_dc_stm32_clock_enable(void)
 #endif
 
 #if USB_OTG_HS_EMB_PHY
+	/*
+	 * STM32F723 and STM32F730 embedded HS PHY requires ULPI
+	 * clock to be enabled (RUN and LP) in addition to USBPHYC.
+	 */
+	LL_AHB1_GRP1_EnableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
 #endif /* USB_OTG_HS_ULPI_PHY */
