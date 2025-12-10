@@ -99,7 +99,6 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_calendar.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/hal/src/sl_si91x_hal_soc_soft_reset.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/ipmu_apis.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
@@ -157,6 +156,10 @@ if(CONFIG_PINCTRL_SILABS_SIWX91X OR CONFIG_GPIO_SILABS_SIWX91X)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/src/sl_si91x_peripheral_gpio.c
   )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_RTC_SILABS_SIWX91X
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_calendar.c
+)
 
 zephyr_library_sources_ifdef(CONFIG_WDT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
