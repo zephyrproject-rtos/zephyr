@@ -17,4 +17,5 @@ supported:
   - pwm
   - spi
   - clock_control
+  - watchdog
 vendor: silabs
