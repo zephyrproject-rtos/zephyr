@@ -19,7 +19,6 @@ target_sources(app PRIVATE
   src/test_procedures.c
 
   # UUT files
-  uut/ccp_call_control_client.c
   uut/tbs_client.c
 
   # Stack source file
