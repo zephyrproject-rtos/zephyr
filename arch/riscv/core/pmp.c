@@ -578,11 +578,21 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
 	 * MSTATUS_MPRV to be effective later.
 	 */
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
+
+#if defined(CONFIG_QEMU_TARGET)
+	/*
+	 * Always use write_pmp_entries() to write entries to the end of the PMP.
+	 * Otherwise, the QEMU workaround may clear remaining valid entries.
+	 */
+	write_pmp_entries(entry_index, ARRAY_SIZE(pmp_addr), false, pmp_addr, pmp_cfg,
+			  ARRAY_SIZE(pmp_addr));
+#else
 	write_pmp_entries(entry_index, entry_index + 1, false, pmp_addr, pmp_cfg,
 			  ARRAY_SIZE(pmp_addr));
+#endif /* CONFIG_QEMU_TARGET */
+
 	csr_set(mstatus, MSTATUS_MPRV);
 	arch_irq_unlock(key);
-
 	return 0;
 }
 #endif /* CONFIG_MEM_ATTR */
