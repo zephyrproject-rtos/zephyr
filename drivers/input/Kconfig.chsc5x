@@ -10,3 +10,11 @@ config INPUT_CHSC5X
 	select INPUT_TOUCH
 	help
 	  Enable CHSC5X driver for Chipsemi capacitive touch panel controller.
+
+config INPUT_CHSC5X_VERIFY_IC_TYPE
+	bool "IC type verification"
+	default y
+	depends on INPUT_CHSC5X
+	help
+	  This option enables the verification of the IC type which implies an
+	  additional delay of 100ms during initialization.

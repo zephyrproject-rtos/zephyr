@@ -100,7 +100,8 @@ static void chsc5x_isr_handler(const struct device *dev, struct gpio_callback *c
 	k_work_submit(&data->work);
 }
 
-static int chsc5x_chip_init(const struct device *dev)
+#if defined(CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE)
+static int chsc5x_verify_ic(const struct device *dev)
 {
 	const struct chsc5x_config *cfg = dev->config;
 	int ret;
@@ -141,6 +142,7 @@ static int chsc5x_chip_init(const struct device *dev)
 
 	return 0;
 }
+#endif /* CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE */
 
 static int chsc5x_reset(const struct device *dev)
 {
@@ -252,10 +254,17 @@ static int chsc5x_init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE)
 	/* It takes about 94ms until chip is ready after reset. */
 	k_msleep(100);
 
-	return chsc5x_chip_init(dev);
+	ret =  chsc5x_verify_ic(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to verify ic: %d", ret);
+		return ret;
+	}
+#endif /* CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE */
+	return ret;
 };
 
 #define CHSC5X_DEFINE(index)                                                                       \
