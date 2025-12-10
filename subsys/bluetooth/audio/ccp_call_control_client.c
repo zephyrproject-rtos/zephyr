@@ -184,7 +184,11 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_co
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
 		if (listener->discover != NULL) {
-			listener->discover(client, err, &bearers);
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->discover(client, err, &bearers, user_data);
 		}
 	}
 }
@@ -309,7 +313,11 @@ static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int er
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
 		if (listener->bearer_provider_name != NULL) {
-			listener->bearer_provider_name(bearer, err, name);
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->bearer_provider_name(bearer, err, name, user_data);
 		}
 	}
 }
