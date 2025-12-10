@@ -679,6 +679,14 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	mac_config.PortSelect = PHY_LINK_IS_SPEED_1000M(state->speed) ? DISABLE : ENABLE;
 #endif
+
+	/* Always disable hardware source address replacement.
+	 * Zephyr network stack sets the source MAC address and
+	 * therefore hardware replacement should not be enabled,
+	 * since it may affect bridging applications, for example.
+	 */
+	mac_config.SourceAddrControl = ETH_SOURCEADDRESS_DISABLE;
+
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
