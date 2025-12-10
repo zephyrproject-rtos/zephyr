@@ -280,6 +280,28 @@ static inline void arch_irq_unlock(unsigned int key);
  */
 static inline bool arch_irq_unlocked(unsigned int key);
 
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+
+/**
+ * @brief Lock all interrupts including zero latency interrupts on the current CPU.
+ *
+ * @details Intended to be used when breaking the promise of zero latency interrupts is
+ * unavoidable and necessary, like accessing shared core peripherals or powering down the
+ * SoC.
+ *
+ * @warning This lock breaks the promise of zero latency interrupts.
+ */
+static inline unsigned int arch_zli_lock(void);
+
+/**
+ * @brief Unlock all interrupts including zero latency interrupts on the current CPU
+ *
+ * @see arch_zli_lock()
+ */
+static inline void arch_zli_unlock(unsigned int key);
+
+#endif
+
 /**
  * Disable the specified interrupt line
  *
