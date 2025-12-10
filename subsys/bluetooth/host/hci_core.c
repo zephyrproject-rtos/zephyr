@@ -4734,13 +4734,6 @@ bool bt_is_ready(void)
 	return atomic_test_bit(bt_dev.flags, BT_DEV_READY);
 }
 
-#define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
-#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-BUILD_ASSERT(DEVICE_NAME_LEN < CONFIG_BT_DEVICE_NAME_MAX);
-#else
-BUILD_ASSERT(DEVICE_NAME_LEN < 248);
-#endif
-
 int bt_set_name(const char *name)
 {
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)

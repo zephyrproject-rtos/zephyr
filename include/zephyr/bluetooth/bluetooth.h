@@ -84,6 +84,11 @@ extern "C" {
 			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
 		(0U)))
 
+/**
+ * Length of the Static Bluetooth Device Name (excluding NULL termination).
+ */
+#define BT_DEVICE_NAME_LEN_STATIC      (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
+
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
 
