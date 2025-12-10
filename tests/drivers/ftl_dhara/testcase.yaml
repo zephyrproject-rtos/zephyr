@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - disk
+    - drivers
+tests:
+  drivers.disk.ftl_dhara:
+    platform_allow:
+      - native_sim
