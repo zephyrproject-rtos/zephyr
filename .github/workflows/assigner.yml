@@ -38,7 +38,7 @@ jobs:
 
     - name: Fetch west.yml/Maintainer.yml from pull request
       if: >
-        github.event_name == 'pull_request_target'
+        github.event_name == 'pull_request_target' && github.base_ref == 'main'
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge
         git show FETCH_HEAD:west.yml > pr_west.yml
@@ -61,7 +61,11 @@ jobs:
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
+          if [ "${{ github.base_ref }}" != "main" ]; then
+            FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
+          else
+            FLAGS+=" -P ${{ github.event.pull_request.number }}"
+          fi
         elif [ "${{ github.event_name }}" = "issues" ]; then
           FLAGS+=" -I ${{ github.event.issue.number }}"
         elif [ "${{ github.event_name }}" = "schedule" ]; then
@@ -74,7 +78,7 @@ jobs:
 
     - name: Check maintainer file changes
       if: >
-        github.event_name == 'pull_request_target'
+        github.event_name == 'pull_request_target' && github.base_ref == 'main'
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
       run: |
