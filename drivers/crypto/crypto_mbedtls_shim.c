@@ -84,6 +84,7 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 	psa_status_t status;
+	size_t out_len;
 
 	/* For security reasons, ECB mode should not be used to encrypt/decrypt
 	 * more than one block. Use CBC mode instead.
@@ -97,13 +98,15 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		status = psa_cipher_encrypt(session->key_id, session->psa_alg,
 					    pkt->in_buf, pkt->in_len,
 					    pkt->out_buf, pkt->out_buf_max,
-					    (size_t *) &pkt->out_len);
+					    &out_len);
 	} else {
 		status = psa_cipher_decrypt(session->key_id, session->psa_alg,
 					    pkt->in_buf, pkt->in_len,
 					    pkt->out_buf, pkt->out_buf_max,
-					    (size_t *) &pkt->out_len);
+					    &out_len);
 	}
+
+	pkt->out_len = out_len;
 
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
