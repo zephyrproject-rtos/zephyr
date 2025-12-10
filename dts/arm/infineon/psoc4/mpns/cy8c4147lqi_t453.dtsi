@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../psoc4100tp/psoc4100tp.48-qfn.dtsi"
+
+&flash0 {
+	reg = <0x00000000 0x20000>;
+};
+
+&sram0 {
+	reg = <0x20000000 0x4000>;
+};

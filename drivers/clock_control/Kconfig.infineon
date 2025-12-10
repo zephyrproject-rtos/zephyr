@@ -38,10 +38,13 @@ if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	int "Infineon fixed factor clock driver init priority"
-	default 29
+	default 31
 	help
 	  Infineon fixed factor clock control driver initialization priority.
-	  This should be lower than the priority of fixed factor clock driver
-	  to ensure the clock paths are initialized before.
+	  This should be higher than CLOCK_CONTROL_INIT_PRIORITY to ensure
+	  fixed-rate clocks are initialized before fixed-factor clocks that
+	  depend on them.Since fixed-factor clocks depend on fixed-rate clocks,
+	  they need a HIGHER priority number so they initialize after their
+	  dependencies.
 
 endif # CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
