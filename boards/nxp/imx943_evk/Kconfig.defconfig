@@ -1,6 +1,9 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+configdefault BOARD_NXP_LPDDR5
+	default y if !BOARD_NXP_LPDDR4
+
 if SOC_MIMX94398_A55
 
 if ETH_NXP_IMX_NETC
