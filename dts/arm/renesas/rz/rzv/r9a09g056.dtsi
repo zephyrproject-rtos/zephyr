@@ -902,6 +902,118 @@
 				status = "disabled";
 			};
 		};
+
+		gtm0: gtm@41800000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x41800000 0x1000>;
+			channel = <0>;
+			interrupts = <17 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm1: gtm@41801000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x41801000 0x1000>;
+			channel = <1>;
+			interrupts = <18 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm2: gtm@44000000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x44000000 0x1000>;
+			channel = <2>;
+			interrupts = <19 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm3: gtm@44001000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x44001000 0x1000>;
+			channel = <3>;
+			interrupts = <20 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm4: gtm@42c00000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42c00000 0x1000>;
+			channel = <4>;
+			interrupts = <21 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm5: gtm@42c01000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42c01000 0x1000>;
+			channel = <5>;
+			interrupts = <22 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm6: gtm@42c02000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42c02000 0x1000>;
+			channel = <6>;
+			interrupts = <23 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm7: gtm@42c03000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42c03000 0x1000>;
+			channel = <7>;
+			interrupts = <24 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
 	};
 };
 

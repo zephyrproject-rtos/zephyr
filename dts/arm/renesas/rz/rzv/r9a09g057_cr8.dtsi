@@ -979,5 +979,117 @@
 				status = "disabled";
 			};
 		};
+
+		gtm0: gtm@11800000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x11800000 0x1000>;
+			channel = <0>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm1: gtm@11801000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x11801000 0x1000>;
+			channel = <1>;
+			interrupts = <GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm2: gtm@14000000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x14000000 0x1000>;
+			channel = <2>;
+			interrupts = <GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm3: gtm@14001000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x14001000 0x1000>;
+			channel = <3>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm4: gtm@12c00000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12c00000 0x1000>;
+			channel = <4>;
+			interrupts = <GIC_SPI 21 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm5: gtm@12c01000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12c01000 0x1000>;
+			channel = <5>;
+			interrupts = <GIC_SPI 22 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm6: gtm@12c02000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12c02000 0x1000>;
+			channel = <6>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm7: gtm@12c03000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12c03000 0x1000>;
+			channel = <7>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
 	};
 };

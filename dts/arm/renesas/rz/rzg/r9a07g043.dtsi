@@ -232,6 +232,48 @@
 			status = "disabled";
 		};
 
+		gtm0: gtm@42801000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801000 DT_SIZE_K(1)>;
+			channel = <0>;
+			interrupts = <46 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm1: gtm@42801400 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801400 DT_SIZE_K(1)>;
+			channel = <1>;
+			interrupts = <47 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm2: gtm@42801800 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801800 DT_SIZE_K(1)>;
+			channel = <2>;
+			interrupts = <48 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
 		scif0: serial@4004b800 {
 			compatible = "renesas,rz-scif-uart";
 			channel = <0>;
