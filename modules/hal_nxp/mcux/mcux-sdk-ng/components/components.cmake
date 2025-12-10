@@ -4,6 +4,10 @@
 
 if(CONFIG_WIFI_NXP)
   set(CONFIG_MCUX_COMPONENT_component.wifi_bt_module.tx_pwr_limits ON)
+
+  if(${MCUX_DEVICE} MATCHES "RW61")
+    zephyr_library_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
+  endif()
 endif()
 
 if(CONFIG_NXP_WIFI_FW_DEBUG)
