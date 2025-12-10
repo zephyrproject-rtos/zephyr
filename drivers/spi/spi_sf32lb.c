@@ -158,13 +158,22 @@ static int spi_sf32lb_configure(const struct device *dev, const struct spi_confi
 		top_ctrl &= ~SPI_TOP_CTRL_TTE;
 	}
 
+	if (config->operation & SPI_HOLD_ON_CS) {
+		return -ENOTSUP;
+	}
+
+	if (config->operation & SPI_LOCK_ON) {
+		return -ENOTSUP;
+	}
+
 	sys_clear_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
 
 	sys_write32(top_ctrl, cfg->base + SPI_TOP_CTRL);
 	sys_write32(triwire_ctrl, cfg->base + SPI_TRIWIRE_CTRL);
 
 	sys_set_bit(cfg->base + SPI_CLK_CTRL, SPI_CLK_CTRL_CLK_SSP_EN_Pos);
-	clk_div = clk_freq / config->frequency; /* see Manual 7.2.6.2.4 clock freq settings */
+	clk_div = DIV_ROUND_UP(clk_freq,
+			       config->frequency); /* see Manual 7.2.6.2.4 clock freq settings */
 	clk_ctrl = sys_read32(cfg->base + SPI_CLK_CTRL);
 	clk_ctrl &= ~SPI_CLK_CTRL_CLK_DIV_Msk;
 	clk_ctrl |= FIELD_PREP(SPI_CLK_CTRL_CLK_DIV_Msk, clk_div);
