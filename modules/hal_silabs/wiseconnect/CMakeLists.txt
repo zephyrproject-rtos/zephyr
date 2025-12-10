@@ -131,8 +131,8 @@ zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_GPDMA
   GPDMA_ROMDRIVER_PRESENT
 )
 
-zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
+zephyr_compile_definitions_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
+  RNG_ROMDRIVER_PRESENT # replace rsi_rng.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SILABS_SIWX91X
