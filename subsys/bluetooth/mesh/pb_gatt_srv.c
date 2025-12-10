@@ -245,8 +245,8 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 dev_name:
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)) {
 		prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-		prov_sd[prov_sd_len].data_len = BT_DEVICE_NAME_LEN;
-		prov_sd[prov_sd_len].data = BT_DEVICE_NAME;
+		prov_sd[prov_sd_len].data_len = BT_MESH_DEVICE_NAME_LEN;
+		prov_sd[prov_sd_len].data = BT_MESH_DEVICE_NAME;
 		prov_sd_len += 1;
 	}
 

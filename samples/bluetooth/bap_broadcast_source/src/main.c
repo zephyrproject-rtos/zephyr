@@ -612,7 +612,7 @@ int main(void)
 		ext_ad[0].data_len = ad_buf.len;
 		ext_ad[0].data = ad_buf.data;
 		ext_ad[1] = (struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
-						    sizeof(CONFIG_BT_DEVICE_NAME) - 1);
+						    BT_DEVICE_NAME_LEN);
 		/* Broadcast name used for scanning device that displays information on the */
 		/* available broadcast sources. */
 		ext_ad[2] = (struct bt_data)BT_DATA(BT_DATA_BROADCAST_NAME, CONFIG_BROADCAST_NAME,

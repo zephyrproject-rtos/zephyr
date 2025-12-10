@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(iso_broadcast_receiver, LOG_LEVEL_DBG);
 
 #define DEVICE_NAME	CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME))
+#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 
 #define PA_RETRY_COUNT 6
 #define ISO_RETRY_COUNT 10
@@ -68,7 +68,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
-		len = MIN(data->data_len, DEVICE_NAME_LEN - 1);
+		len = MIN(data->data_len, DEVICE_NAME_LEN);
 		memcpy(name, data->data, len);
 		name[len] = '\0';
 		return false;
@@ -81,7 +81,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[DEVICE_NAME_LEN];
+	char name[DEVICE_NAME_LEN + 1];
 
 	if (broadcaster_found) {
 		return;

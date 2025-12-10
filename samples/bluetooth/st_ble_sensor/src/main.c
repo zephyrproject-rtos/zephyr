@@ -48,7 +48,7 @@ static const struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x0000fe42, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 #define ADV_LEN 12
 
 /* Advertising data */

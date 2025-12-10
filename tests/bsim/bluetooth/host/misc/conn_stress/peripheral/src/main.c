@@ -416,7 +416,7 @@ void test_peripheral_main(void)
 	struct bt_data sd[1];
 
 	sd[0].type = BT_DATA_NAME_COMPLETE;
-	sd[0].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
+	sd[0].data_len = BT_DEVICE_NAME_LEN;
 	sd[0].data = CONFIG_BT_DEVICE_NAME;
 
 	err = bt_le_adv_start(&adv_param, sd, 1, sd, 1);

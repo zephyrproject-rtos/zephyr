@@ -27,7 +27,7 @@
 LOG_MODULE_REGISTER(iso_connected, LOG_LEVEL_DBG);
 
 #define DEVICE_NAME	CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME))
+#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 
 enum benchmark_role {
 	ROLE_CENTRAL,
@@ -145,7 +145,7 @@ static struct bt_iso_cig_param cig_create_param = {
 };
 
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 static enum benchmark_role device_role_select(void)
@@ -443,7 +443,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	case BT_DATA_NAME_SHORTENED:
 		__fallthrough;
 	case BT_DATA_NAME_COMPLETE:
-		len = MIN(data->data_len, DEVICE_NAME_LEN - 1);
+		len = MIN(data->data_len, DEVICE_NAME_LEN);
 		memcpy(name, data->data, len);
 		name[len] = '\0';
 		return false;
@@ -486,7 +486,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[DEVICE_NAME_LEN];
+	char name[DEVICE_NAME_LEN + 1];
 
 	if (advertiser_found) {
 		return;

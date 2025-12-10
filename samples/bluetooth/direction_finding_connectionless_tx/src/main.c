@@ -65,7 +65,7 @@ struct bt_df_adv_cte_tx_param cte_params = { .cte_len = CTE_LEN,
 };
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 static void adv_sent_cb(struct bt_le_ext_adv *adv,

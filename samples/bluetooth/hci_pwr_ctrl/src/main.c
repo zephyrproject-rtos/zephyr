@@ -34,11 +34,11 @@ static const struct bt_data ad[] = {
 };
 
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 #define DEVICE_BEACON_TXPOWER_NUM  8
 
 static struct k_thread pwr_thread_data;

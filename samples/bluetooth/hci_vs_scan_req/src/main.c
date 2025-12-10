@@ -14,7 +14,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
 	     "This app requires Zephyr-specific HCI vendor extensions");
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LENGTH (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LENGTH BT_DEVICE_NAME_LEN
 
 /* Advertising Interval: the longer, the less energy consumption.
  * Units: 0.625 milliseconds.

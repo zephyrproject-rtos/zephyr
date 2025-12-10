@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 
 /*
  * Set Advertisement data. Based on the Eddystone specification:

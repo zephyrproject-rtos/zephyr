@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/services/ots.h>
 
 #define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LEN  BT_DEVICE_NAME_LEN
 
 #define OBJ_POOL_SIZE CONFIG_BT_OTS_MAX_OBJ_CNT
 #define OBJ_MAX_SIZE  100
