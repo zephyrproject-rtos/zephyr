@@ -36,6 +36,7 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
 struct siwx91x_nwp_data {
+	uint8_t power_profile;
 	char current_country_code[WIFI_COUNTRY_CODE_LEN];
 };
 
@@ -163,7 +164,7 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 	} else if (wifi_enabled) {
 		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 	} else if (bt_enabled) {
-		boot_config->coex_mode = SL_SI91X_BLE_MODE;
+		boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else {
 		/*
 		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
@@ -390,15 +391,51 @@ int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hi
 	return 0;
 }
 
+int siwx91x_nwp_apply_power_profile(const struct device *dev)
+{
+	struct siwx91x_nwp_data *data = dev->data;
+	sl_wifi_performance_profile_t performance_profile = {
+		.profile = data->power_profile
+	};
+	sl_bt_performance_profile_t bt_performance_profile = {
+		.profile = data->power_profile
+	};
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		/* no_op if PM is not enabled*/
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
+		if (ret) {
+			LOG_ERR("Failed to initiate power save in BLE mode");
+			return -EINVAL;
+		}
+	}
+
+	ret = sl_wifi_set_performance_profile(&performance_profile);
+	if (ret) {
+		return -EINVAL;
+	}
+
+	/* Remove the previously added PS4 power state requirement */
+	sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+
+	return 0;
+}
+
 static int siwx91x_nwp_init(const struct device *dev)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
-	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
-		.profile = DEEP_SLEEP_WITH_RAM_RETENTION};
-	__maybe_unused sl_bt_performance_profile_t bt_performance_profile = {
-		.profile = DEEP_SLEEP_WITH_RAM_RETENTION};
+	struct siwx91x_nwp_data *data = dev->data;
 	sl_wifi_device_configuration_t network_config;
 	int ret;
+
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		data->power_profile = ASSOCIATED_POWER_SAVE;
+	}
 
 	siwx91x_get_nwp_config(dev, &network_config, WIFI_STA_MODE, false, 0);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
@@ -417,28 +454,20 @@ static int siwx91x_nwp_init(const struct device *dev)
 			SIWX91X_NWP_FW_EXPECTED_VERSION);
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
-		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-			ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
-			if (ret) {
-				LOG_ERR("Failed to initiate power save in BLE mode");
-				return -EINVAL;
-			}
-		}
-		/*
-		 * Note: the WiFi related sources are always imported (because of
-		 * CONFIG_SILABS_SIWX91X_NWP) whatever the value of CONFIG_WIFI. However,
-		 * because of boot_config->coex_mode, sl_wifi_set_performance_profile() is a no-op
-		 * if CONFIG_WIFI=n and CONFIG_BT=y. We could probably remove the dependency to the
-		 * WiFi sources in this case. However, outside of the code size, this dependency
-		 * does not hurt.
-		 */
-		ret = sl_wifi_set_performance_profile(&performance_profile);
+	/* WORKAROUND:
+	 * Only set the power profile if Bluetooth is not enabled.
+	 *
+	 * If bt is enabled, we need to wait for the bt setup to complete
+	 * before setting the power profile.
+	 *
+	 * Because of that, if CONFIG_BT_SILABS_SIWX91X is enabled and
+	 * bt_enable() is not called, you will never go in sleep.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		ret = siwx91x_nwp_apply_power_profile(dev);
 		if (ret) {
 			return -EINVAL;
 		}
-		/* Remove the previously added PS4 power state requirement */
-		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 	}
 
 	config->config_irq(dev);
@@ -461,7 +490,9 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		irq_enable(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq));                               \
 	};                                                                                         \
                                                                                                    \
-	static struct siwx91x_nwp_data siwx91x_nwp_data_##inst = {};                               \
+	static struct siwx91x_nwp_data siwx91x_nwp_data_##inst = {                                 \
+		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
+	};                                                                                         \
                                                                                                    \
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
