@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC35XX LGPT PWM Controller Node
+
+compatible: "ti,cc35xx-lgpt-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+pwm-cells:
+  - channel
+  - period
+  - flags

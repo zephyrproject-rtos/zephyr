@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_CC35XX_TIMER
+	bool "TI SimpleLink CC35XX LGPT PWM driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_LGPT_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enables TI SimpleLink CC35XX LGPT PWM driver.
