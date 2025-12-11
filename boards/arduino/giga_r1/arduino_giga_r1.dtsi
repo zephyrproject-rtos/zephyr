@@ -59,6 +59,7 @@ sdhc: &sdmmc1 {
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
+	disk-name = "SDIO";
 	sdhi-on-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
